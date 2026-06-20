@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sgorbions Collector — The Ultimate Fan Database</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@400;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
+<style>
+/* ===== RESET & VARIABLES ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0e0a1a;
+  --bg2: #160f28;
+  --bg3: #1e1535;
+  --card: #1a1030;
+  --card2: #221540;
+  --accent: #b5ff2e;
+  --accent2: #ff6b1a;
+  --accent3: #c84bff;
+  --text: #f0eaff;
+  --muted: #8b7aaa;
+  --border: rgba(181,255,46,0.18);
+  --border2: rgba(200,75,255,0.18);
+  --glow: 0 0 20px rgba(181,255,46,0.15);
+  --glow2: 0 0 20px rgba(200,75,255,0.15);
+  --radius: 12px;
+  --radius-lg: 20px;
+  --font-display: 'Permanent Marker', cursive;
+  --font-ui: 'Boogaloo', cursive;
+  --font-body: 'Nunito', sans-serif;
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ===== ANIMATED BACKGROUND ===== */
+.bg-particles {
+  position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+}
+.particle {
+  position: absolute; border-radius: 50%; opacity: 0.12;
+  animation: float-up linear infinite;
+}
+@keyframes float-up {
+  0% { transform: translateY(100vh) scale(0); opacity: 0; }
+  10% { opacity: 0.15; }
+  90% { opacity: 0.1; }
+  100% { transform: translateY(-20px) scale(1); opacity: 0; }
+}
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--accent3); border-radius: 3px; }
+
+/* ===== NAVIGATION ===== */
+#navbar {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+  background: rgba(14,10,26,0.92); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 2rem;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 64px;
+  transition: all 0.3s;
+}
+.nav-logo {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--accent);
+  text-decoration: none;
+  letter-spacing: 1px;
+  text-shadow: 0 0 20px rgba(181,255,46,0.4);
+  cursor: pointer;
+}
+.nav-logo span { color: var(--accent2); }
+.nav-links { display: flex; gap: 0.25rem; align-items: center; }
+.nav-links a {
+  color: var(--muted); text-decoration: none;
+  font-family: var(--font-ui); font-size: 1.05rem;
+  padding: 0.4rem 0.9rem; border-radius: 8px;
+  transition: all 0.2s; cursor: pointer;
+  border: 1px solid transparent;
+}
+.nav-links a:hover, .nav-links a.active {
+  color: var(--accent); background: rgba(181,255,46,0.08);
+  border-color: var(--border);
+}
+.lang-toggle {
+  display: flex; align-items: center; gap: 4px;
+  background: var(--card2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 4px; cursor: pointer;
+}
+.lang-btn {
+  padding: 4px 10px; border-radius: 6px; font-size: 0.8rem;
+  font-family: var(--font-ui); cursor: pointer; transition: all 0.2s;
+  background: transparent; border: none; color: var(--muted);
+}
+.lang-btn.active {
+  background: var(--accent); color: #0e0a1a; font-weight: 700;
+}
+.nav-right { display: flex; gap: 1rem; align-items: center; }
+.btn-login {
+  font-family: var(--font-ui); font-size: 1rem;
+  background: var(--card2); border: 1px solid var(--border);
+  color: var(--text); padding: 0.35rem 1rem; border-radius: 8px;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-login:hover { border-color: var(--accent3); color: var(--accent3); }
+.btn-register {
+  font-family: var(--font-ui); font-size: 1rem;
+  background: var(--accent); border: 1px solid var(--accent);
+  color: #0e0a1a; padding: 0.35rem 1.2rem; border-radius: 8px;
+  cursor: pointer; transition: all 0.2s; font-weight: 700;
+}
+.btn-register:hover { background: #d4ff60; box-shadow: 0 0 20px rgba(181,255,46,0.4); }
+#user-nav { display: flex; gap: 0.75rem; align-items: center; }
+.avatar-btn {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent3), var(--accent2));
+  border: 2px solid var(--accent); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-ui); font-size: 0.85rem; color: white; font-weight: 700;
+}
+.btn-logout {
+  font-family: var(--font-ui); background: transparent;
+  border: 1px solid rgba(255,100,100,0.3); color: #ff6b6b;
+  padding: 0.35rem 0.9rem; border-radius: 8px; cursor: pointer;
+  font-size: 0.9rem; transition: all 0.2s;
+}
+.btn-logout:hover { background: rgba(255,100,100,0.1); }
+
+/* ===== PAGES ===== */
+.page { display: none; padding-top: 64px; min-height: 100vh; position: relative; z-index: 1; }
+.page.active { display: block; }
+
+/* ===== HERO ===== */
+#hero {
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center; padding: 2rem;
+  position: relative;
+}
+.hero-eyebrow {
+  font-family: var(--font-ui); font-size: 1rem; color: var(--accent2);
+  letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5rem;
+  animation: fade-in 0.8s ease both;
+}
+.hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(3rem, 10vw, 7rem);
+  line-height: 1;
+  color: var(--text);
+  animation: hero-in 0.9s cubic-bezier(0.22,1,0.36,1) both 0.1s;
+}
+.hero-title .s { color: var(--accent); text-shadow: 0 0 40px rgba(181,255,46,0.5); }
+.hero-title .g { color: var(--accent2); text-shadow: 0 0 40px rgba(255,107,26,0.5); }
+.hero-slime {
+  display: block; font-size: 0.55em; color: var(--accent3);
+  animation: drip 3s ease-in-out infinite 1s;
+  text-shadow: 0 0 30px rgba(200,75,255,0.5);
+}
+@keyframes drip {
+  0%, 100% { transform: scaleY(1) translateY(0); }
+  50% { transform: scaleY(1.04) translateY(4px); }
+}
+@keyframes hero-in {
+  0% { opacity: 0; transform: translateY(40px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes fade-in {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.hero-desc {
+  max-width: 540px; font-size: 1.1rem; color: var(--muted);
+  margin: 1.5rem auto 2.5rem; line-height: 1.7;
+  animation: fade-in 0.9s ease both 0.3s;
+}
+.hero-cta {
+  display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+  animation: fade-in 0.9s ease both 0.4s;
+}
+.btn-primary {
+  font-family: var(--font-ui); font-size: 1.15rem;
+  background: var(--accent); color: #0e0a1a;
+  border: none; padding: 0.75rem 2rem; border-radius: 12px;
+  cursor: pointer; font-weight: 700; transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(181,255,46,0.4); }
+.btn-secondary {
+  font-family: var(--font-ui); font-size: 1.15rem;
+  background: transparent; color: var(--text);
+  border: 1.5px solid var(--border2); padding: 0.75rem 2rem; border-radius: 12px;
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-secondary:hover { border-color: var(--accent3); color: var(--accent3); transform: translateY(-2px); }
+
+/* hero stats */
+.hero-stats {
+  display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap;
+  margin-top: 4rem; animation: fade-in 1s ease both 0.5s;
+}
+.stat-item { text-align: center; }
+.stat-num {
+  font-family: var(--font-display); font-size: 2.2rem;
+  color: var(--accent); display: block;
+}
+.stat-label { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+
+/* slime blob decorations */
+.blob {
+  position: absolute; border-radius: 50%; filter: blur(80px);
+  pointer-events: none; animation: pulse-blob 6s ease-in-out infinite;
+}
+@keyframes pulse-blob {
+  0%, 100% { opacity: 0.12; transform: scale(1); }
+  50% { opacity: 0.2; transform: scale(1.1); }
+}
+
+/* ===== SECTION STYLES ===== */
+.section { padding: 5rem 2rem; }
+.section-inner { max-width: 1100px; margin: 0 auto; }
+.section-header { text-align: center; margin-bottom: 3rem; }
+.section-eyebrow {
+  font-family: var(--font-ui); font-size: 0.9rem; color: var(--accent2);
+  letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; display: block;
+}
+.section-title {
+  font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 2.8rem);
+  color: var(--text); margin-bottom: 0.75rem;
+}
+.section-title .hi { color: var(--accent3); }
+.section-sub { color: var(--muted); font-size: 1rem; max-width: 500px; margin: 0 auto; }
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--card); border: 1px solid var(--border2);
+  border-radius: var(--radius-lg); overflow: hidden;
+  transition: all 0.3s; cursor: pointer;
+}
+.card:hover {
+  transform: translateY(-6px); border-color: var(--accent3);
+  box-shadow: 0 12px 40px rgba(200,75,255,0.2);
+}
+.card-img {
+  width: 100%; aspect-ratio: 4/3; object-fit: cover;
+  background: var(--bg3); display: flex; align-items: center; justify-content: center;
+  font-size: 4rem; position: relative; overflow: hidden;
+}
+.card-img-placeholder {
+  background: linear-gradient(135deg, var(--bg2), var(--card2));
+  width: 100%; aspect-ratio: 4/3; display: flex; align-items: center;
+  justify-content: center; font-size: 3.5rem; position: relative;
+}
+.card-body { padding: 1.25rem 1.5rem 1.5rem; }
+.card-tag {
+  font-size: 0.72rem; font-family: var(--font-ui); letter-spacing: 2px;
+  text-transform: uppercase; color: var(--accent3); margin-bottom: 0.5rem;
+  display: block;
+}
+.card-title {
+  font-family: var(--font-ui); font-size: 1.35rem; color: var(--text);
+  margin-bottom: 0.5rem;
+}
+.card-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+.card-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 1rem; padding-top: 1rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.card-badge {
+  background: rgba(181,255,46,0.1); border: 1px solid rgba(181,255,46,0.2);
+  color: var(--accent); font-size: 0.78rem; font-family: var(--font-ui);
+  padding: 3px 10px; border-radius: 20px;
+}
+.card-count { font-size: 0.82rem; color: var(--muted); }
+
+/* grid */
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; }
+
+/* ===== FIGURINE CARDS ===== */
+.fig-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+  transition: all 0.25s; position: relative;
+}
+.fig-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: 0 8px 30px rgba(181,255,46,0.15); }
+.fig-img {
+  width: 100%; aspect-ratio: 1; background: var(--bg3);
+  display: flex; align-items: center; justify-content: center; font-size: 3rem;
+  position: relative; overflow: hidden;
+}
+.fig-img img { width: 100%; height: 100%; object-fit: cover; }
+.fig-img-placeholder { 
+  background: linear-gradient(135deg, var(--bg2) 0%, var(--card2) 100%);
+  width: 100%; aspect-ratio: 1; display: flex; align-items: center;
+  justify-content: center; font-size: 3rem;
+}
+.fig-owned-badge {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--accent); color: #0e0a1a;
+  font-size: 0.7rem; font-family: var(--font-ui); font-weight: 700;
+  padding: 3px 8px; border-radius: 20px;
+}
+.fig-body { padding: 0.9rem 1rem 1rem; }
+.fig-number { font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; }
+.fig-name { font-family: var(--font-ui); font-size: 1.05rem; color: var(--text); }
+.fig-toggle {
+  display: flex; align-items: center; justify-content: space-between; margin-top: 0.6rem;
+}
+.toggle-label { font-size: 0.78rem; color: var(--muted); }
+.toggle-btn {
+  width: 38px; height: 22px; border-radius: 11px; border: none;
+  background: var(--card2); cursor: pointer; position: relative; transition: all 0.25s;
+}
+.toggle-btn::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 16px; height: 16px; border-radius: 50%;
+  background: var(--muted); transition: all 0.25s;
+}
+.toggle-btn.on { background: rgba(181,255,46,0.2); }
+.toggle-btn.on::after { left: 19px; background: var(--accent); }
+
+/* ===== SERIES DETAIL PAGE ===== */
+#series-detail { display: none; }
+#series-detail.active { display: block; }
+.series-hero {
+  background: linear-gradient(to bottom, var(--bg2), var(--bg));
+  padding: 3rem 2rem 2rem;
+  border-bottom: 1px solid var(--border);
+}
+.series-hero-inner { max-width: 1100px; margin: 0 auto; }
+.back-btn {
+  font-family: var(--font-ui); background: transparent;
+  border: 1px solid var(--border); color: var(--muted);
+  padding: 0.4rem 1rem; border-radius: 8px; cursor: pointer;
+  margin-bottom: 1.5rem; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+}
+.back-btn:hover { border-color: var(--accent3); color: var(--accent3); }
+.series-title-area { display: flex; align-items: flex-start; gap: 2rem; flex-wrap: wrap; }
+.series-cover {
+  width: 160px; min-width: 160px; aspect-ratio: 3/4;
+  background: var(--card2); border-radius: var(--radius);
+  border: 1px solid var(--border2); display: flex; align-items: center;
+  justify-content: center; font-size: 4rem; overflow: hidden;
+}
+.series-cover img { width: 100%; height: 100%; object-fit: cover; }
+.series-info { flex: 1; min-width: 200px; }
+.series-year {
+  font-family: var(--font-ui); font-size: 0.88rem; color: var(--accent2);
+  letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem;
+}
+.series-name {
+  font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 3rem);
+  color: var(--text); margin-bottom: 1rem; line-height: 1.1;
+}
+.series-description { color: var(--muted); line-height: 1.7; margin-bottom: 1.5rem; max-width: 600px; }
+.progress-bar-wrap { margin-bottom: 0.5rem; }
+.progress-label { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px; }
+.progress-label span:first-child { color: var(--muted); }
+.progress-label span:last-child { color: var(--accent); font-family: var(--font-ui); }
+.progress-bar { height: 8px; background: var(--card2); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent3), var(--accent)); border-radius: 4px; transition: width 0.6s ease; }
+
+/* ===== MODALS ===== */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(5,2,15,0.85);
+  backdrop-filter: blur(8px); z-index: 2000;
+  display: flex; align-items: center; justify-content: center;
+  padding: 1rem; animation: overlay-in 0.2s ease;
+}
+.modal-overlay.hidden { display: none; }
+@keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--radius-lg); padding: 2rem;
+  width: 100%; max-width: 460px; max-height: 90vh; overflow-y: auto;
+  animation: modal-in 0.25s cubic-bezier(0.22,1,0.36,1);
+}
+.modal-wide { max-width: 660px; }
+@keyframes modal-in {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;
+}
+.modal-title { font-family: var(--font-display); font-size: 1.5rem; color: var(--text); }
+.modal-close {
+  background: var(--card2); border: none; color: var(--muted);
+  width: 32px; height: 32px; border-radius: 8px; cursor: pointer;
+  font-size: 1.1rem; transition: all 0.2s;
+}
+.modal-close:hover { color: var(--text); background: var(--card); }
+
+/* ===== FORMS ===== */
+.form-group { margin-bottom: 1.25rem; }
+.form-label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; font-family: var(--font-ui); }
+.form-input, .form-textarea, .form-select {
+  width: 100%; background: var(--card); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--font-body); font-size: 0.95rem;
+  padding: 0.65rem 1rem; border-radius: var(--radius); outline: none; transition: all 0.2s;
+}
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  border-color: var(--accent3); box-shadow: 0 0 0 3px rgba(200,75,255,0.1);
+}
+.form-textarea { resize: vertical; min-height: 100px; }
+.form-select { appearance: none; cursor: pointer; }
+.form-hint { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+/* file upload */
+.file-drop {
+  border: 2px dashed var(--border2); border-radius: var(--radius);
+  padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s;
+  background: rgba(200,75,255,0.03);
+}
+.file-drop:hover { border-color: var(--accent3); background: rgba(200,75,255,0.07); }
+.file-drop-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+.file-drop-text { font-size: 0.88rem; color: var(--muted); }
+.file-drop-text strong { color: var(--accent3); }
+.file-preview { max-width: 100%; border-radius: var(--radius); margin-top: 1rem; max-height: 200px; object-fit: cover; display: none; }
+
+/* ===== AUTH TABS ===== */
+.auth-tabs { display: flex; gap: 4px; background: var(--card); border-radius: 10px; padding: 4px; margin-bottom: 1.5rem; }
+.auth-tab {
+  flex: 1; padding: 0.5rem; border-radius: 7px; border: none; background: transparent;
+  color: var(--muted); font-family: var(--font-ui); font-size: 1rem; cursor: pointer; transition: all 0.2s;
+}
+.auth-tab.active { background: var(--card2); color: var(--accent3); }
+
+/* ===== BLOG / Q&A ===== */
+.blog-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 1.5rem 1.75rem;
+  transition: border-color 0.2s; margin-bottom: 1.5rem;
+}
+.blog-card:hover { border-color: var(--accent3); }
+.blog-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.blog-author { font-size: 0.82rem; color: var(--accent3); font-family: var(--font-ui); }
+.blog-date { font-size: 0.78rem; color: var(--muted); }
+.blog-type-badge {
+  font-size: 0.7rem; font-family: var(--font-ui); letter-spacing: 1px; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 20px;
+}
+.badge-question { background: rgba(255,107,26,0.15); color: var(--accent2); border: 1px solid rgba(255,107,26,0.25); }
+.badge-news { background: rgba(181,255,46,0.1); color: var(--accent); border: 1px solid rgba(181,255,46,0.2); }
+.blog-title { font-family: var(--font-ui); font-size: 1.2rem; color: var(--text); margin-bottom: 0.5rem; }
+.blog-excerpt { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+
+/* Thread / Comments */
+.comments-section {
+  margin-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 1.25rem;
+}
+.comment {
+  display: flex; gap: 0.75rem; margin-bottom: 1rem;
+}
+.comment-avatar {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700;
+  background: linear-gradient(135deg, var(--card2), var(--bg3));
+  border: 1px solid var(--border2); color: var(--accent3);
+}
+.comment-avatar.is-admin {
+  background: linear-gradient(135deg, rgba(181,255,46,0.15), rgba(200,75,255,0.15));
+  border-color: rgba(181,255,46,0.3); color: var(--accent);
+}
+.comment-bubble {
+  flex: 1; background: var(--bg2); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 4px 12px 12px 12px; padding: 0.7rem 1rem;
+}
+.comment-bubble.is-admin {
+  background: rgba(181,255,46,0.04); border-color: rgba(181,255,46,0.15);
+  border-left: 3px solid var(--accent);
+}
+.comment-header {
+  display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; flex-wrap: wrap;
+}
+.comment-author { font-family: var(--font-ui); font-size: 0.85rem; color: var(--text); }
+.comment-admin-badge {
+  font-size: 0.65rem; background: rgba(181,255,46,0.15); color: var(--accent);
+  border: 1px solid rgba(181,255,46,0.25); padding: 1px 6px; border-radius: 10px;
+  font-family: var(--font-ui); letter-spacing: 0.5px;
+}
+.comment-date { font-size: 0.72rem; color: var(--muted); margin-left: auto; }
+.comment-text { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+.comment-del-btn {
+  background: transparent; border: none; color: rgba(255,100,100,0.4);
+  cursor: pointer; font-size: 0.75rem; padding: 0 4px; margin-left: 6px;
+  transition: color 0.15s;
+}
+.comment-del-btn:hover { color: #ff6b6b; }
+
+/* Inline reply box */
+.reply-box {
+  display: flex; gap: 0.6rem; margin-top: 0.75rem; align-items: flex-start;
+}
+.reply-box-avatar {
+  width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-ui); font-size: 0.8rem; font-weight: 700;
+  background: linear-gradient(135deg, var(--card2), var(--bg3));
+  border: 1px solid var(--border2); color: var(--accent3);
+}
+.reply-textarea {
+  flex: 1; background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--font-body); font-size: 0.88rem;
+  padding: 0.55rem 0.85rem; border-radius: 20px; outline: none;
+  resize: none; transition: border-color 0.2s; height: 38px; line-height: 1.5;
+  overflow: hidden;
+}
+.reply-textarea:focus { border-color: var(--accent3); height: 80px; border-radius: 12px; }
+.reply-send-btn {
+  background: var(--accent3); border: none; color: white;
+  width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+  font-size: 1rem; flex-shrink: 0; transition: all 0.2s; align-self: flex-end;
+}
+.reply-send-btn:hover { background: var(--accent); color: #0e0a1a; transform: scale(1.1); }
+.toggle-replies-btn {
+  background: transparent; border: none; color: var(--muted);
+  font-size: 0.8rem; cursor: pointer; padding: 0; font-family: var(--font-ui);
+  transition: color 0.15s; margin-top: 0.5rem;
+}
+.toggle-replies-btn:hover { color: var(--accent3); }
+
+/* ===== CONTACT PAGE ===== */
+.contact-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 3rem; align-items: start; }
+.contact-info { }
+.contact-info h3 { font-family: var(--font-ui); font-size: 1.4rem; margin-bottom: 1rem; }
+.contact-item { display: flex; gap: 1rem; margin-bottom: 1.25rem; align-items: flex-start; }
+.contact-icon { font-size: 1.5rem; line-height: 1; margin-top: 2px; }
+.contact-item h4 { font-family: var(--font-ui); font-size: 1rem; margin-bottom: 2px; }
+.contact-item p { font-size: 0.88rem; color: var(--muted); }
+
+/* ===== PROFILE PAGE ===== */
+.profile-header {
+  background: linear-gradient(135deg, var(--bg2), var(--card));
+  border: 1px solid var(--border2); border-radius: var(--radius-lg);
+  padding: 2rem; display: flex; gap: 2rem; align-items: center; flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+.profile-avatar {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--accent3), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 2rem; color: white;
+  border: 3px solid var(--accent); flex-shrink: 0;
+}
+.profile-info h2 { font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 0.25rem; }
+.profile-info p { color: var(--muted); font-size: 0.9rem; }
+.profile-stats { display: flex; gap: 2rem; margin-top: 1rem; flex-wrap: wrap; }
+.profile-stat-num { font-family: var(--font-display); font-size: 1.5rem; color: var(--accent); }
+.profile-stat-label { font-size: 0.78rem; color: var(--muted); }
+
+/* ===== ADMIN BADGE ===== */
+.admin-badge {
+  background: linear-gradient(90deg, var(--accent2), var(--accent3));
+  color: white; font-size: 0.7rem; font-family: var(--font-ui);
+  padding: 2px 8px; border-radius: 20px; margin-left: 8px; vertical-align: middle;
+}
+
+/* ===== TOAST ===== */
+#toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
+.toast {
+  background: var(--card2); border: 1px solid var(--border2);
+  color: var(--text); padding: 0.75rem 1.25rem; border-radius: 12px;
+  font-family: var(--font-ui); font-size: 1rem;
+  animation: toast-in 0.3s ease; display: flex; align-items: center; gap: 0.5rem;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+}
+.toast.success { border-color: rgba(181,255,46,0.3); }
+.toast.error { border-color: rgba(255,100,100,0.3); }
+@keyframes toast-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+/* ===== EMPTY STATE ===== */
+.empty-state { text-align: center; padding: 4rem 2rem; }
+.empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
+.empty-title { font-family: var(--font-ui); font-size: 1.3rem; color: var(--muted); margin-bottom: 0.5rem; }
+.empty-sub { font-size: 0.88rem; color: var(--muted); opacity: 0.7; }
+
+/* ===== SEARCH & FILTERS ===== */
+.search-bar {
+  display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap; align-items: center;
+}
+.search-input-wrap { flex: 1; min-width: 200px; position: relative; }
+.search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 1rem; }
+.search-input {
+  width: 100%; background: var(--card); border: 1px solid var(--border);
+  color: var(--text); font-family: var(--font-body); font-size: 0.95rem;
+  padding: 0.65rem 1rem 0.65rem 2.5rem; border-radius: var(--radius); outline: none; transition: all 0.2s;
+}
+.search-input:focus { border-color: var(--accent3); }
+
+/* ===== ADMIN PANEL ===== */
+.admin-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; overflow-x: auto; }
+.admin-tab {
+  font-family: var(--font-ui); font-size: 1rem;
+  background: var(--card); border: 1px solid var(--border);
+  color: var(--muted); padding: 0.5rem 1.2rem; border-radius: 8px;
+  cursor: pointer; transition: all 0.2s; white-space: nowrap;
+}
+.admin-tab.active { background: rgba(181,255,46,0.1); border-color: rgba(181,255,46,0.3); color: var(--accent); }
+.admin-section { display: none; }
+.admin-section.active { display: block; }
+
+/* ===== TABLE ===== */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: left; padding: 0.75rem 1rem; font-family: var(--font-ui); font-size: 0.85rem;
+  color: var(--muted); border-bottom: 1px solid var(--border); letter-spacing: 1px; text-transform: uppercase;
+}
+.data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.9rem; }
+.data-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tbl-btn {
+  font-family: var(--font-ui); font-size: 0.82rem; padding: 3px 10px;
+  border-radius: 6px; cursor: pointer; transition: all 0.15s; border: 1px solid;
+  margin-right: 4px;
+}
+.tbl-btn-edit { background: transparent; border-color: rgba(200,75,255,0.3); color: var(--accent3); }
+.tbl-btn-edit:hover { background: rgba(200,75,255,0.1); }
+.tbl-btn-del { background: transparent; border-color: rgba(255,100,100,0.3); color: #ff6b6b; }
+.tbl-btn-del:hover { background: rgba(255,100,100,0.1); }
+
+/* ===== DIVIDER ===== */
+.divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 2rem 0; }
+
+/* ===== FOOTER ===== */
+footer {
+  background: var(--bg2); border-top: 1px solid var(--border);
+  padding: 3rem 2rem 2rem; position: relative; z-index: 1;
+}
+.footer-inner { max-width: 1100px; margin: 0 auto; }
+.footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 3rem; margin-bottom: 2rem; }
+.footer-logo { font-family: var(--font-display); font-size: 1.6rem; color: var(--accent); margin-bottom: 0.75rem; }
+.footer-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+.footer-col h4 { font-family: var(--font-ui); font-size: 0.9rem; color: var(--text); margin-bottom: 1rem; letter-spacing: 1px; text-transform: uppercase; }
+.footer-col a { display: block; font-size: 0.88rem; color: var(--muted); text-decoration: none; margin-bottom: 0.5rem; transition: color 0.2s; cursor: pointer; }
+.footer-col a:hover { color: var(--accent3); }
+.footer-bottom { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding-top: 2rem; border-top: 1px solid rgba(255,255,255,0.05); }
+.footer-copy { font-size: 0.82rem; color: var(--muted); }
+.footer-slime { font-size: 0.82rem; color: var(--accent3); }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .nav-links { display: none; }
+  .contact-grid { grid-template-columns: 1fr; }
+  .footer-top { grid-template-columns: 1fr; gap: 2rem; }
+  .hero-stats { gap: 1.5rem; }
+}
+@media (max-width: 480px) {
+  .modal { padding: 1.5rem; }
+}
+
+/* ===== SCROLL ANIMATIONS ===== */
+.reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
+.reveal.visible { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- Animated background particles -->
+<div class="bg-particles" id="particles"></div>
+
+<!-- Blob decorations for hero -->
+<div class="blob" style="width:400px;height:400px;background:var(--accent3);top:-100px;right:-100px;"></div>
+<div class="blob" style="width:350px;height:350px;background:var(--accent2);bottom:20%;left:-100px;animation-delay:-3s;"></div>
+
+<!-- NAVBAR -->
+<nav id="navbar">
+  <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
+  <div class="nav-links">
+    <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
+    <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog">Catalog</a>
+    <a onclick="showPage('blog')" data-page="blog" data-i18n="nav.blog">Q&A / Blog</a>
+    <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contact</a>
+  </div>
+  <div class="nav-right">
+    <div class="lang-toggle">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" onclick="setLang('it')">IT</button>
+    </div>
+    <div id="guest-nav">
+      <button class="btn-login" onclick="openAuth('login')" data-i18n="nav.login">Login</button>
+      <button class="btn-register" onclick="openAuth('register')" data-i18n="nav.register">Join Free</button>
+    </div>
+    <div id="user-nav" style="display:none;">
+      <span id="nav-username" style="font-family:var(--font-ui);color:var(--muted);font-size:0.9rem;"></span>
+      <div class="avatar-btn" id="nav-avatar" onclick="showPage('profile')">U</div>
+      <button class="btn-logout" onclick="logout()" data-i18n="nav.logout">Logout</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ==================== HOME PAGE ==================== -->
+<div id="page-home" class="page active">
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-eyebrow" data-i18n="hero.eyebrow">🇮🇹 Italy's Wildest 90s Collectibles</div>
+    <h1 class="hero-title">
+      <span class="s">SGOR</span><span class="g">BIONS</span>
+      <span class="hero-slime" data-i18n="hero.sub">Collector's Universe</span>
+    </h1>
+    <p class="hero-desc" data-i18n="hero.desc">The definitive fan database for Sgorbions figurines — the legendary Italian sticker series from the early 1990s. Catalog your collection, connect with other fans, and track every grotesque character.</p>
+    <div class="hero-cta">
+      <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1">Explore Catalog</button>
+      <button class="btn-secondary" onclick="openAuth('register')" data-i18n="hero.cta2">Start Collecting</button>
+    </div>
+    <div class="hero-stats" id="hero-stats">
+      <div class="stat-item"><span class="stat-num" id="stat-series">0</span><span class="stat-label" data-i18n="hero.stat1">Series</span></div>
+      <div class="stat-item"><span class="stat-num" id="stat-figs">0</span><span class="stat-label" data-i18n="hero.stat2">Figurines</span></div>
+      <div class="stat-item"><span class="stat-num" id="stat-users">0</span><span class="stat-label" data-i18n="hero.stat3">Collectors</span></div>
+    </div>
+  </section>
+
+  <!-- FEATURED SERIES -->
+  <section class="section" style="background:var(--bg2);">
+    <div class="section-inner">
+      <div class="section-header reveal">
+        <span class="section-eyebrow" data-i18n="home.featured.eyebrow">Featured Series</span>
+        <h2 class="section-title" data-i18n="home.featured.title">Explore the <span class="hi">Slime World</span></h2>
+        <p class="section-sub" data-i18n="home.featured.sub">Every series carefully documented with original artwork, descriptions and rarity info.</p>
+      </div>
+      <div class="grid-3 reveal" id="home-series-grid">
+        <div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title" data-i18n="catalog.empty">No series added yet. Be the first!</p></div>
+      </div>
+      <div style="text-align:center;margin-top:2.5rem;">
+        <button class="btn-secondary" onclick="showPage('catalog')" data-i18n="home.featured.btn">View All Series →</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-header reveal">
+        <span class="section-eyebrow" data-i18n="home.how.eyebrow">How It Works</span>
+        <h2 class="section-title" data-i18n="home.how.title">Your <span class="hi">Collection</span>, Organized</h2>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;" class="reveal">
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">📖</div>
+          <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;" data-i18n="how.1.title">Browse the Catalog</h3>
+          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.1.desc">Explore all Sgorbions series and figurines, complete with photos and descriptions.</p>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">✅</div>
+          <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;" data-i18n="how.2.title">Mark Your Figurines</h3>
+          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.2.desc">Toggle which figurines you own and track your completion percentage per series.</p>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">🤝</div>
+          <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;" data-i18n="how.3.title">Connect & Ask</h3>
+          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.3.desc">Post questions and get answers from the owner and fellow collectors.</p>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">👤</div>
+          <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;" data-i18n="how.4.title">Your Profile</h3>
+          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.4.desc">See your collection stats, owned figurines and activity history in one place.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== CATALOG PAGE ==================== -->
+<div id="page-catalog" class="page">
+  <section class="section">
+    <div class="section-inner">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+        <div>
+          <h1 style="font-family:var(--font-display);font-size:2.2rem;" data-i18n="catalog.title">The Catalog</h1>
+          <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n="catalog.sub">All Sgorbions series ever released</p>
+        </div>
+        <div id="admin-add-series-btn" style="display:none;">
+          <button class="btn-primary" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
+        </div>
+      </div>
+      <div class="search-bar">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" type="text" id="series-search" placeholder="Search series..." oninput="renderCatalog()" data-i18n-placeholder="catalog.search">
+        </div>
+      </div>
+      <div class="grid-3" id="catalog-grid">
+        <div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title" data-i18n="catalog.empty">No series yet. Admin can add them!</p></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- SERIES DETAIL (inside catalog page, toggled) -->
+<div id="series-detail" style="display:none;padding-top:64px;min-height:100vh;position:relative;z-index:1;">
+  <div class="series-hero">
+    <div class="series-hero-inner">
+      <button class="back-btn" onclick="closeSeriesDetail()">← <span data-i18n="back">Back to Catalog</span></button>
+      <div class="series-title-area">
+        <div class="series-cover" id="detail-cover"><span id="detail-cover-emoji">🎴</span></div>
+        <div class="series-info">
+          <div class="series-year" id="detail-year"></div>
+          <h1 class="series-name" id="detail-name"></h1>
+          <p class="series-description" id="detail-desc"></p>
+          <div class="progress-bar-wrap" id="detail-progress-wrap" style="display:none;">
+            <div class="progress-label">
+              <span data-i18n="detail.owned">Owned</span>
+              <span id="detail-progress-label">0 / 0</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="detail-progress-fill" style="width:0%"></div></div>
+          </div>
+          <div id="admin-add-fig-btn" style="display:none;margin-top:1rem;">
+            <button class="btn-primary" onclick="openAddFigModal()" data-i18n="detail.addfig">+ Add Figurine</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="max-width:1100px;margin:0 auto;padding:2rem;">
+    <div class="grid-4" id="figurines-grid">
+      <div class="empty-state"><div class="empty-icon">🧟</div><p class="empty-title">No figurines yet!</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== BLOG / Q&A ==================== -->
+<div id="page-blog" class="page">
+  <section class="section">
+    <div class="section-inner">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+        <div>
+          <h1 style="font-family:var(--font-display);font-size:2.2rem;" data-i18n="blog.title">Q&A & Blog</h1>
+          <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n="blog.sub">Ask questions, share news and discoveries</p>
+        </div>
+        <button class="btn-primary" onclick="openPostModal()" data-i18n="blog.post">+ Post Question / News</button>
+      </div>
+      <div id="blog-list">
+        <div class="empty-state"><div class="empty-icon">💬</div><p class="empty-title" data-i18n="blog.empty">No posts yet. Start the conversation!</p></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== CONTACT ==================== -->
+<div id="page-contact" class="page">
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-eyebrow" data-i18n="contact.eyebrow">Get In Touch</span>
+        <h1 class="section-title" data-i18n="contact.title">Contact <span class="hi">the Owner</span></h1>
+        <p class="section-sub" data-i18n="contact.sub">Have a rare find? Want to contribute? Drop a message!</p>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-info">
+          <h3 data-i18n="contact.info.title">Let's talk Sgorbions</h3>
+          <div class="contact-item">
+            <div class="contact-icon">📧</div>
+            <div><h4 data-i18n="contact.email">Email</h4><p>sgorbions@collector.it</p></div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">📍</div>
+            <div><h4 data-i18n="contact.location">Location</h4><p data-i18n="contact.location.val">Italy 🇮🇹</p></div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-icon">⚡</div>
+            <div><h4 data-i18n="contact.resp">Response Time</h4><p data-i18n="contact.resp.val">Usually within 24–48 hours</p></div>
+          </div>
+        </div>
+        <div>
+          <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;">
+            <div class="form-group">
+              <label class="form-label" data-i18n="form.name">Your Name</label>
+              <input class="form-input" type="text" id="contact-name" data-i18n-placeholder="form.name.ph" placeholder="Sgorbio Fan">
+            </div>
+            <div class="form-group">
+              <label class="form-label" data-i18n="form.email">Email Address</label>
+              <input class="form-input" type="email" id="contact-email" placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+              <label class="form-label" data-i18n="form.subject">Subject</label>
+              <input class="form-input" type="text" id="contact-subject" data-i18n-placeholder="form.subject.ph" placeholder="I found a rare Sgorbio!">
+            </div>
+            <div class="form-group">
+              <label class="form-label" data-i18n="form.message">Message</label>
+              <textarea class="form-textarea" id="contact-message" rows="5" data-i18n-placeholder="form.message.ph" placeholder="Tell me everything..."></textarea>
+            </div>
+            <button class="btn-primary" style="width:100%;" onclick="sendContact()" data-i18n="form.send">Send Message 🚀</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== PROFILE ==================== -->
+<div id="page-profile" class="page">
+  <section class="section">
+    <div class="section-inner">
+      <div class="profile-header">
+        <div class="profile-avatar" id="profile-avatar">U</div>
+        <div class="profile-info">
+          <h2 id="profile-username">Username</h2>
+          <p id="profile-email" style="color:var(--muted)"></p>
+          <div class="profile-stats">
+            <div><div class="profile-stat-num" id="profile-owned">0</div><div class="profile-stat-label" data-i18n="profile.owned">Figurines Owned</div></div>
+            <div><div class="profile-stat-num" id="profile-series-count">0</div><div class="profile-stat-label" data-i18n="profile.series">Series Tracked</div></div>
+          </div>
+        </div>
+      </div>
+      <div id="admin-panel" style="display:none;">
+        <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:1.5rem;">⚙️ <span data-i18n="admin.title">Admin Panel</span></h2>
+        <div class="admin-tabs">
+          <button class="admin-tab active" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
+          <button class="admin-tab" onclick="adminTab('figurines')" data-i18n="admin.figurines">Figurines</button>
+          <button class="admin-tab" onclick="adminTab('blog')" data-i18n="admin.blog">Blog / Q&A</button>
+          <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
+          <button class="admin-tab" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
+        </div>
+        <div id="admin-series" class="admin-section active">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+            <h3 style="font-family:var(--font-ui);" data-i18n="admin.series.title">Manage Series</h3>
+            <button class="btn-primary" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
+          </div>
+          <div id="admin-series-table"></div>
+        </div>
+        <div id="admin-figurines" class="admin-section">
+          <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.figurines.title">Manage Figurines</h3>
+          <div id="admin-figs-table"></div>
+        </div>
+        <div id="admin-blog" class="admin-section">
+          <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.blog.title">Manage Q&A / Blog</h3>
+          <div id="admin-blog-list"></div>
+        </div>
+        <div id="admin-contacts" class="admin-section">
+          <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.contacts.title">Contact Messages</h3>
+          <div id="admin-contacts-list"></div>
+        </div>
+        <div id="admin-users" class="admin-section">
+          <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.users.title">Registered Users</h3>
+          <div id="admin-users-table"></div>
+        </div>
+      </div>
+      <div id="my-collection" style="margin-top:2rem;">
+        <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:1.5rem;" data-i18n="profile.collection">My Collection</h2>
+        <div id="my-collection-list"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== FOOTER ==================== -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-logo">SGORBIONS</div>
+        <p class="footer-desc" data-i18n="footer.desc">The unofficial fan database dedicated to the legendary Italian figurine collection from the early 1990s. Made with 💚 by collectors, for collectors.</p>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.nav">Navigation</h4>
+        <a onclick="showPage('home')" data-i18n="nav.home">Home</a>
+        <a onclick="showPage('catalog')" data-i18n="nav.catalog">Catalog</a>
+        <a onclick="showPage('blog')" data-i18n="nav.blog">Q&A / Blog</a>
+        <a onclick="showPage('contact')" data-i18n="nav.contact">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4 data-i18n="footer.account">Account</h4>
+        <a onclick="openAuth('login')" data-i18n="nav.login">Login</a>
+        <a onclick="openAuth('register')" data-i18n="nav.register">Register</a>
+        <a onclick="showPage('profile')" data-i18n="profile.title">My Profile</a>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span class="footer-copy" data-i18n="footer.copy">© 2024 Sgorbions Collector. Unofficial fan site.</span>
+      <span class="footer-slime">👾 Stay Slimy!</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay hidden" id="auth-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" data-i18n="auth.title">Welcome Back</h2>
+      <button class="modal-close" onclick="closeModal('auth-modal')">✕</button>
+    </div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')" data-i18n="auth.login">Login</button>
+      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')" data-i18n="auth.register">Register</button>
+    </div>
+    <div id="auth-login">
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.username">Username</label>
+        <input class="form-input" type="text" id="login-username" placeholder="your_username">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.password">Password</label>
+        <input class="form-input" type="password" id="login-password" placeholder="••••••••">
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
+    </div>
+    <div id="auth-register" style="display:none;">
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.username">Username</label>
+        <input class="form-input" type="text" id="reg-username" placeholder="slime_collector_99">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.email">Email</label>
+        <input class="form-input" type="email" id="reg-email" placeholder="you@example.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.password">Password</label>
+        <input class="form-input" type="password" id="reg-password" placeholder="Min. 6 characters">
+      </div>
+      <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doRegister()" data-i18n="auth.reg.btn">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD SERIES MODAL -->
+<div class="modal-overlay hidden" id="add-series-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2 class="modal-title" id="series-modal-title" data-i18n="modal.series.title">Add New Series</h2>
+      <button class="modal-close" onclick="closeModal('add-series-modal')">✕</button>
+    </div>
+    <input type="hidden" id="edit-series-id">
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.series.name">Series Name</label>
+      <input class="form-input" type="text" id="series-name-input" placeholder="e.g. Serie 1 — Primavera">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.series.year">Year</label>
+        <input class="form-input" type="number" id="series-year-input" placeholder="1991" min="1985" max="2010">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.series.count">Number of Figurines</label>
+        <input class="form-input" type="number" id="series-count-input" placeholder="30" min="1">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.series.desc">Description</label>
+      <textarea class="form-textarea" id="series-desc-input" placeholder="Describe this series..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.series.desc.it">Descrizione (Italiano)</label>
+      <textarea class="form-textarea" id="series-desc-it-input" placeholder="Descrivi questa serie..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.series.cover">Cover Image</label>
+      <div class="file-drop" onclick="document.getElementById('series-img-file').click()" id="series-drop">
+        <div class="file-drop-icon">📸</div>
+        <div class="file-drop-text"><strong data-i18n="form.click">Click to upload</strong> <span data-i18n="form.drag">or drag and drop</span></div>
+        <div class="file-drop-text">PNG, JPG, WEBP</div>
+      </div>
+      <input type="file" id="series-img-file" accept="image/*" style="display:none;" onchange="handleSeriesImg(event)">
+      <img id="series-img-preview" class="file-preview">
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="saveSeries()" data-i18n="modal.series.save">Save Series</button>
+  </div>
+</div>
+
+<!-- ADD FIGURINE MODAL -->
+<div class="modal-overlay hidden" id="add-fig-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2 class="modal-title" id="fig-modal-title" data-i18n="modal.fig.title">Add Figurine</h2>
+      <button class="modal-close" onclick="closeModal('add-fig-modal')">✕</button>
+    </div>
+    <input type="hidden" id="edit-fig-id">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.fig.number">Number</label>
+        <input class="form-input" type="number" id="fig-number-input" placeholder="01" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.fig.name">Name</label>
+        <input class="form-input" type="text" id="fig-name-input" placeholder="Sgorbio Maximus">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.fig.desc">Description</label>
+      <textarea class="form-textarea" id="fig-desc-input" rows="3" placeholder="Describe this figurine..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.fig.image">Image</label>
+      <div class="file-drop" onclick="document.getElementById('fig-img-file').click()">
+        <div class="file-drop-icon">🧟</div>
+        <div class="file-drop-text"><strong data-i18n="form.click">Click to upload</strong></div>
+      </div>
+      <input type="file" id="fig-img-file" accept="image/*" style="display:none;" onchange="handleFigImg(event)">
+      <img id="fig-img-preview" class="file-preview">
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="saveFigurine()" data-i18n="modal.fig.save">Save Figurine</button>
+  </div>
+</div>
+
+<!-- POST MODAL -->
+<div class="modal-overlay hidden" id="post-modal">
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <h2 class="modal-title" data-i18n="modal.post.title">New Post</h2>
+      <button class="modal-close" onclick="closeModal('post-modal')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.post.type">Post Type</label>
+      <select class="form-select" id="post-type">
+        <option value="question" data-i18n="form.post.question">❓ Question</option>
+        <option value="news" data-i18n="form.post.news">📢 News / Discovery</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.post.title">Title</label>
+      <input class="form-input" type="text" id="post-title-input" placeholder="What's your question or news?">
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.post.body">Content</label>
+      <textarea class="form-textarea" id="post-body-input" rows="5" placeholder="Share the details..."></textarea>
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="savePost()" data-i18n="modal.post.save">Publish Post</button>
+  </div>
+</div>
+
+<!-- reply modal removed — using inline comment system -->
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script>
+// ============================================================
+//  DATA STORE (localStorage)
+// ============================================================
+const DB = {
+  get(k) { try { return JSON.parse(localStorage.getItem('sgorbions_' + k)) || null; } catch { return null; } },
+  set(k,v) { localStorage.setItem('sgorbions_' + k, JSON.stringify(v)); },
+  del(k) { localStorage.removeItem('sgorbions_' + k); }
+};
+
+function getData(k, def) { return DB.get(k) || def; }
+function setData(k,v) { DB.set(k,v); }
+
+// ============================================================
+//  I18N
+// ============================================================
+const i18n = {
+  en: {
+    'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Q&A / Blog','nav.contact':'Contact',
+    'nav.login':'Login','nav.register':'Join Free','nav.logout':'Logout',
+    'hero.eyebrow':'🇮🇹 Italy\'s Wildest 90s Collectibles',
+    'hero.sub':'Collector\'s Universe','hero.desc':'The definitive fan database for Sgorbions figurines — the legendary Italian sticker series from the early 1990s. Catalog your collection, connect with other fans, and track every grotesque character.',
+    'hero.cta1':'Explore Catalog','hero.cta2':'Start Collecting',
+    'hero.stat1':'Series','hero.stat2':'Figurines','hero.stat3':'Collectors',
+    'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the Slime World','home.featured.sub':'Every series carefully documented with original artwork, descriptions and rarity info.',
+    'home.featured.btn':'View All Series →',
+    'home.how.eyebrow':'How It Works','home.how.title':'Your Collection, Organized',
+    'how.1.title':'Browse the Catalog','how.1.desc':'Explore all Sgorbions series and figurines, complete with photos and descriptions.',
+    'how.2.title':'Mark Your Figurines','how.2.desc':'Toggle which figurines you own and track your completion percentage per series.',
+    'how.3.title':'Connect & Ask','how.3.desc':'Post questions and get answers from the owner and fellow collectors.',
+    'how.4.title':'Your Profile','how.4.desc':'See your collection stats, owned figurines and activity history in one place.',
+    'catalog.title':'The Catalog','catalog.sub':'All Sgorbions series ever released','catalog.addseries':'+ Add Series','catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
+    'back':'Back to Catalog','detail.owned':'Owned','detail.addfig':'+ Add Figurine',
+    'blog.title':'Q&A & Blog','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ Post Question / News','blog.empty':'No posts yet. Start the conversation!',
+    'contact.eyebrow':'Get In Touch','contact.title':'Contact the Owner','contact.sub':'Have a rare find? Want to contribute? Drop a message!',
+    'contact.info.title':"Let's talk Sgorbions",'contact.email':'Email','contact.location':'Location','contact.location.val':'Italy 🇮🇹','contact.resp':'Response Time','contact.resp.val':'Usually within 24–48 hours',
+    'form.name':'Your Name','form.name.ph':'Sgorbio Fan','form.email':'Email Address','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio!','form.message':'Message','form.message.ph':'Tell me everything...','form.send':'Send Message 🚀',
+    'form.username':'Username','form.password':'Password',
+    'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Figurines','form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.cover':'Cover Image',
+    'form.click':'Click to upload','form.drag':'or drag and drop',
+    'form.fig.number':'Number','form.fig.name':'Name','form.fig.desc':'Description','form.fig.image':'Image',
+    'form.post.type':'Post Type','form.post.title':'Title','form.post.body':'Content','form.post.question':'❓ Question','form.post.news':'📢 News / Discovery',
+    'form.reply.placeholder':'Write a reply...','comment.admin':'Owner','comment.login':'Log in to reply',
+    'auth.title':'Welcome Back','auth.login':'Login','auth.register':'Register','auth.login.btn':'Sign In','auth.reg.btn':'Create Account',
+    'modal.series.title':'Add New Series','modal.series.save':'Save Series',
+    'modal.fig.title':'Add Figurine','modal.fig.save':'Save Figurine',
+    'modal.post.title':'New Post','modal.post.save':'Publish Post',
+    'profile.title':'My Profile','profile.owned':'Figurines Owned','profile.series':'Series Tracked','profile.collection':'My Collection',
+    'admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Figurines','admin.blog':'Blog / Q&A','admin.contacts':'Messages','admin.users':'Users',
+    'admin.series.title':'Manage Series','admin.figurines.title':'Manage Figurines','admin.blog.title':'Manage Q&A / Blog','admin.contacts.title':'Contact Messages','admin.users.title':'Registered Users',
+    'footer.desc':'The unofficial fan database dedicated to the legendary Italian figurine collection from the early 1990s. Made with 💚 by collectors, for collectors.',
+    'footer.nav':'Navigation','footer.account':'Account','footer.copy':'© 2024 Sgorbions Collector. Unofficial fan site.',
+    'owned.toggle':'I own this','owned.yes':'✓ Owned'
+  },
+  it: {
+    'nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'D&R / Blog','nav.contact':'Contatti',
+    'nav.login':'Accedi','nav.register':'Iscriviti','nav.logout':'Esci',
+    'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
+    'hero.sub':'L\'Universo dei Collezionisti','hero.desc':'Il database definitivo per i collezionisti di Sgorbions — la leggendaria serie italiana degli anni \'90. Cataloga la tua collezione, connettiti con altri fan e traccia ogni personaggio grottesco.',
+    'hero.cta1':'Esplora il Catalogo','hero.cta2':'Inizia a Collezionare',
+    'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat3':'Collezionisti',
+    'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
+    'home.featured.btn':'Vedi Tutte le Serie →',
+    'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
+    'how.1.title':'Sfoglia il Catalogo','how.1.desc':'Esplora tutte le serie di Sgorbions con foto e descrizioni complete.',
+    'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine possiedi e tieni traccia della percentuale di completamento per ogni serie.',
+    'how.3.title':'Connettiti e Chiedi','how.3.desc':'Fai domande e ricevi risposte dal proprietario e dagli altri collezionisti.',
+    'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le statistiche della tua collezione, le figurine possedute e la cronologia delle attività.',
+    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!',
+    'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
+    'blog.title':'D&R e Blog','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova Domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
+    'contact.eyebrow':'Mettiti in Contatto','contact.title':'Contatta il Proprietario','contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
+    'contact.info.title':'Parliamo di Sgorbions','contact.email':'Email','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
+    'form.name':'Il Tuo Nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo Email','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia Messaggio 🚀',
+    'form.username':'Nome utente','form.password':'Password',
+    'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'Numero di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.cover':'Immagine di Copertina',
+    'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
+    'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
+    'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
+    'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Proprietario','comment.login':'Accedi per rispondere',
+    'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Crea Account',
+    'modal.series.title':'Aggiungi Nuova Serie','modal.series.save':'Salva Serie',
+    'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva Figurina',
+    'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
+    'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
+    'admin.title':'Pannello Admin','admin.series':'Serie','admin.figurines':'Figurine','admin.blog':'Blog / D&R','admin.contacts':'Messaggi','admin.users':'Utenti',
+    'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.blog.title':'Gestisci D&R / Blog','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati',
+    'footer.desc':'Il database fan non ufficiale dedicato alla leggendaria collezione di figurine italiana degli anni \'90. Fatto con 💚 da collezionisti, per collezionisti.',
+    'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2024 Sgorbions Collector. Sito fan non ufficiale.',
+    'owned.toggle':'Ce l\'ho','owned.yes':'✓ Posseduta'
+  }
+};
+
+let currentLang = getData('lang','en');
+
+function t(key) { return (i18n[currentLang] || i18n.en)[key] || (i18n.en)[key] || key; }
+
+function applyI18n() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  setData('lang', lang);
+  document.querySelectorAll('.lang-btn').forEach(b => {
+    b.classList.toggle('active', b.textContent === lang.toUpperCase());
+  });
+  applyI18n();
+  renderAll();
+}
+
+// ============================================================
+//  APP STATE
+// ============================================================
+let currentUser = getData('currentUser', null);
+let currentSeriesId = null;
+let editingSeriesImg = null;
+let editingFigImg = null;
+
+// Seed admin account if not present
+function initAdmin() {
+  let users = getData('users', []);
+  if (!users.find(u => u.username === 'admin')) {
+    users.push({ id: 'admin', username: 'admin', email: 'admin@sgorbions.it', password: 'admin123', isAdmin: true, joined: new Date().toISOString() });
+    setData('users', users);
+  }
+}
+initAdmin();
+
+// ============================================================
+//  NAVIGATION
+// ============================================================
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('series-detail').style.display = 'none';
+  const el = document.getElementById('page-' + page);
+  if (el) { el.classList.add('active'); }
+  document.querySelectorAll('.nav-links a').forEach(a => {
+    a.classList.toggle('active', a.dataset.page === page);
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (page === 'catalog') renderCatalog();
+  if (page === 'blog') renderBlog();
+  if (page === 'profile') renderProfile();
+  if (page === 'home') { renderHomeStats(); renderHomeSeries(); }
+  initReveal();
+}
+
+// ============================================================
+//  AUTH
+// ============================================================
+function openAuth(tab) {
+  document.getElementById('auth-modal').classList.remove('hidden');
+  switchAuthTab(tab);
+}
+function switchAuthTab(tab) {
+  document.getElementById('auth-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('auth-register').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+}
+function doLogin() {
+  const u = document.getElementById('login-username').value.trim();
+  const p = document.getElementById('login-password').value;
+  const users = getData('users', []);
+  const user = users.find(x => x.username === u && x.password === p);
+  if (!user) { toast('Invalid username or password', 'error'); return; }
+  currentUser = user;
+  setData('currentUser', user);
+  closeModal('auth-modal');
+  updateNavUser();
+  toast('Welcome back, ' + user.username + '! 👾', 'success');
+}
+function doRegister() {
+  const u = document.getElementById('reg-username').value.trim();
+  const e = document.getElementById('reg-email').value.trim();
+  const p = document.getElementById('reg-password').value;
+  if (!u || !e || !p) { toast('Please fill all fields', 'error'); return; }
+  if (p.length < 6) { toast('Password must be at least 6 characters', 'error'); return; }
+  let users = getData('users', []);
+  if (users.find(x => x.username === u)) { toast('Username already taken', 'error'); return; }
+  const newUser = { id: Date.now().toString(), username: u, email: e, password: p, isAdmin: false, joined: new Date().toISOString() };
+  users.push(newUser);
+  setData('users', users);
+  currentUser = newUser;
+  setData('currentUser', newUser);
+  closeModal('auth-modal');
+  updateNavUser();
+  toast('Welcome to the Sgorbions family! 🎉', 'success');
+}
+function logout() {
+  currentUser = null;
+  setData('currentUser', null);
+  updateNavUser();
+  showPage('home');
+  toast('Logged out. See you soon! 👋', 'success');
+}
+function updateNavUser() {
+  const guestNav = document.getElementById('guest-nav');
+  const userNav = document.getElementById('user-nav');
+  const addSeriesBtn = document.getElementById('admin-add-series-btn');
+  if (currentUser) {
+    guestNav.style.display = 'none';
+    userNav.style.display = 'flex';
+    document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
+    document.getElementById('nav-avatar').textContent = currentUser.username[0].toUpperCase();
+    if (addSeriesBtn) addSeriesBtn.style.display = currentUser.isAdmin ? '' : 'none';
+  } else {
+    guestNav.style.display = 'flex';
+    userNav.style.display = 'none';
+    if (addSeriesBtn) addSeriesBtn.style.display = 'none';
+  }
+}
+updateNavUser();
+
+// ============================================================
+//  SERIES
+// ============================================================
+function openAddSeriesModal(seriesId) {
+  if (!currentUser?.isAdmin) { toast('Admin only', 'error'); return; }
+  document.getElementById('edit-series-id').value = seriesId || '';
+  document.getElementById('series-modal-title').textContent = seriesId ? 'Edit Series' : t('modal.series.title');
+  document.getElementById('series-img-preview').style.display = 'none';
+  editingSeriesImg = null;
+  if (seriesId) {
+    const s = getData('series', []).find(x => x.id === seriesId);
+    if (s) {
+      document.getElementById('series-name-input').value = s.name;
+      document.getElementById('series-year-input').value = s.year;
+      document.getElementById('series-count-input').value = s.count;
+      document.getElementById('series-desc-input').value = s.desc;
+      document.getElementById('series-desc-it-input').value = s.descIt || '';
+      if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
+    }
+  } else {
+    ['series-name-input','series-year-input','series-count-input','series-desc-input','series-desc-it-input'].forEach(id => document.getElementById(id).value = '');
+  }
+  document.getElementById('add-series-modal').classList.remove('hidden');
+}
+function handleSeriesImg(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    editingSeriesImg = ev.target.result;
+    const pr = document.getElementById('series-img-preview');
+    pr.src = ev.target.result; pr.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+function saveSeries() {
+  const name = document.getElementById('series-name-input').value.trim();
+  const year = document.getElementById('series-year-input').value;
+  const count = document.getElementById('series-count-input').value;
+  const desc = document.getElementById('series-desc-input').value.trim();
+  const descIt = document.getElementById('series-desc-it-input').value.trim();
+  if (!name || !year) { toast('Name and year are required', 'error'); return; }
+  let series = getData('series', []);
+  const editId = document.getElementById('edit-series-id').value;
+  if (editId) {
+    const idx = series.findIndex(x => x.id === editId);
+    if (idx >= 0) { series[idx] = { ...series[idx], name, year: +year, count: +count, desc, descIt, img: editingSeriesImg || series[idx].img }; }
+  } else {
+    series.push({ id: Date.now().toString(), name, year: +year, count: +count||0, desc, descIt, img: editingSeriesImg || null, created: new Date().toISOString() });
+  }
+  setData('series', series);
+  closeModal('add-series-modal');
+  renderCatalog(); renderHomeSeries(); renderHomeStats();
+  toast('Series saved! 🎴', 'success');
+}
+function deleteSeries(id) {
+  if (!confirm('Delete this series and all its figurines?')) return;
+  let series = getData('series', []).filter(x => x.id !== id);
+  setData('series', series);
+  let figs = getData('figurines', []).filter(x => x.seriesId !== id);
+  setData('figurines', figs);
+  renderCatalog(); renderHomeSeries(); renderHomeStats(); renderAdminSeries();
+  toast('Series deleted', 'success');
+}
+
+function renderCatalog() {
+  const grid = document.getElementById('catalog-grid');
+  let series = getData('series', []);
+  const q = (document.getElementById('series-search')?.value || '').toLowerCase();
+  if (q) series = series.filter(s => s.name.toLowerCase().includes(q) || (s.desc||'').toLowerCase().includes(q));
+  if (!series.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title">${t('catalog.empty')}</p></div>`;
+    return;
+  }
+  grid.innerHTML = series.map(s => seriesCardHTML(s)).join('');
+}
+
+function seriesCardHTML(s) {
+  const figs = getData('figurines', []).filter(f => f.seriesId === s.id);
+  const desc = currentLang === 'it' && s.descIt ? s.descIt : s.desc;
+  return `<div class="card" onclick="openSeriesDetail('${s.id}')">
+    <div class="card-img-placeholder">
+      ${s.img ? `<img src="${s.img}" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">` : '🎴'}
+    </div>
+    <div class="card-body">
+      <span class="card-tag">${s.year || ''}</span>
+      <div class="card-title">${s.name}</div>
+      <div class="card-desc">${(desc||'').substring(0,90)}${(desc||'').length>90?'…':''}</div>
+      <div class="card-meta">
+        <span class="card-badge">${figs.length} figurines</span>
+        <span class="card-count">${s.count ? s.count + ' total' : ''}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderHomeSeries() {
+  const grid = document.getElementById('home-series-grid');
+  if (!grid) return;
+  const series = getData('series', []).slice(0, 3);
+  if (!series.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title">${t('catalog.empty')}</p></div>`;
+    return;
+  }
+  grid.innerHTML = series.map(s => seriesCardHTML(s)).join('');
+}
+
+// ============================================================
+//  SERIES DETAIL
+// ============================================================
+function openSeriesDetail(seriesId) {
+  currentSeriesId = seriesId;
+  const s = getData('series', []).find(x => x.id === seriesId);
+  if (!s) return;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const det = document.getElementById('series-detail');
+  det.style.display = 'block';
+  const desc = currentLang === 'it' && s.descIt ? s.descIt : s.desc;
+  document.getElementById('detail-name').textContent = s.name;
+  document.getElementById('detail-year').textContent = s.year;
+  document.getElementById('detail-desc').textContent = desc || '';
+  const cover = document.getElementById('detail-cover');
+  cover.innerHTML = s.img ? `<img src="${s.img}">` : '<span>🎴</span>';
+  document.getElementById('admin-add-fig-btn').style.display = currentUser?.isAdmin ? '' : 'none';
+  renderFigurines();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function closeSeriesDetail() {
+  document.getElementById('series-detail').style.display = 'none';
+  document.getElementById('page-catalog').classList.add('active');
+  currentSeriesId = null;
+}
+
+// ============================================================
+//  FIGURINES
+// ============================================================
+function openAddFigModal(figId) {
+  if (!currentUser?.isAdmin) { toast('Admin only', 'error'); return; }
+  document.getElementById('edit-fig-id').value = figId || '';
+  document.getElementById('fig-modal-title').textContent = figId ? 'Edit Figurine' : t('modal.fig.title');
+  document.getElementById('fig-img-preview').style.display = 'none';
+  editingFigImg = null;
+  if (figId) {
+    const f = getData('figurines', []).find(x => x.id === figId);
+    if (f) {
+      document.getElementById('fig-number-input').value = f.number;
+      document.getElementById('fig-name-input').value = f.name;
+      document.getElementById('fig-desc-input').value = f.desc || '';
+      if (f.img) { const pr = document.getElementById('fig-img-preview'); pr.src = f.img; pr.style.display = 'block'; editingFigImg = f.img; }
+    }
+  } else {
+    ['fig-number-input','fig-name-input','fig-desc-input'].forEach(id => document.getElementById(id).value = '');
+  }
+  document.getElementById('add-fig-modal').classList.remove('hidden');
+}
+function handleFigImg(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    editingFigImg = ev.target.result;
+    const pr = document.getElementById('fig-img-preview');
+    pr.src = ev.target.result; pr.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+function saveFigurine() {
+  const number = document.getElementById('fig-number-input').value;
+  const name = document.getElementById('fig-name-input').value.trim();
+  const desc = document.getElementById('fig-desc-input').value.trim();
+  if (!name || !number) { toast('Number and name required', 'error'); return; }
+  let figs = getData('figurines', []);
+  const editId = document.getElementById('edit-fig-id').value;
+  if (editId) {
+    const idx = figs.findIndex(x => x.id === editId);
+    if (idx >= 0) figs[idx] = { ...figs[idx], number: +number, name, desc, img: editingFigImg || figs[idx].img };
+  } else {
+    figs.push({ id: Date.now().toString(), seriesId: currentSeriesId, number: +number, name, desc, img: editingFigImg || null });
+  }
+  setData('figurines', figs);
+  closeModal('add-fig-modal');
+  renderFigurines(); renderHomeStats();
+  toast('Figurine saved! 🧟', 'success');
+}
+function deleteFigurine(id) {
+  if (!confirm('Delete this figurine?')) return;
+  let figs = getData('figurines', []).filter(x => x.id !== id);
+  setData('figurines', figs);
+  renderFigurines(); renderHomeStats();
+  toast('Figurine deleted', 'success');
+}
+
+function getOwned() { return getData('owned_' + (currentUser?.id || 'guest'), []); }
+function toggleOwned(figId) {
+  if (!currentUser) { openAuth('register'); return; }
+  let owned = getOwned();
+  if (owned.includes(figId)) owned = owned.filter(x => x !== figId);
+  else owned.push(figId);
+  setData('owned_' + currentUser.id, owned);
+  renderFigurines(); renderProfile();
+}
+
+function renderFigurines() {
+  const grid = document.getElementById('figurines-grid');
+  if (!currentSeriesId || !grid) return;
+  const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId).sort((a,b) => a.number - b.number);
+  const owned = getOwned();
+  if (!figs.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🧟</div><p class="empty-title">No figurines yet!</p>${currentUser?.isAdmin ? '<button class="btn-primary" onclick="openAddFigModal()" style="margin-top:1rem;">+ Add Figurine</button>' : ''}</div>`;
+    document.getElementById('detail-progress-wrap').style.display = 'none';
+    return;
+  }
+  // progress
+  const pw = document.getElementById('detail-progress-wrap');
+  if (currentUser) {
+    pw.style.display = '';
+    const ownedCount = figs.filter(f => owned.includes(f.id)).length;
+    const pct = Math.round(ownedCount / figs.length * 100);
+    document.getElementById('detail-progress-label').textContent = `${ownedCount} / ${figs.length}`;
+    document.getElementById('detail-progress-fill').style.width = pct + '%';
+  } else { pw.style.display = 'none'; }
+  grid.innerHTML = figs.map(f => {
+    const isOwned = owned.includes(f.id);
+    return `<div class="fig-card">
+      <div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
+        ${f.img ? `<img src="${f.img}" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:0;">` : '🧟'}
+        ${isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : ''}
+        ${currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;">
+          <button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddFigModal('${f.id}')">✏</button>
+          <button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">✕</button>
+        </div>` : ''}
+      </div>
+      <div class="fig-body">
+        <div class="fig-number">#${String(f.number).padStart(2,'0')}</div>
+        <div class="fig-name">${f.name}</div>
+        ${f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}…</div>` : ''}
+        <div class="fig-toggle">
+          <span class="toggle-label">${t('owned.toggle')}</span>
+          <button class="toggle-btn ${isOwned?'on':''}" onclick="toggleOwned('${f.id}')"></button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+//  BLOG / Q&A
+// ============================================================
+function openPostModal() {
+  if (!currentUser) { openAuth('login'); return; }
+  ['post-title-input','post-body-input'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('post-modal').classList.remove('hidden');
+}
+function savePost() {
+  const type = document.getElementById('post-type').value;
+  const title = document.getElementById('post-title-input').value.trim();
+  const body = document.getElementById('post-body-input').value.trim();
+  if (!title) { toast('Title required', 'error'); return; }
+  let posts = getData('posts', []);
+  posts.unshift({ id: Date.now().toString(), type, title, body, author: currentUser.username, authorId: currentUser.id, date: new Date().toISOString(), comments: [] });
+  setData('posts', posts);
+  closeModal('post-modal');
+  renderBlog();
+  toast('Post published! 💬', 'success');
+}
+
+function submitComment(postId) {
+  if (!currentUser) { openAuth('login'); return; }
+  const textarea = document.getElementById('reply-input-' + postId);
+  const text = textarea ? textarea.value.trim() : '';
+  if (!text) { toast('Please write something first', 'error'); return; }
+  let posts = getData('posts', []);
+  const idx = posts.findIndex(p => p.id === postId);
+  if (idx < 0) return;
+  if (!posts[idx].comments) posts[idx].comments = [];
+  posts[idx].comments.push({
+    id: Date.now().toString(),
+    author: currentUser.username,
+    authorId: currentUser.id,
+    isAdmin: !!currentUser.isAdmin,
+    text,
+    date: new Date().toISOString()
+  });
+  setData('posts', posts);
+  renderBlog();
+  toast('Reply posted! ✅', 'success');
+}
+
+function deleteComment(postId, commentId) {
+  if (!currentUser) return;
+  let posts = getData('posts', []);
+  const idx = posts.findIndex(p => p.id === postId);
+  if (idx < 0) return;
+  const c = posts[idx].comments.find(c => c.id === commentId);
+  if (!c) return;
+  if (!currentUser.isAdmin && c.authorId !== currentUser.id) { toast('Not allowed', 'error'); return; }
+  posts[idx].comments = posts[idx].comments.filter(c => c.id !== commentId);
+  setData('posts', posts);
+  renderBlog();
+  toast('Comment deleted', 'success');
+}
+
+function deletePost(id) {
+  if (!currentUser?.isAdmin) { toast('Admin only', 'error'); return; }
+  if (!confirm('Delete this post?')) return;
+  let posts = getData('posts', []).filter(p => p.id !== id);
+  setData('posts', posts);
+  renderBlog();
+  toast('Post deleted', 'success');
+}
+
+function renderBlog() {
+  const list = document.getElementById('blog-list');
+  // migrate old posts that used single reply field
+  let posts = getData('posts', []);
+  let migrated = false;
+  posts = posts.map(p => {
+    if (!p.comments) {
+      p.comments = [];
+      if (p.reply && p.reply.text) {
+        p.comments.push({ id: 'migrated', author: 'admin', authorId: 'admin', isAdmin: true, text: p.reply.text, date: p.reply.date || p.date });
+        delete p.reply;
+        migrated = true;
+      }
+    }
+    return p;
+  });
+  if (migrated) setData('posts', posts);
+
+  if (!posts.length) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">💬</div><p class="empty-title">${t('blog.empty')}</p></div>`;
+    return;
+  }
+
+  list.innerHTML = posts.map(p => {
+    const badgeClass = p.type === 'question' ? 'badge-question' : 'badge-news';
+    const badgeLabel = p.type === 'question' ? '❓ ' + (currentLang==='it'?'Domanda':'Question') : '📢 ' + (currentLang==='it'?'Notizia':'News');
+    const dateStr = new Date(p.date).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB', { year:'numeric', month:'short', day:'numeric' });
+    const comments = p.comments || [];
+    const commentCount = comments.length;
+
+    // render comments
+    const commentsHTML = comments.map(c => {
+      const cDate = new Date(c.date).toLocaleDateString(currentLang==='it'?'it-IT':'en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+      const canDel = currentUser && (currentUser.isAdmin || currentUser.id === c.authorId);
+      return `<div class="comment">
+        <div class="comment-avatar ${c.isAdmin ? 'is-admin' : ''}">${c.author[0].toUpperCase()}</div>
+        <div class="comment-bubble ${c.isAdmin ? 'is-admin' : ''}">
+          <div class="comment-header">
+            <span class="comment-author">@${c.author}</span>
+            ${c.isAdmin ? `<span class="comment-admin-badge">👑 ${t('comment.admin')}</span>` : ''}
+            <span class="comment-date">${cDate}</span>
+            ${canDel ? `<button class="comment-del-btn" onclick="deleteComment('${p.id}','${c.id}')" title="Delete">✕</button>` : ''}
+          </div>
+          <div class="comment-text">${c.text.replace(/\n/g,'<br>')}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // reply box
+    const replyBoxHTML = currentUser
+      ? `<div class="reply-box">
+          <div class="reply-box-avatar ${currentUser.isAdmin?'is-admin':''}">${currentUser.username[0].toUpperCase()}</div>
+          <textarea class="reply-textarea" id="reply-input-${p.id}" placeholder="${t('form.reply.placeholder')}"
+            onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){submitComment('${p.id}');event.preventDefault();}"></textarea>
+          <button class="reply-send-btn" onclick="submitComment('${p.id}')" title="Send">↑</button>
+        </div>`
+      : `<div style="margin-top:0.75rem;font-size:0.82rem;color:var(--muted);">
+          <a style="color:var(--accent3);cursor:pointer;text-decoration:none;" onclick="openAuth('login')">${t('comment.login')}</a>
+        </div>`;
+
+    return `<div class="blog-card">
+      <div class="blog-meta">
+        <span class="blog-author">@${p.author}</span>
+        <span class="blog-date">${dateStr}</span>
+        <span class="blog-type-badge ${badgeClass}">${badgeLabel}</span>
+        ${currentUser?.isAdmin ? `<button class="tbl-btn tbl-btn-del" style="margin-left:auto;" onclick="deletePost('${p.id}')">Delete</button>` : ''}
+      </div>
+      <div class="blog-title">${p.title}</div>
+      ${p.body ? `<div class="blog-excerpt">${p.body}</div>` : ''}
+      <div class="comments-section">
+        ${commentsHTML}
+        ${replyBoxHTML}
+        ${commentCount > 0 ? `<div style="font-size:0.75rem;color:var(--muted);margin-top:0.5rem;padding-top:0.5rem;">💬 ${commentCount} ${commentCount===1?(currentLang==='it'?'risposta':'reply'):(currentLang==='it'?'risposte':'replies')}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+//  CONTACT
+// ============================================================
+function sendContact() {
+  const name = document.getElementById('contact-name').value.trim();
+  const email = document.getElementById('contact-email').value.trim();
+  const subject = document.getElementById('contact-subject').value.trim();
+  const message = document.getElementById('contact-message').value.trim();
+  if (!name || !email || !message) { toast('Please fill in name, email and message', 'error'); return; }
+  let msgs = getData('contact_messages', []);
+  msgs.unshift({ id: Date.now().toString(), name, email, subject, message, date: new Date().toISOString(), read: false });
+  setData('contact_messages', msgs);
+  ['contact-name','contact-email','contact-subject','contact-message'].forEach(id => document.getElementById(id).value = '');
+  toast('Message sent! We\'ll get back to you soon 📩', 'success');
+}
+
+// ============================================================
+//  PROFILE
+// ============================================================
+function renderProfile() {
+  if (!currentUser) { showPage('home'); return; }
+  document.getElementById('profile-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
+  document.getElementById('profile-email').textContent = currentUser.email;
+  document.getElementById('profile-avatar').textContent = currentUser.username[0].toUpperCase();
+  const allFigs = getData('figurines', []);
+  const owned = getOwned();
+  const ownedFigs = allFigs.filter(f => owned.includes(f.id));
+  document.getElementById('profile-owned').textContent = ownedFigs.length;
+  const seriesIds = [...new Set(ownedFigs.map(f => f.seriesId))];
+  document.getElementById('profile-series-count').textContent = seriesIds.length;
+  document.getElementById('admin-panel').style.display = currentUser.isAdmin ? '' : 'none';
+  if (currentUser.isAdmin) { adminTab('series'); }
+  renderMyCollection(ownedFigs);
+}
+
+function renderMyCollection(ownedFigs) {
+  const el = document.getElementById('my-collection-list');
+  const series = getData('series', []);
+  if (!ownedFigs.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">😢</div><p class="empty-title">No figurines yet!</p><p class="empty-sub">Browse the catalog and mark what you own.</p></div>`;
+    return;
+  }
+  const bySeries = {};
+  ownedFigs.forEach(f => {
+    if (!bySeries[f.seriesId]) bySeries[f.seriesId] = [];
+    bySeries[f.seriesId].push(f);
+  });
+  el.innerHTML = Object.entries(bySeries).map(([sId, figs]) => {
+    const s = series.find(x => x.id === sId);
+    const allSeriesFigs = getData('figurines', []).filter(f => f.seriesId === sId);
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:1rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;">
+        <span style="font-family:var(--font-ui);font-size:1.1rem;">${s ? s.name : 'Unknown Series'}</span>
+        <span class="card-badge">${figs.length} / ${allSeriesFigs.length}</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(figs.length/allSeriesFigs.length*100)}%"></div></div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.75rem;">
+        ${figs.sort((a,b)=>a.number-b.number).map(f=>`<span style="background:rgba(181,255,46,0.08);border:1px solid rgba(181,255,46,0.2);color:var(--accent);font-size:0.78rem;padding:2px 8px;border-radius:12px;">#${String(f.number).padStart(2,'0')} ${f.name}</span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+//  ADMIN
+// ============================================================
+function adminTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach((b,i) => {
+    const tabs = ['series','figurines','blog','contacts','users'];
+    b.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('admin-' + tab).classList.add('active');
+  if (tab === 'series') renderAdminSeries();
+  if (tab === 'figurines') renderAdminFigs();
+  if (tab === 'blog') renderAdminBlog();
+  if (tab === 'contacts') renderAdminContacts();
+  if (tab === 'users') renderAdminUsers();
+}
+function renderAdminSeries() {
+  const el = document.getElementById('admin-series-table');
+  const series = getData('series', []);
+  if (!series.length) { el.innerHTML = '<p style="color:var(--muted);">No series yet.</p>'; return; }
+  el.innerHTML = `<table class="data-table"><thead><tr><th>Name</th><th>Year</th><th>Figurines</th><th>Actions</th></tr></thead><tbody>
+    ${series.map(s => {
+      const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
+      return `<tr><td>${s.name}</td><td>${s.year}</td><td>${figs}</td><td>
+        <button class="tbl-btn tbl-btn-edit" onclick="openAddSeriesModal('${s.id}')">Edit</button>
+        <button class="tbl-btn tbl-btn-del" onclick="deleteSeries('${s.id}')">Delete</button>
+      </td></tr>`;
+    }).join('')}</tbody></table>`;
+}
+function renderAdminFigs() {
+  const el = document.getElementById('admin-figs-table');
+  const figs = getData('figurines', []);
+  const series = getData('series', []);
+  if (!figs.length) { el.innerHTML = '<p style="color:var(--muted);">No figurines yet.</p>'; return; }
+  el.innerHTML = `<table class="data-table"><thead><tr><th>#</th><th>Name</th><th>Series</th><th>Actions</th></tr></thead><tbody>
+    ${figs.map(f => {
+      const s = series.find(x => x.id === f.seriesId);
+      return `<tr><td>${f.number}</td><td>${f.name}</td><td>${s?s.name:'-'}</td><td>
+        <button class="tbl-btn tbl-btn-edit" onclick="currentSeriesId='${f.seriesId}';openAddFigModal('${f.id}')">Edit</button>
+        <button class="tbl-btn tbl-btn-del" onclick="deleteFigurine('${f.id}')">Delete</button>
+      </td></tr>`;
+    }).join('')}</tbody></table>`;
+}
+function renderAdminBlog() {
+  const el = document.getElementById('admin-blog-list');
+  const posts = getData('posts', []);
+  if (!posts.length) { el.innerHTML = '<p style="color:var(--muted);">No posts yet.</p>'; return; }
+  el.innerHTML = posts.map(p => {
+    const comments = p.comments || [];
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:0.75rem;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem;">
+        <div><strong style="font-family:var(--font-ui);">${p.title}</strong> <span style="font-size:0.78rem;color:var(--muted);">by @${p.author}</span></div>
+        <button class="tbl-btn tbl-btn-del" onclick="deletePost('${p.id}')">Delete</button>
+      </div>
+      <div style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem;">💬 ${comments.length} ${comments.length===1?'reply':'replies'}</div>
+    </div>`;
+  }).join('');
+}
+function renderAdminContacts() {
+  const el = document.getElementById('admin-contacts-list');
+  const msgs = getData('contact_messages', []);
+  if (!msgs.length) { el.innerHTML = '<p style="color:var(--muted);">No messages yet.</p>'; return; }
+  el.innerHTML = msgs.map(m => `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin-bottom:0.75rem;">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
+      <strong style="font-family:var(--font-ui);">${m.name} <span style="font-size:0.8rem;color:var(--muted);font-family:var(--font-body);">&lt;${m.email}&gt;</span></strong>
+      <span style="font-size:0.78rem;color:var(--muted);">${new Date(m.date).toLocaleDateString()}</span>
+    </div>
+    ${m.subject ? `<div style="font-size:0.88rem;color:var(--accent3);margin-bottom:0.4rem;">Re: ${m.subject}</div>` : ''}
+    <div style="font-size:0.88rem;color:var(--muted);">${m.message}</div>
+  </div>`).join('');
+}
+function renderAdminUsers() {
+  const el = document.getElementById('admin-users-table');
+  const users = getData('users', []);
+  el.innerHTML = `<table class="data-table"><thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead><tbody>
+    ${users.map(u => `<tr>
+      <td>${u.username}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}</td>
+      <td>${u.email}</td><td>${u.isAdmin?'Admin':'Collector'}</td>
+      <td>${new Date(u.joined).toLocaleDateString()}</td>
+    </tr>`).join('')}
+  </tbody></table>`;
+}
+
+// ============================================================
+//  STATS
+// ============================================================
+function animateCount(el, target) {
+  let current = 0;
+  const step = Math.ceil(target / 30);
+  const interval = setInterval(() => {
+    current = Math.min(current + step, target);
+    el.textContent = current;
+    if (current >= target) clearInterval(interval);
+  }, 40);
+}
+function renderHomeStats() {
+  const series = getData('series', []);
+  const figs = getData('figurines', []);
+  const users = getData('users', []).filter(u => !u.isAdmin);
+  animateCount(document.getElementById('stat-series'), series.length);
+  animateCount(document.getElementById('stat-figs'), figs.length);
+  animateCount(document.getElementById('stat-users'), users.length);
+}
+
+// ============================================================
+//  MODAL HELPERS
+// ============================================================
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); });
+});
+
+// ============================================================
+//  TOAST
+// ============================================================
+function toast(msg, type = 'success') {
+  const tc = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  tc.appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ============================================================
+//  PARTICLES
+// ============================================================
+function createParticles() {
+  const container = document.getElementById('particles');
+  const colors = ['#b5ff2e','#ff6b1a','#c84bff','#2effb5'];
+  for (let i = 0; i < 18; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const size = Math.random() * 80 + 20;
+    p.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;background:${colors[Math.floor(Math.random()*colors.length)]};animation-duration:${Math.random()*20+15}s;animation-delay:-${Math.random()*20}s;`;
+    container.appendChild(p);
+  }
+}
+createParticles();
+
+// ============================================================
+//  SCROLL REVEAL
+// ============================================================
+function initReveal() {
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); obs.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.reveal').forEach(el => { el.classList.remove('visible'); obs.observe(el); });
+}
+
+// ============================================================
+//  RENDER ALL
+// ============================================================
+function renderAll() {
+  applyI18n();
+  renderHomeSeries();
+  renderHomeStats();
+  if (document.getElementById('page-catalog').classList.contains('active')) renderCatalog();
+  if (document.getElementById('page-blog').classList.contains('active')) renderBlog();
+  if (document.getElementById('page-profile').classList.contains('active')) renderProfile();
+}
+
+// ============================================================
+//  INIT
+// ============================================================
+applyI18n();
+renderHomeSeries();
+renderHomeStats();
+initReveal();
+setLang(currentLang);
+
+// keyboard close modals
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
+  }
+});
+</script>
+</body>
+</html>
