@@ -695,13 +695,16 @@ footer {
 
 <!-- NAVBAR -->
 <nav id="navbar">
-  <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-  <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.24</span>
+  <div style="display:flex;align-items:center;gap:0.75rem;">
+    <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
+    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.26</span>
+  </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
     <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog">Catalog</a>
     <a onclick="showPage('blog')" data-page="blog" data-i18n="nav.blog">Q&A / Blog</a>
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contact</a>
+    <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;">Mancolista</a>
   </div>
   <div class="nav-right">
     <div class="lang-toggle">
@@ -1012,6 +1015,22 @@ footer {
   </section>
 </div>
 
+<!-- ==================== WANTLIST ==================== -->
+<div id="page-wantlist" class="page">
+  <section class="section">
+    <div class="section-inner">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+        <div>
+          <h1 style="font-family:var(--font-display);font-size:2.2rem;">Mancolista</h1>
+          <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;">Le figurine che ti mancano per completare la collezione</p>
+        </div>
+        <button class="btn-secondary" onclick="exportWantlist()">⬇ Esporta lista</button>
+      </div>
+      <div id="wantlist-content"></div>
+    </div>
+  </section>
+</div>
+
 <!-- ==================== FOOTER ==================== -->
 <footer>
   <div class="footer-inner">
@@ -1037,7 +1056,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.24</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.26</span>
     </div>
   </div>
 </footer>
@@ -1065,7 +1084,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.24</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.26</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1470,6 +1489,7 @@ function showPage(page) {
   if (page === 'blog') renderBlog();
   if (page === 'profile') renderProfile();
   if (page === 'home') { renderHomeStats(); renderHomeSeries(); }
+  if (page === 'wantlist') renderWantlist();
   initReveal();
 }
 
@@ -1533,9 +1553,11 @@ function updateNavUser() {
   const guestNav = document.getElementById('guest-nav');
   const userNav = document.getElementById('user-nav');
   const addSeriesBtn = document.getElementById('admin-add-series-btn');
+  const wantlistLink = document.getElementById('nav-wantlist');
   if (currentUser) {
     guestNav.style.display = 'none';
     userNav.style.display = 'flex';
+    if (wantlistLink) wantlistLink.style.display = '';
     document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
     document.getElementById('nav-avatar').textContent = currentUser.username[0].toUpperCase();
     if (addSeriesBtn) addSeriesBtn.style.display = currentUser.isAdmin ? '' : 'none';
@@ -1543,6 +1565,7 @@ function updateNavUser() {
     guestNav.style.display = 'flex';
     userNav.style.display = 'none';
     if (addSeriesBtn) addSeriesBtn.style.display = 'none';
+    if (wantlistLink) wantlistLink.style.display = 'none';
   }
 }
 updateNavUser();
@@ -2362,6 +2385,93 @@ function renderAll() {
   if (document.getElementById('page-catalog').classList.contains('active')) renderCatalog();
   if (document.getElementById('page-blog').classList.contains('active')) renderBlog();
   if (document.getElementById('page-profile').classList.contains('active')) renderProfile();
+}
+
+// ============================================================
+//  WANTLIST
+// ============================================================
+function renderWantlist() {
+  if (!currentUser) { showPage('home'); return; }
+  const el = document.getElementById('wantlist-content');
+  const allFigs = getData('figurines', []);
+  const owned = getOwned();
+  const missing = allFigs.filter(f => !owned.includes(f.id));
+  const series = getData('series', []);
+
+  if (!missing.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">Complimenti! Hai tutto!</p><p class="empty-sub">Non ti manca nessuna figurina.</p></div>';
+    return;
+  }
+
+  // Group by series
+  const bySeries = {};
+  missing.forEach(f => {
+    if (!bySeries[f.seriesId]) bySeries[f.seriesId] = [];
+    bySeries[f.seriesId].push(f);
+  });
+
+  const sectionLabels = { figurines: 'Figurine', albums: 'Album', extras: 'Altro Materiale' };
+
+  el.innerHTML = Object.entries(bySeries).map(([sId, figs]) => {
+    const s = series.find(x => x.id === sId);
+    const allSeriesFigs = allFigs.filter(f => f.seriesId === sId);
+    const ownedCount = allSeriesFigs.length - figs.length;
+    // group by section
+    const bySection = {};
+    figs.forEach(f => {
+      const sec = f.section || 'figurines';
+      if (!bySection[sec]) bySection[sec] = [];
+      bySection[sec].push(f);
+    });
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
+        <span style="font-family:var(--font-display);font-size:1.4rem;">${s ? s.name : 'Serie sconosciuta'}</span>
+        <span class="card-badge">${figs.length} mancanti su ${allSeriesFigs.length}</span>
+      </div>
+      <div class="progress-bar" style="margin-bottom:1rem;"><div class="progress-fill" style="width:${Math.round(ownedCount/allSeriesFigs.length*100)}%"></div></div>
+      ${Object.entries(bySection).map(([sec, items]) => `
+        <div style="margin-bottom:0.75rem;">
+          <div style="font-family:var(--font-ui);font-size:0.85rem;color:var(--accent3);margin-bottom:0.4rem;">${sectionLabels[sec] || sec}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+            ${items.sort((a,b)=>a.number-b.number).map(f => `<span style="background:rgba(255,107,26,0.08);border:1px solid rgba(255,107,26,0.2);color:var(--accent2);font-size:0.78rem;padding:2px 8px;border-radius:12px;">#${String(f.number).padStart(2,'0')} ${f.name}</span>`).join('')}
+          </div>
+        </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+function exportWantlist() {
+  if (!currentUser) return;
+  const allFigs = getData('figurines', []);
+  const owned = getOwned();
+  const missing = allFigs.filter(f => !owned.includes(f.id));
+  const series = getData('series', []);
+  const sectionLabels = { figurines: 'Figurine', albums: 'Album', extras: 'Altro Materiale' };
+
+  let text = 'MANCOLISTA - ' + currentUser.username + '\n';
+  text += new Date().toLocaleDateString('it-IT') + '\n\n';
+
+  const bySeries = {};
+  missing.forEach(f => {
+    if (!bySeries[f.seriesId]) bySeries[f.seriesId] = [];
+    bySeries[f.seriesId].push(f);
+  });
+
+  Object.entries(bySeries).forEach(([sId, figs]) => {
+    const s = series.find(x => x.id === sId);
+    text += (s ? s.name : 'Serie sconosciuta') + '\n';
+    figs.sort((a,b) => a.number - b.number).forEach(f => {
+      text += '  [' + (sectionLabels[f.section] || 'Figurine') + '] #' + String(f.number).padStart(2,'0') + ' ' + f.name + '\n';
+    });
+    text += '\n';
+  });
+
+  const blob = new Blob([text], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'mancolista_' + currentUser.username + '.txt';
+  a.click(); URL.revokeObjectURL(url);
+  toast('Mancolista esportata! 📋', 'success');
 }
 
 // ============================================================
