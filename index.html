@@ -1472,17 +1472,23 @@ function switchAuthTab(tab) {
   document.getElementById('tab-login').classList.toggle('active', tab === 'login');
   document.getElementById('tab-register').classList.toggle('active', tab === 'register');
 }
-function doLogin() {
+async function doLogin() {
   const u = document.getElementById('login-username').value.trim();
   const p = document.getElementById('login-password').value;
+  if (!u || !p) { toast('Inserisci username e password', 'error'); return; }
+  // Se Firebase non ha ancora caricato gli utenti, ricarica
+  if (!_cache.users || _cache.users.length === 0) {
+    toast('Connessione in corso...', 'success');
+    _cache.users = await fsGetAll('users');
+  }
   const users = getData('users', []);
   const user = users.find(x => x.username === u && x.password === p);
-  if (!user) { toast('Invalid username or password', 'error'); return; }
+  if (!user) { toast('Username o password errati', 'error'); return; }
   currentUser = user;
   LOCAL.set('currentUser', user);
   closeModal('auth-modal');
   updateNavUser();
-  toast('Welcome back, ' + user.username + '! 👾', 'success');
+  toast('Bentornato, ' + user.username + '! 👾', 'success');
 }
 async function doRegister() {
   const u = document.getElementById('reg-username').value.trim();
