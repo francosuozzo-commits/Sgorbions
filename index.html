@@ -1771,24 +1771,30 @@ function renderItems() {
     document.getElementById('detail-progress-fill').style.width = pct + '%';
   } else { pw.style.display = 'none'; }
   if (!items.length) {
-    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora!' + (currentUser?.isAdmin ? '</p><button class="btn-primary" onclick="openAddItemModal()" style="margin-top:1rem;">+ Aggiungi</button>' : '</p>') + '</div>';
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora!</p>${currentUser?.isAdmin ? '<button class="btn-primary" onclick="openAddItemModal()" style="margin-top:1rem;">+ Aggiungi</button>' : ''}</div>`;
     return;
   }
   grid.innerHTML = items.map(f => {
     const isOwned = owned.includes(f.id);
-    return '<div class="fig-card">' +
-      '<div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">' +
-        (f.img ? '<img src="' + f.img + '" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:0;">' : SECTION_ICONS[currentSection]) +
-        (isOwned ? '<div class="fig-owned-badge">' + t('owned.yes') + '</div>' : '') +
-        (currentUser?.isAdmin ? '<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('' + f.id + '')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('' + f.id + '')">&#10005;</button></div>' : '') +
-      '</div>' +
-      '<div class="fig-body">' +
-        '<div class="fig-number">#' + String(f.number).padStart(2,'0') + '</div>' +
-        '<div class="fig-name">' + f.name + '</div>' +
-        (f.desc ? '<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">' + f.desc.substring(0,60) + (f.desc.length>60?'...':'') + '</div>' : '') +
-        '<div class="fig-toggle"><span class="toggle-label">' + t('owned.toggle') + '</span>' +
-        '<button class="toggle-btn ' + (isOwned?'on':'') + '" onclick="toggleOwned('' + f.id + '')"></button></div>' +
-      '</div></div>';
+    const icon = SECTION_ICONS[currentSection];
+    const imgHTML = f.img ? `<img src="${f.img}" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:0;">` : icon;
+    const ownedBadge = isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : '';
+    const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">&#10005;</button></div>` : '';
+    const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
+    return `<div class="fig-card">
+      <div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
+        ${imgHTML}${ownedBadge}${adminBtns}
+      </div>
+      <div class="fig-body">
+        <div class="fig-number">#${String(f.number).padStart(2,'0')}</div>
+        <div class="fig-name">${f.name}</div>
+        ${descHTML}
+        <div class="fig-toggle">
+          <span class="toggle-label">${t('owned.toggle')}</span>
+          <button class="toggle-btn ${isOwned?'on':''}" onclick="toggleOwned('${f.id}')"></button>
+        </div>
+      </div>
+    </div>`;
   }).join('');
 }
 
