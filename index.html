@@ -663,22 +663,6 @@ footer {
   .modal { padding: 1.5rem; }
 }
 
-/* ===== SECTION CHOICE CARDS ===== */
-.section-choice-card {
-  background: var(--card); border: 1px solid var(--border2);
-  border-radius: var(--radius-lg); padding: 2.5rem 1.5rem;
-  text-align: center; cursor: pointer; transition: all 0.3s;
-}
-.section-choice-card:hover {
-  transform: translateY(-6px); border-color: var(--accent3);
-  box-shadow: 0 12px 40px rgba(200,75,255,0.2);
-}
-.section-choice-icon { font-size: 3.5rem; margin-bottom: 1rem; }
-.section-choice-title {
-  font-family: var(--font-display); font-size: 1.6rem; color: var(--text); margin-bottom: 0.5rem;
-}
-.section-choice-count { font-size: 0.88rem; color: var(--muted); }
-
 /* ===== SCROLL ANIMATIONS ===== */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
@@ -820,57 +804,30 @@ footer {
 <div id="series-detail" style="display:none;padding-top:64px;min-height:100vh;position:relative;z-index:1;">
   <div class="series-hero">
     <div class="series-hero-inner">
-      <button class="back-btn" onclick="closeSeriesDetail()">&#8592; <span data-i18n="back">Back to Catalog</span></button>
+      <button class="back-btn" onclick="closeSeriesDetail()">← <span data-i18n="back">Back to Catalog</span></button>
       <div class="series-title-area">
-        <div class="series-cover" id="detail-cover"><span id="detail-cover-emoji">&#127924;</span></div>
+        <div class="series-cover" id="detail-cover"><span id="detail-cover-emoji">🎴</span></div>
         <div class="series-info">
           <div class="series-year" id="detail-year"></div>
           <h1 class="series-name" id="detail-name"></h1>
           <p class="series-description" id="detail-desc"></p>
+          <div class="progress-bar-wrap" id="detail-progress-wrap" style="display:none;">
+            <div class="progress-label">
+              <span data-i18n="detail.owned">Owned</span>
+              <span id="detail-progress-label">0 / 0</span>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="detail-progress-fill" style="width:0%"></div></div>
+          </div>
+          <div id="admin-add-fig-btn" style="display:none;margin-top:1rem;">
+            <button class="btn-primary" onclick="openAddFigModal()" data-i18n="detail.addfig">+ Add Figurine</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
-  <!-- SECTION SELECTOR -->
-  <div id="section-selector" style="max-width:1100px;margin:0 auto;padding:2rem;">
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem;">
-      <div class="section-choice-card" onclick="openSeriesSection('figurines')">
-        <div class="section-choice-icon">&#129535;</div>
-        <div class="section-choice-title">Figurine</div>
-        <div class="section-choice-count" id="count-figurines">caricamento...</div>
-      </div>
-      <div class="section-choice-card" onclick="openSeriesSection('albums')">
-        <div class="section-choice-icon">&#128210;</div>
-        <div class="section-choice-title">Album</div>
-        <div class="section-choice-count" id="count-albums">caricamento...</div>
-      </div>
-      <div class="section-choice-card" onclick="openSeriesSection('extras')">
-        <div class="section-choice-icon">&#127873;</div>
-        <div class="section-choice-title">Altro Materiale</div>
-        <div class="section-choice-count" id="count-extras">caricamento...</div>
-      </div>
-    </div>
-  </div>
-  <!-- ITEMS GRID -->
-  <div id="items-section" style="display:none;max-width:1100px;margin:0 auto;padding:0 2rem 2rem;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
-      <div style="display:flex;align-items:center;gap:0.75rem;">
-        <button class="back-btn" onclick="closeItemsSection()">&#8592; Sezioni</button>
-        <h2 id="items-section-title" style="font-family:var(--font-display);font-size:1.5rem;"></h2>
-      </div>
-      <div id="admin-add-item-btn" style="display:none;">
-        <button class="btn-primary" onclick="openAddItemModal()">+ Aggiungi</button>
-      </div>
-    </div>
-    <div class="progress-bar-wrap" id="detail-progress-wrap" style="display:none;margin-bottom:1.5rem;">
-      <div class="progress-label">
-        <span>In mio possesso</span>
-        <span id="detail-progress-label">0 / 0</span>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" id="detail-progress-fill" style="width:0%"></div></div>
-    </div>
-    <div class="grid-4" id="items-grid">
-      <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora!</p></div>
+  <div style="max-width:1100px;margin:0 auto;padding:2rem;">
+    <div class="grid-4" id="figurines-grid">
+      <div class="empty-state"><div class="empty-icon">🧟</div><p class="empty-title">No figurines yet!</p></div>
     </div>
   </div>
 </div>
@@ -1649,18 +1606,8 @@ function renderHomeSeries() {
 // ============================================================
 //  SERIES DETAIL
 // ============================================================
-let currentSection = null; // 'figurines' | 'albums' | 'extras'
-
-const SECTION_LABELS = {
-  figurines: 'Figurine',
-  albums: 'Album',
-  extras: 'Altro Materiale'
-};
-const SECTION_ICONS = { figurines: '&#129535;', albums: '&#128210;', extras: '&#127873;' };
-
 function openSeriesDetail(seriesId) {
   currentSeriesId = seriesId;
-  currentSection = null;
   const s = getData('series', []).find(x => x.id === seriesId);
   if (!s) return;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1671,60 +1618,28 @@ function openSeriesDetail(seriesId) {
   document.getElementById('detail-year').textContent = s.year;
   document.getElementById('detail-desc').textContent = desc || '';
   const cover = document.getElementById('detail-cover');
-  cover.innerHTML = s.img ? '<img src="' + s.img + '">' : '<span>&#127924;</span>';
-  // show selector, hide items section
-  document.getElementById('section-selector').style.display = '';
-  document.getElementById('items-section').style.display = 'none';
-  // update counts
-  updateSectionCounts();
+  cover.innerHTML = s.img ? `<img src="${s.img}">` : '<span>🎴</span>';
+  document.getElementById('admin-add-fig-btn').style.display = currentUser?.isAdmin ? '' : 'none';
+  renderFigurines();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
-
-function updateSectionCounts() {
-  ['figurines','albums','extras'].forEach(sec => {
-    const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === sec);
-    const el = document.getElementById('count-' + sec);
-    if (el) el.textContent = items.length + ' oggetti';
-  });
-}
-
-function openSeriesSection(section) {
-  currentSection = section;
-  document.getElementById('section-selector').style.display = 'none';
-  document.getElementById('items-section').style.display = '';
-  document.getElementById('items-section-title').textContent = SECTION_LABELS[section];
-  document.getElementById('admin-add-item-btn').style.display = currentUser?.isAdmin ? '' : 'none';
-  renderItems();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function closeItemsSection() {
-  document.getElementById('items-section').style.display = 'none';
-  document.getElementById('section-selector').style.display = '';
-  currentSection = null;
-  updateSectionCounts();
-}
-
 function closeSeriesDetail() {
   document.getElementById('series-detail').style.display = 'none';
   document.getElementById('page-catalog').classList.add('active');
   currentSeriesId = null;
-  currentSection = null;
 }
 
 // ============================================================
-//  ITEMS (figurines/albums/extras unified)
+//  FIGURINES
 // ============================================================
-function openAddItemModal(itemId) {
+function openAddFigModal(figId) {
   if (!currentUser?.isAdmin) { toast('Admin only', 'error'); return; }
-  document.getElementById('edit-fig-id').value = itemId || '';
-  const label = SECTION_LABELS[currentSection] || 'Oggetto';
-  document.getElementById('fig-modal-title').textContent = itemId ? 'Modifica ' + label : 'Aggiungi ' + label;
+  document.getElementById('edit-fig-id').value = figId || '';
+  document.getElementById('fig-modal-title').textContent = figId ? 'Edit Figurine' : t('modal.fig.title');
   document.getElementById('fig-img-preview').style.display = 'none';
   editingFigImg = null;
-  editingFigImgFileSave = null;
-  if (itemId) {
-    const f = getData('figurines', []).find(x => x.id === itemId);
+  if (figId) {
+    const f = getData('figurines', []).find(x => x.id === figId);
     if (f) {
       document.getElementById('fig-number-input').value = f.number;
       document.getElementById('fig-name-input').value = f.name;
@@ -1736,62 +1651,10 @@ function openAddItemModal(itemId) {
   }
   document.getElementById('add-fig-modal').classList.remove('hidden');
 }
-
-// keep openAddFigModal as alias for admin panel
-function openAddFigModal(figId) { openAddItemModal(figId); }
-
-function getOwned() { return LOCAL.get('owned_' + (currentUser?.id || 'guest')) || []; }
-function toggleOwned(figId) {
-  if (!currentUser) { openAuth('register'); return; }
-  let owned = getOwned();
-  if (owned.includes(figId)) owned = owned.filter(x => x !== figId);
-  else owned.push(figId);
-  LOCAL.set('owned_' + currentUser.id, owned);
-  renderItems(); renderProfile();
-}
-
-function renderItems() {
-  const grid = document.getElementById('items-grid');
-  if (!currentSeriesId || !grid || !currentSection) return;
-  const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection).sort((a,b) => a.number - b.number);
-  const owned = getOwned();
-  const pw = document.getElementById('detail-progress-wrap');
-  if (currentUser && items.length) {
-    pw.style.display = '';
-    const ownedCount = items.filter(f => owned.includes(f.id)).length;
-    const pct = Math.round(ownedCount / items.length * 100);
-    document.getElementById('detail-progress-label').textContent = ownedCount + ' / ' + items.length;
-    document.getElementById('detail-progress-fill').style.width = pct + '%';
-  } else { pw.style.display = 'none'; }
-  if (!items.length) {
-    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora!' + (currentUser?.isAdmin ? '</p><button class="btn-primary" onclick="openAddItemModal()" style="margin-top:1rem;">+ Aggiungi</button>' : '</p>') + '</div>';
-    return;
-  }
-  grid.innerHTML = items.map(f => {
-    const isOwned = owned.includes(f.id);
-    return '<div class="fig-card">' +
-      '<div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">' +
-        (f.img ? '<img src="' + f.img + '" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:0;">' : SECTION_ICONS[currentSection]) +
-        (isOwned ? '<div class="fig-owned-badge">' + t('owned.yes') + '</div>' : '') +
-        (currentUser?.isAdmin ? '<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('' + f.id + '')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('' + f.id + '')">&#10005;</button></div>' : '') +
-      '</div>' +
-      '<div class="fig-body">' +
-        '<div class="fig-number">#' + String(f.number).padStart(2,'0') + '</div>' +
-        '<div class="fig-name">' + f.name + '</div>' +
-        (f.desc ? '<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">' + f.desc.substring(0,60) + (f.desc.length>60?'...':'') + '</div>' : '') +
-        '<div class="fig-toggle"><span class="toggle-label">' + t('owned.toggle') + '</span>' +
-        '<button class="toggle-btn ' + (isOwned?'on':'') + '" onclick="toggleOwned('' + f.id + '')"></button></div>' +
-      '</div></div>';
-  }).join('');
-}
-
-// renderFigurines kept as alias for admin panel compatibility
-function renderFigurines() { if (currentSection) renderItems(); }
-
-let editingFigImgFileSave = null;
+let editingFigImgFile = null;
 function handleFigImg(e) {
   const file = e.target.files[0]; if (!file) return;
-  editingFigImgFileSave = file;
+  editingFigImgFile = file;
   const reader = new FileReader();
   reader.onload = ev => {
     const pr = document.getElementById('fig-img-preview');
@@ -1799,17 +1662,16 @@ function handleFigImg(e) {
   };
   reader.readAsDataURL(file);
 }
-
 async function saveFigurine() {
   const number = document.getElementById('fig-number-input').value;
   const name = document.getElementById('fig-name-input').value.trim();
   const desc = document.getElementById('fig-desc-input').value.trim();
-  if (!name || !number) { toast('Numero e nome richiesti', 'error'); return; }
-  toast('Salvataggio...', 'success');
+  if (!name || !number) { toast('Number and name required', 'error'); return; }
+  toast('Saving...', 'success');
   let imgUrl = editingFigImg || null;
-  if (editingFigImgFileSave) {
-    try { imgUrl = await uploadToCloudinary(editingFigImgFileSave); }
-    catch(e) { toast('Caricamento immagine fallito', 'error'); return; }
+  if (editingFigImgFile) {
+    try { imgUrl = await uploadToCloudinary(editingFigImgFile); }
+    catch(e) { toast('Image upload failed', 'error'); return; }
   }
   let figs = getData('figurines', []);
   const editId = document.getElementById('edit-fig-id').value;
@@ -1821,22 +1683,74 @@ async function saveFigurine() {
       _cache.figurines = figs;
     }
   } else {
-    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: +number, name, desc, img: imgUrl || null };
+    const newF = { seriesId: currentSeriesId, number: +number, name, desc, img: imgUrl || null };
     const saved = await fsSave('figurines', newF);
     _cache.figurines.push(saved);
   }
-  editingFigImgFileSave = null;
+  editingFigImgFile = null;
   closeModal('add-fig-modal');
-  renderItems(); renderHomeStats(); updateSectionCounts();
-  toast('Salvato! 🧟', 'success');
+  renderFigurines(); renderHomeStats();
+  toast('Figurine saved! 🧟', 'success');
 }
-
 async function deleteFigurine(id) {
-  if (!confirm('Eliminare questo oggetto?')) return;
+  if (!confirm('Delete this figurine?')) return;
   await fsDelete('figurines', id);
   _cache.figurines = _cache.figurines.filter(x => x.id !== id);
-  renderItems(); renderHomeStats(); updateSectionCounts();
-  toast('Eliminato', 'success');
+  renderFigurines(); renderHomeStats();
+  toast('Figurine deleted', 'success');
+}
+
+function getOwned() { return LOCAL.get('owned_' + (currentUser?.id || 'guest')) || []; }
+function toggleOwned(figId) {
+  if (!currentUser) { openAuth('register'); return; }
+  let owned = getOwned();
+  if (owned.includes(figId)) owned = owned.filter(x => x !== figId);
+  else owned.push(figId);
+  LOCAL.set('owned_' + currentUser.id, owned);
+  renderFigurines(); renderProfile();
+}
+
+function renderFigurines() {
+  const grid = document.getElementById('figurines-grid');
+  if (!currentSeriesId || !grid) return;
+  const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId).sort((a,b) => a.number - b.number);
+  const owned = getOwned();
+  if (!figs.length) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🧟</div><p class="empty-title">No figurines yet!</p>${currentUser?.isAdmin ? '<button class="btn-primary" onclick="openAddFigModal()" style="margin-top:1rem;">+ Add Figurine</button>' : ''}</div>`;
+    document.getElementById('detail-progress-wrap').style.display = 'none';
+    return;
+  }
+  // progress
+  const pw = document.getElementById('detail-progress-wrap');
+  if (currentUser) {
+    pw.style.display = '';
+    const ownedCount = figs.filter(f => owned.includes(f.id)).length;
+    const pct = Math.round(ownedCount / figs.length * 100);
+    document.getElementById('detail-progress-label').textContent = `${ownedCount} / ${figs.length}`;
+    document.getElementById('detail-progress-fill').style.width = pct + '%';
+  } else { pw.style.display = 'none'; }
+  grid.innerHTML = figs.map(f => {
+    const isOwned = owned.includes(f.id);
+    return `<div class="fig-card">
+      <div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
+        ${f.img ? `<img src="${f.img}" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:0;">` : '🧟'}
+        ${isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : ''}
+        ${currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;">
+          <button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddFigModal('${f.id}')">✏</button>
+          <button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">✕</button>
+        </div>` : ''}
+      </div>
+      <div class="fig-body">
+        <div class="fig-number">#${String(f.number).padStart(2,'0')}</div>
+        <div class="fig-name">${f.name}</div>
+        ${f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}…</div>` : ''}
+        <div class="fig-toggle">
+          <span class="toggle-label">${t('owned.toggle')}</span>
+          <button class="toggle-btn ${isOwned?'on':''}" onclick="toggleOwned('${f.id}')"></button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ============================================================
