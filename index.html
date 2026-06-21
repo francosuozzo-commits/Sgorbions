@@ -697,7 +697,7 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.29</span>
+    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.31</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -735,7 +735,7 @@ footer {
     </h1>
     <p class="hero-desc" data-i18n="hero.desc">The definitive fan database for Sgorbions figurines — the legendary Italian sticker series from the early 1990s. Catalog your collection, connect with other fans, and track every grotesque character.</p>
     <div class="hero-cta">
-      <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1">Explore Catalog</button>
+      <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog">Explore Catalog</button>
 <button class="btn-secondary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting">Start Collecting</button>
     </div>
     <div class="hero-stats" id="hero-stats">
@@ -1056,7 +1056,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.29</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.31</span>
     </div>
   </div>
 </footer>
@@ -1084,7 +1084,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.29</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.31</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1505,6 +1505,8 @@ function switchAuthTab(tab) {
   document.getElementById('auth-register').style.display = tab === 'register' ? '' : 'none';
   document.getElementById('tab-login').classList.toggle('active', tab === 'login');
   document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  const title = document.querySelector('#auth-modal .modal-title');
+  if (title) title.textContent = tab === 'login' ? 'Bentornato' : 'Benvenuto!';
 }
 async function doLogin() {
   const u = document.getElementById('login-username').value.trim();
@@ -1560,6 +1562,7 @@ function updateNavUser() {
     userNav.style.display = 'flex';
     if (wantlistLink) wantlistLink.style.display = '';
     if (btnCollect) btnCollect.style.display = 'none';
+    if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = '';
     document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
     document.getElementById('nav-avatar').textContent = currentUser.username[0].toUpperCase();
     if (addSeriesBtn) addSeriesBtn.style.display = currentUser.isAdmin ? '' : 'none';
@@ -1569,6 +1572,7 @@ function updateNavUser() {
     if (addSeriesBtn) addSeriesBtn.style.display = 'none';
     if (wantlistLink) wantlistLink.style.display = 'none';
     if (btnCollect) btnCollect.style.display = '';
+    if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = 'none';
   }
 }
 updateNavUser();
