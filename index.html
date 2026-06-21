@@ -703,6 +703,7 @@ footer {
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contact</a>
   </div>
   <div class="nav-right">
+    <span style="font-size:0.72rem;color:var(--muted);font-family:var(--font-ui);">v1.16</span>
     <div class="lang-toggle">
       <button class="lang-btn active" onclick="setLang('en')">EN</button>
       <button class="lang-btn" onclick="setLang('it')">IT</button>
@@ -1034,7 +1035,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.14</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.16</span>
     </div>
   </div>
 </footer>
@@ -1062,7 +1063,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.14</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.16</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -2116,40 +2117,48 @@ function renderAdminSeries() {
 function initSeriesDragSort() {
   const tbody = document.querySelector('#sortable-series-table tbody');
   if (!tbody) return;
-  let dragRow = null;
+  let dragSrc = null;
 
   tbody.querySelectorAll('tr').forEach(row => {
-    row.addEventListener('dragstart', e => {
-      dragRow = row;
-      row.style.opacity = '0.4';
+    row.setAttribute('draggable', 'true');
+
+    row.addEventListener('dragstart', function(e) {
+      dragSrc = this;
       e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', this.dataset.id);
+      setTimeout(() => this.style.opacity = '0.4', 0);
     });
-    row.addEventListener('dragend', e => {
-      row.style.opacity = '1';
-      dragRow = null;
-      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+
+    row.addEventListener('dragend', function() {
+      this.style.opacity = '1';
+      tbody.querySelectorAll('tr').forEach(r => r.style.borderTop = '');
     });
-    row.addEventListener('dragover', e => {
+
+    row.addEventListener('dragover', function(e) {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
-      if (row !== dragRow) row.style.borderTop = '2px solid var(--accent)';
+      tbody.querySelectorAll('tr').forEach(r => r.style.borderTop = '');
+      if (this !== dragSrc) this.style.borderTop = '2px solid var(--accent)';
+      return false;
     });
-    row.addEventListener('dragleave', e => {
-      row.style.borderTop = '';
+
+    row.addEventListener('dragleave', function() {
+      this.style.borderTop = '';
     });
-    row.addEventListener('drop', e => {
+
+    row.addEventListener('drop', function(e) {
+      e.stopPropagation();
       e.preventDefault();
-      row.style.borderTop = '';
-      if (row === dragRow) return;
-      const rows = [...tbody.querySelectorAll('tr')];
-      const fromIdx = rows.indexOf(dragRow);
-      const toIdx = rows.indexOf(row);
-      if (fromIdx < toIdx) tbody.insertBefore(dragRow, row.nextSibling);
-      else tbody.insertBefore(dragRow, row);
-      // Save new order
+      this.style.borderTop = '';
+      if (dragSrc === this) return false;
+      const allRows = [...tbody.querySelectorAll('tr')];
+      const fromIdx = allRows.indexOf(dragSrc);
+      const toIdx = allRows.indexOf(this);
+      if (fromIdx < toIdx) tbody.insertBefore(dragSrc, this.nextSibling);
+      else tbody.insertBefore(dragSrc, this);
       const newOrder = [...tbody.querySelectorAll('tr')].map(r => r.dataset.id);
       saveSeriesOrder(newOrder);
+      return false;
     });
   });
 }
