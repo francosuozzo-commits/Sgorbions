@@ -1034,7 +1034,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.13</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.14</span>
     </div>
   </div>
 </footer>
@@ -1062,7 +1062,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.13</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.14</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1624,7 +1624,7 @@ async function deleteSeries(id) {
 function renderCatalog() {
   const grid = document.getElementById('catalog-grid');
   let series = getData('series', []);
-  series = series.sort((a,b) => a.name.localeCompare(b.name));
+  series = series.sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
   const q = (document.getElementById('series-search')?.value || '').toLowerCase();
   if (q) series = series.filter(s => s.name.toLowerCase().includes(q) || (s.desc||'').toLowerCase().includes(q));
   if (!series.length) {
@@ -2098,14 +2098,73 @@ function renderAdminSeries() {
   const el = document.getElementById('admin-series-table');
   const series = getData('series', []);
   if (!series.length) { el.innerHTML = '<p style="color:var(--muted);">No series yet.</p>'; return; }
-  el.innerHTML = `<table class="data-table"><thead><tr><th>Name</th><th>Year</th><th>Figurines</th><th>Actions</th></tr></thead><tbody>
+  el.innerHTML = `
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">&#9654; Trascina le righe per cambiare l'ordine</p>
+    <table class="data-table" id="sortable-series-table"><thead><tr><th style="width:30px;"></th><th>Name</th><th>Year</th><th>Figurines</th><th>Actions</th></tr></thead><tbody>
     ${series.map(s => {
       const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
-      return `<tr><td>${s.name}</td><td>${s.year}</td><td>${figs}</td><td>
+      return `<tr draggable="true" data-id="${s.id}" style="cursor:grab;">
+        <td style="color:var(--muted);font-size:1.1rem;user-select:none;">⠿</td>
+        <td>${s.name}</td><td>${s.year}</td><td>${figs}</td><td>
         <button class="tbl-btn tbl-btn-edit" onclick="openAddSeriesModal('${s.id}')">Edit</button>
         <button class="tbl-btn tbl-btn-del" onclick="deleteSeries('${s.id}')">Delete</button>
       </td></tr>`;
     }).join('')}</tbody></table>`;
+  initSeriesDragSort();
+}
+
+function initSeriesDragSort() {
+  const tbody = document.querySelector('#sortable-series-table tbody');
+  if (!tbody) return;
+  let dragRow = null;
+
+  tbody.querySelectorAll('tr').forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragRow = row;
+      row.style.opacity = '0.4';
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', e => {
+      row.style.opacity = '1';
+      dragRow = null;
+      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('drag-over'));
+      if (row !== dragRow) row.style.borderTop = '2px solid var(--accent)';
+    });
+    row.addEventListener('dragleave', e => {
+      row.style.borderTop = '';
+    });
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      row.style.borderTop = '';
+      if (row === dragRow) return;
+      const rows = [...tbody.querySelectorAll('tr')];
+      const fromIdx = rows.indexOf(dragRow);
+      const toIdx = rows.indexOf(row);
+      if (fromIdx < toIdx) tbody.insertBefore(dragRow, row.nextSibling);
+      else tbody.insertBefore(dragRow, row);
+      // Save new order
+      const newOrder = [...tbody.querySelectorAll('tr')].map(r => r.dataset.id);
+      saveSeriesOrder(newOrder);
+    });
+  });
+}
+
+async function saveSeriesOrder(newOrder) {
+  let series = getData('series', []);
+  const ordered = newOrder.map(id => series.find(s => s.id === id)).filter(Boolean);
+  // save order index to each series
+  for (let i = 0; i < ordered.length; i++) {
+    ordered[i].order = i;
+    await fsSave('series', ordered[i]);
+  }
+  _cache.series = ordered;
+  renderCatalog(); renderHomeSeries();
+  toast('Ordine salvato! ✅', 'success');
 }
 function renderAdminFigs() {
   const el = document.getElementById('admin-figs-table');
