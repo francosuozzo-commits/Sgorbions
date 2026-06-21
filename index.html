@@ -703,7 +703,7 @@ footer {
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contact</a>
   </div>
   <div class="nav-right">
-    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.21</span>
+    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.22</span>
     <div class="lang-toggle">
       <button class="lang-btn active" onclick="setLang('en')" title="English" style="background-image:url('https://flagcdn.com/w40/gb.png');background-size:cover;background-position:center;width:32px;height:22px;border-radius:4px;"></button>
       <button class="lang-btn" onclick="setLang('it')" title="Italiano" style="background-image:url('https://flagcdn.com/w40/it.png');background-size:cover;background-position:center;width:32px;height:22px;border-radius:4px;"></button>
@@ -714,6 +714,7 @@ footer {
     </div>
     <div id="user-nav" style="display:none;">
       <span id="nav-username" style="font-family:var(--font-ui);color:var(--muted);font-size:1.05rem;"></span>
+      <span id="nav-owned-counter" style="font-family:var(--font-ui);font-size:0.85rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:2px 10px;border-radius:20px;display:none;"></span>
       <div class="avatar-btn" id="nav-avatar" onclick="showPage('profile')">U</div>
       <button class="btn-logout" onclick="logout()" data-i18n="nav.logout">Logout</button>
     </div>
@@ -738,6 +739,7 @@ footer {
       <div class="stat-item"><span class="stat-num" id="stat-series">0</span><span class="stat-label" data-i18n="hero.stat1">Series</span></div>
       <div class="stat-item"><span class="stat-num" id="stat-figs">0</span><span class="stat-label" data-i18n="hero.stat2">Figurines</span></div>
       <div class="stat-item"><span class="stat-num" id="stat-users">0</span><span class="stat-label" data-i18n="hero.stat3">Collectors</span></div>
+      <div class="stat-item" id="stat-owned-wrap" style="display:none;"><span class="stat-num" id="stat-owned-hero">0/0</span><span class="stat-label">Le mie / Totale</span></div>
     </div>
   </section>
 
@@ -1035,7 +1037,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.21</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.22</span>
     </div>
   </div>
 </footer>
@@ -1063,7 +1065,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.21</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.22</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1523,6 +1525,7 @@ function logout() {
   currentUser = null;
   LOCAL.set('currentUser', null);
   updateNavUser();
+  updateOwnedCounter();
   showPage('home');
   toast('Logged out. See you soon! 👋', 'success');
 }
@@ -2266,6 +2269,41 @@ function renderHomeStats() {
   animateCount(document.getElementById('stat-series'), series.length);
   animateCount(document.getElementById('stat-figs'), figs.length);
   animateCount(document.getElementById('stat-users'), users.length);
+  updateOwnedCounter();
+}
+
+function updateOwnedCounter() {
+  const figs = getData('figurines', []);
+  const owned = getOwned();
+  const ownedCount = figs.filter(f => owned.includes(f.id)).length;
+  const total = figs.length;
+
+  // Hero stat
+  const wrap = document.getElementById('stat-owned-wrap');
+  const heroEl = document.getElementById('stat-owned-hero');
+  if (wrap && heroEl) {
+    if (currentUser) {
+      wrap.style.display = '';
+      heroEl.textContent = ownedCount + ' / ' + total;
+    } else {
+      wrap.style.display = 'none';
+    }
+  }
+
+  // Navbar counter
+  const navEl = document.getElementById('nav-owned-counter');
+  if (navEl) {
+    if (currentUser) {
+      navEl.style.display = '';
+      navEl.textContent = ownedCount + ' / ' + total;
+    } else {
+      navEl.style.display = 'none';
+    }
+  }
+
+  // Profile stats
+  const profileOwned = document.getElementById('profile-owned');
+  if (profileOwned) profileOwned.textContent = ownedCount + ' / ' + total;
 }
 
 // ============================================================
