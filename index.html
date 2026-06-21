@@ -1140,16 +1140,148 @@ footer {
 
 <script>
 // ============================================================
-//  DATA STORE (localStorage)
+//  FIREBASE + CLOUDINARY CONFIG
 // ============================================================
-const DB = {
-  get(k) { try { return JSON.parse(localStorage.getItem('sgorbions_' + k)) || null; } catch { return null; } },
-  set(k,v) { localStorage.setItem('sgorbions_' + k, JSON.stringify(v)); },
-  del(k) { localStorage.removeItem('sgorbions_' + k); }
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAolDaSifZO5ja0hRyQ6016J4jouS3Qg94",
+  authDomain: "sgorbions.firebaseapp.com",
+  projectId: "sgorbions",
+  storageBucket: "sgorbions.firebasestorage.app",
+  messagingSenderId: "474693775672",
+  appId: "1:474693775672:web:3a3fb031cb298ff52011cd"
+};
+const CLOUDINARY_CLOUD = 'ddpsge9d8';
+const CLOUDINARY_PRESET = 'sgorbions';
+
+// Firebase SDK (via CDN)
+let db = null;
+let fbApp = null;
+
+async function initFirebase() {
+  const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+  const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  fbApp = initializeApp(FIREBASE_CONFIG);
+  db = getFirestore(fbApp);
+  window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy };
+  console.log('Firebase ready');
+  await loadAllData();
+}
+
+// ============================================================
+//  CACHE (in-memory, replaces localStorage for shared data)
+// ============================================================
+let _cache = {
+  series: [],
+  figurines: [],
+  posts: [],
+  users: [],
+  contact_messages: []
 };
 
-function getData(k, def) { return DB.get(k) || def; }
-function setData(k,v) { DB.set(k,v); }
+// Local-only (per-user) data still uses localStorage
+const LOCAL = {
+  get(k) { try { return JSON.parse(localStorage.getItem('sgorbions_' + k)) || null; } catch { return null; } },
+  set(k,v) { localStorage.setItem('sgorbions_' + k, JSON.stringify(v)); }
+};
+
+function getData(k, def) {
+  if (k.startsWith('owned_') || k === 'currentUser' || k === 'lang') {
+    return LOCAL.get(k) || def;
+  }
+  return _cache[k] !== undefined ? _cache[k] : def;
+}
+function setData(k, v) {
+  if (k.startsWith('owned_') || k === 'currentUser' || k === 'lang') {
+    LOCAL.set(k, v);
+    return;
+  }
+  _cache[k] = v;
+}
+
+// ============================================================
+//  FIRESTORE HELPERS
+// ============================================================
+async function fsGetAll(collName) {
+  if (!db) return [];
+  try {
+    const { collection, getDocs } = window._fb;
+    const snap = await getDocs(collection(db, collName));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) { console.error('fsGetAll', e); return []; }
+}
+
+async function fsSave(collName, item) {
+  if (!db) return item;
+  try {
+    const { collection, doc, setDoc, addDoc } = window._fb;
+    if (item.id) {
+      const ref = doc(db, collName, item.id);
+      await setDoc(ref, item, { merge: true });
+      return item;
+    } else {
+      const ref = await addDoc(collection(db, collName), item);
+      const saved = { ...item, id: ref.id };
+      const { doc: docFn, setDoc: setDocFn } = window._fb;
+      await setDocFn(docFn(db, collName, ref.id), saved);
+      return saved;
+    }
+  } catch(e) { console.error('fsSave', e); return item; }
+}
+
+async function fsDelete(collName, id) {
+  if (!db) return;
+  try {
+    const { doc, deleteDoc } = window._fb;
+    await deleteDoc(doc(db, collName, id));
+  } catch(e) { console.error('fsDelete', e); }
+}
+
+async function loadAllData() {
+  showLoadingOverlay(true);
+  try {
+    _cache.series = await fsGetAll('series');
+    _cache.figurines = await fsGetAll('figurines');
+    _cache.posts = await fsGetAll('posts');
+    _cache.users = await fsGetAll('users');
+    _cache.contact_messages = await fsGetAll('contact_messages');
+    // seed admin if not present
+    if (!_cache.users.find(u => u.username === 'admin')) {
+      const adminUser = { id: 'admin', username: 'admin', email: 'admin@sgorbions.it', password: 'admin123', isAdmin: true, joined: new Date().toISOString() };
+      await fsSave('users', adminUser);
+      _cache.users.push(adminUser);
+    }
+  } catch(e) { console.error('loadAllData', e); }
+  showLoadingOverlay(false);
+  renderAll();
+  updateNavUser();
+}
+
+function showLoadingOverlay(show) {
+  let ov = document.getElementById('loading-overlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'loading-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(14,10,26,0.92);z-index:9998;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;';
+    ov.innerHTML = '<div style="font-family:var(--font-display);font-size:2rem;color:var(--accent);text-shadow:0 0 30px rgba(181,255,46,0.5);">SGORBIONS</div><div style="font-family:var(--font-ui);color:var(--muted);font-size:1rem;">Caricamento dati...</div><div style="width:200px;height:4px;background:var(--card2);border-radius:2px;overflow:hidden;"><div style="height:100%;background:linear-gradient(90deg,var(--accent3),var(--accent));animation:progress-anim 1.5s ease-in-out infinite;border-radius:2px;"></div></div><style>@keyframes progress-anim{0%{width:0%;margin-left:0}50%{width:70%;margin-left:0}100%{width:0%;margin-left:100%}}</style>';
+    document.body.appendChild(ov);
+  }
+  ov.style.display = show ? 'flex' : 'none';
+}
+
+// ============================================================
+//  CLOUDINARY UPLOAD
+// ============================================================
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, {
+    method: 'POST', body: formData
+  });
+  const data = await res.json();
+  if (data.secure_url) return data.secure_url;
+  throw new Error('Upload failed');
+}
 
 // ============================================================
 //  I18N
@@ -1231,7 +1363,7 @@ const i18n = {
   }
 };
 
-let currentLang = getData('lang','en');
+let currentLang = LOCAL.get('lang') || 'en';
 
 function t(key) { return (i18n[currentLang] || i18n.en)[key] || (i18n.en)[key] || key; }
 
@@ -1246,7 +1378,7 @@ function applyI18n() {
 
 function setLang(lang) {
   currentLang = lang;
-  setData('lang', lang);
+  LOCAL.set('lang', lang);
   document.querySelectorAll('.lang-btn').forEach(b => {
     b.classList.toggle('active', b.textContent === lang.toUpperCase());
   });
@@ -1257,20 +1389,13 @@ function setLang(lang) {
 // ============================================================
 //  APP STATE
 // ============================================================
-let currentUser = getData('currentUser', null);
+let currentUser = LOCAL.get('currentUser') || null;
 let currentSeriesId = null;
 let editingSeriesImg = null;
 let editingFigImg = null;
 
-// Seed admin account if not present
-function initAdmin() {
-  let users = getData('users', []);
-  if (!users.find(u => u.username === 'admin')) {
-    users.push({ id: 'admin', username: 'admin', email: 'admin@sgorbions.it', password: 'admin123', isAdmin: true, joined: new Date().toISOString() });
-    setData('users', users);
-  }
-}
-initAdmin();
+
+// Admin seeding is handled in loadAllData() after Firebase is ready
 
 // ============================================================
 //  NAVIGATION
@@ -1311,12 +1436,12 @@ function doLogin() {
   const user = users.find(x => x.username === u && x.password === p);
   if (!user) { toast('Invalid username or password', 'error'); return; }
   currentUser = user;
-  setData('currentUser', user);
+  LOCAL.set('currentUser', user);
   closeModal('auth-modal');
   updateNavUser();
   toast('Welcome back, ' + user.username + '! 👾', 'success');
 }
-function doRegister() {
+async function doRegister() {
   const u = document.getElementById('reg-username').value.trim();
   const e = document.getElementById('reg-email').value.trim();
   const p = document.getElementById('reg-password').value;
@@ -1325,17 +1450,17 @@ function doRegister() {
   let users = getData('users', []);
   if (users.find(x => x.username === u)) { toast('Username already taken', 'error'); return; }
   const newUser = { id: Date.now().toString(), username: u, email: e, password: p, isAdmin: false, joined: new Date().toISOString() };
-  users.push(newUser);
-  setData('users', users);
-  currentUser = newUser;
-  setData('currentUser', newUser);
+  const saved = await fsSave('users', newUser);
+  _cache.users.push(saved);
+  currentUser = saved;
+  LOCAL.set('currentUser', saved);
   closeModal('auth-modal');
   updateNavUser();
   toast('Welcome to the Sgorbions family! 🎉', 'success');
 }
 function logout() {
   currentUser = null;
-  setData('currentUser', null);
+  LOCAL.set('currentUser', null);
   updateNavUser();
   showPage('home');
   toast('Logged out. See you soon! 👋', 'success');
@@ -1384,40 +1509,54 @@ function openAddSeriesModal(seriesId) {
 }
 function handleSeriesImg(e) {
   const file = e.target.files[0]; if (!file) return;
+  editingSeriesImgFile = file;
   const reader = new FileReader();
   reader.onload = ev => {
-    editingSeriesImg = ev.target.result;
     const pr = document.getElementById('series-img-preview');
     pr.src = ev.target.result; pr.style.display = 'block';
   };
   reader.readAsDataURL(file);
 }
-function saveSeries() {
+let editingSeriesImgFile = null;
+async function saveSeries() {
   const name = document.getElementById('series-name-input').value.trim();
   const year = document.getElementById('series-year-input').value;
   const count = document.getElementById('series-count-input').value;
   const desc = document.getElementById('series-desc-input').value.trim();
   const descIt = document.getElementById('series-desc-it-input').value.trim();
   if (!name || !year) { toast('Name and year are required', 'error'); return; }
+  toast('Saving...', 'success');
+  let imgUrl = editingSeriesImg || null;
+  if (editingSeriesImgFile) {
+    try { imgUrl = await uploadToCloudinary(editingSeriesImgFile); }
+    catch(e) { toast('Image upload failed', 'error'); return; }
+  }
   let series = getData('series', []);
   const editId = document.getElementById('edit-series-id').value;
   if (editId) {
     const idx = series.findIndex(x => x.id === editId);
-    if (idx >= 0) { series[idx] = { ...series[idx], name, year: +year, count: +count, desc, descIt, img: editingSeriesImg || series[idx].img }; }
+    if (idx >= 0) {
+      series[idx] = { ...series[idx], name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img };
+      await fsSave('series', series[idx]);
+      _cache.series = series;
+    }
   } else {
-    series.push({ id: Date.now().toString(), name, year: +year, count: +count||0, desc, descIt, img: editingSeriesImg || null, created: new Date().toISOString() });
+    const newS = { name, year: +year, count: +count||0, desc, descIt, img: imgUrl, created: new Date().toISOString() };
+    const saved = await fsSave('series', newS);
+    _cache.series.push(saved);
   }
-  setData('series', series);
+  editingSeriesImgFile = null;
   closeModal('add-series-modal');
   renderCatalog(); renderHomeSeries(); renderHomeStats();
   toast('Series saved! 🎴', 'success');
 }
-function deleteSeries(id) {
+async function deleteSeries(id) {
   if (!confirm('Delete this series and all its figurines?')) return;
-  let series = getData('series', []).filter(x => x.id !== id);
-  setData('series', series);
-  let figs = getData('figurines', []).filter(x => x.seriesId !== id);
-  setData('figurines', figs);
+  await fsDelete('series', id);
+  _cache.series = _cache.series.filter(x => x.id !== id);
+  const figsToDelete = _cache.figurines.filter(x => x.seriesId === id);
+  for (const f of figsToDelete) await fsDelete('figurines', f.id);
+  _cache.figurines = _cache.figurines.filter(x => x.seriesId !== id);
   renderCatalog(); renderHomeSeries(); renderHomeStats(); renderAdminSeries();
   toast('Series deleted', 'success');
 }
@@ -1512,49 +1651,62 @@ function openAddFigModal(figId) {
   }
   document.getElementById('add-fig-modal').classList.remove('hidden');
 }
+let editingFigImgFile = null;
 function handleFigImg(e) {
   const file = e.target.files[0]; if (!file) return;
+  editingFigImgFile = file;
   const reader = new FileReader();
   reader.onload = ev => {
-    editingFigImg = ev.target.result;
     const pr = document.getElementById('fig-img-preview');
     pr.src = ev.target.result; pr.style.display = 'block';
   };
   reader.readAsDataURL(file);
 }
-function saveFigurine() {
+async function saveFigurine() {
   const number = document.getElementById('fig-number-input').value;
   const name = document.getElementById('fig-name-input').value.trim();
   const desc = document.getElementById('fig-desc-input').value.trim();
   if (!name || !number) { toast('Number and name required', 'error'); return; }
+  toast('Saving...', 'success');
+  let imgUrl = editingFigImg || null;
+  if (editingFigImgFile) {
+    try { imgUrl = await uploadToCloudinary(editingFigImgFile); }
+    catch(e) { toast('Image upload failed', 'error'); return; }
+  }
   let figs = getData('figurines', []);
   const editId = document.getElementById('edit-fig-id').value;
   if (editId) {
     const idx = figs.findIndex(x => x.id === editId);
-    if (idx >= 0) figs[idx] = { ...figs[idx], number: +number, name, desc, img: editingFigImg || figs[idx].img };
+    if (idx >= 0) {
+      figs[idx] = { ...figs[idx], number: +number, name, desc, img: imgUrl || figs[idx].img };
+      await fsSave('figurines', figs[idx]);
+      _cache.figurines = figs;
+    }
   } else {
-    figs.push({ id: Date.now().toString(), seriesId: currentSeriesId, number: +number, name, desc, img: editingFigImg || null });
+    const newF = { seriesId: currentSeriesId, number: +number, name, desc, img: imgUrl || null };
+    const saved = await fsSave('figurines', newF);
+    _cache.figurines.push(saved);
   }
-  setData('figurines', figs);
+  editingFigImgFile = null;
   closeModal('add-fig-modal');
   renderFigurines(); renderHomeStats();
   toast('Figurine saved! 🧟', 'success');
 }
-function deleteFigurine(id) {
+async function deleteFigurine(id) {
   if (!confirm('Delete this figurine?')) return;
-  let figs = getData('figurines', []).filter(x => x.id !== id);
-  setData('figurines', figs);
+  await fsDelete('figurines', id);
+  _cache.figurines = _cache.figurines.filter(x => x.id !== id);
   renderFigurines(); renderHomeStats();
   toast('Figurine deleted', 'success');
 }
 
-function getOwned() { return getData('owned_' + (currentUser?.id || 'guest'), []); }
+function getOwned() { return LOCAL.get('owned_' + (currentUser?.id || 'guest')) || []; }
 function toggleOwned(figId) {
   if (!currentUser) { openAuth('register'); return; }
   let owned = getOwned();
   if (owned.includes(figId)) owned = owned.filter(x => x !== figId);
   else owned.push(figId);
-  setData('owned_' + currentUser.id, owned);
+  LOCAL.set('owned_' + currentUser.id, owned);
   renderFigurines(); renderProfile();
 }
 
@@ -1609,29 +1761,28 @@ function openPostModal() {
   ['post-title-input','post-body-input'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('post-modal').classList.remove('hidden');
 }
-function savePost() {
+async function savePost() {
   const type = document.getElementById('post-type').value;
   const title = document.getElementById('post-title-input').value.trim();
   const body = document.getElementById('post-body-input').value.trim();
   if (!title) { toast('Title required', 'error'); return; }
-  let posts = getData('posts', []);
-  posts.unshift({ id: Date.now().toString(), type, title, body, author: currentUser.username, authorId: currentUser.id, date: new Date().toISOString(), comments: [] });
-  setData('posts', posts);
+  const newPost = { type, title, body, author: currentUser.username, authorId: currentUser.id, date: new Date().toISOString(), comments: [] };
+  const saved = await fsSave('posts', newPost);
+  _cache.posts.unshift(saved);
   closeModal('post-modal');
   renderBlog();
   toast('Post published! 💬', 'success');
 }
 
-function submitComment(postId) {
+async function submitComment(postId) {
   if (!currentUser) { openAuth('login'); return; }
   const textarea = document.getElementById('reply-input-' + postId);
   const text = textarea ? textarea.value.trim() : '';
   if (!text) { toast('Please write something first', 'error'); return; }
-  let posts = getData('posts', []);
-  const idx = posts.findIndex(p => p.id === postId);
+  const idx = _cache.posts.findIndex(p => p.id === postId);
   if (idx < 0) return;
-  if (!posts[idx].comments) posts[idx].comments = [];
-  posts[idx].comments.push({
+  if (!_cache.posts[idx].comments) _cache.posts[idx].comments = [];
+  _cache.posts[idx].comments.push({
     id: Date.now().toString(),
     author: currentUser.username,
     authorId: currentUser.id,
@@ -1639,30 +1790,29 @@ function submitComment(postId) {
     text,
     date: new Date().toISOString()
   });
-  setData('posts', posts);
+  await fsSave('posts', _cache.posts[idx]);
   renderBlog();
   toast('Reply posted! ✅', 'success');
 }
 
-function deleteComment(postId, commentId) {
+async function deleteComment(postId, commentId) {
   if (!currentUser) return;
-  let posts = getData('posts', []);
-  const idx = posts.findIndex(p => p.id === postId);
+  const idx = _cache.posts.findIndex(p => p.id === postId);
   if (idx < 0) return;
-  const c = posts[idx].comments.find(c => c.id === commentId);
+  const c = _cache.posts[idx].comments.find(c => c.id === commentId);
   if (!c) return;
   if (!currentUser.isAdmin && c.authorId !== currentUser.id) { toast('Not allowed', 'error'); return; }
-  posts[idx].comments = posts[idx].comments.filter(c => c.id !== commentId);
-  setData('posts', posts);
+  _cache.posts[idx].comments = _cache.posts[idx].comments.filter(c => c.id !== commentId);
+  await fsSave('posts', _cache.posts[idx]);
   renderBlog();
   toast('Comment deleted', 'success');
 }
 
-function deletePost(id) {
+async function deletePost(id) {
   if (!currentUser?.isAdmin) { toast('Admin only', 'error'); return; }
   if (!confirm('Delete this post?')) return;
-  let posts = getData('posts', []).filter(p => p.id !== id);
-  setData('posts', posts);
+  await fsDelete('posts', id);
+  _cache.posts = _cache.posts.filter(p => p.id !== id);
   renderBlog();
   toast('Post deleted', 'success');
 }
@@ -1748,15 +1898,15 @@ function renderBlog() {
 // ============================================================
 //  CONTACT
 // ============================================================
-function sendContact() {
+async function sendContact() {
   const name = document.getElementById('contact-name').value.trim();
   const email = document.getElementById('contact-email').value.trim();
   const subject = document.getElementById('contact-subject').value.trim();
   const message = document.getElementById('contact-message').value.trim();
   if (!name || !email || !message) { toast('Please fill in name, email and message', 'error'); return; }
-  let msgs = getData('contact_messages', []);
-  msgs.unshift({ id: Date.now().toString(), name, email, subject, message, date: new Date().toISOString(), read: false });
-  setData('contact_messages', msgs);
+  const msg = { name, email, subject, message, date: new Date().toISOString(), read: false };
+  const saved = await fsSave('contact_messages', msg);
+  _cache.contact_messages.unshift(saved);
   ['contact-name','contact-email','contact-subject','contact-message'].forEach(id => document.getElementById(id).value = '');
   toast('Message sent! We\'ll get back to you soon 📩', 'success');
 }
@@ -1974,10 +2124,13 @@ function renderAll() {
 //  INIT
 // ============================================================
 applyI18n();
-renderHomeSeries();
-renderHomeStats();
-initReveal();
 setLang(currentLang);
+initReveal();
+// Start Firebase — loads all data then renders
+initFirebase().catch(e => {
+  console.error('Firebase init failed', e);
+  toast('Errore connessione database', 'error');
+});
 
 // keyboard close modals
 document.addEventListener('keydown', e => {
