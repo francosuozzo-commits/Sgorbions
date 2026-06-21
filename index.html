@@ -101,7 +101,7 @@ body {
   border-radius: 8px; padding: 4px; cursor: pointer;
 }
 .lang-btn {
-  padding: 4px 10px; border-radius: 6px; font-size: 0.8rem;
+  padding: 4px 10px; border-radius: 6px; font-size: 0.92rem;
   font-family: var(--font-ui); cursor: pointer; transition: all 0.2s;
   background: transparent; border: none; color: var(--muted);
 }
@@ -110,14 +110,14 @@ body {
 }
 .nav-right { display: flex; gap: 1rem; align-items: center; }
 .btn-login {
-  font-family: var(--font-ui); font-size: 1rem;
+  font-family: var(--font-ui); font-size: 1.1rem;
   background: var(--card2); border: 1px solid var(--border);
   color: var(--text); padding: 0.35rem 1rem; border-radius: 8px;
   cursor: pointer; transition: all 0.2s;
 }
 .btn-login:hover { border-color: var(--accent3); color: var(--accent3); }
 .btn-register {
-  font-family: var(--font-ui); font-size: 1rem;
+  font-family: var(--font-ui); font-size: 1.1rem;
   background: var(--accent); border: 1px solid var(--accent);
   color: #0e0a1a; padding: 0.35rem 1.2rem; border-radius: 8px;
   cursor: pointer; transition: all 0.2s; font-weight: 700;
@@ -703,17 +703,17 @@ footer {
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contact</a>
   </div>
   <div class="nav-right">
-    <span style="font-size:0.72rem;color:var(--muted);font-family:var(--font-ui);">v1.17</span>
+    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.19</span>
     <div class="lang-toggle">
-      <button class="lang-btn active" onclick="setLang('en')">EN</button>
-      <button class="lang-btn" onclick="setLang('it')">IT</button>
+      <button class="lang-btn active" onclick="setLang('en')">🇬🇧</button>
+      <button class="lang-btn" onclick="setLang('it')">🇮🇹</button>
     </div>
     <div id="guest-nav">
       <button class="btn-login" onclick="openAuth('login')" data-i18n="nav.login">Login</button>
       <button class="btn-register" onclick="openAuth('register')" data-i18n="nav.register">Join Free</button>
     </div>
     <div id="user-nav" style="display:none;">
-      <span id="nav-username" style="font-family:var(--font-ui);color:var(--muted);font-size:0.9rem;"></span>
+      <span id="nav-username" style="font-family:var(--font-ui);color:var(--muted);font-size:1.05rem;"></span>
       <div class="avatar-btn" id="nav-avatar" onclick="showPage('profile')">U</div>
       <button class="btn-logout" onclick="logout()" data-i18n="nav.logout">Logout</button>
     </div>
@@ -1035,7 +1035,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.17</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.19</span>
     </div>
   </div>
 </footer>
@@ -1063,7 +1063,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.17</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.19</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1435,7 +1435,7 @@ function setLang(lang) {
   currentLang = lang;
   LOCAL.set('lang', lang);
   document.querySelectorAll('.lang-btn').forEach(b => {
-    b.classList.toggle('active', b.textContent === lang.toUpperCase());
+    b.classList.toggle('active', (lang === 'en' && b.textContent === '🇬🇧') || (lang === 'it' && b.textContent === '🇮🇹'));
   });
   applyI18n();
   renderAll();
