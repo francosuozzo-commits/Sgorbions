@@ -697,14 +697,14 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.26</span>
+    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.29</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
     <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog">Catalog</a>
     <a onclick="showPage('blog')" data-page="blog" data-i18n="nav.blog">Q&A / Blog</a>
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contact</a>
-    <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;">Mancolista</a>
+    <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;">Le mie mancoliste</a>
   </div>
   <div class="nav-right">
     <div class="lang-toggle">
@@ -736,7 +736,7 @@ footer {
     <p class="hero-desc" data-i18n="hero.desc">The definitive fan database for Sgorbions figurines — the legendary Italian sticker series from the early 1990s. Catalog your collection, connect with other fans, and track every grotesque character.</p>
     <div class="hero-cta">
       <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1">Explore Catalog</button>
-      <button class="btn-secondary" onclick="openAuth('register')" data-i18n="hero.cta2">Start Collecting</button>
+<button class="btn-secondary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting">Start Collecting</button>
     </div>
     <div class="hero-stats" id="hero-stats">
       <div class="stat-item"><span class="stat-num" id="stat-series">0</span><span class="stat-label" data-i18n="hero.stat1">Series</span></div>
@@ -1021,7 +1021,7 @@ footer {
     <div class="section-inner">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
         <div>
-          <h1 style="font-family:var(--font-display);font-size:2.2rem;">Mancolista</h1>
+          <h1 style="font-family:var(--font-ui);font-size:2.2rem;">Mancolista</h1>
           <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;">Le figurine che ti mancano per completare la collezione</p>
         </div>
         <button class="btn-secondary" onclick="exportWantlist()">⬇ Esporta lista</button>
@@ -1056,7 +1056,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.26</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.29</span>
     </div>
   </div>
 </footer>
@@ -1084,7 +1084,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.26</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.29</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1554,10 +1554,12 @@ function updateNavUser() {
   const userNav = document.getElementById('user-nav');
   const addSeriesBtn = document.getElementById('admin-add-series-btn');
   const wantlistLink = document.getElementById('nav-wantlist');
+  const btnCollect = document.getElementById('btn-start-collecting');
   if (currentUser) {
     guestNav.style.display = 'none';
     userNav.style.display = 'flex';
     if (wantlistLink) wantlistLink.style.display = '';
+    if (btnCollect) btnCollect.style.display = 'none';
     document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
     document.getElementById('nav-avatar').textContent = currentUser.username[0].toUpperCase();
     if (addSeriesBtn) addSeriesBtn.style.display = currentUser.isAdmin ? '' : 'none';
@@ -1566,6 +1568,7 @@ function updateNavUser() {
     userNav.style.display = 'none';
     if (addSeriesBtn) addSeriesBtn.style.display = 'none';
     if (wantlistLink) wantlistLink.style.display = 'none';
+    if (btnCollect) btnCollect.style.display = '';
   }
 }
 updateNavUser();
