@@ -698,21 +698,22 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.54</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.59</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
     <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog">Catalog</a>
     <a onclick="showPage('blog')" data-page="blog" data-i18n="nav.blog">Q&A / Blog</a>
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contact</a>
+    <a onclick="showPage('classifica')" data-page="classifica">🏆 Classifica</a>
     <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;">Le mie mancoliste</a>
+    <a onclick="showPage('profile');setTimeout(()=>adminTab('newsletter'),300)" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
   </div>
   <div class="nav-right">
     <div class="lang-toggle">
       <button class="lang-btn active" onclick="setLang('en')" title="English" style="background-image:url('https://flagcdn.com/w40/gb.png');background-size:cover;background-position:center;width:32px;height:22px;border-radius:4px;"></button>
       <button class="lang-btn" onclick="setLang('it')" title="Italiano" style="background-image:url('https://flagcdn.com/w40/it.png');background-size:cover;background-position:center;width:32px;height:22px;border-radius:4px;"></button>
     </div>
-    <div id="nav-newsletter-btn" style="display:none;"><button class="btn-login" onclick="showPage('profile');setTimeout(()=>adminTab('newsletter'),300)">📧 Newsletter</button></div>
     <div id="guest-nav">
       <button class="btn-login" onclick="openAuth('login')" data-i18n="nav.login">Login</button>
       <button class="btn-register" onclick="openAuth('register')" data-i18n="nav.register">Join Free</button>
@@ -875,9 +876,14 @@ footer {
         <button class="back-btn" onclick="closeItemsSection()">&#8592; Sezioni</button>
         <h2 id="items-section-title" style="font-family:var(--font-display);font-size:1.5rem;"></h2>
       </div>
-      <div id="admin-add-item-btn" style="display:none;">
+      <div id="admin-add-item-btn" style="display:none;display:flex;gap:0.75rem;flex-wrap:wrap;">
         <button class="btn-primary" onclick="openAddItemModal()">+ Aggiungi</button>
+        <button class="btn-secondary" onclick="openBulkScoreModal()">⭐ Punteggio serie</button>
       </div>
+    </div>
+    <div id="bulk-owned-btns" style="display:none;margin-bottom:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+      <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;">✅ Ho tutto</button>
+      <button class="btn-secondary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;">❌ Non ho niente</button>
     </div>
     <div class="progress-bar-wrap" id="detail-progress-wrap" style="display:none;margin-bottom:1.5rem;">
       <div class="progress-label">
@@ -1042,6 +1048,11 @@ footer {
             </div>
           </div>
           <div style="font-size:0.78rem;color:var(--muted);margin-top:0.5rem;text-align:center;">Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese)</div>
+          <div style="margin-top:1rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
+            <label style="font-size:0.85rem;color:var(--muted);">Correggi contatore mensile:</label>
+            <input type="number" id="fix-counter-input" min="0" max="200" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:8px;font-size:0.9rem;" placeholder="es. 9">
+            <button class="tbl-btn tbl-btn-edit" onclick="manualFixCounter()">Aggiorna</button>
+          </div>
         </div>
         <div id="admin-users" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.users.title">Registered Users</h3>
@@ -1052,6 +1063,20 @@ footer {
         <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:1.5rem;" data-i18n="profile.collection">My Collection</h2>
         <div id="my-collection-list"></div>
       </div>
+    </div>
+  </section>
+</div>
+
+<!-- ==================== CLASSIFICA ==================== -->
+<div id="page-classifica" class="page">
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-header">
+        <span class="section-eyebrow">Top Collectors</span>
+        <h1 class="section-title">🏆 Classifica <span class="hi">Collezionisti</span></h1>
+        <p class="section-sub">I migliori collezionisti di Sgorbions, in base al punteggio della loro collezione</p>
+      </div>
+      <div id="classifica-list"></div>
     </div>
   </section>
 </div>
@@ -1097,7 +1122,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.54</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.59</span>
     </div>
   </div>
 </footer>
@@ -1126,7 +1151,7 @@ footer {
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.54</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.59</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1214,6 +1239,11 @@ footer {
       <textarea class="form-textarea" id="fig-desc-input" rows="3" placeholder="Describe this figurine..."></textarea>
     </div>
     <div class="form-group">
+      <label class="form-label">Punteggio</label>
+      <input class="form-input" type="number" id="fig-score-input" placeholder="es. 10" min="0">
+      <div class="form-hint">Punti assegnati a chi possiede questo oggetto</div>
+    </div>
+    <div class="form-group">
       <label class="form-label" data-i18n="form.fig.image">Image</label>
       <div class="file-drop" onclick="document.getElementById('fig-img-file').click()">
         <div class="file-drop-icon">🧟</div>
@@ -1253,6 +1283,22 @@ footer {
 </div>
 
 <!-- reply modal removed — using inline comment system -->
+
+<!-- BULK SCORE MODAL -->
+<div class="modal-overlay hidden" id="bulk-score-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">⭐ Punteggio Serie</h2>
+      <button class="modal-close" onclick="closeModal('bulk-score-modal')">✕</button>
+    </div>
+    <p style="color:var(--muted);font-size:0.9rem;margin-bottom:1.25rem;">Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.</p>
+    <div class="form-group">
+      <label class="form-label">Punteggio per ogni oggetto</label>
+      <input class="form-input" type="number" id="bulk-score-input" placeholder="es. 10" min="0">
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="saveBulkScore()">Applica a tutti</button>
+  </div>
+</div>
 
 <!-- EDIT USER MODAL -->
 <div class="modal-overlay hidden" id="edit-user-modal">
@@ -1649,6 +1695,7 @@ function showPage(page) {
   if (page === 'profile') renderProfile();
   if (page === 'home') { renderHomeStats(); renderHomeSeries(); }
   if (page === 'wantlist') renderWantlist();
+  if (page === 'classifica') renderClassifica();
   initReveal();
 }
 
@@ -1973,6 +2020,7 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-number-input').value = f.number;
       document.getElementById('fig-name-input').value = f.name;
       document.getElementById('fig-desc-input').value = f.desc || '';
+      document.getElementById('fig-score-input').value = f.score || 0;
       if (f.img) { const pr = document.getElementById('fig-img-preview'); pr.src = f.img; pr.style.display = 'block'; editingFigImg = f.img; }
     }
   } else {
@@ -2000,6 +2048,10 @@ function renderItems() {
   const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection).sort((a,b) => a.number - b.number);
   const owned = getOwned();
   const pw = document.getElementById('detail-progress-wrap');
+  // Show bulk owned buttons only for figurines section when logged in
+  const bulkBtns = document.getElementById('bulk-owned-btns');
+  if (bulkBtns) bulkBtns.style.display = (currentUser && currentSection === 'figurines' && items.length) ? 'flex' : 'none';
+
   if (currentUser && items.length) {
     pw.style.display = '';
     const ownedCount = items.filter(f => owned.includes(f.id)).length;
@@ -2054,6 +2106,7 @@ async function saveFigurine() {
   const number = document.getElementById('fig-number-input').value;
   const name = document.getElementById('fig-name-input').value.trim();
   const desc = document.getElementById('fig-desc-input').value.trim();
+  const score = parseInt(document.getElementById('fig-score-input').value) || 0;
   if (!name || !number) { toast('Numero e nome sono obbligatori', 'error'); return; }
   toast('Salvataggio...', 'success');
   let imgUrl = editingFigImg || null;
@@ -2066,12 +2119,12 @@ async function saveFigurine() {
   if (editId) {
     const idx = figs.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      figs[idx] = { ...figs[idx], number: +number, name, desc, img: imgUrl || figs[idx].img };
+      figs[idx] = { ...figs[idx], number: +number, name, desc, score, img: imgUrl || figs[idx].img };
       await fsSave('figurines', figs[idx]);
       _cache.figurines = figs;
     }
   } else {
-    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: +number, name, desc, img: imgUrl || null };
+    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: +number, name, desc, score, img: imgUrl || null };
     const saved = await fsSave('figurines', newF);
     _cache.figurines.push(saved);
   }
@@ -2656,6 +2709,35 @@ async function incrementEmailCounter(count) {
   } catch(e) { console.error('Email counter error', e); }
 }
 
+async function manualFixCounter() {
+  const val = parseInt(document.getElementById('fix-counter-input').value);
+  if (isNaN(val) || val < 0) { toast('Inserisci un numero valido', 'error'); return; }
+  if (!confirm('Impostare il contatore mensile a ' + val + '?')) return;
+  const now = new Date();
+  const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const { doc, getDoc, setDoc } = window._fb;
+  const ref = doc(db, 'email_stats', 'counter');
+  let data = { total: 0, months: {} };
+  try { const snap = await getDoc(ref); if (snap.exists()) data = snap.data(); } catch(e) {}
+  const diff = val - (data.months?.[monthKey] || 0);
+  data.months[monthKey] = val;
+  data.total = Math.max(0, (data.total || 0) + diff);
+  await setDoc(ref, data);
+  renderEmailCounter(data, monthKey);
+  toast('Contatore aggiornato a ' + val, 'success');
+}
+
+async function fixEmailCounter() {
+  // One-time fix to align counter with EmailJS real count
+  const now = new Date();
+  const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  const { doc, setDoc } = window._fb;
+  const ref = doc(db, 'email_stats', 'counter');
+  await setDoc(ref, { total: 9, months: { [monthKey]: 9 } });
+  renderEmailCounter({ total: 9, months: { [monthKey]: 9 } }, monthKey);
+  toast('Contatore aggiornato a 9', 'success');
+}
+
 async function loadEmailCounter() {
   try {
     const { doc, getDoc } = window._fb;
@@ -2704,6 +2786,111 @@ async function uploadAvatar(e) {
   } catch(e) {
     toast('Errore nel caricamento', 'error');
   }
+}
+
+// ============================================================
+//  BULK OWNED
+// ============================================================
+async function setAllOwned(ownAll) {
+  if (!currentUser) return;
+  const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === 'figurines');
+  if (!items.length) return;
+  const msg = ownAll ? 'Segnare tutti gli oggetti come posseduti?' : 'Rimuovere tutti gli oggetti dalla tua collezione?';
+  if (!confirm(msg)) return;
+  let owned = LOCAL.get('owned_' + currentUser.id) || [];
+  if (ownAll) {
+    items.forEach(f => { if (!owned.includes(f.id)) owned.push(f.id); });
+  } else {
+    const ids = items.map(f => f.id);
+    owned = owned.filter(id => !ids.includes(id));
+  }
+  LOCAL.set('owned_' + currentUser.id, owned);
+  renderItems();
+  updateOwnedCounter();
+  toast(ownAll ? 'Tutti gli oggetti aggiunti! ✅' : 'Tutti gli oggetti rimossi ❌', 'success');
+}
+
+// ============================================================
+//  BULK SCORE
+// ============================================================
+function openBulkScoreModal() {
+  if (!currentUser?.isAdmin) return;
+  document.getElementById('bulk-score-input').value = '';
+  document.getElementById('bulk-score-modal').classList.remove('hidden');
+}
+
+async function saveBulkScore() {
+  const score = parseInt(document.getElementById('bulk-score-input').value);
+  if (isNaN(score) || score < 0) { toast('Inserisci un punteggio valido', 'error'); return; }
+  const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
+  if (!items.length) { toast('Nessun oggetto in questa sezione', 'error'); return; }
+  if (!confirm('Assegnare ' + score + ' punti a tutti i ' + items.length + ' oggetti di questa sezione?')) return;
+  toast('Salvataggio in corso...', 'success');
+  for (const item of items) {
+    item.score = score;
+    await fsSave('figurines', item);
+  }
+  _cache.figurines = getData('figurines', []).map(f => {
+    if (f.seriesId === currentSeriesId && f.section === currentSection) f.score = score;
+    return f;
+  });
+  closeModal('bulk-score-modal');
+  renderItems();
+  toast('Punteggio assegnato a ' + items.length + ' oggetti! ⭐', 'success');
+}
+
+// ============================================================
+//  CLASSIFICA
+// ============================================================
+async function renderClassifica() {
+  const el = document.getElementById('classifica-list');
+  if (!el) return;
+  el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p class="empty-title">Caricamento...</p></div>';
+
+  const users = getData('users', []).filter(u => !u.isAdmin);
+  const allFigs = getData('figurines', []);
+
+  // Calculate score for each user
+  const ranking = [];
+  for (const user of users) {
+    const owned = getData('owned_' + user.id, []);
+    const score = allFigs.filter(f => owned.includes(f.id)).reduce((sum, f) => sum + (f.score || 0), 0);
+    const ownedCount = owned.filter(id => allFigs.find(f => f.id === id)).length;
+    ranking.push({ user, score, ownedCount });
+  }
+
+  ranking.sort((a, b) => b.score - a.score);
+
+  if (!ranking.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">👤</div><p class="empty-title">Nessun collezionista ancora!</p></div>';
+    return;
+  }
+
+  const medals = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅'];
+  const trophies = ['🏆', '🥈', '🥉'];
+
+  el.innerHTML = ranking.map((entry, idx) => {
+    const { user, score, ownedCount } = entry;
+    const position = idx + 1;
+    const medal = position <= 10 ? medals[idx] : '';
+    const isTop3 = position <= 3;
+    const avatarHTML = user.avatar
+      ? `<div style="width:52px;height:52px;border-radius:50%;background:url('${user.avatar}') center/cover;border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};flex-shrink:0;"></div>`
+      : `<div style="width:52px;height:52px;border-radius:50%;background:var(--card2);border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--muted);flex-shrink:0;">${user.username[0].toUpperCase()}</div>`;
+
+    return `<div style="background:${isTop3 ? 'rgba(181,255,46,0.05)' : 'var(--card)'};border:1px solid ${isTop3 ? 'rgba(181,255,46,0.2)' : 'var(--border)'};border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:1.25rem;">
+      <div style="font-size:${isTop3 ? '2rem' : '1.3rem'};width:40px;text-align:center;flex-shrink:0;">${medal || '#' + position}</div>
+      ${avatarHTML}
+      <div style="flex:1;">
+        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);">${user.username}</div>
+        <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">${ownedCount} oggetti in collezione</div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-family:var(--font-ui);font-size:1.5rem;color:var(--accent);">${score} pt</div>
+        ${isTop3 ? `<div style="font-size:1.2rem;">${trophies[idx]}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ============================================================
