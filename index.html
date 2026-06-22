@@ -698,7 +698,7 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.50</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.54</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -712,6 +712,7 @@ footer {
       <button class="lang-btn active" onclick="setLang('en')" title="English" style="background-image:url('https://flagcdn.com/w40/gb.png');background-size:cover;background-position:center;width:32px;height:22px;border-radius:4px;"></button>
       <button class="lang-btn" onclick="setLang('it')" title="Italiano" style="background-image:url('https://flagcdn.com/w40/it.png');background-size:cover;background-position:center;width:32px;height:22px;border-radius:4px;"></button>
     </div>
+    <div id="nav-newsletter-btn" style="display:none;"><button class="btn-login" onclick="showPage('profile');setTimeout(()=>adminTab('newsletter'),300)">📧 Newsletter</button></div>
     <div id="guest-nav">
       <button class="btn-login" onclick="openAuth('login')" data-i18n="nav.login">Login</button>
       <button class="btn-register" onclick="openAuth('register')" data-i18n="nav.register">Join Free</button>
@@ -1096,7 +1097,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.50</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.54</span>
     </div>
   </div>
 </footer>
@@ -1124,7 +1125,8 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.50</div>
+      <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.54</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1140,6 +1142,7 @@ footer {
         <input class="form-input" type="password" id="reg-password" placeholder="Min. 6 characters">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doRegister()" data-i18n="auth.reg.btn">Create Account</button>
+      <div id="reg-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
     </div>
   </div>
 </div>
@@ -1307,7 +1310,7 @@ async function sendEmail(toEmail, username, subject, messaggio) {
   if (typeof emailjs === 'undefined') { console.warn('EmailJS not loaded'); return; }
   try {
     await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
-      to_email: toEmail,
+      email: toEmail,
       username: username,
       subject: subject,
       messaggio: messaggio
@@ -1663,11 +1666,15 @@ function switchAuthTab(tab) {
   document.getElementById('tab-register').classList.toggle('active', tab === 'register');
   const title = document.querySelector('#auth-modal .modal-title');
   if (title) title.textContent = tab === 'login' ? 'Bentornato!' : 'Benvenuto!';
+  const ae = document.getElementById('auth-error'); if (ae) ae.style.display = 'none';
+  const re = document.getElementById('reg-error'); if (re) re.style.display = 'none';
 }
 async function doLogin() {
   const u = document.getElementById('login-username').value.trim();
   const p = document.getElementById('login-password').value;
-  if (!u || !p) { toast('Inserisci username e password', 'error'); return; }
+  const authErr = document.getElementById('auth-error');
+  if (authErr) authErr.style.display = 'none';
+  if (!u || !p) { if (authErr) { authErr.style.display = ''; authErr.textContent = 'Inserisci username e password'; return; } toast('Inserisci username e password', 'error'); return; }
   // Se Firebase non ha ancora caricato gli utenti, ricarica
   if (!_cache.users || _cache.users.length === 0) {
     toast('Connessione in corso...', 'success');
@@ -1675,7 +1682,7 @@ async function doLogin() {
   }
   const users = getData('users', []);
   const user = users.find(x => x.username === u && x.password === p);
-  if (!user) { toast('Username o password errati', 'error'); return; }
+  if (!user) { const ae = document.getElementById('auth-error'); if (ae) { ae.style.display = ''; ae.textContent = 'Username o password errati'; } else toast('Username o password errati', 'error'); return; }
   currentUser = user;
   LOCAL.set('currentUser', user);
   closeModal('auth-modal');
@@ -1686,10 +1693,12 @@ async function doRegister() {
   const u = document.getElementById('reg-username').value.trim();
   const e = document.getElementById('reg-email').value.trim();
   const p = document.getElementById('reg-password').value;
-  if (!u || !e || !p) { toast('Compila tutti i campi', 'error'); return; }
-  if (p.length < 6) { toast('La password deve avere almeno 6 caratteri', 'error'); return; }
+  const regErr = document.getElementById('reg-error');
+  if (regErr) regErr.style.display = 'none';
+  if (!u || !e || !p) { if (regErr) { regErr.style.display = ''; regErr.textContent = 'Compila tutti i campi'; return; } toast('Compila tutti i campi', 'error'); return; }
+  if (p.length < 6) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'La password deve avere almeno 6 caratteri'; return; } toast('La password deve avere almeno 6 caratteri', 'error'); return; }
   let users = getData('users', []);
-  if (users.find(x => x.username === u)) { toast('Username già in uso', 'error'); return; }
+  if (users.find(x => x.username === u)) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'Username già in uso'; return; } toast('Username già in uso', 'error'); return; }
   const newUser = { id: Date.now().toString(), username: u, email: e, password: p, isAdmin: false, joined: new Date().toISOString() };
   const saved = await fsSave('users', newUser);
   _cache.users.push(saved);
@@ -1718,6 +1727,8 @@ function updateNavUser() {
     guestNav.style.display = 'none';
     userNav.style.display = 'flex';
     if (wantlistLink) wantlistLink.style.display = '';
+    const nlBtn = document.getElementById('nav-newsletter-btn');
+    if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
     if (btnCollect) btnCollect.style.display = 'none';
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = '';
     document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
@@ -1740,6 +1751,8 @@ function updateNavUser() {
     userNav.style.display = 'none';
     if (addSeriesBtn) addSeriesBtn.style.display = 'none';
     if (wantlistLink) wantlistLink.style.display = 'none';
+    const nlBtn2 = document.getElementById('nav-newsletter-btn');
+    if (nlBtn2) nlBtn2.style.display = 'none';
     if (btnCollect) btnCollect.style.display = '';
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = 'none';
   }
@@ -2457,7 +2470,10 @@ function renderAdminUsers() {
   const users = getData('users', []);
   el.innerHTML = `<table class="data-table"><thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Iscritto</th><th>Azioni</th></tr></thead><tbody>
     ${users.map(u => `<tr>
-      <td>${u.username}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}</td>
+      <td style="display:flex;align-items:center;gap:0.6rem;">
+        <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : u.username[0].toUpperCase()}</div>
+        ${u.username}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}
+      </td>
       <td>${u.email}</td>
       <td>${u.isAdmin?'Admin':'Collector'}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
