@@ -698,7 +698,7 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.43</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.46</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -1074,7 +1074,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.43</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.46</span>
     </div>
   </div>
 </footer>
@@ -1102,7 +1102,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.43</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.46</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1228,6 +1228,26 @@ footer {
 </div>
 
 <!-- reply modal removed — using inline comment system -->
+
+<!-- EDIT USER MODAL -->
+<div class="modal-overlay hidden" id="edit-user-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">Modifica Utente</h2>
+      <button class="modal-close" onclick="closeModal('edit-user-modal')">✕</button>
+    </div>
+    <input type="hidden" id="edit-user-id">
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input class="form-input" type="text" id="edit-user-username" placeholder="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" id="edit-user-email" placeholder="email@esempio.it">
+    </div>
+    <button class="btn-primary" style="width:100%;" onclick="saveEditUser()">Salva modifiche</button>
+  </div>
+</div>
 
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
@@ -2386,9 +2406,35 @@ function renderAdminUsers() {
       <td>${u.email}</td>
       <td>${u.isAdmin?'Admin':'Collector'}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
-      <td>${u.isAdmin ? '-' : `<button class="tbl-btn tbl-btn-del" onclick="deleteUser('${u.id}')">Elimina</button>`}</td>
+      <td><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">Modifica</button>${u.isAdmin ? '' : ` <button class="tbl-btn tbl-btn-del" onclick="deleteUser('${u.id}')">Elimina</button>`}</td>
     </tr>`).join('')}
   </tbody></table>`;
+}
+
+function openEditUserModal(userId) {
+  const user = getData('users', []).find(u => u.id === userId);
+  if (!user) return;
+  document.getElementById('edit-user-id').value = userId;
+  document.getElementById('edit-user-username').value = user.username;
+  document.getElementById('edit-user-email').value = user.email;
+  document.getElementById('edit-user-modal').classList.remove('hidden');
+}
+
+async function saveEditUser() {
+  const userId = document.getElementById('edit-user-id').value;
+  const username = document.getElementById('edit-user-username').value.trim();
+  const email = document.getElementById('edit-user-email').value.trim();
+  if (!username || !email) { toast('Compila tutti i campi', 'error'); return; }
+  const users = getData('users', []);
+  const idx = users.findIndex(u => u.id === userId);
+  if (idx < 0) return;
+  users[idx].username = username;
+  users[idx].email = email;
+  await fsSave('users', users[idx]);
+  _cache.users = users;
+  closeModal('edit-user-modal');
+  renderAdminUsers();
+  toast('Utente aggiornato!', 'success');
 }
 
 async function deleteUser(userId) {
@@ -2460,7 +2506,10 @@ function updateOwnedCounter() {
 // ============================================================
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 document.querySelectorAll('.modal-overlay').forEach(m => {
-  m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); });
+  // Solo i modal che non sono auth possono essere chiusi cliccando fuori
+  if (m.id !== 'auth-modal') {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); });
+  }
 });
 
 // ============================================================
