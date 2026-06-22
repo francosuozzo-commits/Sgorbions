@@ -698,7 +698,7 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.42</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.43</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -1074,7 +1074,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.42</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.43</span>
     </div>
   </div>
 </footer>
@@ -1102,7 +1102,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.42</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.43</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -2380,13 +2380,23 @@ function renderAdminContacts() {
 function renderAdminUsers() {
   const el = document.getElementById('admin-users-table');
   const users = getData('users', []);
-  el.innerHTML = `<table class="data-table"><thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead><tbody>
+  el.innerHTML = `<table class="data-table"><thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Iscritto</th><th>Azioni</th></tr></thead><tbody>
     ${users.map(u => `<tr>
       <td>${u.username}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}</td>
-      <td>${u.email}</td><td>${u.isAdmin?'Admin':'Collector'}</td>
+      <td>${u.email}</td>
+      <td>${u.isAdmin?'Admin':'Collector'}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
+      <td>${u.isAdmin ? '-' : `<button class="tbl-btn tbl-btn-del" onclick="deleteUser('${u.id}')">Elimina</button>`}</td>
     </tr>`).join('')}
   </tbody></table>`;
+}
+
+async function deleteUser(userId) {
+  if (!confirm('Eliminare questo utente?')) return;
+  await fsDelete('users', userId);
+  _cache.users = _cache.users.filter(u => u.id !== userId);
+  renderAdminUsers();
+  toast('Utente eliminato', 'success');
 }
 
 // ============================================================
