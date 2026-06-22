@@ -457,7 +457,7 @@ body {
 }
 .badge-question { background: rgba(255,107,26,0.15); color: var(--accent2); border: 1px solid rgba(255,107,26,0.25); }
 .badge-news { background: rgba(181,255,46,0.1); color: var(--accent); border: 1px solid rgba(181,255,46,0.2); }
-.blog-title { font-family: var(--font-ui); font-size: 1.4rem; color: var(--text); margin-bottom: 0.5rem; }
+.blog-title { font-family: var(--font-ui); font-size: 1.1rem; color: var(--text); margin-bottom: 0.5rem; }
 .blog-excerpt { font-size: 1rem; color: var(--muted); line-height: 1.6; }
 
 /* Thread / Comments */
@@ -698,7 +698,7 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.68</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.80</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -909,7 +909,7 @@ footer {
           <h1 style="font-family:var(--font-display);font-size:2.2rem;" data-i18n="blog.title">Q&A & Blog</h1>
           <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n="blog.sub">Ask questions, share news and discoveries</p>
         </div>
-        <button class="btn-primary" onclick="openPostModal()" data-i18n="blog.post">+ Post Question / News</button>
+        <button class="btn-primary" onclick="openPostModal()" data-i18n="blog.post">+ Nuova domanda / Notizia</button>
       </div>
       <div id="blog-list">
         <div class="empty-state"><div class="empty-icon">💬</div><p class="empty-title" data-i18n="blog.empty">No posts yet. Start the conversation!</p></div>
@@ -1074,7 +1074,7 @@ footer {
   <section class="section">
     <div class="section-inner">
       <div class="section-header">
-        <span class="section-eyebrow">Top Collectors</span>
+        <span class="section-eyebrow" id="classifica-eyebrow">Top Collectors</span>
         <h1 class="section-title">🏆 Classifica <span class="hi">Collezionisti</span></h1>
         <p class="section-sub">I migliori collezionisti di Sgorbions, in base al punteggio della loro collezione</p>
       </div>
@@ -1124,7 +1124,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.68</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.80</span>
     </div>
   </div>
 </footer>
@@ -1153,7 +1153,7 @@ footer {
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.68</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.80</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1167,6 +1167,14 @@ footer {
       <div class="form-group">
         <label class="form-label" data-i18n="form.password">Password</label>
         <input class="form-input" type="password" id="reg-password" placeholder="Min. 6 characters">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nazionalità</label>
+        <input class="form-input" type="text" id="reg-nationality-search" placeholder="Scrivi il nome del paese..." oninput="filterNationalities()" autocomplete="off">
+        <div id="nationality-dropdown" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);max-height:180px;overflow-y:auto;margin-top:4px;"></div>
+        <input type="hidden" id="reg-nationality-code" value="">
+        <input type="hidden" id="reg-nationality-name" value="">
+        <div id="reg-nationality-preview" style="display:none;margin-top:6px;display:flex;align-items:center;gap:6px;font-size:0.88rem;color:var(--text);"></div>
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doRegister()" data-i18n="auth.reg.btn">Create Account</button>
       <div id="reg-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
@@ -1440,6 +1448,99 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
+// ============================================================
+//  NATIONALITY
+// ============================================================
+const COUNTRIES = [
+  ['it','Italia'],['gb','Regno Unito'],['us','Stati Uniti'],['fr','Francia'],['de','Germania'],
+  ['es','Spagna'],['pt','Portogallo'],['nl','Paesi Bassi'],['be','Belgio'],['ch','Svizzera'],
+  ['at','Austria'],['pl','Polonia'],['cz','Repubblica Ceca'],['sk','Slovacchia'],['hu','Ungheria'],
+  ['ro','Romania'],['bg','Bulgaria'],['hr','Croazia'],['si','Slovenia'],['rs','Serbia'],
+  ['gr','Grecia'],['tr','Turchia'],['se','Svezia'],['no','Norvegia'],['dk','Danimarca'],
+  ['fi','Finlandia'],['ie','Irlanda'],['lt','Lituania'],['lv','Lettonia'],['ee','Estonia'],
+  ['br','Brasile'],['ar','Argentina'],['mx','Messico'],['co','Colombia'],['cl','Cile'],
+  ['au','Australia'],['nz','Nuova Zelanda'],['jp','Giappone'],['cn','Cina'],['kr','Corea del Sud'],
+  ['in','India'],['ru','Russia'],['ua','Ucraina'],['ca','Canada'],['za','Sudafrica'],
+  ['eg','Egitto'],['ma','Marocco'],['ng','Nigeria'],['gh','Ghana'],['ke','Kenya'],
+  ['ae','Emirati Arabi'],['sa','Arabia Saudita'],['il','Israele'],['sg','Singapore'],['th','Tailandia'],
+];
+
+function flagUrl(code) {
+  return `https://flagcdn.com/w40/${code}.png`;
+}
+
+function filterNationalities() {
+  const q = document.getElementById('reg-nationality-search').value.toLowerCase().trim();
+  const dd = document.getElementById('nationality-dropdown');
+  if (!q) { dd.style.display = 'none'; return; }
+  const filtered = COUNTRIES.filter(([code, name]) => name.toLowerCase().includes(q));
+  if (!filtered.length) { dd.style.display = 'none'; return; }
+  dd.style.display = '';
+  dd.innerHTML = filtered.map(([code, name]) =>
+    `<div onclick="selectNationality('${code}','${name}')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;transition:background 0.15s;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <img src="${flagUrl(code)}" style="width:24px;height:16px;object-fit:cover;border-radius:2px;">
+      <span style="font-size:0.9rem;">${name}</span>
+    </div>`
+  ).join('');
+}
+
+function selectNationality(code, name) {
+  document.getElementById('reg-nationality-code').value = code;
+  document.getElementById('reg-nationality-name').value = name;
+  document.getElementById('reg-nationality-search').value = name;
+  document.getElementById('nationality-dropdown').style.display = 'none';
+  const preview = document.getElementById('reg-nationality-preview');
+  preview.style.display = 'flex';
+  preview.innerHTML = `<img src="${flagUrl(code)}" style="width:24px;height:16px;object-fit:cover;border-radius:2px;"> ${name}`;
+}
+
+function nationalityFlag(code, name) {
+  if (!code) return '';
+  return `<img src="${flagUrl(code)}" title="${name||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;margin-left:4px;">`;
+}
+
+function loadDemoData() {
+  _cache.series = [
+    { id: 's1', name: 'Serie 1 — Primavera', year: 1990, count: 30, desc: 'La prima serie di Sgorbions, con i personaggi più iconici.', order: 0 },
+    { id: 's2', name: 'Serie 2 — Estate', year: 1991, count: 25, desc: 'La seconda serie con nuovi personaggi grotteschi.', order: 1 },
+    { id: 's3', name: 'Serie 3 — Autunno', year: 1992, count: 20, desc: 'Terza serie con edizione limitata.', order: 2 },
+  ];
+  _cache.figurines = [
+    { id: 'f1', seriesId: 's1', section: 'figurines', number: 1, name: 'Vittorio Mortorio', desc: 'Il più famoso degli Sgorbions', score: 10 },
+    { id: 'f2', seriesId: 's1', section: 'figurines', number: 2, name: 'Pamela Candela', desc: 'La principessa del moccio', score: 8 },
+    { id: 'f3', seriesId: 's1', section: 'figurines', number: 3, name: 'Sgorbio Maximus', desc: 'Il re degli Sgorbions', score: 15 },
+    { id: 'f4', seriesId: 's1', section: 'albums', number: 1, name: 'Album Serie 1', desc: 'Album ufficiale della prima serie', score: 20 },
+    { id: 'f5', seriesId: 's2', section: 'figurines', number: 1, name: 'Slimeo', desc: 'Il principe del fango', score: 12 },
+    { id: 'f6', seriesId: 's2', section: 'figurines', number: 2, name: 'Bavaglina', desc: 'La bavaglina vivente', score: 7 },
+  ];
+  _cache.posts = [
+    { id: 'p1', type: 'question', title: 'Dove trovo la figurina #3?', body: 'Cerco da anni Sgorbio Maximus, qualcuno sa dove trovarla?', author: 'collezionista99', authorId: 'u1', date: new Date().toISOString(), comments: [
+      { id: 'c1', author: 'admin', authorId: 'admin', isAdmin: true, text: 'Prova nei mercatini vintage!', date: new Date().toISOString() }
+    ]},
+    { id: 'p2', type: 'news', title: 'Trovato lotto raro al mercatino!', body: 'Ho trovato un lotto completo della Serie 1 in ottime condizioni.', author: 'sgorbionista', authorId: 'u2', date: new Date().toISOString(), comments: [] },
+  ];
+  _cache.users = [
+    { id: 'admin', username: 'admin', email: 'admin@sgorbions.it', isAdmin: true, joined: new Date().toISOString() },
+    { id: 'u1', username: 'collezionista99', email: 'test1@example.com', isAdmin: false, joined: new Date().toISOString(), nationalityCode: 'it', nationalityName: 'Italia' },
+    { id: 'u2', username: 'sgorbionista', email: 'test2@example.com', isAdmin: false, joined: new Date().toISOString(), nationalityCode: 'fr', nationalityName: 'Francia' },
+    { id: 'u3', username: 'slimecollector', email: 'test3@example.com', isAdmin: false, joined: new Date().toISOString(), nationalityCode: 'de', nationalityName: 'Germania' },
+    { id: 'u4', username: 'sgorbio_fan', email: 'test4@example.com', isAdmin: false, joined: new Date().toISOString(), nationalityCode: 'es', nationalityName: 'Spagna' },
+    { id: 'u5', username: 'moccio_king', email: 'test5@example.com', isAdmin: false, joined: new Date().toISOString(), nationalityCode: 'gb', nationalityName: 'Regno Unito' },
+  ];
+  // Simulate owned items for demo users (stored in localStorage)
+  const demoOwned = {
+    'u1': ['f1','f2','f3','f4'],   // collezionista99: 10+8+15+20 = 53 pt
+    'u2': ['f1','f3','f5'],        // sgorbionista: 10+15+12 = 37 pt
+    'u3': ['f2','f4','f6'],        // slimecollector: 8+20+7 = 35 pt
+    'u4': ['f1','f6'],             // sgorbio_fan: 10+7 = 17 pt
+    'u5': ['f5'],                  // moccio_king: 12 pt
+  };
+  Object.entries(demoOwned).forEach(([uid, ids]) => {
+    localStorage.setItem('sgorbions_owned_' + uid, JSON.stringify(ids));
+  });
+  console.log('Demo data loaded');
+}
+
 async function initFirebase() {
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
   const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
@@ -1522,7 +1623,10 @@ async function fsDelete(collName, id) {
 async function loadAllData() {
   showLoadingOverlay(true);
   try {
-    _cache.series = await fsGetAll('series');
+    _cache.series = await Promise.race([
+      fsGetAll('series'),
+      new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+    ]);
     _cache.figurines = await fsGetAll('figurines');
     _cache.posts = await fsGetAll('posts');
     _cache.users = await fsGetAll('users');
@@ -1533,8 +1637,13 @@ async function loadAllData() {
       await fsSave('users', adminUser);
       _cache.users.push(adminUser);
     }
-  } catch(e) { console.error('loadAllData', e); }
+  } catch(e) {
+    console.warn('Firebase non disponibile, carico dati demo:', e.message);
+    loadDemoData();
+  }
   showLoadingOverlay(false);
+  // Extra check: if still no data, load demo
+  if (!_cache.series.length) loadDemoData();
   renderAll();
   updateNavUser();
 }
@@ -1586,7 +1695,7 @@ const i18n = {
     'how.4.title':'Your Profile','how.4.desc':'See your collection stats, owned figurines and activity history in one place.',
     'catalog.title':'The Catalog','catalog.sub':'All Sgorbions series ever released','catalog.addseries':'+ Add Series','catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
     'back':'Back to Catalog','detail.owned':'Owned','detail.addfig':'+ Add Figurine',
-    'blog.title':'Q&A & Blog','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ Post Question / News','blog.empty':'No posts yet. Start the conversation!',
+    'blog.title':'Q&A & Blog','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ Nuova domanda / Notizia','blog.empty':'No posts yet. Start the conversation!',
     'contact.eyebrow':'Get In Touch','contact.title':'Contact the Owner','contact.sub':'Have a rare find? Want to contribute? Drop a message!',
     'contact.info.title':"Let's talk Sgorbions",'contact.email':'Email','contact.location':'Location','contact.location.val':'Italy 🇮🇹','contact.resp':'Response Time','contact.resp.val':'Usually within 24–48 hours',
     'form.name':'Your Name','form.name.ph':'Sgorbio Fan','form.email':'Email Address','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio!','form.message':'Message','form.message.ph':'Tell me everything...','form.send':'Send Message 🚀',
@@ -1623,7 +1732,7 @@ const i18n = {
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le statistiche della tua collezione, le figurine possedute e la cronologia delle attività.',
     'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
-    'blog.title':'D&R e Blog','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova Domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
+    'blog.title':'D&R e Blog','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':'Contatta il Proprietario','contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'Email','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     'form.name':'Il Tuo Nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo Email','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia Messaggio 🚀',
@@ -1665,6 +1774,8 @@ function setLang(lang) {
   document.querySelectorAll('.lang-btn').forEach(b => {
     b.classList.toggle('active', (lang === 'en' && b.textContent === '🇬🇧') || (lang === 'it' && b.textContent === '🇮🇹'));
   });
+  const eyebrow = document.getElementById('classifica-eyebrow');
+  if (eyebrow) eyebrow.textContent = lang === 'it' ? 'Migliori Collezionisti' : 'Top Collectors';
   applyI18n();
   renderAll();
 }
@@ -1748,7 +1859,9 @@ async function doRegister() {
   if (p.length < 6) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'La password deve avere almeno 6 caratteri'; return; } toast('La password deve avere almeno 6 caratteri', 'error'); return; }
   let users = getData('users', []);
   if (users.find(x => x.username === u)) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'Username già in uso'; return; } toast('Username già in uso', 'error'); return; }
-  const newUser = { id: Date.now().toString(), username: u, email: e, password: p, isAdmin: false, joined: new Date().toISOString() };
+  const natCode = document.getElementById('reg-nationality-code')?.value || '';
+  const natName = document.getElementById('reg-nationality-name')?.value || '';
+  const newUser = { id: Date.now().toString(), username: u, email: e, password: p, isAdmin: false, joined: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName };
   const saved = await fsSave('users', newUser);
   _cache.users.push(saved);
   currentUser = saved;
@@ -2256,7 +2369,7 @@ function renderBlog() {
         <div class="comment-avatar ${c.isAdmin ? 'is-admin' : ''}">${c.author[0].toUpperCase()}</div>
         <div class="comment-bubble ${c.isAdmin ? 'is-admin' : ''}">
           <div class="comment-header">
-            <span class="comment-author">@${c.author}</span>
+            <span class="comment-author">@${c.author}</span>${(()=>{ const u = getData("users",[]).find(x=>x.id===c.authorId); return u?.nationalityCode ? `<img src="https://flagcdn.com/w40/${u.nationalityCode}.png" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : ""; })()}
             ${c.isAdmin ? `<span class="comment-admin-badge">👑 ${t('comment.admin')}</span>` : ''}
             <span class="comment-date">${cDate}</span>
             ${canDel ? `<button class="comment-del-btn" onclick="deleteComment('${p.id}','${c.id}')" title="Delete">✕</button>` : ''}
@@ -2865,9 +2978,12 @@ async function renderClassifica() {
   const ranking = [];
   for (const user of users) {
     const owned = getData('owned_' + user.id, []);
-    const score = allFigs.filter(f => owned.includes(f.id)).reduce((sum, f) => sum + (f.score || 0), 0);
-    const ownedCount = owned.filter(id => allFigs.find(f => f.id === id)).length;
-    ranking.push({ user, score, ownedCount });
+    const ownedFigs = allFigs.filter(f => owned.includes(f.id));
+    const score = ownedFigs.reduce((sum, f) => sum + (f.score || 0), 0);
+    const countFigurines = ownedFigs.filter(f => f.section === 'figurines' || !f.section).length;
+    const countAlbums = ownedFigs.filter(f => f.section === 'albums').length;
+    const countExtras = ownedFigs.filter(f => f.section === 'extras').length;
+    ranking.push({ user, score, countFigurines, countAlbums, countExtras });
   }
 
   ranking.sort((a, b) => b.score - a.score);
@@ -2894,15 +3010,15 @@ async function renderClassifica() {
       : `<div style="width:52px;height:52px;border-radius:50%;background:var(--card2);border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--muted);flex-shrink:0;">${user.username[0].toUpperCase()}</div>`;
 
     return `<div style="background:${isTop3 ? 'rgba(181,255,46,0.05)' : 'var(--card)'};border:1px solid ${isTop3 ? 'rgba(181,255,46,0.2)' : 'var(--border)'};border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:1.25rem;">
-      <div style="font-size:${isTop3 ? '2rem' : '1.3rem'};width:40px;text-align:center;flex-shrink:0;">${medal || '#' + position}</div>
+      <div style="font-size:1.1rem;width:40px;text-align:center;flex-shrink:0;font-family:var(--font-ui);color:${isTop3 ? 'var(--accent)' : 'var(--muted)'};">#${position}</div>
       ${avatarHTML}
       <div style="flex:1;">
-        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);">${user.username}</div>
-        <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">${ownedCount} oggetti in collezione</div>
+        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;">${user.username}${user.nationalityCode ? `<img src="https://flagcdn.com/w40/${user.nationalityCode}.png" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}</div>
+        <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">${countFigurines} figurine · ${countAlbums} album · ${countExtras} altri articoli</div>
       </div>
-      <div style="text-align:right;">
-        <div style="font-family:var(--font-ui);font-size:1.5rem;color:var(--accent);">${score} pt</div>
-        ${isTop3 ? `<div style="font-size:1.2rem;">${trophies[idx]}</div>` : ''}
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div style="font-family:var(--font-ui);font-size:1.1rem;color:var(--accent);">${score} pt</div>
+        ${isTop3 ? trophies[idx] : (medal ? `<span style="font-size:1.5rem;">${medal}</span>` : '')}
       </div>
     </div>`;
   }).join('');
@@ -3011,8 +3127,11 @@ initReveal();
 // Start Firebase — loads all data then renders
 initEmailJS();
 initFirebase().catch(e => {
-  console.error('Firebase init failed', e);
-  toast('Errore connessione database', 'error');
+  console.warn('Firebase non disponibile, uso dati demo:', e.message);
+  loadDemoData();
+  showLoadingOverlay(false);
+  renderAll();
+  updateNavUser();
 });
 
 // keyboard close modals
