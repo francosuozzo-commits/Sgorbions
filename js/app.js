@@ -804,14 +804,16 @@ function openAddItemModal(itemId) {
   if (itemId) {
     const f = getData('figurines', []).find(x => x.id === itemId);
     if (f) {
-      document.getElementById('fig-number-input').value = f.number;
+      document.getElementById('fig-number-input').value = f.number || '';
       document.getElementById('fig-name-input').value = f.name;
       document.getElementById('fig-desc-input').value = f.desc || '';
       document.getElementById('fig-score-input').value = f.score || 0;
+      document.getElementById('fig-subseries-input').value = f.subseries || '';
       if (f.img) { const pr = document.getElementById('fig-img-preview'); pr.src = f.img; pr.style.display = 'block'; editingFigImg = f.img; }
     }
   } else {
-    ['fig-number-input','fig-name-input','fig-desc-input'].forEach(id => document.getElementById(id).value = '');
+    ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fig-score-input').value = 0;
   }
   document.getElementById('add-fig-modal').classList.remove('hidden');
 }
@@ -832,7 +834,7 @@ function toggleOwned(figId) {
 function renderItems() {
   const grid = document.getElementById('items-grid');
   if (!currentSeriesId || !grid || !currentSection) return;
-  const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection).sort((a,b) => a.number - b.number);
+  const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection).sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
   const owned = getOwned();
   const pw = document.getElementById('detail-progress-wrap');
   // Show bulk owned buttons only for figurines section when logged in
@@ -858,12 +860,13 @@ function renderItems() {
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">&#10005;</button></div>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
+    const figLabel = f.subseries ? `[${f.subseries}]` : (f.number ? `#${String(f.number).padStart(2,'0')}` : '');
     return `<div class="fig-card">
       <div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
         ${imgHTML}${ownedBadge}${adminBtns}
       </div>
       <div class="fig-body">
-        <div class="fig-number">#${String(f.number).padStart(2,'0')}</div>
+        <div class="fig-number">${figLabel}</div>
         <div class="fig-name">${f.name}</div>
         ${descHTML}
         ${scoreHTML}
@@ -896,6 +899,7 @@ async function saveFigurine() {
   const name = document.getElementById('fig-name-input').value.trim();
   const desc = document.getElementById('fig-desc-input').value.trim();
   const score = parseInt(document.getElementById('fig-score-input').value) || 0;
+  const subseries = document.getElementById('fig-subseries-input')?.value.trim() || '';
   if (!name || !number) { toast('Numero e nome sono obbligatori', 'error'); return; }
   toast('Salvataggio...', 'success');
   let imgUrl = editingFigImg || null;
@@ -908,12 +912,12 @@ async function saveFigurine() {
   if (editId) {
     const idx = figs.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      figs[idx] = { ...figs[idx], number: +number, name, desc, score, img: imgUrl || figs[idx].img };
+      figs[idx] = { ...figs[idx], number: number ? +number : null, name, desc, score, subseries, img: imgUrl || figs[idx].img };
       await fsSave('figurines', figs[idx]);
       _cache.figurines = figs;
     }
   } else {
-    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: +number, name, desc, score, img: imgUrl || null };
+    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: number ? +number : null, name, desc, score, subseries, img: imgUrl || null };
     const saved = await fsSave('figurines', newF);
     _cache.figurines.push(saved);
   }
@@ -1061,7 +1065,7 @@ function renderBlog() {
         <span class="blog-author">@${p.author}</span>
         <span class="blog-date">${dateStr}</span>
         <span class="blog-type-badge ${badgeClass}">${badgeLabel}</span>
-        ${currentUser?.isAdmin ? `<button class="tbl-btn tbl-btn-del" style="margin-left:auto;" onclick="deletePost('${p.id}')">Delete</button>` : ''}
+        ${currentUser?.isAdmin ? `<button class="tbl-btn tbl-btn-del" style="margin-left:auto;" onclick="deletePost('${p.id}')">Cancella</button>` : ''}
       </div>
       <div class="blog-title">${p.title}</div>
       ${p.body ? `<div class="blog-excerpt">${p.body}</div>` : ''}
@@ -1173,7 +1177,7 @@ function renderAdminSeries() {
   if (!series.length) { el.innerHTML = '<p style="color:var(--muted);">Nessuna serie ancora.</p>'; return; }
   el.innerHTML = `
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Usa le frecce per cambiare l'ordine</p>
-    <table class="data-table"><thead><tr><th>Ordine</th><th>Name</th><th>Year</th><th>Figurines</th><th>Actions</th></tr></thead><tbody>
+    <table class="data-table"><thead><tr><th>Ordine</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"Figurine":"Figurines"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${series.map((s, idx) => {
       const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
       return `<tr>
@@ -1182,8 +1186,8 @@ function renderAdminSeries() {
           <button class="tbl-btn tbl-btn-edit" onclick="moveSeriesDown(${idx})" ${idx===series.length-1?'disabled style="opacity:0.3;"':''}>▼</button>
         </td>
         <td>${s.name}</td><td>${s.year}</td><td>${figs}</td><td>
-        <button class="tbl-btn tbl-btn-edit" onclick="openAddSeriesModal('${s.id}')">Edit</button>
-        <button class="tbl-btn tbl-btn-del" onclick="deleteSeries('${s.id}')">Delete</button>
+        <button class="tbl-btn tbl-btn-edit" onclick="openAddSeriesModal('${s.id}')">Modifica</button>
+        <button class="tbl-btn tbl-btn-del" onclick="deleteSeries('${s.id}')">Cancella</button>
       </td></tr>`;
     }).join('')}</tbody></table>`;
 }
@@ -1270,12 +1274,12 @@ function renderAdminFigs() {
   const figs = getData('figurines', []);
   const series = getData('series', []);
   if (!figs.length) { el.innerHTML = '<p style="color:var(--muted);">Nessuna figurina ancora.</p>'; return; }
-  el.innerHTML = `<table class="data-table"><thead><tr><th>#</th><th>Name</th><th>Series</th><th>Actions</th></tr></thead><tbody>
+  el.innerHTML = `<table class="data-table"><thead><tr><th>#</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Serie":"Series"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${figs.map(f => {
       const s = series.find(x => x.id === f.seriesId);
       return `<tr><td>${f.number}</td><td>${f.name}</td><td>${s?s.name:'-'}</td><td>
-        <button class="tbl-btn tbl-btn-edit" onclick="currentSeriesId='${f.seriesId}';openAddFigModal('${f.id}')">Edit</button>
-        <button class="tbl-btn tbl-btn-del" onclick="deleteFigurine('${f.id}')">Delete</button>
+        <button class="tbl-btn tbl-btn-edit" onclick="currentSeriesId='${f.seriesId}';openAddFigModal('${f.id}')">Modifica</button>
+        <button class="tbl-btn tbl-btn-del" onclick="deleteFigurine('${f.id}')">Cancella</button>
       </td></tr>`;
     }).join('')}</tbody></table>`;
 }
@@ -1288,7 +1292,7 @@ function renderAdminBlog() {
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:0.75rem;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem;">
         <div><strong style="font-family:var(--font-ui);">${p.title}</strong> <span style="font-size:0.78rem;color:var(--muted);">by @${p.author}</span></div>
-        <button class="tbl-btn tbl-btn-del" onclick="deletePost('${p.id}')">Delete</button>
+        <button class="tbl-btn tbl-btn-del" onclick="deletePost('${p.id}')">Cancella</button>
       </div>
       <div style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem;">💬 ${comments.length} ${comments.length===1?'reply':'replies'}</div>
     </div>`;
@@ -1310,7 +1314,7 @@ function renderAdminContacts() {
 function renderAdminUsers() {
   const el = document.getElementById('admin-users-table');
   const users = getData('users', []);
-  el.innerHTML = `<table class="data-table"><thead><tr><th>Username</th><th>Email</th><th>Role</th><th>Iscritto</th><th>Azioni</th></tr></thead><tbody>
+  el.innerHTML = `<table class="data-table"><thead><tr><th>Username</th><th>Email</th><th>${currentLang==="it"?"Ruolo":"Role"}</th><th>${currentLang==="it"?"Iscritto":"Joined"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${users.map(u => `<tr>
       <td style="display:flex;align-items:center;gap:0.6rem;">
         <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : u.username[0].toUpperCase()}</div>
