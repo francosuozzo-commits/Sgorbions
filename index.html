@@ -698,7 +698,7 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.48</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.50</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -1016,9 +1016,31 @@ footer {
           </div>
           <div class="form-group">
             <label class="form-label">Messaggio</label>
-            <textarea class="form-textarea" id="newsletter-body" rows="6" placeholder="Scrivi il messaggio per tutti gli utenti..."></textarea>
+            <textarea class="form-textarea" id="newsletter-body" rows="5" placeholder="Scrivi il messaggio per gli utenti selezionati..."></textarea>
           </div>
-          <button class="btn-primary" onclick="sendNewsletterFromAdmin()">📧 Invia a tutti gli utenti</button>
+          <div class="form-group">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+              <label class="form-label" style="margin:0;">Destinatari</label>
+              <div style="display:flex;gap:0.5rem;">
+                <button class="tbl-btn tbl-btn-edit" onclick="selectAllNewsletterUsers(true)">Seleziona tutti</button>
+                <button class="tbl-btn tbl-btn-edit" onclick="selectAllNewsletterUsers(false)">Deseleziona tutti</button>
+              </div>
+            </div>
+            <div id="newsletter-users-list" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem;"></div>
+          </div>
+          <button class="btn-primary" onclick="sendNewsletterFromAdmin()">📧 Invia agli utenti selezionati</button>
+          <hr class="divider">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem;">
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;">
+              <div style="font-size:1.8rem;font-weight:700;color:var(--accent);" id="email-count-month">-</div>
+              <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">Email inviate questo mese</div>
+            </div>
+            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;">
+              <div style="font-size:1.8rem;font-weight:700;color:var(--accent3);" id="email-count-total">-</div>
+              <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">Email inviate in totale</div>
+            </div>
+          </div>
+          <div style="font-size:0.78rem;color:var(--muted);margin-top:0.5rem;text-align:center;">Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese)</div>
         </div>
         <div id="admin-users" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.users.title">Registered Users</h3>
@@ -1074,7 +1096,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.48</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.50</span>
     </div>
   </div>
 </footer>
@@ -1102,7 +1124,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.48</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.50</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1303,6 +1325,7 @@ async function sendWelcomeEmail(user) {
     'Benvenuto su Sgorbions Collector! 👾',
     'Il tuo account è stato creato con successo!\n\nInizia subito a sfogliare il catalogo e a costruire la tua collezione di Sgorbions.'
   );
+  incrementEmailCounter(1);
 }
 
 async function sendReplyNotificationEmail(postAuthorId, postTitle, replyAuthor, replyText) {
@@ -1317,14 +1340,39 @@ async function sendReplyNotificationEmail(postAuthorId, postTitle, replyAuthor, 
     'Qualcuno ha risposto al tuo post! 💬',
     replyAuthor + ' ha risposto al tuo post "' + postTitle + '":\n\n"' + replyText + '"\n\nVai a vedere la risposta su figurinesgorbions.it'
   );
+  incrementEmailCounter(1);
+}
+
+function renderNewsletterUsers() {
+  const el = document.getElementById('newsletter-users-list');
+  if (!el) return;
+  const users = getData('users', []).filter(u => !u.isAdmin && u.email);
+  if (!users.length) { el.innerHTML = '<p style="color:var(--muted);font-size:0.88rem;">Nessun utente registrato.</p>'; return; }
+  el.innerHTML = users.map(u => `
+    <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-size:0.9rem;">
+      <input type="checkbox" class="newsletter-user-cb" data-id="${u.id}" data-email="${u.email}" data-username="${u.username}" checked
+        style="width:16px;height:16px;cursor:pointer;">
+      <span>${u.username}</span>
+      <span style="color:var(--muted);font-size:0.8rem;">&lt;${u.email}&gt;</span>
+    </label>`).join('');
+}
+
+function selectAllNewsletterUsers(select) {
+  document.querySelectorAll('.newsletter-user-cb').forEach(cb => cb.checked = select);
 }
 
 async function sendNewsletterFromAdmin() {
   const subject = document.getElementById('newsletter-subject').value.trim();
   const body = document.getElementById('newsletter-body').value.trim();
   if (!subject || !body) { toast('Compila oggetto e messaggio', 'error'); return; }
-  if (!confirm('Inviare la newsletter a tutti gli utenti registrati?')) return;
-  await sendNewsletterEmail(subject, body);
+  const selected = [...document.querySelectorAll('.newsletter-user-cb:checked')];
+  if (!selected.length) { toast('Seleziona almeno un utente', 'error'); return; }
+  if (!confirm('Inviare la newsletter a ' + selected.length + ' utenti?')) return;
+  for (const cb of selected) {
+    await sendEmail(cb.dataset.email, cb.dataset.username, subject, body);
+  }
+  await incrementEmailCounter(selected.length);
+  toast('Newsletter inviata a ' + selected.length + ' utenti! 📧', 'success');
   document.getElementById('newsletter-subject').value = '';
   document.getElementById('newsletter-body').value = '';
 }
@@ -2262,7 +2310,7 @@ function adminTab(tab) {
   if (tab === 'blog') renderAdminBlog();
   if (tab === 'contacts') renderAdminContacts();
   if (tab === 'users') renderAdminUsers();
-  if (tab === 'newsletter') {} // no render needed
+  if (tab === 'newsletter') { renderNewsletterUsers(); loadEmailCounter(); }
 }
 function renderAdminSeries() {
   const el = document.getElementById('admin-series-table');
@@ -2567,6 +2615,51 @@ function renderAll() {
   if (document.getElementById('page-catalog').classList.contains('active')) renderCatalog();
   if (document.getElementById('page-blog').classList.contains('active')) renderBlog();
   if (document.getElementById('page-profile').classList.contains('active')) renderProfile();
+}
+
+// ============================================================
+//  EMAIL COUNTER
+// ============================================================
+async function incrementEmailCounter(count) {
+  try {
+    const now = new Date();
+    const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    // Get current stats from Firebase
+    const { doc, getDoc, setDoc } = window._fb;
+    const ref = doc(db, 'email_stats', 'counter');
+    let data = { total: 0, months: {} };
+    try {
+      const snap = await getDoc(ref);
+      if (snap.exists()) data = snap.data();
+    } catch(e) {}
+    data.total = (data.total || 0) + count;
+    if (!data.months) data.months = {};
+    data.months[monthKey] = (data.months[monthKey] || 0) + count;
+    await setDoc(ref, data);
+    renderEmailCounter(data, monthKey);
+  } catch(e) { console.error('Email counter error', e); }
+}
+
+async function loadEmailCounter() {
+  try {
+    const { doc, getDoc } = window._fb;
+    const ref = doc(db, 'email_stats', 'counter');
+    const snap = await getDoc(ref);
+    if (snap.exists()) {
+      const now = new Date();
+      const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+      renderEmailCounter(snap.data(), monthKey);
+    } else {
+      renderEmailCounter({ total: 0, months: {} }, '');
+    }
+  } catch(e) { console.error('Load counter error', e); }
+}
+
+function renderEmailCounter(data, monthKey) {
+  const monthEl = document.getElementById('email-count-month');
+  const totalEl = document.getElementById('email-count-total');
+  if (monthEl) monthEl.textContent = (data.months?.[monthKey] || 0) + ' / 200';
+  if (totalEl) totalEl.textContent = data.total || 0;
 }
 
 // ============================================================
