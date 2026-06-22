@@ -698,7 +698,7 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.62</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.68</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -879,12 +879,12 @@ footer {
       <div id="admin-add-item-btn" style="display:none;">
         <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
           <button class="btn-primary" onclick="openAddItemModal()">+ Aggiungi</button>
-          <button class="btn-secondary" onclick="openBulkScoreModal()">⭐ Punteggio sezione</button>
+          <button class="btn-secondary" onclick="openBulkScoreModal()">⭐ Punteggio serie</button>
         </div>
       </div>
     </div>
     <div id="bulk-owned-btns" style="display:none;margin-bottom:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
-      <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;">✅ Ho tutto</button>
+      <button onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;background:#0e0a1a;border:1.5px solid var(--accent);color:var(--accent);border-radius:12px;cursor:pointer;font-family:var(--font-body);transition:all 0.2s;">✅ Ho tutto</button>
       <button class="btn-secondary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;">❌ Non ho niente</button>
     </div>
     <div class="progress-bar-wrap" id="detail-progress-wrap" style="display:none;margin-bottom:1.5rem;">
@@ -1124,7 +1124,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.62</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.68</span>
     </div>
   </div>
 </footer>
@@ -1153,7 +1153,7 @@ footer {
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.62</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.68</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1605,7 +1605,7 @@ const i18n = {
     'admin.series.title':'Manage Series','admin.figurines.title':'Manage Figurines','admin.blog.title':'Manage Q&A / Blog','admin.contacts.title':'Contact Messages','admin.users.title':'Registered Users',
     'footer.desc':'The unofficial fan database dedicated to the legendary Italian figurine collection from the early 1990s. Made with 💚 by collectors, for collectors.',
     'footer.nav':'Navigation','footer.account':'Account','footer.copy':'© 2026 Sgorbions Collector. Unofficial fan site.',
-    'owned.toggle':'I own this','owned.yes':'✓ Owned'
+    'owned.toggle':'I own this','owned.yes':'✓ Ce l\'ho'
   },
   it: {
     'nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'D&R / Blog','nav.contact':'Contatti',
@@ -1642,7 +1642,7 @@ const i18n = {
     'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.blog.title':'Gestisci D&R / Blog','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati',
     'footer.desc':'Il database fan non ufficiale dedicato alla leggendaria collezione di figurine italiana degli anni \'90. Fatto con 💚 da collezionisti, per collezionisti.',
     'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2026 Sgorbions Collector. Sito fan non ufficiale.',
-    'owned.toggle':'Ce l\'ho','owned.yes':'✓ Posseduta'
+    'owned.toggle':'Ce l\'ho','owned.yes':'✓ Ce l\'ho'
   }
 };
 
@@ -1990,6 +1990,10 @@ function openSeriesSection(section) {
   // Show bulk score button only for figurines section
   const bulkScoreBtn = document.querySelector('#admin-add-item-btn .btn-secondary');
   if (bulkScoreBtn) bulkScoreBtn.style.display = section === 'figurines' ? '' : 'none';
+  // Rename add button based on section
+  const addBtn = document.querySelector('#admin-add-item-btn .btn-primary');
+  const addLabels = { figurines: '+ Aggiungi figurina', albums: '+ Aggiungi album', extras: '+ Aggiungi' };
+  if (addBtn) addBtn.textContent = addLabels[section] || '+ Aggiungi';
   renderItems();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -2075,6 +2079,7 @@ function renderItems() {
     const ownedBadge = isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : '';
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">&#10005;</button></div>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
+    const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
     return `<div class="fig-card">
       <div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
         ${imgHTML}${ownedBadge}${adminBtns}
@@ -2083,6 +2088,7 @@ function renderItems() {
         <div class="fig-number">#${String(f.number).padStart(2,'0')}</div>
         <div class="fig-name">${f.name}</div>
         ${descHTML}
+        ${scoreHTML}
         <div class="fig-toggle">
           <span class="toggle-label">${t('owned.toggle')}</span>
           <button class="toggle-btn ${isOwned?'on':''}" onclick="toggleOwned('${f.id}')"></button>
@@ -2872,7 +2878,11 @@ async function renderClassifica() {
   }
 
   const medals = ['🥇', '🥈', '🥉', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅', '🏅'];
-  const trophies = ['🏆', '🥈', '🥉'];
+  const trophies = [
+    '<span style="font-size:2rem;">🏆</span>',
+    '<span style="font-size:2rem;filter:grayscale(1) brightness(1.8);">🏆</span>',
+    '<span style="font-size:2rem;filter:sepia(1) saturate(0.5) brightness(0.8);">🏆</span>'
+  ];
 
   el.innerHTML = ranking.map((entry, idx) => {
     const { user, score, ownedCount } = entry;
