@@ -28,8 +28,8 @@
   --glow2: 0 0 20px rgba(200,75,255,0.15);
   --radius: 12px;
   --radius-lg: 20px;
-  --font-display: 'Permanent Marker', cursive;
-  --font-ui: 'Boogaloo', cursive;
+  --font-display: 'Nunito', sans-serif;
+  --font-ui: 'Nunito', sans-serif;
   --font-body: 'Nunito', sans-serif;
 }
 
@@ -448,16 +448,16 @@ body {
 }
 .blog-card:hover { border-color: var(--accent3); }
 .blog-meta { display: flex; align-items: center; gap: 1rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
-.blog-author { font-size: 0.82rem; color: var(--accent3); font-family: var(--font-ui); }
-.blog-date { font-size: 0.78rem; color: var(--muted); }
+.blog-author { font-size: 0.95rem; color: var(--accent3); font-family: var(--font-ui); }
+.blog-date { font-size: 0.9rem; color: var(--muted); }
 .blog-type-badge {
   font-size: 0.7rem; font-family: var(--font-ui); letter-spacing: 1px; text-transform: uppercase;
   padding: 2px 8px; border-radius: 20px;
 }
 .badge-question { background: rgba(255,107,26,0.15); color: var(--accent2); border: 1px solid rgba(255,107,26,0.25); }
 .badge-news { background: rgba(181,255,46,0.1); color: var(--accent); border: 1px solid rgba(181,255,46,0.2); }
-.blog-title { font-family: var(--font-ui); font-size: 1.2rem; color: var(--text); margin-bottom: 0.5rem; }
-.blog-excerpt { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+.blog-title { font-family: var(--font-ui); font-size: 1.4rem; color: var(--text); margin-bottom: 0.5rem; }
+.blog-excerpt { font-size: 1rem; color: var(--muted); line-height: 1.6; }
 
 /* Thread / Comments */
 .comments-section {
@@ -488,14 +488,14 @@ body {
 .comment-header {
   display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem; flex-wrap: wrap;
 }
-.comment-author { font-family: var(--font-ui); font-size: 0.85rem; color: var(--text); }
+.comment-author { font-family: var(--font-ui); font-size: 1rem; color: var(--text); }
 .comment-admin-badge {
   font-size: 0.65rem; background: rgba(181,255,46,0.15); color: var(--accent);
   border: 1px solid rgba(181,255,46,0.25); padding: 1px 6px; border-radius: 10px;
   font-family: var(--font-ui); letter-spacing: 0.5px;
 }
 .comment-date { font-size: 0.72rem; color: var(--muted); margin-left: auto; }
-.comment-text { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+.comment-text { font-size: 1rem; color: var(--muted); line-height: 1.6; }
 .comment-del-btn {
   background: transparent; border: none; color: rgba(255,100,100,0.4);
   cursor: pointer; font-size: 0.75rem; padding: 0 4px; margin-left: 6px;
@@ -516,7 +516,7 @@ body {
 }
 .reply-textarea {
   flex: 1; background: var(--bg3); border: 1px solid var(--border);
-  color: var(--text); font-family: var(--font-body); font-size: 0.88rem;
+  color: var(--text); font-family: var(--font-body); font-size: 1rem;
   padding: 0.55rem 0.85rem; border-radius: 20px; outline: none;
   resize: none; transition: border-color 0.2s; height: 38px; line-height: 1.5;
   overflow: hidden;
@@ -697,7 +697,7 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.31</span>
+    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.34</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -1056,7 +1056,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.31</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.34</span>
     </div>
   </div>
 </footer>
@@ -1084,7 +1084,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.31</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.34</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1506,7 +1506,7 @@ function switchAuthTab(tab) {
   document.getElementById('tab-login').classList.toggle('active', tab === 'login');
   document.getElementById('tab-register').classList.toggle('active', tab === 'register');
   const title = document.querySelector('#auth-modal .modal-title');
-  if (title) title.textContent = tab === 'login' ? 'Bentornato' : 'Benvenuto!';
+  if (title) title.textContent = tab === 'login' ? 'Bentornato!' : 'Benvenuto!';
 }
 async function doLogin() {
   const u = document.getElementById('login-username').value.trim();
