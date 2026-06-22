@@ -697,7 +697,7 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.34</span>
+    <span style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">v1.36</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -718,7 +718,7 @@ footer {
     <div id="user-nav" style="display:none;">
       <span id="nav-username" style="font-family:var(--font-ui);color:var(--muted);font-size:1.05rem;"></span>
       <span id="nav-owned-counter" style="font-family:var(--font-ui);font-size:0.85rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:2px 10px;border-radius:20px;display:none;"></span>
-      <div class="avatar-btn" id="nav-avatar" onclick="showPage('profile')">U</div>
+      <div class="avatar-btn" id="nav-avatar" onclick="showPage('profile')" style="overflow:hidden;padding:0;"></div>
       <button class="btn-logout" onclick="logout()" data-i18n="nav.logout">Logout</button>
     </div>
   </div>
@@ -964,7 +964,11 @@ footer {
   <section class="section">
     <div class="section-inner">
       <div class="profile-header">
-        <div class="profile-avatar" id="profile-avatar">U</div>
+        <div class="profile-avatar" id="profile-avatar" onclick="document.getElementById('avatar-upload').click()" style="cursor:pointer;position:relative;" title="Clicca per cambiare foto">
+        <input type="file" id="avatar-upload" accept="image/*" style="display:none;" onchange="uploadAvatar(event)">
+        <span id="profile-avatar-text">U</span>
+        <div style="position:absolute;bottom:0;right:0;width:22px;height:22px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;">✏️</div>
+      </div>
         <div class="profile-info">
           <h2 id="profile-username">Username</h2>
           <p id="profile-email" style="color:var(--muted)"></p>
@@ -1056,7 +1060,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.34</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.36</span>
     </div>
   </div>
 </footer>
@@ -1084,7 +1088,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.34</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.36</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1564,7 +1568,16 @@ function updateNavUser() {
     if (btnCollect) btnCollect.style.display = 'none';
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = '';
     document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
-    document.getElementById('nav-avatar').textContent = currentUser.username[0].toUpperCase();
+    const navAvatar = document.getElementById('nav-avatar');
+    if (currentUser.avatar) {
+      navAvatar.style.backgroundImage = 'url(' + currentUser.avatar + ')';
+      navAvatar.style.backgroundSize = 'cover';
+      navAvatar.style.backgroundPosition = 'center';
+      navAvatar.textContent = '';
+    } else {
+      navAvatar.style.backgroundImage = '';
+      navAvatar.textContent = currentUser.username[0].toUpperCase();
+    }
     if (addSeriesBtn) addSeriesBtn.style.display = currentUser.isAdmin ? '' : 'none';
   } else {
     guestNav.style.display = 'flex';
@@ -2023,9 +2036,9 @@ function renderBlog() {
     const replyBoxHTML = currentUser
       ? `<div class="reply-box">
           <div class="reply-box-avatar ${currentUser.isAdmin?'is-admin':''}">${currentUser.username[0].toUpperCase()}</div>
-          <textarea class="reply-textarea" id="reply-input-${p.id}" placeholder="${t('form.reply.placeholder')}"
-            onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){submitComment('${p.id}');event.preventDefault();}"></textarea>
-          <button class="reply-send-btn" onclick="submitComment('${p.id}')" title="Send">↑</button>
+          <textarea class="reply-textarea" id="reply-input-${p.id}" placeholder="Scrivi una risposta..."
+            onkeydown="if(event.key==='Enter'&&(event.ctrlKey||event.metaKey)){submitComment('${p.id}');event.preventDefault();}" rows="1"></textarea>
+          <button class="reply-send-btn" type="button" onclick="event.preventDefault();submitComment('${p.id}')" title="Invia">↑</button>
         </div>`
       : `<div style="margin-top:0.75rem;font-size:0.82rem;color:var(--muted);">
           <a style="color:var(--accent3);cursor:pointer;text-decoration:none;" onclick="openAuth('login')">${t('comment.login')}</a>
@@ -2072,7 +2085,16 @@ function renderProfile() {
   if (!currentUser) { showPage('home'); return; }
   document.getElementById('profile-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
   document.getElementById('profile-email').textContent = currentUser.email;
-  document.getElementById('profile-avatar').textContent = currentUser.username[0].toUpperCase();
+  const avatarText = document.getElementById('profile-avatar-text');
+  const profileAvatar = document.getElementById('profile-avatar');
+  if (currentUser.avatar) {
+    if (avatarText) avatarText.style.display = 'none';
+    profileAvatar.style.backgroundImage = 'url(' + currentUser.avatar + ')';
+    profileAvatar.style.backgroundSize = 'cover';
+    profileAvatar.style.backgroundPosition = 'center';
+  } else {
+    if (avatarText) { avatarText.style.display = ''; avatarText.textContent = currentUser.username[0].toUpperCase(); }
+  }
   const allFigs = getData('figurines', []);
   const owned = getOwned();
   const ownedFigs = allFigs.filter(f => owned.includes(f.id));
@@ -2392,6 +2414,34 @@ function renderAll() {
   if (document.getElementById('page-catalog').classList.contains('active')) renderCatalog();
   if (document.getElementById('page-blog').classList.contains('active')) renderBlog();
   if (document.getElementById('page-profile').classList.contains('active')) renderProfile();
+}
+
+// ============================================================
+//  AVATAR UPLOAD
+// ============================================================
+async function uploadAvatar(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  toast('Caricamento avatar...', 'success');
+  try {
+    const url = await uploadToCloudinary(file);
+    // Update user in cache and localStorage
+    currentUser.avatar = url;
+    LOCAL.set('currentUser', currentUser);
+    // Update in Firebase
+    let users = getData('users', []);
+    const idx = users.findIndex(u => u.id === currentUser.id);
+    if (idx >= 0) {
+      users[idx].avatar = url;
+      _cache.users = users;
+      await fsSave('users', users[idx]);
+    }
+    updateNavUser();
+    renderProfile();
+    toast('Avatar aggiornato! 🎉', 'success');
+  } catch(e) {
+    toast('Errore nel caricamento', 'error');
+  }
 }
 
 // ============================================================
