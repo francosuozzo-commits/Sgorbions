@@ -554,10 +554,10 @@ body {
 }
 .profile-avatar {
   width: 80px; height: 80px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--accent3), var(--accent2));
+  background: var(--card2);
   display: flex; align-items: center; justify-content: center;
-  font-family: var(--font-display); font-size: 2rem; color: white;
-  border: 3px solid var(--accent); flex-shrink: 0;
+  font-family: var(--font-display); font-size: 2rem; color: var(--muted);
+  border: 3px solid var(--border); flex-shrink: 0;
 }
 .profile-info h2 { font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 0.25rem; }
 .profile-info p { color: var(--muted); font-size: 0.9rem; }
@@ -698,7 +698,7 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.46</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.48</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -1074,7 +1074,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.46</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.48</span>
     </div>
   </div>
 </footer>
@@ -1102,7 +1102,7 @@ footer {
         <input class="form-input" type="password" id="login-password" placeholder="••••••••">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.46</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.48</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1674,13 +1674,16 @@ function updateNavUser() {
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = '';
     document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
     const navAvatar = document.getElementById('nav-avatar');
+    // Always reset first
+    navAvatar.style.backgroundImage = '';
+    navAvatar.style.backgroundSize = '';
+    navAvatar.style.backgroundPosition = '';
+    navAvatar.textContent = '';
     if (currentUser.avatar) {
       navAvatar.style.backgroundImage = 'url(' + currentUser.avatar + ')';
       navAvatar.style.backgroundSize = 'cover';
       navAvatar.style.backgroundPosition = 'center';
-      navAvatar.textContent = '';
     } else {
-      navAvatar.style.backgroundImage = '';
       navAvatar.textContent = currentUser.username[0].toUpperCase();
     }
     if (addSeriesBtn) addSeriesBtn.style.display = currentUser.isAdmin ? '' : 'none';
@@ -2193,6 +2196,10 @@ function renderProfile() {
   document.getElementById('profile-email').textContent = currentUser.email;
   const avatarText = document.getElementById('profile-avatar-text');
   const profileAvatar = document.getElementById('profile-avatar');
+  // Always reset first
+  profileAvatar.style.backgroundImage = '';
+  profileAvatar.style.backgroundSize = '';
+  profileAvatar.style.backgroundPosition = '';
   if (currentUser.avatar) {
     if (avatarText) avatarText.style.display = 'none';
     profileAvatar.style.backgroundImage = 'url(' + currentUser.avatar + ')';
