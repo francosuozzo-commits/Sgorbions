@@ -698,16 +698,16 @@ footer {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.59</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.62</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
-    <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog">Catalog</a>
-    <a onclick="showPage('blog')" data-page="blog" data-i18n="nav.blog">Q&A / Blog</a>
-    <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contact</a>
-    <a onclick="showPage('classifica')" data-page="classifica">🏆 Classifica</a>
+    <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog">Catalogo</a>
+    <a onclick="showPage('blog')" data-page="blog">Domande &amp; Risposte / Blog</a>
     <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;">Le mie mancoliste</a>
+    <a onclick="showPage('classifica')" data-page="classifica">🏆 Classifica</a>
     <a onclick="showPage('profile');setTimeout(()=>adminTab('newsletter'),300)" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
+    <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contatti</a>
   </div>
   <div class="nav-right">
     <div class="lang-toggle">
@@ -876,9 +876,11 @@ footer {
         <button class="back-btn" onclick="closeItemsSection()">&#8592; Sezioni</button>
         <h2 id="items-section-title" style="font-family:var(--font-display);font-size:1.5rem;"></h2>
       </div>
-      <div id="admin-add-item-btn" style="display:none;display:flex;gap:0.75rem;flex-wrap:wrap;">
-        <button class="btn-primary" onclick="openAddItemModal()">+ Aggiungi</button>
-        <button class="btn-secondary" onclick="openBulkScoreModal()">⭐ Punteggio serie</button>
+      <div id="admin-add-item-btn" style="display:none;">
+        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+          <button class="btn-primary" onclick="openAddItemModal()">+ Aggiungi</button>
+          <button class="btn-secondary" onclick="openBulkScoreModal()">⭐ Punteggio sezione</button>
+        </div>
       </div>
     </div>
     <div id="bulk-owned-btns" style="display:none;margin-bottom:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
@@ -1122,7 +1124,7 @@ footer {
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.59</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.62</span>
     </div>
   </div>
 </footer>
@@ -1151,7 +1153,7 @@ footer {
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.59</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.62</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1985,6 +1987,9 @@ function openSeriesSection(section) {
   document.getElementById('items-section').style.display = '';
   document.getElementById('items-section-title').textContent = SECTION_LABELS[section];
   document.getElementById('admin-add-item-btn').style.display = currentUser?.isAdmin ? '' : 'none';
+  // Show bulk score button only for figurines section
+  const bulkScoreBtn = document.querySelector('#admin-add-item-btn .btn-secondary');
+  if (bulkScoreBtn) bulkScoreBtn.style.display = section === 'figurines' ? '' : 'none';
   renderItems();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
