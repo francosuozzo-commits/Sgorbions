@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.93</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v1.98</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -131,7 +131,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
         <div>
           <h1 style="font-family:var(--font-display);font-size:2.2rem;" data-i18n="catalog.title">The Catalog</h1>
-          <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n="catalog.sub">All Sgorbions series ever released</p>
+          <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n="catalog.sub">All Sgorbions series published</p>
         </div>
         <div id="admin-add-series-btn" style="display:none;">
           <button class="btn-primary" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
@@ -447,7 +447,7 @@
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.93</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.98</span>
     </div>
   </div>
 </footer>
@@ -476,7 +476,7 @@
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.93</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v1.98</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -529,7 +529,7 @@
     </div>
     <div class="form-group">
       <label class="form-label" data-i18n="form.series.desc">Description</label>
-      <textarea class="form-textarea" id="series-desc-input" placeholder="Describe this series..."></textarea>
+      <textarea class="form-textarea" id="series-desc-input" placeholder="Descrivi questa serie..."></textarea>
     </div>
 
     <div class="form-group">
@@ -570,8 +570,12 @@
       </div>
     </div>
     <div class="form-group">
-      <label class="form-label" data-i18n="form.fig.desc">Description</label>
-      <textarea class="form-textarea" id="fig-desc-input" rows="3" placeholder="Describe this figurine..."></textarea>
+      <label class="form-label">Taglia / Size</label>
+      <input class="form-input" type="text" id="fig-size-input" placeholder="es. S, M, L, XL">
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.fig.desc">Descrizione</label>
+      <textarea class="form-textarea" id="fig-desc-input" rows="3" placeholder="Descrivi questa figurina..."></textarea>
     </div>
     <div class="form-group">
       <label class="form-label">Punteggio</label>
@@ -632,6 +636,7 @@
       <input class="form-input" type="number" id="bulk-score-input" placeholder="es. 10" min="0">
     </div>
     <button class="btn-primary" style="width:100%;" onclick="saveBulkScore()">Applica a tutti</button>
+    <div id="bulk-score-feedback" style="display:none;margin-top:0.75rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
   </div>
 </div>
 
