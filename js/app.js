@@ -809,10 +809,11 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-desc-input').value = f.desc || '';
       document.getElementById('fig-score-input').value = f.score || 0;
       document.getElementById('fig-subseries-input').value = f.subseries || '';
+      document.getElementById('fig-size-input').value = f.size || '';
       if (f.img) { const pr = document.getElementById('fig-img-preview'); pr.src = f.img; pr.style.display = 'block'; editingFigImg = f.img; }
     }
   } else {
-    ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input'].forEach(id => document.getElementById(id).value = '');
+    ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('fig-score-input').value = 0;
   }
   document.getElementById('add-fig-modal').classList.remove('hidden');
@@ -860,6 +861,7 @@ function renderItems() {
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">&#10005;</button></div>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
+    const sizeHTML = f.size ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
     const figLabel = f.subseries ? `[${f.subseries}]` : (f.number ? `#${String(f.number).padStart(2,'0')}` : '');
     return `<div class="fig-card">
       <div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
@@ -869,6 +871,7 @@ function renderItems() {
         <div class="fig-number">${figLabel}</div>
         <div class="fig-name">${f.name}</div>
         ${descHTML}
+        ${sizeHTML}
         ${scoreHTML}
         <div class="fig-toggle">
           <span class="toggle-label">${t('owned.toggle')}</span>
@@ -900,6 +903,7 @@ async function saveFigurine() {
   const desc = document.getElementById('fig-desc-input').value.trim();
   const score = parseInt(document.getElementById('fig-score-input').value) || 0;
   const subseries = document.getElementById('fig-subseries-input')?.value.trim() || '';
+  const size = document.getElementById('fig-size-input')?.value.trim() || '';
   if (!name || !number) { toast('Numero e nome sono obbligatori', 'error'); return; }
   toast('Salvataggio...', 'success');
   let imgUrl = editingFigImg || null;
@@ -912,12 +916,12 @@ async function saveFigurine() {
   if (editId) {
     const idx = figs.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      figs[idx] = { ...figs[idx], number: number ? +number : null, name, desc, score, subseries, img: imgUrl || figs[idx].img };
+      figs[idx] = { ...figs[idx], number: number ? +number : null, name, desc, score, subseries, size, img: imgUrl || figs[idx].img };
       await fsSave('figurines', figs[idx]);
       _cache.figurines = figs;
     }
   } else {
-    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: number ? +number : null, name, desc, score, subseries, img: imgUrl || null };
+    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: number ? +number : null, name, desc, score, subseries, size, img: imgUrl || null };
     const saved = await fsSave('figurines', newF);
     _cache.figurines.push(saved);
   }
@@ -1618,18 +1622,28 @@ async function saveBulkScore() {
   const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
   if (!items.length) { toast('Nessun oggetto in questa sezione', 'error'); return; }
   if (!confirm('Assegnare ' + score + ' punti a tutti i ' + items.length + ' oggetti di questa sezione?')) return;
-  toast('Salvataggio in corso...', 'success');
+  const fb = document.getElementById('bulk-score-feedback');
+  const btn = document.querySelector('#bulk-score-modal .btn-primary');
+  if (btn) btn.disabled = true;
+  if (fb) { fb.style.display = ''; fb.textContent = '⏳ Salvataggio in corso... 0 / ' + items.length; }
+  let saved = 0;
   for (const item of items) {
     item.score = score;
     await fsSave('figurines', item);
+    saved++;
+    if (fb) fb.textContent = '⏳ Salvataggio in corso... ' + saved + ' / ' + items.length;
   }
   _cache.figurines = getData('figurines', []).map(f => {
     if (f.seriesId === currentSeriesId && f.section === currentSection) f.score = score;
     return f;
   });
-  closeModal('bulk-score-modal');
+  if (fb) fb.textContent = '✅ Punteggio assegnato a ' + items.length + ' oggetti!';
+  if (btn) btn.disabled = false;
   renderItems();
-  toast('Punteggio assegnato a ' + items.length + ' oggetti! ⭐', 'success');
+  setTimeout(() => {
+    closeModal('bulk-score-modal');
+    if (fb) { fb.style.display = 'none'; fb.textContent = ''; }
+  }, 1000);
 }
 
 // ============================================================
