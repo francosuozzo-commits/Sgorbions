@@ -628,7 +628,10 @@ async function saveSeries() {
   const desc = document.getElementById('series-desc-input').value.trim();
   const descIt = desc; // same description for both languages
   if (!name || !year) { toast('Nome e anno sono obbligatori', 'error'); return; }
-  toast('Salvataggio in corso...', 'success');
+  const fb = document.getElementById('series-save-feedback');
+  const btn = document.querySelector('#add-series-modal .btn-primary');
+  if (fb) { fb.style.display = ''; fb.textContent = '⏳ Salvataggio in corso...'; }
+  if (btn) btn.disabled = true;
   let imgUrl = editingSeriesImg || null;
   if (editingSeriesImgFile) {
     try { imgUrl = await uploadToCloudinary(editingSeriesImgFile); }
@@ -649,9 +652,13 @@ async function saveSeries() {
     _cache.series.push(saved);
   }
   editingSeriesImgFile = null;
-  closeModal('add-series-modal');
+  if (fb) { fb.textContent = '✅ Serie salvata!'; }
+  if (btn) btn.disabled = false;
+  setTimeout(() => {
+    closeModal('add-series-modal');
+    if (fb) { fb.style.display = 'none'; fb.textContent = ''; }
+  }, 1000);
   renderCatalog(); renderHomeSeries(); renderHomeStats();
-  toast('Serie salvata! 🎴', 'success');
 }
 async function deleteSeries(id) {
   if (!confirm('Delete this series and all its figurines?')) return;
@@ -680,6 +687,15 @@ function renderCatalog() {
 function seriesCardHTML(s) {
   const figs = getData('figurines', []).filter(f => f.seriesId === s.id);
   const desc = currentLang === 'it' && s.descIt ? s.descIt : s.desc;
+  // Calculate mode score (most common score > 0)
+  let modeScoreHTML = '';
+  const scoredFigs = figs.filter(f => f.score && f.score > 0);
+  if (scoredFigs.length) {
+    const freq = {};
+    scoredFigs.forEach(f => { freq[f.score] = (freq[f.score] || 0) + 1; });
+    const modeScore = Object.entries(freq).sort((a,b) => b[1]-a[1])[0][0];
+    modeScoreHTML = `<span style="font-size:0.78rem;color:var(--accent);font-family:var(--font-ui);">⭐ ${modeScore} pt</span>`;
+  }
   return `<div class="card" onclick="openSeriesDetail('${s.id}')">
     <div class="card-img-placeholder">
       ${s.img ? `<img src="${s.img}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;padding:8px;">` : '🎴'}
@@ -690,7 +706,7 @@ function seriesCardHTML(s) {
       <div class="card-desc">${(desc||'').substring(0,90)}${(desc||'').length>90?'…':''}</div>
       <div class="card-meta">
         <span class="card-badge">${figs.length} ${currentLang === 'it' ? 'figurine' : 'figurines'}</span>
-
+        ${modeScoreHTML}
       </div>
     </div>
   </div>`;
