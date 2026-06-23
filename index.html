@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.25</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.27</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -57,12 +57,13 @@
 <div id="construction-banner" style="background:linear-gradient(90deg,#ff6b1a,#c84bff);color:#fff;text-align:center;padding:0.75rem 1rem;font-family:var(--font-ui);font-size:1.1rem;font-weight:700;letter-spacing:0.5px;position:sticky;top:64px;z-index:99;">
   🚧 &nbsp; SITO WEB IN COSTRUZIONE &nbsp; 🚧
 </div>
+<div style="font-family:var(--font-ui);font-size:0.9rem;color:rgba(255,255,255,0.7);background:rgba(0,0,0,0.3);padding:4px 16px;text-align:left;">Sito online dal 1 luglio 2026</div>
 
 <div id="page-home" class="page active">
   <!-- HERO -->
   <section id="hero">
     <div class="hero-eyebrow" data-i18n="hero.eyebrow">🇮🇹 Italy's Wildest 90s Collectibles</div>
-    <div style="font-family:var(--font-ui);font-size:1rem;color:var(--muted);margin-bottom:0.75rem;text-align:left;">Sito online dal 1 luglio 2026</div>
+
     <h1 class="hero-title">
       <span class="s">SGOR</span><span class="g">BIONS</span>
       <span class="hero-slime" data-i18n="hero.sub">Collector's Universe</span>
@@ -71,9 +72,9 @@
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
     <div class="hero-cta">
       <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog">Esplora il catalogo Sgorbions</button>
-<button class="btn-secondary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting">Start Collecting</button>
+<button class="btn-primary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting">Inizia a collezionare gli Sgorbions</button>
     </div>
-    <div class="hero-stats" id="hero-stats">
+    <div class="hero-stats" id="hero-stats" style="display:none;">
       <div class="stat-item"><span class="stat-num" id="stat-series">0</span><span class="stat-label" data-i18n="hero.stat1">Series</span></div>
       <div class="stat-item"><span class="stat-num" id="stat-figs">0</span><span class="stat-label" data-i18n="hero.stat2">Figurines</span></div>
       <div class="stat-item"><span class="stat-num" id="stat-users">0</span><span class="stat-label" data-i18n="hero.stat3">Collectors</span></div>
@@ -461,7 +462,7 @@
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.25</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.27</span>
     </div>
   </div>
 </footer>
@@ -490,7 +491,7 @@
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.25</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.27</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
