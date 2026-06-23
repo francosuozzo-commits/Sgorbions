@@ -752,7 +752,7 @@ function renderHomeSeries() {
 // ============================================================
 let currentSection = null; // 'figurines' | 'albums' | 'extras'
 let currentItemPage = 1;
-const ITEMS_PER_PAGE = 36;
+const ITEMS_PER_PAGE = 42;
 
 const SECTION_LABELS = {
   figurines: 'Figurine',
@@ -918,7 +918,7 @@ function renderItems() {
   grid.innerHTML = items.map(f => {
     const isOwned = owned.includes(f.id);
     const icon = SECTION_ICONS[currentSection];
-    const imgHTML = f.img ? `<img src="${cloudinaryUrl(f.img)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : icon;
+    const imgHTML = f.img ? `<img src="${cloudinaryUrl(f.img)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;text-align:center;"><span style="font-size:1.5rem;">${icon}</span><span style="font-size:0.6rem;color:var(--muted);line-height:1.2;">Foto non ancora disponibile</span></div>`;
     const ownedBadge = isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : '';
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">&#10005;</button></div>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
@@ -930,14 +930,14 @@ function renderItems() {
         ${imgHTML}${ownedBadge}${adminBtns}
       </div>
       <div class="fig-body">
-        <div class="fig-number">${figLabel}</div>
+        <div class="fig-number" style="font-size:1rem;">${figLabel}</div>
         <div class="fig-name">${f.name}</div>
         ${descHTML}
         ${sizeHTML}
         ${scoreHTML}
         <div class="fig-toggle">
           <span class="toggle-label">${t('owned.toggle')}</span>
-          <button class="toggle-btn ${isOwned?'on':''}" onclick="toggleOwned('${f.id}')"></button>
+          <button class="toggle-btn-blue ${isOwned?'on':''}" onclick="toggleOwned('${f.id}')"></button>
         </div>
       </div>
     </div>`;
