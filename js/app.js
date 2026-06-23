@@ -399,7 +399,7 @@ const i18n = {
     'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
     'how.1.title':'Sfoglia il Catalogo','how.1.desc':'Esplora tutte le serie di Sgorbions con foto e descrizioni complete.',
     'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine possiedi e tieni traccia della percentuale di completamento per ogni serie.',
-    'how.3.title':'Connettiti e Chiedi','how.3.desc':'Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.',
+    'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le statistiche della tua collezione, le figurine possedute e la cronologia delle attività.',
     'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
