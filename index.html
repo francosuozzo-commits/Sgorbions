@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.18</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.25</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -68,8 +68,9 @@
       <span class="hero-slime" data-i18n="hero.sub">Collector's Universe</span>
     </h1>
     <p class="hero-desc" data-i18n="hero.desc">The definitive fan database for Sgorbions figurines — the legendary Italian sticker series from the early 1990s. Catalog your collection, connect with other fans, and track every grotesque character.</p>
+    <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
     <div class="hero-cta">
-      <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog">Explore Catalog</button>
+      <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog">Esplora il catalogo Sgorbions</button>
 <button class="btn-secondary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting">Start Collecting</button>
     </div>
     <div class="hero-stats" id="hero-stats">
@@ -79,6 +80,9 @@
       <div class="stat-item" id="stat-owned-wrap" style="display:none;"><span class="stat-num" id="stat-owned-hero">0/0</span><span class="stat-label">Le mie / Totale</span></div>
     </div>
   </section>
+
+  <!-- LOGGED IN CONTENT -->
+  <div id="home-logged-in-content" style="display:none;">
 
   <!-- FEATURED SERIES -->
   <section class="section" style="background:var(--bg2);">
@@ -128,6 +132,7 @@
       </div>
     </div>
   </section>
+  </div><!-- end home-logged-in-content -->
 </div>
 
 <!-- ==================== CATALOG PAGE ==================== -->
@@ -228,6 +233,7 @@
     <div class="grid-4" id="items-grid">
       <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora!</p></div>
     </div>
+    <div id="items-pagination"></div>
   </div>
 </div>
 
@@ -284,18 +290,17 @@
           </div>
           <button class="btn-primary" style="width:100%;" onclick="sendContact()" data-i18n="form.send">Invia messaggio 🚀</button>
         </div>
-        <div style="display:flex;gap:2rem;justify-content:center;margin-top:2rem;flex-wrap:wrap;">
-          <div class="contact-item">
-            <div class="contact-icon">📧</div>
-            <div><h4>E-mail</h4><p><a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);text-decoration:none;">postmaster@figurinesgorbions.it</a></p></div>
-          </div>
-          <div class="contact-item">
-            <div class="contact-icon">📍</div>
-            <div><h4>Posizione</h4><p>Italia 🇮🇹</p></div>
-          </div>
-          <div class="contact-item">
-            <div class="contact-icon">⚡</div>
-            <div><h4>Tempo di risposta medio</h4><p>Di solito in poche ore</p></div>
+        <div style="margin-top:2rem;">
+          <h3 style="text-align:center;font-family:var(--font-ui);margin-bottom:1.25rem;">Informazioni di contatto</h3>
+          <div style="display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;">
+            <div class="contact-item">
+              <div class="contact-icon">📧</div>
+              <div><h4>E-mail</h4><p><a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);text-decoration:none;">postmaster@figurinesgorbions.it</a></p></div>
+            </div>
+            <div class="contact-item">
+              <div class="contact-icon">⚡</div>
+              <div><h4>Tempo di risposta medio</h4><p>Di solito in poche ore</p></div>
+            </div>
           </div>
         </div>
       </div>
@@ -456,7 +461,7 @@
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.18</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.25</span>
     </div>
   </div>
 </footer>
@@ -485,7 +490,7 @@
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.18</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.25</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
