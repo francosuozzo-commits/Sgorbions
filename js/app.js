@@ -752,7 +752,7 @@ function renderHomeSeries() {
 // ============================================================
 let currentSection = null; // 'figurines' | 'albums' | 'extras'
 let currentItemPage = 1;
-const ITEMS_PER_PAGE = 25;
+const ITEMS_PER_PAGE = 36;
 
 const SECTION_LABELS = {
   figurines: 'Figurine',
@@ -878,28 +878,47 @@ function toggleOwned(figId) {
 function renderItems() {
   const grid = document.getElementById('items-grid');
   if (!currentSeriesId || !grid || !currentSection) return;
-  const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection).sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
+  const allItems = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection).sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
   const owned = getOwned();
   const pw = document.getElementById('detail-progress-wrap');
   // Show bulk owned buttons only for figurines section when logged in
   const bulkBtns = document.getElementById('bulk-owned-btns');
-  if (bulkBtns) bulkBtns.style.display = (currentUser && currentSection === 'figurines' && items.length) ? 'flex' : 'none';
+  if (bulkBtns) bulkBtns.style.display = (currentUser && currentSection === 'figurines' && allItems.length) ? 'flex' : 'none';
 
-  if (currentUser && items.length) {
+  if (currentUser && allItems.length) {
     pw.style.display = '';
-    const ownedCount = items.filter(f => owned.includes(f.id)).length;
-    const pct = Math.round(ownedCount / items.length * 100);
-    document.getElementById('detail-progress-label').textContent = ownedCount + ' / ' + items.length;
+    const ownedCount = allItems.filter(f => owned.includes(f.id)).length;
+    const pct = Math.round(ownedCount / allItems.length * 100);
+    document.getElementById('detail-progress-label').textContent = ownedCount + ' / ' + allItems.length;
     document.getElementById('detail-progress-fill').style.width = pct + '%';
   } else { pw.style.display = 'none'; }
-  if (!items.length) {
+  if (!allItems.length) {
     grid.innerHTML = `<div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora!</p>${currentUser?.isAdmin ? '<button class="btn-primary" onclick="openAddItemModal()" style="margin-top:1rem;">+ Aggiungi</button>' : ''}</div>`;
+    document.getElementById('items-pagination').innerHTML = '';
     return;
   }
+  // Pagination
+  const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+  if (currentItemPage > totalPages) currentItemPage = totalPages;
+  const start = (currentItemPage - 1) * ITEMS_PER_PAGE;
+  const items = allItems.slice(start, start + ITEMS_PER_PAGE);
+  // Pagination controls (top)
+  const paginationTop = document.getElementById('items-pagination-top');
+  const totalPagesTop = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+  function paginationHTML(cur, tot, total) {
+    if (tot <= 1) return '';
+    return `<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+      <button onclick="changeItemPage(${cur - 1})" ${cur === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ Precedente</button>
+      <span style="font-family:var(--font-ui);color:var(--muted);font-size:0.9rem;">Pagina ${cur} di ${tot} &nbsp;|&nbsp; ${total} oggetti</span>
+      <button onclick="changeItemPage(${cur + 1})" ${cur === tot ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">Successiva ▶</button>
+    </div>`;
+  }
+  if (paginationTop) paginationTop.innerHTML = paginationHTML(currentItemPage, totalPagesTop, allItems.length);
+
   grid.innerHTML = items.map(f => {
     const isOwned = owned.includes(f.id);
     const icon = SECTION_ICONS[currentSection];
-    const imgHTML = f.img ? `<img src="${cloudinaryUrl(f.img)}" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:0;">` : icon;
+    const imgHTML = f.img ? `<img src="${cloudinaryUrl(f.img)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : icon;
     const ownedBadge = isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : '';
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">&#10005;</button></div>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
@@ -924,19 +943,11 @@ function renderItems() {
     </div>`;
   }).join('');
 
-  // Render pagination controls
-  const totalPages2 = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+  // Render pagination controls (bottom)
   const paginationEl = document.getElementById('items-pagination');
   if (paginationEl) {
-    if (totalPages2 <= 1) { paginationEl.innerHTML = ''; }
-    else {
-      paginationEl.innerHTML = `
-        <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-top:1.5rem;flex-wrap:wrap;">
-          <button onclick="changeItemPage(${currentItemPage - 1})" ${currentItemPage === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ Precedente</button>
-          <span style="font-family:var(--font-ui);color:var(--muted);font-size:0.9rem;">Pagina ${currentItemPage} di ${totalPages2} &nbsp;|&nbsp; ${allItems.length} oggetti</span>
-          <button onclick="changeItemPage(${currentItemPage + 1})" ${currentItemPage === totalPages2 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">Successiva ▶</button>
-        </div>`;
-    }
+    paginationEl.innerHTML = paginationHTML(currentItemPage, Math.ceil(allItems.length / ITEMS_PER_PAGE), allItems.length);
+    paginationEl.style.marginTop = '1.5rem';
   }
 }
 
