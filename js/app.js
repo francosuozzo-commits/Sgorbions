@@ -134,6 +134,12 @@ function flagUrl(code) {
   return `https://flagcdn.com/w40/${code}.png`;
 }
 
+function cloudinaryUrl(url, opts = 'w_300,h_300,c_fit,q_auto,f_auto') {
+  if (!url || !url.includes('cloudinary.com')) return url;
+  // Insert transformation parameters after /upload/
+  return url.replace('/upload/', `/upload/${opts}/`);
+}
+
 function filterNationalities() {
   const q = document.getElementById('reg-nationality-search').value.toLowerCase().trim();
   const dd = document.getElementById('nationality-dropdown');
@@ -361,9 +367,9 @@ const i18n = {
     'catalog.title':'The Catalog','catalog.sub':'All Sgorbions series ever released','catalog.addseries':'+ Add Series','catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
     'back':'Back to Catalog','detail.owned':'Owned','detail.addfig':'+ Add Figurine',
     'blog.title':'Q&A & Blog','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ Nuova domanda / Notizia','blog.empty':'No posts yet. Start the conversation!',
-    'contact.eyebrow':'Get In Touch','contact.title':'Contact the Owner','contact.sub':'Have a rare find? Want to contribute? Drop a message!',
+    'contact.eyebrow':'Get In Touch','contact.title':"Contatta l'amministratore",'contact.sub':'Have a rare find? Want to contribute? Drop a message!',
     'contact.info.title':"Let's talk Sgorbions",'contact.email':'Email','contact.location':'Location','contact.location.val':'Italy 🇮🇹','contact.resp':'Response Time','contact.resp.val':'Usually within 24–48 hours',
-    'form.name':'Your Name','form.name.ph':'Sgorbio Fan','form.email':'Email Address','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio!','form.message':'Message','form.message.ph':'Tell me everything...','form.send':'Send Message 🚀',
+    'form.name':'Your Name','form.name.ph':'Sgorbio Fan','form.email':'E-mail','form.subject':'Contesto della domanda','form.subject.ph':'I found a rare Sgorbio!','form.message':'Domanda (o messaggio)','form.message.ph':'Tell me everything...','form.send':'Send Message 🚀',
     'form.username':'Username','form.password':'Password',
     'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Figurines','form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.cover':'Cover Image',
     'form.click':'Click to upload','form.drag':'or drag and drop',
@@ -393,12 +399,12 @@ const i18n = {
     'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
     'how.1.title':'Sfoglia il Catalogo','how.1.desc':'Esplora tutte le serie di Sgorbions con foto e descrizioni complete.',
     'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine possiedi e tieni traccia della percentuale di completamento per ogni serie.',
-    'how.3.title':'Connettiti e Chiedi','how.3.desc':'Fai domande e ricevi risposte dal proprietario e dagli altri collezionisti.',
+    'how.3.title':'Connettiti e Chiedi','how.3.desc':'Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.',
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le statistiche della tua collezione, le figurine possedute e la cronologia delle attività.',
     'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'D&R e Blog','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
-    'contact.eyebrow':'Mettiti in Contatto','contact.title':'Contatta il Proprietario','contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
+    'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'Email','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     'form.name':'Il Tuo Nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo Email','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia Messaggio 🚀',
     'form.username':'Nome utente','form.password':'Password',
@@ -406,7 +412,7 @@ const i18n = {
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
-    'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Proprietario','comment.login':'Accedi per rispondere',
+    'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Crea Account',
     'modal.series.title':'Aggiungi Nuova Serie','modal.series.save':'Salva Serie',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva Figurina',
@@ -698,7 +704,7 @@ function seriesCardHTML(s) {
   }
   return `<div class="card" onclick="openSeriesDetail('${s.id}')">
     <div class="card-img-placeholder">
-      ${s.img ? `<img src="${s.img}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;padding:8px;">` : '🎴'}
+      ${s.img ? `<img src="${cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;padding:8px;">` : '🎴'}
     </div>
     <div class="card-body">
       <span class="card-tag">${s.year || ''}</span>
@@ -753,7 +759,7 @@ function openSeriesDetail(seriesId) {
   document.getElementById('detail-year').textContent = s.year;
   document.getElementById('detail-desc').textContent = desc || '';
   const cover = document.getElementById('detail-cover');
-  cover.innerHTML = s.img ? '<img src="' + s.img + '">' : '<span>&#127924;</span>';
+  cover.innerHTML = s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_200,h_200,c_fit,q_auto,f_auto') + '">' : '<span>&#127924;</span>';
   // show selector, hide items section
   document.getElementById('section-selector').style.display = '';
   document.getElementById('items-section').style.display = 'none';
@@ -872,7 +878,7 @@ function renderItems() {
   grid.innerHTML = items.map(f => {
     const isOwned = owned.includes(f.id);
     const icon = SECTION_ICONS[currentSection];
-    const imgHTML = f.img ? `<img src="${f.img}" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:0;">` : icon;
+    const imgHTML = f.img ? `<img src="${cloudinaryUrl(f.img)}" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:0;">` : icon;
     const ownedBadge = isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : '';
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">&#10005;</button></div>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
