@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.01</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.13</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -53,10 +53,16 @@
 </nav>
 
 <!-- ==================== HOME PAGE ==================== -->
+<!-- BANNER COSTRUZIONE -->
+<div id="construction-banner" style="background:linear-gradient(90deg,#ff6b1a,#c84bff);color:#fff;text-align:center;padding:0.75rem 1rem;font-family:var(--font-ui);font-size:1.1rem;font-weight:700;letter-spacing:0.5px;position:sticky;top:64px;z-index:99;">
+  🚧 &nbsp; SITO WEB IN COSTRUZIONE &nbsp; 🚧
+</div>
+
 <div id="page-home" class="page active">
   <!-- HERO -->
   <section id="hero">
     <div class="hero-eyebrow" data-i18n="hero.eyebrow">🇮🇹 Italy's Wildest 90s Collectibles</div>
+    <div style="font-family:var(--font-ui);font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem;">🟢 Online dal 1 luglio 2026</div>
     <h1 class="hero-title">
       <span class="s">SGOR</span><span class="g">BIONS</span>
       <span class="hero-slime" data-i18n="hero.sub">Collector's Universe</span>
@@ -247,46 +253,49 @@
 <div id="page-contact" class="page">
   <section class="section">
     <div class="section-inner">
-      <div class="section-header">
-        <span class="section-eyebrow" data-i18n="contact.eyebrow">Get In Touch</span>
-        <h1 class="section-title" data-i18n="contact.title">Contact <span class="hi">the Owner</span></h1>
-        <p class="section-sub" data-i18n="contact.sub">Have a rare find? Want to contribute? Drop a message!</p>
+      <div class="section-header" style="text-align:center;">
+        <h1 class="section-title" data-i18n="contact.title">Contatta <span class="hi">l'amministratore</span></h1>
+        <p class="section-sub">
+          Hai trovato qualche pezzo raro che non è censito nel sito?<br>
+          Vuoi avere altre informazioni sugli Sgorbions?<br>
+          Vuoi contribuire al mantenimento del sito?<br>
+          O vuoi semplicemente fare i complimenti all'amministratore?<br>
+          Vuoi segnalare un errore?<br><br>
+          Per una qualsiasi di queste cose, inviaci un messaggio!
+        </p>
       </div>
       <div class="contact-grid">
         <div class="contact-info">
-          <h3 data-i18n="contact.info.title">Let's talk Sgorbions</h3>
+          <h3>Informazioni di contatto</h3>
           <div class="contact-item">
             <div class="contact-icon">📧</div>
-            <div><h4 data-i18n="contact.email">Email</h4><p>sgorbions@collector.it</p></div>
+            <div><h4>E-mail</h4><p><a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);text-decoration:none;">postmaster@figurinesgorbions.it</a></p></div>
           </div>
-          <div class="contact-item">
-            <div class="contact-icon">📍</div>
-            <div><h4 data-i18n="contact.location">Location</h4><p data-i18n="contact.location.val">Italy 🇮🇹</p></div>
-          </div>
+
           <div class="contact-item">
             <div class="contact-icon">⚡</div>
-            <div><h4 data-i18n="contact.resp">Response Time</h4><p data-i18n="contact.resp.val">Usually within 24–48 hours</p></div>
+            <div><h4>Tempo di risposta medio</h4><p>Di solito in poche ore</p></div>
           </div>
         </div>
         <div>
           <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;">
             <div class="form-group">
-              <label class="form-label" data-i18n="form.name">Your Name</label>
+              <label class="form-label">Nome</label>
               <input class="form-input" type="text" id="contact-name" data-i18n-placeholder="form.name.ph" placeholder="Sgorbio Fan">
             </div>
             <div class="form-group">
-              <label class="form-label" data-i18n="form.email">Email Address</label>
-              <input class="form-input" type="email" id="contact-email" placeholder="you@example.com">
+              <label class="form-label">E-mail</label>
+              <input class="form-input" type="email" id="contact-email" placeholder="la-tua@e-mail.com">
             </div>
             <div class="form-group">
-              <label class="form-label" data-i18n="form.subject">Subject</label>
-              <input class="form-input" type="text" id="contact-subject" data-i18n-placeholder="form.subject.ph" placeholder="I found a rare Sgorbio!">
+              <label class="form-label">Contesto della domanda</label>
+              <input class="form-input" type="text" id="contact-subject" data-i18n-placeholder="form.subject.ph" placeholder="Argomento della domanda...">
             </div>
             <div class="form-group">
-              <label class="form-label" data-i18n="form.message">Message</label>
-              <textarea class="form-textarea" id="contact-message" rows="5" data-i18n-placeholder="form.message.ph" placeholder="Tell me everything..."></textarea>
+              <label class="form-label">Domanda (o messaggio)</label>
+              <textarea class="form-textarea" id="contact-message" rows="5" data-i18n-placeholder="form.message.ph" placeholder="Scrivi qui la tua domanda o messaggio..."></textarea>
             </div>
-            <button class="btn-primary" style="width:100%;" onclick="sendContact()" data-i18n="form.send">Send Message 🚀</button>
+            <button class="btn-primary" style="width:100%;" onclick="sendContact()" data-i18n="form.send">Invia messaggio 🚀</button>
           </div>
         </div>
       </div>
@@ -345,11 +354,11 @@
         <div id="admin-newsletter" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;">Invia Newsletter</h3>
           <div class="form-group">
-            <label class="form-label">Oggetto</label>
+            <label class="form-label">Contesto della domanda</label>
             <input class="form-input" type="text" id="newsletter-subject" placeholder="es. Nuova serie aggiunta!">
           </div>
           <div class="form-group">
-            <label class="form-label">Messaggio</label>
+            <label class="form-label">Domanda (o messaggio)</label>
             <textarea class="form-textarea" id="newsletter-body" rows="5" placeholder="Scrivi il messaggio per gli utenti selezionati..."></textarea>
           </div>
           <div class="form-group">
@@ -435,7 +444,7 @@
         <a onclick="showPage('home')" data-i18n="nav.home">Home</a>
         <a onclick="showPage('catalog')" data-i18n="nav.catalog">Catalog</a>
         <a onclick="showPage('blog')" data-i18n="nav.blog">Q&A / Blog</a>
-        <a onclick="showPage('contact')" data-i18n="nav.contact">Contact</a>
+        <a onclick="showPage('contact')" data-i18n="nav.contact">Contatti</a>
       </div>
       <div class="footer-col">
         <h4 data-i18n="footer.account">Account</h4>
@@ -447,7 +456,7 @@
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.01</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.13</span>
     </div>
   </div>
 </footer>
@@ -476,7 +485,7 @@
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.01</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.13</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -484,8 +493,8 @@
         <input class="form-input" type="text" id="reg-username" placeholder="slime_collector_99">
       </div>
       <div class="form-group">
-        <label class="form-label" data-i18n="form.email">Email</label>
-        <input class="form-input" type="email" id="reg-email" placeholder="you@example.com">
+        <label class="form-label" data-i18n="form.email">E-mail</label>
+        <input class="form-input" type="email" id="reg-email" placeholder="la-tua@e-mail.com">
       </div>
       <div class="form-group">
         <label class="form-label" data-i18n="form.password">Password</label>
@@ -654,7 +663,7 @@
       <input class="form-input" type="text" id="edit-user-username" placeholder="username">
     </div>
     <div class="form-group">
-      <label class="form-label">Email</label>
+      <label class="form-label">E-mail</label>
       <input class="form-input" type="email" id="edit-user-email" placeholder="email@esempio.it">
     </div>
     <button class="btn-primary" style="width:100%;" onclick="saveEditUser()">Salva modifiche</button>
