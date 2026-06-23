@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.27</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.29</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -231,7 +231,8 @@
       </div>
       <div class="progress-bar"><div class="progress-fill" id="detail-progress-fill" style="width:0%"></div></div>
     </div>
-    <div class="grid-4" id="items-grid">
+    <div id="items-pagination-top"></div>
+    <div class="grid-6" id="items-grid">
       <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora!</p></div>
     </div>
     <div id="items-pagination"></div>
@@ -462,7 +463,7 @@
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.27</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.29</span>
     </div>
   </div>
 </footer>
@@ -491,7 +492,7 @@
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.27</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.29</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
