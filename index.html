@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.13</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.18</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -62,7 +62,7 @@
   <!-- HERO -->
   <section id="hero">
     <div class="hero-eyebrow" data-i18n="hero.eyebrow">🇮🇹 Italy's Wildest 90s Collectibles</div>
-    <div style="font-family:var(--font-ui);font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem;">🟢 Online dal 1 luglio 2026</div>
+    <div style="font-family:var(--font-ui);font-size:1rem;color:var(--muted);margin-bottom:0.75rem;text-align:left;">Sito online dal 1 luglio 2026</div>
     <h1 class="hero-title">
       <span class="s">SGOR</span><span class="g">BIONS</span>
       <span class="hero-slime" data-i18n="hero.sub">Collector's Universe</span>
@@ -259,43 +259,43 @@
           Hai trovato qualche pezzo raro che non è censito nel sito?<br>
           Vuoi avere altre informazioni sugli Sgorbions?<br>
           Vuoi contribuire al mantenimento del sito?<br>
-          O vuoi semplicemente fare i complimenti all'amministratore?<br>
-          Vuoi segnalare un errore?<br><br>
+          Vuoi segnalare un errore?<br>
+          O vuoi semplicemente fare i complimenti all'amministratore?<br><br>
           Per una qualsiasi di queste cose, inviaci un messaggio!
         </p>
       </div>
-      <div class="contact-grid">
-        <div class="contact-info">
-          <h3>Informazioni di contatto</h3>
+      <div style="max-width:600px;margin:0 auto;">
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;">
+          <div class="form-group">
+            <label class="form-label">Nome</label>
+            <input class="form-input" type="text" id="contact-name" data-i18n-placeholder="form.name.ph" placeholder="Sgorbio Fan">
+          </div>
+          <div class="form-group">
+            <label class="form-label">E-mail</label>
+            <input class="form-input" type="email" id="contact-email" placeholder="la-tua@e-mail.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contesto della domanda</label>
+            <input class="form-input" type="text" id="contact-subject" data-i18n-placeholder="form.subject.ph" placeholder="Argomento della domanda...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Domanda (o messaggio)</label>
+            <textarea class="form-textarea" id="contact-message" rows="5" data-i18n-placeholder="form.message.ph" placeholder="Scrivi qui la tua domanda o messaggio..."></textarea>
+          </div>
+          <button class="btn-primary" style="width:100%;" onclick="sendContact()" data-i18n="form.send">Invia messaggio 🚀</button>
+        </div>
+        <div style="display:flex;gap:2rem;justify-content:center;margin-top:2rem;flex-wrap:wrap;">
           <div class="contact-item">
             <div class="contact-icon">📧</div>
             <div><h4>E-mail</h4><p><a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);text-decoration:none;">postmaster@figurinesgorbions.it</a></p></div>
           </div>
-
+          <div class="contact-item">
+            <div class="contact-icon">📍</div>
+            <div><h4>Posizione</h4><p>Italia 🇮🇹</p></div>
+          </div>
           <div class="contact-item">
             <div class="contact-icon">⚡</div>
             <div><h4>Tempo di risposta medio</h4><p>Di solito in poche ore</p></div>
-          </div>
-        </div>
-        <div>
-          <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;">
-            <div class="form-group">
-              <label class="form-label">Nome</label>
-              <input class="form-input" type="text" id="contact-name" data-i18n-placeholder="form.name.ph" placeholder="Sgorbio Fan">
-            </div>
-            <div class="form-group">
-              <label class="form-label">E-mail</label>
-              <input class="form-input" type="email" id="contact-email" placeholder="la-tua@e-mail.com">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Contesto della domanda</label>
-              <input class="form-input" type="text" id="contact-subject" data-i18n-placeholder="form.subject.ph" placeholder="Argomento della domanda...">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Domanda (o messaggio)</label>
-              <textarea class="form-textarea" id="contact-message" rows="5" data-i18n-placeholder="form.message.ph" placeholder="Scrivi qui la tua domanda o messaggio..."></textarea>
-            </div>
-            <button class="btn-primary" style="width:100%;" onclick="sendContact()" data-i18n="form.send">Invia messaggio 🚀</button>
           </div>
         </div>
       </div>
@@ -456,7 +456,7 @@
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.13</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.18</span>
     </div>
   </div>
 </footer>
@@ -485,7 +485,7 @@
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.13</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.18</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
