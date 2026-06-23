@@ -355,7 +355,7 @@ const i18n = {
     'nav.login':'Login','nav.register':'Join Free','nav.logout':'Logout',
     'hero.eyebrow':'🇮🇹 Italy\'s Wildest 90s Collectibles',
     'hero.sub':'Collector\'s Universe','hero.desc':'The definitive fan database for Sgorbions figurines — the legendary Italian sticker series from the early 1990s. Catalog your collection, connect with other fans, and track every grotesque character.',
-    'hero.cta1':'Explore Catalog','hero.cta2':'Start Collecting',
+    'hero.cta1':'Esplora il catalogo Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Series','hero.stat2':'Figurines','hero.stat3':'Collectors',
     'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the Slime World','home.featured.sub':'Every series carefully documented with original artwork, descriptions and rarity info.',
     'home.featured.btn':'View All Series →',
@@ -369,7 +369,7 @@ const i18n = {
     'blog.title':'Q&A & Blog','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ Nuova domanda / Notizia','blog.empty':'No posts yet. Start the conversation!',
     'contact.eyebrow':'Get In Touch','contact.title':"Contatta l'amministratore",'contact.sub':'Have a rare find? Want to contribute? Drop a message!',
     'contact.info.title':"Let's talk Sgorbions",'contact.email':'Email','contact.location':'Location','contact.location.val':'Italy 🇮🇹','contact.resp':'Response Time','contact.resp.val':'Usually within 24–48 hours',
-    'form.name':'Your Name','form.name.ph':'Sgorbio Fan','form.email':'E-mail','form.subject':'Contesto della domanda','form.subject.ph':'I found a rare Sgorbio!','form.message':'Domanda (o messaggio)','form.message.ph':'Tell me everything...','form.send':'Send Message 🚀',
+    'form.name':'Your Name','form.name.ph':'Sgorbio Fan','form.email':'E-mail','form.subject':'Contesto della domanda','form.subject.ph':'I found a rare Sgorbio!','form.message':'Domanda (o messaggio)','form.message.ph':'Tell me everything...','form.send':'Invia messaggio 🚀',
     'form.username':'Username','form.password':'Password',
     'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Figurines','form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.cover':'Cover Image',
     'form.click':'Click to upload','form.drag':'or drag and drop',
@@ -392,7 +392,7 @@ const i18n = {
     'nav.login':'Accedi','nav.register':'Iscriviti','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.desc':'Il database definitivo per i collezionisti di Sgorbions — la leggendaria serie italiana degli anni \'90. Cataloga la tua collezione, connettiti con altri fan e traccia ogni personaggio grottesco.',
-    'hero.cta1':'Esplora il Catalogo','hero.cta2':'Inizia a Collezionare',
+    'hero.cta1':'Esplora il catalogo Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat3':'Collezionisti',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
@@ -406,7 +406,7 @@ const i18n = {
     'blog.title':'D&R e Blog','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'Email','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
-    'form.name':'Il Tuo Nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo Email','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia Messaggio 🚀',
+    'form.name':'Il Tuo Nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo Email','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
     'form.username':'Nome utente','form.password':'Password',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'Numero di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
@@ -518,7 +518,12 @@ async function doLogin() {
   LOCAL.set('currentUser', user);
   closeModal('auth-modal');
   updateNavUser();
-  toast('Bentornato, ' + user.username + '! 👾', 'success');
+  const welcomeEl = document.getElementById('hero-welcome-msg');
+  if (welcomeEl) {
+    welcomeEl.style.display = '';
+    welcomeEl.textContent = 'Bentornato, ' + user.username + '! 👾';
+    setTimeout(() => { welcomeEl.style.display = 'none'; }, 4000);
+  }
 }
 async function doRegister() {
   const u = document.getElementById('reg-username').value.trim();
@@ -540,7 +545,12 @@ async function doRegister() {
   closeModal('auth-modal');
   updateNavUser();
   sendWelcomeEmail(saved);
-  toast('Benvenuto nella famiglia Sgorbions! 🎉', 'success');
+  const welcomeEl2 = document.getElementById('hero-welcome-msg');
+  if (welcomeEl2) {
+    welcomeEl2.style.display = '';
+    welcomeEl2.textContent = 'Benvenuto nella famiglia Sgorbions, ' + u + '! 🎉';
+    setTimeout(() => { welcomeEl2.style.display = 'none'; }, 4000);
+  }
 }
 function logout() {
   currentUser = null;
@@ -563,6 +573,10 @@ function updateNavUser() {
     const nlBtn = document.getElementById('nav-newsletter-btn');
     if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
     if (btnCollect) btnCollect.style.display = 'none';
+    const homeContent = document.getElementById('home-logged-in-content');
+    if (homeContent) homeContent.style.display = '';
+    const heroStats = document.getElementById('hero-stats');
+    if (heroStats) heroStats.style.display = '';
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = '';
     document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
     const navAvatar = document.getElementById('nav-avatar');
@@ -587,6 +601,10 @@ function updateNavUser() {
     const nlBtn2 = document.getElementById('nav-newsletter-btn');
     if (nlBtn2) nlBtn2.style.display = 'none';
     if (btnCollect) btnCollect.style.display = '';
+    const homeContent2 = document.getElementById('home-logged-in-content');
+    if (homeContent2) homeContent2.style.display = 'none';
+    const heroStats2 = document.getElementById('hero-stats');
+    if (heroStats2) heroStats2.style.display = 'none';
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = 'none';
   }
 }
@@ -733,6 +751,8 @@ function renderHomeSeries() {
 //  SERIES DETAIL
 // ============================================================
 let currentSection = null; // 'figurines' | 'albums' | 'extras'
+let currentItemPage = 1;
+const ITEMS_PER_PAGE = 25;
 
 const SECTION_LABELS = {
   figurines: 'Figurine',
@@ -783,6 +803,7 @@ function updateSectionCounts() {
 
 function openSeriesSection(section) {
   currentSection = section;
+  currentItemPage = 1;
   document.getElementById('section-selector').style.display = 'none';
   document.getElementById('items-section').style.display = '';
   document.getElementById('items-section-title').textContent = SECTION_LABELS[section];
@@ -902,6 +923,30 @@ function renderItems() {
       </div>
     </div>`;
   }).join('');
+
+  // Render pagination controls
+  const totalPages2 = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+  const paginationEl = document.getElementById('items-pagination');
+  if (paginationEl) {
+    if (totalPages2 <= 1) { paginationEl.innerHTML = ''; }
+    else {
+      paginationEl.innerHTML = `
+        <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-top:1.5rem;flex-wrap:wrap;">
+          <button onclick="changeItemPage(${currentItemPage - 1})" ${currentItemPage === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ Precedente</button>
+          <span style="font-family:var(--font-ui);color:var(--muted);font-size:0.9rem;">Pagina ${currentItemPage} di ${totalPages2} &nbsp;|&nbsp; ${allItems.length} oggetti</span>
+          <button onclick="changeItemPage(${currentItemPage + 1})" ${currentItemPage === totalPages2 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">Successiva ▶</button>
+        </div>`;
+    }
+  }
+}
+
+function changeItemPage(page) {
+  const allItems = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
+  const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+  if (page < 1 || page > totalPages) return;
+  currentItemPage = page;
+  renderItems();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // renderFigurines kept as alias for admin panel compatibility
