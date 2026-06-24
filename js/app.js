@@ -144,7 +144,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v3.32';
+const JS_VERSION = 'v3.36';
 
 // ============================================================
 //  NATIONALITY
@@ -1815,7 +1815,7 @@ function renderAdminPunteggi() {
   </tr></thead><tbody>
   ${levels.map(lv => `<tr>
     <td><strong>${lv.name}</strong></td>
-    <td>${lv.minScore} pt</td>
+    <td>${lv.minScore.toLocaleString('it-IT')} pt</td>
     <td>
       <button class="tbl-btn tbl-btn-edit" onclick="editLevel('${lv.id}')">Modifica</button>
       <button class="tbl-btn tbl-btn-del" onclick="deleteLevel('${lv.id}')">Elimina</button>
@@ -2627,6 +2627,19 @@ async function renderClassifica() {
   if (!el) return;
   el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p class="empty-title">Caricamento...</p></div>';
 
+  // Render levels table on the right
+  const levelsEl = document.getElementById('classifica-levels-table');
+  if (levelsEl) {
+    const levels = getData('levels', []).sort((a,b) => a.minScore - b.minScore);
+    if (levels.length) {
+      levelsEl.innerHTML = '<table class="data-table"><thead><tr><th>Livello</th><th>Da</th></tr></thead><tbody>' +
+        levels.map(lv => '<tr><td><strong>' + lv.name + '</strong></td><td>' + lv.minScore.toLocaleString('it-IT') + ' pt</td></tr>').join('') +
+        '</tbody></table>';
+    } else {
+      levelsEl.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;font-style:italic;">Nessun livello definito.</p>';
+    }
+  }
+
   const users = getData('users', []).filter(u => !u.isAdmin);
   const allFigs = getData('figurines', []);
 
@@ -2670,11 +2683,13 @@ async function renderClassifica() {
       ${avatarHTML}
       <div style="flex:1;">
         <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;">${user.username}${user.nationalityCode ? `<img src="https://flagcdn.com/w40/${user.nationalityCode}.png" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}<span style="font-size:0.78rem;color:var(--muted);font-family:var(--font-body);font-weight:400;">(utente dal ${user.joined ? new Date(user.joined).toLocaleDateString('it-IT') : '—'})</span></div>
-        ${(() => { const lv = getUserLevel(score); return lv ? `<div style="display:inline-block;font-size:0.75rem;background:rgba(181,255,46,0.12);border:1px solid rgba(181,255,46,0.25);color:var(--accent);border-radius:99px;padding:1px 10px;margin-bottom:3px;font-family:var(--font-ui);">🏅 ${lv.name}</div>` : ''; })()}
         <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">${countFigurines} figurine · ${countAlbums} album · ${countExtras} altri articoli</div>
       </div>
       <div style="display:flex;align-items:center;gap:0.75rem;">
-        <div style="font-family:var(--font-ui);font-size:1.1rem;color:var(--accent);">${score} pt</div>
+        <div style="text-align:center;">
+          <div style="font-family:var(--font-ui);font-size:1.1rem;color:var(--accent);">${score.toLocaleString('it-IT')} pt</div>
+          ${(() => { const lv = getUserLevel(score); return lv ? `<div style="font-size:0.72rem;color:var(--accent);opacity:0.8;font-family:var(--font-ui);">🏅 ${lv.name}</div>` : ''; })()}
+        </div>
         ${isTop3 ? trophies[idx] : (medal ? `<span style="font-size:1.5rem;">${medal}</span>` : '')}
       </div>
     </div>`;
