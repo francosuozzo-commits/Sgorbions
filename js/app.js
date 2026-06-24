@@ -113,7 +113,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.82';
+const JS_VERSION = 'v2.88';
 
 // ============================================================
 //  NATIONALITY
