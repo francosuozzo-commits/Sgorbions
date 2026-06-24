@@ -62,7 +62,7 @@ async function sendWelcomeEmail(user) {
     user.email,
     user.username,
     'Benvenuto su Sgorbions Collector! 👾',
-    'Il tuo account è stato creato con successo!\n\nInizia subito a sfogliare il catalogo e a costruire la tua collezione di Sgorbions.'
+    'Benvenuto nella community Sgorbions di figurinesgorbions.it!\n\nIl tuo account è stato creato con successo. Inizia subito a sfogliare il catalogo e a costruire la tua collezione!'
   );
   incrementEmailCounter(1);
 }
@@ -128,7 +128,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.99';
+const JS_VERSION = 'v3.07';
 
 // ============================================================
 //  NATIONALITY
@@ -371,7 +371,7 @@ async function uploadToCloudinary(file) {
 const i18n = {
   en: {
     'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Q&A / Blog','nav.contact':'Contact',
-    'nav.login':'Login','nav.register':'Join','nav.logout':'Logout',
+    'nav.login':'Login','nav.register':'Registrati','nav.logout':'Logout',
     'hero.eyebrow':'🇮🇹 Italy\'s Wildest 90s Collectibles',
     'hero.sub':'Collector\'s Universe','hero.desc':'The definitive fan database for Sgorbions figurines — the legendary Italian sticker series from the early 1990s. Catalog your collection, connect with other fans, and track every grotesque character.',
     'hero.cta1':'Esplora il catalogo Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions',
@@ -395,7 +395,7 @@ const i18n = {
     'form.fig.number':'Number','form.fig.name':'Name','form.fig.desc':'Description','form.fig.image':'Image',
     'form.post.type':'Post Type','form.post.title':'Title','form.post.body':'Content','form.post.question':'❓ Question','form.post.news':'📢 News / Discovery',
     'form.reply.placeholder':'Write a reply...','comment.admin':'Owner','comment.login':'Log in to reply',
-    'auth.title':'Welcome Back','auth.login':'Login','auth.register':'Register','auth.login.btn':'Sign In','auth.reg.btn':'Create Account',
+    'auth.title':'Welcome Back','auth.login':'Login','auth.register':'Registrati','auth.login.btn':'Sign In','auth.reg.btn':'Create Account',
     'modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie',
     'modal.fig.title':'Add Figurine','modal.fig.save':'Save Figurine',
     'modal.post.title':'New Post','modal.post.save':'Publish Post',
@@ -408,7 +408,7 @@ const i18n = {
   },
   it: {
     'nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'D&R / Blog','nav.contact':'Contatti',
-    'nav.login':'Accedi','nav.register':'Iscriviti','nav.logout':'Esci',
+    'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.desc':'Il database definitivo per i collezionisti di Sgorbions — la leggendaria serie italiana degli anni \'90. Cataloga la tua collezione, connettiti con altri fan e traccia ogni personaggio grottesco.',
     'hero.cta1':'Esplora il catalogo Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions',
@@ -529,6 +529,7 @@ async function doLogin() {
   LOCAL.set('currentUser', user);
   closeModal('auth-modal');
   updateNavUser();
+  showProfileInviteIfNeeded();
   const welcomeEl = document.getElementById('hero-welcome-msg');
   if (welcomeEl) {
     welcomeEl.style.display = '';
@@ -564,7 +565,68 @@ async function doRegister() {
     setTimeout(() => { welcomeEl2.style.display = 'none'; }, 4000);
   }
   logEvent('new_user', 'Nuovo utente registrato: ' + u);
+  showProfileInviteIfNeeded();
 }
+// ============================================================
+//  PROFILE INFO
+// ============================================================
+function showProfileInviteIfNeeded() {
+  if (!currentUser) return;
+  const hasInfo = currentUser.nome || currentUser.cognome || currentUser.eta || currentUser.sesso || currentUser.anniCollezionismo;
+  if (!hasInfo) {
+    setTimeout(() => {
+      // Clear fields before showing
+      document.getElementById('invite-nome').value = '';
+      document.getElementById('invite-cognome').value = '';
+      document.getElementById('invite-eta').value = '';
+      document.getElementById('invite-sesso').value = '';
+      document.getElementById('invite-anni').value = '';
+      // Show login buttons (Dopo / Salva e continua)
+      document.getElementById('invite-modal-btns-login').style.display = 'flex';
+      document.getElementById('invite-modal-btns-profile').style.display = 'none';
+      document.getElementById('profile-invite-modal').classList.remove('hidden');
+    }, 1500);
+  }
+}
+
+function openProfileInfoModal() {
+  document.getElementById('invite-nome').value = currentUser.nome || '';
+  document.getElementById('invite-cognome').value = currentUser.cognome || '';
+  document.getElementById('invite-eta').value = currentUser.eta || '';
+  document.getElementById('invite-sesso').value = currentUser.sesso || '';
+  document.getElementById('invite-anni').value = currentUser.anniCollezionismo || '';
+  // Show profile buttons, hide login buttons
+  document.getElementById('invite-modal-btns-login').style.display = 'none';
+  document.getElementById('invite-modal-btns-profile').style.display = 'flex';
+  document.getElementById('profile-invite-modal').classList.remove('hidden');
+}
+
+async function saveProfileInvite() {
+  const nome = document.getElementById('invite-nome').value.trim();
+  const cognome = document.getElementById('invite-cognome').value.trim();
+  const eta = document.getElementById('invite-eta').value;
+  const sesso = document.getElementById('invite-sesso').value;
+  const anniCollezionismo = document.getElementById('invite-anni').value;
+
+  currentUser = { ...currentUser, nome, cognome, eta: eta ? +eta : null, sesso, anniCollezionismo: anniCollezionismo ? +anniCollezionismo : null };
+  LOCAL.set('currentUser', currentUser);
+
+  const users = getData('users', []);
+  const idx = users.findIndex(u => u.id === currentUser.id);
+  if (idx >= 0) {
+    users[idx] = { ...users[idx], nome, cognome, eta: eta ? +eta : null, sesso, anniCollezionismo: anniCollezionismo ? +anniCollezionismo : null };
+    _cache.users = users;
+    await fsSave('users', users[idx]);
+  }
+
+  closeModal('profile-invite-modal');
+  const msg = document.getElementById('profile-save-msg');
+  if (msg) {
+    msg.style.display = '';
+    setTimeout(() => { msg.style.display = 'none'; }, 3000);
+  }
+}
+
 // ============================================================
 //  CHANGE PASSWORD
 // ============================================================
@@ -1212,7 +1274,8 @@ async function savePost() {
   _cache.posts.unshift(saved);
   closeModal('post-modal');
   renderBlog();
-  toast('Post published! 💬', 'success');
+  toast('Post pubblicato! 💬', 'success');
+  logEvent('new_post', 'Nuovo post nel blog: ' + title);
 }
 
 async function submitComment(postId) {
@@ -1999,9 +2062,9 @@ function updateOwnedCounter() {
 //  MODAL HELPERS
 // ============================================================
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+const NO_CLICK_CLOSE = ['auth-modal', 'change-pwd-modal', 'reset-pwd-modal', 'profile-invite-modal', 'add-series-modal', 'add-fig-modal'];
 document.querySelectorAll('.modal-overlay').forEach(m => {
-  // Solo i modal che non sono auth possono essere chiusi cliccando fuori
-  if (m.id !== 'auth-modal') {
+  if (!NO_CLICK_CLOSE.includes(m.id)) {
     m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); });
   }
 });
