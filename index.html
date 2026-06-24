@@ -23,15 +23,15 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.58</span>
-    <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">JS:<span id="nav-js-version">-</span></span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.69</span>
+    <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);">| Online dal 1.07.2026</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
     <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog" id="nav-catalog" style="display:none;">Catalogo</a>
-    <a onclick="showPage('blog')" data-page="blog" id="nav-blog" style="display:none;">Domande &amp; Risposte / Blog</a>
-    <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;">Le mie mancoliste</a>
+    <a onclick="showPage('blog')" data-page="blog" id="nav-blog" style="display:none;">Blog / D&amp;R</a>
+    <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;">Mancoliste</a>
     <a onclick="showPage('classifica')" data-page="classifica" id="nav-classifica" style="display:none;">🏆 Classifica</a>
     <a onclick="showPage('profile');setTimeout(()=>adminTab('newsletter'),300)" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contatti</a>
@@ -479,7 +479,7 @@
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.58</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.69</span>
     </div>
   </div>
 </footer>
@@ -508,7 +508,7 @@
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.58</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.69</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -607,6 +607,11 @@
       <input class="form-input" type="text" id="fig-size-input" placeholder="es. S, M, L, XL">
     </div>
     <div class="form-group">
+      <label class="form-label">Numero di variazioni esistenti</label>
+      <input class="form-input" type="number" id="fig-back-input" placeholder="1" min="1" value="1">
+      <div class="form-hint">Numero stampato sul retro della figurina (default: 1)</div>
+    </div>
+    <div class="form-group">
       <label class="form-label" data-i18n="form.fig.desc">Descrizione</label>
       <textarea class="form-textarea" id="fig-desc-input" rows="3" placeholder="Descrivi questa figurina..."></textarea>
     </div>
@@ -670,6 +675,20 @@
     </div>
     <button class="btn-primary" style="width:100%;" onclick="saveBulkScore()">Applica a tutti</button>
     <div id="bulk-score-feedback" style="display:none;margin-top:0.75rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
+  </div>
+</div>
+
+<!-- FIGURINE DETAIL MODAL -->
+<div class="modal-overlay hidden" id="fig-detail-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="fig-detail-title">Dettaglio figurina</h2>
+      <button class="modal-close" onclick="closeModal('fig-detail-modal')">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr auto;gap:1.5rem;align-items:start;">
+      <div id="fig-detail-content"></div>
+      <div id="fig-detail-photo" style="width:140px;flex-shrink:0;"></div>
+    </div>
   </div>
 </div>
 
