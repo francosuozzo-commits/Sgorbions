@@ -128,7 +128,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v3.09';
+const JS_VERSION = 'v3.11';
 
 // ============================================================
 //  NATIONALITY
@@ -321,6 +321,7 @@ async function loadAllData() {
     _cache.contact_messages = await fsGetAll('contact_messages');
     _cache.segnalazioni = await fsGetAll('segnalazioni');
     _cache.eventi = await fsGetAll('eventi');
+    await loadAllOwnedFromFirebase();
     // seed admin if not present
     if (!_cache.users.find(u => u.username === 'admin')) {
       const adminUser = { id: 'admin', username: 'admin', email: 'admin@sgorbions.it', password: 'admin123', isAdmin: true, joined: new Date().toISOString() };
@@ -525,8 +526,11 @@ async function doLogin() {
   const users = getData('users', []);
   const user = users.find(x => x.username === u && x.password === p);
   if (!user) { const ae = document.getElementById('auth-error'); if (ae) { ae.style.display = ''; ae.textContent = 'Username o password errati'; } else toast('Username o password errati', 'error'); return; }
+  user.lastLogin = new Date().toISOString();
   currentUser = user;
   LOCAL.set('currentUser', user);
+  fsSave('users', user);
+  await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
   updateNavUser();
   showProfileInviteIfNeeded();
@@ -1102,14 +1106,50 @@ function openAddItemModal(itemId) {
 // keep openAddFigModal as alias for admin panel
 function openAddFigModal(figId) { openAddItemModal(figId); }
 
-function getOwned() { return LOCAL.get('owned_' + (currentUser?.id || 'guest')) || []; }
+function getOwned() {
+  const uid = currentUser?.id || 'guest';
+  // Use cached Firebase data if available, fallback to localStorage
+  if (_cache.ownedMap && _cache.ownedMap[uid]) return _cache.ownedMap[uid];
+  return LOCAL.get('owned_' + uid) || [];
+}
 function toggleOwned(figId) {
   if (!currentUser) { openAuth('register'); return; }
   let owned = getOwned();
   if (owned.includes(figId)) owned = owned.filter(x => x !== figId);
   else owned.push(figId);
+  // Save to cache, localStorage, and Firebase
+  if (!_cache.ownedMap) _cache.ownedMap = {};
+  _cache.ownedMap[currentUser.id] = owned;
+  if (!_cache.ownedMap) _cache.ownedMap = {};
+  _cache.ownedMap[currentUser.id] = owned;
   LOCAL.set('owned_' + currentUser.id, owned);
+  saveOwnedToFirebase(currentUser.id, owned);
+  saveOwnedToFirebase(currentUser.id, owned);
   renderItems(); renderProfile();
+}
+
+async function saveOwnedToFirebase(userId, owned) {
+  try {
+    await fsSave('owned', { id: userId, userId, owned });
+  } catch(e) { console.error('saveOwned error', e); }
+}
+
+async function loadAllOwnedFromFirebase() {
+  try {
+    const allOwned = await fsGetAll('owned');
+    if (!_cache.ownedMap) _cache.ownedMap = {};
+    for (const doc of allOwned) {
+      _cache.ownedMap[doc.userId] = doc.owned || [];
+    }
+    // Migrate current user's localStorage data to Firebase if not yet saved
+    if (currentUser) {
+      const localOwned = LOCAL.get('owned_' + currentUser.id);
+      if (localOwned && localOwned.length > 0 && !allOwned.find(d => d.userId === currentUser.id)) {
+        _cache.ownedMap[currentUser.id] = localOwned;
+        await saveOwnedToFirebase(currentUser.id, localOwned);
+      }
+    }
+  } catch(e) { console.error('loadAllOwned error', e); }
 }
 
 function renderItems() {
@@ -1664,6 +1704,7 @@ function renderAdminUsers() {
       </td>
       <td>${u.email}</td>
       <td>${u.isAdmin?'Admin':(currentLang==='it'?'Collezionista':'Collector')}</td>
+      <td style="font-size:0.82rem;">${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(u.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '<span style="color:var(--muted);font-style:italic;">mai</span>'}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
       <td><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">Modifica</button>${u.isAdmin ? '' : ` <button class="tbl-btn tbl-btn-del" onclick="deleteUser('${u.id}')">Elimina</button>`}</td>
     </tr>`).join('')}
@@ -2264,14 +2305,17 @@ async function setAllOwned(ownAll) {
   if (!items.length) return;
   const msg = ownAll ? 'Segnare tutti gli oggetti come posseduti?' : 'Rimuovere tutti gli oggetti dalla tua collezione?';
   if (!confirm(msg)) return;
-  let owned = LOCAL.get('owned_' + currentUser.id) || [];
+  let owned = getOwned();
   if (ownAll) {
     items.forEach(f => { if (!owned.includes(f.id)) owned.push(f.id); });
   } else {
     const ids = items.map(f => f.id);
     owned = owned.filter(id => !ids.includes(id));
   }
+  if (!_cache.ownedMap) _cache.ownedMap = {};
+  _cache.ownedMap[currentUser.id] = owned;
   LOCAL.set('owned_' + currentUser.id, owned);
+  saveOwnedToFirebase(currentUser.id, owned);
   renderItems();
   updateOwnedCounter();
   toast(ownAll ? 'Tutti gli oggetti aggiunti! ✅' : 'Tutti gli oggetti rimossi ❌', 'success');
@@ -2420,7 +2464,7 @@ async function renderClassifica() {
   // Calculate score for each user
   const ranking = [];
   for (const user of users) {
-    const owned = LOCAL.get('owned_' + user.id) || [];
+    const owned = (_cache.ownedMap && _cache.ownedMap[user.id]) || LOCAL.get('owned_' + user.id) || [];
     const ownedFigs = allFigs.filter(f => owned.includes(f.id));
     const score = ownedFigs.reduce((sum, f) => sum + (f.score || 0), 0);
     const countFigurines = ownedFigs.filter(f => f.section === 'figurines' || !f.section).length;
