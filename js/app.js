@@ -1,3 +1,21 @@
+function openAuth(tab) {
+  document.getElementById('auth-modal').classList.remove('hidden');
+  switchAuthTab(tab);
+}
+// Also expose as _openAuth for proxy calls
+window._openAuth = openAuth;
+window._openResetModal = openResetModal;
+function switchAuthTab(tab) {
+  document.getElementById('auth-login').style.display = tab === 'login' ? '' : 'none';
+  document.getElementById('auth-register').style.display = tab === 'register' ? '' : 'none';
+  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+  const title = document.querySelector('#auth-modal .modal-title');
+  if (title) title.textContent = tab === 'login' ? 'Bentornato!' : 'Benvenuto!';
+  const ae = document.getElementById('auth-error'); if (ae) ae.style.display = 'none';
+  const re = document.getElementById('reg-error'); if (re) re.style.display = 'none';
+}
+
 
 // ============================================================
 //  FIREBASE + CLOUDINARY CONFIG
@@ -113,7 +131,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.98';
+const JS_VERSION = 'v2.99';
 
 // ============================================================
 //  NATIONALITY
@@ -356,7 +374,7 @@ async function uploadToCloudinary(file) {
 const i18n = {
   en: {
     'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Q&A / Blog','nav.contact':'Contact',
-    'nav.login':'Login','nav.register':'Join Free','nav.logout':'Logout',
+    'nav.login':'Login','nav.register':'Join','nav.logout':'Logout',
     'hero.eyebrow':'🇮🇹 Italy\'s Wildest 90s Collectibles',
     'hero.sub':'Collector\'s Universe','hero.desc':'The definitive fan database for Sgorbions figurines — the legendary Italian sticker series from the early 1990s. Catalog your collection, connect with other fans, and track every grotesque character.',
     'hero.cta1':'Esplora il catalogo Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions',
@@ -495,20 +513,7 @@ function showPage(page) {
 // ============================================================
 //  AUTH
 // ============================================================
-function openAuth(tab) {
-  document.getElementById('auth-modal').classList.remove('hidden');
-  switchAuthTab(tab);
-}
-function switchAuthTab(tab) {
-  document.getElementById('auth-login').style.display = tab === 'login' ? '' : 'none';
-  document.getElementById('auth-register').style.display = tab === 'register' ? '' : 'none';
-  document.getElementById('tab-login').classList.toggle('active', tab === 'login');
-  document.getElementById('tab-register').classList.toggle('active', tab === 'register');
-  const title = document.querySelector('#auth-modal .modal-title');
-  if (title) title.textContent = tab === 'login' ? 'Bentornato!' : 'Benvenuto!';
-  const ae = document.getElementById('auth-error'); if (ae) ae.style.display = 'none';
-  const re = document.getElementById('reg-error'); if (re) re.style.display = 'none';
-}
+// openAuth moved to top
 async function doLogin() {
   const u = document.getElementById('login-username').value.trim();
   const p = document.getElementById('login-password').value;
