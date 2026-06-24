@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.07</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.09</span>
     <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);">| Online dal 1.07.2026</span>
   </div>
@@ -65,9 +65,7 @@
 </div>
 <div id="page-home" class="page active">
   <!-- HERO -->
-  <section id="hero" style="background-image:url('https://res.cloudinary.com/ddpsge9d8/image/upload/w_1400,c_fill,q_auto,f_auto/sgorbions_b58zpb');background-size:cover;background-position:center top;position:relative;">
-    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.60);z-index:0;"></div>
-    <div style="position:relative;z-index:1;">
+  <section id="hero">
     <div class="hero-eyebrow" data-i18n="hero.eyebrow">🇮🇹 Italy's Wildest 90s Collectibles</div>
 
     <h1 class="hero-title">
@@ -93,28 +91,11 @@
   <div id="home-logged-in-content" style="display:none;">
 
   <!-- FEATURED SERIES -->
-  <section class="section" style="background:var(--bg2);">
-    <div class="section-inner">
-      <div class="section-header reveal">
-        <span class="section-eyebrow" data-i18n="home.featured.eyebrow">Featured Series</span>
-        <h2 class="section-title" data-i18n="home.featured.title">Explore the <span class="hi">Slime World</span></h2>
-        <p class="section-sub" data-i18n="home.featured.sub">Every series carefully documented with original artwork, descriptions and rarity info.</p>
-      </div>
-      <div class="grid-3 reveal" id="home-series-grid">
-        <div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title" data-i18n="catalog.empty">No series added yet. Be the first!</p></div>
-      </div>
-      <div style="text-align:center;margin-top:2.5rem;">
-        <button class="btn-secondary" onclick="showPage('catalog')" data-i18n="home.featured.btn">View All Series →</button>
-      </div>
-    </div>
-  </section>
-
   <!-- HOW IT WORKS -->
   <section class="section">
     <div class="section-inner">
       <div class="section-header reveal">
-        <span class="section-eyebrow" data-i18n="home.how.eyebrow">How It Works</span>
-        <h2 class="section-title" data-i18n="home.how.title">Your <span class="hi">Collection</span>, Organized</h2>
+        <h2 class="section-title">Come funziona la tua Collezione Sgorbions <span class="hi">organizzata</span></h2>
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;" class="reveal">
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
@@ -353,7 +334,8 @@
           <button class="admin-tab" onclick="adminTab('blog')" data-i18n="admin.blog">Blog / Q&A</button>
           <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
           <button class="admin-tab" onclick="adminTab('segnalazioni')">🔔 Segnalazioni</button>
-          <button class="admin-tab" onclick="adminTab('eventi')">🔵 Eventi</button>
+          <button class="admin-tab" onclick="adminTab('eventi')"><span style="filter:hue-rotate(200deg);">🔔</span> Eventi</button>
+          <button class="admin-tab" onclick="adminTab('risorse')">🗄️ Risorse</button>
           <button class="admin-tab" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
           <button class="admin-tab" onclick="adminTab('newsletter')">Newsletter</button>
         </div>
@@ -372,6 +354,49 @@
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.blog.title">Manage Q&A / Blog</h3>
           <div id="admin-blog-list"></div>
         </div>
+        <div id="admin-risorse" class="admin-section">
+          <h3 style="font-family:var(--font-ui);margin-bottom:1.5rem;">🗄️ Risorse</h3>
+
+          <!-- EMAIL -->
+          <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+            <h4 style="font-family:var(--font-ui);margin-bottom:1rem;">📧 E-mail</h4>
+            <div id="admin-email-stats" style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+              <div>
+                <div style="font-size:2rem;font-weight:700;font-family:var(--font-ui);" id="email-count-display">—</div>
+                <div style="font-size:0.8rem;color:var(--muted);">e-mail inviate questo mese</div>
+              </div>
+              <div style="flex:1;min-width:200px;">
+                <div style="display:flex;justify-content:space-between;font-size:0.8rem;color:var(--muted);margin-bottom:4px;">
+                  <span id="email-count-label">— / 200</span>
+                  <span id="email-count-pct">—%</span>
+                </div>
+                <div style="background:var(--border);border-radius:99px;height:8px;">
+                  <div id="email-count-bar" style="background:var(--accent);border-radius:99px;height:8px;width:0%;transition:width 0.5s;"></div>
+                </div>
+              </div>
+            </div>
+            <p style="font-size:0.78rem;color:var(--muted);margin-top:0.75rem;">Limite piano gratuito EmailJS: 200 e-mail/mese.</p>
+          </div>
+
+          <!-- FIREBASE -->
+          <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+            <h4 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🔥 Firebase Firestore</h4>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Piano gratuito (Spark): 1 GB storage, 50.000 letture/giorno, 20.000 scritture/giorno.</p>
+            <div id="admin-firebase-stats">
+              <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:700;font-family:var(--font-ui);" id="firebase-docs-count">—</div><div style="font-size:0.78rem;color:var(--muted);">documenti totali</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CLOUDINARY -->
+          <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
+            <h4 style="font-family:var(--font-ui);margin-bottom:0.5rem;">☁️ Cloudinary</h4>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Piano gratuito: 25 crediti/mese (storage + trasformazioni + banda).</p>
+            <p style="font-size:0.82rem;color:var(--muted);">Per il dettaglio aggiornato vai su <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.</p>
+          </div>
+        </div>
+
         <div id="admin-eventi" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;">Eventi di sistema</h3>
           <div id="admin-eventi-table"></div>
@@ -492,7 +517,7 @@
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.07</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.09</span>
     </div>
   </div>
 </footer>
@@ -522,7 +547,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.07</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.09</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
