@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.11</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.21</span>
     <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);">| Online dal 1.07.2026</span>
   </div>
@@ -209,9 +209,10 @@
         </div>
       </div>
     </div>
-    <div id="bulk-owned-btns" style="display:none;margin-bottom:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;">
+    <div id="bulk-owned-btns" style="display:none;margin-bottom:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
       <button onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;background:#0e0a1a;border:1.5px solid var(--accent);color:var(--accent);border-radius:12px;cursor:pointer;font-family:var(--font-body);transition:all 0.2s;">✅ Ho tutto</button>
       <button class="btn-secondary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;">❌ Non ho niente</button>
+      <span id="set-all-msg" style="display:none;font-size:0.85rem;color:var(--accent);font-family:var(--font-ui);"></span>
     </div>
     <div class="progress-bar-wrap" id="detail-progress-wrap" style="display:none;margin-bottom:1.5rem;">
       <div class="progress-label">
@@ -331,13 +332,14 @@
         <div class="admin-tabs">
           <button class="admin-tab active" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
           <button class="admin-tab" onclick="adminTab('figurines')" data-i18n="admin.figurines">Figurines</button>
-          <button class="admin-tab" onclick="adminTab('blog')" data-i18n="admin.blog">Blog / Q&A</button>
+          <button class="admin-tab" onclick="adminTab('blog')" data-i18n="admin.blog">Blog</button>
           <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
           <button class="admin-tab" onclick="adminTab('segnalazioni')">🔔 Segnalazioni</button>
           <button class="admin-tab" onclick="adminTab('eventi')"><span style="filter:hue-rotate(200deg);">🔔</span> Eventi</button>
+          <button class="admin-tab" onclick="adminTab('punteggi')">🏆 Punteggi</button>
           <button class="admin-tab" onclick="adminTab('risorse')">🗄️ Risorse</button>
           <button class="admin-tab" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
-          <button class="admin-tab" onclick="adminTab('newsletter')">Newsletter</button>
+          <button class="admin-tab" onclick="adminTab('newsletter')">Mail</button>
         </div>
         <div id="admin-series" class="admin-section active">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -354,6 +356,27 @@
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.blog.title">Manage Q&A / Blog</h3>
           <div id="admin-blog-list"></div>
         </div>
+        <div id="admin-punteggi" class="admin-section">
+          <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🏆 Livelli utente</h3>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;">Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.</p>
+          <div id="admin-levels-list" style="margin-bottom:1.5rem;"></div>
+          <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
+            <h4 style="font-family:var(--font-ui);margin-bottom:1rem;">Aggiungi / modifica livello</h4>
+            <input type="hidden" id="level-edit-id">
+            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;align-items:end;">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">Nome livello</label>
+                <input class="form-input" type="text" id="level-name-input" placeholder="Es. Principiante">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">Punteggio minimo</label>
+                <input class="form-input" type="number" id="level-score-input" placeholder="Es. 0" min="0">
+              </div>
+              <button class="btn-primary" onclick="saveLevel()" style="white-space:nowrap;">Salva livello</button>
+            </div>
+          </div>
+        </div>
+
         <div id="admin-risorse" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:1.5rem;">🗄️ Risorse</h3>
 
@@ -375,16 +398,21 @@
                 </div>
               </div>
             </div>
-            <p style="font-size:0.78rem;color:var(--muted);margin-top:0.75rem;">Limite piano gratuito EmailJS: 200 e-mail/mese.</p>
+            <p style="font-size:0.88rem;color:var(--muted);margin-top:0.75rem;">Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese).</p>
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem;">
+              <label style="font-size:0.88rem;color:var(--muted);">Correggi contatore:</label>
+              <input type="number" id="email-count-edit" min="0" max="200" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:8px;font-size:0.88rem;">
+              <button class="btn-secondary" style="font-size:0.85rem;padding:4px 14px;" onclick="saveEmailCounter()">Salva</button>
+            </div>
           </div>
 
           <!-- FIREBASE -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
             <h4 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🔥 Firebase Firestore</h4>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Piano gratuito (Spark): 1 GB storage, 50.000 letture/giorno, 20.000 scritture/giorno.</p>
+            <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;">Piano gratuito (Spark): 1 GB storage, 50.000 letture/giorno, 20.000 scritture/giorno.</p>
             <div id="admin-firebase-stats">
               <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-                <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:700;font-family:var(--font-ui);" id="firebase-docs-count">—</div><div style="font-size:0.78rem;color:var(--muted);">documenti totali</div></div>
+                <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:700;font-family:var(--font-ui);" id="firebase-docs-count">—</div><div style="font-size:0.88rem;color:var(--muted);">documenti totali</div></div>
               </div>
             </div>
           </div>
@@ -392,8 +420,8 @@
           <!-- CLOUDINARY -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
             <h4 style="font-family:var(--font-ui);margin-bottom:0.5rem;">☁️ Cloudinary</h4>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Piano gratuito: 25 crediti/mese (storage + trasformazioni + banda).</p>
-            <p style="font-size:0.82rem;color:var(--muted);">Per il dettaglio aggiornato vai su <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.</p>
+            <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;">Piano gratuito: 25 crediti/mese (storage + trasformazioni + banda).</p>
+            <p style="font-size:0.88rem;color:var(--muted);">Per il dettaglio aggiornato vai su <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.</p>
           </div>
         </div>
 
@@ -517,7 +545,7 @@
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.11</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.21</span>
     </div>
   </div>
 </footer>
@@ -547,7 +575,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.11</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.21</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -879,6 +907,13 @@
     <div class="form-group">
       <label class="form-label">E-mail</label>
       <input class="form-input" type="email" id="edit-user-email" placeholder="email@esempio.it">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tipologia di utente</label>
+      <select class="form-input" id="edit-user-role">
+        <option value="collector">Collezionista</option>
+        <option value="admin">Admin</option>
+      </select>
     </div>
     <button class="btn-primary" style="width:100%;" onclick="saveEditUser()">Salva modifiche</button>
   </div>
