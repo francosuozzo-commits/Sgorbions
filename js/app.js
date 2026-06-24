@@ -113,7 +113,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.88';
+const JS_VERSION = 'v2.96';
 
 // ============================================================
 //  NATIONALITY
@@ -305,6 +305,7 @@ async function loadAllData() {
     _cache.users = await fsGetAll('users');
     _cache.contact_messages = await fsGetAll('contact_messages');
     _cache.segnalazioni = await fsGetAll('segnalazioni');
+    _cache.eventi = await fsGetAll('eventi');
     // seed admin if not present
     if (!_cache.users.find(u => u.username === 'admin')) {
       const adminUser = { id: 'admin', username: 'admin', email: 'admin@sgorbions.it', password: 'admin123', isAdmin: true, joined: new Date().toISOString() };
@@ -409,14 +410,14 @@ const i18n = {
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'Email','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
-    'form.name':'Il Tuo Nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo Email','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
+    'form.name':'Il Tuo Nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
     'form.username':'Nome utente','form.password':'Password',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'Numero di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
-    'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Crea Account',
+    'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
     'modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva Figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
@@ -540,9 +541,10 @@ async function doRegister() {
   const regErr = document.getElementById('reg-error');
   if (regErr) regErr.style.display = 'none';
   if (!u || !e || !p) { if (regErr) { regErr.style.display = ''; regErr.textContent = 'Compila tutti i campi'; return; } toast('Compila tutti i campi', 'error'); return; }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { if (regErr) { regErr.style.display = ''; regErr.textContent = 'Inserisci un indirizzo e-mail valido'; return; } toast('Inserisci un indirizzo e-mail valido', 'error'); return; }
   if (p.length < 6) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'La password deve avere almeno 6 caratteri'; return; } toast('La password deve avere almeno 6 caratteri', 'error'); return; }
   let users = getData('users', []);
-  if (users.find(x => x.username === u)) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'Username già in uso'; return; } toast('Username già in uso', 'error'); return; }
+  if (users.find(x => x.username === u)) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'Nome utente già in uso'; return; } toast('Nome utente già in uso', 'error'); return; }
   const natCode = document.getElementById('reg-nationality-code')?.value || '';
   const natName = document.getElementById('reg-nationality-name')?.value || '';
   const newUser = { id: Date.now().toString(), username: u, email: e, password: p, isAdmin: false, joined: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName };
@@ -559,6 +561,7 @@ async function doRegister() {
     welcomeEl2.textContent = 'Benvenuto nella famiglia Sgorbions, ' + u + '! 🎉';
     setTimeout(() => { welcomeEl2.style.display = 'none'; }, 4000);
   }
+  logEvent('new_user', 'Nuovo utente registrato: ' + u);
 }
 function logout() {
   currentUser = null;
@@ -1315,6 +1318,7 @@ function adminTab(tab) {
   if (tab === 'users') renderAdminUsers();
   if (tab === 'newsletter') { renderNewsletterUsers(); loadEmailCounter(); }
   if (tab === 'segnalazioni') renderAdminSegnalazioni();
+  if (tab === 'eventi') renderAdminEventi();
 }
 function renderAdminSeries() {
   const el = document.getElementById('admin-series-table');
@@ -1541,13 +1545,63 @@ async function saveNationality() {
 }
 
 // ============================================================
+//  EVENTI
+// ============================================================
+async function logEvent(type, description, extra = {}) {
+  const event = {
+    type,
+    description,
+    date: new Date().toISOString(),
+    read: false,
+    ...extra
+  };
+  try {
+    const saved = await fsSave('eventi', event);
+    if (!_cache.eventi) _cache.eventi = [];
+    _cache.eventi.push(saved);
+    updateBellBadge();
+  } catch(e) { console.error('logEvent error:', e); }
+}
+
+function renderAdminEventi() {
+  const el = document.getElementById('admin-eventi-table');
+  if (!el) return;
+  const eventi = (_cache.eventi || []).sort((a,b) => new Date(b.date) - new Date(a.date));
+  if (!eventi.length) {
+    el.innerHTML = '<p style="color:var(--muted);">Nessun evento ancora.</p>';
+    return;
+  }
+  const typeIcon = { 'new_user': '👤', 'new_post': '📝', 'reset_pwd': '🔑' };
+  el.innerHTML = `<table class="data-table"><thead><tr>
+    <th>Data</th><th>Tipo</th><th>Descrizione</th><th></th>
+  </tr></thead><tbody>
+  ${eventi.map(e => `<tr style="${e.read ? '' : 'background:rgba(181,255,46,0.05);'}">
+    <td style="white-space:nowrap;font-size:0.82rem;">${new Date(e.date).toLocaleDateString('it-IT')} ${new Date(e.date).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}</td>
+    <td>${typeIcon[e.type] || '📌'}</td>
+    <td>${e.description}</td>
+    <td><button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : 'Segna letto'}</button></td>
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+
+async function markEventRead(id) {
+  const idx = (_cache.eventi || []).findIndex(e => e.id === id);
+  if (idx < 0) return;
+  _cache.eventi[idx].read = true;
+  await fsSave('eventi', _cache.eventi[idx]);
+  updateBellBadge();
+  renderAdminEventi();
+}
+
+// ============================================================
 //  SEGNALAZIONI
 // ============================================================
 function updateBellBadge() {
   const badge = document.getElementById('nav-bell-badge');
   if (!badge) return;
   const segnalazioni = _cache.segnalazioni || [];
-  const unread = segnalazioni.filter(s => !s.read).length;
+  const eventi = _cache.eventi || [];
+  const unread = segnalazioni.filter(s => !s.read).length + eventi.filter(e => !e.read).length;
   if (unread > 0) {
     badge.style.display = '';
     badge.textContent = unread > 9 ? '9+' : unread;
