@@ -113,7 +113,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.54';
+const JS_VERSION = 'v2.58';
 
 // ============================================================
 //  NATIONALITY
@@ -304,6 +304,7 @@ async function loadAllData() {
     _cache.posts = await fsGetAll('posts');
     _cache.users = await fsGetAll('users');
     _cache.contact_messages = await fsGetAll('contact_messages');
+    _cache.segnalazioni = await fsGetAll('segnalazioni');
     // seed admin if not present
     if (!_cache.users.find(u => u.username === 'admin')) {
       const adminUser = { id: 'admin', username: 'admin', email: 'admin@sgorbions.it', password: 'admin123', isAdmin: true, joined: new Date().toISOString() };
@@ -565,7 +566,12 @@ function logout() {
   updateNavUser();
   updateOwnedCounter();
   showPage('home');
-  toast('Logged out. See you soon! 👋', 'success');
+  const welcomeEl = document.getElementById('hero-welcome-msg');
+  if (welcomeEl) {
+    welcomeEl.style.display = '';
+    welcomeEl.textContent = currentLang === 'it' ? 'Arrivederci! A presto 👋' : 'Logged out. See you soon! 👋';
+    setTimeout(() => { welcomeEl.style.display = 'none'; }, 4000);
+  }
 }
 function updateNavUser() {
   const guestNav = document.getElementById('guest-nav');
@@ -587,6 +593,11 @@ function updateNavUser() {
     if (heroStats) heroStats.style.display = '';
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = '';
     document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
+    const bellBtn = document.getElementById('nav-bell-btn');
+    if (bellBtn) {
+      bellBtn.style.display = currentUser.isAdmin ? '' : 'none';
+      updateBellBadge();
+    }
     const navAvatar = document.getElementById('nav-avatar');
     // Always reset first
     navAvatar.style.backgroundImage = '';
@@ -611,6 +622,8 @@ function updateNavUser() {
     if (btnCollect) btnCollect.style.display = '';
     const homeContent2 = document.getElementById('home-logged-in-content');
     if (homeContent2) homeContent2.style.display = 'none';
+    const bellBtn2 = document.getElementById('nav-bell-btn');
+    if (bellBtn2) bellBtn2.style.display = 'none';
     ['nav-catalog','nav-blog','nav-classifica'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     const heroStats2 = document.getElementById('hero-stats');
     if (heroStats2) heroStats2.style.display = 'none';
@@ -930,13 +943,14 @@ function renderItems() {
     const imgHTML = f.img ? `<img src="${cloudinaryUrl(f.img)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;text-align:center;"><span style="font-size:1.5rem;">${icon}</span><span style="font-size:0.6rem;color:var(--muted);line-height:1.2;">Foto non ancora disponibile</span></div>`;
     const ownedBadge = isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : '';
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">&#10005;</button></div>` : '';
+    const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" style="position:absolute;bottom:6px;right:6px;font-size:0.65rem;padding:2px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.7);cursor:pointer;">🚩 Segnala</button>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
     const sizeHTML = f.size ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
     const figLabel = f.subseries ? `[${f.subseries}]` : (f.number ? `#${String(f.number).padStart(2,'0')}` : '');
     return `<div class="fig-card">
       <div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
-        ${imgHTML}${ownedBadge}${adminBtns}
+        ${imgHTML}${ownedBadge}${adminBtns}${reportBtn}
       </div>
       <div class="fig-body">
         <div class="fig-number" style="font-size:1rem;">${figLabel}</div>
@@ -1269,6 +1283,7 @@ function adminTab(tab) {
   if (tab === 'contacts') renderAdminContacts();
   if (tab === 'users') renderAdminUsers();
   if (tab === 'newsletter') { renderNewsletterUsers(); loadEmailCounter(); }
+  if (tab === 'segnalazioni') renderAdminSegnalazioni();
 }
 function renderAdminSeries() {
   const el = document.getElementById('admin-series-table');
@@ -1487,6 +1502,100 @@ async function saveNationality() {
   closeModal('nationality-modal');
   renderProfile();
   toast('Nazionalità aggiornata! 🌍', 'success');
+}
+
+// ============================================================
+//  SEGNALAZIONI
+// ============================================================
+function updateBellBadge() {
+  const badge = document.getElementById('nav-bell-badge');
+  if (!badge) return;
+  const segnalazioni = _cache.segnalazioni || [];
+  const unread = segnalazioni.filter(s => !s.read).length;
+  if (unread > 0) {
+    badge.style.display = '';
+    badge.textContent = unread > 9 ? '9+' : unread;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function openSegnalazioneModal(figId) {
+  if (!currentUser) { openAuth('login'); return; }
+  document.getElementById('segnalazione-fig-id').value = figId;
+  document.getElementById('segnalazione-commento').value = '';
+  const fb = document.getElementById('segnalazione-feedback');
+  fb.style.display = 'none';
+  document.getElementById('segnalazione-modal').classList.remove('hidden');
+}
+
+async function inviaSegnalazione() {
+  const figId = document.getElementById('segnalazione-fig-id').value;
+  const commento = document.getElementById('segnalazione-commento').value.trim();
+  if (!commento) { toast('Inserisci un commento', 'error'); return; }
+  const allFigs = getData('figurines', []);
+  const fig = allFigs.find(f => f.id === figId);
+  const series = getData('series', []);
+  const serie = fig ? series.find(s => s.id === fig.seriesId) : null;
+  const segnalazione = {
+    figId,
+    figName: fig ? fig.name : 'Sconosciuta',
+    figNumber: fig ? fig.number : null,
+    serieName: serie ? serie.name : 'Sconosciuta',
+    userId: currentUser.id,
+    username: currentUser.username,
+    commento,
+    date: new Date().toISOString(),
+    read: false
+  };
+  const saved = await fsSave('segnalazioni', segnalazione);
+  if (!_cache.segnalazioni) _cache.segnalazioni = [];
+  _cache.segnalazioni.push(saved);
+  const fb = document.getElementById('segnalazione-feedback');
+  fb.style.display = '';
+  fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem;border-radius:8px;font-size:0.88rem;margin-bottom:0.75rem;';
+  fb.textContent = '✅ Segnalazione inviata! Grazie.';
+  setTimeout(() => closeModal('segnalazione-modal'), 1500);
+  updateBellBadge();
+}
+
+function renderAdminSegnalazioni() {
+  const el = document.getElementById('admin-segnalazioni-table');
+  const segnalazioni = (_cache.segnalazioni || []).sort((a,b) => new Date(b.date) - new Date(a.date));
+  if (!segnalazioni.length) {
+    el.innerHTML = '<p style="color:var(--muted);">Nessuna segnalazione ancora.</p>';
+    return;
+  }
+  el.innerHTML = `<table class="data-table"><thead><tr>
+    <th>Data</th><th>Utente</th><th>Figurina</th><th>Commento</th><th></th>
+  </tr></thead><tbody>
+  ${segnalazioni.map(s => `<tr style="${s.read ? '' : 'background:rgba(181,255,46,0.05);'}">
+    <td style="white-space:nowrap;font-size:0.82rem;">${new Date(s.date).toLocaleDateString('it-IT')}</td>
+    <td>${s.username}</td>
+    <td style="font-size:0.82rem;">${s.serieName}<br><span style="color:var(--muted);">${s.figNumber ? '#'+s.figNumber+' ' : ''}${s.figName}</span></td>
+    <td>${s.commento}</td>
+    <td><button class="tbl-btn tbl-btn-edit" onclick="markSegnalazioneRead('${s.id}')">${s.read ? '✓' : 'Segna letta'}</button></td>
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+
+async function markSegnalazioneRead(id) {
+  const idx = _cache.segnalazioni.findIndex(s => s.id === id);
+  if (idx < 0) return;
+  _cache.segnalazioni[idx].read = true;
+  await fsSave('segnalazioni', _cache.segnalazioni[idx]);
+  updateBellBadge();
+  renderAdminSegnalazioni();
+}
+
+async function markAllSegnalazioniRead() {
+  for (const s of _cache.segnalazioni.filter(s => !s.read)) {
+    s.read = true;
+    await fsSave('segnalazioni', s);
+  }
+  updateBellBadge();
+  renderAdminSegnalazioni();
+  toast('Tutte le segnalazioni segnate come lette', 'success');
 }
 
 function openEditUserModal(userId) {
