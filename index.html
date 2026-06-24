@@ -9,17 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Boogaloo&family=Nunito:wght@400;600;700;800&family=Permanent+Marker&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <link rel="stylesheet" href="css/style.css">
-<script>
-// Proxy functions available immediately before app.js loads
-function openAuth(tab) {
-  document.addEventListener('appReady', function() { window._openAuth(tab); }, { once: true });
-  // If already ready, call directly
-  if (window._openAuth) window._openAuth(tab);
-}
-function openResetModal() {
-  if (window._openResetModal) window._openResetModal();
-}
-</script>
 </head>
 <body>
 
@@ -34,7 +23,7 @@ function openResetModal() {
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.99</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.07</span>
     <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);">| Online dal 1.07.2026</span>
   </div>
@@ -58,7 +47,7 @@ function openResetModal() {
     </div>
     <div id="guest-nav">
       <button class="btn-login" onclick="openAuth('login')" data-i18n="nav.login">Login</button>
-      <button class="btn-register" onclick="openAuth('register')" data-i18n="nav.register">Join</button>
+      <button class="btn-register" onclick="openAuth('register')" data-i18n="nav.register">Registrati</button>
     </div>
     <div id="user-nav" style="display:none;">
       <span id="nav-username" style="font-family:var(--font-ui);color:var(--muted);font-size:1.05rem;"></span>
@@ -76,7 +65,9 @@ function openResetModal() {
 </div>
 <div id="page-home" class="page active">
   <!-- HERO -->
-  <section id="hero">
+  <section id="hero" style="background-image:url('https://res.cloudinary.com/ddpsge9d8/image/upload/w_1400,c_fill,q_auto,f_auto/sgorbions_b58zpb');background-size:cover;background-position:center top;position:relative;">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.60);z-index:0;"></div>
+    <div style="position:relative;z-index:1;">
     <div class="hero-eyebrow" data-i18n="hero.eyebrow">🇮🇹 Italy's Wildest 90s Collectibles</div>
 
     <h1 class="hero-title">
@@ -85,6 +76,7 @@ function openResetModal() {
     </h1>
     <p class="hero-desc" data-i18n="hero.desc">The definitive fan database for Sgorbions figurines — the legendary Italian sticker series from the early 1990s. Catalog your collection, connect with other fans, and track every grotesque character.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
+    <div id="profile-save-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1rem;margin-bottom:1rem;text-align:center;">✅ Informazioni salvate!</div>
     <div class="hero-cta">
       <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog">Esplora il catalogo Sgorbions</button>
 <button class="btn-primary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting">Inizia a collezionare gli Sgorbions</button>
@@ -345,6 +337,7 @@ function openResetModal() {
             <div id="profile-nationality-display" style="font-size:0.88rem;color:var(--muted);"></div>
             <button onclick="openNationalityModal()" style="font-size:0.75rem;padding:2px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;">✏️ Cambia nazionalità</button>
             <button onclick="openChangePwdModal()" style="font-size:0.75rem;padding:2px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;">🔑 Cambia password</button>
+            <button onclick="openProfileInfoModal()" style="font-size:0.75rem;padding:2px 10px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;">✏️ Le mie info</button>
           </div>
           <div class="profile-stats">
             <div><div class="profile-stat-num" id="profile-owned">0</div><div class="profile-stat-label" data-i18n="profile.owned">Figurines Owned</div></div>
@@ -360,7 +353,7 @@ function openResetModal() {
           <button class="admin-tab" onclick="adminTab('blog')" data-i18n="admin.blog">Blog / Q&A</button>
           <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
           <button class="admin-tab" onclick="adminTab('segnalazioni')">🔔 Segnalazioni</button>
-          <button class="admin-tab" onclick="adminTab('eventi')">📋 Eventi</button>
+          <button class="admin-tab" onclick="adminTab('eventi')">🔵 Eventi</button>
           <button class="admin-tab" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
           <button class="admin-tab" onclick="adminTab('newsletter')">Newsletter</button>
         </div>
@@ -492,14 +485,14 @@ function openResetModal() {
       <div class="footer-col">
         <h4 data-i18n="footer.account">Account</h4>
         <a onclick="openAuth('login')" data-i18n="nav.login">Login</a>
-        <a onclick="openAuth('register')" data-i18n="nav.register">Register</a>
+        <a onclick="openAuth('register')" data-i18n="nav.register">Registrati</a>
         <a onclick="showPage('profile')" data-i18n="profile.title">My Profile</a>
       </div>
     </div>
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.99</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.07</span>
     </div>
   </div>
 </footer>
@@ -515,7 +508,7 @@ function openResetModal() {
     </div>
     <div class="auth-tabs">
       <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')" data-i18n="auth.login">Login</button>
-      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')" data-i18n="auth.register">Register</button>
+      <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')" data-i18n="auth.register">Registrati</button>
     </div>
     <div id="auth-login">
       <div class="form-group">
@@ -529,7 +522,7 @@ function openResetModal() {
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.99</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.07</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -711,6 +704,51 @@ function openResetModal() {
   </div>
 </div>
 
+<!-- PROFILE INFO INVITE MODAL -->
+<div class="modal-overlay hidden" id="profile-invite-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h2 class="modal-title">👋 Raccontaci di te!</h2>
+      <button class="modal-close" onclick="closeModal('profile-invite-modal')">✕</button>
+    </div>
+    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1.25rem;">Queste informazioni sono <strong>facoltative</strong> e non saranno mostrate ad altri utenti. Ci aiutano a conoscerti meglio!</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+      <div class="form-group">
+        <label class="form-label">Nome</label>
+        <input class="form-input" type="text" id="invite-nome" placeholder="">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Cognome</label>
+        <input class="form-input" type="text" id="invite-cognome" placeholder="">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Età</label>
+        <input class="form-input" type="number" id="invite-eta" min="5" max="120">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Sesso</label>
+        <select class="form-input" id="invite-sesso">
+          <option value="">— Seleziona —</option>
+          <option value="M">Maschio</option>
+          <option value="F">Femmina</option>
+          <option value="A">Preferisco non dirlo</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Anni di collezionismo Sgorbions</label>
+      <input class="form-input" type="number" id="invite-anni" min="0" max="40">
+    </div>
+    <div id="invite-modal-btns-login" style="display:flex;gap:0.75rem;margin-top:0.5rem;">
+      <button class="btn-secondary" style="flex:1;" onclick="closeModal('profile-invite-modal')">Dopo</button>
+      <button class="btn-primary" style="flex:2;" onclick="saveProfileInvite()">Salva e continua</button>
+    </div>
+    <div id="invite-modal-btns-profile" style="display:none;gap:0.75rem;margin-top:0.5rem;">
+      <button class="btn-primary" style="width:100%;" onclick="saveProfileInvite()">Salva</button>
+    </div>
+  </div>
+</div>
+
 <!-- CHANGE PASSWORD MODAL -->
 <div class="modal-overlay hidden" id="change-pwd-modal">
   <div class="modal">
@@ -824,6 +862,6 @@ function openResetModal() {
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js" defer></script>
+<script src="js/app.js"></script>
 </body>
 </html>
