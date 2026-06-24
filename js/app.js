@@ -113,7 +113,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.34';
+const JS_VERSION = 'v2.43';
 
 // ============================================================
 //  NATIONALITY
@@ -468,6 +468,11 @@ let editingFigImg = null;
 //  NAVIGATION
 // ============================================================
 function showPage(page) {
+  const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile'];
+  if (protectedPages.includes(page) && !currentUser) {
+    openAuth('login');
+    return;
+  }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('series-detail').style.display = 'none';
   const el = document.getElementById('page-' + page);
@@ -572,6 +577,7 @@ function updateNavUser() {
     guestNav.style.display = 'none';
     userNav.style.display = 'flex';
     if (wantlistLink) wantlistLink.style.display = '';
+    ['nav-catalog','nav-blog','nav-classifica'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
     const nlBtn = document.getElementById('nav-newsletter-btn');
     if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
     if (btnCollect) btnCollect.style.display = 'none';
@@ -605,6 +611,7 @@ function updateNavUser() {
     if (btnCollect) btnCollect.style.display = '';
     const homeContent2 = document.getElementById('home-logged-in-content');
     if (homeContent2) homeContent2.style.display = 'none';
+    ['nav-catalog','nav-blog','nav-classifica'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     const heroStats2 = document.getElementById('hero-stats');
     if (heroStats2) heroStats2.style.display = 'none';
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = 'none';
@@ -1772,7 +1779,7 @@ async function renderClassifica() {
       ? `<div style="width:52px;height:52px;border-radius:50%;background:url('${user.avatar}') center/cover;border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};flex-shrink:0;"></div>`
       : `<div style="width:52px;height:52px;border-radius:50%;background:var(--card2);border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--muted);flex-shrink:0;">${user.username[0].toUpperCase()}</div>`;
 
-    return `<div style="background:${isTop3 ? 'rgba(181,255,46,0.05)' : 'var(--card)'};border:1px solid ${isTop3 ? 'rgba(181,255,46,0.2)' : 'var(--border)'};border-radius:var(--radius-lg);padding:1.25rem 1.5rem;margin-bottom:0.75rem;display:flex;align-items:center;gap:1.25rem;">
+    return `<div style="background:${isTop3 ? 'rgba(181,255,46,0.05)' : 'var(--card)'};border:1px solid ${isTop3 ? 'rgba(181,255,46,0.2)' : 'var(--border)'};border-radius:var(--radius-lg);padding:0.6rem 1.5rem;margin-bottom:0.4rem;display:flex;align-items:center;gap:1.25rem;">
       <div style="font-size:1.1rem;width:40px;text-align:center;flex-shrink:0;font-family:var(--font-ui);color:${isTop3 ? 'var(--accent)' : 'var(--muted)'};">#${position}</div>
       ${avatarHTML}
       <div style="flex:1;">
@@ -1856,13 +1863,18 @@ function renderWantlist() {
               <button onclick="toggleWantlistMode('${groupKey}','both')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='both'?'var(--accent3)':'var(--card2)'};color:${mode==='both'?'#fff':'var(--muted)'};cursor:pointer;">Numeri e nomi</button>
             </div>
           </div>`;
+        // If all items in this section are missing, show a simple message
+        const allSectionFigs = allFigs.filter(f => f.seriesId === sId && f.section === sec);
+        if (items.length === allSectionFigs.length) {
+          return `<div style="margin-bottom:0.75rem;">${modeSelector}<div style="color:var(--muted);font-size:0.88rem;font-style:italic;">Ti manca tutta la serie</div></div>`;
+        }
         const sorted = items.sort((a,b) => (a.number||0) - (b.number||0));
         const chips = sorted.map(f => {
           let label = '';
           if (mode === 'numbers') label = f.number ? '#' + String(f.number).padStart(2,'0') : (f.subseries ? '['+f.subseries+']' : f.name);
           else if (mode === 'names') label = f.name;
           else label = (f.number ? '#' + String(f.number).padStart(2,'0') + ' ' : (f.subseries ? '['+f.subseries+'] ' : '')) + f.name;
-          return `<span style="background:rgba(255,107,26,0.08);border:1px solid rgba(255,107,26,0.2);color:var(--accent2);font-size:0.78rem;padding:2px 8px;border-radius:12px;">${label}</span>`;
+          return `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:0.78rem;padding:2px 8px;border-radius:12px;">${label}</span>`;
         }).join('');
         return `<div style="margin-bottom:0.75rem;">${modeSelector}<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">${chips}</div></div>`;
       }).join('')}
