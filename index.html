@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.54</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v2.58</span>
     <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">JS:<span id="nav-js-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);">| Online dal 1.07.2026</span>
   </div>
@@ -40,6 +40,10 @@
     <div class="lang-toggle">
       <button class="lang-btn active" onclick="setLang('en')" title="English" style="background-image:url('https://flagcdn.com/w40/gb.png');background-size:cover;background-position:center;width:32px;height:22px;border-radius:4px;"></button>
       <button class="lang-btn" onclick="setLang('it')" title="Italiano" style="background-image:url('https://flagcdn.com/w40/it.png');background-size:cover;background-position:center;width:32px;height:22px;border-radius:4px;"></button>
+    </div>
+    <div id="nav-bell-btn" style="display:none;position:relative;cursor:pointer;" onclick="showPage('profile');setTimeout(()=>adminTab('segnalazioni'),300)" title="Segnalazioni">
+      <span style="font-size:1.3rem;">🔔</span>
+      <span id="nav-bell-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:#ff4444;color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span>
     </div>
     <div id="guest-nav">
       <button class="btn-login" onclick="openAuth('login')" data-i18n="nav.login">Login</button>
@@ -340,6 +344,7 @@
           <button class="admin-tab" onclick="adminTab('figurines')" data-i18n="admin.figurines">Figurines</button>
           <button class="admin-tab" onclick="adminTab('blog')" data-i18n="admin.blog">Blog / Q&A</button>
           <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
+          <button class="admin-tab" onclick="adminTab('segnalazioni')">🔔 Segnalazioni</button>
           <button class="admin-tab" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
           <button class="admin-tab" onclick="adminTab('newsletter')">Newsletter</button>
         </div>
@@ -357,6 +362,13 @@
         <div id="admin-blog" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.blog.title">Manage Q&A / Blog</h3>
           <div id="admin-blog-list"></div>
+        </div>
+        <div id="admin-segnalazioni" class="admin-section">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+            <h3 style="font-family:var(--font-ui);">Segnalazioni utenti</h3>
+            <button class="tbl-btn tbl-btn-edit" onclick="markAllSegnalazioniRead()">✓ Segna tutte come lette</button>
+          </div>
+          <div id="admin-segnalazioni-table"></div>
         </div>
         <div id="admin-contacts" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.contacts.title">Contact Messages</h3>
@@ -406,10 +418,7 @@
           <div id="admin-users-table"></div>
         </div>
       </div>
-      <div id="my-collection" style="margin-top:2rem;">
-        <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:1.5rem;" data-i18n="profile.collection">My Collection</h2>
-        <div id="my-collection-list"></div>
-      </div>
+
     </div>
   </section>
 </div>
@@ -470,7 +479,7 @@
     <div class="footer-bottom">
       <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
       <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.54</span>
+      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.58</span>
     </div>
   </div>
 </footer>
@@ -499,7 +508,7 @@
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.54</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v2.58</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -661,6 +670,24 @@
     </div>
     <button class="btn-primary" style="width:100%;" onclick="saveBulkScore()">Applica a tutti</button>
     <div id="bulk-score-feedback" style="display:none;margin-top:0.75rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
+  </div>
+</div>
+
+<!-- SEGNALAZIONE MODAL -->
+<div class="modal-overlay hidden" id="segnalazione-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title">🚩 Segnala errore</h2>
+      <button class="modal-close" onclick="closeModal('segnalazione-modal')">✕</button>
+    </div>
+    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem;">Descrivi l'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all'amministratore.</p>
+    <input type="hidden" id="segnalazione-fig-id">
+    <div class="form-group">
+      <label class="form-label">Commento</label>
+      <textarea class="form-textarea" id="segnalazione-commento" rows="4" placeholder="Descrivi l'errore..."></textarea>
+    </div>
+    <div id="segnalazione-feedback" style="display:none;margin-bottom:0.75rem;"></div>
+    <button class="btn-primary" style="width:100%;" onclick="inviaSegnalazione()">Invia segnalazione</button>
   </div>
 </div>
 
