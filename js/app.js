@@ -113,6 +113,8 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
+const JS_VERSION = 'v2.34';
+
 // ============================================================
 //  NATIONALITY
 // ============================================================
@@ -1738,7 +1740,7 @@ async function renderClassifica() {
   // Calculate score for each user
   const ranking = [];
   for (const user of users) {
-    const owned = getData('owned_' + user.id, []);
+    const owned = LOCAL.get('owned_' + user.id) || [];
     const ownedFigs = allFigs.filter(f => owned.includes(f.id));
     const score = ownedFigs.reduce((sum, f) => sum + (f.score || 0), 0);
     const countFigurines = ownedFigs.filter(f => f.section === 'figurines' || !f.section).length;
@@ -1762,7 +1764,7 @@ async function renderClassifica() {
   ];
 
   el.innerHTML = ranking.map((entry, idx) => {
-    const { user, score, ownedCount } = entry;
+    const { user, score, countFigurines, countAlbums, countExtras } = entry;
     const position = idx + 1;
     const medal = position <= 10 ? medals[idx] : '';
     const isTop3 = position <= 3;
@@ -1788,6 +1790,14 @@ async function renderClassifica() {
 // ============================================================
 //  WANTLIST
 // ============================================================
+// Wantlist display mode per group: 'both' | 'numbers' | 'names'
+const wantlistMode = {};
+
+function toggleWantlistMode(key, mode) {
+  wantlistMode[key] = mode;
+  renderWantlist();
+}
+
 function renderWantlist() {
   if (!currentUser) { showPage('home'); return; }
   const el = document.getElementById('wantlist-content');
@@ -1801,7 +1811,6 @@ function renderWantlist() {
     return;
   }
 
-  // Group by series
   const bySeries = {};
   missing.forEach(f => {
     if (!bySeries[f.seriesId]) bySeries[f.seriesId] = [];
@@ -1810,7 +1819,6 @@ function renderWantlist() {
 
   const sectionLabels = { figurines: 'Figurine', albums: 'Album', extras: 'Altro Materiale' };
 
-  // Sort by same order as catalog
   const sortedEntries = Object.entries(bySeries).sort(([aId], [bId]) => {
     const aS = series.find(x => x.id === aId);
     const bS = series.find(x => x.id === bId);
@@ -1821,26 +1829,43 @@ function renderWantlist() {
     const s = series.find(x => x.id === sId);
     const allSeriesFigs = allFigs.filter(f => f.seriesId === sId);
     const ownedCount = allSeriesFigs.length - figs.length;
-    // group by section
     const bySection = {};
     figs.forEach(f => {
       const sec = f.section || 'figurines';
       if (!bySection[sec]) bySection[sec] = [];
       bySection[sec].push(f);
     });
+
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
         <span style="font-family:var(--font-display);font-size:1.4rem;">${s ? s.name : 'Serie sconosciuta'}</span>
         <span class="card-badge">${figs.length} mancanti su ${allSeriesFigs.length}</span>
       </div>
       <div class="progress-bar" style="margin-bottom:1rem;"><div class="progress-fill" style="width:${Math.round(ownedCount/allSeriesFigs.length*100)}%"></div></div>
-      ${Object.entries(bySection).map(([sec, items]) => `
-        <div style="margin-bottom:0.75rem;">
-          <div style="font-family:var(--font-ui);font-size:0.85rem;color:var(--accent3);margin-bottom:0.4rem;">${sectionLabels[sec] || sec}</div>
-          <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
-            ${items.sort((a,b)=>a.number-b.number).map(f => `<span style="background:rgba(255,107,26,0.08);border:1px solid rgba(255,107,26,0.2);color:var(--accent2);font-size:0.78rem;padding:2px 8px;border-radius:12px;">#${String(f.number).padStart(2,'0')} ${f.name}</span>`).join('')}
-          </div>
-        </div>`).join('')}
+      ${Object.entries(bySection).map(([sec, items]) => {
+        const groupKey = sId + '_' + sec;
+        const mode = wantlistMode[groupKey] || 'both';
+        const hasNumbers = items.some(f => f.number);
+        const hasNames = true;
+        const modeSelector = `
+          <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;flex-wrap:wrap;">
+            <span style="font-family:var(--font-ui);font-size:0.85rem;color:var(--accent3);">${sectionLabels[sec] || sec}</span>
+            <div style="margin-left:auto;display:flex;gap:0.35rem;">
+              ${hasNumbers ? `<button onclick="toggleWantlistMode('${groupKey}','numbers')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='numbers'?'var(--accent3)':'var(--card2)'};color:${mode==='numbers'?'#fff':'var(--muted)'};cursor:pointer;">Solo numeri</button>` : ''}
+              <button onclick="toggleWantlistMode('${groupKey}','names')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='names'?'var(--accent3)':'var(--card2)'};color:${mode==='names'?'#fff':'var(--muted)'};cursor:pointer;">Solo nomi</button>
+              <button onclick="toggleWantlistMode('${groupKey}','both')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='both'?'var(--accent3)':'var(--card2)'};color:${mode==='both'?'#fff':'var(--muted)'};cursor:pointer;">Numeri e nomi</button>
+            </div>
+          </div>`;
+        const sorted = items.sort((a,b) => (a.number||0) - (b.number||0));
+        const chips = sorted.map(f => {
+          let label = '';
+          if (mode === 'numbers') label = f.number ? '#' + String(f.number).padStart(2,'0') : (f.subseries ? '['+f.subseries+']' : f.name);
+          else if (mode === 'names') label = f.name;
+          else label = (f.number ? '#' + String(f.number).padStart(2,'0') + ' ' : (f.subseries ? '['+f.subseries+'] ' : '')) + f.name;
+          return `<span style="background:rgba(255,107,26,0.08);border:1px solid rgba(255,107,26,0.2);color:var(--accent2);font-size:0.78rem;padding:2px 8px;border-radius:12px;">${label}</span>`;
+        }).join('');
+        return `<div style="margin-bottom:0.75rem;">${modeSelector}<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">${chips}</div></div>`;
+      }).join('')}
     </div>`;
   }).join('');
 }
@@ -1887,6 +1912,9 @@ setLang(currentLang);
 initReveal();
 // Start Firebase — loads all data then renders
 initEmailJS();
+// Show JS version in navbar
+const jsVerEl = document.getElementById('nav-js-version');
+if (jsVerEl) jsVerEl.textContent = JS_VERSION;
 initFirebase().catch(e => {
   console.warn('Firebase non disponibile, uso dati demo:', e.message);
   loadDemoData();
