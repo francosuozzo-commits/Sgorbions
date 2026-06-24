@@ -89,7 +89,7 @@ function renderNewsletterUsers() {
   if (!users.length) { el.innerHTML = '<p style="color:var(--muted);font-size:0.88rem;">Nessun utente registrato.</p>'; return; }
   el.innerHTML = users.map(u => `
     <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-size:0.9rem;">
-      <input type="checkbox" class="newsletter-user-cb" data-id="${u.id}" data-email="${u.email}" data-username="${u.username}" checked
+      <input type="checkbox" class="newsletter-user-cb" data-id="${u.id}" data-email="${u.email}" data-username="${u.username}"
         style="width:16px;height:16px;cursor:pointer;">
       <span>${u.username}</span>
       <span style="color:var(--muted);font-size:0.8rem;">&lt;${u.email}&gt;</span>
@@ -128,7 +128,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v3.11';
+const JS_VERSION = 'v3.21';
 
 // ============================================================
 //  NATIONALITY
@@ -321,6 +321,7 @@ async function loadAllData() {
     _cache.contact_messages = await fsGetAll('contact_messages');
     _cache.segnalazioni = await fsGetAll('segnalazioni');
     _cache.eventi = await fsGetAll('eventi');
+    _cache.levels = await fsGetAll('levels');
     await loadAllOwnedFromFirebase();
     // seed admin if not present
     if (!_cache.users.find(u => u.username === 'admin')) {
@@ -401,7 +402,7 @@ const i18n = {
     'modal.fig.title':'Add Figurine','modal.fig.save':'Save Figurine',
     'modal.post.title':'New Post','modal.post.save':'Publish Post',
     'profile.title':'My Profile','profile.owned':'Figurines Owned','profile.series':'Series Tracked','profile.collection':'My Collection',
-    'admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Figurines','admin.blog':'Blog / Q&A','admin.contacts':'Messages','admin.users':'Users',
+    'admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Figurines','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users',
     'admin.series.title':'Manage Series','admin.figurines.title':'Manage Figurines','admin.blog.title':'Manage Q&A / Blog','admin.contacts.title':'Contact Messages','admin.users.title':'Registered Users',
     'footer.desc':'The unofficial fan database dedicated to the legendary Italian figurine collection from the early 1990s. Made with 💚 by collectors, for collectors.',
     'footer.nav':'Navigation','footer.account':'Account','footer.copy':'© 2026 Sgorbions Collector. Unofficial fan site.',
@@ -438,7 +439,7 @@ const i18n = {
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva Figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
-    'admin.title':'Pannello Admin','admin.series':'Serie','admin.figurines':'Figurine','admin.blog':'Blog / D&R','admin.contacts':'Messaggi','admin.users':'Utenti',
+    'admin.title':'Pannello Admin','admin.series':'Serie','admin.figurines':'Figurine','admin.blog':'Blog','admin.contacts':'Messaggi','admin.users':'Utenti',
     'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.blog.title':'Gestisci D&R / Blog','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati',
     'footer.desc':'Il database fan non ufficiale dedicato alla leggendaria collezione di figurine italiana degli anni \'90. Fatto con 💚 da collezionisti, per collezionisti.',
     'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2026 Sgorbions Collector. Sito fan non ufficiale.',
@@ -1547,6 +1548,7 @@ function adminTab(tab) {
   if (tab === 'segnalazioni') renderAdminSegnalazioni();
   if (tab === 'eventi') renderAdminEventi();
   if (tab === 'risorse') renderAdminRisorse();
+  if (tab === 'punteggi') renderAdminPunteggi();
 }
 function renderAdminSeries() {
   const el = document.getElementById('admin-series-table');
@@ -1696,7 +1698,7 @@ function renderAdminContacts() {
 function renderAdminUsers() {
   const el = document.getElementById('admin-users-table');
   const users = getData('users', []);
-  el.innerHTML = `<table class="data-table"><thead><tr><th>Username</th><th>Email</th><th>${currentLang==="it"?"Ruolo":"Role"}</th><th>${currentLang==="it"?"Iscritto":"Joined"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
+  el.innerHTML = `<table class="data-table"><thead><tr><th>Username</th><th>E-mail</th><th>Livello</th><th>Ultima login</th><th>Iscritto dal</th><th>Azioni</th></tr></thead><tbody>
     ${users.map(u => `<tr>
       <td style="display:flex;align-items:center;gap:0.6rem;">
         <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : u.username[0].toUpperCase()}</div>
@@ -1774,8 +1776,92 @@ async function saveNationality() {
 }
 
 // ============================================================
+//  PUNTEGGI / LIVELLI
+// ============================================================
+function getUserLevel(score) {
+  const levels = getData('levels', []).sort((a,b) => b.minScore - a.minScore);
+  for (const lv of levels) {
+    if (score >= lv.minScore) return lv;
+  }
+  return null;
+}
+
+function renderAdminPunteggi() {
+  const el = document.getElementById('admin-levels-list');
+  if (!el) return;
+  const levels = getData('levels', []).sort((a,b) => a.minScore - b.minScore);
+  if (!levels.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-style:italic;">Nessun livello definito ancora.</p>';
+    return;
+  }
+  el.innerHTML = `<table class="data-table"><thead><tr>
+    <th>Nome livello</th><th>Punteggio minimo</th><th></th>
+  </tr></thead><tbody>
+  ${levels.map(lv => `<tr>
+    <td><strong>${lv.name}</strong></td>
+    <td>${lv.minScore} pt</td>
+    <td>
+      <button class="tbl-btn tbl-btn-edit" onclick="editLevel('${lv.id}')">Modifica</button>
+      <button class="tbl-btn tbl-btn-del" onclick="deleteLevel('${lv.id}')">Elimina</button>
+    </td>
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+
+function editLevel(id) {
+  const lv = getData('levels', []).find(l => l.id === id);
+  if (!lv) return;
+  document.getElementById('level-edit-id').value = id;
+  document.getElementById('level-name-input').value = lv.name;
+  document.getElementById('level-score-input').value = lv.minScore;
+}
+
+async function saveLevel() {
+  const name = document.getElementById('level-name-input').value.trim();
+  const minScore = parseInt(document.getElementById('level-score-input').value);
+  const editId = document.getElementById('level-edit-id').value;
+  if (!name || isNaN(minScore)) { toast('Compila nome e punteggio minimo', 'error'); return; }
+
+  let levels = getData('levels', []);
+  if (editId) {
+    const idx = levels.findIndex(l => l.id === editId);
+    if (idx >= 0) {
+      levels[idx] = { ...levels[idx], name, minScore };
+      await fsSave('levels', levels[idx]);
+    }
+  } else {
+    const newLevel = { name, minScore };
+    const saved = await fsSave('levels', newLevel);
+    levels.push(saved);
+  }
+  _cache.levels = levels;
+  document.getElementById('level-edit-id').value = '';
+  document.getElementById('level-name-input').value = '';
+  document.getElementById('level-score-input').value = '';
+  renderAdminPunteggi();
+  toast('Livello salvato!', 'success');
+}
+
+async function deleteLevel(id) {
+  if (!confirm('Eliminare questo livello?')) return;
+  let levels = getData('levels', []);
+  levels = levels.filter(l => l.id !== id);
+  _cache.levels = levels;
+  await fsDelete('levels', id);
+  renderAdminPunteggi();
+}
+
+// ============================================================
 //  RISORSE
 // ============================================================
+async function saveEmailCounter() {
+  const val = parseInt(document.getElementById('email-count-edit').value);
+  if (isNaN(val) || val < 0) { toast('Valore non valido', 'error'); return; }
+  await fsSave('email_stats', { id: 'monthly', count: val });
+  toast('Contatore aggiornato!', 'success');
+  renderAdminRisorse();
+}
+
 async function renderAdminRisorse() {
   // Email counter
   try {
@@ -1785,6 +1871,8 @@ async function renderAdminRisorse() {
     const color = pct >= 90 ? '#ff4444' : pct >= 70 ? '#ffb400' : 'var(--accent)';
     const el = document.getElementById('email-count-display');
     if (el) el.textContent = count;
+    const editEl = document.getElementById('email-count-edit');
+    if (editEl) editEl.value = count;
     const label = document.getElementById('email-count-label');
     if (label) label.textContent = count + ' / 200';
     const pctEl = document.getElementById('email-count-pct');
@@ -2049,6 +2137,7 @@ function openEditUserModal(userId) {
   document.getElementById('edit-user-id').value = userId;
   document.getElementById('edit-user-username').value = user.username;
   document.getElementById('edit-user-email').value = user.email;
+  document.getElementById('edit-user-role').value = user.isAdmin ? 'admin' : 'collector';
   document.getElementById('edit-user-modal').classList.remove('hidden');
 }
 
@@ -2056,6 +2145,7 @@ async function saveEditUser() {
   const userId = document.getElementById('edit-user-id').value;
   const username = document.getElementById('edit-user-username').value.trim();
   const email = document.getElementById('edit-user-email').value.trim();
+  const isAdmin = document.getElementById('edit-user-role').value === 'admin';
   if (!username || !email) { toast('Compila tutti i campi', 'error'); return; }
   const users = getData('users', []);
   const idx = users.findIndex(u => u.id === userId);
@@ -2318,7 +2408,12 @@ async function setAllOwned(ownAll) {
   saveOwnedToFirebase(currentUser.id, owned);
   renderItems();
   updateOwnedCounter();
-  toast(ownAll ? 'Tutti gli oggetti aggiunti! ✅' : 'Tutti gli oggetti rimossi ❌', 'success');
+  const setAllMsgEl = document.getElementById('set-all-msg');
+  if (setAllMsgEl) {
+    setAllMsgEl.textContent = ownAll ? '✅ Tutti aggiunti!' : '❌ Tutti rimossi!';
+    setAllMsgEl.style.display = '';
+    setTimeout(() => { setAllMsgEl.style.display = 'none'; }, 3000);
+  }
 }
 
 // ============================================================
@@ -2500,7 +2595,8 @@ async function renderClassifica() {
       <div style="font-size:1.1rem;width:40px;text-align:center;flex-shrink:0;font-family:var(--font-ui);color:${isTop3 ? 'var(--accent)' : 'var(--muted)'};">#${position}</div>
       ${avatarHTML}
       <div style="flex:1;">
-        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;">${user.username}${user.nationalityCode ? `<img src="https://flagcdn.com/w40/${user.nationalityCode}.png" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}</div>
+        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;">${user.username}${user.nationalityCode ? `<img src="https://flagcdn.com/w40/${user.nationalityCode}.png" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}<span style="font-size:0.78rem;color:var(--muted);font-family:var(--font-body);font-weight:400;">(utente dal ${user.joined ? new Date(user.joined).toLocaleDateString('it-IT') : '—'})</span></div>
+        ${(() => { const lv = getUserLevel(score); return lv ? `<div style="display:inline-block;font-size:0.75rem;background:rgba(181,255,46,0.12);border:1px solid rgba(181,255,46,0.25);color:var(--accent);border-radius:99px;padding:1px 10px;margin-bottom:3px;font-family:var(--font-ui);">🏅 ${lv.name}</div>` : ''; })()}
         <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">${countFigurines} figurine · ${countAlbums} album · ${countExtras} altri articoli</div>
       </div>
       <div style="display:flex;align-items:center;gap:0.75rem;">
