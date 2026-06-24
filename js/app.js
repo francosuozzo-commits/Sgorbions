@@ -113,7 +113,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.53';
+const JS_VERSION = 'v2.54';
 
 // ============================================================
 //  NATIONALITY
@@ -129,7 +129,7 @@ const COUNTRIES = [
   ['au','Australia'],['nz','Nuova Zelanda'],['jp','Giappone'],['cn','Cina'],['kr','Corea del Sud'],
   ['in','India'],['ru','Russia'],['ua','Ucraina'],['ca','Canada'],['za','Sudafrica'],
   ['eg','Egitto'],['ma','Marocco'],['ng','Nigeria'],['gh','Ghana'],['ke','Kenya'],
-  ['ae','Emirati Arabi'],['sa','Arabia Saudita'],['il','Israele'],['sg','Singapore'],['th','Tailandia'],
+  ['ae','Emirati Arabi'],['sa','Arabia Saudita'],['il','Israele'],['sg','Singapore'],['th','Tailandia'],['cu','Cuba'],
 ];
 
 function flagUrl(code) {
