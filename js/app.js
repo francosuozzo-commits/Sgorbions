@@ -113,7 +113,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.73';
+const JS_VERSION = 'v2.79';
 
 // ============================================================
 //  NATIONALITY
@@ -380,7 +380,7 @@ const i18n = {
     'form.post.type':'Post Type','form.post.title':'Title','form.post.body':'Content','form.post.question':'❓ Question','form.post.news':'📢 News / Discovery',
     'form.reply.placeholder':'Write a reply...','comment.admin':'Owner','comment.login':'Log in to reply',
     'auth.title':'Welcome Back','auth.login':'Login','auth.register':'Register','auth.login.btn':'Sign In','auth.reg.btn':'Create Account',
-    'modal.series.title':'Add New Series','modal.series.save':'Save Series',
+    'modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie',
     'modal.fig.title':'Add Figurine','modal.fig.save':'Save Figurine',
     'modal.post.title':'New Post','modal.post.save':'Publish Post',
     'profile.title':'My Profile','profile.owned':'Figurines Owned','profile.series':'Series Tracked','profile.collection':'My Collection',
@@ -417,7 +417,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Crea Account',
-    'modal.series.title':'Aggiungi Nuova Serie','modal.series.save':'Salva Serie',
+    'modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva Figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
@@ -640,7 +640,7 @@ updateNavUser();
 function openAddSeriesModal(seriesId) {
   if (!currentUser?.isAdmin) { toast('Solo per admin', 'error'); return; }
   document.getElementById('edit-series-id').value = seriesId || '';
-  document.getElementById('series-modal-title').textContent = seriesId ? 'Edit Series' : t('modal.series.title');
+  document.getElementById('series-modal-title').textContent = seriesId ? t('modal.series.edit') : t('modal.series.title');
   document.getElementById('series-img-preview').style.display = 'none';
   editingSeriesImg = null;
   if (seriesId) {
@@ -656,6 +656,15 @@ function openAddSeriesModal(seriesId) {
   } else {
     ['series-name-input','series-year-input','series-count-input','series-desc-input'].forEach(id => document.getElementById(id).value = '');
   }
+  // Show admin-only series fields
+  ['series-has-sizes-input','series-has-subseries-input','series-has-subseries-group'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.closest('.form-group') ? el.closest('.form-group').style.display = currentUser?.isAdmin ? '' : 'none' : el.style.display = currentUser?.isAdmin ? '' : 'none';
+  });
+  const hasSizesGroup = document.getElementById('series-has-sizes-input')?.closest('.form-group');
+  if (hasSizesGroup) hasSizesGroup.style.display = currentUser?.isAdmin ? '' : 'none';
+  const hasSubseriesGroup = document.getElementById('series-has-subseries-group');
+  if (hasSubseriesGroup) hasSubseriesGroup.style.display = currentUser?.isAdmin ? '' : 'none';
   document.getElementById('add-series-modal').classList.remove('hidden');
 }
 function handleSeriesImg(e) {
@@ -673,6 +682,7 @@ async function saveSeries() {
   const name = document.getElementById('series-name-input').value.trim();
   const year = document.getElementById('series-year-input').value;
   const hasSizes = document.getElementById('series-has-sizes-input').checked;
+  const hasSubseries = document.getElementById('series-has-subseries-input').checked;
   const count = document.getElementById('series-count-input').value;
   const desc = document.getElementById('series-desc-input').value.trim();
   const descIt = desc; // same description for both languages
@@ -857,6 +867,15 @@ function closeItemsSection() {
 }
 
 function closeSeriesDetail() {
+  // Reset bulk edit state
+  bulkEditActive = false;
+  const bulkView = document.getElementById('bulk-edit-view');
+  if (bulkView) { bulkView.style.display = 'none'; bulkView.innerHTML = ''; }
+  const bulkBtn = document.getElementById('bulk-edit-toggle-btn');
+  if (bulkBtn) bulkBtn.textContent = '📋 Vista tabellare';
+  const grid = document.getElementById('items-grid');
+  if (grid) grid.style.display = 'grid';
+
   document.getElementById('series-detail').style.display = 'none';
   document.getElementById('page-catalog').classList.add('active');
   currentSeriesId = null;
@@ -970,7 +989,7 @@ function renderItems() {
         <div style="display:flex;align-items:center;gap:0.5rem;">${scoreHTML}${reportBtn}</div>
         <div class="fig-toggle">
           <span class="toggle-label">${t('owned.toggle')}</span>
-          <button class="toggle-btn-blue ${isOwned?'on':''}" onclick="toggleOwned('${f.id}')"></button>
+          <button class="toggle-btn-blue ${isOwned?'on':''}" onclick="event.stopPropagation();toggleOwned('${f.id}')"></button>
         </div>
       </div>
     </div>`;
@@ -1312,7 +1331,12 @@ function renderAdminSeries() {
         </td>
         <td>${s.name}</td><td>${s.year}</td><td>${figs}</td><td>
         <button class="tbl-btn tbl-btn-edit" onclick="openAddSeriesModal('${s.id}')">Modifica</button>
-        <button class="tbl-btn tbl-btn-del" onclick="deleteSeries('${s.id}')">Cancella</button>
+        ${(() => {
+          const figCount = (_cache.figurines || getData('figurines',[])).filter(f => f.seriesId === s.id).length;
+          return figCount === 0
+            ? '<button class="tbl-btn tbl-btn-del" onclick="deleteSeries(\'' + s.id + '\')" title="Elimina serie">Cancella</button>'
+            : '<span style="font-size:0.75rem;color:var(--muted);font-style:italic;">Svuota prima la serie</span>';
+        })()}
       </td></tr>`;
     }).join('')}</tbody></table>`;
 }
@@ -1602,10 +1626,26 @@ function openFigDetail(figId) {
 
 function toggleOwnedFromDetail(figId) {
   toggleOwned(figId);
-  // Update toggle in detail modal
   const owned = getOwned();
+  // Update toggle button in modal
   const btn = document.getElementById('fig-detail-toggle');
   if (btn) btn.className = 'toggle-btn-blue ' + (owned.includes(figId) ? 'on' : '');
+  // Update the card in the grid without closing the modal
+  const card = document.querySelector(`.fig-card[onclick*="${figId}"]`);
+  if (card) {
+    const toggleBtn = card.querySelector('.toggle-btn-blue');
+    if (toggleBtn) toggleBtn.className = 'toggle-btn-blue ' + (owned.includes(figId) ? 'on' : '');
+    const badge = card.querySelector('.owned-badge');
+    if (badge) badge.style.display = owned.includes(figId) ? '' : 'none';
+  }
+  // Update progress bar
+  const allFigs = (_cache.figurines || getData('figurines',[])).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
+  const ownedCount = allFigs.filter(f => owned.includes(f.id)).length;
+  const pct = Math.round(ownedCount / allFigs.length * 100);
+  const label = document.getElementById('detail-progress-label');
+  const fill = document.getElementById('detail-progress-fill');
+  if (label) label.textContent = ownedCount + ' / ' + allFigs.length;
+  if (fill) fill.style.width = pct + '%';
 }
 
 function openSegnalazioneModal(figId) {
@@ -1995,6 +2035,7 @@ function renderBulkEditView() {
   if (!bulkView) return;
   const currentSeries = getData('series', []).find(s => s.id === currentSeriesId);
   const currentSeriesHasSizes = currentSeries?.hasSizes || false;
+  const currentSeriesHasSubseries = currentSeries?.hasSubseries || false;
   const allItems = (_cache.figurines || getData('figurines', []))
     .filter(f => f.seriesId === currentSeriesId && f.section === currentSection)
     .sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
@@ -2006,7 +2047,7 @@ function renderBulkEditView() {
     <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
       <thead>
         <tr style="background:var(--card2);">
-          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottoserie</th>
+          ${currentSeriesHasSubseries ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottoserie</th>' : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Nome</th>
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Punteggio</th>
@@ -2017,7 +2058,7 @@ function renderBulkEditView() {
       </thead>
       <tbody>
         ${allItems.map(f => `<tr id="bulk-row-${f.id}" style="border-bottom:1px solid var(--border);">
-          <td style="padding:4px;"><input data-field="subseries" data-id="${f.id}" value="${f.subseries||''}" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
+          ${currentSeriesHasSubseries ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
           <td style="padding:4px;"><input data-field="number" data-id="${f.id}" value="${f.number||''}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
           <td style="padding:4px;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:180px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
           <td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
