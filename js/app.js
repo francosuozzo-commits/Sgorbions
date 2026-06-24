@@ -113,7 +113,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.58';
+const JS_VERSION = 'v2.64';
 
 // ============================================================
 //  NATIONALITY
@@ -406,7 +406,7 @@ const i18n = {
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le statistiche della tua collezione, le figurine possedute e la cronologia delle attività.',
     'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
-    'blog.title':'D&R e Blog','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
+    'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'Email','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     'form.name':'Il Tuo Nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo Email','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
@@ -598,6 +598,8 @@ function updateNavUser() {
       bellBtn.style.display = currentUser.isAdmin ? '' : 'none';
       updateBellBadge();
     }
+    const jsVerWrap = document.getElementById('nav-js-version-wrap');
+    if (jsVerWrap) jsVerWrap.style.display = currentUser.isAdmin ? '' : 'none';
     const navAvatar = document.getElementById('nav-avatar');
     // Always reset first
     navAvatar.style.backgroundImage = '';
@@ -875,11 +877,13 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-score-input').value = f.score || 0;
       document.getElementById('fig-subseries-input').value = f.subseries || '';
       document.getElementById('fig-size-input').value = f.size || '';
+      document.getElementById('fig-back-input').value = f.backNumber || 1;
       if (f.img) { const pr = document.getElementById('fig-img-preview'); pr.src = f.img; pr.style.display = 'block'; editingFigImg = f.img; }
     }
   } else {
     ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('fig-score-input').value = 0;
+    document.getElementById('fig-back-input').value = 1;
   }
   document.getElementById('add-fig-modal').classList.remove('hidden');
 }
@@ -943,21 +947,21 @@ function renderItems() {
     const imgHTML = f.img ? `<img src="${cloudinaryUrl(f.img)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;text-align:center;"><span style="font-size:1.5rem;">${icon}</span><span style="font-size:0.6rem;color:var(--muted);line-height:1.2;">Foto non ancora disponibile</span></div>`;
     const ownedBadge = isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : '';
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">&#10005;</button></div>` : '';
-    const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" style="position:absolute;bottom:6px;right:6px;font-size:0.65rem;padding:2px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:rgba(0,0,0,0.4);color:rgba(255,255,255,0.7);cursor:pointer;">🚩 Segnala</button>` : '';
+    const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="Segnala qualcosa all'amministratore per questa figurina" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
     const sizeHTML = f.size ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
     const figLabel = f.subseries ? `[${f.subseries}]` : (f.number ? `#${String(f.number).padStart(2,'0')}` : '');
-    return `<div class="fig-card">
+    return `<div class="fig-card" onclick="openFigDetail('${f.id}')" style="cursor:pointer;">
       <div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
-        ${imgHTML}${ownedBadge}${adminBtns}${reportBtn}
+        ${imgHTML}${ownedBadge}${adminBtns}
       </div>
       <div class="fig-body">
         <div class="fig-number" style="font-size:1rem;">${figLabel}</div>
         <div class="fig-name">${f.name}</div>
         ${descHTML}
         ${sizeHTML}
-        ${scoreHTML}
+        <div style="display:flex;align-items:center;gap:0.5rem;">${scoreHTML}${reportBtn}</div>
         <div class="fig-toggle">
           <span class="toggle-label">${t('owned.toggle')}</span>
           <button class="toggle-btn-blue ${isOwned?'on':''}" onclick="toggleOwned('${f.id}')"></button>
@@ -1005,6 +1009,7 @@ async function saveFigurine() {
   const score = parseInt(document.getElementById('fig-score-input').value) || 0;
   const subseries = document.getElementById('fig-subseries-input')?.value.trim() || '';
   const size = document.getElementById('fig-size-input')?.value.trim() || '';
+  const backNumber = parseInt(document.getElementById('fig-back-input')?.value) || 1;
   if (!name || !number) { toast('Numero e nome sono obbligatori', 'error'); return; }
   toast('Salvataggio...', 'success');
   let imgUrl = editingFigImg || null;
@@ -1017,12 +1022,12 @@ async function saveFigurine() {
   if (editId) {
     const idx = figs.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      figs[idx] = { ...figs[idx], number: number ? +number : null, name, desc, score, subseries, size, img: imgUrl || figs[idx].img };
+      figs[idx] = { ...figs[idx], number: number ? +number : null, name, desc, score, subseries, size, backNumber, img: imgUrl || figs[idx].img };
       await fsSave('figurines', figs[idx]);
       _cache.figurines = figs;
     }
   } else {
-    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: number ? +number : null, name, desc, score, subseries, size, img: imgUrl || null };
+    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: number ? +number : null, name, desc, score, subseries, size, backNumber, img: imgUrl || null };
     const saved = await fsSave('figurines', newF);
     _cache.figurines.push(saved);
   }
@@ -1520,6 +1525,80 @@ function updateBellBadge() {
   }
 }
 
+function openFigDetail(figId) {
+  const allFigs = getData('figurines', []);
+  const f = allFigs.find(x => x.id === figId);
+  if (!f) return;
+  const owned = getOwned();
+  const isOwned = owned.includes(f.id);
+  const isAdmin = currentUser?.isAdmin;
+
+  // Title
+  const titleEl = document.getElementById('fig-detail-title');
+  if (titleEl) titleEl.textContent = f.name;
+
+  // Build content
+  const rows = [];
+
+  // Sottoserie
+  if (f.subseries || isAdmin) {
+    rows.push(`<div class="detail-row"><span class="detail-label">Sottoserie</span><span class="detail-value">${f.subseries || '<span style="color:var(--muted);font-style:italic;">non impostata</span>'}</span></div>`);
+  }
+
+  // Numero
+  if (f.number || isAdmin) {
+    rows.push(`<div class="detail-row"><span class="detail-label">N.</span><span class="detail-value">${f.number ? '#' + String(f.number).padStart(2,'0') : '<span style="color:var(--muted);font-style:italic;">non numerata</span>'}</span></div>`);
+  }
+
+  // Nome
+  rows.push(`<div class="detail-row"><span class="detail-label">Nome</span><span class="detail-value">${f.name}</span></div>`);
+
+  // Punteggio
+  if (f.score > 0 || isAdmin) {
+    rows.push(`<div class="detail-row"><span class="detail-label">Punteggio</span><span class="detail-value">${f.score > 0 ? '⭐ ' + f.score + ' pt' : '<span style="color:var(--muted);font-style:italic;">non assegnato</span>'}</span></div>`);
+  }
+
+  // Taglia
+  if (f.size || isAdmin) {
+    rows.push(`<div class="detail-row"><span class="detail-label">Taglia</span><span class="detail-value">${f.size || '<span style="color:var(--muted);font-style:italic;">non impostata</span>'}</span></div>`);
+  }
+
+  // Numero di variazioni esistenti - always show (default 1)
+  rows.push(`<div class="detail-row"><span class="detail-label">Numero di variazioni esistenti</span><span class="detail-value">${f.backNumber || 1}</span></div>`);
+
+  // Foto (shown in separate right column)
+  const photoEl = document.getElementById('fig-detail-photo');
+  if (photoEl) {
+    photoEl.innerHTML = f.img ? `<img src="${cloudinaryUrl(f.img, 'w_300,h_300,c_fit,q_auto,f_auto')}" style="width:140px;height:140px;object-fit:contain;border-radius:8px;background:var(--card2);padding:4px;">` : '<div style="width:140px;height:140px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">Foto non ancora disponibile</div>';
+  }
+
+  // Ce l'ho toggle
+  if (currentUser) {
+    rows.push(`<div class="detail-row" style="align-items:center;">
+      <span class="detail-label">Ce l'ho</span>
+      <button class="toggle-btn-blue ${isOwned ? 'on' : ''}" id="fig-detail-toggle" onclick="toggleOwnedFromDetail('${f.id}')"></button>
+    </div>`);
+  }
+
+  // Segnala
+  if (currentUser && !isAdmin) {
+    rows.push(`<div style="margin-top:1rem;text-align:right;">
+      <button onclick="closeModal('fig-detail-modal');openSegnalazioneModal('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;" title="Segnala qualcosa all'amministratore, per questa figurina">🚩 Segnala errore</button>
+    </div>`);
+  }
+
+  document.getElementById('fig-detail-content').innerHTML = rows.join('');
+  document.getElementById('fig-detail-modal').classList.remove('hidden');
+}
+
+function toggleOwnedFromDetail(figId) {
+  toggleOwned(figId);
+  // Update toggle in detail modal
+  const owned = getOwned();
+  const btn = document.getElementById('fig-detail-toggle');
+  if (btn) btn.className = 'toggle-btn-blue ' + (owned.includes(figId) ? 'on' : '');
+}
+
 function openSegnalazioneModal(figId) {
   if (!currentUser) { openAuth('login'); return; }
   document.getElementById('segnalazione-fig-id').value = figId;
@@ -1571,7 +1650,7 @@ function renderAdminSegnalazioni() {
   </tr></thead><tbody>
   ${segnalazioni.map(s => `<tr style="${s.read ? '' : 'background:rgba(181,255,46,0.05);'}">
     <td style="white-space:nowrap;font-size:0.82rem;">${new Date(s.date).toLocaleDateString('it-IT')}</td>
-    <td>${s.username}</td>
+    <td style="display:flex;align-items:center;gap:6px;">${s.username}${(() => { const u = getData('users',[]).find(x=>x.id===s.userId); return u?.nationalityCode ? `<img src="https://flagcdn.com/w40/${u.nationalityCode}.png" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''; })()}</td>
     <td style="font-size:0.82rem;">${s.serieName}<br><span style="color:var(--muted);">${s.figNumber ? '#'+s.figNumber+' ' : ''}${s.figName}</span></td>
     <td>${s.commento}</td>
     <td><button class="tbl-btn tbl-btn-edit" onclick="markSegnalazioneRead('${s.id}')">${s.read ? '✓' : 'Segna letta'}</button></td>
