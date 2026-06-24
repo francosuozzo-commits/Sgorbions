@@ -113,7 +113,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.96';
+const JS_VERSION = 'v2.98';
 
 // ============================================================
 //  NATIONALITY
@@ -563,6 +563,125 @@ async function doRegister() {
   }
   logEvent('new_user', 'Nuovo utente registrato: ' + u);
 }
+// ============================================================
+//  CHANGE PASSWORD
+// ============================================================
+function openChangePwdModal() {
+  document.getElementById('change-pwd-current').value = '';
+  document.getElementById('change-pwd-new').value = '';
+  document.getElementById('change-pwd-confirm').value = '';
+  const fb = document.getElementById('change-pwd-feedback');
+  fb.style.display = 'none';
+  document.getElementById('change-pwd-modal').classList.remove('hidden');
+}
+
+async function doChangePassword() {
+  const current = document.getElementById('change-pwd-current').value;
+  const newPwd = document.getElementById('change-pwd-new').value;
+  const confirm = document.getElementById('change-pwd-confirm').value;
+  const fb = document.getElementById('change-pwd-feedback');
+
+  const showError = (msg) => {
+    fb.style.cssText = 'display:block;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6464;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
+    fb.textContent = msg;
+  };
+
+  if (!current || !newPwd || !confirm) { showError('Compila tutti i campi.'); return; }
+  if (currentUser.password !== current) { showError('La password attuale non è corretta.'); return; }
+  if (newPwd.length < 6) { showError('La nuova password deve essere di almeno 6 caratteri.'); return; }
+  if (newPwd !== confirm) { showError('Le due password non corrispondono.'); return; }
+
+  currentUser.password = newPwd;
+  currentUser.mustChangePassword = false;
+  LOCAL.set('currentUser', currentUser);
+
+  const users = getData('users', []);
+  const idx = users.findIndex(u => u.id === currentUser.id);
+  if (idx >= 0) {
+    users[idx].password = newPwd;
+    users[idx].mustChangePassword = false;
+    _cache.users = users;
+    await fsSave('users', users[idx]);
+  }
+
+  fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
+  fb.textContent = '✅ Password aggiornata con successo!';
+  setTimeout(() => closeModal('change-pwd-modal'), 1500);
+}
+
+// ============================================================
+//  RESET PASSWORD
+// ============================================================
+function openResetModal() {
+  closeModal('auth-modal');
+  document.getElementById('reset-email-input').value = '';
+  const fb = document.getElementById('reset-pwd-feedback');
+  fb.style.display = 'none';
+  document.getElementById('reset-pwd-modal').classList.remove('hidden');
+}
+
+function generateTempPassword() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let pwd = '';
+  for (let i = 0; i < 8; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
+  return pwd;
+}
+
+async function doResetPassword() {
+  const email = document.getElementById('reset-email-input').value.trim();
+  const fb = document.getElementById('reset-pwd-feedback');
+  const btn = document.querySelector('#reset-pwd-modal .btn-primary');
+
+  if (!email) { 
+    fb.style.cssText = 'display:block;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6464;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
+    fb.textContent = 'Inserisci il tuo indirizzo e-mail.';
+    return; 
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    fb.style.cssText = 'display:block;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6464;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
+    fb.textContent = 'Inserisci un indirizzo e-mail valido.';
+    return;
+  }
+
+  // Find user by email
+  const users = getData('users', []);
+  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+
+  // Always show success message (security: don't reveal if email exists)
+  fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
+  fb.textContent = '✅ Se l'indirizzo è registrato, riceverai una password temporanea via e-mail.';
+  if (btn) btn.disabled = true;
+
+  if (user) {
+    const tempPwd = generateTempPassword();
+    // Save temp password to user
+    user.password = tempPwd;
+    user.mustChangePassword = true;
+    const allUsers = getData('users', []);
+    const idx = allUsers.findIndex(u => u.id === user.id);
+    if (idx >= 0) {
+      allUsers[idx] = user;
+      _cache.users = allUsers;
+      await fsSave('users', user);
+    }
+    // Send email
+    await sendEmail(
+      user.email,
+      user.username,
+      'Reset password — Sgorbions Collector',
+      'Hai richiesto il reset della password.\n\nLa tua password temporanea è: ' + tempPwd + '\n\nAccedi con questa password e cambiala subito dal tuo profilo.'
+    );
+    incrementEmailCounter(1);
+    // Log event
+    logEvent('reset_pwd', 'Reset password richiesto per: ' + user.username);
+  }
+
+  setTimeout(() => {
+    closeModal('reset-pwd-modal');
+    if (btn) btn.disabled = false;
+  }, 3000);
+}
+
 function logout() {
   currentUser = null;
   LOCAL.set('currentUser', null);
@@ -1239,6 +1358,9 @@ function renderProfile() {
   if (!currentUser) { showPage('home'); return; }
   document.getElementById('profile-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
   document.getElementById('profile-email').textContent = currentUser.email;
+  // Show warning if user must change password
+  const mustChangeBanner = document.getElementById('must-change-pwd-banner');
+  if (mustChangeBanner) mustChangeBanner.style.display = currentUser.mustChangePassword ? '' : 'none';
   const natDisplay = document.getElementById('profile-nationality-display');
   if (natDisplay) {
     if (currentUser.nationalityCode) {
