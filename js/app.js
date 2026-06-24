@@ -113,7 +113,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.79';
+const JS_VERSION = 'v2.82';
 
 // ============================================================
 //  NATIONALITY
@@ -1271,6 +1271,7 @@ function renderProfile() {
 
 function renderMyCollection(ownedFigs) {
   const el = document.getElementById('my-collection-list');
+  if (!el) return; // section removed
   const series = getData('series', []);
   if (!ownedFigs.length) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">😢</div><p class="empty-title">Nessuna figurina ancora!</p><p class="empty-sub">Sfoglia il catalogo e segna le figurine che possiedi.</p></div>`;
@@ -1467,10 +1468,10 @@ function renderAdminUsers() {
     ${users.map(u => `<tr>
       <td style="display:flex;align-items:center;gap:0.6rem;">
         <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : u.username[0].toUpperCase()}</div>
-        ${u.username}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}
+        ${u.username}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}${u.nationalityCode ? '<img src="'+flagUrl(u.nationalityCode)+'" title="'+(u.nationalityName||'')+'" style="width:18px;height:12px;object-fit:cover;border-radius:2px;margin-left:4px;">' : ''}
       </td>
       <td>${u.email}</td>
-      <td>${u.isAdmin?'Admin':'Collector'}</td>
+      <td>${u.isAdmin?'Admin':(currentLang==='it'?'Collezionista':'Collector')}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
       <td><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">Modifica</button>${u.isAdmin ? '' : ` <button class="tbl-btn tbl-btn-del" onclick="deleteUser('${u.id}')">Elimina</button>`}</td>
     </tr>`).join('')}
@@ -1570,9 +1571,9 @@ function openFigDetail(figId) {
   // Build content
   const rows = [];
 
-  // Sottoserie
-  if (f.subseries || isAdmin) {
-    rows.push(`<div class="detail-row"><span class="detail-label">Sottoserie</span><span class="detail-value">${f.subseries || '<span style="color:var(--muted);font-style:italic;">non impostata</span>'}</span></div>`);
+  // Sottoserie - show only if populated (admin sees it always in edit modal, not here)
+  if (f.subseries) {
+    rows.push(`<div class="detail-row"><span class="detail-label">Sottoserie</span><span class="detail-value">${f.subseries}</span></div>`);
   }
 
   // Numero
@@ -1602,7 +1603,7 @@ function openFigDetail(figId) {
   // Foto (shown in separate right column)
   const photoEl = document.getElementById('fig-detail-photo');
   if (photoEl) {
-    photoEl.innerHTML = f.img ? `<img src="${cloudinaryUrl(f.img, 'w_300,h_300,c_fit,q_auto,f_auto')}" style="width:140px;height:140px;object-fit:contain;border-radius:8px;background:var(--card2);padding:4px;">` : '<div style="width:140px;height:140px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">Foto non ancora disponibile</div>';
+    photoEl.innerHTML = f.img ? `<img src="${cloudinaryUrl(f.img, 'w_300,h_300,c_fit,q_auto,f_auto')}" style="width:160px;height:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:4px;">` : '<div style="width:160px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;flex:1;">Foto non ancora disponibile</div>';
   }
 
   // Ce l'ho toggle
