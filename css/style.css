@@ -313,6 +313,15 @@ body {
   display: flex; align-items: center; justify-content: space-between; margin-top: 0.6rem;
 }
 .toggle-label { font-size: 0.78rem; color: var(--muted); }
+.detail-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.5rem 0; border-bottom: 1px solid var(--border);
+  font-size: 0.9rem;
+}
+.detail-row:last-child { border-bottom: none; }
+.detail-label { color: var(--muted); font-size: 0.85rem; min-width: 180px; }
+.detail-value { color: var(--text); font-weight: 500; padding-left: 0.5rem; }
+
 .toggle-btn-blue {
   width: 36px; height: 20px; border-radius: 10px; border: none; cursor: pointer;
   background: var(--border); position: relative; transition: background 0.2s; flex-shrink: 0;
@@ -389,7 +398,7 @@ body {
 .modal {
   background: var(--bg2); border: 1px solid var(--border2);
   border-radius: var(--radius-lg); padding: 2rem;
-  width: 100%; max-width: 552px; max-height: 90vh; overflow-y: auto;
+  width: 100%; max-width: 662px; max-height: 90vh; overflow-y: auto;
   animation: modal-in 0.25s cubic-bezier(0.22,1,0.36,1);
 }
 .modal-wide { max-width: 660px; }
