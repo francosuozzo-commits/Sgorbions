@@ -113,7 +113,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.46';
+const JS_VERSION = 'v2.53';
 
 // ============================================================
 //  NATIONALITY
@@ -1192,6 +1192,14 @@ function renderProfile() {
   if (!currentUser) { showPage('home'); return; }
   document.getElementById('profile-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
   document.getElementById('profile-email').textContent = currentUser.email;
+  const natDisplay = document.getElementById('profile-nationality-display');
+  if (natDisplay) {
+    if (currentUser.nationalityCode) {
+      natDisplay.innerHTML = `<img src="${flagUrl(currentUser.nationalityCode)}" style="width:20px;height:14px;object-fit:cover;border-radius:2px;vertical-align:middle;"> ${currentUser.nationalityName || ''}`;
+    } else {
+      natDisplay.textContent = 'Nessuna nazionalità impostata';
+    }
+  }
   const avatarText = document.getElementById('profile-avatar-text');
   const profileAvatar = document.getElementById('profile-avatar');
   // Always reset first
@@ -1417,6 +1425,68 @@ function renderAdminUsers() {
       <td><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">Modifica</button>${u.isAdmin ? '' : ` <button class="tbl-btn tbl-btn-del" onclick="deleteUser('${u.id}')">Elimina</button>`}</td>
     </tr>`).join('')}
   </tbody></table>`;
+}
+
+let pendingNatCode = '';
+let pendingNatName = '';
+
+function openNationalityModal() {
+  if (!currentUser) return;
+  pendingNatCode = currentUser.nationalityCode || '';
+  pendingNatName = currentUser.nationalityName || '';
+  document.getElementById('profile-nationality-search').value = pendingNatName;
+  document.getElementById('nationality-dropdown-2').style.display = 'none';
+  const preview = document.getElementById('profile-nationality-preview-2');
+  if (pendingNatCode) {
+    preview.style.display = 'flex';
+    preview.innerHTML = `<img src="${flagUrl(pendingNatCode)}" style="width:24px;height:16px;object-fit:cover;border-radius:2px;"> ${pendingNatName}`;
+  } else {
+    preview.style.display = 'none';
+  }
+  document.getElementById('nationality-modal').classList.remove('hidden');
+}
+
+function filterNationalities2() {
+  const q = document.getElementById('profile-nationality-search').value.toLowerCase().trim();
+  const dd = document.getElementById('nationality-dropdown-2');
+  if (!q) { dd.style.display = 'none'; return; }
+  const filtered = COUNTRIES.filter(([code, name]) => name.toLowerCase().includes(q));
+  if (!filtered.length) { dd.style.display = 'none'; return; }
+  dd.style.display = '';
+  dd.innerHTML = filtered.map(([code, name]) =>
+    `<div onclick="selectNationality2('${code}','${name}')" style="display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <img src="${flagUrl(code)}" style="width:24px;height:16px;object-fit:cover;border-radius:2px;">
+      <span style="font-size:0.9rem;">${name}</span>
+    </div>`
+  ).join('');
+}
+
+function selectNationality2(code, name) {
+  pendingNatCode = code;
+  pendingNatName = name;
+  document.getElementById('profile-nationality-search').value = name;
+  document.getElementById('nationality-dropdown-2').style.display = 'none';
+  const preview = document.getElementById('profile-nationality-preview-2');
+  preview.style.display = 'flex';
+  preview.innerHTML = `<img src="${flagUrl(code)}" style="width:24px;height:16px;object-fit:cover;border-radius:2px;"> ${name}`;
+}
+
+async function saveNationality() {
+  if (!currentUser) return;
+  currentUser.nationalityCode = pendingNatCode;
+  currentUser.nationalityName = pendingNatName;
+  LOCAL.set('currentUser', currentUser);
+  const users = getData('users', []);
+  const idx = users.findIndex(u => u.id === currentUser.id);
+  if (idx >= 0) {
+    users[idx].nationalityCode = pendingNatCode;
+    users[idx].nationalityName = pendingNatName;
+    _cache.users = users;
+    await fsSave('users', users[idx]);
+  }
+  closeModal('nationality-modal');
+  renderProfile();
+  toast('Nazionalità aggiornata! 🌍', 'success');
 }
 
 function openEditUserModal(userId) {
@@ -1882,7 +1952,57 @@ function renderWantlist() {
   }).join('');
 }
 
-function exportWantlist() {
+async function exportOwnedList() {
+  if (!currentUser) return;
+  const allFigs = getData('figurines', []);
+  const owned = getOwned();
+  const ownedFigs = allFigs.filter(f => owned.includes(f.id));
+  const series = getData('series', []);
+  const sectionLabels = { figurines: 'Figurine', albums: 'Album', extras: 'Altro Materiale' };
+
+  const rows = [['Serie', 'Tipo di oggetto', 'Sottoserie', 'Numero', 'Nome']];
+
+  const bySeries = {};
+  ownedFigs.forEach(f => {
+    if (!bySeries[f.seriesId]) bySeries[f.seriesId] = [];
+    bySeries[f.seriesId].push(f);
+  });
+
+  const sortedEntries = Object.entries(bySeries).sort(([aId], [bId]) => {
+    const aS = series.find(x => x.id === aId);
+    const bS = series.find(x => x.id === bId);
+    return (aS?.order ?? 9999) - (bS?.order ?? 9999);
+  });
+
+  sortedEntries.forEach(([sId, figs]) => {
+    const s = series.find(x => x.id === sId);
+    const sName = s ? s.name : 'Serie sconosciuta';
+    figs.sort((a,b) => (a.number||0) - (b.number||0)).forEach(f => {
+      rows.push([
+        sName,
+        sectionLabels[f.section] || 'Figurine',
+        f.subseries || '',
+        f.number ? String(f.number) : '',
+        f.name
+      ]);
+    });
+  });
+
+  try {
+    const XLSX = await import('https://cdn.jsdelivr.net/npm/xlsx/xlsx.mjs');
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 35 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'La mia lista');
+    XLSX.writeFile(wb, 'mia_lista_' + currentUser.username + '_' + new Date().toLocaleDateString('it-IT').replace(/\//g,'-') + '.xlsx');
+    toast('Lista esportata in Excel! 📊', 'success');
+  } catch(e) {
+    console.error('SheetJS error:', e);
+    toast('Errore esportazione', 'error');
+  }
+}
+
+async function exportWantlist() {
   if (!currentUser) return;
   const allFigs = getData('figurines', []);
   const owned = getOwned();
@@ -1890,8 +2010,7 @@ function exportWantlist() {
   const series = getData('series', []);
   const sectionLabels = { figurines: 'Figurine', albums: 'Album', extras: 'Altro Materiale' };
 
-  let text = 'MANCOLISTA - ' + currentUser.username + '\n';
-  text += new Date().toLocaleDateString('it-IT') + '\n\n';
+  const rows = [['Serie', 'Tipo di oggetto', 'Sottoserie', 'Numero', 'Nome']];
 
   const bySeries = {};
   missing.forEach(f => {
@@ -1899,21 +2018,40 @@ function exportWantlist() {
     bySeries[f.seriesId].push(f);
   });
 
-  Object.entries(bySeries).forEach(([sId, figs]) => {
-    const s = series.find(x => x.id === sId);
-    text += (s ? s.name : 'Serie sconosciuta') + '\n';
-    figs.sort((a,b) => a.number - b.number).forEach(f => {
-      text += '  [' + (sectionLabels[f.section] || 'Figurine') + '] #' + String(f.number).padStart(2,'0') + ' ' + f.name + '\n';
-    });
-    text += '\n';
+  const sortedEntries = Object.entries(bySeries).sort(([aId], [bId]) => {
+    const aS = series.find(x => x.id === aId);
+    const bS = series.find(x => x.id === bId);
+    return (aS?.order ?? 9999) - (bS?.order ?? 9999);
   });
 
-  const blob = new Blob([text], { type: 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'mancolista_' + currentUser.username + '.txt';
-  a.click(); URL.revokeObjectURL(url);
-  toast('Mancolista esportata! 📋', 'success');
+  sortedEntries.forEach(([sId, figs]) => {
+    const s = series.find(x => x.id === sId);
+    const sName = s ? s.name : 'Serie sconosciuta';
+    figs.sort((a,b) => (a.number||0) - (b.number||0)).forEach(f => {
+      rows.push([
+        sName,
+        sectionLabels[f.section] || 'Figurine',
+        f.subseries || '',
+        f.number ? String(f.number) : '',
+        f.name
+      ]);
+    });
+  });
+
+  // Load SheetJS and generate real .xlsx
+  try {
+    const XLSX = await import('https://cdn.jsdelivr.net/npm/xlsx/xlsx.mjs');
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    // Set column widths
+    ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 35 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Mancolista');
+    XLSX.writeFile(wb, 'mancolista_' + currentUser.username + '_' + new Date().toLocaleDateString('it-IT').replace(/\//g,'-') + '.xlsx');
+    toast('Mancolista esportata in Excel! 📊', 'success');
+  } catch(e) {
+    console.error('SheetJS error:', e);
+    toast('Errore esportazione', 'error');
+  }
 }
 
 // ============================================================
