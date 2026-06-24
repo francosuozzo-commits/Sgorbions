@@ -113,7 +113,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v2.71';
+const JS_VERSION = 'v2.73';
 
 // ============================================================
 //  NATIONALITY
@@ -672,6 +672,7 @@ let editingSeriesImgFile = null;
 async function saveSeries() {
   const name = document.getElementById('series-name-input').value.trim();
   const year = document.getElementById('series-year-input').value;
+  const hasSizes = document.getElementById('series-has-sizes-input').checked;
   const count = document.getElementById('series-count-input').value;
   const desc = document.getElementById('series-desc-input').value.trim();
   const descIt = desc; // same description for both languages
@@ -1563,9 +1564,12 @@ function openFigDetail(figId) {
     rows.push(`<div class="detail-row"><span class="detail-label">Punteggio</span><span class="detail-value">${f.score > 0 ? '⭐ ' + f.score + ' pt' : '<span style="color:var(--muted);font-style:italic;">non assegnato</span>'}</span></div>`);
   }
 
-  // Taglia
-  if (f.size || isAdmin) {
-    rows.push(`<div class="detail-row"><span class="detail-label">Taglia</span><span class="detail-value">${f.size || '<span style="color:var(--muted);font-style:italic;">non impostata</span>'}</span></div>`);
+  // Taglia (only for series with hasSizes)
+  const figSeries = getData('series', []).find(s => s.id === f.seriesId);
+  if (figSeries?.hasSizes || (isAdmin && figSeries?.hasSizes)) {
+    if (f.size || isAdmin) {
+      rows.push(`<div class="detail-row"><span class="detail-label">Taglia</span><span class="detail-value">${f.size || '<span style="color:var(--muted);font-style:italic;">non impostata</span>'}</span></div>`);
+    }
   }
 
   // Numero di variazioni esistenti - always show (default 1)
@@ -1974,13 +1978,14 @@ function toggleBulkEditView() {
     if (grid) grid.style.display = 'none';
     if (pagination) pagination.style.display = 'none';
     if (paginationTop) paginationTop.style.display = 'none';
+    if (bulkView) bulkView.style.display = '';
     if (btn) btn.textContent = '🔲 Vista griglia';
     renderBulkEditView();
   } else {
-    if (grid) grid.style.display = '';
+    if (grid) grid.style.display = 'grid';
     if (pagination) pagination.style.display = '';
     if (paginationTop) paginationTop.style.display = '';
-    if (bulkView) bulkView.innerHTML = '';
+    if (bulkView) { bulkView.style.display = 'none'; bulkView.innerHTML = ''; }
     if (btn) btn.textContent = '📋 Vista tabellare';
   }
 }
@@ -1988,6 +1993,8 @@ function toggleBulkEditView() {
 function renderBulkEditView() {
   const bulkView = document.getElementById('bulk-edit-view');
   if (!bulkView) return;
+  const currentSeries = getData('series', []).find(s => s.id === currentSeriesId);
+  const currentSeriesHasSizes = currentSeries?.hasSizes || false;
   const allItems = (_cache.figurines || getData('figurines', []))
     .filter(f => f.seriesId === currentSeriesId && f.section === currentSection)
     .sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
@@ -2003,7 +2010,7 @@ function renderBulkEditView() {
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Nome</th>
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Punteggio</th>
-          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>
+          ${currentSeriesHasSizes ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N. variazioni</th>
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Azioni</th>
         </tr>
@@ -2014,7 +2021,7 @@ function renderBulkEditView() {
           <td style="padding:4px;"><input data-field="number" data-id="${f.id}" value="${f.number||''}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
           <td style="padding:4px;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:180px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
           <td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
-          <td style="padding:4px;"><input data-field="size" data-id="${f.id}" value="${f.size||''}" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
+          ${currentSeriesHasSizes ? '<td style="padding:4px;"><input data-field="size" data-id="'+f.id+'" value="'+(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
           <td style="padding:4px;"><input data-field="backNumber" data-id="${f.id}" value="${f.backNumber||1}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
           <td style="padding:4px;"><button class="tbl-btn tbl-btn-del" onclick="deleteFigurine('${f.id}')">✕</button></td>
         </tr>`).join('')}
