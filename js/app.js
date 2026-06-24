@@ -128,7 +128,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v3.07';
+const JS_VERSION = 'v3.09';
 
 // ============================================================
 //  NATIONALITY
@@ -1506,6 +1506,7 @@ function adminTab(tab) {
   if (tab === 'newsletter') { renderNewsletterUsers(); loadEmailCounter(); }
   if (tab === 'segnalazioni') renderAdminSegnalazioni();
   if (tab === 'eventi') renderAdminEventi();
+  if (tab === 'risorse') renderAdminRisorse();
 }
 function renderAdminSeries() {
   const el = document.getElementById('admin-series-table');
@@ -1729,6 +1730,39 @@ async function saveNationality() {
   closeModal('nationality-modal');
   renderProfile();
   toast('Nazionalità aggiornata! 🌍', 'success');
+}
+
+// ============================================================
+//  RISORSE
+// ============================================================
+async function renderAdminRisorse() {
+  // Email counter
+  try {
+    const statsDoc = await fsGet('email_stats', 'monthly');
+    const count = statsDoc?.count || 0;
+    const pct = Math.min(Math.round(count / 200 * 100), 100);
+    const color = pct >= 90 ? '#ff4444' : pct >= 70 ? '#ffb400' : 'var(--accent)';
+    const el = document.getElementById('email-count-display');
+    if (el) el.textContent = count;
+    const label = document.getElementById('email-count-label');
+    if (label) label.textContent = count + ' / 200';
+    const pctEl = document.getElementById('email-count-pct');
+    if (pctEl) pctEl.textContent = pct + '%';
+    const bar = document.getElementById('email-count-bar');
+    if (bar) { bar.style.width = pct + '%'; bar.style.background = color; }
+  } catch(e) { console.error('Email stats error', e); }
+
+  // Firebase doc count
+  try {
+    const collections = ['users', 'figurines', 'series', 'posts', 'segnalazioni', 'eventi'];
+    let total = 0;
+    for (const col of collections) {
+      const docs = await fsGetAll(col);
+      total += docs.length;
+    }
+    const el = document.getElementById('firebase-docs-count');
+    if (el) el.textContent = total.toLocaleString('it-IT');
+  } catch(e) { console.error('Firebase stats error', e); }
 }
 
 // ============================================================
