@@ -828,6 +828,11 @@ function updateSectionCounts() {
 function openSeriesSection(section) {
   currentSection = section;
   currentItemPage = 1;
+  bulkEditActive = false;
+  const bulkView = document.getElementById('bulk-edit-view');
+  if (bulkView) bulkView.innerHTML = '';
+  const btn = document.getElementById('bulk-edit-toggle-btn');
+  if (btn) btn.textContent = '📋 Vista tabellare';
   document.getElementById('section-selector').style.display = 'none';
   document.getElementById('items-section').style.display = '';
   document.getElementById('items-section-title').textContent = SECTION_LABELS[section];
@@ -1547,7 +1552,7 @@ function openFigDetail(figId) {
 
   // Numero
   if (f.number || isAdmin) {
-    rows.push(`<div class="detail-row"><span class="detail-label">N.</span><span class="detail-value">${f.number ? '#' + String(f.number).padStart(2,'0') : '<span style="color:var(--muted);font-style:italic;">non numerata</span>'}</span></div>`);
+    rows.push(`<div class="detail-row"><span class="detail-label">N.</span><span class="detail-value">${f.number ? String(f.number) : '<span style="color:var(--muted);font-style:italic;">non numerata</span>'}</span></div>`);
   }
 
   // Nome
@@ -1950,6 +1955,92 @@ async function setAllOwned(ownAll) {
   renderItems();
   updateOwnedCounter();
   toast(ownAll ? 'Tutti gli oggetti aggiunti! ✅' : 'Tutti gli oggetti rimossi ❌', 'success');
+}
+
+// ============================================================
+//  BULK EDIT VIEW
+// ============================================================
+let bulkEditActive = false;
+
+function toggleBulkEditView() {
+  bulkEditActive = !bulkEditActive;
+  const grid = document.getElementById('items-grid');
+  const pagination = document.getElementById('items-pagination');
+  const paginationTop = document.getElementById('items-pagination-top');
+  const bulkView = document.getElementById('bulk-edit-view');
+  const btn = document.getElementById('bulk-edit-toggle-btn');
+
+  if (bulkEditActive) {
+    if (grid) grid.style.display = 'none';
+    if (pagination) pagination.style.display = 'none';
+    if (paginationTop) paginationTop.style.display = 'none';
+    if (btn) btn.textContent = '🔲 Vista griglia';
+    renderBulkEditView();
+  } else {
+    if (grid) grid.style.display = '';
+    if (pagination) pagination.style.display = '';
+    if (paginationTop) paginationTop.style.display = '';
+    if (bulkView) bulkView.innerHTML = '';
+    if (btn) btn.textContent = '📋 Vista tabellare';
+  }
+}
+
+function renderBulkEditView() {
+  const bulkView = document.getElementById('bulk-edit-view');
+  if (!bulkView) return;
+  const allItems = (_cache.figurines || getData('figurines', []))
+    .filter(f => f.seriesId === currentSeriesId && f.section === currentSection)
+    .sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
+
+  if (!allItems.length) { bulkView.innerHTML = '<p style="color:var(--muted);">Nessun oggetto ancora.</p>'; return; }
+
+  bulkView.innerHTML = `
+    <p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.</p>
+    <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
+      <thead>
+        <tr style="background:var(--card2);">
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottoserie</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Nome</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Punteggio</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N. variazioni</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${allItems.map(f => `<tr id="bulk-row-${f.id}" style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px;"><input data-field="subseries" data-id="${f.id}" value="${f.subseries||''}" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
+          <td style="padding:4px;"><input data-field="number" data-id="${f.id}" value="${f.number||''}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
+          <td style="padding:4px;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:180px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
+          <td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
+          <td style="padding:4px;"><input data-field="size" data-id="${f.id}" value="${f.size||''}" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
+          <td style="padding:4px;"><input data-field="backNumber" data-id="${f.id}" value="${f.backNumber||1}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
+          <td style="padding:4px;"><button class="tbl-btn tbl-btn-del" onclick="deleteFigurine('${f.id}')">✕</button></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+async function saveBulkCell(input) {
+  const figId = input.dataset.id;
+  const field = input.dataset.field;
+  let value = input.value.trim();
+
+  // Type conversion
+  if (field === 'number' || field === 'backNumber') value = value ? parseInt(value) : null;
+  if (field === 'score') value = parseInt(value) || 0;
+
+  const figs = getData('figurines', []);
+  const idx = figs.findIndex(f => f.id === figId);
+  if (idx < 0) return;
+  figs[idx][field] = value;
+  _cache.figurines = figs;
+  await fsSave('figurines', figs[idx]);
+
+  // Visual feedback
+  input.style.borderColor = 'var(--accent)';
+  setTimeout(() => { input.style.borderColor = 'var(--border)'; }, 800);
 }
 
 // ============================================================
