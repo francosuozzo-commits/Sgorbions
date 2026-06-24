@@ -2,9 +2,6 @@ function openAuth(tab) {
   document.getElementById('auth-modal').classList.remove('hidden');
   switchAuthTab(tab);
 }
-// Also expose as _openAuth for proxy calls
-window._openAuth = openAuth;
-window._openResetModal = openResetModal;
 function switchAuthTab(tab) {
   document.getElementById('auth-login').style.display = tab === 'login' ? '' : 'none';
   document.getElementById('auth-register').style.display = tab === 'register' ? '' : 'none';
@@ -654,7 +651,7 @@ async function doResetPassword() {
 
   // Always show success message (security: don't reveal if email exists)
   fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
-  fb.textContent = '✅ Se l'indirizzo è registrato, riceverai una password temporanea via e-mail.';
+  fb.textContent = '✅ Se l\'indirizzo è registrato, riceverai una password temporanea via e-mail.';
   if (btn) btn.disabled = true;
 
   if (user) {
