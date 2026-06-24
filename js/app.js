@@ -43,6 +43,8 @@ function initEmailJS() {
 }
 
 async function sendEmail(toEmail, username, subject, messaggio) {
+  // Log always, regardless of EmailJS outcome
+  logEmail(toEmail, subject);
   if (typeof emailjs === 'undefined') { console.warn('EmailJS not loaded'); return; }
   try {
     await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
@@ -80,6 +82,20 @@ async function sendReplyNotificationEmail(postAuthorId, postTitle, replyAuthor, 
     replyAuthor + ' ha risposto al tuo post "' + postTitle + '":\n\n"' + replyText + '"\n\nVai a vedere la risposta su figurinesgorbions.it'
   );
   incrementEmailCounter(1);
+}
+
+async function renderEmailLog() {
+  const el = document.getElementById('admin-email-log');
+  if (!el) return;
+  el.innerHTML = '<p style="color:var(--muted);font-style:italic;">Caricamento...</p>';
+  try {
+    const logs = await fsGetAll('email_log');
+    logs.sort((a,b) => new Date(b.date) - new Date(a.date));
+    if (!logs.length) { el.innerHTML = '<p style="color:var(--muted);font-style:italic;">Nessuna e-mail registrata.</p>'; return; }
+    el.innerHTML = '<table class="data-table"><thead><tr><th>Data invio</th><th>Destinatario</th><th>Soggetto</th></tr></thead><tbody>' +
+    logs.map(e => '<tr><td style="white-space:nowrap;font-size:0.85rem;">' + new Date(e.date).toLocaleDateString('it-IT') + ' ' + new Date(e.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td><td style="font-size:0.85rem;">' + e.to + '</td><td style="font-size:0.85rem;">' + e.subject + '</td></tr>').join('') +
+    '</tbody></table>';
+  } catch(err) { el.innerHTML = '<p style="color:var(--muted);">Errore caricamento log.</p>'; }
 }
 
 function renderNewsletterUsers() {
@@ -128,7 +144,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v3.21';
+const JS_VERSION = 'v3.32';
 
 // ============================================================
 //  NATIONALITY
@@ -1544,7 +1560,7 @@ function adminTab(tab) {
   if (tab === 'blog') renderAdminBlog();
   if (tab === 'contacts') renderAdminContacts();
   if (tab === 'users') renderAdminUsers();
-  if (tab === 'newsletter') { renderNewsletterUsers(); loadEmailCounter(); }
+  if (tab === 'newsletter') { renderNewsletterUsers(); loadEmailCounter(); renderEmailLog(); }
   if (tab === 'segnalazioni') renderAdminSegnalazioni();
   if (tab === 'eventi') renderAdminEventi();
   if (tab === 'risorse') renderAdminRisorse();
@@ -1863,10 +1879,20 @@ async function saveEmailCounter() {
 }
 
 async function renderAdminRisorse() {
-  // Email counter
+  // Email counter — reads from same source as Mail tab
   try {
-    const statsDoc = await fsGet('email_stats', 'monthly');
-    const count = statsDoc?.count || 0;
+    const now = new Date();
+    const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    const { doc, getDoc } = window._fb;
+    const ref = doc(db, 'email_stats', 'counter');
+    let count = 0;
+    try {
+      const snap = await getDoc(ref);
+      if (snap.exists()) {
+        const data = snap.data();
+        count = (data.months && data.months[monthKey]) || 0;
+      }
+    } catch(e) {}
     const pct = Math.min(Math.round(count / 200 * 100), 100);
     const color = pct >= 90 ? '#ff4444' : pct >= 70 ? '#ffb400' : 'var(--accent)';
     const el = document.getElementById('email-count-display');
@@ -2141,6 +2167,39 @@ function openEditUserModal(userId) {
   document.getElementById('edit-user-modal').classList.remove('hidden');
 }
 
+async function adminResetPassword() {
+  const userId = document.getElementById('edit-user-id').value;
+  const users = getData('users', []);
+  const user = users.find(u => u.id === userId);
+  if (!user) return;
+  if (!confirm('Resettare la password di ' + user.username + '? Verrà inviata una password temporanea via e-mail.')) return;
+
+  const tempPwd = generateTempPassword();
+  user.password = tempPwd;
+  user.mustChangePassword = true;
+  const idx = users.findIndex(u => u.id === userId);
+  if (idx >= 0) {
+    users[idx] = user;
+    _cache.users = users;
+    await fsSave('users', user);
+  }
+
+  await sendEmail(
+    user.email,
+    user.username,
+    'Reset password — Sgorbions Collector',
+    'La tua password è stata reimpostata dall\'amministratore.\n\nLa tua nuova password temporanea è: ' + tempPwd + '\n\nAccedi con questa password e cambiala subito dal tuo profilo.'
+  );
+  incrementEmailCounter(1);
+  logEvent('reset_pwd', 'Reset password effettuato da admin per: ' + user.username);
+
+  const fb = document.getElementById('admin-reset-pwd-feedback');
+  if (fb) {
+    fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;margin-top:0.5rem;';
+    fb.textContent = '✅ Password temporanea inviata a ' + user.email;
+  }
+}
+
 async function saveEditUser() {
   const userId = document.getElementById('edit-user-id').value;
   const username = document.getElementById('edit-user-username').value.trim();
@@ -2287,6 +2346,21 @@ function renderAll() {
 // ============================================================
 //  EMAIL COUNTER
 // ============================================================
+async function logEmail(toEmail, subject) {
+  try {
+    await fsSave('email_log', {
+      to: toEmail,
+      subject: subject,
+      date: new Date().toISOString()
+    });
+    // Refresh log if Mail tab is open
+    if (typeof renderEmailLog === 'function') {
+      const mailTab = document.getElementById('admin-email-log');
+      if (mailTab && mailTab.offsetParent !== null) renderEmailLog();
+    }
+  } catch(e) { console.error('logEmail error', e); }
+}
+
 async function incrementEmailCounter(count) {
   try {
     const now = new Date();
