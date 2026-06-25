@@ -1120,7 +1120,7 @@ function updateSectionCounts() {
 
 function openSeriesSection(section) {
   currentSection = section;
-  const si = document.getElementById('items-search'); if (si) si.value = '';
+  const si = document.getElementById('items-search'); if (si) { si.value = ''; si.placeholder = currentLang === 'it' ? 'Cerca figurine...' : 'Search stickers...'; }
   currentItemPage = 1;
   bulkEditActive = false;
   const bulkView = document.getElementById('bulk-edit-view');
@@ -1249,6 +1249,7 @@ function renderItems() {
   const grid = document.getElementById('items-grid');
   if (!currentSeriesId || !grid || !currentSection) return;
   const searchQ = (document.getElementById('items-search')?.value || '').toLowerCase().trim();
+  if (searchQ) currentItemPage = 1;
   const allItems = getData('figurines', []).filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
     if (!searchQ) return true;
