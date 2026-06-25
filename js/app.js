@@ -144,7 +144,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v3.61';
+const JS_VERSION = 'v3.62';
 
 // ============================================================
 //  NATIONALITY
@@ -393,33 +393,33 @@ const i18n = {
     'hero.eyebrow':'🇮🇹 Italy\'s Wildest 90s Collectibles',
     'hero.sub':'Collector\'s Universe','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
     'hero.cta1':'Esplora il catalogo Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
-    'hero.stat1':'Series','hero.stat2':'Figurines','hero.stat3':'Collectors',
+    'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat3':'Collectors',
     'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the Slime World','home.featured.sub':'Every series carefully documented with original artwork, descriptions and rarity info.',
     'home.featured.btn':'View All Series →',
     'home.how.eyebrow':'How It Works','home.how.title':'Your Collection, Organized',
     'how.1.title':'Browse the Catalog','how.1.desc':'Explore all Sgorbions series and figurines, complete with photos and descriptions.',
-    'how.2.title':'Mark Your Figurines','how.2.desc':'Toggle which figurines you own and track your completion percentage per series.',
+    'how.2.title':'Mark Your Stickers','how.2.desc':'Toggle which stickers you own and track your completion percentage per series.',
     'how.3.title':'Connect & Ask','how.3.desc':'Post questions and get answers from the owner and fellow collectors.',
     'how.4.title':'Your Profile','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
     'catalog.title':'The Catalog','catalog.sub':'All Sgorbions series ever released','catalog.addseries':'+ Add Series','catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
-    'back':'Back to Catalog','detail.owned':'Owned','detail.addfig':'+ Add Figurine',
+    'back':'Back to Catalog','detail.owned':'Owned','detail.addfig':'+ Add Sticker',
     'blog.title':'Q&A & Blog','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ Nuova domanda / Notizia','blog.empty':'No posts yet. Start the conversation!',
     'contact.eyebrow':'Get In Touch','contact.title':"Contatta l'amministratore",'contact.sub':'Have a rare find? Want to contribute? Drop a message!',
     'contact.info.title':"Let's talk Sgorbions",'contact.email':'Email','contact.location':'Location','contact.location.val':'Italy 🇮🇹','contact.resp':'Response Time','contact.resp.val':'Usually within 24–48 hours',
     'form.name':'Your Name','form.name.ph':'Sgorbio Fan','form.email':'E-mail','form.subject':'Contesto della domanda','form.subject.ph':'I found a rare Sgorbio!','form.message':'Domanda (o messaggio)','form.message.ph':'Tell me everything...','form.send':'Invia messaggio 🚀',
     'form.username':'Username','form.password':'Password',
-    'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Figurines','form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.cover':'Cover Image',
+    'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Stickers','form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.cover':'Cover Image',
     'form.click':'Click to upload','form.drag':'or drag and drop',
     'form.fig.number':'Number','form.fig.name':'Name','form.fig.desc':'Description','form.fig.image':'Image',
     'form.post.type':'Post Type','form.post.title':'Title','form.post.body':'Content','form.post.question':'❓ Question','form.post.news':'📢 News / Discovery',
     'form.reply.placeholder':'Write a reply...','comment.admin':'Owner','comment.login':'Log in to reply',
     'auth.title':'Welcome Back','auth.login':'Login','auth.register':'Registrati','auth.login.btn':'Sign In','auth.reg.btn':'Create Account',
     'modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie',
-    'modal.fig.title':'Add Figurine','modal.fig.save':'Save Figurine',
+    'modal.fig.title':'Add Sticker','modal.fig.save':'Save Sticker',
     'modal.post.title':'New Post','modal.post.save':'Publish Post',
     'profile.title':'My Profile','profile.owned':'Figurines Owned','profile.series':'Series Tracked','profile.collection':'My Collection',
     'admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Figurines','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users',
-    'admin.series.title':'Manage Series','admin.figurines.title':'Manage Figurines','admin.blog.title':'Manage Q&A / Blog','admin.contacts.title':'Contact Messages','admin.users.title':'Registered Users',
+    'admin.series.title':'Manage Series','admin.figurines.title':'Manage Stickers','admin.blog.title':'Manage Q&A / Blog','admin.contacts.title':'Contact Messages','admin.users.title':'Registered Users',
     'footer.desc':'The unofficial fan database dedicated to the legendary Italian figurine collection from the early 1990s. Made with 💚 by collectors, for collectors.',
     'footer.nav':'Navigation','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Sito fan non ufficiale.',
     'owned.toggle':'I own this','owned.yes':'✓ Ce l\'ho'
@@ -1594,7 +1594,7 @@ function renderAdminSeries() {
   if (!series.length) { el.innerHTML = '<p style="color:var(--muted);">Nessuna serie ancora.</p>'; return; }
   el.innerHTML = `
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Usa le frecce per cambiare l'ordine</p>
-    <table class="data-table"><thead><tr><th>Ordine</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"Figurine":"Figurines"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
+    <table class="data-table"><thead><tr><th>Ordine</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"Figurine":"Stickers"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${series.map((s, idx) => {
       const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
       return `<tr>
