@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.62</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.69</span>
     <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);">| Online dal 1.07.2026</span>
   </div>
@@ -41,7 +41,7 @@
       <button class="lang-btn active" onclick="setLang('en')" title="English" style="background-image:url('https://flagcdn.com/w40/gb.png');background-size:cover;background-position:center;width:32px;height:22px;border-radius:4px;"></button>
       <button class="lang-btn" onclick="setLang('it')" title="Italiano" style="background-image:url('https://flagcdn.com/w40/it.png');background-size:cover;background-position:center;width:32px;height:22px;border-radius:4px;"></button>
     </div>
-    <div id="nav-bell-btn" style="display:none;position:relative;cursor:pointer;" onclick="showPage('profile');setTimeout(()=>adminTab('segnalazioni'),300)" title="Segnalazioni">
+    <div id="nav-bell-btn" style="display:none;position:relative;cursor:pointer;" onclick="showPage('admin');setTimeout(()=>adminTab('eventi'),300)" title="Segnalazioni">
       <span style="font-size:1.3rem;">🔔</span>
       <span id="nav-bell-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:#ff4444;color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span>
     </div>
@@ -571,7 +571,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.62</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.69</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -913,12 +913,54 @@
 
 <!-- EDIT USER MODAL -->
 <div class="modal-overlay hidden" id="edit-user-modal">
-  <div class="modal">
+  <div class="modal" style="max-width:580px;">
     <div class="modal-header">
-      <h2 class="modal-title">Modifica Utente</h2>
+      <h2 class="modal-title" id="edit-user-modal-title">👤 Utente</h2>
       <button class="modal-close" onclick="closeModal('edit-user-modal')">✕</button>
     </div>
     <input type="hidden" id="edit-user-id">
+
+    <!-- Info sola lettura -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:1rem;background:var(--card2);border-radius:8px;padding:0.75rem;">
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Iscritto dal</div>
+        <div id="edit-user-joined" style="font-size:0.88rem;color:var(--text);">—</div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Ultima login</div>
+        <div id="edit-user-lastlogin" style="font-size:0.88rem;color:var(--text);">—</div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Livello</div>
+        <div id="edit-user-level" style="font-size:0.88rem;color:var(--accent);">—</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:1rem;background:var(--card2);border-radius:8px;padding:0.75rem;">
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Nome</div>
+        <div id="edit-user-nome" style="font-size:0.88rem;color:var(--text);">—</div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Cognome</div>
+        <div id="edit-user-cognome" style="font-size:0.88rem;color:var(--text);">—</div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Età</div>
+        <div id="edit-user-eta" style="font-size:0.88rem;color:var(--text);">—</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;background:var(--card2);border-radius:8px;padding:0.75rem;">
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Sesso</div>
+        <div id="edit-user-sesso" style="font-size:0.88rem;color:var(--text);">—</div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Anni di collezionismo</div>
+        <div id="edit-user-anni" style="font-size:0.88rem;color:var(--text);">—</div>
+      </div>
+    </div>
+
+    <!-- Campi editabili -->
     <div class="form-group">
       <label class="form-label">Username</label>
       <input class="form-input" type="text" id="edit-user-username" placeholder="username">
@@ -934,19 +976,11 @@
         <option value="admin">Admin</option>
       </select>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
-      <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Iscritto dal</div>
-        <div id="edit-user-joined" style="font-size:0.88rem;color:var(--text);">—</div>
-      </div>
-      <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Ultima login</div>
-        <div id="edit-user-lastlogin" style="font-size:0.88rem;color:var(--text);">—</div>
-      </div>
-    </div>
+
     <button class="btn-primary" style="width:100%;" onclick="saveEditUser()">Salva modifiche</button>
     <button class="btn-secondary" style="width:100%;margin-top:0.5rem;" onclick="adminResetPassword()">🔑 Reset password</button>
     <div id="admin-reset-pwd-feedback" style="display:none;margin-top:0.5rem;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;"></div>
+    <button id="edit-user-delete-btn" class="btn-secondary" style="width:100%;margin-top:0.5rem;color:#ff6464;border-color:#ff6464;" onclick="deleteUserFromModal()">🗑️ Elimina utente</button>
   </div>
 </div>
 
