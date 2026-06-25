@@ -22,10 +22,10 @@
 <!-- NAVBAR -->
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-    <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v4.13</span>
-    <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span></span>
-    <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);">| Online dal 1.07.2026</span>
+    <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v4.48</span>
+    <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
+    <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);" data-i18n="nav.onlineSince">| Online dal 1.07.2026</span>
   </div>
   <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
@@ -33,7 +33,7 @@
     <a onclick="showPage('blog')" data-page="blog" id="nav-blog" style="display:none;" data-i18n="nav.blog">Blog / D&amp;R</a>
     <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;" data-i18n="nav.wantlist">Mancoliste</a>
     <a onclick="showPage('classifica')" data-page="classifica" id="nav-classifica" style="display:none;" data-i18n="nav.classifica">🏆 Classifica</a>
-    <a onclick="showPage('profile');setTimeout(()=>adminTab('newsletter'),300)" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
+    <a onclick="showPage('newsletter')" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contatti</a>
   </div>
   <div class="nav-right">
@@ -232,6 +232,7 @@
       </div>
       <div class="progress-bar"><div class="progress-fill" id="detail-progress-fill" style="width:0%"></div></div>
     </div>
+    <div id="wip-photos-banner" style="display:none;background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);border-radius:10px;padding:0.6rem 1rem;margin-bottom:1rem;font-size:0.85rem;color:#ffb400;">📷 <span id="wip-photos-msg"></span></div>
     <div class="search-bar" style="margin-bottom:1.5rem;">
       <div class="search-input-wrap">
         <span class="search-icon">🔍</span>
@@ -270,25 +271,18 @@
   <section class="section">
     <div class="section-inner">
       <div class="section-header" style="text-align:center;">
-        <h1 class="section-title" data-i18n="contact.title">Contatta <span class="hi">l'amministratore</span></h1>
-        <p class="section-sub">
-          Hai trovato qualche pezzo raro che non è censito nel sito?<br>
-          Vuoi avere altre informazioni sugli Sgorbions?<br>
-          Vuoi contribuire al mantenimento del sito?<br>
-          Vuoi segnalare un errore?<br>
-          O vuoi semplicemente fare i complimenti all'amministratore?<br><br>
-          Per una qualsiasi di queste cose, inviaci un messaggio!
-        </p>
+        <h1 class="section-title" data-i18n-html="contact.title">Contatta <span class="hi">l'amministratore</span></h1>
+        <p class="section-sub" data-i18n-html="contact.intro">Hai trovato qualche pezzo raro che non è censito nel sito?</p>
       </div>
       <div style="max-width:600px;margin:0 auto;">
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:2rem;">
           <div class="form-group">
-            <label class="form-label">Nome</label>
+            <label class="form-label" data-i18n="form.name">Nome</label>
             <input class="form-input" type="text" id="contact-name" data-i18n-placeholder="form.name.ph" placeholder="Sgorbio Fan">
           </div>
           <div class="form-group">
             <label class="form-label">E-mail</label>
-            <input class="form-input" type="email" id="contact-email" placeholder="la-tua@e-mail.com">
+            <input class="form-input" type="email" id="contact-email" data-i18n-placeholder="contact.email.ph" placeholder="la-tua@e-mail.com">
           </div>
           <div class="form-group">
             <label class="form-label" data-i18n="contact.context">Contesto della domanda</label>
@@ -298,10 +292,10 @@
             <label class="form-label" data-i18n="contact.message">Domanda (o messaggio)</label>
             <textarea class="form-textarea" id="contact-message" rows="5" data-i18n-placeholder="form.message.ph" placeholder="Scrivi qui la tua domanda o messaggio..."></textarea>
           </div>
-          <button class="btn-primary" style="width:100%;" onclick="sendContact()" data-i18n="form.send" data-i18n="contact.send">Invia messaggio 🚀</button>
+          <button class="btn-primary" style="width:100%;" onclick="sendContact()" data-i18n="contact.send">Invia messaggio 🚀</button>
         </div>
         <div style="margin-top:2rem;">
-          <h3 style="text-align:center;font-family:var(--font-ui);margin-bottom:1.25rem;">Informazioni di contatto</h3>
+          <h3 style="text-align:center;font-family:var(--font-ui);margin-bottom:1.25rem;" data-i18n="contact.info">Informazioni di contatto</h3>
           <div style="display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;">
             <div class="contact-item">
               <div class="contact-icon">📧</div>
@@ -309,7 +303,7 @@
             </div>
             <div class="contact-item">
               <div class="contact-icon">⚡</div>
-              <div><h4>Tempo di risposta medio</h4><p>Di solito in poche ore</p></div>
+              <div><h4 data-i18n="contact.responseTime">Tempo di risposta medio</h4><p data-i18n="contact.responseDesc">Di solito in poche ore</p></div>
             </div>
           </div>
         </div>
@@ -322,6 +316,7 @@
 <div id="page-profile" class="page">
   <section class="section">
     <div class="section-inner">
+      <div id="profile-content">
       <div class="profile-header">
         <div class="profile-avatar" id="profile-avatar" onclick="document.getElementById('avatar-upload').click()" style="cursor:pointer;position:relative;" title="Clicca per cambiare foto">
         <input type="file" id="avatar-upload" accept="image/*" style="display:none;" onchange="uploadAvatar(event)">
@@ -334,9 +329,9 @@
           <p id="profile-email" style="color:var(--muted);font-size:1rem;"></p>
           <div style="margin-top:0.5rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
             <div id="profile-nationality-display" style="font-size:1rem;color:var(--muted);"></div>
-            <button onclick="openNationalityModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;">✏️ Cambia nazionalità</button>
-            <button onclick="openChangePwdModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;">🔑 Cambia password</button>
-            <button onclick="openProfileInfoModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;">✏️ Le mie info</button>
+            <button onclick="openNationalityModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.changeNat">✏️ Cambia nazionalità</button>
+            <button onclick="openChangePwdModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.changePwd">🔑 Cambia password</button>
+            <button onclick="openProfileInfoModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.myInfo">✏️ Le mie info</button>
           </div>
           <div class="profile-stats">
             <div><div class="profile-stat-num" id="profile-owned">0</div><div class="profile-stat-label" data-i18n="profile.owned">Figurines Owned</div></div>
@@ -344,20 +339,20 @@
           </div>
         </div>
       </div>
+      </div><!-- end profile-content -->
       <div id="admin-panel" style="display:none;">
         <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:1.5rem;">⚙️ <span data-i18n="admin.title">Admin Panel</span></h2>
         <div class="admin-tabs">
           <button class="admin-tab active" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
           <button class="admin-tab" onclick="adminTab('blog')" data-i18n="admin.blog">Blog</button>
           <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
-          <button class="admin-tab" onclick="adminTab('segnalazioni')">🔔 Segnalazioni</button>
-          <button class="admin-tab" onclick="adminTab('eventi')"><span style="filter:hue-rotate(200deg);">🔔</span> Eventi</button>
-          <button class="admin-tab" onclick="adminTab('punteggi')">🏆 Punteggi</button>
-          <button class="admin-tab" onclick="adminTab('risorse')">🗄️ Risorse</button>
+          <button class="admin-tab" onclick="adminTab('segnalazioni')" data-i18n="admin.segnalazioni">🔔 Segnalazioni</button>
+          <button class="admin-tab" onclick="adminTab('eventi')" data-i18n="admin.eventi"><span style="filter:hue-rotate(200deg);">🔔</span> Eventi</button>
+          <button class="admin-tab" onclick="adminTab('punteggi')" data-i18n="admin.punteggi">🏆 Punteggi</button>
+          <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
           <button class="admin-tab" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
-          <button class="admin-tab" onclick="adminTab('newsletter')">Mail</button>
         </div>
-        <div id="admin-series" class="admin-section active">
+        <div id="admin-series" class="admin-section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
             <h3 style="font-family:var(--font-ui);" data-i18n="admin.series.title">Manage Series</h3>
             <button class="btn-primary" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
@@ -369,28 +364,32 @@
           <div id="admin-blog-list"></div>
         </div>
         <div id="admin-punteggi" class="admin-section">
-          <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🏆 Livelli utente</h3>
-          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;">Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.</p>
+          <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;" data-i18n="admin.levels.heading">🏆 Livelli utente</h3>
+          <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1.5rem;" data-i18n="admin.levels.desc">Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.</p>
           <div id="admin-levels-list" style="margin-bottom:1.5rem;"></div>
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
-            <h4 style="font-family:var(--font-ui);margin-bottom:1rem;">Aggiungi / modifica livello</h4>
+            <h4 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.levels.addEdit">Aggiungi / modifica livello</h4>
             <input type="hidden" id="level-edit-id">
-            <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:0.75rem;align-items:end;">
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:0.75rem;align-items:end;">
               <div class="form-group" style="margin:0;">
-                <label class="form-label">Nome livello</label>
+                <label class="form-label" data-i18n="admin.levels.nameIt">Nome (IT)</label>
                 <input class="form-input" type="text" id="level-name-input" placeholder="Es. Principiante">
               </div>
               <div class="form-group" style="margin:0;">
-                <label class="form-label">Punteggio minimo</label>
+                <label class="form-label" data-i18n="admin.levels.nameEn">Nome (EN)</label>
+                <input class="form-input" type="text" id="level-name-en-input" placeholder="Es. Beginner">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label" data-i18n="admin.levels.minScore">Punteggio minimo</label>
                 <input class="form-input" type="number" id="level-score-input" placeholder="Es. 0" min="0">
               </div>
-              <button class="btn-primary" onclick="saveLevel()" style="white-space:nowrap;">Salva livello</button>
+              <button class="btn-primary" onclick="saveLevel()" style="white-space:nowrap;" data-i18n="admin.levels.save">Salva livello</button>
             </div>
           </div>
         </div>
 
         <div id="admin-risorse" class="admin-section">
-          <h3 style="font-family:var(--font-ui);margin-bottom:1.5rem;">🗄️ Risorse</h3>
+          <h3 style="font-family:var(--font-ui);margin-bottom:1.5rem;" data-i18n="admin.risorse.title">🗄️ Risorse</h3>
 
           <!-- EMAIL -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
@@ -410,21 +409,21 @@
                 </div>
               </div>
             </div>
-            <p style="font-size:0.88rem;color:var(--muted);margin-top:0.75rem;">Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese).</p>
+            <p style="font-size:0.88rem;color:var(--muted);margin-top:0.75rem;" data-i18n="admin.email.plan">Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese).</p>
             <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem;">
-              <label style="font-size:0.88rem;color:var(--muted);">Correggi contatore:</label>
+              <label style="font-size:0.88rem;color:var(--muted);" data-i18n="admin.email.fix">Correggi contatore:</label>
               <input type="number" id="email-count-edit" min="0" max="200" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:8px;font-size:0.88rem;">
-              <button class="btn-secondary" style="font-size:0.85rem;padding:4px 14px;" onclick="saveEmailCounter()">Salva</button>
+              <button class="btn-secondary" style="font-size:0.85rem;padding:4px 14px;" onclick="saveEmailCounter()" data-i18n="admin.save">Salva</button>
             </div>
           </div>
 
           <!-- FIREBASE -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
             <h4 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🔥 Firebase Firestore</h4>
-            <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;">Piano gratuito (Spark): 1 GB storage, 50.000 letture/giorno, 20.000 scritture/giorno.</p>
+            <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;" data-i18n="admin.firebase.plan">Piano gratuito (Spark): 1 GB storage, 50.000 letture/giorno, 20.000 scritture/giorno.</p>
             <div id="admin-firebase-stats">
               <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-                <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:700;font-family:var(--font-ui);" id="firebase-docs-count">—</div><div style="font-size:0.88rem;color:var(--muted);">documenti totali</div></div>
+                <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:700;font-family:var(--font-ui);" id="firebase-docs-count">—</div><div style="font-size:0.88rem;color:var(--muted);" data-i18n="admin.firebase.docs">documenti totali</div></div>
               </div>
             </div>
           </div>
@@ -432,19 +431,19 @@
           <!-- CLOUDINARY -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
             <h4 style="font-family:var(--font-ui);margin-bottom:0.5rem;">☁️ Cloudinary</h4>
-            <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;">Piano gratuito: 25 crediti/mese (storage + trasformazioni + banda).</p>
-            <p style="font-size:0.88rem;color:var(--muted);">Per il dettaglio aggiornato vai su <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.</p>
+            <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;" data-i18n="admin.cloudinary.plan">Piano gratuito: 25 crediti/mese (storage + trasformazioni + banda).</p>
+            <p style="font-size:0.88rem;color:var(--muted);" data-i18n-html="admin.cloudinary.link">Per il dettaglio aggiornato vai su <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.</p>
           </div>
         </div>
 
         <div id="admin-eventi" class="admin-section">
-          <h3 style="font-family:var(--font-ui);margin-bottom:1rem;">Eventi di sistema</h3>
+          <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.eventi.title">Eventi di sistema</h3>
           <div id="admin-eventi-table"></div>
         </div>
         <div id="admin-segnalazioni" class="admin-section">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
-            <h3 style="font-family:var(--font-ui);">Segnalazioni utenti</h3>
-            <button class="tbl-btn tbl-btn-edit" onclick="markAllSegnalazioniRead()">✓ Segna tutte come lette</button>
+            <h3 style="font-family:var(--font-ui);" data-i18n="admin.segnalazioni.title">Segnalazioni utenti</h3>
+            <button class="tbl-btn tbl-btn-edit" onclick="markAllSegnalazioniRead()" data-i18n="admin.eventi.markRead">✓ Segna tutte come lette</button>
           </div>
           <div id="admin-segnalazioni-table"></div>
         </div>
@@ -452,48 +451,7 @@
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.contacts.title">Contact Messages</h3>
           <div id="admin-contacts-list"></div>
         </div>
-        <div id="admin-newsletter" class="admin-section">
-          <h3 style="font-family:var(--font-ui);margin-bottom:1rem;">Invia Newsletter</h3>
-          <div class="form-group">
-            <label class="form-label" data-i18n="contact.context">Contesto della domanda</label>
-            <input class="form-input" type="text" id="newsletter-subject" placeholder="es. Nuova serie aggiunta!">
-          </div>
-          <div class="form-group">
-            <label class="form-label" data-i18n="contact.message">Domanda (o messaggio)</label>
-            <textarea class="form-textarea" id="newsletter-body" rows="5" placeholder="Scrivi il messaggio per gli utenti selezionati..."></textarea>
-          </div>
-          <div class="form-group">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
-              <label class="form-label" style="margin:0;">Destinatari</label>
-              <div style="display:flex;gap:0.5rem;">
-                <button class="tbl-btn tbl-btn-edit" onclick="selectAllNewsletterUsers(true)">Seleziona tutti</button>
-                <button class="tbl-btn tbl-btn-edit" onclick="selectAllNewsletterUsers(false)">Deseleziona tutti</button>
-              </div>
-            </div>
-            <div id="newsletter-users-list" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem;"></div>
-          </div>
-          <button class="btn-primary" onclick="sendNewsletterFromAdmin()">📧 Invia agli utenti selezionati</button>
-          <hr class="divider">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.5rem;">
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;">
-              <div style="font-size:1.8rem;font-weight:700;color:var(--accent);" id="email-count-month">-</div>
-              <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">Email inviate questo mese</div>
-            </div>
-            <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1rem;text-align:center;">
-              <div style="font-size:1.8rem;font-weight:700;color:var(--accent3);" id="email-count-total">-</div>
-              <div style="font-size:0.82rem;color:var(--muted);margin-top:4px;">Email inviate in totale</div>
-            </div>
-          </div>
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:0.5rem;text-align:center;">Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese)</div>
-          <div style="margin-top:1rem;display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-            <label style="font-size:0.85rem;color:var(--muted);">Correggi contatore mensile:</label>
-            <input type="number" id="fix-counter-input" min="0" max="200" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:8px;font-size:0.9rem;" placeholder="es. 9">
-            <button class="tbl-btn tbl-btn-edit" onclick="manualFixCounter()">Aggiorna</button>
-          </div>
-          <hr class="divider" style="margin-top:1.5rem;">
-          <h4 style="font-family:var(--font-ui);margin-bottom:1rem;">📬 Ultime e-mail inviate</h4>
-          <div id="admin-email-log"></div>
-        </div>
+
         <div id="admin-users" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.users.title">Registered Users</h3>
           <div id="admin-users-table"></div>
@@ -504,17 +462,53 @@
   </section>
 </div>
 
+
+<!-- ==================== NEWSLETTER ==================== -->
+<div id="page-newsletter" class="page">
+  <section class="section">
+    <div class="section-inner">
+      <div class="section-header">
+        <h1 class="section-title" data-i18n="newsletter.title">Invia Newsletter</h1>
+      </div>
+      <div style="max-width:640px;">
+        <div class="form-group">
+          <label class="form-label" data-i18n="newsletter.subject">Oggetto</label>
+          <input class="form-input" type="text" id="newsletter-subject" data-i18n-placeholder="newsletter.subject.ph" placeholder="es. Nuova serie aggiunta!">
+        </div>
+        <div class="form-group">
+          <label class="form-label" data-i18n="newsletter.body">Corpo del messaggio</label>
+          <textarea class="form-textarea" id="newsletter-body" rows="5" data-i18n-placeholder="newsletter.body.ph" placeholder="Scrivi il messaggio per gli utenti selezionati..."></textarea>
+        </div>
+        <div class="form-group">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+            <label class="form-label" style="margin:0;" data-i18n="newsletter.recipients">Destinatari</label>
+            <div style="display:flex;gap:0.5rem;">
+              <button class="tbl-btn tbl-btn-edit" onclick="selectAllNewsletterUsers(true)" data-i18n="newsletter.selectAll">Seleziona tutti</button>
+              <button class="tbl-btn tbl-btn-edit" onclick="selectAllNewsletterUsers(false)" data-i18n="newsletter.deselectAll">Deseleziona tutti</button>
+            </div>
+          </div>
+          <div id="newsletter-users-list" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem;"></div>
+        </div>
+        <button class="btn-primary" onclick="sendNewsletterFromAdmin()" data-i18n="newsletter.send">📧 Invia agli utenti selezionati</button>
+        <hr class="divider">
+        <h4 style="font-family:var(--font-ui);margin-bottom:1rem;">📬 <span data-i18n="newsletter.log">Ultime e-mail inviate</span></h4>
+        <div id="admin-email-log"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
 <!-- ==================== CLASSIFICA ==================== -->
 <div id="page-classifica" class="page">
   <section class="section">
     <div class="section-inner">
       <div class="section-header">
-        <h1 class="section-title">🏆 Classifica dei <span class="hi">migliori collezionisti</span></h1>
+        <h1 class="section-title">🏆 <span data-i18n="classifica.best">Classifica dei migliori collezionisti</span></h1>
       </div>
       <div style="display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start;">
         <div id="classifica-list"></div>
         <div>
-          <h3 style="font-family:var(--font-ui);font-size:1rem;margin-bottom:1rem;color:var(--muted);">🏅 Livelli</h3>
+          <h3 style="font-family:var(--font-ui);font-size:1rem;margin-bottom:1rem;color:var(--muted);">🏅 <span data-i18n="classifica.levels">Livelli</span></h3>
           <div id="classifica-levels-table"></div>
         </div>
       </div>
@@ -573,7 +567,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v4.13</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v4.48</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -738,7 +732,7 @@
       <label class="form-label" data-i18n="form.post.body">Content</label>
       <textarea class="form-textarea" id="post-body-input" rows="5" placeholder="Share the details..."></textarea>
     </div>
-    <button class="btn-primary" style="width:100%;" onclick="savePost()" data-i18n="modal.post.save">Publish Post</button>
+    <button class="btn-primary" style="width:100%;" onclick="savePost()" data-i18n="modal.post.save">Publish post</button>
   </div>
 </div>
 
@@ -833,7 +827,7 @@
 <div class="modal-overlay hidden" id="change-pwd-modal">
   <div class="modal">
     <div class="modal-header">
-      <h2 class="modal-title">🔑 Cambia password</h2>
+      <h2 class="modal-title" data-i18n="profile.changePwd.title">🔑 Cambia password</h2>
       <button class="modal-close" onclick="closeModal('change-pwd-modal')">✕</button>
     </div>
     <div class="form-group">
@@ -906,7 +900,7 @@
 <div class="modal-overlay hidden" id="nationality-modal">
   <div class="modal">
     <div class="modal-header">
-      <h2 class="modal-title">Cambia nazionalità</h2>
+      <h2 class="modal-title" data-i18n="profile.changeNat.title">Cambia nazionalità</h2>
       <button class="modal-close" onclick="closeModal('nationality-modal')">✕</button>
     </div>
     <div class="form-group">
@@ -931,25 +925,25 @@
     <!-- Info sola lettura -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:1rem;background:var(--card2);border-radius:8px;padding:0.75rem;">
       <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Iscritto dal</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.joined">Iscritto dal</div>
         <div id="edit-user-joined" style="font-size:0.88rem;color:var(--text);">—</div>
       </div>
       <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Ultima login</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.lastlogin">Ultima login</div>
         <div id="edit-user-lastlogin" style="font-size:0.88rem;color:var(--text);">—</div>
       </div>
       <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Livello</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.level">Livello</div>
         <div id="edit-user-level" style="font-size:0.88rem;color:var(--accent);">—</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:1rem;background:var(--card2);border-radius:8px;padding:0.75rem;">
       <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Nome</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.nome">Nome</div>
         <div id="edit-user-nome" style="font-size:0.88rem;color:var(--text);">—</div>
       </div>
       <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Cognome</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.cognome">Cognome</div>
         <div id="edit-user-cognome" style="font-size:0.88rem;color:var(--text);">—</div>
       </div>
       <div>
@@ -959,36 +953,36 @@
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;background:var(--card2);border-radius:8px;padding:0.75rem;">
       <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Sesso</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.sesso">Sesso</div>
         <div id="edit-user-sesso" style="font-size:0.88rem;color:var(--text);">—</div>
       </div>
       <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Anni di collezionismo</div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.anni">Anni di collezionismo</div>
         <div id="edit-user-anni" style="font-size:0.88rem;color:var(--text);">—</div>
       </div>
     </div>
 
     <!-- Campi editabili -->
     <div class="form-group">
-      <label class="form-label">Username</label>
+      <label class="form-label" data-i18n="form.username">Username</label>
       <input class="form-input" type="text" id="edit-user-username" placeholder="username">
     </div>
     <div class="form-group">
-      <label class="form-label">E-mail</label>
+      <label class="form-label" data-i18n="form.email">E-mail</label>
       <input class="form-input" type="email" id="edit-user-email" placeholder="email@esempio.it">
     </div>
     <div class="form-group">
-      <label class="form-label">Tipologia di utente</label>
+      <label class="form-label" data-i18n="admin.user.role">Tipologia di utente</label>
       <select class="form-input" id="edit-user-role">
-        <option value="collector">Collezionista</option>
-        <option value="admin">Admin</option>
+        <option value="collector" data-i18n="admin.user.collector">Collezionista</option>
+        <option value="admin" data-i18n="admin.user.admin">Admin</option>
       </select>
     </div>
 
-    <button class="btn-primary" style="width:100%;" onclick="saveEditUser()">Salva modifiche</button>
-    <button class="btn-secondary" style="width:100%;margin-top:0.5rem;" onclick="adminResetPassword()">🔑 Reset password</button>
+    <button class="btn-primary" style="width:100%;" onclick="saveEditUser()" data-i18n="admin.user.save">Salva modifiche</button>
+    <button class="btn-secondary" style="width:100%;margin-top:0.5rem;" onclick="adminResetPassword()" data-i18n="admin.user.reset">🔑 Reset password</button>
     <div id="admin-reset-pwd-feedback" style="display:none;margin-top:0.5rem;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;"></div>
-    <button id="edit-user-delete-btn" class="btn-secondary" style="width:100%;margin-top:0.5rem;color:#ff6464;border-color:#ff6464;" onclick="deleteUserFromModal()">🗑️ Elimina utente</button>
+    <button id="edit-user-delete-btn" class="btn-secondary" style="width:100%;margin-top:0.5rem;color:#ff6464;border-color:#ff6464;" onclick="deleteUserFromModal()" data-i18n="admin.user.delete">🗑️ Elimina utente</button>
   </div>
 </div>
 
