@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.52</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.61</span>
     <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);">| Online dal 1.07.2026</span>
   </div>
@@ -66,13 +66,13 @@
 <div id="page-home" class="page active">
   <!-- HERO -->
   <section id="hero">
-    <img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:520px;width:90%;margin:0 auto 0.75rem;display:block;transform:scale(1.15);transform-origin:center top;">
+    <img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:700px;width:90%;margin:0 auto 1.5rem;display:block;">
     <p class="hero-desc" data-i18n="hero.desc">Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni '90.</p>
     <p class="hero-desc" style="margin-top:-1rem;">Fatto con 💚 da collezionisti, per collezionisti.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
     <div id="profile-save-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1rem;margin-bottom:1rem;text-align:center;">✅ Informazioni salvate!</div>
     <div class="hero-cta">
-      <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog">Esplora il catalogo Sgorbions</button>
+      <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog">Esplora il catalogo Sgorbions!</button>
 <button class="btn-primary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting">Inizia a collezionare gli Sgorbions</button>
     </div>
     <div class="hero-stats" id="hero-stats" style="display:none;">
@@ -122,6 +122,13 @@
       </div>
     </div>
   </section>
+  <div style="max-width:1100px;margin:1.5rem auto 0;padding:0 2rem;">
+    <div style="font-size:0.88rem;text-align:left;background:rgba(255,255,255,0.04);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:1rem 1.25rem;">
+      <strong style="color:var(--accent);">NOTA:</strong><br><br>
+      Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Non è un sito di vendita. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>
+      Le informazioni contenute in questo sito rappresentano la conoscenza dell'amministratore, e non pretendono di essere un'informazione ufficiale.
+    </div>
+  </div>
   </div><!-- end home-logged-in-content -->
 </div>
 
@@ -500,7 +507,7 @@
       <div class="section-header">
         <h1 class="section-title">🏆 Classifica dei <span class="hi">migliori collezionisti</span></h1>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 280px;gap:2rem;align-items:start;">
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start;">
         <div id="classifica-list"></div>
         <div>
           <h3 style="font-family:var(--font-ui);font-size:1rem;margin-bottom:1rem;color:var(--muted);">🏅 Livelli</h3>
@@ -564,7 +571,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.52</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.61</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -793,7 +800,7 @@
 
 <!-- DEMO TOGGLE MODAL -->
 <div class="modal-overlay hidden" id="demo-toggle-modal">
-  <div class="modal" style="max-width:480px;">
+  <div class="modal" style="max-width:650px;">
     <div class="modal-header">
       <h2 class="modal-title">Come funziona il toggle</h2>
       <button class="modal-close" onclick="closeModal('demo-toggle-modal')">✕</button>
@@ -926,6 +933,16 @@
         <option value="collector">Collezionista</option>
         <option value="admin">Admin</option>
       </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:0.75rem;">
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Iscritto dal</div>
+        <div id="edit-user-joined" style="font-size:0.88rem;color:var(--text);">—</div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Ultima login</div>
+        <div id="edit-user-lastlogin" style="font-size:0.88rem;color:var(--text);">—</div>
+      </div>
     </div>
     <button class="btn-primary" style="width:100%;" onclick="saveEditUser()">Salva modifiche</button>
     <button class="btn-secondary" style="width:100%;margin-top:0.5rem;" onclick="adminResetPassword()">🔑 Reset password</button>
