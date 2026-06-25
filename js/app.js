@@ -163,8 +163,8 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v4.56';
-const CSS_VERSION = 'v4.55';
+const JS_VERSION = 'v4.66';
+const CSS_VERSION = 'v4.62';
 
 // ============================================================
 //  NATIONALITY
@@ -409,8 +409,8 @@ async function uploadToCloudinary(file) {
 const i18n = {
   en: {
     'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts',
-'profile.anon':'Appear anonymous in the ranking',
-'classifica.anonInfo':'Want to stay private? You can <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">set your profile as anonymous</a> — your name will be hidden from other collectors.','nav.onlineSince':'| Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
+'profile.anon':'Show me as anonymous in the ranking',
+'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'| Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
 'admin.email.fix':'Fix counter:','admin.save':'Save',
@@ -464,8 +464,8 @@ const i18n = {
   },
   it: {
     'catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.sections':'Sezioni','catalog.loading':'caricamento...','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.bulkscore':'⭐ Punteggio serie','catalog.add':'+ Aggiungi','catalog.itemsearch':'Cerca figurine...','catalog.tableview':'📋 Vista tabellare','nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti',
-'profile.anon':'Appari anonimo in classifica',
-'classifica.anonInfo':'Vuoi restare riservato? Puoi <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">impostare il tuo profilo come anonimo</a> — il tuo nome sarà nascosto agli altri collezionisti.','nav.onlineSince':'| Online dal 21.06.2026','profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.myInfo':'✏️ Le mie info','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
+'profile.anon':'Mostrami come utente anonimo nella classifica',
+'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.','nav.onlineSince':'| Online dal 21.06.2026','profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.myInfo':'✏️ Le mie info','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'Email inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese).',
 'admin.email.fix':'Correggi contatore:','admin.save':'Salva',
@@ -543,7 +543,7 @@ function setLang(lang, byUser = false) {
   const btn = document.getElementById('lang-current-btn');
   if (btn) {
     const flags = { en: 'gb', it: 'it' };
-    btn.style.backgroundImage = 'url(https://flagcdn.com/w40/' + (flags[lang] || 'gb') + '.png)';
+    btn.src = 'https://flagcdn.com/w40/' + (flags[lang] || 'gb') + '.png';
   }
   document.querySelectorAll('.lang-btn').forEach(b => {
     b.classList.toggle('active', (lang === 'en' && b.textContent === '🇬🇧') || (lang === 'it' && b.textContent === '🇮🇹'));
@@ -1689,6 +1689,11 @@ function renderProfile() {
   // Show warning if user must change password
   const mustChangeBanner = document.getElementById('must-change-pwd-banner');
   if (mustChangeBanner) mustChangeBanner.style.display = currentUser.mustChangePassword ? '' : 'none';
+  // Show anon toggle (only for non-admin users)
+  const anonWrap = document.getElementById('profile-anon-wrap');
+  if (anonWrap) anonWrap.style.display = currentUser.isAdmin ? 'none' : '';
+  const anonCb = document.getElementById('profile-anon-toggle');
+  if (anonCb) anonCb.checked = currentUser.isAnonymous || false;
   const natDisplay = document.getElementById('profile-nationality-display');
   if (natDisplay) {
     if (currentUser.nationalityCode) {
@@ -3036,7 +3041,7 @@ async function renderClassifica() {
   if (levelsEl) {
     const levels = getData('levels', []).sort((a,b) => a.minScore - b.minScore);
     if (levels.length) {
-      levelsEl.innerHTML = '<table class="data-table"><thead><tr><th>' + (currentLang === 'it' ? 'Livello' : 'Level') + '</th><th>' + (currentLang === 'it' ? 'Da' : 'From') + '</th></tr></thead><tbody>' +
+      levelsEl.innerHTML = '<table class="data-table compact"><thead><tr><th>' + (currentLang === 'it' ? 'Livello' : 'Level') + '</th><th>' + (currentLang === 'it' ? 'Da' : 'From') + '</th></tr></thead><tbody>' +
         levels.map(lv => '<tr><td><strong>' + ((currentLang !== 'it' && lv.nameEn) ? lv.nameEn : lv.name) + '</strong></td><td>' + lv.minScore.toLocaleString('it-IT') + ' pt</td></tr>').join('') +
         '</tbody></table>';
     } else {
@@ -3094,9 +3099,9 @@ async function renderClassifica() {
     const displayAvatar = isAnon
       ? `<div style="width:40px;height:40px;border-radius:50%;background:var(--card2);border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🕵️</div>`
       : avatarHTML;
-    const adminNote = user.isAnonymous && currentUser?.isAdmin ? ' <span style="font-size:0.75rem;opacity:0.6;">🕵️ ${user.username}</span>' : '';
+    const adminNote = user.isAnonymous && currentUser?.isAdmin ? ` <span style="font-size:0.75rem;color:#ffb400;">🕵️ ${currentLang === 'it' ? 'anonimo' : 'anonymous'}</span>` : '';
     const meNote = isMe && user.isAnonymous
-      ? ` <span style="font-size:0.78rem;color:#ffb400;font-family:var(--font-ui);">${currentLang === 'it' ? '(tu — anonimo 🕵️)' : '(you — anonymous 🕵️)'}</span>`
+      ? ` <span style="font-size:0.78rem;color:#ffb400;font-family:var(--font-ui);">${currentLang === 'it' ? '(tu 🕵️ — nome anonimizzato)' : '(you 🕵️ — anonymous name)'}</span>`
       : isMe ? ` <span style="font-size:0.78rem;color:var(--accent);font-family:var(--font-ui);">${currentLang === 'it' ? '(tu)' : '(you)'}</span>` : '';
     const rowBg = isMe
       ? (isTop3 ? 'rgba(181,255,46,0.1)' : 'rgba(181,255,46,0.04)')
@@ -3322,6 +3327,12 @@ initReveal();
 // Start Firebase — loads all data then renders
 initEmailJS();
 // Show JS+CSS version in navbar
+// Init lang flag button
+const _langBtn = document.getElementById('lang-current-btn');
+if (_langBtn) {
+  const _flags = { en: 'gb', it: 'it' };
+  _langBtn.src = 'https://flagcdn.com/w40/' + (_flags[currentLang] || 'gb') + '.png';
+}
 const jsVerEl = document.getElementById('nav-js-version');
 if (jsVerEl) jsVerEl.textContent = JS_VERSION;
 const cssVerEl = document.getElementById('nav-css-version');
