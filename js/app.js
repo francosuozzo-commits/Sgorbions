@@ -144,7 +144,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v3.52';
+const JS_VERSION = 'v3.61';
 
 // ============================================================
 //  NATIONALITY
@@ -392,7 +392,7 @@ const i18n = {
     'nav.login':'Login','nav.register':'Registrati','nav.logout':'Logout',
     'hero.eyebrow':'🇮🇹 Italy\'s Wildest 90s Collectibles',
     'hero.sub':'Collector\'s Universe','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
-    'hero.cta1':'Esplora il catalogo Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions',
+    'hero.cta1':'Esplora il catalogo Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Series','hero.stat2':'Figurines','hero.stat3':'Collectors',
     'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the Slime World','home.featured.sub':'Every series carefully documented with original artwork, descriptions and rarity info.',
     'home.featured.btn':'View All Series →',
@@ -429,7 +429,7 @@ const i18n = {
     'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
-    'hero.cta1':'Esplora il catalogo Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions',
+    'hero.cta1':'Esplora il catalogo Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat3':'Collezionisti',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
@@ -547,6 +547,7 @@ async function doLogin() {
   currentUser = user;
   LOCAL.set('currentUser', user);
   fsSave('users', user);
+  if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username);
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
   updateNavUser();
@@ -1732,10 +1733,36 @@ function renderAdminContacts() {
     <div style="font-size:0.88rem;color:var(--muted);">${m.message}</div>
   </div>`).join('');
 }
+let _usersSort = { col: 'username', dir: 1 };
+
+function sortAdminUsers(col) {
+  if (_usersSort.col === col) _usersSort.dir *= -1;
+  else { _usersSort.col = col; _usersSort.dir = 1; }
+  renderAdminUsers();
+}
+
 function renderAdminUsers() {
   const el = document.getElementById('admin-users-table');
-  const users = getData('users', []);
-  el.innerHTML = `<table class="data-table"><thead><tr><th>Username</th><th>E-mail</th><th>Livello</th><th>Ultima login</th><th>Iscritto dal</th><th>Azioni</th></tr></thead><tbody>
+  let users = [...getData('users', [])];
+  const { col, dir } = _usersSort;
+  users.sort((a, b) => {
+    let va, vb;
+    if (col === 'username') { va = a.username.toLowerCase(); vb = b.username.toLowerCase(); }
+    else if (col === 'email') { va = a.email.toLowerCase(); vb = b.email.toLowerCase(); }
+    else if (col === 'lastLogin') { va = a.lastLogin || ''; vb = b.lastLogin || ''; }
+    else if (col === 'joined') { va = a.joined || ''; vb = b.joined || ''; }
+    else if (col === 'role') { va = a.isAdmin ? 0 : 1; vb = b.isAdmin ? 0 : 1; }
+    else { va = ''; vb = ''; }
+    return va < vb ? -dir : va > vb ? dir : 0;
+  });
+  const arrow = (c) => _usersSort.col === c ? (_usersSort.dir === 1 ? ' ↑' : ' ↓') : '';
+  el.innerHTML = `<table class="data-table"><thead><tr>
+    <th style="cursor:pointer;" onclick="sortAdminUsers('username')">Username${arrow('username')}</th>
+    <th style="cursor:pointer;" onclick="sortAdminUsers('email')">E-mail${arrow('email')}</th>
+    <th style="cursor:pointer;" onclick="sortAdminUsers('role')">Livello${arrow('role')}</th>
+    <th style="cursor:pointer;" onclick="sortAdminUsers('lastLogin')">Ultima login${arrow('lastLogin')}</th>
+    <th style="cursor:pointer;" onclick="sortAdminUsers('joined')">Iscritto dal${arrow('joined')}</th>
+    <th>Azioni</th></tr></thead><tbody>
     ${users.map(u => `<tr>
       <td style="display:flex;align-items:center;gap:0.6rem;">
         <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : u.username[0].toUpperCase()}</div>
@@ -1745,7 +1772,7 @@ function renderAdminUsers() {
       <td>${u.isAdmin?'Admin':(currentLang==='it'?'Collezionista':'Collector')}</td>
       <td style="font-size:0.82rem;">${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(u.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '<span style="color:var(--muted);font-style:italic;">mai</span>'}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
-      <td><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">Modifica</button>${u.isAdmin ? '' : ` <button class="tbl-btn tbl-btn-del" onclick="deleteUser('${u.id}')">Elimina</button>`}</td>
+      <td><button class="tbl-btn" onclick="openViewUserModal('${u.id}')">Visualizza</button> <button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">Modifica</button>${u.isAdmin ? '' : ` <button class="tbl-btn tbl-btn-del" onclick="deleteUser('${u.id}')">Elimina</button>`}</td>
     </tr>`).join('')}
   </tbody></table>`;
 }
@@ -1968,13 +1995,14 @@ function renderAdminEventi() {
     el.innerHTML = '<p style="color:var(--muted);">Nessun evento ancora.</p>';
     return;
   }
-  const typeIcon = { 'new_user': '👤', 'new_post': '📝', 'reset_pwd': '🔑' };
+  const typeIcon = { 'new_user': '👤', 'new_post': '📝', 'reset_pwd': '🔑', 'login': '🔓' };
+  const noBellEvTypes = ['login'];
   el.innerHTML = `<table class="data-table"><thead><tr>
     <th>Data</th><th>Tipo</th><th>Descrizione</th><th></th>
   </tr></thead><tbody>
   ${eventi.map(e => `<tr style="${e.read ? '' : 'background:rgba(181,255,46,0.05);'}">
     <td style="white-space:nowrap;font-size:0.82rem;">${new Date(e.date).toLocaleDateString('it-IT')} ${new Date(e.date).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}</td>
-    <td>${typeIcon[e.type] || '📌'}</td>
+    <td>${typeIcon[e.type] || '📌'}${!noBellEvTypes.includes(e.type) && !e.read ? ' 🔔' : ''}</td>
     <td>${e.description}</td>
     <td><button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : 'Segna letto'}</button></td>
   </tr>`).join('')}
@@ -1998,7 +2026,8 @@ function updateBellBadge() {
   if (!badge) return;
   const segnalazioni = _cache.segnalazioni || [];
   const eventi = _cache.eventi || [];
-  const unread = segnalazioni.filter(s => !s.read).length + eventi.filter(e => !e.read).length;
+  const noBellTypes = ['login'];
+  const unread = segnalazioni.filter(s => !s.read).length + eventi.filter(e => !e.read && !noBellTypes.includes(e.type)).length;
   if (unread > 0) {
     badge.style.display = '';
     badge.textContent = unread > 9 ? '9+' : unread;
@@ -2178,6 +2207,39 @@ async function markAllSegnalazioniRead() {
   toast('Tutte le segnalazioni segnate come lette', 'success');
 }
 
+function openViewUserModal(userId) {
+  const user = getData('users', []).find(u => u.id === userId);
+  if (!user) return;
+  const joined = user.joined ? new Date(user.joined).toLocaleDateString('it-IT') : '—';
+  const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(user.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : 'mai';
+  const role = user.isAdmin ? 'Admin' : 'Collezionista';
+  const flag = user.nationalityCode ? `<img src="${flagUrl(user.nationalityCode)}" style="width:20px;height:14px;object-fit:cover;border-radius:2px;vertical-align:middle;margin-left:4px;">` : '';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:420px;width:90%;">
+      <div class="modal-header">
+        <h2 class="modal-title">👤 ${user.username}</h2>
+        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
+      </div>
+      <div style="display:grid;gap:0.75rem;">
+        <div class="detail-row"><span class="detail-label">Username</span><span class="detail-value">${user.username} ${flag}</span></div>
+        <div class="detail-row"><span class="detail-label">E-mail</span><span class="detail-value">${user.email}</span></div>
+        <div class="detail-row"><span class="detail-label">Tipologia</span><span class="detail-value">${role}</span></div>
+        <div class="detail-row"><span class="detail-label">Iscritto dal</span><span class="detail-value">${joined}</span></div>
+        <div class="detail-row"><span class="detail-label">Ultima login</span><span class="detail-value">${lastLogin}</span></div>
+        <div class="detail-row"><span class="detail-label">Nome</span><span class="detail-value">${[user.nome, user.cognome].filter(Boolean).join(' ') || '—'}</span></div>
+        <div class="detail-row"><span class="detail-label">Età</span><span class="detail-value">${user.eta ? user.eta + ' anni' : '—'}</span></div>
+        <div class="detail-row"><span class="detail-label">Sesso</span><span class="detail-value">${user.sesso === 'M' ? 'Maschio' : user.sesso === 'F' ? 'Femmina' : user.sesso === 'A' ? 'Non specificato' : '—'}</span></div>
+        <div class="detail-row"><span class="detail-label">Anni collezione</span><span class="detail-value">${user.anniCollezionismo || '—'}</span></div>
+      </div>
+    </div>`;
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
 function openEditUserModal(userId) {
   const user = getData('users', []).find(u => u.id === userId);
   if (!user) return;
@@ -2185,6 +2247,10 @@ function openEditUserModal(userId) {
   document.getElementById('edit-user-username').value = user.username;
   document.getElementById('edit-user-email').value = user.email;
   document.getElementById('edit-user-role').value = user.isAdmin ? 'admin' : 'collector';
+  const joinedEl = document.getElementById('edit-user-joined');
+  if (joinedEl) joinedEl.textContent = user.joined ? new Date(user.joined).toLocaleDateString('it-IT') : '—';
+  const lastLoginEl = document.getElementById('edit-user-lastlogin');
+  if (lastLoginEl) lastLoginEl.textContent = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(user.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : 'mai';
   document.getElementById('edit-user-modal').classList.remove('hidden');
 }
 
@@ -2703,7 +2769,7 @@ async function renderClassifica() {
       <div style="font-size:1.1rem;width:40px;text-align:center;flex-shrink:0;font-family:var(--font-ui);color:${isTop3 ? 'var(--accent)' : 'var(--muted)'};">#${position}</div>
       ${avatarHTML}
       <div style="flex:1;">
-        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;">${user.username}${user.nationalityCode ? `<img src="https://flagcdn.com/w40/${user.nationalityCode}.png" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}<span style="font-size:0.78rem;color:var(--muted);font-family:var(--font-body);font-weight:400;">(utente dal ${user.joined ? new Date(user.joined).toLocaleDateString('it-IT') : '—'})</span></div>
+        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;">${user.username}${user.nationalityCode ? `<img src="https://flagcdn.com/w40/${user.nationalityCode}.png" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}<span style="font-size:0.92rem;color:var(--muted);font-family:var(--font-body);font-weight:400;">(utente dal ${user.joined ? new Date(user.joined).toLocaleDateString('it-IT') : '—'})</span></div>
         <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">${countFigurines} figurine · ${countAlbums} album · ${countExtras} altri articoli</div>
       </div>
       <div style="display:flex;align-items:center;gap:0.75rem;">
