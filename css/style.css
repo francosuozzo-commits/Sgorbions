@@ -136,9 +136,9 @@ body {
 
 /* ===== HERO ===== */
 #hero {
-  min-height: 100vh; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  text-align: center; padding: 2rem;
+  min-height: auto; display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-start;
+  text-align: center; padding: 4rem 2rem 3rem;
   position: relative;
 }
 .hero-eyebrow {
@@ -573,8 +573,8 @@ body {
 .profile-info h2 { font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 0.25rem; }
 .profile-info p { color: var(--muted); font-size: 0.9rem; }
 .profile-stats { display: flex; gap: 2rem; margin-top: 1rem; flex-wrap: wrap; }
-.profile-stat-num { font-family: var(--font-display); font-size: 1.5rem; color: var(--accent); }
-.profile-stat-label { font-size: 0.78rem; color: var(--muted); }
+.profile-stat-num { font-family: var(--font-display); font-size: 1.8rem; color: var(--accent); }
+.profile-stat-label { font-size: 0.95rem; color: var(--muted); }
 
 /* ===== ADMIN BADGE ===== */
 .admin-badge {
@@ -623,7 +623,7 @@ body {
   color: var(--muted); padding: 0.5rem 1.2rem; border-radius: 8px;
   cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
-.admin-tab.active { background: rgba(181,255,46,0.1); border-color: rgba(181,255,46,0.3); color: var(--accent); }
+.admin-tab.active { background: var(--accent); border-color: var(--accent); color: #0e0a1a; font-weight: 700; }
 .admin-section { display: none; }
 .admin-section.active { display: block; }
 
