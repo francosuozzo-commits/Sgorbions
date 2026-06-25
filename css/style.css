@@ -1,4 +1,4 @@
-/* CSS_VERSION: v4.38 */
+/* CSS_VERSION: v4.62 */
 /* ===== RESET & VARIABLES ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -88,14 +88,13 @@ body {
 }
 .lang-toggle {
   display: flex; align-items: center; gap: 4px;
-  background: var(--card2); border: 1px solid var(--border);
-  border-radius: 8px; padding: 4px; cursor: pointer;
 }
 .lang-btn {
   padding: 0; border-radius: 4px; cursor: pointer; transition: all 0.2s;
   background: transparent; border: 2px solid transparent; opacity: 0.45;
   width: 32px; height: 22px; background-size: cover; background-position: center;
 }
+#lang-current-btn, #lang-current-btn:focus, #lang-current-btn:active, #lang-current-btn:hover { border: none !important; outline: none !important; box-shadow: none !important; -webkit-appearance: none; appearance: none; }
 .lang-btn.active {
   border-color: var(--accent); opacity: 1; box-shadow: 0 0 0 1px var(--accent);
 }
