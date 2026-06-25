@@ -1,4 +1,4 @@
-
+/* CSS_VERSION: v4.38 */
 /* ===== RESET & VARIABLES ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -635,6 +635,7 @@ body {
 }
 .data-table td { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.9rem; }
 .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+.data-table.compact td, .data-table.compact th { padding: 0.3rem 0.75rem; font-size: 0.82rem; }
 .tbl-btn {
   font-family: var(--font-ui); font-size: 0.82rem; padding: 3px 10px;
   border-radius: 6px; cursor: pointer; transition: all 0.15s; border: 1px solid;
