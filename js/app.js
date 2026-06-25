@@ -144,7 +144,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v3.50';
+const JS_VERSION = 'v3.51';
 
 // ============================================================
 //  NATIONALITY
@@ -651,6 +651,27 @@ async function saveProfileInvite() {
 // ============================================================
 //  CHANGE PASSWORD
 // ============================================================
+function openDemoToggleModal() {
+  // Reset demo toggle state
+  const btn = document.getElementById('demo-toggle-btn');
+  if (btn) {
+    btn.classList.remove('on');
+    btn._on = false;
+    const label = document.getElementById('demo-toggle-label');
+    if (label) label.style.color = 'var(--muted)';
+  }
+  document.getElementById('demo-toggle-modal').classList.remove('hidden');
+}
+
+function toggleDemoBtn() {
+  const btn = document.getElementById('demo-toggle-btn');
+  const label = document.getElementById('demo-toggle-label');
+  if (!btn) return;
+  btn._on = !btn._on;
+  btn.classList.toggle('on', btn._on);
+  if (label) label.style.color = btn._on ? '#4db8ff' : 'var(--muted)';
+}
+
 function openChangePwdModal() {
   document.getElementById('change-pwd-current').value = '';
   document.getElementById('change-pwd-new').value = '';
