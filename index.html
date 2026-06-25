@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.36</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.50</span>
     <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);">| Online dal 1.07.2026</span>
   </div>
@@ -66,13 +66,9 @@
 <div id="page-home" class="page active">
   <!-- HERO -->
   <section id="hero">
-    <div class="hero-eyebrow" data-i18n="hero.eyebrow">🇮🇹 Italy's Wildest 90s Collectibles</div>
-
-    <h1 class="hero-title">
-      <span class="s">SGOR</span><span class="g">BIONS</span>
-      <span class="hero-slime" data-i18n="hero.sub">Collector's Universe</span>
-    </h1>
-    <p class="hero-desc" data-i18n="hero.desc">The definitive fan database for Sgorbions figurines — the legendary Italian sticker series from the early 1990s. Catalog your collection, connect with other fans, and track every grotesque character.</p>
+    <img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:520px;width:90%;margin:0 auto 0.5rem;display:block;">
+    <p class="hero-desc" data-i18n="hero.desc">Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni '90.</p>
+    <p class="hero-desc" style="margin-top:-1rem;">Fatto con 💚 da collezionisti, per collezionisti.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
     <div id="profile-save-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1rem;margin-bottom:1rem;text-align:center;">✅ Informazioni salvate!</div>
     <div class="hero-cta">
@@ -95,9 +91,9 @@
   <section class="section">
     <div class="section-inner">
       <div class="section-header reveal">
-        <h2 class="section-title">Come funziona la tua Collezione Sgorbions <span class="hi">organizzata</span></h2>
+        
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.5rem;" class="reveal">
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;" class="reveal">
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
           <div style="font-size:2.5rem;margin-bottom:1rem;">📖</div>
           <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;" data-i18n="how.1.title">Browse the Catalog</h3>
@@ -116,7 +112,12 @@
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
           <div style="font-size:2.5rem;margin-bottom:1rem;">👤</div>
           <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;" data-i18n="how.4.title">Your Profile</h3>
-          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.4.desc">See your collection stats, owned figurines and activity history in one place.</p>
+          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.4.desc">Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.</p>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
+          <div style="font-size:2.5rem;margin-bottom:1rem;">🏆</div>
+          <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;">Sfida gli altri</h3>
+          <p style="font-size:0.88rem;color:var(--muted);">Sfida gli altri collezionisti a chi ha la collezione più grande.</p>
         </div>
       </div>
     </div>
@@ -532,29 +533,8 @@
 <!-- ==================== FOOTER ==================== -->
 <footer>
   <div class="footer-inner">
-    <div class="footer-top">
-      <div>
-        <div class="footer-logo">SGORBIONS</div>
-        <p class="footer-desc" data-i18n="footer.desc">The unofficial fan database dedicated to the legendary Italian figurine collection from the early 1990s. Made with 💚 by collectors, for collectors.</p>
-      </div>
-      <div class="footer-col">
-        <h4 data-i18n="footer.nav">Navigation</h4>
-        <a onclick="showPage('home')" data-i18n="nav.home">Home</a>
-        <a onclick="showPage('catalog')" data-i18n="nav.catalog">Catalog</a>
-        <a onclick="showPage('blog')" data-i18n="nav.blog">Q&A / Blog</a>
-        <a onclick="showPage('contact')" data-i18n="nav.contact">Contatti</a>
-      </div>
-      <div class="footer-col">
-        <h4 data-i18n="footer.account">Account</h4>
-        <a onclick="openAuth('login')" data-i18n="nav.login">Login</a>
-        <a onclick="openAuth('register')" data-i18n="nav.register">Registrati</a>
-        <a onclick="showPage('profile')" data-i18n="profile.title">My Profile</a>
-      </div>
-    </div>
     <div class="footer-bottom">
-      <span class="footer-copy" data-i18n="footer.copy">© 2026 Sgorbions Collector. Unofficial fan site.</span>
-      <span class="footer-slime">👾 Stay Slimy!</span>
-      <span style="font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.36</span>
+      <span class="footer-copy" data-i18n="footer.copy">© 2026 figurinesgorbions.it — Sito fan non ufficiale.</span>
     </div>
   </div>
 </footer>
@@ -584,7 +564,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.36</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.50</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
