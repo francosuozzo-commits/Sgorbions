@@ -144,7 +144,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v3.62';
+const JS_VERSION = 'v3.69';
 
 // ============================================================
 //  NATIONALITY
@@ -1772,7 +1772,7 @@ function renderAdminUsers() {
       <td>${u.isAdmin?'Admin':(currentLang==='it'?'Collezionista':'Collector')}</td>
       <td style="font-size:0.82rem;">${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(u.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '<span style="color:var(--muted);font-style:italic;">mai</span>'}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
-      <td><button class="tbl-btn" onclick="openViewUserModal('${u.id}')">Visualizza</button> <button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">Modifica</button>${u.isAdmin ? '' : ` <button class="tbl-btn tbl-btn-del" onclick="deleteUser('${u.id}')">Elimina</button>`}</td>
+      <td><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">Visualizza</button></td>
     </tr>`).join('')}
   </tbody></table>`;
 }
@@ -2002,7 +2002,7 @@ function renderAdminEventi() {
   </tr></thead><tbody>
   ${eventi.map(e => `<tr style="${e.read ? '' : 'background:rgba(181,255,46,0.05);'}">
     <td style="white-space:nowrap;font-size:0.82rem;">${new Date(e.date).toLocaleDateString('it-IT')} ${new Date(e.date).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}</td>
-    <td>${typeIcon[e.type] || '📌'}${!noBellEvTypes.includes(e.type) && !e.read ? ' 🔔' : ''}</td>
+    <td>${typeIcon[e.type] || '📌'}</td>
     <td>${e.description}</td>
     <td><button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : 'Segna letto'}</button></td>
   </tr>`).join('')}
@@ -2219,7 +2219,7 @@ function openViewUserModal(userId) {
   modal.className = 'modal-overlay';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
   modal.innerHTML = `
-    <div class="modal" style="max-width:420px;width:90%;">
+    <div class="modal" style="max-width:600px;width:95%;">
       <div class="modal-header">
         <h2 class="modal-title">👤 ${user.username}</h2>
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
@@ -2240,6 +2240,16 @@ function openViewUserModal(userId) {
   document.body.appendChild(modal);
 }
 
+async function deleteUserFromModal() {
+  const userId = document.getElementById('edit-user-id').value;
+  const users = getData('users', []);
+  const user = users.find(u => u.id === userId);
+  if (!user) return;
+  if (!confirm('Eliminare definitivamente l\'utente ' + user.username + '?')) return;
+  await deleteUser(userId);
+  closeModal('edit-user-modal');
+}
+
 function openEditUserModal(userId) {
   const user = getData('users', []).find(u => u.id === userId);
   if (!user) return;
@@ -2247,10 +2257,44 @@ function openEditUserModal(userId) {
   document.getElementById('edit-user-username').value = user.username;
   document.getElementById('edit-user-email').value = user.email;
   document.getElementById('edit-user-role').value = user.isAdmin ? 'admin' : 'collector';
+  // Update modal title
+  const titleEl = document.getElementById('edit-user-modal-title');
+  if (titleEl) titleEl.textContent = '👤 ' + user.username;
+
+  // Read-only fields
   const joinedEl = document.getElementById('edit-user-joined');
   if (joinedEl) joinedEl.textContent = user.joined ? new Date(user.joined).toLocaleDateString('it-IT') : '—';
   const lastLoginEl = document.getElementById('edit-user-lastlogin');
   if (lastLoginEl) lastLoginEl.textContent = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(user.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : 'mai';
+  const nomeEl = document.getElementById('edit-user-nome');
+  if (nomeEl) nomeEl.textContent = user.nome || '—';
+  const cognomeEl = document.getElementById('edit-user-cognome');
+  if (cognomeEl) cognomeEl.textContent = user.cognome || '—';
+  const etaEl = document.getElementById('edit-user-eta');
+  if (etaEl) etaEl.textContent = user.eta ? user.eta + ' anni' : '—';
+  const sessoEl = document.getElementById('edit-user-sesso');
+  if (sessoEl) sessoEl.textContent = user.sesso === 'M' ? 'Maschio' : user.sesso === 'F' ? 'Femmina' : user.sesso === 'A' ? 'Non specificato' : '—';
+  const anniEl = document.getElementById('edit-user-anni');
+  if (anniEl) anniEl.textContent = user.anniCollezionismo || '—';
+  const levelEl = document.getElementById('edit-user-level');
+  if (levelEl) {
+    const owned = (_cache.ownedMap && _cache.ownedMap[user.id]) || [];
+    const allFigs = getData('figurines', []);
+    const score = allFigs.filter(f => owned.includes(f.id)).reduce((s, f) => s + (f.score || 0), 0);
+    // Ensure levels are loaded
+    if (!_cache.levels || !_cache.levels.length) {
+      fsGetAll('levels').then(lvs => {
+        _cache.levels = lvs;
+        const lv = getUserLevel(score);
+        levelEl.textContent = lv ? lv.name + ' (' + score.toLocaleString('it-IT') + ' pt)' : '— (' + score.toLocaleString('it-IT') + ' pt)';
+      });
+    } else {
+      const lv = getUserLevel(score);
+      levelEl.textContent = lv ? lv.name + ' (' + score.toLocaleString('it-IT') + ' pt)' : '— (' + score.toLocaleString('it-IT') + ' pt)';
+    }
+  }
+  const deleteBtn = document.getElementById('edit-user-delete-btn');
+  if (deleteBtn) deleteBtn.style.display = user.isAdmin ? 'none' : 'block';
   document.getElementById('edit-user-modal').classList.remove('hidden');
 }
 
