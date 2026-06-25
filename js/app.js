@@ -2154,15 +2154,38 @@ function openFigDetail(figId) {
     </div>`);
   }
 
-  // Segnala
-  if (currentUser && !isAdmin) {
+  // Bottom buttons
+  if (isAdmin) {
+    rows.push(`<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
+      <button onclick="editItemFromDetail('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;">✏️ ${currentLang === 'it' ? 'Modifica' : 'Edit'}</button>
+      <button onclick="deleteItemFromDetail('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid #ff6464;background:transparent;color:#ff6464;cursor:pointer;">🗑️ ${currentLang === 'it' ? 'Elimina' : 'Delete'}</button>
+    </div>`);
+  } else if (currentUser) {
     rows.push(`<div style="margin-top:1rem;text-align:right;">
-      <button onclick="closeModal('fig-detail-modal');openSegnalazioneModal('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;" title="Segnala qualcosa all'amministratore, per questa figurina">${currentLang === 'it' ? '🚩 Segnala errore' : '🚩 Report error'}</button>
+      <button onclick="closeModal('fig-detail-modal');openSegnalazioneModal('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩 ${currentLang === 'it' ? 'Segnala errore' : 'Report error'}</button>
     </div>`);
   }
 
   document.getElementById('fig-detail-content').innerHTML = rows.join('');
   document.getElementById('fig-detail-modal').classList.remove('hidden');
+}
+
+function editItemFromDetail(itemId) {
+  const item = getData('figurines', []).find(x => x.id === itemId);
+  if (!item) return;
+  currentSection = item.section;
+  currentSeriesId = item.seriesId;
+  closeModal('fig-detail-modal');
+  openAddItemModal(itemId);
+}
+
+async function deleteItemFromDetail(itemId) {
+  if (!confirm(currentLang === 'it' ? 'Eliminare questa figurina?' : 'Delete this sticker?')) return;
+  await fsDelete('figurines', itemId);
+  _cache.figurines = (_cache.figurines || []).filter(x => x.id !== itemId);
+  closeModal('fig-detail-modal');
+  renderItems();
+  toast(currentLang === 'it' ? 'Eliminata! 🗑️' : 'Deleted! 🗑️', 'success');
 }
 
 function toggleOwnedFromDetail(figId) {
