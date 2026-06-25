@@ -419,7 +419,7 @@ const i18n = {
     'how.3.title':'Connect & Ask','how.3.desc':'Post questions and get answers from the owner and fellow collectors.',
     'how.4.title':'Your Profile','how.4.desc':'View your profile info and decide what to share with other collectors.','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
     'catalog.title':'The Catalog','catalog.sub':'All Sgorbions series ever released','catalog.addseries':'+ Add Series','catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
-    'back':'Back to Catalog','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.sections':'Sections','catalog.loading':'loading...','catalog.haveall':'✅ Have it all','catalog.havenone':'❌ Have nothing','catalog.bulkscore':'⭐ Series score','catalog.add':'+ Add','catalog.tableview':'📋 Table view','detail.owned':'Owned','detail.addfig':'+ Add Sticker',
+    'back':'Back to Catalog','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.sections':'Sections','catalog.loading':'loading...','catalog.haveall':'✅ Have it all','catalog.havenone':'❌ Have nothing','catalog.bulkscore':'⭐ Series score','catalog.add':'+ Add','catalog.itemsearch':'Search stickers...','catalog.tableview':'📋 Table view','detail.owned':'Owned','detail.addfig':'+ Add Sticker',
     'blog.title':'Q&A & Blog','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ Nuova domanda / Notizia','blog.empty':'No posts yet. Start the conversation!',
     'contact.eyebrow':'Get In Touch','contact.title':"Contatta l'amministratore",'contact.sub':'Have a rare find? Want to contribute? Drop a message!',
     'contact.info.title':"Let's talk Sgorbions",'contact.email':'Email','contact.location':'Location','contact.location.val':'Italy 🇮🇹','contact.resp':'Response Time','contact.resp.val':'Usually within 24–48 hours',
@@ -439,10 +439,10 @@ const i18n = {
     'admin.series.title':'Manage Series','admin.figurines.title':'Manage Stickers','admin.blog.title':'Manage Q&A / Blog','admin.contacts.title':'Contact Messages','admin.users.title':'Registered Users',
     'footer.desc':'The unofficial fan database dedicated to the legendary Italian figurine collection from the early 1990s. Made with 💚 by collectors, for collectors.',
     'footer.nav':'Navigation','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Unofficial fan site.',
-    'owned.toggle':'I own this','owned.yes':'✓ Ce l\'ho'
+    'owned.toggle':'I own this','owned.yes':'✓ Owned'
   },
   it: {
-    'catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.sections':'Sezioni','catalog.loading':'caricamento...','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.bulkscore':'⭐ Punteggio serie','catalog.add':'+ Aggiungi','catalog.tableview':'📋 Vista tabellare','nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.','profile.saved':'✅ Informazioni salvate!','banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
+    'catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.sections':'Sezioni','catalog.loading':'caricamento...','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.bulkscore':'⭐ Punteggio serie','catalog.add':'+ Aggiungi','catalog.itemsearch':'Cerca figurine...','catalog.tableview':'📋 Vista tabellare','nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.','profile.saved':'✅ Informazioni salvate!','banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
     'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Le mie / Totale','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Sfida gli altri collezionisti a chi ha la collezione più grande.','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
@@ -1120,6 +1120,7 @@ function updateSectionCounts() {
 
 function openSeriesSection(section) {
   currentSection = section;
+  const si = document.getElementById('items-search'); if (si) si.value = '';
   currentItemPage = 1;
   bulkEditActive = false;
   const bulkView = document.getElementById('bulk-edit-view');
@@ -1247,7 +1248,12 @@ async function loadAllOwnedFromFirebase() {
 function renderItems() {
   const grid = document.getElementById('items-grid');
   if (!currentSeriesId || !grid || !currentSection) return;
-  const allItems = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection).sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
+  const searchQ = (document.getElementById('items-search')?.value || '').toLowerCase().trim();
+  const allItems = getData('figurines', []).filter(f => {
+    if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
+    if (!searchQ) return true;
+    return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ);
+  }).sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
   const owned = getOwned();
   const pw = document.getElementById('detail-progress-wrap');
   // Show bulk owned buttons only for figurines section when logged in
@@ -1294,7 +1300,7 @@ function renderItems() {
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
     const sizeHTML = f.size ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
-    const figLabel = f.subseries ? `[${f.subseries}]` : (f.number ? `#${String(f.number).padStart(2,'0')}` : '');
+    const figLabel = f.subseries ? `[${f.subseries}]` : (f.number ? `#${f.number}` : '');
     return `<div class="fig-card" onclick="openFigDetail('${f.id}')" style="cursor:pointer;">
       <div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
         ${imgHTML}${ownedBadge}${adminBtns}
@@ -2956,9 +2962,9 @@ function renderWantlist() {
         const sorted = items.sort((a,b) => (a.number||0) - (b.number||0));
         const chips = sorted.map(f => {
           let label = '';
-          if (mode === 'numbers') label = f.number ? '#' + String(f.number).padStart(2,'0') : (f.subseries ? '['+f.subseries+']' : f.name);
+          if (mode === 'numbers') label = f.number ? '#' + f.number : (f.subseries ? '['+f.subseries+']' : f.name);
           else if (mode === 'names') label = f.name;
-          else label = (f.number ? '#' + String(f.number).padStart(2,'0') + ' ' : (f.subseries ? '['+f.subseries+'] ' : '')) + f.name;
+          else label = (f.number ? '#' + f.number + ' ' : (f.subseries ? '['+f.subseries+'] ' : '')) + f.name;
           return `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:0.78rem;padding:2px 8px;border-radius:12px;">${label}</span>`;
         }).join('');
         return `<div style="margin-bottom:0.75rem;">${modeSelector}<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">${chips}</div></div>`;
