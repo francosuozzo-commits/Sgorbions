@@ -163,8 +163,8 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v3.81';
-const CSS_VERSION = 'v4.13';
+const JS_VERSION = 'v4.56';
+const CSS_VERSION = 'v4.55';
 
 // ============================================================
 //  NATIONALITY
@@ -410,7 +410,7 @@ const i18n = {
   en: {
     'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts',
 'profile.anon':'Appear anonymous in the ranking',
-'classifica.anonInfo':'Want to stay private? You can <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">set your profile as anonymous</a> — your name will be hidden from other collectors.','nav.onlineSince':'| Online since 24.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
+'classifica.anonInfo':'Want to stay private? You can <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">set your profile as anonymous</a> — your name will be hidden from other collectors.','nav.onlineSince':'| Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
 'admin.email.fix':'Fix counter:','admin.save':'Save',
@@ -465,7 +465,7 @@ const i18n = {
   it: {
     'catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.sections':'Sezioni','catalog.loading':'caricamento...','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.bulkscore':'⭐ Punteggio serie','catalog.add':'+ Aggiungi','catalog.itemsearch':'Cerca figurine...','catalog.tableview':'📋 Vista tabellare','nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti',
 'profile.anon':'Appari anonimo in classifica',
-'classifica.anonInfo':'Vuoi restare riservato? Puoi <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">impostare il tuo profilo come anonimo</a> — il tuo nome sarà nascosto agli altri collezionisti.','nav.onlineSince':'| Online dal 24.06.2026','profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.myInfo':'✏️ Le mie info','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
+'classifica.anonInfo':'Vuoi restare riservato? Puoi <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">impostare il tuo profilo come anonimo</a> — il tuo nome sarà nascosto agli altri collezionisti.','nav.onlineSince':'| Online dal 21.06.2026','profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.myInfo':'✏️ Le mie info','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'Email inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese).',
 'admin.email.fix':'Correggi contatore:','admin.save':'Salva',
@@ -640,7 +640,7 @@ async function doLogin() {
   if (!LOCAL.get('lang_set_by_user_' + user.id)) {
     const lang = (user.nationalityCode === 'it') ? 'it' : 'en';
     setLang(lang);
-    applyTranslations();
+    applyI18n();
   }
   fsSave('users', user);
   if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username, { read: true });
@@ -686,7 +686,7 @@ async function doRegister() {
   if (!LOCAL.get('lang_set_by_user_' + saved.id)) {
     const lang = (saved.nationalityCode === 'it') ? 'it' : 'en';
     setLang(lang);
-    applyTranslations();
+    applyI18n();
   }
   logEvent('new_user', 'Nuovo utente registrato: ' + u);
   showProfileInviteIfNeeded();
@@ -1781,7 +1781,7 @@ function renderAdminSeries() {
   if (!series.length) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Nessuna serie ancora.' : 'No series yet.') + '</p>'; return; }
   el.innerHTML = `
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.25rem;">${(currentLang === 'it') ? "Usa le frecce per cambiare l'ordine" : 'Use the arrows to change the order'}</p>
-    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">${({L}) ? 'Per eliminare una serie, cancellare prima tutto il suo contenuto.' : 'To delete a series, first delete all its content.'}</p>
+    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Per eliminare una serie, cancellare prima tutto il suo contenuto.' : 'To delete a series, first delete all its content.'}</p>
     <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"Figurine":"Stickers"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${series.map((s, idx) => {
       const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
@@ -3044,7 +3044,7 @@ async function renderClassifica() {
     }
   }
 
-  const users = getData('users', []).filter(u => !u.isAdmin);
+  const users = getData('users', []);
   const allFigs = getData('figurines', []);
 
   // Calculate score for each user
