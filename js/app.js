@@ -144,7 +144,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v3.36';
+const JS_VERSION = 'v3.50';
 
 // ============================================================
 //  NATIONALITY
@@ -391,7 +391,7 @@ const i18n = {
     'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Q&A / Blog','nav.contact':'Contact',
     'nav.login':'Login','nav.register':'Registrati','nav.logout':'Logout',
     'hero.eyebrow':'🇮🇹 Italy\'s Wildest 90s Collectibles',
-    'hero.sub':'Collector\'s Universe','hero.desc':'The definitive fan database for Sgorbions figurines — the legendary Italian sticker series from the early 1990s. Catalog your collection, connect with other fans, and track every grotesque character.',
+    'hero.sub':'Collector\'s Universe','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
     'hero.cta1':'Esplora il catalogo Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Series','hero.stat2':'Figurines','hero.stat3':'Collectors',
     'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the Slime World','home.featured.sub':'Every series carefully documented with original artwork, descriptions and rarity info.',
@@ -400,7 +400,7 @@ const i18n = {
     'how.1.title':'Browse the Catalog','how.1.desc':'Explore all Sgorbions series and figurines, complete with photos and descriptions.',
     'how.2.title':'Mark Your Figurines','how.2.desc':'Toggle which figurines you own and track your completion percentage per series.',
     'how.3.title':'Connect & Ask','how.3.desc':'Post questions and get answers from the owner and fellow collectors.',
-    'how.4.title':'Your Profile','how.4.desc':'See your collection stats, owned figurines and activity history in one place.',
+    'how.4.title':'Your Profile','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
     'catalog.title':'The Catalog','catalog.sub':'All Sgorbions series ever released','catalog.addseries':'+ Add Series','catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
     'back':'Back to Catalog','detail.owned':'Owned','detail.addfig':'+ Add Figurine',
     'blog.title':'Q&A & Blog','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ Nuova domanda / Notizia','blog.empty':'No posts yet. Start the conversation!',
@@ -421,23 +421,23 @@ const i18n = {
     'admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Figurines','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users',
     'admin.series.title':'Manage Series','admin.figurines.title':'Manage Figurines','admin.blog.title':'Manage Q&A / Blog','admin.contacts.title':'Contact Messages','admin.users.title':'Registered Users',
     'footer.desc':'The unofficial fan database dedicated to the legendary Italian figurine collection from the early 1990s. Made with 💚 by collectors, for collectors.',
-    'footer.nav':'Navigation','footer.account':'Account','footer.copy':'© 2026 Sgorbions Collector. Unofficial fan site.',
+    'footer.nav':'Navigation','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Sito fan non ufficiale.',
     'owned.toggle':'I own this','owned.yes':'✓ Ce l\'ho'
   },
   it: {
     'nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'D&R / Blog','nav.contact':'Contatti',
     'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
-    'hero.sub':'L\'Universo dei Collezionisti','hero.desc':'Il database definitivo per i collezionisti di Sgorbions — la leggendaria serie italiana degli anni \'90. Cataloga la tua collezione, connettiti con altri fan e traccia ogni personaggio grottesco.',
+    'hero.sub':'L\'Universo dei Collezionisti','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
     'hero.cta1':'Esplora il catalogo Sgorbions','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat3':'Collezionisti',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
     'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
     'how.1.title':'Sfoglia il Catalogo','how.1.desc':'Esplora tutte le serie di Sgorbions con foto e descrizioni complete.',
-    'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine possiedi e tieni traccia della percentuale di completamento per ogni serie.',
+    'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine hai e traccia la percentuale di completamento per ogni serie.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
-    'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le statistiche della tua collezione, le figurine possedute e la cronologia delle attività.',
+    'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
     'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
@@ -458,7 +458,7 @@ const i18n = {
     'admin.title':'Pannello Admin','admin.series':'Serie','admin.figurines':'Figurine','admin.blog':'Blog','admin.contacts':'Messaggi','admin.users':'Utenti',
     'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.blog.title':'Gestisci D&R / Blog','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati',
     'footer.desc':'Il database fan non ufficiale dedicato alla leggendaria collezione di figurine italiana degli anni \'90. Fatto con 💚 da collezionisti, per collezionisti.',
-    'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2026 Sgorbions Collector. Sito fan non ufficiale.',
+    'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Sito fan non ufficiale.',
     'owned.toggle':'Ce l\'ho','owned.yes':'✓ Ce l\'ho'
   }
 };
