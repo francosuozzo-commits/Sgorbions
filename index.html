@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.50</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v3.51</span>
     <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);">| Online dal 1.07.2026</span>
   </div>
@@ -66,7 +66,7 @@
 <div id="page-home" class="page active">
   <!-- HERO -->
   <section id="hero">
-    <img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:520px;width:90%;margin:0 auto 0.5rem;display:block;">
+    <img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:520px;width:90%;margin:0 auto 0.75rem;display:block;transform:scale(1.15);transform-origin:center top;">
     <p class="hero-desc" data-i18n="hero.desc">Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni '90.</p>
     <p class="hero-desc" style="margin-top:-1rem;">Fatto con 💚 da collezionisti, per collezionisti.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
@@ -93,30 +93,30 @@
       <div class="section-header reveal">
         
       </div>
-      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;" class="reveal">
-        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
-          <div style="font-size:2.5rem;margin-bottom:1rem;">📖</div>
-          <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;" data-i18n="how.1.title">Browse the Catalog</h3>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;font-size:1.15em;" class="reveal">
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('catalog')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
+          <div style="font-size:2.875rem;margin-bottom:1rem;">📖</div>
+          <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.1.title">Browse the Catalog</h3>
           <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.1.desc">Explore all Sgorbions series and figurines, complete with photos and descriptions.</p>
         </div>
-        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
-          <div style="font-size:2.5rem;margin-bottom:1rem;">✅</div>
-          <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;" data-i18n="how.2.title">Mark Your Figurines</h3>
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="openDemoToggleModal()" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
+          <div style="font-size:2.875rem;margin-bottom:1rem;">✅</div>
+          <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.2.title">Mark Your Figurines</h3>
           <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.2.desc">Toggle which figurines you own and track your completion percentage per series.</p>
         </div>
-        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
-          <div style="font-size:2.5rem;margin-bottom:1rem;">🤝</div>
-          <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;" data-i18n="how.3.title">Connect & Ask</h3>
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('contact')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
+          <div style="font-size:2.875rem;margin-bottom:1rem;">🤝</div>
+          <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.3.title">Connect & Ask</h3>
           <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.3.desc">Post questions and get answers from the owner and fellow collectors.</p>
         </div>
-        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
-          <div style="font-size:2.5rem;margin-bottom:1rem;">👤</div>
-          <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;" data-i18n="how.4.title">Your Profile</h3>
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('profile')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
+          <div style="font-size:2.875rem;margin-bottom:1rem;">👤</div>
+          <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="how.4.title">Your Profile</h3>
           <p style="font-size:0.88rem;color:var(--muted);" data-i18n="how.4.desc">Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.</p>
         </div>
-        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;">
-          <div style="font-size:2.5rem;margin-bottom:1rem;">🏆</div>
-          <h3 style="font-family:var(--font-ui);font-size:1.15rem;margin-bottom:0.5rem;">Sfida gli altri</h3>
+        <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('classifica')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
+          <div style="font-size:2.875rem;margin-bottom:1rem;">🏆</div>
+          <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;">Sfida gli altri</h3>
           <p style="font-size:0.88rem;color:var(--muted);">Sfida gli altri collezionisti a chi ha la collezione più grande.</p>
         </div>
       </div>
@@ -564,7 +564,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.50</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v3.51</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -788,6 +788,29 @@
     <div id="invite-modal-btns-profile" style="display:none;gap:0.75rem;margin-top:0.5rem;">
       <button class="btn-primary" style="width:100%;" onclick="saveProfileInvite()">Salva</button>
     </div>
+  </div>
+</div>
+
+<!-- DEMO TOGGLE MODAL -->
+<div class="modal-overlay hidden" id="demo-toggle-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h2 class="modal-title">Come funziona il toggle</h2>
+      <button class="modal-close" onclick="closeModal('demo-toggle-modal')">✕</button>
+    </div>
+    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1.5rem;">Clicca sul pulsante "Ce l'ho" per segnare una figurina come posseduta. Il colore cambia per indicare che è nella tua collezione!</p>
+    <div style="display:flex;align-items:center;gap:1.5rem;background:var(--card2);border-radius:12px;padding:1.25rem;">
+      <div style="width:90px;height:90px;background:var(--card);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:2rem;flex-shrink:0;">🤢</div>
+      <div style="flex:1;">
+        <div style="font-family:var(--font-ui);font-size:1rem;margin-bottom:0.25rem;">Gastone Bubbone</div>
+        <div style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">Serie 1 — N. 1</div>
+        <div style="display:flex;align-items:center;gap:0.6rem;">
+          <button id="demo-toggle-btn" class="toggle-btn-blue" onclick="toggleDemoBtn()" title="Ce l'ho"></button>
+          <span id="demo-toggle-label" style="font-size:0.85rem;color:var(--muted);font-family:var(--font-ui);">Ce l'ho</span>
+        </div>
+      </div>
+    </div>
+    <p style="font-size:0.8rem;color:var(--muted);text-align:center;margin-top:1rem;">Prova a spostare il cursore! 👆</p>
   </div>
 </div>
 
