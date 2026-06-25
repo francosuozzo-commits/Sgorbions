@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')">S<span>G</span>ORBIONS</a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v4.10</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v4.13</span>
     <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);">| Online dal 1.07.2026</span>
   </div>
@@ -573,7 +573,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v4.10</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v4.13</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -637,6 +637,12 @@
       </div>
     </div>
     <div class="form-group">
+      <label class="form-label" data-i18n="form.series.hasVariations">Ha variazioni</label>
+      <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+        <input type="checkbox" id="series-has-variations-input" style="width:18px;height:18px;cursor:pointer;">
+      </div>
+    </div>
+    <div class="form-group">
       <label class="form-label" data-i18n="form.series.desc">Description</label>
       <textarea class="form-textarea" id="series-desc-input" data-i18n-placeholder="form.series.descPlaceholder" placeholder="Descrivi questa serie..."></textarea>
     </div>
@@ -669,7 +675,7 @@
         <label class="form-label" data-i18n="form.fig.number">Numero</label>
         <input class="form-input" type="number" id="fig-number-input" placeholder="01" min="1">
       </div>
-      <div class="form-group">
+      <div class="form-group" id="fig-subseries-group">
         <label class="form-label" data-i18n="form.fig.subseries">Sottoserie</label>
         <input class="form-input" type="text" id="fig-subseries-input" placeholder="es. OLO">
         <div class="form-hint" data-i18n="form.fig.subseriesHint">Se presente, sostituisce il numero</div>
@@ -679,11 +685,11 @@
         <input class="form-input" type="text" id="fig-name-input" placeholder="Sgorbio Maximus">
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.fig.size">Taglia / Size</label>
+    <div class="form-group" id="fig-size-group">
+      <label class="form-label" data-i18n="form.fig.size">Taglia</label>
       <input class="form-input" type="text" id="fig-size-input" placeholder="es. S, M, L, XL">
     </div>
-    <div class="form-group">
+    <div class="form-group" id="fig-back-group">
       <label class="form-label" data-i18n="form.fig.variations">Numero di variazioni esistenti</label>
       <input class="form-input" type="number" id="fig-back-input" placeholder="1" min="1" value="1">
       <div class="form-hint" data-i18n="form.fig.variationsHint">Numero stampato sul retro della figurina (default: 1)</div>
