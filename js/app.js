@@ -408,7 +408,9 @@ async function uploadToCloudinary(file) {
 // ============================================================
 const i18n = {
   en: {
-    'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.onlineSince':'| Online since 1.07.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
+    'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts',
+'profile.anon':'Appear anonymous in the ranking',
+'classifica.anonInfo':'Want to stay private? You can <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">set your profile as anonymous</a> — your name will be hidden from other collectors.','nav.onlineSince':'| Online since 24.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
 'admin.email.fix':'Fix counter:','admin.save':'Save',
@@ -424,10 +426,10 @@ const i18n = {
 'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class=\'hi\'>the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to contribute to the site?<br>Want to report an error?<br>Or just want to compliment the admin?<br><br>For any of these, send us a message!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧',
     'nav.login':'Login','nav.register':'Registrati','nav.logout':'Logout',
     'hero.eyebrow':'🇮🇹 Italy\'s Wildest 90s Collectibles',
-    'hero.sub':'Collector\'s Universe','hero.myvsTotal':'Mine / Total','hero.challenge':'Challenge others','hero.challengeDesc':'Challenge other collectors to see who has the biggest collection.','hero.desc':'The definitive unofficial database dedicated to the legendary Italian sticker series from the \'90s.',
+    'hero.sub':'Collector\'s Universe','hero.myvsTotal':'Mine / Total','hero.challenge':'Challenge others','hero.challengeDesc':'Challenge other collectors to see who has the biggest collection. You can also choose to appear anonymously.','hero.desc':'The definitive unofficial database dedicated to the legendary Italian sticker series from the \'90s.',
     'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br><br>This site is purely dedicated to collecting and sharing information among collectors. It is not a sales site. Its sole purpose is to connect collectors from around the world, help them find material they don\'t own, and meet other collectors to trade with.<br><br>The information on this site reflects the knowledge of the administrator and does not claim to be official.','hero.cta1':'Explore the Sgorbions catalog!','hero.cta2':'Start collecting Sgorbions',
     'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat3':'Collectors',
     'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the Slime World','home.featured.sub':'Every series carefully documented with original artwork, descriptions and rarity info.',
@@ -461,7 +463,9 @@ const i18n = {
     'owned.toggle':'I own this','owned.yes':'✓ Owned'
   },
   it: {
-    'catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.sections':'Sezioni','catalog.loading':'caricamento...','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.bulkscore':'⭐ Punteggio serie','catalog.add':'+ Aggiungi','catalog.itemsearch':'Cerca figurine...','catalog.tableview':'📋 Vista tabellare','nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.onlineSince':'| Online dal 1.07.2026','profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.myInfo':'✏️ Le mie info','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
+    'catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.sections':'Sezioni','catalog.loading':'caricamento...','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.bulkscore':'⭐ Punteggio serie','catalog.add':'+ Aggiungi','catalog.itemsearch':'Cerca figurine...','catalog.tableview':'📋 Vista tabellare','nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti',
+'profile.anon':'Appari anonimo in classifica',
+'classifica.anonInfo':'Vuoi restare riservato? Puoi <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">impostare il tuo profilo come anonimo</a> — il tuo nome sarà nascosto agli altri collezionisti.','nav.onlineSince':'| Online dal 24.06.2026','profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.myInfo':'✏️ Le mie info','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'Email inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese).',
 'admin.email.fix':'Correggi contatore:','admin.save':'Salva',
@@ -477,10 +481,10 @@ const i18n = {
 'form.username':'Username','form.email':'E-mail','contact.title':'Contatta <span class=\'hi\'>l\'amministratore</span>',
 'contact.intro':'Hai trovato qualche pezzo raro che non è censito nel sito?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Nome','contact.email.ph':'la-tua@e-mail.com','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀',
-'contact.info':'Informazioni di contatto','contact.responseTime':'Tempo di risposta medio','contact.responseDesc':'Di solito in poche ore','newsletter.title':'Invia Newsletter','newsletter.subject':'Oggetto','newsletter.subject.ph':'es. Nuova serie aggiunta!','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate','classifica.best':'Classifica dei migliori collezionisti','classifica.levels':'Livelli','admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio minimo','admin.levels.save':'Salva livello','hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.','profile.saved':'✅ Informazioni salvate!','banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
+'contact.info':'Informazioni di contatto','contact.responseTime':'Tempo di risposta medio','contact.responseDesc':'Di solito in poche ore','newsletter.title':'Invia Newsletter','newsletter.subject':'Oggetto','newsletter.subject.ph':'es. Nuova serie aggiunta!','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate','classifica.best':'Classifica dei migliori collezionisti','classifica.levels':'Livelli di Collezionista Sgorbions','admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio minimo','admin.levels.save':'Salva livello','hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.','profile.saved':'✅ Informazioni salvate!','banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
     'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
-    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Le mie / Totale','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Sfida gli altri collezionisti a chi ha la collezione più grande.','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
+    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Le mie / Totale','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Sfida gli altri collezionisti a chi ha la collezione più grande. Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Non è un sito di vendita. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute in questo sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora il catalogo Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat3':'Collezionisti',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
@@ -1656,6 +1660,28 @@ async function sendContact() {
 // ============================================================
 //  PROFILE
 // ============================================================
+async function saveAnonSetting() {
+  if (!currentUser) return;
+  const cb = document.getElementById('profile-anon-toggle');
+  const enabling = cb?.checked || false;
+  const L = currentLang === 'it';
+  const msg = enabling
+    ? (L ? `Attivando l'anonimato, il tuo nome sarà "Collezionista Anonimo". Gli altri non potranno identificarti, ma vedrai sempre la tua posizione.\n\nConfermi?`
+         : `By enabling anonymity, your name becomes "Anonymous Collector". Others won't identify you, but you'll still see your own position.\n\nConfirm?`)
+    : (L ? `Disattivando l'anonimato, il tuo nome e avatar torneranno visibili a tutti.\n\nConfermi?`
+         : `By disabling anonymity, your name and avatar will be visible to everyone again.\n\nConfirm?`);
+  if (!confirm(msg)) {
+    cb.checked = !enabling; // revert
+    return;
+  }
+  currentUser.isAnonymous = enabling;
+  LOCAL.set('currentUser', currentUser);
+  await fsSave('users', currentUser);
+  toast(L
+    ? (enabling ? '🕵️ Profilo anonimo attivato' : 'Profilo pubblico ripristinato')
+    : (enabling ? '🕵️ Anonymous profile enabled' : 'Public profile restored'), 'success');
+}
+
 function renderProfile() {
   if (!currentUser) { showPage('home'); return; }
   document.getElementById('profile-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
@@ -3001,6 +3027,9 @@ async function renderClassifica() {
   const el = document.getElementById('classifica-list');
   if (!el) return;
   el.innerHTML = '<div class="empty-state"><div class="empty-icon">⏳</div><p class="empty-title">' + (currentLang === 'it' ? 'Caricamento...' : 'Loading...') + '</p></div>';
+  // Show anon info banner for logged-in non-admin users
+  const anonBanner = document.getElementById('classifica-anon-banner');
+  if (anonBanner) anonBanner.style.display = (currentUser && !currentUser.isAdmin) ? '' : 'none';
 
   // Render levels table on the right
   const levelsEl = document.getElementById('classifica-levels-table');
@@ -3044,20 +3073,43 @@ async function renderClassifica() {
     '<span style="font-size:2rem;filter:sepia(1) saturate(0.5) brightness(0.8);">🏆</span>'
   ];
 
+  // Count anon users for stable numbering
+  let anonCount = 0;
   el.innerHTML = ranking.map((entry, idx) => {
     const { user, score, countFigurines, countAlbums, countExtras } = entry;
     const position = idx + 1;
     const medal = position <= 10 ? medals[idx] : '';
     const isTop3 = position <= 3;
-    const avatarHTML = user.avatar
-      ? `<div style="width:52px;height:52px;border-radius:50%;background:url('${user.avatar}') center/cover;border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};flex-shrink:0;"></div>`
-      : `<div style="width:52px;height:52px;border-radius:50%;background:var(--card2);border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.3rem;color:var(--muted);flex-shrink:0;">${user.username[0].toUpperCase()}</div>`;
+    const isMe = currentUser && user.id === currentUser.id;
+    const isAnon = user.isAnonymous && !currentUser?.isAdmin && !isMe;
+    if (user.isAnonymous && !isMe) anonCount++;
+    const myAnonIdx = isMe && user.isAnonymous ? ranking.slice(0, idx+1).filter(e => e.user.isAnonymous).length : 0;
 
-    return `<div style="background:${isTop3 ? 'rgba(181,255,46,0.05)' : 'var(--card)'};border:1px solid ${isTop3 ? 'rgba(181,255,46,0.2)' : 'var(--border)'};border-radius:var(--radius-lg);padding:0.6rem 1.5rem;margin-bottom:0.4rem;display:flex;align-items:center;gap:1.25rem;">
+    const displayName = isAnon
+      ? (currentLang === 'it' ? 'Collezionista Anonimo ' + anonCount : 'Anonymous Collector ' + anonCount)
+      : user.username;
+    const avatarHTML = user.avatar
+      ? `<div style="width:40px;height:40px;border-radius:50%;background:url('${user.avatar}') center/cover;border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};flex-shrink:0;"></div>`
+      : `<div style="width:40px;height:40px;border-radius:50%;background:var(--card2);border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--muted);flex-shrink:0;">${user.username[0].toUpperCase()}</div>`;
+    const displayAvatar = isAnon
+      ? `<div style="width:40px;height:40px;border-radius:50%;background:var(--card2);border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🕵️</div>`
+      : avatarHTML;
+    const adminNote = user.isAnonymous && currentUser?.isAdmin ? ' <span style="font-size:0.75rem;opacity:0.6;">🕵️ ${user.username}</span>' : '';
+    const meNote = isMe && user.isAnonymous
+      ? ` <span style="font-size:0.78rem;color:#ffb400;font-family:var(--font-ui);">${currentLang === 'it' ? '(tu — anonimo 🕵️)' : '(you — anonymous 🕵️)'}</span>`
+      : isMe ? ` <span style="font-size:0.78rem;color:var(--accent);font-family:var(--font-ui);">${currentLang === 'it' ? '(tu)' : '(you)'}</span>` : '';
+    const rowBg = isMe
+      ? (isTop3 ? 'rgba(181,255,46,0.1)' : 'rgba(181,255,46,0.04)')
+      : (isTop3 ? 'rgba(181,255,46,0.05)' : 'var(--card)');
+    const rowBorder = isMe
+      ? 'rgba(181,255,46,0.5)'
+      : (isTop3 ? 'rgba(181,255,46,0.2)' : 'var(--border)');
+
+    return `<div style="background:${rowBg};border:1px solid ${rowBorder};border-radius:var(--radius-lg);padding:0.4rem 1rem;margin-bottom:0.3rem;display:flex;align-items:center;gap:1rem;">
       <div style="font-size:1.1rem;width:40px;text-align:center;flex-shrink:0;font-family:var(--font-ui);color:${isTop3 ? 'var(--accent)' : 'var(--muted)'};">#${position}</div>
-      ${avatarHTML}
+      ${displayAvatar}
       <div style="flex:1;">
-        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;">${user.username}${user.nationalityCode ? `<img src="https://flagcdn.com/w40/${user.nationalityCode}.png" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}<span style="font-size:0.92rem;color:var(--muted);font-family:var(--font-body);font-weight:400;">(${(currentLang === 'it') ? 'utente dal' : 'member since'} ${user.joined ? new Date(user.joined).toLocaleDateString((currentLang === 'it') ? 'it-IT' : 'en-GB') : '—'})</span></div>
+        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${displayName}${adminNote}${meNote}${!isAnon && user.nationalityCode ? `<img src="https://flagcdn.com/w40/${user.nationalityCode}.png" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}${!isAnon ? `<span style="font-size:0.92rem;color:var(--muted);font-family:var(--font-body);font-weight:400;">(${(currentLang === 'it') ? 'utente dal' : 'member since'} ${user.joined ? new Date(user.joined).toLocaleDateString((currentLang === 'it') ? 'it-IT' : 'en-GB') : '—'})</span>` : ''}</div>
         <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">${countFigurines} ${(currentLang === 'it') ? 'figurine' : 'stickers'} · ${countAlbums} album · ${countExtras} ${(currentLang === 'it') ? 'altri articoli' : 'extras'}</div>
       </div>
       <div style="display:flex;align-items:center;gap:0.75rem;">
