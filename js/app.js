@@ -431,7 +431,7 @@ const i18n = {
     'form.post.type':'Post Type','form.post.title':'Title','form.post.body':'Content','form.post.question':'❓ Question','form.post.news':'📢 News / Discovery',
     'form.reply.placeholder':'Write a reply...','comment.admin':'Owner','comment.login':'Log in to reply',
     'auth.title':'Welcome Back','auth.login':'Login','auth.register':'Registrati','auth.login.btn':'Sign In','auth.reg.btn':'Create Account',
-    'modal.bulkscore.title':'⭐ Series Score','modal.bulkscore.desc':'Assign the same score to all items in the current section. You can edit individual scores later.','modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to all','contact.q1':'Want to know more about Sgorbions?','contact.q2':'Want to report an error?','contact.q3':'Or just want to compliment the admin?','contact.cta':'For any of these, send us a message!','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀','wantlist.desc':'Here are the stickers you need to complete your Sgorbions collection','wantlist.export':'Export my list','modal.figdetail.title':'Sticker detail','modal.segnala.send':'Submit report','profile.anni':'Years collecting Sgorbions','profile.sliderHint':'Try moving the slider! 👆','pwd.current':'Current password','pwd.resetDesc':'Enter your email address. We will send you a temporary password.','modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries','form.series.descPlaceholder':'Describe this series...','form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number','form.fig.size':'Size','form.fig.variations':'Number of existing variations','form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)','form.fig.score':'Score','form.fig.scoreHint':'Points assigned to whoever owns this item','form.fig.descPlaceholder':'Describe this sticker...',
+    'modal.bulkscore.title':'⭐ Series Score','modal.bulkscore.desc':'Assign the same score to all items in the current section. You can edit individual scores later.','modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to all','contact.q1':'Want to know more about Sgorbions?','contact.q2':'Want to report an error?','contact.q3':'Or just want to compliment the admin?','contact.cta':'For any of these, send us a message!','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀','wantlist.desc':'Here are the stickers you need to complete your Sgorbions collection','wantlist.export':'Export my list','modal.figdetail.title':'Sticker detail','modal.segnala.send':'Submit report','profile.anni':'Years collecting Sgorbions','profile.sliderHint':'Try moving the slider! 👆','pwd.current':'Current password','pwd.resetDesc':'Enter your email address. We will send you a temporary password.','modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries','form.series.hasVariations':'Has variations','form.series.descPlaceholder':'Describe this series...','form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number','form.fig.size':'Size','form.fig.variations':'Number of existing variations','form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)','form.fig.score':'Score','form.fig.scoreHint':'Points assigned to whoever owns this item','form.fig.descPlaceholder':'Describe this sticker...',
     'modal.fig.title':'Add Sticker','modal.fig.save':'Save Sticker',
     'modal.post.title':'New Post','modal.post.save':'Publish Post',
     'profile.title':'My Profile','profile.owned':'Stickers Owned','profile.series':'Series Tracked','profile.collection':'My Collection',
@@ -468,8 +468,8 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
-    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Ecco le figurine che ti mancano per completare la tua collezione Sgorbions','wantlist.export':'Esporta la mia lista','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia / Size','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
-    'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva Figurina',
+    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Ecco le figurine che ti mancano per completare la tua collezione Sgorbions','wantlist.export':'Esporta la mia lista','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
     'admin.title':'Pannello Admin','admin.series':'Serie','admin.figurines':'Figurine','admin.blog':'Blog','admin.contacts':'Messaggi','admin.users':'Utenti',
@@ -939,7 +939,7 @@ function openAddSeriesModal(seriesId) {
     ['series-name-input','series-year-input','series-count-input','series-desc-input'].forEach(id => document.getElementById(id).value = '');
   }
   // Show admin-only series fields
-  ['series-has-sizes-input','series-has-subseries-input','series-has-subseries-group'].forEach(id => {
+  ['series-has-sizes-input','series-has-subseries-input','series-has-variations-input'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.closest('.form-group') ? el.closest('.form-group').style.display = currentUser?.isAdmin ? '' : 'none' : el.style.display = currentUser?.isAdmin ? '' : 'none';
   });
@@ -947,6 +947,8 @@ function openAddSeriesModal(seriesId) {
   if (hasSizesGroup) hasSizesGroup.style.display = currentUser?.isAdmin ? '' : 'none';
   const hasSubseriesGroup = document.getElementById('series-has-subseries-group');
   if (hasSubseriesGroup) hasSubseriesGroup.style.display = currentUser?.isAdmin ? '' : 'none';
+  const hasVariationsGroup = document.getElementById('series-has-variations-input')?.closest('.form-group');
+  if (hasVariationsGroup) hasVariationsGroup.style.display = currentUser?.isAdmin ? '' : 'none';
   document.getElementById('add-series-modal').classList.remove('hidden');
 }
 function handleSeriesImg(e) {
@@ -965,6 +967,7 @@ async function saveSeries() {
   const year = document.getElementById('series-year-input').value;
   const hasSizes = document.getElementById('series-has-sizes-input').checked;
   const hasSubseries = document.getElementById('series-has-subseries-input').checked;
+  const hasVariations = document.getElementById('series-has-variations-input')?.checked || false;
   const count = document.getElementById('series-count-input').value;
   const desc = document.getElementById('series-desc-input').value.trim();
   const descIt = desc; // same description for both languages
@@ -983,12 +986,12 @@ async function saveSeries() {
   if (editId) {
     const idx = series.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      series[idx] = { ...series[idx], name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img };
+      series[idx] = { ...series[idx], name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations };
       await fsSave('series', series[idx]);
       _cache.series = series;
     }
   } else {
-    const newS = { name, year: +year, count: +count||0, desc, descIt, img: imgUrl, created: new Date().toISOString() };
+    const newS = { name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, created: new Date().toISOString() };
     const saved = await fsSave('series', newS);
     _cache.series.push(saved);
   }
@@ -1193,6 +1196,14 @@ function openAddItemModal(itemId) {
     document.getElementById('fig-score-input').value = 0;
     document.getElementById('fig-back-input').value = 1;
   }
+  // Show/hide conditional fields based on series flags
+  const _ser = getData('series', []).find(s => s.id === currentSeriesId);
+  const sizeGroup = document.getElementById('fig-size-group');
+  if (sizeGroup) sizeGroup.style.display = _ser?.hasSizes ? '' : 'none';
+  const subseriesGroup = document.getElementById('fig-subseries-group');
+  if (subseriesGroup) subseriesGroup.style.display = _ser?.hasSubseries ? '' : 'none';
+  const backGroup = document.getElementById('fig-back-group');
+  if (backGroup) backGroup.style.display = _ser?.hasVariations ? '' : 'none';
   document.getElementById('add-fig-modal').classList.remove('hidden');
 }
 
