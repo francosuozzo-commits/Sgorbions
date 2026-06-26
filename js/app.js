@@ -170,7 +170,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.32';
+const JS_VERSION = 'v5.34';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -913,7 +913,6 @@ function updateNavUser() {
     if (wantlistLink) wantlistLink.style.display = '';
     ['nav-catalog','nav-blog','nav-classifica'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
     const nwl = document.getElementById('nav-wishlist'); if (nwl) nwl.style.display = currentUser.isAdmin ? 'none' : '';
-    const nwlb = document.getElementById('nav-wishlist-btn'); if (nwlb) nwlb.style.display = currentUser.isAdmin ? 'none' : '';
     const nlBtn = document.getElementById('nav-newsletter-btn');
     if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
     if (btnCollect) btnCollect.style.display = 'none';
@@ -959,7 +958,6 @@ function updateNavUser() {
     const bellBtn2 = document.getElementById('nav-bell-btn');
     if (bellBtn2) bellBtn2.style.display = 'none';
     ['nav-catalog','nav-blog','nav-classifica','nav-wishlist'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
-    const _nwlb = document.getElementById('nav-wishlist-btn'); if (_nwlb) _nwlb.style.display = 'none';
     const heroStats2 = document.getElementById('hero-stats');
     if (heroStats2) heroStats2.style.display = 'none';
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = 'none';
