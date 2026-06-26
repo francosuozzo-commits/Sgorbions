@@ -3140,6 +3140,7 @@ function toggleWantlistMode(key, mode) {
 }
 
 function renderWantlist() {
+  console.log('=== renderWantlist called ===');
   if (!currentUser) { showPage('home'); return; }
   const el = document.getElementById('wantlist-content');
   const allFigs = getData('figurines', []);
