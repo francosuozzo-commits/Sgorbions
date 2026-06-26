@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v4.82</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v4.83</span>
     <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);" data-i18n="nav.onlineSince">| Online dal 21.06.2026</span>
   </div>
@@ -534,14 +534,18 @@
         <div>
           <h1 style="font-family:var(--font-ui);font-size:2.2rem;" data-i18n="nav.wantlist">Mancolista</h1>
           <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n="wantlist.desc">Ecco le figurine che ti mancano per completare la tua collezione Sgorbions.</p>
-          <p style="color:var(--muted);font-size:0.85rem;margin-top:4px;" data-i18n="wantlist.hint">Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.</p>
-        </div>
-        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-          <button class="btn-secondary" onclick="exportWantlist()" data-i18n="wantlist.exportMissing">Esporta mancolista</button>
-          <button class="btn-secondary" onclick="exportOwnedList()" title="Esporta le figurine che possiedi" data-i18n="wantlist.export">Esporta la mia lista</button>
         </div>
       </div>
-      <h3 id="wantlist-missing-title" style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.75rem;" data-i18n="wantlist.missingTitle">EXPORT DELLE TUE MANCOLISTE</h3>
+
+      <!-- SEZIONE MANCOLISTE -->
+      <h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;" data-i18n="wantlist.missingTitle">EXPORT DELLE TUE MANCOLISTE</h3>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:0.4rem;" data-i18n="wantlist.hintMissing">Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.</p>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:0.4rem;" data-i18n="wantlist.hintExportMissing">Seleziona le serie per le quali vuoi esportare l'elenco delle figurine che non hai e poi premi il tasto "Esporta mancolista" qui affianco.</p>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem;" data-i18n="wantlist.hintExportIncomplete">Seleziona le serie per le quali vuoi esportare l'elenco delle figurine che hai e poi premi il tasto "Esporta figurine serie incomplete", qui affianco.</p>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+        <button class="btn-secondary" onclick="exportWantlist()" data-i18n="wantlist.exportMissing">Esporta mancolista</button>
+        <button class="btn-secondary" onclick="exportOwnedIncomplete()" data-i18n="wantlist.exportIncomplete">Esporta figurine serie incomplete</button>
+      </div>
       <div id="wantlist-content"></div>
     </div>
   </section>
@@ -579,7 +583,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v4.82</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v4.83</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
