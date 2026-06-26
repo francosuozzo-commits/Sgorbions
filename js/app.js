@@ -170,7 +170,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.37';
+const JS_VERSION = 'v5.38';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -617,7 +617,6 @@ function showPage(page) {
 // ============================================================
 // openAuth moved to top
 async function doLogin() {
-  console.log('[doLogin] START');
   const u = document.getElementById('login-username').value.trim();
   const p = document.getElementById('login-password').value;
   const authErr = document.getElementById('auth-error');
@@ -629,9 +628,7 @@ async function doLogin() {
     _cache.users = await fsGetAll('users');
   }
   const users = getData('users', []);
-  console.log('[doLogin] users found:', users.length, 'searching for:', u);
   const user = users.find(x => x.username === u && x.password === p);
-  console.log('[doLogin] user match:', !!user);
   if (!user) { const ae = document.getElementById('auth-error'); if (ae) { ae.style.display = ''; ae.textContent = 'Username o password errati'; } else toast('Username o password errati', 'error'); return; }
   user.lastLogin = new Date().toISOString();
   currentUser = user;
@@ -644,9 +641,7 @@ async function doLogin() {
   }
   fsSave('users', user);
   if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username, { read: true });
-  console.log('[doLogin] loadAllOwned start');
   await loadAllOwnedFromFirebase();
-  console.log('[doLogin] loadAllOwned done');
   closeModal('auth-modal');
   updateNavUser();
   loadWishlist();
