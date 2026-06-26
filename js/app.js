@@ -163,7 +163,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v4.90';
+const JS_VERSION = 'v4.91';
 const CSS_VERSION = 'v4.66';
 
 // ============================================================
@@ -3182,7 +3182,7 @@ function renderWantlist() {
         </button>
       </div>`;
     }).join('');
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! Hai tutto!' : 'Congrats! You have it all!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'EXPORT DELLE TUE SERIE COMPLETE' : 'EXPORT OF YOUR COMPLETE SERIES') + '</h3><p style="font-size:0.95rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto "Esporta lista figurine mie serie complete", qui sotto.' : 'Select the series for which you want to export your stickers. Then press "Export my complete series stickers", below.') + '</p><div style="margin-bottom:1rem;"><button class="btn-secondary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes : '');
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! Hai tutto!' : 'Congrats! You have it all!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'EXPORT DELLE TUE SERIE COMPLETE' : 'EXPORT OF YOUR COMPLETE SERIES') + '</h3><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto "Esporta lista figurine mie serie complete", qui sotto.' : 'Select the series for which you want to export your stickers. Then press "Export my complete series stickers", below.') + '</p><div style="margin-bottom:1rem;"><button class="btn-secondary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes : '');
     return;
   }
 
@@ -3278,7 +3278,7 @@ function renderWantlist() {
         </button>
       </div>`;
     }).join('');
-    el.innerHTML += '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'EXPORT DELLE TUE SERIE COMPLETE' : 'EXPORT OF YOUR COMPLETE SERIES') + '</h3><p style="font-size:0.95rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto "Esporta lista figurine mie serie complete", qui sotto.' : 'Select the series for which you want to export your stickers. Then press "Export my complete series stickers", below.') + '</p><div style="margin-bottom:1rem;"><button class="btn-secondary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes;
+    el.innerHTML += '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'EXPORT DELLE TUE SERIE COMPLETE' : 'EXPORT OF YOUR COMPLETE SERIES') + '</h3><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto "Esporta lista figurine mie serie complete", qui sotto.' : 'Select the series for which you want to export your stickers. Then press "Export my complete series stickers", below.') + '</p><div style="margin-bottom:1rem;"><button class="btn-secondary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes;
   }
 }
 
