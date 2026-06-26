@@ -163,7 +163,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v4.76';
+const JS_VERSION = 'v4.80';
 const CSS_VERSION = 'v4.66';
 
 // ============================================================
@@ -1168,10 +1168,19 @@ function openSeriesDetail(seriesId) {
 }
 
 function updateSectionCounts() {
+  const owned = getOwned();
   ['figurines','albums','extras'].forEach(sec => {
     const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === sec);
     const el = document.getElementById('count-' + sec);
-    if (el) el.textContent = items.length + (currentLang === 'it' ? ' oggetti' : ' items');
+    if (!el) return;
+    if (currentUser && items.length > 0) {
+      const ownedCount = items.filter(f => owned.includes(f.id)).length;
+      if (ownedCount === items.length) {
+        el.innerHTML = `<span style="color:var(--accent);font-weight:700;">🎉 ${currentLang === 'it' ? 'Hai tutto!' : 'You have it all!'}</span>`;
+        return;
+      }
+    }
+    el.textContent = items.length + (currentLang === 'it' ? ' oggetti' : ' items');
   });
 }
 
@@ -1350,6 +1359,13 @@ function renderItems() {
     const ownedCount = allItems.filter(f => owned.includes(f.id)).length;
     const pct = Math.round(ownedCount / allItems.length * 100);
     document.getElementById('detail-progress-label').textContent = ownedCount + ' / ' + allItems.length;
+    // Show complete message for figurines section
+    const completeMsg = document.getElementById('items-complete-msg');
+    if (completeMsg) {
+      const isComplete = currentSection === 'figurines' && ownedCount === allItems.length && allItems.length > 0;
+      completeMsg.style.display = isComplete ? '' : 'none';
+      if (isComplete) completeMsg.textContent = currentLang === 'it' ? '🎉 Hai tutte le figurine di questa serie!' : '🎉 You have all the stickers in this series!';
+    }
     document.getElementById('detail-progress-fill').style.width = pct + '%';
   } else { pw.style.display = 'none'; }
   if (!allItems.length) {
@@ -3166,7 +3182,7 @@ function renderWantlist() {
         </button>
       </div>`;
     }).join('');
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! Hai tutto!' : 'Congrats! You have it all!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">' + ((currentLang === 'it') ? 'Gestisci export serie complete:' : 'Manage export for complete series:') + '</p>' + completeBoxes : '');
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! Hai tutto!' : 'Congrats! You have it all!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'Export serie complete' : 'Export complete series') + '</h3><p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali vuoi esportare l\'elenco delle figurine che hai e poi premi il tasto "Esporta figurine che ho", in alto a destra.' : 'Select the series for which you want to export the stickers you own, then press "Export owned stickers list" top right.') + '</p>' + completeBoxes : '');
     return;
   }
 
@@ -3202,9 +3218,11 @@ function renderWantlist() {
         const incOwned = prefs[sId]?.includeOwned !== false; // default true
         return `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.4rem;">
-          <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')}</span>
-          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
+          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')}</span>
             <span class="card-badge">${figs.length} ${currentLang === 'it' ? 'mancanti su' : 'missing out of'} ${allSeriesFigs.length}</span>
+          </div>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
             <button onclick="toggleWantlistExclude('${sId}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${excMissing ? '#ff6464' : 'var(--border)'};background:${excMissing ? 'rgba(255,100,100,0.15)' : 'var(--card2)'};color:${excMissing ? '#ff6464' : 'var(--muted)'};cursor:pointer;">
               ${excMissing ? '✓ ' : ''}${currentLang === 'it' ? 'Escludi da mancolista' : 'Exclude from missing list'}
             </button>
@@ -3260,7 +3278,7 @@ function renderWantlist() {
         </button>
       </div>`;
     }).join('');
-    el.innerHTML += '<hr style="border-color:var(--border);margin:1rem 0;"><p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Serie complete (gestisci export):' : 'Complete series (manage export):') + '</p>' + completeBoxes;
+    el.innerHTML += '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'Export serie complete' : 'Export complete series') + '</h3><p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali vuoi esportare l\'elenco delle figurine che hai e poi premi il tasto "Esporta figurine che ho", in alto a destra.' : 'Select the series for which you want to export the stickers you own, then press "Export owned stickers list" top right.') + '</p>' + completeBoxes;
   }
 }
 
