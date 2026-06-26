@@ -1,5 +1,12 @@
 function toggleLangDropdown() {
   const dd = document.getElementById('lang-dropdown');
+  // Hide current language option
+  if (dd) {
+    dd.querySelectorAll('button').forEach(btn => {
+      const lang = btn.getAttribute('onclick')?.includes("'en'") ? 'en' : 'it';
+      btn.style.display = lang === currentLang ? 'none' : '';
+    });
+  }
   if (!dd) return;
   dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
   // Close on outside click
@@ -25,7 +32,7 @@ function switchAuthTab(tab) {
   document.getElementById('tab-login').classList.toggle('active', tab === 'login');
   document.getElementById('tab-register').classList.toggle('active', tab === 'register');
   const title = document.querySelector('#auth-modal .modal-title');
-  if (title) title.textContent = tab === 'login' ? 'Bentornato!' : 'Benvenuto!';
+  if (title) title.textContent = tab === 'login' ? (currentLang === 'it' ? 'Bentornato!' : 'Welcome back!') : (currentLang === 'it' ? 'Benvenuto!' : 'Welcome!');
   const ae = document.getElementById('auth-error'); if (ae) ae.style.display = 'none';
   const re = document.getElementById('reg-error'); if (re) re.style.display = 'none';
 }
@@ -163,8 +170,8 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.13';
-const CSS_VERSION = 'v4.66';
+const JS_VERSION = 'v5.21';
+const CSS_VERSION = 'v5.15';
 
 // ============================================================
 //  NATIONALITY
@@ -354,7 +361,7 @@ async function loadAllData() {
     _cache.figurines = await fsGetAll('figurines');
     _cache.posts = await fsGetAll('posts');
     _cache.users = await fsGetAll('users');
-    _cache.contact_messages = await fsGetAll('contact_messages');
+    _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
     _cache.segnalazioni = await fsGetAll('segnalazioni');
     _cache.eventi = await fsGetAll('eventi');
     _cache.levels = await fsGetAll('levels');
@@ -442,7 +449,7 @@ const i18n = {
     'catalog.title':'The Catalog','catalog.sub':'All Sgorbions series ever released','catalog.addseries':'+ Add Series','catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
     'back':'Back to Catalog','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.sections':'Sections','catalog.loading':'loading...','catalog.haveall':'✅ Have it all','catalog.havenone':'❌ Have nothing','catalog.bulkscore':'⭐ Series score','catalog.add':'+ Add','catalog.itemsearch':'Search stickers...','catalog.tableview':'📋 Table view','detail.owned':'Owned','detail.addfig':'+ Add Sticker',
     'blog.title':'Q&A & Blog','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New question / News','blog.empty':'No posts yet. Start the conversation!',
-    'contact.eyebrow':'Get In Touch','contact.title':"Contatta l'amministratore",'contact.sub':'Have a rare find? Want to contribute? Drop a message!',
+    'contact.eyebrow':'Get In Touch','contact.title':'Contact <span class="hi">the administrator</span>','contact.sub':'Have a rare find? Want to contribute? Drop a message!',
     'contact.info.title':"Let's talk Sgorbions",'contact.email':'Email','contact.location':'Location','contact.location.val':'Italy 🇮🇹','contact.resp':'Response Time','contact.resp.val':'Usually within 24–48 hours',
     'form.name':'Your Name','form.name.ph':'Sgorbio Fan','form.email':'E-mail','form.subject':'Contesto della domanda','form.subject.ph':'I found a rare Sgorbio!','form.message':'Domanda (o messaggio)','form.message.ph':'Tell me everything...','form.send':'Invia messaggio 🚀',
     'form.username':'Username','form.password':'Password',
@@ -452,7 +459,7 @@ const i18n = {
     'form.post.type':'Post Type','form.post.title':'Title','form.post.body':'Content','form.post.question':'❓ Question','form.post.news':'📢 News / Discovery',
     'form.reply.placeholder':'Write a reply...','comment.admin':'Owner','comment.login':'Log in to reply',
     'auth.title':'Welcome Back','auth.login':'Login','auth.register':'Registrati','auth.login.btn':'Sign In','auth.reg.btn':'Create Account',
-    'modal.bulkscore.title':'⭐ Series Score','modal.bulkscore.desc':'Assign the same score to all items in the current section. You can edit individual scores later.','modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to all','contact.q1':'Want to know more about Sgorbions?','contact.q2':'Want to report an error?','contact.q3':'Or just want to compliment the admin?','contact.cta':'For any of these, send us a message!','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀','wantlist.desc':'Here you can find the list of your complete and incomplete series.<br>You can export to Excel:<br>• the list of your missing stickers<br>• the list of stickers you own<br>• the list of stickers from your complete series','wantlist.missingTitle':'EXPORT OF YOUR INCOMPLETE SERIES (MISSING LISTS)','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in.','wantlist.hintExportMissing':'Select the series for which you want to export your missing stickers, then press "Export missing list" next to this.','wantlist.hintExportIncomplete':'Select the series for which you want to export your owned stickers, then press "Export owned incomplete series" next to this.','wantlist.exportIncomplete':'Export list of stickers I own from my incomplete series','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in.','wantlist.exportMissing':'Export list of stickers I am missing','wantlist.export':'Export owned stickers list','modal.figdetail.title':'Sticker detail','modal.segnala.send':'Submit report','profile.anni':'Years collecting Sgorbions','profile.sliderHint':'Try moving the slider! 👆','pwd.current':'Current password','pwd.resetDesc':'Enter your email address. We will send you a temporary password.','modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries','form.series.hasVariations':'Has variations','form.series.descPlaceholder':'Describe this series...','form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number','form.fig.size':'Size','form.fig.variations':'Number of existing variations','form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)','form.fig.score':'Score','form.fig.scoreHint':'Points assigned to whoever owns this item','form.fig.descPlaceholder':'Describe this sticker...',
+    'modal.bulkscore.title':'⭐ Series Score','modal.bulkscore.desc':'Assign the same score to all items in the current section. You can edit individual scores later.','modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to all','contact.q1':'Want to know more about Sgorbions?','contact.q2':'Want to report an error?','contact.q3':'Or just want to compliment the admin?','contact.cta':'For any of these, send us a message!','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀','wantlist.desc':'Here you can find the list of your complete and incomplete series.<br>You can export to Excel:<br>• the list of your missing stickers<br>• the list of stickers you own<br>• the list of stickers from your complete series','wantlist.pageTitle':'Missing stickers list','wantlist.missingTitle':'EXPORT OF YOUR INCOMPLETE SERIES (MISSING LISTS)','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in.','wantlist.hintExportMissing':'Select the series for which you want to export your missing stickers, then press "Export missing list" next to this.','wantlist.hintExportIncomplete':'Select the series for which you want to export your owned stickers, then press "Export owned incomplete series" next to this.','wantlist.exportIncomplete':'Export list of stickers I own from my incomplete series','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in.','wantlist.exportMissing':'Export list of stickers I am missing','wantlist.export':'Export owned stickers list','modal.figdetail.title':'Sticker detail','modal.segnala.send':'Submit report','profile.anni':'Years collecting Sgorbions','profile.sliderHint':'Try moving the slider! 👆','pwd.current':'Current password','pwd.resetDesc':'Enter your email address. We will send you a temporary password.','modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries','form.series.hasVariations':'Has variations','form.series.descPlaceholder':'Describe this series...','form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number','form.fig.size':'Size','form.fig.variations':'Number of existing variations','form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)','form.fig.score':'Score','form.fig.scoreHint':'Points assigned to whoever owns this item','form.fig.descPlaceholder':'Describe this sticker...',
     'modal.fig.title':'Add Sticker','modal.fig.save':'Save Sticker',
     'modal.post.title':'New Post','modal.post.save':'Publish post',
     'profile.title':'My Profile','profile.owned':'Stickers Owned','profile.series':'Series Tracked','profile.collection':'My Collection',
@@ -507,7 +514,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
-    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista figurine che mi mancano".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho delle mie serie incomplete".','wantlist.exportIncomplete':'Esporta lista figurine che ho delle mie serie incomplete','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista figurine che mi mancano','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista figurine che mi mancano".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho delle mie serie incomplete".','wantlist.exportIncomplete':'Esporta lista figurine che ho delle mie serie incomplete','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista figurine che mi mancano','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
@@ -925,6 +932,8 @@ function updateNavUser() {
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = '';
     document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
     const bellBtn = document.getElementById('nav-bell-btn');
+    const msgBtn = document.getElementById('nav-msg-btn');
+    if (msgBtn) msgBtn.style.display = currentUser?.isAdmin ? '' : 'none';
     if (bellBtn) {
       bellBtn.style.display = currentUser.isAdmin ? '' : 'none';
       updateBellBadge();
@@ -1739,7 +1748,11 @@ function renderProfile() {
   const seriesIds = [...new Set(ownedFigs.map(f => f.seriesId))];
   document.getElementById('profile-series-count').textContent = seriesIds.length;
   document.getElementById('admin-panel').style.display = currentUser.isAdmin ? '' : 'none';
-  if (currentUser.isAdmin) { adminTab('series'); }
+  if (currentUser.isAdmin) {
+    const currentActiveTab = document.querySelector('.admin-tab.active');
+    const currentTab = currentActiveTab?.getAttribute('onclick')?.match(/adminTab\('(\w+)'\)/)?.[1];
+    adminTab(currentTab || 'series');
+  }
   renderMyCollection(ownedFigs);
 }
 
@@ -1789,7 +1802,7 @@ function adminTab(tab) {
   if (tab === 'series') renderAdminSeries();
   if (tab === 'figurines') renderAdminFigs();
   if (tab === 'blog') renderAdminBlog();
-  if (tab === 'contacts') renderAdminContacts();
+  if (tab === 'contacts') { renderAdminContacts(); updateMsgBadge(); }
   if (tab === 'users') renderAdminUsers();
   if (tab === 'segnalazioni') renderAdminSegnalazioni();
   if (tab === 'eventi') renderAdminEventi();
@@ -1931,16 +1944,32 @@ function renderAdminBlog() {
 }
 function renderAdminContacts() {
   const el = document.getElementById('admin-contacts-list');
-  const msgs = getData('contact_messages', []);
-  if (!msgs.length) { el.innerHTML = '<p style="color:var(--muted);">No messages yet.</p>'; return; }
-  el.innerHTML = msgs.map(m => `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1.25rem;margin-bottom:0.75rem;">
-    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.5rem;">
-      <strong style="font-family:var(--font-ui);">${m.name} <span style="font-size:0.8rem;color:var(--muted);font-family:var(--font-body);">&lt;${m.email}&gt;</span></strong>
-      <span style="font-size:0.78rem;color:var(--muted);">${new Date(m.date).toLocaleDateString()}</span>
+  const msgs = getData('contact_messages', []).sort((a,b) => new Date(b.date) - new Date(a.date));
+  if (!msgs.length) { el.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun messaggio ancora.' : 'No messages yet.'}</p>`; return; }
+  el.innerHTML = msgs.map(m => `<div style="background:${m.read ? 'var(--card)' : 'rgba(68,136,255,0.06)'};border:1px solid ${m.read ? 'var(--border)' : 'rgba(68,136,255,0.3)'};border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.5rem;">
+    <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.4rem;align-items:center;">
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        ${m.read ? '' : '<span style="font-size:0.7rem;background:#4488ff;color:#fff;border-radius:4px;padding:1px 6px;">NEW</span>'}
+        <strong style="font-family:var(--font-ui);">${m.name} <span style="font-size:0.8rem;color:var(--muted);font-family:var(--font-body);">&lt;${m.email}&gt;</span></strong>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <span style="font-size:0.78rem;color:var(--muted);">${new Date(m.date).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB')}</span>
+        ${!m.read ? `<button class="tbl-btn tbl-btn-edit" onclick="markContactRead('${m.id}')">${currentLang === 'it' ? 'Segna letto' : 'Mark as read'}</button>` : '<span style="font-size:0.78rem;color:var(--muted);">✓</span>'}
+      </div>
     </div>
-    ${m.subject ? `<div style="font-size:0.88rem;color:var(--accent3);margin-bottom:0.4rem;">Re: ${m.subject}</div>` : ''}
+    ${m.subject ? `<div style="font-size:0.85rem;color:var(--accent3);margin-bottom:0.35rem;">Re: ${m.subject}</div>` : ''}
     <div style="font-size:0.88rem;color:var(--muted);">${m.message}</div>
   </div>`).join('');
+}
+
+async function markContactRead(id) {
+  const msgs = _cache.contact_messages || [];
+  const idx = msgs.findIndex(m => m.id === id);
+  if (idx === -1) return;
+  msgs[idx].read = true;
+  await fsSave('contact_messages', msgs[idx]);
+  renderAdminContacts();
+  updateMsgBadge();
 }
 let _usersSort = { col: 'username', dir: 1 };
 
@@ -2233,6 +2262,20 @@ async function markEventRead(id) {
 // ============================================================
 //  SEGNALAZIONI
 // ============================================================
+function updateMsgBadge() {
+  const badge = document.getElementById('nav-msg-badge');
+  const btn = document.getElementById('nav-msg-btn');
+  if (!badge || !btn) return;
+  const contacts = _cache.contact_messages || [];
+  const unread = contacts.filter(m => !m.read).length;
+  if (unread > 0) {
+    badge.style.display = '';
+    badge.textContent = unread > 9 ? '9+' : unread;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
 function updateBellBadge() {
   const badge = document.getElementById('nav-bell-badge');
   if (!badge) return;
@@ -2401,6 +2444,7 @@ async function inviaSegnalazione() {
   fb.textContent = '✅ Segnalazione inviata! Grazie.';
   setTimeout(() => closeModal('segnalazione-modal'), 1500);
   updateBellBadge();
+  updateMsgBadge();
 }
 
 function renderAdminSegnalazioni() {
@@ -2670,12 +2714,23 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 // ============================================================
 //  TOAST
 // ============================================================
-function toast(msg, type = 'success') {
-  const tc = document.getElementById('toast-container');
+function toast(msg, type = 'success', anchorEl = null) {
   const t = document.createElement('div');
   t.className = 'toast ' + type;
   t.textContent = msg;
-  tc.appendChild(t);
+  if (anchorEl) {
+    // Position near the anchor element
+    const rect = anchorEl.getBoundingClientRect();
+    t.style.position = 'fixed';
+    t.style.zIndex = '9999';
+    t.style.left = Math.min(rect.left, window.innerWidth - 320) + 'px';
+    t.style.top = (rect.bottom + 8) + 'px';
+    t.style.transform = 'none';
+    document.body.appendChild(t);
+  } else {
+    const tc = document.getElementById('toast-container');
+    tc.appendChild(t);
+  }
   setTimeout(() => t.remove(), 3500);
 }
 
@@ -2744,16 +2799,16 @@ function renderAll() {
     }
   }
 
-  // Re-render admin if open
+  // Re-render admin if open — preserve active tab
   if (document.getElementById('admin-panel')?.style.display === 'block') {
     const activeTab = document.querySelector('.admin-tab.active');
-    if (activeTab) {
-      const tab = activeTab.getAttribute('onclick')?.match(/adminTab\('(\w+)'\)/)?.[1];
-      if (tab) adminTab(tab);
-    }
+    const tab = activeTab?.getAttribute('onclick')?.match(/adminTab\('(\w+)'\)/)?.[1];
+    if (tab) adminTab(tab);
   }
 
-  if (document.getElementById('page-profile')?.classList.contains('active')) renderProfile();
+  // Only render profile if admin panel is NOT showing (admin panel lives inside page-profile)
+  const _adminPanelOpen = document.getElementById('admin-panel')?.style.display === 'block';
+  if (document.getElementById('page-profile')?.classList.contains('active') && !_adminPanelOpen) renderProfile();
 }
 
 // ============================================================
@@ -3188,7 +3243,7 @@ function renderWantlist() {
         </button>
       </div>`;
     }).join('');
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! Hai tutto!' : 'Congrats! You have it all!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'EXPORT DELLE TUE SERIE COMPLETE' : 'EXPORT OF YOUR COMPLETE SERIES') + '</h3><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto "Esporta lista figurine mie serie complete", qui sotto.' : 'Select the series for which you want to export your stickers. Then press "Export my complete series stickers", below.') + '</p><div style="margin-bottom:1rem;"><button class="btn-secondary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes : '');
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! Hai tutto!' : 'Congrats! You have it all!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'EXPORT DELLE TUE SERIE COMPLETE' : 'EXPORT OF YOUR COMPLETE SERIES') + '</h3><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto "Esporta lista figurine mie serie complete".' : 'Select the series for which you want to export your stickers. Then press "Export my complete series stickers".') + '</p><div style="margin-bottom:1rem;"><button class="btn-secondary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes : '');
     return;
   }
 
@@ -3258,7 +3313,7 @@ function renderWantlist() {
         // If all items in this section are missing, show a simple message
         const allSectionFigs = allFigs.filter(f => f.seriesId === sId && f.section === sec);
         if (items.length === allSectionFigs.length) {
-          return `<div style="margin-bottom:0.4rem;">${modeSelector}<div style="color:var(--muted);font-size:0.88rem;font-style:italic;">${currentLang === 'it' ? 'Ti manca tutta la serie' : 'You are missing the entire series'}</div></div>`;
+          return `<div style="margin-bottom:0.4rem;">${modeSelector}<div style="color:var(--muted);font-size:0.88rem;font-style:italic;">${currentLang === 'it' ? 'Ti manca tutta la serie!' : 'You are missing the entire series!'}</div></div>`;
         }
         const sorted = items.sort((a,b) => {
           // Sort by subseries first, then by number, then by name
@@ -3324,7 +3379,7 @@ function renderWantlist() {
         </button>
       </div>`;
     }).join('');
-    el.innerHTML += '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'EXPORT DELLE TUE SERIE COMPLETE' : 'EXPORT OF YOUR COMPLETE SERIES') + '</h3><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto "Esporta lista figurine mie serie complete", qui sotto.' : 'Select the series for which you want to export your stickers. Then press "Export my complete series stickers", below.') + '</p><div style="margin-bottom:1rem;"><button class="btn-secondary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes;
+    el.innerHTML += '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'EXPORT DELLE TUE SERIE COMPLETE' : 'EXPORT OF YOUR COMPLETE SERIES') + '</h3><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto "Esporta lista figurine mie serie complete".' : 'Select the series for which you want to export your stickers. Then press "Export my complete series stickers".') + '</p><div style="margin-bottom:1rem;"><button class="btn-secondary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes;
   }
 }
 
@@ -3355,7 +3410,7 @@ async function toggleOwnedInclude(seriesId) {
   renderWantlist();
 }
 
-async function exportOwnedIncomplete() {
+async function exportOwnedIncomplete(btn) {
   // Export owned figs only for series where user does NOT have all stickers
   const allFigs = getData('figurines', []);
   const series = getData('series', []);
@@ -3380,7 +3435,7 @@ async function exportOwnedIncomplete() {
     });
   });
 
-  if (rows.length <= 1) { toast(currentLang === 'it' ? 'Nessuna fig da esportare' : 'No stickers to export', 'error'); return; }
+  if (rows.length <= 1) { toast(currentLang === 'it' ? 'Non ti manca nessuna figurina! 🎉' : 'You are not missing any sticker! 🎉', 'success', btn); return; }
 
   const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs');
   const ws = XLSX.utils.aoa_to_sheet(rows);
@@ -3442,7 +3497,18 @@ async function exportOwnedList() {
   }
 }
 
-async function exportWantlist() {
+async function exportWantlist(btn) {
+  const allFigs = getData('figurines', []).filter(f => f.section === 'figurines');
+  const owned = getOwned();
+  const missing = allFigs.filter(f => !owned.includes(f.id));
+  if (!missing.length) {
+    toast(currentLang === 'it' ? 'Non ti manca nessuna figurina! 🎉' : 'You are not missing any sticker! 🎉', 'success', btn);
+    return;
+  }
+  // continue with original logic
+  return _exportWantlistImpl();
+}
+async function _exportWantlistImpl() {
   if (!currentUser) return;
   const allFigs = getData('figurines', []);
   const owned = getOwned();
