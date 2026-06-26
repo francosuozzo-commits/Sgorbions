@@ -163,7 +163,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v4.75';
+const JS_VERSION = 'v4.76';
 const CSS_VERSION = 'v4.66';
 
 // ============================================================
@@ -3140,7 +3140,6 @@ function toggleWantlistMode(key, mode) {
 }
 
 function renderWantlist() {
-  console.log('=== renderWantlist called ===');
   if (!currentUser) { showPage('home'); return; }
   const el = document.getElementById('wantlist-content');
   const allFigs = getData('figurines', []);
@@ -3152,12 +3151,9 @@ function renderWantlist() {
   const completeSeries = series.slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999)).filter(s => {
     const seriesFigs = allFigs.filter(f => f.seriesId === s.id && f.section === 'figurines');
     const missingInSeries = seriesFigs.filter(f => !owned.includes(f.id));
-    console.log(`Serie "${s.name}": figs=${seriesFigs.length}, missing=${missingInSeries.length}, owned_sample=${owned.slice(0,3)}`);
     if (!seriesFigs.length) return false;
     return missingInSeries.length === 0;
   });
-  console.log('COMPLETE SERIES:', completeSeries.map(s=>s.name));
-  console.log('OWNED TOTAL:', owned.length);
 
   if (!missing.length) {
     const prefs = getWantlistPrefs();
@@ -3251,6 +3247,21 @@ function renderWantlist() {
       }).join(''); })()}
     </div>`;
   }).join('');
+
+  // Append complete series section at the bottom
+  if (completeSeries.length) {
+    const prefs = getWantlistPrefs();
+    const completeBoxes = completeSeries.map(s => {
+      const incOwned = prefs[s.id]?.includeOwned !== false;
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
+        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓</span></span>
+        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#ff6464' : 'var(--border)'};background:${!incOwned ? 'rgba(255,100,100,0.15)' : 'var(--card2)'};color:${!incOwned ? '#ff6464' : 'var(--muted)'};cursor:pointer;">
+          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export possedute' : 'Exclude from owned export'}
+        </button>
+      </div>`;
+    }).join('');
+    el.innerHTML += '<hr style="border-color:var(--border);margin:1rem 0;"><p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Serie complete (gestisci export):' : 'Complete series (manage export):') + '</p>' + completeBoxes;
+  }
 }
 
 // Wantlist preferences stored on user profile
