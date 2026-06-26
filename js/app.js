@@ -163,7 +163,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.09';
+const JS_VERSION = 'v5.13';
 const CSS_VERSION = 'v4.66';
 
 // ============================================================
@@ -3251,8 +3251,8 @@ function renderWantlist() {
             <span style="font-family:var(--font-ui);font-size:0.85rem;color:var(--accent3);">${sectionLabels[sec] || sec}</span>
             <div style="margin-left:auto;display:flex;gap:0.35rem;">
               ${hasNumbers ? `<button onclick="toggleWantlistMode('${groupKey}','numbers')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='numbers'?'var(--accent3)':'var(--card2)'};color:${mode==='numbers'?'#fff':'var(--muted)'};cursor:pointer;">${currentLang === 'it' ? 'Solo numeri' : 'Numbers only'}</button>` : ''}
-              <button onclick="toggleWantlistMode('${groupKey}','names')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='names'?'var(--accent3)':'var(--card2)'};color:${mode==='names'?'#fff':'var(--muted)'};cursor:pointer;">${currentLang === 'it' ? 'Solo nomi' : 'Names only'}</button>
-              <button onclick="toggleWantlistMode('${groupKey}','both')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='both'?'var(--accent3)':'var(--card2)'};color:${mode==='both'?'#fff':'var(--muted)'};cursor:pointer;">${currentLang === 'it' ? 'Numeri e nomi' : 'Numbers and names'}</button>
+              ${hasNumbers ? `<button onclick="toggleWantlistMode('${groupKey}','names')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='names'?'var(--accent3)':'var(--card2)'};color:${mode==='names'?'#fff':'var(--muted)'};cursor:pointer;">${currentLang === 'it' ? 'Solo nomi' : 'Names only'}</button>` : ''}
+              ${hasNumbers ? `<button onclick="toggleWantlistMode('${groupKey}','both')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='both'?'var(--accent3)':'var(--card2)'};color:${mode==='both'?'#fff':'var(--muted)'};cursor:pointer;">${currentLang === 'it' ? 'Numeri e nomi' : 'Numbers and names'}</button>` : ''}
             </div>
           </div>`;
         // If all items in this section are missing, show a simple message
@@ -3295,7 +3295,7 @@ function renderWantlist() {
               else label = (f.number ? '#' + f.number + ' ' : '') + f.name;
               return `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:0.64rem;padding:1px 5px;border-radius:8px;">${label}</span>`;
             }).join('');
-            return `<div style="margin-bottom:0.3rem;"><span style="font-size:0.72rem;font-weight:700;color:var(--accent3);margin-right:0.4rem;">${sub}:</span><span style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">${subChips}</span></div>`;
+            return `<div style="margin-bottom:0.3rem;"><span style="font-size:0.72rem;font-weight:700;color:var(--accent3);margin-right:0.4rem;">(${(currentLang === 'it') ? 'Sottoserie' : 'Subseries'}: ${sub}):</span><span style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">${subChips}</span></div>`;
           }).join('');
         } else {
           const chips = sorted.map(f => {
