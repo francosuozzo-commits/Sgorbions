@@ -163,7 +163,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v4.92';
+const JS_VERSION = 'v4.93';
 const CSS_VERSION = 'v4.66';
 
 // ============================================================
@@ -3340,7 +3340,7 @@ async function exportOwnedIncomplete() {
   const ws = XLSX.utils.aoa_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, currentLang === 'it' ? 'Serie incomplete' : 'Incomplete series');
-  XLSX.writeFile(wb, 'sgorbions_incomplete_owned.xlsx');
+  XLSX.writeFile(wb, (currentLang === 'it' ? 'sgorbions_serie_incomplete_possedute' : 'sgorbions_incomplete_series_owned') + '_' + currentUser.username + '.xlsx');
   toast(currentLang === 'it' ? 'Esportato! 📊' : 'Exported! 📊', 'success');
 }
 
@@ -3388,7 +3388,7 @@ async function exportOwnedList() {
     ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 35 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'La mia lista');
-    XLSX.writeFile(wb, 'mia_lista_' + currentUser.username + '_' + new Date().toLocaleDateString('it-IT').replace(/\//g,'-') + '.xlsx');
+    XLSX.writeFile(wb, (currentLang === 'it' ? 'mia_lista_' : 'my_list_') + currentUser.username + '_' + new Date().toLocaleDateString('it-IT').replace(/\//g,'-') + '.xlsx');
     toast('Lista esportata in Excel! 📊', 'success');
   } catch(e) {
     console.error('SheetJS error:', e);
@@ -3442,7 +3442,7 @@ async function exportWantlist() {
     ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 35 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, (currentLang === 'it' ? 'Mancolista' : 'Missing list'));
-    XLSX.writeFile(wb, 'mancolista_' + currentUser.username + '_' + new Date().toLocaleDateString('it-IT').replace(/\//g,'-') + '.xlsx');
+    XLSX.writeFile(wb, (currentLang === 'it' ? 'mancolista_' : 'missing_list_') + currentUser.username + '_' + new Date().toLocaleDateString('it-IT').replace(/\//g,'-') + '.xlsx');
     toast((currentLang === 'it' ? 'Mancolista esportata in Excel! 📊' : 'Missing list exported to Excel! 📊'), 'success');
   } catch(e) {
     console.error('SheetJS error:', e);
