@@ -163,7 +163,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v4.91';
+const JS_VERSION = 'v4.92';
 const CSS_VERSION = 'v4.66';
 
 // ============================================================
