@@ -163,7 +163,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v4.71';
+const JS_VERSION = 'v4.74';
 const CSS_VERSION = 'v4.66';
 
 // ============================================================
@@ -3147,8 +3147,26 @@ function renderWantlist() {
   const missing = allFigs.filter(f => !owned.includes(f.id));
   const series = getData('series', []);
 
+  // Series where user has everything (or has items but none missing)
+  const completeSeries = series.slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999)).filter(s => {
+    const seriesFigs = allFigs.filter(f => f.seriesId === s.id && f.section === 'figurines');
+    if (!seriesFigs.length) return false;
+    const missingInSeries = seriesFigs.filter(f => !owned.includes(f.id));
+    return missingInSeries.length === 0;
+  });
+
   if (!missing.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! Hai tutto!' : 'Congrats! You have it all!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>';
+    const prefs = getWantlistPrefs();
+    const completeBoxes = completeSeries.map(s => {
+      const incOwned = prefs[s.id]?.includeOwned !== false;
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
+        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓</span></span>
+        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#ff6464' : 'var(--border)'};background:${!incOwned ? 'rgba(255,100,100,0.15)' : 'var(--card2)'};color:${!incOwned ? '#ff6464' : 'var(--muted)'};cursor:pointer;">
+          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export possedute' : 'Exclude from owned export'}
+        </button>
+      </div>`;
+    }).join('');
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! Hai tutto!' : 'Congrats! You have it all!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.75rem;">' + ((currentLang === 'it') ? 'Gestisci export serie complete:' : 'Manage export for complete series:') + '</p>' + completeBoxes : '');
     return;
   }
 
