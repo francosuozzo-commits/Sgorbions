@@ -170,7 +170,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.34';
+const JS_VERSION = 'v5.36';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -416,7 +416,7 @@ async function uploadToCloudinary(file) {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.wishlist':'Wishlist','wishlist.desc':'Your <strong>Wishlist</strong> is your personal space to collect the stickers (or other items) you would like to own.<br><br>While browsing the catalog, press the <strong>♡</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send wishlist to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send wishlist to staff',
+    'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.wishlist':'Wishlist','wishlist.desc':'Your <strong>Wishlist</strong> is your personal space to collect the stickers (or other items) you would like to own.<br><br>While browsing the catalog, press the <strong>♡</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send wishlist to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send wishlist',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'| Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
@@ -438,8 +438,8 @@ const i18n = {
   },
   it: {
 'nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog / D&R','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.wishlist':'Lista desiderati',
-'wishlist.desc':'La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nel catalogo, premi il tasto <strong>♡</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia lista desiderati allo staff&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
-'wishlist.submit':'📨 Invia lista desiderati allo staff',
+'wishlist.desc':'La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nel catalogo, premi il tasto <strong>♡</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia lista desiderati&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
+'wishlist.submit':'📨 Invia lista desiderati',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
 'nav.onlineSince':'| Online dal 21.06.2026',
@@ -642,6 +642,7 @@ async function doLogin() {
   fsSave('users', user);
   if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username, { read: true });
   await loadAllOwnedFromFirebase();
+  await loadWishlist();
   closeModal('auth-modal');
   updateNavUser();
   showProfileInviteIfNeeded();
@@ -2302,6 +2303,42 @@ function _hideImpersonateBanner() {
 
 }
 
+// ============================================================
+//  WISHLIST FUNCTIONS
+// ============================================================
+let _wishlist = [];
+
+function getWishlist() { return _wishlist; }
+
+async function loadWishlist() {
+  if (!currentUser) { _wishlist = []; return; }
+  try {
+    const doc = await fsGet('wishlists', currentUser.id);
+    _wishlist = doc?.items || [];
+  } catch(e) { _wishlist = []; }
+  updateWishlistBadge();
+}
+
+async function saveWishlist() {
+  if (!currentUser) return;
+  try {
+    await fsSave('wishlists', { id: currentUser.id, userId: currentUser.id, items: _wishlist });
+  } catch(e) { console.error('saveWishlist error', e); }
+  updateWishlistBadge();
+}
+
+async function toggleWishlist(figId) {
+  if (!currentUser) { openAuth('register'); return; }
+  if (_wishlist.includes(figId)) {
+    _wishlist = _wishlist.filter(id => id !== figId);
+  } else {
+    _wishlist.push(figId);
+  }
+  await saveWishlist();
+  if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
+  renderItems();
+}
+
 function updateMsgBadge() {
   const badge = document.getElementById('nav-msg-badge');
   const btn = document.getElementById('nav-msg-btn');
@@ -3318,7 +3355,7 @@ async function submitWishlist() {
     _cache.contact_messages = _cache.contact_messages || [];
     _cache.contact_messages.unshift(saved);
     updateMsgBadge();
-    toast(currentLang === 'it' ? '✅ Lista desiderati inviata allo staff!' : '✅ Wishlist sent to staff!', 'success');
+    toast(currentLang === 'it' ? '✅ Lista desiderati inviata!' : '✅ Wishlist sent!', 'success');
 
     // Ask if user wants to clear
     if (confirm(currentLang === 'it' ? 'Vuoi svuotare la tua wishlist?' : 'Do you want to clear your wishlist?')) {
