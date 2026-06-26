@@ -163,8 +163,8 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v4.66';
-const CSS_VERSION = 'v4.62';
+const JS_VERSION = 'v4.71';
+const CSS_VERSION = 'v4.66';
 
 // ============================================================
 //  NATIONALITY
@@ -452,7 +452,7 @@ const i18n = {
     'form.post.type':'Post Type','form.post.title':'Title','form.post.body':'Content','form.post.question':'❓ Question','form.post.news':'📢 News / Discovery',
     'form.reply.placeholder':'Write a reply...','comment.admin':'Owner','comment.login':'Log in to reply',
     'auth.title':'Welcome Back','auth.login':'Login','auth.register':'Registrati','auth.login.btn':'Sign In','auth.reg.btn':'Create Account',
-    'modal.bulkscore.title':'⭐ Series Score','modal.bulkscore.desc':'Assign the same score to all items in the current section. You can edit individual scores later.','modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to all','contact.q1':'Want to know more about Sgorbions?','contact.q2':'Want to report an error?','contact.q3':'Or just want to compliment the admin?','contact.cta':'For any of these, send us a message!','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀','wantlist.desc':'Here are the stickers you need to complete your Sgorbions collection','wantlist.export':'Export my list','modal.figdetail.title':'Sticker detail','modal.segnala.send':'Submit report','profile.anni':'Years collecting Sgorbions','profile.sliderHint':'Try moving the slider! 👆','pwd.current':'Current password','pwd.resetDesc':'Enter your email address. We will send you a temporary password.','modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries','form.series.hasVariations':'Has variations','form.series.descPlaceholder':'Describe this series...','form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number','form.fig.size':'Size','form.fig.variations':'Number of existing variations','form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)','form.fig.score':'Score','form.fig.scoreHint':'Points assigned to whoever owns this item','form.fig.descPlaceholder':'Describe this sticker...',
+    'modal.bulkscore.title':'⭐ Series Score','modal.bulkscore.desc':'Assign the same score to all items in the current section. You can edit individual scores later.','modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to all','contact.q1':'Want to know more about Sgorbions?','contact.q2':'Want to report an error?','contact.q3':'Or just want to compliment the admin?','contact.cta':'For any of these, send us a message!','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀','wantlist.desc':'Here are the stickers you need to complete your Sgorbions collection','wantlist.exportMissing':'Export missing list','wantlist.export':'Export owned stickers list','modal.figdetail.title':'Sticker detail','modal.segnala.send':'Submit report','profile.anni':'Years collecting Sgorbions','profile.sliderHint':'Try moving the slider! 👆','pwd.current':'Current password','pwd.resetDesc':'Enter your email address. We will send you a temporary password.','modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries','form.series.hasVariations':'Has variations','form.series.descPlaceholder':'Describe this series...','form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number','form.fig.size':'Size','form.fig.variations':'Number of existing variations','form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)','form.fig.score':'Score','form.fig.scoreHint':'Points assigned to whoever owns this item','form.fig.descPlaceholder':'Describe this sticker...',
     'modal.fig.title':'Add Sticker','modal.fig.save':'Save Sticker',
     'modal.post.title':'New Post','modal.post.save':'Publish post',
     'profile.title':'My Profile','profile.owned':'Stickers Owned','profile.series':'Series Tracked','profile.collection':'My Collection',
@@ -507,7 +507,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
-    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Ecco le figurine che ti mancano per completare la tua collezione Sgorbions','wantlist.export':'Esporta la mia lista','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Ecco le figurine che ti mancano per completare la tua collezione Sgorbions','wantlist.exportMissing':'Esporta mancolista','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
@@ -3158,7 +3158,7 @@ function renderWantlist() {
     bySeries[f.seriesId].push(f);
   });
 
-  const sectionLabels = { figurines: 'Figurine', albums: 'Album', extras: 'Altro Materiale' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', albums: 'Album', extras: currentLang === 'it' ? 'Altro Materiale' : 'Extra Material' };
 
   const sortedEntries = Object.entries(bySeries).sort(([aId], [bId]) => {
     const aS = series.find(x => x.id === aId);
@@ -3177,30 +3177,45 @@ function renderWantlist() {
       bySection[sec].push(f);
     });
 
-    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem;">
-        <span style="font-family:var(--font-display);font-size:1.4rem;">${s ? s.name : 'Serie sconosciuta'}</span>
-        <span class="card-badge">${figs.length} ${currentLang === 'it' ? 'mancanti su' : 'missing out of'} ${allSeriesFigs.length}</span>
-      </div>
-      <div class="progress-bar" style="margin-bottom:1rem;"><div class="progress-fill" style="width:${Math.round(ownedCount/allSeriesFigs.length*100)}%"></div></div>
-      ${Object.entries(bySection).map(([sec, items]) => {
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;">
+      ${(() => {
+        const prefs = getWantlistPrefs();
+        const excMissing = prefs[sId]?.excludeMissing || false;
+        const incOwned = prefs[sId]?.includeOwned !== false; // default true
+        return `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.4rem;">
+          <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')}</span>
+          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
+            <span class="card-badge">${figs.length} ${currentLang === 'it' ? 'mancanti su' : 'missing out of'} ${allSeriesFigs.length}</span>
+            <button onclick="toggleWantlistExclude('${sId}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${excMissing ? '#ff6464' : 'var(--border)'};background:${excMissing ? 'rgba(255,100,100,0.15)' : 'var(--card2)'};color:${excMissing ? '#ff6464' : 'var(--muted)'};cursor:pointer;">
+              ${excMissing ? '✓ ' : ''}${currentLang === 'it' ? 'Escludi da mancolista' : 'Exclude from missing list'}
+            </button>
+            <button onclick="toggleOwnedInclude('${sId}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${incOwned ? 'var(--accent)' : 'var(--border)'};background:${incOwned ? 'rgba(181,255,46,0.08)' : 'var(--card2)'};color:${incOwned ? 'var(--accent)' : 'var(--muted)'};cursor:pointer;">
+              ${!incOwned ? '✓ ' : ''}${currentLang === 'it' ? 'Escludi da export possedute' : 'Exclude from owned export'}
+            </button>
+          </div>
+        </div>
+        ${!excMissing ? '<div class="progress-bar" style="margin-bottom:0.5rem;"><div class="progress-fill" style="width:' + Math.round(ownedCount/allSeriesFigs.length*100) + '%"></div></div>' : ''}
+        `;
+      })()}
+      ${(() => { const prefs = getWantlistPrefs(); if (prefs[sId]?.excludeMissing) return '<p style="color:var(--muted);font-size:0.82rem;font-style:italic;">' + (currentLang === 'it' ? 'Esclusa dalla mancolista.' : 'Excluded from missing list.') + '</p>'; return Object.entries(bySection).map(([sec, items]) => {
         const groupKey = sId + '_' + sec;
         const mode = wantlistMode[groupKey] || 'both';
         const hasNumbers = items.some(f => f.number);
         const hasNames = true;
         const modeSelector = `
-          <div style="display:flex;gap:0.5rem;margin-bottom:0.5rem;align-items:center;flex-wrap:wrap;">
+          <div style="display:flex;gap:0.4rem;margin-bottom:0.3rem;align-items:center;flex-wrap:wrap;">
             <span style="font-family:var(--font-ui);font-size:0.85rem;color:var(--accent3);">${sectionLabels[sec] || sec}</span>
             <div style="margin-left:auto;display:flex;gap:0.35rem;">
-              ${hasNumbers ? `<button onclick="toggleWantlistMode('${groupKey}','numbers')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='numbers'?'var(--accent3)':'var(--card2)'};color:${mode==='numbers'?'#fff':'var(--muted)'};cursor:pointer;">Solo numeri</button>` : ''}
-              <button onclick="toggleWantlistMode('${groupKey}','names')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='names'?'var(--accent3)':'var(--card2)'};color:${mode==='names'?'#fff':'var(--muted)'};cursor:pointer;">Solo nomi</button>
-              <button onclick="toggleWantlistMode('${groupKey}','both')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='both'?'var(--accent3)':'var(--card2)'};color:${mode==='both'?'#fff':'var(--muted)'};cursor:pointer;">Numeri e nomi</button>
+              ${hasNumbers ? `<button onclick="toggleWantlistMode('${groupKey}','numbers')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='numbers'?'var(--accent3)':'var(--card2)'};color:${mode==='numbers'?'#fff':'var(--muted)'};cursor:pointer;">${currentLang === 'it' ? 'Solo numeri' : 'Numbers only'}</button>` : ''}
+              <button onclick="toggleWantlistMode('${groupKey}','names')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='names'?'var(--accent3)':'var(--card2)'};color:${mode==='names'?'#fff':'var(--muted)'};cursor:pointer;">${currentLang === 'it' ? 'Solo nomi' : 'Names only'}</button>
+              <button onclick="toggleWantlistMode('${groupKey}','both')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='both'?'var(--accent3)':'var(--card2)'};color:${mode==='both'?'#fff':'var(--muted)'};cursor:pointer;">${currentLang === 'it' ? 'Numeri e nomi' : 'Numbers and names'}</button>
             </div>
           </div>`;
         // If all items in this section are missing, show a simple message
         const allSectionFigs = allFigs.filter(f => f.seriesId === sId && f.section === sec);
         if (items.length === allSectionFigs.length) {
-          return `<div style="margin-bottom:0.75rem;">${modeSelector}<div style="color:var(--muted);font-size:0.88rem;font-style:italic;">Ti manca tutta la serie</div></div>`;
+          return `<div style="margin-bottom:0.4rem;">${modeSelector}<div style="color:var(--muted);font-size:0.88rem;font-style:italic;">${currentLang === 'it' ? 'Ti manca tutta la serie' : 'You are missing the entire series'}</div></div>`;
         }
         const sorted = items.sort((a,b) => (a.number||0) - (b.number||0));
         const chips = sorted.map(f => {
@@ -3210,10 +3225,37 @@ function renderWantlist() {
           else label = (f.number ? '#' + f.number + ' ' : (f.subseries ? '['+f.subseries+'] ' : '')) + f.name;
           return `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:0.78rem;padding:2px 8px;border-radius:12px;">${label}</span>`;
         }).join('');
-        return `<div style="margin-bottom:0.75rem;">${modeSelector}<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">${chips}</div></div>`;
-      }).join('')}
+        return `<div style="margin-bottom:0.4rem;">${modeSelector}<div style="display:flex;flex-wrap:wrap;gap:0.4rem;">${chips}</div></div>`;
+      }).join(''); })()}
     </div>`;
   }).join('');
+}
+
+// Wantlist preferences stored on user profile
+function getWantlistPrefs() {
+  return currentUser?.wantlistPrefs || {};
+}
+
+async function toggleWantlistExclude(seriesId) {
+  if (!currentUser) return;
+  const prefs = getWantlistPrefs();
+  prefs[seriesId] = prefs[seriesId] || {};
+  prefs[seriesId].excludeMissing = !prefs[seriesId].excludeMissing;
+  currentUser.wantlistPrefs = prefs;
+  LOCAL.set('currentUser', currentUser);
+  await fsSave('users', currentUser);
+  renderWantlist();
+}
+
+async function toggleOwnedInclude(seriesId) {
+  if (!currentUser) return;
+  const prefs = getWantlistPrefs();
+  prefs[seriesId] = prefs[seriesId] || {};
+  prefs[seriesId].includeOwned = !prefs[seriesId].includeOwned;
+  currentUser.wantlistPrefs = prefs;
+  LOCAL.set('currentUser', currentUser);
+  await fsSave('users', currentUser);
+  renderWantlist();
 }
 
 async function exportOwnedList() {
@@ -3222,12 +3264,14 @@ async function exportOwnedList() {
   const owned = getOwned();
   const ownedFigs = allFigs.filter(f => owned.includes(f.id));
   const series = getData('series', []);
-  const sectionLabels = { figurines: 'Figurine', albums: 'Album', extras: 'Altro Materiale' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', albums: 'Album', extras: currentLang === 'it' ? 'Altro Materiale' : 'Extra Material' };
 
-  const rows = [['Serie', 'Tipo di oggetto', 'Sottoserie', 'Numero', 'Nome']];
+  const rows = [[(currentLang === 'it' ? 'Serie' : 'Series'), (currentLang === 'it' ? 'Tipo di oggetto' : 'Item type'), (currentLang === 'it' ? 'Sottoserie' : 'Subseries'), (currentLang === 'it' ? 'Numero' : 'Number'), (currentLang === 'it' ? 'Nome' : 'Name')]];
 
+  const prefs = getWantlistPrefs();
   const bySeries = {};
   ownedFigs.forEach(f => {
+    if (prefs[f.seriesId]?.includeOwned === false) return; // excluded
     if (!bySeries[f.seriesId]) bySeries[f.seriesId] = [];
     bySeries[f.seriesId].push(f);
   });
@@ -3240,7 +3284,7 @@ async function exportOwnedList() {
 
   sortedEntries.forEach(([sId, figs]) => {
     const s = series.find(x => x.id === sId);
-    const sName = s ? s.name : 'Serie sconosciuta';
+    const sName = s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series');
     figs.sort((a,b) => (a.number||0) - (b.number||0)).forEach(f => {
       rows.push([
         sName,
@@ -3272,12 +3316,14 @@ async function exportWantlist() {
   const owned = getOwned();
   const missing = allFigs.filter(f => !owned.includes(f.id));
   const series = getData('series', []);
-  const sectionLabels = { figurines: 'Figurine', albums: 'Album', extras: 'Altro Materiale' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', albums: 'Album', extras: currentLang === 'it' ? 'Altro Materiale' : 'Extra Material' };
 
-  const rows = [['Serie', 'Tipo di oggetto', 'Sottoserie', 'Numero', 'Nome']];
+  const rows = [[(currentLang === 'it' ? 'Serie' : 'Series'), (currentLang === 'it' ? 'Tipo di oggetto' : 'Item type'), (currentLang === 'it' ? 'Sottoserie' : 'Subseries'), (currentLang === 'it' ? 'Numero' : 'Number'), (currentLang === 'it' ? 'Nome' : 'Name')]];
 
+  const prefs2 = getWantlistPrefs();
   const bySeries = {};
   missing.forEach(f => {
+    if (prefs2[f.seriesId]?.excludeMissing) return; // excluded
     if (!bySeries[f.seriesId]) bySeries[f.seriesId] = [];
     bySeries[f.seriesId].push(f);
   });
@@ -3290,7 +3336,7 @@ async function exportWantlist() {
 
   sortedEntries.forEach(([sId, figs]) => {
     const s = series.find(x => x.id === sId);
-    const sName = s ? s.name : 'Serie sconosciuta';
+    const sName = s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series');
     figs.sort((a,b) => (a.number||0) - (b.number||0)).forEach(f => {
       rows.push([
         sName,
@@ -3309,9 +3355,9 @@ async function exportWantlist() {
     // Set column widths
     ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 35 }];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Mancolista');
+    XLSX.utils.book_append_sheet(wb, ws, (currentLang === 'it' ? 'Mancolista' : 'Missing list'));
     XLSX.writeFile(wb, 'mancolista_' + currentUser.username + '_' + new Date().toLocaleDateString('it-IT').replace(/\//g,'-') + '.xlsx');
-    toast('Mancolista esportata in Excel! 📊', 'success');
+    toast((currentLang === 'it' ? 'Mancolista esportata in Excel! 📊' : 'Missing list exported to Excel! 📊'), 'success');
   } catch(e) {
     console.error('SheetJS error:', e);
     toast('Errore esportazione', 'error');
