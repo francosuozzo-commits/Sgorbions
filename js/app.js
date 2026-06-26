@@ -170,8 +170,8 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.21';
-const CSS_VERSION = 'v5.15';
+const JS_VERSION = 'v5.31';
+const CSS_VERSION = 'v5.25';
 
 // ============================================================
 //  NATIONALITY
@@ -415,7 +415,8 @@ async function uploadToCloudinary(file) {
 // ============================================================
 const i18n = {
   en: {
-    'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts',
+
+    'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.wishlist':'Wishlist','wishlist.desc':'Your <strong>Wishlist</strong> is your personal space to collect the stickers (or other items) you would like to own.<br><br>While browsing the catalog, press the <strong>♡</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send wishlist to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send wishlist to staff',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'| Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
@@ -424,55 +425,26 @@ const i18n = {
 'admin.firebase.plan':'Free plan (Spark): 1 GB storage, 50,000 reads/day, 20,000 writes/day.',
 'admin.firebase.docs':'total documents',
 'admin.cloudinary.plan':'Free plan: 25 credits/month (storage + transformations + bandwidth).',
-'admin.cloudinary.link':'For updated details go to <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.',
+'admin.cloudinary.link':'Per il dettaglio aggiornato vai su <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.',
 'admin.eventi.title':'System events','admin.segnalazioni.title':'User comments','admin.eventi.markRead':'✓ Mark all as read',
 'admin.user.save':'Save changes','admin.user.reset':'🔑 Reset password','admin.user.delete':'🗑️ Delete user',
 'admin.user.joined':'Member since','admin.user.lastlogin':'Last login','admin.user.level':'Level',
 'admin.user.nome':'First name','admin.user.cognome':'Last name','admin.user.sesso':'Gender','admin.user.anni':'Years collecting',
 'admin.user.role':'User type','admin.user.collector':'Collector','admin.user.admin':'Admin',
 'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class="hi">the administrator</span>',
-'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to contribute to the site?<br>Want to report an error?<br>Or just want to compliment the admin?<br><br>For any of these, send us a message!',
+'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧',
-    'nav.login':'Login','nav.register':'Registrati','nav.logout':'Logout',
-    'hero.eyebrow':'🇮🇹 Italy\'s Wildest 90s Collectibles',
-    'hero.sub':'Collector\'s Universe','hero.myvsTotal':'Mine / Total','hero.challenge':'Challenge others','hero.challengeDesc':'Challenge other collectors to see who has the biggest collection. You can also choose to appear anonymously.','hero.desc':'The definitive unofficial database dedicated to the legendary Italian sticker series from the \'90s.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br><br>This site is purely dedicated to collecting and sharing information among collectors. It is not a sales site. Its sole purpose is to connect collectors from around the world, help them find material they don\'t own, and meet other collectors to trade with.<br><br>The information on this site reflects the knowledge of the administrator and does not claim to be official.','hero.cta1':'Explore the Sgorbions catalog!','hero.cta2':'Start collecting Sgorbions',
-    'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat3':'Collectors',
-    'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the Slime World','home.featured.sub':'Every series carefully documented with original artwork, descriptions and rarity info.',
-    'home.featured.btn':'View All Series →',
-    'home.how.eyebrow':'How It Works','home.how.title':'Your Collection, Organized',
-    'how.1.title':'Browse the Catalog','how.1.desc':'Explore all Sgorbions series and stickers, complete with photos and descriptions.',
-    'how.2.title':'Mark Your Stickers','how.2.desc':'Toggle which stickers you own and track your completion percentage per series.',
-    'how.3.title':'Connect & Ask','how.3.desc':'Post questions and get answers from the owner and fellow collectors.',
-    'how.4.title':'Your Profile','how.4.desc':'View your profile info and decide what to share with other collectors.','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'The Catalog','catalog.sub':'All Sgorbions series ever released','catalog.addseries':'+ Add Series','catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
-    'back':'Back to Catalog','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.sections':'Sections','catalog.loading':'loading...','catalog.haveall':'✅ Have it all','catalog.havenone':'❌ Have nothing','catalog.bulkscore':'⭐ Series score','catalog.add':'+ Add','catalog.itemsearch':'Search stickers...','catalog.tableview':'📋 Table view','detail.owned':'Owned','detail.addfig':'+ Add Sticker',
-    'blog.title':'Q&A & Blog','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New question / News','blog.empty':'No posts yet. Start the conversation!',
-    'contact.eyebrow':'Get In Touch','contact.title':'Contact <span class="hi">the administrator</span>','contact.sub':'Have a rare find? Want to contribute? Drop a message!',
-    'contact.info.title':"Let's talk Sgorbions",'contact.email':'Email','contact.location':'Location','contact.location.val':'Italy 🇮🇹','contact.resp':'Response Time','contact.resp.val':'Usually within 24–48 hours',
-    'form.name':'Your Name','form.name.ph':'Sgorbio Fan','form.email':'E-mail','form.subject':'Contesto della domanda','form.subject.ph':'I found a rare Sgorbio!','form.message':'Domanda (o messaggio)','form.message.ph':'Tell me everything...','form.send':'Invia messaggio 🚀',
-    'form.username':'Username','form.password':'Password',
-    'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Stickers','form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.cover':'Cover Image',
-    'form.click':'Click to upload','form.drag':'or drag and drop',
-    'form.fig.number':'Number','form.fig.name':'Name','form.fig.desc':'Description','form.fig.image':'Image',
-    'form.post.type':'Post Type','form.post.title':'Title','form.post.body':'Content','form.post.question':'❓ Question','form.post.news':'📢 News / Discovery',
-    'form.reply.placeholder':'Write a reply...','comment.admin':'Owner','comment.login':'Log in to reply',
-    'auth.title':'Welcome Back','auth.login':'Login','auth.register':'Registrati','auth.login.btn':'Sign In','auth.reg.btn':'Create Account',
-    'modal.bulkscore.title':'⭐ Series Score','modal.bulkscore.desc':'Assign the same score to all items in the current section. You can edit individual scores later.','modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to all','contact.q1':'Want to know more about Sgorbions?','contact.q2':'Want to report an error?','contact.q3':'Or just want to compliment the admin?','contact.cta':'For any of these, send us a message!','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀','wantlist.desc':'Here you can find the list of your complete and incomplete series.<br>You can export to Excel:<br>• the list of your missing stickers<br>• the list of stickers you own<br>• the list of stickers from your complete series','wantlist.pageTitle':'Missing stickers list','wantlist.missingTitle':'EXPORT OF YOUR INCOMPLETE SERIES (MISSING LISTS)','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in.','wantlist.hintExportMissing':'Select the series for which you want to export your missing stickers, then press "Export missing list" next to this.','wantlist.hintExportIncomplete':'Select the series for which you want to export your owned stickers, then press "Export owned incomplete series" next to this.','wantlist.exportIncomplete':'Export list of stickers I own from my incomplete series','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in.','wantlist.exportMissing':'Export list of stickers I am missing','wantlist.export':'Export owned stickers list','modal.figdetail.title':'Sticker detail','modal.segnala.send':'Submit report','profile.anni':'Years collecting Sgorbions','profile.sliderHint':'Try moving the slider! 👆','pwd.current':'Current password','pwd.resetDesc':'Enter your email address. We will send you a temporary password.','modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries','form.series.hasVariations':'Has variations','form.series.descPlaceholder':'Describe this series...','form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number','form.fig.size':'Size','form.fig.variations':'Number of existing variations','form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)','form.fig.score':'Score','form.fig.scoreHint':'Points assigned to whoever owns this item','form.fig.descPlaceholder':'Describe this sticker...',
-    'modal.fig.title':'Add Sticker','modal.fig.save':'Save Sticker',
-    'modal.post.title':'New Post','modal.post.save':'Publish post',
-    'profile.title':'My Profile','profile.owned':'Stickers Owned','profile.series':'Series Tracked','profile.collection':'My Collection',
-    'admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Figurines','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users',
-    'admin.series.title':'Manage Series','admin.figurines.title':'Manage Stickers','admin.blog.title':'Manage Q&A / Blog','admin.contacts.title':'Contact Messages','admin.users.title':'Registered Users',
-    'footer.desc':'The unofficial fan database dedicated to the legendary Italian figurine collection from the early 1990s. Made with 💚 by collectors, for collectors.',
-    'footer.nav':'Navigation','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Unofficial fan site.',
-    'owned.toggle':'I own this','owned.yes':'✓ Owned'
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧'
   },
   it: {
-    'catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.sections':'Sezioni','catalog.loading':'caricamento...','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.bulkscore':'⭐ Punteggio serie','catalog.add':'+ Aggiungi','catalog.itemsearch':'Cerca figurine...','catalog.tableview':'📋 Vista tabellare','nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti',
+'nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog / D&R','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.wishlist':'Lista desiderati',
+'wishlist.desc':'La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nel catalogo, premi il tasto <strong>♡</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia lista desiderati allo staff&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
+'wishlist.submit':'📨 Invia lista desiderati allo staff',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
-'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.','nav.onlineSince':'| Online dal 21.06.2026','profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.myInfo':'✏️ Le mie info','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
+'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
+'nav.onlineSince':'| Online dal 21.06.2026',
+'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.myInfo':'✏️ Le mie info','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità',
+'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'Email inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese).',
 'admin.email.fix':'Correggi contatore:','admin.save':'Salva',
@@ -485,11 +457,27 @@ const i18n = {
 'admin.user.joined':'Iscritto dal','admin.user.lastlogin':'Ultima login','admin.user.level':'Livello',
 'admin.user.nome':'Nome','admin.user.cognome':'Cognome','admin.user.sesso':'Sesso','admin.user.anni':'Anni di collezionismo',
 'admin.user.role':'Tipologia di utente','admin.user.collector':'Collezionista','admin.user.admin':'Admin',
-'form.username':'Username','form.email':'E-mail','contact.title':'Contatta <span class=\'hi\'>l\'amministratore</span>',
+'form.username':'Username','form.email':'E-mail',
+'contact.title':'Contatta <span class=\'hi\'>l\'amministratore</span>',
 'contact.intro':'Hai trovato qualche pezzo raro che non è censito nel sito?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Nome','contact.email.ph':'la-tua@e-mail.com','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀',
-'contact.info':'Informazioni di contatto','contact.responseTime':'Tempo di risposta medio','contact.responseDesc':'Di solito in poche ore','newsletter.title':'Invia Newsletter','newsletter.subject':'Oggetto','newsletter.subject.ph':'es. Nuova serie aggiunta!','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate','classifica.best':'Classifica dei migliori collezionisti','classifica.levels':'Livelli di Collezionista Sgorbions','admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio minimo','admin.levels.save':'Salva livello','hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.','profile.saved':'✅ Informazioni salvate!','banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
-    'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
+'contact.info':'Informazioni di contatto','contact.responseTime':'Tempo di risposta medio','contact.responseDesc':'Di solito in poche ore',
+'newsletter.title':'Invia Newsletter','newsletter.subject':'Oggetto','newsletter.subject.ph':'es. Nuova serie aggiunta!','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate',
+'classifica.best':'Classifica dei migliori collezionisti','classifica.levels':'Livelli di Collezionista Sgorbions',
+'admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio minimo','admin.levels.save':'Salva livello',
+'hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.',
+'profile.saved':'✅ Informazioni salvate!','banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
+'wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete',
+'wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)',
+'wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista figurine che mi mancano".',
+'wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho delle mie serie incomplete".',
+'wantlist.exportIncomplete':'Esporta lista figurine che ho delle mie serie incomplete',
+'wantlist.hint':'Clicca su "Escludi da export mie mancoliste" sulle serie per cui non ti interessa la mancolista.',
+'wantlist.hintMissing':'Clicca su "Escludi da export mie mancoliste" sulle serie per cui non ti interessa la mancolista.',
+'wantlist.exportMissing':'Esporta lista figurine che mi mancano',
+'wantlist.export':'Esporta lista figurine mie serie complete',
+'wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)',
+'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Le mie / Totale','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Sfida gli altri collezionisti a chi ha la collezione più grande. Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Non è un sito di vendita. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute in questo sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora il catalogo Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
@@ -523,6 +511,7 @@ const i18n = {
     'footer.desc':'Il database fan non ufficiale dedicato alla leggendaria collezione di figurine italiana degli anni \'90. Fatto con 💚 da collezionisti, per collezionisti.',
     'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Sito fan non ufficiale.',
     'owned.toggle':'Ce l\'ho','owned.yes':'✓ Ce l\'ho'
+  
   }
 };
 
@@ -592,7 +581,7 @@ function showAdminTab(tab) {
 }
 
 function showPage(page) {
-  const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile', 'newsletter'];
+  const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile', 'newsletter', 'wishlist'];
   if (protectedPages.includes(page) && !currentUser) {
     openAuth('login');
     return;
@@ -617,6 +606,7 @@ function showPage(page) {
   if (page === 'home') { renderHomeStats(); renderHomeSeries(); }
   if (page === 'wantlist') renderWantlist();
   if (page === 'newsletter') { renderNewsletterUsers(); renderEmailLog(); }
+  if (page === 'wishlist') renderWishlist();
   if (page === 'classifica') renderClassifica();
   if (page === 'admin') adminTab('series');
   initReveal();
@@ -922,6 +912,8 @@ function updateNavUser() {
     userNav.style.display = 'flex';
     if (wantlistLink) wantlistLink.style.display = '';
     ['nav-catalog','nav-blog','nav-classifica'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+  const nwl = document.getElementById('nav-wishlist'); if (nwl) nwl.style.display = currentUser?.isAdmin ? 'none' : '';
+  const nwlb = document.getElementById('nav-wishlist-btn'); if (nwlb) nwlb.style.display = currentUser?.isAdmin ? 'none' : '';
     const nlBtn = document.getElementById('nav-newsletter-btn');
     if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
     if (btnCollect) btnCollect.style.display = 'none';
@@ -1421,9 +1413,10 @@ function renderItems() {
         ${descHTML}
         ${sizeHTML}
         <div style="display:flex;align-items:center;gap:0.5rem;">${scoreHTML}${reportBtn}</div>
-        <div class="fig-toggle">
+        <div class="fig-toggle" style="display:flex;align-items:center;gap:0.5rem;">
           <span class="toggle-label">${t('owned.toggle')}</span>
           <button class="toggle-btn-blue ${isOwned?'on':''}" onclick="event.stopPropagation();toggleOwned('${f.id}')"></button>
+          ${(currentUser && !currentUser.isAdmin && !isOwned) ? `<button onclick="event.stopPropagation();toggleWishlist('${f.id}')" title="${currentLang==='it'?'Aggiungi ai desiderati':'Add to wishlist'}" style="background:${_wishlist.includes(f.id)?'rgba(255,100,100,0.2)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'#ff6464':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'#ff6464':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;">${_wishlist.includes(f.id)?'♥':'♡'}</button>` : ''}
         </div>
       </div>
     </div>`;
@@ -2010,7 +2003,7 @@ function renderAdminUsers() {
       <td>${u.isAdmin?'Admin':(currentLang==='it'?'Collezionista':'Collector')}</td>
       <td style="font-size:0.82rem;">${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(u.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '<span style="color:var(--muted);font-style:italic;">mai</span>'}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
-      <td><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">Visualizza</button></td>
+      <td style="display:flex;gap:0.3rem;"><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">${currentLang === 'it' ? 'Visualizza' : 'View'}</button>${!u.isAdmin ? `<button class="tbl-btn" style="background:rgba(255,180,0,0.15);border-color:rgba(255,180,0,0.4);color:#ffb400;" onclick="impersonateUser('${u.id}')">🎭 ${(currentLang === 'it') ? 'Impersona' : 'Impersonate'}</button>` : ''}</td>
     </tr>`).join('')}
   </tbody></table>`;
 }
@@ -2262,6 +2255,54 @@ async function markEventRead(id) {
 // ============================================================
 //  SEGNALAZIONI
 // ============================================================
+function isImpersonating() {
+  return !!(_realAdmin);
+}
+
+function impersonateUser(userId) {
+  const user = getData('users', []).find(u => u.id === userId);
+  if (!user || user.isAdmin) return;
+  const msg = (currentLang === 'it' ? 'Impersonare ' : 'Impersonate ') + user.username + (currentLang === 'it' ? '? Modalità sola lettura.' : '? Read-only mode.');
+  if (!confirm(msg)) return;
+  _realAdmin = { ...currentUser };
+  currentUser = { ...user };
+  _showImpersonateBanner();
+  showPage('home');
+  renderAll();
+  updateNavUser();
+  toast('🎭 ' + (currentLang === 'it' ? 'Impersonando: ' : 'Impersonating: ') + user.username, 'success');
+}
+
+function stopImpersonation() {
+  if (!_realAdmin) return;
+  currentUser = { ..._realAdmin };
+  _realAdmin = null;
+  _hideImpersonateBanner();
+  showPage('profile');
+  setTimeout(() => adminTab('users'), 200);
+  renderAll();
+  updateNavUser();
+  toast(currentLang === 'it' ? '✅ Tornato admin' : '✅ Back to admin', 'success');
+}
+
+function _showImpersonateBanner() {
+  let banner = document.getElementById('impersonate-banner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'impersonate-banner';
+    banner.style.cssText = 'position:fixed;top:0;left:1rem;z-index:99999;background:#ffb400;color:#0e0a1a;padding:0.3rem 0.75rem;display:flex;align-items:center;gap:0.75rem;font-family:var(--font-ui);font-size:0.82rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);border-radius:0 0 8px 8px;max-width:33vw;';
+    document.body.prepend(banner);
+  }
+  banner.innerHTML = '<span>🎭 ' + (currentLang === 'it' ? 'Stai impersonando' : 'Impersonating') + ': <strong>' + currentUser.username + '</strong> — ' + (currentLang === 'it' ? 'WRITE MODE' : 'WRITE MODE') + '</span><button onclick="stopImpersonation()" style="background:#0e0a1a;color:#ffb400;border:none;border-radius:6px;padding:4px 14px;cursor:pointer;font-weight:700;">' + (currentLang === 'it' ? '✕ Torna admin' : '✕ Back to admin') + '</button>';
+  banner.style.display = 'flex';
+}
+
+function _hideImpersonateBanner() {
+  const banner = document.getElementById('impersonate-banner');
+  if (banner) banner.remove();
+
+}
+
 function updateMsgBadge() {
   const badge = document.getElementById('nav-msg-badge');
   const btn = document.getElementById('nav-msg-btn');
@@ -2445,6 +2486,8 @@ async function inviaSegnalazione() {
   setTimeout(() => closeModal('segnalazione-modal'), 1500);
   updateBellBadge();
   updateMsgBadge();
+  await loadWishlist();
+  updateWishlistBadge();
 }
 
 function renderAdminSegnalazioni() {
@@ -2773,6 +2816,7 @@ function renderAll() {
   if (document.getElementById('page-blog')?.classList.contains('active')) renderBlog();
   if (document.getElementById('page-classifica')?.classList.contains('active')) renderClassifica();
   if (document.getElementById('page-wantlist')?.classList.contains('active')) renderWantlist();
+  if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
   if (document.getElementById('page-newsletter')?.classList.contains('active')) { renderNewsletterUsers(); renderEmailLog(); }
 
   // Re-render items section if open
@@ -3202,6 +3246,90 @@ async function renderClassifica() {
 // ============================================================
 //  WANTLIST
 // ============================================================
+// ============================================================
+//  WISHLIST
+// ============================================================
+function renderWishlist() {
+  const el = document.getElementById('wishlist-content');
+  if (!el) return;
+  const allFigs = getData('figurines', []);
+  const series = getData('series', []);
+  const items = _wishlist.map(id => allFigs.find(f => f.id === id)).filter(Boolean);
+
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">♡</div><p class="empty-title">${currentLang === 'it' ? 'La tua wishlist è vuota' : 'Your wishlist is empty'}</p><p class="empty-sub">${currentLang === 'it' ? 'Naviga il catalogo e premi ♡ sulle figurine che ti interessano.' : 'Browse the catalog and press ♡ on stickers you are interested in.'}</p></div>`;
+    return;
+  }
+
+  // Group by series
+  const bySeries = {};
+  items.forEach(f => {
+    if (!bySeries[f.seriesId]) bySeries[f.seriesId] = [];
+    bySeries[f.seriesId].push(f);
+  });
+
+  const seriesSorted = series.filter(s => bySeries[s.id]).sort((a,b) => (a.order??9999)-(b.order??9999));
+
+  el.innerHTML = seriesSorted.map(s => {
+    const figs = bySeries[s.id].sort((a,b) => (a.number||0)-(b.number||0));
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.75rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
+        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name}</span>
+        <span class="card-badge">${figs.length}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
+        ${figs.map(f => `<span style="background:rgba(255,100,100,0.08);border:1px solid rgba(255,100,100,0.25);color:var(--text);font-size:0.72rem;padding:2px 8px;border-radius:10px;display:inline-flex;align-items:center;gap:4px;">
+          ${f.number ? '#'+f.number+' ' : ''}${f.name}
+          <button onclick="toggleWishlist('${f.id}')" style="background:none;border:none;color:#ff6464;cursor:pointer;padding:0;font-size:0.9rem;line-height:1;" title="${currentLang === 'it' ? 'Rimuovi' : 'Remove'}">×</button>
+        </span>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function submitWishlist() {
+  if (!currentUser || !_wishlist.length) return;
+  const allFigs = getData('figurines', []);
+  const series = getData('series', []);
+  const items = _wishlist.map(id => allFigs.find(f => f.id === id)).filter(Boolean);
+
+  // Build message
+  const bySeries = {};
+  items.forEach(f => {
+    const s = series.find(x => x.id === f.seriesId);
+    const sName = s?.name || f.seriesId;
+    if (!bySeries[sName]) bySeries[sName] = [];
+    bySeries[sName].push((f.number ? '#'+f.number+' ' : '') + f.name);
+  });
+  const listText = Object.entries(bySeries).map(([s, figs]) => s + ': ' + figs.join(', ')).join('\n');
+  const msg = (currentLang === 'it' ? 'Ciao! Ecco la mia lista dei desiderata:\n\n' : 'Hi! Here is my wishlist:\n\n') + listText;
+
+  // Save as contact message
+  const saved = await fsSave('contact_messages', {
+    name: currentUser.username,
+    email: currentUser.email || '',
+    subject: currentLang === 'it' ? '🎁 Lista desiderati' : '🎁 Wishlist',
+    message: msg,
+    date: new Date().toISOString(),
+    read: false,
+    type: 'wishlist',
+    userId: currentUser.id
+  });
+  if (saved) {
+    _cache.contact_messages = _cache.contact_messages || [];
+    _cache.contact_messages.unshift(saved);
+    updateMsgBadge();
+    toast(currentLang === 'it' ? '✅ Lista desiderati inviata allo staff!' : '✅ Wishlist sent to staff!', 'success');
+
+    // Ask if user wants to clear
+    if (confirm(currentLang === 'it' ? 'Vuoi svuotare la tua wishlist?' : 'Do you want to clear your wishlist?')) {
+      _wishlist = [];
+      await saveWishlist();
+      renderWishlist();
+    }
+  }
+}
+
 // Wantlist display mode per group: 'both' | 'numbers' | 'names'
 const _wantlistCollapsed = {}; // seriesId -> bool
 
@@ -3577,6 +3705,7 @@ if (_langBtn) {
   const _flags = { en: 'gb', it: 'it' };
   _langBtn.src = 'https://flagcdn.com/w40/' + (_flags[currentLang] || 'gb') + '.png';
 }
+if (currentUser?._impersonated) { _realAdmin = null; currentUser._impersonated = false; } // safety reset on load
 const jsVerEl = document.getElementById('nav-js-version');
 if (jsVerEl) jsVerEl.textContent = JS_VERSION;
 const cssVerEl = document.getElementById('nav-css-version');
