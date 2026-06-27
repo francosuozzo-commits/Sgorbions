@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.114 — Data import: a capo dopo "ISTRUZIONI:".
+//          Form serie: desc sotto nome, flag su 2 colonne.
+// v5.113 — Serie: campo "N. iniziale"; paginazione mostra range reale.
+// v5.112 — Data import: titolo e istruzioni aggiornate.
+// v5.111 — Paginazione figurine: "oggetti" → "figurine", aggiunto range X..Y.
 // v5.110 — Pulsanti foto stessa larghezza; fix event delegation livelli classifica.
 // v5.109 — Classifica: admin può aggiungere, modificare ed eliminare livelli.
 // v5.108 — Admin "Data import": fix sezione vuota, tab rinominato.
@@ -265,7 +270,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.110';
+const JS_VERSION = 'v5.114';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -529,7 +534,7 @@ const i18n = {
 'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','admin.foto':'📥 Data import','catalog.searchglobal':'Search in catalog...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First number','form.series.firstNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','catalog.searchglobal':'Search in catalog...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -648,7 +653,7 @@ const i18n = {
     'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine hai e traccia la percentuale di completamento per ogni serie.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','admin.foto':'📥 Data import','catalog.searchglobal':'Cerca nel catalogo...',
+    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. iniziale','form.series.firstNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','catalog.searchglobal':'Cerca nel catalogo...',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -1143,18 +1148,16 @@ function openAddSeriesModal(seriesId) {
       document.getElementById('series-name-input').value = s.name;
       document.getElementById('series-year-input').value = s.year;
       document.getElementById('series-count-input').value = s.count;
+      document.getElementById('series-first-number-input').value = s.firstNumber || '';
       document.getElementById('series-desc-input').value = s.desc;
 
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
     }
   } else {
-    ['series-name-input','series-year-input','series-count-input','series-desc-input'].forEach(id => document.getElementById(id).value = '');
+    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-desc-input'].forEach(id => document.getElementById(id).value = '');
   }
   // Show admin-only series fields
-  ['series-has-sizes-input','series-has-subseries-input','series-has-variations-input'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.closest('.form-group') ? el.closest('.form-group').style.display = currentUser?.isAdmin ? '' : 'none' : el.style.display = currentUser?.isAdmin ? '' : 'none';
-  });
+  // Flag visibili solo per admin (ora dentro label in griglia 2 colonne)
   const hasSizesGroup = document.getElementById('series-has-sizes-input')?.closest('.form-group');
   if (hasSizesGroup) hasSizesGroup.style.display = currentUser?.isAdmin ? '' : 'none';
   const hasSubseriesGroup = document.getElementById('series-has-subseries-group');
@@ -1181,6 +1184,7 @@ async function saveSeries() {
   const hasSubseries = document.getElementById('series-has-subseries-input').checked;
   const hasVariations = document.getElementById('series-has-variations-input')?.checked || false;
   const count = document.getElementById('series-count-input').value;
+  const firstNumber = parseInt(document.getElementById('series-first-number-input').value) || null;
   const desc = document.getElementById('series-desc-input').value.trim();
   const descIt = desc; // same description for both languages
   if (!name || !year) { toast((currentLang === 'it' ? 'Nome e anno sono obbligatori' : 'Name and year are required'), 'error'); return; }
@@ -1198,12 +1202,12 @@ async function saveSeries() {
   if (editId) {
     const idx = series.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      series[idx] = { ...series[idx], name, year: +year, count: +count, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations };
+      series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations };
       await fsSave('series', series[idx]);
       _cache.series = series;
     }
   } else {
-    const newS = { name, year: +year, count: +count||0, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, created: new Date().toISOString() };
+    const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, created: new Date().toISOString() };
     const saved = await fsSave('series', newS);
     _cache.series.push(saved);
   }
@@ -1648,9 +1652,22 @@ function renderItems() {
   const totalPagesTop = Math.ceil(allItems.length / ITEMS_PER_PAGE);
   function paginationHTML(cur, tot, total) {
     if (tot <= 1) return '';
+    const _ser = getData('series', []).find(s => s.id === currentSeriesId);
+    const firstNum = _ser?.firstNumber;
+    let rangeStr = '';
+    if (firstNum != null) {
+      const from = firstNum + (cur - 1) * ITEMS_PER_PAGE;
+      const to = Math.min(firstNum + cur * ITEMS_PER_PAGE - 1, firstNum + total - 1);
+      rangeStr = currentLang === 'it'
+        ? ` &nbsp;|&nbsp; figurine ${from}..${to}`
+        : ` &nbsp;|&nbsp; stickers ${from}..${to}`;
+    }
+    const label = currentLang === 'it'
+      ? `Pagina ${cur} di ${tot}${rangeStr} &nbsp;|&nbsp; ${total} figurine`
+      : `Page ${cur} of ${tot}${rangeStr} &nbsp;|&nbsp; ${total} total`;
     return `<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
       <button onclick="changeItemPage(${cur - 1})" ${cur === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ ${currentLang === 'it' ? 'Precedente' : 'Previous'}</button>
-      <span style="font-family:var(--font-ui);color:var(--muted);font-size:0.9rem;">${currentLang === 'it' ? 'Pagina' : 'Page'} ${cur} ${currentLang === 'it' ? 'di' : 'of'} ${tot} &nbsp;|&nbsp; ${total} ${currentLang === 'it' ? 'oggetti' : 'items'}</span>
+      <span style="font-family:var(--font-ui);color:var(--muted);font-size:0.9rem;">${label}</span>
       <button onclick="changeItemPage(${cur + 1})" ${cur === tot ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Successiva' : 'Next'} ▶</button>
     </div>`;
   }
@@ -3394,11 +3411,11 @@ function renderAdminFoto() {
 
   el.innerHTML = `
     <div style="max-width:680px;">
-      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📥 ${currentLang==='it'?'Data import — Caricamento foto':'Data import — Bulk photo upload'}</h3>
+      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📥 ${currentLang==='it'?'Data import — Caricamento foto massivo':'Data import — Bulk photo upload'}</h3>
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'Seleziona una serie, carica le foto (nome file = numero figurina, es. <code>1.jpg</code>). Lo script rimuove lo sfondo con AI e aggiorna Firebase automaticamente.'
-          : 'Select a series, upload photos (filename = sticker number, e.g. <code>1.jpg</code>). The script removes the background with AI and updates Firebase automatically.'}
+          ? 'ISTRUZIONI:<br>Seleziona la serie, seleziona le foto da caricare (nome file = numero figurina, es. <code>1.jpg</code>).<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
+          : 'INSTRUCTIONS:<br>Select a series, select the photos to upload (filename = sticker number, e.g. <code>1.jpg</code>).<br>The script removes the background with AI and updates the database (Firebase).'}
       </p>
 
       <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
