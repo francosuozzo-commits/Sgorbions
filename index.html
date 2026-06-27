@@ -26,7 +26,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.114</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.117</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -442,11 +442,39 @@
 
           <!-- FIREBASE -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
-            <h4 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🔥 Firebase Firestore</h4>
-            <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;" data-i18n="admin.firebase.plan">Piano gratuito (Spark): 1 GB storage, 50.000 letture/giorno, 20.000 scritture/giorno.</p>
+            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🔥 Firebase Firestore</h4>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:0.75rem;">
+              <div style="background:var(--card);border-radius:8px;padding:0.6rem 0.75rem;">
+                <div style="font-size:0.72rem;color:var(--muted);margin-bottom:2px;">Piano</div>
+                <div style="font-size:0.88rem;font-weight:600;">Spark (gratuito)</div>
+              </div>
+              <div style="background:var(--card);border-radius:8px;padding:0.6rem 0.75rem;">
+                <div style="font-size:0.72rem;color:var(--muted);margin-bottom:2px;">Storage</div>
+                <div style="font-size:0.88rem;font-weight:600;">1 GB</div>
+              </div>
+              <div style="background:var(--card);border-radius:8px;padding:0.6rem 0.75rem;">
+                <div style="font-size:0.72rem;color:var(--muted);margin-bottom:2px;">Letture / giorno</div>
+                <div style="font-size:0.88rem;font-weight:600;">50.000</div>
+              </div>
+              <div style="background:var(--card);border-radius:8px;padding:0.6rem 0.75rem;">
+                <div style="font-size:0.72rem;color:var(--muted);margin-bottom:2px;">Scritture / giorno</div>
+                <div style="font-size:0.88rem;font-weight:600;">20.000</div>
+              </div>
+              <div style="background:var(--card);border-radius:8px;padding:0.6rem 0.75rem;">
+                <div style="font-size:0.72rem;color:var(--muted);margin-bottom:2px;">Eliminazioni / giorno</div>
+                <div style="font-size:0.88rem;font-weight:600;">20.000</div>
+              </div>
+              <div style="background:var(--card);border-radius:8px;padding:0.6rem 0.75rem;">
+                <div style="font-size:0.72rem;color:var(--muted);margin-bottom:2px;">Reset limiti</div>
+                <div style="font-size:0.88rem;font-weight:600;">Ogni giorno a mezzanotte (PT)</div>
+              </div>
+            </div>
+            <p style="font-size:0.78rem;color:rgba(255,200,50,0.8);background:rgba(255,200,50,0.08);border:1px solid rgba(255,200,50,0.2);border-radius:8px;padding:0.4rem 0.75rem;margin-bottom:0.75rem;">
+              ⚠️ Se superi i limiti giornalieri, il sito smette di funzionare fino al giorno successivo. Il caricamento massivo di foto consuma molte scritture.
+            </p>
             <div id="admin-firebase-stats">
               <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
-                <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:700;font-family:var(--font-ui);" id="firebase-docs-count">—</div><div style="font-size:0.88rem;color:var(--muted);" data-i18n="admin.firebase.docs">documenti totali</div></div>
+                <div style="text-align:center;"><div style="font-size:1.5rem;font-weight:700;font-family:var(--font-ui);" id="firebase-docs-count">—</div><div style="font-size:0.88rem;color:var(--muted);">documenti totali nel db</div></div>
               </div>
             </div>
           </div>
@@ -692,7 +720,11 @@
       </label>
       <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
         <input type="checkbox" id="series-has-variations-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-        <span data-i18n="form.series.hasVariations">Ha variazioni</span>
+        <span data-i18n="form.series.hasVariations">Ha variazioni ufficiali</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+        <input type="checkbox" id="series-has-unofficial-variations-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+        <span data-i18n="form.series.hasUnofficialVariations">Ha variazioni non ufficiali</span>
       </label>
     </div>
 
