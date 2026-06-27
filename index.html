@@ -26,7 +26,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.120</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.122</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -446,52 +446,48 @@
             <p style="font-size:0.78rem;color:rgba(255,200,50,0.8);background:rgba(255,200,50,0.08);border:1px solid rgba(255,200,50,0.2);border-radius:8px;padding:0.4rem 0.75rem;margin-bottom:0.75rem;">
               ⚠️ Se superi i limiti giornalieri il sito smette di funzionare fino al giorno successivo. Il caricamento massivo di foto consuma molte letture.
             </p>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 1rem;margin-bottom:0.75rem;">
-              <!-- Intestazioni colonne -->
-              <div style="font-size:0.72rem;font-weight:700;color:var(--accent);padding:0.3rem 0.75rem;border-bottom:1px solid var(--border);margin-bottom:0.25rem;">Limite piano (Spark)</div>
-              <div style="font-size:0.72rem;font-weight:700;color:var(--accent);padding:0.3rem 0.75rem;border-bottom:1px solid var(--border);margin-bottom:0.25rem;">Misurato oggi *</div>
-              <!-- Riga: Piano -->
-              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;margin-bottom:0.4rem;">
-                <div style="font-size:0.7rem;color:var(--muted);">Piano</div>
-                <div style="font-size:0.85rem;font-weight:600;">Spark (gratuito)</div>
-              </div>
-              <!-- Riga: Letture -->
-              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;margin-bottom:0.4rem;">
+            <p style="font-size:0.82rem;margin-bottom:0.75rem;">Piano: <strong>Spark (gratuito)</strong> &nbsp;·&nbsp; Reset limiti: <strong>mezzanotte PT (9:00 IT)</strong></p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 1rem;margin-bottom:0.75rem;">
+              <!-- Intestazioni -->
+              <div style="font-size:0.72rem;font-weight:700;color:var(--accent);padding:0.2rem 0.5rem;border-bottom:1px solid var(--border);">Limite piano (Spark)</div>
+              <div style="font-size:0.72rem;font-weight:700;color:var(--accent);padding:0.2rem 0.5rem;border-bottom:1px solid var(--border);">Misurato oggi *</div>
+              <!-- Letture -->
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
                 <div style="font-size:0.7rem;color:var(--muted);">Letture / giorno</div>
                 <div style="font-size:0.85rem;font-weight:600;">50.000</div>
               </div>
-              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;margin-bottom:0.4rem;">
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
                 <div style="font-size:0.7rem;color:var(--muted);">Letture oggi (fsGetAll)</div>
                 <div style="font-size:0.85rem;font-weight:600;" id="firebase-reads-count">—</div>
               </div>
-              <!-- Riga: Scritture -->
-              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;margin-bottom:0.4rem;">
+              <!-- Scritture -->
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
                 <div style="font-size:0.7rem;color:var(--muted);">Scritture / giorno</div>
                 <div style="font-size:0.85rem;font-weight:600;">20.000</div>
               </div>
-              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;margin-bottom:0.4rem;">
-                <div style="font-size:0.7rem;color:var(--muted);">—</div>
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
+                <div style="font-size:0.7rem;color:var(--muted);">Scritture oggi</div>
                 <div style="font-size:0.85rem;color:var(--muted);">non misurate</div>
               </div>
-              <!-- Riga: Eliminazioni -->
-              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;margin-bottom:0.4rem;">
+              <!-- Eliminazioni -->
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
                 <div style="font-size:0.7rem;color:var(--muted);">Eliminazioni / giorno</div>
                 <div style="font-size:0.85rem;font-weight:600;">20.000</div>
               </div>
-              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;margin-bottom:0.4rem;">
-                <div style="font-size:0.7rem;color:var(--muted);">—</div>
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
+                <div style="font-size:0.7rem;color:var(--muted);">Eliminazioni oggi</div>
                 <div style="font-size:0.85rem;color:var(--muted);">non misurate</div>
               </div>
-              <!-- Riga: Storage -->
+              <!-- Storage -->
               <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
-                <div style="font-size:0.7rem;color:var(--muted);">Storage</div>
+                <div style="font-size:0.7rem;color:var(--muted);">Storage totale</div>
                 <div style="font-size:0.85rem;font-weight:600;">1 GB</div>
               </div>
               <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
                 <div style="font-size:0.7rem;color:var(--muted);">Storage usato</div>
-                <div style="font-size:0.82rem;color:var(--muted);">non misurabile via API —<br><a href="https://console.firebase.google.com/project/sgorbions/usage" target="_blank" style="color:var(--accent);">vedi Console Firebase</a></div>
+                <div style="font-size:0.78rem;color:var(--muted);">non misurabile via API —<br><a href="https://console.firebase.google.com/project/sgorbions/usage" target="_blank" style="color:var(--accent);">Console Firebase</a></div>
               </div>
-              <!-- Riga: Documenti -->
+              <!-- Documenti -->
               <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
                 <div style="font-size:0.7rem;color:var(--muted);">N. documenti</div>
                 <div style="font-size:0.85rem;font-weight:600;">Nessun limite</div>
@@ -500,15 +496,6 @@
                 <div style="font-size:0.7rem;color:var(--muted);">Documenti nel db</div>
                 <div style="font-size:0.85rem;font-weight:600;" id="firebase-docs-count">—</div>
               </div>
-              <!-- Riga: Reset -->
-              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
-                <div style="font-size:0.7rem;color:var(--muted);">Reset limiti giornalieri</div>
-                <div style="font-size:0.85rem;font-weight:600;">Mezzanotte PT (9:00 IT)</div>
-              </div>
-              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
-                <div style="font-size:0.7rem;color:var(--muted);">—</div>
-                <div style="font-size:0.82rem;color:var(--muted);">—</div>
-              </div>
             </div>
             <p style="font-size:0.72rem;color:var(--muted);">* Le letture sono misurate solo per le operazioni <code>fsGetAll</code> eseguite da questo browser. Si azzerano a mezzanotte PT.</p>
             <div id="firebase-reads-history" style="margin-top:1rem;"></div>
@@ -516,9 +503,42 @@
 
           <!-- CLOUDINARY -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
-            <h4 style="font-family:var(--font-ui);margin-bottom:0.5rem;">☁️ Cloudinary</h4>
-            <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;" data-i18n="admin.cloudinary.plan">Piano gratuito: 25 crediti/mese (storage + trasformazioni + banda).</p>
-            <p style="font-size:0.88rem;color:var(--muted);" data-i18n-html="admin.cloudinary.link">Per il dettaglio aggiornato vai su <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.</p>
+            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">☁️ Cloudinary (foto)</h4>
+            <p style="font-size:0.82rem;margin-bottom:0.75rem;">Piano: <strong>Free</strong> &nbsp;·&nbsp; Reset: <strong>1° del mese</strong></p>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 1rem;margin-bottom:0.75rem;">
+              <div style="font-size:0.72rem;font-weight:700;color:var(--accent);padding:0.2rem 0.5rem;border-bottom:1px solid var(--border);">Limite piano (Free)</div>
+              <div style="font-size:0.72rem;font-weight:700;color:var(--accent);padding:0.2rem 0.5rem;border-bottom:1px solid var(--border);">Misurato questo mese *</div>
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
+                <div style="font-size:0.7rem;color:var(--muted);">Crediti / mese</div>
+                <div style="font-size:0.85rem;font-weight:600;">25</div>
+              </div>
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
+                <div style="font-size:0.7rem;color:var(--muted);">Crediti usati (stimati)</div>
+                <div style="font-size:0.85rem;font-weight:600;" id="cloudinary-credits-count">—</div>
+              </div>
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
+                <div style="font-size:0.7rem;color:var(--muted);">Upload / mese</div>
+                <div style="font-size:0.85rem;font-weight:600;">Nessun limite</div>
+              </div>
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
+                <div style="font-size:0.7rem;color:var(--muted);">Upload conteggiati</div>
+                <div style="font-size:0.85rem;font-weight:600;" id="cloudinary-uploads-count">—</div>
+              </div>
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
+                <div style="font-size:0.7rem;color:var(--muted);">Storage</div>
+                <div style="font-size:0.85rem;font-weight:600;">25 GB</div>
+              </div>
+              <div style="background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;">
+                <div style="font-size:0.7rem;color:var(--muted);">Storage usato</div>
+                <div style="font-size:0.78rem;color:var(--muted);">non misurabile —<br><a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">Console Cloudinary</a></div>
+              </div>
+            </div>
+            <p style="font-size:0.72rem;color:var(--muted);margin-bottom:0.75rem;">* Gli upload sono conteggiati solo da questo browser. 1 upload ≈ 0.01 crediti (stima approssimativa — il credito reale dipende da dimensione e trasformazioni).</p>
+            <div style="background:rgba(68,136,255,0.07);border:1px solid rgba(68,136,255,0.2);border-radius:8px;padding:0.75rem 1rem;font-size:0.78rem;color:var(--muted);line-height:1.6;">
+              <strong style="color:#4488ff;display:block;margin-bottom:0.3rem;">ℹ️ Cosa stiamo misurando e cosa potremmo fare</strong>
+              <strong>Ora:</strong> contiamo gli upload eseguiti da questo browser tramite <code>uploadToCloudinary()</code>, stimando i crediti consumati (≈0.01 per upload). Non misuriamo le trasformazioni automatiche (resize, format conversion) né la banda usata dalle visualizzazioni.<br><br>
+              <strong>Cosa potremmo fare:</strong> Cloudinary ha API ufficiali per leggere l'utilizzo reale (crediti, storage, banda). Il problema è che richiedono l'<em>API Secret</em>, una credenziale che non può stare nel codice frontend per ragioni di sicurezza. Per usarle servirebbe un piccolo backend (es. una Cloud Function di Firebase) che fa la chiamata in modo sicuro e restituisce solo i dati all'app. Più preciso, ma più complesso da implementare.
+            </div>
           </div>
         </div>
 
