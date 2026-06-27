@@ -1,6 +1,41 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.90 — Editing figurina: Sottoserie condizionale a hasSubseries;
+//          foto preview in editing allargata a 200px.
+// v5.89 — Fix editing figurina: reset contenuto modal all'apertura
+//          per evitare valori residui da figurine precedenti.
+// v5.88 — Editing figurina: ordine campi corretto (Sottoserie, N.,
+//          Nome, Punteggio, Taglia, Variazioni, Descrizione);
+//          Variazioni sempre visibile.
+// v5.87 — Modifica figurina inline nella modal di dettaglio;
+//          eliminata la form di editing separata.
+// v5.86 — Modal modifica figurina: fix griglia con Sottoserie visibile
+//          (selettore cambiato da querySelector a getElementById).
+// v5.85 — Modal modifica figurina: griglia dinamica — senza Sottoserie
+//          usa 3 colonne (80px 1fr 60px), con Sottoserie 4 colonne.
+// v5.84 — Modal modifica figurina: Numero 80px, Sottoserie max 120px,
+//          Nome 1fr (prende tutto lo spazio), Punteggio 60px.
+// v5.83 — Modal modifica figurina: Punteggio a 80px (=Numero),
+//          Nome a 2.5fr (2.5× Sottoserie).
+// v5.82 — Admin wishlist: fix pulsante elimina (sostituito onclick
+//          inline con event delegation su data-msg-id).
+// v5.81 — Modal figurina: ripristinata griglia v5.79 (80px 1fr 2fr 70px).
+// v5.80 — Modal figurina: Punteggio a 80px (=Numero), Nome a 2.5fr.
+// v5.79 — Modal figurina: Numero ridotto a 80px, Punteggio a 70px,
+//          tutti gli input allineati in basso sulla stessa riga.
+// v5.78 — Admin: pulsante elimina su ogni lista desiderati ricevuta.
+// v5.77 — Aggiunte tutte le traduzioni EN mancanti: homepage,
+//          catalogo, blog, profilo, form, modal, footer, owned.
+// v5.76 — Mancoliste: aggiunte tutte le traduzioni EN mancanti.
+// v5.75 — Newsletter: contenuto centrato; storico email più compatto.
+// v5.74 — Mancoliste: "fig" → "figurine" nelle serie complete.
+// v5.73 — Homepage NOTA: rimossa riga vuota dopo "NOTA:".
+// v5.72 — Homepage: ridotta interlinea tra le due frasi hero.
+// v5.71 — Navbar: versione e "Online dal" sotto al logo;
+//          link di navigazione subito a destra del logo.
+// v5.70 — Navbar: link Home→Contatti spostati a sinistra,
+//          subito dopo il logo.
 // v5.69 — Commento lista desiderati: textarea multiriga al posto
 //          del prompt nativo del browser.
 // v5.68 — Box figurine navbar: stesso font su entrambe le righe.
@@ -151,7 +186,7 @@ async function renderEmailLog() {
     if (!logs.length) { el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Nessuna e-mail registrata.' : 'No emails recorded.') + '</p>'; return; }
     const display = logs.slice(0, 50);
     const note = logs.length > 50 ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrate le ultime 50 di ' + logs.length : 'Showing last 50 of ' + logs.length}</p>` : '';
-    el.innerHTML = note + '<table class="data-table"><thead><tr><th>' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th><th>' + (currentLang === 'it' ? 'Destinatario' : 'Recipient') + '</th><th>' + (currentLang === 'it' ? 'Soggetto' : 'Subject') + '</th></tr></thead><tbody>' +
+    el.innerHTML = note + '<table class="data-table compact"><thead><tr><th>' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th><th>' + (currentLang === 'it' ? 'Destinatario' : 'Recipient') + '</th><th>' + (currentLang === 'it' ? 'Soggetto' : 'Subject') + '</th></tr></thead><tbody>' +
     display.map(e => '<tr><td style="white-space:nowrap;font-size:0.85rem;">' + new Date(e.date).toLocaleDateString('it-IT') + ' ' + new Date(e.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td><td style="font-size:0.85rem;">' + e.to + '</td><td style="font-size:0.85rem;">' + e.subject + '</td></tr>').join('') +
     '</tbody></table>';
   } catch(err) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Errore caricamento log.' : 'Error loading log.') + '</p>'; }
@@ -203,7 +238,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.69';
+const JS_VERSION = 'v5.90';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -467,7 +502,71 @@ const i18n = {
 'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','catalog.searchglobal':'Search in catalog...'
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','catalog.searchglobal':'Search in catalog...',
+'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
+'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
+'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
+'hero.challenge':'Challenge others','hero.challengeDesc':'Challenge other collectors to see who has the biggest collection. You can also choose to appear anonymously.',
+'hero.desc':'The ultimate unofficial database dedicated to the legendary Italian sticker series of the \'90s.',
+'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. It is not a sales site. The sole purpose of the site is to connect collectors from around the world, allowing them to search for items they do not own and find other collectors to trade with.<br><br>The information on this site represents the knowledge of the administrator and does not claim to be official information.',
+'hero.cta1':'Explore the Sgorbions catalog!','hero.cta2':'Start collecting Sgorbions',
+'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat3':'Collectors',
+'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
+'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
+'home.featured.btn':'View All Series →',
+'home.how.eyebrow':'How It Works','home.how.title':'Your Collection, Organised',
+'how.1.title':'Browse the Catalog','how.1.desc':'Explore all Sgorbions series with photos and full descriptions.',
+'how.2.title':'Mark Your Stickers','how.2.desc':'Record which stickers you own and track your completion percentage for each series.',
+'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
+'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
+'catalog.title':'The Catalog','catalog.sub':'All Sgorbions series ever published','catalog.addseries':'+ Add Series',
+'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
+'back':'Back to Catalog','detail.owned':'I own this','detail.addfig':'+ Add Sticker',
+'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation!',
+'contact.eyebrow':'Get in Touch','contact.sub':'Found a rare piece? Want to contribute? Write to us!',
+'contact.info.title':'Let\'s Talk Sgorbions','contact.email':'Email','contact.location':'Location',
+'contact.location.val':'Italy 🇮🇹','contact.resp':'Response time','contact.resp.val':'Usually within 24–48 hours',
+'form.name.ph':'Sgorbions Fan','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio!',
+'form.message':'Message','form.message.ph':'Tell me everything...',
+'form.send':'Send message 🚀','form.password':'Password',
+'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Stickers',
+'form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.cover':'Cover Image',
+'form.click':'Click to upload','form.drag':'or drag and drop',
+'form.fig.image':'Image',
+'form.post.type':'Post Type','form.post.title':'Title','form.post.body':'Content',
+'form.post.question':'❓ Question','form.post.news':'📢 News / Discovery',
+'form.reply.placeholder':'Write a reply...','comment.admin':'Administrator','comment.login':'Log in to reply',
+'auth.title':'Welcome back','auth.login':'Login','auth.register':'Sign up',
+'auth.login.btn':'Enter','auth.reg.btn':'Confirm registration',
+'modal.bulkscore.title':'⭐ Series Score','modal.bulkscore.desc':'Assign the same score to all items in the current section. You can edit individual scores later.',
+'modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to all',
+'modal.figdetail.title':'Sticker detail','modal.segnala.send':'Send report',
+'modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series',
+'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
+'modal.post.title':'New Post','modal.post.save':'Publish Post',
+'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
+'form.series.hasVariations':'Has variations','form.series.descPlaceholder':'Describe this series...',
+'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
+'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
+'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
+'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
+'form.fig.descPlaceholder':'Describe this sticker...',
+'profile.title':'My Profile','profile.owned':'Stickers Owned','profile.series':'Series Tracked',
+'profile.collection':'My Collection','profile.anni':'Years collecting Sgorbions',
+'profile.sliderHint':'Try moving the slider! 👆',
+'pwd.current':'Current password',
+'pwd.resetDesc':'Enter your email address. We will send you a temporary password.',
+'admin.series.title':'Manage Series','admin.figurines.title':'Manage Stickers',
+'admin.blog.title':'Manage Q&A / Blog','admin.contacts.title':'Received Messages',
+'admin.users.title':'Registered Users',
+'footer.desc':'The unofficial fan database dedicated to the legendary Italian sticker collection of the \'90s. Made with 💚 by collectors, for collectors.',
+'footer.nav':'Navigation','footer.account':'Account',
+'footer.copy':'© 2026 figurinesgorbions.it — Unofficial fan site.',
+'owned.toggle':'I have it','owned.yes':'✓ I have it',
+'contact.q1':'Do you want more information about Sgorbions?','contact.q2':'Do you want to report an error?',
+'contact.q3':'Or do you just want to compliment the administrator?',
+'contact.cta':'For any of these things, send us a message!',
+'wantlist.desc':'This page shows your complete and incomplete series.<br><br>You can export to Excel:<br>• the list of your missing stickers<br>• the list of stickers you own<br>• the list of stickers from your complete series','wantlist.pageTitle':'Missing list','wantlist.missingTitle':'EXPORT OF YOUR INCOMPLETE SERIES (MISSING LIST)','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'Select the series for which to export the list of stickers you are missing. Then press "Export missing stickers".','wantlist.hintExportIncomplete':'Select the series for which to export the list of stickers you own. Then press "Export stickers I own (incomplete series)".','wantlist.exportMissing':'Export missing stickers','wantlist.exportIncomplete':'Export stickers I own (incomplete series)','wantlist.export':'Export stickers from my complete series'
   },
   it: {
 'nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog / D&R','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.wishlist':'Lista desiderati',
@@ -513,7 +612,7 @@ const i18n = {
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Le mie / Totale','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Sfida gli altri collezionisti a chi ha la collezione più grande. Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Non è un sito di vendita. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute in questo sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora il catalogo Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
+    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Non è un sito di vendita. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute in questo sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora il catalogo Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat3':'Collezionisti',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
@@ -1397,7 +1496,15 @@ function openAddItemModal(itemId) {
   const sizeGroup = document.getElementById('fig-size-group');
   if (sizeGroup) sizeGroup.style.display = _ser?.hasSizes ? '' : 'none';
   const subseriesGroup = document.getElementById('fig-subseries-group');
-  if (subseriesGroup) subseriesGroup.style.display = _ser?.hasSubseries ? '' : 'none';
+  const hasSubseries = _ser?.hasSubseries || false;
+  if (subseriesGroup) subseriesGroup.style.display = hasSubseries ? '' : 'none';
+  // Aggiorna le colonne della griglia in base alla visibilità della Sottoserie
+  const figGrid = document.getElementById('fig-modal-grid');
+  if (figGrid) {
+    figGrid.style.gridTemplateColumns = hasSubseries
+      ? '80px minmax(0,120px) 1fr 60px'
+      : '80px 1fr 60px';
+  }
   const backGroup = document.getElementById('fig-back-group');
   if (backGroup) backGroup.style.display = _ser?.hasVariations ? '' : 'none';
   document.getElementById('add-fig-modal').classList.remove('hidden');
@@ -2503,6 +2610,7 @@ function updateBellBadge() {
 }
 
 function openFigDetail(figId) {
+  _figEditImgData = null; // reset immagine editing precedente
   const allFigs = getData('figurines', []);
   const f = allFigs.find(x => x.id === figId);
   if (!f) return;
@@ -2513,6 +2621,10 @@ function openFigDetail(figId) {
   // Title
   const titleEl = document.getElementById('fig-detail-title');
   if (titleEl) titleEl.textContent = f.name;
+
+  // Reset contenuto modal (evita residui da aperture precedenti)
+  document.getElementById('fig-detail-content').innerHTML = '';
+  document.getElementById('fig-detail-photo').innerHTML = '';
 
   // Build content
   const rows = [];
@@ -2572,7 +2684,7 @@ function openFigDetail(figId) {
   // Bottom buttons
   if (isAdmin) {
     rows.push(`<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
-      <button onclick="editItemFromDetail('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;">✏️ ${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>
+      <button onclick="switchToEditMode('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;">✏️ ${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>
       <button onclick="deleteItemFromDetail('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid #ff6464;background:transparent;color:#ff6464;cursor:pointer;">🗑️ ${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button>
     </div>`);
   } else if (currentUser) {
@@ -2586,12 +2698,120 @@ function openFigDetail(figId) {
 }
 
 function editItemFromDetail(itemId) {
-  const item = getData('figurines', []).find(x => x.id === itemId);
-  if (!item) return;
-  currentSection = item.section;
-  currentSeriesId = item.seriesId;
+  switchToEditMode(itemId);
+}
+
+function switchToEditMode(figId) {
+  const f = getData('figurines', []).find(x => x.id === figId);
+  if (!f) return;
+  const figSeries = getData('series', []).find(s => s.id === f.seriesId);
+  const content = document.getElementById('fig-detail-content');
+  const photo = document.getElementById('fig-detail-photo');
+
+  // Aggiorna titolo modal
+  const titleEl = document.getElementById('fig-detail-title');
+  if (titleEl) titleEl.textContent = currentLang === 'it' ? 'Modifica figurina' : 'Edit sticker';
+
+  // Foto con pulsante cambio immagine
+  if (photo) {
+    photo.innerHTML = (f.img
+      ? '<img id="fig-edit-img-preview" src="' + cloudinaryUrl(f.img,'w_300,h_300,c_fit,q_auto,f_auto') + '" style="width:160px;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:4px;display:block;margin-bottom:0.5rem;">'
+      : '<div id="fig-edit-img-preview" style="width:160px;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">Nessuna foto</div>') +
+      '<label style="display:block;cursor:pointer;text-align:center;">' +
+      '<span style="font-size:0.75rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;">📷 ' + (currentLang==='it'?'Cambia foto':'Change photo') + '</span>' +
+      '<input type="file" id="fig-edit-img-file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event)">' +
+      '</label>';
+  }
+
+  // Build edit form
+  let html = '';
+
+  // Sottoserie (solo se la serie ha hasSubseries)
+  if (figSeries?.hasSubseries) {
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottoserie':'Subseries') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subseries" value="' + (f.subseries||'') + '" placeholder="es. OLO" style="padding:0.3rem 0.5rem;font-size:0.9rem;"></span></div>';
+  }
+
+  // Numero
+  html += '<div class="detail-row"><span class="detail-label">N.</span><span class="detail-value"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;"></span></div>';
+
+  // Nome
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + (f.name||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;"></span></div>';
+
+  // Punteggio
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Punteggio':'Score') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;"></span></div>';
+
+  // Taglia (solo se la serie ha taglie)
+  if (figSeries?.hasSizes) {
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-size" value="' + (f.size||'') + '" placeholder="S/M/L/XL" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;"></span></div>';
+  }
+
+  // Variazioni (sempre visibile, come nella vista dettaglio)
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazioni':'Variations') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-back" value="' + (f.backNumber||1) + '" min="1" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;"></span></div>';
+
+  // Descrizione (in fondo, campo più grande)
+  html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang==='it'?'Descrizione':'Description') + '</span><span class="detail-value"><textarea id="fe-desc" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;">' + (f.desc||'') + '</textarea></span></div>';
+
+  // Pulsanti
+  html += '<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">';
+  html += '<button onclick="closeModal(\'fig-detail-modal\')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">' + (currentLang==='it'?'Annulla':'Cancel') + '</button>';
+  html += '<button onclick="saveFigFromDetail(\"' + f.id + '\")" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:none;background:var(--accent);color:#0e0a1a;cursor:pointer;font-weight:600;">💾 ' + (currentLang==='it'?'Salva':'Save') + '</button>';
+  html += '</div>';
+
+  content.innerHTML = html;
+}
+
+let _figEditImgData = null;
+function handleFigEditImg(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    _figEditImgData = e.target.result;
+    const preview = document.getElementById('fig-edit-img-preview');
+    if (preview) { preview.src = _figEditImgData; preview.tagName === 'DIV' ? preview.style.backgroundImage = 'url('+_figEditImgData+')' : null; }
+  };
+  reader.readAsDataURL(file);
+}
+
+async function saveFigFromDetail(figId) {
+  const name = document.getElementById('fe-name')?.value.trim();
+  if (!name) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
+  const updates = {
+    id: figId,
+    name,
+    number: document.getElementById('fe-number')?.value ? +document.getElementById('fe-number').value : null,
+    subseries: document.getElementById('fe-subseries')?.value.trim() || '',
+    desc: document.getElementById('fe-desc')?.value.trim() || '',
+    score: +(document.getElementById('fe-score')?.value || 0),
+    size: document.getElementById('fe-size')?.value.trim() || '',
+    backNumber: +(document.getElementById('fe-back')?.value || 1),
+  };
+
+  // Gestione immagine
+  if (_figEditImgData) {
+    try {
+      const uploaded = await uploadToCloudinary(_figEditImgData);
+      if (uploaded) updates.img = uploaded;
+    } catch(e) { console.error('Upload img error', e); }
+  }
+  _figEditImgData = null;
+
+  // Mantieni i campi esistenti non modificati
+  const existing = getData('figurines', []).find(x => x.id === figId);
+  const merged = { ...existing, ...updates };
+  // Rimuovi campi null/vuoti solo se non erano popolati
+  if (!merged.number) delete merged.number;
+  if (!merged.subseries) delete merged.subseries;
+  if (!merged.size) delete merged.size;
+
+  await fsSave('figurines', merged);
+  if (_cache.figurines) {
+    const idx = _cache.figurines.findIndex(x => x.id === figId);
+    if (idx >= 0) _cache.figurines[idx] = merged;
+  }
+  toast(currentLang==='it'?'✅ Figurina salvata!':'✅ Sticker saved!','success');
   closeModal('fig-detail-modal');
-  openAddItemModal(itemId);
+  renderItems();
 }
 
 async function deleteItemFromDetail(itemId) {
@@ -3559,7 +3779,10 @@ function renderWishlistAdmin(el) {
     html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.75rem;">';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">';
     html += '<span style="font-weight:600;">👤 ' + (m.name || '—') + '</span>';
+    html += '<div style="display:flex;align-items:center;gap:0.5rem;">';
     html += '<span style="font-size:0.78rem;color:var(--muted);">📨 ' + fmt(m.date) + '</span>';
+    html += '<button class="wl-delete-btn" data-msg-id="' + m.id + '" style="font-size:0.75rem;padding:2px 8px;border-radius:6px;border:1px solid rgba(255,100,100,0.4);background:rgba(255,100,100,0.08);color:#ff6464;cursor:pointer;" title="' + (currentLang === 'it' ? 'Elimina' : 'Delete') + '">🗑️</button>';
+    html += '</div>';
     html += '</div>';
     if (m.email) {
       html += '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;">✉️ ' + m.email + '</div>';
@@ -3575,8 +3798,28 @@ function renderWishlistAdmin(el) {
   });
 
   el.innerHTML = html;
+
+  // Event delegation per i pulsanti elimina wishlist
+  el.querySelectorAll('.wl-delete-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      deleteWishlistMsg(btn.getAttribute('data-msg-id'));
+    });
+  });
 }
 
+
+async function deleteWishlistMsg(msgId) {
+  if (!confirm(currentLang === 'it' ? 'Eliminare questa lista desiderati?' : 'Delete this wishlist?')) return;
+  await fsDelete('contact_messages', msgId);
+  // Rimuovi dalla cache
+  if (_cache.contact_messages) {
+    _cache.contact_messages = _cache.contact_messages.filter(m => m.id !== msgId);
+  }
+  // Re-render
+  const el = document.getElementById('wishlist-content');
+  if (el) renderWishlistAdmin(el);
+  updateMsgBadge();
+}
 
 function renderWishlistHistory() {
   // Cerca o crea il contenitore storico
@@ -3736,7 +3979,7 @@ function renderWantlist() {
     const completeBoxes = completeSeries.map(s => {
       const incOwned = prefs[s.id]?.includeOwned !== false;
       return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
-        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'); return figs.length; })()}&nbsp;${currentLang==='it'?'fig':'stickers'})</span></span>
+        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
         <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#ff6464' : 'var(--border)'};background:${!incOwned ? 'rgba(255,100,100,0.15)' : 'var(--card2)'};color:${!incOwned ? '#ff6464' : 'var(--muted)'};cursor:pointer;">
           ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine che ho' : 'Exclude from owned stickers export'}
         </button>
@@ -3872,7 +4115,7 @@ function renderWantlist() {
     const completeBoxes = completeSeries.map(s => {
       const incOwned = prefs[s.id]?.includeOwned !== false;
       return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
-        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'); return figs.length; })()}&nbsp;${currentLang==='it'?'fig':'stickers'})</span></span>
+        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
         <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#ff6464' : 'var(--border)'};background:${!incOwned ? 'rgba(255,100,100,0.15)' : 'var(--card2)'};color:${!incOwned ? '#ff6464' : 'var(--muted)'};cursor:pointer;">
           ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine che ho' : 'Exclude from owned stickers export'}
         </button>
