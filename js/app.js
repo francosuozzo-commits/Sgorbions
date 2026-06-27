@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.120 — Risorse: nota storage non misurabile, riga N. documenti (nessun limite).
+// v5.119 — Storico letture 30 giorni nel pannello Risorse.
+// v5.118 — Contatore letture fsGetAll (reset mezzanotte PT).
+//          Sezione DATABASE: Firebase Firestore con layout 2 colonne.
 // v5.117 — Cache sessionStorage per ridurre letture Firebase: serie,
 //          figurine e livelli cachati 5 min; invalidati su modifica.
 // v5.116 — Risorse: blocco Firebase con limiti dettagliati e avviso.
@@ -275,7 +279,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.117';
+const JS_VERSION = 'v5.120';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -426,8 +430,66 @@ async function fsGetAll(collName) {
   try {
     const { collection, getDocs } = window._fb;
     const snap = await getDocs(collection(db, collName));
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Contatore letture giornaliero
+    _trackReads(docs.length);
+    return docs;
   } catch(e) { console.error('fsGetAll', e); return []; }
+}
+
+// ── Contatore letture Firebase ────────────────────────────────
+function _getReadCounter() {
+  try {
+    const raw = localStorage.getItem('sgorbions_reads');
+    if (!raw) return { count: 0, date: _ptDate() };
+    const data = JSON.parse(raw);
+    // Reset se il giorno PT è cambiato: salva nello storico prima
+    if (data.date !== _ptDate()) {
+      if (data.count > 0) _saveReadHistory(data.date, data.count);
+      return { count: 0, date: _ptDate() };
+    }
+    return data;
+  } catch(e) { return { count: 0, date: _ptDate() }; }
+}
+
+function _saveReadHistory(date, count) {
+  try {
+    const raw = localStorage.getItem('sgorbions_reads_history');
+    const history = raw ? JSON.parse(raw) : [];
+    // Evita duplicati per la stessa data
+    const idx = history.findIndex(r => r.date === date);
+    if (idx >= 0) { history[idx].count = count; }
+    else { history.unshift({ date, count }); }
+    // Mantieni solo 30 giorni
+    if (history.length > 30) history.splice(30);
+    localStorage.setItem('sgorbions_reads_history', JSON.stringify(history));
+  } catch(e) {}
+}
+
+function getReadHistory() {
+  try {
+    const raw = localStorage.getItem('sgorbions_reads_history');
+    return raw ? JSON.parse(raw) : [];
+  } catch(e) { return []; }
+}
+
+function _ptDate() {
+  // Data corrente in Pacific Time (UTC-7 o UTC-8)
+  const now = new Date();
+  const pt = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  return pt.getFullYear() + '-' + String(pt.getMonth()+1).padStart(2,'0') + '-' + String(pt.getDate()).padStart(2,'0');
+}
+
+function _trackReads(count) {
+  try {
+    const data = _getReadCounter();
+    data.count += count;
+    localStorage.setItem('sgorbions_reads', JSON.stringify(data));
+  } catch(e) {}
+}
+
+function getReadCount() {
+  return _getReadCounter().count;
 }
 
 function _invalidateSessionCache() {
@@ -2553,12 +2615,43 @@ async function renderAdminRisorse() {
     const collections = ['users', 'figurines', 'series', 'posts', 'segnalazioni', 'eventi'];
     let total = 0;
     for (const col of collections) {
-      const docs = await fsGetAll(col);
+      const docs = _cache[col] || [];
       total += docs.length;
     }
     const el = document.getElementById('firebase-docs-count');
     if (el) el.textContent = total.toLocaleString('it-IT');
   } catch(e) { console.error('Firebase stats error', e); }
+
+  // Letture fsGetAll misurate oggi
+  const readsEl = document.getElementById('firebase-reads-count');
+  if (readsEl) {
+    const reads = getReadCount();
+    const pct = Math.round(reads / 50000 * 100);
+    const color = pct >= 90 ? '#ff4444' : pct >= 60 ? '#ffb400' : 'var(--accent)';
+    readsEl.innerHTML = `<span style="color:${color};">${reads.toLocaleString('it-IT')}</span> <span style="font-size:0.72rem;color:var(--muted);">(${pct}% del limite)</span>`;
+  }
+
+  // Storico letture ultimi 30 giorni
+  const histEl = document.getElementById('firebase-reads-history');
+  if (histEl) {
+    const history = getReadHistory();
+    if (!history.length) {
+      histEl.innerHTML = '<p style="font-size:0.78rem;color:var(--muted);font-style:italic;">Nessuno storico ancora — si accumula giorno per giorno.</p>';
+    } else {
+      const fmtDate = d => {
+        const [y, m, day] = d.split('-');
+        return day + '/' + m + '/' + y;
+      };
+      histEl.innerHTML = '<div style="font-size:0.78rem;font-weight:600;color:var(--muted);margin-bottom:0.4rem;">📅 Storico letture (ultimi ' + history.length + ' giorni)</div>' +
+        '<table class="data-table compact"><thead><tr><th>Data (PT)</th><th>Letture fsGetAll</th><th>% limite</th></tr></thead><tbody>' +
+        history.map(r => {
+          const pct = Math.round(r.count / 50000 * 100);
+          const color = pct >= 90 ? '#ff4444' : pct >= 60 ? '#ffb400' : 'var(--accent)';
+          return '<tr><td>' + fmtDate(r.date) + '</td><td style="color:' + color + ';font-weight:600;">' + r.count.toLocaleString('it-IT') + '</td><td style="color:' + color + ';">' + pct + '%</td></tr>';
+        }).join('') +
+        '</tbody></table>';
+    }
+  }
 }
 
 // ============================================================
