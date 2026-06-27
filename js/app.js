@@ -1,6 +1,7 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.100 — CDN rimozione sfondo cambiato da jsdelivr a unpkg.
 // v5.99 — Editing figurina: bottone "Rimuovi sfondo" con AI locale
 //          (@imgly/background-removal, nessun limite, nessuna API key).
 // v5.98 — Admin: bottone "Senza foto" nella toolbar figurine.
@@ -249,7 +250,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.99';
+const JS_VERSION = 'v5.100';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
