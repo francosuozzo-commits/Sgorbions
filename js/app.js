@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.99 — Editing figurina: bottone "Rimuovi sfondo" con AI locale
+//          (@imgly/background-removal, nessun limite, nessuna API key).
+// v5.98 — Admin: bottone "Senza foto" nella toolbar figurine.
 // v5.97 — Editing figurina: fix anteprima foto nuova (crea img da div).
 // v5.96 — Editing figurina: usa classe detail-row standard per le linee.
 // v5.95 — Editing figurina: ripristinata linea separatrice tra i campi.
@@ -246,7 +249,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.97';
+const JS_VERSION = 'v5.99';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -695,6 +698,7 @@ function setLang(lang, byUser = false) {
 // ============================================================
 let currentUser = LOCAL.get('currentUser') || null;
 let currentSeriesId = null;
+let _noPhotoFilter = false; // filtro figurine senza foto
 let editingSeriesImg = null;
 let editingFigImg = null;
 
@@ -1406,6 +1410,9 @@ function updateSectionCounts() {
 }
 
 function openSeriesSection(section) {
+  _noPhotoFilter = false;
+  const noPhotoBtn = document.getElementById('no-photo-filter-btn');
+  if (noPhotoBtn) { noPhotoBtn.style.background=''; noPhotoBtn.style.borderColor=''; noPhotoBtn.style.color=''; noPhotoBtn.textContent='📷 Senza foto'; }
   currentSection = section;
   const si = document.getElementById('items-search'); if (si) { si.value = ''; si.placeholder = currentLang === 'it' ? 'Cerca figurine...' : 'Search stickers...'; }
   currentItemPage = 1;
@@ -1567,6 +1574,18 @@ async function loadAllOwnedFromFirebase() {
   } catch(e) { console.error('loadAllOwned error', e); }
 }
 
+function toggleNoPhotoFilter() {
+  _noPhotoFilter = !_noPhotoFilter;
+  const btn = document.getElementById('no-photo-filter-btn');
+  if (btn) {
+    btn.style.background = _noPhotoFilter ? 'rgba(255,100,100,0.15)' : '';
+    btn.style.borderColor = _noPhotoFilter ? '#ff6464' : '';
+    btn.style.color = _noPhotoFilter ? '#ff6464' : '';
+    btn.textContent = _noPhotoFilter ? '📷 Mostra tutte' : '📷 Senza foto';
+  }
+  renderItems();
+}
+
 function renderItems() {
   const grid = document.getElementById('items-grid');
   if (!currentSeriesId || !grid || !currentSection) return;
@@ -1574,6 +1593,7 @@ function renderItems() {
   if (searchQ) currentItemPage = 1;
   const allItems = getData('figurines', []).filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
+    if (_noPhotoFilter && f.img) return false;
     if (!searchQ) return true;
     return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ);
   }).sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
@@ -2730,10 +2750,12 @@ function switchToEditMode(figId) {
     photo.innerHTML = (f.img
       ? '<img id="fig-edit-img-preview" src="' + cloudinaryUrl(f.img,'w_300,h_300,c_fit,q_auto,f_auto') + '" style="width:160px;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:4px;display:block;margin-bottom:0.5rem;">'
       : '<div id="fig-edit-img-preview" style="width:160px;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">Nessuna foto</div>') +
-      '<label style="display:block;cursor:pointer;text-align:center;">' +
+      '<label style="display:block;cursor:pointer;text-align:center;margin-bottom:0.3rem;">' +
       '<span style="font-size:0.75rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;">📷 ' + (currentLang==='it'?'Cambia foto':'Change photo') + '</span>' +
       '<input type="file" id="fig-edit-img-file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event)">' +
-      '</label>';
+      '</label>' +
+      '<button id="fig-edit-remove-bg-btn" onclick="removeBgFromEdit()" style="display:block;width:100%;font-size:0.72rem;color:#b5ff2e;border:1px solid #b5ff2e;background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;margin-top:0.2rem;">' +
+      (currentLang==='it'?'✨ Rimuovi sfondo':'✨ Remove background') + '</button>';
   }
 
   // Build edit form
@@ -2780,6 +2802,55 @@ function switchToEditMode(figId) {
 }
 
 let _figEditImgData = null;
+
+async function removeBgFromEdit() {
+  const btn = document.getElementById('fig-edit-remove-bg-btn');
+  const preview = document.getElementById('fig-edit-img-preview');
+
+  if (!preview || !preview.src || preview.src === window.location.href) {
+    toast(currentLang === 'it' ? 'Carica prima una foto' : 'Upload a photo first', 'error');
+    return;
+  }
+
+  // Stato loading
+  if (btn) { btn.disabled = true; btn.textContent = currentLang === 'it' ? '⏳ Elaborazione...' : '⏳ Processing...'; }
+
+  try {
+    const removeBackground = window._removeBackground;
+    if (!removeBackground) {
+      toast(currentLang === 'it' ? 'Libreria non ancora caricata, riprova tra un secondo' : 'Library not loaded yet, try again in a second', 'error');
+      return;
+    }
+
+    // Ottieni il blob dalla src corrente
+    const srcRes = await fetch(preview.src);
+    const blob = await srcRes.blob();
+
+    // Rimuovi sfondo
+    const resultBlob = await removeBackground(blob, {
+      progress: (key, current, total) => {
+        if (btn) btn.textContent = currentLang === 'it'
+          ? '⏳ ' + Math.round((current/total)*100) + '%'
+          : '⏳ ' + Math.round((current/total)*100) + '%';
+      }
+    });
+
+    // Converti in base64 e aggiorna la preview
+    const reader = new FileReader();
+    reader.onload = e => {
+      _figEditImgData = e.target.result;
+      preview.src = _figEditImgData;
+      if (btn) { btn.disabled = false; btn.textContent = currentLang === 'it' ? '✨ Rimuovi sfondo' : '✨ Remove background'; }
+      toast(currentLang === 'it' ? '✅ Sfondo rimosso!' : '✅ Background removed!', 'success');
+    };
+    reader.readAsDataURL(resultBlob);
+
+  } catch(e) {
+    console.error('removeBg error', e);
+    toast(currentLang === 'it' ? '❌ Errore nella rimozione sfondo' : '❌ Error removing background', 'error');
+    if (btn) { btn.disabled = false; btn.textContent = currentLang === 'it' ? '✨ Rimuovi sfondo' : '✨ Remove background'; }
+  }
+}
 function handleFigEditImg(event) {
   const file = event.target.files[0];
   if (!file) return;
