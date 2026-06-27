@@ -23,7 +23,7 @@
 <nav id="navbar">
   <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
     <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v5.38</span>
+    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v5.60</span>
     <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
     <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);" data-i18n="nav.onlineSince">| Online dal 21.06.2026</span>
   </div>
@@ -160,9 +160,10 @@
       <div class="search-bar">
         <div class="search-input-wrap">
           <span class="search-icon">🔍</span>
-          <input class="search-input" type="text" id="series-search" placeholder="Search series..." oninput="renderCatalog()" data-i18n-placeholder="catalog.search">
+          <input class="search-input" type="text" id="series-search" placeholder="Cerca nel catalogo..." oninput="renderCatalog()" data-i18n-placeholder="catalog.searchglobal">
         </div>
       </div>
+      <div id="catalog-search-results" style="display:none;"></div>
       <div class="grid-3" id="catalog-grid">
         <div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title" data-i18n="catalog.empty">No series yet. Admin can add them!</p></div>
       </div>
@@ -359,14 +360,14 @@
       <div id="admin-panel" style="display:none;">
         <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:1.5rem;">⚙️ <span data-i18n="admin.title">Admin Panel</span></h2>
         <div class="admin-tabs">
-          <button class="admin-tab active" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
+          <button class="admin-tab active" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
+          <button class="admin-tab" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
           <button class="admin-tab" onclick="adminTab('blog')" data-i18n="admin.blog">Blog</button>
           <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
           <button class="admin-tab" onclick="adminTab('segnalazioni')" data-i18n="admin.segnalazioni">🔔 Segnalazioni</button>
           <button class="admin-tab" onclick="adminTab('eventi')" data-i18n="admin.eventi"><span style="filter:hue-rotate(200deg);">🔔</span> Eventi</button>
           <button class="admin-tab" onclick="adminTab('punteggi')" data-i18n="admin.punteggi">🏆 Punteggi</button>
           <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
-          <button class="admin-tab" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
         </div>
         <div id="admin-series" class="admin-section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -519,16 +520,17 @@
 <div id="page-wishlist" class="page">
   <section class="section">
     <div class="section-inner">
-      <div class="section-header">
-        <div>
-          <h1 style="font-family:var(--font-ui);font-size:2.2rem;" data-i18n="nav.wishlist">Lista desiderati</h1>
-          <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n-html="wishlist.desc">La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nel catalogo, premi il tasto <strong>♡</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>"Invia lista desiderati allo staff"</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.</p>
-        </div>
-        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-start;">
-          <button class="btn-secondary" onclick="submitWishlist()" data-i18n="wishlist.submit">📨 Invia lista desiderati</button>
-        </div>
+      <div style="margin-bottom:1.5rem;">
+        <h1 style="font-family:var(--font-ui);font-size:2.2rem;display:flex;align-items:center;gap:0.4rem;" data-i18n="nav.wishlist">Lista desiderati <span style="font-size:1.8rem;line-height:1;">🛒</span></h1>
+        <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n-html="wishlist.desc">La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nel catalogo, premi il tasto <strong>🛒</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>"Invia lista desiderati allo staff"</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.</p>
+      </div>
+      <div style="text-align:center;margin-bottom:1.25rem;">
+        <button class="btn-secondary" onclick="submitWishlist()" data-i18n="wishlist.submit">📨 Invia lista desiderati</button>
       </div>
       <div id="wishlist-content"></div>
+      <div style="text-align:center;margin-top:1.25rem;">
+        <button class="btn-secondary" onclick="submitWishlist()" data-i18n="wishlist.submit">📨 Invia lista desiderati</button>
+      </div>
     </div>
   </section>
 </div>
@@ -610,7 +612,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.38</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.60</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -707,7 +709,7 @@
       <button class="modal-close" onclick="closeModal('add-fig-modal')">✕</button>
     </div>
     <input type="hidden" id="edit-fig-id">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:1rem;align-items:start;">
       <div class="form-group">
         <label class="form-label" data-i18n="form.fig.number">Numero</label>
         <input class="form-input" type="number" id="fig-number-input" placeholder="01" min="1">
@@ -720,6 +722,10 @@
       <div class="form-group">
         <label class="form-label" data-i18n="form.fig.name">Name</label>
         <input class="form-input" type="text" id="fig-name-input" placeholder="Sgorbio Maximus">
+      </div>
+      <div class="form-group" style="min-width:70px;">
+        <label class="form-label" style="font-size:0.75rem;white-space:nowrap;" data-i18n="form.fig.score">Punteggio</label>
+        <input class="form-input" type="number" id="fig-score-input" placeholder="0" min="0" style="padding:0.45rem 0.5rem;font-size:0.85rem;">
       </div>
     </div>
     <div class="form-group" id="fig-size-group">
@@ -735,19 +741,17 @@
       <label class="form-label" data-i18n="form.fig.desc">Descrizione</label>
       <textarea class="form-textarea" id="fig-desc-input" rows="3" data-i18n-placeholder="form.fig.descPlaceholder" placeholder="Descrivi questa figurina..."></textarea>
     </div>
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.fig.score">Punteggio</label>
-      <input class="form-input" type="number" id="fig-score-input" placeholder="es. 10" min="0">
-      <div class="form-hint" data-i18n="form.fig.scoreHint">Punti assegnati a chi possiede questo oggetto</div>
-    </div>
+
     <div class="form-group">
       <label class="form-label" data-i18n="form.fig.image">Image</label>
-      <div class="file-drop" onclick="document.getElementById('fig-img-file').click()">
-        <div class="file-drop-icon">🧟</div>
-        <div class="file-drop-text"><strong data-i18n="form.click">Click to upload</strong></div>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div class="file-drop" onclick="document.getElementById('fig-img-file').click()" style="padding:0.5rem 1rem;display:flex;align-items:center;gap:0.5rem;flex:1;">
+          <span style="font-size:1.2rem;">🧟</span>
+          <span class="file-drop-text"><strong data-i18n="form.click">Click to upload</strong></span>
+        </div>
+        <img id="fig-img-preview" class="file-preview" style="margin-top:0;max-height:48px;max-width:48px;border-radius:6px;object-fit:contain;">
       </div>
       <input type="file" id="fig-img-file" accept="image/*" style="display:none;" onchange="handleFigImg(event)">
-      <img id="fig-img-preview" class="file-preview">
     </div>
     <button class="btn-primary" style="width:100%;" onclick="saveFigurine()" data-i18n="modal.fig.save">Save Figurine</button>
   </div>
