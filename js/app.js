@@ -170,7 +170,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.60';
+const JS_VERSION = 'v5.63';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -1123,23 +1123,40 @@ function renderCatalogSearch(q) {
   resultsEl.innerHTML = summary + results.map(r => {
     const s = r.series;
     const desc = (currentLang === 'it' && s.descIt ? s.descIt : s.desc) || '';
-    const seriesHighlight = r.seriesMatch
-      ? `<div onclick="openSeriesDetail('${s.id}')" style="cursor:pointer;display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;background:rgba(181,255,46,0.07);border:1px solid rgba(181,255,46,0.2);border-radius:var(--radius);margin-bottom:0.5rem;">
-          ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_48,h_48,c_fit,q_auto,f_auto')}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;background:var(--card2);">` : '<span style="font-size:1.5rem;width:40px;text-align:center;">🎴</span>'}
-          <div><div style="font-weight:600;">${s.name}</div><div style="font-size:0.78rem;color:var(--muted);">${desc.substring(0,80)}${desc.length>80?'…':''}</div></div>
-        </div>` : '';
+    // Nome serie sempre in cima, cliccabile per aprire la serie
+    const seriesHeader = `<div onclick="openSeriesDetail('${s.id}')" style="cursor:pointer;display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;">
+        ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_40,h_40,c_fit,q_auto,f_auto')}" style="width:32px;height:32px;object-fit:contain;border-radius:5px;background:var(--card2);">` : '<span style="font-size:1.1rem;">🎴</span>'}
+        <span style="font-family:var(--font-display);font-size:1rem;font-weight:600;color:var(--accent);">${s.name}</span>
+        ${r.seriesMatch ? `<span style="font-size:0.7rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 6px;">${currentLang==='it'?'serie':'series'}</span>` : ''}
+      </div>`;
     const figsHTML = r.figs.length
-      ? `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;padding:0.4rem 0 0.25rem;">
-          ${r.figs.map(f => `<span onclick="openSeriesDetail('${s.id}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:3px 10px;border-radius:10px;">
-            ${f.number ? '#'+f.number+' ' : ''}${f.name}
+      ? `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;padding:0.25rem 0 0;">
+          ${r.figs.map(f => `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:3px 10px;border-radius:10px;display:inline-flex;align-items:center;gap:3px;">
+            ${f.number ? '<span style="color:var(--muted);">#'+f.number+'</span> ' : ''}${f.name}
           </span>`).join('')}
         </div>` : '';
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.75rem;">
-      ${seriesHighlight}
-      ${r.figs.length ? `<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.25rem;">${r.figs.length} ${currentLang==='it'?'oggetti in questa serie':'items in this series'}</div>` : ''}
+      ${seriesHeader}
+      ${r.figs.length ? `<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.25rem;">${r.figs.length} ${currentLang==='it'?'oggetti trovati':'items found'}</div>` : ''}
       ${figsHTML}
     </div>`;
   }).join('');
+}
+
+async function openFigFromSearch(figId, seriesId, section) {
+  // Svuota la ricerca e ripristina il catalogo
+  const searchEl = document.getElementById('series-search');
+  if (searchEl) searchEl.value = '';
+  const resultsEl = document.getElementById('catalog-search-results');
+  const grid = document.getElementById('catalog-grid');
+  if (resultsEl) resultsEl.style.display = 'none';
+  if (grid) grid.style.display = '';
+  // Naviga alla serie e sezione giusta, poi apre la figurina
+  currentSeriesId = seriesId;
+  currentSection = section || 'figurines';
+  openSeriesSection(currentSection);
+  // Attende il render della griglia prima di aprire il dettaglio
+  setTimeout(() => openFigDetail(figId), 80);
 }
 
 function seriesCardHTML(s) {
@@ -1813,6 +1830,8 @@ function renderProfile() {
   const allFigs = getData('figurines', []);
   const owned = getOwned();
   const ownedFigs = allFigs.filter(f => owned.includes(f.id));
+  const profileStatsBox = document.getElementById('profile-stats-box');
+  if (profileStatsBox) profileStatsBox.style.display = currentUser.isAdmin ? 'none' : '';
   document.getElementById('profile-owned').textContent = ownedFigs.length;
   const seriesIds = [...new Set(ownedFigs.map(f => f.seriesId))];
   document.getElementById('profile-series-count').textContent = seriesIds.length;
@@ -3422,6 +3441,13 @@ async function renderClassifica() {
 function renderWishlist() {
   const el = document.getElementById('wishlist-content');
   if (!el) return;
+
+  // Vista admin: mostra tutte le liste desiderati ricevute
+  if (currentUser?.isAdmin) {
+    renderWishlistAdmin(el);
+    return;
+  }
+
   const allFigs = getData('figurines', []);
   const series = getData('series', []);
   const items = _wishlist.map(id => allFigs.find(f => f.id === id)).filter(Boolean);
@@ -3469,6 +3495,52 @@ function renderWishlist() {
   // Storico liste inviate
   renderWishlistHistory();
 }
+
+function _wlMsgBody(msg) {
+  var lines = msg.split('\n');
+  var i = lines.findIndex(function(l) { return l.trim() === ''; });
+  return i > -1 ? lines.slice(i + 1).join('\n') : msg;
+}
+
+function renderWishlistAdmin(el) {
+  var allMsgs = getData('contact_messages', [])
+    .filter(function(m) { return m.type === 'wishlist'; })
+    .sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
+
+  if (!allMsgs.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🛒</div><p class="empty-title">' +
+      (currentLang === 'it' ? 'Nessuna lista desiderati ricevuta' : 'No wishlists received yet') + '</p></div>';
+    return;
+  }
+
+  var histEl = document.getElementById('wishlist-history');
+  if (histEl) histEl.innerHTML = '';
+
+  var fmt = function(d) {
+    return new Date(d).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB',
+      { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  };
+
+  var html = '<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">' +
+    (currentLang === 'it' ? allMsgs.length + ' liste ricevute' : allMsgs.length + ' wishlists received') + '</p>';
+
+  allMsgs.forEach(function(m) {
+    html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.75rem;">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">';
+    html += '<span style="font-weight:600;">👤 ' + (m.name || '—') + '</span>';
+    html += '<span style="font-size:0.78rem;color:var(--muted);">📨 ' + fmt(m.date) + '</span>';
+    html += '</div>';
+    if (m.email) {
+      html += '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;">✉️ ' + m.email + '</div>';
+    }
+    html += '<div style="font-size:0.82rem;color:var(--text);white-space:pre-line;line-height:1.6;background:var(--card2);border-radius:8px;padding:0.5rem 0.75rem;">' +
+      _wlMsgBody(m.message) + '</div>';
+    html += '</div>';
+  });
+
+  el.innerHTML = html;
+}
+
 
 function renderWishlistHistory() {
   // Cerca o crea il contenitore storico
