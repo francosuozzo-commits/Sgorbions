@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.69 — Commento lista desiderati: textarea multiriga al posto
+//          del prompt nativo del browser.
+// v5.68 — Box figurine navbar: stesso font su entrambe le righe.
+// v5.67 — Navbar: rimossa pipe "|" prima della data online.
+//          Box figurine navbar su 2 righe (etichetta + numero).
+//          Invio lista desiderati: chiede commento opzionale
+//          per lo staff; commento visibile in storico e in admin.
 // v5.66 — Navbar: admin vede "Blog" invece di "Blog / D&R".
 // v5.65 — Ricerca globale: conteggio oggetti trovati a dx nella
 //          prima riga del box; miniatura foto accanto al nome.
@@ -196,7 +203,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.66';
+const JS_VERSION = 'v5.69';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -444,7 +451,7 @@ const i18n = {
 
     'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.wishlist':'Wishlist','wishlist.desc':'Your <strong>Wishlist</strong> is your personal space to collect the stickers (or other items) you would like to own.<br><br>While browsing the catalog, press the <strong>🛒</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send wishlist to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send wishlist',
 'profile.anon':'Show me as anonymous in the ranking',
-'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'| Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
+'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
 'admin.email.fix':'Fix counter:','admin.save':'Save',
@@ -468,7 +475,7 @@ const i18n = {
 'wishlist.submit':'📨 Invia lista desiderati',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
-'nav.onlineSince':'| Online dal 21.06.2026',
+'nav.onlineSince':'Online dal 21.06.2026',
 'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.myInfo':'✏️ Le mie info','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità',
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
@@ -2930,7 +2937,7 @@ function updateOwnedCounter() {
   if (navEl) {
     if (currentUser && !currentUser.isAdmin) {
       navEl.style.display = '';
-      navEl.textContent = (currentLang === 'it' ? 'Mie figurine: ' : 'My stickers: ') + ownedCount + ' / ' + total;
+      navEl.innerHTML = '<div style="font-size:0.7rem;opacity:0.75;line-height:1.2;">' + (currentLang === 'it' ? 'Mie figurine' : 'My stickers') + '</div><div style="font-size:0.7rem;line-height:1.2;">' + ownedCount + ' / ' + total + '</div>';
     } else {
       navEl.style.display = 'none';
     }
@@ -3559,6 +3566,11 @@ function renderWishlistAdmin(el) {
     }
     html += '<div style="font-size:0.82rem;color:var(--text);white-space:pre-line;line-height:1.6;background:var(--card2);border-radius:8px;padding:0.5rem 0.75rem;">' +
       _wlMsgBody(m.message) + '</div>';
+    if (m.comment) {
+      html += '<div style="margin-top:0.4rem;font-size:0.8rem;color:var(--text);background:rgba(181,255,46,0.07);border:1px solid rgba(181,255,46,0.2);border-radius:8px;padding:0.4rem 0.75rem;">' +
+        '<span style="font-size:0.7rem;color:var(--accent);font-weight:600;display:block;margin-bottom:2px;">💬 ' + (currentLang === 'it' ? 'Commento utente' : 'User comment') + '</span>' +
+        m.comment + '</div>';
+    }
     html += '</div>';
   });
 
@@ -3597,14 +3609,59 @@ function renderWishlistHistory() {
           <span class="card-badge" style="font-size:0.7rem;">#${msgs.length - i}</span>
         </div>
         <div style="font-size:0.78rem;color:var(--text);white-space:pre-line;line-height:1.5;">${(function(msg){var p=msg.indexOf('\n\n');return p>-1?msg.slice(p+2):msg;})(m.message)}</div>
+        ${m.comment ? `<div style="margin-top:0.35rem;font-size:0.76rem;color:var(--text);background:rgba(181,255,46,0.07);border:1px solid rgba(181,255,46,0.2);border-radius:8px;padding:0.35rem 0.65rem;"><span style="font-size:0.68rem;color:var(--accent);font-weight:600;display:block;margin-bottom:2px;">💬 ${currentLang === 'it' ? 'Il tuo commento' : 'Your comment'}</span>${m.comment}</div>` : ''}
       </div>
     `).join('')}
   `;
 }
 
+function promptMultiline(labelText) {
+  return new Promise(resolve => {
+    // Crea overlay
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(5,2,15,0.85);z-index:3000;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;width:min(480px,90vw);display:flex;flex-direction:column;gap:1rem;">
+        <div style="font-family:var(--font-ui);font-size:1rem;font-weight:600;">${labelText}</div>
+        <textarea id="multiline-comment-input" rows="5" style="width:100%;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:0.9rem;padding:0.6rem 0.75rem;resize:vertical;font-family:inherit;box-sizing:border-box;" placeholder="${currentLang === 'it' ? 'Scrivi qui il tuo commento...' : 'Write your comment here...'}"></textarea>
+        <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+          <button id="multiline-cancel" style="padding:0.45rem 1.1rem;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:0.88rem;">${currentLang === 'it' ? 'Annulla' : 'Cancel'}</button>
+          <button id="multiline-confirm" class="btn-primary" style="padding:0.45rem 1.1rem;font-size:0.88rem;">${currentLang === 'it' ? 'Conferma' : 'Confirm'}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const textarea = overlay.querySelector('#multiline-comment-input');
+    textarea.focus();
+    overlay.querySelector('#multiline-confirm').onclick = () => {
+      const val = textarea.value.trim();
+      overlay.remove();
+      resolve(val);
+    };
+    overlay.querySelector('#multiline-cancel').onclick = () => {
+      overlay.remove();
+      resolve('');
+    };
+    // Ctrl+Enter conferma
+    textarea.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.ctrlKey) {
+        overlay.querySelector('#multiline-confirm').click();
+      }
+    });
+  });
+}
+
 async function submitWishlist() {
   if (!currentUser || !_wishlist.length) return;
   if (!confirm(currentLang === 'it' ? 'Confermi di inviare allo staff la tua lista dei desiderati?' : 'Do you confirm sending your wishlist to the staff?')) return;
+
+  // Chiede se aggiungere un commento
+  let userComment = '';
+  if (confirm(currentLang === 'it' ? 'Vuoi aggiungere un commento per lo staff prima di inviare?' : 'Do you want to add a comment for the staff before sending?')) {
+    userComment = await promptMultiline(
+      currentLang === 'it' ? 'Scrivi il tuo commento per lo staff:' : 'Write your comment for the staff:'
+    );
+  }
+
   const allFigs = getData('figurines', []);
   const series = getData('series', []);
   const items = _wishlist.map(id => allFigs.find(f => f.id === id)).filter(Boolean);
@@ -3618,7 +3675,8 @@ async function submitWishlist() {
     bySeries[sName].push((f.number ? '#'+f.number+' ' : '') + f.name);
   });
   const listText = Object.entries(bySeries).map(([s, figs]) => s + ': ' + figs.join(', ')).join('\n');
-  const msg = (currentLang === 'it' ? 'Ciao! Ecco la mia lista dei desiderata:\n\n' : 'Hi! Here is my wishlist:\n\n') + listText;
+  const commentSection = userComment ? '\n\n--- Commento utente ---\n' + userComment : '';
+  const msg = (currentLang === 'it' ? 'Ciao! Ecco la mia lista dei desiderati:\n\n' : 'Hi! Here is my wishlist:\n\n') + listText + commentSection;
 
   // Save as contact message
   const saved = await fsSave('contact_messages', {
@@ -3626,6 +3684,7 @@ async function submitWishlist() {
     email: currentUser.email || '',
     subject: currentLang === 'it' ? '🎁 Lista desiderati' : '🎁 Wishlist',
     message: msg,
+    comment: userComment,
     date: new Date().toISOString(),
     read: false,
     type: 'wishlist',
