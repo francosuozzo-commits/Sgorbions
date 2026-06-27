@@ -318,6 +318,7 @@ body {
   font-size: 0.9rem;
 }
 .detail-row:last-child { border-bottom: none; }
+.detail-row-edit { border-bottom: none !important; padding: 0.25rem 0; }
 .detail-label { color: var(--muted); font-size: 0.85rem; min-width: 180px; }
 .detail-value { color: var(--text); font-weight: 500; padding-left: 0.5rem; }
 
