@@ -1,6 +1,7 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.103 — Bottone rimuovi sfondo: aspetta la libreria invece di dare errore.
 // v5.102 — Editing figurina: bottone "Rimuovi foto".
 // v5.101 — Autocrop automatico dopo rimozione sfondo (script e app).
 // v5.100 — CDN rimozione sfondo cambiato da jsdelivr a unpkg.
@@ -252,7 +253,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.102';
+const JS_VERSION = 'v5.103';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -2820,10 +2821,19 @@ async function removeBgFromEdit() {
   if (btn) { btn.disabled = true; btn.textContent = currentLang === 'it' ? '⏳ Elaborazione...' : '⏳ Processing...'; }
 
   try {
-    const removeBackground = window._removeBackground;
+    let removeBackground = window._removeBackground;
     if (!removeBackground) {
-      toast(currentLang === 'it' ? 'Libreria non ancora caricata, riprova tra un secondo' : 'Library not loaded yet, try again in a second', 'error');
-      return;
+      if (btn) btn.textContent = currentLang === 'it' ? '⏳ Caricamento libreria...' : '⏳ Loading library...';
+      // Aspetta fino a 30 secondi che la libreria si carichi
+      for (let i = 0; i < 30; i++) {
+        await new Promise(r => setTimeout(r, 1000));
+        if (window._removeBackground) { removeBackground = window._removeBackground; break; }
+      }
+      if (!removeBackground) {
+        toast(currentLang === 'it' ? '❌ Libreria non disponibile, ricarica la pagina' : '❌ Library unavailable, reload the page', 'error');
+        if (btn) { btn.disabled = false; btn.textContent = currentLang === 'it' ? '✨ Rimuovi sfondo' : '✨ Remove background'; }
+        return;
+      }
     }
 
     // Ottieni il blob dalla src corrente
