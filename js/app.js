@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.110 — Pulsanti foto stessa larghezza; fix event delegation livelli classifica.
+// v5.109 — Classifica: admin può aggiungere, modificare ed eliminare livelli.
+// v5.108 — Admin "Data import": fix sezione vuota, tab rinominato.
+//          Admin Messaggi: aggiunto pulsante elimina.
 // v5.107 — Admin: interlinea ridotta in Utenti ed Eventi; elimina messaggio;
 //          tab Punteggi rimosso (gestione spostata in Classifica).
 // v5.106 — Sezione admin "Foto": caricamento massivo con rimozione sfondo.
@@ -261,7 +265,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.107';
+const JS_VERSION = 'v5.110';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -525,7 +529,7 @@ const i18n = {
 'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','admin.foto':'📸 Photos','catalog.searchglobal':'Search in catalog...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','admin.foto':'📥 Data import','catalog.searchglobal':'Search in catalog...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -644,7 +648,7 @@ const i18n = {
     'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine hai e traccia la percentuale di completamento per ogni serie.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','admin.foto':'📸 Foto','catalog.searchglobal':'Cerca nel catalogo...',
+    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','admin.foto':'📥 Data import','catalog.searchglobal':'Cerca nel catalogo...',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -2774,11 +2778,13 @@ function switchToEditMode(figId) {
     photo.innerHTML = (f.img
       ? '<img id="fig-edit-img-preview" src="' + cloudinaryUrl(f.img,'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
       : '<div id="fig-edit-img-preview" style="width:100%;height:240px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">Nessuna foto</div>') +
-      '<label style="display:block;cursor:pointer;text-align:center;margin-bottom:0.3rem;">' +
-      '<span style="font-size:0.75rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;">📷 ' + (currentLang==='it'?'Cambia foto':'Change photo') + '</span>' +
+      '<div style="display:flex;gap:0.4rem;margin-top:0.3rem;">' +
+      '<label style="flex:1;cursor:pointer;text-align:center;">' +
+      '<span style="display:block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;white-space:nowrap;">📷 ' + (currentLang==='it'?'Cambia foto':'Change photo') + '</span>' +
       '<input type="file" id="fig-edit-img-file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event)">' +
       '</label>' +
-      (f.img ? '<button onclick="removeFigPhoto()" style="display:block;width:100%;font-size:0.72rem;color:#ff6464;border:1px solid rgba(255,100,100,0.4);background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;margin-top:0.2rem;">🗑️ ' + (currentLang==='it'?'Rimuovi foto':'Remove photo') + '</button>' : '');
+      (f.img ? '<button onclick="removeFigPhoto()" style="flex:1;font-size:0.72rem;color:#ff6464;border:1px solid rgba(255,100,100,0.4);background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;white-space:nowrap;">🗑️ ' + (currentLang==='it'?'Rimuovi foto':'Remove photo') + '</button>' : '') +
+      '</div>';
   }
 
   // Build edit form
@@ -3381,14 +3387,14 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 //  ADMIN FOTO
 // ============================================================
 function renderAdminFoto() {
-  const el = document.getElementById('admin-content');
+  const el = document.getElementById('admin-foto-content');
   if (!el) return;
 
   const series = getData('series', []).sort((a,b) => (a.order||999)-(b.order||999));
 
   el.innerHTML = `
     <div style="max-width:680px;">
-      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📸 ${currentLang==='it'?'Caricamento foto massive':'Bulk photo upload'}</h3>
+      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📥 ${currentLang==='it'?'Data import — Caricamento foto':'Data import — Bulk photo upload'}</h3>
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
           ? 'Seleziona una serie, carica le foto (nome file = numero figurina, es. <code>1.jpg</code>). Lo script rimuove lo sfondo con AI e aggiorna Firebase automaticamente.'
@@ -3943,6 +3949,110 @@ async function saveBulkScore() {
 // ============================================================
 //  CLASSIFICA
 // ============================================================
+function renderClassificaLevels(el) {
+  const levels = getData('levels', []).sort((a,b) => a.minScore - b.minScore);
+  const isAdmin = currentUser?.isAdmin;
+
+  let html = '';
+  if (levels.length) {
+    html += '<table class="data-table compact"><thead><tr>';
+    html += '<th>' + (currentLang === 'it' ? 'Livello' : 'Level') + '</th>';
+    html += '<th>' + (currentLang === 'it' ? 'Da' : 'From') + '</th>';
+    if (isAdmin) html += '<th></th>';
+    html += '</tr></thead><tbody>';
+    html += levels.map(lv => {
+      let row = '<tr><td><strong>' + ((currentLang !== 'it' && lv.nameEn) ? lv.nameEn : lv.name) + '</strong></td>';
+      row += '<td>' + lv.minScore.toLocaleString('it-IT') + ' pt</td>';
+      if (isAdmin) {
+        row += '<td style="display:flex;gap:0.3rem;">';
+        row += '<button class="tbl-btn tbl-btn-edit cl-edit-btn" data-id="' + lv.id + '">' + (currentLang === 'it' ? 'Modifica' : 'Edit') + '</button>';
+        row += '<button class="tbl-btn tbl-btn-del cl-del-btn" data-id="' + lv.id + '">' + (currentLang === 'it' ? 'Elimina' : 'Delete') + '</button>';
+        row += '</td>';
+      }
+      row += '</tr>';
+      return row;
+    }).join('');
+    html += '</tbody></table>';
+  } else {
+    html = '<p style="color:var(--muted);font-size:0.85rem;font-style:italic;">' + (currentLang === 'it' ? 'Nessun livello definito.' : 'No levels defined.') + '</p>';
+  }
+
+  // Form aggiunta/modifica per admin
+  if (isAdmin) {
+    html += '<hr style="border-color:var(--border);margin:1rem 0;">';
+    html += '<div id="classifica-level-form" style="background:var(--card2);border-radius:var(--radius);padding:0.75rem;">';
+    html += '<div style="font-size:0.8rem;font-weight:600;color:var(--accent);margin-bottom:0.5rem;" id="classifica-level-form-title">' + (currentLang === 'it' ? '+ Aggiungi livello' : '+ Add level') + '</div>';
+    html += '<input type="hidden" id="cl-edit-id">';
+    html += '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">';
+    html += '<input class="form-input" type="text" id="cl-name-it" placeholder="' + (currentLang === 'it' ? 'Nome IT' : 'Name IT') + '" style="flex:1;min-width:100px;">';
+    html += '<input class="form-input" type="text" id="cl-name-en" placeholder="Name EN" style="flex:1;min-width:100px;">';
+    html += '<input class="form-input" type="number" id="cl-score" placeholder="Min pt" style="width:80px;">';
+    html += '<button class="btn-primary" style="padding:0.4rem 0.75rem;font-size:0.82rem;" onclick="saveLevelClassifica()">💾</button>';
+    html += '<button style="padding:0.4rem 0.75rem;font-size:0.82rem;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--radius);cursor:pointer;" onclick="resetLevelClassifica()">✕</button>';
+    html += '</div></div>';
+  }
+
+  el.innerHTML = html;
+
+  // Event delegation per modifica/elimina livelli
+  el.querySelectorAll('.cl-edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => editLevelClassifica(btn.getAttribute('data-id')));
+  });
+  el.querySelectorAll('.cl-del-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteLevelClassifica(btn.getAttribute('data-id')));
+  });
+}
+
+function editLevelClassifica(id) {
+  const lv = getData('levels', []).find(l => l.id === id);
+  if (!lv) return;
+  document.getElementById('cl-edit-id').value = id;
+  document.getElementById('cl-name-it').value = lv.name;
+  document.getElementById('cl-name-en').value = lv.nameEn || '';
+  document.getElementById('cl-score').value = lv.minScore;
+  const title = document.getElementById('classifica-level-form-title');
+  if (title) title.textContent = currentLang === 'it' ? '✏️ Modifica livello' : '✏️ Edit level';
+}
+
+function resetLevelClassifica() {
+  document.getElementById('cl-edit-id').value = '';
+  document.getElementById('cl-name-it').value = '';
+  document.getElementById('cl-name-en').value = '';
+  document.getElementById('cl-score').value = '';
+  const title = document.getElementById('classifica-level-form-title');
+  if (title) title.textContent = currentLang === 'it' ? '+ Aggiungi livello' : '+ Add level';
+}
+
+async function saveLevelClassifica() {
+  const name = document.getElementById('cl-name-it')?.value.trim();
+  const nameEn = document.getElementById('cl-name-en')?.value.trim() || '';
+  const minScore = parseInt(document.getElementById('cl-score')?.value);
+  const editId = document.getElementById('cl-edit-id')?.value;
+  if (!name || isNaN(minScore)) { toast(currentLang === 'it' ? 'Compila nome e punteggio' : 'Fill in name and score', 'error'); return; }
+  let levels = getData('levels', []);
+  if (editId) {
+    const idx = levels.findIndex(l => l.id === editId);
+    if (idx >= 0) { levels[idx] = { ...levels[idx], name, nameEn, minScore }; await fsSave('levels', levels[idx]); }
+  } else {
+    const saved = await fsSave('levels', { name, nameEn, minScore });
+    levels.push(saved);
+  }
+  _cache.levels = levels;
+  resetLevelClassifica();
+  const levelsEl = document.getElementById('classifica-levels-table');
+  if (levelsEl) renderClassificaLevels(levelsEl);
+  toast(currentLang === 'it' ? '✅ Livello salvato!' : '✅ Level saved!', 'success');
+}
+
+async function deleteLevelClassifica(id) {
+  if (!confirm(currentLang === 'it' ? 'Eliminare questo livello?' : 'Delete this level?')) return;
+  await fsDelete('levels', id);
+  _cache.levels = (_cache.levels || []).filter(l => l.id !== id);
+  const levelsEl = document.getElementById('classifica-levels-table');
+  if (levelsEl) renderClassificaLevels(levelsEl);
+  toast(currentLang === 'it' ? '✅ Livello eliminato' : '✅ Level deleted', 'success');
+}
+
 async function renderClassifica() {
   const el = document.getElementById('classifica-list');
   if (!el) return;
@@ -3954,14 +4064,7 @@ async function renderClassifica() {
   // Render levels table on the right
   const levelsEl = document.getElementById('classifica-levels-table');
   if (levelsEl) {
-    const levels = getData('levels', []).sort((a,b) => a.minScore - b.minScore);
-    if (levels.length) {
-      levelsEl.innerHTML = '<table class="data-table compact"><thead><tr><th>' + (currentLang === 'it' ? 'Livello' : 'Level') + '</th><th>' + (currentLang === 'it' ? 'Da' : 'From') + '</th></tr></thead><tbody>' +
-        levels.map(lv => '<tr><td><strong>' + ((currentLang !== 'it' && lv.nameEn) ? lv.nameEn : lv.name) + '</strong></td><td>' + lv.minScore.toLocaleString('it-IT') + ' pt</td></tr>').join('') +
-        '</tbody></table>';
-    } else {
-      levelsEl.innerHTML = '<p style="color:var(--muted);font-size:0.85rem;font-style:italic;">' + (currentLang === 'it' ? 'Nessun livello definito.' : 'No levels defined.') + '</p>';
-    }
+    renderClassificaLevels(levelsEl);
   }
 
   const users = getData('users', []);
