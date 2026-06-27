@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.97 — Editing figurina: fix anteprima foto nuova (crea img da div).
+// v5.96 — Editing figurina: usa classe detail-row standard per le linee.
+// v5.95 — Editing figurina: ripristinata linea separatrice tra i campi.
+// v5.94 — Editing figurina: rimosso bordo e sfondo dagli input.
+// v5.93 — Editing figurina: bordi tra campi rimossi con stile inline.
+// v5.92 — Vista dettaglio figurina: aggiunta Descrizione mancante.
+// v5.91 — Editing figurina: fix pulsante Salva (listener diretto),
+//          fix upload foto (base64→blob), rimossi bordi tra i campi.
 // v5.90 — Editing figurina: Sottoserie condizionale a hasSubseries;
 //          foto preview in editing allargata a 200px.
 // v5.89 — Fix editing figurina: reset contenuto modal all'apertura
@@ -238,7 +246,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.90';
+const JS_VERSION = 'v5.97';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -2647,6 +2655,11 @@ function openFigDetail(figId) {
     rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Punteggio' : 'Score'}</span><span class="detail-value">${f.score > 0 ? '⭐ ' + f.score + ' pt' : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non assegnato' : 'not assigned') + '</span>'}</span></div>`);
   }
 
+  // Descrizione
+  if (f.desc) {
+    rows.push(`<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">${currentLang === 'it' ? 'Descrizione' : 'Description'}</span><span class="detail-value" style="font-size:0.88rem;line-height:1.5;">${f.desc}</span></div>`);
+  }
+
   // Taglia (only for series with hasSizes)
   const figSeries = getData('series', []).find(s => s.id === f.seriesId);
   if (figSeries?.hasSizes || (isAdmin && figSeries?.hasSizes)) {
@@ -2728,36 +2741,42 @@ function switchToEditMode(figId) {
 
   // Sottoserie (solo se la serie ha hasSubseries)
   if (figSeries?.hasSubseries) {
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottoserie':'Subseries') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subseries" value="' + (f.subseries||'') + '" placeholder="es. OLO" style="padding:0.3rem 0.5rem;font-size:0.9rem;"></span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottoserie':'Subseries') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subseries" value="' + (f.subseries||'') + '" placeholder="es. OLO" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   }
 
   // Numero
-  html += '<div class="detail-row"><span class="detail-label">N.</span><span class="detail-value"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;"></span></div>';
+  html += '<div class="detail-row"><span class="detail-label">N.</span><span class="detail-value"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
 
   // Nome
-  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + (f.name||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;"></span></div>';
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + (f.name||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
 
   // Punteggio
-  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Punteggio':'Score') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;"></span></div>';
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Punteggio':'Score') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
 
   // Taglia (solo se la serie ha taglie)
   if (figSeries?.hasSizes) {
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-size" value="' + (f.size||'') + '" placeholder="S/M/L/XL" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;"></span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-size" value="' + (f.size||'') + '" placeholder="S/M/L/XL" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;border:none;background:transparent;"></span></div>';
   }
 
   // Variazioni (sempre visibile, come nella vista dettaglio)
-  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazioni':'Variations') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-back" value="' + (f.backNumber||1) + '" min="1" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;"></span></div>';
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazioni':'Variations') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-back" value="' + (f.backNumber||1) + '" min="1" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
 
   // Descrizione (in fondo, campo più grande)
-  html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang==='it'?'Descrizione':'Description') + '</span><span class="detail-value"><textarea id="fe-desc" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;">' + (f.desc||'') + '</textarea></span></div>';
+  html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang==='it'?'Descrizione':'Description') + '</span><span class="detail-value"><textarea id="fe-desc" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + (f.desc||'') + '</textarea></span></div>';
 
   // Pulsanti
   html += '<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">';
   html += '<button onclick="closeModal(\'fig-detail-modal\')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">' + (currentLang==='it'?'Annulla':'Cancel') + '</button>';
-  html += '<button onclick="saveFigFromDetail(\"' + f.id + '\")" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:none;background:var(--accent);color:#0e0a1a;cursor:pointer;font-weight:600;">💾 ' + (currentLang==='it'?'Salva':'Save') + '</button>';
+  html += '<button id="fig-edit-save-btn" data-fig-id="' + f.id + '" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:none;background:var(--accent);color:#0e0a1a;cursor:pointer;font-weight:600;">💾 ' + (currentLang==='it'?'Salva':'Save') + '</button>';
   html += '</div>';
 
   content.innerHTML = html;
+
+  // Listener sul pulsante Salva (evita problemi con onclick inline)
+  const saveBtn = document.getElementById('fig-edit-save-btn');
+  if (saveBtn) saveBtn.addEventListener('click', function() {
+    saveFigFromDetail(saveBtn.getAttribute('data-fig-id'));
+  });
 }
 
 let _figEditImgData = null;
@@ -2767,8 +2786,17 @@ function handleFigEditImg(event) {
   const reader = new FileReader();
   reader.onload = e => {
     _figEditImgData = e.target.result;
-    const preview = document.getElementById('fig-edit-img-preview');
-    if (preview) { preview.src = _figEditImgData; preview.tagName === 'DIV' ? preview.style.backgroundImage = 'url('+_figEditImgData+')' : null; }
+    const container = document.getElementById('fig-detail-photo');
+    let preview = document.getElementById('fig-edit-img-preview');
+    // Se il preview è un div placeholder, lo sostituiamo con un img
+    if (preview && preview.tagName === 'DIV') {
+      const img = document.createElement('img');
+      img.id = 'fig-edit-img-preview';
+      img.style.cssText = 'width:160px;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:4px;display:block;margin-bottom:0.5rem;';
+      preview.replaceWith(img);
+      preview = img;
+    }
+    if (preview) preview.src = _figEditImgData;
   };
   reader.readAsDataURL(file);
 }
@@ -2790,7 +2818,10 @@ async function saveFigFromDetail(figId) {
   // Gestione immagine
   if (_figEditImgData) {
     try {
-      const uploaded = await uploadToCloudinary(_figEditImgData);
+      // Converti base64 in blob per uploadToCloudinary
+      const res = await fetch(_figEditImgData);
+      const blob = await res.blob();
+      const uploaded = await uploadToCloudinary(blob);
       if (uploaded) updates.img = uploaded;
     } catch(e) { console.error('Upload img error', e); }
   }
