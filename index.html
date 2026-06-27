@@ -21,13 +21,16 @@
 
 <!-- NAVBAR -->
 <nav id="navbar">
-  <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;">
-    <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
-    <span style="font-size:0.85rem;color:#ffffff;font-family:var(--font-ui);">v5.69</span>
-    <span id="nav-js-version-wrap" style="font-size:0.75rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
-    <span style="font-size:0.9rem;color:rgba(255,255,255,0.6);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
-  </div>
-  <div class="nav-links">
+  <div style="display:flex;align-items:center;gap:0;flex:1;min-width:0;">
+    <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
+      <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.90</span>
+        <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
+      </div>
+    </div>
+    <div class="nav-links">
     <a onclick="showPage('home')" data-page="home" class="active" data-i18n="nav.home">Home</a>
     <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog" id="nav-catalog" style="display:none;">Catalogo</a>
     <a onclick="showPage('blog')" data-page="blog" id="nav-blog" style="display:none;" data-i18n="nav.blog">Blog / D&amp;R</a>
@@ -36,6 +39,7 @@
     <a onclick="showPage('classifica')" data-page="classifica" id="nav-classifica" style="display:none;" data-i18n="nav.classifica">🏆 Classifica</a>
     <a onclick="showPage('newsletter')" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contatti</a>
+    </div>
   </div>
   <div class="nav-right">
     <div class="lang-toggle">
@@ -82,7 +86,7 @@
   <section id="hero">
     <img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:700px;width:90%;margin:0 auto 1.5rem;display:block;">
     <p class="hero-desc" data-i18n="hero.desc">Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni '90.</p>
-    <p class="hero-desc" style="margin-top:-1rem;" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
+    <p class="hero-desc" style="margin-top:-2.2rem;" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
     <div id="profile-save-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1rem;margin-bottom:1rem;text-align:center;"data-i18n="profile.saved">✅ Informazioni salvate!</div>
     <div class="hero-cta">
@@ -487,7 +491,7 @@
       <div class="section-header">
         <h1 class="section-title" data-i18n="newsletter.title">Invia Newsletter</h1>
       </div>
-      <div style="max-width:640px;">
+      <div style="max-width:640px;margin:0 auto;">
         <div class="form-group">
           <label class="form-label" data-i18n="newsletter.subject">Oggetto</label>
           <input class="form-input" type="text" id="newsletter-subject" data-i18n-placeholder="newsletter.subject.ph" placeholder="es. Nuova serie aggiunta!">
@@ -612,7 +616,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.69</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.70</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -709,23 +713,23 @@
       <button class="modal-close" onclick="closeModal('add-fig-modal')">✕</button>
     </div>
     <input type="hidden" id="edit-fig-id">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:1rem;align-items:start;">
-      <div class="form-group">
+    <div id="fig-modal-grid" style="display:grid;grid-template-columns:80px minmax(0,120px) 1fr 60px;gap:1rem;align-items:end;">
+      <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.fig.number">Numero</label>
         <input class="form-input" type="number" id="fig-number-input" placeholder="01" min="1">
       </div>
-      <div class="form-group" id="fig-subseries-group">
+      <div class="form-group" id="fig-subseries-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.fig.subseries">Sottoserie</label>
         <input class="form-input" type="text" id="fig-subseries-input" placeholder="es. OLO">
         <div class="form-hint" data-i18n="form.fig.subseriesHint">Se presente, sostituisce il numero</div>
       </div>
-      <div class="form-group">
+      <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.fig.name">Name</label>
         <input class="form-input" type="text" id="fig-name-input" placeholder="Sgorbio Maximus">
       </div>
-      <div class="form-group" style="min-width:70px;">
+      <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" style="font-size:0.75rem;white-space:nowrap;" data-i18n="form.fig.score">Punteggio</label>
-        <input class="form-input" type="number" id="fig-score-input" placeholder="0" min="0" style="padding:0.45rem 0.5rem;font-size:0.85rem;">
+        <input class="form-input" type="number" id="fig-score-input" placeholder="0" min="0">
       </div>
     </div>
     <div class="form-group" id="fig-size-group">
