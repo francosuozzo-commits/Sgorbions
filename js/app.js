@@ -1,3 +1,29 @@
+// ============================================================
+// CHANGELOG app.js
+// ------------------------------------------------------------
+// v5.66 — Navbar: admin vede "Blog" invece di "Blog / D&R".
+// v5.65 — Ricerca globale: conteggio oggetti trovati a dx nella
+//          prima riga del box; miniatura foto accanto al nome.
+// v5.64 — Ricerca globale: chiusura scheda figurina torna ai
+//          risultati invece che alla pagina del catalogo.
+//          Tab Blog nell'admin già etichettato correttamente.
+// v5.63 — Ricerca globale: nome serie sempre in cima a ogni
+//          risultato; click su figurina apre la sua scheda.
+// v5.62 — Admin: nascosto box "figurine possedute" nel profilo.
+//          Pagina Lista desiderati per admin mostra tutte le
+//          liste ricevute dagli utenti (con nome, email, data).
+// v5.61 — Admin: box figurine possedute nel profilo nascosto.
+//          Tab "Utenti" primo nella console admin.
+//          Popup impersonificazione senza "modalità sola lettura".
+//          Carrello nella modal creato dinamicamente se mancante.
+// v5.60 — Toast conferma invio lista desiderati visibile 5 sec.
+// v5.59 — Box wishlist: etichetta "N. figurine: X".
+//          Totale figurine in fondo alla lista desiderati.
+// v5.58 — Versione hardcoded nell'HTML aggiornata.
+//          "desiderata" → "desiderati" nel messaggio allo staff.
+//          Tab Utenti primo nella console admin.
+// ============================================================
+
 function toggleLangDropdown() {
   const dd = document.getElementById('lang-dropdown');
   // Hide current language option
@@ -170,7 +196,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.63';
+const JS_VERSION = 'v5.66';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -913,6 +939,8 @@ function updateNavUser() {
     userNav.style.display = 'flex';
     if (wantlistLink) wantlistLink.style.display = '';
     ['nav-catalog','nav-blog','nav-classifica'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+    const navBlogEl = document.getElementById('nav-blog');
+    if (navBlogEl) navBlogEl.textContent = currentUser.isAdmin ? 'Blog' : t('nav.blog');
     const nwl = document.getElementById('nav-wishlist'); if (nwl) nwl.style.display = currentUser.isAdmin ? 'none' : '';
     const nlBtn = document.getElementById('nav-newsletter-btn');
     if (nlBtn) nlBtn.style.display = currentUser.isAdmin ? '' : 'none';
@@ -1124,39 +1152,35 @@ function renderCatalogSearch(q) {
     const s = r.series;
     const desc = (currentLang === 'it' && s.descIt ? s.descIt : s.desc) || '';
     // Nome serie sempre in cima, cliccabile per aprire la serie
-    const seriesHeader = `<div onclick="openSeriesDetail('${s.id}')" style="cursor:pointer;display:flex;align-items:center;gap:0.6rem;margin-bottom:0.5rem;">
-        ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_40,h_40,c_fit,q_auto,f_auto')}" style="width:32px;height:32px;object-fit:contain;border-radius:5px;background:var(--card2);">` : '<span style="font-size:1.1rem;">🎴</span>'}
-        <span style="font-family:var(--font-display);font-size:1rem;font-weight:600;color:var(--accent);">${s.name}</span>
-        ${r.seriesMatch ? `<span style="font-size:0.7rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 6px;">${currentLang==='it'?'serie':'series'}</span>` : ''}
+    // Prima riga: nome serie a sx + conteggio oggetti a dx
+    const seriesHeader = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+        <div onclick="openSeriesDetail('${s.id}')" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
+          ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_40,h_40,c_fit,q_auto,f_auto')}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;background:var(--card2);flex-shrink:0;">` : '<span style="font-size:1rem;flex-shrink:0;">🎴</span>'}
+          <span style="font-family:var(--font-display);font-size:0.95rem;font-weight:600;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
+          ${r.seriesMatch ? `<span style="font-size:0.65rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 5px;flex-shrink:0;">${currentLang==='it'?'serie':'series'}</span>` : ''}
+        </div>
+        ${r.figs.length ? `<span style="font-size:0.7rem;color:var(--muted);white-space:nowrap;margin-left:0.5rem;flex-shrink:0;">${r.figs.length} ${currentLang==='it'?'trovati':'found'}</span>` : ''}
       </div>`;
     const figsHTML = r.figs.length
-      ? `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;padding:0.25rem 0 0;">
-          ${r.figs.map(f => `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:3px 10px;border-radius:10px;display:inline-flex;align-items:center;gap:3px;">
-            ${f.number ? '<span style="color:var(--muted);">#'+f.number+'</span> ' : ''}${f.name}
+      ? `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
+          ${r.figs.map(f => `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
+            ${f.img ? `<img src="${cloudinaryUrl(f.img,'w_32,h_32,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : ''}
+            <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${f.name}</span>
           </span>`).join('')}
         </div>` : '';
-    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.75rem;">
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.6rem 0.75rem;margin-bottom:0.6rem;">
       ${seriesHeader}
-      ${r.figs.length ? `<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.25rem;">${r.figs.length} ${currentLang==='it'?'oggetti trovati':'items found'}</div>` : ''}
       ${figsHTML}
     </div>`;
   }).join('');
 }
 
-async function openFigFromSearch(figId, seriesId, section) {
-  // Svuota la ricerca e ripristina il catalogo
-  const searchEl = document.getElementById('series-search');
-  if (searchEl) searchEl.value = '';
-  const resultsEl = document.getElementById('catalog-search-results');
-  const grid = document.getElementById('catalog-grid');
-  if (resultsEl) resultsEl.style.display = 'none';
-  if (grid) grid.style.display = '';
-  // Naviga alla serie e sezione giusta, poi apre la figurina
+function openFigFromSearch(figId, seriesId, section) {
+  // Imposta il contesto senza navigare via dai risultati di ricerca
   currentSeriesId = seriesId;
   currentSection = section || 'figurines';
-  openSeriesSection(currentSection);
-  // Attende il render della griglia prima di aprire il dettaglio
-  setTimeout(() => openFigDetail(figId), 80);
+  // Apre direttamente la modal di dettaglio, i risultati rimangono visibili
+  openFigDetail(figId);
 }
 
 function seriesCardHTML(s) {
