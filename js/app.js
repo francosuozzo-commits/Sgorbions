@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.102 — Editing figurina: bottone "Rimuovi foto".
+// v5.101 — Autocrop automatico dopo rimozione sfondo (script e app).
 // v5.100 — CDN rimozione sfondo cambiato da jsdelivr a unpkg.
 // v5.99 — Editing figurina: bottone "Rimuovi sfondo" con AI locale
 //          (@imgly/background-removal, nessun limite, nessuna API key).
@@ -250,7 +252,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.100';
+const JS_VERSION = 'v5.102';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -2755,6 +2757,7 @@ function switchToEditMode(figId) {
       '<span style="font-size:0.75rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;">📷 ' + (currentLang==='it'?'Cambia foto':'Change photo') + '</span>' +
       '<input type="file" id="fig-edit-img-file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event)">' +
       '</label>' +
+      (f.img ? '<button onclick="removeFigPhoto()" style="display:block;width:100%;font-size:0.72rem;color:#ff6464;border:1px solid rgba(255,100,100,0.4);background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;margin-top:0.2rem;">🗑️ ' + (currentLang==='it'?'Rimuovi foto':'Remove photo') + '</button>' : '') +
       '<button id="fig-edit-remove-bg-btn" onclick="removeBgFromEdit()" style="display:block;width:100%;font-size:0.72rem;color:#b5ff2e;border:1px solid #b5ff2e;background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;margin-top:0.2rem;">' +
       (currentLang==='it'?'✨ Rimuovi sfondo':'✨ Remove background') + '</button>';
   }
@@ -2836,6 +2839,26 @@ async function removeBgFromEdit() {
       }
     });
 
+    // Crop automatico per rimuovere trasparenza residua
+    const cropCanvas = document.createElement('canvas');
+    const cropImg = new Image();
+    const tmpUrl = URL.createObjectURL(resultBlob);
+    await new Promise(res => { cropImg.onload = res; cropImg.src = tmpUrl; });
+    URL.revokeObjectURL(tmpUrl);
+    cropCanvas.width = cropImg.naturalWidth; cropCanvas.height = cropImg.naturalHeight;
+    const cropCtx = cropCanvas.getContext('2d');
+    cropCtx.drawImage(cropImg, 0, 0);
+    const pd = cropCtx.getImageData(0, 0, cropCanvas.width, cropCanvas.height).data;
+    let mnX = cropCanvas.width, mnY = cropCanvas.height, mxX = 0, mxY = 0;
+    for (let y = 0; y < cropCanvas.height; y++) for (let x = 0; x < cropCanvas.width; x++) {
+      if (pd[(y * cropCanvas.width + x) * 4 + 3] > 10) { if (x < mnX) mnX=x; if (x > mxX) mxX=x; if (y < mnY) mnY=y; if (y > mxY) mxY=y; }
+    }
+    const pad = 4, cw = mxX-mnX+1+pad*2, ch = mxY-mnY+1+pad*2;
+    const finalCanvas = document.createElement('canvas');
+    finalCanvas.width = cw; finalCanvas.height = ch;
+    finalCanvas.getContext('2d').drawImage(cropCanvas, Math.max(0,mnX-pad), Math.max(0,mnY-pad), cw, ch, 0, 0, cw, ch);
+    const croppedBlob = await new Promise(res => finalCanvas.toBlob(res, 'image/png'));
+
     // Converti in base64 e aggiorna la preview
     const reader = new FileReader();
     reader.onload = e => {
@@ -2844,7 +2867,7 @@ async function removeBgFromEdit() {
       if (btn) { btn.disabled = false; btn.textContent = currentLang === 'it' ? '✨ Rimuovi sfondo' : '✨ Remove background'; }
       toast(currentLang === 'it' ? '✅ Sfondo rimosso!' : '✅ Background removed!', 'success');
     };
-    reader.readAsDataURL(resultBlob);
+    reader.readAsDataURL(croppedBlob);
 
   } catch(e) {
     console.error('removeBg error', e);
@@ -2852,6 +2875,23 @@ async function removeBgFromEdit() {
     if (btn) { btn.disabled = false; btn.textContent = currentLang === 'it' ? '✨ Rimuovi sfondo' : '✨ Remove background'; }
   }
 }
+function removeFigPhoto() {
+  if (!confirm(currentLang === 'it' ? 'Rimuovere la foto da questa figurina?' : 'Remove the photo from this sticker?')) return;
+  _figEditImgData = '__remove__'; // segnale speciale per saveFigFromDetail
+  const preview = document.getElementById('fig-edit-img-preview');
+  if (preview) {
+    preview.src = '';
+    preview.style.display = 'none';
+    // Mostra placeholder
+    const placeholder = document.createElement('div');
+    placeholder.id = 'fig-edit-img-preview';
+    placeholder.style.cssText = 'width:160px;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;';
+    placeholder.textContent = currentLang === 'it' ? 'Nessuna foto' : 'No photo';
+    preview.replaceWith(placeholder);
+  }
+  toast(currentLang === 'it' ? 'Foto rimossa — premi Salva per confermare' : 'Photo removed — press Save to confirm', 'success');
+}
+
 function handleFigEditImg(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -2888,9 +2928,10 @@ async function saveFigFromDetail(figId) {
   };
 
   // Gestione immagine
-  if (_figEditImgData) {
+  if (_figEditImgData === '__remove__') {
+    updates.img = '';
+  } else if (_figEditImgData) {
     try {
-      // Converti base64 in blob per uploadToCloudinary
       const res = await fetch(_figEditImgData);
       const blob = await res.blob();
       const uploaded = await uploadToCloudinary(blob);
