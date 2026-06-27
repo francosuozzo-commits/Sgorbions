@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.107 — Admin: interlinea ridotta in Utenti ed Eventi; elimina messaggio;
+//          tab Punteggi rimosso (gestione spostata in Classifica).
+// v5.106 — Sezione admin "Foto": caricamento massivo con rimozione sfondo.
+//          Rimosso bottone rimuovi sfondo dalla form figurina.
+//          X chiusura modal rimessa nell'angolo.
+// v5.105 — Modal dettaglio: allargata a 860px, foto 320px a dx,
+//          X chiusura spostata a sinistra, foto in alta risoluzione (640px).
 // v5.104 — Libreria rimozione sfondo caricata da app.js (non da HTML).
 // v5.103 — Bottone rimuovi sfondo: aspetta la libreria invece di dare errore.
 // v5.102 — Editing figurina: bottone "Rimuovi foto".
@@ -254,7 +261,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.104';
+const JS_VERSION = 'v5.107';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -518,7 +525,7 @@ const i18n = {
 'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','catalog.searchglobal':'Search in catalog...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','admin.foto':'📸 Photos','catalog.searchglobal':'Search in catalog...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -637,7 +644,7 @@ const i18n = {
     'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine hai e traccia la percentuale di completamento per ogni serie.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','catalog.searchglobal':'Cerca nel catalogo...',
+    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','admin.foto':'📸 Foto','catalog.searchglobal':'Cerca nel catalogo...',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -2066,6 +2073,7 @@ function adminTab(tab) {
   if (tab === 'segnalazioni') renderAdminSegnalazioni();
   if (tab === 'eventi') renderAdminEventi();
   if (tab === 'risorse') renderAdminRisorse();
+  if (tab === 'foto') renderAdminFoto();
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 function renderAdminSeries() {
@@ -2213,12 +2221,23 @@ function renderAdminContacts() {
       </div>
       <div style="display:flex;align-items:center;gap:0.5rem;">
         <span style="font-size:0.78rem;color:var(--muted);">${new Date(m.date).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB')}</span>
-        ${!m.read ? `<button class="tbl-btn tbl-btn-edit" onclick="markContactRead('${m.id}')">${currentLang === 'it' ? 'Segna letto' : 'Mark as read'}</button>` : '<span style="font-size:0.78rem;color:var(--muted);">✓</span>'}
+        <div style="display:flex;gap:0.4rem;align-items:center;">
+          ${!m.read ? `<button class="tbl-btn tbl-btn-edit" onclick="markContactRead('${m.id}')">${currentLang === 'it' ? 'Segna letto' : 'Mark read'}</button>` : '<span style="font-size:0.78rem;color:var(--muted);">✓</span>'}
+          <button class="tbl-btn" style="background:rgba(255,100,100,0.1);border-color:rgba(255,100,100,0.4);color:#ff6464;" onclick="deleteContactMsg('${m.id}')">🗑️</button>
+        </div>
       </div>
     </div>
     ${m.subject ? `<div style="font-size:0.85rem;color:var(--accent3);margin-bottom:0.35rem;">Re: ${m.subject}</div>` : ''}
     <div style="font-size:0.88rem;color:var(--muted);">${m.message}</div>
   </div>`).join('');
+}
+
+async function deleteContactMsg(id) {
+  if (!confirm(currentLang === 'it' ? 'Eliminare questo messaggio?' : 'Delete this message?')) return;
+  await fsDelete('contact_messages', id);
+  if (_cache.contact_messages) _cache.contact_messages = _cache.contact_messages.filter(m => m.id !== id);
+  renderAdminContacts();
+  updateMsgBadge();
 }
 
 async function markContactRead(id) {
@@ -2261,8 +2280,8 @@ function renderAdminUsers() {
     <th style="cursor:pointer;" onclick="sortAdminUsers('joined')">${(currentLang === 'it') ? 'Iscritto dal' : 'Member since'}${arrow('joined')}</th>
     <th>${(currentLang === 'it') ? 'Azioni' : 'Actions'}</th></tr></thead><tbody>
     ${users.map(u => `<tr>
-      <td style="display:flex;align-items:center;gap:0.6rem;">
-        <div style="width:32px;height:32px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : u.username[0].toUpperCase()}</div>
+      <td style="display:flex;align-items:center;gap:0.4rem;">
+        <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : u.username[0].toUpperCase()}</div>
         ${u.username}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}${u.nationalityCode ? '<img src="'+flagUrl(u.nationalityCode)+'" title="'+(u.nationalityName||'')+'" style="width:18px;height:12px;object-fit:cover;border-radius:2px;margin-left:4px;">' : ''}
       </td>
       <td>${u.email}</td>
@@ -2501,7 +2520,7 @@ function renderAdminEventi() {
     <th>${(currentLang === 'it') ? 'Data' : 'Date'}</th><th>${(currentLang === 'it') ? 'Tipo' : 'Type'}</th><th>${(currentLang === 'it') ? 'Descrizione' : 'Description'}</th><th></th>
   </tr></thead><tbody>
   ${eventi.map(e => `<tr style="${e.read ? '' : 'background:rgba(181,255,46,0.05);'}">
-    <td style="white-space:nowrap;font-size:0.82rem;">${new Date(e.date).toLocaleDateString('it-IT')} ${new Date(e.date).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}</td>
+    <td style="white-space:nowrap;font-size:0.78rem;">${new Date(e.date).toLocaleDateString('it-IT')} ${new Date(e.date).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}</td>
     <td>${typeIcon[e.type] || '📌'}</td>
     <td>${e.description}</td>
     <td><button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : 'Segna letto'}</button></td>
@@ -2699,7 +2718,7 @@ function openFigDetail(figId) {
   // Foto (shown in separate right column)
   const photoEl = document.getElementById('fig-detail-photo');
   if (photoEl) {
-    photoEl.innerHTML = f.img ? `<img src="${cloudinaryUrl(f.img, 'w_300,h_300,c_fit,q_auto,f_auto')}" style="width:160px;height:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:4px;">` : '<div style="width:160px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;flex:1;">Foto non ancora disponibile</div>';
+    photoEl.innerHTML = f.img ? `<img src="${cloudinaryUrl(f.img, 'w_640,h_640,c_fit,q_auto,f_auto')}" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">` : '<div style="width:100%;height:280px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">Foto non ancora disponibile</div>';
   }
 
   // Ce l'ho toggle
@@ -2753,15 +2772,13 @@ function switchToEditMode(figId) {
   // Foto con pulsante cambio immagine
   if (photo) {
     photo.innerHTML = (f.img
-      ? '<img id="fig-edit-img-preview" src="' + cloudinaryUrl(f.img,'w_300,h_300,c_fit,q_auto,f_auto') + '" style="width:160px;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:4px;display:block;margin-bottom:0.5rem;">'
-      : '<div id="fig-edit-img-preview" style="width:160px;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">Nessuna foto</div>') +
+      ? '<img id="fig-edit-img-preview" src="' + cloudinaryUrl(f.img,'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
+      : '<div id="fig-edit-img-preview" style="width:100%;height:240px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">Nessuna foto</div>') +
       '<label style="display:block;cursor:pointer;text-align:center;margin-bottom:0.3rem;">' +
       '<span style="font-size:0.75rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;">📷 ' + (currentLang==='it'?'Cambia foto':'Change photo') + '</span>' +
       '<input type="file" id="fig-edit-img-file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event)">' +
       '</label>' +
-      (f.img ? '<button onclick="removeFigPhoto()" style="display:block;width:100%;font-size:0.72rem;color:#ff6464;border:1px solid rgba(255,100,100,0.4);background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;margin-top:0.2rem;">🗑️ ' + (currentLang==='it'?'Rimuovi foto':'Remove photo') + '</button>' : '') +
-      '<button id="fig-edit-remove-bg-btn" onclick="removeBgFromEdit()" style="display:block;width:100%;font-size:0.72rem;color:#b5ff2e;border:1px solid #b5ff2e;background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;margin-top:0.2rem;">' +
-      (currentLang==='it'?'✨ Rimuovi sfondo':'✨ Remove background') + '</button>';
+      (f.img ? '<button onclick="removeFigPhoto()" style="display:block;width:100%;font-size:0.72rem;color:#ff6464;border:1px solid rgba(255,100,100,0.4);background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;margin-top:0.2rem;">🗑️ ' + (currentLang==='it'?'Rimuovi foto':'Remove photo') + '</button>' : '');
   }
 
   // Build edit form
@@ -3092,7 +3109,7 @@ function renderAdminSegnalazioni() {
     <th>${(currentLang === 'it') ? 'Data' : 'Date'}</th><th>${(currentLang === 'it') ? 'Utente' : 'User'}</th><th>${(currentLang === 'it') ? 'Figurina' : 'Sticker'}</th><th>${(currentLang === 'it') ? 'Commento' : 'Comment'}</th><th></th>
   </tr></thead><tbody>
   ${segnalazioni.map(s => `<tr style="${s.read ? '' : 'background:rgba(181,255,46,0.05);'}">
-    <td style="white-space:nowrap;font-size:0.82rem;">${new Date(s.date).toLocaleDateString('it-IT')}</td>
+    <td style="white-space:nowrap;font-size:0.78rem;">${new Date(s.date).toLocaleDateString('it-IT')}</td>
     <td style="display:flex;align-items:center;gap:6px;">${s.username}${(() => { const u = getData('users',[]).find(x=>x.id===s.userId); return u?.nationalityCode ? `<img src="https://flagcdn.com/w40/${u.nationalityCode}.png" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''; })()}</td>
     <td style="font-size:0.82rem;">${s.serieName}<br><span style="color:var(--muted);">${s.figNumber ? '#'+s.figNumber+' ' : ''}${s.figName}</span></td>
     <td>${s.commento}</td>
@@ -3359,6 +3376,183 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
     });
   }
 })();
+
+// ============================================================
+//  ADMIN FOTO
+// ============================================================
+function renderAdminFoto() {
+  const el = document.getElementById('admin-content');
+  if (!el) return;
+
+  const series = getData('series', []).sort((a,b) => (a.order||999)-(b.order||999));
+
+  el.innerHTML = `
+    <div style="max-width:680px;">
+      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📸 ${currentLang==='it'?'Caricamento foto massive':'Bulk photo upload'}</h3>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+        ${currentLang==='it'
+          ? 'Seleziona una serie, carica le foto (nome file = numero figurina, es. <code>1.jpg</code>). Lo script rimuove lo sfondo con AI e aggiorna Firebase automaticamente.'
+          : 'Select a series, upload photos (filename = sticker number, e.g. <code>1.jpg</code>). The script removes the background with AI and updates Firebase automatically.'}
+      </p>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
+        <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
+        <select id="foto-series-select" class="form-select" style="margin-bottom:0.75rem;">
+          <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
+          ${series.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+        </select>
+
+        <label class="form-label">${currentLang==='it'?'Foto (JPG, JPEG, PNG)':'Photos (JPG, JPEG, PNG)'}</label>
+        <input type="file" id="foto-file-input" accept=".jpg,.jpeg,.png,.webp" multiple class="form-input" style="margin-bottom:0.75rem;">
+
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;margin-bottom:0.4rem;">
+          <input type="checkbox" id="foto-remove-bg" checked style="width:auto;">
+          ${currentLang==='it'?'✨ Rimuovi sfondo automaticamente (AI locale)':'✨ Remove background automatically (local AI)'}
+        </label>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;margin-bottom:0.75rem;">
+          <input type="checkbox" id="foto-overwrite" checked style="width:auto;">
+          ${currentLang==='it'?'Sovrascrivi foto già presenti':'Overwrite existing photos'}
+        </label>
+
+        <button class="btn-primary" onclick="startAdminFotoUpload()" id="foto-start-btn">
+          🚀 ${currentLang==='it'?'Avvia caricamento':'Start upload'}
+        </button>
+      </div>
+
+      <div id="foto-progress-wrap" style="display:none;margin-bottom:1rem;">
+        <progress id="foto-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
+        <div id="foto-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
+      </div>
+      <div id="foto-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;"></div>
+    </div>`;
+}
+
+function fotoLog(msg, type) {
+  const el = document.getElementById('foto-log');
+  if (!el) return;
+  el.style.display = 'block';
+  const line = document.createElement('div');
+  line.style.color = type === 'ok' ? 'var(--accent)' : type === 'err' ? '#ff6464' : type === 'warn' ? '#ffc832' : 'var(--muted)';
+  line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function fotoStatus(msg, pct) {
+  const el = document.getElementById('foto-status');
+  if (el) el.textContent = msg;
+  const pr = document.getElementById('foto-progress');
+  if (pr && pct !== undefined) pr.value = pct;
+}
+
+// Funzione autocrop (rimuove trasparenza residua attorno alla figurina)
+function fotoCrop(blob) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let mnX = canvas.width, mnY = canvas.height, mxX = 0, mxY = 0;
+      for (let y = 0; y < canvas.height; y++) {
+        for (let x = 0; x < canvas.width; x++) {
+          if (data[(y * canvas.width + x) * 4 + 3] > 10) {
+            if (x < mnX) mnX = x; if (x > mxX) mxX = x;
+            if (y < mnY) mnY = y; if (y > mxY) mxY = y;
+          }
+        }
+      }
+      if (mxX <= mnX || mxY <= mnY) { resolve(blob); return; }
+      const pad = 4;
+      const cw = mxX - mnX + 1 + pad * 2, ch = mxY - mnY + 1 + pad * 2;
+      const out = document.createElement('canvas');
+      out.width = cw; out.height = ch;
+      out.getContext('2d').drawImage(canvas, Math.max(0, mnX-pad), Math.max(0, mnY-pad), cw, ch, 0, 0, cw, ch);
+      out.toBlob(resolve, 'image/png');
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+async function startAdminFotoUpload() {
+  const seriesId = document.getElementById('foto-series-select').value;
+  if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series', 'error'); return; }
+  const files = Array.from(document.getElementById('foto-file-input').files);
+  if (!files.length) { toast(currentLang==='it'?'Seleziona almeno una foto':'Select at least one photo', 'error'); return; }
+  const doRemoveBg = document.getElementById('foto-remove-bg').checked;
+  const overwrite = document.getElementById('foto-overwrite').checked;
+
+  if (doRemoveBg) {
+    // Aspetta la libreria fino a 30 secondi
+    let tries = 0;
+    while (!window._removeBackground && tries < 30) {
+      fotoStatus(currentLang==='it'?'⏳ Caricamento libreria AI...':'⏳ Loading AI library...', 0);
+      await new Promise(r => setTimeout(r, 1000));
+      tries++;
+    }
+    if (!window._removeBackground) {
+      toast(currentLang==='it'?'❌ Libreria AI non disponibile, deseleziona "Rimuovi sfondo"':'❌ AI library unavailable, uncheck "Remove background"', 'error');
+      return;
+    }
+  }
+
+  document.getElementById('foto-start-btn').disabled = true;
+  document.getElementById('foto-progress-wrap').style.display = 'block';
+  document.getElementById('foto-log').innerHTML = '';
+  fotoLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + files.length + ' foto ---', 'info');
+
+  // Carica figurine della serie
+  const allFigs = getData('figurines', []).filter(f => f.seriesId === seriesId);
+  fotoLog((currentLang==='it'?'Figurine nella serie:':'Stickers in series:') + ' ' + allFigs.length, 'info');
+
+  let ok = 0, skip = 0, errors = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const num = parseInt(file.name.replace(/\.[^.]+$/, ''), 10);
+    fotoStatus(file.name + ' (' + (i+1) + '/' + files.length + ')', Math.round((i/files.length)*100));
+
+    if (isNaN(num)) { fotoLog('⚠️ Nome non valido: ' + file.name, 'warn'); errors++; continue; }
+    const fig = allFigs.find(f => Number(f.number) === num);
+    if (!fig) { fotoLog('⚠️ Nessuna figurina #' + num + ' trovata', 'warn'); errors++; continue; }
+    if (fig.img && !overwrite) { fotoLog('⏭️ #' + num + ' ' + fig.name + ' — skip (ha già foto)', 'info'); skip++; continue; }
+
+    try {
+      let blob = file;
+
+      if (doRemoveBg) {
+        fotoLog('🎨 Rimozione sfondo #' + num + '...', 'info');
+        blob = await window._removeBackground(blob, {
+          progress: (key, cur, tot) => fotoStatus('Sfondo #' + num + ': ' + Math.round((cur/tot)*100) + '%', Math.round((i/files.length)*100))
+        });
+        blob = await fotoCrop(blob);
+      }
+
+      fotoLog('☁️ Upload #' + num + '...', 'info');
+      const url = await uploadToCloudinary(blob);
+      const updated = { ...fig, img: url };
+      await fsSave('figurines', updated);
+      if (_cache.figurines) {
+        const idx = _cache.figurines.findIndex(x => x.id === fig.id);
+        if (idx >= 0) _cache.figurines[idx] = updated;
+      }
+      fotoLog('✅ #' + num + ' ' + fig.name + ' — completato', 'ok');
+      ok++;
+    } catch(e) {
+      fotoLog('❌ #' + num + ' — ' + e.message, 'err');
+      errors++;
+    }
+  }
+
+  fotoStatus('✅ Fine: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori', 100);
+  fotoLog('--- FINE: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori ---', errors === 0 ? 'ok' : 'warn');
+  document.getElementById('foto-start-btn').disabled = false;
+}
 
 // ============================================================
 //  TOAST
