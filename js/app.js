@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.117 — Cache sessionStorage per ridurre letture Firebase: serie,
+//          figurine e livelli cachati 5 min; invalidati su modifica.
+// v5.116 — Risorse: blocco Firebase con limiti dettagliati e avviso.
+// v5.115 — Form serie: "Ha variazioni" → "Ha variazioni ufficiali";
+//          aggiunto campo "Ha variazioni non ufficiali".
 // v5.114 — Data import: a capo dopo "ISTRUZIONI:".
 //          Form serie: desc sotto nome, flag su 2 colonne.
 // v5.113 — Serie: campo "N. iniziale"; paginazione mostra range reale.
@@ -270,7 +275,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.114';
+const JS_VERSION = 'v5.117';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -425,7 +430,15 @@ async function fsGetAll(collName) {
   } catch(e) { console.error('fsGetAll', e); return []; }
 }
 
+function _invalidateSessionCache() {
+  try { sessionStorage.removeItem('sgorbions_session_cache'); } catch(e) {}
+}
+
 async function fsSave(collName, item) {
+  // Invalida la cache se modifichiamo serie o figurine
+  if (collName === 'series' || collName === 'figurines' || collName === 'levels') {
+    _invalidateSessionCache();
+  }
   if (!db) return item;
   try {
     const { collection, doc, setDoc, addDoc } = window._fb;
@@ -453,18 +466,55 @@ async function fsDelete(collName, id) {
 
 async function loadAllData() {
   showLoadingOverlay(true);
+
+  // Cache in sessionStorage per ridurre le letture Firebase
+  // Le collection che cambiano raramente vengono cachate per la sessione corrente
+  const SESSION_KEY = 'sgorbions_session_cache';
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minuti
+  let sessionCache = null;
   try {
-    _cache.series = await Promise.race([
-      fsGetAll('series'),
-      new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 4000))
-    ]);
-    _cache.figurines = await fsGetAll('figurines');
-    _cache.posts = await fsGetAll('posts');
-    _cache.users = await fsGetAll('users');
-    _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
-    _cache.segnalazioni = await fsGetAll('segnalazioni');
-    _cache.eventi = await fsGetAll('eventi');
-    _cache.levels = await fsGetAll('levels');
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Date.now() - parsed.ts < CACHE_TTL) sessionCache = parsed;
+    }
+  } catch(e) {}
+
+  try {
+    if (sessionCache) {
+      // Usa la cache per i dati statici
+      _cache.series = sessionCache.series || [];
+      _cache.figurines = sessionCache.figurines || [];
+      _cache.levels = sessionCache.levels || [];
+      // Ricarica solo i dati dinamici
+      _cache.posts = await fsGetAll('posts');
+      _cache.users = await fsGetAll('users');
+      _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
+      _cache.segnalazioni = await fsGetAll('segnalazioni');
+      _cache.eventi = await fsGetAll('eventi');
+    } else {
+      // Prima volta o cache scaduta: carica tutto
+      _cache.series = await Promise.race([
+        fsGetAll('series'),
+        new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 4000))
+      ]);
+      _cache.figurines = await fsGetAll('figurines');
+      _cache.posts = await fsGetAll('posts');
+      _cache.users = await fsGetAll('users');
+      _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
+      _cache.segnalazioni = await fsGetAll('segnalazioni');
+      _cache.eventi = await fsGetAll('eventi');
+      _cache.levels = await fsGetAll('levels');
+      // Salva in sessionStorage
+      try {
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+          ts: Date.now(),
+          series: _cache.series,
+          figurines: _cache.figurines,
+          levels: _cache.levels
+        }));
+      } catch(e) {}
+    }
     await loadAllOwnedFromFirebase();
     // seed admin if not present
     if (!_cache.users.find(u => u.username === 'admin')) {
@@ -577,7 +627,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has variations','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -666,7 +716,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
-    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista figurine che mi mancano".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho delle mie serie incomplete".','wantlist.exportIncomplete':'Esporta lista figurine che ho delle mie serie incomplete','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista figurine che mi mancano','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista figurine che mi mancano".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho delle mie serie incomplete".','wantlist.exportIncomplete':'Esporta lista figurine che ho delle mie serie incomplete','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista figurine che mi mancano','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
@@ -1149,6 +1199,7 @@ function openAddSeriesModal(seriesId) {
       document.getElementById('series-year-input').value = s.year;
       document.getElementById('series-count-input').value = s.count;
       document.getElementById('series-first-number-input').value = s.firstNumber || '';
+      const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = s.hasUnofficialVariations || false;
       document.getElementById('series-desc-input').value = s.desc;
 
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
@@ -1157,6 +1208,7 @@ function openAddSeriesModal(seriesId) {
     ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-desc-input'].forEach(id => document.getElementById(id).value = '');
   }
   // Show admin-only series fields
+    const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = false;
   // Flag visibili solo per admin (ora dentro label in griglia 2 colonne)
   const hasSizesGroup = document.getElementById('series-has-sizes-input')?.closest('.form-group');
   if (hasSizesGroup) hasSizesGroup.style.display = currentUser?.isAdmin ? '' : 'none';
@@ -1183,6 +1235,7 @@ async function saveSeries() {
   const hasSizes = document.getElementById('series-has-sizes-input').checked;
   const hasSubseries = document.getElementById('series-has-subseries-input').checked;
   const hasVariations = document.getElementById('series-has-variations-input')?.checked || false;
+  const hasUnofficialVariations = document.getElementById('series-has-unofficial-variations-input')?.checked || false;
   const count = document.getElementById('series-count-input').value;
   const firstNumber = parseInt(document.getElementById('series-first-number-input').value) || null;
   const desc = document.getElementById('series-desc-input').value.trim();
@@ -1202,12 +1255,12 @@ async function saveSeries() {
   if (editId) {
     const idx = series.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations };
+      series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations };
       await fsSave('series', series[idx]);
       _cache.series = series;
     }
   } else {
-    const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, created: new Date().toISOString() };
+    const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, created: new Date().toISOString() };
     const saved = await fsSave('series', newS);
     _cache.series.push(saved);
   }
