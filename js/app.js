@@ -170,7 +170,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.38';
+const JS_VERSION = 'v5.60';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -416,9 +416,9 @@ async function uploadToCloudinary(file) {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.wishlist':'Wishlist','wishlist.desc':'Your <strong>Wishlist</strong> is your personal space to collect the stickers (or other items) you would like to own.<br><br>While browsing the catalog, press the <strong>♡</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send wishlist to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send wishlist',
+    'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.wishlist':'Wishlist','wishlist.desc':'Your <strong>Wishlist</strong> is your personal space to collect the stickers (or other items) you would like to own.<br><br>While browsing the catalog, press the <strong>🛒</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send wishlist to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send wishlist',
 'profile.anon':'Show me as anonymous in the ranking',
-'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'| Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
+'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'| Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
 'admin.email.fix':'Fix counter:','admin.save':'Save',
@@ -434,11 +434,11 @@ const i18n = {
 'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧'
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','catalog.searchglobal':'Search in catalog...'
   },
   it: {
 'nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog / D&R','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.wishlist':'Lista desiderati',
-'wishlist.desc':'La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nel catalogo, premi il tasto <strong>♡</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia lista desiderati&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
+'wishlist.desc':'La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nel catalogo, premi il tasto <strong>🛒</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia lista desiderati&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
 'wishlist.submit':'📨 Invia lista desiderati',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
@@ -489,7 +489,7 @@ const i18n = {
     'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine hai e traccia la percentuale di completamento per ogni serie.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!',
+    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','catalog.searchglobal':'Cerca nel catalogo...',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -608,7 +608,7 @@ function showPage(page) {
   if (page === 'newsletter') { renderNewsletterUsers(); renderEmailLog(); }
   if (page === 'wishlist') renderWishlist();
   if (page === 'classifica') renderClassifica();
-  if (page === 'admin') adminTab('series');
+  if (page === 'admin') adminTab('users');
   initReveal();
 }
 
@@ -1066,16 +1066,80 @@ async function deleteSeries(id) {
 }
 
 function renderCatalog() {
+  const q = (document.getElementById('series-search')?.value || '').trim();
+  if (q) { renderCatalogSearch(q); return; }
+  // Nessuna query: ripristina vista normale
+  const resultsEl = document.getElementById('catalog-search-results');
   const grid = document.getElementById('catalog-grid');
+  if (resultsEl) resultsEl.style.display = 'none';
+  if (grid) grid.style.display = '';
   let series = getData('series', []);
   series = series.sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
-  const q = (document.getElementById('series-search')?.value || '').toLowerCase();
-  if (q) series = series.filter(s => s.name.toLowerCase().includes(q) || (s.desc||'').toLowerCase().includes(q));
   if (!series.length) {
     grid.innerHTML = `<div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title">${t('catalog.empty')}</p></div>`;
     return;
   }
   grid.innerHTML = series.map(s => seriesCardHTML(s)).join('');
+}
+
+function renderCatalogSearch(q) {
+  q = (q || document.getElementById('series-search')?.value || '').trim().toLowerCase();
+  const resultsEl = document.getElementById('catalog-search-results');
+  const grid = document.getElementById('catalog-grid');
+  if (!q) { renderCatalog(); return; }
+  if (resultsEl) resultsEl.style.display = '';
+  if (grid) grid.style.display = 'none';
+
+  const allSeries = getData('series', []).sort((a,b) => (a.order??9999)-(b.order??9999));
+  const allFigs = getData('figurines', []);
+
+  // Cerca in serie (nome, descrizione) e in figurine (nome, numero, sottoserie, descrizione)
+  const results = [];
+  allSeries.forEach(s => {
+    const desc = (currentLang === 'it' && s.descIt ? s.descIt : s.desc) || '';
+    const seriesMatch = s.name.toLowerCase().includes(q) || desc.toLowerCase().includes(q);
+    const matchingFigs = allFigs.filter(f => f.seriesId === s.id && (
+      (f.name||'').toLowerCase().includes(q) ||
+      String(f.number||'').includes(q) ||
+      (f.subseries||'').toLowerCase().includes(q) ||
+      (f.desc||'').toLowerCase().includes(q)
+    ));
+    if (seriesMatch || matchingFigs.length) {
+      results.push({ series: s, seriesMatch, figs: matchingFigs });
+    }
+  });
+
+  if (!results.length) {
+    resultsEl.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><p class="empty-title">${currentLang === 'it' ? 'Nessun risultato per "' + q + '"' : 'No results for "' + q + '"'}</p></div>`;
+    return;
+  }
+
+  const totalFigs = results.reduce((n, r) => n + r.figs.length, 0);
+  const totalSeries = results.filter(r => r.seriesMatch).length;
+  const summary = currentLang === 'it'
+    ? `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">${results.length} serie trovate · ${totalFigs} oggetti trovati</p>`
+    : `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">${results.length} series found · ${totalFigs} items found</p>`;
+
+  resultsEl.innerHTML = summary + results.map(r => {
+    const s = r.series;
+    const desc = (currentLang === 'it' && s.descIt ? s.descIt : s.desc) || '';
+    const seriesHighlight = r.seriesMatch
+      ? `<div onclick="openSeriesDetail('${s.id}')" style="cursor:pointer;display:flex;align-items:center;gap:0.75rem;padding:0.6rem 0.75rem;background:rgba(181,255,46,0.07);border:1px solid rgba(181,255,46,0.2);border-radius:var(--radius);margin-bottom:0.5rem;">
+          ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_48,h_48,c_fit,q_auto,f_auto')}" style="width:40px;height:40px;object-fit:contain;border-radius:6px;background:var(--card2);">` : '<span style="font-size:1.5rem;width:40px;text-align:center;">🎴</span>'}
+          <div><div style="font-weight:600;">${s.name}</div><div style="font-size:0.78rem;color:var(--muted);">${desc.substring(0,80)}${desc.length>80?'…':''}</div></div>
+        </div>` : '';
+    const figsHTML = r.figs.length
+      ? `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;padding:0.4rem 0 0.25rem;">
+          ${r.figs.map(f => `<span onclick="openSeriesDetail('${s.id}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:3px 10px;border-radius:10px;">
+            ${f.number ? '#'+f.number+' ' : ''}${f.name}
+          </span>`).join('')}
+        </div>` : '';
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.75rem;">
+      ${seriesHighlight}
+      ${r.figs.length ? `<div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.25rem;">${r.figs.length} ${currentLang==='it'?'oggetti in questa serie':'items in this series'}</div>` : ''}
+      ${figsHTML}
+    </div>`;
+  }).join('');
 }
 
 function seriesCardHTML(s) {
@@ -1174,14 +1238,15 @@ function updateSectionCounts() {
     const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === sec);
     const el = document.getElementById('count-' + sec);
     if (!el) return;
-    if (currentUser && items.length > 0) {
+    const total = items.length;
+    const unit = currentLang === 'it' ? ' oggetti' : ' items';
+    if (currentUser && total > 0) {
       const ownedCount = items.filter(f => owned.includes(f.id)).length;
-      if (ownedCount === items.length) {
-        el.innerHTML = `<span style="color:var(--accent);font-weight:700;">🎉 ${currentLang === 'it' ? 'Hai tutto!' : 'You have it all!'}</span>`;
-        return;
-      }
+      const ownedLabel = currentLang === 'it' ? ownedCount + ' posseduti' : ownedCount + ' owned';
+      el.textContent = total + unit + ' (' + ownedLabel + ')';
+    } else {
+      el.textContent = total + unit;
     }
-    el.textContent = items.length + (currentLang === 'it' ? ' oggetti' : ' items');
   });
 }
 
@@ -1403,7 +1468,7 @@ function renderItems() {
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
     const sizeHTML = f.size ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
     const figLabel = f.subseries ? `[${f.subseries}]` : (f.number ? `#${f.number}` : '');
-    return `<div class="fig-card" onclick="openFigDetail('${f.id}')" style="cursor:pointer;">
+    return `<div class="fig-card" onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="cursor:pointer;">
       <div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
         ${imgHTML}${ownedBadge}${adminBtns}
       </div>
@@ -1416,11 +1481,22 @@ function renderItems() {
         <div class="fig-toggle" style="display:flex;align-items:center;gap:0.5rem;">
           <span class="toggle-label">${t('owned.toggle')}</span>
           <button class="toggle-btn-blue ${isOwned?'on':''}" onclick="event.stopPropagation();toggleOwned('${f.id}')"></button>
-          ${(currentUser && !currentUser.isAdmin && !isOwned) ? `<button onclick="event.stopPropagation();toggleWishlist('${f.id}')" title="${currentLang==='it'?'Aggiungi ai desiderati':'Add to wishlist'}" style="background:${_wishlist.includes(f.id)?'rgba(255,100,100,0.2)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'#ff6464':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'#ff6464':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;">${_wishlist.includes(f.id)?'♥':'♡'}</button>` : ''}
+          ${(currentUser && !currentUser.isAdmin && !isOwned) ? `<button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Rimuovi dai desiderati':'Aggiungi ai desiderati'):(_wishlist.includes(f.id)?'Remove from wishlist':'Add to wishlist')}" style="background:${_wishlist.includes(f.id)?'rgba(255,200,50,0.2)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'#ffc832':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'#ffc832':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">🛒</button>` : ''}
         </div>
       </div>
     </div>`;
   }).join('');
+
+  // Event delegation per i pulsanti cuore wishlist: rimossa la vecchia istanza e aggiunta nuova
+  if (grid._wishlistHandler) grid.removeEventListener('click', grid._wishlistHandler);
+  grid._wishlistHandler = function(e) {
+    const btn = e.target.closest('.wishlist-heart-btn');
+    if (btn) {
+      e.stopPropagation();
+      toggleWishlist(btn.dataset.wishlistId);
+    }
+  };
+  grid.addEventListener('click', grid._wishlistHandler);
 
   // Render pagination controls (bottom)
   const paginationEl = document.getElementById('items-pagination');
@@ -1744,7 +1820,7 @@ function renderProfile() {
   if (currentUser.isAdmin) {
     const currentActiveTab = document.querySelector('.admin-tab.active');
     const currentTab = currentActiveTab?.getAttribute('onclick')?.match(/adminTab\('(\w+)'\)/)?.[1];
-    adminTab(currentTab || 'series');
+    adminTab(currentTab || 'users');
   }
   renderMyCollection(ownedFigs);
 }
@@ -2262,7 +2338,7 @@ function isImpersonating() {
 function impersonateUser(userId) {
   const user = getData('users', []).find(u => u.id === userId);
   if (!user || user.isAdmin) return;
-  const msg = (currentLang === 'it' ? 'Impersonare ' : 'Impersonate ') + user.username + (currentLang === 'it' ? '? Modalità sola lettura.' : '? Read-only mode.');
+  const msg = (currentLang === 'it' ? 'Impersonare ' : 'Impersonate ') + user.username + '?';
   if (!confirm(msg)) return;
   _realAdmin = { ...currentUser };
   currentUser = { ...user };
@@ -2334,9 +2410,17 @@ async function toggleWishlist(figId) {
   } else {
     _wishlist.push(figId);
   }
-  await saveWishlist();
+  // Aggiorna visivamente solo il pulsante cuore della card, senza re-render completo
+  const inWishlist = _wishlist.includes(figId);
+  const btn = document.querySelector(`.wishlist-heart-btn[data-wishlist-id="${figId}"]`);
+  if (btn) {
+    btn.textContent = '🛒';
+    btn.style.background = inWishlist ? 'rgba(255,200,50,0.2)' : 'transparent';
+    btn.style.borderColor = inWishlist ? '#ffc832' : 'rgba(255,255,255,0.15)';
+    btn.style.color = inWishlist ? '#ffc832' : 'var(--muted)';
+  }
+  saveWishlist(); // fire-and-forget, non blocchiamo il thread UI
   if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
-  renderItems();
 }
 
 function updateMsgBadge() {
@@ -2426,6 +2510,15 @@ function openFigDetail(figId) {
     </div>`);
   }
 
+  // Stella wishlist (solo per utenti non-admin e non posseduta)
+  if (currentUser && !isAdmin && !isOwned) {
+    const inWishlist = _wishlist.includes(f.id);
+    rows.push(`<div class="detail-row" style="align-items:center;">
+      <span class="detail-label">${currentLang === 'it' ? 'Lista desiderati' : 'Wishlist'}</span>
+      <button id="fig-detail-wishlist-btn" data-fig-id="${f.id}" onclick="event.stopPropagation();toggleWishlistFromDetail('${f.id}')" title="${currentLang === 'it' ? (inWishlist ? 'Rimuovi dai desiderati' : 'Aggiungi ai desiderati') : (inWishlist ? 'Remove from wishlist' : 'Add to wishlist')}" style="background:${inWishlist ? 'rgba(255,200,50,0.2)' : 'transparent'};border:1px solid ${inWishlist ? '#ffc832' : 'rgba(255,255,255,0.15)'};color:${inWishlist ? '#ffc832' : 'var(--muted)'};border-radius:8px;padding:3px 10px;cursor:pointer;font-size:1.1rem;line-height:1;position:relative;z-index:2;">${inWishlist ? '🛒' : '🛒'}</button>
+    </div>`);
+  }
+
   // Bottom buttons
   if (isAdmin) {
     rows.push(`<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
@@ -2463,16 +2556,42 @@ async function deleteItemFromDetail(itemId) {
 function toggleOwnedFromDetail(figId) {
   toggleOwned(figId);
   const owned = getOwned();
+  const isNowOwned = owned.includes(figId);
   // Update toggle button in modal
   const btn = document.getElementById('fig-detail-toggle');
-  if (btn) btn.className = 'toggle-btn-blue ' + (owned.includes(figId) ? 'on' : '');
+  if (btn) btn.className = 'toggle-btn-blue ' + (isNowOwned ? 'on' : '');
+  // Mostra/nasconde/crea il carrello wishlist nella modal in base a isOwned
+  if (isNowOwned) {
+    const wishBtnModal = document.getElementById('fig-detail-wishlist-btn');
+    if (wishBtnModal) wishBtnModal.style.display = 'none';
+  } else {
+    // Se il pulsante non esiste ancora (figurina era owned all'apertura), lo creiamo
+    let wishBtnModal = document.getElementById('fig-detail-wishlist-btn');
+    if (!wishBtnModal && currentUser && !currentUser.isAdmin) {
+      const inWishlist = _wishlist.includes(figId);
+      const detailRow = document.createElement('div');
+      detailRow.className = 'detail-row';
+      detailRow.style.alignItems = 'center';
+      detailRow.innerHTML = `<span class="detail-label">${currentLang === 'it' ? 'Lista desiderati' : 'Wishlist'}</span>
+        <button id="fig-detail-wishlist-btn" data-fig-id="${figId}" onclick="event.stopPropagation();toggleWishlistFromDetail('${figId}')"
+          style="background:${inWishlist?'rgba(255,200,50,0.2)':'transparent'};border:1px solid ${inWishlist?'#ffc832':'rgba(255,255,255,0.15)'};color:${inWishlist?'#ffc832':'var(--muted)'};border-radius:8px;padding:3px 10px;cursor:pointer;font-size:1.1rem;line-height:1;position:relative;z-index:2;">🛒</button>`;
+      const toggleRow = document.getElementById('fig-detail-toggle')?.closest('.detail-row');
+      if (toggleRow) toggleRow.after(detailRow);
+      else document.getElementById('fig-detail-content')?.appendChild(detailRow);
+    } else if (wishBtnModal) {
+      wishBtnModal.style.display = '';
+    }
+  }
   // Update the card in the grid without closing the modal
   const card = document.querySelector(`.fig-card[onclick*="${figId}"]`);
   if (card) {
     const toggleBtn = card.querySelector('.toggle-btn-blue');
-    if (toggleBtn) toggleBtn.className = 'toggle-btn-blue ' + (owned.includes(figId) ? 'on' : '');
+    if (toggleBtn) toggleBtn.className = 'toggle-btn-blue ' + (isNowOwned ? 'on' : '');
     const badge = card.querySelector('.owned-badge');
-    if (badge) badge.style.display = owned.includes(figId) ? '' : 'none';
+    if (badge) badge.style.display = isNowOwned ? '' : 'none';
+    // Mostra/nasconde la stella wishlist nella card
+    const wishBtnCard = card.querySelector('.wishlist-heart-btn');
+    if (wishBtnCard) wishBtnCard.style.display = isNowOwned ? 'none' : '';
   }
   // Update progress bar
   const allFigs = (_cache.figurines || getData('figurines',[])).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
@@ -2766,7 +2885,7 @@ function updateOwnedCounter() {
   // Navbar counter
   const navEl = document.getElementById('nav-owned-counter');
   if (navEl) {
-    if (currentUser) {
+    if (currentUser && !currentUser.isAdmin) {
       navEl.style.display = '';
       navEl.textContent = (currentLang === 'it' ? 'Mie figurine: ' : 'My stickers: ') + ownedCount + ' / ' + total;
     } else {
@@ -2790,13 +2909,28 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
   }
 });
 
+// Listener permanente delegato per il cuore wishlist nella modal dettaglio
+(function() {
+  const detailModal = document.getElementById('fig-detail-modal');
+  if (detailModal) {
+    detailModal.addEventListener('click', function(e) {
+      const btn = e.target.closest('#fig-detail-wishlist-btn');
+      if (btn) {
+        e.stopPropagation();
+        const figId = btn.getAttribute('data-fig-id');
+        if (figId) toggleWishlistFromDetail(figId);
+      }
+    });
+  }
+})();
+
 // ============================================================
 //  TOAST
 // ============================================================
-function toast(msg, type = 'success', anchorEl = null) {
+function toast(msg, type = 'success', anchorEl = null, duration = 3500) {
   const t = document.createElement('div');
   t.className = 'toast ' + type;
-  t.textContent = msg;
+  if (msg.includes('<br>')) { t.innerHTML = msg; } else { t.textContent = msg; }
   if (anchorEl) {
     // Position near the anchor element
     const rect = anchorEl.getBoundingClientRect();
@@ -2810,7 +2944,7 @@ function toast(msg, type = 'success', anchorEl = null) {
     const tc = document.getElementById('toast-container');
     tc.appendChild(t);
   }
-  setTimeout(() => t.remove(), 3500);
+  setTimeout(() => t.remove(), duration);
 }
 
 // ============================================================
@@ -3293,7 +3427,8 @@ function renderWishlist() {
   const items = _wishlist.map(id => allFigs.find(f => f.id === id)).filter(Boolean);
 
   if (!items.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">♡</div><p class="empty-title">${currentLang === 'it' ? 'La tua wishlist è vuota' : 'Your wishlist is empty'}</p><p class="empty-sub">${currentLang === 'it' ? 'Naviga il catalogo e premi ♡ sulle figurine che ti interessano.' : 'Browse the catalog and press ♡ on stickers you are interested in.'}</p></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🛒</div><p class="empty-title">${currentLang === 'it' ? 'La tua Lista desiderati è vuota' : 'Your wishlist is empty'}</p><p class="empty-sub">${currentLang === 'it' ? 'Naviga il catalogo e premi 🛒 sulle figurine che ti interessano.' : 'Browse the catalog and press 🛒 on stickers you are interested in.'}</p></div>`;
+    renderWishlistHistory();
     return;
   }
 
@@ -3306,12 +3441,14 @@ function renderWishlist() {
 
   const seriesSorted = series.filter(s => bySeries[s.id]).sort((a,b) => (a.order??9999)-(b.order??9999));
 
+  const totalItems = items.length;
+
   el.innerHTML = seriesSorted.map(s => {
     const figs = bySeries[s.id].sort((a,b) => (a.number||0)-(b.number||0));
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.75rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
         <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name}</span>
-        <span class="card-badge">${figs.length}</span>
+        <span class="card-badge">${currentLang === 'it' ? 'N. figurine: ' : 'Items: '}${figs.length}</span>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
         ${figs.map(f => `<span style="background:rgba(255,100,100,0.08);border:1px solid rgba(255,100,100,0.25);color:var(--text);font-size:0.72rem;padding:2px 8px;border-radius:10px;display:inline-flex;align-items:center;gap:4px;">
@@ -3321,10 +3458,57 @@ function renderWishlist() {
       </div>
     </div>`;
   }).join('');
+
+  // Totale in fondo alla lista
+  el.innerHTML += `<p style="text-align:center;color:var(--muted);font-size:0.9rem;margin:1rem 0 0.25rem;">
+    ${currentLang === 'it'
+      ? 'La tua lista dei desiderati conta <strong style="color:var(--text);">' + totalItems + '</strong> figurine.'
+      : 'Your wishlist contains <strong style="color:var(--text);">' + totalItems + '</strong> items.'}
+  </p>`;
+
+  // Storico liste inviate
+  renderWishlistHistory();
+}
+
+function renderWishlistHistory() {
+  // Cerca o crea il contenitore storico
+  let histEl = document.getElementById('wishlist-history');
+  if (!histEl) {
+    histEl = document.createElement('div');
+    histEl.id = 'wishlist-history';
+    const page = document.getElementById('page-wishlist');
+    const inner = page?.querySelector('.section-inner') || page;
+    if (inner) inner.appendChild(histEl);
+  }
+
+  const msgs = (getData('contact_messages', []))
+    .filter(m => m.type === 'wishlist' && m.userId === currentUser?.id)
+    .sort((a,b) => new Date(b.date) - new Date(a.date));
+
+  if (!msgs.length) { histEl.innerHTML = ''; return; }
+
+  const fmt = d => new Date(d).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+
+  histEl.innerHTML = `
+    <hr style="border-color:var(--border);margin:2rem 0 1.25rem;">
+    <h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.75rem;">
+      📋 ${currentLang === 'it' ? 'Storico liste desiderate inviate' : 'Sent wishlist history'}
+    </h3>
+    ${msgs.map((m,i) => `
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.6rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;">
+          <span style="font-size:0.82rem;color:var(--muted);">📨 ${fmt(m.date)}</span>
+          <span class="card-badge" style="font-size:0.7rem;">#${msgs.length - i}</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text);white-space:pre-line;line-height:1.5;">${(function(msg){var p=msg.indexOf('\n\n');return p>-1?msg.slice(p+2):msg;})(m.message)}</div>
+      </div>
+    `).join('')}
+  `;
 }
 
 async function submitWishlist() {
   if (!currentUser || !_wishlist.length) return;
+  if (!confirm(currentLang === 'it' ? 'Confermi di inviare allo staff la tua lista dei desiderati?' : 'Do you confirm sending your wishlist to the staff?')) return;
   const allFigs = getData('figurines', []);
   const series = getData('series', []);
   const items = _wishlist.map(id => allFigs.find(f => f.id === id)).filter(Boolean);
@@ -3355,14 +3539,10 @@ async function submitWishlist() {
     _cache.contact_messages = _cache.contact_messages || [];
     _cache.contact_messages.unshift(saved);
     updateMsgBadge();
-    toast(currentLang === 'it' ? '✅ Lista desiderati inviata!' : '✅ Wishlist sent!', 'success');
-
-    // Ask if user wants to clear
-    if (confirm(currentLang === 'it' ? 'Vuoi svuotare la tua wishlist?' : 'Do you want to clear your wishlist?')) {
-      _wishlist = [];
-      await saveWishlist();
-      renderWishlist();
-    }
+    toast(currentLang === 'it' ? '✅ Lista desiderati inviata!<br><span style="font-size:0.85em;opacity:0.85;">Troverai la tua lista nello storico liste desiderate.</span>' : '✅ Wishlist sent!<br><span style="font-size:0.85em;opacity:0.85;">You will find it in the wishlist history.</span>', 'success', null, 5000);
+    _wishlist = [];
+    await saveWishlist();
+    renderWishlist();
   }
 }
 
@@ -3760,3 +3940,32 @@ document.addEventListener('keydown', e => {
     document.querySelectorAll('.modal-overlay:not(.hidden)').forEach(m => m.classList.add('hidden'));
   }
 });
+
+async function toggleWishlistFromDetail(figId) {
+  if (!currentUser) { openAuth('register'); return; }
+  if (_wishlist.includes(figId)) {
+    _wishlist = _wishlist.filter(id => id !== figId);
+  } else {
+    _wishlist.push(figId);
+  }
+  // Aggiorna visivamente il bottone nella modal immediatamente
+  const inWishlist = _wishlist.includes(figId);
+  const btn = document.getElementById('fig-detail-wishlist-btn');
+  if (btn) {
+    btn.textContent = '🛒';
+    btn.style.background = inWishlist ? 'rgba(255,200,50,0.2)' : 'transparent';
+    btn.style.borderColor = inWishlist ? '#ffc832' : 'rgba(255,255,255,0.15)';
+    btn.style.color = inWishlist ? '#ffc832' : 'var(--muted)';
+    btn.title = currentLang === 'it' ? (inWishlist ? 'Rimuovi dai desiderati' : 'Aggiungi ai desiderati') : (inWishlist ? 'Remove from wishlist' : 'Add to wishlist');
+  }
+  // Aggiorna anche la stella nella griglia se visibile
+  const gridBtn = document.querySelector(`.wishlist-heart-btn[data-wishlist-id="${figId}"]`);
+  if (gridBtn) {
+    gridBtn.textContent = '🛒';
+    gridBtn.style.background = inWishlist ? 'rgba(255,200,50,0.2)' : 'transparent';
+    gridBtn.style.borderColor = inWishlist ? '#ffc832' : 'rgba(255,255,255,0.15)';
+    gridBtn.style.color = inWishlist ? '#ffc832' : 'var(--muted)';
+  }
+  saveWishlist(); // fire-and-forget
+  if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
+}
