@@ -1,6 +1,8 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.122 — Cloudinary: contatore upload mensile + tabella con analisi.
+// v5.121 — Risorse Firebase: piano sopra la tabella, colonne corrette.
 // v5.120 — Risorse: nota storage non misurabile, riga N. documenti (nessun limite).
 // v5.119 — Storico letture 30 giorni nel pannello Risorse.
 // v5.118 — Contatore letture fsGetAll (reset mezzanotte PT).
@@ -279,7 +281,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.120';
+const JS_VERSION = 'v5.122';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -618,8 +620,39 @@ async function uploadToCloudinary(file) {
     method: 'POST', body: formData
   });
   const data = await res.json();
-  if (data.secure_url) return data.secure_url;
+  if (data.secure_url) {
+    _trackCloudinaryUpload();
+    return data.secure_url;
+  }
   throw new Error('Upload failed');
+}
+
+// ── Contatore upload Cloudinary ───────────────────────────────
+function _getMonthKey() {
+  const now = new Date();
+  return now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+}
+
+function _getCloudinaryCounter() {
+  try {
+    const raw = localStorage.getItem('sgorbions_cloudinary');
+    if (!raw) return { count: 0, month: _getMonthKey() };
+    const data = JSON.parse(raw);
+    if (data.month !== _getMonthKey()) return { count: 0, month: _getMonthKey() };
+    return data;
+  } catch(e) { return { count: 0, month: _getMonthKey() }; }
+}
+
+function _trackCloudinaryUpload() {
+  try {
+    const data = _getCloudinaryCounter();
+    data.count += 1;
+    localStorage.setItem('sgorbions_cloudinary', JSON.stringify(data));
+  } catch(e) {}
+}
+
+function getCloudinaryUploadCount() {
+  return _getCloudinaryCounter().count;
 }
 
 // ============================================================
@@ -2629,6 +2662,18 @@ async function renderAdminRisorse() {
     const pct = Math.round(reads / 50000 * 100);
     const color = pct >= 90 ? '#ff4444' : pct >= 60 ? '#ffb400' : 'var(--accent)';
     readsEl.innerHTML = `<span style="color:${color};">${reads.toLocaleString('it-IT')}</span> <span style="font-size:0.72rem;color:var(--muted);">(${pct}% del limite)</span>`;
+  }
+
+  // Cloudinary upload counter
+  const clUploads = document.getElementById('cloudinary-uploads-count');
+  const clCredits = document.getElementById('cloudinary-credits-count');
+  if (clUploads || clCredits) {
+    const uploads = getCloudinaryUploadCount();
+    const credits = (uploads * 0.01).toFixed(2);
+    const pct = Math.round(uploads * 0.01 / 25 * 100);
+    const color = pct >= 90 ? '#ff4444' : pct >= 60 ? '#ffb400' : 'var(--accent)';
+    if (clUploads) clUploads.innerHTML = `<span style="color:${color};">${uploads.toLocaleString('it-IT')}</span>`;
+    if (clCredits) clCredits.innerHTML = `<span style="color:${color};">~${credits}</span> <span style="font-size:0.72rem;color:var(--muted);">(${pct}% del limite)</span>`;
   }
 
   // Storico letture ultimi 30 giorni
