@@ -1,6 +1,7 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.104 — Libreria rimozione sfondo caricata da app.js (non da HTML).
 // v5.103 — Bottone rimuovi sfondo: aspetta la libreria invece di dare errore.
 // v5.102 — Editing figurina: bottone "Rimuovi foto".
 // v5.101 — Autocrop automatico dopo rimozione sfondo (script e app).
@@ -253,7 +254,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.103';
+const JS_VERSION = 'v5.104';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -2807,6 +2808,17 @@ function switchToEditMode(figId) {
 }
 
 let _figEditImgData = null;
+
+// Carica libreria rimozione sfondo in background all'avvio
+(async function loadRemoveBgLib() {
+  try {
+    const mod = await import('https://esm.sh/@imgly/background-removal');
+    window._removeBackground = mod.removeBackground;
+    console.log('Background removal library loaded');
+  } catch(e) {
+    console.warn('Background removal library not available:', e.message);
+  }
+})();
 
 async function removeBgFromEdit() {
   const btn = document.getElementById('fig-edit-remove-bg-btn');
