@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.129 — Hero serie: SI in verde, NO in rosso per variazioni; fix label campi numerici.
+// v5.128 — Form serie: "Numero di Figurine" → "N. di Figurine".
+// v5.127 — Hero serie: variazioni ufficiali/non ufficiali mostrano SI/NO.
+// v5.126 — Serie: "N. iniziale" → "N. prima figurina"; aggiunto "N. ultima figurina".
+// v5.125 — Hero serie: campi meta (N. figurine, N. iniziale, variazioni, desc).
+// v5.124 — Data import: serie in ordine alfabetico.
+// v5.123 — Risorse: rinominati titoli blocchi Firebase e Cloudinary.
 // v5.122 — Cloudinary: contatore upload mensile + tabella con analisi.
 // v5.121 — Risorse Firebase: piano sopra la tabella, colonne corrette.
 // v5.120 — Risorse: nota storage non misurabile, riga N. documenti (nessun limite).
@@ -281,7 +288,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.122';
+const JS_VERSION = 'v5.129';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -679,7 +686,7 @@ const i18n = {
 'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First number','form.series.firstNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','catalog.searchglobal':'Search in catalog...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','catalog.searchglobal':'Search in catalog...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -798,14 +805,14 @@ const i18n = {
     'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine hai e traccia la percentuale di completamento per ogni serie.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. iniziale','form.series.firstNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','catalog.searchglobal':'Cerca nel catalogo...',
+    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','catalog.searchglobal':'Cerca nel catalogo...',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'Email','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
     'form.username':'Nome utente','form.password':'Password',
-    'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'Numero di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.cover':'Immagine di Copertina',
+    'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
@@ -1294,13 +1301,14 @@ function openAddSeriesModal(seriesId) {
       document.getElementById('series-year-input').value = s.year;
       document.getElementById('series-count-input').value = s.count;
       document.getElementById('series-first-number-input').value = s.firstNumber || '';
+      document.getElementById('series-last-number-input').value = s.lastNumber || '';
       const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = s.hasUnofficialVariations || false;
       document.getElementById('series-desc-input').value = s.desc;
 
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
     }
   } else {
-    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-desc-input'].forEach(id => document.getElementById(id).value = '');
+    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-desc-input'].forEach(id => document.getElementById(id).value = '');
   }
   // Show admin-only series fields
     const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = false;
@@ -1333,6 +1341,7 @@ async function saveSeries() {
   const hasUnofficialVariations = document.getElementById('series-has-unofficial-variations-input')?.checked || false;
   const count = document.getElementById('series-count-input').value;
   const firstNumber = parseInt(document.getElementById('series-first-number-input').value) || null;
+  const lastNumber = parseInt(document.getElementById('series-last-number-input').value) || null;
   const desc = document.getElementById('series-desc-input').value.trim();
   const descIt = desc; // same description for both languages
   if (!name || !year) { toast((currentLang === 'it' ? 'Nome e anno sono obbligatori' : 'Name and year are required'), 'error'); return; }
@@ -1350,12 +1359,12 @@ async function saveSeries() {
   if (editId) {
     const idx = series.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations };
+      series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, lastNumber: lastNumber || series[idx].lastNumber || undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations };
       await fsSave('series', series[idx]);
       _cache.series = series;
     }
   } else {
-    const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, created: new Date().toISOString() };
+    const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, lastNumber: lastNumber || undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, created: new Date().toISOString() };
     const saved = await fsSave('series', newS);
     _cache.series.push(saved);
   }
@@ -1544,6 +1553,22 @@ function openSeriesDetail(seriesId) {
   document.getElementById('detail-name').textContent = s.name;
   document.getElementById('detail-year').textContent = s.year;
   document.getElementById('detail-desc').textContent = desc || '';
+
+  // Campi meta nella hero
+  const metaEl = document.getElementById('detail-meta');
+  if (metaEl) {
+    const meta = [];
+    if (s.count) meta.push(`<span>📦 ${s.count} ${currentLang === 'it' ? 'figurine' : 'stickers'}</span>`);
+    if (s.firstNumber != null) meta.push(`<span>🔢 ${currentLang === 'it' ? 'N. prima' : 'First N.'}: ${s.firstNumber}</span>`);
+    if (s.lastNumber != null) meta.push(`<span>🔢 ${currentLang === 'it' ? 'N. ultima' : 'Last N.'}: ${s.lastNumber}</span>`);
+    const varLabel = currentLang === 'it' ? 'Variazioni ufficiali' : 'Official variations';
+    const varVal = s.hasVariations ? `<span style="color:#b5ff2e;font-weight:600;">${currentLang === 'it' ? 'SI' : 'YES'}</span>` : `<span style="color:#ff6464;">${currentLang === 'it' ? 'NO' : 'NO'}</span>`;
+    meta.push(`<span>🎨 ${varLabel}: ${varVal}</span>`);
+    const unoffLabel = currentLang === 'it' ? 'Variazioni non ufficiali' : 'Unofficial variations';
+    const unoffVal = s.hasUnofficialVariations ? `<span style="color:#b5ff2e;font-weight:600;">${currentLang === 'it' ? 'SI' : 'YES'}</span>` : `<span style="color:#ff6464;">${currentLang === 'it' ? 'NO' : 'NO'}</span>`;
+    meta.push(`<span>🎨 ${unoffLabel}: ${unoffVal}</span>`);
+    metaEl.innerHTML = meta.join('');
+  }
   const cover = document.getElementById('detail-cover');
   cover.innerHTML = s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_200,h_200,c_fit,q_auto,f_auto') + '">' : '<span>&#127924;</span>';
   // show selector, hide items section
@@ -3598,7 +3623,7 @@ function renderAdminFoto() {
   const el = document.getElementById('admin-foto-content');
   if (!el) return;
 
-  const series = getData('series', []).sort((a,b) => (a.order||999)-(b.order||999));
+  const series = getData('series', []).slice().sort((a,b) => a.name.localeCompare(b.name, 'it'));
 
   el.innerHTML = `
     <div style="max-width:680px;">
