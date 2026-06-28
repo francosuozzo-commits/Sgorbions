@@ -26,7 +26,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.122</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.129</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -186,6 +186,7 @@
         <div class="series-info">
           <div class="series-year" id="detail-year"></div>
           <h1 class="series-name" id="detail-name"></h1>
+          <div id="detail-meta" style="display:flex;flex-wrap:wrap;gap:0.4rem 1.2rem;margin:0.4rem 0 0.5rem;font-size:0.82rem;color:var(--muted);"></div>
           <p class="series-description" id="detail-desc"></p>
         </div>
       </div>
@@ -442,7 +443,7 @@
 
           <!-- FIREBASE -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
-            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🔥 DATABASE: Firebase Firestore</h4>
+            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🔥 Database per i dati: Firebase Firestore</h4>
             <p style="font-size:0.78rem;color:rgba(255,200,50,0.8);background:rgba(255,200,50,0.08);border:1px solid rgba(255,200,50,0.2);border-radius:8px;padding:0.4rem 0.75rem;margin-bottom:0.75rem;">
               ⚠️ Se superi i limiti giornalieri il sito smette di funzionare fino al giorno successivo. Il caricamento massivo di foto consuma molte letture.
             </p>
@@ -503,7 +504,7 @@
 
           <!-- CLOUDINARY -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
-            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">☁️ Cloudinary (foto)</h4>
+            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">☁️ Database per le foto: Cloudinary</h4>
             <p style="font-size:0.82rem;margin-bottom:0.75rem;">Piano: <strong>Free</strong> &nbsp;·&nbsp; Reset: <strong>1° del mese</strong></p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem 1rem;margin-bottom:0.75rem;">
               <div style="font-size:0.72rem;font-weight:700;color:var(--accent);padding:0.2rem 0.5rem;border-bottom:1px solid var(--border);">Limite piano (Free)</div>
@@ -749,19 +750,27 @@
       <label class="form-label" data-i18n="form.series.desc">Description</label>
       <textarea class="form-textarea" id="series-desc-input" data-i18n-placeholder="form.series.descPlaceholder" placeholder="Descrivi questa serie..." style="min-height:70px;"></textarea>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
-      <div class="form-group">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:0.5rem;">
+      <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.year">Year</label>
         <input class="form-input" type="number" id="series-year-input" placeholder="1991" min="1985" max="2010">
       </div>
-      <div class="form-group">
-        <label class="form-label" data-i18n="form.series.count">Number of Figurines</label>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label" data-i18n="form.series.count">N. di Figurine</label>
         <input class="form-input" type="number" id="series-count-input" placeholder="30" min="1">
       </div>
+      <div class="form-group" style="margin-bottom:0;"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
       <div class="form-group">
-        <label class="form-label" data-i18n="form.series.firstNumber">N. iniziale</label>
+        <label class="form-label" data-i18n="form.series.firstNumber">N. prima figurina</label>
         <input class="form-input" type="number" id="series-first-number-input" placeholder="1" min="1">
         <div class="form-hint" data-i18n="form.series.firstNumberHint">Lascia vuoto se non numerata</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" data-i18n="form.series.lastNumber">N. ultima figurina</label>
+        <input class="form-input" type="number" id="series-last-number-input" placeholder="256" min="1">
+        <div class="form-hint" data-i18n="form.series.lastNumberHint">Lascia vuoto se non numerata</div>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;margin-bottom:0.75rem;">
