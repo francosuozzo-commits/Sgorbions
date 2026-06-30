@@ -26,7 +26,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.171</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.186</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -379,6 +379,7 @@
           <button class="admin-tab" onclick="adminTab('eventi')" data-i18n="admin.eventi"><span style="filter:hue-rotate(200deg);">🔔</span> Eventi</button>
           <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
           <button class="admin-tab" onclick="adminTab('foto')" data-i18n="admin.foto">📥 Data import</button>
+          <button class="admin-tab" onclick="adminTab('email')" data-i18n="admin.email.tab">✉️ E-mail</button>
         </div>
         <div id="admin-series" class="admin-section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -560,18 +561,10 @@
         </div>
         <div id="admin-contacts" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.contacts.title">Contact Messages</h3>
-          <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;max-width:640px;">
-            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;" data-i18n="newsletter.settingsTitle">⚙️ Impostazioni Email</h4>
-            <div class="form-group" style="margin-bottom:0;">
-              <label class="form-label" data-i18n="newsletter.replyToLabel">Indirizzo per le risposte (Reply-To)</label>
-              <div style="display:flex;gap:0.5rem;">
-                <input class="form-input" type="email" id="newsletter-reply-to" placeholder="postmaster@figurinesgorbions.it" style="flex:1;">
-                <button class="btn-primary" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveReplyToField()" data-i18n="admin.save">Salva</button>
-              </div>
-              <div class="form-hint" data-i18n="newsletter.replyToHint">Quando rispondi a un messaggio, l'email arriverà a questo indirizzo</div>
-            </div>
-          </div>
           <div id="admin-contacts-list"></div>
+          <hr class="divider">
+          <h4 style="font-family:var(--font-ui);margin-bottom:1rem;">📬 <span data-i18n="newsletter.log">Ultime e-mail inviate</span></h4>
+          <div id="messages-email-log"></div>
         </div>
 
         <div id="admin-users" class="admin-section">
@@ -580,6 +573,39 @@
         </div>
         <div id="admin-foto" class="admin-section">
           <div id="admin-foto-content"></div>
+        </div>
+        <div id="admin-email" class="admin-section">
+          <div style="max-width:950px;">
+            <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+              <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;" data-i18n="newsletter.settingsTitle">⚙️ Impostazioni Email</h4>
+
+              <div class="form-group">
+                <label class="form-label" data-i18n="newsletter.replyToLabel">Indirizzo per le risposte (Reply-To)</label>
+                <div style="display:flex;gap:0.5rem;">
+                  <input class="form-input" type="email" id="newsletter-reply-to" placeholder="postmaster@figurinesgorbions.it" style="flex:1;">
+                  <button class="btn-primary" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveReplyToField()" data-i18n="admin.save">Salva</button>
+                </div>
+                <div class="form-hint" data-i18n="newsletter.replyToHint">Quando rispondi a un messaggio, l'email arriverà a questo indirizzo</div>
+              </div>
+
+              <hr class="divider" style="margin:1rem 0;">
+
+              <div>
+                <label class="form-label" data-i18n="admin.email.outgoingTitle" style="display:block;margin-bottom:0.4rem;">🔐 Credenziali posta in uscita</label>
+                <p style="font-size:0.85rem;color:var(--muted);margin:0;">
+                  <span data-i18n="admin.email.outgoingDesc">Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di</span>
+                  <a href="https://dashboard.emailjs.com" target="_blank" style="color:var(--accent);">EmailJS</a>.
+                </p>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:0.5rem;margin-bottom:1rem;border-bottom:1px solid var(--border);">
+              <button class="email-archive-tab-btn" data-archive="all" onclick="switchEmailArchiveTab('all')" style="font-size:0.85rem;padding:8px 14px;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;font-weight:600;" data-i18n="admin.email.all">Tutte le e-mail</button>
+              <button class="email-archive-tab-btn" data-archive="newsletter" onclick="switchEmailArchiveTab('newsletter')" style="font-size:0.85rem;padding:8px 14px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);cursor:pointer;" data-i18n="admin.email.newsletterArchive">Newsletter</button>
+              <button class="email-archive-tab-btn" data-archive="messages" onclick="switchEmailArchiveTab('messages')" style="font-size:0.85rem;padding:8px 14px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);cursor:pointer;" data-i18n="admin.email.messagesArchive">Messaggi</button>
+            </div>
+            <div id="admin-email-log"></div>
+          </div>
         </div>
       </div>
 
@@ -617,7 +643,7 @@
         <button class="btn-primary" onclick="sendNewsletterFromAdmin()" data-i18n="newsletter.send">📧 Invia agli utenti selezionati</button>
         <hr class="divider">
         <h4 style="font-family:var(--font-ui);margin-bottom:1rem;">📬 <span data-i18n="newsletter.log">Ultime e-mail inviate</span></h4>
-        <div id="admin-email-log"></div>
+        <div id="newsletter-email-log"></div>
       </div>
     </div>
   </section>
@@ -736,7 +762,7 @@
         <input class="form-input" type="password" id="reg-password" placeholder="Min. 6 characters">
       </div>
       <div class="form-group">
-        <label class="form-label">Nazionalità</label>
+        <label class="form-label">Nazionalità *</label>
         <input class="form-input" type="text" id="reg-nationality-search" placeholder="Scrivi il nome del paese..." oninput="filterNationalities()" autocomplete="off">
         <div id="nationality-dropdown" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);max-height:180px;overflow-y:auto;margin-top:4px;"></div>
         <input type="hidden" id="reg-nationality-code" value="">
