@@ -1,6 +1,78 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.165 — Admin Utenti: rimossa colonna Livello (Admin/Collezionista),
+//          ridondante con il badge ADMIN già mostrato accanto allo username.
+// v5.164 — Classifica: chi ha meno punti del livello più basso ora
+//          riceve il livello virtuale "Non qualificabile".
+// v5.163 — Fix critico: lastLogin ora aggiornato anche per le sessioni
+//          già salvate (login automatico via localStorage), non solo al
+//          login esplicito. Causa principale del bug per utenti reali.
+// v5.162 — Fix: salvataggio lastLogin al login ora atteso (await),
+//          evitando che vada perso se la pagina cambia stato subito dopo.
+// v5.161 — Data import: ordinamento serie allineato a quello admin
+//          (campo "order", gestito dalle frecce), non più alfabetico.
+// v5.160 — Hero serie: "N. figurine album" mostrato subito dopo
+//          "N. figurine (set base)", solo se popolato.
+// v5.159 — Nuovo campo serie "N. figurine album" (numerico).
+// v5.158 — Form serie: checkbox riorganizzati in 2 colonne distinte —
+//          sx: Sottoserie/Taglie; dx: Var. ufficiali/non ufficiali/Change.
+// v5.157 — Form serie: i campi N. variazioni ufficiali/non ufficiali/
+//          Change ora visibili solo se il relativo flag "Ha..." è attivo.
+// v5.156 — Pulsante "Modifica serie" admin nella hero della serie
+//          (catalogo, vista dettaglio), oltre alla tabella admin.
+// v5.155 — Form serie: Anno, N. figurine, N. prima, N. ultima ora su
+//          un'unica riga (4 colonne, Anno più stretto). Hint spostati
+//          come tooltip per risparmiare spazio verticale.
+// v5.154 — Form serie: N. variazioni ufficiali/non ufficiali/Change ora
+//          readonly, calcolati automaticamente dal conteggio reale delle
+//          figurine con i relativi flag attivi.
+// v5.153 — Tab figurine collegate (Variazioni ufficiali/non ufficiali/
+//          Change) nella scheda figurina base, sia in lettura che in
+//          modifica. Mostrati solo i gruppi non vuoti.
+// v5.152 — Fix leggibilità: option dentro i <select> form-select ora
+//          hanno sfondo scuro e testo chiaro espliciti (la tendina
+//          "Figurina base" appariva con testo bianco su bianco).
+// v5.151 — Rimosso campo "Variazioni" (backNumber): superato dal sistema
+//          isVariation/isUnofficialVariation/isChange + baseFigurineId.
+//          Anche colonna delete in vista tabellare sostituita con Modifica.
+// v5.150 — Rimosso pulsante elimina rapido dalla griglia (figurine, album,
+//          extra). Resta solo "Modifica"; eliminazione possibile dalla form.
+// v5.149 — Filtri tipo figurina: aggiunto margine tra "Tutte" e gli altri 3.
+// v5.148 — Nuovo campo baseFigurineId: collega variazioni/change alla
+//          figurina base. Selettore in entrambe le form (catalogo e
+//          dettaglio inline), riferimento cliccabile in vista lettura.
+// v5.147 — Filtri tipo figurina: usa veri toggle switch (.toggle-btn-blue)
+//          come "Ce l'ho" invece di pulsanti pill, per stato OFF leggibile.
+// v5.146 — Sezione figurine: toggle filtro Variazioni ufficiali/non
+//          ufficiali/Change + selettore "Tutte". Default OFF, reset
+//          ad ogni accesso alla sezione.
+// v5.145 — Validazione: Variazione ufficiale/non ufficiale/Change mutuamente
+//          esclusivi, blocca il salvataggio se ne sono attivi 2 o 3.
+// v5.144 — Vista lettura: flag mostrati come frase invece di "campo: valore".
+// v5.143 — Nuovi flag figurina: Variazione ufficiale/non ufficiale/Change.
+//          Checkbox in entrambe le form (catalogo e dettaglio inline).
+//          Conteggi hero calcolati dinamicamente dalle figurine reali.
+// v5.142 — Hero serie: "N. figurine (set base)" + conte variazioni
+//          ufficiali/non ufficiali/Change mostrate solo se popolate.
+// v5.141 — Tabella admin serie: NO in colore neutro (bianco) invece di rosso.
+// v5.140 — Tabella admin serie: colonne SI/NO per Var. ufficiali,
+//          Var. non ufficiali, Change.
+// v5.139 — Hero serie: descrizione rispetta gli a capo (white-space:pre-line).
+// v5.138 — Fix: "Vista griglia" hardcoded in italiano in toggleBulkEditView.
+// v5.137 — Fix: testo pulsanti "Vista tabellare" e "Solo figurine senza
+//          foto" ora si aggiorna anche al cambio lingua mentre la sezione
+//          figurine è già aperta (renderAll non li toccava).
+// v5.136 — Pulsante "Solo figurine senza foto" tradotto anche in EN.
+// v5.135 — Fix definitivo: 2 punti residui nel JS che riscrivevano
+//          "Senza foto" a runtime, sovrascrivendo il testo HTML.
+// v5.134 — Fix versione hardcoded in index.html (era rimasta a v5.130).
+// v5.133 — Pulsante "Senza foto" rinominato "Solo figurine senza foto".
+// v5.132 — Fix critico: il reset dei checkbox "Ha variazioni non ufficiali"
+//          e "Ha Change" era fuori dal blocco if/else e sovrascriveva
+//          sempre i valori a false, anche in modifica.
+// v5.131 — Fix: renderAdminSeries mancante dopo salvataggio serie.
+// v5.130 — Serie: nuovo flag "Ha Change" (solo form admin, non nel catalogo).
 // v5.129 — Hero serie: SI in verde, NO in rosso per variazioni; fix label campi numerici.
 // v5.128 — Form serie: "Numero di Figurine" → "N. di Figurine".
 // v5.127 — Hero serie: variazioni ufficiali/non ufficiali mostrano SI/NO.
@@ -288,7 +360,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.129';
+const JS_VERSION = 'v5.165';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -600,6 +672,20 @@ async function loadAllData() {
   showLoadingOverlay(false);
   // Extra check: if still no data, load demo
   if (!_cache.series.length) loadDemoData();
+
+  // Se l'utente ha una sessione già salvata (login automatico), aggiorna
+  // lastLogin: senza questo, chi resta loggato senza rifare login esplicito
+  // non avrebbe mai una data di ultimo accesso registrata su Firebase.
+  if (currentUser) {
+    const freshUser = (_cache.users || []).find(u => u.id === currentUser.id);
+    if (freshUser) {
+      freshUser.lastLogin = new Date().toISOString();
+      currentUser = freshUser;
+      LOCAL.set('currentUser', freshUser);
+      await fsSave('users', freshUser);
+    }
+  }
+
   renderAll();
   updateNavUser();
 }
@@ -686,7 +772,7 @@ const i18n = {
 'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','catalog.searchglobal':'Search in catalog...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','catalog.searchglobal':'Search in catalog...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -729,7 +815,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'N. Change','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -805,7 +891,7 @@ const i18n = {
     'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine hai e traccia la percentuale di completamento per ogni serie.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','catalog.searchglobal':'Cerca nel catalogo...',
+    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','catalog.searchglobal':'Cerca nel catalogo...',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -818,7 +904,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
-    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista figurine che mi mancano".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho delle mie serie incomplete".','wantlist.exportIncomplete':'Esporta lista figurine che ho delle mie serie incomplete','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista figurine che mi mancano','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista figurine che mi mancano".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho delle mie serie incomplete".','wantlist.exportIncomplete':'Esporta lista figurine che ho delle mie serie incomplete','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista figurine che mi mancano','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
@@ -872,6 +958,7 @@ function setLang(lang, byUser = false) {
 let currentUser = LOCAL.get('currentUser') || null;
 let currentSeriesId = null;
 let _noPhotoFilter = false; // filtro figurine senza foto
+let _itemTypeFilters = { variation: false, unofficialVariation: false, change: false }; // filtri tipo figurina (default OFF)
 let editingSeriesImg = null;
 let editingFigImg = null;
 
@@ -956,7 +1043,7 @@ async function doLogin() {
     setLang(lang);
     applyI18n();
   }
-  fsSave('users', user);
+  await fsSave('users', user);
   if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username, { read: true });
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
@@ -1288,6 +1375,33 @@ updateNavUser();
 // ============================================================
 //  SERIES
 // ============================================================
+// Calcola e mostra i conteggi automatici (var. ufficiali/non ufficiali/Change)
+// contando le figurine della serie con i relativi flag a true.
+function updateSeriesVariationCounts(seriesId) {
+  const figs = seriesId ? getData('figurines', []).filter(f => f.seriesId === seriesId) : [];
+  const nVar = figs.filter(f => f.isVariation).length;
+  const nUnoff = figs.filter(f => f.isUnofficialVariation).length;
+  const nChg = figs.filter(f => f.isChange).length;
+  const elVar = document.getElementById('series-count-variations-input');
+  const elUnoff = document.getElementById('series-count-unofficial-variations-input');
+  const elChg = document.getElementById('series-count-change-input');
+  if (elVar) elVar.value = nVar;
+  if (elUnoff) elUnoff.value = nUnoff;
+  if (elChg) elChg.value = nChg;
+}
+
+function toggleSeriesCountGroups() {
+  const hasVar = document.getElementById('series-has-variations-input')?.checked;
+  const hasUnoff = document.getElementById('series-has-unofficial-variations-input')?.checked;
+  const hasChg = document.getElementById('series-has-change-input')?.checked;
+  const gVar = document.getElementById('series-count-variations-group');
+  const gUnoff = document.getElementById('series-count-unofficial-variations-group');
+  const gChg = document.getElementById('series-count-change-group');
+  if (gVar) gVar.style.display = hasVar ? '' : 'none';
+  if (gUnoff) gUnoff.style.display = hasUnoff ? '' : 'none';
+  if (gChg) gChg.style.display = hasChg ? '' : 'none';
+}
+
 function openAddSeriesModal(seriesId) {
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
   document.getElementById('edit-series-id').value = seriesId || '';
@@ -1302,16 +1416,20 @@ function openAddSeriesModal(seriesId) {
       document.getElementById('series-count-input').value = s.count;
       document.getElementById('series-first-number-input').value = s.firstNumber || '';
       document.getElementById('series-last-number-input').value = s.lastNumber || '';
+      document.getElementById('series-album-count-input').value = s.albumCount || '';
       const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = s.hasUnofficialVariations || false;
+      const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = s.hasChange || false;
       document.getElementById('series-desc-input').value = s.desc;
 
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
     }
   } else {
-    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-desc-input'].forEach(id => document.getElementById(id).value = '');
-  }
-  // Show admin-only series fields
+    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-album-count-input','series-desc-input'].forEach(id => document.getElementById(id).value = '');
     const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = false;
+    const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = false;
+  }
+  updateSeriesVariationCounts(seriesId || null);
+  toggleSeriesCountGroups();
   // Flag visibili solo per admin (ora dentro label in griglia 2 colonne)
   const hasSizesGroup = document.getElementById('series-has-sizes-input')?.closest('.form-group');
   if (hasSizesGroup) hasSizesGroup.style.display = currentUser?.isAdmin ? '' : 'none';
@@ -1339,9 +1457,14 @@ async function saveSeries() {
   const hasSubseries = document.getElementById('series-has-subseries-input').checked;
   const hasVariations = document.getElementById('series-has-variations-input')?.checked || false;
   const hasUnofficialVariations = document.getElementById('series-has-unofficial-variations-input')?.checked || false;
+  const hasChange = document.getElementById('series-has-change-input')?.checked || false;
+  const countVariations = parseInt(document.getElementById('series-count-variations-input').value) || null;
+  const countUnofficialVariations = parseInt(document.getElementById('series-count-unofficial-variations-input').value) || null;
+  const countChange = parseInt(document.getElementById('series-count-change-input').value) || null;
   const count = document.getElementById('series-count-input').value;
   const firstNumber = parseInt(document.getElementById('series-first-number-input').value) || null;
   const lastNumber = parseInt(document.getElementById('series-last-number-input').value) || null;
+  const albumCount = parseInt(document.getElementById('series-album-count-input').value) || null;
   const desc = document.getElementById('series-desc-input').value.trim();
   const descIt = desc; // same description for both languages
   if (!name || !year) { toast((currentLang === 'it' ? 'Nome e anno sono obbligatori' : 'Name and year are required'), 'error'); return; }
@@ -1359,12 +1482,12 @@ async function saveSeries() {
   if (editId) {
     const idx = series.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, lastNumber: lastNumber || series[idx].lastNumber || undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations };
+      series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, lastNumber: lastNumber || series[idx].lastNumber || undefined, albumCount: albumCount ?? series[idx].albumCount ?? undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, countVariations: countVariations ?? series[idx].countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? undefined, countChange: countChange ?? series[idx].countChange ?? undefined };
       await fsSave('series', series[idx]);
       _cache.series = series;
     }
   } else {
-    const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, lastNumber: lastNumber || undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, created: new Date().toISOString() };
+    const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, lastNumber: lastNumber || undefined, albumCount: albumCount ?? undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, countVariations: countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? undefined, countChange: countChange ?? undefined, created: new Date().toISOString() };
     const saved = await fsSave('series', newS);
     _cache.series.push(saved);
   }
@@ -1375,7 +1498,7 @@ async function saveSeries() {
     closeModal('add-series-modal');
     if (fb) { fb.style.display = 'none'; fb.textContent = ''; }
   }, 1000);
-  renderCatalog(); renderHomeSeries(); renderHomeStats();
+  renderCatalog(); renderHomeSeries(); renderHomeStats(); renderAdminSeries();
 }
 async function deleteSeries(id) {
   if (!confirm('Delete this series and all its figurines?')) return;
@@ -1553,20 +1676,23 @@ function openSeriesDetail(seriesId) {
   document.getElementById('detail-name').textContent = s.name;
   document.getElementById('detail-year').textContent = s.year;
   document.getElementById('detail-desc').textContent = desc || '';
+  const editSeriesBtn = document.getElementById('detail-edit-series-btn');
+  if (editSeriesBtn) editSeriesBtn.style.display = currentUser?.isAdmin ? '' : 'none';
 
   // Campi meta nella hero
   const metaEl = document.getElementById('detail-meta');
   if (metaEl) {
     const meta = [];
-    if (s.count) meta.push(`<span>📦 ${s.count} ${currentLang === 'it' ? 'figurine' : 'stickers'}</span>`);
-    if (s.firstNumber != null) meta.push(`<span>🔢 ${currentLang === 'it' ? 'N. prima' : 'First N.'}: ${s.firstNumber}</span>`);
-    if (s.lastNumber != null) meta.push(`<span>🔢 ${currentLang === 'it' ? 'N. ultima' : 'Last N.'}: ${s.lastNumber}</span>`);
-    const varLabel = currentLang === 'it' ? 'Variazioni ufficiali' : 'Official variations';
-    const varVal = s.hasVariations ? `<span style="color:#b5ff2e;font-weight:600;">${currentLang === 'it' ? 'SI' : 'YES'}</span>` : `<span style="color:#ff6464;">${currentLang === 'it' ? 'NO' : 'NO'}</span>`;
-    meta.push(`<span>🎨 ${varLabel}: ${varVal}</span>`);
-    const unoffLabel = currentLang === 'it' ? 'Variazioni non ufficiali' : 'Unofficial variations';
-    const unoffVal = s.hasUnofficialVariations ? `<span style="color:#b5ff2e;font-weight:600;">${currentLang === 'it' ? 'SI' : 'YES'}</span>` : `<span style="color:#ff6464;">${currentLang === 'it' ? 'NO' : 'NO'}</span>`;
-    meta.push(`<span>🎨 ${unoffLabel}: ${unoffVal}</span>`);
+    if (s.count) meta.push(`<span>📦 ${s.count} ${currentLang === 'it' ? 'figurine (set base)' : 'stickers (base set)'}</span>`);
+    if (s.albumCount) meta.push(`<span>📖 ${s.albumCount} ${currentLang === 'it' ? 'figurine album' : 'album stickers'}</span>`);
+    // Conteggi calcolati dinamicamente dalle figurine della serie
+    const seriesFigs = getData('figurines', []).filter(f => f.seriesId === s.id);
+    const nVariation = seriesFigs.filter(f => f.isVariation).length;
+    const nUnofficialVariation = seriesFigs.filter(f => f.isUnofficialVariation).length;
+    const nChange = seriesFigs.filter(f => f.isChange).length;
+    if (nVariation) meta.push(`<span>🎨 ${nVariation} ${currentLang === 'it' ? 'variazioni ufficiali' : 'official variations'}</span>`);
+    if (nUnofficialVariation) meta.push(`<span>🎨 ${nUnofficialVariation} ${currentLang === 'it' ? 'variazioni non ufficiali' : 'unofficial variations'}</span>`);
+    if (nChange) meta.push(`<span>🔄 ${nChange} Change</span>`);
     metaEl.innerHTML = meta.join('');
   }
   const cover = document.getElementById('detail-cover');
@@ -1604,8 +1730,9 @@ function updateSectionCounts() {
 
 function openSeriesSection(section) {
   _noPhotoFilter = false;
+  _itemTypeFilters = { variation: false, unofficialVariation: false, change: false };
   const noPhotoBtn = document.getElementById('no-photo-filter-btn');
-  if (noPhotoBtn) { noPhotoBtn.style.background=''; noPhotoBtn.style.borderColor=''; noPhotoBtn.style.color=''; noPhotoBtn.textContent='📷 Senza foto'; }
+  if (noPhotoBtn) { noPhotoBtn.style.background=''; noPhotoBtn.style.borderColor=''; noPhotoBtn.style.color=''; noPhotoBtn.textContent = currentLang === 'it' ? '📷 Solo figurine senza foto' : '📷 Stickers without photo only'; }
   currentSection = section;
   const si = document.getElementById('items-search'); if (si) { si.value = ''; si.placeholder = currentLang === 'it' ? 'Cerca figurine...' : 'Search stickers...'; }
   currentItemPage = 1;
@@ -1673,6 +1800,25 @@ function closeSeriesDetail() {
 // ============================================================
 //  ITEMS (figurines/albums/extras unified)
 // ============================================================
+function populateBaseFigurineSelect(excludeId, selectedId) {
+  const sel = document.getElementById('fig-base-figurine-input');
+  if (!sel) return;
+  const candidates = getData('figurines', [])
+    .filter(f => f.seriesId === currentSeriesId && f.section === currentSection && f.id !== excludeId && !f.isVariation && !f.isUnofficialVariation && !f.isChange)
+    .sort((a,b) => (a.number||0) - (b.number||0));
+  sel.innerHTML = '<option value="">-- ' + (currentLang === 'it' ? 'Seleziona' : 'Select') + ' --</option>' +
+    candidates.map(f => '<option value="' + f.id + '"' + (f.id === selectedId ? ' selected' : '') + '>' + (f.number ? '#' + f.number + ' ' : '') + f.name + '</option>').join('');
+}
+
+function toggleBaseFigurineGroup() {
+  const group = document.getElementById('fig-base-figurine-group');
+  if (!group) return;
+  const isVar = document.getElementById('fig-is-variation-input')?.checked;
+  const isUnoff = document.getElementById('fig-is-unofficial-variation-input')?.checked;
+  const isChg = document.getElementById('fig-is-change-input')?.checked;
+  group.style.display = (isVar || isUnoff || isChg) ? '' : 'none';
+}
+
 function openAddItemModal(itemId) {
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
   document.getElementById('edit-fig-id').value = itemId || '';
@@ -1691,14 +1837,21 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-score-input').value = f.score || 0;
       document.getElementById('fig-subseries-input').value = f.subseries || '';
       document.getElementById('fig-size-input').value = f.size || '';
-      document.getElementById('fig-back-input').value = f.backNumber || 1;
+      document.getElementById('fig-is-variation-input').checked = f.isVariation || false;
+      document.getElementById('fig-is-unofficial-variation-input').checked = f.isUnofficialVariation || false;
+      document.getElementById('fig-is-change-input').checked = f.isChange || false;
+      populateBaseFigurineSelect(itemId, f.baseFigurineId);
       if (f.img) { const pr = document.getElementById('fig-img-preview'); pr.src = f.img; pr.style.display = 'block'; editingFigImg = f.img; }
     }
   } else {
     ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('fig-score-input').value = 0;
-    document.getElementById('fig-back-input').value = 1;
+    document.getElementById('fig-is-variation-input').checked = false;
+    document.getElementById('fig-is-unofficial-variation-input').checked = false;
+    document.getElementById('fig-is-change-input').checked = false;
+    populateBaseFigurineSelect(null, null);
   }
+  toggleBaseFigurineGroup();
   // Show/hide conditional fields based on series flags
   const _ser = getData('series', []).find(s => s.id === currentSeriesId);
   const sizeGroup = document.getElementById('fig-size-group');
@@ -1713,9 +1866,20 @@ function openAddItemModal(itemId) {
       ? '80px minmax(0,120px) 1fr 60px'
       : '80px 1fr 60px';
   }
-  const backGroup = document.getElementById('fig-back-group');
-  if (backGroup) backGroup.style.display = _ser?.hasVariations ? '' : 'none';
+  const delBtn = document.getElementById('fig-modal-delete-btn');
+  if (delBtn) delBtn.style.display = itemId ? '' : 'none';
   document.getElementById('add-fig-modal').classList.remove('hidden');
+}
+
+async function deleteFigurineFromModal() {
+  const itemId = document.getElementById('edit-fig-id').value;
+  if (!itemId) return;
+  if (!confirm(currentLang === 'it' ? 'Eliminare questo oggetto?' : 'Delete this item?')) return;
+  await fsDelete('figurines', itemId);
+  _cache.figurines = _cache.figurines.filter(x => x.id !== itemId);
+  closeModal('add-fig-modal');
+  renderItems(); renderHomeStats(); updateSectionCounts();
+  toast(currentLang === 'it' ? 'Eliminato' : 'Deleted', 'success');
 }
 
 // keep openAddFigModal as alias for admin panel
@@ -1774,8 +1938,48 @@ function toggleNoPhotoFilter() {
     btn.style.background = _noPhotoFilter ? 'rgba(255,100,100,0.15)' : '';
     btn.style.borderColor = _noPhotoFilter ? '#ff6464' : '';
     btn.style.color = _noPhotoFilter ? '#ff6464' : '';
-    btn.textContent = _noPhotoFilter ? '📷 Mostra tutte' : '📷 Senza foto';
+    btn.textContent = _noPhotoFilter ? (currentLang === 'it' ? '📷 Mostra tutte' : '📷 Show all') : (currentLang === 'it' ? '📷 Solo figurine senza foto' : '📷 Stickers without photo only');
   }
+  renderItems();
+}
+
+function renderItemTypeFilters() {
+  const el = document.getElementById('items-filter-toggles');
+  if (!el) return;
+  if (currentSection !== 'figurines') { el.innerHTML = ''; return; }
+
+  const allActive = _itemTypeFilters.variation && _itemTypeFilters.unofficialVariation && _itemTypeFilters.change;
+  const item = (key, label, icon) => `
+    <div style="display:flex;align-items:center;gap:0.4rem;">
+      <button class="toggle-btn-blue ${_itemTypeFilters[key] ? 'on' : ''}" onclick="toggleItemTypeFilter('${key}')" title="${label}"></button>
+      <span style="font-size:0.82rem;color:var(--muted);">${icon} ${label}</span>
+    </div>`;
+
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center;">';
+  html += `
+    <div style="display:flex;align-items:center;gap:0.4rem;margin-right:1rem;">
+      <button class="toggle-btn-blue ${allActive ? 'on' : ''}" onclick="toggleItemTypeFilter('all')" title="${currentLang === 'it' ? 'Tutte' : 'All'}"></button>
+      <span style="font-size:0.82rem;color:var(--muted);font-weight:600;">${currentLang === 'it' ? 'Tutte' : 'All'}</span>
+    </div>`;
+  html += item('variation', currentLang === 'it' ? 'Variazioni ufficiali' : 'Official variations', '🎨');
+  html += item('unofficialVariation', currentLang === 'it' ? 'Variazioni non ufficiali' : 'Unofficial variations', '🎨');
+  html += item('change', 'Change', '🔄');
+  html += '</div>';
+
+  el.innerHTML = html;
+}
+
+function toggleItemTypeFilter(type) {
+  if (type === 'all') {
+    const allActive = _itemTypeFilters.variation && _itemTypeFilters.unofficialVariation && _itemTypeFilters.change;
+    const newVal = !allActive;
+    _itemTypeFilters.variation = newVal;
+    _itemTypeFilters.unofficialVariation = newVal;
+    _itemTypeFilters.change = newVal;
+  } else {
+    _itemTypeFilters[type] = !_itemTypeFilters[type];
+  }
+  currentItemPage = 1;
   renderItems();
 }
 
@@ -1784,9 +1988,21 @@ function renderItems() {
   if (!currentSeriesId || !grid || !currentSection) return;
   const searchQ = (document.getElementById('items-search')?.value || '').toLowerCase().trim();
   if (searchQ) currentItemPage = 1;
+
+  // Render filtri tipo figurina (solo per la sezione figurine)
+  renderItemTypeFilters();
+
+  const anyTypeFilterActive = _itemTypeFilters.variation || _itemTypeFilters.unofficialVariation || _itemTypeFilters.change;
   const allItems = getData('figurines', []).filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
     if (_noPhotoFilter && f.img) return false;
+    // Filtro tipo figurina: se almeno un toggle è attivo, mostra solo quelle che matchano uno dei toggle attivi
+    if (currentSection === 'figurines' && anyTypeFilterActive) {
+      const matchesType = (_itemTypeFilters.variation && f.isVariation) ||
+                           (_itemTypeFilters.unofficialVariation && f.isUnofficialVariation) ||
+                           (_itemTypeFilters.change && f.isChange);
+      if (!matchesType) return false;
+    }
     if (!searchQ) return true;
     return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ);
   }).sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
@@ -1851,7 +2067,7 @@ function renderItems() {
     const icon = SECTION_ICONS[currentSection];
     const imgHTML = f.img ? `<img src="${cloudinaryUrl(f.img)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;text-align:center;"><span style="font-size:1.5rem;">${icon}</span><span style="font-size:0.6rem;color:var(--muted);line-height:1.2;">Foto non ancora disponibile</span></div>`;
     const ownedBadge = isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : '';
-    const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-del" onclick="event.stopPropagation();deleteFigurine('${f.id}')">&#10005;</button></div>` : '';
+    const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button></div>` : '';
     const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="Segnala qualcosa all'amministratore per questa figurina" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
@@ -1944,8 +2160,15 @@ async function saveFigurine() {
   const score = parseInt(document.getElementById('fig-score-input').value) || 0;
   const subseries = document.getElementById('fig-subseries-input')?.value.trim() || '';
   const size = document.getElementById('fig-size-input')?.value.trim() || '';
-  const backNumber = parseInt(document.getElementById('fig-back-input')?.value) || 1;
+  const isVariation = document.getElementById('fig-is-variation-input')?.checked || false;
+  const isUnofficialVariation = document.getElementById('fig-is-unofficial-variation-input')?.checked || false;
+  const isChange = document.getElementById('fig-is-change-input')?.checked || false;
+  const baseFigurineId = document.getElementById('fig-base-figurine-input')?.value || null;
   if (!name || !number) { toast((currentLang === 'it' ? 'Numero e nome sono obbligatori' : 'Number and name are required'), 'error'); return; }
+  if ([isVariation, isUnofficialVariation, isChange].filter(Boolean).length > 1) {
+    toast((currentLang === 'it' ? 'Variazione ufficiale, non ufficiale e Change sono mutuamente esclusivi: spunta solo una opzione' : 'Official variation, unofficial variation and Change are mutually exclusive: check only one'), 'error');
+    return;
+  }
   toast((currentLang === 'it' ? 'Salvataggio...' : 'Saving...'), 'success');
   let imgUrl = editingFigImg || null;
   if (editingFigImgFileSave) {
@@ -1957,12 +2180,12 @@ async function saveFigurine() {
   if (editId) {
     const idx = figs.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      figs[idx] = { ...figs[idx], number: number ? +number : null, name, desc, score, subseries, size, backNumber, img: imgUrl || figs[idx].img };
+      figs[idx] = { ...figs[idx], number: number ? +number : null, name, desc, score, subseries, size, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, img: imgUrl || figs[idx].img };
       await fsSave('figurines', figs[idx]);
       _cache.figurines = figs;
     }
   } else {
-    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: number ? +number : null, name, desc, score, subseries, size, backNumber, img: imgUrl || null };
+    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: number ? +number : null, name, desc, score, subseries, size, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, img: imgUrl || null };
     const saved = await fsSave('figurines', newF);
     _cache.figurines.push(saved);
   }
@@ -2277,15 +2500,20 @@ function renderAdminSeries() {
   el.innerHTML = `
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.25rem;">${(currentLang === 'it') ? "Usa le frecce per cambiare l'ordine" : 'Use the arrows to change the order'}</p>
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Per eliminare una serie, cancellare prima tutto il suo contenuto.' : 'To delete a series, first delete all its content.'}</p>
-    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"Figurine":"Stickers"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
+    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"Figurine":"Stickers"}</th><th>${currentLang==="it"?"Var. uff.":"Off. var."}</th><th>${currentLang==="it"?"Var. non uff.":"Unoff. var."}</th><th>Change</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${series.map((s, idx) => {
       const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
+      const siNoCell = v => v ? '<span style="color:#b5ff2e;font-weight:600;">SI</span>' : '<span style="color:var(--text);">NO</span>';
       return `<tr>
         <td style="white-space:nowrap;">
           <button class="tbl-btn tbl-btn-edit" onclick="moveSeriesUp(${idx})" ${idx===0?'disabled style="opacity:0.3;"':''}>▲</button>
           <button class="tbl-btn tbl-btn-edit" onclick="moveSeriesDown(${idx})" ${idx===series.length-1?'disabled style="opacity:0.3;"':''}>▼</button>
         </td>
-        <td>${s.name}</td><td>${s.year}</td><td>${figs}</td><td>
+        <td>${s.name}</td><td>${s.year}</td><td>${figs}</td>
+        <td>${siNoCell(s.hasVariations)}</td>
+        <td>${siNoCell(s.hasUnofficialVariations)}</td>
+        <td>${siNoCell(s.hasChange)}</td>
+        <td>
         <button class="tbl-btn tbl-btn-edit" onclick="openAddSeriesModal('${s.id}')">${currentLang === 'it' ? 'Modifica' : 'Edit'}</button>
         ${(() => {
           const figCount = (_cache.figurines || getData('figurines',[])).filter(f => f.seriesId === s.id).length;
@@ -2461,7 +2689,6 @@ function renderAdminUsers() {
     else if (col === 'email') { va = a.email.toLowerCase(); vb = b.email.toLowerCase(); }
     else if (col === 'lastLogin') { va = a.lastLogin || ''; vb = b.lastLogin || ''; }
     else if (col === 'joined') { va = a.joined || ''; vb = b.joined || ''; }
-    else if (col === 'role') { va = a.isAdmin ? 0 : 1; vb = b.isAdmin ? 0 : 1; }
     else { va = ''; vb = ''; }
     return va < vb ? -dir : va > vb ? dir : 0;
   });
@@ -2469,7 +2696,6 @@ function renderAdminUsers() {
   el.innerHTML = `<table class="data-table compact"><thead><tr>
     <th style="cursor:pointer;" onclick="sortAdminUsers('username')">Username${arrow('username')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('email')">E-mail${arrow('email')}</th>
-    <th style="cursor:pointer;" onclick="sortAdminUsers('role')">${(currentLang === 'it') ? 'Livello' : 'Level'}${arrow('role')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('lastLogin')">${(currentLang === 'it') ? 'Ultima login' : 'Last login'}${arrow('lastLogin')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('joined')">${(currentLang === 'it') ? 'Iscritto dal' : 'Member since'}${arrow('joined')}</th>
     <th>${(currentLang === 'it') ? 'Azioni' : 'Actions'}</th></tr></thead><tbody>
@@ -2479,7 +2705,6 @@ function renderAdminUsers() {
         ${u.username}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}${u.nationalityCode ? '<img src="'+flagUrl(u.nationalityCode)+'" title="'+(u.nationalityName||'')+'" style="width:18px;height:12px;object-fit:cover;border-radius:2px;margin-left:4px;">' : ''}
       </td>
       <td>${u.email}</td>
-      <td>${u.isAdmin?'Admin':(currentLang==='it'?'Collezionista':'Collector')}</td>
       <td style="font-size:0.82rem;">${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(u.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '<span style="color:var(--muted);font-style:italic;">mai</span>'}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
       <td style="display:flex;gap:0.3rem;"><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">${currentLang === 'it' ? 'Visualizza' : 'View'}</button>${!u.isAdmin ? `<button class="tbl-btn" style="background:rgba(255,180,0,0.15);border-color:rgba(255,180,0,0.4);color:#ffb400;" onclick="impersonateUser('${u.id}')">🎭 ${(currentLang === 'it') ? 'Impersona' : 'Impersonate'}</button>` : ''}</td>
@@ -2556,6 +2781,10 @@ function getUserLevel(score) {
   const levels = getData('levels', []).sort((a,b) => b.minScore - a.minScore);
   for (const lv of levels) {
     if (score >= lv.minScore) return lv;
+  }
+  // Punteggio sotto la soglia del livello più basso definito
+  if (levels.length) {
+    return { id: '__unqualified__', name: 'Non qualificabile', nameEn: 'Not qualified', minScore: 0 };
   }
   return null;
 }
@@ -2936,6 +3165,23 @@ function openFigDetail(figId) {
     rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Punteggio' : 'Score'}</span><span class="detail-value">${f.score > 0 ? '⭐ ' + f.score + ' pt' : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non assegnato' : 'not assigned') + '</span>'}</span></div>`);
   }
 
+  // Flag Variazione ufficiale / non ufficiale / Change (solo se attivi, come frase)
+  if (f.isVariation) {
+    rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${currentLang === 'it' ? 'Questa figurina è una variazione ufficiale' : 'This sticker is an official variation'}</span></div>`);
+  }
+  if (f.isUnofficialVariation) {
+    rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${currentLang === 'it' ? 'Questa figurina è una variazione non ufficiale' : 'This sticker is an unofficial variation'}</span></div>`);
+  }
+  if (f.isChange) {
+    rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${currentLang === 'it' ? 'Questa figurina è un change' : 'This sticker is a change'}</span></div>`);
+  }
+  if ((f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
+    const baseFig = getData('figurines', []).find(x => x.id === f.baseFigurineId);
+    if (baseFig) {
+      rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--muted);">${currentLang === 'it' ? 'Variazione di' : 'Variation of'}: <a href="#" onclick="openFigDetail('${baseFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${baseFig.number ? '#' + baseFig.number + ' ' : ''}${baseFig.name}</a></span></div>`);
+    }
+  }
+
   // Descrizione
   if (f.desc) {
     rows.push(`<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">${currentLang === 'it' ? 'Descrizione' : 'Description'}</span><span class="detail-value" style="font-size:0.88rem;line-height:1.5;">${f.desc}</span></div>`);
@@ -2950,7 +3196,6 @@ function openFigDetail(figId) {
   }
 
   // Numero di variazioni esistenti - always show (default 1)
-  rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Variazioni' : 'Variations')}</span><span class="detail-value">${f.backNumber || 1}</span></div>`);
 
   // Foto (shown in separate right column)
   const photoEl = document.getElementById('fig-detail-photo');
@@ -2975,6 +3220,9 @@ function openFigDetail(figId) {
     </div>`);
   }
 
+  // Figurine collegate (variazioni/change di cui questa è la base) — tab
+  rows.push(buildLinkedFiguresTabsHTML(f.id));
+
   // Bottom buttons
   if (isAdmin) {
     rows.push(`<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
@@ -2991,8 +3239,67 @@ function openFigDetail(figId) {
   document.getElementById('fig-detail-modal').classList.remove('hidden');
 }
 
+// Costruisce l'HTML con i tab delle figurine collegate (variazioni/change)
+// di cui la figurina "baseId" è la base. Restituisce '' se non ce ne sono.
+function buildLinkedFiguresTabsHTML(baseId) {
+  const linked = getData('figurines', []).filter(x => x.baseFigurineId === baseId);
+  if (!linked.length) return '';
+
+  const groups = [
+    { key: 'variation', label: currentLang === 'it' ? 'Variazioni ufficiali' : 'Official variations', icon: '🎨', items: linked.filter(x => x.isVariation) },
+    { key: 'unofficialVariation', label: currentLang === 'it' ? 'Variazioni non ufficiali' : 'Unofficial variations', icon: '🎨', items: linked.filter(x => x.isUnofficialVariation) },
+    { key: 'change', label: 'Change', icon: '🔄', items: linked.filter(x => x.isChange) },
+  ].filter(g => g.items.length > 0);
+
+  if (!groups.length) return '';
+
+  const firstKey = groups[0].key;
+  let html = '<div style="margin-top:1.2rem;">';
+  html += '<div style="display:flex;gap:0.4rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;flex-wrap:wrap;">';
+  groups.forEach((g, i) => {
+    html += `<button class="linked-fig-tab-btn" data-tab="${g.key}" onclick="switchLinkedFigTab('${g.key}')" style="font-size:0.8rem;padding:6px 12px;border:none;border-bottom:2px solid ${i===0?'var(--accent)':'transparent'};background:transparent;color:${i===0?'var(--accent)':'var(--muted)'};cursor:pointer;font-weight:${i===0?'600':'400'};">${g.icon} ${g.label} (${g.items.length})</button>`;
+  });
+  html += '</div>';
+
+  groups.forEach((g, i) => {
+    html += `<div class="linked-fig-tab-panel" data-tab="${g.key}" style="${i===0?'':'display:none;'}">`;
+    html += '<div style="display:flex;flex-direction:column;gap:0.4rem;">';
+    g.items.forEach(item => {
+      html += `<a href="#" onclick="openFigDetail('${item.id}');return false;" style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;border-radius:8px;background:var(--card2);text-decoration:none;color:var(--text);font-size:0.85rem;">
+        ${item.img ? `<img src="${cloudinaryUrl(item.img,'w_60,h_60,c_fit,q_auto,f_auto')}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;background:var(--card);">` : '<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">🖼️</span>'}
+        <span>${item.number ? '#' + item.number + ' ' : ''}${item.name}</span>
+      </a>`;
+    });
+    html += '</div></div>';
+  });
+
+  html += '</div>';
+  return html;
+}
+
+function switchLinkedFigTab(key) {
+  document.querySelectorAll('.linked-fig-tab-btn').forEach(btn => {
+    const active = btn.getAttribute('data-tab') === key;
+    btn.style.borderBottomColor = active ? 'var(--accent)' : 'transparent';
+    btn.style.color = active ? 'var(--accent)' : 'var(--muted)';
+    btn.style.fontWeight = active ? '600' : '400';
+  });
+  document.querySelectorAll('.linked-fig-tab-panel').forEach(panel => {
+    panel.style.display = panel.getAttribute('data-tab') === key ? '' : 'none';
+  });
+}
+
 function editItemFromDetail(itemId) {
   switchToEditMode(itemId);
+}
+
+function toggleFeBaseFigurineGroup() {
+  const group = document.getElementById('fe-base-figurine-group');
+  if (!group) return;
+  const isVar = document.getElementById('fe-is-variation')?.checked;
+  const isUnoff = document.getElementById('fe-is-unofficial-variation')?.checked;
+  const isChg = document.getElementById('fe-is-change')?.checked;
+  group.style.display = (isVar || isUnoff || isChg) ? '' : 'none';
 }
 
 function switchToEditMode(figId) {
@@ -3042,11 +3349,25 @@ function switchToEditMode(figId) {
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-size" value="' + (f.size||'') + '" placeholder="S/M/L/XL" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;border:none;background:transparent;"></span></div>';
   }
 
-  // Variazioni (sempre visibile, come nella vista dettaglio)
-  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazioni':'Variations') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-back" value="' + (f.backNumber||1) + '" min="1" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
+  // Flag Variazione ufficiale / non ufficiale / Change
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione ufficiale':'Official variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-variation" onchange="toggleFeBaseFigurineGroup()" ' + (f.isVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione non ufficiale':'Unofficial variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup()" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Change</span><span class="detail-value"><input type="checkbox" id="fe-is-change" onchange="toggleFeBaseFigurineGroup()" ' + (f.isChange?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+
+  // Figurina base (selettore, mostrato solo se uno dei 3 flag è attivo)
+  const baseCandidates = getData('figurines', [])
+    .filter(x => x.seriesId === f.seriesId && x.section === f.section && x.id !== f.id && !x.isVariation && !x.isUnofficialVariation && !x.isChange)
+    .sort((a,b) => (a.number||0) - (b.number||0));
+  const baseOptionsHtml = '<option value="">-- ' + (currentLang==='it'?'Seleziona':'Select') + ' --</option>' +
+    baseCandidates.map(x => '<option value="' + x.id + '"' + (x.id === f.baseFigurineId ? ' selected' : '') + '>' + (x.number ? '#' + x.number + ' ' : '') + x.name + '</option>').join('');
+  const showBaseGroup = f.isVariation || f.isUnofficialVariation || f.isChange;
+  html += '<div class="detail-row" id="fe-base-figurine-group" style="' + (showBaseGroup ? '' : 'display:none;') + '"><span class="detail-label">' + (currentLang==='it'?'Figurina base':'Base sticker') + '</span><span class="detail-value"><select class="form-select" id="fe-base-figurine" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;">' + baseOptionsHtml + '</select></span></div>';
 
   // Descrizione (in fondo, campo più grande)
   html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang==='it'?'Descrizione':'Description') + '</span><span class="detail-value"><textarea id="fe-desc" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + (f.desc||'') + '</textarea></span></div>';
+
+  // Figurine collegate (variazioni/change di cui questa è la base) — tab
+  html += buildLinkedFiguresTabsHTML(f.id);
 
   // Pulsanti
   html += '<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">';
@@ -3202,8 +3523,19 @@ async function saveFigFromDetail(figId) {
     desc: document.getElementById('fe-desc')?.value.trim() || '',
     score: +(document.getElementById('fe-score')?.value || 0),
     size: document.getElementById('fe-size')?.value.trim() || '',
-    backNumber: +(document.getElementById('fe-back')?.value || 1),
+    isVariation: document.getElementById('fe-is-variation')?.checked || false,
+    isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
+    isChange: document.getElementById('fe-is-change')?.checked || false,
   };
+
+  if ([updates.isVariation, updates.isUnofficialVariation, updates.isChange].filter(Boolean).length > 1) {
+    toast(currentLang === 'it' ? 'Variazione ufficiale, non ufficiale e Change sono mutuamente esclusivi: spunta solo una opzione' : 'Official variation, unofficial variation and Change are mutually exclusive: check only one', 'error');
+    return;
+  }
+
+  updates.baseFigurineId = (updates.isVariation || updates.isUnofficialVariation || updates.isChange)
+    ? (document.getElementById('fe-base-figurine')?.value || null)
+    : null;
 
   // Gestione immagine
   if (_figEditImgData === '__remove__') {
@@ -3623,7 +3955,7 @@ function renderAdminFoto() {
   const el = document.getElementById('admin-foto-content');
   if (!el) return;
 
-  const series = getData('series', []).slice().sort((a,b) => a.name.localeCompare(b.name, 'it'));
+  const series = getData('series', []).slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
 
   el.innerHTML = `
     <div style="max-width:680px;">
@@ -3862,6 +4194,19 @@ function renderAll() {
   if (document.getElementById('items-section')?.style.display !== 'none') {
     const titleEl = document.getElementById('items-section-title');
     if (titleEl && currentSection) titleEl.textContent = getSectionLabel(currentSection);
+    // Aggiorna testo pulsanti toolbar figurine (Vista tabellare / Solo senza foto)
+    const bulkBtn = document.getElementById('bulk-edit-toggle-btn');
+    if (bulkBtn) {
+      bulkBtn.textContent = bulkEditActive
+        ? (currentLang === 'it' ? '🔲 Vista griglia' : '🔲 Grid view')
+        : (currentLang === 'it' ? '📋 Vista tabellare' : '📋 Table view');
+    }
+    const noPhotoBtn2 = document.getElementById('no-photo-filter-btn');
+    if (noPhotoBtn2) {
+      noPhotoBtn2.textContent = _noPhotoFilter
+        ? (currentLang === 'it' ? '📷 Mostra tutte' : '📷 Show all')
+        : (currentLang === 'it' ? '📷 Solo figurine senza foto' : '📷 Stickers without photo only');
+    }
     renderItems();
     // Re-trigger WIP banner
     if (currentSection && currentSeriesId) {
@@ -4068,7 +4413,7 @@ function toggleBulkEditView() {
     if (pagination) pagination.style.display = 'none';
     if (paginationTop) paginationTop.style.display = 'none';
     if (bulkView) bulkView.style.display = '';
-    if (btn) btn.textContent = '🔲 Vista griglia';
+    if (btn) btn.textContent = currentLang === 'it' ? '🔲 Vista griglia' : '🔲 Grid view';
     renderBulkEditView();
   } else {
     if (grid) grid.style.display = 'grid';
@@ -4101,7 +4446,6 @@ function renderBulkEditView() {
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Nome</th>
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
           ${currentSeriesHasSizes ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
-          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N. variazioni</th>
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Azioni</th>
         </tr>
       </thead>
@@ -4112,8 +4456,7 @@ function renderBulkEditView() {
           <td style="padding:4px;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:180px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
           <td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
           ${currentSeriesHasSizes ? '<td style="padding:4px;"><input data-field="size" data-id="'+f.id+'" value="'+(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
-          <td style="padding:4px;"><input data-field="backNumber" data-id="${f.id}" value="${f.backNumber||1}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
-          <td style="padding:4px;"><button class="tbl-btn tbl-btn-del" onclick="deleteFigurine('${f.id}')">✕</button></td>
+          <td style="padding:4px;"><button class="tbl-btn tbl-btn-edit" onclick="openAddItemModal('${f.id}')">&#9998;</button></td>
         </tr>`).join('')}
       </tbody>
     </table>`;
@@ -4125,7 +4468,7 @@ async function saveBulkCell(input) {
   let value = input.value.trim();
 
   // Type conversion
-  if (field === 'number' || field === 'backNumber') value = value ? parseInt(value) : null;
+  if (field === 'number') value = value ? parseInt(value) : null;
   if (field === 'score') value = parseInt(value) || 0;
 
   const figs = getData('figurines', []);
