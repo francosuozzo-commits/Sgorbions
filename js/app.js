@@ -1,6 +1,22 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.171 — Fix: messaggi di validazione e conferma del form Contatti
+//          erano hardcoded in inglese, ora rispettano currentLang.
+// v5.170 — Messaggi: nuovo pulsante "Rispondi" — apre editor inline,
+//          invia email all'utente (con reply_to configurato), segna il
+//          messaggio come "RISPOSTO".
+// v5.169 — Spostata sezione "Impostazioni Email" (Reply-To) da Newsletter
+//          a Messaggi: concettualmente legata alle risposte ai messaggi
+//          ricevuti, non alla newsletter (a cui non si risponde).
+// v5.168 — Newsletter: BCC ripristinato, ora letto dinamicamente
+//          dall'email corrente dell'utente admin nel database (Profilo),
+//          non più un indirizzo fisso nel codice.
+// v5.167 — Rimosso BCC automatico in newsletter (mai confermato
+//          l'indirizzo corretto). Resta solo il Reply-To configurabile.
+// v5.166 — Newsletter: indirizzo Reply-To configurabile dall'admin
+//          (sezione Impostazioni Email), salvato su Firebase. Le risposte
+//          degli utenti arrivano a quell'indirizzo.
 // v5.165 — Admin Utenti: rimossa colonna Livello (Admin/Collezionista),
 //          ridondante con il badge ADMIN già mostrato accanto allo username.
 // v5.164 — Classifica: chi ha meno punti del livello più basso ora
@@ -256,17 +272,37 @@ function initEmailJS() {
   }
 }
 
-async function sendEmail(toEmail, username, subject, messaggio) {
+// ── Impostazioni email (reply-to configurabile da admin) ──────────────
+async function getEmailReplyTo() {
+  if (_cache.emailReplyTo !== undefined) return _cache.emailReplyTo;
+  try {
+    const docs = await fsGetAll('settings');
+    const found = docs.find(d => d.id === 'email');
+    _cache.emailReplyTo = found?.replyTo || '';
+  } catch(e) { _cache.emailReplyTo = ''; }
+  return _cache.emailReplyTo;
+}
+
+async function saveEmailReplyTo(value) {
+  await fsSave('settings', { id: 'email', replyTo: value });
+  _cache.emailReplyTo = value;
+}
+
+async function sendEmail(toEmail, username, subject, messaggio, options = {}) {
   // Log always, regardless of EmailJS outcome
   logEmail(toEmail, subject);
   if (typeof emailjs === 'undefined') { console.warn('EmailJS not loaded'); return; }
   try {
-    await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, {
+    const replyTo = await getEmailReplyTo();
+    const payload = {
       email: toEmail,
       username: username,
       subject: subject,
       messaggio: messaggio
-    });
+    };
+    if (replyTo) payload.reply_to = replyTo;
+    if (options.bcc) payload.bcc = options.bcc;
+    await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, payload);
     console.log('Email inviata a', toEmail);
   } catch(e) {
     console.error('Errore invio email', e);
@@ -314,6 +350,20 @@ async function renderEmailLog() {
   } catch(err) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Errore caricamento log.' : 'Error loading log.') + '</p>'; }
 }
 
+async function loadReplyToField() {
+  const input = document.getElementById('newsletter-reply-to');
+  if (!input) return;
+  input.value = await getEmailReplyTo();
+}
+
+async function saveReplyToField() {
+  const input = document.getElementById('newsletter-reply-to');
+  if (!input) return;
+  const value = input.value.trim();
+  await saveEmailReplyTo(value);
+  toast(currentLang === 'it' ? '✅ Indirizzo salvato!' : '✅ Address saved!', 'success');
+}
+
 function renderNewsletterUsers() {
   const el = document.getElementById('newsletter-users-list');
   if (!el) return;
@@ -350,8 +400,12 @@ async function sendNewsletterFromAdmin() {
 
 async function sendNewsletterEmail(subject, messaggio) {
   const users = getData('users', []).filter(u => !u.isAdmin && u.email);
+  // BCC dinamico: legge l'email dell'admin dal database ad ogni invio,
+  // così riflette sempre quella attuale (modificabile dal Profilo).
+  const adminUser = getData('users', []).find(u => u.isAdmin);
+  const bcc = adminUser?.email || null;
   for (const user of users) {
-    await sendEmail(user.email, user.username, subject, messaggio);
+    await sendEmail(user.email, user.username, subject, messaggio, { bcc });
   }
   toast((currentLang === 'it' ? 'Newsletter inviata a ' : 'Newsletter sent to ') + users.length + (currentLang === 'it' ? ' utenti!' : ' users!'), 'success');
 }
@@ -360,7 +414,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.165';
+const JS_VERSION = 'v5.171';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -759,7 +813,7 @@ const i18n = {
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
-'admin.email.fix':'Fix counter:','admin.save':'Save',
+'admin.email.fix':'Fix counter:','admin.save':'Save','newsletter.settingsTitle':'⚙️ Email Settings','newsletter.replyToLabel':'Reply-To address','newsletter.replyToHint':'When you reply to a message, the email will go to this address',
 'admin.firebase.plan':'Free plan (Spark): 1 GB storage, 50,000 reads/day, 20,000 writes/day.',
 'admin.firebase.docs':'total documents',
 'admin.cloudinary.plan':'Free plan: 25 credits/month (storage + transformations + bandwidth).',
@@ -849,7 +903,7 @@ const i18n = {
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'Email inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese).',
-'admin.email.fix':'Correggi contatore:','admin.save':'Salva',
+'admin.email.fix':'Correggi contatore:','admin.save':'Salva','newsletter.settingsTitle':'⚙️ Impostazioni Email','newsletter.replyToLabel':'Indirizzo per le risposte (Reply-To)','newsletter.replyToHint':'Quando rispondi a un messaggio, l\'email arriverà a questo indirizzo',
 'admin.firebase.plan':'Piano gratuito (Spark): 1 GB storage, 50.000 letture/giorno, 20.000 scritture/giorno.',
 'admin.firebase.docs':'documenti totali',
 'admin.cloudinary.plan':'Piano gratuito: 25 crediti/mese (storage + trasformazioni + banda).',
@@ -2355,12 +2409,12 @@ async function sendContact() {
   const email = document.getElementById('contact-email').value.trim();
   const subject = document.getElementById('contact-subject').value.trim();
   const message = document.getElementById('contact-message').value.trim();
-  if (!name || !email || !message) { toast('Please fill in name, email and message', 'error'); return; }
+  if (!name || !email || !message) { toast(currentLang === 'it' ? 'Compila nome, email e messaggio' : 'Please fill in name, email and message', 'error'); return; }
   const msg = { name, email, subject, message, date: new Date().toISOString(), read: false };
   const saved = await fsSave('contact_messages', msg);
   _cache.contact_messages.unshift(saved);
   ['contact-name','contact-email','contact-subject','contact-message'].forEach(id => document.getElementById(id).value = '');
-  toast('Message sent! We\'ll get back to you soon 📩', 'success');
+  toast(currentLang === 'it' ? 'Messaggio inviato! Ti risponderemo presto 📩' : 'Message sent! We\'ll get back to you soon 📩', 'success');
 }
 
 // ============================================================
@@ -2632,6 +2686,7 @@ function renderAdminBlog() {
   }).join('');
 }
 function renderAdminContacts() {
+  loadReplyToField();
   const el = document.getElementById('admin-contacts-list');
   const msgs = getData('contact_messages', []).sort((a,b) => new Date(b.date) - new Date(a.date));
   if (!msgs.length) { el.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun messaggio ancora.' : 'No messages yet.'}</p>`; return; }
@@ -2639,19 +2694,62 @@ function renderAdminContacts() {
     <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.4rem;align-items:center;">
       <div style="display:flex;align-items:center;gap:0.5rem;">
         ${m.read ? '' : '<span style="font-size:0.7rem;background:#4488ff;color:#fff;border-radius:4px;padding:1px 6px;">NEW</span>'}
+        ${m.replied ? `<span style="font-size:0.7rem;background:rgba(181,255,46,0.15);color:var(--accent);border-radius:4px;padding:1px 6px;">✓ ${currentLang === 'it' ? 'RISPOSTO' : 'REPLIED'}</span>` : ''}
         <strong style="font-family:var(--font-ui);">${m.name} <span style="font-size:0.8rem;color:var(--muted);font-family:var(--font-body);">&lt;${m.email}&gt;</span></strong>
       </div>
       <div style="display:flex;align-items:center;gap:0.5rem;">
         <span style="font-size:0.78rem;color:var(--muted);">${new Date(m.date).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB')}</span>
         <div style="display:flex;gap:0.4rem;align-items:center;">
           ${!m.read ? `<button class="tbl-btn tbl-btn-edit" onclick="markContactRead('${m.id}')">${currentLang === 'it' ? 'Segna letto' : 'Mark read'}</button>` : '<span style="font-size:0.78rem;color:var(--muted);">✓</span>'}
+          <button class="tbl-btn tbl-btn-edit" onclick="toggleReplyBox('${m.id}')">↩️ ${currentLang === 'it' ? 'Rispondi' : 'Reply'}</button>
           <button class="tbl-btn" style="background:rgba(255,100,100,0.1);border-color:rgba(255,100,100,0.4);color:#ff6464;" onclick="deleteContactMsg('${m.id}')">🗑️</button>
         </div>
       </div>
     </div>
     ${m.subject ? `<div style="font-size:0.85rem;color:var(--accent3);margin-bottom:0.35rem;">Re: ${m.subject}</div>` : ''}
     <div style="font-size:0.88rem;color:var(--muted);">${m.message}</div>
+    <div id="reply-box-${m.id}" style="display:none;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">
+      <textarea id="reply-text-${m.id}" class="form-textarea" rows="3" placeholder="${currentLang === 'it' ? 'Scrivi la tua risposta...' : 'Write your reply...'}" style="margin-bottom:0.5rem;"></textarea>
+      <div style="display:flex;gap:0.5rem;">
+        <button class="btn-primary" style="font-size:0.82rem;padding:6px 14px;" onclick="sendContactReply('${m.id}')">📧 ${currentLang === 'it' ? 'Invia risposta' : 'Send reply'}</button>
+        <button class="tbl-btn" onclick="toggleReplyBox('${m.id}')">${currentLang === 'it' ? 'Annulla' : 'Cancel'}</button>
+      </div>
+    </div>
   </div>`).join('');
+}
+
+function toggleReplyBox(id) {
+  const box = document.getElementById('reply-box-' + id);
+  if (!box) return;
+  const isOpen = box.style.display !== 'none';
+  document.querySelectorAll('[id^="reply-box-"]').forEach(b => b.style.display = 'none');
+  box.style.display = isOpen ? 'none' : '';
+  if (!isOpen) {
+    const ta = document.getElementById('reply-text-' + id);
+    if (ta) ta.focus();
+  }
+}
+
+async function sendContactReply(id) {
+  const msg = getData('contact_messages', []).find(m => m.id === id);
+  if (!msg) return;
+  const textarea = document.getElementById('reply-text-' + id);
+  const replyText = textarea?.value.trim();
+  if (!replyText) { toast(currentLang === 'it' ? 'Scrivi una risposta prima di inviare' : 'Write a reply before sending', 'error'); return; }
+
+  const subject = (currentLang === 'it' ? 'Re: ' : 'Re: ') + (msg.subject || (currentLang === 'it' ? 'la tua richiesta' : 'your request'));
+  await sendEmail(msg.email, msg.name, subject, replyText);
+
+  msg.replied = true;
+  msg.repliedAt = new Date().toISOString();
+  await fsSave('contact_messages', msg);
+  if (_cache.contact_messages) {
+    const idx = _cache.contact_messages.findIndex(m => m.id === id);
+    if (idx >= 0) _cache.contact_messages[idx] = msg;
+  }
+
+  toast(currentLang === 'it' ? '✅ Risposta inviata!' : '✅ Reply sent!', 'success');
+  renderAdminContacts();
 }
 
 async function deleteContactMsg(id) {
