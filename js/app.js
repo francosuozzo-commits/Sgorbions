@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.190 — Rimossi avvisi preventivi per domini Microsoft (troppi falsi
+//          positivi). Resta solo lo status ✓/❌ nel log email.
+// v5.188 — Storico email: righe cliccabili (▶/▼) mostrano un pannello
+//          con destinatario, oggetto e corpo completo del messaggio.
+//          body ora salvato in email_log ad ogni invio.
+// v5.187 — Data import foto: il log ora mostra "Caricamento N/TOT" invece
+//          di "Upload", con numero progressivo rispetto al totale.
 // v5.186 — Geolocalizzazione IP (ipapi.co): suggerisce/preseleziona la
 //          nazionalità in fase di registrazione (modificabile dall'utente),
 //          e imposta la lingua iniziale per i visitatori anonimi senza
@@ -341,8 +348,7 @@ async function saveEmailReplyTo(value) {
 
 async function sendEmail(toEmail, username, subject, messaggio, options = {}) {
   // Log always, regardless of EmailJS outcome
-  logEmail(toEmail, subject, options.source || 'other');
-  if (typeof emailjs === 'undefined') { console.warn('EmailJS not loaded'); return { ok: false, error: 'EmailJS non caricato' }; }
+  if (typeof emailjs === 'undefined') { console.warn('EmailJS not loaded'); await logEmail(toEmail, subject, options.source || 'other', messaggio, 'failed'); return { ok: false, error: 'EmailJS non caricato' }; }
   try {
     const replyTo = await getEmailReplyTo();
     const payload = {
@@ -355,10 +361,10 @@ async function sendEmail(toEmail, username, subject, messaggio, options = {}) {
     if (options.bcc) payload.bcc = options.bcc;
     await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, payload);
     console.log('Email inviata a', toEmail);
+    await logEmail(toEmail, subject, options.source || 'other', messaggio, 'sent');
     return { ok: true };
   } catch(e) {
     console.error('Errore invio email', e);
-    // Estrae un messaggio leggibile dall'errore EmailJS/SMTP
     const rawMsg = e?.text || e?.message || String(e);
     let friendly = rawMsg;
     if (/authentication failed|535/i.test(rawMsg)) {
@@ -366,6 +372,7 @@ async function sendEmail(toEmail, username, subject, messaggio, options = {}) {
         ? 'Autenticazione SMTP fallita — controlla le credenziali email su EmailJS (la password potrebbe essere cambiata)'
         : 'SMTP authentication failed — check email credentials on EmailJS (password may have changed)';
     }
+    await logEmail(toEmail, subject, options.source || 'other', messaggio, 'failed');
     return { ok: false, error: friendly };
   }
 }
@@ -425,10 +432,49 @@ async function renderEmailLogInto(targetId, filterSource) {
     const note = logs.length > 50 ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrate le ultime 50 di ' + logs.length : 'Showing last 50 of ' + logs.length}</p>` : '';
     const sourceLabel = (s) => s === 'newsletter' ? '📬 Newsletter' : '↩️ ' + (currentLang === 'it' ? 'Messaggi' : 'Messages');
     const showSourceCol = filterSource === 'all';
-    el.innerHTML = note + '<table class="data-table" style="border-spacing:0;table-layout:fixed;width:100%;"><thead><tr><th style="padding:0.4rem 0.75rem;width:160px;">' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th><th style="padding:0.4rem 0.75rem;width:220px;">' + (currentLang === 'it' ? 'Destinatario' : 'Recipient') + '</th><th style="padding:0.4rem 0.75rem;">' + (currentLang === 'it' ? 'Soggetto' : 'Subject') + '</th>' + (showSourceCol ? '<th style="padding:0.4rem 0.75rem;width:110px;">' + (currentLang === 'it' ? 'Origine' : 'Source') + '</th>' : '') + '</tr></thead><tbody>' +
-    display.map(e => '<tr><td style="white-space:nowrap;font-size:0.88rem;padding:0.4rem 0.75rem;">' + new Date(e.date).toLocaleDateString('it-IT') + ' ' + new Date(e.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td><td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + e.to + '</td><td style="font-size:0.88rem;padding:0.4rem 0.75rem;">' + e.subject + '</td>' + (showSourceCol ? '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;">' + sourceLabel(e.source) + '</td>' : '') + '</tr>').join('') +
-    '</tbody></table>';
+    const rows = display.map((e, idx) => {
+      const rowId = targetId + '-row-' + idx;
+      const detailId = targetId + '-detail-' + idx;
+      const statusIcon = e.status === 'failed' ? '<span title="Invio fallito" style="color:#ff6464;">❌ </span>' : '<span style="color:#b5ff2e;">✓ </span>';
+      const mainRow = '<tr style="cursor:pointer;" onclick="toggleEmailDetail(\'' + detailId + '\')">' +
+        '<td style="white-space:nowrap;font-size:0.88rem;padding:0.4rem 0.75rem;">' + statusIcon + new Date(e.date).toLocaleDateString('it-IT') + ' ' + new Date(e.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td>' +
+        '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + e.to + '</td>' +
+        '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;">' + e.subject + '</td>' +
+        (showSourceCol ? '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;">' + sourceLabel(e.source) + '</td>' : '') +
+        '</tr>';
+      const colspan = showSourceCol ? 4 : 3;
+      const bodyHtml = e.body
+        ? '<div style="white-space:pre-line;font-size:0.88rem;line-height:1.6;color:var(--text);padding:0.5rem 0;">' + e.body.replace(/[<]/g,'&lt;').replace(/[>]/g,'&gt;') + '</div>'
+        : '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Corpo non disponibile (email inviata prima di questa funzionalità)' : 'Body not available (email sent before this feature)') + '</p>';
+      const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="' + colspan + '" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
+        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + e.to + '</div>' +
+        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + e.subject + '</div>' +
+        bodyHtml +
+        '</td></tr>';
+      return mainRow + detailRow;
+    }).join('');
+    el.innerHTML = note + '<table class="data-table" style="border-spacing:0;table-layout:fixed;width:100%;"><thead><tr>' +
+      '<th style="padding:0.4rem 0.75rem;width:170px;">' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th>' +
+      '<th style="padding:0.4rem 0.75rem;width:220px;">' + (currentLang === 'it' ? 'Destinatario' : 'Recipient') + '</th>' +
+      '<th style="padding:0.4rem 0.75rem;">' + (currentLang === 'it' ? 'Soggetto' : 'Subject') + '</th>' +
+      (showSourceCol ? '<th style="padding:0.4rem 0.75rem;width:110px;">' + (currentLang === 'it' ? 'Origine' : 'Source') + '</th>' : '') +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
   } catch(err) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Errore caricamento log.' : 'Error loading log.') + '</p>'; }
+}
+
+function toggleEmailDetail(detailId) {
+  const row = document.getElementById(detailId);
+  if (!row) return;
+  const allDetails = row.closest('table').querySelectorAll('tr[id*="-detail-"]');
+  allDetails.forEach(r => { if (r.id !== detailId) r.style.display = 'none'; });
+  const isOpen = row.style.display !== 'none';
+  row.style.display = isOpen ? 'none' : '';
+  // Aggiorna l'indicatore ▶/▼ nella riga principale
+  const mainRow = row.previousElementSibling;
+  if (mainRow) {
+    const firstCell = mainRow.querySelector('td');
+    if (firstCell) firstCell.innerHTML = firstCell.innerHTML.replace(isOpen ? '▼' : '▶', isOpen ? '▶' : '▼');
+  }
 }
 
 async function renderEmailLog() {
@@ -504,7 +550,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.186';
+const JS_VERSION = 'v5.190';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -4339,7 +4385,7 @@ async function startAdminFotoUpload() {
         blob = await fotoCrop(blob);
       }
 
-      fotoLog('☁️ Upload #' + num + '...', 'info');
+      fotoLog('☁️ Caricamento ' + (i+1) + '/' + files.length + ' — #' + num + '...', 'info');
       const url = await uploadToCloudinary(blob);
       const updated = { ...fig, img: url };
       await fsSave('figurines', updated);
@@ -4477,12 +4523,14 @@ function renderAll() {
 // ============================================================
 //  EMAIL COUNTER
 // ============================================================
-async function logEmail(toEmail, subject, source = 'other') {
+async function logEmail(toEmail, subject, source = 'other', body = '', status = 'sent') {
   try {
     await fsSave('email_log', {
       to: toEmail,
       subject: subject,
       source: source,
+      body: body,
+      status: status,
       date: new Date().toISOString()
     });
     // Keep only latest 200 in Firebase
