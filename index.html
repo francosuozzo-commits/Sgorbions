@@ -26,7 +26,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.129</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.165</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -184,7 +184,10 @@
       <div class="series-title-area">
         <div class="series-cover" id="detail-cover"><span id="detail-cover-emoji">&#127924;</span></div>
         <div class="series-info">
-          <div class="series-year" id="detail-year"></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+            <div class="series-year" id="detail-year"></div>
+            <button id="detail-edit-series-btn" onclick="openAddSeriesModal(currentSeriesId)" style="display:none;font-size:0.78rem;padding:4px 12px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;">✏️ Modifica serie</button>
+          </div>
           <h1 class="series-name" id="detail-name"></h1>
           <div id="detail-meta" style="display:flex;flex-wrap:wrap;gap:0.4rem 1.2rem;margin:0.4rem 0 0.5rem;font-size:0.82rem;color:var(--muted);"></div>
           <p class="series-description" id="detail-desc"></p>
@@ -234,7 +237,7 @@
           <button class="btn-primary" onclick="openAddItemModal()" id="admin-add-label" data-i18n="catalog.add">+ Aggiungi</button>
           <button class="btn-secondary" onclick="openBulkScoreModal()" id="bulk-score-toggle" data-i18n="catalog.bulkscore">⭐ Punteggio serie</button>
           <button class="btn-secondary" onclick="toggleBulkEditView()" id="bulk-edit-toggle-btn">📋 Vista tabellare</button>
-          <button class="btn-secondary" onclick="toggleNoPhotoFilter()" id="no-photo-filter-btn">📷 Senza foto</button>
+          <button class="btn-secondary" onclick="toggleNoPhotoFilter()" id="no-photo-filter-btn">📷 Solo figurine senza foto</button>
         </div>
       </div>
     </div>
@@ -251,12 +254,13 @@
       <div class="progress-bar"><div class="progress-fill" id="detail-progress-fill" style="width:0%"></div></div>
     </div>
     <div id="wip-photos-banner" style="display:none;background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);border-radius:10px;padding:0.6rem 1rem;margin-bottom:1rem;font-size:0.85rem;color:#ffb400;">📷 <span id="wip-photos-msg"></span></div>
-    <div class="search-bar" style="margin-bottom:1.5rem;">
+    <div class="search-bar" style="margin-bottom:0.75rem;">
       <div class="search-input-wrap">
         <span class="search-icon">🔍</span>
         <input class="search-input" type="text" id="items-search" placeholder="Search..." oninput="renderItems()">
       </div>
     </div>
+    <div id="items-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.5rem;"></div>
     <div id="items-pagination-top"></div>
     <div class="grid-6" id="items-grid">
       <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora!</p></div>
@@ -750,7 +754,7 @@
       <label class="form-label" data-i18n="form.series.desc">Description</label>
       <textarea class="form-textarea" id="series-desc-input" data-i18n-placeholder="form.series.descPlaceholder" placeholder="Descrivi questa serie..." style="min-height:70px;"></textarea>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:0.5rem;">
+    <div style="display:grid;grid-template-columns:0.7fr 1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.5rem;">
       <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.year">Year</label>
         <input class="form-input" type="number" id="series-year-input" placeholder="1991" min="1985" max="2010">
@@ -759,37 +763,61 @@
         <label class="form-label" data-i18n="form.series.count">N. di Figurine</label>
         <input class="form-input" type="number" id="series-count-input" placeholder="30" min="1">
       </div>
-      <div class="form-group" style="margin-bottom:0;"></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
-      <div class="form-group">
-        <label class="form-label" data-i18n="form.series.firstNumber">N. prima figurina</label>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label" data-i18n="form.series.firstNumber" title="Lascia vuoto se non numerata">N. prima figurina</label>
         <input class="form-input" type="number" id="series-first-number-input" placeholder="1" min="1">
-        <div class="form-hint" data-i18n="form.series.firstNumberHint">Lascia vuoto se non numerata</div>
       </div>
-      <div class="form-group">
-        <label class="form-label" data-i18n="form.series.lastNumber">N. ultima figurina</label>
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label" data-i18n="form.series.lastNumber" title="Lascia vuoto se non numerata">N. ultima figurina</label>
         <input class="form-input" type="number" id="series-last-number-input" placeholder="256" min="1">
-        <div class="form-hint" data-i18n="form.series.lastNumberHint">Lascia vuoto se non numerata</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.5rem;">
+      <div class="form-group" style="margin-bottom:0;">
+        <label class="form-label" data-i18n="form.series.albumCount">N. figurine album</label>
+        <input class="form-input" type="number" id="series-album-count-input" placeholder="0" min="0">
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;margin-bottom:0.75rem;">
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-        <input type="checkbox" id="series-has-sizes-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-        <span data-i18n="form.series.hasSizes">Figurine con taglie differenti</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label" id="series-has-subseries-group">
-        <input type="checkbox" id="series-has-subseries-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-        <span data-i18n="form.series.hasSubseries">Ha sottoserie</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-        <input type="checkbox" id="series-has-variations-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-        <span data-i18n="form.series.hasVariations">Ha variazioni ufficiali</span>
-      </label>
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-        <input type="checkbox" id="series-has-unofficial-variations-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-        <span data-i18n="form.series.hasUnofficialVariations">Ha variazioni non ufficiali</span>
-      </label>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label" id="series-has-subseries-group">
+          <input type="checkbox" id="series-has-subseries-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <span data-i18n="form.series.hasSubseries">Ha sottoserie</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+          <input type="checkbox" id="series-has-sizes-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <span data-i18n="form.series.hasSizes">Figurine con taglie differenti</span>
+        </label>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+          <input type="checkbox" id="series-has-variations-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <span data-i18n="form.series.hasVariations">Ha variazioni ufficiali</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+          <input type="checkbox" id="series-has-unofficial-variations-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <span data-i18n="form.series.hasUnofficialVariations">Ha variazioni non ufficiali</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+          <input type="checkbox" id="series-has-change-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <span data-i18n="form.series.hasChange">Ha Change</span>
+        </label>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+      <div class="form-group" id="series-count-variations-group" style="display:none;">
+        <label class="form-label" data-i18n="form.series.countVariations">N. variazioni ufficiali</label>
+        <input class="form-input" type="number" id="series-count-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;">
+      </div>
+      <div class="form-group" id="series-count-unofficial-variations-group" style="display:none;">
+        <label class="form-label" data-i18n="form.series.countUnofficialVariations">N. variazioni non ufficiali</label>
+        <input class="form-input" type="number" id="series-count-unofficial-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;">
+      </div>
+      <div class="form-group" id="series-count-change-group" style="display:none;">
+        <label class="form-label" data-i18n="form.series.countChange">N. Change</label>
+        <input class="form-input" type="number" id="series-count-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;">
+      </div>
     </div>
 
     <div class="form-group">
@@ -838,10 +866,26 @@
       <label class="form-label" data-i18n="form.fig.size">Taglia</label>
       <input class="form-input" type="text" id="fig-size-input" placeholder="es. S, M, L, XL">
     </div>
-    <div class="form-group" id="fig-back-group">
-      <label class="form-label" data-i18n="form.fig.variations">Numero di variazioni esistenti</label>
-      <input class="form-input" type="number" id="fig-back-input" placeholder="1" min="1" value="1">
-      <div class="form-hint" data-i18n="form.fig.variationsHint">Numero stampato sul retro della figurina (default: 1)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:0.75rem;">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+        <input type="checkbox" id="fig-is-variation-input" onchange="toggleBaseFigurineGroup()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+        <span data-i18n="form.fig.isVariation">Variazione ufficiale</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+        <input type="checkbox" id="fig-is-unofficial-variation-input" onchange="toggleBaseFigurineGroup()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+        <span data-i18n="form.fig.isUnofficialVariation">Variazione non ufficiale</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+        <input type="checkbox" id="fig-is-change-input" onchange="toggleBaseFigurineGroup()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+        <span data-i18n="form.fig.isChange">Change</span>
+      </label>
+    </div>
+    <div class="form-group" id="fig-base-figurine-group" style="display:none;">
+      <label class="form-label" data-i18n="form.fig.baseFigurine">Figurina base (di cui questa è una variante)</label>
+      <select class="form-select" id="fig-base-figurine-input">
+        <option value="">-- Seleziona --</option>
+      </select>
+      <div class="form-hint" data-i18n="form.fig.baseFigurineHint">Indica la figurina originale di cui questa è una variazione o un change</div>
     </div>
     <div class="form-group">
       <label class="form-label" data-i18n="form.fig.desc">Descrizione</label>
@@ -859,7 +903,10 @@
       </div>
       <input type="file" id="fig-img-file" accept="image/*" style="display:none;" onchange="handleFigImg(event)">
     </div>
-    <button class="btn-primary" style="width:100%;" onclick="saveFigurine()" data-i18n="modal.fig.save">Save Figurine</button>
+    <div style="display:flex;gap:0.5rem;">
+      <button class="btn-primary" style="flex:1;" onclick="saveFigurine()" data-i18n="modal.fig.save">Save Figurine</button>
+      <button id="fig-modal-delete-btn" style="display:none;font-size:0.85rem;padding:0.6rem 1rem;border-radius:8px;border:1px solid #ff6464;background:transparent;color:#ff6464;cursor:pointer;" onclick="deleteFigurineFromModal()">🗑️</button>
+    </div>
   </div>
 </div>
 
