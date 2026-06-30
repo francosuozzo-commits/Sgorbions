@@ -1,6 +1,47 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.186 — Geolocalizzazione IP (ipapi.co): suggerisce/preseleziona la
+//          nazionalità in fase di registrazione (modificabile dall'utente),
+//          e imposta la lingua iniziale per i visitatori anonimi senza
+//          preferenza già salvata.
+// v5.185 — Registrazione: nazionalità ora obbligatoria (asterisco in
+//          label, validazione blocca il submit se non selezionata).
+// v5.184 — Newsletter: bandierina nazionalità accanto a username/email
+//          nel pannello Destinatari (stesso stile della tabella Utenti).
+// v5.183 — Fix critico i18n: le chiavi admin.email.* erano duplicate
+//          in entrambi i dizionari (IT scritto anche nel blocco EN e
+//          viceversa), causando testi sbagliati al cambio lingua.
+// v5.182 — Refresh automatico storico newsletter dopo l'invio.
+// v5.181 — Storico email replicato anche nei tab Newsletter e Messaggi,
+//          filtrato per source rispettivo, senza colonna Origine.
+//          renderEmailLog ora basato su funzione generica riusabile.
+// v5.180 — Tab E-mail: container allargato da 680px a 950px (+40%)
+//          per dare più spazio alla colonna Soggetto nello storico.
+// v5.179 — Storico email: larghezze colonne fisse (data/destinatario/
+//          origine strette), Soggetto occupa tutto lo spazio rimanente.
+// v5.178 — Storico email: interlinea ridotta (padding 0.4rem invece di
+//          1rem standard), colonna Origine con nowrap per restare su
+//          una sola riga (icona + testo).
+// v5.177 — Fix: sezione Credenziali posta in uscita unificata sotto lo
+//          stesso cappello "Impostazioni Email" (era separata); link a
+//          EmailJS ora sempre visibile (non più sovrascritto da i18n).
+// v5.176 — Tab E-mail: nuova sezione "Credenziali posta in uscita" con
+//          link al pannello EmailJS (le credenziali non sono gestite qui).
+// v5.175 — Fix critico: sendNewsletterFromAdmin (funzione realmente
+//          collegata al pulsante invio) non passava source='newsletter',
+//          quindi l'archivio Newsletter risultava sempre vuoto. Corretto.
+//          Tabella storico email: rimossa classe "compact" (interlinea
+//          troppo stretta), font leggermente più grande.
+// v5.174 — Fix nomenclatura: source 'reply' rinominato in 'messages'.
+//          2 sole casistiche reali (newsletter/messages), 3 viste filtro.
+// v5.173 — Nuovo tab admin "✉️ E-mail": Impostazioni Reply-To spostate
+//          qui da Messaggi; storico email diviso in 3 archivi filtrabili
+//          (Tutte / Newsletter / Messaggi) tramite nuovo campo "source".
+// v5.172 — sendEmail ora restituisce esito {ok, error}. Risposta a un
+//          messaggio mostra l'errore reale se l'invio fallisce (es.
+//          autenticazione SMTP) invece di dare sempre "inviato" e
+//          marcare il messaggio come risposto solo se l'invio riesce.
 // v5.171 — Fix: messaggi di validazione e conferma del form Contatti
 //          erano hardcoded in inglese, ora rispettano currentLang.
 // v5.170 — Messaggi: nuovo pulsante "Rispondi" — apre editor inline,
@@ -241,6 +282,16 @@ function switchAuthTab(tab) {
   if (title) title.textContent = tab === 'login' ? (currentLang === 'it' ? 'Bentornato!' : 'Welcome back!') : (currentLang === 'it' ? 'Benvenuto!' : 'Welcome!');
   const ae = document.getElementById('auth-error'); if (ae) ae.style.display = 'none';
   const re = document.getElementById('reg-error'); if (re) re.style.display = 'none';
+
+  // Preseleziona la nazionalità via geolocalizzazione IP (solo se il campo è ancora vuoto)
+  if (tab === 'register') {
+    const codeInput = document.getElementById('reg-nationality-code');
+    if (codeInput && !codeInput.value) {
+      detectCountryFromIP().then(geo => {
+        if (geo && !codeInput.value) selectNationality(geo.code, geo.name);
+      });
+    }
+  }
 }
 
 
@@ -290,8 +341,8 @@ async function saveEmailReplyTo(value) {
 
 async function sendEmail(toEmail, username, subject, messaggio, options = {}) {
   // Log always, regardless of EmailJS outcome
-  logEmail(toEmail, subject);
-  if (typeof emailjs === 'undefined') { console.warn('EmailJS not loaded'); return; }
+  logEmail(toEmail, subject, options.source || 'other');
+  if (typeof emailjs === 'undefined') { console.warn('EmailJS not loaded'); return { ok: false, error: 'EmailJS non caricato' }; }
   try {
     const replyTo = await getEmailReplyTo();
     const payload = {
@@ -304,8 +355,18 @@ async function sendEmail(toEmail, username, subject, messaggio, options = {}) {
     if (options.bcc) payload.bcc = options.bcc;
     await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, payload);
     console.log('Email inviata a', toEmail);
+    return { ok: true };
   } catch(e) {
     console.error('Errore invio email', e);
+    // Estrae un messaggio leggibile dall'errore EmailJS/SMTP
+    const rawMsg = e?.text || e?.message || String(e);
+    let friendly = rawMsg;
+    if (/authentication failed|535/i.test(rawMsg)) {
+      friendly = currentLang === 'it'
+        ? 'Autenticazione SMTP fallita — controlla le credenziali email su EmailJS (la password potrebbe essere cambiata)'
+        : 'SMTP authentication failed — check email credentials on EmailJS (password may have changed)';
+    }
+    return { ok: false, error: friendly };
   }
 }
 
@@ -334,20 +395,44 @@ async function sendReplyNotificationEmail(postAuthorId, postTitle, replyAuthor, 
   incrementEmailCounter(1);
 }
 
-async function renderEmailLog() {
-  const el = document.getElementById('admin-email-log');
+let _emailArchiveFilter = 'all';
+
+function switchEmailArchiveTab(filter) {
+  _emailArchiveFilter = filter;
+  document.querySelectorAll('.email-archive-tab-btn').forEach(btn => {
+    const active = btn.getAttribute('data-archive') === filter;
+    btn.style.borderBottomColor = active ? 'var(--accent)' : 'transparent';
+    btn.style.color = active ? 'var(--accent)' : 'var(--muted)';
+    btn.style.fontWeight = active ? '600' : '400';
+  });
+  renderEmailLog();
+}
+
+// targetId: id del contenitore dove disegnare la tabella
+// filterSource: 'all' | 'newsletter' | 'messages' — se omesso usa _emailArchiveFilter (pannello E-mail)
+async function renderEmailLogInto(targetId, filterSource) {
+  const el = document.getElementById(targetId);
   if (!el) return;
   el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Caricamento...' : 'Loading...') + '</p>';
   try {
-    const logs = await fsGetAll('email_log');
+    let logs = await fsGetAll('email_log');
+    if (filterSource !== 'all') {
+      logs = logs.filter(e => e.source === filterSource);
+    }
     logs.sort((a,b) => new Date(b.date) - new Date(a.date));
     if (!logs.length) { el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Nessuna e-mail registrata.' : 'No emails recorded.') + '</p>'; return; }
     const display = logs.slice(0, 50);
     const note = logs.length > 50 ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrate le ultime 50 di ' + logs.length : 'Showing last 50 of ' + logs.length}</p>` : '';
-    el.innerHTML = note + '<table class="data-table compact"><thead><tr><th>' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th><th>' + (currentLang === 'it' ? 'Destinatario' : 'Recipient') + '</th><th>' + (currentLang === 'it' ? 'Soggetto' : 'Subject') + '</th></tr></thead><tbody>' +
-    display.map(e => '<tr><td style="white-space:nowrap;font-size:0.85rem;">' + new Date(e.date).toLocaleDateString('it-IT') + ' ' + new Date(e.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td><td style="font-size:0.85rem;">' + e.to + '</td><td style="font-size:0.85rem;">' + e.subject + '</td></tr>').join('') +
+    const sourceLabel = (s) => s === 'newsletter' ? '📬 Newsletter' : '↩️ ' + (currentLang === 'it' ? 'Messaggi' : 'Messages');
+    const showSourceCol = filterSource === 'all';
+    el.innerHTML = note + '<table class="data-table" style="border-spacing:0;table-layout:fixed;width:100%;"><thead><tr><th style="padding:0.4rem 0.75rem;width:160px;">' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th><th style="padding:0.4rem 0.75rem;width:220px;">' + (currentLang === 'it' ? 'Destinatario' : 'Recipient') + '</th><th style="padding:0.4rem 0.75rem;">' + (currentLang === 'it' ? 'Soggetto' : 'Subject') + '</th>' + (showSourceCol ? '<th style="padding:0.4rem 0.75rem;width:110px;">' + (currentLang === 'it' ? 'Origine' : 'Source') + '</th>' : '') + '</tr></thead><tbody>' +
+    display.map(e => '<tr><td style="white-space:nowrap;font-size:0.88rem;padding:0.4rem 0.75rem;">' + new Date(e.date).toLocaleDateString('it-IT') + ' ' + new Date(e.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td><td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + e.to + '</td><td style="font-size:0.88rem;padding:0.4rem 0.75rem;">' + e.subject + '</td>' + (showSourceCol ? '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;">' + sourceLabel(e.source) + '</td>' : '') + '</tr>').join('') +
     '</tbody></table>';
   } catch(err) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Errore caricamento log.' : 'Error loading log.') + '</p>'; }
+}
+
+async function renderEmailLog() {
+  return renderEmailLogInto('admin-email-log', _emailArchiveFilter);
 }
 
 async function loadReplyToField() {
@@ -365,6 +450,7 @@ async function saveReplyToField() {
 }
 
 function renderNewsletterUsers() {
+  renderEmailLogInto('newsletter-email-log', 'newsletter');
   const el = document.getElementById('newsletter-users-list');
   if (!el) return;
   const users = getData('users', []).filter(u => !u.isAdmin && u.email);
@@ -375,6 +461,7 @@ function renderNewsletterUsers() {
         style="width:16px;height:16px;cursor:pointer;">
       <span>${u.username}</span>
       <span style="color:var(--muted);font-size:0.8rem;">&lt;${u.email}&gt;</span>
+      ${u.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''}
     </label>`).join('');
 }
 
@@ -389,13 +476,16 @@ async function sendNewsletterFromAdmin() {
   const selected = [...document.querySelectorAll('.newsletter-user-cb:checked')];
   if (!selected.length) { toast((currentLang === 'it' ? 'Seleziona almeno un utente' : 'Select at least one user'), 'error'); return; }
   if (!confirm((currentLang === 'it' ? 'Inviare la newsletter a ' : 'Send newsletter to ') + selected.length + (currentLang === 'it' ? ' utenti?' : ' users?'))) return;
+  const adminUser = getData('users', []).find(u => u.isAdmin);
+  const bcc = adminUser?.email || null;
   for (const cb of selected) {
-    await sendEmail(cb.dataset.email, cb.dataset.username, subject, body);
+    await sendEmail(cb.dataset.email, cb.dataset.username, subject, body, { bcc, source: 'newsletter' });
   }
   await incrementEmailCounter(selected.length);
   toast((currentLang === 'it' ? 'Newsletter inviata a ' : 'Newsletter sent to ') + selected.length + (currentLang === 'it' ? ' utenti! 📧' : ' users! 📧'), 'success');
   document.getElementById('newsletter-subject').value = '';
   document.getElementById('newsletter-body').value = '';
+  renderEmailLogInto('newsletter-email-log', 'newsletter');
 }
 
 async function sendNewsletterEmail(subject, messaggio) {
@@ -405,7 +495,7 @@ async function sendNewsletterEmail(subject, messaggio) {
   const adminUser = getData('users', []).find(u => u.isAdmin);
   const bcc = adminUser?.email || null;
   for (const user of users) {
-    await sendEmail(user.email, user.username, subject, messaggio, { bcc });
+    await sendEmail(user.email, user.username, subject, messaggio, { bcc, source: 'newsletter' });
   }
   toast((currentLang === 'it' ? 'Newsletter inviata a ' : 'Newsletter sent to ') + users.length + (currentLang === 'it' ? ' utenti!' : ' users!'), 'success');
 }
@@ -414,7 +504,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.171';
+const JS_VERSION = 'v5.186';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -664,6 +754,15 @@ async function fsDelete(collName, id) {
 async function loadAllData() {
   showLoadingOverlay(true);
 
+  // Geolocalizzazione: imposta la lingua iniziale per i visitatori
+  // anonimi (senza login e senza preferenza lingua già salvata)
+  if (!currentUser && !LOCAL.get('lang')) {
+    const geo = await detectCountryFromIP();
+    if (geo) {
+      currentLang = geo.code === 'it' ? 'it' : 'en';
+    }
+  }
+
   // Cache in sessionStorage per ridurre le letture Firebase
   // Le collection che cambiano raramente vengono cachate per la sessione corrente
   const SESSION_KEY = 'sgorbions_session_cache';
@@ -826,7 +925,7 @@ const i18n = {
 'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','catalog.searchglobal':'Search in catalog...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.email.tab':'✉️ Email','admin.email.all':'All emails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in catalog...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -945,7 +1044,7 @@ const i18n = {
     'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine hai e traccia la percentuale di completamento per ogni serie.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','catalog.searchglobal':'Cerca nel catalogo...',
+    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.email.tab':'✉️ E-mail','admin.email.all':'Tutte le e-mail','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nel catalogo...',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -972,6 +1071,31 @@ const i18n = {
 };
 
 let currentLang = LOCAL.get('lang') || 'en';
+
+// ── Geolocalizzazione IP (per suggerire nazionalità e lingua iniziale) ──
+let _geoDetectedCountry = null; // { code: 'it', name: 'Italia' }
+
+async function detectCountryFromIP() {
+  if (_geoDetectedCountry !== null) return _geoDetectedCountry;
+  try {
+    const res = await Promise.race([
+      fetch('https://ipapi.co/json/'),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
+    ]);
+    const data = await res.json();
+    if (data?.country_code) {
+      const code = data.country_code.toLowerCase();
+      const match = COUNTRIES.find(c => c[0] === code);
+      _geoDetectedCountry = match ? { code: match[0], name: match[1] } : null;
+    } else {
+      _geoDetectedCountry = null;
+    }
+  } catch(e) {
+    console.warn('Geolocalizzazione IP non disponibile:', e.message);
+    _geoDetectedCountry = null;
+  }
+  return _geoDetectedCountry;
+}
 
 function t(key) { return (i18n[currentLang] || i18n.en)[key] || (i18n.en)[key] || key; }
 
@@ -1124,6 +1248,13 @@ async function doRegister() {
   if (users.find(x => x.username === u)) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'Nome utente già in uso'; return; } toast('Nome utente già in uso', 'error'); return; }
   const natCode = document.getElementById('reg-nationality-code')?.value || '';
   const natName = document.getElementById('reg-nationality-name')?.value || '';
+  if (!natCode) {
+    const re = document.getElementById('reg-error');
+    const errMsg = currentLang === 'it' ? 'Seleziona la tua nazionalità' : 'Select your nationality';
+    if (re) { re.style.display = ''; re.textContent = errMsg; return; }
+    toast(errMsg, 'error');
+    return;
+  }
   const newUser = { id: Date.now().toString(), username: u, email: e, password: p, isAdmin: false, joined: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName };
   const saved = await fsSave('users', newUser);
   _cache.users.push(saved);
@@ -2545,6 +2676,7 @@ function adminTab(tab) {
   if (tab === 'eventi') renderAdminEventi();
   if (tab === 'risorse') renderAdminRisorse();
   if (tab === 'foto') renderAdminFoto();
+  if (tab === 'email') { loadReplyToField(); renderEmailLog(); }
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 function renderAdminSeries() {
@@ -2686,7 +2818,7 @@ function renderAdminBlog() {
   }).join('');
 }
 function renderAdminContacts() {
-  loadReplyToField();
+  renderEmailLogInto('messages-email-log', 'messages');
   const el = document.getElementById('admin-contacts-list');
   const msgs = getData('contact_messages', []).sort((a,b) => new Date(b.date) - new Date(a.date));
   if (!msgs.length) { el.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun messaggio ancora.' : 'No messages yet.'}</p>`; return; }
@@ -2738,7 +2870,12 @@ async function sendContactReply(id) {
   if (!replyText) { toast(currentLang === 'it' ? 'Scrivi una risposta prima di inviare' : 'Write a reply before sending', 'error'); return; }
 
   const subject = (currentLang === 'it' ? 'Re: ' : 'Re: ') + (msg.subject || (currentLang === 'it' ? 'la tua richiesta' : 'your request'));
-  await sendEmail(msg.email, msg.name, subject, replyText);
+  const result = await sendEmail(msg.email, msg.name, subject, replyText, { source: 'messages' });
+
+  if (!result.ok) {
+    toast((currentLang === 'it' ? '❌ Invio fallito: ' : '❌ Send failed: ') + result.error, 'error');
+    return;
+  }
 
   msg.replied = true;
   msg.repliedAt = new Date().toISOString();
@@ -4340,11 +4477,12 @@ function renderAll() {
 // ============================================================
 //  EMAIL COUNTER
 // ============================================================
-async function logEmail(toEmail, subject) {
+async function logEmail(toEmail, subject, source = 'other') {
   try {
     await fsSave('email_log', {
       to: toEmail,
       subject: subject,
+      source: source,
       date: new Date().toISOString()
     });
     // Keep only latest 200 in Firebase
