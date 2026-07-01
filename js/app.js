@@ -1,6 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.218 — Per i Retro, la chiave univoca ora è Categoria + Nome (non
+//          più solo Nome), applicata ovunque: import massivo (già
+//          aggiornato), form principale di aggiunta/modifica e form di
+//          modifica rapida dal dettaglio — impedisce il salvataggio se
+//          esiste già un Retro con stessa Categoria e Nome nella serie
+// v5.217 — Fix: nella vista dettaglio pubblica, la riga Numero veniva
+//          comunque mostrata per i Retro quando loggati come admin
+//          (con "non numerata"), perché la condizione non escludeva la
+//          sezione. Ora per i Retro la riga Numero non appare affatto
+// v5.216 — Fix: titolo form di modifica rapida diceva sempre "Modifica
+//          figurina" indipendentemente dalla sezione, ora è dinamico
+//          (es. "Modifica retro"). Nella vista dettaglio pubblica,
+//          Sottocategoria dei Retro ora mostrata solo se popolata
+//          (Categoria resta sempre visibile); in modifica resta sempre
+//          visibile come già era
 // v5.215 — Categoria e Sottocategoria dei Retro ora sempre visibili nella
 //          vista dettaglio pubblica (openFigDetail), non solo nelle form
 //          di modifica admin — stesso errore di impostazione già corretto
@@ -629,7 +644,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.215';
+const JS_VERSION = 'v5.218';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -2530,6 +2545,17 @@ async function saveFigurine() {
   const retroId = document.getElementById('fig-retro-input')?.value || null;
   const isRetrosSection = currentSection === 'retros';
   if (!name || (!isRetrosSection && !number)) { toast((currentLang === 'it' ? (isRetrosSection ? 'Il nome è obbligatorio' : 'Numero e nome sono obbligatori') : (isRetrosSection ? 'Name is required' : 'Number and name are required')), 'error'); return; }
+  if (isRetrosSection) {
+    const editId = document.getElementById('edit-fig-id').value;
+    const dup = getData('figurines', []).find(f =>
+      f.id !== editId &&
+      f.seriesId === currentSeriesId &&
+      f.section === 'retros' &&
+      (f.name||'').toLowerCase() === name.toLowerCase() &&
+      (f.category||'').toLowerCase() === category.toLowerCase()
+    );
+    if (dup) { toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria e lo stesso Nome in questa serie' : 'A Retro with the same Category and Name already exists in this series'), 'error'); return; }
+  }
   if ([isVariation, isUnofficialVariation, isChange].filter(Boolean).length > 1) {
     toast((currentLang === 'it' ? 'Variazione ufficiale, non ufficiale e Change sono mutuamente esclusivi: spunta solo una opzione' : 'Official variation, unofficial variation and Change are mutually exclusive: check only one'), 'error');
     return;
@@ -3566,10 +3592,12 @@ function openFigDetail(figId) {
   // Serie (prima informazione, sempre visibile, utile arrivando da una ricerca)
   rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Serie' : 'Series')}</span><span class="detail-value" style="font-weight:600;">${figSeries?.name || ''}</span></div>`);
 
-  // Categoria e Sottocategoria (solo per i Retro, sempre visibili)
+  // Categoria (sempre visibile per i Retro) e Sottocategoria (solo se popolata)
   if (f.section === 'retros') {
     rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Categoria' : 'Category')}</span><span class="detail-value">${f.category || '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
-    rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottocategoria' : 'Subcategory')}</span><span class="detail-value">${f.subcategory || '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
+    if (f.subcategory) {
+      rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottocategoria' : 'Subcategory')}</span><span class="detail-value">${f.subcategory}</span></div>`);
+    }
   }
 
   // Sottoserie - show only if populated (admin sees it always in edit modal, not here)
@@ -3577,8 +3605,8 @@ function openFigDetail(figId) {
     rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottoserie' : 'Subseries')}</span><span class="detail-value">${f.subseries}</span></div>`);
   }
 
-  // Numero
-  if (f.number || isAdmin) {
+  // Numero (i Retro non sono numerati: non va mostrato affatto)
+  if (f.section !== 'retros' && (f.number || isAdmin)) {
     rows.push(`<div class="detail-row"><span class="detail-label">N.</span><span class="detail-value">${f.number ? String(f.number) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non numerata' : 'unnumbered') + '</span>'}</span></div>`);
   }
 
@@ -3762,7 +3790,7 @@ function switchToEditMode(figId) {
 
   // Aggiorna titolo modal
   const titleEl = document.getElementById('fig-detail-title');
-  if (titleEl) titleEl.textContent = currentLang === 'it' ? 'Modifica figurina' : 'Edit sticker';
+  if (titleEl) titleEl.textContent = (currentLang === 'it' ? 'Modifica ' : 'Edit ') + getSectionLabelSingular(f.section);
 
   // Foto con pulsante cambio immagine
   if (photo) {
@@ -3986,6 +4014,18 @@ function handleFigEditImg(event) {
 async function saveFigFromDetail(figId) {
   const name = document.getElementById('fe-name')?.value.trim();
   if (!name) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
+  const existingForCheck = getData('figurines', []).find(x => x.id === figId);
+  if (existingForCheck?.section === 'retros') {
+    const category = document.getElementById('fe-category')?.value.trim() || '';
+    const dup = getData('figurines', []).find(f =>
+      f.id !== figId &&
+      f.seriesId === existingForCheck.seriesId &&
+      f.section === 'retros' &&
+      (f.name||'').toLowerCase() === name.toLowerCase() &&
+      (f.category||'').toLowerCase() === category.toLowerCase()
+    );
+    if (dup) { toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria e lo stesso Nome in questa serie' : 'A Retro with the same Category and Name already exists in this series'), 'error'); return; }
+  }
   const updates = {
     id: figId,
     name,
@@ -4656,12 +4696,13 @@ async function startImportRetro() {
       errors++; continue;
     }
 
-    // Cerca eventuale duplicato (stessa serie, stesso nome)
+    // Cerca eventuale duplicato (stessa serie, stessa Categoria + Nome)
     const existingFigs = getData('figurines', []);
     const duplicate = existingFigs.find(f =>
       f.seriesId === seriesId &&
       f.section === 'retros' &&
-      (f.name||'').toLowerCase() === nome.toLowerCase()
+      (f.name||'').toLowerCase() === nome.toLowerCase() &&
+      (f.category||'').toLowerCase() === categoria.toLowerCase()
     );
 
     const retroData = {
