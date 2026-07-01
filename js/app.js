@@ -1,6 +1,47 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.231 — Griglia Retro: box foto più basso (aspect-ratio 1.6 invece di
+//          1, quindi rettangolare invece che quadrato) solo per questa
+//          sezione, per ridurne l'ingombro nella card
+// v5.230 — Il breakout di larghezza della griglia (fino a 1500px) già
+//          applicato ai Retro ora vale anche per le Figurine, stesso
+//          contenitore; le Figurine mantengono le loro colonne standard
+//          (7), non le 5 dei Retro
+// v5.229 — Fix paginazione Retro: l'intervallo mostrato (es. "161..200")
+//          usava il campo "N. prima figurina" della serie, non pertinente
+//          per i Retro che non sono numerati. Ora per i Retro l'intervallo
+//          parte sempre da 1 (posizione progressiva nella lista ordinata)
+// v5.228 — Import Variazioni e Import Retro: il riepilogo finale ora
+//          distingue "inseriti" da "aggiornati" invece di sommarli tutti
+//          sotto un'unica voce "ok"
+// v5.227 — Griglia Retro: la zona griglia ora "esce" dal contenitore da
+//          1100px e si allarga fino a 1500px (centrata, tecnica breakout
+//          con margin-left:50%+translateX), senza toccare la fascia dei
+//          pulsanti soprastante che resta nel contenitore originale
+// v5.226 — Griglia Retro: 5 colonne invece di 6
+// v5.225 — Griglia Retro: ordinamento ora per Categoria, Sottocategoria,
+//          Nome (le altre sezioni mantengono l'ordinamento per Numero)
+// v5.224 — Griglia Retro: 6 colonne invece di 7 (solo per questa sezione,
+//          le altre restano a 7); nel box, Categoria e Sottocategoria ora
+//          mostrate prima del Nome, senza etichetta di campo
+// v5.223 — Contatori gialli della home riorganizzati su due righe: prima
+//          riga Serie + Collezionisti, seconda riga Figurine/Retro/Album/
+//          Altri oggetti (nessuna modifica alla logica di calcolo)
+// v5.222 — Box serie nel catalogo: il punteggio (⭐) è stato spostato
+//          sulla riga dell'anno, in alto a destra, per liberare spazio
+//          nella riga contatori ora che sono 4 (Figurine/Retro/Album/Altro)
+// v5.221 — Fix conteggio nei contatori gialli della home: "Figurine"
+//          includeva erroneamente anche Album e Altro Materiale. Ora
+//          quattro contatori distinti: Figurine, Retro, Album, Altri
+//          oggetti (oltre a Serie e Collezionisti)
+// v5.220 — Fix conteggio nei box del catalogo: il conteggio "figurine"
+//          poteva includere erroneamente Album e Altro Materiale. Ora
+//          quattro contatori pienamente distinti e mutuamente esclusivi:
+//          Figurine, Retro, Album, Altro (per Altro Materiale)
+// v5.219 — Fix conteggio nei box del catalogo: la card serie mostrava un
+//          unico numero che sommava figurine e retro insieme. Ora sono
+//          due contatori distinti ("N figurine" e "N retro")
 // v5.218 — Per i Retro, la chiave univoca ora è Categoria + Nome (non
 //          più solo Nome), applicata ovunque: import massivo (già
 //          aggiornato), form principale di aggiunta/modifica e form di
@@ -644,7 +685,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.218';
+const JS_VERSION = 'v5.231';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -1073,7 +1114,7 @@ const i18n = {
 'hero.desc':'The ultimate unofficial database dedicated to the legendary Italian sticker series of the \'90s.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. It is not a sales site. The sole purpose of the site is to connect collectors from around the world, allowing them to search for items they do not own and find other collectors to trade with.<br><br>The information on this site represents the knowledge of the administrator and does not claim to be official information.',
 'hero.cta1':'Explore the Sgorbions catalog!','hero.cta2':'Start collecting Sgorbions',
-'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat3':'Collectors',
+'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat3':'Collectors',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
 'home.featured.btn':'View All Series →',
@@ -1176,7 +1217,7 @@ const i18n = {
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Le mie / Totale','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Sfida gli altri collezionisti a chi ha la collezione più grande. Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Non è un sito di vendita. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute in questo sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora il catalogo Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
-    'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat3':'Collezionisti',
+    'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri oggetti','hero.stat3':'Collezionisti',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
     'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
@@ -1927,7 +1968,11 @@ function openFigFromSearch(figId, seriesId, section) {
 }
 
 function seriesCardHTML(s) {
-  const figs = getData('figurines', []).filter(f => f.seriesId === s.id);
+  const allItems = getData('figurines', []).filter(f => f.seriesId === s.id);
+  const retros = allItems.filter(f => f.section === 'retros');
+  const albums = allItems.filter(f => f.section === 'albums');
+  const extras = allItems.filter(f => f.section === 'extras');
+  const figs = allItems.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras');
   const desc = currentLang === 'it' && s.descIt ? s.descIt : s.desc;
   // Calculate mode score (most common score > 0)
   let modeScoreHTML = '';
@@ -1943,12 +1988,17 @@ function seriesCardHTML(s) {
       ${s.img ? `<img src="${cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;padding:8px;">` : '🎴'}
     </div>
     <div class="card-body">
-      <span class="card-tag">${s.year || ''}</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span class="card-tag">${s.year || ''}</span>
+        ${modeScoreHTML}
+      </div>
       <div class="card-title">${s.name}</div>
       <div class="card-desc">${(desc||'').substring(0,90)}${(desc||'').length>90?'…':''}</div>
       <div class="card-meta">
         <span class="card-badge">${figs.length} ${currentLang === 'it' ? 'figurine' : 'stickers'}</span>
-        ${modeScoreHTML}
+        ${retros.length ? `<span class="card-badge">${retros.length} ${currentLang === 'it' ? 'retro' : 'retros'}</span>` : ''}
+        ${albums.length ? `<span class="card-badge">${albums.length} ${currentLang === 'it' ? 'album' : 'albums'}</span>` : ''}
+        ${extras.length ? `<span class="card-badge">${extras.length} ${currentLang === 'it' ? 'Altro' : 'Other'}</span>` : ''}
       </div>
     </div>
   </div>`;
@@ -2380,7 +2430,19 @@ function renderItems() {
     }
     if (!searchQ) return true;
     return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ);
-  }).sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
+  }).sort((a,b) => {
+    if (currentSection === 'retros') {
+      const catCmp = (a.category||'').localeCompare(b.category||'', 'it');
+      if (catCmp !== 0) return catCmp;
+      const subcatCmp = (a.subcategory||'').localeCompare(b.subcategory||'', 'it');
+      if (subcatCmp !== 0) return subcatCmp;
+      return (a.name||'').localeCompare(b.name||'', 'it');
+    }
+    if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||'');
+    if (!a.number) return 1;
+    if (!b.number) return -1;
+    return a.number - b.number;
+  });
   const owned = getOwned();
   const pw = document.getElementById('detail-progress-wrap');
   // Show bulk owned buttons for figurines and retros sections when logged in
@@ -2417,7 +2479,7 @@ function renderItems() {
   function paginationHTML(cur, tot, total) {
     if (tot <= 1) return '';
     const _ser = getData('series', []).find(s => s.id === currentSeriesId);
-    const firstNum = _ser?.firstNumber;
+    const firstNum = currentSection === 'retros' ? 1 : _ser?.firstNumber;
     const sectionLabelLower = (getSectionLabel(currentSection) || (currentLang === 'it' ? 'oggetti' : 'items')).toLowerCase();
     let rangeStr = '';
     if (firstNum != null) {
@@ -2438,6 +2500,22 @@ function renderItems() {
   }
   if (paginationTop) paginationTop.innerHTML = paginationHTML(currentItemPage, totalPagesTop, allItems.length);
 
+  if (currentSection === 'retros' || currentSection === 'figurines') {
+    grid.style.gridTemplateColumns = currentSection === 'retros' ? 'repeat(5, 1fr)' : '';
+    grid.style.width = 'min(1500px, 94vw)';
+    grid.style.maxWidth = '1500px';
+    grid.style.marginLeft = '50%';
+    grid.style.marginRight = '0';
+    grid.style.transform = 'translateX(-50%)';
+  } else {
+    grid.style.gridTemplateColumns = '';
+    grid.style.width = '';
+    grid.style.maxWidth = '';
+    grid.style.marginLeft = '';
+    grid.style.marginRight = '';
+    grid.style.transform = '';
+  }
+
   grid.innerHTML = items.map(f => {
     const isOwned = owned.includes(f.id);
     const icon = SECTION_ICONS[currentSection];
@@ -2449,12 +2527,15 @@ function renderItems() {
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
     const sizeHTML = f.size ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
     const figLabel = f.subseries ? `[${f.subseries}]` : (f.number ? `#${f.number}` : '');
+    const categoryHTML = (currentSection === 'retros' && (f.category || f.subcategory)) ? `<div style="font-size:0.78rem;color:var(--muted);">${[f.category, f.subcategory].filter(Boolean).join(' · ')}</div>` : '';
+    const imgAspectRatio = currentSection === 'retros' ? '1.6' : '1';
     return `<div class="fig-card" onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="cursor:pointer;">
-      <div class="fig-img-placeholder" style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
+      <div class="fig-img-placeholder" style="aspect-ratio:${imgAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
         ${imgHTML}${ownedBadge}${adminBtns}
       </div>
       <div class="fig-body">
         <div class="fig-number" style="font-size:1rem;">${figLabel}</div>
+        ${categoryHTML}
         <div class="fig-name">${f.name}</div>
         ${descHTML}
         ${sizeHTML}
@@ -4399,8 +4480,15 @@ function renderHomeStats() {
   const series = getData('series', []);
   const figs = getData('figurines', []);
   const users = getData('users', []).filter(u => !u.isAdmin);
+  const onlyFigs = figs.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras');
+  const retros = figs.filter(f => f.section === 'retros');
+  const albums = figs.filter(f => f.section === 'albums');
+  const extras = figs.filter(f => f.section === 'extras');
   animateCount(document.getElementById('stat-series'), series.length);
-  animateCount(document.getElementById('stat-figs'), figs.length);
+  animateCount(document.getElementById('stat-figs'), onlyFigs.length);
+  animateCount(document.getElementById('stat-retros'), retros.length);
+  animateCount(document.getElementById('stat-albums'), albums.length);
+  animateCount(document.getElementById('stat-extras'), extras.length);
   animateCount(document.getElementById('stat-users'), users.length);
   updateOwnedCounter();
 }
@@ -4537,7 +4625,7 @@ async function startImportVar() {
   const allFigs = getData('figurines', []).filter(f => f.seriesId === seriesId && f.section === sectionType);
   varImportLog((currentLang==='it'?'Oggetti nella sezione:':'Items in section:') + ' ' + allFigs.length, 'info');
 
-  let ok = 0, skip = 0, errors = 0;
+  let inserted = 0, updated = 0, skip = 0, errors = 0;
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -4596,25 +4684,26 @@ async function startImportVar() {
 
     try {
       if (duplicate) {
-        const updated = { ...duplicate, ...figData, id: duplicate.id };
-        await fsSave('figurines', updated);
+        const updatedRec = { ...duplicate, ...figData, id: duplicate.id };
+        await fsSave('figurines', updatedRec);
         const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
-        if (idx >= 0) _cache.figurines[idx] = updated;
+        if (idx >= 0) _cache.figurines[idx] = updatedRec;
         varImportLog('🔄 Riga ' + (i+1) + ': "' + nome + '" (#' + numStr + ') — sovrascritta', 'info');
+        updated++;
       } else {
         const saved = await fsSave('figurines', figData);
         _cache.figurines.push(saved);
         varImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" (#' + numStr + ') — importata (' + tipo + ')', 'ok');
+        inserted++;
       }
-      ok++;
     } catch(e) {
       varImportLog('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
       errors++;
     }
   }
 
-  varImportStatus('✅ Fine: ' + ok + ' ok · ' + errors + ' errori', 100);
-  varImportLog('--- FINE: ' + ok + ' ok · ' + errors + ' errori ---', errors===0?'ok':'warn');
+  varImportStatus('✅ Fine: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + errors + ' errori', 100);
+  varImportLog('--- FINE: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + errors + ' errori ---', errors===0?'ok':'warn');
   const _endBtn = document.getElementById('import-var-start-btn'); if (_endBtn) _endBtn.disabled = false;
   renderItems();
 }
@@ -4670,7 +4759,7 @@ async function startImportRetro() {
   const selEl = document.getElementById('import-retro-series-select');
   const seriesName = selEl?.selectedOptions[0]?.dataset.name || '';
 
-  let ok = 0, errors = 0, skipped = 0;
+  let inserted = 0, updated = 0, errors = 0, skipped = 0;
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
@@ -4725,25 +4814,26 @@ async function startImportRetro() {
 
     try {
       if (duplicate) {
-        const updated = { ...duplicate, ...retroData, id: duplicate.id };
-        await fsSave('figurines', updated);
+        const updatedRec = { ...duplicate, ...retroData, id: duplicate.id };
+        await fsSave('figurines', updatedRec);
         const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
-        if (idx >= 0) _cache.figurines[idx] = updated;
+        if (idx >= 0) _cache.figurines[idx] = updatedRec;
         retroImportLog('🔄 Riga ' + (i+1) + ': "' + nome + '" — sovrascritta', 'info');
+        updated++;
       } else {
         const saved = await fsSave('figurines', retroData);
         _cache.figurines.push(saved);
         retroImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — importata (' + categoria + ')', 'ok');
+        inserted++;
       }
-      ok++;
     } catch(e) {
       retroImportLog('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
       errors++;
     }
   }
 
-  retroImportStatus('✅ Fine: ' + ok + ' ok · ' + skipped + ' ignorate · ' + errors + ' errori', 100);
-  retroImportLog('--- FINE: ' + ok + ' ok · ' + skipped + ' ignorate · ' + errors + ' errori ---', errors===0?'ok':'warn');
+  retroImportStatus('✅ Fine: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + skipped + ' ignorate · ' + errors + ' errori', 100);
+  retroImportLog('--- FINE: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + skipped + ' ignorate · ' + errors + ' errori ---', errors===0?'ok':'warn');
   const _endBtn = document.getElementById('import-retro-start-btn'); if (_endBtn) _endBtn.disabled = false;
   renderItems(); updateSectionCounts();
 }
