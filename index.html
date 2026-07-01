@@ -26,7 +26,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.231</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.244</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -895,7 +895,7 @@
     <div id="fig-modal-series-indicator" style="margin-bottom:1rem;font-size:0.85rem;color:var(--muted);">
       <span data-i18n="form.fig.series">Serie</span>: <strong id="fig-modal-series-name" style="color:var(--text);"></strong>
     </div>
-    <div id="fig-modal-grid" style="display:grid;grid-template-columns:80px minmax(0,120px) 1fr 60px;gap:1rem;align-items:end;">
+    <div id="fig-modal-grid" style="display:grid;grid-template-columns:80px minmax(0,70px) 1fr;gap:1rem;align-items:end;">
       <div class="form-group" id="fig-category-group" style="margin-bottom:0;display:none;">
         <label class="form-label" data-i18n="form.fig.category">Categoria</label>
         <input class="form-input" type="text" id="fig-category-input" placeholder="es. Scritta bianca">
@@ -911,27 +911,28 @@
       <div class="form-group" id="fig-subseries-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.fig.subseries">Sottoserie</label>
         <input class="form-input" type="text" id="fig-subseries-input" placeholder="es. OLO">
-        <div class="form-hint" data-i18n="form.fig.subseriesHint">Se presente, sostituisce il numero</div>
       </div>
       <div class="form-group" id="fig-name-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.fig.name">Name</label>
         <input class="form-input" type="text" id="fig-name-input" placeholder="Sgorbio Maximus">
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:140px 100px;gap:1rem;margin-bottom:1.25rem;">
+      <div class="form-group" id="fig-size-group" style="margin-bottom:0;">
+        <label class="form-label" data-i18n="form.fig.size">Taglia</label>
+        <input class="form-input" type="text" id="fig-size-input" placeholder="es. S, M, L, XL">
       </div>
       <div class="form-group" id="fig-score-group" style="margin-bottom:0;">
         <label class="form-label" style="font-size:0.75rem;white-space:nowrap;" data-i18n="form.fig.score">Punteggio</label>
         <input class="form-input" type="number" id="fig-score-input" placeholder="0" min="0">
       </div>
     </div>
-    <div class="form-group" id="fig-size-group">
-      <label class="form-label" data-i18n="form.fig.size">Taglia</label>
-      <input class="form-input" type="text" id="fig-size-input" placeholder="es. S, M, L, XL">
-    </div>
     <div data-flags-block style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:0.75rem;">
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+      <label id="fig-var-official-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
         <input type="checkbox" id="fig-is-variation-input" onchange="toggleBaseFigurineGroup()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
         <span data-i18n="form.fig.isVariation">Variazione ufficiale</span>
       </label>
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+      <label id="fig-var-unofficial-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
         <input type="checkbox" id="fig-is-unofficial-variation-input" onchange="toggleBaseFigurineGroup()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
         <span data-i18n="form.fig.isUnofficialVariation">Variazione non ufficiale</span>
       </label>
@@ -941,17 +942,18 @@
       </label>
     </div>
     <div class="form-group" id="fig-base-figurine-group" style="display:none;">
-      <label class="form-label" data-i18n="form.fig.baseFigurine">Figurina base (di cui questa è una variante)</label>
+      <label class="form-label"><span id="fig-base-figurine-label-text" data-i18n="form.fig.baseFigurine">Figurina base (di cui questa è una variante)</span></label>
       <select class="form-select" id="fig-base-figurine-input">
         <option value="">-- Seleziona --</option>
       </select>
       <div class="form-hint" data-i18n="form.fig.baseFigurineHint">Indica la figurina originale di cui questa è una variazione o un change</div>
     </div>
-    <div class="form-group" id="fig-retro-group" style="display:none;">
+    <div class="form-group" id="fig-retro-group" style="display:none;position:relative;">
       <label class="form-label" data-i18n="form.fig.retro">Retro associato</label>
-      <select class="form-select" id="fig-retro-input">
-        <option value="">-- Seleziona --</option>
-      </select>
+      <input class="form-input" type="text" id="fig-retro-search" placeholder="Cerca per nome, categoria o sottocategoria..." autocomplete="off" oninput="filterRetroLink()" onfocus="filterRetroLink()" onblur="clearRetroLinkIfEmpty()">
+      <input type="hidden" id="fig-retro-input">
+      <div id="fig-retro-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:260px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
+      <div id="fig-retro-selected-preview" style="display:none;margin-top:6px;font-size:0.85rem;color:var(--accent);"></div>
       <div class="form-hint" data-i18n="form.fig.retroHint">Indica il Retro che rappresenta il retro di questa variazione</div>
     </div>
     <div class="form-group">
