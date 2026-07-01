@@ -1,6 +1,72 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.244 — Fix bug reale: un blocco di codice più sotto sovrascriveva
+//          sempre la visibilità di Sottoserie/Taglia con '' (visibile)
+//          per qualunque sezione diversa da Retro, ignorando del tutto i
+//          flag hasSubseries/hasSizes della serie. Ora la visibilità
+//          dipende correttamente da entrambe le condizioni insieme.
+//          Punteggio spostato fuori dalla griglia principale e affiancato
+//          a Taglia in una riga dedicata
+// v5.243 — Form Figurina: rimosso l'hint sotto Sottoserie (disallineava
+//          le altezze dei campi); Sottoserie ristretta (120px→70px) e
+//          Nome quindi più largo; Taglia ristretta (era a piena
+//          larghezza, ora max 140px). Fix bug reale: flagsBlock.style.
+//          display='' cancellava anche "display:grid" ereditato dallo
+//          style inline, facendo impilare verticalmente le 3 checkbox
+//          Variazione/Change invece di mostrarle sulla stessa riga —
+//          ora impostato esplicitamente a 'grid'. Confermate già
+//          corrette le condizioni di visibilità Sottoserie/Taglia
+//          (legate a hasSubseries/hasSizes della serie)
+// v5.242 — Vista dettaglio: per un Retro-Change il testo ora dice
+//          "Questo retro è un Change" (non più "Questa figurina...") e
+//          il collegamento dice "Change di" invece di "Variazione di".
+//          Validazione: per un Retro con Change attivo, il campo Retro
+//          base è ora obbligatorio (in entrambe le form)
+// v5.241 — Correzione della v5.240: la checkbox Change (e il relativo
+//          collegamento "base") ha senso anche per i Retro (Retro-Change),
+//          quindi resta visibile; restano invece esclusi dai Retro solo
+//          Variazione ufficiale/non ufficiale e "Retro associato" (un
+//          retro non ha un retro). Applicato a entrambe le form
+// v5.240 — Fix baco: il campo "Retro associato" (e le checkbox Variazione
+//          ufficiale/non ufficiale/Change/Figurina base) comparivano
+//          anche nella form di un Retro stesso, che non ha senso. Ora
+//          nascosti sia nella form principale che in quella di modifica
+//          rapida dal dettaglio quando l'oggetto è un Retro
+// v5.239 — Rinominati i titoli visibili: "Caricamento massivo Figurine"
+//          → "Caricamento massivo figurine" e "Caricamento massivo Retro"
+//          → "Caricamento massivo retro" (minuscolo)
+// v5.238 — Data import: rinominate "Caricamento foto massivo" →
+//          "Caricamento massivo foto" e "Caricamento massivo carte non
+//          standard" → "Caricamento massivo figurine non standard".
+//          "Caricamento massivo Figurine" spostato in prima posizione
+// v5.237 — Import Figurine: aggiornato l'ordine colonne nelle istruzioni
+//          a Serie, Sottoserie, Numero, Nome, Taglia, Retro - Categoria,
+//          Retro - Nome (il parsing legge per nome intestazione, quindi
+//          l'ordine fisico non incideva già sul funzionamento)
+// v5.236 — Nuova sezione in Data import: "Caricamento massivo Figurine".
+//          Colonne: Serie, Numero, Nome, Sottoserie, Taglia, Retro -
+//          Categoria, Retro - Nome. Chiave di riconciliazione: se la
+//          serie ha sottoserie attive e la colonna è compilata, Serie+
+//          Sottoserie+Numero (o Nome se Numero vuoto); altrimenti Serie+
+//          Numero (o Nome se Numero vuoto). Il Retro viene cercato per
+//          Categoria+Nome in tutte le serie; se non trovato, la figurina
+//          viene comunque importata. In aggiornamento, foto e Retro
+//          esistenti vengono preservati se la riga non li specifica
+// v5.235 — Admin console, tabella Serie: aggiunta colonna "Ha sottoserie"
+// v5.234 — Vista dettaglio Fronte+Retro: sotto il box Retro ora appare
+//          una piccola didascalia con Categoria · Sottocategoria — Nome,
+//          utile soprattutto quando il Retro non ha ancora una foto
+// v5.233 — Il collegamento Retro è ora disponibile anche per la figurina
+//          base (non solo variazioni ufficiali/non ufficiali), escluso
+//          Change. La vista dettaglio mostra Fronte+Retro affiancati con
+//          la stessa grafica delle variazioni: per la figurina base il
+//          Fronte è la sua stessa foto, non quella di una base collegata
+// v5.232 — Collegamento Figurina→Retro: la tendina classica (fino a 247+
+//          voci in alcune serie) è stata sostituita da un campo di ricerca
+//          con filtro in digitazione (per Nome/Categoria/Sottocategoria),
+//          in entrambe le form (principale e modifica rapida dal
+//          dettaglio). Ricerca sempre scoperta alla sola serie corrente
 // v5.231 — Griglia Retro: box foto più basso (aspect-ratio 1.6 invece di
 //          1, quindi rettangolare invece che quadrato) solo per questa
 //          sezione, per ridurne l'ingombro nella card
@@ -685,7 +751,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.231';
+const JS_VERSION = 'v5.244';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -2185,14 +2251,66 @@ function populateBaseFigurineSelect(excludeId, selectedId) {
     candidates.map(f => '<option value="' + f.id + '"' + (f.id === selectedId ? ' selected' : '') + '>' + (f.number ? '#' + f.number + ' ' : '') + f.name + '</option>').join('');
 }
 
+let _retroLinkOptions = [];
 function populateRetroSelect(selectedId) {
-  const sel = document.getElementById('fig-retro-input');
-  if (!sel) return;
-  const retros = getData('figurines', [])
+  _retroLinkOptions = getData('figurines', [])
     .filter(f => f.seriesId === currentSeriesId && f.section === 'retros')
-    .sort((a,b) => (a.name||'').localeCompare(b.name||'', 'it'));
-  sel.innerHTML = '<option value="">-- ' + (currentLang === 'it' ? 'Seleziona' : 'Select') + ' --</option>' +
-    retros.map(r => '<option value="' + r.id + '"' + (r.id === selectedId ? ' selected' : '') + '>' + r.name + '</option>').join('');
+    .sort((a,b) => (a.category||'').localeCompare(b.category||'', 'it') || (a.subcategory||'').localeCompare(b.subcategory||'', 'it') || (a.name||'').localeCompare(b.name||'', 'it'));
+  const hidden = document.getElementById('fig-retro-input');
+  const search = document.getElementById('fig-retro-search');
+  const preview = document.getElementById('fig-retro-selected-preview');
+  if (!hidden || !search) return;
+  hidden.value = selectedId || '';
+  const dd = document.getElementById('fig-retro-dropdown');
+  if (dd) dd.style.display = 'none';
+  if (selectedId) {
+    const r = _retroLinkOptions.find(x => x.id === selectedId);
+    if (r) {
+      search.value = r.name;
+      if (preview) { preview.style.display = ''; preview.textContent = '✓ ' + [r.category, r.subcategory].filter(Boolean).join(' · ') + (r.category||r.subcategory ? ' — ' : '') + r.name; }
+    }
+  } else {
+    search.value = '';
+    if (preview) preview.style.display = 'none';
+  }
+}
+
+function filterRetroLink() {
+  const q = document.getElementById('fig-retro-search').value.toLowerCase().trim();
+  const dd = document.getElementById('fig-retro-dropdown');
+  if (!dd) return;
+  const filtered = q
+    ? _retroLinkOptions.filter(r => (r.name||'').toLowerCase().includes(q) || (r.category||'').toLowerCase().includes(q) || (r.subcategory||'').toLowerCase().includes(q))
+    : _retroLinkOptions;
+  if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
+  dd.style.display = '';
+  dd.innerHTML = filtered.slice(0, 50).map(r => {
+    const sub = [r.category, r.subcategory].filter(Boolean).join(' · ');
+    return `<div onclick="selectRetroLink('${r.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <div style="font-size:0.9rem;">${r.name}</div>
+      ${sub ? `<div style="font-size:0.75rem;color:var(--muted);">${sub}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function selectRetroLink(id) {
+  const r = _retroLinkOptions.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('fig-retro-input').value = id;
+  document.getElementById('fig-retro-search').value = r.name;
+  document.getElementById('fig-retro-dropdown').style.display = 'none';
+  const preview = document.getElementById('fig-retro-selected-preview');
+  if (preview) { preview.style.display = ''; preview.textContent = '✓ ' + [r.category, r.subcategory].filter(Boolean).join(' · ') + (r.category||r.subcategory ? ' — ' : '') + r.name; }
+}
+
+function clearRetroLinkIfEmpty() {
+  setTimeout(() => {
+    const dd = document.getElementById('fig-retro-dropdown');
+    if (dd) dd.style.display = 'none';
+    const search = document.getElementById('fig-retro-search');
+    const hidden = document.getElementById('fig-retro-input');
+    if (search && hidden && !search.value.trim()) hidden.value = '';
+  }, 200);
 }
 
 function toggleBaseFigurineGroup() {
@@ -2204,8 +2322,8 @@ function toggleBaseFigurineGroup() {
   const isChg = document.getElementById('fig-is-change-input')?.checked;
   const showBase = isVar || isUnoff || isChg;
   group.style.display = showBase ? '' : 'none';
-  // Il campo Retro appare solo per variazioni ufficiali e non ufficiali (non Change)
-  if (retroGroup) retroGroup.style.display = (isVar || isUnoff) ? '' : 'none';
+  // Il campo Retro associato non si applica mai ai Retro stessi (un retro non ha un retro)
+  if (retroGroup) retroGroup.style.display = (!isChg && currentSection !== 'retros') ? '' : 'none';
 }
 
 function openAddItemModal(itemId) {
@@ -2255,39 +2373,50 @@ function openAddItemModal(itemId) {
   toggleBaseFigurineGroup();
   // Show/hide conditional fields based on series flags
   const _ser = getData('series', []).find(s => s.id === currentSeriesId);
-  const sizeGroup = document.getElementById('fig-size-group');
-  if (sizeGroup) sizeGroup.style.display = _ser?.hasSizes ? '' : 'none';
-  const subseriesGroup = document.getElementById('fig-subseries-group');
+  const hasSizes = _ser?.hasSizes || false;
   const hasSubseries = _ser?.hasSubseries || false;
-  if (subseriesGroup) subseriesGroup.style.display = hasSubseries ? '' : 'none';
   // Aggiorna le colonne della griglia in base alla visibilità della Sottoserie
   const figGrid = document.getElementById('fig-modal-grid');
   if (figGrid) {
     figGrid.style.gridTemplateColumns = hasSubseries
-      ? '80px minmax(0,120px) 1fr 60px'
-      : '80px 1fr 60px';
+      ? '80px minmax(0,70px) 1fr'
+      : '80px 1fr';
   }
   const delBtn = document.getElementById('fig-modal-delete-btn');
   if (delBtn) delBtn.style.display = itemId ? '' : 'none';
 
-  // Per la sezione Retro, nasconde i campi non rilevanti (numero, sottoserie, taglia, flag variazione)
+  // Per la sezione Retro, nasconde i campi non rilevanti (numero, flag variazione)
   // Il Punteggio resta visibile anche per i Retro; la Categoria è esclusiva dei Retro
   const isRetros = currentSection === 'retros';
-  ['fig-number-group', 'fig-subseries-group', 'fig-size-group', 'fig-base-figurine-group'].forEach(id => {
+  ['fig-number-group', 'fig-base-figurine-group'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = isRetros ? 'none' : '';
   });
+  // Sottoserie e Taglia dipendono sia dai flag della serie sia dalla sezione (mai per i Retro)
+  const sizeGroup = document.getElementById('fig-size-group');
+  if (sizeGroup) sizeGroup.style.display = (hasSizes && !isRetros) ? '' : 'none';
+  const subseriesGroup = document.getElementById('fig-subseries-group');
+  if (subseriesGroup) subseriesGroup.style.display = (hasSubseries && !isRetros) ? '' : 'none';
   const categoryGroup = document.getElementById('fig-category-group');
   if (categoryGroup) categoryGroup.style.display = isRetros ? '' : 'none';
   const subcategoryGroup = document.getElementById('fig-subcategory-group');
   if (subcategoryGroup) subcategoryGroup.style.display = isRetros ? '' : 'none';
-  // Per i Retro, in griglia restano Categoria, Sottocategoria, Nome e Punteggio
+  // Per i Retro, in griglia restano Categoria, Sottocategoria e Nome
   if (figGrid && isRetros) {
-    figGrid.style.gridTemplateColumns = 'minmax(0,140px) minmax(0,140px) 1fr 60px';
+    figGrid.style.gridTemplateColumns = 'minmax(0,140px) minmax(0,140px) 1fr';
   }
-  // Nasconde anche il blocco flag variazioni per i Retro
+  // Per i Retro, il blocco flag resta visibile ma solo con la checkbox Change
+  // (Variazione ufficiale/non ufficiale non si applicano ai Retro)
   const flagsBlock = document.querySelector('#add-fig-modal [data-flags-block]');
-  if (flagsBlock) flagsBlock.style.display = isRetros ? 'none' : '';
+  if (flagsBlock) flagsBlock.style.display = 'grid';
+  const varOfficialLabel = document.getElementById('fig-var-official-label');
+  const varUnofficialLabel = document.getElementById('fig-var-unofficial-label');
+  if (varOfficialLabel) varOfficialLabel.style.display = isRetros ? 'none' : '';
+  if (varUnofficialLabel) varUnofficialLabel.style.display = isRetros ? 'none' : '';
+  const baseLabelText = document.getElementById('fig-base-figurine-label-text');
+  if (baseLabelText) baseLabelText.textContent = isRetros
+    ? (currentLang === 'it' ? 'Retro base (di cui questo è una variante)' : 'Base Retro (the one this is a variant of)')
+    : (currentLang === 'it' ? 'Figurina base (di cui questa è una variante)' : 'Base sticker (the one this is a variant of)');
 
   document.getElementById('add-fig-modal').classList.remove('hidden');
 }
@@ -2641,6 +2770,10 @@ async function saveFigurine() {
     toast((currentLang === 'it' ? 'Variazione ufficiale, non ufficiale e Change sono mutuamente esclusivi: spunta solo una opzione' : 'Official variation, unofficial variation and Change are mutually exclusive: check only one'), 'error');
     return;
   }
+  if (isRetrosSection && isChange && !baseFigurineId) {
+    toast((currentLang === 'it' ? 'Per un Retro Change, il Retro base è obbligatorio' : 'For a Retro Change, the Base Retro is required'), 'error');
+    return;
+  }
   toast((currentLang === 'it' ? 'Salvataggio...' : 'Saving...'), 'success');
   let imgUrl = editingFigImg || null;
   if (editingFigImgFileSave) {
@@ -2652,12 +2785,12 @@ async function saveFigurine() {
   if (editId) {
     const idx = figs.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      figs[idx] = { ...figs[idx], number: number ? +number : null, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: (isVariation || isUnofficialVariation) ? (retroId || null) : null, img: imgUrl || figs[idx].img };
+      figs[idx] = { ...figs[idx], number: number ? +number : null, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || figs[idx].img };
       await fsSave('figurines', figs[idx]);
       _cache.figurines = figs;
     }
   } else {
-    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: number ? +number : null, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: (isVariation || isUnofficialVariation) ? (retroId || null) : null, img: imgUrl || null };
+    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: number ? +number : null, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || null };
     const saved = await fsSave('figurines', newF);
     _cache.figurines.push(saved);
   }
@@ -2973,7 +3106,7 @@ function renderAdminSeries() {
   el.innerHTML = `
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.25rem;">${(currentLang === 'it') ? "Usa le frecce per cambiare l'ordine" : 'Use the arrows to change the order'}</p>
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Per eliminare una serie, cancellare prima tutto il suo contenuto.' : 'To delete a series, first delete all its content.'}</p>
-    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"Figurine":"Stickers"}</th><th>${currentLang==="it"?"Var. uff.":"Off. var."}</th><th>${currentLang==="it"?"Var. non uff.":"Unoff. var."}</th><th>Change</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
+    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"Figurine":"Stickers"}</th><th>${currentLang==="it"?"Ha sottoserie":"Has subseries"}</th><th>${currentLang==="it"?"Var. uff.":"Off. var."}</th><th>${currentLang==="it"?"Var. non uff.":"Unoff. var."}</th><th>Change</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${series.map((s, idx) => {
       const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
       const siNoCell = v => v ? '<span style="color:#b5ff2e;font-weight:600;">SI</span>' : '<span style="color:var(--text);">NO</span>';
@@ -2983,6 +3116,7 @@ function renderAdminSeries() {
           <button class="tbl-btn tbl-btn-edit" onclick="moveSeriesDown(${idx})" ${idx===series.length-1?'disabled style="opacity:0.3;"':''}>▼</button>
         </td>
         <td>${s.name}</td><td>${s.year}</td><td>${figs}</td>
+        <td>${siNoCell(s.hasSubseries)}</td>
         <td>${siNoCell(s.hasVariations)}</td>
         <td>${siNoCell(s.hasUnofficialVariations)}</td>
         <td>${siNoCell(s.hasChange)}</td>
@@ -3707,12 +3841,18 @@ function openFigDetail(figId) {
     rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${currentLang === 'it' ? 'Questa figurina è una variazione non ufficiale' : 'This sticker is an unofficial variation'}</span></div>`);
   }
   if (f.isChange) {
-    rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${currentLang === 'it' ? 'Questa figurina è un change' : 'This sticker is a change'}</span></div>`);
+    const changeLabel = f.section === 'retros'
+      ? (currentLang === 'it' ? 'Questo retro è un Change' : 'This retro is a Change')
+      : (currentLang === 'it' ? 'Questa figurina è un Change' : 'This sticker is a Change');
+    rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${changeLabel}</span></div>`);
   }
   if ((f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
     const baseFig = getData('figurines', []).find(x => x.id === f.baseFigurineId);
     if (baseFig) {
-      rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--muted);">${currentLang === 'it' ? 'Variazione di' : 'Variation of'}: <a href="#" onclick="openFigDetail('${baseFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${baseFig.number ? '#' + baseFig.number + ' ' : ''}${baseFig.name}</a></span></div>`);
+      const relationLabel = f.section === 'retros'
+        ? (currentLang === 'it' ? 'Change di' : 'Change of')
+        : (currentLang === 'it' ? 'Variazione di' : 'Variation of');
+      rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--muted);">${relationLabel}: <a href="#" onclick="openFigDetail('${baseFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${baseFig.number ? '#' + baseFig.number + ' ' : ''}${baseFig.name}</a></span></div>`);
     }
   }
 
@@ -3734,17 +3874,21 @@ function openFigDetail(figId) {
   const photoEl = document.getElementById('fig-detail-photo');
   if (photoEl) {
     const isVar = f.isVariation || f.isUnofficialVariation;
-    if (isVar && (f.baseFigurineId || f.retroId)) {
-      // Variazione: mostra foto base (sx) + foto retro (dx) affiancate
-      const baseFig = f.baseFigurineId ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
+    if (f.retroId || (isVar && f.baseFigurineId)) {
+      // Variazione o figurina base con Retro collegato: mostra Fronte (sx) + Retro (dx) affiancati
+      const baseFig = (isVar && f.baseFigurineId) ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
+      const frontImg = baseFig ? baseFig.img : f.img;
       const retroFig = f.retroId ? getData('figurines', []).find(x => x.id === f.retroId) : null;
       const noPhotoBox = '<div style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non disponibile' : 'Photo not available') + '</div>';
-      const baseHTML = baseFig?.img
-        ? `<img src="${cloudinaryUrl(baseFig.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+      const baseHTML = frontImg
+        ? `<img src="${cloudinaryUrl(frontImg, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
         : noPhotoBox;
       const retroHTML = retroFig?.img
         ? `<img src="${cloudinaryUrl(retroFig.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
         : noPhotoBox;
+      const retroCaption = retroFig
+        ? `<div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:4px;">${[retroFig.category, retroFig.subcategory].filter(Boolean).join(' · ')}${(retroFig.category||retroFig.subcategory) ? ' — ' : ''}${retroFig.name}</div>`
+        : '';
       photoEl.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
           <div>
@@ -3754,6 +3898,7 @@ function openFigDetail(figId) {
           <div>
             <div style="font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:4px;">${currentLang === 'it' ? 'Retro' : 'Back'}</div>
             ${retroHTML}
+            ${retroCaption}
           </div>
         </div>`;
     } else {
@@ -3859,7 +4004,44 @@ function toggleFeBaseFigurineGroup() {
   const isUnoff = document.getElementById('fe-is-unofficial-variation')?.checked;
   const isChg = document.getElementById('fe-is-change')?.checked;
   group.style.display = (isVar || isUnoff || isChg) ? '' : 'none';
-  if (retroGroup) retroGroup.style.display = (isVar || isUnoff) ? '' : 'none';
+  if (retroGroup) retroGroup.style.display = !isChg ? '' : 'none';
+}
+
+let _feRetroLinkOptions = [];
+function filterFeRetroLink() {
+  const q = document.getElementById('fe-retro-search').value.toLowerCase().trim();
+  const dd = document.getElementById('fe-retro-dropdown');
+  if (!dd) return;
+  const filtered = q
+    ? _feRetroLinkOptions.filter(r => (r.name||'').toLowerCase().includes(q) || (r.category||'').toLowerCase().includes(q) || (r.subcategory||'').toLowerCase().includes(q))
+    : _feRetroLinkOptions;
+  if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
+  dd.style.display = '';
+  dd.innerHTML = filtered.slice(0, 50).map(r => {
+    const sub = [r.category, r.subcategory].filter(Boolean).join(' · ');
+    return `<div onclick="selectFeRetroLink('${r.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <div style="font-size:0.9rem;">${r.name}</div>
+      ${sub ? `<div style="font-size:0.75rem;color:var(--muted);">${sub}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function selectFeRetroLink(id) {
+  const r = _feRetroLinkOptions.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('fe-retro').value = id;
+  document.getElementById('fe-retro-search').value = r.name;
+  document.getElementById('fe-retro-dropdown').style.display = 'none';
+}
+
+function clearFeRetroLinkIfEmpty() {
+  setTimeout(() => {
+    const dd = document.getElementById('fe-retro-dropdown');
+    if (dd) dd.style.display = 'none';
+    const search = document.getElementById('fe-retro-search');
+    const hidden = document.getElementById('fe-retro');
+    if (search && hidden && !search.value.trim()) hidden.value = '';
+  }, 200);
 }
 
 function switchToEditMode(figId) {
@@ -3922,26 +4104,36 @@ function switchToEditMode(figId) {
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-size" value="' + (f.size||'') + '" placeholder="S/M/L/XL" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;border:none;background:transparent;"></span></div>';
   }
 
-  // Flag Variazione ufficiale / non ufficiale / Change
-  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione ufficiale':'Official variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-variation" onchange="toggleFeBaseFigurineGroup()" ' + (f.isVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
-  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione non ufficiale':'Unofficial variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup()" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+  // Flag Variazione ufficiale / non ufficiale (solo Figurine/Album/Altro) e Change (anche Retro)
+  if (!isRetrosItem) {
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione ufficiale':'Official variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-variation" onchange="toggleFeBaseFigurineGroup()" ' + (f.isVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione non ufficiale':'Unofficial variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup()" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+  }
   html += '<div class="detail-row"><span class="detail-label">Change</span><span class="detail-value"><input type="checkbox" id="fe-is-change" onchange="toggleFeBaseFigurineGroup()" ' + (f.isChange?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
 
-  // Figurina base (selettore, mostrato solo se uno dei 3 flag è attivo)
+  // Figurina/Retro base (selettore, mostrato se uno dei flag è attivo)
   const baseCandidates = getData('figurines', [])
     .filter(x => x.seriesId === f.seriesId && x.section === f.section && x.id !== f.id && !x.isVariation && !x.isUnofficialVariation && !x.isChange)
     .sort((a,b) => (a.number||0) - (b.number||0));
   const baseOptionsHtml = '<option value="">-- ' + (currentLang==='it'?'Seleziona':'Select') + ' --</option>' +
     baseCandidates.map(x => '<option value="' + x.id + '"' + (x.id === f.baseFigurineId ? ' selected' : '') + '>' + (x.number ? '#' + x.number + ' ' : '') + x.name + '</option>').join('');
   const showBaseGroup = f.isVariation || f.isUnofficialVariation || f.isChange;
-  html += '<div class="detail-row" id="fe-base-figurine-group" style="' + (showBaseGroup ? '' : 'display:none;') + '"><span class="detail-label">' + (currentLang==='it'?'Figurina base':'Base sticker') + '</span><span class="detail-value"><select class="form-select" id="fe-base-figurine" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;">' + baseOptionsHtml + '</select></span></div>';
+  const baseLabel = isRetrosItem ? (currentLang==='it'?'Retro base':'Base Retro') : (currentLang==='it'?'Figurina base':'Base sticker');
+  html += '<div class="detail-row" id="fe-base-figurine-group" style="' + (showBaseGroup ? '' : 'display:none;') + '"><span class="detail-label">' + baseLabel + '</span><span class="detail-value"><select class="form-select" id="fe-base-figurine" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;">' + baseOptionsHtml + '</select></span></div>';
 
-  // Selettore Retro (solo per variazioni ufficiali e non ufficiali)
-  const retros = getData('figurines', []).filter(x => x.seriesId === f.seriesId && x.section === 'retros').sort((a,b) => (a.name||'').localeCompare(b.name||'', 'it'));
-  const retroOptionsHtml = '<option value="">-- ' + (currentLang==='it'?'Seleziona':'Select') + ' --</option>' +
-    retros.map(r => '<option value="' + r.id + '"' + (r.id === f.retroId ? ' selected' : '') + '>' + r.name + '</option>').join('');
-  const showRetroGroup = f.isVariation || f.isUnofficialVariation;
-  html += '<div class="detail-row" id="fe-retro-group" style="' + (showRetroGroup ? '' : 'display:none;') + '"><span class="detail-label">' + (currentLang==='it'?'Retro associato':'Associated Retro') + '</span><span class="detail-value"><select class="form-select" id="fe-retro" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;">' + retroOptionsHtml + '</select></span></div>';
+  // Selettore Retro associato (non applicabile ai Retro stessi) — ricerca in digitazione (247+ retro in alcune serie)
+  if (!isRetrosItem) {
+    _feRetroLinkOptions = getData('figurines', []).filter(x => x.seriesId === f.seriesId && x.section === 'retros')
+      .sort((a,b) => (a.category||'').localeCompare(b.category||'', 'it') || (a.subcategory||'').localeCompare(b.subcategory||'', 'it') || (a.name||'').localeCompare(b.name||'', 'it'));
+    const selectedRetro = f.retroId ? _feRetroLinkOptions.find(r => r.id === f.retroId) : null;
+    const showRetroGroup = !f.isChange;
+    html += '<div class="detail-row" id="fe-retro-group" style="' + (showRetroGroup ? '' : 'display:none;') + 'flex-direction:column;align-items:stretch;position:relative;">' +
+      '<span class="detail-label">' + (currentLang==='it'?'Retro associato':'Associated Retro') + '</span>' +
+      '<input class="form-input" type="text" id="fe-retro-search" placeholder="' + (currentLang==='it'?'Cerca per nome, categoria o sottocategoria...':'Search by name, category or subcategory...') + '" autocomplete="off" value="' + (selectedRetro ? selectedRetro.name : '') + '" oninput="filterFeRetroLink()" onfocus="filterFeRetroLink()" onblur="clearFeRetroLinkIfEmpty()" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
+      '<input type="hidden" id="fe-retro" value="' + (f.retroId || '') + '">' +
+    '<div id="fe-retro-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:220px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>' +
+    '</div>';
+  }
 
   // Descrizione (in fondo, campo più grande)
   html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang==='it'?'Descrizione':'Description') + '</span><span class="detail-value"><textarea id="fe-desc" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + (f.desc||'') + '</textarea></span></div>';
@@ -4130,7 +4322,12 @@ async function saveFigFromDetail(figId) {
   updates.baseFigurineId = (updates.isVariation || updates.isUnofficialVariation || updates.isChange)
     ? (document.getElementById('fe-base-figurine')?.value || null)
     : null;
-  updates.retroId = (updates.isVariation || updates.isUnofficialVariation)
+
+  if (existingForCheck?.section === 'retros' && updates.isChange && !updates.baseFigurineId) {
+    toast((currentLang === 'it' ? 'Per un Retro Change, il Retro base è obbligatorio' : 'For a Retro Change, the Base Retro is required'), 'error');
+    return;
+  }
+  updates.retroId = !updates.isChange
     ? (document.getElementById('fe-retro')?.value || null)
     : null;
 
@@ -4838,6 +5035,156 @@ async function startImportRetro() {
   renderItems(); updateSectionCounts();
 }
 
+// ── Importazione Figurine da XLS ───────────────────────────────────────
+function figImportLog(msg, type) {
+  const el = document.getElementById('import-fig-log');
+  if (!el) return;
+  el.style.display = 'block';
+  const color = type==='ok'?'#b5ff2e':type==='err'?'#ff6464':type==='warn'?'#ffaa00':'var(--muted)';
+  el.innerHTML += '<div style="color:'+color+';margin-bottom:2px;">'+msg+'</div>';
+  el.scrollTop = el.scrollHeight;
+}
+
+function figImportStatus(msg, pct) {
+  const bar = document.getElementById('import-fig-progress');
+  const status = document.getElementById('import-fig-status');
+  if (bar) bar.value = pct;
+  if (status) status.textContent = msg;
+}
+
+async function startImportFig() {
+  const seriesId = document.getElementById('import-fig-series-select').value;
+  if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series','error'); return; }
+  const fileInput = document.getElementById('import-fig-file');
+  if (!fileInput.files.length) { toast(currentLang==='it'?'Seleziona un file XLS':'Select an XLS file','error'); return; }
+
+  const seriesObj = getData('series', []).find(s => s.id === seriesId);
+  const hasSubseries = seriesObj?.hasSubseries || false;
+
+  if (typeof XLSX === 'undefined') {
+    await new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = res; s.onerror = rej;
+      document.head.appendChild(s);
+    });
+  }
+
+  const file = fileInput.files[0];
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: 'array' });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+
+  if (!rows.length) { toast(currentLang==='it'?'File vuoto o formato non valido':'Empty file or invalid format','error'); return; }
+
+  document.getElementById('import-fig-progress-wrap').style.display = 'block';
+  document.getElementById('import-fig-log').innerHTML = '';
+  document.getElementById('import-fig-log').style.display = 'block';
+  const _startBtn = document.getElementById('import-fig-start-btn'); if (_startBtn) _startBtn.disabled = true;
+
+  figImportLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'info');
+
+  const selEl = document.getElementById('import-fig-series-select');
+  const seriesName = selEl?.selectedOptions[0]?.dataset.name || '';
+
+  let inserted = 0, updated = 0, errors = 0, skipped = 0, retroNotFound = 0;
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i];
+    const getCol = (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return String(v[1]).trim(); } return ''; };
+    const serieCol = getCol('Serie','series','serie');
+    const numero = getCol('Numero','number','numero');
+    const nome = getCol('Nome','name','nome');
+    const sottoserie = getCol('Sottoserie','subseries','sottoserie');
+    const taglia = getCol('Taglia','size','taglia');
+    const retroCategoria = getCol('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria');
+    const retroNome = getCol('Retro - Nome','Retro-Nome','retro nome','retro-nome');
+
+    figImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
+
+    if (!serieCol) {
+      figImportLog('⚠️ Riga ' + (i+1) + ': colonna Serie mancante', 'warn');
+      errors++; continue;
+    }
+    if (serieCol.toLowerCase() !== seriesName.toLowerCase()) {
+      figImportLog('⏭️ Riga ' + (i+1) + ': Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
+      skipped++; continue;
+    }
+    if (!nome) {
+      figImportLog('⚠️ Riga ' + (i+1) + ': Nome mancante', 'warn');
+      errors++; continue;
+    }
+
+    // Chiave di riconciliazione
+    const existingFigs = getData('figurines', []);
+    let duplicate = null;
+    if (hasSubseries && sottoserie) {
+      duplicate = existingFigs.find(f =>
+        f.seriesId === seriesId && f.section === 'figurines' &&
+        (f.subseries||'').toLowerCase() === sottoserie.toLowerCase() &&
+        (numero ? String(f.number||'') === String(+numero) : (f.name||'').toLowerCase() === nome.toLowerCase())
+      );
+    } else {
+      duplicate = existingFigs.find(f =>
+        f.seriesId === seriesId && f.section === 'figurines' &&
+        (numero ? String(f.number||'') === String(+numero) : (f.name||'').toLowerCase() === nome.toLowerCase())
+      );
+    }
+
+    // Ricerca Retro (cross-serie, chiave Categoria+Nome)
+    let foundRetroId = null;
+    let retroSpecified = false;
+    if (retroCategoria && retroNome) {
+      retroSpecified = true;
+      const retroMatch = existingFigs.find(f =>
+        f.section === 'retros' &&
+        (f.category||'').toLowerCase() === retroCategoria.toLowerCase() &&
+        (f.name||'').toLowerCase() === retroNome.toLowerCase()
+      );
+      if (retroMatch) { foundRetroId = retroMatch.id; }
+      else { figImportLog('⚠️ Riga ' + (i+1) + ': Retro "' + retroCategoria + ' / ' + retroNome + '" non trovato — figurina importata senza collegamento', 'warn'); retroNotFound++; }
+    }
+
+    const figData = {
+      seriesId,
+      section: 'figurines',
+      number: numero ? +numero : null,
+      name: nome,
+      subseries: sottoserie || '',
+      size: taglia || '',
+      desc: '', score: 0, category: '', subcategory: '',
+      isVariation: false, isUnofficialVariation: false, isChange: false, baseFigurineId: null,
+      img: null
+    };
+
+    try {
+      if (duplicate) {
+        // Il Retro esistente viene preservato se la riga non ne specifica uno nuovo
+        const updatedRec = { ...duplicate, ...figData, img: duplicate.img, retroId: retroSpecified ? foundRetroId : (duplicate.retroId || null), id: duplicate.id };
+        await fsSave('figurines', updatedRec);
+        const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
+        if (idx >= 0) _cache.figurines[idx] = updatedRec;
+        figImportLog('🔄 Riga ' + (i+1) + ': "' + nome + '" — sovrascritta', 'info');
+        updated++;
+      } else {
+        const saved = await fsSave('figurines', { ...figData, retroId: foundRetroId });
+        _cache.figurines.push(saved);
+        figImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — importata', 'ok');
+        inserted++;
+      }
+    } catch(e) {
+      figImportLog('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
+      errors++;
+    }
+  }
+
+  figImportStatus('✅ Fine: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : ''), 100);
+  figImportLog('--- FINE: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', errors===0?'ok':'warn');
+  const _endBtn = document.getElementById('import-fig-start-btn'); if (_endBtn) _endBtn.disabled = false;
+  renderItems(); updateSectionCounts();
+}
+
 function renderAdminFoto() {
   const el = document.getElementById('admin-foto-content');
   if (!el) return;
@@ -4846,7 +5193,37 @@ function renderAdminFoto() {
 
   el.innerHTML = `
     <div style="max-width:680px;">
-      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📥 ${currentLang==='it'?'Caricamento foto massivo':'Bulk photo upload'}</h3>
+      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">🃏 ${currentLang==='it'?'Caricamento massivo figurine':'Bulk import of Stickers'}</h3>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+        ${currentLang==='it'
+          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne (nell\'ordine): <code>Serie</code> (obbligatoria) · <code>Sottoserie</code> · <code>Numero</code> · <code>Nome</code> (obbligatoria) · <code>Taglia</code> · <code>Retro - Categoria</code> · <code>Retro - Nome</code>.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.<br>NOTA: se la serie ha sottoserie attive e la colonna Sottoserie è compilata, la chiave di riconciliazione è Serie+Sottoserie+Numero (o Nome se il Numero è vuoto); altrimenti è Serie+Numero (o Nome se il Numero è vuoto).'
+          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns (in order): <code>Serie</code> (required) · <code>Sottoserie</code> · <code>Numero</code> · <code>Nome</code> (required) · <code>Taglia</code> · <code>Retro - Categoria</code> · <code>Retro - Nome</code>.<br>NOTE: Rows with a Serie different from the selected one are skipped.<br>NOTE: if the series has active subseries and the Sottoserie column is filled in, the reconciliation key is Serie+Sottoserie+Numero (or Nome if Numero is empty); otherwise it is Serie+Numero (or Nome if Numero is empty).'}
+      </p>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
+        <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
+        <select id="import-fig-series-select" class="form-select" style="margin-bottom:0.75rem;">
+          <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
+          ${series.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
+        </select>
+
+        <label class="form-label">${currentLang==='it'?'File XLS (.xlsx, .xls)':'XLS File (.xlsx, .xls)'}</label>
+        <input type="file" id="import-fig-file" accept=".xlsx,.xls" class="form-input" style="margin-bottom:0.75rem;padding:0.4rem;">
+
+        <button class="btn-primary" onclick="startImportFig()" id="import-fig-start-btn">
+          ▶ ${currentLang==='it'?'Avvia importazione':'Start import'}
+        </button>
+      </div>
+
+      <div id="import-fig-progress-wrap" style="display:none;margin-bottom:0.75rem;">
+        <progress id="import-fig-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
+        <div id="import-fig-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
+      </div>
+      <div id="import-fig-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;"></div>
+
+      <hr class="divider" style="margin:2rem 0;">
+
+      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📥 ${currentLang==='it'?'Caricamento massivo foto':'Bulk photo upload'}</h3>
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
           ? 'ISTRUZIONI:<br>Seleziona la serie, seleziona le foto da caricare (nome file = numero figurina, es. <code>1.jpg</code>).<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
@@ -4885,7 +5262,7 @@ function renderAdminFoto() {
 
       <hr class="divider" style="margin:2rem 0;">
 
-      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📊 ${currentLang==='it'?'Caricamento massivo carte non standard':'Bulk import of non-standard cards'}</h3>
+      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📊 ${currentLang==='it'?'Caricamento massivo figurine non standard':'Bulk import of non-standard cards'}</h3>
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
           ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne richieste: <code>Serie</code> · <code>Numero Figurina</code> · <code>Nome</code> · <code>Tipo</code> (Ufficiale / Non ufficiale / Change).<br>NOTA: La colonna Serie deve corrispondere esattamente al nome della serie selezionata.'
@@ -4923,7 +5300,7 @@ function renderAdminFoto() {
 
       <hr class="divider" style="margin:2rem 0;">
 
-      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📇 ${currentLang==='it'?'Caricamento massivo Retro':'Bulk import of Retros'}</h3>
+      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📇 ${currentLang==='it'?'Caricamento massivo retro':'Bulk import of Retros'}</h3>
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
           ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne richieste (nell\'ordine): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code>.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.'
