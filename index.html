@@ -26,7 +26,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.244</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.262</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -756,7 +756,7 @@
         <input class="form-input" type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
-      <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;">Password dimenticata?</button></div>
+      <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
       <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.70</div>
     </div>
@@ -774,7 +774,7 @@
         <input class="form-input" type="password" id="reg-password" placeholder="Min. 6 characters">
       </div>
       <div class="form-group">
-        <label class="form-label">Nazionalità *</label>
+        <label class="form-label" data-i18n="form.nationality">Nazionalità *</label>
         <input class="form-input" type="text" id="reg-nationality-search" placeholder="Scrivi il nome del paese..." oninput="filterNationalities()" autocomplete="off">
         <div id="nationality-dropdown" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);max-height:180px;overflow-y:auto;margin-top:4px;"></div>
         <input type="hidden" id="reg-nationality-code" value="">
@@ -1151,14 +1151,14 @@
 <div class="modal-overlay hidden" id="segnalazione-modal">
   <div class="modal">
     <div class="modal-header">
-      <h2 class="modal-title">🚩 Segnala errore</h2>
+      <h2 class="modal-title" data-i18n="modal.segnala.title">🚩 Segnala errore</h2>
       <button class="modal-close" onclick="closeModal('segnalazione-modal')">✕</button>
     </div>
-    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem;">Descrivi l'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all'amministratore.</p>
+    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1rem;" data-i18n="modal.segnala.desc">Descrivi l'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all'amministratore.</p>
     <input type="hidden" id="segnalazione-fig-id">
     <div class="form-group">
-      <label class="form-label">Commento</label>
-      <textarea class="form-textarea" id="segnalazione-commento" rows="4" placeholder="Descrivi l'errore..."></textarea>
+      <label class="form-label" data-i18n="modal.segnala.comment">Commento</label>
+      <textarea class="form-textarea" id="segnalazione-commento" rows="4" placeholder="Descrivi l'errore..." data-i18n-placeholder="modal.segnala.placeholder"></textarea>
     </div>
     <div id="segnalazione-feedback" style="display:none;margin-bottom:0.75rem;"></div>
     <button class="btn-primary" style="width:100%;" onclick="inviaSegnalazione()" data-i18n="modal.segnala.send">Invia segnalazione</button>
@@ -1173,7 +1173,7 @@
       <button class="modal-close" onclick="closeModal('nationality-modal')">✕</button>
     </div>
     <div class="form-group">
-      <label class="form-label">Cerca il tuo paese</label>
+      <label class="form-label" data-i18n="profile.searchCountry">Cerca il tuo paese</label>
       <input class="form-input" type="text" id="profile-nationality-search" placeholder="Scrivi il nome del paese..." oninput="filterNationalities2()" autocomplete="off">
       <div id="nationality-dropdown-2" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);max-height:200px;overflow-y:auto;margin-top:4px;"></div>
       <div id="profile-nationality-preview-2" style="margin-top:8px;display:none;align-items:center;gap:6px;font-size:0.88rem;"></div>
