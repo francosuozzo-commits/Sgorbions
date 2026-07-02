@@ -1,6 +1,92 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.262 — Il badge "N figurine mancanti su M" ora considera anche
+//          variazioni/change quando il flag "Includere variazioni/
+//          change" è attivo per quella serie (prima il conteggio era
+//          sempre solo-base indipendentemente dal flag)
+// v5.261 — Badge "N figurine mancanti su M" colorato in azzurro
+// v5.260 — "Includi variazioni/change": tolto il punto interrogativo,
+//          colore verde invece di rosso quando selezionato. I due
+//          pulsanti di esclusione a destra ("Escludi da export...")
+//          convertiti anch'essi in tickbox + etichetta, rossa quando
+//          selezionata (stesso trattamento del tickbox a sinistra)
+// v5.259 — "Includi variazioni/change" da pulsante a tickbox affiancato
+//          a una domanda ("Includere variazioni/change?"), testo in
+//          rosso quando selezionato per evidenziare la deviazione dal
+//          comportamento di default (escluse)
+// v5.258 — Rinominato il pulsante "Esporta lista figurine che ho delle
+//          mie serie incomplete" in "Esporta lista figurine che ho (solo
+//          serie incomplete)" — aggiornato anche nel testo di hint
+// v5.257 — Rinominato il pulsante "Esporta lista figurine che mi
+//          mancano" in "Esporta lista di quello che mi manca" (più
+//          accurato, dato che esporta anche Retro/Album/Altri oggetti
+//          mancanti, non solo figurine). Aggiornato anche il testo di
+//          hint che citava il vecchio nome del pulsante
+// v5.256 — Mancolista: le sotto-sezioni per tipo di oggetto ora appaiono
+//          in un ordine fisso (Figurine, Retro, Album, Altri oggetti)
+//          invece che nell'ordine casuale determinato dai dati
+// v5.255 — Fix baco: nella mancolista, la sotto-sezione dei Retro
+//          mancanti mostrava il valore grezzo "retros" invece di "Retro
+//          mancanti", perché mancava la chiave nella mappa (stesso
+//          identico problema già risolto per l'export XLS in v5.254, ma
+//          in un punto diverso). "Altro materiale mancante" rinominato
+//          in "Altri oggetti mancanti" nell'interfaccia; negli export
+//          XLS, "Altro Materiale" → "Altro materiale" (minuscolo)
+// v5.254 — Fix baco: negli export XLS della mancolista, i Retro venivano
+//          etichettati come "Figurine" nella colonna "Tipo di oggetto"
+//          perché mancava la chiave 'retros' nella mappa (ricadeva sul
+//          fallback). Aggiunta la chiave mancante; "Figurine"/"Stickers"
+//          cambiato al singolare "Figurina"/"Sticker" in tutti e tre gli
+//          export. Corretta anche una terza occorrenza che scriveva il
+//          valore grezzo f.section invece di un'etichetta tradotta
+// v5.253 — Fix baco: il pulsante "Escludi da export figurine che ho"
+//          (per le serie incomplete) si evidenziava in verde quando NON
+//          escluso, invece che in rosso quando effettivamente escluso —
+//          logica invertita rispetto all'altro pulsante di esclusione.
+//          Ora entrambi usano lo stesso rosso quando la serie è esclusa
+// v5.252 — Pulsante "Includi variazioni/change" spostato a sinistra,
+//          accanto al badge "N figurine mancanti su M", con stile
+//          esteticamente distinto (bordo tratteggiato viola, icona 🔀,
+//          corsivo) rispetto ai due pulsanti di export a destra
+// v5.251 — Mancolista: la barra di progresso ora considera solo le
+//          figurine base (come già il badge). Corrette anche le sezioni
+//          "figurine che ho delle mie serie incomplete" e l'export delle
+//          serie complete (stesso toggle "Escludi da export figurine che
+//          ho"): entrambe ora includono solo figurine base della sezione
+//          Figurine, non più album/altro materiale/variazioni/change
+// v5.250 — Mancolista: il badge accanto al nome serie ("N mancanti su
+//          M") ora conta esclusivamente le figurine base (esclusi
+//          album/altro materiale e variazioni/change), e il testo ora
+//          dice "N figurine mancanti su M" invece del generico
+//          "N mancanti su M"
+// v5.249 — Mancolista: i conteggi delle figurine mancanti ("mancanti su
+//          X", serie complete, ecc.) ora considerano solo le figurine
+//          base, escludendo variazioni ufficiali/non ufficiali e Change
+//          (prima venivano sommate insieme). Nuovo selettore "Includi
+//          variazioni/change" per ogni serie, sulla riga del nome serie,
+//          default disattivato: se attivato, l'export XLS della
+//          mancolista include anche variazioni/change di quella serie
+// v5.248 — Testo pulsante "Report error" → "Report an error" nella vista
+//          dettaglio. Fix baco: il tooltip del pulsante 🚩 nella card
+//          della griglia era testo italiano fisso, senza controllo
+//          lingua — ora dinamico come il resto del sito
+// v5.247 — Fix baco: il modal "Segnala errore" era quasi interamente in
+//          italiano hardcoded (titolo, descrizione, etichetta Commento,
+//          placeholder) senza attributi data-i18n, restando in italiano
+//          anche con lingua inglese rilevata. Aggiunte tutte le chiavi
+//          mancanti, verificate caricando realmente l'oggetto i18n (non
+//          a occhio) per escludere l'errore di distribuzione EN/IT
+//          commesso nella v5.245. Corretto anche "Send Comment" →
+//          "Send comment" (minuscolo)
+// v5.246 — Testo inglese: pulsante segnalazione da "Send report" a
+//          "Send Comment"
+// v5.245 — Fix baco: nella form di registrazione, l'etichetta
+//          "Nazionalità *" e il link "Password dimenticata?" (e, nel
+//          profilo, "Cerca il tuo paese") erano testo hardcoded in
+//          italiano senza attributo data-i18n, quindi restavano in
+//          italiano anche quando la lingua veniva rilevata come inglese
+//          dalla geolocalizzazione IP. Aggiunte le chiavi i18n mancanti
 // v5.244 — Fix bug reale: un blocco di codice più sotto sovrascriveva
 //          sempre la visibilità di Sottoserie/Taglia con '' (visibile)
 //          per qualunque sezione diversa da Retro, ignorando del tutto i
@@ -751,7 +837,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.244';
+const JS_VERSION = 'v5.262';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -1198,7 +1284,7 @@ const i18n = {
 'contact.location.val':'Italy 🇮🇹','contact.resp':'Response time','contact.resp.val':'Usually within 24–48 hours',
 'form.name.ph':'Sgorbions Fan','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio!',
 'form.message':'Message','form.message.ph':'Tell me everything...',
-'form.send':'Send message 🚀','form.password':'Password',
+'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality *','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
 'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Stickers',
 'form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.cover':'Cover Image',
 'form.click':'Click to upload','form.drag':'or drag and drop',
@@ -1210,7 +1296,7 @@ const i18n = {
 'auth.login.btn':'Enter','auth.reg.btn':'Confirm registration',
 'modal.bulkscore.title':'⭐ Series Score','modal.bulkscore.desc':'Assign the same score to all items in the current section. You can edit individual scores later.',
 'modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to all',
-'modal.figdetail.title':'Sticker detail','modal.segnala.send':'Send report',
+'modal.figdetail.title':'Sticker detail','modal.segnala.send':'Send comment','modal.segnala.title':'🚩 Report an issue','modal.segnala.desc':'Describe the issue you found with this sticker. The report will only be visible to the administrator.','modal.segnala.comment':'Comment','modal.segnala.placeholder':'Describe the issue...',
 'modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series',
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post',
@@ -1271,12 +1357,12 @@ const i18n = {
 'profile.saved':'✅ Informazioni salvate!','banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
 'wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete',
 'wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)',
-'wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista figurine che mi mancano".',
-'wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho delle mie serie incomplete".',
-'wantlist.exportIncomplete':'Esporta lista figurine che ho delle mie serie incomplete',
+'wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".',
+'wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".',
+'wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)',
 'wantlist.hint':'Clicca su "Escludi da export mie mancoliste" sulle serie per cui non ti interessa la mancolista.',
 'wantlist.hintMissing':'Clicca su "Escludi da export mie mancoliste" sulle serie per cui non ti interessa la mancolista.',
-'wantlist.exportMissing':'Esporta lista figurine che mi mancano',
+'wantlist.exportMissing':'Esporta lista di quello che mi manca',
 'wantlist.export':'Esporta lista figurine mie serie complete',
 'wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)',
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
@@ -1297,14 +1383,14 @@ const i18n = {
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'Email','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
-    'form.username':'Nome utente','form.password':'Password',
+    'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità *','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
-    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista figurine che mi mancano".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho delle mie serie incomplete".','wantlist.exportIncomplete':'Esporta lista figurine che ho delle mie serie incomplete','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista figurine che mi mancano','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retro':'Associated Retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retro':'Associated Retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
@@ -2651,7 +2737,7 @@ function renderItems() {
     const imgHTML = f.img ? `<img src="${cloudinaryUrl(f.img)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;text-align:center;"><span style="font-size:1.5rem;">${icon}</span><span style="font-size:0.6rem;color:var(--muted);line-height:1.2;">Foto non ancora disponibile</span></div>`;
     const ownedBadge = isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : '';
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button></div>` : '';
-    const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="Segnala qualcosa all'amministratore per questa figurina" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
+    const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="${currentLang === 'it' ? 'Segnala qualcosa all\'amministratore per questa figurina' : 'Report something to the administrator about this sticker'}" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
     const sizeHTML = f.size ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
@@ -3934,7 +4020,7 @@ function openFigDetail(figId) {
     </div>`);
   } else if (currentUser) {
     rows.push(`<div style="margin-top:1rem;text-align:right;">
-      <button onclick="closeModal('fig-detail-modal');openSegnalazioneModal('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩 ${currentLang === 'it' ? 'Segnala errore' : 'Report error'}</button>
+      <button onclick="closeModal('fig-detail-modal');openSegnalazioneModal('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩 ${currentLang === 'it' ? 'Segnala errore' : 'Report an error'}</button>
     </div>`);
   }
 
@@ -6332,17 +6418,25 @@ function toggleWantlistMode(key, mode) {
   renderWantlist();
 }
 
+// Figurina "base": non è una variazione ufficiale/non ufficiale né un Change
+function isBaseFigurine(f) {
+  return !f.isVariation && !f.isUnofficialVariation && !f.isChange;
+}
+
 function renderWantlist() {
   if (!currentUser) { showPage('home'); return; }
   const el = document.getElementById('wantlist-content');
   const allFigs = getData('figurines', []);
   const owned = getOwned();
-  const missing = allFigs.filter(f => !owned.includes(f.id));
+  // Le numeriche di default considerano solo le figurine base (non variazioni/change);
+  // le variazioni/change sono incluse nell'export solo se l'utente attiva l'opzione dedicata
+  const isBaseItem = isBaseFigurine;
+  const missing = allFigs.filter(f => !owned.includes(f.id) && isBaseItem(f));
   const series = getData('series', []);
 
   // Series where user has everything (or has items but none missing)
   const completeSeries = series.slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999)).filter(s => {
-    const seriesFigs = allFigs.filter(f => f.seriesId === s.id && f.section === 'figurines');
+    const seriesFigs = allFigs.filter(f => f.seriesId === s.id && f.section === 'figurines' && isBaseItem(f));
     const missingInSeries = seriesFigs.filter(f => !owned.includes(f.id));
     if (!seriesFigs.length) return false;
     return missingInSeries.length === 0;
@@ -6353,7 +6447,7 @@ function renderWantlist() {
     const completeBoxes = completeSeries.map(s => {
       const incOwned = prefs[s.id]?.includeOwned !== false;
       return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
-        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
+        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&!f.isVariation&&!f.isUnofficialVariation&&!f.isChange); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
         <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#ff6464' : 'var(--border)'};background:${!incOwned ? 'rgba(255,100,100,0.15)' : 'var(--card2)'};color:${!incOwned ? '#ff6464' : 'var(--muted)'};cursor:pointer;">
           ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine che ho' : 'Exclude from owned stickers export'}
         </button>
@@ -6369,7 +6463,7 @@ function renderWantlist() {
     bySeries[f.seriesId].push(f);
   });
 
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine mancanti' : 'Missing stickers', albums: currentLang === 'it' ? 'Album mancanti' : 'Missing albums', extras: currentLang === 'it' ? 'Altro materiale mancante' : 'Missing extras' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine mancanti' : 'Missing stickers', retros: currentLang === 'it' ? 'Retro mancanti' : 'Missing retros', albums: currentLang === 'it' ? 'Album mancanti' : 'Missing albums', extras: currentLang === 'it' ? 'Altri oggetti mancanti' : 'Missing other items' };
 
   const sortedEntries = Object.entries(bySeries).sort(([aId], [bId]) => {
     const aS = series.find(x => x.id === aId);
@@ -6379,8 +6473,12 @@ function renderWantlist() {
 
   el.innerHTML = sortedEntries.map(([sId, figs]) => {
     const s = series.find(x => x.id === sId);
-    const allSeriesFigs = allFigs.filter(f => f.seriesId === sId);
-    const ownedCount = allSeriesFigs.length - figs.length;
+    const allSeriesFigs = allFigs.filter(f => f.seriesId === sId && isBaseItem(f));
+    const seriesPrefs = getWantlistPrefs();
+    const seriesIncVariations = seriesPrefs[sId]?.includeVariations || false;
+    const figurinesOnlyMissing = allFigs.filter(f => f.seriesId === sId && (f.section || 'figurines') === 'figurines' && !owned.includes(f.id) && (seriesIncVariations || isBaseItem(f))).length;
+    const figurinesOnlyTotal = allFigs.filter(f => f.seriesId === sId && (f.section || 'figurines') === 'figurines' && (seriesIncVariations || isBaseItem(f))).length;
+    const ownedCount = figurinesOnlyTotal - figurinesOnlyMissing;
     const bySection = {};
     figs.forEach(f => {
       const sec = f.section || 'figurines';
@@ -6393,26 +6491,35 @@ function renderWantlist() {
         const prefs = getWantlistPrefs();
         const excMissing = prefs[sId]?.excludeMissing || false;
         const incOwned = prefs[sId]?.includeOwned !== false; // default true
+        const incVariations = prefs[sId]?.includeVariations || false; // default false
         return `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.4rem;">
-          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;cursor:pointer;" onclick="toggleWantlistCollapse('${sId}')">
-            <span style="font-size:0.8rem;color:var(--muted);user-select:none;">${_wantlistCollapsed[sId] ? '▶' : '▼'}</span>
-            <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')}</span>
-            <span class="card-badge">${figs.length} ${currentLang === 'it' ? 'mancanti su' : 'missing out of'} ${allSeriesFigs.length}</span>
+          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+            <span style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;cursor:pointer;" onclick="toggleWantlistCollapse('${sId}')">
+              <span style="font-size:0.8rem;color:var(--muted);user-select:none;">${_wantlistCollapsed[sId] ? '▶' : '▼'}</span>
+              <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')}</span>
+              <span class="card-badge" style="color:#5ec8f0;">${figurinesOnlyMissing} ${currentLang === 'it' ? 'figurine mancanti su' : 'stickers missing out of'} ${figurinesOnlyTotal}</span>
+            </span>
+            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
+              <input type="checkbox" onchange="toggleIncludeVariations('${sId}')" ${incVariations ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+              <span style="color:${incVariations ? 'var(--accent)' : 'var(--muted)'};">${currentLang === 'it' ? 'Includere variazioni/change' : 'Include variations/change'}</span>
+            </label>
           </div>
-          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;align-items:center;">
-            <button onclick="toggleWantlistExclude('${sId}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${excMissing ? '#ff6464' : 'var(--border)'};background:${excMissing ? 'rgba(255,100,100,0.15)' : 'var(--card2)'};color:${excMissing ? '#ff6464' : 'var(--muted)'};cursor:pointer;">
-              ${excMissing ? '✓ ' : ''}${currentLang === 'it' ? 'Escludi da export mie mancoliste' : 'Exclude from my missing lists export'}
-            </button>
-            <button onclick="toggleOwnedInclude('${sId}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${incOwned ? 'var(--accent)' : 'var(--border)'};background:${incOwned ? 'rgba(181,255,46,0.08)' : 'var(--card2)'};color:${incOwned ? 'var(--accent)' : 'var(--muted)'};cursor:pointer;">
-              ${!incOwned ? '✓ ' : ''}${currentLang === 'it' ? 'Escludi da export figurine che ho' : 'Exclude from owned stickers export'}
-            </button>
+          <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
+              <input type="checkbox" onchange="toggleWantlistExclude('${sId}')" ${excMissing ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+              <span style="color:${excMissing ? '#ff6464' : 'var(--muted)'};">${currentLang === 'it' ? 'Escludi da export mie mancoliste' : 'Exclude from my missing lists export'}</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
+              <input type="checkbox" onchange="toggleOwnedInclude('${sId}')" ${!incOwned ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+              <span style="color:${!incOwned ? '#ff6464' : 'var(--muted)'};">${currentLang === 'it' ? 'Escludi da export figurine che ho' : 'Exclude from owned stickers export'}</span>
+            </label>
           </div>
         </div>
-        ${!excMissing ? '<div class="progress-bar" style="margin-bottom:0.5rem;"><div class="progress-fill" style="width:' + Math.round(ownedCount/allSeriesFigs.length*100) + '%"></div></div>' : ''}
+        ${!excMissing ? '<div class="progress-bar" style="margin-bottom:0.5rem;"><div class="progress-fill" style="width:' + Math.round(ownedCount/figurinesOnlyTotal*100) + '%"></div></div>' : ''}
         `;
       })()}
-      ${(() => { if (_wantlistCollapsed[sId]) return ''; const prefs = getWantlistPrefs(); if (prefs[sId]?.excludeMissing) return '<p style="color:var(--muted);font-size:0.82rem;font-style:italic;">' + (currentLang === 'it' ? 'Esclusa dalla mancolista.' : 'Excluded from missing list.') + '</p>'; return Object.entries(bySection).map(([sec, items]) => {
+      ${(() => { if (_wantlistCollapsed[sId]) return ''; const prefs = getWantlistPrefs(); if (prefs[sId]?.excludeMissing) return '<p style="color:var(--muted);font-size:0.82rem;font-style:italic;">' + (currentLang === 'it' ? 'Esclusa dalla mancolista.' : 'Excluded from missing list.') + '</p>'; const sectionOrder = ['figurines', 'retros', 'albums', 'extras']; return Object.entries(bySection).sort(([secA], [secB]) => sectionOrder.indexOf(secA) - sectionOrder.indexOf(secB)).map(([sec, items]) => {
         const groupKey = sId + '_' + sec;
         const mode = wantlistMode[groupKey] || 'both';
         const hasNumbers = items.some(f => f.number);
@@ -6489,7 +6596,7 @@ function renderWantlist() {
     const completeBoxes = completeSeries.map(s => {
       const incOwned = prefs[s.id]?.includeOwned !== false;
       return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
-        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
+        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&!f.isVariation&&!f.isUnofficialVariation&&!f.isChange); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
         <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#ff6464' : 'var(--border)'};background:${!incOwned ? 'rgba(255,100,100,0.15)' : 'var(--card2)'};color:${!incOwned ? '#ff6464' : 'var(--muted)'};cursor:pointer;">
           ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine che ho' : 'Exclude from owned stickers export'}
         </button>
@@ -6526,6 +6633,17 @@ async function toggleOwnedInclude(seriesId) {
   renderWantlist();
 }
 
+async function toggleIncludeVariations(seriesId) {
+  if (!currentUser) return;
+  const prefs = getWantlistPrefs();
+  prefs[seriesId] = prefs[seriesId] || {};
+  prefs[seriesId].includeVariations = !prefs[seriesId].includeVariations;
+  currentUser.wantlistPrefs = prefs;
+  LOCAL.set('currentUser', currentUser);
+  await fsSave('users', currentUser);
+  renderWantlist();
+}
+
 async function exportOwnedIncomplete(btn) {
   // Export owned figs only for series where user does NOT have all stickers
   const allFigs = getData('figurines', []);
@@ -6538,16 +6656,16 @@ async function exportOwnedIncomplete(btn) {
   // Get incomplete series (has missing figs) and not excluded
   const incompleteSeries = series.filter(s => {
     if (prefs[s.id]?.includeOwned === false) return false;
-    const seriesFigs = allFigs.filter(f => f.seriesId === s.id && f.section === 'figurines');
+    const seriesFigs = allFigs.filter(f => f.seriesId === s.id && f.section === 'figurines' && isBaseFigurine(f));
     const missing = seriesFigs.filter(f => !owned.includes(f.id));
     return missing.length > 0 && missing.length < seriesFigs.length;
   }).sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
 
   incompleteSeries.forEach(s => {
-    const ownedFigs = allFigs.filter(f => f.seriesId === s.id && owned.includes(f.id))
+    const ownedFigs = allFigs.filter(f => f.seriesId === s.id && f.section === 'figurines' && isBaseFigurine(f) && owned.includes(f.id))
       .sort((a,b) => (a.number||0) - (b.number||0));
     ownedFigs.forEach(f => {
-      rows.push([s.name, f.section, f.subseries || '', f.number || '', f.name]);
+      rows.push([s.name, (currentLang === 'it' ? 'Figurina' : 'Sticker'), f.subseries || '', f.number || '', f.name]);
     });
   });
 
@@ -6565,9 +6683,9 @@ async function exportOwnedList() {
   if (!currentUser) return;
   const allFigs = getData('figurines', []);
   const owned = getOwned();
-  const ownedFigs = allFigs.filter(f => owned.includes(f.id));
+  const ownedFigs = allFigs.filter(f => owned.includes(f.id) && f.section === 'figurines' && isBaseFigurine(f));
   const series = getData('series', []);
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', albums: 'Album', extras: currentLang === 'it' ? 'Altro Materiale' : 'Extra Material' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurina' : 'Sticker', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altro materiale' : 'Other material' };
 
   const rows = [[(currentLang === 'it' ? 'Serie' : 'Series'), (currentLang === 'it' ? 'Tipo di oggetto' : 'Item type'), (currentLang === 'it' ? 'Sottoserie' : 'Subseries'), (currentLang === 'it' ? 'Numero' : 'Number'), (currentLang === 'it' ? 'Nome' : 'Name')]];
 
@@ -6591,7 +6709,7 @@ async function exportOwnedList() {
     figs.sort((a,b) => (a.number||0) - (b.number||0)).forEach(f => {
       rows.push([
         sName,
-        sectionLabels[f.section] || 'Figurine',
+        sectionLabels[f.section] || sectionLabels.figurines,
         f.subseries || '',
         f.number ? String(f.number) : '',
         f.name
@@ -6630,7 +6748,7 @@ async function _exportWantlistImpl() {
   const owned = getOwned();
   const missing = allFigs.filter(f => !owned.includes(f.id));
   const series = getData('series', []);
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', albums: 'Album', extras: currentLang === 'it' ? 'Altro Materiale' : 'Extra Material' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurina' : 'Sticker', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altro materiale' : 'Other material' };
 
   const rows = [[(currentLang === 'it' ? 'Serie' : 'Series'), (currentLang === 'it' ? 'Tipo di oggetto' : 'Item type'), (currentLang === 'it' ? 'Sottoserie' : 'Subseries'), (currentLang === 'it' ? 'Numero' : 'Number'), (currentLang === 'it' ? 'Nome' : 'Name')]];
 
@@ -6638,6 +6756,8 @@ async function _exportWantlistImpl() {
   const bySeries = {};
   missing.forEach(f => {
     if (prefs2[f.seriesId]?.excludeMissing) return; // excluded
+    const isVariant = f.isVariation || f.isUnofficialVariation || f.isChange;
+    if (isVariant && !prefs2[f.seriesId]?.includeVariations) return; // variazioni/change escluse per default
     if (!bySeries[f.seriesId]) bySeries[f.seriesId] = [];
     bySeries[f.seriesId].push(f);
   });
@@ -6654,7 +6774,7 @@ async function _exportWantlistImpl() {
     figs.sort((a,b) => (a.number||0) - (b.number||0)).forEach(f => {
       rows.push([
         sName,
-        sectionLabels[f.section] || 'Figurine',
+        sectionLabels[f.section] || sectionLabels.figurines,
         f.subseries || '',
         f.number ? String(f.number) : '',
         f.name
