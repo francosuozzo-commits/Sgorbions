@@ -1,6 +1,30 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.266 — Compliance privacy: rimossa completamente la funzionalità di
+//          suggerimento nazionalità via geolocalizzazione IP alla
+//          registrazione (era un nice-to-have, chiamava ipapi.co senza
+//          consenso). Rimossa anche la funzione detectCountryFromIP,
+//          non più usata da nessuna parte. La Nazionalità in
+//          registrazione non è più obbligatoria: l'utente la inserisce
+//          solo se vuole (tolto l'asterisco dall'etichetta)
+// v5.265 — Compliance privacy: la rilevazione automatica della lingua
+//          iniziale non contatta più ipapi.co (che inviava l'IP di OGNI
+//          visitatore anonimo a un servizio esterno senza consenso, ad
+//          ogni caricamento pagina). Ora si usa navigator.language,
+//          un'informazione già presente nel browser, senza contattare
+//          terze parti. La geolocalizzazione IP resta usata solo per il
+//          suggerimento nazionalità in fase di registrazione (azione
+//          esplicita dell'utente, non automatica per tutti i visitatori)
+// v5.264 — Vista dettaglio: aggiunti pulsanti ◀ ▶ per scorrere avanti e
+//          indietro tra le figurine, senza dover chiudere la finestra.
+//          La navigazione segue l'ordine della griglia corrente (tutte le
+//          pagine); se la figurina aperta non fa parte della griglia
+//          attuale (es. aperta da un altro contesto), i pulsanti restano
+//          nascosti anziché comportarsi in modo imprevedibile
+// v5.263 — Admin console, tabella Serie: "Ha sottoserie" → "Sottoserie",
+//          "Figurine" → "N. FIG"; aggiunte colonne "DA" e "A" (campi
+//          firstNumber/lastNumber) subito dopo N. FIG
 // v5.262 — Il badge "N figurine mancanti su M" ora considera anche
 //          variazioni/change quando il flag "Includere variazioni/
 //          change" è attivo per quella serie (prima il conteggio era
@@ -576,16 +600,6 @@ function switchAuthTab(tab) {
   if (title) title.textContent = tab === 'login' ? (currentLang === 'it' ? 'Bentornato!' : 'Welcome back!') : (currentLang === 'it' ? 'Benvenuto!' : 'Welcome!');
   const ae = document.getElementById('auth-error'); if (ae) ae.style.display = 'none';
   const re = document.getElementById('reg-error'); if (re) re.style.display = 'none';
-
-  // Preseleziona la nazionalità via geolocalizzazione IP (solo se il campo è ancora vuoto)
-  if (tab === 'register') {
-    const codeInput = document.getElementById('reg-nationality-code');
-    if (codeInput && !codeInput.value) {
-      detectCountryFromIP().then(geo => {
-        if (geo && !codeInput.value) selectNationality(geo.code, geo.name);
-      });
-    }
-  }
 }
 
 
@@ -837,7 +851,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.262';
+const JS_VERSION = 'v5.266';
 const CSS_VERSION = 'v5.25';
 
 // ============================================================
@@ -1087,13 +1101,14 @@ async function fsDelete(collName, id) {
 async function loadAllData() {
   showLoadingOverlay(true);
 
-  // Geolocalizzazione: imposta la lingua iniziale per i visitatori
-  // anonimi (senza login e senza preferenza lingua già salvata)
+  // Rilevamento lingua iniziale per i visitatori anonimi (senza login e senza
+  // preferenza lingua già salvata). Usiamo navigator.language (informazione
+  // già presente nel browser) invece di un servizio di geolocalizzazione IP
+  // di terze parti, per non inviare l'IP del visitatore a servizi esterni
+  // senza consenso prima ancora che l'utente interagisca con il sito.
   if (!currentUser && !LOCAL.get('lang')) {
-    const geo = await detectCountryFromIP();
-    if (geo) {
-      currentLang = geo.code === 'it' ? 'it' : 'en';
-    }
+    const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
+    currentLang = browserLang.startsWith('it') ? 'it' : 'en';
   }
 
   // Cache in sessionStorage per ridurre le letture Firebase
@@ -1284,7 +1299,7 @@ const i18n = {
 'contact.location.val':'Italy 🇮🇹','contact.resp':'Response time','contact.resp.val':'Usually within 24–48 hours',
 'form.name.ph':'Sgorbions Fan','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio!',
 'form.message':'Message','form.message.ph':'Tell me everything...',
-'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality *','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
+'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
 'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Stickers',
 'form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.cover':'Cover Image',
 'form.click':'Click to upload','form.drag':'or drag and drop',
@@ -1383,7 +1398,7 @@ const i18n = {
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'Email','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
-    'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità *','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
+    'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
@@ -1404,31 +1419,6 @@ const i18n = {
 };
 
 let currentLang = LOCAL.get('lang') || 'en';
-
-// ── Geolocalizzazione IP (per suggerire nazionalità e lingua iniziale) ──
-let _geoDetectedCountry = null; // { code: 'it', name: 'Italia' }
-
-async function detectCountryFromIP() {
-  if (_geoDetectedCountry !== null) return _geoDetectedCountry;
-  try {
-    const res = await Promise.race([
-      fetch('https://ipapi.co/json/'),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 3000))
-    ]);
-    const data = await res.json();
-    if (data?.country_code) {
-      const code = data.country_code.toLowerCase();
-      const match = COUNTRIES.find(c => c[0] === code);
-      _geoDetectedCountry = match ? { code: match[0], name: match[1] } : null;
-    } else {
-      _geoDetectedCountry = null;
-    }
-  } catch(e) {
-    console.warn('Geolocalizzazione IP non disponibile:', e.message);
-    _geoDetectedCountry = null;
-  }
-  return _geoDetectedCountry;
-}
 
 function t(key) { return (i18n[currentLang] || i18n.en)[key] || (i18n.en)[key] || key; }
 
@@ -1581,13 +1571,6 @@ async function doRegister() {
   if (users.find(x => x.username === u)) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'Nome utente già in uso'; return; } toast('Nome utente già in uso', 'error'); return; }
   const natCode = document.getElementById('reg-nationality-code')?.value || '';
   const natName = document.getElementById('reg-nationality-name')?.value || '';
-  if (!natCode) {
-    const re = document.getElementById('reg-error');
-    const errMsg = currentLang === 'it' ? 'Seleziona la tua nazionalità' : 'Select your nationality';
-    if (re) { re.style.display = ''; re.textContent = errMsg; return; }
-    toast(errMsg, 'error');
-    return;
-  }
   const newUser = { id: Date.now().toString(), username: u, email: e, password: p, isAdmin: false, joined: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName };
   const saved = await fsSave('users', newUser);
   _cache.users.push(saved);
@@ -2172,6 +2155,17 @@ function renderHomeSeries() {
 // ============================================================
 let currentSection = null; // 'figurines' | 'albums' | 'extras'
 let currentItemPage = 1;
+let _gridOrderedIds = []; // elenco ordinato completo (tutte le pagine) per navigazione avanti/indietro nel dettaglio
+let _currentDetailFigId = null;
+
+function navigateFigDetail(direction) {
+  if (!_currentDetailFigId) return;
+  const idx = _gridOrderedIds.indexOf(_currentDetailFigId);
+  if (idx === -1) return;
+  const newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= _gridOrderedIds.length) return;
+  openFigDetail(_gridOrderedIds[newIdx]);
+}
 const ITEMS_PER_PAGE = 42;
 
 function getSectionLabel(section) {
@@ -2688,6 +2682,8 @@ function renderItems() {
   if (currentItemPage > totalPages) currentItemPage = totalPages;
   const start = (currentItemPage - 1) * ITEMS_PER_PAGE;
   const items = allItems.slice(start, start + ITEMS_PER_PAGE);
+  // Elenco completo ordinato (tutte le pagine), usato per navigare avanti/indietro nel dettaglio
+  _gridOrderedIds = allItems.map(f => f.id);
   // Pagination controls (top)
   const paginationTop = document.getElementById('items-pagination-top');
   const totalPagesTop = Math.ceil(allItems.length / ITEMS_PER_PAGE);
@@ -3192,7 +3188,7 @@ function renderAdminSeries() {
   el.innerHTML = `
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.25rem;">${(currentLang === 'it') ? "Usa le frecce per cambiare l'ordine" : 'Use the arrows to change the order'}</p>
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Per eliminare una serie, cancellare prima tutto il suo contenuto.' : 'To delete a series, first delete all its content.'}</p>
-    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"Figurine":"Stickers"}</th><th>${currentLang==="it"?"Ha sottoserie":"Has subseries"}</th><th>${currentLang==="it"?"Var. uff.":"Off. var."}</th><th>${currentLang==="it"?"Var. non uff.":"Unoff. var."}</th><th>Change</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
+    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"N. FIG":"N. FIG"}</th><th>DA</th><th>A</th><th>${currentLang==="it"?"Sottoserie":"Subseries"}</th><th>${currentLang==="it"?"Var. uff.":"Off. var."}</th><th>${currentLang==="it"?"Var. non uff.":"Unoff. var."}</th><th>Change</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${series.map((s, idx) => {
       const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
       const siNoCell = v => v ? '<span style="color:#b5ff2e;font-weight:600;">SI</span>' : '<span style="color:var(--text);">NO</span>';
@@ -3202,6 +3198,8 @@ function renderAdminSeries() {
           <button class="tbl-btn tbl-btn-edit" onclick="moveSeriesDown(${idx})" ${idx===series.length-1?'disabled style="opacity:0.3;"':''}>▼</button>
         </td>
         <td>${s.name}</td><td>${s.year}</td><td>${figs}</td>
+        <td>${s.firstNumber ?? ''}</td>
+        <td>${s.lastNumber ?? ''}</td>
         <td>${siNoCell(s.hasSubseries)}</td>
         <td>${siNoCell(s.hasVariations)}</td>
         <td>${siNoCell(s.hasUnofficialVariations)}</td>
@@ -3871,6 +3869,7 @@ function updateBellBadge() {
 
 function openFigDetail(figId) {
   _figEditImgData = null; // reset immagine editing precedente
+  _currentDetailFigId = figId;
   const allFigs = getData('figurines', []);
   const f = allFigs.find(x => x.id === figId);
   if (!f) return;
@@ -3878,6 +3877,26 @@ function openFigDetail(figId) {
   const isOwned = owned.includes(f.id);
   const isAdmin = currentUser?.isAdmin;
   const figSeries = getData('series', []).find(s => s.id === f.seriesId);
+
+  // Frecce di navigazione avanti/indietro (solo se la figurina fa parte dell'elenco attualmente in griglia)
+  const navIdx = _gridOrderedIds.indexOf(figId);
+  const prevBtn = document.getElementById('fig-detail-prev-btn');
+  const nextBtn = document.getElementById('fig-detail-next-btn');
+  if (prevBtn && nextBtn) {
+    prevBtn.title = currentLang === 'it' ? 'Precedente' : 'Previous';
+    nextBtn.title = currentLang === 'it' ? 'Successivo' : 'Next';
+    if (navIdx === -1) {
+      prevBtn.style.visibility = 'hidden';
+      nextBtn.style.visibility = 'hidden';
+    } else {
+      prevBtn.style.visibility = '';
+      nextBtn.style.visibility = '';
+      prevBtn.disabled = navIdx <= 0;
+      prevBtn.style.opacity = navIdx <= 0 ? '0.3' : '1';
+      nextBtn.disabled = navIdx >= _gridOrderedIds.length - 1;
+      nextBtn.style.opacity = navIdx >= _gridOrderedIds.length - 1 ? '0.3' : '1';
+    }
+  }
 
   // Title
   const titleEl = document.getElementById('fig-detail-title');
