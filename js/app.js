@@ -1,6 +1,36 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.307 — Migrazione a Firebase Authentication vera, per poter
+//          finalmente proteggere il database con regole di sicurezza
+//          reali (prima impossibile: l'app non usava mai Firebase Auth,
+//          quindi le regole non potevano distinguere l'admin da un
+//          visitatore qualsiasi). Registrazione: crea un vero account
+//          Firebase, non salva più la password in chiaro su Firestore.
+//          Login: se l'utente non è ancora migrato, verifica la vecchia
+//          password e crea il vero account al volo (migrazione
+//          automatica e trasparente, un utente per volta, al primo
+//          accesso dopo l'aggiornamento) — poi rimuove la password in
+//          chiaro dal database. Aggiunto il campo authUid a owned,
+//          wishlists e post del blog, per poterli proteggere con le
+//          regole. Vedi le istruzioni di attivazione fornite in chat:
+//          l'ordine dei passaggi è fondamentale
+// v5.306 — Paginazione griglia: aggiunti i pulsanti "⏮ Prima" e "Ultima
+//          ⏭" (sia in cima che in fondo alla griglia, stessa funzione
+//          condivisa). Nascosti (non solo disabilitati) quando ci si
+//          trova già sulla prima/ultima pagina
+// v5.305 — Nuovo campo "Non ha numero" a livello di singola figurina
+//          (checkbox accanto al campo Numero, in entrambe le form),
+//          per eccezioni puntuali dentro serie altrimenti numerate. Il
+//          contatore "Figurine senza numero" (sezione Errori) esclude
+//          ora anche queste. Trovato e corretto, durante l'implementazione,
+//          un baco preesistente e più ampio: 7 chiavi di traduzione
+//          inglese relative alla form Figurina (Categoria, Sottocategoria,
+//          Figurina base e relativo hint, Retro associato e relativo
+//          hint, Serie) mostravano per errore il testo italiano, a causa
+//          di chiavi duplicate nel dizionario i18n dove l'ultima vinceva
+//          su quella corretta. Ripulite anche altre 24 chiavi duplicate
+//          (ma innocue) nel dizionario italiano
 // v5.304 — Trovata e corretta la causa reale della "serie fantasma":
 //          il salvataggio di una Serie impostava esplicitamente il
 //          valore JavaScript "undefined" per i campi opzionali vuoti
@@ -1057,8 +1087,9 @@ async function sendNewsletterEmail(subject, messaggio) {
 // Firebase SDK (via CDN)
 let db = null;
 let fbApp = null;
+let fbAuth = null;
 
-const JS_VERSION = 'v5.304';
+const JS_VERSION = 'v5.307';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -1162,10 +1193,13 @@ function loadDemoData() {
 
 async function initFirebase() {
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-  const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, deleteField } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
   fbApp = initializeApp(FIREBASE_CONFIG);
   db = getFirestore(fbApp);
-  window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy };
+  fbAuth = getAuth(fbApp);
+  window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, deleteField };
+  window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
   console.log('Firebase ready');
   await loadAllData();
 }
@@ -1519,7 +1553,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'N. Change','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'N. Change','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -1541,7 +1575,7 @@ const i18n = {
 'contact.q3':'Or do you just want to compliment the administrator?',
 'contact.cta':'For any of these things, send us a message!',
 'wantlist.desc':'This page shows your complete and incomplete series.<br><br>You can export to Excel:<br>• the list of your missing stickers<br>• the list of stickers you own<br>• the list of stickers from your complete series','wantlist.pageTitle':'Missing list','wantlist.missingTitle':'EXPORT OF YOUR INCOMPLETE SERIES (MISSING LIST)','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'Select the series for which to export the list of stickers you are missing. Then press "Export missing stickers".','wantlist.hintExportIncomplete':'Select the series for which to export the list of stickers you own. Then press "Export stickers I own (incomplete series)".','wantlist.exportMissing':'Export missing stickers','wantlist.exportIncomplete':'Export stickers I own (incomplete series)','wantlist.export':'Export stickers from my complete series'
-  },
+  ,'form.fig.noNumber':'Does not have a number'},
   it: {
 'nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog / D&R','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.wishlist':'Lista desiderati',
 'wishlist.desc':'La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nel catalogo, premi il tasto <strong>🛒</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia lista desiderati&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
@@ -1563,26 +1597,26 @@ const i18n = {
 'admin.user.joined':'Iscritto dal','admin.user.lastlogin':'Ultima login','admin.user.level':'Livello',
 'admin.user.nome':'Nome','admin.user.cognome':'Cognome','admin.user.sesso':'Sesso','admin.user.anni':'Anni di collezionismo',
 'admin.user.role':'Tipologia di utente','admin.user.collector':'Collezionista','admin.user.admin':'Admin',
-'form.username':'Username','form.email':'E-mail',
+
 'contact.title':'Contatta <span class=\'hi\'>l\'amministratore</span>',
 'contact.intro':'Hai trovato qualche pezzo raro che non è censito nel sito?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
-'form.name':'Nome','contact.email.ph':'la-tua@e-mail.com','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀',
+'contact.email.ph':'la-tua@e-mail.com',
 'contact.info':'Informazioni di contatto','contact.responseTime':'Tempo di risposta medio','contact.responseDesc':'Di solito in poche ore',
 'newsletter.title':'Invia Newsletter','newsletter.subject':'Oggetto','newsletter.subject.ph':'es. Nuova serie aggiunta!','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate',
 'classifica.best':'Classifica dei migliori collezionisti','classifica.levels':'Livelli di Collezionista Sgorbions',
 'admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio minimo','admin.levels.save':'Salva livello',
 'hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.',
 'profile.saved':'✅ Informazioni salvate!','banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
-'wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete',
-'wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)',
-'wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".',
-'wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".',
-'wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)',
-'wantlist.hint':'Clicca su "Escludi da export mie mancoliste" sulle serie per cui non ti interessa la mancolista.',
-'wantlist.hintMissing':'Clicca su "Escludi da export mie mancoliste" sulle serie per cui non ti interessa la mancolista.',
-'wantlist.exportMissing':'Esporta lista di quello che mi manca',
-'wantlist.export':'Esporta lista figurine mie serie complete',
-'wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)',
+
+
+
+
+
+
+
+
+
+
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Le mie / Totale','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Sfida gli altri collezionisti a chi ha la collezione più grande. Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
@@ -1608,7 +1642,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
-    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
@@ -1618,7 +1652,7 @@ const i18n = {
     'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Sito fan non ufficiale.',
     'owned.toggle':'Ce l\'ho','owned.yes':'✓ Ce l\'ho'
   
-  }
+  ,'form.fig.noNumber':'Non ha numero'}
 };
 
 let currentLang = LOCAL.get('lang') || 'en';
@@ -1736,8 +1770,54 @@ async function doLogin() {
     _cache.users = await fsGetAll('users');
   }
   const users = getData('users', []);
-  const user = users.find(x => x.username === u && x.password === p);
-  if (!user) { const ae = document.getElementById('auth-error'); if (ae) { ae.style.display = ''; ae.textContent = 'Username o password errati'; } else toast('Username o password errati', 'error'); return; }
+  const user = users.find(x => x.username === u);
+  const showErr = (msg) => { const ae = document.getElementById('auth-error'); if (ae) { ae.style.display = ''; ae.textContent = msg; } else toast(msg, 'error'); };
+  if (!user) { showErr(currentLang === 'it' ? 'Username o password errati' : 'Wrong username or password'); return; }
+
+  const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = window._fbAuth;
+
+  if (user.authUid) {
+    // Account già migrato: verifica reale tramite Firebase Authentication
+    try {
+      await signInWithEmailAndPassword(fbAuth, user.email, p);
+    } catch(err) {
+      console.error('Firebase Auth login', err);
+      showErr(currentLang === 'it' ? 'Username o password errati' : 'Wrong username or password');
+      return;
+    }
+  } else {
+    // Account non ancora migrato: verifica col vecchio metodo, poi crea il vero account Firebase
+    if (user.password !== p) { showErr(currentLang === 'it' ? 'Username o password errati' : 'Wrong username or password'); return; }
+    try {
+      let authUid;
+      try {
+        const cred = await createUserWithEmailAndPassword(fbAuth, user.email, p);
+        authUid = cred.user.uid;
+      } catch(createErr) {
+        if (createErr.code === 'auth/email-already-in-use') {
+          // Email già associata a un account Firebase (es. duplicata tra utenti storici): prova ad agganciarla
+          const cred = await signInWithEmailAndPassword(fbAuth, user.email, p);
+          authUid = cred.user.uid;
+        } else {
+          throw createErr;
+        }
+      }
+      user.authUid = authUid;
+      const { doc, setDoc, deleteField } = window._fb;
+      await setDoc(doc(db, 'users', user.id), { authUid: user.authUid, password: deleteField() }, { merge: true });
+      delete user.password;
+      if (user.isAdmin) {
+        // Tentativo best-effort: con le regole di sicurezza definitive questa scrittura
+        // è riservata alla console Firebase (vedi documentazione) — non deve bloccare il login
+        try { await fsSave('admin_uids', { id: user.authUid, isAdmin: true }); } catch(e2) { console.warn('admin_uids write skipped (expected once security rules are in place):', e2.message); }
+      }
+    } catch(err) {
+      console.error('Firebase Auth migration', err);
+      showErr(currentLang === 'it' ? 'Accesso non riuscito, riprova (controlla la connessione)' : 'Login failed, please retry (check your connection)');
+      return;
+    }
+  }
+
   user.lastLogin = new Date().toISOString();
   currentUser = user;
   LOCAL.set('currentUser', user);
@@ -1774,7 +1854,20 @@ async function doRegister() {
   if (users.find(x => x.username === u)) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'Nome utente già in uso'; return; } toast('Nome utente già in uso', 'error'); return; }
   const natCode = document.getElementById('reg-nationality-code')?.value || '';
   const natName = document.getElementById('reg-nationality-name')?.value || '';
-  const newUser = { id: Date.now().toString(), username: u, email: e, password: p, isAdmin: false, joined: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName };
+  let authUid = null;
+  try {
+    const { createUserWithEmailAndPassword } = window._fbAuth;
+    const cred = await createUserWithEmailAndPassword(fbAuth, e, p);
+    authUid = cred.user.uid;
+  } catch(err) {
+    console.error('Firebase Auth registration', err);
+    let msg = currentLang === 'it' ? 'Registrazione non riuscita, riprova' : 'Registration failed, please retry';
+    if (err.code === 'auth/email-already-in-use') msg = currentLang === 'it' ? 'Questa email è già registrata' : 'This email is already registered';
+    else if (err.code === 'auth/weak-password') msg = currentLang === 'it' ? 'Password troppo debole (minimo 6 caratteri)' : 'Password too weak (minimum 6 characters)';
+    if (regErr) { regErr.style.display = ''; regErr.textContent = msg; } else toast(msg, 'error');
+    return;
+  }
+  const newUser = { id: Date.now().toString(), authUid, username: u, email: e, isAdmin: false, joined: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName };
   const saved = await fsSave('users', newUser);
   _cache.users.push(saved);
   currentUser = saved;
@@ -2696,6 +2789,7 @@ function openAddItemModal(itemId) {
     const f = getData('figurines', []).find(x => x.id === itemId);
     if (f) {
       document.getElementById('fig-number-input').value = f.number || '';
+      document.getElementById('fig-no-number-input').checked = f.noNumber || false;
       document.getElementById('fig-category-input').value = f.category || '';
       document.getElementById('fig-subcategory-input').value = f.subcategory || '';
       document.getElementById('fig-name-input').value = f.name;
@@ -2712,6 +2806,7 @@ function openAddItemModal(itemId) {
     }
   } else {
     ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input','fig-category-input','fig-subcategory-input'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('fig-no-number-input').checked = false;
     document.getElementById('fig-score-input').value = 0;
     document.getElementById('fig-is-variation-input').checked = false;
     document.getElementById('fig-is-unofficial-variation-input').checked = false;
@@ -2814,7 +2909,7 @@ function toggleOwned(figId) {
 
 async function saveOwnedToFirebase(userId, owned) {
   try {
-    await fsSave('owned', { id: userId, userId, owned });
+    await fsSave('owned', { id: userId, userId, authUid: currentUser?.authUid || null, owned });
   } catch(e) { console.error('saveOwned error', e); }
 }
 
@@ -3009,9 +3104,11 @@ function renderItems() {
       ? `Pagina ${cur} di ${tot}${rangeStr} &nbsp;|&nbsp; ${total} ${sectionLabelLower}`
       : `Page ${cur} of ${tot}${rangeStr} &nbsp;|&nbsp; ${total} total`;
     return `<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+      ${cur > 1 ? `<button onclick="changeItemPage(1)" class="btn-secondary" style="padding:0.4rem 1rem;">⏮ ${currentLang === 'it' ? 'Prima' : 'First'}</button>` : ''}
       <button onclick="changeItemPage(${cur - 1})" ${cur === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ ${currentLang === 'it' ? 'Precedente' : 'Previous'}</button>
       <span style="font-family:var(--font-ui);color:var(--muted);font-size:0.9rem;">${label}</span>
       <button onclick="changeItemPage(${cur + 1})" ${cur === tot ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Successiva' : 'Next'} ▶</button>
+      ${cur < tot ? `<button onclick="changeItemPage(${tot})" class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Ultima' : 'Last'} ⏭</button>` : ''}
     </div>`;
   }
   if (paginationTop) paginationTop.innerHTML = paginationHTML(currentItemPage, totalPagesTop, allItems.length);
@@ -3162,6 +3259,7 @@ function handleFigImg(e) {
 
 async function saveFigurine() {
   const number = document.getElementById('fig-number-input').value;
+  const noNumber = document.getElementById('fig-no-number-input')?.checked || false;
   const name = document.getElementById('fig-name-input').value.trim();
   const desc = document.getElementById('fig-desc-input').value.trim();
   const score = parseInt(document.getElementById('fig-score-input').value) || 0;
@@ -3219,12 +3317,12 @@ async function saveFigurine() {
     if (editId) {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        figs[idx] = { ...figs[idx], number: finalNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || figs[idx].img };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || figs[idx].img };
         await fsSave('figurines', figs[idx]);
         _cache.figurines = figs;
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || null };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || null };
       const saved = await fsSave('figurines', newF);
       _cache.figurines.push(saved);
     }
@@ -3260,7 +3358,7 @@ async function savePost() {
   const title = document.getElementById('post-title-input').value.trim();
   const body = document.getElementById('post-body-input').value.trim();
   if (!title) { toast('Il titolo è obbligatorio', 'error'); return; }
-  const newPost = { type, title, body, author: currentUser.username, authorId: currentUser.id, date: new Date().toISOString(), comments: [] };
+  const newPost = { type, title, body, author: currentUser.username, authorId: currentUser.id, authorAuthUid: currentUser.authUid || null, date: new Date().toISOString(), comments: [] };
   const saved = await fsSave('posts', newPost);
   _cache.posts.unshift(saved);
   closeModal('post-modal');
@@ -4172,7 +4270,7 @@ async function loadWishlist() {
 async function saveWishlist() {
   if (!currentUser) return;
   try {
-    await fsSave('wishlists', { id: currentUser.id, userId: currentUser.id, items: _wishlist });
+    await fsSave('wishlists', { id: currentUser.id, userId: currentUser.id, authUid: currentUser.authUid || null, items: _wishlist });
   } catch(e) { console.error('saveWishlist error', e); }
   updateWishlistBadge();
 }
@@ -4596,7 +4694,7 @@ function switchToEditMode(figId) {
   }
 
   // Numero (i Retro non sono numerati; le Variazioni/Change ereditano quello della figurina base)
-  html += '<div class="detail-row" id="fe-number-group" style="' + ((!isRetrosItem && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ? '' : 'display:none;') + '"><span class="detail-label">N.</span><span class="detail-value"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
+  html += '<div class="detail-row" id="fe-number-group" style="' + ((!isRetrosItem && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ? '' : 'display:none;') + '"><span class="detail-label">N.</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"><label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--muted);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
 
   // Nome
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + (f.name||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
@@ -4812,6 +4910,7 @@ async function saveFigFromDetail(figId) {
     id: figId,
     name,
     number: document.getElementById('fe-number')?.value ? +document.getElementById('fe-number').value : null,
+    noNumber: document.getElementById('fe-no-number')?.checked || false,
     subseries: document.getElementById('fe-subseries')?.value.trim() || '',
     desc: document.getElementById('fe-desc')?.value.trim() || '',
     score: +(document.getElementById('fe-score')?.value || 0),
@@ -5781,9 +5880,11 @@ function renderAdminErrori() {
   const seriesList = getData('series', []);
   const allFigs = getData('figurines', []);
   // Figurine (sezione figurines) senza numero, la cui serie NON è marcata "Non ha numeri"
+  // e che non sono singolarmente marcate come eccezione ("Non ha numero" sulla figurina)
   const missingNumber = allFigs.filter(f => {
     if (f.section !== 'figurines') return false;
     if (f.number) return false;
+    if (f.noNumber) return false;
     const s = seriesList.find(x => x.id === f.seriesId);
     return !(s?.noNumbers);
   });
@@ -5793,8 +5894,8 @@ function renderAdminErrori() {
       <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">⚠️ ${currentLang==='it'?'Errori':'Errors'}</h3>
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'Contatori per individuare possibili incoerenze nei dati. Una serie marcata "Non ha numeri" (nella form di modifica serie) viene esclusa da questo conteggio.'
-          : 'Counters to spot possible data inconsistencies. A series marked "Does not have numbers" (in the series edit form) is excluded from this count.'}
+          ? 'Contatori per individuare possibili incoerenze nei dati. Una serie marcata "Non ha numeri" (nella form di modifica serie) viene esclusa da questo conteggio; lo stesso vale per una singola figurina marcata "Non ha numero" (nella form di modifica figurina), utile per le eccezioni all\'interno di una serie altrimenti numerata.'
+          : 'Counters to spot possible data inconsistencies. A series marked "Does not have numbers" (in the series edit form) is excluded from this count; the same applies to a single sticker marked "Does not have a number" (in the sticker edit form), useful for exceptions within an otherwise numbered series.'}
       </p>
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
