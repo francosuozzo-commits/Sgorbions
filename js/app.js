@@ -1,6 +1,22 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.303 — Fix baco serio: fsSave/fsDelete intercettavano in silenzio
+//          gli errori di scrittura/eliminazione su Firebase e
+//          restituivano comunque un "falso successo" — l'interfaccia
+//          mostrava "Salvato!" e aggiornava la cache locale anche
+//          quando il dato NON era mai stato scritto su Firestore
+//          davvero (visibile solo in quella sessione, sparito al primo
+//          ricaricamento vero). Ora l'errore viene propagato. Salvataggi
+//          di Serie, Figurina (entrambe le form) ed eliminazioni di
+//          Serie/Figurina mostrano un messaggio d'errore chiaro invece
+//          di un falso "Salvato!" quando la scrittura fallisce davvero.
+//          Le 3 procedure di import massivo beneficiano automaticamente
+//          della correzione (avevano già un try/catch per riga)
+// v5.302 — Sezione Errori: accanto al contatore "Figurine senza numero"
+//          ora c'è una lista cliccabile (ordinata per Serie e Nome) di
+//          tutte le figurine coinvolte — un clic apre direttamente il
+//          dettaglio della figurina
 // v5.301 — Admin console, tabella Serie: intestazione della colonna
 //          rinominata in "NO NUMERI" (più compatta). Allargato il
 //          contenitore della admin console (fino a 1500px, tecnica
@@ -1033,7 +1049,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.301';
+const JS_VERSION = 'v5.303';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -1256,28 +1272,24 @@ async function fsSave(collName, item) {
     _invalidateSessionCache();
   }
   if (!db) return item;
-  try {
-    const { collection, doc, setDoc, addDoc } = window._fb;
-    if (item.id) {
-      const ref = doc(db, collName, item.id);
-      await setDoc(ref, item, { merge: true });
-      return item;
-    } else {
-      const ref = await addDoc(collection(db, collName), item);
-      const saved = { ...item, id: ref.id };
-      const { doc: docFn, setDoc: setDocFn } = window._fb;
-      await setDocFn(docFn(db, collName, ref.id), saved);
-      return saved;
-    }
-  } catch(e) { console.error('fsSave', e); return item; }
+  const { collection, doc, setDoc, addDoc } = window._fb;
+  if (item.id) {
+    const ref = doc(db, collName, item.id);
+    await setDoc(ref, item, { merge: true });
+    return item;
+  } else {
+    const ref = await addDoc(collection(db, collName), item);
+    const saved = { ...item, id: ref.id };
+    const { doc: docFn, setDoc: setDocFn } = window._fb;
+    await setDocFn(docFn(db, collName, ref.id), saved);
+    return saved;
+  }
 }
 
 async function fsDelete(collName, id) {
   if (!db) return;
-  try {
-    const { doc, deleteDoc } = window._fb;
-    await deleteDoc(doc(db, collName, id));
-  } catch(e) { console.error('fsDelete', e); }
+  const { doc, deleteDoc } = window._fb;
+  await deleteDoc(doc(db, collName, id));
 }
 
 async function loadAllData() {
@@ -2165,17 +2177,25 @@ async function saveSeries() {
   }
   let series = getData('series', []);
   const editId = document.getElementById('edit-series-id').value;
-  if (editId) {
-    const idx = series.findIndex(x => x.id === editId);
-    if (idx >= 0) {
-      series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, lastNumber: lastNumber || series[idx].lastNumber || undefined, albumCount: albumCount ?? series[idx].albumCount ?? undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? series[idx].countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? undefined, countChange: countChange ?? series[idx].countChange ?? undefined };
-      await fsSave('series', series[idx]);
-      _cache.series = series;
+  try {
+    if (editId) {
+      const idx = series.findIndex(x => x.id === editId);
+      if (idx >= 0) {
+        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, lastNumber: lastNumber || series[idx].lastNumber || undefined, albumCount: albumCount ?? series[idx].albumCount ?? undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? series[idx].countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? undefined, countChange: countChange ?? series[idx].countChange ?? undefined };
+        await fsSave('series', series[idx]);
+        _cache.series = series;
+      }
+    } else {
+      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, lastNumber: lastNumber || undefined, albumCount: albumCount ?? undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? undefined, countChange: countChange ?? undefined, created: new Date().toISOString() };
+      const saved = await fsSave('series', newS);
+      _cache.series.push(saved);
     }
-  } else {
-    const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, lastNumber: lastNumber || undefined, albumCount: albumCount ?? undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? undefined, countChange: countChange ?? undefined, created: new Date().toISOString() };
-    const saved = await fsSave('series', newS);
-    _cache.series.push(saved);
+  } catch(e) {
+    console.error('saveSeries', e);
+    if (fb) { fb.style.display = 'none'; fb.textContent = ''; }
+    if (btn) btn.disabled = false;
+    toast((currentLang === 'it' ? '❌ Salvataggio fallito, riprova (controlla la connessione)' : '❌ Save failed, please retry (check your connection)'), 'error');
+    return;
   }
   editingSeriesImgFile = null;
   if (fb) { fb.textContent = (currentLang === 'it' ? '✅ Serie salvata!' : '✅ Series saved!'); }
@@ -2188,10 +2208,16 @@ async function saveSeries() {
 }
 async function deleteSeries(id) {
   if (!confirm('Delete this series and all its figurines?')) return;
-  await fsDelete('series', id);
+  try {
+    await fsDelete('series', id);
+    const figsToDelete = _cache.figurines.filter(x => x.seriesId === id);
+    for (const f of figsToDelete) await fsDelete('figurines', f.id);
+  } catch(e) {
+    console.error('deleteSeries', e);
+    toast((currentLang === 'it' ? '❌ Eliminazione fallita, riprova' : '❌ Delete failed, please retry'), 'error');
+    return;
+  }
   _cache.series = _cache.series.filter(x => x.id !== id);
-  const figsToDelete = _cache.figurines.filter(x => x.seriesId === id);
-  for (const f of figsToDelete) await fsDelete('figurines', f.id);
   _cache.figurines = _cache.figurines.filter(x => x.seriesId !== id);
   renderCatalog(); renderHomeSeries(); renderHomeStats(); renderAdminSeries();
   toast((currentLang === 'it' ? 'Serie eliminata' : 'Series deleted'), 'success');
@@ -3180,17 +3206,23 @@ async function saveFigurine() {
   }
   let figs = getData('figurines', []);
   const editId = document.getElementById('edit-fig-id').value;
-  if (editId) {
-    const idx = figs.findIndex(x => x.id === editId);
-    if (idx >= 0) {
-      figs[idx] = { ...figs[idx], number: finalNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || figs[idx].img };
-      await fsSave('figurines', figs[idx]);
-      _cache.figurines = figs;
+  try {
+    if (editId) {
+      const idx = figs.findIndex(x => x.id === editId);
+      if (idx >= 0) {
+        figs[idx] = { ...figs[idx], number: finalNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || figs[idx].img };
+        await fsSave('figurines', figs[idx]);
+        _cache.figurines = figs;
+      }
+    } else {
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || null };
+      const saved = await fsSave('figurines', newF);
+      _cache.figurines.push(saved);
     }
-  } else {
-    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || null };
-    const saved = await fsSave('figurines', newF);
-    _cache.figurines.push(saved);
+  } catch(e) {
+    console.error('saveFigurine', e);
+    toast((currentLang === 'it' ? '❌ Salvataggio fallito, riprova (controlla la connessione)' : '❌ Save failed, please retry (check your connection)'), 'error');
+    return;
   }
   editingFigImgFileSave = null;
   closeModal('add-fig-modal');
@@ -4831,7 +4863,13 @@ async function saveFigFromDetail(figId) {
   if (!merged.subseries) delete merged.subseries;
   if (!merged.size) delete merged.size;
 
-  await fsSave('figurines', merged);
+  try {
+    await fsSave('figurines', merged);
+  } catch(e) {
+    console.error('saveFigFromDetail', e);
+    toast((currentLang === 'it' ? '❌ Salvataggio fallito, riprova (controlla la connessione)' : '❌ Save failed, please retry (check your connection)'), 'error');
+    return;
+  }
   if (_cache.figurines) {
     const idx = _cache.figurines.findIndex(x => x.id === figId);
     if (idx >= 0) _cache.figurines[idx] = merged;
@@ -4844,7 +4882,13 @@ async function saveFigFromDetail(figId) {
 
 async function deleteItemFromDetail(itemId) {
   if (!confirm(currentLang === 'it' ? 'Eliminare questa figurina?' : 'Delete this sticker?')) return;
-  await fsDelete('figurines', itemId);
+  try {
+    await fsDelete('figurines', itemId);
+  } catch(e) {
+    console.error('deleteItemFromDetail', e);
+    toast((currentLang === 'it' ? '❌ Eliminazione fallita, riprova' : '❌ Delete failed, please retry'), 'error');
+    return;
+  }
   _cache.figurines = (_cache.figurines || []).filter(x => x.id !== itemId);
   closeModal('fig-detail-modal');
   renderItems();
@@ -5743,9 +5787,27 @@ function renderAdminErrori() {
           ? 'Contatori per individuare possibili incoerenze nei dati. Una serie marcata "Non ha numeri" (nella form di modifica serie) viene esclusa da questo conteggio.'
           : 'Counters to spot possible data inconsistencies. A series marked "Does not have numbers" (in the series edit form) is excluded from this count.'}
       </p>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;">
-        <div style="font-size:2.6rem;font-weight:700;color:${missingNumber.length ? '#ff6464' : 'var(--accent)'};">${missingNumber.length}</div>
-        <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">${currentLang==='it'?'Figurine senza numero':'Stickers without a number'}</div>
+      <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
+          <div style="font-size:2.6rem;font-weight:700;color:${missingNumber.length ? '#ff6464' : 'var(--accent)'};">${missingNumber.length}</div>
+          <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">${currentLang==='it'?'Figurine senza numero':'Stickers without a number'}</div>
+        </div>
+        ${missingNumber.length ? `
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;flex:1;min-width:280px;max-height:340px;overflow-y:auto;">
+          ${missingNumber
+            .slice()
+            .sort((a, b) => {
+              const sA = seriesList.find(x => x.id === a.seriesId)?.name || '';
+              const sB = seriesList.find(x => x.id === b.seriesId)?.name || '';
+              return sA.localeCompare(sB, 'it') || (a.name||'').localeCompare(b.name||'', 'it');
+            })
+            .map(f => {
+              const sName = seriesList.find(x => x.id === f.seriesId)?.name || (currentLang==='it'?'Serie sconosciuta':'Unknown series');
+              return `<a href="#" onclick="openFigDetail('${f.id}');return false;" style="display:block;padding:0.4rem 0.5rem;border-radius:8px;text-decoration:none;color:var(--text);font-size:0.85rem;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''">
+                <span style="color:var(--muted);">${sName}</span> — ${f.name}
+              </a>`;
+            }).join('')}
+        </div>` : ''}
       </div>
     </div>`;
 }
