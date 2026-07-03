@@ -1,4 +1,4 @@
-/* CSS_VERSION: v5.25 */
+/* CSS_VERSION: segue JS_VERSION (vedi app.js) — non più un numero separato */
 /* ===== RESET & VARIABLES ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -617,7 +617,7 @@ body {
 .search-input:focus { border-color: var(--accent3); }
 
 /* ===== ADMIN PANEL ===== */
-.admin-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; overflow-x: auto; }
+.admin-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
 .admin-tab {
   font-family: var(--font-ui); font-size: 1rem;
   background: var(--card); border: 1px solid var(--border);
