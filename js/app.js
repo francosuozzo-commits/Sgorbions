@@ -1,6 +1,188 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.301 — Admin console, tabella Serie: intestazione della colonna
+//          rinominata in "NO NUMERI" (più compatta). Allargato il
+//          contenitore della admin console (fino a 1500px, tecnica
+//          breakout, senza toccare il contenitore da 1100px condiviso
+//          dalle altre pagine) e i tab ora vanno a capo invece di
+//          forzare uno scroll orizzontale quando non entrano tutti
+// v5.300 — Nuova sezione "⚠️ Errori" nella admin console, con un primo
+//          contatore "Figurine senza numero" (conta le figurine di
+//          sezione Figurine senza Numero, escludendo le serie marcate
+//          "Non ha numeri"). Aggiunto il nuovo campo booleano "Non ha
+//          numeri" alla form di aggiunta/modifica serie e come colonna
+//          nella tabella Serie della admin console
+// v5.299 — Data import: le 4 procedure sono ora collassabili (di
+//          default chiuse, si vede solo il titolo — clic per aprire
+//          quella che interessa). Allargato il contenitore da 680px a
+//          900px, e i log riga per riga usano ora tutta la larghezza
+//          disponibile senza andare a capo inutilmente
+// v5.298 — Per le Variazioni/Change il campo Numero eredita ora sempre
+//          il numero della figurina base collegata, invece di restare
+//          vuoto. Completato in tutti e tre i punti: form principale
+//          (già in v5.297), form di modifica rapida dal dettaglio, e
+//          import massivo Variazioni/Change. Il campo Numero si nasconde
+//          automaticamente in entrambe le form quando è selezionata una
+//          Variazione/Change, dato che il valore è ereditato e non va
+//          inserito a mano
+// v5.297 — Griglia Figurine: le Variazioni (ufficiali/non ufficiali) con
+//          sia la foto della figurina base sia quella del Retro
+//          collegato ora mostrano entrambe, impilate verticalmente,
+//          nella stessa altezza totale del box foto — colpo d'occhio
+//          immediato per riconoscere le variazioni. Se manca una delle
+//          due foto, torna al comportamento con foto singola di prima
+// v5.296 — Griglia Figurine: aggiunta l'etichetta gialla "Figurina base"
+//          anche per le figurine base, mostrata sempre (non solo con
+//          "Tutte" acceso), per evitare il disallineamento verticale
+//          delle card rispetto a Variazioni/Change che hanno la loro
+//          etichetta. Indicatore limitato alla sola sezione Figurine
+// v5.295 — Ordinamento griglia Figurine: per le figurine senza campo
+//          Numero popolato, il raggruppamento (base + sue variazioni/
+//          change) ora avviene per Nome invece di finire tutte in coda
+//          senza un ordine sensato. I gruppi con Numero restano comunque
+//          prima di quelli senza, che si ordinano poi alfabeticamente
+// v5.294 — Correzione dell'ordinamento in v5.293: comanda innanzitutto il
+//          Numero della figurina di riferimento (proprio per la base,
+//          quello della base collegata per variazioni/change) — quindi
+//          "Tutte" mostra prima tutto ciò che riguarda #1, poi tutto ciò
+//          che riguarda #2, ecc. All'interno dello stesso numero vale il
+//          sotto-ordinamento: base, variazioni ufficiali (per Retro),
+//          variazioni non ufficiali (per Retro), Change (per nome)
+// v5.293 — Griglia Figurine: nuovo ordinamento fisso — figurina base
+//          (per numero), poi variazioni ufficiali (per Retro Categoria+
+//          Nome), poi variazioni non ufficiali (per Retro Categoria+
+//          Nome), poi Change (per Nome). Aggiunto indicatore giallo del
+//          tipo ("Variazione ufficiale"/"Variazione non ufficiale"/
+//          "Change") sotto al selettore "Ce l'ho" in ogni card
+// v5.292 — Fix baco: il testo "Categoria · Sottocategoria — Nome" del
+//          Retro poteva mostrare uno spazio iniziale spurio quando
+//          Categoria/Sottocategoria contenevano solo spazi vuoti (dato
+//          "presente" ma vuoto dopo trim). Aggiunto trim() ovunque
+//          questo pattern comparisse (7 punti: didascalia Fronte/Retro,
+//          elenco figurine collegate, anteprima e dropdown ricerca
+//          Retro in entrambe le form, badge categoria nella griglia)
+// v5.291 — Scheda figurina base, elenco figurine collegate: per le
+//          Variazioni (ufficiali/non ufficiali) ora mostriamo il Retro
+//          collegato (Categoria + Nome) invece del nome della variazione
+//          (sempre identico a quello della base, quindi ridondante). Per
+//          i Change mostriamo solo il Nome, senza numero (i Change non
+//          hanno un numero proprio)
+// v5.290 — Griglia Figurine: sistemati i selettori tipo. Il baco per cui
+//          "Tutte" appariva acceso di default è risolto sostituendo la
+//          vecchia logica a più booleani indipendenti con un'unica
+//          variabile a scelta singola (comportamento radio puro, sempre
+//          uno e un solo selettore attivo). Aggiunto un quinto selettore
+//          "Solo base" (a sinistra, acceso di default) che mostra solo
+//          le figurine base; "Tutte" spostato in fondo a destra, spento
+//          di default come gli altri tre
+// v5.289 — Griglia: le Variazioni/Change senza foto propria ora mostrano
+//          automaticamente la foto della figurina base collegata (via
+//          baseFigurineId), invece del placeholder "Foto non ancora
+//          disponibile". Una Variazione è concettualmente solo un
+//          collegamento Figurina base + Retro: non serve duplicare/
+//          caricare una foto propria, si riusa quella già esistente —
+//          stessa logica già presente nella vista dettaglio
+// v5.288 — Import Variazioni/Change: il log riga per riga ora indica
+//          anche il Retro (Categoria/Nome) per le Variazioni, dato che è
+//          parte della chiave di riconciliazione — prima, righe di
+//          Variazioni diverse della stessa figurina base risultavano
+//          indistinguibili nel log (stesso nome ereditato, stesso
+//          numero). Aggiunto anche il Tipo al log di sovrascrittura,
+//          già presente in quello di inserimento
+// v5.287 — Import Variazioni/Change: rimossa la domanda "Tipo di
+//          oggetto" (fisso a Figurine, unico caso d'uso reale). Fix
+//          concettuale importante: per le Variazioni il Nome non si
+//          legge più dal file — si eredita sempre dalla figurina base,
+//          perché una Variazione ha sempre lo stesso nome della sua
+//          base (a differenza del Change, dove resta obbligatorio ed è
+//          chiave). Risolve l'errore "serve anche il Nome" che si
+//          presentava sistematicamente per le Variazioni esistenti non
+//          ancora collegate a un Retro (la riconciliazione per retroId
+//          non trovava corrispondenza dato che quel collegamento è
+//          proprio quello che l'import doveva scrivere per la prima volta)
+// v5.286 — Import Variazioni/Change: chiave di riconciliazione
+//          differenziata. Variazioni (Ufficiale/Non ufficiale): Serie +
+//          Figurina base + Retro (Categoria+Nome, ora obbligatorio; riga
+//          scartata se il Retro non esiste), Nome facoltativo (non
+//          sbiancato se vuoto, necessario solo per creare una riga
+//          nuova). Change: Serie + Figurina base + Nome (obbligatorio,
+//          Retro non applicabile, invariato). Istruzioni riscritte di
+//          conseguenza
+// v5.285 — Rinominata la procedura in "Caricamento massivo Variazioni e
+//          Change"
+// v5.284 — Import Variazioni/Change: aggiunte colonne facoltative Retro
+//          (Categoria) e Retro (Nome), stesso meccanismo di collegamento
+//          cross-serie dell'import Figurine base (non si applica al
+//          Change; collegamento esistente preservato se non specificato
+//          in aggiornamento). Titolo già corretto ("Caricamento massivo
+//          figurine non standard", da v5.238). Istruzioni riscritte con
+//          lo stesso stile/struttura della procedura Figurine base
+// v5.283 — Riordinate le 4 procedure di Data import: "Caricamento
+//          massivo foto" ora è l'ultima (dopo Figurine base, Figurine
+//          non standard, Retro), prima era la seconda
+// v5.282 — Log riga per riga di tutte e 3 le procedure di import
+//          (Figurine base, Variazioni/Change, Retro): "importata" →
+//          "aggiunta" per le righe inserite con successo
+// v5.281 — Log finali import Figurine base e Variazioni/Change: genere
+//          corretto "inseriti/aggiornati" → "inserite/aggiornate"
+//          (concordanza con "figurine"). Import Retro invariato
+//          ("inseriti/aggiornati" già corretto, "i retro" è maschile)
+// v5.280 — Import Figurine base: aggiunto il titoletto "REGOLE DI
+//          RICONCILIAZIONE E CAMPI OBBLIGATORI" prima del recap regole
+// v5.279 — Import Figurine base: sostituite le note sparse con un recap
+//          completo e strutturato delle regole di obbligatorietà campi e
+//          chiave di riconciliazione, sotto alla riga delle colonne
+// v5.278 — Import Figurine base: aggiornato il testo delle istruzioni
+//          colonne (separatori a punto e virgola, "Retro (Categoria)" /
+//          "Retro (Nome)" invece di "Retro - Categoria/Nome"). Aggiunti
+//          anche come sinonimi riconosciuti nel parsing del file, per
+//          coerenza tra quanto mostrato e quanto effettivamente accettato
+// v5.277 — Rinominata la procedura "Caricamento massivo figurine" in
+//          "Caricamento massivo figurine base (non Variazioni e Change)"
+// v5.276 — Correzione della v5.275: con Numero presente, il Nome ora
+//          AGGIORNA la figurina se compilato (permette di rinominarla via
+//          import), e preserva quello esistente solo se lasciato vuoto —
+//          non più ignorato a prescindere come nella versione precedente
+// v5.275 — Import Figurine: quando il Numero è presente, il Nome della
+//          riga viene completamente ignorato negli aggiornamenti (si
+//          preserva il nome già a database, mai sbiancato). Il Nome
+//          resta necessario solo per creare una figurina che non esiste
+//          ancora (quella riga viene segnalata come errore se manca).
+//          Se il Numero è assente, il Nome resta obbligatorio come prima
+// v5.274 — Vista dettaglio: le frecce ◀ ▶ non sono più affiancate al
+//          titolo (che cambia lunghezza col nome della figurina, facendo
+//          "saltare" la posizione delle frecce) — ora sono in un gruppo
+//          fisso a destra, accanto alla X di chiusura, per scorrere
+//          velocemente senza dover rincorrere la posizione col mouse
+// v5.273 — Form aggiornamento Figurina: il titolo ora mostra "# Numero -
+//          Nome" quando si modifica un elemento esistente (in entrambe
+//          le form), invece del generico "Modifica figurina". Il titolo
+//          "Aggiungi X" per i nuovi elementi resta invariato
+// v5.272 — Testo inglese: "Associated Retro" → "Associated retro"
+//          (minuscolo), in tutte le occorrenze (etichetta campo, hint di
+//          validazione)
+// v5.271 — Vista dettaglio Figurina: il titolo ora mostra "#Numero -
+//          Nome" (solo "Nome" per i Retro, che non hanno numero); i
+//          campi Numero e Nome rimossi dal corpo, ora ridondanti col
+//          titolo
+// v5.270 — Il campo "Retro associato" è ora obbligatorio per Variazione
+//          ufficiale/non ufficiale (non per Change, e non per i Retro
+//          stessi che non hanno questo campo). Applicato in entrambe le
+//          form
+// v5.269 — La Figurina/Retro base è ora obbligatoria per qualsiasi dei
+//          tre flag (Variazione ufficiale, Variazione non ufficiale,
+//          Change), non solo per Change nei Retro come prima. Applicato
+//          in entrambe le form
+// v5.268 — Campo "Figurina base (di cui questa è una variante)" ora con
+//          ricerca in digitazione, stesso pattern già usato per il Retro
+//          associato — in entrambe le form (principale e modifica rapida
+//          dal dettaglio), utile anche qui con serie numerose
+// v5.267 — Fix: CSS_VERSION era una costante separata da JS_VERSION,
+//          impostata una volta a "v5.25" e mai più aggiornata da allora
+//          (per questo in "Altro" restava fermo mentre JS_VERSION
+//          avanzava ad ogni consegna). Ora CSS_VERSION segue sempre
+//          automaticamente JS_VERSION, un solo numero da tenere allineato
 // v5.266 — Compliance privacy: rimossa completamente la funzionalità di
 //          suggerimento nazionalità via geolocalizzazione IP alla
 //          registrazione (era un nice-to-have, chiamava ipapi.co senza
@@ -851,8 +1033,8 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.266';
-const CSS_VERSION = 'v5.25';
+const JS_VERSION = 'v5.301';
+const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
 //  NATIONALITY
@@ -1273,7 +1455,7 @@ const i18n = {
 'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Email','admin.email.all':'All emails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in catalog...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Email','admin.email.all':'All emails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in catalog...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -1316,7 +1498,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retro':'Associated Retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'N. Change','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'N. Change','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -1392,7 +1574,7 @@ const i18n = {
     'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine hai e traccia la percentuale di completamento per ogni serie.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ E-mail','admin.email.all':'Tutte le e-mail','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nel catalogo...',
+    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ E-mail','admin.email.all':'Tutte le e-mail','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nel catalogo...',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -1405,7 +1587,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
-    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retro':'Associated Retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
@@ -1459,7 +1641,7 @@ function setLang(lang, byUser = false) {
 let currentUser = LOCAL.get('currentUser') || null;
 let currentSeriesId = null;
 let _noPhotoFilter = false; // filtro figurine senza foto
-let _itemTypeFilters = { variation: false, unofficialVariation: false, change: false }; // filtri tipo figurina (default OFF)
+let _itemTypeFilter = 'base'; // 'base' | 'variation' | 'unofficialVariation' | 'change' | 'all' — sempre uno solo attivo
 let editingSeriesImg = null;
 let editingFigImg = null;
 
@@ -1920,6 +2102,7 @@ function openAddSeriesModal(seriesId) {
       document.getElementById('series-album-count-input').value = s.albumCount || '';
       const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = s.hasUnofficialVariations || false;
       const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = s.hasChange || false;
+      const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = s.noNumbers || false;
       document.getElementById('series-desc-input').value = s.desc;
 
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
@@ -1928,6 +2111,7 @@ function openAddSeriesModal(seriesId) {
     ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-album-count-input','series-desc-input'].forEach(id => document.getElementById(id).value = '');
     const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = false;
     const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = false;
+    const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = false;
   }
   updateSeriesVariationCounts(seriesId || null);
   toggleSeriesCountGroups();
@@ -1959,6 +2143,7 @@ async function saveSeries() {
   const hasVariations = document.getElementById('series-has-variations-input')?.checked || false;
   const hasUnofficialVariations = document.getElementById('series-has-unofficial-variations-input')?.checked || false;
   const hasChange = document.getElementById('series-has-change-input')?.checked || false;
+  const noNumbers = document.getElementById('series-no-numbers-input')?.checked || false;
   const countVariations = parseInt(document.getElementById('series-count-variations-input').value) || null;
   const countUnofficialVariations = parseInt(document.getElementById('series-count-unofficial-variations-input').value) || null;
   const countChange = parseInt(document.getElementById('series-count-change-input').value) || null;
@@ -1983,12 +2168,12 @@ async function saveSeries() {
   if (editId) {
     const idx = series.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, lastNumber: lastNumber || series[idx].lastNumber || undefined, albumCount: albumCount ?? series[idx].albumCount ?? undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, countVariations: countVariations ?? series[idx].countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? undefined, countChange: countChange ?? series[idx].countChange ?? undefined };
+      series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, lastNumber: lastNumber || series[idx].lastNumber || undefined, albumCount: albumCount ?? series[idx].albumCount ?? undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? series[idx].countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? undefined, countChange: countChange ?? series[idx].countChange ?? undefined };
       await fsSave('series', series[idx]);
       _cache.series = series;
     }
   } else {
-    const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, lastNumber: lastNumber || undefined, albumCount: albumCount ?? undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, countVariations: countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? undefined, countChange: countChange ?? undefined, created: new Date().toISOString() };
+    const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, lastNumber: lastNumber || undefined, albumCount: albumCount ?? undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? undefined, countChange: countChange ?? undefined, created: new Date().toISOString() };
     const saved = await fsSave('series', newS);
     _cache.series.push(saved);
   }
@@ -2251,7 +2436,7 @@ function updateSectionCounts() {
 
 function openSeriesSection(section) {
   _noPhotoFilter = false;
-  _itemTypeFilters = { variation: false, unofficialVariation: false, change: false };
+  _itemTypeFilter = 'base';
   const noPhotoBtn = document.getElementById('no-photo-filter-btn');
   if (noPhotoBtn) { noPhotoBtn.style.background=''; noPhotoBtn.style.borderColor=''; noPhotoBtn.style.color=''; noPhotoBtn.textContent = currentLang === 'it' ? '📷 Solo figurine senza foto' : '📷 Stickers without photo only'; }
   currentSection = section;
@@ -2321,14 +2506,57 @@ function closeSeriesDetail() {
 // ============================================================
 //  ITEMS (figurines/albums/extras unified)
 // ============================================================
+let _baseFigurineLinkOptions = [];
 function populateBaseFigurineSelect(excludeId, selectedId) {
-  const sel = document.getElementById('fig-base-figurine-input');
-  if (!sel) return;
-  const candidates = getData('figurines', [])
+  const hidden = document.getElementById('fig-base-figurine-input');
+  const search = document.getElementById('fig-base-figurine-search');
+  if (!hidden || !search) return;
+  _baseFigurineLinkOptions = getData('figurines', [])
     .filter(f => f.seriesId === currentSeriesId && f.section === currentSection && f.id !== excludeId && !f.isVariation && !f.isUnofficialVariation && !f.isChange)
     .sort((a,b) => (a.number||0) - (b.number||0));
-  sel.innerHTML = '<option value="">-- ' + (currentLang === 'it' ? 'Seleziona' : 'Select') + ' --</option>' +
-    candidates.map(f => '<option value="' + f.id + '"' + (f.id === selectedId ? ' selected' : '') + '>' + (f.number ? '#' + f.number + ' ' : '') + f.name + '</option>').join('');
+  hidden.value = selectedId || '';
+  const dd = document.getElementById('fig-base-figurine-dropdown');
+  if (dd) dd.style.display = 'none';
+  if (selectedId) {
+    const b = _baseFigurineLinkOptions.find(x => x.id === selectedId);
+    search.value = b ? ((b.number ? '#' + b.number + ' ' : '') + b.name) : '';
+  } else {
+    search.value = '';
+  }
+}
+
+function filterBaseFigurineLink() {
+  const q = document.getElementById('fig-base-figurine-search').value.toLowerCase().trim();
+  const dd = document.getElementById('fig-base-figurine-dropdown');
+  if (!dd) return;
+  const filtered = q
+    ? _baseFigurineLinkOptions.filter(f => (f.name||'').toLowerCase().includes(q) || String(f.number||'').includes(q))
+    : _baseFigurineLinkOptions;
+  if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
+  dd.style.display = '';
+  dd.innerHTML = filtered.slice(0, 50).map(f => {
+    return `<div onclick="selectBaseFigurineLink('${f.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <div style="font-size:0.9rem;">${f.number ? '#' + f.number + ' ' : ''}${f.name}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectBaseFigurineLink(id) {
+  const f = _baseFigurineLinkOptions.find(x => x.id === id);
+  if (!f) return;
+  document.getElementById('fig-base-figurine-input').value = id;
+  document.getElementById('fig-base-figurine-search').value = (f.number ? '#' + f.number + ' ' : '') + f.name;
+  document.getElementById('fig-base-figurine-dropdown').style.display = 'none';
+}
+
+function clearBaseFigurineLinkIfEmpty() {
+  setTimeout(() => {
+    const dd = document.getElementById('fig-base-figurine-dropdown');
+    if (dd) dd.style.display = 'none';
+    const search = document.getElementById('fig-base-figurine-search');
+    const hidden = document.getElementById('fig-base-figurine-input');
+    if (search && hidden && !search.value.trim()) hidden.value = '';
+  }, 200);
 }
 
 let _retroLinkOptions = [];
@@ -2347,7 +2575,7 @@ function populateRetroSelect(selectedId) {
     const r = _retroLinkOptions.find(x => x.id === selectedId);
     if (r) {
       search.value = r.name;
-      if (preview) { preview.style.display = ''; preview.textContent = '✓ ' + [r.category, r.subcategory].filter(Boolean).join(' · ') + (r.category||r.subcategory ? ' — ' : '') + r.name; }
+      if (preview) { const parts = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean); preview.style.display = ''; preview.textContent = '✓ ' + (parts.length ? parts.join(' · ') + ' — ' : '') + r.name; }
     }
   } else {
     search.value = '';
@@ -2365,7 +2593,7 @@ function filterRetroLink() {
   if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
   dd.innerHTML = filtered.slice(0, 50).map(r => {
-    const sub = [r.category, r.subcategory].filter(Boolean).join(' · ');
+    const sub = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean).join(' · ');
     return `<div onclick="selectRetroLink('${r.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
       <div style="font-size:0.9rem;">${r.name}</div>
       ${sub ? `<div style="font-size:0.75rem;color:var(--muted);">${sub}</div>` : ''}
@@ -2380,7 +2608,7 @@ function selectRetroLink(id) {
   document.getElementById('fig-retro-search').value = r.name;
   document.getElementById('fig-retro-dropdown').style.display = 'none';
   const preview = document.getElementById('fig-retro-selected-preview');
-  if (preview) { preview.style.display = ''; preview.textContent = '✓ ' + [r.category, r.subcategory].filter(Boolean).join(' · ') + (r.category||r.subcategory ? ' — ' : '') + r.name; }
+  if (preview) { const parts = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean); preview.style.display = ''; preview.textContent = '✓ ' + (parts.length ? parts.join(' · ') + ' — ' : '') + r.name; }
 }
 
 function clearRetroLinkIfEmpty() {
@@ -2396,6 +2624,7 @@ function clearRetroLinkIfEmpty() {
 function toggleBaseFigurineGroup() {
   const group = document.getElementById('fig-base-figurine-group');
   const retroGroup = document.getElementById('fig-retro-group');
+  const numberGroup = document.getElementById('fig-number-group');
   if (!group) return;
   const isVar = document.getElementById('fig-is-variation-input')?.checked;
   const isUnoff = document.getElementById('fig-is-unofficial-variation-input')?.checked;
@@ -2404,18 +2633,23 @@ function toggleBaseFigurineGroup() {
   group.style.display = showBase ? '' : 'none';
   // Il campo Retro associato non si applica mai ai Retro stessi (un retro non ha un retro)
   if (retroGroup) retroGroup.style.display = (!isChg && currentSection !== 'retros') ? '' : 'none';
+  // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
+  if (numberGroup) numberGroup.style.display = (showBase || currentSection === 'retros') ? 'none' : '';
 }
 
 function openAddItemModal(itemId) {
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
   document.getElementById('edit-fig-id').value = itemId || '';
+  let existingItem = null;
   if (itemId) {
-    const existingItem = getData('figurines', []).find(x => x.id === itemId);
+    existingItem = getData('figurines', []).find(x => x.id === itemId);
     if (existingItem) { currentSeriesId = existingItem.seriesId; currentSection = existingItem.section || currentSection; }
   }
   const label = getSectionLabel(currentSection) || (currentLang === 'it' ? 'Oggetto' : 'Item');
   const labelSingular = getSectionLabelSingular(currentSection);
-  document.getElementById('fig-modal-title').textContent = itemId ? (currentLang === 'it' ? 'Modifica ' : 'Edit ') + labelSingular : (currentLang === 'it' ? 'Aggiungi ' : 'Add ') + labelSingular;
+  document.getElementById('fig-modal-title').textContent = (itemId && existingItem)
+    ? (existingItem.number ? '# ' + existingItem.number + ' - ' + existingItem.name : existingItem.name)
+    : (currentLang === 'it' ? 'Aggiungi ' : 'Add ') + labelSingular;
   const saveBtn = document.querySelector('#add-fig-modal button[onclick="saveFigurine()"]');
   if (saveBtn) { saveBtn.removeAttribute('data-i18n'); saveBtn.textContent = (currentLang === 'it' ? 'Salva ' : 'Save ') + labelSingular; }
   const seriesNameEl = document.getElementById('fig-modal-series-name');
@@ -2468,10 +2702,16 @@ function openAddItemModal(itemId) {
   // Per la sezione Retro, nasconde i campi non rilevanti (numero, flag variazione)
   // Il Punteggio resta visibile anche per i Retro; la Categoria è esclusiva dei Retro
   const isRetros = currentSection === 'retros';
-  ['fig-number-group', 'fig-base-figurine-group'].forEach(id => {
+  ['fig-base-figurine-group'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = isRetros ? 'none' : '';
   });
+  // Il Numero si nasconde per i Retro, e anche per Variazioni/Change (eredita quello della figurina base)
+  const isVarOrChg = document.getElementById('fig-is-variation-input')?.checked ||
+                      document.getElementById('fig-is-unofficial-variation-input')?.checked ||
+                      document.getElementById('fig-is-change-input')?.checked;
+  const numberGroup = document.getElementById('fig-number-group');
+  if (numberGroup) numberGroup.style.display = (isRetros || isVarOrChg) ? 'none' : '';
   // Sottoserie e Taglia dipendono sia dai flag della serie sia dalla sezione (mai per i Retro)
   const sizeGroup = document.getElementById('fig-size-group');
   if (sizeGroup) sizeGroup.style.display = (hasSizes && !isRetros) ? '' : 'none';
@@ -2578,41 +2818,27 @@ function renderItemTypeFilters() {
   if (!el) return;
   if (currentSection !== 'figurines') { el.innerHTML = ''; return; }
 
-  const noneActive = !_itemTypeFilters.variation && !_itemTypeFilters.unofficialVariation && !_itemTypeFilters.change;
-  const item = (key, label, icon) => `
+  const item = (key, label, icon, bold) => `
     <div style="display:flex;align-items:center;gap:0.4rem;">
-      <button class="toggle-btn-blue ${_itemTypeFilters[key] ? 'on' : ''}" onclick="toggleItemTypeFilter('${key}')" title="${label}"></button>
-      <span style="font-size:0.82rem;color:var(--muted);">${icon} ${label}</span>
+      <button class="toggle-btn-blue ${_itemTypeFilter === key ? 'on' : ''}" onclick="toggleItemTypeFilter('${key}')" title="${label}"></button>
+      <span style="font-size:0.82rem;color:var(--muted);${bold ? 'font-weight:600;' : ''}">${icon} ${label}</span>
     </div>`;
 
-  let html = '<div style="display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center;">';
-  html += `
-    <div style="display:flex;align-items:center;gap:0.4rem;margin-right:1rem;">
-      <button class="toggle-btn-blue ${noneActive ? 'on' : ''}" onclick="toggleItemTypeFilter('all')" title="${currentLang === 'it' ? 'Tutte' : 'All'}"></button>
-      <span style="font-size:0.82rem;color:var(--muted);font-weight:600;">${currentLang === 'it' ? 'Tutte' : 'All'}</span>
-    </div>`;
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center;justify-content:space-between;">';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center;">';
+  html += item('base', currentLang === 'it' ? 'Solo base' : 'Base only', '⭐', true);
   html += item('variation', currentLang === 'it' ? 'Solo variazioni ufficiali' : 'Official variations only', '🎨');
   html += item('unofficialVariation', currentLang === 'it' ? 'Solo variazioni non ufficiali' : 'Unofficial variations only', '🎨');
   html += item('change', currentLang === 'it' ? 'Solo Change' : 'Change only', '🔄');
+  html += '</div>';
+  html += item('all', currentLang === 'it' ? 'Tutte' : 'All', '', true);
   html += '</div>';
 
   el.innerHTML = html;
 }
 
 function toggleItemTypeFilter(type) {
-  if (type === 'all') {
-    // Tutte: spegne tutti i filtri
-    _itemTypeFilters.variation = false;
-    _itemTypeFilters.unofficialVariation = false;
-    _itemTypeFilters.change = false;
-  } else {
-    // Comportamento radio: accende il selezionato, spegne gli altri
-    const wasActive = _itemTypeFilters[type];
-    _itemTypeFilters.variation = false;
-    _itemTypeFilters.unofficialVariation = false;
-    _itemTypeFilters.change = false;
-    _itemTypeFilters[type] = !wasActive; // toggle: se era già acceso, si spegne
-  }
+  _itemTypeFilter = type; // comportamento radio puro: sempre uno solo attivo
   currentItemPage = 1;
   renderItems();
 }
@@ -2626,20 +2852,64 @@ function renderItems() {
   // Render filtri tipo figurina (solo per la sezione figurine)
   renderItemTypeFilters();
 
-  const anyTypeFilterActive = _itemTypeFilters.variation || _itemTypeFilters.unofficialVariation || _itemTypeFilters.change;
   const allItems = getData('figurines', []).filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
     if (_noPhotoFilter && f.img) return false;
-    // Filtro tipo figurina: se almeno un toggle è attivo, mostra solo quelle che matchano uno dei toggle attivi
-    if (currentSection === 'figurines' && anyTypeFilterActive) {
-      const matchesType = (_itemTypeFilters.variation && f.isVariation) ||
-                           (_itemTypeFilters.unofficialVariation && f.isUnofficialVariation) ||
-                           (_itemTypeFilters.change && f.isChange);
+    // Filtro tipo figurina (solo sezione figurine): sempre uno dei 5 stati attivo
+    if (currentSection === 'figurines' && _itemTypeFilter !== 'all') {
+      const matchesType =
+        (_itemTypeFilter === 'base' && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ||
+        (_itemTypeFilter === 'variation' && f.isVariation) ||
+        (_itemTypeFilter === 'unofficialVariation' && f.isUnofficialVariation) ||
+        (_itemTypeFilter === 'change' && f.isChange);
       if (!matchesType) return false;
     }
     if (!searchQ) return true;
     return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ);
   }).sort((a,b) => {
+    if (currentSection === 'figurines') {
+      const allFigsForSort = getData('figurines', []);
+      // Figurina di riferimento: se stessa se è base, altrimenti la figurina base collegata
+      const refFig = f => {
+        if (!f.isVariation && !f.isUnofficialVariation && !f.isChange) return f;
+        return f.baseFigurineId ? allFigsForSort.find(x => x.id === f.baseFigurineId) : null;
+      };
+      const refA = refFig(a), refB = refFig(b);
+      const numA = refA?.number, numB = refB?.number;
+      if (numA && numB) {
+        if (numA !== numB) return numA - numB;
+      } else if (numA && !numB) {
+        return -1; // i gruppi con numero vengono prima di quelli senza
+      } else if (!numA && numB) {
+        return 1;
+      } else {
+        // Nessuna delle due ha un numero: si raggruppa per Nome della figurina di riferimento
+        const nameCmp = (refA?.name||'').localeCompare(refB?.name||'', 'it');
+        if (nameCmp !== 0) return nameCmp;
+      }
+
+      // Stesso gruppo (stesso numero, o stesso nome se senza numero): figurina base, poi
+      // variazioni ufficiali, poi non ufficiali, poi Change
+      const typeRank = f => f.isChange ? 3 : f.isUnofficialVariation ? 2 : f.isVariation ? 1 : 0;
+      const rankA = typeRank(a), rankB = typeRank(b);
+      if (rankA !== rankB) return rankA - rankB;
+      if (rankA === 0) {
+        // Figurina base: eventuale sotto-ordinamento per sottoserie se il numero manca
+        return (a.subseries||'').localeCompare(b.subseries||'');
+      }
+      if (rankA === 3) {
+        // Change: per nome
+        return (a.name||'').localeCompare(b.name||'', 'it');
+      }
+      // Variazioni (ufficiali o non ufficiali): per Retro (Categoria + Nome)
+      const retroA = a.retroId ? allFigsForSort.find(x => x.id === a.retroId) : null;
+      const retroB = b.retroId ? allFigsForSort.find(x => x.id === b.retroId) : null;
+      const catCmp = (retroA?.category||'').localeCompare(retroB?.category||'', 'it');
+      if (catCmp !== 0) return catCmp;
+      const subcatCmp = (retroA?.subcategory||'').localeCompare(retroB?.subcategory||'', 'it');
+      if (subcatCmp !== 0) return subcatCmp;
+      return (retroA?.name||'').localeCompare(retroB?.name||'', 'it');
+    }
     if (currentSection === 'retros') {
       const catCmp = (a.category||'').localeCompare(b.category||'', 'it');
       if (catCmp !== 0) return catCmp;
@@ -2730,7 +3000,31 @@ function renderItems() {
   grid.innerHTML = items.map(f => {
     const isOwned = owned.includes(f.id);
     const icon = SECTION_ICONS[currentSection];
-    const imgHTML = f.img ? `<img src="${cloudinaryUrl(f.img)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;text-align:center;"><span style="font-size:1.5rem;">${icon}</span><span style="font-size:0.6rem;color:var(--muted);line-height:1.2;">Foto non ancora disponibile</span></div>`;
+    // Una Variazione/Change è essenzialmente un collegamento (Figurina base + Retro): se non ha
+    // una foto propria, riusiamo quella della figurina base collegata, senza duplicare il dato
+    let displayImg = f.img;
+    let baseFigForImg = null;
+    if (!displayImg && (f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
+      baseFigForImg = getData('figurines', []).find(x => x.id === f.baseFigurineId);
+      if (baseFigForImg?.img) displayImg = baseFigForImg.img;
+    }
+    // Per le Variazioni (non Change), se sono disponibili sia la foto della figurina base (fronte)
+    // sia quella del Retro collegato, le mostriamo impilate verticalmente nella stessa altezza
+    // totale del box: colpo d'occhio immediato per riconoscere le variazioni nella griglia
+    let imgHTML;
+    if ((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && f.retroId) {
+      const baseFigDual = baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId);
+      const retroFigDual = getData('figurines', []).find(x => x.id === f.retroId);
+      if (baseFigDual?.img && retroFigDual?.img) {
+        imgHTML = `<div style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
+          <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(baseFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+          <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);"><img src="${cloudinaryUrl(retroFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+        </div>`;
+      }
+    }
+    if (!imgHTML) {
+      imgHTML = displayImg ? `<img src="${cloudinaryUrl(displayImg)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;text-align:center;"><span style="font-size:1.5rem;">${icon}</span><span style="font-size:0.6rem;color:var(--muted);line-height:1.2;">Foto non ancora disponibile</span></div>`;
+    }
     const ownedBadge = isOwned ? `<div class="fig-owned-badge">${t('owned.yes')}</div>` : '';
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button></div>` : '';
     const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="${currentLang === 'it' ? 'Segnala qualcosa all\'amministratore per questa figurina' : 'Report something to the administrator about this sticker'}" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
@@ -2738,8 +3032,17 @@ function renderItems() {
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
     const sizeHTML = f.size ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
     const figLabel = f.subseries ? `[${f.subseries}]` : (f.number ? `#${f.number}` : '');
-    const categoryHTML = (currentSection === 'retros' && (f.category || f.subcategory)) ? `<div style="font-size:0.78rem;color:var(--muted);">${[f.category, f.subcategory].filter(Boolean).join(' · ')}</div>` : '';
+    const catParts = [f.category, f.subcategory].map(v => (v||'').trim()).filter(Boolean);
+    const categoryHTML = (currentSection === 'retros' && catParts.length) ? `<div style="font-size:0.78rem;color:var(--muted);">${catParts.join(' · ')}</div>` : '';
     const imgAspectRatio = currentSection === 'retros' ? '1.6' : '1';
+    const typeIndicator = (currentSection === 'figurines') ? (f.isVariation
+      ? (currentLang === 'it' ? 'Variazione ufficiale' : 'Official variation')
+      : f.isUnofficialVariation
+      ? (currentLang === 'it' ? 'Variazione non ufficiale' : 'Unofficial variation')
+      : f.isChange
+      ? 'Change'
+      : (currentLang === 'it' ? 'Figurina base' : 'Base sticker')) : '';
+    const typeIndicatorHTML = typeIndicator ? `<div style="font-size:0.72rem;color:#ffc832;font-weight:600;margin-top:2px;">${typeIndicator}</div>` : '';
     return `<div class="fig-card" onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="cursor:pointer;">
       <div class="fig-img-placeholder" style="aspect-ratio:${imgAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
         ${imgHTML}${ownedBadge}${adminBtns}
@@ -2756,6 +3059,7 @@ function renderItems() {
           <button class="toggle-btn-blue ${isOwned?'on':''}" onclick="event.stopPropagation();toggleOwned('${f.id}')"></button>
           ${(currentUser && !currentUser.isAdmin && !isOwned) ? `<button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Rimuovi dai desiderati':'Aggiungi ai desiderati'):(_wishlist.includes(f.id)?'Remove from wishlist':'Add to wishlist')}" style="background:${_wishlist.includes(f.id)?'rgba(255,200,50,0.2)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'#ffc832':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'#ffc832':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">🛒</button>` : ''}
         </div>
+        ${typeIndicatorHTML}
       </div>
     </div>`;
   }).join('');
@@ -2836,7 +3140,8 @@ async function saveFigurine() {
   const baseFigurineId = document.getElementById('fig-base-figurine-input')?.value || null;
   const retroId = document.getElementById('fig-retro-input')?.value || null;
   const isRetrosSection = currentSection === 'retros';
-  if (!name || (!isRetrosSection && !number)) { toast((currentLang === 'it' ? (isRetrosSection ? 'Il nome è obbligatorio' : 'Numero e nome sono obbligatori') : (isRetrosSection ? 'Name is required' : 'Number and name are required')), 'error'); return; }
+  const isVarOrChgSection = isVariation || isUnofficialVariation || isChange;
+  if (!name || (!isRetrosSection && !isVarOrChgSection && !number)) { toast((currentLang === 'it' ? (isRetrosSection || isVarOrChgSection ? 'Il nome è obbligatorio' : 'Numero e nome sono obbligatori') : (isRetrosSection || isVarOrChgSection ? 'Name is required' : 'Number and name are required')), 'error'); return; }
   if (isRetrosSection) {
     const editId = document.getElementById('edit-fig-id').value;
     const dup = getData('figurines', []).find(f =>
@@ -2852,11 +3157,22 @@ async function saveFigurine() {
     toast((currentLang === 'it' ? 'Variazione ufficiale, non ufficiale e Change sono mutuamente esclusivi: spunta solo una opzione' : 'Official variation, unofficial variation and Change are mutually exclusive: check only one'), 'error');
     return;
   }
-  if (isRetrosSection && isChange && !baseFigurineId) {
-    toast((currentLang === 'it' ? 'Per un Retro Change, il Retro base è obbligatorio' : 'For a Retro Change, the Base Retro is required'), 'error');
+  if ((isVariation || isUnofficialVariation || isChange) && !baseFigurineId) {
+    const label = isRetrosSection ? (currentLang === 'it' ? 'Retro base' : 'Base Retro') : (currentLang === 'it' ? 'Figurina base' : 'Base sticker');
+    toast((currentLang === 'it' ? `Il campo "${label}" è obbligatorio quando è selezionata una Variazione o un Change` : `The "${label}" field is required when a Variation or Change is selected`), 'error');
+    return;
+  }
+  if (!isRetrosSection && (isVariation || isUnofficialVariation) && !retroId) {
+    toast((currentLang === 'it' ? 'Il campo "Retro associato" è obbligatorio quando è selezionata una Variazione ufficiale o non ufficiale' : 'The "Associated retro" field is required when an official or unofficial Variation is selected'), 'error');
     return;
   }
   toast((currentLang === 'it' ? 'Salvataggio...' : 'Saving...'), 'success');
+  // Per Variazioni/Change il Numero eredita quello della figurina base collegata
+  let finalNumber = number ? +number : null;
+  if (isVarOrChgSection && baseFigurineId) {
+    const baseFigForNum = getData('figurines', []).find(x => x.id === baseFigurineId);
+    finalNumber = baseFigForNum ? baseFigForNum.number : null;
+  }
   let imgUrl = editingFigImg || null;
   if (editingFigImgFileSave) {
     try { imgUrl = await uploadToCloudinary(editingFigImgFileSave); }
@@ -2867,12 +3183,12 @@ async function saveFigurine() {
   if (editId) {
     const idx = figs.findIndex(x => x.id === editId);
     if (idx >= 0) {
-      figs[idx] = { ...figs[idx], number: number ? +number : null, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || figs[idx].img };
+      figs[idx] = { ...figs[idx], number: finalNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || figs[idx].img };
       await fsSave('figurines', figs[idx]);
       _cache.figurines = figs;
     }
   } else {
-    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: number ? +number : null, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || null };
+    const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || null };
     const saved = await fsSave('figurines', newF);
     _cache.figurines.push(saved);
   }
@@ -3178,6 +3494,7 @@ function adminTab(tab) {
   if (tab === 'eventi') renderAdminEventi();
   if (tab === 'risorse') renderAdminRisorse();
   if (tab === 'foto') renderAdminFoto();
+  if (tab === 'errori') renderAdminErrori();
   if (tab === 'email') { loadReplyToField(); renderEmailLog(); }
   if (tab === 'punteggi') renderAdminPunteggi();
 }
@@ -3188,7 +3505,7 @@ function renderAdminSeries() {
   el.innerHTML = `
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.25rem;">${(currentLang === 'it') ? "Usa le frecce per cambiare l'ordine" : 'Use the arrows to change the order'}</p>
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Per eliminare una serie, cancellare prima tutto il suo contenuto.' : 'To delete a series, first delete all its content.'}</p>
-    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"N. FIG":"N. FIG"}</th><th>DA</th><th>A</th><th>${currentLang==="it"?"Sottoserie":"Subseries"}</th><th>${currentLang==="it"?"Var. uff.":"Off. var."}</th><th>${currentLang==="it"?"Var. non uff.":"Unoff. var."}</th><th>Change</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
+    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"N. FIG":"N. FIG"}</th><th>DA</th><th>A</th><th>${currentLang==="it"?"NO NUMERI":"NO NUMBERS"}</th><th>${currentLang==="it"?"Sottoserie":"Subseries"}</th><th>${currentLang==="it"?"Var. uff.":"Off. var."}</th><th>${currentLang==="it"?"Var. non uff.":"Unoff. var."}</th><th>Change</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${series.map((s, idx) => {
       const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
       const siNoCell = v => v ? '<span style="color:#b5ff2e;font-weight:600;">SI</span>' : '<span style="color:var(--text);">NO</span>';
@@ -3200,6 +3517,7 @@ function renderAdminSeries() {
         <td>${s.name}</td><td>${s.year}</td><td>${figs}</td>
         <td>${s.firstNumber ?? ''}</td>
         <td>${s.lastNumber ?? ''}</td>
+        <td>${siNoCell(s.noNumbers)}</td>
         <td>${siNoCell(s.hasSubseries)}</td>
         <td>${siNoCell(s.hasVariations)}</td>
         <td>${siNoCell(s.hasUnofficialVariations)}</td>
@@ -3900,7 +4218,7 @@ function openFigDetail(figId) {
 
   // Title
   const titleEl = document.getElementById('fig-detail-title');
-  if (titleEl) titleEl.textContent = f.name;
+  if (titleEl) titleEl.textContent = f.number ? ('#' + f.number + ' - ' + f.name) : f.name;
 
   // Reset contenuto modal (evita residui da aperture precedenti)
   document.getElementById('fig-detail-content').innerHTML = '';
@@ -3924,14 +4242,6 @@ function openFigDetail(figId) {
   if (f.subseries) {
     rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottoserie' : 'Subseries')}</span><span class="detail-value">${f.subseries}</span></div>`);
   }
-
-  // Numero (i Retro non sono numerati: non va mostrato affatto)
-  if (f.section !== 'retros' && (f.number || isAdmin)) {
-    rows.push(`<div class="detail-row"><span class="detail-label">N.</span><span class="detail-value">${f.number ? String(f.number) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non numerata' : 'unnumbered') + '</span>'}</span></div>`);
-  }
-
-  // Nome
-  rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome' : 'Name')}</span><span class="detail-value">${f.name}</span></div>`);
 
   // Punteggio
   if (f.score > 0 || isAdmin) {
@@ -3992,7 +4302,7 @@ function openFigDetail(figId) {
         ? `<img src="${cloudinaryUrl(retroFig.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
         : noPhotoBox;
       const retroCaption = retroFig
-        ? `<div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:4px;">${[retroFig.category, retroFig.subcategory].filter(Boolean).join(' · ')}${(retroFig.category||retroFig.subcategory) ? ' — ' : ''}${retroFig.name}</div>`
+        ? (() => { const parts = [retroFig.category, retroFig.subcategory].map(v => (v||'').trim()).filter(Boolean); return `<div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:4px;">${parts.length ? parts.join(' · ') + ' — ' : ''}${retroFig.name}</div>`; })()
         : '';
       photoEl.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
@@ -4073,9 +4383,21 @@ function buildLinkedFiguresTabsHTML(baseId) {
     html += `<div class="linked-fig-tab-panel" data-tab="${g.key}" style="${i===0?'':'display:none;'}">`;
     html += '<div style="display:flex;flex-direction:column;gap:0.4rem;">';
     g.items.forEach(item => {
+      let label;
+      if (g.key === 'change') {
+        // Per il Change mostriamo solo il Nome (il Change non ha un numero proprio)
+        label = item.name;
+      } else {
+        // Per le Variazioni il Nome coincide sempre con quello della figurina base: inutile
+        // ripeterlo. Mostriamo invece il Retro collegato (Categoria + Nome), la vera chiave
+        const retroFig = item.retroId ? getData('figurines', []).find(x => x.id === item.retroId) : null;
+        label = retroFig
+        ? (() => { const parts = [retroFig.category, retroFig.subcategory].map(v => (v||'').trim()).filter(Boolean); return parts.length ? parts.join(' · ') + ' — ' + retroFig.name : retroFig.name; })()
+          : (currentLang === 'it' ? 'Nessun Retro collegato' : 'No Retro linked');
+      }
       html += `<a href="#" onclick="openFigDetail('${item.id}');return false;" style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;border-radius:8px;background:var(--card2);text-decoration:none;color:var(--text);font-size:0.85rem;">
         ${item.img ? `<img src="${cloudinaryUrl(item.img,'w_60,h_60,c_fit,q_auto,f_auto')}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;background:var(--card);">` : '<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">🖼️</span>'}
-        <span>${item.number ? '#' + item.number + ' ' : ''}${item.name}</span>
+        <span>${label}</span>
       </a>`;
     });
     html += '</div></div>';
@@ -4104,12 +4426,51 @@ function editItemFromDetail(itemId) {
 function toggleFeBaseFigurineGroup() {
   const group = document.getElementById('fe-base-figurine-group');
   const retroGroup = document.getElementById('fe-retro-group');
+  const numberGroup = document.getElementById('fe-number-group');
   if (!group) return;
   const isVar = document.getElementById('fe-is-variation')?.checked;
   const isUnoff = document.getElementById('fe-is-unofficial-variation')?.checked;
   const isChg = document.getElementById('fe-is-change')?.checked;
-  group.style.display = (isVar || isUnoff || isChg) ? '' : 'none';
+  const showBase = isVar || isUnoff || isChg;
+  group.style.display = showBase ? '' : 'none';
   if (retroGroup) retroGroup.style.display = !isChg ? '' : 'none';
+  // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
+  if (numberGroup) numberGroup.style.display = showBase ? 'none' : '';
+}
+
+let _feBaseFigurineLinkOptions = [];
+function filterFeBaseFigurineLink() {
+  const q = document.getElementById('fe-base-figurine-search').value.toLowerCase().trim();
+  const dd = document.getElementById('fe-base-figurine-dropdown');
+  if (!dd) return;
+  const filtered = q
+    ? _feBaseFigurineLinkOptions.filter(f => (f.name||'').toLowerCase().includes(q) || String(f.number||'').includes(q))
+    : _feBaseFigurineLinkOptions;
+  if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
+  dd.style.display = '';
+  dd.innerHTML = filtered.slice(0, 50).map(f => {
+    return `<div onclick="selectFeBaseFigurineLink('${f.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
+      <div style="font-size:0.9rem;">${f.number ? '#' + f.number + ' ' : ''}${f.name}</div>
+    </div>`;
+  }).join('');
+}
+
+function selectFeBaseFigurineLink(id) {
+  const f = _feBaseFigurineLinkOptions.find(x => x.id === id);
+  if (!f) return;
+  document.getElementById('fe-base-figurine').value = id;
+  document.getElementById('fe-base-figurine-search').value = (f.number ? '#' + f.number + ' ' : '') + f.name;
+  document.getElementById('fe-base-figurine-dropdown').style.display = 'none';
+}
+
+function clearFeBaseFigurineLinkIfEmpty() {
+  setTimeout(() => {
+    const dd = document.getElementById('fe-base-figurine-dropdown');
+    if (dd) dd.style.display = 'none';
+    const search = document.getElementById('fe-base-figurine-search');
+    const hidden = document.getElementById('fe-base-figurine');
+    if (search && hidden && !search.value.trim()) hidden.value = '';
+  }, 200);
 }
 
 let _feRetroLinkOptions = [];
@@ -4123,7 +4484,7 @@ function filterFeRetroLink() {
   if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
   dd.innerHTML = filtered.slice(0, 50).map(r => {
-    const sub = [r.category, r.subcategory].filter(Boolean).join(' · ');
+    const sub = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean).join(' · ');
     return `<div onclick="selectFeRetroLink('${r.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
       <div style="font-size:0.9rem;">${r.name}</div>
       ${sub ? `<div style="font-size:0.75rem;color:var(--muted);">${sub}</div>` : ''}
@@ -4158,7 +4519,7 @@ function switchToEditMode(figId) {
 
   // Aggiorna titolo modal
   const titleEl = document.getElementById('fig-detail-title');
-  if (titleEl) titleEl.textContent = (currentLang === 'it' ? 'Modifica ' : 'Edit ') + getSectionLabelSingular(f.section);
+  if (titleEl) titleEl.textContent = f.number ? ('# ' + f.number + ' - ' + f.name) : f.name;
 
   // Foto con pulsante cambio immagine
   if (photo) {
@@ -4193,10 +4554,8 @@ function switchToEditMode(figId) {
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottoserie':'Subseries') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subseries" value="' + (f.subseries||'') + '" placeholder="es. OLO" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   }
 
-  // Numero (i Retro non sono numerati)
-  if (!isRetrosItem) {
-    html += '<div class="detail-row"><span class="detail-label">N.</span><span class="detail-value"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
-  }
+  // Numero (i Retro non sono numerati; le Variazioni/Change ereditano quello della figurina base)
+  html += '<div class="detail-row" id="fe-number-group" style="' + ((!isRetrosItem && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ? '' : 'display:none;') + '"><span class="detail-label">N.</span><span class="detail-value"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
 
   // Nome
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + (f.name||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
@@ -4216,15 +4575,19 @@ function switchToEditMode(figId) {
   }
   html += '<div class="detail-row"><span class="detail-label">Change</span><span class="detail-value"><input type="checkbox" id="fe-is-change" onchange="toggleFeBaseFigurineGroup()" ' + (f.isChange?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
 
-  // Figurina/Retro base (selettore, mostrato se uno dei flag è attivo)
-  const baseCandidates = getData('figurines', [])
+  // Figurina/Retro base — ricerca in digitazione (stesso pattern del Retro associato)
+  _feBaseFigurineLinkOptions = getData('figurines', [])
     .filter(x => x.seriesId === f.seriesId && x.section === f.section && x.id !== f.id && !x.isVariation && !x.isUnofficialVariation && !x.isChange)
     .sort((a,b) => (a.number||0) - (b.number||0));
-  const baseOptionsHtml = '<option value="">-- ' + (currentLang==='it'?'Seleziona':'Select') + ' --</option>' +
-    baseCandidates.map(x => '<option value="' + x.id + '"' + (x.id === f.baseFigurineId ? ' selected' : '') + '>' + (x.number ? '#' + x.number + ' ' : '') + x.name + '</option>').join('');
+  const selectedBaseFig = f.baseFigurineId ? _feBaseFigurineLinkOptions.find(x => x.id === f.baseFigurineId) : null;
   const showBaseGroup = f.isVariation || f.isUnofficialVariation || f.isChange;
   const baseLabel = isRetrosItem ? (currentLang==='it'?'Retro base':'Base Retro') : (currentLang==='it'?'Figurina base':'Base sticker');
-  html += '<div class="detail-row" id="fe-base-figurine-group" style="' + (showBaseGroup ? '' : 'display:none;') + '"><span class="detail-label">' + baseLabel + '</span><span class="detail-value"><select class="form-select" id="fe-base-figurine" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;">' + baseOptionsHtml + '</select></span></div>';
+  html += '<div class="detail-row" id="fe-base-figurine-group" style="' + (showBaseGroup ? '' : 'display:none;') + 'flex-direction:column;align-items:stretch;position:relative;">' +
+    '<span class="detail-label">' + baseLabel + '</span>' +
+    '<input class="form-input" type="text" id="fe-base-figurine-search" placeholder="' + (currentLang==='it'?'Cerca per numero o nome...':'Search by number or name...') + '" autocomplete="off" value="' + (selectedBaseFig ? ((selectedBaseFig.number ? '#' + selectedBaseFig.number + ' ' : '') + selectedBaseFig.name) : '') + '" oninput="filterFeBaseFigurineLink()" onfocus="filterFeBaseFigurineLink()" onblur="clearFeBaseFigurineLinkIfEmpty()" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
+    '<input type="hidden" id="fe-base-figurine" value="' + (f.baseFigurineId || '') + '">' +
+    '<div id="fe-base-figurine-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:220px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>' +
+    '</div>';
 
   // Selettore Retro associato (non applicabile ai Retro stessi) — ricerca in digitazione (247+ retro in alcune serie)
   if (!isRetrosItem) {
@@ -4233,7 +4596,7 @@ function switchToEditMode(figId) {
     const selectedRetro = f.retroId ? _feRetroLinkOptions.find(r => r.id === f.retroId) : null;
     const showRetroGroup = !f.isChange;
     html += '<div class="detail-row" id="fe-retro-group" style="' + (showRetroGroup ? '' : 'display:none;') + 'flex-direction:column;align-items:stretch;position:relative;">' +
-      '<span class="detail-label">' + (currentLang==='it'?'Retro associato':'Associated Retro') + '</span>' +
+      '<span class="detail-label">' + (currentLang==='it'?'Retro associato':'Associated retro') + '</span>' +
       '<input class="form-input" type="text" id="fe-retro-search" placeholder="' + (currentLang==='it'?'Cerca per nome, categoria o sottocategoria...':'Search by name, category or subcategory...') + '" autocomplete="off" value="' + (selectedRetro ? selectedRetro.name : '') + '" oninput="filterFeRetroLink()" onfocus="filterFeRetroLink()" onblur="clearFeRetroLinkIfEmpty()" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
       '<input type="hidden" id="fe-retro" value="' + (f.retroId || '') + '">' +
     '<div id="fe-retro-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:220px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>' +
@@ -4428,8 +4791,19 @@ async function saveFigFromDetail(figId) {
     ? (document.getElementById('fe-base-figurine')?.value || null)
     : null;
 
-  if (existingForCheck?.section === 'retros' && updates.isChange && !updates.baseFigurineId) {
-    toast((currentLang === 'it' ? 'Per un Retro Change, il Retro base è obbligatorio' : 'For a Retro Change, the Base Retro is required'), 'error');
+  // Per Variazioni/Change il Numero eredita quello della figurina base collegata
+  if ((updates.isVariation || updates.isUnofficialVariation || updates.isChange) && updates.baseFigurineId) {
+    const baseFigForNum = getData('figurines', []).find(x => x.id === updates.baseFigurineId);
+    updates.number = baseFigForNum ? baseFigForNum.number : null;
+  }
+
+  if ((updates.isVariation || updates.isUnofficialVariation || updates.isChange) && !updates.baseFigurineId) {
+    const label = existingForCheck?.section === 'retros' ? (currentLang === 'it' ? 'Retro base' : 'Base Retro') : (currentLang === 'it' ? 'Figurina base' : 'Base sticker');
+    toast((currentLang === 'it' ? `Il campo "${label}" è obbligatorio quando è selezionata una Variazione o un Change` : `The "${label}" field is required when a Variation or Change is selected`), 'error');
+    return;
+  }
+  if (existingForCheck?.section !== 'retros' && (updates.isVariation || updates.isUnofficialVariation) && !document.getElementById('fe-retro')?.value) {
+    toast((currentLang === 'it' ? 'Il campo "Retro associato" è obbligatorio quando è selezionata una Variazione ufficiale o non ufficiale' : 'The "Associated retro" field is required when an official or unofficial Variation is selected'), 'error');
     return;
   }
   updates.retroId = !updates.isChange
@@ -4878,8 +5252,7 @@ function varImportStatus(msg, pct) {
 async function startImportVar() {
   const seriesId = document.getElementById('import-var-series-select').value;
   if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series','error'); return; }
-  const sectionType = document.getElementById('import-var-section-select').value;
-  if (!sectionType) { toast(currentLang==='it'?'Seleziona il tipo di oggetto':'Select the object type','error'); return; }
+  const sectionType = 'figurines';
   const fileInput = document.getElementById('import-var-file');
   if (!fileInput.files.length) { toast(currentLang==='it'?'Seleziona un file XLS':'Select an XLS file','error'); return; }
 
@@ -4936,11 +5309,13 @@ async function startImportVar() {
     const numStr = getCol('Numero Figurina','numero figurina','numero','number');
     const nome   = getCol('Nome','name','nome');
     const tipo   = getCol('Tipo','type','tipo');
+    const retroCategoria = getCol('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria','Retro (Categoria)','retro (categoria)');
+    const retroNome = getCol('Retro - Nome','Retro-Nome','retro nome','retro-nome','Retro (Nome)','retro (nome)');
 
     varImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
 
-    if (!numStr || !nome || !tipo) {
-      varImportLog('⚠️ Riga ' + (i+1) + ': dati mancanti (num=' + numStr + ' nome=' + nome + ' tipo=' + tipo + ')', 'warn');
+    if (!numStr || !tipo) {
+      varImportLog('⚠️ Riga ' + (i+1) + ': dati mancanti (num=' + numStr + ' tipo=' + tipo + ')', 'warn');
       errors++; continue;
     }
 
@@ -4960,19 +5335,60 @@ async function startImportVar() {
       errors++; continue;
     }
 
-    // Cerca eventuale duplicato (stessa serie, stessa base, stesso nome)
     const existingFigs = getData('figurines', []);
-    const duplicate = existingFigs.find(f =>
-      f.seriesId === seriesId &&
-      f.baseFigurineId === baseFig.id &&
-      (f.name||'').toLowerCase() === nome.toLowerCase()
-    );
+    let duplicate = null;
+    let foundRetroId = null;
+
+    if (isChange) {
+      // Change: il Nome è obbligatorio ed è la chiave di riconciliazione (Serie + Figurina base + Nome)
+      if (!nome) {
+        varImportLog('⚠️ Riga ' + (i+1) + ': Nome mancante (obbligatorio per un Change)', 'warn');
+        errors++; continue;
+      }
+      duplicate = existingFigs.find(f =>
+        f.seriesId === seriesId &&
+        f.baseFigurineId === baseFig.id &&
+        f.isChange &&
+        (f.name||'').toLowerCase() === nome.toLowerCase()
+      );
+    } else {
+      // Variazione (ufficiale/non ufficiale): il Retro è obbligatorio ed è la chiave di
+      // riconciliazione insieme a Serie + Figurina base; il Nome è facoltativo
+      if (!retroCategoria || !retroNome) {
+        varImportLog('⚠️ Riga ' + (i+1) + ': Retro (Categoria)/Retro (Nome) mancanti (obbligatori per una Variazione)', 'warn');
+        errors++; continue;
+      }
+      const retroMatch = existingFigs.find(f =>
+        f.section === 'retros' &&
+        (f.category||'').toLowerCase() === retroCategoria.toLowerCase() &&
+        (f.name||'').toLowerCase() === retroNome.toLowerCase()
+      );
+      if (!retroMatch) {
+        varImportLog('⚠️ Riga ' + (i+1) + ': Retro "' + retroCategoria + ' / ' + retroNome + '" non trovato — riga scartata', 'warn');
+        errors++; continue;
+      }
+      foundRetroId = retroMatch.id;
+      duplicate = existingFigs.find(f =>
+        f.seriesId === seriesId &&
+        f.baseFigurineId === baseFig.id &&
+        f.retroId === foundRetroId &&
+        (f.isVariation || f.isUnofficialVariation)
+      );
+    }
+
+    // Per le Variazioni il Nome è sempre lo stesso della figurina base (non si legge dal file);
+    // per il Change resta quello indicato nella colonna Nome (già obbligatorio e validato sopra)
+    const finalName = isChange ? nome : baseFig.name;
+
+    // Stringa che indica la chiave usata per questa riga, per distinguere righe altrimenti
+    // identiche (es. più Variazioni dello stesso Tipo per la stessa figurina base)
+    const keyInfo = isChange ? '' : (' [Retro: ' + retroCategoria + ' / ' + retroNome + ']');
 
     const figData = {
       seriesId,
       section: sectionType,
-      number: null,
-      name: nome,
+      number: baseFig.number,
+      name: finalName,
       desc: '',
       score: 0,
       subseries: '',
@@ -4981,6 +5397,7 @@ async function startImportVar() {
       isUnofficialVariation,
       isChange,
       baseFigurineId: baseFig.id,
+      retroId: isChange ? null : foundRetroId,
       img: null
     };
 
@@ -4990,12 +5407,12 @@ async function startImportVar() {
         await fsSave('figurines', updatedRec);
         const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
         if (idx >= 0) _cache.figurines[idx] = updatedRec;
-        varImportLog('🔄 Riga ' + (i+1) + ': "' + nome + '" (#' + numStr + ') — sovrascritta', 'info');
+        varImportLog('🔄 Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — sovrascritta (' + tipo + ')', 'info');
         updated++;
       } else {
         const saved = await fsSave('figurines', figData);
         _cache.figurines.push(saved);
-        varImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" (#' + numStr + ') — importata (' + tipo + ')', 'ok');
+        varImportLog('✅ Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — aggiunta (' + tipo + ')', 'ok');
         inserted++;
       }
     } catch(e) {
@@ -5004,8 +5421,8 @@ async function startImportVar() {
     }
   }
 
-  varImportStatus('✅ Fine: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + errors + ' errori', 100);
-  varImportLog('--- FINE: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + errors + ' errori ---', errors===0?'ok':'warn');
+  varImportStatus('✅ Fine: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + errors + ' errori', 100);
+  varImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + errors + ' errori ---', errors===0?'ok':'warn');
   const _endBtn = document.getElementById('import-var-start-btn'); if (_endBtn) _endBtn.disabled = false;
   renderItems();
 }
@@ -5125,7 +5542,7 @@ async function startImportRetro() {
       } else {
         const saved = await fsSave('figurines', retroData);
         _cache.figurines.push(saved);
-        retroImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — importata (' + categoria + ')', 'ok');
+        retroImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta (' + categoria + ')', 'ok');
         inserted++;
       }
     } catch(e) {
@@ -5203,8 +5620,8 @@ async function startImportFig() {
     const nome = getCol('Nome','name','nome');
     const sottoserie = getCol('Sottoserie','subseries','sottoserie');
     const taglia = getCol('Taglia','size','taglia');
-    const retroCategoria = getCol('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria');
-    const retroNome = getCol('Retro - Nome','Retro-Nome','retro nome','retro-nome');
+    const retroCategoria = getCol('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria','Retro (Categoria)','retro (categoria)');
+    const retroNome = getCol('Retro - Nome','Retro-Nome','retro nome','retro-nome','Retro (Nome)','retro (nome)');
 
     figImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
 
@@ -5216,8 +5633,8 @@ async function startImportFig() {
       figImportLog('⏭️ Riga ' + (i+1) + ': Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
       skipped++; continue;
     }
-    if (!nome) {
-      figImportLog('⚠️ Riga ' + (i+1) + ': Nome mancante', 'warn');
+    if (!numero && !nome) {
+      figImportLog('⚠️ Riga ' + (i+1) + ': servono Numero o Nome per identificare la figurina', 'warn');
       errors++; continue;
     }
 
@@ -5255,7 +5672,6 @@ async function startImportFig() {
       seriesId,
       section: 'figurines',
       number: numero ? +numero : null,
-      name: nome,
       subseries: sottoserie || '',
       size: taglia || '',
       desc: '', score: 0, category: '', subcategory: '',
@@ -5265,17 +5681,23 @@ async function startImportFig() {
 
     try {
       if (duplicate) {
+        // Con Numero presente: Nome aggiorna se compilato, altrimenti si preserva quello esistente
+        const finalName = numero ? (nome || duplicate.name) : nome;
         // Il Retro esistente viene preservato se la riga non ne specifica uno nuovo
-        const updatedRec = { ...duplicate, ...figData, img: duplicate.img, retroId: retroSpecified ? foundRetroId : (duplicate.retroId || null), id: duplicate.id };
+        const updatedRec = { ...duplicate, ...figData, name: finalName, img: duplicate.img, retroId: retroSpecified ? foundRetroId : (duplicate.retroId || null), id: duplicate.id };
         await fsSave('figurines', updatedRec);
         const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
         if (idx >= 0) _cache.figurines[idx] = updatedRec;
-        figImportLog('🔄 Riga ' + (i+1) + ': "' + nome + '" — sovrascritta', 'info');
+        figImportLog('🔄 Riga ' + (i+1) + ': "' + finalName + '" — sovrascritta', 'info');
         updated++;
       } else {
-        const saved = await fsSave('figurines', { ...figData, retroId: foundRetroId });
+        if (!nome) {
+          figImportLog('⚠️ Riga ' + (i+1) + ': nessuna figurina esistente con Numero ' + numero + ' — per crearne una nuova serve anche il Nome', 'warn');
+          errors++; continue;
+        }
+        const saved = await fsSave('figurines', { ...figData, name: nome, retroId: foundRetroId });
         _cache.figurines.push(saved);
-        figImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — importata', 'ok');
+        figImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta', 'ok');
         inserted++;
       }
     } catch(e) {
@@ -5284,10 +5706,48 @@ async function startImportFig() {
     }
   }
 
-  figImportStatus('✅ Fine: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : ''), 100);
-  figImportLog('--- FINE: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', errors===0?'ok':'warn');
+  figImportStatus('✅ Fine: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : ''), 100);
+  figImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', errors===0?'ok':'warn');
   const _endBtn = document.getElementById('import-fig-start-btn'); if (_endBtn) _endBtn.disabled = false;
   renderItems(); updateSectionCounts();
+}
+
+function toggleImportSection(key) {
+  const content = document.getElementById('import-' + key + '-section-content');
+  const chevron = document.getElementById('import-' + key + '-chevron');
+  if (!content) return;
+  const isOpen = content.style.display !== 'none';
+  content.style.display = isOpen ? 'none' : '';
+  if (chevron) chevron.textContent = isOpen ? '▶' : '▼';
+}
+
+function renderAdminErrori() {
+  const el = document.getElementById('admin-errori-content');
+  if (!el) return;
+
+  const seriesList = getData('series', []);
+  const allFigs = getData('figurines', []);
+  // Figurine (sezione figurines) senza numero, la cui serie NON è marcata "Non ha numeri"
+  const missingNumber = allFigs.filter(f => {
+    if (f.section !== 'figurines') return false;
+    if (f.number) return false;
+    const s = seriesList.find(x => x.id === f.seriesId);
+    return !(s?.noNumbers);
+  });
+
+  el.innerHTML = `
+    <div style="max-width:900px;">
+      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">⚠️ ${currentLang==='it'?'Errori':'Errors'}</h3>
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+        ${currentLang==='it'
+          ? 'Contatori per individuare possibili incoerenze nei dati. Una serie marcata "Non ha numeri" (nella form di modifica serie) viene esclusa da questo conteggio.'
+          : 'Counters to spot possible data inconsistencies. A series marked "Does not have numbers" (in the series edit form) is excluded from this count.'}
+      </p>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;">
+        <div style="font-size:2.6rem;font-weight:700;color:${missingNumber.length ? '#ff6464' : 'var(--accent)'};">${missingNumber.length}</div>
+        <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">${currentLang==='it'?'Figurine senza numero':'Stickers without a number'}</div>
+      </div>
+    </div>`;
 }
 
 function renderAdminFoto() {
@@ -5297,12 +5757,13 @@ function renderAdminFoto() {
   const series = getData('series', []).slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
 
   el.innerHTML = `
-    <div style="max-width:680px;">
-      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">🃏 ${currentLang==='it'?'Caricamento massivo figurine':'Bulk import of Stickers'}</h3>
+    <div style="max-width:900px;">
+      <h3 onclick="toggleImportSection('fig')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-fig-chevron">▶</span> 🃏 ${currentLang==='it'?'Caricamento massivo figurine base (non Variazioni e Change)':'Bulk import of base stickers (not Variations and Change)'}</h3>
+      <div id="import-fig-section-content" style="display:none;">
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne (nell\'ordine): <code>Serie</code> (obbligatoria) · <code>Sottoserie</code> · <code>Numero</code> · <code>Nome</code> (obbligatoria) · <code>Taglia</code> · <code>Retro - Categoria</code> · <code>Retro - Nome</code>.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.<br>NOTA: se la serie ha sottoserie attive e la colonna Sottoserie è compilata, la chiave di riconciliazione è Serie+Sottoserie+Numero (o Nome se il Numero è vuoto); altrimenti è Serie+Numero (o Nome se il Numero è vuoto).'
-          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns (in order): <code>Serie</code> (required) · <code>Sottoserie</code> · <code>Numero</code> · <code>Nome</code> (required) · <code>Taglia</code> · <code>Retro - Categoria</code> · <code>Retro - Nome</code>.<br>NOTE: Rows with a Serie different from the selected one are skipped.<br>NOTE: if the series has active subseries and the Sottoserie column is filled in, the reconciliation key is Serie+Sottoserie+Numero (or Nome if Numero is empty); otherwise it is Serie+Numero (or Nome if Numero is empty).'}
+          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne (in ordine); <code>Serie</code> (obbligatoria); <code>Sottoserie</code>; <code>Numero</code>; <code>Nome</code>; <code>Taglia</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>REGOLE DI RICONCILIAZIONE E CAMPI OBBLIGATORI</b><br><br><b>Colonna Numero</b> — facoltativa.<br><br><b>Colonna Nome</b> — se il Numero è presente, il Nome è facoltativo: se compilato aggiorna il nome della figurina, se vuoto si preserva quello già a database. Se il Numero è assente, il Nome è invece obbligatorio ed è la chiave di riconciliazione.<br><br><b>Creazione di una figurina nuova</b> (nessuna corrispondenza trovata) — serve comunque un Nome, altrimenti la riga viene segnalata come errore e scartata.<br><br><b>Chiave di riconciliazione</b> — se la serie ha sottoserie attive e la colonna Sottoserie è compilata: Serie + Sottoserie + Numero (o Nome, se il Numero è vuoto). Altrimenti: Serie + Numero (o Nome, se il Numero è vuoto).<br><br>NOTA: le righe con Serie diversa da quella selezionata vengono ignorate.'
+          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns (in order); <code>Serie</code> (required); <code>Sottoserie</code>; <code>Numero</code>; <code>Nome</code>; <code>Taglia</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>RECONCILIATION RULES AND REQUIRED FIELDS</b><br><br><b>Numero column</b> — optional.<br><br><b>Nome column</b> — if Numero is present, Nome is optional: if filled in it updates the sticker name, if empty the existing database value is preserved. If Numero is absent, Nome is required and is the reconciliation key.<br><br><b>Creating a new sticker</b> (no match found) — a Nome is still needed, otherwise the row is flagged as an error and skipped.<br><br><b>Reconciliation key</b> — if the series has active subseries and the Sottoserie column is filled in: Serie + Sottoserie + Numero (or Nome, if Numero is empty). Otherwise: Serie + Numero (or Nome, if Numero is empty).<br><br>NOTE: rows with a Serie different from the selected one are skipped.'}
       </p>
 
       <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
@@ -5324,11 +5785,77 @@ function renderAdminFoto() {
         <progress id="import-fig-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="import-fig-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
       </div>
-      <div id="import-fig-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;"></div>
+      <div id="import-fig-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      </div>
 
       <hr class="divider" style="margin:2rem 0;">
 
-      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📥 ${currentLang==='it'?'Caricamento massivo foto':'Bulk photo upload'}</h3>
+      <h3 onclick="toggleImportSection('var')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-var-chevron">▶</span> 📊 ${currentLang==='it'?'Caricamento massivo Variazioni e Change':'Bulk import of Variations and Change'}</h3>
+      <div id="import-var-section-content" style="display:none;">
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+        ${currentLang==='it'
+          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne (in ordine); <code>Serie</code> (obbligatoria); <code>Numero</code> (obbligatoria); <code>Nome</code>; <code>Tipo</code> (obbligatoria; Ufficiale / Non ufficiale / Change); <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>REGOLE DI RICONCILIAZIONE E CAMPI OBBLIGATORI</b><br><br><b>Colonna Serie</b> — obbligatoria, deve corrispondere esattamente al nome della serie selezionata; le righe con Serie diversa bloccano l\'intero caricamento.<br><br><b>Colonna Numero</b> — obbligatoria: è il numero della figurina base a cui la riga si riferisce (deve già esistere nella serie).<br><br><b>Colonna Tipo</b> — obbligatoria: Ufficiale, Non ufficiale o Change; righe con un valore non riconosciuto vengono scartate.<br><br><b>Per le Variazioni (Ufficiale / Non ufficiale)</b> — <code>Retro (Categoria)</code> e <code>Retro (Nome)</code> sono obbligatorie e fanno parte della chiave di riconciliazione: Serie + Figurina base + Retro (possono esistere più Variazioni dello stesso Tipo per la stessa figurina base, una per ciascun Retro). Se il Retro indicato non esiste, la riga viene scartata. La colonna <b>Nome non viene letta</b>: una Variazione ha sempre lo stesso nome della sua figurina base, assegnato automaticamente.<br><br><b>Per i Change</b> — le colonne Retro non si applicano. Il <b>Nome è obbligatorio</b> e fa parte della chiave di riconciliazione: Serie + Figurina base + Nome.'
+          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns (in order); <code>Serie</code> (required); <code>Numero</code> (required); <code>Nome</code>; <code>Tipo</code> (required; Ufficiale / Non ufficiale / Change); <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>RECONCILIATION RULES AND REQUIRED FIELDS</b><br><br><b>Serie column</b> — required, must exactly match the selected series name; rows with a different Serie block the whole import.<br><br><b>Numero column</b> — required: the number of the base sticker the row refers to (must already exist in the series).<br><br><b>Tipo column</b> — required: Ufficiale, Non ufficiale or Change; rows with an unrecognized value are skipped.<br><br><b>For Variations (Ufficiale / Non ufficiale)</b> — <code>Retro (Categoria)</code> and <code>Retro (Nome)</code> are required and are part of the reconciliation key: Serie + Base sticker + Retro (there can be several Variations of the same Tipo for the same base sticker, one per Retro). If the specified Retro does not exist, the row is skipped. The <b>Nome column is not read</b>: a Variation always has the same name as its base sticker, assigned automatically.<br><br><b>For Change</b> — the Retro columns do not apply. <b>Nome is required</b> and is part of the reconciliation key: Serie + Base sticker + Nome.'}
+      </p>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
+        <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
+        <select id="import-var-series-select" class="form-select" style="margin-bottom:0.75rem;">
+          <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
+          ${series.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
+        </select>
+
+        <label class="form-label">${currentLang==='it'?'File XLS (.xlsx, .xls)':'XLS File (.xlsx, .xls)'}</label>
+        <input type="file" id="import-var-file" accept=".xlsx,.xls" class="form-input" style="margin-bottom:0.75rem;padding:0.4rem;">
+
+        <button class="btn-primary" onclick="startImportVar()" id="import-var-start-btn">
+          ▶ ${currentLang==='it'?'Avvia importazione':'Start import'}
+        </button>
+      </div>
+
+      <div id="import-var-progress-wrap" style="display:none;margin-bottom:0.75rem;">
+        <progress id="import-var-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
+        <div id="import-var-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
+      </div>
+      <div id="import-var-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      </div>
+
+      <hr class="divider" style="margin:2rem 0;">
+
+      <h3 onclick="toggleImportSection('retro')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-retro-chevron">▶</span> 📇 ${currentLang==='it'?'Caricamento massivo retro':'Bulk import of Retros'}</h3>
+      <div id="import-retro-section-content" style="display:none;">
+      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+        ${currentLang==='it'
+          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne richieste (nell\'ordine): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code>.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.'
+          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Required columns (in order): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code>.<br>NOTE: Rows with a Serie different from the selected one are skipped.'}
+      </p>
+
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
+        <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
+        <select id="import-retro-series-select" class="form-select" style="margin-bottom:0.75rem;">
+          <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
+          ${series.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
+        </select>
+
+        <label class="form-label">${currentLang==='it'?'File XLS (.xlsx, .xls)':'XLS File (.xlsx, .xls)'}</label>
+        <input type="file" id="import-retro-file" accept=".xlsx,.xls" class="form-input" style="margin-bottom:0.75rem;padding:0.4rem;">
+
+        <button class="btn-primary" onclick="startImportRetro()" id="import-retro-start-btn">
+          ▶ ${currentLang==='it'?'Avvia importazione':'Start import'}
+        </button>
+      </div>
+
+      <div id="import-retro-progress-wrap" style="display:none;margin-bottom:0.75rem;">
+        <progress id="import-retro-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
+        <div id="import-retro-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
+      </div>
+      <div id="import-retro-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      </div>
+
+      <hr class="divider" style="margin:2rem 0;">
+
+      <h3 onclick="toggleImportSection('foto')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-foto-chevron">▶</span> 📥 ${currentLang==='it'?'Caricamento massivo foto':'Bulk photo upload'}</h3>
+      <div id="import-foto-section-content" style="display:none;">
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
           ? 'ISTRUZIONI:<br>Seleziona la serie, seleziona le foto da caricare (nome file = numero figurina, es. <code>1.jpg</code>).<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
@@ -5363,75 +5890,8 @@ function renderAdminFoto() {
         <progress id="foto-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="foto-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
       </div>
-      <div id="foto-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;"></div>
-
-      <hr class="divider" style="margin:2rem 0;">
-
-      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📊 ${currentLang==='it'?'Caricamento massivo figurine non standard':'Bulk import of non-standard cards'}</h3>
-      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
-        ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne richieste: <code>Serie</code> · <code>Numero Figurina</code> · <code>Nome</code> · <code>Tipo</code> (Ufficiale / Non ufficiale / Change).<br>NOTA: La colonna Serie deve corrispondere esattamente al nome della serie selezionata.'
-          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Required columns: <code>Serie</code> · <code>Numero Figurina</code> · <code>Nome</code> · <code>Tipo</code> (Official / Unofficial / Change).<br>NOTE: The Serie column must exactly match the selected series name.'}
-      </p>
-
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
-        <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
-        <select id="import-var-series-select" class="form-select" style="margin-bottom:0.75rem;">
-          <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
-          ${series.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
-        </select>
-
-        <label class="form-label">${currentLang==='it'?'Tipo di oggetto':'Object type'}</label>
-        <select id="import-var-section-select" class="form-select" style="margin-bottom:0.75rem;">
-          <option value="">-- ${currentLang==='it'?'Seleziona':'Select'} --</option>
-          <option value="figurines">${currentLang==='it'?'Figurine':'Stickers'}</option>
-          <option value="albums">${currentLang==='it'?'Album':'Albums'}</option>
-          <option value="extras">${currentLang==='it'?'Altro materiale':'Extra material'}</option>
-        </select>
-
-        <label class="form-label">${currentLang==='it'?'File XLS (.xlsx, .xls)':'XLS File (.xlsx, .xls)'}</label>
-        <input type="file" id="import-var-file" accept=".xlsx,.xls" class="form-input" style="margin-bottom:0.75rem;padding:0.4rem;">
-
-        <button class="btn-primary" onclick="startImportVar()" id="import-var-start-btn">
-          ▶ ${currentLang==='it'?'Avvia importazione':'Start import'}
-        </button>
+      <div id="foto-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
       </div>
-
-      <div id="import-var-progress-wrap" style="display:none;margin-bottom:0.75rem;">
-        <progress id="import-var-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
-        <div id="import-var-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
-      </div>
-      <div id="import-var-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;"></div>
-
-      <hr class="divider" style="margin:2rem 0;">
-
-      <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">📇 ${currentLang==='it'?'Caricamento massivo retro':'Bulk import of Retros'}</h3>
-      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
-        ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne richieste (nell\'ordine): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code>.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.'
-          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Required columns (in order): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code>.<br>NOTE: Rows with a Serie different from the selected one are skipped.'}
-      </p>
-
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
-        <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
-        <select id="import-retro-series-select" class="form-select" style="margin-bottom:0.75rem;">
-          <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
-          ${series.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
-        </select>
-
-        <label class="form-label">${currentLang==='it'?'File XLS (.xlsx, .xls)':'XLS File (.xlsx, .xls)'}</label>
-        <input type="file" id="import-retro-file" accept=".xlsx,.xls" class="form-input" style="margin-bottom:0.75rem;padding:0.4rem;">
-
-        <button class="btn-primary" onclick="startImportRetro()" id="import-retro-start-btn">
-          ▶ ${currentLang==='it'?'Avvia importazione':'Start import'}
-        </button>
-      </div>
-
-      <div id="import-retro-progress-wrap" style="display:none;margin-bottom:0.75rem;">
-        <progress id="import-retro-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
-        <div id="import-retro-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
-      </div>
-      <div id="import-retro-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;"></div>
     </div>`;
 }
 
