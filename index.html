@@ -26,7 +26,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.266</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.301</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -380,7 +380,7 @@
         </div>
       </div>
       </div><!-- end profile-content -->
-      <div id="admin-panel" style="display:none;">
+      <div id="admin-panel" style="display:none;max-width:1500px;width:94vw;margin-left:50%;transform:translateX(-50%);">
         <h2 style="font-family:var(--font-display);font-size:1.5rem;margin-bottom:1.5rem;">⚙️ <span data-i18n="admin.title">Admin Panel</span></h2>
         <div class="admin-tabs">
           <button class="admin-tab active" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
@@ -391,6 +391,7 @@
           <button class="admin-tab" onclick="adminTab('eventi')" data-i18n="admin.eventi"><span style="filter:hue-rotate(200deg);">🔔</span> Eventi</button>
           <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
           <button class="admin-tab" onclick="adminTab('foto')" data-i18n="admin.foto">📥 Data import</button>
+          <button class="admin-tab" onclick="adminTab('errori')" data-i18n="admin.errori">⚠️ Errori</button>
           <button class="admin-tab" onclick="adminTab('email')" data-i18n="admin.email.tab">✉️ E-mail</button>
         </div>
         <div id="admin-series" class="admin-section">
@@ -585,6 +586,9 @@
         </div>
         <div id="admin-foto" class="admin-section">
           <div id="admin-foto-content"></div>
+        </div>
+        <div id="admin-errori" class="admin-section">
+          <div id="admin-errori-content"></div>
         </div>
         <div id="admin-email" class="admin-section">
           <div style="max-width:950px;">
@@ -837,6 +841,10 @@
           <input type="checkbox" id="series-has-sizes-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
           <span data-i18n="form.series.hasSizes">Figurine con taglie differenti</span>
         </label>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+          <input type="checkbox" id="series-no-numbers-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <span data-i18n="form.series.noNumbers">Non ha numeri</span>
+        </label>
       </div>
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
@@ -941,11 +949,11 @@
         <span data-i18n="form.fig.isChange">Change</span>
       </label>
     </div>
-    <div class="form-group" id="fig-base-figurine-group" style="display:none;">
+    <div class="form-group" id="fig-base-figurine-group" style="display:none;position:relative;">
       <label class="form-label"><span id="fig-base-figurine-label-text" data-i18n="form.fig.baseFigurine">Figurina base (di cui questa è una variante)</span></label>
-      <select class="form-select" id="fig-base-figurine-input">
-        <option value="">-- Seleziona --</option>
-      </select>
+      <input class="form-input" type="text" id="fig-base-figurine-search" placeholder="Cerca per numero o nome..." autocomplete="off" oninput="filterBaseFigurineLink()" onfocus="filterBaseFigurineLink()" onblur="clearBaseFigurineLinkIfEmpty()">
+      <input type="hidden" id="fig-base-figurine-input">
+      <div id="fig-base-figurine-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:260px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
       <div class="form-hint" data-i18n="form.fig.baseFigurineHint">Indica la figurina originale di cui questa è una variazione o un change</div>
     </div>
     <div class="form-group" id="fig-retro-group" style="display:none;position:relative;">
@@ -1137,12 +1145,12 @@
 <div class="modal-overlay hidden" id="fig-detail-modal">
   <div class="modal modal-wide" style="max-width:860px;">
     <div class="modal-header">
-      <div style="display:flex;align-items:center;gap:0.6rem;min-width:0;">
+      <h2 class="modal-title" id="fig-detail-title" data-i18n="modal.figdetail.title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1;">Dettaglio figurina</h2>
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;">
         <button id="fig-detail-prev-btn" onclick="navigateFigDetail(-1)" class="btn-secondary" style="padding:0.35rem 0.65rem;flex-shrink:0;" title="Previous">◀</button>
-        <h2 class="modal-title" id="fig-detail-title" data-i18n="modal.figdetail.title" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Dettaglio figurina</h2>
         <button id="fig-detail-next-btn" onclick="navigateFigDetail(1)" class="btn-secondary" style="padding:0.35rem 0.65rem;flex-shrink:0;" title="Next">▶</button>
+        <button class="modal-close" onclick="closeModal('fig-detail-modal')">✕</button>
       </div>
-      <button class="modal-close" onclick="closeModal('fig-detail-modal')">✕</button>
     </div>
     <div style="display:grid;grid-template-columns:1fr 320px;gap:2rem;align-items:start;">
       <div id="fig-detail-content"></div>
