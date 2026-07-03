@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.304 — Trovata e corretta la causa reale della "serie fantasma":
+//          il salvataggio di una Serie impostava esplicitamente il
+//          valore JavaScript "undefined" per i campi opzionali vuoti
+//          (Numero prima/ultima figurina, conteggi variazioni, ecc.) —
+//          ma Firestore rifiuta categoricamente "undefined" in
+//          qualunque campo, facendo fallire l'intera scrittura. Prima
+//          questo errore veniva nascosto da fsSave (v5.303 lo ha reso
+//          visibile). Ora questi campi usano "null" invece di
+//          "undefined", che Firestore accetta regolarmente
 // v5.303 — Fix baco serio: fsSave/fsDelete intercettavano in silenzio
 //          gli errori di scrittura/eliminazione su Firebase e
 //          restituivano comunque un "falso successo" — l'interfaccia
@@ -1049,7 +1058,7 @@ async function sendNewsletterEmail(subject, messaggio) {
 let db = null;
 let fbApp = null;
 
-const JS_VERSION = 'v5.303';
+const JS_VERSION = 'v5.304';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -2181,12 +2190,12 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || undefined, lastNumber: lastNumber || series[idx].lastNumber || undefined, albumCount: albumCount ?? series[idx].albumCount ?? undefined, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? series[idx].countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? undefined, countChange: countChange ?? series[idx].countChange ?? undefined };
+        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null };
         await fsSave('series', series[idx]);
         _cache.series = series;
       }
     } else {
-      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || undefined, lastNumber: lastNumber || undefined, albumCount: albumCount ?? undefined, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? undefined, countUnofficialVariations: countUnofficialVariations ?? undefined, countChange: countChange ?? undefined, created: new Date().toISOString() };
+      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
