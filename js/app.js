@@ -1,6 +1,87 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.326 — CAMBIO DI ARCHITETTURA DATI: le figurine non sono più salvate
+//          come documenti separati (uno a figurina, collezione
+//          'figurines'), ma incorporate dentro il documento della loro
+//          serie, in un nuovo campo "items" (un array). Ogni serie ha
+//          anche un nuovo campo "counts" con i conteggi già pronti
+//          (figurines/retros/albums/extras), ricalcolato automaticamente
+//          ad ogni salvataggio della serie.
+//
+//          PERCHÉ: con 2421 figurine, ogni singolo caricamento del sito
+//          costava ~2421 letture Firestore (una per documento) — con
+//          10.000+ figurine in arrivo e più utenti, il limite gratuito
+//          di 50.000 letture/giorno sarebbe stato impossibile da
+//          rispettare. Con le figurine incorporate nelle ~15 serie
+//          esistenti, lo stesso caricamento costa ~15 letture — una
+//          riduzione di oltre 150 volte.
+//
+//          COSA NON CAMBIA: tutto il resto del codice continua a usare
+//          _cache.figurines esattamente come prima (un array piatto con
+//          tutte le figurine di tutte le serie insieme) — viene solo
+//          ricostruito "spacchettando" i campi "items" delle serie subito
+//          dopo averle scaricate, invece di scaricarlo già piatto da una
+//          collezione a parte. I ~66 punti del codice che leggono
+//          getData('figurines', []) non sono stati toccati.
+//
+//          COME SI SALVA/CANCELLA ORA: fsSave('figurines', ...) e
+//          fsDelete('figurines', ...) continuano a funzionare come prima
+//          da fuori (nessuno dei punti che li chiamano è stato
+//          modificato) — internamente, fsSave/fsDelete intercettano il
+//          caso 'figurines' e aggiornano invece il documento della serie
+//          corrispondente (trova la serie, modifica il suo array
+//          "items", ricalcola "counts", riscrive l'intero documento
+//          serie). Vedi _saveFigurineItem() e _deleteFigurineItem().
+//
+//          MIGRAZIONE OBBLIGATORIA UNA TANTUM: le 2421 figurine esistenti
+//          vivono ancora nella vecchia collezione 'figurines', che
+//          questa versione non legge più. Prima di usare il sito con
+//          questa versione, vai su Admin → 🗄️ Risorse → "Migrazione
+//          figurine al nuovo formato per-serie" e clicca "Avvia
+//          migrazione" — sposta tutte le figurine esistenti nel nuovo
+//          formato in un colpo solo. Finché non lo fai, il catalogo
+//          apparirà vuoto. La vecchia collezione non viene cancellata
+//          automaticamente (resta come backup silenzioso in Firestore).
+//
+//          COMPROMESSI ACCETTATI (discussi con Franco prima di procedere):
+//          • Ogni modifica a UNA SINGOLA figurina ora riscrive l'intero
+//            documento della sua serie (tutte le sue figurine insieme),
+//            non solo quella cambiata. Più lento e pesante lato
+//            scrittura di quanto non fosse prima, ma non incide sul
+//            limite di lettura che era il problema reale.
+//          • L'import bulk (3 procedure: variazioni, retro, figurine)
+//            continua a fare UNA scrittura per riga importata, quindi
+//            un file da 500 righe fa ancora 500 scritture del documento
+//            serie (non 500 letture: quello resta risolto). Ottimizzarlo
+//            per fare una sola scrittura a fine import è un possibile
+//            miglioramento futuro, non necessario per il problema di
+//            oggi.
+//          • Rischio di conflitto in scrittura se due modifiche alla
+//            STESSA serie avvengono in parallelo da finestre diverse
+//            (l'ultima sovrascrive la prima) — Franco ha confermato che
+//            non lavora mai in parallelo su più finestre, quindi rischio
+//            trascurabile nella pratica.
+//          • Limite di 1 MB per documento Firestore: con l'attuale
+//            distribuzione (2421 figurine su ~15 serie) siamo ben al di
+//            sotto; da monitorare se una singola serie dovesse crescere
+//            molto oltre le altre.
+//
+//          NON FATTO (di proposito, discusso con Franco): il caricamento
+//          "pigro" per singola serie (scaricare solo la serie che si sta
+//          guardando, invece di tutte insieme) — con le figurine ora
+//          raggruppate per serie, l'Opzione B da sola porta già il
+//          costo da migliaia a poche decine di letture, rendendo il
+//          caricamento pigro non necessario per ora. Da riconsiderare
+//          solo se in futuro anche il numero di SERIE crescesse molto.
+// v5.325 — Aggiunta su richiesta di Franco un'icona ⚠️ in navbar (solo
+//          admin), visibile quando il contatore letture fsGetAll di
+//          QUESTO browser supera il 90% del limite giornaliero gratuito
+//          di Firestore (50.000). Clic sull'icona porta al tab Risorse.
+//          Nota importante lasciata anche nel codice: è una misura solo
+//          locale a questo browser, non il consumo reale e globale del
+//          sito generato da tutti i visitatori — per quello resta
+//          necessaria la vera Firebase Console.
 // v5.324 — Due correzioni su segnalazione di Franco: (1) la barra gialla
 //          "Stai impersonando" si sovrapponeva alla navbar (stessa
 //          posizione top:0) — probabilmente la causa reale dell'impressione
@@ -1249,7 +1330,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.324';
+const JS_VERSION = 'v5.326';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -1492,10 +1573,24 @@ function _trackReads(count) {
     data.count += count;
     localStorage.setItem('sgorbions_reads', JSON.stringify(data));
   } catch(e) {}
+  _checkReadQuotaWarning();
 }
 
 function getReadCount() {
   return _getReadCounter().count;
+}
+
+// Mostra un'icona di avviso in navbar (solo admin) quando il contatore
+// LOCALE di letture fsGetAll di questo browser supera il 90% del limite
+// giornaliero gratuito di Firestore. NOTA: è una misura solo di questo
+// browser, non il consumo reale e globale del sito — per quello resta
+// necessario controllare la vera Firebase Console.
+function _checkReadQuotaWarning() {
+  const btn = document.getElementById('nav-quota-warning-btn');
+  if (!btn) return;
+  if (!currentUser?.isAdmin) { btn.style.display = 'none'; return; }
+  const pct = getReadCount() / 50000;
+  btn.style.display = pct >= 0.9 ? '' : 'none';
 }
 
 function _invalidateSessionCache() {
@@ -1530,6 +1625,13 @@ async function fsSave(collName, item) {
   if (collName === 'series' || collName === 'figurines' || collName === 'levels') {
     _invalidateSessionCache();
   }
+  // Le figurine non sono più una collezione a parte: vivono dentro il
+  // documento della loro serie (vedi _saveFigurineItem). Intercettiamo qui
+  // per non dover toccare tutti i punti del codice che chiamano
+  // fsSave('figurines', ...) — continuano a funzionare senza saperlo.
+  if (collName === 'figurines') {
+    return await _saveFigurineItem(item);
+  }
   if (!db) return item;
   const { collection, doc, setDoc, addDoc } = window._fb;
   if (item.id) {
@@ -1548,9 +1650,126 @@ async function fsSave(collName, item) {
 }
 
 async function fsDelete(collName, id) {
+  if (collName === 'figurines') {
+    return await _deleteFigurineItem(id);
+  }
   if (!db) return;
   const { doc, deleteDoc } = window._fb;
   await deleteDoc(doc(db, collName, id));
+}
+
+// ============================================================
+//  FIGURINE: salvate DENTRO il documento della loro serie
+//  (un documento Firestore per serie, non uno per figurina).
+//  Questo riduce le letture del catalogo da ~1 per figurina a 1 per
+//  serie: con 2421 figurine e ~15 serie, un caricamento completo passa
+//  da ~2421 letture a ~15. Vedi CHANGELOG in cima al file per i dettagli
+//  e i compromessi di questa scelta.
+// ============================================================
+function _generateFigurineId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+
+function _recomputeSeriesCounts(series) {
+  const items = series.items || [];
+  series.counts = {
+    figurines: items.filter(f => f.section === 'figurines' || !f.section).length,
+    retros: items.filter(f => f.section === 'retros').length,
+    albums: items.filter(f => f.section === 'albums').length,
+    extras: items.filter(f => f.section === 'extras').length
+  };
+}
+
+async function _saveFigurineItem(item) {
+  const seriesList = getData('series', []);
+  const sIdx = seriesList.findIndex(s => s.id === item.seriesId);
+  if (sIdx < 0) throw new Error('Serie non trovata per la figurina: ' + item.seriesId);
+  const series = seriesList[sIdx];
+  series.items = series.items || [];
+
+  if (!item.id) item.id = _generateFigurineId();
+  const iIdx = series.items.findIndex(x => x.id === item.id);
+  if (iIdx >= 0) series.items[iIdx] = item; else series.items.push(item);
+  _recomputeSeriesCounts(series);
+
+  await fsSave('series', series);
+
+  // Aggiorna la cache piatta usata da tutto il resto del codice, che
+  // continua a vedere _cache.figurines esattamente come prima
+  _cache.figurines = _cache.figurines || [];
+  const flatIdx = _cache.figurines.findIndex(x => x.id === item.id);
+  if (flatIdx >= 0) _cache.figurines[flatIdx] = item; else _cache.figurines.push(item);
+
+  return item;
+}
+
+async function _deleteFigurineItem(id) {
+  const seriesList = getData('series', []);
+  for (const series of seriesList) {
+    const idx = (series.items || []).findIndex(x => x.id === id);
+    if (idx >= 0) {
+      series.items.splice(idx, 1);
+      _recomputeSeriesCounts(series);
+      await fsSave('series', series);
+      break;
+    }
+  }
+  _cache.figurines = (_cache.figurines || []).filter(x => x.id !== id);
+}
+
+// ============================================================
+//  MIGRAZIONE UNA TANTUM: figurine dalla vecchia collezione a parte
+//  (un documento a figurina) al nuovo formato incorporato nella serie
+//  (campo "items"). Da eseguire una sola volta dopo aver caricato questa
+//  versione. La vecchia collezione 'figurines' non viene più letta né
+//  scritta dal resto del codice dopo questa modifica — resta in Firestore
+//  come backup finché non la si cancella manualmente, se lo si desidera.
+// ============================================================
+async function migrateFigurinesIntoSeries() {
+  if (!confirm('Migrare tutte le figurine nel nuovo formato per-serie? Operazione da fare una volta sola.')) return;
+  const btn = document.getElementById('migrate-figurines-btn');
+  const progressEl = document.getElementById('migrate-figurines-progress');
+  if (btn) btn.disabled = true;
+  if (progressEl) { progressEl.style.display = ''; progressEl.textContent = 'Lettura della vecchia collezione figurines...'; }
+
+  try {
+    const oldFigurines = await fsGetAll('figurines'); // vecchio formato, un documento a figurina
+    const seriesList = getData('series', []);
+    const bySeriesId = {};
+    for (const f of oldFigurines) {
+      if (!bySeriesId[f.seriesId]) bySeriesId[f.seriesId] = [];
+      bySeriesId[f.seriesId].push(f);
+    }
+
+    let done = 0;
+    for (const series of seriesList) {
+      series.items = bySeriesId[series.id] || [];
+      _recomputeSeriesCounts(series);
+      await fsSave('series', series);
+      done++;
+      if (progressEl) progressEl.textContent = 'Migrate ' + done + ' / ' + seriesList.length + ' serie...';
+    }
+
+    const matchedSeriesIds = new Set(seriesList.map(s => s.id));
+    const orphanFigs = oldFigurines.filter(f => !matchedSeriesIds.has(f.seriesId));
+
+    // Ricostruisce la cache piatta usata da tutto il resto del codice
+    _cache.figurines = [];
+    for (const s of seriesList) for (const item of (s.items || [])) _cache.figurines.push(item);
+    _invalidateSessionCache();
+
+    const summary = 'Completato: ' + oldFigurines.length + ' figurine spostate in ' + done + ' serie.' +
+      (orphanFigs.length ? ' ⚠️ ' + orphanFigs.length + ' figurine con una serie non trovata (seriesId non valido) — ignorate, controllale manualmente.' : '');
+    if (progressEl) progressEl.textContent = summary;
+    toast(oldFigurines.length + ' figurine migrate con successo' + (orphanFigs.length ? ' (' + orphanFigs.length + ' orfane, vedi log)' : ''), orphanFigs.length ? 'error' : 'success');
+    renderCatalog(); renderHomeSeries(); renderHomeStats(); renderAdminSeries();
+  } catch(e) {
+    console.error('migrateFigurinesIntoSeries', e);
+    toast('Errore durante la migrazione: ' + e.message, 'error');
+    if (progressEl) progressEl.textContent = '❌ Errore: ' + e.message;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function loadAllData() {
@@ -1585,6 +1804,15 @@ async function loadAllData() {
       _cache.series = sessionCache.series || [];
       _cache.figurines = sessionCache.figurines || [];
       _cache.levels = sessionCache.levels || [];
+      // Le serie in sessionStorage sono salvate SENZA il campo "items" (per
+      // non duplicare gli stessi dati anche nell'array piatto figurines,
+      // risparmiando spazio nel browser) — le riattacchiamo qui
+      const figsBySeriesId = {};
+      for (const f of _cache.figurines) {
+        if (!figsBySeriesId[f.seriesId]) figsBySeriesId[f.seriesId] = [];
+        figsBySeriesId[f.seriesId].push(f);
+      }
+      for (const s of _cache.series) s.items = figsBySeriesId[s.id] || [];
       // Ricarica solo i dati dinamici
       _cache.posts = await fsGetAll('posts');
       _cache.public_profiles = await fsGetAll('public_profiles');
@@ -1595,16 +1823,25 @@ async function loadAllData() {
         fsGetAll('series'),
         new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 4000))
       ]);
-      _cache.figurines = await fsGetAll('figurines');
+      // Le figurine vivono dentro il documento della loro serie (campo
+      // "items"): le "spacchettiamo" qui in un unico array piatto, così
+      // tutto il resto del codice continua a usare _cache.figurines
+      // esattamente come prima, senza saperlo
+      _cache.figurines = [];
+      for (const s of _cache.series) {
+        for (const item of (s.items || [])) _cache.figurines.push(item);
+      }
       _cache.posts = await fsGetAll('posts');
       _cache.public_profiles = await fsGetAll('public_profiles');
       if (currentUser?.isAdmin) await _loadAdminOnlyData();
       _cache.levels = await fsGetAll('levels');
-      // Salva in sessionStorage
+      // Salva in sessionStorage (le serie senza "items": sono già presenti
+      // per intero in figurines, non serve duplicarle e sprecare spazio)
       try {
+        const seriesLight = _cache.series.map(s => { const { items, ...rest } = s; return rest; });
         sessionStorage.setItem(SESSION_KEY, JSON.stringify({
           ts: Date.now(),
-          series: _cache.series,
+          series: seriesLight,
           figurines: _cache.figurines,
           levels: _cache.levels
         }));
@@ -2418,6 +2655,7 @@ function updateNavUser() {
       bellBtn.style.display = currentUser.isAdmin ? '' : 'none';
       updateBellBadge();
     }
+    _checkReadQuotaWarning();
     const jsVerWrap = document.getElementById('nav-js-version-wrap');
     if (jsVerWrap) jsVerWrap.style.display = currentUser.isAdmin ? '' : 'none';
     const navAvatar = document.getElementById('nav-avatar');
@@ -2446,6 +2684,8 @@ function updateNavUser() {
     if (homeContent2) homeContent2.style.display = 'none';
     const bellBtn2 = document.getElementById('nav-bell-btn');
     if (bellBtn2) bellBtn2.style.display = 'none';
+    const quotaBtn2 = document.getElementById('nav-quota-warning-btn');
+    if (quotaBtn2) quotaBtn2.style.display = 'none';
     ['nav-catalog','nav-blog','nav-classifica','nav-wishlist'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     const heroStats2 = document.getElementById('hero-stats');
     if (heroStats2) heroStats2.style.display = 'none';
@@ -2596,9 +2836,11 @@ async function saveSeries() {
 async function deleteSeries(id) {
   if (!confirm('Delete this series and all its figurines?')) return;
   try {
+    // Cancellare il documento della serie cancella già tutte le sue
+    // figurine, che ora vivono incorporate al suo interno (non serve più
+    // un ciclo di cancellazione separato, anzi sarebbe controproducente:
+    // ricreerebbe il documento appena cancellato)
     await fsDelete('series', id);
-    const figsToDelete = _cache.figurines.filter(x => x.seriesId === id);
-    for (const f of figsToDelete) await fsDelete('figurines', f.id);
   } catch(e) {
     console.error('deleteSeries', e);
     toast((currentLang === 'it' ? '❌ Eliminazione fallita, riprova' : '❌ Delete failed, please retry'), 'error');
