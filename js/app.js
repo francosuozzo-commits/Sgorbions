@@ -1,6 +1,48 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.319 — Corretto un crash reale segnalato da Franco: renderClassifica
+//          andava in errore (Cannot read properties of undefined) se un
+//          documento in public_profiles aveva lo username mancante,
+//          bloccando la pagina Classifica per tutti e impedendo il
+//          normale caricamento del resto della pagina. Ora questi profili
+//          malformati vengono filtrati ed esclusi dalla Classifica invece
+//          di far crashare la pagina. Stessa protezione aggiunta al
+//          pannello admin Utenti (ordinamento e visualizzazione).
+// v5.318 — Ripristinato su richiesta di Franco il pulsante "Ricalcola
+//          punteggi di tutti" in fondo alla pagina Classifica (solo
+//          admin): serve ancora per gli utenti registrati prima della
+//          v5.314, che senza questo passaggio mostrano punteggio 0.
+// v5.317 — Rimossa su richiesta di Franco la sezione "Migrazione account a
+//          Firebase Authentication" da Admin → Risorse (pannello, pulsanti
+//          e funzioni runAuthMigration/checkAuthMigrationStatus/
+//          _usersNeedingMigration). Aveva esaurito il suo scopo: tutti gli
+//          account sono già migrati, e ogni nuova registrazione crea un
+//          account Firebase Auth vero fin dall'inizio.
+// v5.316 — Rimossa su richiesta di Franco la funzione "Ricalcolo punteggi
+//          pubblici" (pulsante, pannello nella pagina Classifica e
+//          funzione backfillPublicScores). Nota: gli utenti registrati
+//          prima della v5.314 avranno il punteggio a 0 in Classifica
+//          finché non modificano di nuovo il proprio "Ce l'ho" — da quel
+//          momento il punteggio si aggiorna da solo, come per tutti gli
+//          utenti nuovi.
+// v5.315 — Su richiesta di Franco: spostato il pannello "Ricalcolo
+//          punteggi pubblici" da Admin → Risorse in fondo alla pagina
+//          Classifica, dove è più pertinente. Visibile solo all'admin
+//          (renderClassifica ne controlla la visibilità). Al termine del
+//          ricalcolo la Classifica si aggiorna automaticamente.
+// v5.314 — Su segnalazione di Franco: la collezione "owned" (Ce l'ho) era
+//          pubblica in lettura solo per permettere alla Classifica di
+//          calcolare i punteggi di tutti, ma esponeva inutilmente la lista
+//          dettagliata di quali figurine specifiche possiede ciascun
+//          utente. Ora "owned" è privata come la wishlist: ogni "Ce l'ho"
+//          calcola e pubblica in public_profiles SOLO il punteggio
+//          aggregato e i conteggi per categoria (figurine/album/extra),
+//          mai i dettagli. La Classifica legge questi valori già pronti.
+//          Aggiunto in Admin → Risorse un ricalcolo una tantum per
+//          pubblicare il punteggio degli utenti già esistenti. Corretta
+//          anche una duplicazione preesistente in toggleOwned che
+//          salvava due volte ad ogni click.
 // v5.313 — Corretto un bug per cui, effettuando il login come admin dal
 //          modulo di accesso (non ricaricando semplicemente la pagina), il
 //          pannello Utenti mostrava un solo utente invece di tutti. Causa:
@@ -1167,7 +1209,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.313';
+const JS_VERSION = 'v5.319';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -1437,7 +1479,7 @@ async function _syncPublicProfile(user) {
       joined: user.joined || null,
       isAnonymous: !!user.isAnonymous
     };
-    await setDoc(doc(db, 'public_profiles', user.id), publicData);
+    await setDoc(doc(db, 'public_profiles', user.id), publicData, { merge: true });
   } catch(e) {
     console.warn('public_profiles sync failed:', e.message);
   }
@@ -3094,10 +3136,7 @@ function toggleOwned(figId) {
   // Save to cache, localStorage, and Firebase
   if (!_cache.ownedMap) _cache.ownedMap = {};
   _cache.ownedMap[currentUser.id] = owned;
-  if (!_cache.ownedMap) _cache.ownedMap = {};
-  _cache.ownedMap[currentUser.id] = owned;
   LOCAL.set('owned_' + currentUser.id, owned);
-  saveOwnedToFirebase(currentUser.id, owned);
   saveOwnedToFirebase(currentUser.id, owned);
   renderItems(); renderProfile();
 }
@@ -3105,20 +3144,79 @@ function toggleOwned(figId) {
 async function saveOwnedToFirebase(userId, owned) {
   try {
     await fsSave('owned', { id: userId, userId, authUid: currentUser?.authUid || null, owned });
+    await _updatePublicScore(userId, owned);
   } catch(e) { console.error('saveOwned error', e); }
+}
+
+async function _updatePublicScore(userId, owned) {
+  // Pubblica SOLO il punteggio aggregato e i conteggi per la Classifica,
+  // mai la lista dettagliata di quali figurine specifiche si possiedono
+  // (quella resta privata nella collezione 'owned').
+  try {
+    const allFigs = getData('figurines', []);
+    const ownedFigs = allFigs.filter(f => owned.includes(f.id));
+    const score = ownedFigs.reduce((sum, f) => sum + (f.score || 0), 0);
+    const countFigurines = ownedFigs.filter(f => f.section === 'figurines' || !f.section).length;
+    const countAlbums = ownedFigs.filter(f => f.section === 'albums').length;
+    const countExtras = ownedFigs.filter(f => f.section === 'extras').length;
+    const { doc, setDoc } = window._fb;
+    await setDoc(doc(db, 'public_profiles', userId), { score, countFigurines, countAlbums, countExtras }, { merge: true });
+  } catch(e) { console.warn('_updatePublicScore failed', e.message); }
+}
+
+// ============================================================
+//  RICALCOLO UNA TANTUM DEI PUNTEGGI PUBBLICI (public_profiles)
+//  Serve per gli utenti registrati prima dell'introduzione di
+//  _updatePublicScore(): il loro public_profiles non ha ancora i campi
+//  score/countFigurine/countAlbums/countExtras (mostrano 0 in Classifica
+//  finché non lo eseguono). Da questo punto in poi ogni "Ce l'ho" li
+//  aggiorna già in automatico, quindi va usato solo occasionalmente.
+// ============================================================
+async function backfillPublicScores() {
+  const btn = document.getElementById('backfill-score-btn');
+  const progressEl = document.getElementById('backfill-score-progress');
+  if (btn) btn.disabled = true;
+  if (progressEl) { progressEl.style.display = ''; progressEl.textContent = 'Lettura dati in corso...'; }
+
+  try {
+    const allOwned = await fsGetAll('owned');
+    let done = 0;
+    for (const doc of allOwned) {
+      await _updatePublicScore(doc.userId, doc.owned || []);
+      done++;
+      if (progressEl) progressEl.textContent = 'Ricalcolati ' + done + ' / ' + allOwned.length + '...';
+    }
+    if (progressEl) progressEl.textContent = 'Completato: ' + done + ' profili aggiornati.';
+    toast(done + ' punteggi pubblicati in public_profiles', 'success');
+    _cache.public_profiles = await fsGetAll('public_profiles');
+    renderClassifica();
+  } catch(e) {
+    console.error('backfillPublicScores', e);
+    toast('Errore durante il ricalcolo: ' + e.message, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 async function loadAllOwnedFromFirebase() {
   try {
-    const allOwned = await fsGetAll('owned');
     if (!_cache.ownedMap) _cache.ownedMap = {};
-    for (const doc of allOwned) {
-      _cache.ownedMap[doc.userId] = doc.owned || [];
+    if (currentUser?.isAdmin) {
+      // L'admin legge l'intera collezione (serve al pannello di gestione utenti)
+      const allOwned = await fsGetAll('owned');
+      for (const doc of allOwned) {
+        _cache.ownedMap[doc.userId] = doc.owned || [];
+      }
+    } else if (currentUser) {
+      // Un utente normale legge solo il proprio documento: 'owned' è privata,
+      // la Classifica ora usa il punteggio già aggregato in public_profiles
+      const own = await fsGet('owned', currentUser.id);
+      if (own) _cache.ownedMap[currentUser.id] = own.owned || [];
     }
     // Migrate current user's localStorage data to Firebase if not yet saved
-    if (currentUser) {
+    if (currentUser && (!_cache.ownedMap[currentUser.id] || !_cache.ownedMap[currentUser.id].length)) {
       const localOwned = LOCAL.get('owned_' + currentUser.id);
-      if (localOwned && localOwned.length > 0 && !allOwned.find(d => d.userId === currentUser.id)) {
+      if (localOwned && localOwned.length > 0) {
         _cache.ownedMap[currentUser.id] = localOwned;
         await saveOwnedToFirebase(currentUser.id, localOwned);
       }
@@ -4077,8 +4175,8 @@ function renderAdminUsers() {
   const { col, dir } = _usersSort;
   users.sort((a, b) => {
     let va, vb;
-    if (col === 'username') { va = a.username.toLowerCase(); vb = b.username.toLowerCase(); }
-    else if (col === 'email') { va = a.email.toLowerCase(); vb = b.email.toLowerCase(); }
+    if (col === 'username') { va = (a.username || '').toLowerCase(); vb = (b.username || '').toLowerCase(); }
+    else if (col === 'email') { va = (a.email || '').toLowerCase(); vb = (b.email || '').toLowerCase(); }
     else if (col === 'lastLogin') { va = a.lastLogin || ''; vb = b.lastLogin || ''; }
     else if (col === 'joined') { va = a.joined || ''; vb = b.joined || ''; }
     else { va = ''; vb = ''; }
@@ -4093,8 +4191,8 @@ function renderAdminUsers() {
     <th>${(currentLang === 'it') ? 'Azioni' : 'Actions'}</th></tr></thead><tbody>
     ${users.map(u => `<tr>
       <td style="display:flex;align-items:center;gap:0.4rem;">
-        <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : u.username[0].toUpperCase()}</div>
-        ${u.username}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}${u.nationalityCode ? '<img src="'+flagUrl(u.nationalityCode)+'" title="'+(u.nationalityName||'')+'" style="width:18px;height:12px;object-fit:cover;border-radius:2px;margin-left:4px;">' : ''}
+        <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : (u.username || '?')[0].toUpperCase()}</div>
+        ${u.username || '(senza nickname)'}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}${u.nationalityCode ? '<img src="'+flagUrl(u.nationalityCode)+'" title="'+(u.nationalityName||'')+'" style="width:18px;height:12px;object-fit:cover;border-radius:2px;margin-left:4px;">' : ''}
       </td>
       <td>${u.email}</td>
       <td style="font-size:0.82rem;">${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(u.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '<span style="color:var(--muted);font-style:italic;">mai</span>'}</td>
@@ -4342,103 +4440,6 @@ async function renderAdminRisorse() {
         '</tbody></table>';
     }
   }
-
-  checkAuthMigrationStatus();
-}
-
-// ============================================================
-//  MIGRAZIONE ACCOUNT A FIREBASE AUTHENTICATION
-//  (prerequisito per attivare le regole di sicurezza Firestore
-//  definitive: ogni account deve avere un authUid, altrimenti il
-//  login non potrà più verificare la password una volta che la
-//  collezione 'users' non sarà più leggibile pubblicamente)
-// ============================================================
-function _usersNeedingMigration() {
-  const users = getData('users', []);
-  return users.filter(u => !u.authUid);
-}
-
-async function checkAuthMigrationStatus() {
-  const el = document.getElementById('migration-pending-count');
-  if (!el) return;
-  if (!_cache.users || _cache.users.length === 0) {
-    _cache.users = await fsGetAll('users');
-  }
-  const pending = _usersNeedingMigration();
-  el.textContent = pending.length;
-  el.style.color = pending.length > 0 ? '#ffb400' : 'var(--accent)';
-  const btn = document.getElementById('migration-run-btn');
-  if (btn) btn.disabled = pending.length === 0;
-}
-
-async function runAuthMigration() {
-  const pending = _usersNeedingMigration();
-  if (!pending.length) { toast('Nessun account da migrare', 'success'); return; }
-  if (!confirm('Migrare ' + pending.length + ' account a Firebase Authentication? L\'operazione non è reversibile.')) return;
-
-  const btn = document.getElementById('migration-run-btn');
-  const progressEl = document.getElementById('migration-progress');
-  const logEl = document.getElementById('migration-log');
-  if (btn) btn.disabled = true;
-  if (progressEl) progressEl.style.display = '';
-  if (logEl) { logEl.style.display = ''; logEl.innerHTML = ''; }
-
-  const { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window._fbAuth;
-  const { doc, setDoc, deleteField } = window._fb;
-  let ok = 0, failed = 0;
-
-  for (let i = 0; i < pending.length; i++) {
-    const user = pending[i];
-    if (progressEl) progressEl.textContent = 'Migrazione ' + (i+1) + ' / ' + pending.length + '...';
-    const logLine = (msg) => { if (logEl) logEl.innerHTML += msg + '<br>'; };
-
-    if (!user.email) {
-      logLine('❌ ' + user.username + ': nessuna e-mail associata, migrazione manuale necessaria');
-      failed++;
-      continue;
-    }
-    if (!user.password) {
-      logLine('❌ ' + user.username + ': nessuna password salvata (account già privo di password ma senza authUid) — serve reset password manuale');
-      failed++;
-      continue;
-    }
-    try {
-      let authUid;
-      try {
-        const cred = await createUserWithEmailAndPassword(fbAuth, user.email, user.password);
-        authUid = cred.user.uid;
-      } catch(createErr) {
-        if (createErr.code === 'auth/email-already-in-use') {
-          const cred = await signInWithEmailAndPassword(fbAuth, user.email, user.password);
-          authUid = cred.user.uid;
-        } else {
-          throw createErr;
-        }
-      }
-      await setDoc(doc(db, 'users', user.id), { authUid, password: deleteField() }, { merge: true });
-      user.authUid = authUid;
-      delete user.password;
-      await _syncPublicProfile(user);
-      if (user.isAdmin) {
-        // Tentativo best-effort: con le regole di sicurezza definitive questa scrittura
-        // è riservata alla console Firebase — non deve bloccare la migrazione
-        try { await fsSave('admin_uids', { id: authUid, isAdmin: true }); } catch(e2) { console.warn('admin_uids write skipped (expected once security rules are in place):', e2.message); }
-      }
-      logLine('✅ ' + user.username);
-      ok++;
-      // Torna a disconnettere: la migrazione non deve lasciare l'admin loggato come l'utente appena creato
-      try { await signOut(fbAuth); } catch(e) {}
-    } catch(err) {
-      logLine('❌ ' + user.username + ': ' + (err.message || err.code || 'errore sconosciuto'));
-      failed++;
-    }
-  }
-
-  _cache.users = getData('users', []); // già aggiornato per riferimento sugli oggetti in pending
-  if (progressEl) progressEl.textContent = 'Completato: ' + ok + ' migrati, ' + failed + ' falliti.';
-  if (logEl) logEl.innerHTML += '<br>⚠️ La sessione Firebase è stata alterata dalla migrazione (limite del piano gratuito, senza Cloud Functions). <strong>Ricarica la pagina e rifai il login come admin</strong> prima di continuare a lavorare.';
-  toast(ok + ' account migrati' + (failed ? ', ' + failed + ' falliti (vedi log)' : '') + ' — ricarica la pagina e rifai login', failed ? 'error' : 'success');
-  await checkAuthMigrationStatus();
 }
 
 // ============================================================
@@ -7004,24 +7005,27 @@ async function renderClassifica() {
   const anonBanner = document.getElementById('classifica-anon-banner');
   if (anonBanner) anonBanner.style.display = (currentUser && !currentUser.isAdmin) ? '' : 'none';
 
+  // Pannello di ricalcolo punteggi: visibile solo all'admin
+  const backfillPanel = document.getElementById('classifica-admin-backfill');
+  if (backfillPanel) backfillPanel.style.display = currentUser?.isAdmin ? '' : 'none';
+
   // Render levels table on the right
   const levelsEl = document.getElementById('classifica-levels-table');
   if (levelsEl) {
     renderClassificaLevels(levelsEl);
   }
 
-  const users = getData('public_profiles', []);
-  const allFigs = getData('figurines', []);
+  const users = getData('public_profiles', []).filter(u => u && u.id && u.username);
 
-  // Calculate score for each user
+  // Calculate score for each user (già pre-calcolato e pubblicato in
+  // public_profiles da _updatePublicScore, non serve più leggere i dettagli
+  // di "owned" — che restano privati)
   const ranking = [];
   for (const user of users) {
-    const owned = (_cache.ownedMap && _cache.ownedMap[user.id]) || LOCAL.get('owned_' + user.id) || [];
-    const ownedFigs = allFigs.filter(f => owned.includes(f.id));
-    const score = ownedFigs.reduce((sum, f) => sum + (f.score || 0), 0);
-    const countFigurines = ownedFigs.filter(f => f.section === 'figurines' || !f.section).length;
-    const countAlbums = ownedFigs.filter(f => f.section === 'albums').length;
-    const countExtras = ownedFigs.filter(f => f.section === 'extras').length;
+    const score = user.score || 0;
+    const countFigurines = user.countFigurines || 0;
+    const countAlbums = user.countAlbums || 0;
+    const countExtras = user.countExtras || 0;
     ranking.push({ user, score, countFigurines, countAlbums, countExtras });
   }
 
@@ -7056,7 +7060,7 @@ async function renderClassifica() {
       : user.username;
     const avatarHTML = user.avatar
       ? `<div style="width:40px;height:40px;border-radius:50%;background:url('${user.avatar}') center/cover;border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};flex-shrink:0;"></div>`
-      : `<div style="width:40px;height:40px;border-radius:50%;background:var(--card2);border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--muted);flex-shrink:0;">${user.username[0].toUpperCase()}</div>`;
+      : `<div style="width:40px;height:40px;border-radius:50%;background:var(--card2);border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;color:var(--muted);flex-shrink:0;">${(user.username || '?')[0].toUpperCase()}</div>`;
     const displayAvatar = isAnon
       ? `<div style="width:40px;height:40px;border-radius:50%;background:var(--card2);border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🕵️</div>`
       : avatarHTML;
