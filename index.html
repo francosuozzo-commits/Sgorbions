@@ -26,7 +26,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.307</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.310</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -359,7 +359,7 @@
       </div>
         <div class="profile-info">
           <div id="must-change-pwd-banner" style="display:none;background:rgba(255,180,0,0.15);border:1px solid rgba(255,180,0,0.4);color:#ffb400;padding:0.5rem 1rem;border-radius:8px;font-size:0.85rem;margin-bottom:0.5rem;">⚠️ Stai usando una password temporanea. <button onclick="openChangePwdModal()" style="background:none;border:none;color:#ffb400;text-decoration:underline;cursor:pointer;font-size:0.85rem;">Cambiala subito!</button></div>
-          <h2 id="profile-username">Username</h2>
+          <h2 id="profile-username">Nickname</h2>
           <p id="profile-email" style="color:var(--muted);font-size:1rem;"></p>
           <div style="margin-top:0.5rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
             <div id="profile-nationality-display" style="font-size:1rem;color:var(--muted);"></div>
@@ -451,7 +451,7 @@
                 </div>
               </div>
             </div>
-            <p style="font-size:0.88rem;color:var(--muted);margin-top:0.75rem;" data-i18n="admin.email.plan">Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese).</p>
+            <p style="font-size:0.88rem;color:var(--muted);margin-top:0.75rem;" data-i18n="admin.email.plan">Piano gratuito EmailJS: 200 e-mail/mese (si azzera il 1° di ogni mese).</p>
             <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem;">
               <label style="font-size:0.88rem;color:var(--muted);" data-i18n="admin.email.fix">Correggi contatore:</label>
               <input type="number" id="email-count-edit" min="0" max="200" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:8px;font-size:0.88rem;">
@@ -518,6 +518,24 @@
             </div>
             <p style="font-size:0.72rem;color:var(--muted);">* Le letture sono misurate solo per le operazioni <code>fsGetAll</code> eseguite da questo browser. Si azzerano a mezzanotte PT.</p>
             <div id="firebase-reads-history" style="margin-top:1rem;"></div>
+          </div>
+
+          <!-- MIGRAZIONE FIREBASE AUTH (prerequisito regole di sicurezza) -->
+          <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;border:1px solid rgba(255,200,50,0.3);">
+            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🔐 Migrazione account a Firebase Authentication</h4>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">
+              Prima di attivare le regole di sicurezza definitive, <strong>tutti</strong> gli account devono avere un accesso Firebase Authentication reale (non più solo password salvata nel documento). Gli account non ancora migrati vengono normalmente convertiti in automatico al primo login — questo strumento forza la migrazione di quelli rimasti, senza dover aspettare che l'utente stesso effettui l'accesso.
+            </p>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
+              <div>
+                <div style="font-size:2rem;font-weight:700;font-family:var(--font-ui);" id="migration-pending-count">—</div>
+                <div style="font-size:0.8rem;color:var(--muted);">account da migrare</div>
+              </div>
+              <button class="btn-primary" style="font-size:0.88rem;" onclick="runAuthMigration()" id="migration-run-btn">▶ Avvia migrazione</button>
+              <button class="btn-secondary" style="font-size:0.85rem;" onclick="checkAuthMigrationStatus()">🔄 Aggiorna conteggio</button>
+            </div>
+            <div id="migration-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem;"></div>
+            <div id="migration-log" style="max-height:200px;overflow-y:auto;font-size:0.8rem;font-family:monospace;background:var(--card);border-radius:8px;padding:0.5rem 0.75rem;display:none;"></div>
           </div>
 
           <!-- CLOUDINARY -->
@@ -601,7 +619,7 @@
                   <input class="form-input" type="email" id="newsletter-reply-to" placeholder="postmaster@figurinesgorbions.it" style="flex:1;">
                   <button class="btn-primary" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveReplyToField()" data-i18n="admin.save">Salva</button>
                 </div>
-                <div class="form-hint" data-i18n="newsletter.replyToHint">Quando rispondi a un messaggio, l'email arriverà a questo indirizzo</div>
+                <div class="form-hint" data-i18n="newsletter.replyToHint">Quando rispondi a un messaggio, l'e-mail arriverà a questo indirizzo</div>
               </div>
 
               <hr class="divider" style="margin:1rem 0;">
@@ -750,10 +768,19 @@
       <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')" data-i18n="auth.login">Login</button>
       <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')" data-i18n="auth.register">Registrati</button>
     </div>
+    <button onclick="signInWithGoogle()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.6rem;padding:0.6rem;border-radius:10px;border:1px solid var(--border2);background:#fff;color:#1f1f1f;font-family:var(--font-ui);font-size:0.9rem;font-weight:600;cursor:pointer;margin-bottom:0.75rem;">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+      <span data-i18n="auth.googleBtn">Accedi con Google</span>
+    </button>
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      <span style="font-size:0.75rem;color:var(--muted);" data-i18n="auth.or">oppure</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
     <div id="auth-login">
       <div class="form-group">
-        <label class="form-label" data-i18n="form.username">Username</label>
-        <input class="form-input" type="text" id="login-username" placeholder="your_username" onkeydown="if(event.key==='Enter')doLogin()">
+        <label class="form-label" data-i18n="form.email">E-mail</label>
+        <input class="form-input" type="email" id="login-email" placeholder="la-tua@e-mail.com" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <div class="form-group">
         <label class="form-label" data-i18n="form.password">Password</label>
@@ -762,11 +789,11 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.70</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.310</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
-        <label class="form-label" data-i18n="form.username">Username</label>
+        <label class="form-label" data-i18n="form.username">Nickname</label>
         <input class="form-input" type="text" id="reg-username" placeholder="slime_collector_99">
       </div>
       <div class="form-group">
@@ -1249,8 +1276,8 @@
 
     <!-- Campi editabili -->
     <div class="form-group">
-      <label class="form-label" data-i18n="form.username">Username</label>
-      <input class="form-input" type="text" id="edit-user-username" placeholder="username">
+      <label class="form-label" data-i18n="form.username">Nickname</label>
+      <input class="form-input" type="text" id="edit-user-username" placeholder="nickname">
     </div>
     <div class="form-group">
       <label class="form-label" data-i18n="form.email">E-mail</label>
