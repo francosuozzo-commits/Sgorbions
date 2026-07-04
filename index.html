@@ -26,7 +26,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.324</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.326</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -63,6 +63,9 @@
     <div id="nav-msg-btn" style="display:none;position:relative;cursor:pointer;" onclick="showAdminTab('contacts')" title="Messaggi">
       <span style="font-size:1.3rem;">✉️</span>
       <span id="nav-msg-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:#4488ff;color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span>
+    </div>
+    <div id="nav-quota-warning-btn" style="display:none;cursor:pointer;" onclick="showAdminTab('risorse')" title="Consumo letture Firebase elevato (solo questo browser)">
+      <span style="font-size:1.3rem;">⚠️</span>
     </div>
     <div id="guest-nav">
       <button class="btn-login" onclick="openAuth('login')" data-i18n="nav.login">Login</button>
@@ -520,6 +523,16 @@
             <div id="firebase-reads-history" style="margin-top:1rem;"></div>
           </div>
 
+          <!-- MIGRAZIONE FIGURINE → FORMATO PER-SERIE (v5.326) -->
+          <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;border:1px solid rgba(255,80,80,0.4);">
+            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">📦 Migrazione figurine al nuovo formato per-serie</h4>
+            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">
+              Da questa versione, le figurine non sono più salvate una alla volta (un documento a figurina) ma incorporate dentro il documento della loro serie — riduce drasticamente le letture del catalogo. <strong>Prima di usare il sito con questa versione, esegui questa migrazione una volta sola</strong>: sposta tutte le figurine esistenti nel nuovo formato. Finché non la esegui, il catalogo apparirà vuoto.
+            </p>
+            <button class="btn-primary" style="font-size:0.88rem;" onclick="migrateFigurinesIntoSeries()" id="migrate-figurines-btn">▶ Avvia migrazione</button>
+            <div id="migrate-figurines-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-top:0.5rem;"></div>
+          </div>
+
           <!-- CLOUDINARY -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
             <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">☁️ Database per le foto: Cloudinary</h4>
@@ -781,7 +794,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.324</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.326</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
