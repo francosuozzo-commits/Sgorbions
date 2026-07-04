@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.313 — Corretto un bug per cui, effettuando il login come admin dal
+//          modulo di accesso (non ricaricando semplicemente la pagina), il
+//          pannello Utenti mostrava un solo utente invece di tutti. Causa:
+//          la funzione che recupera il proprio profilo dopo il login
+//          sovrascriveva per errore l'intera cache utenti con un elenco
+//          di un solo elemento (se stesso), e nulla la ricaricava per
+//          intero subito dopo. Aggiunto un caricamento esplicito dei dati
+//          riservati all'admin (utenti, messaggi, segnalazioni, eventi)
+//          subito dopo un login riuscito come admin, sia con e-mail/
+//          password sia con Google.
 // v5.312 — Corretto un bug serio nel logout: la funzione cancellava solo lo
 //          stato interno dell'app, ma non chiudeva mai la sessione reale
 //          di Firebase Authentication. Risultato: dopo un logout "riuscito"
@@ -1157,7 +1167,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.312';
+const JS_VERSION = 'v5.313';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -1496,12 +1506,7 @@ async function loadAllData() {
       // Ricarica solo i dati dinamici
       _cache.posts = await fsGetAll('posts');
       _cache.public_profiles = await fsGetAll('public_profiles');
-      if (currentUser?.isAdmin) {
-        _cache.users = await fsGetAll('users');
-        _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
-        _cache.segnalazioni = await fsGetAll('segnalazioni');
-        _cache.eventi = await fsGetAll('eventi');
-      }
+      if (currentUser?.isAdmin) await _loadAdminOnlyData();
     } else {
       // Prima volta o cache scaduta: carica tutto
       _cache.series = await Promise.race([
@@ -1511,12 +1516,7 @@ async function loadAllData() {
       _cache.figurines = await fsGetAll('figurines');
       _cache.posts = await fsGetAll('posts');
       _cache.public_profiles = await fsGetAll('public_profiles');
-      if (currentUser?.isAdmin) {
-        _cache.users = await fsGetAll('users');
-        _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
-        _cache.segnalazioni = await fsGetAll('segnalazioni');
-        _cache.eventi = await fsGetAll('eventi');
-      }
+      if (currentUser?.isAdmin) await _loadAdminOnlyData();
       _cache.levels = await fsGetAll('levels');
       // Salva in sessionStorage
       try {
@@ -1904,15 +1904,30 @@ async function _findUserByAuthUid(uid) {
     if (snap.empty) return null;
     const docSnap = snap.docs[0];
     const user = { id: docSnap.id, ...docSnap.data() };
-    const users = getData('users', []);
-    const idx = users.findIndex(x => x.id === user.id);
-    if (idx >= 0) users[idx] = user; else users.push(user);
-    _cache.users = users;
+    // Aggiorna la cache solo se era già una lista realmente popolata (es. per
+    // l'admin). Altrimenti NON creiamo qui una lista con un solo utente: 
+    // verrebbe scambiata per l'elenco completo (è successo, ed è un bug
+    // fastidioso da scovare). Chi ha bisogno della lista completa la carica
+    // esplicitamente con _loadAdminOnlyData().
+    if (Array.isArray(_cache.users)) {
+      const idx = _cache.users.findIndex(x => x.id === user.id);
+      if (idx >= 0) _cache.users[idx] = user; else _cache.users.push(user);
+    }
     return user;
   } catch(e) {
     console.error('_findUserByAuthUid query failed', e);
     return null;
   }
+}
+
+async function _loadAdminOnlyData() {
+  // Dati riservati all'admin, da ricaricare esplicitamente ogni volta che un
+  // admin effettua il login dal modulo (non solo al caricamento iniziale
+  // della pagina, gestito da loadAllData)
+  _cache.users = await fsGetAll('users');
+  _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
+  _cache.segnalazioni = await fsGetAll('segnalazioni');
+  _cache.eventi = await fsGetAll('eventi');
 }
 
 async function doLogin() {
@@ -1951,6 +1966,7 @@ async function doLogin() {
   }
   await fsSave('users', user);
   if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username, { read: true });
+  else await _loadAdminOnlyData();
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
   updateNavUser();
@@ -2017,6 +2033,7 @@ async function signInWithGoogle() {
   }
   await fsSave('users', user);
   if (!isNewUser && !user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username, { read: true });
+  if (!isNewUser && user.isAdmin) await _loadAdminOnlyData();
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
   updateNavUser();
