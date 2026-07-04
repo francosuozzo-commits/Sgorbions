@@ -26,7 +26,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.319</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.324</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -707,7 +707,7 @@
       <div id="classifica-admin-backfill" style="display:none;margin-top:2.5rem;background:var(--card2);border-radius:12px;padding:1.25rem;border:1px solid rgba(255,200,50,0.3);">
         <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🏆 Ricalcolo punteggi pubblici</h4>
         <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">
-          Il punteggio di ciascun utente è calcolato e pubblicato in <code>public_profiles</code> ad ogni modifica di "Ce l'ho" — la lista dettagliata di cosa si possiede resta privata. Usa questo ricalcolo per gli utenti registrati prima dell'introduzione di questo meccanismo (mostrano 0 finché non lo esegui), o se noti punteggi disallineati.
+          Il punteggio di ciascun utente viene calcolato e pubblicato automaticamente ad ogni modifica di "Ce l'ho" — la lista dettagliata di cosa si possiede resta privata. Usa questo ricalcolo per gli utenti registrati prima dell'introduzione di questo meccanismo (mostrano 0 finché non lo esegui), o se noti punteggi disallineati.
         </p>
         <button class="btn-primary" style="font-size:0.88rem;" onclick="backfillPublicScores()" id="backfill-score-btn">▶ Ricalcola punteggi di tutti</button>
         <div id="backfill-score-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-top:0.5rem;"></div>
@@ -781,7 +781,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.319</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.324</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
