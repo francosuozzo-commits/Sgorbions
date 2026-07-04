@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.311 — Corretto un problema di sicurezza reale: l'app non verificava
+//          mai se il "currentUser" salvato in localStorage corrispondesse
+//          a una sessione Firebase Auth davvero attiva in quel browser.
+//          Un utente rimasto in cache (es. sessione scaduta, browser
+//          condiviso, logout non completato) mostrava quindi ancora
+//          l'interfaccia da loggato/admin — compreso il tasto "Messaggi"
+//          — pur senza un accesso reale. Aggiunto un controllo con
+//          onAuthStateChanged all'avvio: se non c'è una sessione Firebase
+//          reale, o non corrisponde al profilo salvato, il currentUser
+//          viene azzerato prima che il resto dell'app si carichi. I dati
+//          veri restavano comunque protetti dalle regole Firestore (il
+//          problema era solo di interfaccia, non di accesso ai dati).
 // v5.310 — Preparazione alle regole di sicurezza Firestore definitive
 //          (database non più pubblico). Modifiche principali:
 //          • Nuova collezione public_profiles: copia minimale e pubblica
@@ -1138,7 +1150,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.310';
+const JS_VERSION = 'v5.311';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -1243,13 +1255,35 @@ function loadDemoData() {
 async function initFirebase() {
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
   const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-  const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+  const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
   fbApp = initializeApp(FIREBASE_CONFIG);
   db = getFirestore(fbApp);
   fbAuth = getAuth(fbApp);
   window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField };
   window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail };
   console.log('Firebase ready');
+
+  // Verifica che il currentUser eventualmente salvato in localStorage
+  // corrisponda a una sessione Firebase Auth realmente attiva in questo
+  // browser. Senza questo controllo, un currentUser rimasto in cache (es.
+  // sessione scaduta, browser condiviso, logout non completato) mostrerebbe
+  // l'interfaccia da loggato/admin anche senza un accesso davvero valido.
+  await new Promise((resolve) => {
+    const unsubscribe = onAuthStateChanged(fbAuth, async (fbUser) => {
+      unsubscribe();
+      try {
+        if (!fbUser) {
+          if (currentUser) { currentUser = null; LOCAL.set('currentUser', null); }
+        } else if (!currentUser || currentUser.authUid !== fbUser.uid) {
+          const user = await _findUserByAuthUid(fbUser.uid);
+          if (user) { currentUser = user; LOCAL.set('currentUser', user); }
+          else { currentUser = null; LOCAL.set('currentUser', null); }
+        }
+      } catch(e) { console.error('Verifica sessione Firebase Auth fallita', e); }
+      resolve();
+    });
+  });
+
   await loadAllData();
 }
 
