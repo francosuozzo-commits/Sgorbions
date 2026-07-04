@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.312 — Corretto un bug serio nel logout: la funzione cancellava solo lo
+//          stato interno dell'app, ma non chiudeva mai la sessione reale
+//          di Firebase Authentication. Risultato: dopo un logout "riuscito"
+//          in apparenza, la sessione Firebase restava valida in background,
+//          e il controllo introdotto in v5.311 la ritrovava al successivo
+//          caricamento rimettendo l'utente loggato automaticamente. Ora
+//          logout() chiude anche la sessione Firebase Auth vera e propria.
 // v5.311 — Corretto un problema di sicurezza reale: l'app non verificava
 //          mai se il "currentUser" salvato in localStorage corrispondesse
 //          a una sessione Firebase Auth davvero attiva in quel browser.
@@ -1150,7 +1157,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.311';
+const JS_VERSION = 'v5.312';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -2253,7 +2260,15 @@ async function doResetPassword() {
   }, 3000);
 }
 
-function logout() {
+async function logout() {
+  // Chiude davvero la sessione Firebase Auth: senza questo, il controllo di
+  // sessione introdotto in v5.311 troverebbe ancora una sessione valida al
+  // prossimo caricamento e rimetterebbe l'utente loggato "da solo"
+  try {
+    const { signOut } = window._fbAuth || {};
+    if (fbAuth && signOut) await signOut(fbAuth);
+  } catch(e) { console.error('signOut error', e); }
+
   currentUser = null;
   LOCAL.set('currentUser', null);
   updateNavUser();
