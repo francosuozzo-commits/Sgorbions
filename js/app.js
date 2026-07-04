@@ -1,6 +1,46 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.324 — Due correzioni su segnalazione di Franco: (1) la barra gialla
+//          "Stai impersonando" si sovrapponeva alla navbar (stessa
+//          posizione top:0) — probabilmente la causa reale dell'impressione
+//          di navbar "storta" notata nei giorni scorsi. Ora appare sotto
+//          la navbar. (2) La lingua di default al primissimo caricamento
+//          (prima ancora del rilevamento della lingua del browser) era
+//          impostata su inglese; ora è italiano, coerente con il fatto che
+//          il sito è italiano. Il rilevamento automatico della lingua del
+//          browser per i visitatori non italiani resta invariato.
+// v5.323 — Corretto un bug preesistente segnalato da Franco:
+//          updateWishlistBadge() veniva chiamata in tre punti (dopo il
+//          login, dopo il salvataggio della wishlist, e altrove) ma non
+//          era mai stata definita, causando un errore non gestito ad ogni
+//          chiamata. Non impediva il login (l'errore scoppia dopo che il
+//          modal si è già chiuso), ma il badge numerico sulla Wishlist in
+//          navbar non si è mai aggiornato finora. Aggiunta la funzione.
+// v5.322 — Corretto un altro effetto a catena della cancellazione utenti
+//          incompleta: backfillPublicScores() leggeva TUTTI i documenti
+//          di 'owned' senza controllare se l'utente esistesse ancora,
+//          "resuscitando" un profilo pubblico incompleto (senza username)
+//          per ogni utente cancellato che avesse ancora dati 'owned'
+//          orfani. Ora salta i documenti 'owned' i cui utenti non esistono
+//          più e segnala quanti ne ha ignorati.
+// v5.321 — Corretto un bug di cancellazione utenti segnalato da Franco:
+//          deleteUser() cancellava solo il documento in 'users', lasciando
+//          orfani i documenti collegati in public_profiles, owned e
+//          wishlists. Spiega perché il conteggio dei profili pubblici non
+//          scendeva dopo aver eliminato utenti. Ora la cancellazione
+//          rimuove anche questi tre documenti. Nota: l'account Firebase
+//          Authentication dell'utente non viene eliminato (non è
+//          possibile farlo lato client per un altro utente senza Cloud
+//          Functions) — l'e-mail resta quindi tecnicamente registrata su
+//          Firebase Auth anche se tutti i dati applicativi sono spariti.
+//          Anche il messaggio del ricalcolo punteggi non cita più il nome
+//          tecnico della tabella (public_profiles).
+// v5.320 — Corretta una lentezza introdotta in v5.313: dopo il login come
+//          admin dal modulo, l'app ricaricava utenti, messaggi,
+//          segnalazioni ed eventi in sequenza (una richiesta di rete dopo
+//          l'altra, ~7 secondi). Ora le quattro letture partono in
+//          parallelo con Promise.all, riducendo drasticamente l'attesa.
 // v5.319 — Corretto un crash reale segnalato da Franco: renderClassifica
 //          andava in errore (Cannot read properties of undefined) se un
 //          documento in public_profiles aveva lo username mancante,
@@ -1209,7 +1249,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.319';
+const JS_VERSION = 'v5.324';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -1830,7 +1870,7 @@ const i18n = {
   ,'form.fig.noNumber':'Non ha numero','auth.googleBtn':'Accedi con Google','auth.or':'oppure'}
 };
 
-let currentLang = LOCAL.get('lang') || 'en';
+let currentLang = LOCAL.get('lang') || 'it';
 
 function t(key) { return (i18n[currentLang] || i18n.en)[key] || (i18n.en)[key] || key; }
 
@@ -1965,11 +2005,19 @@ async function _findUserByAuthUid(uid) {
 async function _loadAdminOnlyData() {
   // Dati riservati all'admin, da ricaricare esplicitamente ogni volta che un
   // admin effettua il login dal modulo (non solo al caricamento iniziale
-  // della pagina, gestito da loadAllData)
-  _cache.users = await fsGetAll('users');
-  _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
-  _cache.segnalazioni = await fsGetAll('segnalazioni');
-  _cache.eventi = await fsGetAll('eventi');
+  // della pagina, gestito da loadAllData). In parallelo, non in sequenza,
+  // per non sommare i tempi di rete di quattro richieste una dopo l'altra.
+  const [users, contactMessages, segnalazioni, eventi] = await Promise.all([
+    fsGetAll('users'),
+    fsGetAll('contact_messages'),
+    fsGetAll('segnalazioni'),
+    fsGetAll('eventi')
+  ]);
+  _cache.users = users;
+  _cache.contact_messages = contactMessages;
+  _cache.segnalazioni = segnalazioni;
+  _cache.eventi = eventi;
+  updateMsgBadge();
 }
 
 async function doLogin() {
@@ -3180,14 +3228,17 @@ async function backfillPublicScores() {
 
   try {
     const allOwned = await fsGetAll('owned');
+    const realUserIds = new Set((await fsGetAll('users')).map(u => u.id));
+    const validOwned = allOwned.filter(o => realUserIds.has(o.userId));
+    const skipped = allOwned.length - validOwned.length;
     let done = 0;
-    for (const doc of allOwned) {
+    for (const doc of validOwned) {
       await _updatePublicScore(doc.userId, doc.owned || []);
       done++;
-      if (progressEl) progressEl.textContent = 'Ricalcolati ' + done + ' / ' + allOwned.length + '...';
+      if (progressEl) progressEl.textContent = 'Ricalcolati ' + done + ' / ' + validOwned.length + '...';
     }
-    if (progressEl) progressEl.textContent = 'Completato: ' + done + ' profili aggiornati.';
-    toast(done + ' punteggi pubblicati in public_profiles', 'success');
+    if (progressEl) progressEl.textContent = 'Completato: ' + done + ' profili aggiornati.' + (skipped ? ' (' + skipped + ' ignorati, utenti non più esistenti)' : '');
+    toast(done + ' punteggi ricalcolati con successo' + (skipped ? ' (' + skipped + ' dati orfani ignorati)' : ''), 'success');
     _cache.public_profiles = await fsGetAll('public_profiles');
     renderClassifica();
   } catch(e) {
@@ -4530,7 +4581,7 @@ function _showImpersonateBanner() {
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'impersonate-banner';
-    banner.style.cssText = 'position:fixed;top:0;left:1rem;z-index:99999;background:#ffb400;color:#0e0a1a;padding:0.3rem 0.75rem;display:flex;align-items:center;gap:0.75rem;font-family:var(--font-ui);font-size:0.82rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);border-radius:0 0 8px 8px;max-width:33vw;';
+    banner.style.cssText = 'position:fixed;top:64px;left:1rem;z-index:99999;background:#ffb400;color:#0e0a1a;padding:0.3rem 0.75rem;display:flex;align-items:center;gap:0.75rem;font-family:var(--font-ui);font-size:0.82rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);border-radius:8px;max-width:33vw;';
     document.body.prepend(banner);
   }
   banner.innerHTML = '<span>🎭 ' + (currentLang === 'it' ? 'Stai impersonando' : 'Impersonating') + ': <strong>' + currentUser.username + '</strong> — ' + (currentLang === 'it' ? 'WRITE MODE' : 'WRITE MODE') + '</span><button onclick="stopImpersonation()" style="background:#0e0a1a;color:#ffb400;border:none;border-radius:6px;padding:4px 14px;cursor:pointer;font-weight:700;">' + (currentLang === 'it' ? '✕ Torna admin' : '✕ Back to admin') + '</button>';
@@ -4549,6 +4600,18 @@ function _hideImpersonateBanner() {
 let _wishlist = [];
 
 function getWishlist() { return _wishlist; }
+
+function updateWishlistBadge() {
+  const badge = document.getElementById('nav-wishlist-badge');
+  if (!badge) return;
+  const count = (_wishlist || []).length;
+  if (count > 0) {
+    badge.textContent = count > 99 ? '99+' : count;
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+}
 
 async function loadWishlist() {
   if (!currentUser) { _wishlist = []; return; }
@@ -5583,7 +5646,14 @@ async function saveEditUser() {
 
 async function deleteUser(userId) {
   await fsDelete('users', userId);
+  // Cancella anche i dati collegati, altrimenti restano "orfani" nel database
+  // (è esattamente il problema dei profili pubblici extra scoperto oggi)
+  try { await fsDelete('public_profiles', userId); } catch(e) { console.warn('delete public_profiles', e.message); }
+  try { await fsDelete('owned', userId); } catch(e) { console.warn('delete owned', e.message); }
+  try { await fsDelete('wishlists', userId); } catch(e) { console.warn('delete wishlists', e.message); }
   _cache.users = _cache.users.filter(u => u.id !== userId);
+  if (_cache.public_profiles) _cache.public_profiles = _cache.public_profiles.filter(p => p.id !== userId);
+  if (_cache.ownedMap) delete _cache.ownedMap[userId];
   renderAdminUsers();
   toast(currentLang === 'it' ? 'Utente eliminato' : 'User deleted', 'success');
 }
