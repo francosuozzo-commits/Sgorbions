@@ -1,6 +1,55 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.310 — Preparazione alle regole di sicurezza Firestore definitive
+//          (database non più pubblico). Modifiche principali:
+//          • Nuova collezione public_profiles: copia minimale e pubblica
+//            del profilo (nickname, avatar, nazionalità), separata dal
+//            documento users che resta privato e contiene l'e-mail.
+//            Sincronizzata automaticamente ad ogni salvataggio di users.
+//          • Login cambiato da Nickname a E-mail (richiesto perché
+//            Firebase Auth è basato su e-mail: cercare l'e-mail a
+//            partire dal nickname avrebbe richiesto una lettura
+//            pubblica della collezione users, vanificando la
+//            protezione dell'e-mail)
+//          • "Username" rinominato in "Nickname" in tutte le etichette
+//            visibili (il campo dati interno resta "username")
+//          • "Email" corretto in "E-mail" nei testi italiani
+//          • Reset password riscritto per usare il meccanismo nativo
+//            di Firebase Auth (invio link) al posto delle vecchie
+//            password temporanee in chiaro via e-mail (sia per l'utente
+//            sia per il reset fatto dall'admin)
+//          • Nuovo strumento admin "Migrazione account a Firebase
+//            Authentication" (tab Risorse): forza la migrazione degli
+//            account non ancora convertiti, prerequisito necessario
+//            prima di attivare le regole di sicurezza definitive
+//          • contact_messages, segnalazioni ed eventi non vengono più
+//            caricati per i visitatori non-admin (le nuove regole li
+//            bloccherebbero comunque)
+//          • Corretti diversi punti in cui il salvataggio di dati utente
+//            (nazionalità, password, avatar, profilo) dipendeva dal
+//            trovare l'utente in una cache locale che ora, per i
+//            non-admin, non è più precaricata per intero
+//          • Corretto un baco preesistente: la funzione fsGet non era
+//            mai stata definita, quindi la wishlist salvata non veniva
+//            mai ricaricata all'accesso (silenziosamente ignorato da un
+//            try/catch)
+// v5.309 — Vista dettaglio: aggiunta una riga "Retro collegato" sempre
+//          visibile (per qualsiasi Figurina, base o variazione), con
+//          link diretto per aprire quel Retro — indipendente dal box
+//          doppio Fronte/Retro, utile per verificare a colpo d'occhio
+//          quale Retro è davvero collegato, e per fare debug se le due
+//          foto non compaiono. Se il collegamento punta a un ID
+//          inesistente, viene segnalato esplicitamente in rosso
+// v5.308 — Aggiunto "Accedi con Google" nel modal di login/
+//          registrazione, in alternativa a Email/Password (entrambe le
+//          opzioni ora coesistono). Un solo pulsante gestisce sia il
+//          primo accesso (crea automaticamente un nuovo utente,
+//          generando uno username univoco dal nome/email Google) sia gli
+//          accessi successivi (riconosce l'account tramite l'UID
+//          Firebase già associato). Nessuna modifica alle regole
+//          Firestore necessaria: usa lo stesso meccanismo authUid già
+//          predisposto per Email/Password
 // v5.307 — Migrazione a Firebase Authentication vera, per poter
 //          finalmente proteggere il database con regole di sicurezza
 //          reali (prima impossibile: l'app non usava mai Firebase Auth,
@@ -1089,7 +1138,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.307';
+const JS_VERSION = 'v5.310';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -1193,13 +1242,13 @@ function loadDemoData() {
 
 async function initFirebase() {
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-  const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, deleteField } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-  const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+  const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
   fbApp = initializeApp(FIREBASE_CONFIG);
   db = getFirestore(fbApp);
   fbAuth = getAuth(fbApp);
-  window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, deleteField };
-  window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut };
+  window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField };
+  window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail };
   console.log('Firebase ready');
   await loadAllData();
 }
@@ -1248,6 +1297,17 @@ async function fsGetAll(collName) {
     _trackReads(docs.length);
     return docs;
   } catch(e) { console.error('fsGetAll', e); return []; }
+}
+
+async function fsGet(collName, id) {
+  if (!db) return null;
+  try {
+    const { doc, getDoc } = window._fb;
+    const snap = await getDoc(doc(db, collName, id));
+    _trackReads(1);
+    if (!snap.exists()) return null;
+    return { id: snap.id, ...snap.data() };
+  } catch(e) { console.error('fsGet', e); return null; }
 }
 
 // ── Contatore letture Firebase ────────────────────────────────
@@ -1309,6 +1369,29 @@ function _invalidateSessionCache() {
   try { sessionStorage.removeItem('sgorbions_session_cache'); } catch(e) {}
 }
 
+async function _syncPublicProfile(user) {
+  // Mantiene una copia "pubblica" minimale del profilo utente (public_profiles),
+  // separata dal documento users che contiene email e altri dati privati.
+  // Sovrascrittura completa (non merge) per non lasciare mai trapelare campi privati.
+  if (!user || !user.id || !db) return;
+  try {
+    const { doc, setDoc } = window._fb;
+    const publicData = {
+      id: user.id,
+      authUid: user.authUid || null,
+      username: user.username || '',
+      avatar: user.avatar || null,
+      nationalityCode: user.nationalityCode || '',
+      nationalityName: user.nationalityName || '',
+      joined: user.joined || null,
+      isAnonymous: !!user.isAnonymous
+    };
+    await setDoc(doc(db, 'public_profiles', user.id), publicData);
+  } catch(e) {
+    console.warn('public_profiles sync failed:', e.message);
+  }
+}
+
 async function fsSave(collName, item) {
   // Invalida la cache se modifichiamo serie o figurine
   if (collName === 'series' || collName === 'figurines' || collName === 'levels') {
@@ -1319,12 +1402,14 @@ async function fsSave(collName, item) {
   if (item.id) {
     const ref = doc(db, collName, item.id);
     await setDoc(ref, item, { merge: true });
+    if (collName === 'users') await _syncPublicProfile(item);
     return item;
   } else {
     const ref = await addDoc(collection(db, collName), item);
     const saved = { ...item, id: ref.id };
     const { doc: docFn, setDoc: setDocFn } = window._fb;
     await setDocFn(docFn(db, collName, ref.id), saved);
+    if (collName === 'users') await _syncPublicProfile(saved);
     return saved;
   }
 }
@@ -1369,10 +1454,13 @@ async function loadAllData() {
       _cache.levels = sessionCache.levels || [];
       // Ricarica solo i dati dinamici
       _cache.posts = await fsGetAll('posts');
-      _cache.users = await fsGetAll('users');
-      _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
-      _cache.segnalazioni = await fsGetAll('segnalazioni');
-      _cache.eventi = await fsGetAll('eventi');
+      _cache.public_profiles = await fsGetAll('public_profiles');
+      if (currentUser?.isAdmin) {
+        _cache.users = await fsGetAll('users');
+        _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
+        _cache.segnalazioni = await fsGetAll('segnalazioni');
+        _cache.eventi = await fsGetAll('eventi');
+      }
     } else {
       // Prima volta o cache scaduta: carica tutto
       _cache.series = await Promise.race([
@@ -1381,10 +1469,13 @@ async function loadAllData() {
       ]);
       _cache.figurines = await fsGetAll('figurines');
       _cache.posts = await fsGetAll('posts');
-      _cache.users = await fsGetAll('users');
-      _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
-      _cache.segnalazioni = await fsGetAll('segnalazioni');
-      _cache.eventi = await fsGetAll('eventi');
+      _cache.public_profiles = await fsGetAll('public_profiles');
+      if (currentUser?.isAdmin) {
+        _cache.users = await fsGetAll('users');
+        _cache.contact_messages = await fsGetAll('contact_messages'); updateMsgBadge();
+        _cache.segnalazioni = await fsGetAll('segnalazioni');
+        _cache.eventi = await fsGetAll('eventi');
+      }
       _cache.levels = await fsGetAll('levels');
       // Salva in sessionStorage
       try {
@@ -1397,8 +1488,9 @@ async function loadAllData() {
       } catch(e) {}
     }
     await loadAllOwnedFromFirebase();
-    // seed admin if not present
-    if (!_cache.users.find(u => u.username === 'admin')) {
+    _cache.users = _cache.users || [];
+    // seed admin if not present (solo quando l'intera lista utenti è caricata, cioè per l'admin)
+    if (currentUser?.isAdmin && !_cache.users.find(u => u.username === 'admin')) {
       const adminUser = { id: 'admin', username: 'admin', email: 'admin@sgorbions.it', password: 'admin123', isAdmin: true, joined: new Date().toISOString() };
       await fsSave('users', adminUser);
       _cache.users.push(adminUser);
@@ -1507,7 +1599,7 @@ const i18n = {
 'admin.user.joined':'Member since','admin.user.lastlogin':'Last login','admin.user.level':'Level',
 'admin.user.nome':'First name','admin.user.cognome':'Last name','admin.user.sesso':'Gender','admin.user.anni':'Years collecting',
 'admin.user.role':'User type','admin.user.collector':'Collector','admin.user.admin':'Admin',
-'form.username':'Username','form.email':'E-mail','contact.title':'Contact <span class="hi">the administrator</span>',
+'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
 'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Email','admin.email.all':'All emails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in catalog...',
@@ -1575,7 +1667,7 @@ const i18n = {
 'contact.q3':'Or do you just want to compliment the administrator?',
 'contact.cta':'For any of these things, send us a message!',
 'wantlist.desc':'This page shows your complete and incomplete series.<br><br>You can export to Excel:<br>• the list of your missing stickers<br>• the list of stickers you own<br>• the list of stickers from your complete series','wantlist.pageTitle':'Missing list','wantlist.missingTitle':'EXPORT OF YOUR INCOMPLETE SERIES (MISSING LIST)','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'Select the series for which to export the list of stickers you are missing. Then press "Export missing stickers".','wantlist.hintExportIncomplete':'Select the series for which to export the list of stickers you own. Then press "Export stickers I own (incomplete series)".','wantlist.exportMissing':'Export missing stickers','wantlist.exportIncomplete':'Export stickers I own (incomplete series)','wantlist.export':'Export stickers from my complete series'
-  ,'form.fig.noNumber':'Does not have a number'},
+  ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
 'nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog / D&R','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.wishlist':'Lista desiderati',
 'wishlist.desc':'La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nel catalogo, premi il tasto <strong>🛒</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia lista desiderati&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
@@ -1586,8 +1678,8 @@ const i18n = {
 'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.myInfo':'✏️ Le mie info','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità',
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
-'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'Email inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 email/mese (si azzera il 1° di ogni mese).',
-'admin.email.fix':'Correggi contatore:','admin.save':'Salva','newsletter.settingsTitle':'⚙️ Impostazioni Email','newsletter.replyToLabel':'Indirizzo per le risposte (Reply-To)','newsletter.replyToHint':'Quando rispondi a un messaggio, l\'email arriverà a questo indirizzo',
+'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'E-mail inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 e-mail/mese (si azzera il 1° di ogni mese).',
+'admin.email.fix':'Correggi contatore:','admin.save':'Salva','newsletter.settingsTitle':'⚙️ Impostazioni E-mail','newsletter.replyToLabel':'Indirizzo per le risposte (Reply-To)','newsletter.replyToHint':'Quando rispondi a un messaggio, l\'e-mail arriverà a questo indirizzo',
 'admin.firebase.plan':'Piano gratuito (Spark): 1 GB storage, 50.000 letture/giorno, 20.000 scritture/giorno.',
 'admin.firebase.docs':'documenti totali',
 'admin.cloudinary.plan':'Piano gratuito: 25 crediti/mese (storage + trasformazioni + banda).',
@@ -1633,9 +1725,9 @@ const i18n = {
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
-    'contact.info.title':'Parliamo di Sgorbions','contact.email':'Email','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
+    'contact.info.title':'Parliamo di Sgorbions','contact.email':'E-mail','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
-    'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
+    'form.username':'Nickname','form.password':'Password','form.nationality':'Nazionalità','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
@@ -1652,7 +1744,7 @@ const i18n = {
     'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Sito fan non ufficiale.',
     'owned.toggle':'Ce l\'ho','owned.yes':'✓ Ce l\'ho'
   
-  ,'form.fig.noNumber':'Non ha numero'}
+  ,'form.fig.noNumber':'Non ha numero','auth.googleBtn':'Accedi con Google','auth.or':'oppure'}
 };
 
 let currentLang = LOCAL.get('lang') || 'en';
@@ -1758,64 +1850,53 @@ function showPage(page) {
 //  AUTH
 // ============================================================
 // openAuth moved to top
+async function _findUserByAuthUid(uid) {
+  // Prima controlla la cache locale (es. per l'admin, che ha l'intera collezione già in cache)
+  const cached = getData('users', []).find(x => x.authUid === uid);
+  if (cached) return cached;
+  // Query mirata: con le regole di sicurezza attive, un utente può leggere solo
+  // il documento il cui campo authUid corrisponde al proprio uid autenticato
+  try {
+    const { collection, query, where, getDocs } = window._fb;
+    const q = query(collection(db, 'users'), where('authUid', '==', uid));
+    const snap = await getDocs(q);
+    if (snap.empty) return null;
+    const docSnap = snap.docs[0];
+    const user = { id: docSnap.id, ...docSnap.data() };
+    const users = getData('users', []);
+    const idx = users.findIndex(x => x.id === user.id);
+    if (idx >= 0) users[idx] = user; else users.push(user);
+    _cache.users = users;
+    return user;
+  } catch(e) {
+    console.error('_findUserByAuthUid query failed', e);
+    return null;
+  }
+}
+
 async function doLogin() {
-  const u = document.getElementById('login-username').value.trim();
+  const emailInput = document.getElementById('login-email').value.trim();
   const p = document.getElementById('login-password').value;
   const authErr = document.getElementById('auth-error');
   if (authErr) authErr.style.display = 'none';
-  if (!u || !p) { if (authErr) { authErr.style.display = ''; authErr.textContent = 'Inserisci username e password'; return; } toast('Inserisci username e password', 'error'); return; }
-  // Se Firebase non ha ancora caricato gli utenti, ricarica
-  if (!_cache.users || _cache.users.length === 0) {
-    toast('Connessione in corso...', 'success');
-    _cache.users = await fsGetAll('users');
-  }
-  const users = getData('users', []);
-  const user = users.find(x => x.username === u);
   const showErr = (msg) => { const ae = document.getElementById('auth-error'); if (ae) { ae.style.display = ''; ae.textContent = msg; } else toast(msg, 'error'); };
-  if (!user) { showErr(currentLang === 'it' ? 'Username o password errati' : 'Wrong username or password'); return; }
+  if (!emailInput || !p) { showErr(currentLang === 'it' ? 'Inserisci e-mail e password' : 'Enter e-mail and password'); return; }
 
-  const { signInWithEmailAndPassword, createUserWithEmailAndPassword } = window._fbAuth;
+  const { signInWithEmailAndPassword } = window._fbAuth;
+  let cred;
+  try {
+    cred = await signInWithEmailAndPassword(fbAuth, emailInput, p);
+  } catch(err) {
+    console.error('Firebase Auth login', err);
+    showErr(currentLang === 'it' ? 'E-mail o password errati' : 'Wrong e-mail or password');
+    return;
+  }
 
-  if (user.authUid) {
-    // Account già migrato: verifica reale tramite Firebase Authentication
-    try {
-      await signInWithEmailAndPassword(fbAuth, user.email, p);
-    } catch(err) {
-      console.error('Firebase Auth login', err);
-      showErr(currentLang === 'it' ? 'Username o password errati' : 'Wrong username or password');
-      return;
-    }
-  } else {
-    // Account non ancora migrato: verifica col vecchio metodo, poi crea il vero account Firebase
-    if (user.password !== p) { showErr(currentLang === 'it' ? 'Username o password errati' : 'Wrong username or password'); return; }
-    try {
-      let authUid;
-      try {
-        const cred = await createUserWithEmailAndPassword(fbAuth, user.email, p);
-        authUid = cred.user.uid;
-      } catch(createErr) {
-        if (createErr.code === 'auth/email-already-in-use') {
-          // Email già associata a un account Firebase (es. duplicata tra utenti storici): prova ad agganciarla
-          const cred = await signInWithEmailAndPassword(fbAuth, user.email, p);
-          authUid = cred.user.uid;
-        } else {
-          throw createErr;
-        }
-      }
-      user.authUid = authUid;
-      const { doc, setDoc, deleteField } = window._fb;
-      await setDoc(doc(db, 'users', user.id), { authUid: user.authUid, password: deleteField() }, { merge: true });
-      delete user.password;
-      if (user.isAdmin) {
-        // Tentativo best-effort: con le regole di sicurezza definitive questa scrittura
-        // è riservata alla console Firebase (vedi documentazione) — non deve bloccare il login
-        try { await fsSave('admin_uids', { id: user.authUid, isAdmin: true }); } catch(e2) { console.warn('admin_uids write skipped (expected once security rules are in place):', e2.message); }
-      }
-    } catch(err) {
-      console.error('Firebase Auth migration', err);
-      showErr(currentLang === 'it' ? 'Accesso non riuscito, riprova (controlla la connessione)' : 'Login failed, please retry (check your connection)');
-      return;
-    }
+  const user = await _findUserByAuthUid(cred.user.uid);
+  if (!user) {
+    console.error('Login riuscito su Firebase Auth ma nessun profilo trovato per authUid', cred.user.uid);
+    showErr(currentLang === 'it' ? 'Accesso riuscito ma profilo non trovato: contatta l\'amministratore' : 'Signed in but no profile found: please contact the administrator');
+    return;
   }
 
   user.lastLogin = new Date().toISOString();
@@ -1841,6 +1922,73 @@ async function doLogin() {
     setTimeout(() => { welcomeEl.style.display = 'none'; }, 4000);
   }
 }
+function _generateUniqueUsername(base) {
+  const profiles = getData('public_profiles', []);
+  let clean = (base || 'collezionista').replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20) || 'collezionista';
+  let candidate = clean;
+  let n = 1;
+  while (profiles.find(x => x.username === candidate)) {
+    n++;
+    candidate = clean + n;
+  }
+  return candidate;
+}
+
+async function signInWithGoogle() {
+  if (!fbAuth || !window._fbAuth) { toast(currentLang === 'it' ? 'Connessione a Firebase in corso, riprova tra poco' : 'Connecting to Firebase, please retry shortly', 'error'); return; }
+  const { GoogleAuthProvider, signInWithPopup } = window._fbAuth;
+  let cred;
+  try {
+    cred = await signInWithPopup(fbAuth, new GoogleAuthProvider());
+  } catch(err) {
+    console.error('signInWithGoogle', err);
+    if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') return; // l'utente ha chiuso il popup, nessun errore da mostrare
+    toast(currentLang === 'it' ? 'Accesso con Google non riuscito, riprova' : 'Google sign-in failed, please retry', 'error');
+    return;
+  }
+
+  let user = await _findUserByAuthUid(cred.user.uid);
+
+  let isNewUser = false;
+  if (user) {
+    // Utente già esistente: procedo come un login
+    user.lastLogin = new Date().toISOString();
+  } else {
+    isNewUser = true;
+    // Primo accesso con questo account Google: creo un nuovo utente
+    const baseName = cred.user.displayName || (cred.user.email || '').split('@')[0];
+    const username = _generateUniqueUsername(baseName);
+    const newUser = { id: Date.now().toString(), authUid: cred.user.uid, username, email: cred.user.email || '', isAdmin: false, joined: new Date().toISOString(), nationalityCode: '', nationalityName: '' };
+    const saved = await fsSave('users', newUser);
+    _cache.users = _cache.users || [];
+    _cache.users.push(saved);
+    user = saved;
+    sendWelcomeEmail(saved);
+    logEvent('new_user', 'Nuovo utente registrato con Google: ' + username);
+  }
+
+  currentUser = user;
+  LOCAL.set('currentUser', user);
+  if (!LOCAL.get('lang_set_by_user_' + user.id)) {
+    const lang = (user.nationalityCode === 'it') ? 'it' : 'en';
+    setLang(lang);
+    applyI18n();
+  }
+  await fsSave('users', user);
+  if (!isNewUser && !user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username, { read: true });
+  await loadAllOwnedFromFirebase();
+  closeModal('auth-modal');
+  updateNavUser();
+  loadWishlist();
+  showProfileInviteIfNeeded();
+  const welcomeEl = document.getElementById('hero-welcome-msg');
+  if (welcomeEl) {
+    welcomeEl.style.display = '';
+    welcomeEl.textContent = 'Bentornato, ' + user.username + '! 👾';
+    setTimeout(() => { welcomeEl.style.display = 'none'; }, 4000);
+  }
+}
+
 async function doRegister() {
   const u = document.getElementById('reg-username').value.trim();
   const e = document.getElementById('reg-email').value.trim();
@@ -1850,8 +1998,8 @@ async function doRegister() {
   if (!u || !e || !p) { if (regErr) { regErr.style.display = ''; regErr.textContent = 'Compila tutti i campi'; return; } toast((currentLang === 'it' ? 'Compila tutti i campi' : 'Please fill in all fields'), 'error'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { if (regErr) { regErr.style.display = ''; regErr.textContent = 'Inserisci un indirizzo e-mail valido'; return; } toast('Inserisci un indirizzo e-mail valido', 'error'); return; }
   if (p.length < 6) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'La password deve avere almeno 6 caratteri'; return; } toast('La password deve avere almeno 6 caratteri', 'error'); return; }
-  let users = getData('users', []);
-  if (users.find(x => x.username === u)) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'Nome utente già in uso'; return; } toast('Nome utente già in uso', 'error'); return; }
+  let profiles = getData('public_profiles', []);
+  if (profiles.find(x => x.username === u)) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'Nickname già in uso'; return; } toast('Nickname già in uso', 'error'); return; }
   const natCode = document.getElementById('reg-nationality-code')?.value || '';
   const natName = document.getElementById('reg-nationality-name')?.value || '';
   let authUid = null;
@@ -1869,6 +2017,7 @@ async function doRegister() {
   }
   const newUser = { id: Date.now().toString(), authUid, username: u, email: e, isAdmin: false, joined: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName };
   const saved = await fsSave('users', newUser);
+  _cache.users = _cache.users || [];
   _cache.users.push(saved);
   currentUser = saved;
   LOCAL.set('currentUser', saved);
@@ -1933,13 +2082,13 @@ async function saveProfileInvite() {
 
   currentUser = { ...currentUser, nome, cognome, eta: eta ? +eta : null, sesso, anniCollezionismo: anniCollezionismo ? +anniCollezionismo : null };
   LOCAL.set('currentUser', currentUser);
+  await fsSave('users', currentUser);
 
   const users = getData('users', []);
   const idx = users.findIndex(u => u.id === currentUser.id);
   if (idx >= 0) {
-    users[idx] = { ...users[idx], nome, cognome, eta: eta ? +eta : null, sesso, anniCollezionismo: anniCollezionismo ? +anniCollezionismo : null };
+    users[idx] = currentUser;
     _cache.users = users;
-    await fsSave('users', users[idx]);
   }
 
   closeModal('profile-invite-modal');
@@ -2002,14 +2151,13 @@ async function doChangePassword() {
   currentUser.password = newPwd;
   currentUser.mustChangePassword = false;
   LOCAL.set('currentUser', currentUser);
+  await fsSave('users', currentUser);
 
   const users = getData('users', []);
   const idx = users.findIndex(u => u.id === currentUser.id);
   if (idx >= 0) {
-    users[idx].password = newPwd;
-    users[idx].mustChangePassword = false;
+    users[idx] = currentUser;
     _cache.users = users;
-    await fsSave('users', users[idx]);
   }
 
   fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
@@ -2051,37 +2199,18 @@ async function doResetPassword() {
     return;
   }
 
-  // Find user by email
-  const users = getData('users', []);
-  const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-
-  // Always show success message (security: don't reveal if email exists)
+  // Sempre lo stesso messaggio, indipendentemente dal fatto che l'indirizzo sia
+  // registrato o meno (non riveliamo l'esistenza di un account a chi non è autenticato)
   fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
-  fb.textContent = '✅ Se l\'indirizzo è registrato, riceverai una password temporanea via e-mail.';
+  fb.textContent = '✅ Se l\'indirizzo è registrato, riceverai un\'e-mail con le istruzioni per reimpostare la password.';
   if (btn) btn.disabled = true;
 
-  if (user) {
-    const tempPwd = generateTempPassword();
-    // Save temp password to user
-    user.password = tempPwd;
-    user.mustChangePassword = true;
-    const allUsers = getData('users', []);
-    const idx = allUsers.findIndex(u => u.id === user.id);
-    if (idx >= 0) {
-      allUsers[idx] = user;
-      _cache.users = allUsers;
-      await fsSave('users', user);
-    }
-    // Send email
-    await sendEmail(
-      user.email,
-      user.username,
-      'Reset password — Sgorbions Collector',
-      'Hai richiesto il reset della password.\n\nLa tua password temporanea è: ' + tempPwd + '\n\nAccedi con questa password e cambiala subito dal tuo profilo.'
-    );
-    incrementEmailCounter(1);
-    // Log event
-    logEvent('reset_pwd', 'Reset password richiesto per: ' + user.username);
+  try {
+    const { sendPasswordResetEmail } = window._fbAuth;
+    await sendPasswordResetEmail(fbAuth, email);
+  } catch(err) {
+    // Non mostriamo l'errore all'utente per non rivelare se l'indirizzo esiste (es. auth/user-not-found)
+    console.warn('sendPasswordResetEmail', err.code || err.message);
   }
 
   setTimeout(() => {
@@ -3891,7 +4020,7 @@ function renderAdminUsers() {
   });
   const arrow = (c) => _usersSort.col === c ? (_usersSort.dir === 1 ? ' ↑' : ' ↓') : '';
   el.innerHTML = `<table class="data-table compact"><thead><tr>
-    <th style="cursor:pointer;" onclick="sortAdminUsers('username')">Username${arrow('username')}</th>
+    <th style="cursor:pointer;" onclick="sortAdminUsers('username')">Nickname${arrow('username')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('email')">E-mail${arrow('email')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('lastLogin')">${(currentLang === 'it') ? 'Ultima login' : 'Last login'}${arrow('lastLogin')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('joined')">${(currentLang === 'it') ? 'Iscritto dal' : 'Member since'}${arrow('joined')}</th>
@@ -3958,13 +4087,12 @@ async function saveNationality() {
   currentUser.nationalityCode = pendingNatCode;
   currentUser.nationalityName = pendingNatName;
   LOCAL.set('currentUser', currentUser);
+  await fsSave('users', currentUser);
   const users = getData('users', []);
   const idx = users.findIndex(u => u.id === currentUser.id);
   if (idx >= 0) {
-    users[idx].nationalityCode = pendingNatCode;
-    users[idx].nationalityName = pendingNatName;
+    users[idx] = currentUser;
     _cache.users = users;
-    await fsSave('users', users[idx]);
   }
   closeModal('nationality-modal');
   renderProfile();
@@ -4148,6 +4276,103 @@ async function renderAdminRisorse() {
         '</tbody></table>';
     }
   }
+
+  checkAuthMigrationStatus();
+}
+
+// ============================================================
+//  MIGRAZIONE ACCOUNT A FIREBASE AUTHENTICATION
+//  (prerequisito per attivare le regole di sicurezza Firestore
+//  definitive: ogni account deve avere un authUid, altrimenti il
+//  login non potrà più verificare la password una volta che la
+//  collezione 'users' non sarà più leggibile pubblicamente)
+// ============================================================
+function _usersNeedingMigration() {
+  const users = getData('users', []);
+  return users.filter(u => !u.authUid);
+}
+
+async function checkAuthMigrationStatus() {
+  const el = document.getElementById('migration-pending-count');
+  if (!el) return;
+  if (!_cache.users || _cache.users.length === 0) {
+    _cache.users = await fsGetAll('users');
+  }
+  const pending = _usersNeedingMigration();
+  el.textContent = pending.length;
+  el.style.color = pending.length > 0 ? '#ffb400' : 'var(--accent)';
+  const btn = document.getElementById('migration-run-btn');
+  if (btn) btn.disabled = pending.length === 0;
+}
+
+async function runAuthMigration() {
+  const pending = _usersNeedingMigration();
+  if (!pending.length) { toast('Nessun account da migrare', 'success'); return; }
+  if (!confirm('Migrare ' + pending.length + ' account a Firebase Authentication? L\'operazione non è reversibile.')) return;
+
+  const btn = document.getElementById('migration-run-btn');
+  const progressEl = document.getElementById('migration-progress');
+  const logEl = document.getElementById('migration-log');
+  if (btn) btn.disabled = true;
+  if (progressEl) progressEl.style.display = '';
+  if (logEl) { logEl.style.display = ''; logEl.innerHTML = ''; }
+
+  const { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = window._fbAuth;
+  const { doc, setDoc, deleteField } = window._fb;
+  let ok = 0, failed = 0;
+
+  for (let i = 0; i < pending.length; i++) {
+    const user = pending[i];
+    if (progressEl) progressEl.textContent = 'Migrazione ' + (i+1) + ' / ' + pending.length + '...';
+    const logLine = (msg) => { if (logEl) logEl.innerHTML += msg + '<br>'; };
+
+    if (!user.email) {
+      logLine('❌ ' + user.username + ': nessuna e-mail associata, migrazione manuale necessaria');
+      failed++;
+      continue;
+    }
+    if (!user.password) {
+      logLine('❌ ' + user.username + ': nessuna password salvata (account già privo di password ma senza authUid) — serve reset password manuale');
+      failed++;
+      continue;
+    }
+    try {
+      let authUid;
+      try {
+        const cred = await createUserWithEmailAndPassword(fbAuth, user.email, user.password);
+        authUid = cred.user.uid;
+      } catch(createErr) {
+        if (createErr.code === 'auth/email-already-in-use') {
+          const cred = await signInWithEmailAndPassword(fbAuth, user.email, user.password);
+          authUid = cred.user.uid;
+        } else {
+          throw createErr;
+        }
+      }
+      await setDoc(doc(db, 'users', user.id), { authUid, password: deleteField() }, { merge: true });
+      user.authUid = authUid;
+      delete user.password;
+      await _syncPublicProfile(user);
+      if (user.isAdmin) {
+        // Tentativo best-effort: con le regole di sicurezza definitive questa scrittura
+        // è riservata alla console Firebase — non deve bloccare la migrazione
+        try { await fsSave('admin_uids', { id: authUid, isAdmin: true }); } catch(e2) { console.warn('admin_uids write skipped (expected once security rules are in place):', e2.message); }
+      }
+      logLine('✅ ' + user.username);
+      ok++;
+      // Torna a disconnettere: la migrazione non deve lasciare l'admin loggato come l'utente appena creato
+      try { await signOut(fbAuth); } catch(e) {}
+    } catch(err) {
+      logLine('❌ ' + user.username + ': ' + (err.message || err.code || 'errore sconosciuto'));
+      failed++;
+    }
+  }
+
+  _cache.users = getData('users', []); // già aggiornato per riferimento sugli oggetti in pending
+  if (progressEl) progressEl.textContent = 'Completato: ' + ok + ' migrati, ' + failed + ' falliti.';
+  if (logEl) logEl.innerHTML += '<br>⚠️ La sessione Firebase è stata alterata dalla migrazione (limite del piano gratuito, senza Cloud Functions). <strong>Ricarica la pagina e rifai il login come admin</strong> prima di continuare a lavorare.';
+  toast(ok + ' account migrati' + (failed ? ', ' + failed + ' falliti (vedi log)' : '') + ' — ricarica la pagina e rifai login', failed ? 'error' : 'success');
+  await checkAuthMigrationStatus();
 }
 
 // ============================================================
@@ -4369,6 +4594,17 @@ function openFigDetail(figId) {
   // Serie (prima informazione, sempre visibile, utile arrivando da una ricerca)
   rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Serie' : 'Series')}</span><span class="detail-value" style="font-weight:600;">${figSeries?.name || ''}</span></div>`);
 
+  // Retro collegato: riga sempre visibile (indipendente dal box foto), per aprire direttamente il Retro
+  if (f.retroId) {
+    const linkedRetro = getData('figurines', []).find(x => x.id === f.retroId);
+    if (linkedRetro) {
+      const rparts = [linkedRetro.category, linkedRetro.subcategory].map(v => (v||'').trim()).filter(Boolean);
+      rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Retro collegato' : 'Linked retro')}</span><span class="detail-value"><a href="#" onclick="openFigDetail('${linkedRetro.id}');return false;" style="color:var(--accent);text-decoration:underline;">${rparts.length ? rparts.join(' · ') + ' — ' : ''}${linkedRetro.name} ↗</a></span></div>`);
+    } else {
+      rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Retro collegato' : 'Linked retro')}</span><span class="detail-value" style="color:#ff6464;">${(currentLang === 'it' ? 'ID collegato non trovato: ' : 'Linked ID not found: ')}${f.retroId}</span></div>`);
+    }
+  }
+
   // Categoria (sempre visibile per i Retro) e Sottocategoria (solo se popolata)
   if (f.section === 'retros') {
     rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Categoria' : 'Category')}</span><span class="detail-value">${f.category || '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
@@ -4441,7 +4677,7 @@ function openFigDetail(figId) {
         ? `<img src="${cloudinaryUrl(retroFig.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
         : noPhotoBox;
       const retroCaption = retroFig
-        ? (() => { const parts = [retroFig.category, retroFig.subcategory].map(v => (v||'').trim()).filter(Boolean); return `<div style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:4px;">${parts.length ? parts.join(' · ') + ' — ' : ''}${retroFig.name}</div>`; })()
+        ? (() => { const parts = [retroFig.category, retroFig.subcategory].map(v => (v||'').trim()).filter(Boolean); return `<div style="font-size:0.72rem;text-align:center;margin-top:4px;"><a href="#" onclick="openFigDetail('${retroFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${parts.length ? parts.join(' · ') + ' — ' : ''}${retroFig.name} ↗</a></div>`; })()
         : '';
       photoEl.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
@@ -5161,7 +5397,7 @@ function openViewUserModal(userId) {
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
       </div>
       <div style="display:grid;gap:0.75rem;">
-        <div class="detail-row"><span class="detail-label">Username</span><span class="detail-value">${user.username} ${flag}</span></div>
+        <div class="detail-row"><span class="detail-label">Nickname</span><span class="detail-value">${user.username} ${flag}</span></div>
         <div class="detail-row"><span class="detail-label">E-mail</span><span class="detail-value">${user.email}</span></div>
         <div class="detail-row"><span class="detail-label">Tipologia</span><span class="detail-value">${role}</span></div>
         <div class="detail-row"><span class="detail-label">Iscritto dal</span><span class="detail-value">${joined}</span></div>
@@ -5239,31 +5475,24 @@ async function adminResetPassword() {
   const users = getData('users', []);
   const user = users.find(u => u.id === userId);
   if (!user) return;
-  if (!confirm('Resettare la password di ' + user.username + '? Verrà inviata una password temporanea via e-mail.')) return;
-
-  const tempPwd = generateTempPassword();
-  user.password = tempPwd;
-  user.mustChangePassword = true;
-  const idx = users.findIndex(u => u.id === userId);
-  if (idx >= 0) {
-    users[idx] = user;
-    _cache.users = users;
-    await fsSave('users', user);
-  }
-
-  await sendEmail(
-    user.email,
-    user.username,
-    'Reset password — Sgorbions Collector',
-    'La tua password è stata reimpostata dall\'amministratore.\n\nLa tua nuova password temporanea è: ' + tempPwd + '\n\nAccedi con questa password e cambiala subito dal tuo profilo.'
-  );
-  incrementEmailCounter(1);
-  logEvent('reset_pwd', 'Reset password effettuato da admin per: ' + user.username);
+  if (!user.email) { toast('Utente senza e-mail associata: reset non possibile', 'error'); return; }
+  if (!confirm('Inviare a ' + user.username + ' (' + user.email + ') un\'e-mail per reimpostare la password?')) return;
 
   const fb = document.getElementById('admin-reset-pwd-feedback');
-  if (fb) {
-    fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;margin-top:0.5rem;';
-    fb.textContent = '✅ Password temporanea inviata a ' + user.email;
+  try {
+    const { sendPasswordResetEmail } = window._fbAuth;
+    await sendPasswordResetEmail(fbAuth, user.email);
+    logEvent('reset_pwd', 'Reset password richiesto da admin per: ' + user.username);
+    if (fb) {
+      fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;margin-top:0.5rem;';
+      fb.textContent = '✅ E-mail di reset inviata a ' + user.email;
+    }
+  } catch(err) {
+    console.error('adminResetPassword', err);
+    if (fb) {
+      fb.style.cssText = 'display:block;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6464;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;margin-top:0.5rem;';
+      fb.textContent = '❌ Invio non riuscito: ' + (err.code || err.message);
+    }
   }
 }
 
@@ -5307,7 +5536,7 @@ function animateCount(el, target) {
 function renderHomeStats() {
   const series = getData('series', []);
   const figs = getData('figurines', []);
-  const users = getData('users', []).filter(u => !u.isAdmin);
+  const users = getData('public_profiles', []);
   const onlyFigs = figs.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras');
   const retros = figs.filter(f => f.section === 'retros');
   const albums = figs.filter(f => f.section === 'albums');
@@ -6422,12 +6651,12 @@ async function uploadAvatar(e) {
     currentUser.avatar = url;
     LOCAL.set('currentUser', currentUser);
     // Update in Firebase
+    await fsSave('users', currentUser);
     let users = getData('users', []);
     const idx = users.findIndex(u => u.id === currentUser.id);
     if (idx >= 0) {
-      users[idx].avatar = url;
+      users[idx] = currentUser;
       _cache.users = users;
-      await fsSave('users', users[idx]);
     }
     updateNavUser();
     renderProfile();
@@ -6715,7 +6944,7 @@ async function renderClassifica() {
     renderClassificaLevels(levelsEl);
   }
 
-  const users = getData('users', []);
+  const users = getData('public_profiles', []);
   const allFigs = getData('figurines', []);
 
   // Calculate score for each user
