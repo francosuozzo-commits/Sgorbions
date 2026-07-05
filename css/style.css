@@ -1,4 +1,36 @@
 /* CSS_VERSION: segue JS_VERSION (vedi app.js) — non più un numero separato */
+/* ===== FONT NUNITO (self-hosted, non più da Google Fonts) =====
+   Scaricato via Google Webfonts Helper (solo woff2, charset Latin).
+   File in /fonts/, referenziati da qui (css/style.css) con percorso relativo. */
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../fonts/nunito-v32-latin-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../fonts/nunito-v32-latin-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../fonts/nunito-v32-latin-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Nunito';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('../fonts/nunito-v32-latin-800.woff2') format('woff2');
+}
+
 /* ===== RESET & VARIABLES ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
