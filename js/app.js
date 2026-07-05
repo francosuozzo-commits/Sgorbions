@@ -1,6 +1,50 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.367 — Due piccole correzioni su segnalazione di Franco: (1) nel log
+//          del caricamento massivo foto, una riga saltata perché già
+//          aveva una foto diceva "skip" in inglese anche in italiano —
+//          ora "saltata"; (2) il placeholder del campo Titolo in "Nuovo
+//          Post" era sempre in inglese, anche con il sito in italiano —
+//          ora tradotto correttamente con il meccanismo già esistente
+//          (data-i18n-placeholder), che semplicemente non era stato
+//          applicato a questo campo.
+// v5.366 — Trovato, su segnalazione di Franco, un bug reale nel login:
+//          QUALSIASI errore durante l'accesso (compreso un timeout di
+//          rete/connessione lenta) mostrava sempre "E-mail o password
+//          errati", anche quando il problema non c'entrava nulla con le
+//          credenziali — da qui la sensazione di dover riprovare con le
+//          stesse identiche credenziali e vederle funzionare al secondo
+//          tentativo. Ora un errore di rete/timeout mostra un messaggio
+//          corretto e distinto, che non parla di password sbagliata.
+//          Rimosse anche due attese non necessarie: il salvataggio di
+//          lastLogin (sia per il login normale sia con Google) non blocca
+//          più il completamento dell'accesso, essendo un dato che nessuna
+//          interfaccia deve aspettare per procedere.
+// v5.365 — Su richiesta di Franco (minimizzazione dati, GDPR): rimossi
+//          del tutto i campi Nome, Cognome, Età, Sesso e Anni di
+//          collezionismo — non più raccolti, non più mostrati (né in
+//          profilo né in admin). Rimosso anche l'intero modal "Raccontaci
+//          di te!" che li chiedeva/suggeriva di completarli dopo la
+//          registrazione (pulsante "Le mie info", promemoria automatico
+//          al primo accesso, tutto il meccanismo). NOTA: questa modifica
+//          ferma la raccolta e la visualizzazione di questi dati, ma NON
+//          cancella automaticamente i valori già salvati in Firestore
+//          per gli utenti che li avevano già compilati in passato — ne
+//          ho parlato con Franco separatamente.
+//          Inoltre: ottimizzata la registrazione (fsSave per 'users' ora
+//          scrive in parallelo su users e public_profiles, invece che in
+//          sequenza — un giro di rete in meno su tre) e aggiunto un
+//          disclaimer "non chiudere questa finestra" visibile durante la
+//          registrazione, in attesa di capire la causa esatta della
+//          lentezza osservata da Franco (probabilmente di rete, non di
+//          codice, vista la storia della sessione di oggi).
+// v5.364 — Su richiesta di Franco: il pulsante "Elimina il mio account"
+//          non è più visibile all'admin, né per il proprio account né
+//          per nessun utente durante l'impersonificazione. Aggiunta
+//          anche una protezione diretta dentro la funzione stessa, non
+//          solo nascondendo il pulsante, come ulteriore rete di
+//          sicurezza.
 // v5.363 — Su proposta di Franco: "Punteggio serie" rinominato "Punteggio
 //          selezionati" e cambiato di significato — non assegna più il
 //          punteggio a TUTTI gli oggetti della sezione, ma solo a quelli
@@ -1705,7 +1749,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.363';
+const JS_VERSION = 'v5.367';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -2011,15 +2055,17 @@ async function fsSave(collName, item) {
   const { collection, doc, setDoc, addDoc } = window._fb;
   if (item.id) {
     const ref = doc(db, collName, item.id);
-    await setDoc(ref, item, { merge: true });
-    if (collName === 'users') await _syncPublicProfile(item);
+    const writes = [setDoc(ref, item, { merge: true })];
+    if (collName === 'users') writes.push(_syncPublicProfile(item));
+    await Promise.all(writes);
     return item;
   } else {
     const ref = await addDoc(collection(db, collName), item);
     const saved = { ...item, id: ref.id };
     const { doc: docFn, setDoc: setDocFn } = window._fb;
-    await setDocFn(docFn(db, collName, ref.id), saved);
-    if (collName === 'users') await _syncPublicProfile(saved);
+    const writes = [setDocFn(docFn(db, collName, ref.id), saved)];
+    if (collName === 'users') writes.push(_syncPublicProfile(saved));
+    await Promise.all(writes);
     return saved;
   }
 }
@@ -2350,7 +2396,7 @@ const i18n = {
 
     'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.wishlist':'Wishlist','wishlist.desc':'Your <strong>Wishlist</strong> is your personal space to collect the stickers (or other items) you would like to own.<br><br>While browsing the catalog, press the <strong>🛒</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send wishlist to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send wishlist',
 'profile.anon':'Show me as anonymous in the ranking',
-'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.myInfo':'✏️ My info','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
+'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
 'admin.email.fix':'Fix counter:','admin.save':'Save','newsletter.settingsTitle':'⚙️ Email Settings','newsletter.replyToLabel':'Reply-To address','newsletter.replyToHint':'When you reply to a message, the email will go to this address',
@@ -2361,12 +2407,12 @@ const i18n = {
 'admin.eventi.title':'System events','admin.segnalazioni.title':'User comments','admin.eventi.markRead':'✓ Mark all as read',
 'admin.user.save':'Save changes','admin.user.reset':'🔑 Reset password','admin.user.delete':'🗑️ Delete user',
 'admin.user.joined':'Member since','admin.user.lastlogin':'Last login','admin.user.level':'Level',
-'admin.user.nome':'First name','admin.user.cognome':'Last name','admin.user.sesso':'Gender','admin.user.anni':'Years collecting',
+
 'admin.user.role':'User type','admin.user.collector':'Collector','admin.user.admin':'Admin',
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Score selected','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Email','admin.email.all':'All emails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in catalog...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Score selected','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Email','admin.email.all':'All emails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in catalog...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -2401,13 +2447,13 @@ const i18n = {
 'form.post.question':'❓ Question','form.post.news':'📢 News / Discovery',
 'form.reply.placeholder':'Write a reply...','comment.admin':'Administrator','comment.login':'Log in to reply',
 'auth.title':'Welcome back','auth.login':'Login','auth.register':'Sign up',
-'auth.login.btn':'Enter','auth.reg.btn':'Confirm registration',
+'auth.login.btn':'Enter','auth.reg.btn':'Confirm registration','auth.reg.wait':'Registration can take up to a minute: don\u2019t close this window.',
 'modal.bulkscore.title':'⭐ Score Selected','modal.bulkscore.desc':'Assign the same score to all currently visible items (those not hidden by any active filters). You can edit individual scores later.',
 'modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to visible',
 'modal.figdetail.title':'Sticker detail','modal.segnala.send':'Send comment','modal.segnala.title':'🚩 Report an issue','modal.segnala.desc':'Describe the issue you found with this sticker. The report will only be visible to the administrator.','modal.segnala.comment':'Comment','modal.segnala.placeholder':'Describe the issue...',
 'modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series',
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
-'modal.post.title':'New Post','modal.post.save':'Publish Post',
+'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
 'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
@@ -2416,8 +2462,9 @@ const i18n = {
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
 'form.fig.descPlaceholder':'Describe this sticker...',
 'profile.title':'My Profile','profile.owned':'Stickers Owned','profile.series':'Series Tracked',
-'profile.collection':'My Collection','profile.anni':'Years collecting Sgorbions',
-'profile.sliderHint':'Try moving the slider! 👆',
+'profile.collection':'My Collection',
+'profile.sliderHint':'Try tapping the toggle! 👆',
+
 'pwd.current':'Current password',
 'pwd.resetDesc':'Enter your email address. We will send you a temporary password.',
 'admin.series.title':'Manage Series','admin.figurines.title':'Manage Stickers',
@@ -2439,7 +2486,7 @@ const i18n = {
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
 'nav.onlineSince':'Online dal 21.06.2026',
-'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.myInfo':'✏️ Le mie info','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità',
+'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità',
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'E-mail inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 e-mail/mese (si azzera il 1° di ogni mese).',
@@ -2451,7 +2498,7 @@ const i18n = {
 'admin.eventi.title':'Eventi di sistema','admin.segnalazioni.title':'Segnalazioni utenti','admin.eventi.markRead':'✓ Segna tutte come lette',
 'admin.user.save':'Salva modifiche','admin.user.reset':'🔑 Reset password','admin.user.delete':'🗑️ Elimina utente',
 'admin.user.joined':'Iscritto dal','admin.user.lastlogin':'Ultima login','admin.user.level':'Livello',
-'admin.user.nome':'Nome','admin.user.cognome':'Cognome','admin.user.sesso':'Sesso','admin.user.anni':'Anni di collezionismo',
+
 'admin.user.role':'Tipologia di utente','admin.user.collector':'Collezionista','admin.user.admin':'Admin',
 
 'contact.title':'Contatta <span class=\'hi\'>l\'amministratore</span>',
@@ -2462,7 +2509,7 @@ const i18n = {
 'classifica.best':'Classifica dei migliori collezionisti','classifica.levels':'Livelli di Collezionista Sgorbions',
 'admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio minimo','admin.levels.save':'Salva livello',
 'hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.',
-'profile.saved':'✅ Informazioni salvate!','banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
+'banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
 
 
 
@@ -2497,11 +2544,12 @@ const i18n = {
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
-    'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
-    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
+    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
-    'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
+    'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
+    'profile.sliderHint':'Prova a spostare il cursore! 👆',
     'admin.title':'Pannello Admin','admin.series':'Serie','admin.figurines':'Figurine','admin.blog':'Blog','admin.contacts':'Messaggi','admin.users':'Utenti',
     'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.blog.title':'Gestisci D&R / Blog','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati',
     'footer.desc':'Il database fan non ufficiale dedicato alla leggendaria collezione di figurine italiana degli anni \'90. Fatto con 💚 da collezionisti, per collezionisti.',
@@ -2675,7 +2723,14 @@ async function doLogin() {
     cred = await signInWithEmailAndPassword(fbAuth, emailInput, p);
   } catch(err) {
     console.error('Firebase Auth login', err);
-    showErr(currentLang === 'it' ? 'E-mail o password errati' : 'Wrong e-mail or password');
+    const networkCodes = ['auth/network-request-failed', 'auth/timeout', 'auth/too-many-requests'];
+    if (networkCodes.includes(err.code)) {
+      showErr(currentLang === 'it'
+        ? '⏳ Connessione lenta o instabile: il login non è riuscito a completarsi in tempo. Non è un problema di password — riprova.'
+        : '⏳ Slow or unstable connection: login didn\u2019t complete in time. This is not a password issue — please retry.');
+    } else {
+      showErr(currentLang === 'it' ? 'E-mail o password errati' : 'Wrong e-mail or password');
+    }
     return;
   }
 
@@ -2695,14 +2750,13 @@ async function doLogin() {
     setLang(lang);
     applyI18n();
   }
-  await fsSave('users', user);
+  fsSave('users', user); // lastLogin: non blocca il login, non serve attenderlo
   if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username, { read: true });
   else await _loadAdminOnlyData();
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
   updateNavUser();
   loadWishlist();
-  showProfileInviteIfNeeded();
   const welcomeEl = document.getElementById('hero-welcome-msg');
   if (welcomeEl) {
     welcomeEl.style.display = '';
@@ -2772,14 +2826,13 @@ async function signInWithGoogle() {
     setLang(lang);
     applyI18n();
   }
-  await fsSave('users', user);
+  if (!isNewUser) fsSave('users', user); // lastLogin: non blocca, non serve attenderlo (per un nuovo utente è già stato salvato sopra)
   if (!isNewUser && !user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username, { read: true });
   if (!isNewUser && user.isAdmin) await _loadAdminOnlyData();
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
   updateNavUser();
   loadWishlist();
-  showProfileInviteIfNeeded();
   const welcomeEl = document.getElementById('hero-welcome-msg');
   if (welcomeEl) {
     welcomeEl.style.display = '';
@@ -2808,6 +2861,10 @@ async function doRegister() {
   const natCode = document.getElementById('reg-nationality-code')?.value || '';
   const natName = document.getElementById('reg-nationality-name')?.value || '';
   let authUid = null;
+  const submitBtn = document.getElementById('reg-submit-btn');
+  const waitNotice = document.getElementById('reg-wait-notice');
+  if (submitBtn) submitBtn.disabled = true;
+  if (waitNotice) waitNotice.style.display = '';
   try {
     const { createUserWithEmailAndPassword } = window._fbAuth;
     const cred = await createUserWithEmailAndPassword(fbAuth, e, p);
@@ -2818,6 +2875,8 @@ async function doRegister() {
     if (err.code === 'auth/email-already-in-use') msg = currentLang === 'it' ? 'Questa email è già registrata' : 'This email is already registered';
     else if (err.code === 'auth/weak-password') msg = currentLang === 'it' ? 'Password troppo debole (minimo 6 caratteri)' : 'Password too weak (minimum 6 characters)';
     if (regErr) { regErr.style.display = ''; regErr.textContent = msg; } else toast(msg, 'error');
+    if (submitBtn) submitBtn.disabled = false;
+    if (waitNotice) waitNotice.style.display = 'none';
     return;
   }
   const newUser = { id: Date.now().toString(), authUid, username: u, email: e, isAdmin: false, joined: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName, ageConfirmed16: true, ageConfirmedAt: new Date().toISOString() };
@@ -2826,6 +2885,8 @@ async function doRegister() {
   _cache.users.push(saved);
   currentUser = saved;
   LOCAL.set('currentUser', saved);
+  if (submitBtn) submitBtn.disabled = false;
+  if (waitNotice) waitNotice.style.display = 'none';
   closeModal('auth-modal');
   updateNavUser();
   sendWelcomeEmail(saved);
@@ -2842,66 +2903,6 @@ async function doRegister() {
     applyI18n();
   }
   logEvent('new_user', 'Nuovo utente registrato: ' + u);
-  showProfileInviteIfNeeded();
-}
-// ============================================================
-//  PROFILE INFO
-// ============================================================
-function showProfileInviteIfNeeded() {
-  if (!currentUser) return;
-  const hasInfo = currentUser.nome || currentUser.cognome || currentUser.eta || currentUser.sesso || currentUser.anniCollezionismo;
-  if (!hasInfo) {
-    setTimeout(() => {
-      // Clear fields before showing
-      document.getElementById('invite-nome').value = '';
-      document.getElementById('invite-cognome').value = '';
-      document.getElementById('invite-eta').value = '';
-      document.getElementById('invite-sesso').value = '';
-      document.getElementById('invite-anni').value = '';
-      // Show login buttons (Dopo / Salva e continua)
-      document.getElementById('invite-modal-btns-login').style.display = 'flex';
-      document.getElementById('invite-modal-btns-profile').style.display = 'none';
-      document.getElementById('profile-invite-modal').classList.remove('hidden');
-    }, 1500);
-  }
-}
-
-function openProfileInfoModal() {
-  document.getElementById('invite-nome').value = currentUser.nome || '';
-  document.getElementById('invite-cognome').value = currentUser.cognome || '';
-  document.getElementById('invite-eta').value = currentUser.eta || '';
-  document.getElementById('invite-sesso').value = currentUser.sesso || '';
-  document.getElementById('invite-anni').value = currentUser.anniCollezionismo || '';
-  // Show profile buttons, hide login buttons
-  document.getElementById('invite-modal-btns-login').style.display = 'none';
-  document.getElementById('invite-modal-btns-profile').style.display = 'flex';
-  document.getElementById('profile-invite-modal').classList.remove('hidden');
-}
-
-async function saveProfileInvite() {
-  const nome = document.getElementById('invite-nome').value.trim();
-  const cognome = document.getElementById('invite-cognome').value.trim();
-  const eta = document.getElementById('invite-eta').value;
-  const sesso = document.getElementById('invite-sesso').value;
-  const anniCollezionismo = document.getElementById('invite-anni').value;
-
-  currentUser = { ...currentUser, nome, cognome, eta: eta ? +eta : null, sesso, anniCollezionismo: anniCollezionismo ? +anniCollezionismo : null };
-  LOCAL.set('currentUser', currentUser);
-  await fsSave('users', currentUser);
-
-  const users = getData('users', []);
-  const idx = users.findIndex(u => u.id === currentUser.id);
-  if (idx >= 0) {
-    users[idx] = currentUser;
-    _cache.users = users;
-  }
-
-  closeModal('profile-invite-modal');
-  const msg = document.getElementById('profile-save-msg');
-  if (msg) {
-    msg.style.display = '';
-    setTimeout(() => { msg.style.display = 'none'; }, 3000);
-  }
 }
 
 // ============================================================
@@ -2942,6 +2943,7 @@ function openChangePwdModal() {
 // ============================================================
 function openDeleteAccountModal() {
   if (!currentUser) return;
+  if (currentUser.isAdmin || isImpersonating()) return; // mai per l'admin, né durante l'impersonificazione
   const pwdGroup = document.getElementById('delete-account-password-group');
   const confirmBtn = document.getElementById('delete-account-confirm-btn');
   const googleBtn = document.getElementById('delete-account-google-btn');
@@ -4790,6 +4792,10 @@ function renderProfile() {
   // Show anon toggle (only for non-admin users)
   const anonWrap = document.getElementById('profile-anon-wrap');
   if (anonWrap) anonWrap.style.display = currentUser.isAdmin ? 'none' : '';
+  // L'autocancellazione account non deve mai essere visibile all'admin, né
+  // per il proprio account né per nessun utente durante l'impersonificazione
+  const dangerZone = document.getElementById('profile-danger-zone');
+  if (dangerZone) dangerZone.style.display = (currentUser.isAdmin || isImpersonating()) ? 'none' : '';
   const anonCb = document.getElementById('profile-anon-toggle');
   if (anonCb) anonCb.checked = currentUser.isAnonymous || false;
   const natDisplay = document.getElementById('profile-nationality-display');
@@ -6462,10 +6468,6 @@ function openViewUserModal(userId) {
         <div class="detail-row"><span class="detail-label">Tipologia</span><span class="detail-value">${role}</span></div>
         <div class="detail-row"><span class="detail-label">Iscritto dal</span><span class="detail-value">${joined}</span></div>
         <div class="detail-row"><span class="detail-label">Ultima login</span><span class="detail-value">${lastLogin}</span></div>
-        <div class="detail-row"><span class="detail-label">Nome</span><span class="detail-value">${[user.nome, user.cognome].filter(Boolean).join(' ') || '—'}</span></div>
-        <div class="detail-row"><span class="detail-label">Età</span><span class="detail-value">${user.eta ? user.eta + ' anni' : '—'}</span></div>
-        <div class="detail-row"><span class="detail-label">Sesso</span><span class="detail-value">${user.sesso === 'M' ? 'Maschio' : user.sesso === 'F' ? 'Femmina' : user.sesso === 'A' ? 'Non specificato' : '—'}</span></div>
-        <div class="detail-row"><span class="detail-label">Anni collezione</span><span class="detail-value">${user.anniCollezionismo || '—'}</span></div>
       </div>
     </div>`;
   modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
@@ -6498,16 +6500,6 @@ function openEditUserModal(userId) {
   if (joinedEl) joinedEl.textContent = user.joined ? new Date(user.joined).toLocaleDateString('it-IT') : '—';
   const lastLoginEl = document.getElementById('edit-user-lastlogin');
   if (lastLoginEl) lastLoginEl.textContent = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(user.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : 'mai';
-  const nomeEl = document.getElementById('edit-user-nome');
-  if (nomeEl) nomeEl.textContent = user.nome || '—';
-  const cognomeEl = document.getElementById('edit-user-cognome');
-  if (cognomeEl) cognomeEl.textContent = user.cognome || '—';
-  const etaEl = document.getElementById('edit-user-eta');
-  if (etaEl) etaEl.textContent = user.eta ? user.eta + ' anni' : '—';
-  const sessoEl = document.getElementById('edit-user-sesso');
-  if (sessoEl) sessoEl.textContent = user.sesso === 'M' ? 'Maschio' : user.sesso === 'F' ? 'Femmina' : user.sesso === 'A' ? 'Non specificato' : '—';
-  const anniEl = document.getElementById('edit-user-anni');
-  if (anniEl) anniEl.textContent = user.anniCollezionismo || '—';
   const levelEl = document.getElementById('edit-user-level');
   if (levelEl) {
     const owned = (_cache.ownedMap && _cache.ownedMap[user.id]) || [];
@@ -6655,7 +6647,7 @@ function updateOwnedCounter() {
 //  MODAL HELPERS
 // ============================================================
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-const NO_CLICK_CLOSE = ['auth-modal', 'change-pwd-modal', 'reset-pwd-modal', 'profile-invite-modal', 'add-series-modal', 'add-fig-modal'];
+const NO_CLICK_CLOSE = ['auth-modal', 'change-pwd-modal', 'reset-pwd-modal', 'add-series-modal', 'add-fig-modal'];
 document.querySelectorAll('.modal-overlay').forEach(m => {
   if (!NO_CLICK_CLOSE.includes(m.id)) {
     m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); });
@@ -7585,7 +7577,7 @@ async function startAdminFotoUpload() {
     if (isNaN(num)) { fotoLog('⚠️ Nome non valido: ' + file.name, 'warn'); errors++; continue; }
     const fig = allFigs.find(f => Number(f.number) === num);
     if (!fig) { fotoLog('⚠️ Nessuna figurina #' + num + ' trovata', 'warn'); errors++; continue; }
-    if (fig.img && !overwrite) { fotoLog('⏭️ #' + num + ' ' + fig.name + ' — skip (ha già foto)', 'info'); skip++; continue; }
+    if (fig.img && !overwrite) { fotoLog('⏭️ #' + num + ' ' + fig.name + ' — saltata (ha già foto)', 'info'); skip++; continue; }
 
     try {
       let blob = file;
@@ -7694,7 +7686,7 @@ async function startAdminFotoNoNumberUpload() {
       errors++; continue;
     }
     const fig = matches[0].item;
-    if (fig.img && !overwrite) { fotoNnLog('⏭️ "' + name + '" — skip (ha già foto)', 'info'); skip++; continue; }
+    if (fig.img && !overwrite) { fotoNnLog('⏭️ "' + name + '" — saltata (ha già foto)', 'info'); skip++; continue; }
 
     try {
       let blob = file;
