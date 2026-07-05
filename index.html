@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.367</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.370</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -248,7 +248,7 @@
           <button class="btn-primary" onclick="openAddItemModal()" id="admin-add-label" data-i18n="catalog.add">+ Aggiungi</button>
           <button class="btn-secondary" onclick="openBulkScoreModal()" id="bulk-score-toggle" data-i18n="catalog.bulkscore">⭐ Punteggio serie</button>
           <button class="btn-secondary" onclick="toggleBulkEditView()" id="bulk-edit-toggle-btn">📋 Vista tabellare</button>
-          <button class="btn-secondary" onclick="toggleNoPhotoFilter()" id="no-photo-filter-btn">📷 Solo con foto mancante</button>
+          <button class="btn-secondary" onclick="toggleNoPhotoFilter()" id="no-photo-filter-btn">📷 Solo senza foto</button>
         </div>
       </div>
     </div>
@@ -376,7 +376,7 @@
             </label>
           </div>
           <div id="profile-danger-zone" style="margin-top:2rem;padding-top:1.25rem;border-top:1px solid rgba(255,100,100,0.25);">
-            <button onclick="openDeleteAccountModal()" style="font-size:0.85rem;padding:6px 14px;border-radius:8px;border:1px solid rgba(255,100,100,0.4);background:rgba(255,100,100,0.08);color:#ff6464;cursor:pointer;">🗑️ Elimina il mio account</button>
+            <button onclick="openDeleteAccountModal()" style="font-size:0.85rem;padding:6px 14px;border-radius:8px;border:1px solid rgba(255,100,100,0.4);background:rgba(255,100,100,0.08);color:#ff6464;cursor:pointer;" data-i18n="profile.deleteAccount">🗑️ Elimina il mio account</button>
           </div>
         </div>
       </div>
@@ -792,7 +792,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.367</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.370</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1134,31 +1134,31 @@
 <div class="modal-overlay hidden" id="delete-account-modal">
   <div class="modal">
     <div class="modal-header">
-      <h2 class="modal-title">🗑️ Elimina il mio account</h2>
+      <h2 class="modal-title" data-i18n="modal.deleteAccount.title">🗑️ Elimina il mio account</h2>
       <button class="modal-close" onclick="closeModal('delete-account-modal')">✕</button>
     </div>
-    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;" data-i18n="modal.deleteAccount.intro">
       Se continui, cancelleremo per sempre:
     </p>
     <ul style="color:var(--muted);font-size:0.88rem;margin:0 0 1rem 1.2rem;line-height:1.7;">
-      <li>Il tuo profilo: nickname, e-mail, avatar, nazionalità</li>
-      <li>La tua collezione "Ce l'ho" e la tua posizione in Classifica</li>
-      <li>La tua Wishlist</li>
-      <li>La possibilità di accedere di nuovo con questa e-mail</li>
+      <li data-i18n="modal.deleteAccount.item1">Il tuo profilo: nickname, e-mail, avatar, nazionalità</li>
+      <li data-i18n="modal.deleteAccount.item2">La tua collezione "Ce l'ho" e la tua posizione in Classifica</li>
+      <li data-i18n="modal.deleteAccount.item3">La tua Wishlist</li>
+      <li data-i18n="modal.deleteAccount.item4">Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato</li>
     </ul>
-    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">
+    <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;" data-i18n-html="modal.deleteAccount.blogNote">
       Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.
     </p>
-    <p style="color:#ff6464;font-size:0.88rem;margin-bottom:1rem;font-weight:600;">
+    <p style="color:#ff6464;font-size:0.88rem;margin-bottom:1rem;font-weight:600;" data-i18n="modal.deleteAccount.irreversible">
       Questa azione non si può annullare.
     </p>
     <div class="form-group" id="delete-account-password-group">
-      <label class="form-label">Conferma la tua password per procedere</label>
+      <label class="form-label" data-i18n="modal.deleteAccount.confirmPwd">Conferma la tua password per procedere</label>
       <input class="form-input" type="password" id="delete-account-password" placeholder="••••••••">
     </div>
     <div id="delete-account-error" style="display:none;margin-bottom:0.75rem;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6464;"></div>
-    <button class="btn-primary" id="delete-account-confirm-btn" style="width:100%;background:#ff6464;" onclick="confirmDeleteAccount()">Elimina definitivamente il mio account</button>
-    <button class="btn-primary" id="delete-account-google-btn" style="width:100%;background:#ff6464;display:none;" onclick="confirmDeleteAccountGoogle()">Verifica con Google ed elimina il mio account</button>
+    <button class="btn-primary" id="delete-account-confirm-btn" style="width:100%;background:#ff6464;" onclick="confirmDeleteAccount()" data-i18n="modal.deleteAccount.confirmBtn">Elimina definitivamente il mio account</button>
+    <button class="btn-primary" id="delete-account-google-btn" style="width:100%;background:#ff6464;display:none;" onclick="confirmDeleteAccountGoogle()" data-i18n="modal.deleteAccount.confirmGoogleBtn">Verifica con Google ed elimina il mio account</button>
   </div>
 </div>
 
