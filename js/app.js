@@ -1,6 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.349 — Su segnalazione di Franco: il titolo della scheda dettaglio
+//          (nomi molto lunghi) andava a sbattere contro le frecce di
+//          navigazione ◀▶, troncandosi invece di andare a capo. Ora va
+//          a capo normalmente (compreso dopo un trattino "-", il
+//          carattere che Franco usa per separare la parte base del nome
+//          da quella che identifica il Change), con un font leggermente
+//          più piccolo.
+// v5.348 — Rimossa la verifica post-scrittura introdotta in v5.343 per
+//          aggiunte e cancellazioni: costava una lettura di rete in più
+//          ad ogni operazione, annullando gran parte del guadagno di
+//          velocità di arrayUnion/arrayRemove. Non serve più: il
+//          "mistero" che l'aveva motivata era un refuso di Franco nei
+//          dati di test (valore di "Tipo di Retro" scritto in modo
+//          diverso da quello configurato), non un problema del
+//          meccanismo arrayUnion/arrayRemove in sé.
 // v5.347 — Corretto, su segnalazione di Franco, il caricamento massivo
 //          Retro per essere coerente con gli altri due caricamenti:
 //          aggiunte le colonne dedicate "Retro - Categoria" e "Retro -
@@ -1564,7 +1579,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.347';
+const JS_VERSION = 'v5.349';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -1928,29 +1943,18 @@ async function _saveFigurineItem(item) {
   _recomputeSeriesCounts(series);
 
   if (isNew) {
-    // Nuovo elemento: proviamo con arrayUnion (invia solo il nuovo
-    // oggetto, non l'intero array — molto più veloce), ma verifichiamo
-    // SUBITO DOPO che l'oggetto sia davvero arrivato su Firestore,
-    // invece di fidarci ciecamente della promise risolta con successo.
-    // Se la verifica fallisce, riproviamo con la riscrittura completa e
-    // lo segnaliamo chiaramente in console, per capire finalmente quando
-    // e perché succede.
+    // Nuovo elemento: arrayUnion invia a Firestore solo il nuovo oggetto,
+    // non l'intero array — molto più veloce. La verifica post-scrittura
+    // introdotta temporaneamente per un sospetto bug è stata rimossa: il
+    // mistero era un refuso nei dati di test di Franco, non un problema
+    // del meccanismo, e quella verifica costava un'intera lettura di rete
+    // in più ad ogni salvataggio, annullando gran parte del guadagno.
     _invalidateSessionCache();
-    let confirmed = false;
     try {
-      const { doc, updateDoc, getDoc, arrayUnion } = window._fb;
-      const ref = doc(db, 'series', series.id);
-      await updateDoc(ref, { items: arrayUnion(item), counts: series.counts });
-      const snap = await getDoc(ref);
-      const savedItems = snap.exists() ? (snap.data().items || []) : [];
-      confirmed = savedItems.some(x => x.id === item.id);
-      if (!confirmed) {
-        console.warn('⚠️ Verifica post-salvataggio (arrayUnion) fallita: l\u2019oggetto ' + item.id + ' ("' + item.name + '") non risulta nella serie "' + series.name + '" (' + series.id + ') subito dopo il salvataggio. Riprovo con riscrittura completa.', { item, series: series.id });
-      }
+      const { doc, updateDoc, arrayUnion } = window._fb;
+      await updateDoc(doc(db, 'series', series.id), { items: arrayUnion(item), counts: series.counts });
     } catch(e) {
-      console.warn('⚠️ arrayUnion ha lanciato un errore: ' + e.message + '. Riprovo con riscrittura completa.', e);
-    }
-    if (!confirmed) {
+      console.warn('arrayUnion non riuscito, riscrivo l\u2019intera serie come fallback:', e.message);
       await fsSave('series', series);
     }
   } else {
@@ -1978,21 +1982,11 @@ async function _deleteFigurineItem(id) {
       series.items.splice(idx, 1);
       _recomputeSeriesCounts(series);
       _invalidateSessionCache();
-      let confirmed = false;
       try {
-        const { doc, updateDoc, getDoc, arrayRemove } = window._fb;
-        const ref = doc(db, 'series', series.id);
-        await updateDoc(ref, { items: arrayRemove(itemToRemove), counts: series.counts });
-        const snap = await getDoc(ref);
-        const remainingItems = snap.exists() ? (snap.data().items || []) : [];
-        confirmed = !remainingItems.some(x => x.id === id);
-        if (!confirmed) {
-          console.warn('⚠️ Verifica post-cancellazione (arrayRemove) fallita: l\u2019oggetto ' + id + ' risulta ancora presente nella serie "' + series.name + '" (' + series.id + '). Riprovo con riscrittura completa.', { itemToRemove, series: series.id });
-        }
+        const { doc, updateDoc, arrayRemove } = window._fb;
+        await updateDoc(doc(db, 'series', series.id), { items: arrayRemove(itemToRemove), counts: series.counts });
       } catch(e) {
-        console.warn('⚠️ arrayRemove ha lanciato un errore: ' + e.message + '. Riprovo con riscrittura completa.', e);
-      }
-      if (!confirmed) {
+        console.warn('arrayRemove non riuscito, riscrivo l\u2019intera serie come fallback:', e.message);
         await fsSave('series', series);
       }
       break;
