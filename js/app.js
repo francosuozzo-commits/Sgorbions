@@ -1,6 +1,19 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.371 — Trovato e corretto, grazie all'errore in console mandato da
+//          Franco, un bug di vecchia data mai emerso prima: la variabile
+//          _realAdmin (usata per rilevare l'impersonificazione admin) non
+//          era mai stata dichiarata correttamente — esisteva solo DOPO
+//          che un admin avesse impersonato qualcuno almeno una volta in
+//          quella sessione del browser. Con un login "pulito" (pagina
+//          appena ricaricata, nessuna impersonificazione mai avvenuta),
+//          chiamare isImpersonating() lanciava un ReferenceError. È
+//          emerso solo ora perché le funzioni aggiunte di recente per
+//          l'autocancellazione (mostra/nascondi il pulsante, controllo di
+//          sicurezza) sono le prime a richiamare isImpersonating() in un
+//          percorso normale, senza impersonificazione. Ora dichiarata
+//          fin dall'inizio, sempre definita (null di default).
 // v5.370 — Su segnalazione di Franco: l'intera funzionalità di
 //          autocancellazione account (pulsante nel profilo e modal di
 //          conferma con le istruzioni) non era mai stata tradotta —
@@ -1764,7 +1777,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.370';
+const JS_VERSION = 'v5.371';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -2615,6 +2628,7 @@ function setLang(lang, byUser = false) {
 //  APP STATE
 // ============================================================
 let currentUser = LOCAL.get('currentUser') || null;
+let _realAdmin = null; // traccia l'admin originale durante l'impersonificazione (vedi isImpersonating)
 let currentSeriesId = null;
 let _noPhotoFilter = false; // filtro figurine senza foto
 let _itemTypeFilter = 'base'; // 'base' | 'variation' | 'unofficialVariation' | 'change' | 'all' — sempre uno solo attivo
