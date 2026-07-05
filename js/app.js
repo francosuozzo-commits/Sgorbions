@@ -1,6 +1,159 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.344 — Su richiesta di Franco: aggiunto un log dettagliato in console
+//          quando il controllo duplicati Retro blocca un salvataggio,
+//          in entrambi i punti dove esiste (form principale e modifica
+//          rapida da scheda dettaglio). Prima non c'era alcuna traccia
+//          visibile del perché — ora mostra sia cosa si stava provando a
+//          salvare sia l'oggetto trovato in memoria che ha fatto
+//          scattare il blocco, per capire finalmente se è un vero
+//          duplicato o un dato fantasma rimasto in cache.
+// v5.343 — Su richiesta di Franco (capire il problema invece di evitarlo):
+//          reintrodotta l'ottimizzazione arrayUnion/arrayRemove per
+//          aggiunte e cancellazioni (v5.339), questa volta con una
+//          VERIFICA automatica subito dopo ogni scrittura: rilegge il
+//          documento appena scritto (1 lettura in più, costo accettato)
+//          e controlla che l'oggetto sia davvero presente (o davvero
+//          assente, per le cancellazioni). Se la verifica fallisce,
+//          riprova subito con la riscrittura completa della serie E
+//          stampa un avviso dettagliato in console (con ID, nome e
+//          serie coinvolti) — così, alla prossima volta che il problema
+//          segnalato da Franco si ripresenta, avremo la prova diretta
+//          di cosa succede invece di continuare a ipotizzare.
+// v5.342 — RIPRISTINO: rimossa l'ottimizzazione arrayUnion/arrayRemove
+//          introdotta in v5.339, sospettata causa di un bug serio
+//          segnalato da Franco — salvataggi che sembravano riusciti
+//          (nessun errore, nessun blocco) ma non arrivavano su
+//          Firestore, con conseguente falso allarme di duplicato ai
+//          tentativi successivi (il controllo duplicati vedeva un
+//          oggetto presente solo nella cache locale del browser, mai
+//          davvero salvato). Salvataggio e cancellazione tornano alla
+//          riscrittura completa dell'intero documento serie ad ogni
+//          modifica — più lento, ma è il comportamento provato e
+//          corretto di prima. Da capire con calma, in separata sede,
+//          prima di riprovare un'ottimizzazione simile.
+// v5.341 — Due correzioni su segnalazione di Franco: (1) il campo "Tipo
+//          di change" ora è posizionato prima di "Retro base" nel form
+//          (era il contrario); (2) corretta un'anomalia reale: il menu
+//          "Tipo di change" non si azzerava aprendo il form per un
+//          NUOVO oggetto, mostrando ancora il valore scelto nell'ultimo
+//          Change di Retro creato. Ancora da chiarire: il mistero del
+//          Change di Retro che non risulta salvato (né in griglia né su
+//          Firestore) e del falso duplicato segnalati da Franco — in
+//          corso di indagine con l'aiuto di uno script diagnostico.
+// v5.340 — Corretto un accordo di genere segnalato da Franco: il
+//          pulsante "Tutte" nei filtri della griglia Retro ora dice
+//          "Tutti" (retro è maschile). Invariato "Tutte" per le
+//          Figurine.
+// v5.339 — Due interventi su segnalazione di Franco:
+//          (1) PRESTAZIONI: da quando le figurine vivono dentro il
+//          documento della loro serie (v5.326), ogni salvataggio o
+//          cancellazione riscriveva l'INTERO array della serie, anche
+//          solo per aggiungere/togliere un elemento — sempre più lento
+//          quanto più una serie cresce. Ora le AGGIUNTE usano
+//          arrayUnion() e le CANCELLAZIONI arrayRemove(): Firestore
+//          riceve solo il singolo oggetto da aggiungere/togliere, non
+//          l'intero array. Le sole MODIFICHE di un elemento esistente
+//          continuano a richiedere la riscrittura completa (Firestore
+//          non offre un modo per sostituire un elemento di un array per
+//          contenuto).
+//          (2) FILTRI: aggiunti alla griglia Retro gli stessi pulsanti
+//          filtro già presenti per le Figurine — Solo base / Solo
+//          Change / Solo Errori di stampa / Tutti (l'ultimo si basa sul
+//          campo "Tipo di change" impostato a "errore di stampa", non
+//          case-sensitive). Corretta anche la capitalizzazione dei
+//          pulsanti Figurine: "Solo Variazioni ufficiali/non ufficiali".
+// v5.338 — Corretto il bug del "doppio inserimento" segnalato da Franco,
+//          introdotto con il nuovo modello dati per-serie (v5.326).
+//          Causa: _saveFigurineItem() (chiamata internamente da
+//          fsSave('figurines', ...)) già aggiunge il nuovo oggetto alla
+//          cache in memoria — ma altri 4 punti del codice lo facevano
+//          ANCHE loro subito dopo, duplicandolo: il form principale di
+//          aggiunta, e tutti e tre gli import massivi (Variazioni/
+//          Change, Retro, Figurine). Accadeva solo in creazione (non in
+//          modifica), sempre, non solo con doppio click.
+//          IMPORTANTE: quasi certamente non ha duplicato i dati veri su
+//          Firestore (il campo "items" della serie riceveva l'oggetto
+//          una sola volta) — era la copia in memoria del browser, usata
+//          durante la sessione senza ricaricare la pagina, a mostrarlo
+//          due volte. Un semplice ricaricamento della pagina dovrebbe
+//          già mostrare la situazione corretta.
+// v5.337 — Il campo "Tipo di change" non era obbligatorio per un Change
+//          di Retro, come segnalato da Franco. Aggiunta la validazione
+//          nel form principale di aggiunta/modifica. Nota: la modifica
+//          rapida dalla scheda di dettaglio (pulsante "Modifica") non ha
+//          ancora questo campo — non rischia di cancellare un Tipo già
+//          salvato (i campi non toccati restano quelli originali), ma da
+//          lì non è ancora possibile modificarlo o impostarlo.
+// v5.336 — Due correzioni segnalate da Franco: (1) il numero di elementi
+//          per pagina era una costante fissa (42) scollegata dal vero
+//          numero di colonne della griglia — che per i Retro è 5, non 7
+//          come per le altre sezioni, quindi 42 lasciava sempre l'ultima
+//          riga incompleta. Ora è sempre "6 righe × colonne reali della
+//          sezione corrente" (42 per Figurine/Album/Extra, invariato;
+//          30 per i Retro, sempre righe piene). (2) Trovato un duplicato
+//          in tabella dopo la creazione di un Change di Retro: causa più
+//          probabile, il pulsante Salva non si disabilitava durante il
+//          salvataggio, quindi un doppio click (o un click ripetuto per
+//          lentezza di rete) poteva creare due copie identiche prima che
+//          il controllo duplicati vedesse la prima. Aggiunta una
+//          protezione contro salvataggi multipli in corso. Il duplicato
+//          già esistente in database va comunque cancellato a mano.
+// v5.335 — Due rifiniture al form Figurina/Retro su richiesta di Franco:
+//          (1) il campo Nome ora sta su una riga propria a larghezza
+//          piena, non più affiancato ad altri campi; (2) il menu a
+//          tendina per scegliere l'oggetto base (Variazione/Change) ora
+//          ordina i Retro alfabeticamente per Categoria-Sottocategoria-
+//          Nome invece che per un ordine casuale (i Retro non hanno un
+//          numero su cui ordinare), e mostra Categoria/Sottocategoria
+//          anche nell'elenco e nella ricerca, non solo il Nome.
+// v5.334 — Primo step verso il caricamento massivo foto Retro: introdotto
+//          il concetto di "Change di Retro" (stesso Retro base, ma con una
+//          peculiarità che lo distingue — es. omaggio di colore diverso,
+//          errore di stampa — e una foto propria). Novità:
+//          • Nuovo campo sulla Serie: "Tipi di Retro" (un valore per riga,
+//            configurabile per ciascuna serie)
+//          • Nel form Retro, quando si spunta "Change", compare un menu
+//            "Tipo di change" con le opzioni di quella serie
+//          • Scegliendo il Tipo, il Nome si precompila come "Nome Retro
+//            base - Tipo" (resta comunque modificabile liberamente)
+//          • Riusato quasi per intero il meccanismo già esistente per i
+//            Change di figurina (stesso campo baseFigurineId, stesso flag
+//            isChange, stessa visualizzazione a tab nella scheda del
+//            Retro base, stesso collegamento "Change di: [link]" nella
+//            scheda del Change) — il codice era già scritto in modo
+//            generico, è bastato completare i pezzi mancanti lato Retro.
+//          Prossimo step: lo strumento di caricamento massivo foto per
+//          Retro e i loro Change.
+// v5.333 — Su segnalazione di Franco: il ricalcolo punteggi aveva un
+//          comportamento "ibrido" poco chiaro — contava solo gli utenti
+//          con un documento "Ce l'ho" (anche vuoto), escludendo invece chi
+//          non ne aveva mai creato uno, pur essendo concettualmente nella
+//          stessa situazione (punteggio zero). Riscritto per scorrere
+//          SEMPRE tutti gli utenti, uno per uno, scrivendo un punteggio
+//          zero esplicito per chi non ha mai usato "Ce l'ho" — nessuna
+//          eccezione nascosta, il conteggio finale è sempre il totale
+//          reale degli utenti.
+// v5.332 — Chiarito, su domanda di Franco, il messaggio finale del
+//          ricalcolo punteggi: il numero mostrato prima ("5 profili
+//          aggiornati" su 7 utenti totali) sembrava un errore, ma non lo
+//          era — il ricalcolo elabora solo chi ha almeno un dato in
+//          "Ce l'ho": chi non ha mai segnato nulla resta correttamente a
+//          punteggio 0 e non viene conteggiato. Ora il messaggio lo dice
+//          esplicitamente ("X utenti aggiornati su Y totali, Z non hanno
+//          mai usato Ce l'ho"), e "profili" è stato sostituito con
+//          "utenti" nel testo.
+// v5.331 — Corretto un bug segnalato da Franco: dopo aver modificato
+//          molte figurine possedute, la Classifica non mostrava il nuovo
+//          punteggio finché non si ricaricava la pagina (o si usava il
+//          ricalcolo manuale, pensato solo per gli utenti già esistenti
+//          prima della v5.314, non per l'uso quotidiano). Causa:
+//          _updatePublicScore aggiornava il punteggio su Firestore
+//          correttamente, ma non la copia in memoria (_cache.
+//          public_profiles) che la pagina già aperta stava usando. Ora
+//          aggiorna anche quella, quindi la Classifica riflette il nuovo
+//          punteggio non appena la si apre, senza dover ricaricare nulla.
 // v5.330 — GDPR (punto 4, minori): aggiunta l'autodichiarazione dell'età
 //          minima in registrazione. Nessuna vera "verifica" (richiederebbe
 //          un documento d'identità, sproporzionato per questo sito):
@@ -1381,7 +1534,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.330';
+const JS_VERSION = 'v5.344';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -1485,12 +1638,12 @@ function loadDemoData() {
 
 async function initFirebase() {
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-  const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
   const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, deleteUser: fbDeleteAuthUser, reauthenticateWithPopup, updatePassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
   fbApp = initializeApp(FIREBASE_CONFIG);
   db = getFirestore(fbApp);
   fbAuth = getAuth(fbApp);
-  window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField };
+  window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove };
   window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, fbDeleteAuthUser, reauthenticateWithPopup, updatePassword };
   console.log('Firebase ready');
 
@@ -1740,10 +1893,42 @@ async function _saveFigurineItem(item) {
 
   if (!item.id) item.id = _generateFigurineId();
   const iIdx = series.items.findIndex(x => x.id === item.id);
-  if (iIdx >= 0) series.items[iIdx] = item; else series.items.push(item);
+  const isNew = iIdx < 0;
+  if (isNew) series.items.push(item); else series.items[iIdx] = item;
   _recomputeSeriesCounts(series);
 
-  await fsSave('series', series);
+  if (isNew) {
+    // Nuovo elemento: proviamo con arrayUnion (invia solo il nuovo
+    // oggetto, non l'intero array — molto più veloce), ma verifichiamo
+    // SUBITO DOPO che l'oggetto sia davvero arrivato su Firestore,
+    // invece di fidarci ciecamente della promise risolta con successo.
+    // Se la verifica fallisce, riproviamo con la riscrittura completa e
+    // lo segnaliamo chiaramente in console, per capire finalmente quando
+    // e perché succede.
+    _invalidateSessionCache();
+    let confirmed = false;
+    try {
+      const { doc, updateDoc, getDoc, arrayUnion } = window._fb;
+      const ref = doc(db, 'series', series.id);
+      await updateDoc(ref, { items: arrayUnion(item), counts: series.counts });
+      const snap = await getDoc(ref);
+      const savedItems = snap.exists() ? (snap.data().items || []) : [];
+      confirmed = savedItems.some(x => x.id === item.id);
+      if (!confirmed) {
+        console.warn('⚠️ Verifica post-salvataggio (arrayUnion) fallita: l\u2019oggetto ' + item.id + ' ("' + item.name + '") non risulta nella serie "' + series.name + '" (' + series.id + ') subito dopo il salvataggio. Riprovo con riscrittura completa.', { item, series: series.id });
+      }
+    } catch(e) {
+      console.warn('⚠️ arrayUnion ha lanciato un errore: ' + e.message + '. Riprovo con riscrittura completa.', e);
+    }
+    if (!confirmed) {
+      await fsSave('series', series);
+    }
+  } else {
+    // Modifica di un elemento esistente: Firestore non permette di
+    // sostituire un singolo elemento di un array per contenuto, quindi
+    // qui serve riscrivere l'intero documento della serie
+    await fsSave('series', series);
+  }
 
   // Aggiorna la cache piatta usata da tutto il resto del codice, che
   // continua a vedere _cache.figurines esattamente come prima
@@ -1759,9 +1944,27 @@ async function _deleteFigurineItem(id) {
   for (const series of seriesList) {
     const idx = (series.items || []).findIndex(x => x.id === id);
     if (idx >= 0) {
+      const itemToRemove = series.items[idx];
       series.items.splice(idx, 1);
       _recomputeSeriesCounts(series);
-      await fsSave('series', series);
+      _invalidateSessionCache();
+      let confirmed = false;
+      try {
+        const { doc, updateDoc, getDoc, arrayRemove } = window._fb;
+        const ref = doc(db, 'series', series.id);
+        await updateDoc(ref, { items: arrayRemove(itemToRemove), counts: series.counts });
+        const snap = await getDoc(ref);
+        const remainingItems = snap.exists() ? (snap.data().items || []) : [];
+        confirmed = !remainingItems.some(x => x.id === id);
+        if (!confirmed) {
+          console.warn('⚠️ Verifica post-cancellazione (arrayRemove) fallita: l\u2019oggetto ' + id + ' risulta ancora presente nella serie "' + series.name + '" (' + series.id + '). Riprovo con riscrittura completa.', { itemToRemove, series: series.id });
+        }
+      } catch(e) {
+        console.warn('⚠️ arrayRemove ha lanciato un errore: ' + e.message + '. Riprovo con riscrittura completa.', e);
+      }
+      if (!confirmed) {
+        await fsSave('series', series);
+      }
       break;
     }
   }
@@ -2056,7 +2259,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'N. Change','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -2145,7 +2348,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
-    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
@@ -2935,6 +3138,8 @@ function openAddSeriesModal(seriesId) {
       const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = s.hasChange || false;
       const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = s.noNumbers || false;
       document.getElementById('series-desc-input').value = s.desc;
+      const rctInput = document.getElementById('series-retro-change-types-input');
+      if (rctInput) rctInput.value = (s.retroChangeTypes || []).join('\n');
 
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
     }
@@ -2943,6 +3148,8 @@ function openAddSeriesModal(seriesId) {
     const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = false;
     const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = false;
     const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = false;
+    const rctInput = document.getElementById('series-retro-change-types-input');
+    if (rctInput) rctInput.value = '';
   }
   updateSeriesVariationCounts(seriesId || null);
   toggleSeriesCountGroups();
@@ -2984,6 +3191,8 @@ async function saveSeries() {
   const albumCount = parseInt(document.getElementById('series-album-count-input').value) || null;
   const desc = document.getElementById('series-desc-input').value.trim();
   const descIt = desc; // same description for both languages
+  const retroChangeTypes = (document.getElementById('series-retro-change-types-input')?.value || '')
+    .split('\n').map(v => v.trim()).filter(Boolean);
   if (!name || !year) { toast((currentLang === 'it' ? 'Nome e anno sono obbligatori' : 'Name and year are required'), 'error'); return; }
   const fb = document.getElementById('series-save-feedback');
   const btn = document.querySelector('#add-series-modal .btn-primary');
@@ -3000,12 +3209,12 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null };
+        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes };
         await fsSave('series', series[idx]);
         _cache.series = series;
       }
     } else {
-      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, created: new Date().toISOString() };
+      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -3198,7 +3407,13 @@ function navigateFigDetail(direction) {
   if (newIdx < 0 || newIdx >= _gridOrderedIds.length) return;
   openFigDetail(_gridOrderedIds[newIdx]);
 }
-const ITEMS_PER_PAGE = 42;
+const ROWS_PER_PAGE = 6;
+function getItemsPerPage() {
+  // Colonne reali della griglia per la sezione corrente (vedi renderItems):
+  // 5 per i Retro, 7 per tutte le altre sezioni (classe CSS .grid-6)
+  const cols = currentSection === 'retros' ? 5 : 7;
+  return ROWS_PER_PAGE * cols;
+}
 
 function getSectionLabel(section) {
   const it = { figurines: 'Figurine', retros: 'Retro', albums: 'Album', extras: 'Altro Materiale' };
@@ -3354,19 +3569,34 @@ function closeSeriesDetail() {
 //  ITEMS (figurines/albums/extras unified)
 // ============================================================
 let _baseFigurineLinkOptions = [];
+function _baseFigurineLinkLabel(f) {
+  if (currentSection === 'retros') {
+    const parts = [f.category, f.subcategory].map(v => (v||'').trim()).filter(Boolean);
+    return (parts.length ? parts.join(' · ') + ' — ' : '') + f.name;
+  }
+  return (f.number ? '#' + f.number + ' ' : '') + f.name;
+}
+
 function populateBaseFigurineSelect(excludeId, selectedId) {
   const hidden = document.getElementById('fig-base-figurine-input');
   const search = document.getElementById('fig-base-figurine-search');
   if (!hidden || !search) return;
   _baseFigurineLinkOptions = getData('figurines', [])
     .filter(f => f.seriesId === currentSeriesId && f.section === currentSection && f.id !== excludeId && !f.isVariation && !f.isUnofficialVariation && !f.isChange)
-    .sort((a,b) => (a.number||0) - (b.number||0));
+    .sort((a, b) => {
+      if (currentSection === 'retros') {
+        const ka = [(a.category||''), (a.subcategory||''), (a.name||'')].join('|').toLowerCase();
+        const kb = [(b.category||''), (b.subcategory||''), (b.name||'')].join('|').toLowerCase();
+        return ka.localeCompare(kb);
+      }
+      return (a.number||0) - (b.number||0);
+    });
   hidden.value = selectedId || '';
   const dd = document.getElementById('fig-base-figurine-dropdown');
   if (dd) dd.style.display = 'none';
   if (selectedId) {
     const b = _baseFigurineLinkOptions.find(x => x.id === selectedId);
-    search.value = b ? ((b.number ? '#' + b.number + ' ' : '') + b.name) : '';
+    search.value = b ? _baseFigurineLinkLabel(b) : '';
   } else {
     search.value = '';
   }
@@ -3377,13 +3607,13 @@ function filterBaseFigurineLink() {
   const dd = document.getElementById('fig-base-figurine-dropdown');
   if (!dd) return;
   const filtered = q
-    ? _baseFigurineLinkOptions.filter(f => (f.name||'').toLowerCase().includes(q) || String(f.number||'').includes(q))
+    ? _baseFigurineLinkOptions.filter(f => (f.name||'').toLowerCase().includes(q) || String(f.number||'').includes(q) || (f.category||'').toLowerCase().includes(q) || (f.subcategory||'').toLowerCase().includes(q))
     : _baseFigurineLinkOptions;
   if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
   dd.innerHTML = filtered.slice(0, 50).map(f => {
     return `<div onclick="selectBaseFigurineLink('${f.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <div style="font-size:0.9rem;">${f.number ? '#' + f.number + ' ' : ''}${f.name}</div>
+      <div style="font-size:0.9rem;">${_baseFigurineLinkLabel(f)}</div>
     </div>`;
   }).join('');
 }
@@ -3392,8 +3622,9 @@ function selectBaseFigurineLink(id) {
   const f = _baseFigurineLinkOptions.find(x => x.id === id);
   if (!f) return;
   document.getElementById('fig-base-figurine-input').value = id;
-  document.getElementById('fig-base-figurine-search').value = (f.number ? '#' + f.number + ' ' : '') + f.name;
+  document.getElementById('fig-base-figurine-search').value = _baseFigurineLinkLabel(f);
   document.getElementById('fig-base-figurine-dropdown').style.display = 'none';
+  applyRetroChangeTypeToName();
 }
 
 function clearBaseFigurineLinkIfEmpty() {
@@ -3472,6 +3703,7 @@ function toggleBaseFigurineGroup() {
   const group = document.getElementById('fig-base-figurine-group');
   const retroGroup = document.getElementById('fig-retro-group');
   const numberGroup = document.getElementById('fig-number-group');
+  const changeTypeGroup = document.getElementById('fig-retro-change-type-group');
   if (!group) return;
   const isVar = document.getElementById('fig-is-variation-input')?.checked;
   const isUnoff = document.getElementById('fig-is-unofficial-variation-input')?.checked;
@@ -3482,6 +3714,33 @@ function toggleBaseFigurineGroup() {
   if (retroGroup) retroGroup.style.display = (!isChg && currentSection !== 'retros') ? '' : 'none';
   // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
   if (numberGroup) numberGroup.style.display = (showBase || currentSection === 'retros') ? 'none' : '';
+  // Tipo di change: solo per i Change di Retro, con le opzioni configurate sulla serie
+  const isRetroChange = currentSection === 'retros' && isChg;
+  if (changeTypeGroup) {
+    changeTypeGroup.style.display = isRetroChange ? '' : 'none';
+    if (isRetroChange) {
+      const series = getData('series', []).find(s => s.id === currentSeriesId);
+      const types = series?.retroChangeTypes || [];
+      const sel = document.getElementById('fig-retro-change-type-input');
+      if (sel) {
+        const current = sel.value;
+        sel.innerHTML = '<option value="">' + (currentLang === 'it' ? '— scegli —' : '— choose —') + '</option>' +
+          types.map(t => `<option value="${t}">${t}</option>`).join('');
+        if (types.includes(current)) sel.value = current;
+      }
+    }
+  }
+}
+
+// Quando si sceglie il Tipo di change di un Retro, precompila il Nome come
+// "Nome Retro base - Tipo" — resta comunque un campo libero e modificabile
+function applyRetroChangeTypeToName() {
+  const type = document.getElementById('fig-retro-change-type-input')?.value;
+  const baseId = document.getElementById('fig-base-figurine-input')?.value;
+  const nameInput = document.getElementById('fig-name-input');
+  if (!type || !baseId || !nameInput) return;
+  const baseRetro = getData('figurines', []).find(x => x.id === baseId);
+  if (baseRetro) nameInput.value = baseRetro.name + ' - ' + type;
 }
 
 function openAddItemModal(itemId) {
@@ -3532,8 +3791,14 @@ function openAddItemModal(itemId) {
     document.getElementById('fig-is-change-input').checked = false;
     populateBaseFigurineSelect(null, null);
     populateRetroSelect(null);
+    const rctSel = document.getElementById('fig-retro-change-type-input');
+    if (rctSel) rctSel.value = '';
   }
   toggleBaseFigurineGroup();
+  if (itemId && existingItem?.changeType) {
+    const sel = document.getElementById('fig-retro-change-type-input');
+    if (sel) sel.value = existingItem.changeType;
+  }
   // Show/hide conditional fields based on series flags
   const _ser = getData('series', []).find(s => s.id === currentSeriesId);
   const hasSizes = _ser?.hasSizes || false;
@@ -3643,6 +3908,16 @@ async function _updatePublicScore(userId, owned) {
     const countExtras = ownedFigs.filter(f => f.section === 'extras').length;
     const { doc, setDoc } = window._fb;
     await setDoc(doc(db, 'public_profiles', userId), { score, countFigurines, countAlbums, countExtras }, { merge: true });
+
+    // Aggiorna anche la copia in memoria: senza questo, la Classifica
+    // mostrerebbe il vecchio punteggio finché non si ricarica la pagina,
+    // anche se su Firestore il dato è già corretto
+    if (Array.isArray(_cache.public_profiles)) {
+      const idx = _cache.public_profiles.findIndex(p => p.id === userId);
+      if (idx >= 0) {
+        _cache.public_profiles[idx] = { ..._cache.public_profiles[idx], score, countFigurines, countAlbums, countExtras };
+      }
+    }
   } catch(e) { console.warn('_updatePublicScore failed', e.message); }
 }
 
@@ -3661,18 +3936,28 @@ async function backfillPublicScores() {
   if (progressEl) { progressEl.style.display = ''; progressEl.textContent = 'Lettura dati in corso...'; }
 
   try {
+    const allUsers = await fsGetAll('users');
     const allOwned = await fsGetAll('owned');
-    const realUserIds = new Set((await fsGetAll('users')).map(u => u.id));
-    const validOwned = allOwned.filter(o => realUserIds.has(o.userId));
-    const skipped = allOwned.length - validOwned.length;
+    const ownedByUserId = {};
+    for (const o of allOwned) ownedByUserId[o.userId] = o.owned || [];
+
+    // Scorre SEMPRE tutti gli utenti, uno per uno — chi non ha mai usato
+    // "Ce l'ho" riceve comunque un punteggio 0 scritto esplicitamente,
+    // invece di essere semplicemente saltato
     let done = 0;
-    for (const doc of validOwned) {
-      await _updatePublicScore(doc.userId, doc.owned || []);
+    for (const user of allUsers) {
+      await _updatePublicScore(user.id, ownedByUserId[user.id] || []);
       done++;
-      if (progressEl) progressEl.textContent = 'Ricalcolati ' + done + ' / ' + validOwned.length + '...';
+      if (progressEl) progressEl.textContent = 'Ricalcolati ' + done + ' / ' + allUsers.length + '...';
     }
-    if (progressEl) progressEl.textContent = 'Completato: ' + done + ' profili aggiornati.' + (skipped ? ' (' + skipped + ' ignorati, utenti non più esistenti)' : '');
-    toast(done + ' punteggi ricalcolati con successo' + (skipped ? ' (' + skipped + ' dati orfani ignorati)' : ''), 'success');
+
+    // Dati "Ce l'ho" orfani (nessun utente corrispondente): solo un avviso,
+    // non influenzano il conteggio principale
+    const realUserIds = new Set(allUsers.map(u => u.id));
+    const orphanOwned = allOwned.filter(o => !realUserIds.has(o.userId)).length;
+
+    if (progressEl) progressEl.textContent = 'Completato: punteggio aggiornato per tutti i ' + done + ' utenti.' + (orphanOwned ? ' (' + orphanOwned + ' dati "Ce l\u2019ho" orfani ignorati, utenti non più esistenti)' : '');
+    toast('Punteggio ricalcolato per tutti i ' + done + ' utenti', 'success');
     _cache.public_profiles = await fsGetAll('public_profiles');
     renderClassifica();
   } catch(e) {
@@ -3724,7 +4009,7 @@ function toggleNoPhotoFilter() {
 function renderItemTypeFilters() {
   const el = document.getElementById('items-filter-toggles');
   if (!el) return;
-  if (currentSection !== 'figurines') { el.innerHTML = ''; return; }
+  if (currentSection !== 'figurines' && currentSection !== 'retros') { el.innerHTML = ''; return; }
 
   const item = (key, label, icon, bold) => `
     <div style="display:flex;align-items:center;gap:0.4rem;">
@@ -3734,12 +4019,18 @@ function renderItemTypeFilters() {
 
   let html = '<div style="display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center;justify-content:space-between;">';
   html += '<div style="display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center;">';
-  html += item('base', currentLang === 'it' ? 'Solo base' : 'Base only', '⭐', true);
-  html += item('variation', currentLang === 'it' ? 'Solo variazioni ufficiali' : 'Official variations only', '🎨');
-  html += item('unofficialVariation', currentLang === 'it' ? 'Solo variazioni non ufficiali' : 'Unofficial variations only', '🎨');
-  html += item('change', currentLang === 'it' ? 'Solo Change' : 'Change only', '🔄');
+  if (currentSection === 'figurines') {
+    html += item('base', currentLang === 'it' ? 'Solo base' : 'Base only', '⭐', true);
+    html += item('variation', currentLang === 'it' ? 'Solo Variazioni ufficiali' : 'Official variations only', '🎨');
+    html += item('unofficialVariation', currentLang === 'it' ? 'Solo Variazioni non ufficiali' : 'Unofficial variations only', '🎨');
+    html += item('change', currentLang === 'it' ? 'Solo Change' : 'Change only', '🔄');
+  } else {
+    html += item('base', currentLang === 'it' ? 'Solo base' : 'Base only', '⭐', true);
+    html += item('change', currentLang === 'it' ? 'Solo Change' : 'Change only', '🔄');
+    html += item('printError', currentLang === 'it' ? 'Solo Errori di stampa' : 'Print errors only', '🖨️');
+  }
   html += '</div>';
-  html += item('all', currentLang === 'it' ? 'Tutte' : 'All', '', true);
+  html += item('all', currentSection === 'retros' ? (currentLang === 'it' ? 'Tutti' : 'All') : (currentLang === 'it' ? 'Tutte' : 'All'), '', true);
   html += '</div>';
 
   el.innerHTML = html;
@@ -3757,7 +4048,7 @@ function renderItems() {
   const searchQ = (document.getElementById('items-search')?.value || '').toLowerCase().trim();
   if (searchQ) currentItemPage = 1;
 
-  // Render filtri tipo figurina (solo per la sezione figurine)
+  // Render filtri tipo (sezione Figurine o Retro)
   renderItemTypeFilters();
 
   const allItems = getData('figurines', []).filter(f => {
@@ -3770,6 +4061,15 @@ function renderItems() {
         (_itemTypeFilter === 'variation' && f.isVariation) ||
         (_itemTypeFilter === 'unofficialVariation' && f.isUnofficialVariation) ||
         (_itemTypeFilter === 'change' && f.isChange);
+      if (!matchesType) return false;
+    }
+    // Filtro tipo Retro: base / Change / errori di stampa / tutti
+    if (currentSection === 'retros' && _itemTypeFilter !== 'all') {
+      const isPrintError = f.isChange && (f.changeType||'').toLowerCase().trim() === 'errore di stampa';
+      const matchesType =
+        (_itemTypeFilter === 'base' && !f.isChange) ||
+        (_itemTypeFilter === 'change' && f.isChange) ||
+        (_itemTypeFilter === 'printError' && isPrintError);
       if (!matchesType) return false;
     }
     if (!searchQ) return true;
@@ -3856,15 +4156,15 @@ function renderItems() {
     return;
   }
   // Pagination
-  const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(allItems.length / getItemsPerPage());
   if (currentItemPage > totalPages) currentItemPage = totalPages;
-  const start = (currentItemPage - 1) * ITEMS_PER_PAGE;
-  const items = allItems.slice(start, start + ITEMS_PER_PAGE);
+  const start = (currentItemPage - 1) * getItemsPerPage();
+  const items = allItems.slice(start, start + getItemsPerPage());
   // Elenco completo ordinato (tutte le pagine), usato per navigare avanti/indietro nel dettaglio
   _gridOrderedIds = allItems.map(f => f.id);
   // Pagination controls (top)
   const paginationTop = document.getElementById('items-pagination-top');
-  const totalPagesTop = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+  const totalPagesTop = Math.ceil(allItems.length / getItemsPerPage());
   function paginationHTML(cur, tot, total) {
     if (tot <= 1) return '';
     const _ser = getData('series', []).find(s => s.id === currentSeriesId);
@@ -3872,8 +4172,8 @@ function renderItems() {
     const sectionLabelLower = (getSectionLabel(currentSection) || (currentLang === 'it' ? 'oggetti' : 'items')).toLowerCase();
     let rangeStr = '';
     if (firstNum != null) {
-      const from = firstNum + (cur - 1) * ITEMS_PER_PAGE;
-      const to = Math.min(firstNum + cur * ITEMS_PER_PAGE - 1, firstNum + total - 1);
+      const from = firstNum + (cur - 1) * getItemsPerPage();
+      const to = Math.min(firstNum + cur * getItemsPerPage() - 1, firstNum + total - 1);
       rangeStr = currentLang === 'it'
         ? ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to}`
         : ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to}`;
@@ -3988,14 +4288,14 @@ function renderItems() {
   // Render pagination controls (bottom)
   const paginationEl = document.getElementById('items-pagination');
   if (paginationEl) {
-    paginationEl.innerHTML = paginationHTML(currentItemPage, Math.ceil(allItems.length / ITEMS_PER_PAGE), allItems.length);
+    paginationEl.innerHTML = paginationHTML(currentItemPage, Math.ceil(allItems.length / getItemsPerPage()), allItems.length);
     paginationEl.style.marginTop = '1.5rem';
   }
 }
 
 function changeItemPage(page) {
   const allItems = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
-  const totalPages = Math.ceil(allItems.length / ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(allItems.length / getItemsPerPage());
   if (page < 1 || page > totalPages) return;
   currentItemPage = page;
   renderItems();
@@ -4035,7 +4335,20 @@ function handleFigImg(e) {
   reader.readAsDataURL(file);
 }
 
+let _savingFigurine = false;
 async function saveFigurine() {
+  if (_savingFigurine) return; // evita duplicati da doppio click o click ripetuto durante il salvataggio
+  _savingFigurine = true;
+  const btn = document.querySelector('#add-fig-modal button[onclick="saveFigurine()"]');
+  if (btn) btn.disabled = true;
+  try {
+    await _saveFigurineInner();
+  } finally {
+    _savingFigurine = false;
+    if (btn) btn.disabled = false;
+  }
+}
+async function _saveFigurineInner() {
   const number = document.getElementById('fig-number-input').value;
   const noNumber = document.getElementById('fig-no-number-input')?.checked || false;
   const name = document.getElementById('fig-name-input').value.trim();
@@ -4051,6 +4364,7 @@ async function saveFigurine() {
   const baseFigurineId = document.getElementById('fig-base-figurine-input')?.value || null;
   const retroId = document.getElementById('fig-retro-input')?.value || null;
   const isRetrosSection = currentSection === 'retros';
+  const changeType = (isRetrosSection && isChange) ? (document.getElementById('fig-retro-change-type-input')?.value || null) : null;
   const isVarOrChgSection = isVariation || isUnofficialVariation || isChange;
   if (!name || (!isRetrosSection && !isVarOrChgSection && !number)) { toast((currentLang === 'it' ? (isRetrosSection || isVarOrChgSection ? 'Il nome è obbligatorio' : 'Numero e nome sono obbligatori') : (isRetrosSection || isVarOrChgSection ? 'Name is required' : 'Number and name are required')), 'error'); return; }
   if (isRetrosSection) {
@@ -4062,7 +4376,15 @@ async function saveFigurine() {
       (f.name||'').toLowerCase() === name.toLowerCase() &&
       (f.category||'').toLowerCase() === category.toLowerCase()
     );
-    if (dup) { toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria e lo stesso Nome in questa serie' : 'A Retro with the same Category and Name already exists in this series'), 'error'); return; }
+    if (dup) {
+      console.warn('🔎 Controllo duplicati BLOCCATO: trovato un oggetto già presente in memoria (_cache.figurines) con stesso nome+categoria.', {
+        stoTentandoDiSalvare: { name, category, seriesId: currentSeriesId },
+        oggettoTrovatoCheBlocca: dup,
+        idEsclusoDalControllo: editId || '(nessuno, è una creazione)'
+      });
+      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria e lo stesso Nome in questa serie' : 'A Retro with the same Category and Name already exists in this series'), 'error');
+      return;
+    }
   }
   if ([isVariation, isUnofficialVariation, isChange].filter(Boolean).length > 1) {
     toast((currentLang === 'it' ? 'Variazione ufficiale, non ufficiale e Change sono mutuamente esclusivi: spunta solo una opzione' : 'Official variation, unofficial variation and Change are mutually exclusive: check only one'), 'error');
@@ -4075,6 +4397,10 @@ async function saveFigurine() {
   }
   if (!isRetrosSection && (isVariation || isUnofficialVariation) && !retroId) {
     toast((currentLang === 'it' ? 'Il campo "Retro associato" è obbligatorio quando è selezionata una Variazione ufficiale o non ufficiale' : 'The "Associated retro" field is required when an official or unofficial Variation is selected'), 'error');
+    return;
+  }
+  if (isRetrosSection && isChange && !changeType) {
+    toast((currentLang === 'it' ? 'Il campo "Tipo di change" è obbligatorio per un Change di Retro' : 'The "Change type" field is required for a Retro Change'), 'error');
     return;
   }
   toast((currentLang === 'it' ? 'Salvataggio...' : 'Saving...'), 'success');
@@ -4095,14 +4421,13 @@ async function saveFigurine() {
     if (editId) {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || figs[idx].img };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || figs[idx].img };
         await fsSave('figurines', figs[idx]);
         _cache.figurines = figs;
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, img: imgUrl || null };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || null };
       const saved = await fsSave('figurines', newF);
-      _cache.figurines.push(saved);
     }
   } catch(e) {
     console.error('saveFigurine', e);
@@ -5707,7 +6032,14 @@ async function saveFigFromDetail(figId) {
       (f.name||'').toLowerCase() === name.toLowerCase() &&
       (f.category||'').toLowerCase() === category.toLowerCase()
     );
-    if (dup) { toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria e lo stesso Nome in questa serie' : 'A Retro with the same Category and Name already exists in this series'), 'error'); return; }
+    if (dup) {
+      console.warn('🔎 Controllo duplicati BLOCCATO (modifica rapida): trovato un oggetto già presente in memoria (_cache.figurines) con stesso nome+categoria.', {
+        stoTentandoDiSalvare: { name, category, seriesId: existingForCheck.seriesId, figId },
+        oggettoTrovatoCheBlocca: dup
+      });
+      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria e lo stesso Nome in questa serie' : 'A Retro with the same Category and Name already exists in this series'), 'error');
+      return;
+    }
   }
   const updates = {
     id: figId,
@@ -6366,7 +6698,6 @@ async function startImportVar() {
         updated++;
       } else {
         const saved = await fsSave('figurines', figData);
-        _cache.figurines.push(saved);
         varImportLog('✅ Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — aggiunta (' + tipo + ')', 'ok');
         inserted++;
       }
@@ -6496,7 +6827,6 @@ async function startImportRetro() {
         updated++;
       } else {
         const saved = await fsSave('figurines', retroData);
-        _cache.figurines.push(saved);
         retroImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta (' + categoria + ')', 'ok');
         inserted++;
       }
@@ -6651,7 +6981,6 @@ async function startImportFig() {
           errors++; continue;
         }
         const saved = await fsSave('figurines', { ...figData, name: nome, retroId: foundRetroId });
-        _cache.figurines.push(saved);
         figImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta', 'ok');
         inserted++;
       }
