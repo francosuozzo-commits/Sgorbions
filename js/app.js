@@ -1,6 +1,80 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.363 — Su proposta di Franco: "Punteggio serie" rinominato "Punteggio
+//          selezionati" e cambiato di significato — non assegna più il
+//          punteggio a TUTTI gli oggetti della sezione, ma solo a quelli
+//          attualmente visibili in griglia/tabella (cioè non nascosti
+//          dai filtri attivi: ricerca testuale, "solo con foto
+//          mancante", filtro tipo). Vale per tutte le sezioni (Figurine,
+//          Retro, Album, Altro Materiale). Estratta la logica di filtro,
+//          prima duplicata tra griglia e vista tabellare, in un'unica
+//          funzione condivisa (getCurrentlyFilteredItems) usata ora da
+//          entrambe le viste e dal Punteggio selezionati — garantisce
+//          che i tre punti vedano sempre esattamente lo stesso insieme
+//          di oggetti "visibili".
+// v5.362 — Due correzioni su segnalazione di Franco: (1) BUG reale: nella
+//          griglia (solo lì, non nel dettaglio), un Change di Retro
+//          senza foto propria mostrava per errore la foto del suo Retro
+//          base — il meccanismo di eredità foto era pensato per le
+//          Variazioni/Change di FIGURINA (che non necessitano di una
+//          foto propria) ma si applicava per errore anche ai Change di
+//          Retro, che invece la richiedono sempre. Ora limitato alle
+//          sole figurine. (2) Nel tab "Change" della scheda di un Retro,
+//          la lista mostra ora il Tipo di change invece del Nome (più
+//          utile, dato che il Nome può coincidere con quello del Retro
+//          base) — invariato per i Change di figurina, che non hanno un
+//          Tipo.
+// v5.361 — Su richiesta di Franco: aggiunto un selettore "Cosa stai
+//          caricando? Figurine / Retro" alla procedura di caricamento
+//          foto senza numero, per circoscrivere il perimetro. Per lo
+//          scope Retro, un Change di Retro ora si abbina con il nome
+//          file "Nome del Retro - Tipo di change" (es. "DI ANTIPATICO -
+//          omaggio nero.jpg"), invece del solo Nome — necessario perché
+//          un Change può condividere lo stesso Nome del suo Retro base,
+//          distinguibile solo dal Tipo. Risolve alla radice anche il
+//          problema dell'ambiguità per questo caso specifico.
+// v5.360 — Su richiesta di Franco: la procedura di caricamento massivo
+//          foto esistente è stata rinominata "Caricamento massivo foto
+//          figurine con numero" (invariata, per abbinamento su Numero).
+//          Aggiunta una NUOVA procedura dedicata, "Caricamento massivo
+//          foto figurine senza numero e retro", che finalmente permette
+//          di caricare le foto dei Retro (base e Change) — cosa non
+//          possibile fino ad oggi. Abbinamento file→oggetto per Nome
+//          esatto (case-insensitive), dato che né le figurine senza
+//          numero né i Retro ne hanno uno proprio. Se più oggetti della
+//          stessa serie condividono lo stesso Nome (es. un Retro e il
+//          suo Change con Nome identico), il file viene segnalato come
+//          ambiguo e saltato, invece di indovinare quale sia quello
+//          giusto — va rinominato in modo più specifico.
+// v5.359 — Due correzioni su segnalazione di Franco: (1) accordo di
+//          genere sul pulsante "Mostra tutte/tutti" (opposto di "Solo
+//          con foto mancante"), ora "Mostra tutti" per i Retro e "Mostra
+//          tutte" per le altre sezioni, stessa logica già applicata al
+//          pulsante "Tutti/Tutte" dei filtri tipo; (2) rimossa la
+//          colonna "N." dalla Vista tabellare quando la sezione è
+//          Retro — non hanno mai un numero.
+// v5.358 — Tre rifiniture alla Vista tabellare su richiesta di Franco:
+//          (1) il contenitore ora è largo quanto quello della vista a
+//          griglia (min(1500px, 94vw), centrato), prima era limitato
+//          alla larghezza standard della pagina; (2) aggiunte le colonne
+//          Categoria e Sottocategoria, modificabili direttamente in
+//          cella, visibili solo per la sezione Retro; (3) la colonna
+//          "Azioni" rinominata "Modifica", dato che contiene solo quel
+//          pulsante.
+// v5.357 — Trovato e corretto, tramite una simulazione dell'ambiente
+//          browser fuori dal sito, il bug segnalato da Franco per cui i
+//          filtri e la ricerca non avevano alcun effetto sulla "Vista
+//          tabellare". Causa: nei gestori dei pulsanti filtro e della
+//          ricerca, la chiamata a renderItems() precedeva sempre quella
+//          a renderBulkEditView() nella stessa funzione — se la prima
+//          lanciava un errore per qualsiasi motivo, l'esecuzione si
+//          fermava lì e la seconda non veniva mai raggiunta, lasciando
+//          la vista tabellare invariata. Le due chiamate sono ora
+//          indipendenti (ciascuna nel proprio try/catch): un problema
+//          nell'una non blocca più l'altra. Allargato anche il campo
+//          Nome nella vista tabellare (min-width 480px, prima 250px),
+//          troncava spesso i nomi più lunghi.
 // v5.356 — Su proposta di Franco, due interventi collegati: (1) tolto
 //          l'automatismo che precompilava il Nome come "Base - Tipo"
 //          quando si sceglie il Tipo di change nel form manuale — non
@@ -1631,7 +1705,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.356';
+const JS_VERSION = 'v5.363';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -2292,7 +2366,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Series score','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Email','admin.email.all':'All emails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in catalog...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','profile.saved':'✅ Information saved!','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Score selected','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Email','admin.email.all':'All emails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in catalog...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -2328,8 +2402,8 @@ const i18n = {
 'form.reply.placeholder':'Write a reply...','comment.admin':'Administrator','comment.login':'Log in to reply',
 'auth.title':'Welcome back','auth.login':'Login','auth.register':'Sign up',
 'auth.login.btn':'Enter','auth.reg.btn':'Confirm registration',
-'modal.bulkscore.title':'⭐ Series Score','modal.bulkscore.desc':'Assign the same score to all items in the current section. You can edit individual scores later.',
-'modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to all',
+'modal.bulkscore.title':'⭐ Score Selected','modal.bulkscore.desc':'Assign the same score to all currently visible items (those not hidden by any active filters). You can edit individual scores later.',
+'modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to visible',
 'modal.figdetail.title':'Sticker detail','modal.segnala.send':'Send comment','modal.segnala.title':'🚩 Report an issue','modal.segnala.desc':'Describe the issue you found with this sticker. The report will only be visible to the administrator.','modal.segnala.comment':'Comment','modal.segnala.placeholder':'Describe the issue...',
 'modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series',
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
@@ -2411,7 +2485,7 @@ const i18n = {
     'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine hai e traccia la percentuale di completamento per ogni serie.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio serie','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ E-mail','admin.email.all':'Tutte le e-mail','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nel catalogo...',
+    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio selezionati','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ E-mail','admin.email.all':'Tutte le e-mail','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nel catalogo...',
     'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -2424,7 +2498,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione',
-    'modal.bulkscore.title':'⭐ Punteggio Serie','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti della sezione corrente. Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica a tutti','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','profile.anni':'Anni di collezionismo Sgorbions','profile.sliderHint':'Prova a spostare il cursore! 👆','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Ti invieremo una password temporanea.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post',
     'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
@@ -4065,9 +4139,10 @@ function toggleNoPhotoFilter() {
     btn.style.background = _noPhotoFilter ? 'rgba(255,100,100,0.15)' : '';
     btn.style.borderColor = _noPhotoFilter ? '#ff6464' : '';
     btn.style.color = _noPhotoFilter ? '#ff6464' : '';
-    btn.textContent = _noPhotoFilter ? (currentLang === 'it' ? '📷 Mostra tutte' : '📷 Show all') : (currentLang === 'it' ? '📷 Solo con foto mancante' : '📷 Missing photo only');
+    btn.textContent = _noPhotoFilter ? (currentLang === 'it' ? (currentSection === 'retros' ? '📷 Mostra tutti' : '📷 Mostra tutte') : '📷 Show all') : (currentLang === 'it' ? '📷 Solo con foto mancante' : '📷 Missing photo only');
   }
-  renderItems();
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleNoPhotoFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleNoPhotoFilter)', e); }
 }
 
 function renderItemTypeFilters() {
@@ -4103,7 +4178,39 @@ function renderItemTypeFilters() {
 function toggleItemTypeFilter(type) {
   _itemTypeFilter = type; // comportamento radio puro: sempre uno solo attivo
   currentItemPage = 1;
-  renderItems();
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleItemTypeFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleItemTypeFilter)', e); }
+}
+
+// Calcola gli oggetti attualmente visibili per la serie/sezione corrente,
+// applicando gli stessi filtri usati da griglia e vista tabellare (ricerca
+// testuale, filtro "solo senza foto", filtro tipo). Funzione condivisa per
+// evitare che i tre punti (griglia, tabella, Punteggio selezionati)
+// finiscano per applicare criteri leggermente diversi tra loro.
+function getCurrentlyFilteredItems() {
+  const searchQ = (document.getElementById('items-search')?.value || '').toLowerCase().trim();
+  return getData('figurines', []).filter(f => {
+    if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
+    if (_noPhotoFilter && f.img) return false;
+    if (currentSection === 'figurines' && _itemTypeFilter !== 'all') {
+      const matchesType =
+        (_itemTypeFilter === 'base' && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ||
+        (_itemTypeFilter === 'variation' && f.isVariation) ||
+        (_itemTypeFilter === 'unofficialVariation' && f.isUnofficialVariation) ||
+        (_itemTypeFilter === 'change' && f.isChange);
+      if (!matchesType) return false;
+    }
+    if (currentSection === 'retros' && _itemTypeFilter !== 'all') {
+      const isPrintError = f.isChange && (f.changeType||'').toLowerCase().trim() === 'errore di stampa';
+      const matchesType =
+        (_itemTypeFilter === 'base' && !f.isChange) ||
+        (_itemTypeFilter === 'change' && f.isChange) ||
+        (_itemTypeFilter === 'printError' && isPrintError);
+      if (!matchesType) return false;
+    }
+    if (!searchQ) return true;
+    return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ);
+  });
 }
 
 function renderItems() {
@@ -4115,30 +4222,7 @@ function renderItems() {
   // Render filtri tipo (sezione Figurine o Retro)
   renderItemTypeFilters();
 
-  const allItems = getData('figurines', []).filter(f => {
-    if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
-    if (_noPhotoFilter && f.img) return false;
-    // Filtro tipo figurina (solo sezione figurine): sempre uno dei 5 stati attivo
-    if (currentSection === 'figurines' && _itemTypeFilter !== 'all') {
-      const matchesType =
-        (_itemTypeFilter === 'base' && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ||
-        (_itemTypeFilter === 'variation' && f.isVariation) ||
-        (_itemTypeFilter === 'unofficialVariation' && f.isUnofficialVariation) ||
-        (_itemTypeFilter === 'change' && f.isChange);
-      if (!matchesType) return false;
-    }
-    // Filtro tipo Retro: base / Change / errori di stampa / tutti
-    if (currentSection === 'retros' && _itemTypeFilter !== 'all') {
-      const isPrintError = f.isChange && (f.changeType||'').toLowerCase().trim() === 'errore di stampa';
-      const matchesType =
-        (_itemTypeFilter === 'base' && !f.isChange) ||
-        (_itemTypeFilter === 'change' && f.isChange) ||
-        (_itemTypeFilter === 'printError' && isPrintError);
-      if (!matchesType) return false;
-    }
-    if (!searchQ) return true;
-    return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ);
-  }).sort((a,b) => {
+  const allItems = getCurrentlyFilteredItems().sort((a,b) => {
     if (currentSection === 'figurines') {
       const allFigsForSort = getData('figurines', []);
       // Figurina di riferimento: se stessa se è base, altrimenti la figurina base collegata
@@ -4278,7 +4362,7 @@ function renderItems() {
     // una foto propria, riusiamo quella della figurina base collegata, senza duplicare il dato
     let displayImg = f.img;
     let baseFigForImg = null;
-    if (!displayImg && (f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
+    if (!displayImg && currentSection === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
       baseFigForImg = getData('figurines', []).find(x => x.id === f.baseFigurineId);
       if (baseFigForImg?.img) displayImg = baseFigForImg.img;
     }
@@ -5715,8 +5799,10 @@ function buildLinkedFiguresTabsHTML(baseId) {
     g.items.forEach(item => {
       let label;
       if (g.key === 'change') {
-        // Per il Change mostriamo solo il Nome (il Change non ha un numero proprio)
-        label = item.name;
+        // Per un Change di Retro mostriamo il Tipo di change (più utile del
+        // Nome, che può coincidere con quello del Retro base). Per un
+        // Change di figurina resta il Nome (non ha un Tipo)
+        label = item.section === 'retros' ? (item.changeType || item.name) : item.name;
       } else {
         // Per le Variazioni il Nome coincide sempre con quello della figurina base: inutile
         // ripeterlo. Mostriamo invece il Retro collegato (Categoria + Nome), la vera chiave
@@ -7318,12 +7404,12 @@ function renderAdminFoto() {
 
       <hr class="divider" style="margin:2rem 0;">
 
-      <h3 onclick="toggleImportSection('foto')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-foto-chevron">▶</span> 📥 ${currentLang==='it'?'Caricamento massivo foto':'Bulk photo upload'}</h3>
+      <h3 onclick="toggleImportSection('foto')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-foto-chevron">▶</span> 📥 ${currentLang==='it'?'Caricamento massivo foto figurine con numero':'Bulk photo upload — numbered stickers'}</h3>
       <div id="import-foto-section-content" style="display:none;">
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, seleziona le foto da caricare (nome file = numero figurina, es. <code>1.jpg</code>).<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
-          : 'INSTRUCTIONS:<br>Select a series, select the photos to upload (filename = sticker number, e.g. <code>1.jpg</code>).<br>The script removes the background with AI and updates the database (Firebase).'}
+          ? 'ISTRUZIONI:<br>Solo per figurine numerate. Seleziona la serie, seleziona le foto da caricare (nome file = numero figurina, es. <code>1.jpg</code>).<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
+          : 'INSTRUCTIONS:<br>Only for numbered stickers. Select a series, select the photos to upload (filename = sticker number, e.g. <code>1.jpg</code>).<br>The script removes the background with AI and updates the database (Firebase).'}
       </p>
 
       <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
@@ -7356,6 +7442,53 @@ function renderAdminFoto() {
       </div>
       <div id="foto-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
       </div>
+
+    <hr class="divider" style="margin:2rem 0;">
+
+    <h3 onclick="toggleImportSection('fotonn')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-fotonn-chevron">▶</span> 📥 ${currentLang==='it'?'Caricamento massivo foto figurine senza numero e retro':'Bulk photo upload — unnumbered stickers and Retros'}</h3>
+    <div id="import-fotonn-section-content" style="display:none;">
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+      ${currentLang==='it'
+        ? 'ISTRUZIONI:<br>Per figurine senza numero e per i Retro (base e Change), che non hanno un numero proprio. Seleziona la serie e indica cosa stai caricando (Figurine o Retro), poi seleziona le foto.<br><br><b>Figurine</b>: nome file = Nome esatto della figurina, es. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Retro base</b>: nome file = Nome esatto del Retro, es. <code>DI ANTIPATICO.jpg</code>.<br><b>Change di Retro</b>: nome file = Nome del Retro + " - " + Tipo di change, es. <code>DI ANTIPATICO - omaggio nero.jpg</code> — necessario perché un Change può avere lo stesso Nome del suo Retro base, distinguibile solo dal Tipo.<br><br>Se il nome del file non corrisponde a nessun oggetto (o corrisponde a più di uno), viene segnalato e saltato.<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
+        : 'INSTRUCTIONS:<br>For unnumbered stickers and for Retros (base and Change), which don\'t have a number of their own. Select the series and what you\'re uploading (Stickers or Retro), then select the photos.<br><br><b>Stickers</b>: filename = exact sticker Name, e.g. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Base Retro</b>: filename = exact Retro Name, e.g. <code>DI ANTIPATICO.jpg</code>.<br><b>Retro Change</b>: filename = Retro Name + " - " + Change type, e.g. <code>DI ANTIPATICO - omaggio nero.jpg</code> — needed because a Change can share the same Name as its base Retro, distinguishable only by Type.<br><br>If the filename doesn\'t match any item (or matches more than one), it is flagged and skipped.<br>The script removes the background with AI and updates the database (Firebase).'}
+    </p>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
+      <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
+      <select id="fotonn-series-select" class="form-select" style="margin-bottom:0.75rem;">
+        <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
+        ${series.map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
+      </select>
+
+      <label class="form-label">${currentLang==='it'?'Cosa stai caricando?':'What are you uploading?'}</label>
+      <select id="fotonn-scope-select" class="form-select" style="margin-bottom:0.75rem;">
+        <option value="figurine">${currentLang==='it'?'Figurine (senza numero)':'Stickers (unnumbered)'}</option>
+        <option value="retro">Retro</option>
+      </select>
+
+      <label class="form-label">${currentLang==='it'?'Foto (JPG, JPEG, PNG)':'Photos (JPG, JPEG, PNG)'}</label>
+      <input type="file" id="fotonn-file-input" accept=".jpg,.jpeg,.png,.webp" multiple class="form-input" style="margin-bottom:0.75rem;">
+
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;margin-bottom:0.4rem;">
+        <input type="checkbox" id="fotonn-remove-bg" checked style="width:auto;">
+        ${currentLang==='it'?'✨ Rimuovi sfondo automaticamente (AI locale)':'✨ Remove background automatically (local AI)'}
+      </label>
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;margin-bottom:0.75rem;">
+        <input type="checkbox" id="fotonn-overwrite" checked style="width:auto;">
+        ${currentLang==='it'?'Sovrascrivi foto già presenti':'Overwrite existing photos'}
+      </label>
+
+      <button class="btn-primary" onclick="startAdminFotoNoNumberUpload()" id="fotonn-start-btn">
+        🚀 ${currentLang==='it'?'Avvia caricamento':'Start upload'}
+      </button>
+    </div>
+
+    <div id="fotonn-progress-wrap" style="display:none;margin-bottom:1rem;">
+      <progress id="fotonn-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
+      <div id="fotonn-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
+    </div>
+    <div id="fotonn-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+    </div>
     </div>`;
 }
 
@@ -7486,6 +7619,115 @@ async function startAdminFotoUpload() {
   document.getElementById('foto-start-btn').disabled = false;
 }
 
+function fotoNnLog(msg, type) {
+  const el = document.getElementById('fotonn-log');
+  if (!el) return;
+  el.style.display = 'block';
+  const line = document.createElement('div');
+  line.style.color = type === 'ok' ? 'var(--accent)' : type === 'err' ? '#ff6464' : type === 'warn' ? '#ffc832' : 'var(--muted)';
+  line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+function fotoNnStatus(msg, pct) {
+  const el = document.getElementById('fotonn-status');
+  if (el) el.textContent = msg;
+  const pr = document.getElementById('fotonn-progress');
+  if (pr && pct !== undefined) pr.value = pct;
+}
+
+// Caricamento massivo foto per figurine senza numero e Retro (base e Change):
+// nessuno di questi ha un Numero, quindi l'abbinamento file→oggetto avviene
+// per Nome esatto (case-insensitive) invece che per numero. Se più di un
+// oggetto della serie condivide lo stesso Nome, il file è ambiguo e viene
+// saltato con un avviso, invece di indovinare quale sia quello giusto.
+async function startAdminFotoNoNumberUpload() {
+  const seriesId = document.getElementById('fotonn-series-select').value;
+  if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series', 'error'); return; }
+  const scope = document.getElementById('fotonn-scope-select').value; // 'figurine' | 'retro'
+  const files = Array.from(document.getElementById('fotonn-file-input').files);
+  if (!files.length) { toast(currentLang==='it'?'Seleziona almeno una foto':'Select at least one photo', 'error'); return; }
+  const doRemoveBg = document.getElementById('fotonn-remove-bg').checked;
+  const overwrite = document.getElementById('fotonn-overwrite').checked;
+
+  if (doRemoveBg) {
+    let tries = 0;
+    while (!window._removeBackground && tries < 30) {
+      fotoNnStatus(currentLang==='it'?'⏳ Caricamento libreria AI...':'⏳ Loading AI library...', 0);
+      await new Promise(r => setTimeout(r, 1000));
+      tries++;
+    }
+    if (!window._removeBackground) {
+      toast(currentLang==='it'?'❌ Libreria AI non disponibile, deseleziona "Rimuovi sfondo"':'❌ AI library unavailable, uncheck "Remove background"', 'error');
+      return;
+    }
+  }
+
+  document.getElementById('fotonn-start-btn').disabled = true;
+  document.getElementById('fotonn-progress-wrap').style.display = 'block';
+  document.getElementById('fotonn-log').innerHTML = '';
+  fotoNnLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + files.length + ' foto (' + scope + ') ---', 'info');
+
+  // Candidati in base allo scope scelto. Per il Retro, la chiave attesa nel
+  // nome del file è diversa per un Change (Nome + " - " + Tipo) rispetto a
+  // un Retro base (solo Nome) — evita ambiguità quando un Change condivide
+  // il Nome col proprio Retro base.
+  const allFigs = getData('figurines', []);
+  const candidates = allFigs
+    .filter(f => f.seriesId === seriesId && (scope === 'retro' ? f.section === 'retros' : (f.section === 'figurines' && !f.number && !f.isVariation && !f.isUnofficialVariation && !f.isChange)))
+    .map(f => ({ item: f, key: (scope === 'retro' && f.isChange) ? (f.name + ' - ' + (f.changeType||'')) : f.name }));
+  fotoNnLog((currentLang==='it'?'Oggetti candidati nella serie:':'Candidate items in series:') + ' ' + candidates.length, 'info');
+
+  let ok = 0, skip = 0, errors = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    const name = file.name.replace(/\.[^.]+$/, '').trim();
+    fotoNnStatus(file.name + ' (' + (i+1) + '/' + files.length + ')', Math.round((i/files.length)*100));
+
+    if (!name) { fotoNnLog('⚠️ Nome file non valido: ' + file.name, 'warn'); errors++; continue; }
+    const matches = candidates.filter(c => c.key.toLowerCase().trim() === name.toLowerCase());
+    if (!matches.length) { fotoNnLog('⚠️ Nessun oggetto trovato con Nome "' + name + '"', 'warn'); errors++; continue; }
+    if (matches.length > 1) {
+      fotoNnLog('⚠️ "' + name + '" è ambiguo: ' + matches.length + ' oggetti nella serie corrispondono — controlla eventuali duplicati nel database', 'warn');
+      errors++; continue;
+    }
+    const fig = matches[0].item;
+    if (fig.img && !overwrite) { fotoNnLog('⏭️ "' + name + '" — skip (ha già foto)', 'info'); skip++; continue; }
+
+    try {
+      let blob = file;
+
+      if (doRemoveBg) {
+        fotoNnLog('🎨 Rimozione sfondo "' + name + '"...', 'info');
+        blob = await window._removeBackground(blob, {
+          progress: (key, cur, tot) => fotoNnStatus('Sfondo "' + name + '": ' + Math.round((cur/tot)*100) + '%', Math.round((i/files.length)*100))
+        });
+        blob = await fotoCrop(blob);
+      }
+
+      fotoNnLog('☁️ Caricamento ' + (i+1) + '/' + files.length + ' — "' + name + '"...', 'info');
+      const url = await uploadToCloudinary(blob);
+      const updated = { ...fig, img: url };
+      await fsSave('figurines', updated);
+      if (_cache.figurines) {
+        const idx = _cache.figurines.findIndex(x => x.id === fig.id);
+        if (idx >= 0) _cache.figurines[idx] = updated;
+      }
+      fotoNnLog('✅ "' + name + '" — completato', 'ok');
+      ok++;
+    } catch(e) {
+      fotoNnLog('❌ "' + name + '" — ' + e.message, 'err');
+      errors++;
+    }
+  }
+
+  fotoNnStatus('✅ Fine: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori', 100);
+  fotoNnLog('--- FINE: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori ---', errors === 0 ? 'ok' : 'warn');
+  document.getElementById('fotonn-start-btn').disabled = false;
+}
+
 // ============================================================
 //  TOAST
 // ============================================================
@@ -7565,7 +7807,7 @@ function renderAll() {
     const noPhotoBtn2 = document.getElementById('no-photo-filter-btn');
     if (noPhotoBtn2) {
       noPhotoBtn2.textContent = _noPhotoFilter
-        ? (currentLang === 'it' ? '📷 Mostra tutte' : '📷 Show all')
+        ? (currentLang === 'it' ? (currentSection === 'retros' ? '📷 Mostra tutti' : '📷 Mostra tutte') : '📷 Show all')
         : (currentLang === 'it' ? '📷 Solo con foto mancante' : '📷 Missing photo only');
     }
     renderItems();
@@ -7791,14 +8033,18 @@ function toggleBulkEditView() {
 function renderBulkEditView() {
   const bulkView = document.getElementById('bulk-edit-view');
   if (!bulkView) return;
+  bulkView.style.width = 'min(1500px, 94vw)';
+  bulkView.style.maxWidth = '1500px';
+  bulkView.style.marginLeft = '50%';
+  bulkView.style.marginRight = '0';
+  bulkView.style.transform = 'translateX(-50%)';
   const currentSeries = getData('series', []).find(s => s.id === currentSeriesId);
   const currentSeriesHasSizes = currentSeries?.hasSizes || false;
   const currentSeriesHasSubseries = currentSeries?.hasSubseries || false;
-  const allItems = (_cache.figurines || getData('figurines', []))
-    .filter(f => f.seriesId === currentSeriesId && f.section === currentSection)
+  const allItems = getCurrentlyFilteredItems()
     .sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
 
-  if (!allItems.length) { bulkView.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun oggetto ancora.' : 'Nothing here yet.'}</p>`; return; }
+  if (!allItems.length) { bulkView.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali.' : 'No items found with the current filters.'}</p>`; return; }
 
   bulkView.innerHTML = `
     <p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
@@ -7810,19 +8056,21 @@ function renderBulkEditView() {
         <tr style="background:var(--card2);">
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>
           ${currentSeriesHasSubseries ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottoserie</th>' : ''}
-          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>
+          ${currentSection === 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Categoria</th><th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottocategoria</th>' : ''}
+          ${currentSection !== 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>' : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Nome</th>
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
           ${currentSeriesHasSizes ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
-          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Azioni</th>
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>
         </tr>
       </thead>
       <tbody>
         ${allItems.map(f => `<tr id="bulk-row-${f.id}" style="border-bottom:1px solid var(--border);">
           <td style="padding:4px;text-align:center;"><input type="checkbox" class="bulk-select-row" data-id="${f.id}" onchange="updateBulkDeleteCount()"></td>
           ${currentSeriesHasSubseries ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
-          <td style="padding:4px;"><input data-field="number" data-id="${f.id}" value="${f.number||''}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
-          <td style="padding:4px;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:180px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
+          ${currentSection === 'retros' ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
+          ${currentSection !== 'retros' ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
+          <td style="padding:4px;width:99%;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:480px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
           <td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
           ${currentSeriesHasSizes ? '<td style="padding:4px;"><input data-field="size" data-id="'+f.id+'" value="'+(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
           <td style="padding:4px;"><button class="tbl-btn tbl-btn-edit" onclick="openAddItemModal('${f.id}')">&#9998;</button></td>
@@ -7898,9 +8146,9 @@ function openBulkScoreModal() {
 async function saveBulkScore() {
   const score = parseInt(document.getElementById('bulk-score-input').value);
   if (isNaN(score) || score < 0) { toast('Inserisci un punteggio valido', 'error'); return; }
-  const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
-  if (!items.length) { toast(currentLang === 'it' ? 'Nessun oggetto in questa sezione' : 'No items in this section', 'error'); return; }
-  if (!confirm('Assegnare ' + score + ' punti a tutti i ' + items.length + ' oggetti di questa sezione?')) return;
+  const items = getCurrentlyFilteredItems();
+  if (!items.length) { toast(currentLang === 'it' ? 'Nessun oggetto visibile con i filtri attuali' : 'No items visible with the current filters', 'error'); return; }
+  if (!confirm((currentLang === 'it' ? 'Assegnare ' + score + ' punti a tutti i ' + items.length + ' oggetti attualmente visibili (non nascosti dai filtri)?' : 'Assign ' + score + ' points to all ' + items.length + ' currently visible items (not hidden by filters)?'))) return;
   const fb = document.getElementById('bulk-score-feedback');
   const btn = document.querySelector('#bulk-score-modal .btn-primary');
   if (btn) btn.disabled = true;
@@ -7912,8 +8160,9 @@ async function saveBulkScore() {
     saved++;
     if (fb) fb.textContent = (currentLang === 'it' ? '⏳ Salvataggio in corso...' : '⏳ Saving...') + ' ' + saved + ' / ' + items.length;
   }
+  const updatedIds = new Set(items.map(f => f.id));
   _cache.figurines = getData('figurines', []).map(f => {
-    if (f.seriesId === currentSeriesId && f.section === currentSection) f.score = score;
+    if (updatedIds.has(f.id)) f.score = score;
     return f;
   });
   if (fb) fb.textContent = currentLang === 'it' ? '✅ Punteggio assegnato a ' + items.length + ' oggetti!' : '✅ Score assigned to ' + items.length + ' items!';
