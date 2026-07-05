@@ -1,6 +1,57 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.330 — GDPR (punto 4, minori): aggiunta l'autodichiarazione dell'età
+//          minima in registrazione. Nessuna vera "verifica" (richiederebbe
+//          un documento d'identità, sproporzionato per questo sito):
+//          l'utente conferma con un checkbox di avere almeno 16 anni,
+//          soglia scelta da Franco. Se non confermato, la registrazione è
+//          bloccata. Stesso requisito applicato anche a chi si registra
+//          con Google (gate mostrato subito dopo l'autenticazione Google,
+//          prima di creare il profilo; se rifiutato, l'account Firebase
+//          Auth appena creato viene ripulito). Per minimizzare i dati
+//          raccolti non si chiede né si salva la data di nascita: si
+//          registra solo ageConfirmed16 e la data della conferma, come
+//          evidenza minima di conformità.
+// v5.329 — Due correzioni: (1) "Cambia password" dal profilo era rotto
+//          per chiunque dalla migrazione a Firebase Auth in poi (il
+//          controllo era ancora sul vecchio campo currentUser.password,
+//          non più esistente). Riscritto usando la riautenticazione e
+//          l'aggiornamento password di Firebase Auth; il pulsante ora si
+//          nasconde per chi ha fatto accesso con Google (nessuna
+//          password da cambiare da qui). (2) Su segnalazione di Franco,
+//          il testo di conferma per l'eliminazione dell'account è stato
+//          riscritto come elenco puntuale e concreto — dice esattamente
+//          quali dati spariscono (profilo, e-mail, "Ce l'ho", posizione
+//          in classifica, wishlist, accesso) invece di un paragrafo
+//          generico, con la nota separata su cosa succede a post/commenti
+//          del blog.
+// v5.328 — GDPR: aggiunta l'autocancellazione dell'account (diritto
+//          all'oblio, art. 17), assente fino ad ora — esisteva solo la
+//          cancellazione fatta dall'admin per un altro utente. Dal
+//          profilo, sezione "Elimina il mio account": richiede
+//          riautenticazione (password, o verifica Google per chi si è
+//          registrato così — obbligatoria lato Firebase per operazioni
+//          sensibili), poi cancella users/public_profiles/owned/
+//          wishlists e l'account Firebase Authentication vero e proprio.
+//          I post/commenti scritti sul blog restano visibili ma con il
+//          nome sostituito da "Utente eliminato" (decisione di Franco).
+//          Corrette anche le regole di sicurezza Firestore: permettevano
+//          la cancellazione del proprio profilo/dati solo "a metà" (la
+//          sintassi usata per create/update non funziona per le
+//          cancellazioni, che Firestore valuta diversamente) — vedi
+//          firestore.rules aggiornato, da ripubblicare in Firebase
+//          Console.
+// v5.327 — Completato il punto GDPR lasciato a metà nelle sessioni
+//          precedenti: rimosso il caricamento di Google Fonts dai server
+//          di Google (esponeva l'IP di ogni visitatore a Google fin dal
+//          primo caricamento, senza consenso). Nunito (l'unico dei tre
+//          font effettivamente usato nel sito — Boogaloo e Permanent
+//          Marker erano importati ma mai utilizzati, rimossi) è ora
+//          "self-hosted": i file .woff2 (pesi 400/600/700/800, forniti
+//          da Franco tramite Google Webfonts Helper) vivono nella
+//          cartella /fonts/ del sito stesso, referenziati da style.css.
+//          Nessuna richiesta esce più verso Google per i font.
 // v5.326 — CAMBIO DI ARCHITETTURA DATI: le figurine non sono più salvate
 //          come documenti separati (uno a figurina, collezione
 //          'figurines'), ma incorporate dentro il documento della loro
@@ -1330,7 +1381,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.326';
+const JS_VERSION = 'v5.330';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -1435,12 +1486,12 @@ function loadDemoData() {
 async function initFirebase() {
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
   const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-  const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+  const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, deleteUser: fbDeleteAuthUser, reauthenticateWithPopup, updatePassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
   fbApp = initializeApp(FIREBASE_CONFIG);
   db = getFirestore(fbApp);
   fbAuth = getAuth(fbApp);
   window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField };
-  window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail };
+  window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, fbDeleteAuthUser, reauthenticateWithPopup, updatePassword };
   console.log('Firebase ready');
 
   // Verifica che il currentUser eventualmente salvato in localStorage
@@ -1988,7 +2039,7 @@ const i18n = {
 'contact.location.val':'Italy 🇮🇹','contact.resp':'Response time','contact.resp.val':'Usually within 24–48 hours',
 'form.name.ph':'Sgorbions Fan','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio!',
 'form.message':'Message','form.message.ph':'Tell me everything...',
-'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
+'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality','form.ageConfirm':'I confirm I am at least 16 years old','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
 'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Stickers',
 'form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.cover':'Cover Image',
 'form.click':'Click to upload','form.drag':'or drag and drop',
@@ -2087,7 +2138,7 @@ const i18n = {
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'E-mail','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
-    'form.username':'Nickname','form.password':'Password','form.nationality':'Nazionalità','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
+    'form.username':'Nickname','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
@@ -2339,10 +2390,20 @@ async function signInWithGoogle() {
     user.lastLogin = new Date().toISOString();
   } else {
     isNewUser = true;
+    // Stesso requisito del form di registrazione: conferma di avere
+    // almeno 16 anni, obbligatoria anche per chi si registra con Google
+    const ageConfirmed = confirm(currentLang === 'it'
+      ? 'Per registrarti devi confermare di avere almeno 16 anni. Confermi?'
+      : 'To register you must confirm you are at least 16 years old. Do you confirm?');
+    if (!ageConfirmed) {
+      try { const { fbDeleteAuthUser } = window._fbAuth; await fbDeleteAuthUser(cred.user); } catch(e) { console.warn('cleanup unconfirmed google account failed', e.message); }
+      toast(currentLang === 'it' ? 'Registrazione annullata' : 'Registration cancelled', 'error');
+      return;
+    }
     // Primo accesso con questo account Google: creo un nuovo utente
     const baseName = cred.user.displayName || (cred.user.email || '').split('@')[0];
     const username = _generateUniqueUsername(baseName);
-    const newUser = { id: Date.now().toString(), authUid: cred.user.uid, username, email: cred.user.email || '', isAdmin: false, joined: new Date().toISOString(), nationalityCode: '', nationalityName: '' };
+    const newUser = { id: Date.now().toString(), authUid: cred.user.uid, username, email: cred.user.email || '', isAdmin: false, joined: new Date().toISOString(), nationalityCode: '', nationalityName: '', ageConfirmed16: true, ageConfirmedAt: new Date().toISOString() };
     const saved = await fsSave('users', newUser);
     _cache.users = _cache.users || [];
     _cache.users.push(saved);
@@ -2383,6 +2444,12 @@ async function doRegister() {
   if (!u || !e || !p) { if (regErr) { regErr.style.display = ''; regErr.textContent = 'Compila tutti i campi'; return; } toast((currentLang === 'it' ? 'Compila tutti i campi' : 'Please fill in all fields'), 'error'); return; }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) { if (regErr) { regErr.style.display = ''; regErr.textContent = 'Inserisci un indirizzo e-mail valido'; return; } toast('Inserisci un indirizzo e-mail valido', 'error'); return; }
   if (p.length < 6) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'La password deve avere almeno 6 caratteri'; return; } toast('La password deve avere almeno 6 caratteri', 'error'); return; }
+  const ageConfirmed = document.getElementById('reg-age-confirm')?.checked;
+  if (!ageConfirmed) {
+    const msg = currentLang === 'it' ? 'Devi confermare di avere almeno 16 anni per registrarti' : 'You must confirm you are at least 16 years old to register';
+    if (regErr) { regErr.style.display = ''; regErr.textContent = msg; } else toast(msg, 'error');
+    return;
+  }
   let profiles = getData('public_profiles', []);
   if (profiles.find(x => x.username === u)) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'Nickname già in uso'; return; } toast('Nickname già in uso', 'error'); return; }
   const natCode = document.getElementById('reg-nationality-code')?.value || '';
@@ -2400,7 +2467,7 @@ async function doRegister() {
     if (regErr) { regErr.style.display = ''; regErr.textContent = msg; } else toast(msg, 'error');
     return;
   }
-  const newUser = { id: Date.now().toString(), authUid, username: u, email: e, isAdmin: false, joined: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName };
+  const newUser = { id: Date.now().toString(), authUid, username: u, email: e, isAdmin: false, joined: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName, ageConfirmed16: true, ageConfirmedAt: new Date().toISOString() };
   const saved = await fsSave('users', newUser);
   _cache.users = _cache.users || [];
   _cache.users.push(saved);
@@ -2517,6 +2584,117 @@ function openChangePwdModal() {
   document.getElementById('change-pwd-modal').classList.remove('hidden');
 }
 
+// ============================================================
+//  AUTOCANCELLAZIONE ACCOUNT (diritto all'oblio, GDPR art. 17)
+// ============================================================
+function openDeleteAccountModal() {
+  if (!currentUser) return;
+  const pwdGroup = document.getElementById('delete-account-password-group');
+  const confirmBtn = document.getElementById('delete-account-confirm-btn');
+  const googleBtn = document.getElementById('delete-account-google-btn');
+  const errEl = document.getElementById('delete-account-error');
+  const pwdInput = document.getElementById('delete-account-password');
+  if (errEl) { errEl.style.display = 'none'; errEl.textContent = ''; }
+  if (pwdInput) pwdInput.value = '';
+
+  const provider = fbAuth?.currentUser?.providerData?.[0]?.providerId;
+  if (provider === 'google.com') {
+    if (pwdGroup) pwdGroup.style.display = 'none';
+    if (confirmBtn) confirmBtn.style.display = 'none';
+    if (googleBtn) googleBtn.style.display = '';
+  } else {
+    if (pwdGroup) pwdGroup.style.display = '';
+    if (confirmBtn) confirmBtn.style.display = '';
+    if (googleBtn) googleBtn.style.display = 'none';
+  }
+  document.getElementById('delete-account-modal').classList.remove('hidden');
+}
+
+async function confirmDeleteAccount() {
+  const pwd = document.getElementById('delete-account-password').value;
+  const errEl = document.getElementById('delete-account-error');
+  const showErr = (msg) => { if (errEl) { errEl.style.display = ''; errEl.textContent = msg; } };
+  if (!pwd) { showErr('Inserisci la tua password.'); return; }
+
+  const { EmailAuthProvider, reauthenticateWithCredential } = window._fbAuth;
+  const fbUser = fbAuth.currentUser;
+  try {
+    const cred = EmailAuthProvider.credential(currentUser.email, pwd);
+    await reauthenticateWithCredential(fbUser, cred);
+  } catch(e) {
+    console.error('reauthenticate error', e);
+    showErr(currentLang === 'it' ? 'Password non corretta, riprova.' : 'Wrong password, please retry.');
+    return;
+  }
+  await _performAccountDeletion(fbUser);
+}
+
+async function confirmDeleteAccountGoogle() {
+  const { GoogleAuthProvider, reauthenticateWithPopup } = window._fbAuth;
+  const fbUser = fbAuth.currentUser;
+  const errEl = document.getElementById('delete-account-error');
+  try {
+    await reauthenticateWithPopup(fbUser, new GoogleAuthProvider());
+  } catch(e) {
+    console.error('reauthenticate google error', e);
+    if (errEl) { errEl.style.display = ''; errEl.textContent = currentLang === 'it' ? 'Verifica Google non riuscita, riprova.' : 'Google verification failed, please retry.'; }
+    return;
+  }
+  await _performAccountDeletion(fbUser);
+}
+
+async function _anonymizeUserContent(userId) {
+  // Post e commenti restano visibili (valore per gli altri lettori del
+  // blog), ma con il nome sostituito: non è più possibile risalire a chi
+  // li ha scritti una volta cancellato l'account
+  const anonName = currentLang === 'it' ? 'Utente eliminato' : 'Deleted user';
+  const posts = getData('posts', []);
+  for (const post of posts) {
+    let changed = false;
+    if (post.authorId === userId) { post.author = anonName; changed = true; }
+    if (post.comments && post.comments.length) {
+      for (const c of post.comments) {
+        if (c.authorId === userId) { c.author = anonName; changed = true; }
+      }
+    }
+    if (changed) {
+      try { await fsSave('posts', post); } catch(e) { console.warn('anonymize post failed', e.message); }
+    }
+  }
+}
+
+async function _performAccountDeletion(fbUser) {
+  const { fbDeleteAuthUser } = window._fbAuth;
+  const userId = currentUser.id;
+  try {
+    // L'anonimizzazione va fatta PRIMA di cancellare l'account: le regole
+    // di sicurezza richiedono di essere ancora autenticati per modificare
+    // i post del blog
+    await _anonymizeUserContent(userId);
+
+    await fsDelete('users', userId);
+    try { await fsDelete('public_profiles', userId); } catch(e) { console.warn('delete public_profiles', e.message); }
+    try { await fsDelete('owned', userId); } catch(e) { console.warn('delete owned', e.message); }
+    try { await fsDelete('wishlists', userId); } catch(e) { console.warn('delete wishlists', e.message); }
+
+    // Cancella l'account Firebase Authentication vero e proprio — possibile
+    // solo perché l'utente lo sta facendo su se stesso, appena riautenticato
+    await fbDeleteAuthUser(fbUser);
+  } catch(e) {
+    console.error('_performAccountDeletion error', e);
+    const errEl = document.getElementById('delete-account-error');
+    if (errEl) { errEl.style.display = ''; errEl.textContent = (currentLang === 'it' ? 'Errore durante la cancellazione: ' : 'Error during deletion: ') + e.message; }
+    return;
+  }
+
+  closeModal('delete-account-modal');
+  currentUser = null;
+  LOCAL.set('currentUser', null);
+  updateNavUser();
+  showPage('home');
+  toast(currentLang === 'it' ? 'Account cancellato. Ci dispiace vederti andare via! 👋' : 'Account deleted. Sorry to see you go! 👋', 'success');
+}
+
 async function doChangePassword() {
   const current = document.getElementById('change-pwd-current').value;
   const newPwd = document.getElementById('change-pwd-new').value;
@@ -2528,22 +2706,36 @@ async function doChangePassword() {
     fb.textContent = msg;
   };
 
+  if (fbAuth?.currentUser?.providerData?.[0]?.providerId === 'google.com') {
+    showError(currentLang === 'it' ? 'Hai fatto accesso con Google: la password si gestisce direttamente dal tuo account Google, non da qui.' : 'You signed in with Google: manage your password directly from your Google account, not here.');
+    return;
+  }
+
   if (!current || !newPwd || !confirm) { showError('Compila tutti i campi.'); return; }
-  if (currentUser.password !== current) { showError('La password attuale non è corretta.'); return; }
   if (newPwd.length < 6) { showError('La nuova password deve essere di almeno 6 caratteri.'); return; }
   if (newPwd !== confirm) { showError('Le due password non corrispondono.'); return; }
 
-  currentUser.password = newPwd;
+  const { EmailAuthProvider, reauthenticateWithCredential, updatePassword } = window._fbAuth;
+  const fbUser = fbAuth.currentUser;
+  try {
+    const cred = EmailAuthProvider.credential(currentUser.email, current);
+    await reauthenticateWithCredential(fbUser, cred);
+  } catch(e) {
+    console.error('reauthenticate error', e);
+    showError('La password attuale non è corretta.');
+    return;
+  }
+  try {
+    await updatePassword(fbUser, newPwd);
+  } catch(e) {
+    console.error('updatePassword error', e);
+    showError('Errore durante l\u2019aggiornamento: ' + e.message);
+    return;
+  }
+
   currentUser.mustChangePassword = false;
   LOCAL.set('currentUser', currentUser);
   await fsSave('users', currentUser);
-
-  const users = getData('users', []);
-  const idx = users.findIndex(u => u.id === currentUser.id);
-  if (idx >= 0) {
-    users[idx] = currentUser;
-    _cache.users = users;
-  }
 
   fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
   fb.textContent = '✅ Password aggiornata con successo!';
@@ -4123,6 +4315,9 @@ function renderProfile() {
   // Show warning if user must change password
   const mustChangeBanner = document.getElementById('must-change-pwd-banner');
   if (mustChangeBanner) mustChangeBanner.style.display = currentUser.mustChangePassword ? '' : 'none';
+  // Chi ha fatto accesso con Google non ha una password da cambiare qui
+  const changePwdBtn = document.getElementById('profile-change-pwd-btn');
+  if (changePwdBtn) changePwdBtn.style.display = (fbAuth?.currentUser?.providerData?.[0]?.providerId === 'google.com') ? 'none' : '';
   // Show anon toggle (only for non-admin users)
   const anonWrap = document.getElementById('profile-anon-wrap');
   if (anonWrap) anonWrap.style.display = currentUser.isAdmin ? 'none' : '';
