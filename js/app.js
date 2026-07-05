@@ -1,6 +1,27 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.346 — Su richiesta di Franco: aggiunto un link "📥 Scarica template
+//          vuoto" in ciascuna delle tre sezioni di caricamento massivo
+//          (Figurine base, Variazioni e Change, Retro) nel pannello
+//          admin. I file .xlsx vivono in una nuova cartella /templates/
+//          del sito, da caricare su GitHub allo stesso livello di
+//          index.html (vedi anche /fonts/). Contengono solo la riga di
+//          intestazione con i nomi delle colonne corrette, pronti da
+//          compilare.
+// v5.345 — Rimossi i log diagnostici temporanei del controllo duplicati
+//          Retro (avevano fatto il loro dovere: il mistero era un typo
+//          di Franco in un valore di "Tipo di Retro" durante un test,
+//          non un bug). Unificato il caricamento massivo Retro: un solo
+//          file XLS ora crea sia Retro base sia Change di Retro, tramite
+//          la nuova colonna facoltativa "Tipo di change". Riga con quella
+//          colonna vuota = Retro base (comportamento invariato); riga
+//          valorizzata = Change, dove Categoria+Nome identificano il
+//          Retro base a cui collegarsi (il nome del Change si genera da
+//          solo come "Nome base - Tipo"). Il Tipo viene validato contro
+//          l'elenco configurato per quella serie: se non corrisponde
+//          esattamente a nessun valore configurato, la riga è segnalata
+//          come errore invece di essere accettata silenziosamente.
 // v5.344 — Su richiesta di Franco: aggiunto un log dettagliato in console
 //          quando il controllo duplicati Retro blocca un salvataggio,
 //          in entrambi i punti dove esiste (form principale e modifica
@@ -1534,7 +1555,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.344';
+const JS_VERSION = 'v5.346';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -4377,11 +4398,6 @@ async function _saveFigurineInner() {
       (f.category||'').toLowerCase() === category.toLowerCase()
     );
     if (dup) {
-      console.warn('🔎 Controllo duplicati BLOCCATO: trovato un oggetto già presente in memoria (_cache.figurines) con stesso nome+categoria.', {
-        stoTentandoDiSalvare: { name, category, seriesId: currentSeriesId },
-        oggettoTrovatoCheBlocca: dup,
-        idEsclusoDalControllo: editId || '(nessuno, è una creazione)'
-      });
       toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria e lo stesso Nome in questa serie' : 'A Retro with the same Category and Name already exists in this series'), 'error');
       return;
     }
@@ -6033,10 +6049,6 @@ async function saveFigFromDetail(figId) {
       (f.category||'').toLowerCase() === category.toLowerCase()
     );
     if (dup) {
-      console.warn('🔎 Controllo duplicati BLOCCATO (modifica rapida): trovato un oggetto già presente in memoria (_cache.figurines) con stesso nome+categoria.', {
-        stoTentandoDiSalvare: { name, category, seriesId: existingForCheck.seriesId, figId },
-        oggettoTrovatoCheBlocca: dup
-      });
       toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria e lo stesso Nome in questa serie' : 'A Retro with the same Category and Name already exists in this series'), 'error');
       return;
     }
@@ -6773,6 +6785,7 @@ async function startImportRetro() {
     const nome = getCol('Nome','name','nome');
     const categoria = getCol('Categoria','category','categoria');
     const sottocategoria = getCol('Sottocategoria','subcategory','sottocategoria');
+    const tipoChange = getCol('Tipo di change','tipo di change','change type','tipo','type');
 
     retroImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
 
@@ -6790,44 +6803,117 @@ async function startImportRetro() {
       errors++; continue;
     }
 
-    // Cerca eventuale duplicato (stessa serie, stessa Categoria + Nome)
     const existingFigs = getData('figurines', []);
-    const duplicate = existingFigs.find(f =>
+
+    if (!tipoChange) {
+      // ── Riga di un Retro BASE (comportamento invariato) ──
+      const duplicate = existingFigs.find(f =>
+        f.seriesId === seriesId &&
+        f.section === 'retros' &&
+        (f.name||'').toLowerCase() === nome.toLowerCase() &&
+        (f.category||'').toLowerCase() === categoria.toLowerCase()
+      );
+
+      const retroData = {
+        seriesId,
+        section: 'retros',
+        number: null,
+        name: nome,
+        category: categoria,
+        subcategory: sottocategoria,
+        desc: '',
+        score: 0,
+        subseries: '',
+        size: '',
+        isVariation: false,
+        isUnofficialVariation: false,
+        isChange: false,
+        baseFigurineId: null,
+        changeType: null,
+        img: null
+      };
+
+      try {
+        if (duplicate) {
+          const updatedRec = { ...duplicate, ...retroData, id: duplicate.id, img: duplicate.img || null };
+          await fsSave('figurines', updatedRec);
+          const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
+          if (idx >= 0) _cache.figurines[idx] = updatedRec;
+          retroImportLog('🔄 Riga ' + (i+1) + ': "' + nome + '" — sovrascritta', 'info');
+          updated++;
+        } else {
+          await fsSave('figurines', retroData);
+          retroImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta (' + categoria + ')', 'ok');
+          inserted++;
+        }
+      } catch(e) {
+        retroImportLog('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
+        errors++;
+      }
+      continue;
+    }
+
+    // ── Riga di un Change di Retro: Categoria+Nome identificano il Retro BASE ──
+    const currentSeriesObj = getData('series', []).find(s => s.id === seriesId);
+    const allowedTypes = currentSeriesObj?.retroChangeTypes || [];
+    const matchedType = allowedTypes.find(t => t.toLowerCase().trim() === tipoChange.toLowerCase().trim());
+    if (!matchedType) {
+      retroImportLog('❌ Riga ' + (i+1) + ': "Tipo di change" = "' + tipoChange + '" non corrisponde a nessuno dei tipi configurati per questa serie (' + (allowedTypes.join(', ') || 'nessuno configurato') + ')', 'err');
+      errors++; continue;
+    }
+
+    const baseRetro = existingFigs.find(f =>
       f.seriesId === seriesId &&
       f.section === 'retros' &&
+      !f.isChange &&
       (f.name||'').toLowerCase() === nome.toLowerCase() &&
       (f.category||'').toLowerCase() === categoria.toLowerCase()
     );
+    if (!baseRetro) {
+      retroImportLog('❌ Riga ' + (i+1) + ': nessun Retro base trovato con Categoria "' + categoria + '" e Nome "' + nome + '" — crea prima il Retro base, o controlla che Categoria/Nome coincidano esattamente', 'err');
+      errors++; continue;
+    }
 
-    const retroData = {
+    const changeName = baseRetro.name + ' - ' + matchedType;
+    const duplicateChange = existingFigs.find(f =>
+      f.seriesId === seriesId &&
+      f.section === 'retros' &&
+      f.isChange &&
+      f.id !== baseRetro.id &&
+      (f.name||'').toLowerCase() === changeName.toLowerCase() &&
+      (f.category||'').toLowerCase() === baseRetro.category.toLowerCase()
+    );
+
+    const changeData = {
       seriesId,
       section: 'retros',
       number: null,
-      name: nome,
-      category: categoria,
-      subcategory: sottocategoria,
+      name: changeName,
+      category: baseRetro.category,
+      subcategory: baseRetro.subcategory || '',
       desc: '',
       score: 0,
       subseries: '',
       size: '',
       isVariation: false,
       isUnofficialVariation: false,
-      isChange: false,
-      baseFigurineId: null,
+      isChange: true,
+      baseFigurineId: baseRetro.id,
+      changeType: matchedType,
       img: null
     };
 
     try {
-      if (duplicate) {
-        const updatedRec = { ...duplicate, ...retroData, id: duplicate.id };
+      if (duplicateChange) {
+        const updatedRec = { ...duplicateChange, ...changeData, id: duplicateChange.id, img: duplicateChange.img || null };
         await fsSave('figurines', updatedRec);
-        const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
+        const idx = _cache.figurines.findIndex(f => f.id === duplicateChange.id);
         if (idx >= 0) _cache.figurines[idx] = updatedRec;
-        retroImportLog('🔄 Riga ' + (i+1) + ': "' + nome + '" — sovrascritta', 'info');
+        retroImportLog('🔄 Riga ' + (i+1) + ': Change "' + changeName + '" — sovrascritto', 'info');
         updated++;
       } else {
-        const saved = await fsSave('figurines', retroData);
-        retroImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta (' + categoria + ')', 'ok');
+        await fsSave('figurines', changeData);
+        retroImportLog('✅ Riga ' + (i+1) + ': Change "' + changeName + '" — aggiunto (base: "' + baseRetro.name + '")', 'ok');
         inserted++;
       }
     } catch(e) {
@@ -7069,6 +7155,7 @@ function renderAdminFoto() {
           ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne (in ordine); <code>Serie</code> (obbligatoria); <code>Sottoserie</code>; <code>Numero</code>; <code>Nome</code>; <code>Taglia</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>REGOLE DI RICONCILIAZIONE E CAMPI OBBLIGATORI</b><br><br><b>Colonna Numero</b> — facoltativa.<br><br><b>Colonna Nome</b> — se il Numero è presente, il Nome è facoltativo: se compilato aggiorna il nome della figurina, se vuoto si preserva quello già a database. Se il Numero è assente, il Nome è invece obbligatorio ed è la chiave di riconciliazione.<br><br><b>Creazione di una figurina nuova</b> (nessuna corrispondenza trovata) — serve comunque un Nome, altrimenti la riga viene segnalata come errore e scartata.<br><br><b>Chiave di riconciliazione</b> — se la serie ha sottoserie attive e la colonna Sottoserie è compilata: Serie + Sottoserie + Numero (o Nome, se il Numero è vuoto). Altrimenti: Serie + Numero (o Nome, se il Numero è vuoto).<br><br>NOTA: le righe con Serie diversa da quella selezionata vengono ignorate.'
           : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns (in order); <code>Serie</code> (required); <code>Sottoserie</code>; <code>Numero</code>; <code>Nome</code>; <code>Taglia</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>RECONCILIATION RULES AND REQUIRED FIELDS</b><br><br><b>Numero column</b> — optional.<br><br><b>Nome column</b> — if Numero is present, Nome is optional: if filled in it updates the sticker name, if empty the existing database value is preserved. If Numero is absent, Nome is required and is the reconciliation key.<br><br><b>Creating a new sticker</b> (no match found) — a Nome is still needed, otherwise the row is flagged as an error and skipped.<br><br><b>Reconciliation key</b> — if the series has active subseries and the Sottoserie column is filled in: Serie + Sottoserie + Numero (or Nome, if Numero is empty). Otherwise: Serie + Numero (or Nome, if Numero is empty).<br><br>NOTE: rows with a Serie different from the selected one are skipped.'}
       </p>
+      <a href="templates/template-figurine.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
 
       <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
         <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
@@ -7101,6 +7188,7 @@ function renderAdminFoto() {
           ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne (in ordine); <code>Serie</code> (obbligatoria); <code>Numero</code> (obbligatoria); <code>Nome</code>; <code>Tipo</code> (obbligatoria; Ufficiale / Non ufficiale / Change); <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>REGOLE DI RICONCILIAZIONE E CAMPI OBBLIGATORI</b><br><br><b>Colonna Serie</b> — obbligatoria, deve corrispondere esattamente al nome della serie selezionata; le righe con Serie diversa bloccano l\'intero caricamento.<br><br><b>Colonna Numero</b> — obbligatoria: è il numero della figurina base a cui la riga si riferisce (deve già esistere nella serie).<br><br><b>Colonna Tipo</b> — obbligatoria: Ufficiale, Non ufficiale o Change; righe con un valore non riconosciuto vengono scartate.<br><br><b>Per le Variazioni (Ufficiale / Non ufficiale)</b> — <code>Retro (Categoria)</code> e <code>Retro (Nome)</code> sono obbligatorie e fanno parte della chiave di riconciliazione: Serie + Figurina base + Retro (possono esistere più Variazioni dello stesso Tipo per la stessa figurina base, una per ciascun Retro). Se il Retro indicato non esiste, la riga viene scartata. La colonna <b>Nome non viene letta</b>: una Variazione ha sempre lo stesso nome della sua figurina base, assegnato automaticamente.<br><br><b>Per i Change</b> — le colonne Retro non si applicano. Il <b>Nome è obbligatorio</b> e fa parte della chiave di riconciliazione: Serie + Figurina base + Nome.'
           : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns (in order); <code>Serie</code> (required); <code>Numero</code> (required); <code>Nome</code>; <code>Tipo</code> (required; Ufficiale / Non ufficiale / Change); <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>RECONCILIATION RULES AND REQUIRED FIELDS</b><br><br><b>Serie column</b> — required, must exactly match the selected series name; rows with a different Serie block the whole import.<br><br><b>Numero column</b> — required: the number of the base sticker the row refers to (must already exist in the series).<br><br><b>Tipo column</b> — required: Ufficiale, Non ufficiale or Change; rows with an unrecognized value are skipped.<br><br><b>For Variations (Ufficiale / Non ufficiale)</b> — <code>Retro (Categoria)</code> and <code>Retro (Nome)</code> are required and are part of the reconciliation key: Serie + Base sticker + Retro (there can be several Variations of the same Tipo for the same base sticker, one per Retro). If the specified Retro does not exist, the row is skipped. The <b>Nome column is not read</b>: a Variation always has the same name as its base sticker, assigned automatically.<br><br><b>For Change</b> — the Retro columns do not apply. <b>Nome is required</b> and is part of the reconciliation key: Serie + Base sticker + Nome.'}
       </p>
+      <a href="templates/template-variazioni-change.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
 
       <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
         <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
@@ -7130,9 +7218,10 @@ function renderAdminFoto() {
       <div id="import-retro-section-content" style="display:none;">
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne richieste (nell\'ordine): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code>.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.'
-          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Required columns (in order): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code>.<br>NOTE: Rows with a Serie different from the selected one are skipped.'}
+          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS. Un unico file per Retro base e Change di Retro.<br>Colonne richieste (nell\'ordine): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code> · <code>Tipo di change</code> (facoltativa).<br><br><strong>Riga di un Retro base</strong>: lascia "Tipo di change" vuoto. Nome, Categoria e Sottocategoria sono quelli del Retro stesso.<br><strong>Riga di un Change di Retro</strong>: valorizza "Tipo di change" con uno dei valori configurati per questa serie (scheda Serie → "Tipi di Retro") — Categoria/Sottocategoria/Nome in questo caso identificano il <u>Retro base</u> a cui collegarlo (stessa chiave di ricerca: Serie+Categoria+Nome). Il nome del Change viene generato automaticamente come "Nome base - Tipo".<br>Se "Tipo di change" non corrisponde a nessuno dei valori configurati per la serie, la riga viene segnalata come errore.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.'
+          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file. A single file for both base Retros and Retro Changes.<br>Required columns (in order): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code> · <code>Tipo di change</code> (optional).<br><br><strong>Base Retro row</strong>: leave "Tipo di change" empty. Name, Category and Subcategory belong to the Retro itself.<br><strong>Retro Change row</strong>: fill "Tipo di change" with one of the values configured for this series (Series form → "Retro types") — Category/Subcategory/Name in this case identify the <u>base Retro</u> to link to (same lookup key: Series+Category+Name). The Change\'s name is generated automatically as "Base name - Type".<br>If "Tipo di change" doesn\'t match any configured value for the series, the row is flagged as an error.<br>NOTE: Rows with a Serie different from the selected one are skipped.'}
       </p>
+      <a href="templates/template-retro.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
 
       <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
         <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
