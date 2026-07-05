@@ -1,6 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.370 — Su segnalazione di Franco: l'intera funzionalità di
+//          autocancellazione account (pulsante nel profilo e modal di
+//          conferma con le istruzioni) non era mai stata tradotta —
+//          restava in italiano anche con il sito in inglese. Aggiunto il
+//          meccanismo data-i18n a tutti i testi coinvolti, con le
+//          rispettive traduzioni in entrambe le lingue.
+// v5.369 — Corretta, su segnalazione di Franco, un'imprecisione nel testo
+//          del popup di cancellazione account: diceva che si perde "la
+//          possibilità di accedere di nuovo con questa e-mail", ma non è
+//          vero — cancellando davvero l'account Firebase Authentication,
+//          l'e-mail si libera e si può usare per registrare un account
+//          nuovo (vuoto) in futuro. Il testo ora lo spiega correttamente.
+// v5.368 — Su richiesta di Franco: pulsante "Solo con foto mancante"
+//          rinominato "Solo senza foto" ovunque compare (stesso
+//          pulsante condiviso da tutte le sezioni).
 // v5.367 — Due piccole correzioni su segnalazione di Franco: (1) nel log
 //          del caricamento massivo foto, una riga saltata perché già
 //          aveva una foto diceva "skip" in inglese anche in italiano —
@@ -1749,7 +1764,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.367';
+const JS_VERSION = 'v5.370';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -2396,7 +2411,8 @@ const i18n = {
 
     'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.wishlist':'Wishlist','wishlist.desc':'Your <strong>Wishlist</strong> is your personal space to collect the stickers (or other items) you would like to own.<br><br>While browsing the catalog, press the <strong>🛒</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send wishlist to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send wishlist',
 'profile.anon':'Show me as anonymous in the ranking',
-'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
+'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.deleteAccount':'🗑️ Delete my account',
+'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "I have it" collection and your Ranking position','modal.deleteAccount.item3':'Your Wishlist','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
 'admin.email.fix':'Fix counter:','admin.save':'Save','newsletter.settingsTitle':'⚙️ Email Settings','newsletter.replyToLabel':'Reply-To address','newsletter.replyToHint':'When you reply to a message, the email will go to this address',
@@ -2486,7 +2502,8 @@ const i18n = {
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
 'nav.onlineSince':'Online dal 21.06.2026',
-'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità',
+'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','profile.deleteAccount':'🗑️ Elimina il mio account',
+'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua collezione "Ce l\'ho" e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua Wishlist','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'E-mail inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 e-mail/mese (si azzera il 1° di ogni mese).',
@@ -3652,7 +3669,7 @@ function openSeriesSection(section) {
   _noPhotoFilter = false;
   _itemTypeFilter = 'base';
   const noPhotoBtn = document.getElementById('no-photo-filter-btn');
-  if (noPhotoBtn) { noPhotoBtn.style.background=''; noPhotoBtn.style.borderColor=''; noPhotoBtn.style.color=''; noPhotoBtn.textContent = currentLang === 'it' ? '📷 Solo con foto mancante' : '📷 Missing photo only'; }
+  if (noPhotoBtn) { noPhotoBtn.style.background=''; noPhotoBtn.style.borderColor=''; noPhotoBtn.style.color=''; noPhotoBtn.textContent = currentLang === 'it' ? '📷 Solo senza foto' : '📷 Missing photo only'; }
   currentSection = section;
   const si = document.getElementById('items-search'); if (si) { si.value = ''; si.placeholder = currentLang === 'it' ? 'Cerca figurine...' : 'Search stickers...'; }
   currentItemPage = 1;
@@ -4141,7 +4158,7 @@ function toggleNoPhotoFilter() {
     btn.style.background = _noPhotoFilter ? 'rgba(255,100,100,0.15)' : '';
     btn.style.borderColor = _noPhotoFilter ? '#ff6464' : '';
     btn.style.color = _noPhotoFilter ? '#ff6464' : '';
-    btn.textContent = _noPhotoFilter ? (currentLang === 'it' ? (currentSection === 'retros' ? '📷 Mostra tutti' : '📷 Mostra tutte') : '📷 Show all') : (currentLang === 'it' ? '📷 Solo con foto mancante' : '📷 Missing photo only');
+    btn.textContent = _noPhotoFilter ? (currentLang === 'it' ? (currentSection === 'retros' ? '📷 Mostra tutti' : '📷 Mostra tutte') : '📷 Show all') : (currentLang === 'it' ? '📷 Solo senza foto' : '📷 Missing photo only');
   }
   try { renderItems(); } catch(e) { console.error('renderItems (toggleNoPhotoFilter)', e); }
   try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleNoPhotoFilter)', e); }
@@ -7800,7 +7817,7 @@ function renderAll() {
     if (noPhotoBtn2) {
       noPhotoBtn2.textContent = _noPhotoFilter
         ? (currentLang === 'it' ? (currentSection === 'retros' ? '📷 Mostra tutti' : '📷 Mostra tutte') : '📷 Show all')
-        : (currentLang === 'it' ? '📷 Solo con foto mancante' : '📷 Missing photo only');
+        : (currentLang === 'it' ? '📷 Solo senza foto' : '📷 Missing photo only');
     }
     renderItems();
     // Re-trigger WIP banner
