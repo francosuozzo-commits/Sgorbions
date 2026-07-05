@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.347 — Corretto, su segnalazione di Franco, il caricamento massivo
+//          Retro per essere coerente con gli altri due caricamenti:
+//          aggiunte le colonne dedicate "Retro - Categoria" e "Retro -
+//          Nome" per identificare il Retro base di un Change, invece di
+//          riusare le colonne Categoria/Nome della riga stessa. Per un
+//          Change, Categoria/Sottocategoria/Nome sono ora i dati PROPRI
+//          del Change (scritti per intero, non più generati
+//          automaticamente come "Nome base - Tipo"). Template e
+//          istruzioni aggiornati di conseguenza.
 // v5.346 — Su richiesta di Franco: aggiunto un link "📥 Scarica template
 //          vuoto" in ciascuna delle tre sezioni di caricamento massivo
 //          (Figurine base, Variazioni e Change, Retro) nel pannello
@@ -1555,7 +1564,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.346';
+const JS_VERSION = 'v5.347';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -6786,6 +6795,8 @@ async function startImportRetro() {
     const categoria = getCol('Categoria','category','categoria');
     const sottocategoria = getCol('Sottocategoria','subcategory','sottocategoria');
     const tipoChange = getCol('Tipo di change','tipo di change','change type','tipo','type');
+    const retroCategoria = getCol('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria','Retro (Categoria)','retro (categoria)');
+    const retroNome = getCol('Retro - Nome','Retro-Nome','retro nome','retro-nome','Retro (Nome)','retro (nome)');
 
     retroImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
 
@@ -6853,7 +6864,9 @@ async function startImportRetro() {
       continue;
     }
 
-    // ── Riga di un Change di Retro: Categoria+Nome identificano il Retro BASE ──
+    // ── Riga di un Change di Retro: Categoria/Sottocategoria/Nome sono i
+    //    dati PROPRI del Change; Retro-Categoria/Retro-Nome identificano
+    //    il Retro BASE a cui collegarlo ──
     const currentSeriesObj = getData('series', []).find(s => s.id === seriesId);
     const allowedTypes = currentSeriesObj?.retroChangeTypes || [];
     const matchedType = allowedTypes.find(t => t.toLowerCase().trim() === tipoChange.toLowerCase().trim());
@@ -6861,36 +6874,38 @@ async function startImportRetro() {
       retroImportLog('❌ Riga ' + (i+1) + ': "Tipo di change" = "' + tipoChange + '" non corrisponde a nessuno dei tipi configurati per questa serie (' + (allowedTypes.join(', ') || 'nessuno configurato') + ')', 'err');
       errors++; continue;
     }
+    if (!retroCategoria || !retroNome) {
+      retroImportLog('⚠️ Riga ' + (i+1) + ': "Retro - Categoria" e "Retro - Nome" sono obbligatorie per un Change (identificano il Retro base)', 'warn');
+      errors++; continue;
+    }
 
     const baseRetro = existingFigs.find(f =>
       f.seriesId === seriesId &&
       f.section === 'retros' &&
       !f.isChange &&
-      (f.name||'').toLowerCase() === nome.toLowerCase() &&
-      (f.category||'').toLowerCase() === categoria.toLowerCase()
+      (f.name||'').toLowerCase() === retroNome.toLowerCase() &&
+      (f.category||'').toLowerCase() === retroCategoria.toLowerCase()
     );
     if (!baseRetro) {
-      retroImportLog('❌ Riga ' + (i+1) + ': nessun Retro base trovato con Categoria "' + categoria + '" e Nome "' + nome + '" — crea prima il Retro base, o controlla che Categoria/Nome coincidano esattamente', 'err');
+      retroImportLog('❌ Riga ' + (i+1) + ': nessun Retro base trovato con Categoria "' + retroCategoria + '" e Nome "' + retroNome + '" — crea prima il Retro base, o controlla che Retro-Categoria/Retro-Nome coincidano esattamente', 'err');
       errors++; continue;
     }
 
-    const changeName = baseRetro.name + ' - ' + matchedType;
     const duplicateChange = existingFigs.find(f =>
       f.seriesId === seriesId &&
       f.section === 'retros' &&
       f.isChange &&
-      f.id !== baseRetro.id &&
-      (f.name||'').toLowerCase() === changeName.toLowerCase() &&
-      (f.category||'').toLowerCase() === baseRetro.category.toLowerCase()
+      (f.name||'').toLowerCase() === nome.toLowerCase() &&
+      (f.category||'').toLowerCase() === categoria.toLowerCase()
     );
 
     const changeData = {
       seriesId,
       section: 'retros',
       number: null,
-      name: changeName,
-      category: baseRetro.category,
-      subcategory: baseRetro.subcategory || '',
+      name: nome,
+      category: categoria,
+      subcategory: sottocategoria,
       desc: '',
       score: 0,
       subseries: '',
@@ -6909,11 +6924,11 @@ async function startImportRetro() {
         await fsSave('figurines', updatedRec);
         const idx = _cache.figurines.findIndex(f => f.id === duplicateChange.id);
         if (idx >= 0) _cache.figurines[idx] = updatedRec;
-        retroImportLog('🔄 Riga ' + (i+1) + ': Change "' + changeName + '" — sovrascritto', 'info');
+        retroImportLog('🔄 Riga ' + (i+1) + ': Change "' + nome + '" — sovrascritto', 'info');
         updated++;
       } else {
         await fsSave('figurines', changeData);
-        retroImportLog('✅ Riga ' + (i+1) + ': Change "' + changeName + '" — aggiunto (base: "' + baseRetro.name + '")', 'ok');
+        retroImportLog('✅ Riga ' + (i+1) + ': Change "' + nome + '" — aggiunto (base: "' + baseRetro.name + '")', 'ok');
         inserted++;
       }
     } catch(e) {
@@ -7218,8 +7233,8 @@ function renderAdminFoto() {
       <div id="import-retro-section-content" style="display:none;">
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS. Un unico file per Retro base e Change di Retro.<br>Colonne richieste (nell\'ordine): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code> · <code>Tipo di change</code> (facoltativa).<br><br><strong>Riga di un Retro base</strong>: lascia "Tipo di change" vuoto. Nome, Categoria e Sottocategoria sono quelli del Retro stesso.<br><strong>Riga di un Change di Retro</strong>: valorizza "Tipo di change" con uno dei valori configurati per questa serie (scheda Serie → "Tipi di Retro") — Categoria/Sottocategoria/Nome in questo caso identificano il <u>Retro base</u> a cui collegarlo (stessa chiave di ricerca: Serie+Categoria+Nome). Il nome del Change viene generato automaticamente come "Nome base - Tipo".<br>Se "Tipo di change" non corrisponde a nessuno dei valori configurati per la serie, la riga viene segnalata come errore.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.'
-          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file. A single file for both base Retros and Retro Changes.<br>Required columns (in order): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code> · <code>Tipo di change</code> (optional).<br><br><strong>Base Retro row</strong>: leave "Tipo di change" empty. Name, Category and Subcategory belong to the Retro itself.<br><strong>Retro Change row</strong>: fill "Tipo di change" with one of the values configured for this series (Series form → "Retro types") — Category/Subcategory/Name in this case identify the <u>base Retro</u> to link to (same lookup key: Series+Category+Name). The Change\'s name is generated automatically as "Base name - Type".<br>If "Tipo di change" doesn\'t match any configured value for the series, the row is flagged as an error.<br>NOTE: Rows with a Serie different from the selected one are skipped.'}
+          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS. Un unico file per Retro base e Change di Retro.<br>Colonne richieste (nell\'ordine): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code> · <code>Tipo di change</code> (facoltativa) · <code>Retro - Categoria</code> (solo per un Change) · <code>Retro - Nome</code> (solo per un Change).<br><br><strong>Riga di un Retro base</strong>: lascia "Tipo di change" (e le due colonne Retro) vuote. Categoria, Sottocategoria e Nome sono quelli del Retro stesso.<br><strong>Riga di un Change di Retro</strong>: valorizza "Tipo di change" con uno dei valori configurati per questa serie (scheda Serie → "Tipi di Retro"). Categoria, Sottocategoria e Nome in questo caso sono i dati **del Change stesso** (scrivili per intero, non vengono generati automaticamente). <code>Retro - Categoria</code> e <code>Retro - Nome</code> identificano invece il <u>Retro base</u> a cui collegarlo (stessa chiave di ricerca degli altri caricamenti: Serie+Categoria+Nome del Retro base).<br>Se "Tipo di change" non corrisponde a nessuno dei valori configurati per la serie, o se il Retro base indicato non esiste, la riga viene segnalata come errore.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.'
+          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file. A single file for both base Retros and Retro Changes.<br>Required columns (in order): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code> · <code>Tipo di change</code> (optional) · <code>Retro - Categoria</code> (Change only) · <code>Retro - Nome</code> (Change only).<br><br><strong>Base Retro row</strong>: leave "Tipo di change" (and the two Retro columns) empty. Categoria, Sottocategoria and Nome belong to the Retro itself.<br><strong>Retro Change row</strong>: fill "Tipo di change" with one of the values configured for this series (Series form → "Retro types"). Categoria, Sottocategoria and Nome in this case are the Change\'s **own** data (write them in full, they are not auto-generated). <code>Retro - Categoria</code> and <code>Retro - Nome</code> identify instead the <u>base Retro</u> to link to (same lookup key as the other imports: Series+Category+Name of the base Retro).<br>If "Tipo di change" doesn\'t match any configured value for the series, or the specified base Retro doesn\'t exist, the row is flagged as an error.<br>NOTE: Rows with a Serie different from the selected one are skipped.'}
       </p>
       <a href="templates/template-retro.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
 
