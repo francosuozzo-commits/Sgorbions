@@ -1,6 +1,58 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.356 — Su proposta di Franco, due interventi collegati: (1) tolto
+//          l'automatismo che precompilava il Nome come "Base - Tipo"
+//          quando si sceglie il Tipo di change nel form manuale — non
+//          serve più, dato che il Tipo si vede già separatamente in
+//          form, griglia e dettaglio. (2) Il Tipo di change è entrato a
+//          far parte della chiave di unicità dei Retro (prima solo
+//          Categoria+Nome), in tutti e quattro i punti dove viene
+//          controllata (form principale, modifica rapida, import XLS
+//          per Retro base e per Change) — necessario ora che il Nome
+//          non porta più il suffisso del Tipo: due Change dello stesso
+//          Retro base potrebbero altrimenti condividere lo stesso
+//          Nome+Categoria, distinguibili solo dal Tipo.
+// v5.355 — Su richiesta di Franco: aggiunta la cancellazione massiva
+//          nella "Vista tabellare" (📋, esistente accanto a "+ Aggiungi"
+//          nella pagina di una serie). Ogni riga ha ora una checkbox;
+//          selezionandone una o più compare un pulsante "🗑️ Elimina
+//          selezionati (N)" che le cancella tutte insieme, con una
+//          conferma prima di procedere. Utile per ripulire in un colpo
+//          solo i dati di prova, tra le altre cose.
+// v5.354 — Colmata la lacuna nota della modifica rapida dalla scheda di
+//          dettaglio: ora mostra e permette di modificare il campo
+//          "Tipo di change" anche da lì, non solo dal form principale di
+//          aggiunta/modifica. Il menu si popola con i tipi configurati
+//          per la serie e appare solo quando la checkbox "Change" è
+//          spuntata, per un Retro.
+// v5.353 — Su segnalazione di Franco: la precompilazione automatica del
+//          Nome ("Base - Tipo") quando si sceglie il Tipo di change nel
+//          form manuale poteva sovrascrivere in silenzio un nome già
+//          presente (es. modificando un Change caricato da XLS con un
+//          nome diverso dallo schema standard). Ora sovrascrive solo se
+//          il campo Nome è vuoto; se contiene già un valore diverso,
+//          chiede conferma prima di sostituirlo. L'import massivo da
+//          XLS non è comunque mai stato interessato da questa regola:
+//          usa sempre il Nome scritto nel file, senza generarlo.
+// v5.352 — Due rifiniture su richiesta di Franco: (1) l'etichetta
+//          "Change" sulle card dei Retro nella griglia ora mostra anche
+//          il Tipo (es. "Change - omaggio nero"), non più solo "Change";
+//          (2) il pulsante "Solo figurine senza foto" rinominato in
+//          "Solo con foto mancante" ovunque compare (è lo stesso
+//          pulsante condiviso da tutte le sezioni, non solo le
+//          Figurine, da qui la scelta di un nome più generico).
+// v5.351 — Due aggiunte su richiesta di Franco: (1) le card dei Retro
+//          nella griglia mostrano ora l'etichetta "Change" per i Change
+//          di Retro, come già avviene per le Variazioni/Change di
+//          figurina; (2) la scheda di dettaglio di un Change di Retro
+//          mostra ora anche il campo "Tipo di change" (prima mancava
+//          del tutto da quella vista).
+// v5.350 — Su richiesta di Franco: il log dell'import massivo Retro ora
+//          mostra anche il valore letto per "Tipo di change" su ogni
+//          riga (comprese quelle senza errori), per aiutare a capire
+//          rapidamente se una riga è stata trattata come Retro base o
+//          come Change e con quale valore esatto.
 // v5.349 — Su segnalazione di Franco: il titolo della scheda dettaglio
 //          (nomi molto lunghi) andava a sbattere contro le frecce di
 //          navigazione ◀▶, troncandosi invece di andare a capo. Ora va
@@ -1579,7 +1631,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.349';
+const JS_VERSION = 'v5.356';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -3524,7 +3576,7 @@ function openSeriesSection(section) {
   _noPhotoFilter = false;
   _itemTypeFilter = 'base';
   const noPhotoBtn = document.getElementById('no-photo-filter-btn');
-  if (noPhotoBtn) { noPhotoBtn.style.background=''; noPhotoBtn.style.borderColor=''; noPhotoBtn.style.color=''; noPhotoBtn.textContent = currentLang === 'it' ? '📷 Solo figurine senza foto' : '📷 Stickers without photo only'; }
+  if (noPhotoBtn) { noPhotoBtn.style.background=''; noPhotoBtn.style.borderColor=''; noPhotoBtn.style.color=''; noPhotoBtn.textContent = currentLang === 'it' ? '📷 Solo con foto mancante' : '📷 Missing photo only'; }
   currentSection = section;
   const si = document.getElementById('items-search'); if (si) { si.value = ''; si.placeholder = currentLang === 'it' ? 'Cerca figurine...' : 'Search stickers...'; }
   currentItemPage = 1;
@@ -3648,7 +3700,6 @@ function selectBaseFigurineLink(id) {
   document.getElementById('fig-base-figurine-input').value = id;
   document.getElementById('fig-base-figurine-search').value = _baseFigurineLinkLabel(f);
   document.getElementById('fig-base-figurine-dropdown').style.display = 'none';
-  applyRetroChangeTypeToName();
 }
 
 function clearBaseFigurineLinkIfEmpty() {
@@ -3754,17 +3805,6 @@ function toggleBaseFigurineGroup() {
       }
     }
   }
-}
-
-// Quando si sceglie il Tipo di change di un Retro, precompila il Nome come
-// "Nome Retro base - Tipo" — resta comunque un campo libero e modificabile
-function applyRetroChangeTypeToName() {
-  const type = document.getElementById('fig-retro-change-type-input')?.value;
-  const baseId = document.getElementById('fig-base-figurine-input')?.value;
-  const nameInput = document.getElementById('fig-name-input');
-  if (!type || !baseId || !nameInput) return;
-  const baseRetro = getData('figurines', []).find(x => x.id === baseId);
-  if (baseRetro) nameInput.value = baseRetro.name + ' - ' + type;
 }
 
 function openAddItemModal(itemId) {
@@ -4025,7 +4065,7 @@ function toggleNoPhotoFilter() {
     btn.style.background = _noPhotoFilter ? 'rgba(255,100,100,0.15)' : '';
     btn.style.borderColor = _noPhotoFilter ? '#ff6464' : '';
     btn.style.color = _noPhotoFilter ? '#ff6464' : '';
-    btn.textContent = _noPhotoFilter ? (currentLang === 'it' ? '📷 Mostra tutte' : '📷 Show all') : (currentLang === 'it' ? '📷 Solo figurine senza foto' : '📷 Stickers without photo only');
+    btn.textContent = _noPhotoFilter ? (currentLang === 'it' ? '📷 Mostra tutte' : '📷 Show all') : (currentLang === 'it' ? '📷 Solo con foto mancante' : '📷 Missing photo only');
   }
   renderItems();
 }
@@ -4275,7 +4315,7 @@ function renderItems() {
       ? (currentLang === 'it' ? 'Variazione non ufficiale' : 'Unofficial variation')
       : f.isChange
       ? 'Change'
-      : (currentLang === 'it' ? 'Figurina base' : 'Base sticker')) : '';
+      : (currentLang === 'it' ? 'Figurina base' : 'Base sticker')) : (currentSection === 'retros' && f.isChange) ? ('Change' + (f.changeType ? ' - ' + f.changeType : '')) : '';
     const typeIndicatorHTML = typeIndicator ? `<div style="font-size:0.72rem;color:#ffc832;font-weight:600;margin-top:2px;">${typeIndicator}</div>` : '';
     return `<div class="fig-card" onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="cursor:pointer;">
       <div class="fig-img-placeholder" style="aspect-ratio:${imgAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
@@ -4398,10 +4438,11 @@ async function _saveFigurineInner() {
       f.seriesId === currentSeriesId &&
       f.section === 'retros' &&
       (f.name||'').toLowerCase() === name.toLowerCase() &&
-      (f.category||'').toLowerCase() === category.toLowerCase()
+      (f.category||'').toLowerCase() === category.toLowerCase() &&
+      (f.changeType||'').toLowerCase().trim() === (changeType||'').toLowerCase().trim()
     );
     if (dup) {
-      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria e lo stesso Nome in questa serie' : 'A Retro with the same Category and Name already exists in this series'), 'error');
+      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, lo stesso Nome e lo stesso Tipo di change in questa serie' : 'A Retro with the same Category, Name and Change type already exists in this series'), 'error');
       return;
     }
   }
@@ -5547,6 +5588,9 @@ function openFigDetail(figId) {
       : (currentLang === 'it' ? 'Questa figurina è un Change' : 'This sticker is a Change');
     rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${changeLabel}</span></div>`);
   }
+  if (f.section === 'retros' && f.isChange && f.changeType) {
+    rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</span><span class="detail-value">${f.changeType}</span></div>`);
+  }
   if ((f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
     const baseFig = getData('figurines', []).find(x => x.id === f.baseFigurineId);
     if (baseFig) {
@@ -5713,6 +5757,7 @@ function toggleFeBaseFigurineGroup() {
   const group = document.getElementById('fe-base-figurine-group');
   const retroGroup = document.getElementById('fe-retro-group');
   const numberGroup = document.getElementById('fe-number-group');
+  const changeTypeGroup = document.getElementById('fe-retro-change-type-group');
   if (!group) return;
   const isVar = document.getElementById('fe-is-variation')?.checked;
   const isUnoff = document.getElementById('fe-is-unofficial-variation')?.checked;
@@ -5722,6 +5767,7 @@ function toggleFeBaseFigurineGroup() {
   if (retroGroup) retroGroup.style.display = !isChg ? '' : 'none';
   // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
   if (numberGroup) numberGroup.style.display = showBase ? 'none' : '';
+  if (changeTypeGroup) changeTypeGroup.style.display = isChg ? '' : 'none';
 }
 
 let _feBaseFigurineLinkOptions = [];
@@ -5860,6 +5906,17 @@ function switchToEditMode(figId) {
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione non ufficiale':'Unofficial variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup()" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
   html += '<div class="detail-row"><span class="detail-label">Change</span><span class="detail-value"><input type="checkbox" id="fe-is-change" onchange="toggleFeBaseFigurineGroup()" ' + (f.isChange?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+  if (isRetrosItem) {
+    const showChangeType = !!f.isChange;
+    const seriesForTypes = getData('series', []).find(s => s.id === f.seriesId);
+    const retroTypes = seriesForTypes?.retroChangeTypes || [];
+    html += '<div class="detail-row" id="fe-retro-change-type-group" style="' + (showChangeType ? '' : 'display:none;') + '">' +
+      '<span class="detail-label">' + (currentLang==='it'?'Tipo di change':'Change type') + '</span>' +
+      '<select class="form-input" id="fe-retro-change-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
+      '<option value="">' + (currentLang==='it'?'— scegli —':'— choose —') + '</option>' +
+      retroTypes.map(t => '<option value="' + t + '"' + (f.changeType === t ? ' selected' : '') + '>' + t + '</option>').join('') +
+      '</select></div>';
+  }
 
   // Figurina/Retro base — ricerca in digitazione (stesso pattern del Retro associato)
   _feBaseFigurineLinkOptions = getData('figurines', [])
@@ -6044,15 +6101,17 @@ async function saveFigFromDetail(figId) {
   const existingForCheck = getData('figurines', []).find(x => x.id === figId);
   if (existingForCheck?.section === 'retros') {
     const category = document.getElementById('fe-category')?.value.trim() || '';
+    const changeTypeVal = document.getElementById('fe-retro-change-type')?.value || '';
     const dup = getData('figurines', []).find(f =>
       f.id !== figId &&
       f.seriesId === existingForCheck.seriesId &&
       f.section === 'retros' &&
       (f.name||'').toLowerCase() === name.toLowerCase() &&
-      (f.category||'').toLowerCase() === category.toLowerCase()
+      (f.category||'').toLowerCase() === category.toLowerCase() &&
+      (f.changeType||'').toLowerCase().trim() === changeTypeVal.toLowerCase().trim()
     );
     if (dup) {
-      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria e lo stesso Nome in questa serie' : 'A Retro with the same Category and Name already exists in this series'), 'error');
+      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, lo stesso Nome e lo stesso Tipo di change in questa serie' : 'A Retro with the same Category, Name and Change type already exists in this series'), 'error');
       return;
     }
   }
@@ -6070,6 +6129,7 @@ async function saveFigFromDetail(figId) {
     isVariation: document.getElementById('fe-is-variation')?.checked || false,
     isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
     isChange: document.getElementById('fe-is-change')?.checked || false,
+    changeType: document.getElementById('fe-retro-change-type')?.value || null,
   };
 
   if ([updates.isVariation, updates.isUnofficialVariation, updates.isChange].filter(Boolean).length > 1) {
@@ -6804,7 +6864,7 @@ async function startImportRetro() {
     }
 
     if (!nome || !categoria) {
-      retroImportLog('⚠️ Riga ' + (i+1) + ': dati mancanti (nome=' + nome + ' categoria=' + categoria + ')', 'warn');
+      retroImportLog('⚠️ Riga ' + (i+1) + ': dati mancanti (nome=' + nome + ' categoria=' + categoria + ') [Tipo: "' + tipoChange + '"]', 'warn');
       errors++; continue;
     }
 
@@ -6815,6 +6875,7 @@ async function startImportRetro() {
       const duplicate = existingFigs.find(f =>
         f.seriesId === seriesId &&
         f.section === 'retros' &&
+        !f.isChange &&
         (f.name||'').toLowerCase() === nome.toLowerCase() &&
         (f.category||'').toLowerCase() === categoria.toLowerCase()
       );
@@ -6844,11 +6905,11 @@ async function startImportRetro() {
           await fsSave('figurines', updatedRec);
           const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
           if (idx >= 0) _cache.figurines[idx] = updatedRec;
-          retroImportLog('🔄 Riga ' + (i+1) + ': "' + nome + '" — sovrascritta', 'info');
+          retroImportLog('🔄 Riga ' + (i+1) + ': "' + nome + '" — sovrascritta [Tipo: "' + tipoChange + '"]', 'info');
           updated++;
         } else {
           await fsSave('figurines', retroData);
-          retroImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta (' + categoria + ')', 'ok');
+          retroImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta (' + categoria + ') [Tipo: "' + tipoChange + '"]', 'ok');
           inserted++;
         }
       } catch(e) {
@@ -6869,7 +6930,7 @@ async function startImportRetro() {
       errors++; continue;
     }
     if (!retroCategoria || !retroNome) {
-      retroImportLog('⚠️ Riga ' + (i+1) + ': "Retro - Categoria" e "Retro - Nome" sono obbligatorie per un Change (identificano il Retro base)', 'warn');
+      retroImportLog('⚠️ Riga ' + (i+1) + ': "Retro - Categoria" e "Retro - Nome" sono obbligatorie per un Change (identificano il Retro base) [Tipo: "' + tipoChange + '"]', 'warn');
       errors++; continue;
     }
 
@@ -6881,7 +6942,7 @@ async function startImportRetro() {
       (f.category||'').toLowerCase() === retroCategoria.toLowerCase()
     );
     if (!baseRetro) {
-      retroImportLog('❌ Riga ' + (i+1) + ': nessun Retro base trovato con Categoria "' + retroCategoria + '" e Nome "' + retroNome + '" — crea prima il Retro base, o controlla che Retro-Categoria/Retro-Nome coincidano esattamente', 'err');
+      retroImportLog('❌ Riga ' + (i+1) + ': nessun Retro base trovato con Categoria "' + retroCategoria + '" e Nome "' + retroNome + '" [Tipo: "' + tipoChange + '"] — crea prima il Retro base, o controlla che Retro-Categoria/Retro-Nome coincidano esattamente', 'err');
       errors++; continue;
     }
 
@@ -6890,7 +6951,8 @@ async function startImportRetro() {
       f.section === 'retros' &&
       f.isChange &&
       (f.name||'').toLowerCase() === nome.toLowerCase() &&
-      (f.category||'').toLowerCase() === categoria.toLowerCase()
+      (f.category||'').toLowerCase() === categoria.toLowerCase() &&
+      (f.changeType||'').toLowerCase().trim() === matchedType.toLowerCase().trim()
     );
 
     const changeData = {
@@ -6918,11 +6980,11 @@ async function startImportRetro() {
         await fsSave('figurines', updatedRec);
         const idx = _cache.figurines.findIndex(f => f.id === duplicateChange.id);
         if (idx >= 0) _cache.figurines[idx] = updatedRec;
-        retroImportLog('🔄 Riga ' + (i+1) + ': Change "' + nome + '" — sovrascritto', 'info');
+        retroImportLog('🔄 Riga ' + (i+1) + ': Change "' + nome + '" — sovrascritto [Tipo: "' + tipoChange + '"]', 'info');
         updated++;
       } else {
         await fsSave('figurines', changeData);
-        retroImportLog('✅ Riga ' + (i+1) + ': Change "' + nome + '" — aggiunto (base: "' + baseRetro.name + '")', 'ok');
+        retroImportLog('✅ Riga ' + (i+1) + ': Change "' + nome + '" — aggiunto (base: "' + baseRetro.name + '") [Tipo: "' + tipoChange + '"]', 'ok');
         inserted++;
       }
     } catch(e) {
@@ -7227,7 +7289,7 @@ function renderAdminFoto() {
       <div id="import-retro-section-content" style="display:none;">
       <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS. Un unico file per Retro base e Change di Retro.<br>Colonne richieste (nell\'ordine): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code> · <code>Tipo di change</code> (facoltativa) · <code>Retro - Categoria</code> (solo per un Change) · <code>Retro - Nome</code> (solo per un Change).<br><br><strong>Riga di un Retro base</strong>: lascia "Tipo di change" (e le due colonne Retro) vuote. Categoria, Sottocategoria e Nome sono quelli del Retro stesso.<br><strong>Riga di un Change di Retro</strong>: valorizza "Tipo di change" con uno dei valori configurati per questa serie (scheda Serie → "Tipi di Retro"). Categoria, Sottocategoria e Nome in questo caso sono i dati **del Change stesso** (scrivili per intero, non vengono generati automaticamente). <code>Retro - Categoria</code> e <code>Retro - Nome</code> identificano invece il <u>Retro base</u> a cui collegarlo (stessa chiave di ricerca degli altri caricamenti: Serie+Categoria+Nome del Retro base).<br>Se "Tipo di change" non corrisponde a nessuno dei valori configurati per la serie, o se il Retro base indicato non esiste, la riga viene segnalata come errore.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.'
+          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS. Un unico file per Retro base e Change di Retro.<br>Colonne richieste (nell\'ordine): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code> · <code>Tipo di change</code> (facoltativa) · <code>Retro - Categoria</code> (solo per un Change) · <code>Retro - Nome</code> (solo per un Change).<br><br><strong>Riga di un Retro base</strong>: lascia "Tipo di change" (e le due colonne Retro) vuote. Categoria, Sottocategoria e Nome sono quelli del Retro stesso. Chiave di riconciliazione: Serie+Categoria+Nome.<br><strong>Riga di un Change di Retro</strong>: valorizza "Tipo di change" con uno dei valori configurati per questa serie (scheda Serie → "Tipi di Retro"). Categoria, Sottocategoria e Nome in questo caso sono i dati **del Change stesso** (scrivili per intero — <u>non</u> includere il Tipo nel Nome, viene già mostrato separatamente ovunque). <code>Retro - Categoria</code> e <code>Retro - Nome</code> identificano invece il <u>Retro base</u> a cui collegarlo (stessa chiave di ricerca degli altri caricamenti: Serie+Categoria+Nome del Retro base). Chiave di riconciliazione del Change: Serie+Categoria+Nome+Tipo di change (così due Change dello stesso Retro base con lo stesso Nome ma Tipo diverso restano distinti).<br>Se "Tipo di change" non corrisponde a nessuno dei valori configurati per la serie, o se il Retro base indicato non esiste, la riga viene segnalata come errore.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.'
           : 'INSTRUCTIONS:<br>Select the series, upload the XLS file. A single file for both base Retros and Retro Changes.<br>Required columns (in order): <code>Serie</code> · <code>Categoria</code> · <code>Sottocategoria</code> · <code>Nome</code> · <code>Tipo di change</code> (optional) · <code>Retro - Categoria</code> (Change only) · <code>Retro - Nome</code> (Change only).<br><br><strong>Base Retro row</strong>: leave "Tipo di change" (and the two Retro columns) empty. Categoria, Sottocategoria and Nome belong to the Retro itself.<br><strong>Retro Change row</strong>: fill "Tipo di change" with one of the values configured for this series (Series form → "Retro types"). Categoria, Sottocategoria and Nome in this case are the Change\'s **own** data (write them in full, they are not auto-generated). <code>Retro - Categoria</code> and <code>Retro - Nome</code> identify instead the <u>base Retro</u> to link to (same lookup key as the other imports: Series+Category+Name of the base Retro).<br>If "Tipo di change" doesn\'t match any configured value for the series, or the specified base Retro doesn\'t exist, the row is flagged as an error.<br>NOTE: Rows with a Serie different from the selected one are skipped.'}
       </p>
       <a href="templates/template-retro.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
@@ -7504,7 +7566,7 @@ function renderAll() {
     if (noPhotoBtn2) {
       noPhotoBtn2.textContent = _noPhotoFilter
         ? (currentLang === 'it' ? '📷 Mostra tutte' : '📷 Show all')
-        : (currentLang === 'it' ? '📷 Solo figurine senza foto' : '📷 Stickers without photo only');
+        : (currentLang === 'it' ? '📷 Solo con foto mancante' : '📷 Missing photo only');
     }
     renderItems();
     // Re-trigger WIP banner
@@ -7740,9 +7802,13 @@ function renderBulkEditView() {
 
   bulkView.innerHTML = `
     <p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
+      <button class="btn-secondary" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
+    </div>
     <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
       <thead>
         <tr style="background:var(--card2);">
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>
           ${currentSeriesHasSubseries ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottoserie</th>' : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Nome</th>
@@ -7753,6 +7819,7 @@ function renderBulkEditView() {
       </thead>
       <tbody>
         ${allItems.map(f => `<tr id="bulk-row-${f.id}" style="border-bottom:1px solid var(--border);">
+          <td style="padding:4px;text-align:center;"><input type="checkbox" class="bulk-select-row" data-id="${f.id}" onchange="updateBulkDeleteCount()"></td>
           ${currentSeriesHasSubseries ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
           <td style="padding:4px;"><input data-field="number" data-id="${f.id}" value="${f.number||''}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
           <td style="padding:4px;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:180px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
@@ -7762,6 +7829,40 @@ function renderBulkEditView() {
         </tr>`).join('')}
       </tbody>
     </table>`;
+}
+
+function toggleBulkSelectAll(checkbox) {
+  document.querySelectorAll('.bulk-select-row').forEach(cb => cb.checked = checkbox.checked);
+  updateBulkDeleteCount();
+}
+
+function updateBulkDeleteCount() {
+  const count = document.querySelectorAll('.bulk-select-row:checked').length;
+  const countEl = document.getElementById('bulk-delete-count');
+  const btn = document.getElementById('bulk-delete-btn');
+  if (countEl) countEl.textContent = count;
+  if (btn) { btn.disabled = count === 0; btn.style.opacity = count === 0 ? '0.5' : '1'; }
+}
+
+async function deleteBulkSelected() {
+  const ids = Array.from(document.querySelectorAll('.bulk-select-row:checked')).map(cb => cb.dataset.id);
+  if (!ids.length) return;
+  if (!confirm((currentLang === 'it' ? 'Eliminare definitivamente ' : 'Permanently delete ') + ids.length + (currentLang === 'it' ? ' oggetti selezionati? L\u2019operazione non è reversibile.' : ' selected items? This cannot be undone.'))) return;
+
+  const btn = document.getElementById('bulk-delete-btn');
+  if (btn) btn.disabled = true;
+  let done = 0;
+  for (const id of ids) {
+    try {
+      await fsDelete('figurines', id);
+      done++;
+    } catch(e) {
+      console.error('deleteBulkSelected', id, e);
+    }
+  }
+  toast(done + (currentLang === 'it' ? ' oggetti eliminati' : ' items deleted'), 'success');
+  renderBulkEditView();
+  renderItems(); renderHomeStats(); updateSectionCounts();
 }
 
 async function saveBulkCell(input) {
