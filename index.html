@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.363</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.367</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -89,7 +89,6 @@
     <p class="hero-desc" data-i18n="hero.desc">Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni '90.</p>
     <p class="hero-desc" style="margin-top:-2.2rem;" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
-    <div id="profile-save-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1rem;margin-bottom:1rem;text-align:center;"data-i18n="profile.saved">✅ Informazioni salvate!</div>
     <div class="hero-cta">
       <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Esplora il catalogo Sgorbions!</button>
 <button class="btn-primary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Inizia a collezionare gli Sgorbions</button>
@@ -365,7 +364,6 @@
             <div id="profile-nationality-display" style="font-size:1rem;color:var(--muted);"></div>
             <button onclick="openNationalityModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.changeNat">✏️ Cambia nazionalità</button>
             <button id="profile-change-pwd-btn" onclick="openChangePwdModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.changePwd">🔑 Cambia password</button>
-            <button onclick="openProfileInfoModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.myInfo">✏️ Le mie info</button>
           </div>
           <div class="profile-stats" id="profile-stats-box">
             <div><div class="profile-stat-num" id="profile-owned">0</div><div class="profile-stat-label" data-i18n="profile.owned">Figurines Owned</div></div>
@@ -794,7 +792,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.363</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.367</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -823,7 +821,8 @@
           <span data-i18n="form.ageConfirm">Confermo di avere almeno 16 anni</span>
         </label>
       </div>
-      <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doRegister()" data-i18n="auth.reg.btn">Create Account</button>
+      <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doRegister()" id="reg-submit-btn" data-i18n="auth.reg.btn">Create Account</button>
+      <div id="reg-wait-notice" style="display:none;margin-top:0.75rem;background:rgba(255,200,50,0.1);border:1px solid rgba(255,200,50,0.3);color:#ffc832;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;text-align:center;">⏳ <span data-i18n="auth.reg.wait">La registrazione può richiedere fino a un minuto: non chiudere questa finestra.</span></div>
       <div id="reg-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
     </div>
   </div>
@@ -1056,7 +1055,7 @@
     </div>
     <div class="form-group">
       <label class="form-label" data-i18n="form.post.title">Title</label>
-      <input class="form-input" type="text" id="post-title-input" placeholder="What's your question or news?">
+      <input class="form-input" type="text" id="post-title-input" data-i18n-placeholder="modal.post.titlePh" placeholder="What's your question or news?">
     </div>
     <div class="form-group">
       <label class="form-label" data-i18n="form.post.body">Content</label>
@@ -1082,51 +1081,6 @@
     </div>
     <button class="btn-primary" style="width:100%;" onclick="saveBulkScore()" data-i18n="modal.bulkscore.apply">Applica ai visibili</button>
     <div id="bulk-score-feedback" style="display:none;margin-top:0.75rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-  </div>
-</div>
-
-<!-- PROFILE INFO INVITE MODAL -->
-<div class="modal-overlay hidden" id="profile-invite-modal">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-header">
-      <h2 class="modal-title">👋 Raccontaci di te!</h2>
-      <button class="modal-close" onclick="closeModal('profile-invite-modal')">✕</button>
-    </div>
-    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:1.25rem;">Queste informazioni sono <strong>facoltative</strong> e non saranno mostrate ad altri utenti. Ci aiutano a conoscerti meglio!</p>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
-      <div class="form-group">
-        <label class="form-label">Nome</label>
-        <input class="form-input" type="text" id="invite-nome" placeholder="">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Cognome</label>
-        <input class="form-input" type="text" id="invite-cognome" placeholder="">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Età</label>
-        <input class="form-input" type="number" id="invite-eta" min="5" max="120">
-      </div>
-      <div class="form-group">
-        <label class="form-label">Sesso</label>
-        <select class="form-input" id="invite-sesso">
-          <option value="">— Seleziona —</option>
-          <option value="M">Maschio</option>
-          <option value="F">Femmina</option>
-          <option value="A">Preferisco non dirlo</option>
-        </select>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label" data-i18n="profile.anni">Anni di collezionismo Sgorbions</label>
-      <input class="form-input" type="number" id="invite-anni" min="0" max="40">
-    </div>
-    <div id="invite-modal-btns-login" style="display:flex;gap:0.75rem;margin-top:0.5rem;">
-      <button class="btn-secondary" style="flex:1;" onclick="closeModal('profile-invite-modal')">Dopo</button>
-      <button class="btn-primary" style="flex:2;" onclick="saveProfileInvite()">Salva e continua</button>
-    </div>
-    <div id="invite-modal-btns-profile" style="display:none;gap:0.75rem;margin-top:0.5rem;">
-      <button class="btn-primary" style="width:100%;" onclick="saveProfileInvite()">Salva</button>
-    </div>
   </div>
 </div>
 
@@ -1300,30 +1254,6 @@
       <div>
         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.level">Livello</div>
         <div id="edit-user-level" style="font-size:0.88rem;color:var(--accent);">—</div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-bottom:1rem;background:var(--card2);border-radius:8px;padding:0.75rem;">
-      <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.nome">Nome</div>
-        <div id="edit-user-nome" style="font-size:0.88rem;color:var(--text);">—</div>
-      </div>
-      <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.cognome">Cognome</div>
-        <div id="edit-user-cognome" style="font-size:0.88rem;color:var(--text);">—</div>
-      </div>
-      <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;">Età</div>
-        <div id="edit-user-eta" style="font-size:0.88rem;color:var(--text);">—</div>
-      </div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1rem;background:var(--card2);border-radius:8px;padding:0.75rem;">
-      <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.sesso">Sesso</div>
-        <div id="edit-user-sesso" style="font-size:0.88rem;color:var(--text);">—</div>
-      </div>
-      <div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:3px;" data-i18n="admin.user.anni">Anni di collezionismo</div>
-        <div id="edit-user-anni" style="font-size:0.88rem;color:var(--text);">—</div>
       </div>
     </div>
 
