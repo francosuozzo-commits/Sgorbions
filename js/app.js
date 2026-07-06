@@ -1,6 +1,336 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.423 — Su richiesta di Franco: ripristinato il titolo generale
+//          "SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE" prima delle
+//          sotto-sezioni 1a/1b, in un font più grande (1.5rem, contro
+//          l'1.2rem delle sotto-sezioni). Portato anche il titolo di
+//          SEZIONE 2 allo stesso font più grande, per coerenza tra i
+//          due titoli di primo livello. Riverificato con la
+//          simulazione dedicata.
+// v5.422 — Grossa ristrutturazione della sezione Liste su richiesta di
+//          Franco: la vecchia Sezione 1 (che mescolava, in ogni box
+//          serie, i controlli di DUE export diversi — causa di
+//          confusione riconosciuta dallo stesso Franco) è stata divisa
+//          in due sotto-sezioni chiare e distinte:
+//          — SEZIONE 1a: Lista degli oggetti non nella mia lista (badge,
+//            checkbox variazioni/esclusione, barra progresso, toggle
+//            numeri/nomi, elenco a pillole — tutto quello che c'era
+//            prima, ma solo per questo export)
+//          — SEZIONE 1b: Lista figurine nella mia lista, serie
+//            incomplete (solo nome serie, conteggio "X/Y nella mia
+//            lista" e checkbox di esclusione — nessun elenco a
+//            pillole, su richiesta esplicita di Franco per non
+//            rischiare elenchi troppo lunghi)
+//          Ciascuna con titolo, testo esplicativo e pulsante di export
+//          propri, spostati dall'HTML statico dentro il rendering JS
+//          (stesso schema già usato dalla SEZIONE 2, invariata, che
+//          resta l'ultima delle tre). Verificato con una simulazione
+//          dedicata prima di consegnare, dato la complessità della
+//          modifica.
+// v5.421 — Su richiesta di Franco: le tre etichette dei toggle rinominate
+//          "Mostra solo numeri" / "Mostra solo nomi" / "Mostra numeri e
+//          nomi" (entrambe le lingue).
+// v5.420 — Su richiesta di Franco: i tre pulsanti "Solo numeri/Solo
+//          nomi/Numeri e nomi" nei box delle Liste ora sono veri toggle
+//          (stesso stile pillola/interruttore già usato per i filtri
+//          tipo Figurina/Retro), non più pulsanti pill colorati —
+//          coerenza visiva con il resto del sito. Rinominati con la N
+//          maiuscola ("Solo Numeri", "Solo Nomi").
+// v5.419 — Su richiesta di Franco: tolta l'interlinea prima di "Se la
+//          risposta è sì..." (ora subito sotto la prima frase) e
+//          aggiunta dopo (prima del paragrafo successivo), in entrambe
+//          le lingue.
+// v5.418 — Su richiesta di Franco: i tre pulsanti "Esporta..." nella
+//          sezione Liste, prima incolori (btn-secondary), ora verde lime
+//          (btn-primary), coerenti con le altre azioni principali del
+//          sito. I pulsanti/filtri di esclusione dall'export, prima
+//          rossi quando attivi, ora azzurri come i toggle — corretto
+//          anche un pulsante filtro dove bordo/sfondo erano rimasti
+//          rossi nonostante il testo fosse già stato corretto in
+//          azzurro. Applicato lo stesso azzurro anche al filtro "Solo
+//          senza foto", anch'esso un filtro.
+// v5.417 — Su richiesta di Franco: semplificata la frase introduttiva
+//          della sezione Liste (tolto "poter", "(ma non solo)", resa più
+//          diretta), in entrambe le lingue.
+// v5.416 — Su richiesta di Franco, primo passo di uniformazione colori
+//          pulsanti secondo lo schema concordato (rosso=eliminazioni,
+//          viola=modifiche tabella, azzurro=toggle, verde lime=azioni
+//          principali): corretti i pulsanti "Modifica" nel dettaglio
+//          figurina e "Modifica serie" nel dettaglio serie, che usavano
+//          per errore il verde invece del viola. Verificato che
+//          Eliminazioni e Toggle sono già coerenti in tutto il sito.
+// v5.415 — Su richiesta di Franco: aggiunta una nuova frase di richiamo
+//          tra il titolo e la descrizione della sezione Liste, in
+//          colore d'accento per darle risalto, con uno spazio (riga
+//          vuota) prima della seconda frase. Entrambe le lingue.
+// v5.414 — Su richiesta di Franco: nella sezione Liste, ogni rimando al
+//          nome di un pulsante (es. "Poi premi il tasto...") ora è in
+//          corsivo bianco invece che tra virgolette — quattro punti
+//          aggiornati (due hint convertiti da solo-testo a HTML per
+//          supportare lo stile, due già inline). Entrambe le lingue.
+// v5.413 — Su richiesta di Franco: "le tue liste sono complete o
+//          incomplete" → "la tua lista è completa o incompleta"
+//          (singolare, con accordo grammaticale corretto), in entrambe
+//          le lingue.
+// v5.412 — Su richiesta di Franco: aggiunti i prefissi "SEZIONE 1:" ed
+//          "SEZIONE 2:" (SECTION 1/2 in inglese) ai due titoli export
+//          della sezione Liste, in entrambe le lingue.
+// v5.411 — Su richiesta di Franco: titolo pagina "Lista figurine" → "Lista
+//          figurine (e non solo...)" / "Stickers list (and more...)".
+// v5.410 — Su richiesta di Franco: riscritti i tre punti elenco della
+//          descrizione della sezione Liste, con esempi tra parentesi
+//          (figurine, retro, album, altro...) e (serie non complete),
+//          in entrambe le lingue.
+// v5.409 — Su richiesta di Franco: pulsante "Esporta la mia lista di
+//          figurine (serie complete)" → "Esporta lista figurine mie
+//          serie complete" — allineato così anche al testo dell'hint
+//          che lo cita tra virgolette, che era rimasto disallineato
+//          dal vero testo del pulsante. Aggiornato in tutte e quattro le
+//          occorrenze, entrambe le lingue.
+// v5.408 — Su richiesta di Franco: "Ti manca tutta la serie!" → "Nella
+//          tua lista manca tutta la serie!" (e l'equivalente inglese
+//          "Your list is missing the entire series!").
+// v5.407 — Su richiesta di Franco: tolto il sottotitolo tra parentesi
+//          dal titolo export ("EXPORT DELLE TUE SERIE INCOMPLETE", senza
+//          "(LISTE NON COMPLETE)"), e corretto il riferimento al
+//          pulsante nell'hint IT ("Esporta lista oggetti non nella mia
+//          lista", allineato al vero testo del pulsante — l'inglese era
+//          già corretto). Entrambe le lingue aggiornate.
+// v5.406 — Su richiesta di Franco: "figurine non presenti nella tua
+//          lista" → "oggetti non presenti nella tua lista", sia nel
+//          punto elenco sia nell'hint di export (la stessa frase
+//          ricorreva in entrambi). Allineato anche l'inglese
+//          corrispondente in tutti i punti, come richiesto da Franco per
+//          il seguito.
+// v5.405 — Su richiesta di Franco: allineata la versione inglese dello
+//          stesso pulsante corretto in v5.403 — "Exclude from export
+//          "Items not in my list"", con lo stesso schema di virgolette
+//          usato in italiano.
+// v5.404 — Su richiesta di Franco: aggiunto "di figurinesgorbions.it"
+//          alla frase introduttiva della sezione Liste ("...rispetto
+//          all'Inventario di figurinesgorbions.it."), spostando il
+//          punto alla fine per una frase grammaticalmente corretta
+//          (solo italiano).
+// v5.403 — Su richiesta di Franco: "Escludi da export oggetti non nella
+//          mia lista" → "Escludi da export "Oggetti non nella mia
+//          lista"" (virgolette e maiuscola, solo italiano).
+// v5.402 — Su richiesta di Franco: pulsante "Escludi da export figurine
+//          che ho" rinominato "Escludi da export figurine della mia
+//          lista" (in tutte e tre le occorrenze, solo italiano).
+// v5.401 — Su richiesta di Franco: pulsante "Escludi da export mie
+//          mancoliste" rinominato "Escludi da export oggetti non nella
+//          mia lista" (e relativo equivalente inglese).
+// v5.400 — Su richiesta di Franco: nei rettangoli per serie della
+//          sezione Liste, "Figurine/Retro/Album/Altri oggetti mancanti"
+//          e il badge "N figurine mancanti su M" ora dicono "non nella
+//          mia lista" invece di "mancanti", in entrambe le lingue.
+// v5.399 — Su segnalazione di Franco: gli aggiornamenti di testo delle
+//          ultime versioni nella sezione Liste erano stati fatti solo
+//          in italiano. Allineato l'inglese: wantlist.missingTitle
+//          ("INCOMPLETE LISTS" invece di "MISSING LIST"),
+//          wantlist.hintExportMissing e wantlist.exportMissing ("items
+//          not in my list" invece di "missing stickers"). Controllate
+//          tutte le altre chiavi wantlist.* una per una: risultavano già
+//          allineate.
+// v5.398 — Su richiesta di Franco, altre due correzioni testo (solo
+//          italiano) nella sezione Liste: il riferimento al pulsante
+//          nell'hint e il pulsante stesso ora dicono "Esporta lista di
+//          quello non nella mia lista" / "Esporta lista oggetti non
+//          nella mia lista", invece di "che mi manca".
+// v5.397 — Su richiesta di Franco, altre due correzioni testo (solo
+//          italiano) nella sezione Liste: il titolo dell'export
+//          "(MANCOLISTE)" → "(LISTE NON COMPLETE)", e "figurine che ti
+//          mancano" → "figurine non presenti nella tua lista" nell'hint
+//          di export.
+// v5.396 — Su richiesta di Franco, quattro modifiche alla sezione
+//          Mancolista: (1) voce di menu rinominata "Liste"/"Lists"; (2)
+//          titolo pagina "Lista figurine"/"Stickers list"; (3) prima
+//          frase della descrizione riscritta per parlare di liste
+//          complete/incomplete rispetto all'Inventario, non di serie
+//          complete/incomplete in astratto; (4) il primo punto elenco
+//          non parla più di figurine "mancanti" ma "non presenti nella
+//          tua lista". Fatto in entrambe le lingue. Il nome "Mancolista"
+//          resta invariato altrove (titolo export, hint sull'esclusione).
+// v5.395 — Trovata, su segnalazione di Franco, la causa del nome
+//          "Deleted user" sempre in inglese vicino ai post/commenti di
+//          un utente cancellato: il testo veniva fissato PER SEMPRE
+//          nella lingua attiva al momento della cancellazione
+//          dell'account, non tradotto dinamicamente quando lo si legge
+//          dopo. Aggiunta displayAuthorName(), che riconosce entrambe le
+//          versioni già salvate ("Utente eliminato"/"Deleted user") e
+//          mostra sempre quella giusta per la lingua corrente di chi sta
+//          guardando — vale sia per i post sia per i commenti, incluso
+//          l'iniziale mostrata nell'avatar del commento.
+// v5.394 — Su richiesta di Franco: "Altro Materiale"/"Extra Material"
+//          rinominato "Altri oggetti"/"Other items" ovunque (box
+//          Inventario, dizionario, etichette usate negli export Excel
+//          della Mancolista).
+// v5.393 — Trovata, su segnalazione di Franco, la vera causa del testo
+//          sempre in italiano nei box dell'Inventario (nonostante
+//          l'accapo aggiunto in v5.391 fosse corretto): la funzione che
+//          genera quel testo (updateSectionCounts) non veniva mai
+//          richiamata al cambio lingua — restava ferma a quando i dati
+//          erano stati aggiornati l'ultima volta (in italiano, la
+//          lingua di default). Ora richiamata anche da renderAll(),
+//          quindi si aggiorna correttamente ad ogni cambio lingua.
+// v5.392 — Due cose su segnalazione di Franco: (1) trovate altre due
+//          occorrenze residue di "Nickname" nell'admin (intestazione
+//          colonna tabella utenti, etichetta nel modal dettaglio
+//          utente) — ora "Nome utente" in italiano, "Nickname" in
+//          inglese; corretto anche il messaggio "Nickname già in uso"
+//          alla registrazione. (2) Rimossa la sezione "Blog" dal
+//          pannello admin: verificato che non offriva nulla in più
+//          rispetto alla normale pagina Blog raggiungibile dal menu —
+//          l'admin ha già lì lo stesso identico pulsante "Cancella" su
+//          ogni post. Rimossi tab, sezione, funzione e traduzioni
+//          ormai inutilizzate.
+// v5.391 — Su richiesta di Franco: nei box dell'Inventario (scelta
+//          sezione Figurine/Retro/Album/Extra), "N. oggetti (N. nella
+//          mia lista)" ora va su due righe separate invece di essere
+//          una prosecuzione della stessa riga.
+// v5.390 — Su richiesta di Franco: "Nickname" tradotto "Nome utente" in
+//          italiano (invariato in inglese).
+// v5.389 — Trovata, su segnalazione di Franco, la vera causa della
+//          descrizione delle serie sempre in italiano anche in inglese:
+//          il form aveva un solo campo, salvato identico in entrambi i
+//          campi del database (desc/descIt) — non esisteva alcun posto
+//          dove scrivere una vera descrizione inglese. Aggiunto un
+//          secondo campo "Descrizione (Inglese)" nel form serie
+//          (esisteva già una traduzione orfana form.series.desc.it,
+//          mai collegata a nulla — ora usata). Finché una serie non ha
+//          ancora una descrizione inglese scritta, mostra quella
+//          italiana come ripiego (invece di restare vuota), sia nelle
+//          card sia nella ricerca.
+// v5.388 — Su richiesta di Franco: "Catalogo"/"Catalog" rinominato
+//          "Inventario"/"Inventory" ovunque nel testo visibile (menu,
+//          homepage, titolo pagina, ricerca, messaggio di benvenuto
+//          registrazione, wishlist, stati vuoti). Toccato solo il testo
+//          mostrato all'utente, non i nomi interni di funzioni/elementi
+//          (renderCatalog, page-catalog, ecc.), per non introdurre
+//          rischio inutile. Aggiornato anche how.2.desc in homepage
+//          (secondo box "Come funziona"): ora dice "traccia la
+//          percentuale di oggetti nella tua lista rispetto
+//          all'Inventario Sgorbions". Sistemate per strada anche alcune
+//          incoerenze residue di lavori precedenti: tre fallback HTML
+//          statici (Punteggio serie, Ho tutto, Non ho niente) che erano
+//          stati aggiornati nel dizionario ma non nel testo di default
+//          mostrato prima che il JS li sovrascriva.
+// v5.387 — Su richiesta di Franco: riscritte tutte le frasi e i pulsanti
+//          della pagina Mancolista che usavano il verbo "avere"
+//          (possesso), sostituito con "nella mia/tua lista" — il nome
+//          "Mancolista" resta invariato, ha un significato preciso nel
+//          collezionismo. Aggiornati: descrizione della pagina, hint di
+//          export, pulsanti "Esporta la mia lista di figurine" (sia per
+//          serie incomplete sia complete), e il messaggio di
+//          congratulazioni quando la lista è completa ("Complimenti! La
+//          tua lista comprende tutti gli oggetti dell'inventario
+//          Sgorbions!"). Fatto in entrambe le lingue.
+// v5.386 — Trovato e corretto un altro residuo italiano nel dizionario
+//          inglese: "admin.cloudinary.link" (pannello Risorse admin) era
+//          interamente in italiano anche nella versione EN. Fatta
+//          anche una verifica sistematica dell'intero dizionario
+//          (confronto automatico EN vs IT, non solo a occhio) — nessun
+//          altro residuo trovato: le uniche coppie con lo stesso valore
+//          in entrambe le lingue sono parole legittimamente identiche
+//          (Nickname, Password, Newsletter, Change, ecc.), non testo
+//          dimenticato.
+// v5.385 — Trovata e corretta, come segnalato da Franco, la causa
+//          precisa del testo italiano residuo nella pagina Contatti in
+//          inglese: la chiave "contact.intro" (quella davvero usata
+//          nell'HTML) aveva testo italiano mescolato anche nel
+//          dizionario inglese. Esistevano già delle chiavi separate e
+//          corrette in inglese (contact.q1/q2/q3/cta), create in un
+//          refactoring mai completato, ma mai collegate all'HTML —
+//          restano lì, orfane e innocue. Tradotta correttamente
+//          contact.intro in inglese.
+// v5.384 — Su segnalazione di Franco: aggiornato anche il box "Segna le
+//          Tue Figurine" in homepage (secondo passo di "Come funziona"),
+//          rimasto in linguaggio di possesso — ora "Costruisci la Tua
+//          Lista" / "Build Your List", coerente con "Mia lista". Trovata
+//          anche un'area più estesa con lo stesso tipo di linguaggio
+//          (pagina Mancolista/export Excel) — lasciata invariata in
+//          attesa di conferma da Franco, dato che lì "hai/non hai" serve
+//          a distinguere cosa manca da cosa non manca.
+// v5.383 — Due semplificazioni testo su richiesta di Franco: (1) il
+//          sottotitolo della Classifica accorciato a "Chi ha costruito la
+//          lista più grande?", senza il confronto esplicito con il
+//          possesso; (2) rimossa la frase "Vuoi contribuire al
+//          mantenimento del sito?" dall'introduzione della pagina
+//          Contatti (entrambe le lingue).
+// v5.382 — Trovate, su segnalazione di Franco, due chiavi di traduzione
+//          rimaste con "Ce l'ho" nella card di ogni oggetto — quelle
+//          davvero usate lì (owned.toggle per l'etichetta accanto al
+//          selettore, owned.yes per il badge quando attivo), diverse da
+//          quelle già corrette in v5.381. Ora anche queste dicono "Mia
+//          lista" / "My list". Aggiornato anche un ultimo messaggio di
+//          log residuo nel ricalcolo punteggi admin.
+// v5.381 — Su proposta di Franco: rinominato il concetto "Ce l'ho" in
+//          "Mia lista" / "My list" ovunque nell'interfaccia (pulsante
+//          toggle, statistica profilo, pulsanti Ho tutto/Non ho niente
+//          → Tutto in lista/Svuota lista, modal di cancellazione
+//          account, Privacy Policy, pannello admin ricalcolo punteggi,
+//          modal demo). Il meccanismo resta identico, cambia solo il
+//          linguaggio: da "possesso" a "lista personale", il cui
+//          significato è lasciato interamente all'utente — aggiunta una
+//          mini spiegazione in questo senso sia nel profilo sia nel
+//          modal demo. Aggiunto anche un sottotitolo alla Classifica
+//          ("Chi ha costruito la lista più grande, non chi possiede di
+//          più!"), per la stessa ragione concettuale. La Wishlist non è
+//          stata toccata, resta concettualmente distinta (il "gettone
+//          usa e getta" di prima).
+// v5.380 — Tre correzioni al testo della Privacy Policy su richiesta di
+//          Franco (in entrambe le lingue): (1) tolto il riferimento a
+//          cosa facevamo in passato (geolocalizzazione IP) nella sezione
+//          "Cosa non raccogliamo" — descrive solo lo stato attuale, non
+//          la storia; (2) semplificata la frase sulla Collezione,
+//          "wishlist" non aveva più senso di avere la nota "dati privati"
+//          attaccata solo a lei; (3) aggiunta la menzione che la
+//          Classifica può essere resa anonima volontariamente, nella
+//          sezione "Profilo pubblico".
+// v5.379 — Aggiunto, nel form di registrazione, un riferimento alla
+//          Privacy Policy ("Registrandoti, accetti la nostra Privacy
+//          Policy"), con link diretto alla pagina, tradotto in entrambe
+//          le lingue.
+// v5.378 — GDPR (punto 2 della lista): creata la pagina Privacy Policy,
+//          accessibile a chiunque (anche senza login) tramite un link
+//          nel footer. Copre: titolare del trattamento, quali dati
+//          raccogliamo e perché, con chi li condividiamo (Firebase,
+//          Cloudinary, EmailJS/Aruba), cookie (nessuno, solo
+//          localStorage), tempi di conservazione, diritti dell'utente
+//          (con link al Garante Privacy), requisito minori, modifiche
+//          future. Contenuto in entrambe le lingue: essendo un testo
+//          troppo lungo per il dizionario data-i18n normale, sono due
+//          blocchi statici (.lang-block-it/.lang-block-en) mostrati/
+//          nascosti da setLang() in base alla lingua corrente.
+// v5.377 — Su richiesta di Franco: tolta l'unica occorrenza residua di
+//          "Sgorbions Collector" trovata nel codice (traduzione inglese
+//          di "Livelli di Collezionista"), sostituita con
+//          "figurinesgorbions.it" — d'ora in poi sempre e solo questo il
+//          nome da usare. Rimossa anche l'impostazione di lingua per
+//          l'e-mail di reset password (v5.376), non più necessaria: si
+//          userà un unico template bilingue invece di più template per
+//          lingua.
+// v5.376 — Su richiesta di Franco: impostiamo ora esplicitamente la
+//          lingua di Firebase Auth (fbAuth.languageCode) in base alla
+//          lingua corrente del sito prima di inviare l'e-mail di reset
+//          password. Perché funzioni davvero, il template "Password
+//          reset" su Firebase Console deve avere entrambe le lingue
+//          (Italiano e Inglese) configurate — Franco deve farlo lato
+//          Firebase Console (Authentication → Templates → gestisci
+//          lingue), non è possibile dal nostro codice. Stesso discorso
+//          per il testo dell'e-mail e il nome mittente visualizzato;
+//          l'indirizzo e-mail del mittente invece resta un dominio
+//          Firebase a meno di configurare un dominio personalizzato
+//          (passaggio separato, richiede verifica DNS).
+// v5.375 — Due correzioni su segnalazione di Franco: (1) i tre messaggi
+//          di doResetPassword (e-mail mancante, e-mail non valida, e il
+//          messaggio di conferma "Se l'indirizzo è registrato...") non
+//          erano mai stati localizzati — ora seguono la lingua corrente;
+//          (2) aggiunto un evento in Admin → 🔔 Eventi per ogni richiesta
+//          di reset password (icona 🔑, già prevista ma mai usata prima
+//          d'ora). Non sappiamo se il reset viene poi davvero completato,
+//          ma è comunque un segnale utile da vedere.
 // v5.374 — Su proposta di Franco: aggiunto, nel modal di reset password,
 //          un link ai Contatti per chi ha dimenticato anche l'e-mail con
 //          cui si era registrato — non viola il principio di non
@@ -1625,7 +1955,7 @@ async function sendWelcomeEmail(user) {
     user.email,
     user.username,
     'Benvenuto su figurinesgorbions.it! 👾',
-    'Benvenuto nella community Sgorbions di figurinesgorbions.it!\n\nIl tuo account è stato creato con successo. Inizia subito a sfogliare il catalogo e a costruire la tua collezione!'
+    'Benvenuto nella community Sgorbions di figurinesgorbions.it!\n\nIl tuo account è stato creato con successo. Inizia subito a esplorare l\'Inventario e a costruire la tua lista!'
   );
   incrementEmailCounter(1);
 }
@@ -1794,7 +2124,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.374';
+const JS_VERSION = 'v5.423';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -2439,55 +2769,55 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Catalog','nav.blog':'Blog','nav.wantlist':'My missing list','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.wishlist':'Wishlist','wishlist.desc':'Your <strong>Wishlist</strong> is your personal space to collect the stickers (or other items) you would like to own.<br><br>While browsing the catalog, press the <strong>🛒</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send wishlist to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send wishlist',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'Wishlist','wishlist.desc':'Your <strong>Wishlist</strong> is your personal space to collect the stickers (or other items) you would like to own.<br><br>While browsing the Inventory, press the <strong>🛒</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send wishlist to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send wishlist',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.deleteAccount':'🗑️ Delete my account',
-'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "I have it" collection and your Ranking position','modal.deleteAccount.item3':'Your Wishlist','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
-'modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go!','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.blog':'Blog','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
+'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your Wishlist','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
+'modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go!','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
 'admin.email.fix':'Fix counter:','admin.save':'Save','newsletter.settingsTitle':'⚙️ Email Settings','newsletter.replyToLabel':'Reply-To address','newsletter.replyToHint':'When you reply to a message, the email will go to this address',
 'admin.firebase.plan':'Free plan (Spark): 1 GB storage, 50,000 reads/day, 20,000 writes/day.',
 'admin.firebase.docs':'total documents',
 'admin.cloudinary.plan':'Free plan: 25 credits/month (storage + transformations + bandwidth).',
-'admin.cloudinary.link':'Per il dettaglio aggiornato vai su <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.',
+'admin.cloudinary.link':'For updated details go to <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.',
 'admin.eventi.title':'System events','admin.segnalazioni.title':'User comments','admin.eventi.markRead':'✓ Mark all as read',
 'admin.user.save':'Save changes','admin.user.reset':'🔑 Reset password','admin.user.delete':'🗑️ Delete user',
 'admin.user.joined':'Member since','admin.user.lastlogin':'Last login','admin.user.level':'Level',
 
 'admin.user.role':'User type','admin.user.collector':'Collector','admin.user.admin':'Admin',
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
-'contact.intro':'Found a rare piece not listed on the site?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
+'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.levels':'Sgorbions Collector Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Extra Material','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Score selected','catalog.haveall':'✅ I have it all','catalog.havenone':'❌ I have none','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Email','admin.email.all':'All emails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in catalog...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Score selected','catalog.haveall':'✅ Add all to list','catalog.havenone':'❌ Clear list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Email','admin.email.all':'All emails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
 'hero.challenge':'Challenge others','hero.challengeDesc':'Challenge other collectors to see who has the biggest collection. You can also choose to appear anonymously.',
 'hero.desc':'The ultimate unofficial database dedicated to the legendary Italian sticker series of the \'90s.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. It is not a sales site. The sole purpose of the site is to connect collectors from around the world, allowing them to search for items they do not own and find other collectors to trade with.<br><br>The information on this site represents the knowledge of the administrator and does not claim to be official information.',
-'hero.cta1':'Explore the Sgorbions catalog!','hero.cta2':'Start collecting Sgorbions',
+'hero.cta1':'Explore the Sgorbions Inventory!','hero.cta2':'Start collecting Sgorbions',
 'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat3':'Collectors',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
 'home.featured.btn':'View All Series →',
 'home.how.eyebrow':'How It Works','home.how.title':'Your Collection, Organised',
-'how.1.title':'Browse the Catalog','how.1.desc':'Explore all Sgorbions series with photos and full descriptions.',
-'how.2.title':'Mark Your Stickers','how.2.desc':'Record which stickers you own and track your completion percentage for each series.',
+'how.1.title':'Browse the Inventory','how.1.desc':'Explore all Sgorbions series with photos and full descriptions.',
+'how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
 'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
 'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
-'catalog.title':'The Catalog','catalog.sub':'All Sgorbions series ever published','catalog.addseries':'+ Add Series',
+'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.addseries':'+ Add Series',
 'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
-'back':'Back to Catalog','detail.owned':'I own this','detail.addfig':'+ Add Sticker',
+'back':'Back to Inventory','detail.owned':'In my list','detail.addfig':'+ Add Sticker',
 'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation!',
 'contact.eyebrow':'Get in Touch','contact.sub':'Found a rare piece? Want to contribute? Write to us!',
 'contact.info.title':'Let\'s Talk Sgorbions','contact.email':'Email','contact.location':'Location',
 'contact.location.val':'Italy 🇮🇹','contact.resp':'Response time','contact.resp.val':'Usually within 24–48 hours',
 'form.name.ph':'Sgorbions Fan','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio!',
 'form.message':'Message','form.message.ph':'Tell me everything...',
-'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality','form.ageConfirm':'I confirm I am at least 16 years old','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
+'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality','form.ageConfirm':'I confirm I am at least 16 years old','form.privacyNotice':'By registering, you agree to our <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Privacy Policy</a>.','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
 'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Stickers',
-'form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.cover':'Cover Image',
+'form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.desc.en':'Description (English)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Cover Image',
 'form.click':'Click to upload','form.drag':'or drag and drop',
 'form.fig.image':'Image',
 'form.post.type':'Post Type','form.post.title':'Title','form.post.body':'Content',
@@ -2508,7 +2838,7 @@ const i18n = {
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
 'form.fig.descPlaceholder':'Describe this sticker...',
-'profile.title':'My Profile','profile.owned':'Stickers Owned','profile.series':'Series Tracked',
+'profile.title':'My Profile','profile.owned':'In My List','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
 
@@ -2516,26 +2846,26 @@ const i18n = {
 'pwd.resetDesc':'Enter your email address. If it\u2019s registered, you\u2019ll receive a link to reset your password.',
 'modal.resetPwd.title':'🔑 Reset password','modal.resetPwd.emailLabel':'E-mail address','modal.resetPwd.send':'Send reset link','modal.resetPwd.forgotEmail':'Forgot which e-mail you registered with too? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contact the administrator</a>.',
 'admin.series.title':'Manage Series','admin.figurines.title':'Manage Stickers',
-'admin.blog.title':'Manage Q&A / Blog','admin.contacts.title':'Received Messages',
+'admin.contacts.title':'Received Messages',
 'admin.users.title':'Registered Users',
 'footer.desc':'The unofficial fan database dedicated to the legendary Italian sticker collection of the \'90s. Made with 💚 by collectors, for collectors.',
 'footer.nav':'Navigation','footer.account':'Account',
 'footer.copy':'© 2026 figurinesgorbions.it — Unofficial fan site.',
-'owned.toggle':'I have it','owned.yes':'✓ I have it',
+'owned.toggle':'My list','owned.yes':'✓ My list',
 'contact.q1':'Do you want more information about Sgorbions?','contact.q2':'Do you want to report an error?',
 'contact.q3':'Or do you just want to compliment the administrator?',
 'contact.cta':'For any of these things, send us a message!',
-'wantlist.desc':'This page shows your complete and incomplete series.<br><br>You can export to Excel:<br>• the list of your missing stickers<br>• the list of stickers you own<br>• the list of stickers from your complete series','wantlist.pageTitle':'Missing list','wantlist.missingTitle':'EXPORT OF YOUR INCOMPLETE SERIES (MISSING LIST)','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'Select the series for which to export the list of stickers you are missing. Then press "Export missing stickers".','wantlist.hintExportIncomplete':'Select the series for which to export the list of stickers you own. Then press "Export stickers I own (incomplete series)".','wantlist.exportMissing':'Export missing stickers','wantlist.exportIncomplete':'Export stickers I own (incomplete series)','wantlist.export':'Export stickers from my complete series'
+'wantlist.desc':'This page shows the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>• items not in your list (stickers, retros, albums, other...)<br>• stickers in your list (incomplete series)<br>• stickers from your complete series','wantlist.pageTitle':'Stickers list (and more...)','wantlist.hook':'Would you like to build lists of Sgorbions stickers in just a few clicks, based on your own personal list built by browsing our Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'SECTION 1: EXPORT OF YOUR INCOMPLETE SERIES','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'Select the series for which to export the list of items not in your list. Then press <i style="color:#fff;">Export items not in my list</i>.','wantlist.hintExportIncomplete':'Select the series for which to export the list of stickers in your list. Then press <i style="color:#fff;">Export my sticker list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in my list','wantlist.exportIncomplete':'Export my sticker list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Catalogo','nav.blog':'Blog / D&R','nav.wantlist':'Mancoliste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.wishlist':'Lista desiderati',
-'wishlist.desc':'La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nel catalogo, premi il tasto <strong>🛒</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia lista desiderati&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Lista desiderati',
+'wishlist.desc':'La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nell\'Inventario, premi il tasto <strong>🛒</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia lista desiderati&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
 'wishlist.submit':'📨 Invia lista desiderati',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
 'nav.onlineSince':'Online dal 21.06.2026',
 'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','profile.deleteAccount':'🗑️ Elimina il mio account',
-'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua collezione "Ce l\'ho" e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua Wishlist','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
+'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua "Mia lista" e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua Wishlist','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
 'modal.accountDeleted.title':'Account eliminato','modal.accountDeleted.desc':'Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via!','modal.accountDeleted.close':'Chiudi',
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
@@ -2552,11 +2882,11 @@ const i18n = {
 'admin.user.role':'Tipologia di utente','admin.user.collector':'Collezionista','admin.user.admin':'Admin',
 
 'contact.title':'Contatta <span class=\'hi\'>l\'amministratore</span>',
-'contact.intro':'Hai trovato qualche pezzo raro che non è censito nel sito?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi contribuire al mantenimento del sito?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
+'contact.intro':'Hai trovato qualche pezzo raro che non è censito nel sito?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'contact.email.ph':'la-tua@e-mail.com',
 'contact.info':'Informazioni di contatto','contact.responseTime':'Tempo di risposta medio','contact.responseDesc':'Di solito in poche ore',
 'newsletter.title':'Invia Newsletter','newsletter.subject':'Oggetto','newsletter.subject.ph':'es. Nuova serie aggiunta!','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate',
-'classifica.best':'Classifica dei migliori collezionisti','classifica.levels':'Livelli di Collezionista Sgorbions',
+'classifica.best':'Classifica dei migliori collezionisti','classifica.sub':'Chi ha costruito la lista più grande?','classifica.levels':'Livelli di Collezionista Sgorbions',
 'admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio minimo','admin.levels.save':'Salva livello',
 'hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.',
 'banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
@@ -2573,39 +2903,39 @@ const i18n = {
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Le mie / Totale','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Sfida gli altri collezionisti a chi ha la collezione più grande. Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Non è un sito di vendita. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute in questo sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora il catalogo Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
+    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Non è un sito di vendita. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute in questo sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri oggetti','hero.stat3':'Collezionisti',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
     'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
-    'how.1.title':'Sfoglia il Catalogo','how.1.desc':'Esplora tutte le serie di Sgorbions con foto e descrizioni complete.',
-    'how.2.title':'Segna le Tue Figurine','how.2.desc':'Indica quali figurine hai e traccia la percentuale di completamento per ogni serie.',
+    'how.1.title':'Sfoglia l\'Inventario','how.1.desc':'Esplora tutte le serie di Sgorbions con foto e descrizioni complete.',
+    'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'Il Catalogo','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altro Materiale','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio selezionati','catalog.haveall':'✅ Ho tutto','catalog.havenone':'❌ Non ho niente','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ E-mail','admin.email.all':'Tutte le e-mail','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nel catalogo...',
-    'back':'Torna al Catalogo','detail.owned':'In mio possesso','detail.addfig':'+ Aggiungi Figurina',
+    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio selezionati','catalog.haveall':'✅ Tutto in lista','catalog.havenone':'❌ Svuota lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ E-mail','admin.email.all':'Tutte le e-mail','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'back':'Torna all\'Inventario','detail.owned':'Nella mia lista','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'E-mail','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
-    'form.username':'Nickname','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
-    'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.cover':'Immagine di Copertina',
+    'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','form.privacyNotice':'Registrandoti, accetti la nostra <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Informativa sulla Privacy</a>.','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
+    'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.desc.en':'Descrizione (Inglese)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
-    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle tue serie complete ed incomplete.<br><br>Puoi esportare in Excel:<br>• l\'elenco delle tue figurine mancanti<br>• l\'elenco delle figurine che hai<br>• l\'elenco delle figurine delle tue serie complete','wantlist.pageTitle':'Mancoliste figurine','wantlist.missingTitle':'EXPORT DELLE TUE SERIE INCOMPLETE (MANCOLISTE)','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco delle figurine che ti mancano. Poi premi il tasto "Esporta lista di quello che mi manca".','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine che hai. Poi premi il tasto "Esporta lista figurine che ho (solo serie incomplete)".','wantlist.exportIncomplete':'Esporta lista figurine che ho (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista di quello che mi manca','wantlist.export':'Esporta lista figurine che ho','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Se è registrato, riceverai un link per reimpostare la password.',
+    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario di figurinesgorbions.it.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>• oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>• figurine presenti nella tua lista (serie non complete)<br>• figurine delle tue serie complete','wantlist.pageTitle':'Lista figurine (e non solo...)','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella mia lista</i>.','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la mia lista di figurine (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta la mia lista di figurine (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella mia lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Se è registrato, riceverai un link per reimpostare la password.',
 'modal.resetPwd.title':'🔑 Reimposta password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.send':'Invia link di reset','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
-    'profile.title':'Il Mio Profilo','profile.owned':'Figurine Possedute','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione',
+    'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
     'profile.sliderHint':'Prova a spostare il cursore! 👆',
-    'admin.title':'Pannello Admin','admin.series':'Serie','admin.figurines':'Figurine','admin.blog':'Blog','admin.contacts':'Messaggi','admin.users':'Utenti',
-    'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.blog.title':'Gestisci D&R / Blog','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati',
+    'admin.title':'Pannello Admin','admin.series':'Serie','admin.figurines':'Figurine','admin.contacts':'Messaggi','admin.users':'Utenti',
+    'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati',
     'footer.desc':'Il database fan non ufficiale dedicato alla leggendaria collezione di figurine italiana degli anni \'90. Fatto con 💚 da collezionisti, per collezionisti.',
     'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Sito fan non ufficiale.',
-    'owned.toggle':'Ce l\'ho','owned.yes':'✓ Ce l\'ho'
+    'owned.toggle':'Mia lista','owned.yes':'✓ Mia lista'
   
   ,'form.fig.noNumber':'Non ha numero','auth.googleBtn':'Accedi con Google','auth.or':'oppure'}
 };
@@ -2641,6 +2971,10 @@ function setLang(lang, byUser = false) {
   });
   const eyebrow = document.getElementById('classifica-eyebrow');
   if (eyebrow) eyebrow.textContent = lang === 'it' ? 'Migliori Collezionisti' : 'Top Collectors';
+  // Blocchi di contenuto lungo (es. Privacy Policy) troppo estesi per il
+  // dizionario data-i18n: due versioni statiche, mostriamo solo quella giusta
+  document.querySelectorAll('.lang-block-it').forEach(el => el.style.display = lang === 'it' ? '' : 'none');
+  document.querySelectorAll('.lang-block-en').forEach(el => el.style.display = lang === 'en' ? '' : 'none');
   applyI18n();
   renderAll();
 }
@@ -2909,7 +3243,7 @@ async function doRegister() {
     return;
   }
   let profiles = getData('public_profiles', []);
-  if (profiles.find(x => x.username === u)) { const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = 'Nickname già in uso'; return; } toast('Nickname già in uso', 'error'); return; }
+  if (profiles.find(x => x.username === u)) { const msg = currentLang === 'it' ? 'Nome utente già in uso' : 'Username already taken'; const re = document.getElementById('reg-error'); if (re) { re.style.display = ''; re.textContent = msg; return; } toast(msg, 'error'); return; }
   const natCode = document.getElementById('reg-nationality-code')?.value || '';
   const natName = document.getElementById('reg-nationality-name')?.value || '';
   let authUid = null;
@@ -3050,6 +3384,18 @@ async function confirmDeleteAccountGoogle() {
   await _performAccountDeletion(fbUser);
 }
 
+// L'autore di un post/commento, tradotto al momento della visualizzazione:
+// riconosce sia "Utente eliminato" sia "Deleted user" (qualunque sia stata
+// salvata al momento della cancellazione dell'account) e mostra sempre il
+// testo giusto per la lingua CORRENTE, invece di restare fissa nella
+// lingua di quel momento passato
+function displayAuthorName(name) {
+  if (name === 'Utente eliminato' || name === 'Deleted user') {
+    return currentLang === 'it' ? 'Utente eliminato' : 'Deleted user';
+  }
+  return name;
+}
+
 async function _anonymizeUserContent(userId) {
   // Post e commenti restano visibili (valore per gli altri lettori del
   // blog), ma con il nome sostituito: non è più possibile risalire a chi
@@ -3174,20 +3520,27 @@ async function doResetPassword() {
 
   if (!email) { 
     fb.style.cssText = 'display:block;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6464;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
-    fb.textContent = 'Inserisci il tuo indirizzo e-mail.';
+    fb.textContent = currentLang === 'it' ? 'Inserisci il tuo indirizzo e-mail.' : 'Enter your e-mail address.';
     return; 
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     fb.style.cssText = 'display:block;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6464;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
-    fb.textContent = 'Inserisci un indirizzo e-mail valido.';
+    fb.textContent = currentLang === 'it' ? 'Inserisci un indirizzo e-mail valido.' : 'Enter a valid e-mail address.';
     return;
   }
 
   // Sempre lo stesso messaggio, indipendentemente dal fatto che l'indirizzo sia
   // registrato o meno (non riveliamo l'esistenza di un account a chi non è autenticato)
   fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
-  fb.textContent = '✅ Se l\'indirizzo è registrato, riceverai un\'e-mail con le istruzioni per reimpostare la password.';
+  fb.textContent = currentLang === 'it'
+    ? '✅ Se l\'indirizzo è registrato, riceverai un\'e-mail con le istruzioni per reimpostare la password.'
+    : '✅ If the address is registered, you\'ll receive an e-mail with instructions to reset your password.';
   if (btn) btn.disabled = true;
+
+  // Un evento per ogni richiesta (non sappiamo se poi viene davvero
+  // completata, ma è comunque un segnale utile: qualcuno ha perso la
+  // password — o dice di averla persa)
+  logEvent('reset_pwd', (currentLang === 'it' ? 'Richiesto reset password per: ' : 'Password reset requested for: ') + email);
 
   try {
     const { sendPasswordResetEmail } = window._fbAuth;
@@ -3341,14 +3694,16 @@ function openAddSeriesModal(seriesId) {
       const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = s.hasUnofficialVariations || false;
       const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = s.hasChange || false;
       const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = s.noNumbers || false;
-      document.getElementById('series-desc-input').value = s.desc;
+      document.getElementById('series-desc-input').value = s.descIt || s.desc || '';
+      const descEnInput = document.getElementById('series-desc-en-input');
+      if (descEnInput) descEnInput.value = s.desc || '';
       const rctInput = document.getElementById('series-retro-change-types-input');
       if (rctInput) rctInput.value = (s.retroChangeTypes || []).join('\n');
 
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
     }
   } else {
-    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-album-count-input','series-desc-input'].forEach(id => document.getElementById(id).value = '');
+    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-album-count-input','series-desc-input','series-desc-en-input'].forEach(id => document.getElementById(id).value = '');
     const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = false;
     const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = false;
     const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = false;
@@ -3393,8 +3748,8 @@ async function saveSeries() {
   const firstNumber = parseInt(document.getElementById('series-first-number-input').value) || null;
   const lastNumber = parseInt(document.getElementById('series-last-number-input').value) || null;
   const albumCount = parseInt(document.getElementById('series-album-count-input').value) || null;
-  const desc = document.getElementById('series-desc-input').value.trim();
-  const descIt = desc; // same description for both languages
+  const descIt = document.getElementById('series-desc-input').value.trim();
+  const desc = document.getElementById('series-desc-en-input').value.trim();
   const retroChangeTypes = (document.getElementById('series-retro-change-types-input')?.value || '')
     .split('\n').map(v => v.trim()).filter(Boolean);
   if (!name || !year) { toast((currentLang === 'it' ? 'Nome e anno sono obbligatori' : 'Name and year are required'), 'error'); return; }
@@ -3488,7 +3843,7 @@ function renderCatalogSearch(q) {
   // Cerca in serie (nome, descrizione) e in figurine (nome, numero, sottoserie, descrizione)
   const results = [];
   allSeries.forEach(s => {
-    const desc = (currentLang === 'it' && s.descIt ? s.descIt : s.desc) || '';
+    const desc = (currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt)) || '';
     const seriesMatch = s.name.toLowerCase().includes(q) || desc.toLowerCase().includes(q);
     const matchingFigs = allFigs.filter(f => f.seriesId === s.id && (
       (f.name||'').toLowerCase().includes(q) ||
@@ -3514,7 +3869,7 @@ function renderCatalogSearch(q) {
 
   resultsEl.innerHTML = summary + results.map(r => {
     const s = r.series;
-    const desc = (currentLang === 'it' && s.descIt ? s.descIt : s.desc) || '';
+    const desc = (currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt)) || '';
     // Nome serie sempre in cima, cliccabile per aprire la serie
     // Prima riga: nome serie a sx + conteggio oggetti a dx
     const seriesHeader = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
@@ -3553,7 +3908,7 @@ function seriesCardHTML(s) {
   const albums = allItems.filter(f => f.section === 'albums');
   const extras = allItems.filter(f => f.section === 'extras');
   const figs = allItems.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras');
-  const desc = currentLang === 'it' && s.descIt ? s.descIt : s.desc;
+  const desc = currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt);
   // Calculate mode score (most common score > 0)
   let modeScoreHTML = '';
   const scoredFigs = figs.filter(f => f.score && f.score > 0);
@@ -3620,8 +3975,8 @@ function getItemsPerPage() {
 }
 
 function getSectionLabel(section) {
-  const it = { figurines: 'Figurine', retros: 'Retro', albums: 'Album', extras: 'Altro Materiale' };
-  const en = { figurines: 'Stickers', retros: 'Retros', albums: 'Albums', extras: 'Extra Material' };
+  const it = { figurines: 'Figurine', retros: 'Retro', albums: 'Album', extras: 'Altri oggetti' };
+  const en = { figurines: 'Stickers', retros: 'Retros', albums: 'Albums', extras: 'Other Items' };
   return (currentLang === 'it' ? it : en)[section] || section;
 }
 function getSectionLabelSingular(section) {
@@ -3644,7 +3999,7 @@ function openSeriesDetail(seriesId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const det = document.getElementById('series-detail');
   det.style.display = 'block';
-  const desc = currentLang === 'it' && s.descIt ? s.descIt : s.desc;
+  const desc = currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt);
   document.getElementById('detail-name').textContent = s.name;
   document.getElementById('detail-year').textContent = s.year;
   document.getElementById('detail-desc').textContent = desc || '';
@@ -3692,8 +4047,8 @@ function updateSectionCounts() {
     const unit = currentLang === 'it' ? ' oggetti' : ' items';
     if (currentUser && total > 0) {
       const ownedCount = items.filter(f => owned.includes(f.id)).length;
-      const ownedLabel = currentLang === 'it' ? ownedCount + ' posseduti' : ownedCount + ' owned';
-      el.textContent = total + unit + ' (' + ownedLabel + ')';
+      const ownedLabel = currentLang === 'it' ? ownedCount + ' nella mia lista' : ownedCount + ' in my list';
+      el.innerHTML = total + unit + '<br>' + ownedLabel;
     } else {
       el.textContent = total + unit;
     }
@@ -4134,7 +4489,7 @@ async function backfillPublicScores() {
     for (const o of allOwned) ownedByUserId[o.userId] = o.owned || [];
 
     // Scorre SEMPRE tutti gli utenti, uno per uno — chi non ha mai usato
-    // "Ce l'ho" riceve comunque un punteggio 0 scritto esplicitamente,
+    // "Mia lista" riceve comunque un punteggio 0 scritto esplicitamente,
     // invece di essere semplicemente saltato
     let done = 0;
     for (const user of allUsers) {
@@ -4143,12 +4498,12 @@ async function backfillPublicScores() {
       if (progressEl) progressEl.textContent = 'Ricalcolati ' + done + ' / ' + allUsers.length + '...';
     }
 
-    // Dati "Ce l'ho" orfani (nessun utente corrispondente): solo un avviso,
+    // Dati "Mia lista" orfani (nessun utente corrispondente): solo un avviso,
     // non influenzano il conteggio principale
     const realUserIds = new Set(allUsers.map(u => u.id));
     const orphanOwned = allOwned.filter(o => !realUserIds.has(o.userId)).length;
 
-    if (progressEl) progressEl.textContent = 'Completato: punteggio aggiornato per tutti i ' + done + ' utenti.' + (orphanOwned ? ' (' + orphanOwned + ' dati "Ce l\u2019ho" orfani ignorati, utenti non più esistenti)' : '');
+    if (progressEl) progressEl.textContent = 'Completato: punteggio aggiornato per tutti i ' + done + ' utenti.' + (orphanOwned ? ' (' + orphanOwned + ' dati "Mia lista" orfani ignorati, utenti non più esistenti)' : '');
     toast('Punteggio ricalcolato per tutti i ' + done + ' utenti', 'success');
     _cache.public_profiles = await fsGetAll('public_profiles');
     renderClassifica();
@@ -4190,9 +4545,9 @@ function toggleNoPhotoFilter() {
   _noPhotoFilter = !_noPhotoFilter;
   const btn = document.getElementById('no-photo-filter-btn');
   if (btn) {
-    btn.style.background = _noPhotoFilter ? 'rgba(255,100,100,0.15)' : '';
-    btn.style.borderColor = _noPhotoFilter ? '#ff6464' : '';
-    btn.style.color = _noPhotoFilter ? '#ff6464' : '';
+    btn.style.background = _noPhotoFilter ? 'rgba(77,184,255,0.15)' : '';
+    btn.style.borderColor = _noPhotoFilter ? '#4db8ff' : '';
+    btn.style.color = _noPhotoFilter ? '#4db8ff' : '';
     btn.textContent = _noPhotoFilter ? (currentLang === 'it' ? (currentSection === 'retros' ? '📷 Mostra tutti' : '📷 Mostra tutte') : '📷 Show all') : (currentLang === 'it' ? '📷 Solo senza foto' : '📷 Missing photo only');
   }
   try { renderItems(); } catch(e) { console.error('renderItems (toggleNoPhotoFilter)', e); }
@@ -4747,10 +5102,10 @@ function renderBlog() {
       const cDate = new Date(c.date).toLocaleDateString(currentLang==='it'?'it-IT':'en-GB', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
       const canDel = currentUser && (currentUser.isAdmin || currentUser.id === c.authorId);
       return `<div class="comment">
-        <div class="comment-avatar ${c.isAdmin ? 'is-admin' : ''}">${c.author[0].toUpperCase()}</div>
+        <div class="comment-avatar ${c.isAdmin ? 'is-admin' : ''}">${displayAuthorName(c.author)[0].toUpperCase()}</div>
         <div class="comment-bubble ${c.isAdmin ? 'is-admin' : ''}">
           <div class="comment-header">
-            <span class="comment-author">@${c.author}</span>${(()=>{ const u = getData("users",[]).find(x=>x.id===c.authorId); return u?.nationalityCode ? `<img src="https://flagcdn.com/w40/${u.nationalityCode}.png" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : ""; })()}
+            <span class="comment-author">@${displayAuthorName(c.author)}</span>${(()=>{ const u = getData("users",[]).find(x=>x.id===c.authorId); return u?.nationalityCode ? `<img src="https://flagcdn.com/w40/${u.nationalityCode}.png" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : ""; })()}
             ${c.isAdmin ? `<span class="comment-admin-badge">👑 ${t('comment.admin')}</span>` : ''}
             <span class="comment-date">${cDate}</span>
             ${canDel ? `<button class="comment-del-btn" onclick="deleteComment('${p.id}','${c.id}')" title="Delete">✕</button>` : ''}
@@ -4774,7 +5129,7 @@ function renderBlog() {
 
     return `<div class="blog-card">
       <div class="blog-meta">
-        <span class="blog-author">@${p.author}</span>
+        <span class="blog-author">@${displayAuthorName(p.author)}</span>
         <span class="blog-date">${dateStr}</span>
         <span class="blog-type-badge ${badgeClass}">${badgeLabel}</span>
         ${currentUser?.isAdmin ? `<button class="tbl-btn tbl-btn-del" style="margin-left:auto;" onclick="deletePost('${p.id}')">${currentLang === 'it' ? "Cancella" : "Delete"}</button>` : ''}
@@ -4894,7 +5249,7 @@ function renderMyCollection(ownedFigs) {
   if (!el) return; // section removed
   const series = getData('series', []);
   if (!ownedFigs.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">😢</div><p class="empty-title">${currentLang === 'it' ? "Nessuna figurina ancora!" : "No stickers yet!"}</p><p class="empty-sub">${currentLang === 'it' ? "Sfoglia il catalogo e segna le figurine che possiedi." : "Browse the catalog and mark the stickers you own."}</p></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">😢</div><p class="empty-title">${currentLang === 'it' ? "Nessuna figurina ancora!" : "No stickers yet!"}</p><p class="empty-sub">${currentLang === 'it' ? "Sfoglia l'Inventario e aggiungi le figurine alla tua lista." : "Browse the Inventory and add stickers to your list."}</p></div>`;
     return;
   }
   const bySeries = {};
@@ -4934,7 +5289,6 @@ function adminTab(tab) {
   if (tabEl) { tabEl.classList.add('active'); }
   if (tab === 'series') renderAdminSeries();
   if (tab === 'figurines') renderAdminFigs();
-  if (tab === 'blog') renderAdminBlog();
   if (tab === 'contacts') { renderAdminContacts(); updateMsgBadge(); }
   if (tab === 'users') renderAdminUsers();
   if (tab === 'segnalazioni') renderAdminSegnalazioni();
@@ -5072,21 +5426,6 @@ function renderAdminFigs() {
       </td></tr>`;
     }).join('')}</tbody></table>`;
 }
-function renderAdminBlog() {
-  const el = document.getElementById('admin-blog-list');
-  const posts = getData('posts', []);
-  if (!posts.length) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Nessun post ancora.' : 'No posts yet.') + '</p>'; return; }
-  el.innerHTML = posts.map(p => {
-    const comments = p.comments || [];
-    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:0.75rem;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem;">
-        <div><strong style="font-family:var(--font-ui);">${p.title}</strong> <span style="font-size:0.78rem;color:var(--muted);">by @${p.author}</span></div>
-        <button class="tbl-btn tbl-btn-del" onclick="deletePost('${p.id}')">${(currentLang === 'it') ? 'Cancella' : 'Delete'}</button>
-      </div>
-      <div style="font-size:0.82rem;color:var(--muted);margin-top:0.5rem;">💬 ${comments.length} ${comments.length===1?'reply':'replies'}</div>
-    </div>`;
-  }).join('');
-}
 function renderAdminContacts() {
   renderEmailLogInto('messages-email-log', 'messages');
   const el = document.getElementById('admin-contacts-list');
@@ -5199,7 +5538,7 @@ function renderAdminUsers() {
   });
   const arrow = (c) => _usersSort.col === c ? (_usersSort.dir === 1 ? ' ↑' : ' ↓') : '';
   el.innerHTML = `<table class="data-table compact"><thead><tr>
-    <th style="cursor:pointer;" onclick="sortAdminUsers('username')">Nickname${arrow('username')}</th>
+    <th style="cursor:pointer;" onclick="sortAdminUsers('username')">${(currentLang === 'it') ? 'Nome utente' : 'Nickname'}${arrow('username')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('email')">E-mail${arrow('email')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('lastLogin')">${(currentLang === 'it') ? 'Ultima login' : 'Last login'}${arrow('lastLogin')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('joined')">${(currentLang === 'it') ? 'Iscritto dal' : 'Member since'}${arrow('joined')}</th>
@@ -5793,10 +6132,10 @@ function openFigDetail(figId) {
     }
   }
 
-  // Ce l'ho toggle
+  // Mia lista toggle
   if (currentUser) {
     rows.push(`<div class="detail-row" style="align-items:center;">
-      <span class="detail-label">${currentLang === 'it' ? "Ce l'ho" : 'I own this'}</span>
+      <span class="detail-label">${currentLang === 'it' ? "Mia lista" : 'My list'}</span>
       <button class="toggle-btn-blue ${isOwned ? 'on' : ''}" id="fig-detail-toggle" onclick="toggleOwnedFromDetail('${f.id}')"></button>
     </div>`);
   }
@@ -5816,7 +6155,7 @@ function openFigDetail(figId) {
   // Bottom buttons
   if (isAdmin) {
     rows.push(`<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
-      <button onclick="switchToEditMode('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer;">✏️ ${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>
+      <button onclick="switchToEditMode('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--accent3);background:transparent;color:var(--accent3);cursor:pointer;">✏️ ${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>
       <button onclick="deleteItemFromDetail('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid #ff6464;background:transparent;color:#ff6464;cursor:pointer;">🗑️ ${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button>
     </div>`);
   } else if (currentUser) {
@@ -6515,7 +6854,7 @@ function openViewUserModal(userId) {
         <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
       </div>
       <div style="display:grid;gap:0.75rem;">
-        <div class="detail-row"><span class="detail-label">Nickname</span><span class="detail-value">${user.username} ${flag}</span></div>
+        <div class="detail-row"><span class="detail-label">${(currentLang === 'it') ? 'Nome utente' : 'Nickname'}</span><span class="detail-value">${user.username} ${flag}</span></div>
         <div class="detail-row"><span class="detail-label">E-mail</span><span class="detail-value">${user.email}</span></div>
         <div class="detail-row"><span class="detail-label">Tipologia</span><span class="detail-value">${role}</span></div>
         <div class="detail-row"><span class="detail-label">Iscritto dal</span><span class="detail-value">${joined}</span></div>
@@ -7828,6 +8167,7 @@ function renderAll() {
   applyI18n();
   renderHomeSeries();
   renderHomeStats();
+  updateSectionCounts();
 
   // Re-render active page
   if (document.getElementById('page-catalog')?.classList.contains('active')) renderCatalog();
@@ -8022,7 +8362,7 @@ async function setAllOwned(ownAll) {
   if (!currentUser) return;
   const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
   if (!items.length) return;
-  const msg = ownAll ? (currentLang === 'it' ? 'Segnare tutti gli oggetti come posseduti?' : 'Mark all items as owned?') : (currentLang === 'it' ? 'Rimuovere tutti gli oggetti dalla tua collezione?' : 'Remove all items from your collection?');
+  const msg = ownAll ? (currentLang === 'it' ? 'Aggiungere tutti gli oggetti alla tua lista?' : 'Add all items to your list?') : (currentLang === 'it' ? 'Svuotare la tua lista?' : 'Clear your list?');
   if (!confirm(msg)) return;
   let owned = getOwned();
   if (ownAll) {
@@ -8442,7 +8782,7 @@ function renderWishlist() {
   const items = _wishlist.map(id => allFigs.find(f => f.id === id)).filter(Boolean);
 
   if (!items.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🛒</div><p class="empty-title">${currentLang === 'it' ? 'La tua Lista desiderati è vuota' : 'Your wishlist is empty'}</p><p class="empty-sub">${currentLang === 'it' ? 'Naviga il catalogo e premi 🛒 sulle figurine che ti interessano.' : 'Browse the catalog and press 🛒 on stickers you are interested in.'}</p></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🛒</div><p class="empty-title">${currentLang === 'it' ? 'La tua Lista desiderati è vuota' : 'Your wishlist is empty'}</p><p class="empty-sub">${currentLang === 'it' ? 'Naviga l\'Inventario e premi 🛒 sulle figurine che ti interessano.' : 'Browse the Inventory and press 🛒 on stickers you are interested in.'}</p></div>`;
     renderWishlistHistory();
     return;
   }
@@ -8726,12 +9066,12 @@ function renderWantlist() {
       const incOwned = prefs[s.id]?.includeOwned !== false;
       return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
         <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&!f.isVariation&&!f.isUnofficialVariation&&!f.isChange); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
-        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#ff6464' : 'var(--border)'};background:${!incOwned ? 'rgba(255,100,100,0.15)' : 'var(--card2)'};color:${!incOwned ? '#ff6464' : 'var(--muted)'};cursor:pointer;">
-          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine che ho' : 'Exclude from owned stickers export'}
+        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#4db8ff' : 'var(--border)'};background:${!incOwned ? 'rgba(77,184,255,0.15)' : 'var(--card2)'};color:${!incOwned ? '#4db8ff' : 'var(--muted)'};cursor:pointer;">
+          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della mia lista' : 'Exclude from owned stickers export'}
         </button>
       </div>`;
     }).join('');
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! Hai tutto!' : 'Congrats! You have it all!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'EXPORT DELLE TUE SERIE COMPLETE' : 'EXPORT OF YOUR COMPLETE SERIES') + '</h3><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto "Esporta lista figurine mie serie complete".' : 'Select the series for which you want to export your stickers. Then press "Export my complete series stickers".') + '</p><div style="margin-bottom:1rem;"><button class="btn-secondary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes : '');
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! La tua lista comprende tutti gli oggetti dell\'inventario Sgorbions!' : 'Congrats! Your list includes every item in the Sgorbions inventory!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;">' + (currentLang === 'it' ? 'SEZIONE 2: EXPORT DELLE TUE SERIE COMPLETE' : 'SECTION 2: EXPORT OF YOUR COMPLETE SERIES') + '</h2><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto <i style="color:#fff;">Esporta lista figurine mie serie complete</i>.' : 'Select the series for which you want to export your stickers. Then press <i style="color:#fff;">Export my complete series stickers</i>.') + '</p><div style="margin-bottom:1rem;"><button class="btn-primary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes : '');
     return;
   }
 
@@ -8741,7 +9081,7 @@ function renderWantlist() {
     bySeries[f.seriesId].push(f);
   });
 
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine mancanti' : 'Missing stickers', retros: currentLang === 'it' ? 'Retro mancanti' : 'Missing retros', albums: currentLang === 'it' ? 'Album mancanti' : 'Missing albums', extras: currentLang === 'it' ? 'Altri oggetti mancanti' : 'Missing other items' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine non nella mia lista' : 'Stickers not in my list', retros: currentLang === 'it' ? 'Retro non nella mia lista' : 'Retros not in my list', albums: currentLang === 'it' ? 'Album non nella mia lista' : 'Albums not in my list', extras: currentLang === 'it' ? 'Altri oggetti non nella mia lista' : 'Other items not in my list' };
 
   const sortedEntries = Object.entries(bySeries).sort(([aId], [bId]) => {
     const aS = series.find(x => x.id === aId);
@@ -8749,9 +9089,13 @@ function renderWantlist() {
     return (aS?.order ?? 9999) - (bS?.order ?? 9999);
   });
 
-  el.innerHTML = sortedEntries.map(([sId, figs]) => {
+  // === SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE (titolo generale) ===
+  let html = '<h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;">' + (currentLang === 'it' ? 'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE' : 'SECTION 1: EXPORT OF YOUR INCOMPLETE SERIES') + '</h2>';
+  // === SEZIONE 1a: Lista degli oggetti non nella mia lista ===
+  html += '<h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'SEZIONE 1a: LISTA DEGLI OGGETTI NON NELLA MIA LISTA' : 'SECTION 1a: LIST OF ITEMS NOT IN MY LIST') + '</h3><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella mia lista</i>.' : 'Select the series for which to export the list of items not in your list. Then press <i style="color:#fff;">Export items not in my list</i>.') + '</p><div style="margin-bottom:1rem;"><button class="btn-primary" onclick="exportWantlist(this)">' + (currentLang === 'it' ? 'Esporta lista oggetti non nella mia lista' : 'Export items not in my list') + '</button></div>';
+
+  html += sortedEntries.map(([sId, figs]) => {
     const s = series.find(x => x.id === sId);
-    const allSeriesFigs = allFigs.filter(f => f.seriesId === sId && isBaseItem(f));
     const seriesPrefs = getWantlistPrefs();
     const seriesIncVariations = seriesPrefs[sId]?.includeVariations || false;
     const figurinesOnlyMissing = allFigs.filter(f => f.seriesId === sId && (f.section || 'figurines') === 'figurines' && !owned.includes(f.id) && (seriesIncVariations || isBaseItem(f))).length;
@@ -8768,7 +9112,6 @@ function renderWantlist() {
       ${(() => {
         const prefs = getWantlistPrefs();
         const excMissing = prefs[sId]?.excludeMissing || false;
-        const incOwned = prefs[sId]?.includeOwned !== false; // default true
         const incVariations = prefs[sId]?.includeVariations || false; // default false
         return `
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.4rem;">
@@ -8776,23 +9119,17 @@ function renderWantlist() {
             <span style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;cursor:pointer;" onclick="toggleWantlistCollapse('${sId}')">
               <span style="font-size:0.8rem;color:var(--muted);user-select:none;">${_wantlistCollapsed[sId] ? '▶' : '▼'}</span>
               <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')}</span>
-              <span class="card-badge" style="color:#5ec8f0;">${figurinesOnlyMissing} ${currentLang === 'it' ? 'figurine mancanti su' : 'stickers missing out of'} ${figurinesOnlyTotal}</span>
+              <span class="card-badge" style="color:#5ec8f0;">${figurinesOnlyMissing} ${currentLang === 'it' ? 'figurine non nella mia lista su' : 'stickers not in my list out of'} ${figurinesOnlyTotal}</span>
             </span>
             <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
               <input type="checkbox" onchange="toggleIncludeVariations('${sId}')" ${incVariations ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
               <span style="color:${incVariations ? 'var(--accent)' : 'var(--muted)'};">${currentLang === 'it' ? 'Includere variazioni/change' : 'Include variations/change'}</span>
             </label>
           </div>
-          <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
-            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
-              <input type="checkbox" onchange="toggleWantlistExclude('${sId}')" ${excMissing ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-              <span style="color:${excMissing ? '#ff6464' : 'var(--muted)'};">${currentLang === 'it' ? 'Escludi da export mie mancoliste' : 'Exclude from my missing lists export'}</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
-              <input type="checkbox" onchange="toggleOwnedInclude('${sId}')" ${!incOwned ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-              <span style="color:${!incOwned ? '#ff6464' : 'var(--muted)'};">${currentLang === 'it' ? 'Escludi da export figurine che ho' : 'Exclude from owned stickers export'}</span>
-            </label>
-          </div>
+          <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
+            <input type="checkbox" onchange="toggleWantlistExclude('${sId}')" ${excMissing ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span style="color:${excMissing ? '#4db8ff' : 'var(--muted)'};">${currentLang === 'it' ? 'Escludi da export "Oggetti non nella mia lista"' : 'Exclude from export "Items not in my list"'}</span>
+          </label>
         </div>
         ${!excMissing ? '<div class="progress-bar" style="margin-bottom:0.5rem;"><div class="progress-fill" style="width:' + Math.round(ownedCount/figurinesOnlyTotal*100) + '%"></div></div>' : ''}
         `;
@@ -8805,16 +9142,16 @@ function renderWantlist() {
         const modeSelector = `
           <div style="display:flex;gap:0.4rem;margin-bottom:0.3rem;align-items:center;flex-wrap:wrap;">
             <span style="font-family:var(--font-ui);font-size:0.85rem;color:var(--accent3);">${sectionLabels[sec] || sec}</span>
-            <div style="margin-left:auto;display:flex;gap:0.35rem;">
-              ${hasNumbers ? `<button onclick="toggleWantlistMode('${groupKey}','numbers')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='numbers'?'var(--accent3)':'var(--card2)'};color:${mode==='numbers'?'#fff':'var(--muted)'};cursor:pointer;">${currentLang === 'it' ? 'Solo numeri' : 'Numbers only'}</button>` : ''}
-              ${hasNumbers ? `<button onclick="toggleWantlistMode('${groupKey}','names')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='names'?'var(--accent3)':'var(--card2)'};color:${mode==='names'?'#fff':'var(--muted)'};cursor:pointer;">${currentLang === 'it' ? 'Solo nomi' : 'Names only'}</button>` : ''}
-              ${hasNumbers ? `<button onclick="toggleWantlistMode('${groupKey}','both')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid var(--border);background:${mode==='both'?'var(--accent3)':'var(--card2)'};color:${mode==='both'?'#fff':'var(--muted)'};cursor:pointer;">${currentLang === 'it' ? 'Numeri e nomi' : 'Numbers and names'}</button>` : ''}
+            <div style="margin-left:auto;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+              ${hasNumbers ? `<div style="display:flex;align-items:center;gap:0.35rem;"><button class="toggle-btn-blue ${mode==='numbers'?'on':''}" onclick="toggleWantlistMode('${groupKey}','numbers')" title="${currentLang === 'it' ? 'Mostra solo numeri' : 'Show numbers only'}"></button><span style="font-size:0.78rem;color:var(--muted);">${currentLang === 'it' ? 'Mostra solo numeri' : 'Show numbers only'}</span></div>` : ''}
+              ${hasNumbers ? `<div style="display:flex;align-items:center;gap:0.35rem;"><button class="toggle-btn-blue ${mode==='names'?'on':''}" onclick="toggleWantlistMode('${groupKey}','names')" title="${currentLang === 'it' ? 'Mostra solo nomi' : 'Show names only'}"></button><span style="font-size:0.78rem;color:var(--muted);">${currentLang === 'it' ? 'Mostra solo nomi' : 'Show names only'}</span></div>` : ''}
+              ${hasNumbers ? `<div style="display:flex;align-items:center;gap:0.35rem;"><button class="toggle-btn-blue ${mode==='both'?'on':''}" onclick="toggleWantlistMode('${groupKey}','both')" title="${currentLang === 'it' ? 'Mostra numeri e nomi' : 'Show numbers and names'}"></button><span style="font-size:0.78rem;color:var(--muted);">${currentLang === 'it' ? 'Mostra numeri e nomi' : 'Show numbers and names'}</span></div>` : ''}
             </div>
           </div>`;
         // If all items in this section are missing, show a simple message
         const allSectionFigs = allFigs.filter(f => f.seriesId === sId && f.section === sec);
         if (items.length === allSectionFigs.length) {
-          return `<div style="margin-bottom:0.4rem;">${modeSelector}<div style="color:var(--muted);font-size:0.88rem;font-style:italic;">${currentLang === 'it' ? 'Ti manca tutta la serie!' : 'You are missing the entire series!'}</div></div>`;
+          return `<div style="margin-bottom:0.4rem;">${modeSelector}<div style="color:var(--muted);font-size:0.88rem;font-style:italic;">${currentLang === 'it' ? 'Nella tua lista manca tutta la serie!' : 'Your list is missing the entire series!'}</div></div>`;
         }
         const sorted = items.sort((a,b) => {
           // Sort by subseries first, then by number, then by name
@@ -8868,6 +9205,27 @@ function renderWantlist() {
     </div>`;
   }).join('');
 
+  // === SEZIONE 1b: Lista figurine nella mia lista (serie incomplete) ===
+  html += '<hr style="border-color:var(--border);margin:1.5rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'SEZIONE 1b: LISTA FIGURINE NELLA MIA LISTA' : 'SECTION 1b: LIST OF STICKERS IN MY LIST') + '</h3><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la mia lista di figurine (solo serie incomplete)</i>.' : 'Select the series for which to export the list of stickers in your list. Then press <i style="color:#fff;">Export my sticker list (incomplete series only)</i>.') + '</p><div style="margin-bottom:1.5rem;"><button class="btn-primary" onclick="exportOwnedIncomplete(this)">' + (currentLang === 'it' ? 'Esporta figurine serie incomplete' : 'Export my sticker list (incomplete series only)') + '</button></div>';
+
+  html += sortedEntries.map(([sId]) => {
+    const s = series.find(x => x.id === sId);
+    const prefs = getWantlistPrefs();
+    const incOwned = prefs[sId]?.includeOwned !== false;
+    const seriesIncVariations = prefs[sId]?.includeVariations || false;
+    const figurinesOnlyTotal = allFigs.filter(f => f.seriesId === sId && (f.section || 'figurines') === 'figurines' && (seriesIncVariations || isBaseItem(f))).length;
+    const figurinesOnlyMissing = allFigs.filter(f => f.seriesId === sId && (f.section || 'figurines') === 'figurines' && !owned.includes(f.id) && (seriesIncVariations || isBaseItem(f))).length;
+    const ownedCount = figurinesOnlyTotal - figurinesOnlyMissing;
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
+      <span style="font-family:var(--font-display);font-size:1.1rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')} <span style="font-size:0.8rem;color:var(--accent);">(${ownedCount}&nbsp;/&nbsp;${figurinesOnlyTotal}&nbsp;${currentLang==='it'?'nella mia lista':'in my list'})</span></span>
+      <button onclick="toggleOwnedInclude('${sId}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#4db8ff' : 'var(--border)'};background:${!incOwned ? 'rgba(77,184,255,0.15)' : 'var(--card2)'};color:${!incOwned ? '#4db8ff' : 'var(--muted)'};cursor:pointer;">
+        ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della mia lista' : 'Exclude from owned stickers export'}
+      </button>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = html;
+
   // Append complete series section at the bottom
   if (completeSeries.length) {
     const prefs = getWantlistPrefs();
@@ -8875,12 +9233,12 @@ function renderWantlist() {
       const incOwned = prefs[s.id]?.includeOwned !== false;
       return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
         <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&!f.isVariation&&!f.isUnofficialVariation&&!f.isChange); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
-        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#ff6464' : 'var(--border)'};background:${!incOwned ? 'rgba(255,100,100,0.15)' : 'var(--card2)'};color:${!incOwned ? '#ff6464' : 'var(--muted)'};cursor:pointer;">
-          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine che ho' : 'Exclude from owned stickers export'}
+        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#4db8ff' : 'var(--border)'};background:${!incOwned ? 'rgba(77,184,255,0.15)' : 'var(--card2)'};color:${!incOwned ? '#4db8ff' : 'var(--muted)'};cursor:pointer;">
+          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della mia lista' : 'Exclude from owned stickers export'}
         </button>
       </div>`;
     }).join('');
-    el.innerHTML += '<hr style="border-color:var(--border);margin:1rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'EXPORT DELLE TUE SERIE COMPLETE' : 'EXPORT OF YOUR COMPLETE SERIES') + '</h3><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto "Esporta lista figurine mie serie complete".' : 'Select the series for which you want to export your stickers. Then press "Export my complete series stickers".') + '</p><div style="margin-bottom:1rem;"><button class="btn-secondary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes;
+    el.innerHTML += '<hr style="border-color:var(--border);margin:1.5rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;">' + (currentLang === 'it' ? 'SEZIONE 2: EXPORT DELLE TUE SERIE COMPLETE' : 'SECTION 2: EXPORT OF YOUR COMPLETE SERIES') + '</h2><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto <i style="color:#fff;">Esporta lista figurine mie serie complete</i>.' : 'Select the series for which you want to export your stickers. Then press <i style="color:#fff;">Export my complete series stickers</i>.') + '</p><div style="margin-bottom:1rem;"><button class="btn-primary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes;
   }
 }
 
@@ -8963,7 +9321,7 @@ async function exportOwnedList() {
   const owned = getOwned();
   const ownedFigs = allFigs.filter(f => owned.includes(f.id) && f.section === 'figurines' && isBaseFigurine(f));
   const series = getData('series', []);
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurina' : 'Sticker', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altro materiale' : 'Other material' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurina' : 'Sticker', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items' };
 
   const rows = [[(currentLang === 'it' ? 'Serie' : 'Series'), (currentLang === 'it' ? 'Tipo di oggetto' : 'Item type'), (currentLang === 'it' ? 'Sottoserie' : 'Subseries'), (currentLang === 'it' ? 'Numero' : 'Number'), (currentLang === 'it' ? 'Nome' : 'Name')]];
 
@@ -9026,7 +9384,7 @@ async function _exportWantlistImpl() {
   const owned = getOwned();
   const missing = allFigs.filter(f => !owned.includes(f.id));
   const series = getData('series', []);
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurina' : 'Sticker', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altro materiale' : 'Other material' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurina' : 'Sticker', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items' };
 
   const rows = [[(currentLang === 'it' ? 'Serie' : 'Series'), (currentLang === 'it' ? 'Tipo di oggetto' : 'Item type'), (currentLang === 'it' ? 'Sottoserie' : 'Subseries'), (currentLang === 'it' ? 'Numero' : 'Number'), (currentLang === 'it' ? 'Nome' : 'Name')]];
 
