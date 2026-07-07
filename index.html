@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.423</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.435</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -33,7 +33,7 @@
     <a onclick="showPage('catalog')" data-page="catalog" data-i18n="nav.catalog" id="nav-catalog" style="display:none;">Inventario</a>
     <a onclick="showPage('blog')" data-page="blog" id="nav-blog" style="display:none;" data-i18n="nav.blog">Blog / D&amp;R</a>
     <a onclick="showPage('wantlist')" data-page="wantlist" id="nav-wantlist" style="display:none;" data-i18n="nav.wantlist">Liste</a>
-    <a onclick="showPage('wishlist')" data-page="wishlist" id="nav-wishlist" style="display:none;position:relative;" data-i18n="nav.wishlist">Wishlist<span id="nav-wishlist-badge" style="display:none;position:absolute;top:-6px;right:-10px;background:#ff6464;color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span></a>
+    <a onclick="showPage('wishlist')" data-page="wishlist" id="nav-wishlist" style="display:none;position:relative;"><span data-i18n="nav.wishlist">Ciò che cerco</span><span id="nav-wishlist-badge" style="display:none;position:absolute;top:-6px;right:-10px;background:#ff6464;color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span></a>
     <a onclick="showPage('classifica')" data-page="classifica" id="nav-classifica" style="display:none;" data-i18n="nav.classifica">🏆 Classifica</a>
     <a onclick="showPage('newsletter')" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contatti</a>
@@ -53,7 +53,7 @@
       <span style="font-size:1.3rem;">🔔</span>
       <span id="nav-bell-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:#ff4444;color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span>
     </div>
-    <div id="nav-wishlist-btn" style="display:none;position:relative;cursor:pointer;" onclick="showPage('wishlist')" title="Lista desiderati">
+    <div id="nav-wishlist-btn" style="display:none;position:relative;cursor:pointer;" onclick="showPage('wishlist')" title="Ciò che cerco">
       <span style="font-size:1.3rem;">♡</span>
       <span id="nav-wishlist-icon-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:#ff6464;color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span>
     </div>
@@ -247,14 +247,13 @@
         <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
           <button class="btn-primary" onclick="openAddItemModal()" id="admin-add-label" data-i18n="catalog.add">+ Aggiungi</button>
           <button class="btn-secondary" onclick="openBulkScoreModal()" id="bulk-score-toggle" data-i18n="catalog.bulkscore">⭐ Punteggio selezionati</button>
-          <button class="btn-secondary" onclick="toggleBulkEditView()" id="bulk-edit-toggle-btn">📋 Vista tabellare</button>
           <button class="btn-secondary" onclick="toggleNoPhotoFilter()" id="no-photo-filter-btn">📷 Solo senza foto</button>
         </div>
       </div>
     </div>
     <div id="bulk-owned-btns" style="display:none;margin-bottom:1rem;display:flex;gap:0.75rem;flex-wrap:wrap;align-items:center;">
-      <button onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;background:#0e0a1a;border:1.5px solid var(--accent);color:var(--accent);border-radius:12px;cursor:pointer;font-family:var(--font-body);transition:all 0.2s;" data-i18n="catalog.haveall">✅ Tutto in lista</button>
-      <button class="btn-secondary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;" data-i18n="catalog.havenone">❌ Svuota lista</button>
+      <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;" data-i18n="catalog.haveall">✅ Tutto in lista</button>
+      <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;" data-i18n="catalog.havenone">❌ Svuota lista</button>
       <span id="set-all-msg" style="display:none;font-size:0.85rem;color:var(--accent);font-family:var(--font-ui);"></span>
     </div>
     <div class="progress-bar-wrap" id="detail-progress-wrap" style="display:none;margin-bottom:1.5rem;">
@@ -271,7 +270,10 @@
         <input class="search-input" type="text" id="items-search" placeholder="Search..." oninput="try{renderItems();}catch(e){console.error('renderItems (search)',e);} try{if(typeof bulkEditActive!=='undefined'&&bulkEditActive)renderBulkEditView();}catch(e){console.error('renderBulkEditView (search)',e);}">
       </div>
     </div>
-    <div id="items-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.5rem;"></div>
+    <div id="items-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;"></div>
+    <div id="user-table-view-btn" style="display:none;margin-bottom:1rem;">
+      <button class="btn-primary" onclick="toggleBulkEditView()" id="bulk-edit-toggle-btn" style="font-size:0.9rem;padding:0.4rem 1.1rem;">📋 Vista tabellare</button>
+    </div>
     <div id="items-pagination-top"></div>
     <div class="grid-6" id="items-grid">
       <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora!</p></div>
@@ -364,7 +366,7 @@
         <ul style="margin:0.5rem 0 1rem 1.3rem;">
           <li><strong>Account</strong>: nickname, indirizzo e-mail, password (gestita da Firebase Authentication — non la vediamo né la conserviamo noi in chiaro)</li>
           <li><strong>Profilo facoltativo</strong>: avatar, nazionalità</li>
-          <li><strong>Collezione</strong>: quali figurine/oggetti hai aggiunto alla tua lista ("Mia lista") e la tua wishlist. Dati privati, visibili solo a te e all'amministratore</li>
+          <li><strong>Collezione</strong>: quali figurine/oggetti hai aggiunto alla tua lista ("Mia lista") e la tua lista "Ciò che cerco". Dati privati, visibili solo a te e all'amministratore</li>
           <li><strong>Profilo pubblico</strong>: nickname, avatar, nazionalità e punteggio aggregato, visibili nella Classifica — <u>mai</u> l'e-mail. Puoi in qualsiasi momento scegliere di apparire in forma anonima nella Classifica, dal tuo profilo</li>
           <li><strong>Conferma età</strong>: una dichiarazione booleana ("ho almeno 16 anni") con la data, richiesta dalla legge per l'iscrizione dei minori</li>
           <li><strong>Blog</strong>: i post e i commenti che scrivi, pubblici e visibili a tutti</li>
@@ -373,12 +375,12 @@
         <p><strong>Cosa non raccogliamo</strong>: nome e cognome reali, età, sesso, la tua posizione geografica.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Perché li raccogliamo</h3>
-        <p>Per farti usare le funzionalità del sito che richiedono un account (collezione, classifica, wishlist, blog), per rispondere alle tue richieste tramite il form Contatti, e per rispettare l'obbligo di legge sull'età minima per l'iscrizione.</p>
+        <p>Per farti usare le funzionalità del sito che richiedono un account (collezione, classifica, "Ciò che cerco", blog), per rispondere alle tue richieste tramite il form Contatti, e per rispettare l'obbligo di legge sull'età minima per l'iscrizione.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Con chi condividiamo i dati</h3>
         <p>Non vendiamo né condividiamo i tuoi dati con terzi per scopi commerciali. Ci appoggiamo a questi fornitori di servizio (che trattano i dati per nostro conto, in qualità di responsabili del trattamento):</p>
         <ul style="margin:0.5rem 0 1rem 1.3rem;">
-          <li><strong>Google Firebase</strong> — autenticazione e database (dove sono conservati account, collezioni, wishlist, post)</li>
+          <li><strong>Google Firebase</strong> — autenticazione e database (dove sono conservati account, collezioni, "Ciò che cerco", post)</li>
           <li><strong>Cloudinary</strong> — hosting delle immagini (avatar, foto delle figurine)</li>
           <li><strong>EmailJS</strong>, con invio tramite <strong>Aruba</strong> — per le e-mail che ti inviamo (benvenuto, newsletter, notifiche)</li>
         </ul>
@@ -388,7 +390,7 @@
         <p>Il sito non usa cookie di tracciamento. Usa esclusivamente la memoria locale del browser (localStorage) per ricordare la tua sessione e le tue preferenze — un dato tecnico che resta sul tuo dispositivo, non viene inviato a terzi per finalità pubblicitarie.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Per quanto tempo conserviamo i dati</h3>
-        <p>Finché il tuo account resta attivo. Puoi cancellarlo in autonomia in qualsiasi momento dal tuo profilo ("Elimina il mio account"): l'operazione è immediata e cancella account, collezione, wishlist e profilo pubblico. Gli eventuali post/commenti scritti sul blog restano visibili per continuità del contenuto condiviso, ma il tuo nome viene sostituito con "Utente eliminato".</p>
+        <p>Finché il tuo account resta attivo. Puoi cancellarlo in autonomia in qualsiasi momento dal tuo profilo ("Elimina il mio account"): l'operazione è immediata e cancella account, collezione, "Ciò che cerco" e profilo pubblico. Gli eventuali post/commenti scritti sul blog restano visibili per continuità del contenuto condiviso, ma il tuo nome viene sostituito con "Utente eliminato".</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">I tuoi diritti</h3>
         <p>In qualsiasi momento puoi chiederci di:</p>
@@ -419,7 +421,7 @@
         <ul style="margin:0.5rem 0 1rem 1.3rem;">
           <li><strong>Account</strong>: nickname, e-mail address, password (managed by Firebase Authentication — we never see or store it in plain text)</li>
           <li><strong>Optional profile</strong>: avatar, nationality</li>
-          <li><strong>Collection</strong>: which stickers/items you've added to your list ("My list") and your wishlist. Private data, visible only to you and the administrator</li>
+          <li><strong>Collection</strong>: which stickers/items you've added to your list ("My list") and your "What I'm looking for" list. Private data, visible only to you and the administrator</li>
           <li><strong>Public profile</strong>: nickname, avatar, nationality and aggregate score, visible in the Ranking — <u>never</u> your e-mail. You can choose to appear anonymously in the Ranking at any time, from your profile</li>
           <li><strong>Age confirmation</strong>: a boolean statement ("I am at least 16 years old") with the date, required by law for minors' registration</li>
           <li><strong>Blog</strong>: the posts and comments you write, public and visible to everyone</li>
@@ -428,12 +430,12 @@
         <p><strong>What we don't collect</strong>: your real first/last name, age, gender, your geographic location.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Why we collect it</h3>
-        <p>To let you use the site's account features (collection, ranking, wishlist, blog), to respond to your requests via the Contact form, and to comply with the legal requirement on the minimum age for registration.</p>
+        <p>To let you use the site's account features (collection, ranking, "What I'm looking for", blog), to respond to your requests via the Contact form, and to comply with the legal requirement on the minimum age for registration.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Who we share data with</h3>
         <p>We do not sell or share your data with third parties for commercial purposes. We rely on these service providers (who process data on our behalf, as data processors):</p>
         <ul style="margin:0.5rem 0 1rem 1.3rem;">
-          <li><strong>Google Firebase</strong> — authentication and database (where accounts, collections, wishlists, posts are stored)</li>
+          <li><strong>Google Firebase</strong> — authentication and database (where accounts, collections, "What I'm looking for" lists, posts are stored)</li>
           <li><strong>Cloudinary</strong> — image hosting (avatars, sticker photos)</li>
           <li><strong>EmailJS</strong>, sending via <strong>Aruba</strong> — for the e-mails we send you (welcome, newsletter, notifications)</li>
         </ul>
@@ -443,7 +445,7 @@
         <p>The site does not use tracking cookies. It only uses the browser's local storage (localStorage) to remember your session and preferences — a technical piece of data that stays on your device, never sent to third parties for advertising purposes.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">How long we keep data</h3>
-        <p>For as long as your account stays active. You can delete it yourself at any time from your profile ("Delete my account"): the operation is immediate and deletes your account, collection, wishlist and public profile. Any posts/comments written on the blog remain visible for the continuity of shared content, but your name is replaced with "Deleted user".</p>
+        <p>For as long as your account stays active. You can delete it yourself at any time from your profile ("Delete my account"): the operation is immediate and deletes your account, collection, "What I'm looking for" list and public profile. Any posts/comments written on the blog remain visible for the continuity of shared content, but your name is replaced with "Deleted user".</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Your rights</h3>
         <p>At any time you can ask us to:</p>
@@ -799,15 +801,15 @@
   <section class="section">
     <div class="section-inner">
       <div style="margin-bottom:1.5rem;">
-        <h1 style="font-family:var(--font-ui);font-size:2.2rem;display:flex;align-items:center;gap:0.4rem;" data-i18n="nav.wishlist">Lista desiderati <span style="font-size:1.8rem;line-height:1;">🛒</span></h1>
-        <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n-html="wishlist.desc">La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nell'Inventario, premi il tasto <strong>🛒</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>"Invia lista desiderati allo staff"</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.</p>
+        <h1 style="font-family:var(--font-ui);font-size:2.2rem;display:flex;align-items:center;gap:0.4rem;"><span data-i18n="nav.wishlist">Ciò che cerco</span> <span style="font-size:1.8rem;line-height:1;">❤️</span></h1>
+        <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n-html="wishlist.desc"><strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br>Navigando nell'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>"Invia \"Ciò che cerco\""</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.</p>
       </div>
       <div style="text-align:center;margin-bottom:1.25rem;">
-        <button class="btn-secondary" onclick="submitWishlist()" data-i18n="wishlist.submit">📨 Invia lista desiderati</button>
+        <button class="btn-secondary" onclick="submitWishlist()" data-i18n="wishlist.submit">📨 Invia "Ciò che cerco"</button>
       </div>
       <div id="wishlist-content"></div>
       <div style="text-align:center;margin-top:1.25rem;">
-        <button class="btn-secondary" onclick="submitWishlist()" data-i18n="wishlist.submit">📨 Invia lista desiderati</button>
+        <button class="btn-secondary" onclick="submitWishlist()" data-i18n="wishlist.submit">📨 Invia "Ciò che cerco"</button>
       </div>
     </div>
   </section>
@@ -903,7 +905,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.423</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.435</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1260,7 +1262,7 @@
     <ul style="color:var(--muted);font-size:0.88rem;margin:0 0 1rem 1.2rem;line-height:1.7;">
       <li data-i18n="modal.deleteAccount.item1">Il tuo profilo: nickname, e-mail, avatar, nazionalità</li>
       <li data-i18n="modal.deleteAccount.item2">La tua "Mia lista" e la tua posizione in Classifica</li>
-      <li data-i18n="modal.deleteAccount.item3">La tua Wishlist</li>
+      <li data-i18n="modal.deleteAccount.item3">La tua lista "Ciò che cerco"</li>
       <li data-i18n="modal.deleteAccount.item4">Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato</li>
     </ul>
     <p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;" data-i18n-html="modal.deleteAccount.blogNote">
