@@ -1,6 +1,102 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.435 — Su ulteriore chiarimento di Franco: "Vista tabellare"/"Vista
+//          griglia" spostato ancora più in basso — ora subito dopo i
+//          selettori tipo (filtri Solo base/Solo Change/ecc.) e prima
+//          della griglia/tabella stessa, non più in alto vicino a "Tutto
+//          in lista"/"Svuota lista".
+// v5.434 — Su richiesta di Franco: le hint del cuore ora dicono
+//          "Aggiungi a "Ciò che cerco""/"Togli da "Ciò che cerco"" (con
+//          le virgolette), entrambe le lingue. Attenzione tecnica
+//          gestita: dove il testo finisce dentro l'attributo HTML
+//          title="...", le virgolette letterali avrebbero rotto
+//          l'attributo — usata l'entità &quot; lì; dove invece il testo
+//          viene assegnato direttamente alla proprietà .title via JS,
+//          restano virgolette letterali (quelle sì visualizzate
+//          correttamente). Trovato e corretto per strada anche un gap
+//          preesistente: toggleWishlist() non aggiornava il tooltip
+//          dopo il click, solo colori e simbolo — ora lo fa.
+// v5.433 — Su richiesta di Franco: "Vista tabellare"/"Vista griglia"
+//          spostato dalla toolbar in alto a subito sopra la griglia/
+//          tabella, più visibile, e reso della stessa altezza di "Tutto
+//          in lista"/"Svuota lista". Tenuto come elemento indipendente
+//          (non annidato dentro il loro contenitore) perché quel
+//          contenitore si nasconde per le sezioni Album/Altri oggetti —
+//          "Vista tabellare" deve restare visibile in ogni sezione.
+// v5.432 — Su richiesta di Franco: "Rimuovi da Ciò che cerco" → "Togli
+//          da Ciò che cerco" nel suggerimento del cuore (tutte e
+//          quattro le occorrenze: card, dettaglio, tabella).
+// v5.431 — Su segnalazione di Franco: "Vista tabellare"/"Vista griglia",
+//          "Tutto in lista" e "Svuota lista" non rispettavano lo standard
+//          colori concordato — ora tutti verde lime pieno (.btn-primary),
+//          coerenti con le altre azioni principali del sito. "Tutto in
+//          lista" aveva solo bordo/testo colorati senza riempimento
+//          pieno; gli altri due erano completamente neutri.
+// v5.430 — Su richiesta di Franco (Opzione A del confronto visivo):
+//          il cuore "Ciò che cerco" ora mostra un cuore vuoto (♡, colore
+//          neutro) quando NON selezionato, e un cuore pieno rosso (❤️,
+//          con sfondo e bordo rossi) quando selezionato — prima l'emoji
+//          ❤️ appariva sempre rossa a prescindere dallo stato, dando
+//          l'impressione fuorviante di essere già marcata. Aggiornato
+//          in tutti i punti: card griglia, dettaglio figurina, vista
+//          tabellare, e le rispettive funzioni di aggiornamento
+//          dinamico al click. Trovati e rimossi per strada anche due
+//          residui della vecchia logica "nascondi il cuore se
+//          posseduto" (v5.428 non li aveva coperti tutti).
+// v5.429 — Su richiesta di Franco: la Vista tabellare, prima riservata
+//          all'admin, è ora disponibile anche agli utenti loggati
+//          (pulsante spostato in un contenitore separato, visibile a
+//          chiunque abbia fatto login). Per l'utente non-admin: nessun
+//          checkbox di selezione, nessuna cella editabile (solo testo),
+//          nessun pulsante Modifica — al loro posto, due colonne "Mia
+//          lista" e "Ciò che cerco", con gli stessi toggle già usati
+//          altrove nel sito. L'admin continua a vedere la tabella
+//          editabile come prima, senza le due nuove colonne. Aggiornati
+//          anche toggleOwned() e toggleWishlist() perché aggiornino
+//          anche la vista tabellare quando attiva, non solo la griglia.
+//          Verificato con una doppia simulazione (admin e utente) prima
+//          di consegnare.
+// v5.428 — Su richiesta di Franco: il cuore "Ciò che cerco" non viene
+//          più nascosto quando un oggetto è nella "Mia lista" — aveva
+//          senso quando "Mia lista" significava letteralmente "Ce l'ho"
+//          (possesso), non più ora che il significato è lasciato
+//          all'utente. Rimosso il condizionamento sia nella card in
+//          griglia sia nel dettaglio figurina, e tutta la logica che
+//          nascondeva/mostrava/ricreava dinamicamente il pulsante al
+//          click del toggle "Mia lista" — ora il cuore resta sempre
+//          visibile e indipendente.
+// v5.427 — Su richiesta di Franco: nella pagina "Ciò che cerco", aggiunta
+//          un'intestazione di tipo oggetto (Figurine/Retro/Album/Altri
+//          oggetti) prima del raggruppamento per Categoria/Sottoserie —
+//          prima non si capiva cosa si stesse guardando quando una serie
+//          aveva più tipi diversi mescolati in lista. Verificato con una
+//          simulazione con tutti e tre i tipi prima di consegnare.
+// v5.426 — Su richiesta di Franco: esteso il raggruppamento della
+//          pagina "Ciò che cerco" anche alla Sottoserie per le Figurine
+//          (oltre alla Categoria per i Retro, già fatta in v5.425) — a
+//          seconda di quale campo ha l'oggetto. Verificato con una
+//          simulazione con dati misti prima di consegnare.
+// v5.425 — Su richiesta di Franco: nella pagina "Ciò che cerco", gli
+//          oggetti con una Categoria (es. Retro) sono ora raggruppati
+//          per categoria all'interno di ogni serie, con la categoria
+//          scritta una sola volta prima del suo elenco — invece di un
+//          unico elenco piatto. Gli oggetti senza categoria (Figurine)
+//          restano come prima. Verificato con una simulazione dedicata
+//          prima di consegnare.
+// v5.424 — Su richiesta di Franco: rinominata "Wishlist"/"Lista
+//          desiderati" in "Ciò che cerco"/"What I'm looking for" in
+//          ogni punto trovato (titolo pagina, menu, tooltip aggiungi/
+//          rimuovi, stato vuoto, vista admin, storico, messaggi di
+//          conferma, e-mail inviata allo staff, Privacy Policy, modal
+//          cancellazione account). Icona carrello 🛒 sostituita con
+//          cuore ❤️ ovunque. Trovato e corretto per strada un problema
+//          strutturale preesistente (non introdotto ora): due elementi
+//          (titolo pagina e voce di menu) avevano l'icona/il contatore
+//          annidati DENTRO lo stesso elemento con data-i18n — dato che
+//          la traduzione usa textContent, questo li avrebbe cancellati
+//          ad ogni cambio lingua. Separato il testo tradotto in uno
+//          span dedicato in entrambi i casi.
 // v5.423 — Su richiesta di Franco: ripristinato il titolo generale
 //          "SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE" prima delle
 //          sotto-sezioni 1a/1b, in un font più grande (1.5rem, contro
@@ -2124,7 +2220,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.423';
+const JS_VERSION = 'v5.435';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -2769,10 +2865,10 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'Wishlist','wishlist.desc':'Your <strong>Wishlist</strong> is your personal space to collect the stickers (or other items) you would like to own.<br><br>While browsing the Inventory, press the <strong>🛒</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send wishlist to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send wishlist',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send \"What I\'m looking for\" to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.deleteAccount':'🗑️ Delete my account',
-'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your Wishlist','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
+'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
 'modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go!','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
@@ -2858,14 +2954,14 @@ const i18n = {
 'wantlist.desc':'This page shows the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>• items not in your list (stickers, retros, albums, other...)<br>• stickers in your list (incomplete series)<br>• stickers from your complete series','wantlist.pageTitle':'Stickers list (and more...)','wantlist.hook':'Would you like to build lists of Sgorbions stickers in just a few clicks, based on your own personal list built by browsing our Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'SECTION 1: EXPORT OF YOUR INCOMPLETE SERIES','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'Select the series for which to export the list of items not in your list. Then press <i style="color:#fff;">Export items not in my list</i>.','wantlist.hintExportIncomplete':'Select the series for which to export the list of stickers in your list. Then press <i style="color:#fff;">Export my sticker list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in my list','wantlist.exportIncomplete':'Export my sticker list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Lista desiderati',
-'wishlist.desc':'La <strong>Lista Desiderati</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti possedere.<br><br>Navigando nell\'Inventario, premi il tasto <strong>🛒</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia lista desiderati&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
-'wishlist.submit':'📨 Invia lista desiderati',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia \"Ciò che cerco\"&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
+'wishlist.submit':'📨 Invia "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
 'nav.onlineSince':'Online dal 21.06.2026',
 'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','profile.deleteAccount':'🗑️ Elimina il mio account',
-'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua "Mia lista" e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua Wishlist','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
+'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua "Mia lista" e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua lista "Ciò che cerco"','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
 'modal.accountDeleted.title':'Account eliminato','modal.accountDeleted.desc':'Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via!','modal.accountDeleted.close':'Chiudi',
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
@@ -4072,6 +4168,8 @@ function openSeriesSection(section) {
   document.getElementById('items-section').style.display = '';
   document.getElementById('items-section-title').textContent = getSectionLabel(section);
   document.getElementById('admin-add-item-btn').style.display = currentUser?.isAdmin ? '' : 'none';
+  const tableViewBtn = document.getElementById('user-table-view-btn');
+  if (tableViewBtn) tableViewBtn.style.display = currentUser ? '' : 'none';
   // Show bulk score button only for figurines and retros sections
   const bulkScoreBtn = document.querySelector('#admin-add-item-btn .btn-secondary');
   if (bulkScoreBtn) bulkScoreBtn.style.display = (section === 'figurines' || section === 'retros') ? '' : 'none';
@@ -4433,6 +4531,7 @@ function toggleOwned(figId) {
   LOCAL.set('owned_' + currentUser.id, owned);
   saveOwnedToFirebase(currentUser.id, owned);
   renderItems(); renderProfile();
+  if (bulkEditActive) renderBulkEditView();
 }
 
 async function saveOwnedToFirebase(userId, owned) {
@@ -4824,7 +4923,7 @@ function renderItems() {
         <div class="fig-toggle" style="display:flex;align-items:center;gap:0.5rem;">
           <span class="toggle-label">${t('owned.toggle')}</span>
           <button class="toggle-btn-blue ${isOwned?'on':''}" onclick="event.stopPropagation();toggleOwned('${f.id}')"></button>
-          ${(currentUser && !currentUser.isAdmin && !isOwned) ? `<button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Rimuovi dai desiderati':'Aggiungi ai desiderati'):(_wishlist.includes(f.id)?'Remove from wishlist':'Add to wishlist')}" style="background:${_wishlist.includes(f.id)?'rgba(255,200,50,0.2)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'#ffc832':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'#ffc832':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">🛒</button>` : ''}
+          ${(currentUser && !currentUser.isAdmin) ? `<button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(_wishlist.includes(f.id)?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${_wishlist.includes(f.id)?'rgba(255,100,100,0.15)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'#ff6464':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'#ff6464':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">${_wishlist.includes(f.id)?'❤️':'♡'}</button>` : ''}
         </div>
         ${typeIndicatorHTML}
       </div>
@@ -5940,17 +6039,18 @@ async function toggleWishlist(figId) {
   } else {
     _wishlist.push(figId);
   }
-  // Aggiorna visivamente solo il pulsante cuore della card, senza re-render completo
+  // Aggiorna visivamente tutti i pulsanti cuore corrispondenti (griglia e/o tabella), senza re-render completo
   const inWishlist = _wishlist.includes(figId);
-  const btn = document.querySelector(`.wishlist-heart-btn[data-wishlist-id="${figId}"]`);
-  if (btn) {
-    btn.textContent = '🛒';
-    btn.style.background = inWishlist ? 'rgba(255,200,50,0.2)' : 'transparent';
-    btn.style.borderColor = inWishlist ? '#ffc832' : 'rgba(255,255,255,0.15)';
-    btn.style.color = inWishlist ? '#ffc832' : 'var(--muted)';
-  }
+  document.querySelectorAll(`.wishlist-heart-btn[data-wishlist-id="${figId}"]`).forEach(btn => {
+    btn.textContent = inWishlist ? '❤️' : '♡';
+    btn.style.background = inWishlist ? 'rgba(255,100,100,0.15)' : 'transparent';
+    btn.style.borderColor = inWishlist ? '#ff6464' : 'rgba(255,255,255,0.15)';
+    btn.style.color = inWishlist ? '#ff6464' : 'var(--muted)';
+    btn.title = currentLang === 'it' ? (inWishlist ? 'Togli da "Ciò che cerco"' : 'Aggiungi a "Ciò che cerco"') : (inWishlist ? 'Remove from "What I\'m looking for"' : 'Add to "What I\'m looking for"');
+  });
   saveWishlist(); // fire-and-forget, non blocchiamo il thread UI
   if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
+  if (bulkEditActive) renderBulkEditView();
 }
 
 function updateMsgBadge() {
@@ -6140,12 +6240,12 @@ function openFigDetail(figId) {
     </div>`);
   }
 
-  // Stella wishlist (solo per utenti non-admin e non posseduta)
-  if (currentUser && !isAdmin && !isOwned) {
+  // Cuore "Ciò che cerco" (solo per utenti non-admin)
+  if (currentUser && !isAdmin) {
     const inWishlist = _wishlist.includes(f.id);
     rows.push(`<div class="detail-row" style="align-items:center;">
-      <span class="detail-label">${currentLang === 'it' ? 'Lista desiderati' : 'Wishlist'}</span>
-      <button id="fig-detail-wishlist-btn" data-fig-id="${f.id}" onclick="event.stopPropagation();toggleWishlistFromDetail('${f.id}')" title="${currentLang === 'it' ? (inWishlist ? 'Rimuovi dai desiderati' : 'Aggiungi ai desiderati') : (inWishlist ? 'Remove from wishlist' : 'Add to wishlist')}" style="background:${inWishlist ? 'rgba(255,200,50,0.2)' : 'transparent'};border:1px solid ${inWishlist ? '#ffc832' : 'rgba(255,255,255,0.15)'};color:${inWishlist ? '#ffc832' : 'var(--muted)'};border-radius:8px;padding:3px 10px;cursor:pointer;font-size:1.1rem;line-height:1;position:relative;z-index:2;">${inWishlist ? '🛒' : '🛒'}</button>
+      <span class="detail-label">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</span>
+      <button id="fig-detail-wishlist-btn" data-fig-id="${f.id}" onclick="event.stopPropagation();toggleWishlistFromDetail('${f.id}')" title="${currentLang === 'it' ? (inWishlist ? 'Togli da &quot;Ciò che cerco&quot;' : 'Aggiungi a &quot;Ciò che cerco&quot;') : (inWishlist ? 'Remove from &quot;What I\'m looking for&quot;' : 'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist ? 'rgba(255,100,100,0.15)' : 'transparent'};border:1px solid ${inWishlist ? '#ff6464' : 'rgba(255,255,255,0.15)'};color:${inWishlist ? '#ff6464' : 'var(--muted)'};border-radius:8px;padding:3px 10px;cursor:pointer;font-size:1.1rem;line-height:1;position:relative;z-index:2;">${inWishlist ? '❤️' : '♡'}</button>
     </div>`);
   }
 
@@ -6703,28 +6803,8 @@ function toggleOwnedFromDetail(figId) {
   // Update toggle button in modal
   const btn = document.getElementById('fig-detail-toggle');
   if (btn) btn.className = 'toggle-btn-blue ' + (isNowOwned ? 'on' : '');
-  // Mostra/nasconde/crea il carrello wishlist nella modal in base a isOwned
-  if (isNowOwned) {
-    const wishBtnModal = document.getElementById('fig-detail-wishlist-btn');
-    if (wishBtnModal) wishBtnModal.style.display = 'none';
-  } else {
-    // Se il pulsante non esiste ancora (figurina era owned all'apertura), lo creiamo
-    let wishBtnModal = document.getElementById('fig-detail-wishlist-btn');
-    if (!wishBtnModal && currentUser && !currentUser.isAdmin) {
-      const inWishlist = _wishlist.includes(figId);
-      const detailRow = document.createElement('div');
-      detailRow.className = 'detail-row';
-      detailRow.style.alignItems = 'center';
-      detailRow.innerHTML = `<span class="detail-label">${currentLang === 'it' ? 'Lista desiderati' : 'Wishlist'}</span>
-        <button id="fig-detail-wishlist-btn" data-fig-id="${figId}" onclick="event.stopPropagation();toggleWishlistFromDetail('${figId}')"
-          style="background:${inWishlist?'rgba(255,200,50,0.2)':'transparent'};border:1px solid ${inWishlist?'#ffc832':'rgba(255,255,255,0.15)'};color:${inWishlist?'#ffc832':'var(--muted)'};border-radius:8px;padding:3px 10px;cursor:pointer;font-size:1.1rem;line-height:1;position:relative;z-index:2;">🛒</button>`;
-      const toggleRow = document.getElementById('fig-detail-toggle')?.closest('.detail-row');
-      if (toggleRow) toggleRow.after(detailRow);
-      else document.getElementById('fig-detail-content')?.appendChild(detailRow);
-    } else if (wishBtnModal) {
-      wishBtnModal.style.display = '';
-    }
-  }
+  // Il cuore "Ciò che cerco" non dipende più dallo stato di "Mia lista":
+  // resta sempre visibile e non viene toccato da questo toggle
   // Update the card in the grid without closing the modal
   const card = document.querySelector(`.fig-card[onclick*="${figId}"]`);
   if (card) {
@@ -6732,9 +6812,6 @@ function toggleOwnedFromDetail(figId) {
     if (toggleBtn) toggleBtn.className = 'toggle-btn-blue ' + (isNowOwned ? 'on' : '');
     const badge = card.querySelector('.owned-badge');
     if (badge) badge.style.display = isNowOwned ? '' : 'none';
-    // Mostra/nasconde la stella wishlist nella card
-    const wishBtnCard = card.querySelector('.wishlist-heart-btn');
-    if (wishBtnCard) wishBtnCard.style.display = isNowOwned ? 'none' : '';
   }
   // Update progress bar
   const allFigs = (_cache.figurines || getData('figurines',[])).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
@@ -8422,6 +8499,8 @@ function renderBulkEditView() {
   bulkView.style.marginLeft = '50%';
   bulkView.style.marginRight = '0';
   bulkView.style.transform = 'translateX(-50%)';
+  const isAdmin = !!currentUser?.isAdmin;
+  const owned = getOwned();
   const currentSeries = getData('series', []).find(s => s.id === currentSeriesId);
   const currentSeriesHasSizes = currentSeries?.hasSizes || false;
   const currentSeriesHasSubseries = currentSeries?.hasSubseries || false;
@@ -8430,35 +8509,46 @@ function renderBulkEditView() {
 
   if (!allItems.length) { bulkView.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali.' : 'No items found with the current filters.'}</p>`; return; }
 
+  // Cella di sola lettura per l'utente non-admin (niente input editabile)
+  const readCell = (val, width) => `<td style="padding:4px 8px;color:var(--text);${width ? 'min-width:'+width+'px;' : ''}">${val ?? ''}</td>`;
+
   bulkView.innerHTML = `
-    <p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
+    ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
       <button class="btn-secondary" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
-    </div>
+    </div>` : ''}
     <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
       <thead>
         <tr style="background:var(--card2);">
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>
+          ${isAdmin ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>' : ''}
           ${currentSeriesHasSubseries ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottoserie</th>' : ''}
           ${currentSection === 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Categoria</th><th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottocategoria</th>' : ''}
           ${currentSection !== 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>' : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Nome</th>
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
           ${currentSeriesHasSizes ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
-          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>
+          ${isAdmin ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>` : `
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Mia lista' : 'My list'}</th>
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</th>`}
         </tr>
       </thead>
       <tbody>
-        ${allItems.map(f => `<tr id="bulk-row-${f.id}" style="border-bottom:1px solid var(--border);">
-          <td style="padding:4px;text-align:center;"><input type="checkbox" class="bulk-select-row" data-id="${f.id}" onchange="updateBulkDeleteCount()"></td>
-          ${currentSeriesHasSubseries ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
-          ${currentSection === 'retros' ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
-          ${currentSection !== 'retros' ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
-          <td style="padding:4px;width:99%;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:480px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
-          <td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>
-          ${currentSeriesHasSizes ? '<td style="padding:4px;"><input data-field="size" data-id="'+f.id+'" value="'+(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : ''}
-          <td style="padding:4px;"><button class="tbl-btn tbl-btn-edit" onclick="openAddItemModal('${f.id}')">&#9998;</button></td>
-        </tr>`).join('')}
+        ${allItems.map(f => {
+          const isOwned = owned.includes(f.id);
+          const inWishlist = _wishlist.includes(f.id);
+          return `<tr id="bulk-row-${f.id}" style="border-bottom:1px solid var(--border);">
+          ${isAdmin ? `<td style="padding:4px;text-align:center;"><input type="checkbox" class="bulk-select-row" data-id="${f.id}" onchange="updateBulkDeleteCount()"></td>` : ''}
+          ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
+          ${currentSection === 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
+          ${currentSection !== 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? '#'+f.number : '')) : ''}
+          ${isAdmin ? `<td style="padding:4px;width:99%;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:480px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.name, 300)}
+          ${isAdmin ? `<td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0)}
+          ${currentSeriesHasSizes ? (isAdmin ? '<td style="padding:4px;"><input data-field="size" data-id="'+f.id+'" value="'+(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.size)) : ''}
+          ${isAdmin ? `<td style="padding:4px;"><button class="tbl-btn tbl-btn-edit" onclick="openAddItemModal('${f.id}')">&#9998;</button></td>` : `
+          <td style="padding:4px;text-align:center;"><button class="toggle-btn-blue ${isOwned?'on':''}" onclick="toggleOwned('${f.id}')"></button></td>
+          <td style="padding:4px;text-align:center;"><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" onclick="toggleWishlist('${f.id}')" title="${currentLang==='it'?(inWishlist?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(inWishlist?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist?'rgba(255,100,100,0.15)':'transparent'};border:1px solid ${inWishlist?'#ff6464':'rgba(255,255,255,0.15)'};color:${inWishlist?'#ff6464':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;">${inWishlist?'❤️':'♡'}</button></td>`}
+        </tr>`;
+        }).join('')}
       </tbody>
     </table>`;
 }
@@ -8782,7 +8872,7 @@ function renderWishlist() {
   const items = _wishlist.map(id => allFigs.find(f => f.id === id)).filter(Boolean);
 
   if (!items.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🛒</div><p class="empty-title">${currentLang === 'it' ? 'La tua Lista desiderati è vuota' : 'Your wishlist is empty'}</p><p class="empty-sub">${currentLang === 'it' ? 'Naviga l\'Inventario e premi 🛒 sulle figurine che ti interessano.' : 'Browse the Inventory and press 🛒 on stickers you are interested in.'}</p></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">❤️</div><p class="empty-title">${currentLang === 'it' ? 'Il tuo \"Ciò che cerco\" è vuoto' : 'Your \"What I\'m looking for\" is empty'}</p><p class="empty-sub">${currentLang === 'it' ? 'Naviga l\'Inventario e premi ❤️ sulle figurine che ti interessano.' : 'Browse the Inventory and press ❤️ on stickers you are interested in.'}</p></div>`;
     renderWishlistHistory();
     return;
   }
@@ -8800,25 +8890,54 @@ function renderWishlist() {
 
   el.innerHTML = seriesSorted.map(s => {
     const figs = bySeries[s.id].sort((a,b) => (a.number||0)-(b.number||0));
+    const chipHtml = f => `<span style="background:rgba(255,100,100,0.08);border:1px solid rgba(255,100,100,0.25);color:var(--text);font-size:0.72rem;padding:2px 8px;border-radius:10px;display:inline-flex;align-items:center;gap:4px;">
+      ${f.number ? '#'+f.number+' ' : ''}${f.name}
+      <button onclick="toggleWishlist('${f.id}')" style="background:none;border:none;color:#ff6464;cursor:pointer;padding:0;font-size:0.9rem;line-height:1;" title="${currentLang === 'it' ? 'Rimuovi' : 'Remove'}">×</button>
+    </span>`;
+    // Prima si raggruppa per tipo di oggetto (Figurine/Retro/Album/Altri
+    // oggetti), altrimenti non si capisce cosa si sta guardando quando una
+    // serie ha in lista più tipi diversi mescolati insieme
+    const typeLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items' };
+    const typeOrder = ['figurines', 'retros', 'albums', 'extras'];
+    const byType = {};
+    figs.forEach(f => {
+      const sec = f.section || 'figurines';
+      if (!byType[sec]) byType[sec] = [];
+      byType[sec].push(f);
+    });
+    const itemsHtml = Object.entries(byType).sort(([a],[b]) => typeOrder.indexOf(a) - typeOrder.indexOf(b)).map(([sec, secFigs]) => {
+      // All'interno di ogni tipo, si raggruppa ulteriormente per Categoria
+      // (Retro) o Sottoserie (Figurine), con l'etichetta scritta una sola
+      // volta prima del suo elenco. Gli oggetti senza nessuno dei due campi
+      // restano in un unico elenco
+      const groupLabel = f => f.category || f.subseries || null;
+      const withoutGroup = secFigs.filter(f => !groupLabel(f));
+      const byGroup = {};
+      secFigs.filter(f => groupLabel(f)).forEach(f => {
+        const key = groupLabel(f);
+        if (!byGroup[key]) byGroup[key] = [];
+        byGroup[key].push(f);
+      });
+      let groupsHtml = withoutGroup.length ? `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;">${withoutGroup.map(chipHtml).join('')}</div>` : '';
+      groupsHtml += Object.entries(byGroup).sort(([a],[b]) => a.localeCompare(b)).map(([label, groupFigs]) =>
+        `<div style="margin-top:0.3rem;"><div style="font-size:0.78rem;font-weight:700;color:var(--accent3);margin-bottom:0.25rem;">${label}</div><div style="display:flex;flex-wrap:wrap;gap:0.3rem;">${groupFigs.map(chipHtml).join('')}</div></div>`
+      ).join('');
+      return `<div style="margin-top:0.5rem;"><div style="font-family:var(--font-ui);font-size:0.9rem;color:var(--muted);margin-bottom:0.3rem;">${typeLabels[sec] || sec}</div>${groupsHtml}</div>`;
+    }).join('');
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.75rem;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">
         <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name}</span>
         <span class="card-badge">${currentLang === 'it' ? 'N. figurine: ' : 'Items: '}${figs.length}</span>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
-        ${figs.map(f => `<span style="background:rgba(255,100,100,0.08);border:1px solid rgba(255,100,100,0.25);color:var(--text);font-size:0.72rem;padding:2px 8px;border-radius:10px;display:inline-flex;align-items:center;gap:4px;">
-          ${f.number ? '#'+f.number+' ' : ''}${f.name}
-          <button onclick="toggleWishlist('${f.id}')" style="background:none;border:none;color:#ff6464;cursor:pointer;padding:0;font-size:0.9rem;line-height:1;" title="${currentLang === 'it' ? 'Rimuovi' : 'Remove'}">×</button>
-        </span>`).join('')}
-      </div>
+      ${itemsHtml}
     </div>`;
   }).join('');
 
   // Totale in fondo alla lista
   el.innerHTML += `<p style="text-align:center;color:var(--muted);font-size:0.9rem;margin:1rem 0 0.25rem;">
     ${currentLang === 'it'
-      ? 'La tua lista dei desiderati conta <strong style="color:var(--text);">' + totalItems + '</strong> figurine.'
-      : 'Your wishlist contains <strong style="color:var(--text);">' + totalItems + '</strong> items.'}
+      ? 'La tua lista "Ciò che cerco" conta <strong style="color:var(--text);">' + totalItems + '</strong> figurine.'
+      : 'Your "What I\'m looking for" list contains <strong style="color:var(--text);">' + totalItems + '</strong> items.'}
   </p>`;
 
   // Storico liste inviate
@@ -8837,8 +8956,8 @@ function renderWishlistAdmin(el) {
     .sort(function(a, b) { return new Date(b.date) - new Date(a.date); });
 
   if (!allMsgs.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🛒</div><p class="empty-title">' +
-      (currentLang === 'it' ? 'Nessuna lista desiderati ricevuta' : 'No wishlists received yet') + '</p></div>';
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">❤️</div><p class="empty-title">' +
+      (currentLang === 'it' ? 'Nessuna lista "Ciò che cerco" ricevuta' : 'No "What I\'m looking for" lists received yet') + '</p></div>';
     return;
   }
 
@@ -8851,7 +8970,7 @@ function renderWishlistAdmin(el) {
   };
 
   var html = '<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">' +
-    (currentLang === 'it' ? allMsgs.length + ' liste ricevute' : allMsgs.length + ' wishlists received') + '</p>';
+    (currentLang === 'it' ? allMsgs.length + ' liste ricevute' : allMsgs.length + ' lists received') + '</p>';
 
   allMsgs.forEach(function(m) {
     html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.75rem;">';
@@ -8887,7 +9006,7 @@ function renderWishlistAdmin(el) {
 
 
 async function deleteWishlistMsg(msgId) {
-  if (!confirm(currentLang === 'it' ? 'Eliminare questa lista desiderati?' : 'Delete this wishlist?')) return;
+  if (!confirm(currentLang === 'it' ? 'Eliminare questa lista "Ciò che cerco"?' : 'Delete this "What I\'m looking for" list?')) return;
   await fsDelete('contact_messages', msgId);
   // Rimuovi dalla cache
   if (_cache.contact_messages) {
@@ -8921,7 +9040,7 @@ function renderWishlistHistory() {
   histEl.innerHTML = `
     <hr style="border-color:var(--border);margin:2rem 0 1.25rem;">
     <h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.75rem;">
-      📋 ${currentLang === 'it' ? 'Storico liste desiderate inviate' : 'Sent wishlist history'}
+      📋 ${currentLang === 'it' ? 'Storico "Ciò che cerco" inviate' : 'Sent "What I\'m looking for" history'}
     </h3>
     ${msgs.map((m,i) => `
       <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.6rem;">
@@ -8973,7 +9092,7 @@ function promptMultiline(labelText) {
 
 async function submitWishlist() {
   if (!currentUser || !_wishlist.length) return;
-  if (!confirm(currentLang === 'it' ? 'Confermi di inviare allo staff la tua lista dei desiderati?' : 'Do you confirm sending your wishlist to the staff?')) return;
+  if (!confirm(currentLang === 'it' ? 'Confermi di inviare allo staff la tua lista "Ciò che cerco"?' : 'Do you confirm sending your "What I\'m looking for" list to the staff?')) return;
 
   // Chiede se aggiungere un commento
   let userComment = '';
@@ -8997,13 +9116,13 @@ async function submitWishlist() {
   });
   const listText = Object.entries(bySeries).map(([s, figs]) => s + ': ' + figs.join(', ')).join('\n');
   const commentSection = userComment ? '\n\n--- Commento utente ---\n' + userComment : '';
-  const msg = (currentLang === 'it' ? 'Ciao! Ecco la mia lista dei desiderati:\n\n' : 'Hi! Here is my wishlist:\n\n') + listText + commentSection;
+  const msg = (currentLang === 'it' ? 'Ciao! Ecco la mia lista "Ciò che cerco":\n\n' : 'Hi! Here is my "What I\'m looking for" list:\n\n') + listText + commentSection;
 
   // Save as contact message
   const saved = await fsSave('contact_messages', {
     name: currentUser.username,
     email: currentUser.email || '',
-    subject: currentLang === 'it' ? '🎁 Lista desiderati' : '🎁 Wishlist',
+    subject: currentLang === 'it' ? '🎁 Ciò che cerco' : '🎁 What I\'m looking for',
     message: msg,
     comment: userComment,
     date: new Date().toISOString(),
@@ -9015,7 +9134,7 @@ async function submitWishlist() {
     _cache.contact_messages = _cache.contact_messages || [];
     _cache.contact_messages.unshift(saved);
     updateMsgBadge();
-    toast(currentLang === 'it' ? '✅ Lista desiderati inviata!<br><span style="font-size:0.85em;opacity:0.85;">Troverai la tua lista nello storico liste desiderate.</span>' : '✅ Wishlist sent!<br><span style="font-size:0.85em;opacity:0.85;">You will find it in the wishlist history.</span>', 'success', null, 5000);
+    toast(currentLang === 'it' ? '✅ Lista inviata!<br><span style="font-size:0.85em;opacity:0.85;">Troverai la tua lista nello storico.</span>' : '✅ List sent!<br><span style="font-size:0.85em;opacity:0.85;">You will find it in the history.</span>', 'success', null, 5000);
     _wishlist = [];
     await saveWishlist();
     renderWishlist();
@@ -9480,20 +9599,19 @@ async function toggleWishlistFromDetail(figId) {
   const inWishlist = _wishlist.includes(figId);
   const btn = document.getElementById('fig-detail-wishlist-btn');
   if (btn) {
-    btn.textContent = '🛒';
-    btn.style.background = inWishlist ? 'rgba(255,200,50,0.2)' : 'transparent';
-    btn.style.borderColor = inWishlist ? '#ffc832' : 'rgba(255,255,255,0.15)';
-    btn.style.color = inWishlist ? '#ffc832' : 'var(--muted)';
-    btn.title = currentLang === 'it' ? (inWishlist ? 'Rimuovi dai desiderati' : 'Aggiungi ai desiderati') : (inWishlist ? 'Remove from wishlist' : 'Add to wishlist');
+    btn.textContent = inWishlist ? '❤️' : '♡';
+    btn.style.background = inWishlist ? 'rgba(255,100,100,0.15)' : 'transparent';
+    btn.style.borderColor = inWishlist ? '#ff6464' : 'rgba(255,255,255,0.15)';
+    btn.style.color = inWishlist ? '#ff6464' : 'var(--muted)';
+    btn.title = currentLang === 'it' ? (inWishlist ? 'Togli da "Ciò che cerco"' : 'Aggiungi a "Ciò che cerco"') : (inWishlist ? 'Remove from "What I\'m looking for"' : 'Add to "What I\'m looking for"');
   }
-  // Aggiorna anche la stella nella griglia se visibile
-  const gridBtn = document.querySelector(`.wishlist-heart-btn[data-wishlist-id="${figId}"]`);
-  if (gridBtn) {
-    gridBtn.textContent = '🛒';
-    gridBtn.style.background = inWishlist ? 'rgba(255,200,50,0.2)' : 'transparent';
-    gridBtn.style.borderColor = inWishlist ? '#ffc832' : 'rgba(255,255,255,0.15)';
-    gridBtn.style.color = inWishlist ? '#ffc832' : 'var(--muted)';
-  }
+  // Aggiorna anche tutte le istanze del cuore nella griglia e/o tabella, se visibili
+  document.querySelectorAll(`.wishlist-heart-btn[data-wishlist-id="${figId}"]`).forEach(gridBtn => {
+    gridBtn.textContent = inWishlist ? '❤️' : '♡';
+    gridBtn.style.background = inWishlist ? 'rgba(255,100,100,0.15)' : 'transparent';
+    gridBtn.style.borderColor = inWishlist ? '#ff6464' : 'rgba(255,255,255,0.15)';
+    gridBtn.style.color = inWishlist ? '#ff6464' : 'var(--muted)';
+  });
   saveWishlist(); // fire-and-forget
   if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
 }
