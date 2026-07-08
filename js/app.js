@@ -1,6 +1,167 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.456 — Su richiesta di Franco: nuovo tab admin "Impostazioni",
+//          posizionato subito dopo Comunicazioni. Contiene il box
+//          "Impostazioni Email" (indirizzo Reply-To + info credenziali
+//          EmailJS), spostato via da Comunicazioni. loadReplyToField()
+//          ora si richiama aprendo Impostazioni, non più E-mail.
+// v5.455 — Su richiesta di Franco: nella colonna Origine, "Messaggio"
+//          rinominato "Messaggio ricevuto" — sia in "Messaggi inviati"
+//          sia in "E-mail inviate", entrambe le lingue.
+// v5.454 — Su richiesta di Franco: sotto-tab di Comunicazioni riordinati
+//          con Newsletter per primo. Nuova funzione renderNewsletterLog()
+//          che unifica e-mail (email_log, source=newsletter) e messaggi
+//          newsletter (contact_messages, isAnnouncement:true) in un solo
+//          elenco, con colonna "Mezzo" (✉️ E-mail / 💬 Messaggio) a
+//          distinguerli — usata sia nel tab Newsletter di Comunicazioni
+//          sia nello storico della pagina di composizione newsletter,
+//          così mostrano sempre lo stesso identico elenco. Verificato
+//          con un test isolato della colonna Mezzo prima di consegnare.
+// v5.453 — Su chiarimento di Franco: il sotto-filtro "Messaggi inviati"
+//          dentro Comunicazioni ora mostra un log unificato costruito
+//          direttamente da contact_messages (non più dal solo log
+//          e-mail) — include sia le risposte alle richieste sia gli
+//          annunci newsletter inviati come messaggio, con una colonna
+//          "Origine" che li distingue con due icone (📬 Newsletter / ↩️
+//          Messaggio). Nuova funzione renderSentMessagesLog(), che
+//          sostituisce renderEmailLogInto() solo per questo
+//          sotto-filtro — "E-mail inviate" e "Newsletter" restano
+//          invariati, basati sul log e-mail vero e proprio. Verificato
+//          con un test isolato della colonna Origine prima di
+//          consegnare.
+// v5.452 — Prima parte della Newsletter-come-messaggio, su richiesta di
+//          Franco: per ogni utente nel pannello Newsletter, ora due
+//          checkbox indipendenti "E-mail"/"Messaggio" (entrambe
+//          selezionabili insieme), E-mail spuntata di default come
+//          prima. Nuova funzione sendNewsletterMessage(): salva un
+//          "annuncio" come contact_messages con isAnnouncement:true —
+//          non è la risposta a una domanda dell'utente, quindi
+//          renderMyMessages() lo mostra in modo diverso (etichetta "📢
+//          Comunicazione dello staff", niente "in attesa di risposta").
+//          Escluso dagli annunci anche dalla lista "Messaggi"
+//          dell'admin (quella per rispondere alle richieste), dato che
+//          non richiedono azione. Verificato con un test isolato della
+//          logica di rendering prima di consegnare.
+//          NOTA: la ristrutturazione dei tre tab del pannello
+//          Comunicazioni, discussa con Franco, resta da fare — prima
+//          si è scelto di completare questa base.
+// v5.451 — Correzione posizione su chiarimento di Franco: il contatore
+//          e-mail nella sezione Comunicazioni spostato sopra ai tre
+//          pulsanti filtro (E-mail inviate/Newsletter/Messaggi inviati),
+//          non più tra questi e l'elenco.
+// v5.450 — Su richiesta di Franco: tab admin "E-mail" rinominato
+//          "Comunicazioni" (dato che contiene sia e-mail sia messaggi),
+//          e al suo interno "Tutte le e-mail" → "E-mail inviate",
+//          "Messaggi" → "Messaggi inviati". Entrambe le lingue.
+// v5.449 — Su richiesta di Franco: il contatore "e-mail inviate questo
+//          mese / 200" (già presente in Risorse) ora compare anche nella
+//          sezione E-mail, subito prima dell'elenco — versione in sola
+//          lettura, senza il pulsante di correzione manuale (resta solo
+//          in Risorse). Estratta la logica in una funzione condivisa
+//          (refreshEmailCountWidgets) che aggiorna entrambi i widget
+//          insieme, invece di duplicare il codice.
+// v5.448 — Su richiesta di Franco: tab dell'admin console riordinati —
+//          Utenti, Serie, Data import, Errori, Segnalazioni, Eventi,
+//          Messaggi, E-mail, Risorse (quest'ultima non era nell'elenco
+//          dato, spostata in fondo). Solo l'ordine visivo dei pulsanti,
+//          nessun cambiamento funzionale.
+// v5.447 — Su richiesta di Franco: rimosso dalla sezione Messaggi il log
+//          e-mail duplicato (ora incompleto/fuorviante, dato che una
+//          risposta può non generare più un'e-mail) — mostra solo i
+//          messaggi. Il log e-mail completo, filtrabile anche per "solo
+//          messaggi", resta nella sezione E-mail, l'unico posto giusto.
+// v5.446 — Su richiesta di Franco: il contatore nel box accanto
+//          all'avatar diceva ancora "Mie figurine"/"My stickers" —
+//          residuo del vecchio linguaggio "Ce l'ho" mai aggiornato in
+//          quel punto. Ora "Figurine mia lista"/"My list's stickers".
+// v5.445 — Su richiesta di Franco: icona busta della notifica risposte
+//          cambiata da ✉️ a 📨 (busta in arrivo), che sul suo sistema
+//          rendeva come un rettangolo bianco poco riconoscibile — 📨 ha
+//          di solito il triangolo della patta molto più marcato, ed è
+//          già usata altrove nel sito.
+// v5.444 — Su richiesta di Franco: il campo e-mail del form Contatti si
+//          precompila con quella dell'account, se l'utente è loggato —
+//          resta comunque modificabile. Approfittato per non svuotarlo
+//          più dopo l'invio (per chiunque, loggato o meno): se manda un
+//          secondo messaggio nella stessa sessione, non deve riscriverla.
+// v5.443 — Su richiesta di Franco: "Segna letto"/"Mark read" → "Segna
+//          come letto"/"Mark as read" — corretto ovunque compare
+//          (Messaggi, Eventi, Segnalazioni), entrambe le lingue.
+// v5.442 — Su segnalazione di Franco: "Segna letto" e "Rispondi" erano
+//          due pulsanti completamente indipendenti — rispondere non
+//          marcava mai il messaggio come letto, restando "NEW" anche
+//          dopo una risposta. sendContactReply() ora imposta
+//          automaticamente read:true, dato che rispondere implica
+//          averlo letto. Come effetto collaterale, anche il badge dei
+//          messaggi non letti dell'admin si aggiorna correttamente.
+// v5.441 — Su richiesta di Franco: nella risposta admin ai messaggi di
+//          contatto, aggiunta la checkbox "Invia anche via e-mail",
+//          deselezionata di default — la risposta viene comunque sempre
+//          salvata nel sito (visibile all'utente tramite "I miei
+//          messaggi con lo staff"), ma l'e-mail parte solo se
+//          esplicitamente richiesto. Utile per i casi come
+//          ryanhitt@hotmail.com, dove l'e-mail non arriva comunque.
+// v5.440 — Corretta la posizione della notifica di risposta, su
+//          precisazione di Franco: non più sovrapposta all'avatar, ma
+//          un'icona busta ✉️ dedicata (nav-reply-btn), con un badge
+//          numerico sopra — stesso identico schema già usato per
+//          l'icona messaggi dell'admin (nav-msg-btn), non quello
+//          disattivato che avevo seguito per errore (nav-wishlist-btn,
+//          mai collegato a nulla in JS). Ora mostra anche il numero di
+//          risposte non lette, non solo un pallino.
+// v5.439 — Su segnalazione di Franco: aggiunta la busta ✉️ vicino
+//          all'icona profilo, che avvisa l'utente quando lo staff ha
+//          risposto a un suo messaggio (checkUnreadReplies, chiamata al
+//          login). Sparisce automaticamente aprendo il profilo
+//          (markRepliesAsRead, dentro renderMyMessages). Ogni nuova
+//          risposta torna "non letta" anche se il messaggio ne aveva già
+//          ricevuta una in passato. Aggiornata di nuovo firestore.rules
+//          per permettere anche l'aggiornamento (non solo la lettura) dei
+//          propri messaggi — serve per segnarli come letti; Franco deve
+//          ripubblicare le regole di nuovo. Trovato e corretto per strada
+//          lo stesso bug di "elemento con testo/badge annidato cancellato
+//          da textContent" già visto altrove in questa sessione:
+//          nav-avatar usa .textContent per l'iniziale del nome quando
+//          manca l'avatar — il badge è stato messo come fratello, non
+//          figlio, per non finire cancellato.
+// v5.438 — Trovata e corretta, grazie allo screenshot mandato da Franco,
+//          la causa del disallineamento tra intestazioni e righe nella
+//          tabella Utenti dopo lo spostamento della colonna Azioni:
+//          due <td> avevano "display:flex" applicato DIRETTAMENTE sulla
+//          cella, invece che su un div interno — questo rompe il layout
+//          automatico della tabella in modo imprevedibile (il problema
+//          esisteva già prima, ma è diventato visibile solo ora che
+//          quella cella è finita in una posizione diversa). Spostato il
+//          flex su un div interno in entrambe le celle, lasciando il
+//          <td> come cella normale. Trovato lo stesso pattern rischioso
+//          in altre due tabelle admin (Segnalazioni e un'altra) — non
+//          toccate perché non segnalate come rotte, ma da tenere
+//          presente se dovessero dare lo stesso problema in futuro.
+// v5.437 — Su richiesta di Franco: colonna "Azioni" (Visualizza/
+//          Impersona) nella tabella Utenti dell'admin spostata a
+//          sinistra, come prima colonna, invece che in fondo a destra.
+// v5.436 — Su richiesta di Franco: rete di sicurezza per quando l'e-mail
+//          di risposta non arriva (es. blacklist Aruba su alcuni server
+//          Hotmail/Outlook). Tre cambiamenti collegati:
+//          (1) sendContactReply() ora salva anche il TESTO della
+//          risposta (replyText), non solo un flag "risposto" — prima il
+//          contenuto esisteva solo nell'e-mail in uscita, mai in
+//          Firestore;
+//          (2) nuova regola firestore.rules: un utente autenticato può
+//          leggere i messaggi di contatto con la propria stessa e-mail
+//          (non serve essere stato loggato al momento dell'invio —
+//          funziona anche per messaggi scritti da anonimo in passato,
+//          se l'e-mail coincide con quella dell'account). Firestore
+//          richiede che la query stessa sia già ristretta di
+//          conseguenza, non basta la regola da sola — vedi
+//          loadMyContactMessages();
+//          (3) nuova sezione "I miei messaggi con lo staff" nel
+//          profilo utente (nascosta se non ci sono messaggi), che
+//          mostra ogni messaggio scritto e l'eventuale risposta.
+//          IMPORTANTE: richiede che Franco ripubblichi le regole
+//          Firestore aggiornate su Firebase Console, altrimenti la
+//          query fallisce silenziosamente per gli utenti normali.
 // v5.435 — Su ulteriore chiarimento di Franco: "Vista tabellare"/"Vista
 //          griglia" spostato ancora più in basso — ora subito dopo i
 //          selettori tipo (filtri Solo base/Solo Change/ecc.) e prima
@@ -2071,7 +2232,7 @@ async function sendReplyNotificationEmail(postAuthorId, postTitle, replyAuthor, 
   incrementEmailCounter(1);
 }
 
-let _emailArchiveFilter = 'all';
+let _emailArchiveFilter = 'newsletter';
 
 function switchEmailArchiveTab(filter) {
   _emailArchiveFilter = filter;
@@ -2099,7 +2260,7 @@ async function renderEmailLogInto(targetId, filterSource) {
     if (!logs.length) { el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Nessuna e-mail registrata.' : 'No emails recorded.') + '</p>'; return; }
     const display = logs.slice(0, 50);
     const note = logs.length > 50 ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrate le ultime 50 di ' + logs.length : 'Showing last 50 of ' + logs.length}</p>` : '';
-    const sourceLabel = (s) => s === 'newsletter' ? '📬 Newsletter' : '↩️ ' + (currentLang === 'it' ? 'Messaggi' : 'Messages');
+    const sourceLabel = (s) => s === 'newsletter' ? '📬 Newsletter' : '↩️ ' + (currentLang === 'it' ? 'Messaggio ricevuto' : 'Received message');
     const showSourceCol = filterSource === 'all';
     const rows = display.map((e, idx) => {
       const rowId = targetId + '-row-' + idx;
@@ -2146,8 +2307,98 @@ function toggleEmailDetail(detailId) {
   }
 }
 
+// Log unificato della Newsletter: sia le e-mail inviate (da email_log,
+// source=newsletter) sia i messaggi inviati come annuncio (da
+// contact_messages, isAnnouncement:true), con un'icona che distingue il
+// mezzo di invio. Usato sia nel tab Newsletter di Comunicazioni sia nella
+// pagina di composizione, perché mostrino sempre lo stesso identico elenco
+async function renderNewsletterLog(targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Caricamento...' : 'Loading...') + '</p>';
+  try {
+    const emailLogs = (await fsGetAll('email_log')).filter(e => e.source === 'newsletter').map(e => ({
+      date: e.date, to: e.to, subject: e.subject, body: e.body, method: 'email', status: e.status
+    }));
+    const msgLogs = getData('contact_messages', []).filter(m => m.isAnnouncement).map(m => ({
+      date: m.repliedAt || m.date, to: m.email, subject: m.subject, body: m.message, method: 'message', status: 'ok'
+    }));
+    const combined = [...emailLogs, ...msgLogs].sort((a,b) => new Date(b.date) - new Date(a.date));
+    if (!combined.length) { el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Nessuna newsletter inviata.' : 'No newsletter sent.') + '</p>'; return; }
+    const display = combined.slice(0, 50);
+    const note = combined.length > 50 ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrate le ultime 50 di ' + combined.length : 'Showing last 50 of ' + combined.length}</p>` : '';
+    const methodLabel = (e) => e.method === 'email' ? '✉️ E-mail' : '💬 ' + (currentLang === 'it' ? 'Messaggio' : 'Message');
+    const rows = display.map((e, idx) => {
+      const detailId = targetId + '-detail-' + idx;
+      const statusIcon = e.status === 'failed' ? '<span title="Invio fallito" style="color:#ff6464;">❌ </span>' : '<span style="color:#b5ff2e;">✓ </span>';
+      const mainRow = '<tr style="cursor:pointer;" onclick="toggleEmailDetail(\'' + detailId + '\')">' +
+        '<td style="white-space:nowrap;font-size:0.88rem;padding:0.4rem 0.75rem;">' + statusIcon + new Date(e.date).toLocaleDateString('it-IT') + ' ' + new Date(e.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td>' +
+        '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + e.to + '</td>' +
+        '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;">' + (e.subject || '') + '</td>' +
+        '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;">' + methodLabel(e) + '</td>' +
+        '</tr>';
+      const bodyHtml = e.body
+        ? '<div style="white-space:pre-line;font-size:0.88rem;line-height:1.6;color:var(--text);padding:0.5rem 0;">' + e.body.replace(/[<]/g,'&lt;').replace(/[>]/g,'&gt;') + '</div>'
+        : '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Corpo non disponibile' : 'Body not available') + '</p>';
+      const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="4" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
+        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + e.to + '</div>' +
+        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + (e.subject || '') + '</div>' +
+        bodyHtml +
+        '</td></tr>';
+      return mainRow + detailRow;
+    }).join('');
+    el.innerHTML = note + '<table class="data-table" style="border-spacing:0;table-layout:fixed;width:100%;"><thead><tr>' +
+      '<th style="padding:0.4rem 0.75rem;width:170px;">' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th>' +
+      '<th style="padding:0.4rem 0.75rem;width:220px;">' + (currentLang === 'it' ? 'Destinatario' : 'Recipient') + '</th>' +
+      '<th style="padding:0.4rem 0.75rem;">' + (currentLang === 'it' ? 'Soggetto' : 'Subject') + '</th>' +
+      '<th style="padding:0.4rem 0.75rem;width:110px;">' + (currentLang === 'it' ? 'Mezzo' : 'Method') + '</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table>';
+  } catch(err) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Errore caricamento log.' : 'Error loading log.') + '</p>'; }
+}
+
 async function renderEmailLog() {
+  if (_emailArchiveFilter === 'messages') return renderSentMessagesLog('admin-email-log');
+  if (_emailArchiveFilter === 'newsletter') return renderNewsletterLog('admin-email-log');
   return renderEmailLogInto('admin-email-log', _emailArchiveFilter);
+}
+
+// Log unificato dei messaggi inviati (non e-mail): sia le risposte alle
+// richieste degli utenti sia gli annunci newsletter inviati come
+// messaggio, presi direttamente da contact_messages (che traccia sempre
+// il testo, e-mail inviata o meno), con una colonna Origine che li
+// distingue
+async function renderSentMessagesLog(targetId) {
+  const el = document.getElementById(targetId);
+  if (!el) return;
+  const msgs = getData('contact_messages', []).filter(m => m.replied).sort((a,b) => new Date(b.repliedAt || b.date) - new Date(a.repliedAt || a.date));
+  if (!msgs.length) { el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Nessun messaggio inviato.' : 'No messages sent.') + '</p>'; return; }
+  const display = msgs.slice(0, 50);
+  const note = msgs.length > 50 ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrati gli ultimi 50 di ' + msgs.length : 'Showing last 50 of ' + msgs.length}</p>` : '';
+  const originLabel = (m) => m.isAnnouncement ? '📬 Newsletter' : '↩️ ' + (currentLang === 'it' ? 'Messaggio ricevuto' : 'Received message');
+  const rows = display.map((m, idx) => {
+    const detailId = targetId + '-detail-' + idx;
+    const dateVal = m.repliedAt || m.date;
+    const mainRow = '<tr style="cursor:pointer;" onclick="toggleEmailDetail(\'' + detailId + '\')">' +
+      '<td style="white-space:nowrap;font-size:0.88rem;padding:0.4rem 0.75rem;">' + new Date(dateVal).toLocaleDateString('it-IT') + ' ' + new Date(dateVal).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td>' +
+      '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + m.email + '</td>' +
+      '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;">' + (m.subject || '') + '</td>' +
+      '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;">' + originLabel(m) + '</td>' +
+      '</tr>';
+    const bodyText = m.isAnnouncement ? m.message : (m.replyText || '');
+    const bodyHtml = '<div style="white-space:pre-line;font-size:0.88rem;line-height:1.6;color:var(--text);padding:0.5rem 0;">' + bodyText.replace(/[<]/g,'&lt;').replace(/[>]/g,'&gt;') + '</div>';
+    const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="4" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
+      '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + m.email + '</div>' +
+      '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + (m.subject || '') + '</div>' +
+      bodyHtml +
+      '</td></tr>';
+    return mainRow + detailRow;
+  }).join('');
+  el.innerHTML = note + '<table class="data-table" style="border-spacing:0;table-layout:fixed;width:100%;"><thead><tr>' +
+    '<th style="padding:0.4rem 0.75rem;width:170px;">' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th>' +
+    '<th style="padding:0.4rem 0.75rem;width:220px;">' + (currentLang === 'it' ? 'Destinatario' : 'Recipient') + '</th>' +
+    '<th style="padding:0.4rem 0.75rem;">' + (currentLang === 'it' ? 'Soggetto' : 'Subject') + '</th>' +
+    '<th style="padding:0.4rem 0.75rem;width:110px;">' + (currentLang === 'it' ? 'Origine' : 'Source') + '</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table>';
 }
 
 async function loadReplyToField() {
@@ -2165,23 +2416,57 @@ async function saveReplyToField() {
 }
 
 function renderNewsletterUsers() {
-  renderEmailLogInto('newsletter-email-log', 'newsletter');
+  renderNewsletterLog('newsletter-email-log');
   const el = document.getElementById('newsletter-users-list');
   if (!el) return;
   const users = getData('users', []).filter(u => !u.isAdmin && u.email);
   if (!users.length) { el.innerHTML = '<p style="color:var(--muted);font-size:0.88rem;">Nessun utente registrato.</p>'; return; }
   el.innerHTML = users.map(u => `
-    <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-size:0.9rem;">
+    <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-size:0.9rem;padding:4px 0;">
       <input type="checkbox" class="newsletter-user-cb" data-id="${u.id}" data-email="${u.email}" data-username="${u.username}"
         style="width:16px;height:16px;cursor:pointer;">
       <span>${u.username}</span>
       <span style="color:var(--muted);font-size:0.8rem;">&lt;${u.email}&gt;</span>
       ${u.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''}
+      <span style="margin-left:auto;display:flex;gap:0.75rem;">
+        <label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;font-size:0.78rem;color:var(--muted);" onclick="event.stopPropagation();">
+          <input type="checkbox" class="newsletter-user-email-cb" data-id="${u.id}" checked style="width:14px;height:14px;cursor:pointer;">
+          ${currentLang === 'it' ? 'E-mail' : 'E-mail'}
+        </label>
+        <label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;font-size:0.78rem;color:var(--muted);" onclick="event.stopPropagation();">
+          <input type="checkbox" class="newsletter-user-msg-cb" data-id="${u.id}" style="width:14px;height:14px;cursor:pointer;">
+          ${currentLang === 'it' ? 'Messaggio' : 'Message'}
+        </label>
+      </span>
     </label>`).join('');
 }
 
 function selectAllNewsletterUsers(select) {
   document.querySelectorAll('.newsletter-user-cb').forEach(cb => cb.checked = select);
+}
+
+// Crea un messaggio-annuncio per un utente (usato dalla Newsletter come
+// alternativa/aggiunta all'e-mail): non è la risposta a qualcosa scritto
+// dall'utente, ma un annuncio dello staff — salvato come contact_messages
+// con isAnnouncement:true, così l'utente lo vede nella sezione "I miei
+// messaggi con lo staff" del proprio profilo, senza la scritta "in attesa
+// di risposta" che avrebbe senso solo per una vera richiesta dell'utente
+async function sendNewsletterMessage(user, subject, body) {
+  const msg = {
+    id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+    name: user.username,
+    email: user.email,
+    subject: subject,
+    message: body,
+    date: new Date().toISOString(),
+    read: true,
+    replied: true,
+    repliedAt: new Date().toISOString(),
+    isAnnouncement: true,
+    userReadReply: false
+  };
+  await fsSave('contact_messages', msg);
+  if (_cache.contact_messages) _cache.contact_messages.push(msg);
 }
 
 async function sendNewsletterFromAdmin() {
@@ -2193,14 +2478,18 @@ async function sendNewsletterFromAdmin() {
   if (!confirm((currentLang === 'it' ? 'Inviare la newsletter a ' : 'Send newsletter to ') + selected.length + (currentLang === 'it' ? ' utenti?' : ' users?'))) return;
   const adminUser = getData('users', []).find(u => u.isAdmin);
   const bcc = adminUser?.email || null;
+  let emailCount = 0, msgCount = 0;
   for (const cb of selected) {
-    await sendEmail(cb.dataset.email, cb.dataset.username, subject, body, { bcc, source: 'newsletter' });
+    const wantsEmail = document.querySelector(`.newsletter-user-email-cb[data-id="${cb.dataset.id}"]`)?.checked;
+    const wantsMsg = document.querySelector(`.newsletter-user-msg-cb[data-id="${cb.dataset.id}"]`)?.checked;
+    if (wantsEmail) { await sendEmail(cb.dataset.email, cb.dataset.username, subject, body, { bcc, source: 'newsletter' }); emailCount++; }
+    if (wantsMsg) { await sendNewsletterMessage({ username: cb.dataset.username, email: cb.dataset.email }, subject, body); msgCount++; }
   }
-  await incrementEmailCounter(selected.length);
-  toast((currentLang === 'it' ? 'Newsletter inviata a ' : 'Newsletter sent to ') + selected.length + (currentLang === 'it' ? ' utenti! 📧' : ' users! 📧'), 'success');
+  if (emailCount) await incrementEmailCounter(emailCount);
+  toast((currentLang === 'it' ? `Newsletter inviata: ${emailCount} e-mail, ${msgCount} messaggi! 📧` : `Newsletter sent: ${emailCount} e-mails, ${msgCount} messages! 📧`), 'success');
   document.getElementById('newsletter-subject').value = '';
   document.getElementById('newsletter-body').value = '';
-  renderEmailLogInto('newsletter-email-log', 'newsletter');
+  renderNewsletterLog('newsletter-email-log');
 }
 
 async function sendNewsletterEmail(subject, messaggio) {
@@ -2220,7 +2509,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.435';
+const JS_VERSION = 'v5.456';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -2867,7 +3156,7 @@ const i18n = {
 
     'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send \"What I\'m looking for\" to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"',
 'profile.anon':'Show me as anonymous in the ranking',
-'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.deleteAccount':'🗑️ Delete my account',
+'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.deleteAccount':'🗑️ Delete my account','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
 'modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go!','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
@@ -2885,7 +3174,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Score selected','catalog.haveall':'✅ Add all to list','catalog.havenone':'❌ Clear list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Email','admin.email.all':'All emails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Score selected','catalog.haveall':'✅ Add all to list','catalog.havenone':'❌ Clear list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -2960,7 +3249,7 @@ const i18n = {
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
 'nav.onlineSince':'Online dal 21.06.2026',
-'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','profile.deleteAccount':'🗑️ Elimina il mio account',
+'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','profile.deleteAccount':'🗑️ Elimina il mio account','profile.myMessages.title':'I miei messaggi con lo staff',
 'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua "Mia lista" e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua lista "Ciò che cerco"','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
 'modal.accountDeleted.title':'Account eliminato','modal.accountDeleted.desc':'Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via!','modal.accountDeleted.close':'Chiudi',
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
@@ -3008,7 +3297,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio selezionati','catalog.haveall':'✅ Tutto in lista','catalog.havenone':'❌ Svuota lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ E-mail','admin.email.all':'Tutte le e-mail','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio selezionati','catalog.haveall':'✅ Tutto in lista','catalog.havenone':'❌ Svuota lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Torna all\'Inventario','detail.owned':'Nella mia lista','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -3137,6 +3426,10 @@ function showPage(page) {
   if (page === 'wishlist') renderWishlist();
   if (page === 'classifica') renderClassifica();
   if (page === 'admin') adminTab('users');
+  if (page === 'contact' && currentUser) {
+    const emailInput = document.getElementById('contact-email');
+    if (emailInput && !emailInput.value) emailInput.value = currentUser.email;
+  }
   initReveal();
 }
 
@@ -3699,10 +3992,13 @@ function updateNavUser() {
     const bellBtn = document.getElementById('nav-bell-btn');
     const msgBtn = document.getElementById('nav-msg-btn');
     if (msgBtn) msgBtn.style.display = currentUser?.isAdmin ? '' : 'none';
+    const replyBtn = document.getElementById('nav-reply-btn');
+    if (replyBtn) replyBtn.style.display = currentUser?.isAdmin ? 'none' : '';
     if (bellBtn) {
       bellBtn.style.display = currentUser.isAdmin ? '' : 'none';
       updateBellBadge();
     }
+    if (!currentUser.isAdmin) checkUnreadReplies();
     _checkReadQuotaWarning();
     const jsVerWrap = document.getElementById('nav-js-version-wrap');
     if (jsVerWrap) jsVerWrap.style.display = currentUser.isAdmin ? '' : 'none';
@@ -5256,7 +5552,7 @@ async function sendContact() {
   const msg = { name, email, subject, message, date: new Date().toISOString(), read: false };
   const saved = await fsSave('contact_messages', msg);
   _cache.contact_messages.unshift(saved);
-  ['contact-name','contact-email','contact-subject','contact-message'].forEach(id => document.getElementById(id).value = '');
+  ['contact-name','contact-subject','contact-message'].forEach(id => document.getElementById(id).value = '');
   toast(currentLang === 'it' ? 'Messaggio inviato! Ti risponderemo presto 📩' : 'Message sent! We\'ll get back to you soon 📩', 'success');
 }
 
@@ -5285,6 +5581,77 @@ async function saveAnonSetting() {
     : (enabling ? '🕵️ Anonymous profile enabled' : 'Public profile restored'), 'success');
 }
 
+// Carica, con una query mirata (non tutta la collezione), solo i messaggi
+// di contatto con la stessa e-mail dell'utente corrente — richiede la
+// regola dedicata in firestore.rules, altrimenti Firestore rifiuta la
+// query per intero (non singoli documenti)
+async function loadMyContactMessages() {
+  if (!currentUser?.email) return [];
+  try {
+    const { collection: col, query: qf, where: wf, getDocs: gd } = window._fb;
+    const q = qf(col(db, 'contact_messages'), wf('email', '==', currentUser.email));
+    const snap = await gd(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) {
+    console.error('loadMyContactMessages', e);
+    return [];
+  }
+}
+
+// Mostra all'utente, nel proprio profilo, i messaggi che ha scritto tramite
+// Contatti (abbinati per e-mail, non per essere stato loggato al momento
+// dell'invio — funziona quindi anche per messaggi scritti in passato da
+// anonimo, se l'e-mail coincide con quella dell'account) e l'eventuale
+// risposta dell'admin. Serve come rete di sicurezza quando l'e-mail di
+// risposta non arriva per problemi di consegna (es. blacklist Aruba/Hotmail)
+async function renderMyMessages() {
+  const wrap = document.getElementById('profile-my-messages');
+  const list = document.getElementById('profile-my-messages-list');
+  if (!wrap || !list || !currentUser?.email) return;
+  const myMsgs = (await loadMyContactMessages()).sort((a, b) => new Date(b.date) - new Date(a.date));
+  if (!myMsgs.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+  markRepliesAsRead(myMsgs); // fire-and-forget, non blocca la visualizzazione
+  list.innerHTML = myMsgs.map(m => m.isAnnouncement ? `
+    <div style="background:var(--card2);border:1px solid var(--accent);border-radius:10px;padding:0.85rem 1rem;margin-bottom:0.75rem;">
+      <div style="font-size:0.78rem;color:var(--accent);margin-bottom:0.3rem;">📢 ${currentLang === 'it' ? 'Comunicazione dello staff' : 'Staff announcement'} — ${new Date(m.date).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-US', {day:'numeric',month:'short',year:'numeric'})}${m.subject ? ' — ' + m.subject : ''}</div>
+      <div style="font-size:0.9rem;">${m.message}</div>
+    </div>` : `
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:0.85rem 1rem;margin-bottom:0.75rem;">
+      <div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.3rem;">${new Date(m.date).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-US', {day:'numeric',month:'short',year:'numeric'})}${m.subject ? ' — ' + m.subject : ''}</div>
+      <div style="font-size:0.9rem;margin-bottom:${m.replyText ? '0.6rem' : '0'};">${m.message}</div>
+      ${m.replyText ? `<div style="border-left:2px solid var(--accent);padding-left:0.75rem;margin-top:0.5rem;">
+        <div style="font-size:0.78rem;color:var(--accent);margin-bottom:0.2rem;">${currentLang === 'it' ? 'Risposta dello staff' : 'Staff reply'}${m.repliedAt ? ' — ' + new Date(m.repliedAt).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-US', {day:'numeric',month:'short',year:'numeric'}) : ''}</div>
+        <div style="font-size:0.9rem;">${m.replyText}</div>
+      </div>` : `<div style="font-size:0.82rem;color:var(--muted);font-style:italic;">${currentLang === 'it' ? 'In attesa di risposta...' : 'Awaiting reply...'}</div>`}
+    </div>`).join('');
+}
+
+// Controlla se l'utente ha risposte dello staff non ancora viste, e mostra
+// il badge accanto all'icona profilo di conseguenza
+async function checkUnreadReplies() {
+  const badge = document.getElementById('nav-reply-badge');
+  if (!badge || !currentUser || currentUser.isAdmin) return;
+  const myMsgs = await loadMyContactMessages();
+  const unread = myMsgs.filter(m => m.replied && !m.userReadReply).length;
+  if (unread > 0) {
+    badge.style.display = '';
+    badge.textContent = unread > 9 ? '9+' : unread;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// Segna come lette tutte le risposte dell'utente corrente (chiamata
+// quando apre la sezione "I miei messaggi con lo staff" nel profilo)
+async function markRepliesAsRead(myMsgs) {
+  const toMark = myMsgs.filter(m => m.replied && !m.userReadReply);
+  if (!toMark.length) return;
+  await Promise.all(toMark.map(m => { m.userReadReply = true; return fsSave('contact_messages', m); }));
+  const badge = document.getElementById('nav-reply-badge');
+  if (badge) badge.style.display = 'none';
+}
+
 function renderProfile() {
   if (!currentUser) { showPage('home'); return; }
   document.getElementById('profile-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
@@ -5298,6 +5665,7 @@ function renderProfile() {
   // Show anon toggle (only for non-admin users)
   const anonWrap = document.getElementById('profile-anon-wrap');
   if (anonWrap) anonWrap.style.display = currentUser.isAdmin ? 'none' : '';
+  if (!currentUser.isAdmin) renderMyMessages();
   // L'autocancellazione account non deve mai essere visibile all'admin, né
   // per il proprio account né per nessun utente durante l'impersonificazione
   const dangerZone = document.getElementById('profile-danger-zone');
@@ -5395,7 +5763,8 @@ function adminTab(tab) {
   if (tab === 'risorse') renderAdminRisorse();
   if (tab === 'foto') renderAdminFoto();
   if (tab === 'errori') renderAdminErrori();
-  if (tab === 'email') { loadReplyToField(); renderEmailLog(); }
+  if (tab === 'email') { renderEmailLog(); refreshEmailCountWidgets(); }
+  if (tab === 'settings') { loadReplyToField(); }
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 function renderAdminSeries() {
@@ -5526,9 +5895,8 @@ function renderAdminFigs() {
     }).join('')}</tbody></table>`;
 }
 function renderAdminContacts() {
-  renderEmailLogInto('messages-email-log', 'messages');
   const el = document.getElementById('admin-contacts-list');
-  const msgs = getData('contact_messages', []).sort((a,b) => new Date(b.date) - new Date(a.date));
+  const msgs = getData('contact_messages', []).filter(m => !m.isAnnouncement).sort((a,b) => new Date(b.date) - new Date(a.date));
   if (!msgs.length) { el.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun messaggio ancora.' : 'No messages yet.'}</p>`; return; }
   el.innerHTML = msgs.map(m => `<div style="background:${m.read ? 'var(--card)' : 'rgba(68,136,255,0.06)'};border:1px solid ${m.read ? 'var(--border)' : 'rgba(68,136,255,0.3)'};border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.5rem;">
     <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.4rem;align-items:center;">
@@ -5540,7 +5908,7 @@ function renderAdminContacts() {
       <div style="display:flex;align-items:center;gap:0.5rem;">
         <span style="font-size:0.78rem;color:var(--muted);">${new Date(m.date).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB')}</span>
         <div style="display:flex;gap:0.4rem;align-items:center;">
-          ${!m.read ? `<button class="tbl-btn tbl-btn-edit" onclick="markContactRead('${m.id}')">${currentLang === 'it' ? 'Segna letto' : 'Mark read'}</button>` : '<span style="font-size:0.78rem;color:var(--muted);">✓</span>'}
+          ${!m.read ? `<button class="tbl-btn tbl-btn-edit" onclick="markContactRead('${m.id}')">${currentLang === 'it' ? 'Segna come letto' : 'Mark as read'}</button>` : '<span style="font-size:0.78rem;color:var(--muted);">✓</span>'}
           <button class="tbl-btn tbl-btn-edit" onclick="toggleReplyBox('${m.id}')">↩️ ${currentLang === 'it' ? 'Rispondi' : 'Reply'}</button>
           <button class="tbl-btn" style="background:rgba(255,100,100,0.1);border-color:rgba(255,100,100,0.4);color:#ff6464;" onclick="deleteContactMsg('${m.id}')">🗑️</button>
         </div>
@@ -5550,6 +5918,10 @@ function renderAdminContacts() {
     <div style="font-size:0.88rem;color:var(--muted);">${m.message}</div>
     <div id="reply-box-${m.id}" style="display:none;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">
       <textarea id="reply-text-${m.id}" class="form-textarea" rows="3" placeholder="${currentLang === 'it' ? 'Scrivi la tua risposta...' : 'Write your reply...'}" style="margin-bottom:0.5rem;"></textarea>
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--muted);margin-bottom:0.6rem;">
+        <input type="checkbox" id="reply-also-email-${m.id}" style="width:16px;height:16px;cursor:pointer;">
+        ${currentLang === 'it' ? 'Invia anche via e-mail' : 'Also send by e-mail'}
+      </label>
       <div style="display:flex;gap:0.5rem;">
         <button class="btn-primary" style="font-size:0.82rem;padding:6px 14px;" onclick="sendContactReply('${m.id}')">📧 ${currentLang === 'it' ? 'Invia risposta' : 'Send reply'}</button>
         <button class="tbl-btn" onclick="toggleReplyBox('${m.id}')">${currentLang === 'it' ? 'Annulla' : 'Cancel'}</button>
@@ -5577,23 +5949,29 @@ async function sendContactReply(id) {
   const replyText = textarea?.value.trim();
   if (!replyText) { toast(currentLang === 'it' ? 'Scrivi una risposta prima di inviare' : 'Write a reply before sending', 'error'); return; }
 
-  const subject = (currentLang === 'it' ? 'Re: ' : 'Re: ') + (msg.subject || (currentLang === 'it' ? 'la tua richiesta' : 'your request'));
-  const result = await sendEmail(msg.email, msg.name, subject, replyText, { source: 'messages' });
+  const alsoEmail = document.getElementById('reply-also-email-' + id)?.checked || false;
 
-  if (!result.ok) {
-    toast((currentLang === 'it' ? '❌ Invio fallito: ' : '❌ Send failed: ') + result.error, 'error');
-    return;
+  if (alsoEmail) {
+    const subject = (currentLang === 'it' ? 'Re: ' : 'Re: ') + (msg.subject || (currentLang === 'it' ? 'la tua richiesta' : 'your request'));
+    const result = await sendEmail(msg.email, msg.name, subject, replyText, { source: 'messages' });
+    if (!result.ok) {
+      toast((currentLang === 'it' ? '❌ Invio e-mail fallito: ' : '❌ E-mail send failed: ') + result.error, 'error');
+      return;
+    }
   }
 
   msg.replied = true;
   msg.repliedAt = new Date().toISOString();
+  msg.replyText = replyText;
+  msg.userReadReply = false; // ogni nuova risposta torna "non letta" per l'utente, anche se il messaggio aveva già avuto una risposta in passato
+  msg.read = true; // rispondere implica averlo letto, anche se "Segna letto" non è mai stato premuto esplicitamente
   await fsSave('contact_messages', msg);
   if (_cache.contact_messages) {
     const idx = _cache.contact_messages.findIndex(m => m.id === id);
     if (idx >= 0) _cache.contact_messages[idx] = msg;
   }
 
-  toast(currentLang === 'it' ? '✅ Risposta inviata!' : '✅ Reply sent!', 'success');
+  toast(alsoEmail ? (currentLang === 'it' ? '✅ Risposta inviata (anche via e-mail)!' : '✅ Reply sent (also by e-mail)!') : (currentLang === 'it' ? '✅ Risposta salvata nel sito' : '✅ Reply saved on the site'), 'success');
   renderAdminContacts();
 }
 
@@ -5637,20 +6015,22 @@ function renderAdminUsers() {
   });
   const arrow = (c) => _usersSort.col === c ? (_usersSort.dir === 1 ? ' ↑' : ' ↓') : '';
   el.innerHTML = `<table class="data-table compact"><thead><tr>
+    <th>${(currentLang === 'it') ? 'Azioni' : 'Actions'}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('username')">${(currentLang === 'it') ? 'Nome utente' : 'Nickname'}${arrow('username')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('email')">E-mail${arrow('email')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('lastLogin')">${(currentLang === 'it') ? 'Ultima login' : 'Last login'}${arrow('lastLogin')}</th>
-    <th style="cursor:pointer;" onclick="sortAdminUsers('joined')">${(currentLang === 'it') ? 'Iscritto dal' : 'Member since'}${arrow('joined')}</th>
-    <th>${(currentLang === 'it') ? 'Azioni' : 'Actions'}</th></tr></thead><tbody>
+    <th style="cursor:pointer;" onclick="sortAdminUsers('joined')">${(currentLang === 'it') ? 'Iscritto dal' : 'Member since'}${arrow('joined')}</th></tr></thead><tbody>
     ${users.map(u => `<tr>
-      <td style="display:flex;align-items:center;gap:0.4rem;">
-        <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : (u.username || '?')[0].toUpperCase()}</div>
-        ${u.username || '(senza nickname)'}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}${u.nationalityCode ? '<img src="'+flagUrl(u.nationalityCode)+'" title="'+(u.nationalityName||'')+'" style="width:18px;height:12px;object-fit:cover;border-radius:2px;margin-left:4px;">' : ''}
+      <td><div style="display:flex;gap:0.3rem;"><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">${currentLang === 'it' ? 'Visualizza' : 'View'}</button>${!u.isAdmin ? `<button class="tbl-btn" style="background:rgba(255,180,0,0.15);border-color:rgba(255,180,0,0.4);color:#ffb400;" onclick="impersonateUser('${u.id}')">🎭 ${(currentLang === 'it') ? 'Impersona' : 'Impersonate'}</button>` : ''}</div></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:0.4rem;">
+          <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : (u.username || '?')[0].toUpperCase()}</div>
+          ${u.username || '(senza nickname)'}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}${u.nationalityCode ? '<img src="'+flagUrl(u.nationalityCode)+'" title="'+(u.nationalityName||'')+'" style="width:18px;height:12px;object-fit:cover;border-radius:2px;margin-left:4px;">' : ''}
+        </div>
       </td>
       <td>${u.email}</td>
       <td style="font-size:0.82rem;">${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(u.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '<span style="color:var(--muted);font-style:italic;">mai</span>'}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
-      <td style="display:flex;gap:0.3rem;"><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">${currentLang === 'it' ? 'Visualizza' : 'View'}</button>${!u.isAdmin ? `<button class="tbl-btn" style="background:rgba(255,180,0,0.15);border-color:rgba(255,180,0,0.4);color:#ffb400;" onclick="impersonateUser('${u.id}')">🎭 ${(currentLang === 'it') ? 'Impersona' : 'Impersonate'}</button>` : ''}</td>
     </tr>`).join('')}
   </tbody></table>`;
 }
@@ -5810,8 +6190,10 @@ async function saveEmailCounter() {
   renderAdminRisorse();
 }
 
-async function renderAdminRisorse() {
-  // Email counter — reads from same source as Mail tab
+// Legge il conteggio e-mail del mese corrente e aggiorna qualsiasi widget
+// presente in pagina — sia quello nella sezione Risorse (con modifica
+// manuale) sia quello, identico ma in sola lettura, nella sezione E-mail
+async function refreshEmailCountWidgets() {
   try {
     const now = new Date();
     const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
@@ -5827,17 +6209,24 @@ async function renderAdminRisorse() {
     } catch(e) {}
     const pct = Math.min(Math.round(count / 200 * 100), 100);
     const color = pct >= 90 ? '#ff4444' : pct >= 70 ? '#ffb400' : 'var(--accent)';
-    const el = document.getElementById('email-count-display');
-    if (el) el.textContent = count;
-    const editEl = document.getElementById('email-count-edit');
-    if (editEl) editEl.value = count;
-    const label = document.getElementById('email-count-label');
-    if (label) label.textContent = count + ' / 200';
-    const pctEl = document.getElementById('email-count-pct');
-    if (pctEl) pctEl.textContent = pct + '%';
-    const bar = document.getElementById('email-count-bar');
-    if (bar) { bar.style.width = pct + '%'; bar.style.background = color; }
+    ['', '-2'].forEach(suffix => {
+      const el = document.getElementById('email-count-display' + suffix);
+      if (el) el.textContent = count;
+      const editEl = document.getElementById('email-count-edit' + suffix);
+      if (editEl) editEl.value = count;
+      const label = document.getElementById('email-count-label' + suffix);
+      if (label) label.textContent = count + ' / 200';
+      const pctEl = document.getElementById('email-count-pct' + suffix);
+      if (pctEl) pctEl.textContent = pct + '%';
+      const bar = document.getElementById('email-count-bar' + suffix);
+      if (bar) { bar.style.width = pct + '%'; bar.style.background = color; }
+    });
   } catch(e) { console.error('Email stats error', e); }
+}
+
+async function renderAdminRisorse() {
+  // Email counter — reads from same source as Mail tab
+  await refreshEmailCountWidgets();
 
   // Firebase doc count
   try {
@@ -5931,7 +6320,7 @@ function renderAdminEventi() {
     <td style="white-space:nowrap;font-size:0.78rem;">${new Date(e.date).toLocaleDateString('it-IT')} ${new Date(e.date).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}</td>
     <td>${typeIcon[e.type] || '📌'}</td>
     <td>${e.description}</td>
-    <td><button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : 'Segna letto'}</button></td>
+    <td><button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : 'Segna come letto'}</button></td>
   </tr>`).join('')}
   </tbody></table>`;
 }
@@ -6880,7 +7269,7 @@ function renderAdminSegnalazioni() {
     <td style="display:flex;align-items:center;gap:6px;">${s.username}${(() => { const u = getData('users',[]).find(x=>x.id===s.userId); return u?.nationalityCode ? `<img src="https://flagcdn.com/w40/${u.nationalityCode}.png" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''; })()}</td>
     <td style="font-size:0.82rem;">${s.serieName}<br><span style="color:var(--muted);">${s.figNumber ? '#'+s.figNumber+' ' : ''}${s.figName}</span></td>
     <td>${s.commento}</td>
-    <td style="display:flex;gap:0.4rem;"><button class="tbl-btn tbl-btn-edit" onclick="markSegnalazioneRead('${s.id}')">${s.read ? '✓' : (currentLang === 'it' ? 'Segna letta' : 'Mark read')}</button><button class="tbl-btn tbl-btn-del" onclick="deleteSegnalazione('${s.id}')">${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button></td>
+    <td style="display:flex;gap:0.4rem;"><button class="tbl-btn tbl-btn-edit" onclick="markSegnalazioneRead('${s.id}')">${s.read ? '✓' : (currentLang === 'it' ? 'Segna come letta' : 'Mark as read')}</button><button class="tbl-btn tbl-btn-del" onclick="deleteSegnalazione('${s.id}')">${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button></td>
   </tr>`).join('')}
   </tbody></table>`;
 }
@@ -7100,7 +7489,7 @@ function updateOwnedCounter() {
   if (navEl) {
     if (currentUser && !currentUser.isAdmin) {
       navEl.style.display = '';
-      navEl.innerHTML = '<div style="font-size:0.7rem;opacity:0.75;line-height:1.2;">' + (currentLang === 'it' ? 'Mie figurine' : 'My stickers') + '</div><div style="font-size:0.7rem;line-height:1.2;">' + ownedCount + ' / ' + total + '</div>';
+      navEl.innerHTML = '<div style="font-size:0.7rem;opacity:0.75;line-height:1.2;">' + (currentLang === 'it' ? 'Figurine mia lista' : "My list's stickers") + '</div><div style="font-size:0.7rem;line-height:1.2;">' + ownedCount + ' / ' + total + '</div>';
     } else {
       navEl.style.display = 'none';
     }
