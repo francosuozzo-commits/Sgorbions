@@ -1,6 +1,447 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.519 — Su richiesta di Franco: la X per svuotare la ricerca
+//          spostata dalla destra alla sinistra (subito dopo la lente),
+//          più comoda su barre di ricerca lunghe. Aggiustato il padding
+//          di .search-input di conseguenza (in style.css).
+// v5.518 — Su richiesta di Franco: "Tutte"/"Tutti" spostato all'inizio
+//          del gruppo filtri, tutto a sinistra, prima di "Solo base"
+//          (prima si trovava dopo, spinto verso destra dal layout
+//          space-between).
+// v5.517 — Su richiesta di Franco: il checkbox "Sovrascrivi foto già
+//          presenti" ora deselezionato di default, in entrambe le
+//          procedure di import foto (per numero e per nome).
+// v5.516 — Correzione estetica su richiesta di Franco: ripristinato il
+//          pallino selettore (toggle-btn-blue) stile Ebay per il filtro
+//          foto — un solo selettore, con l'etichetta che alterna tra
+//          "Solo senza foto"/"Con e senza foto" in base allo stato,
+//          invece del semplice link testuale usato in precedenza.
+// v5.515 — Su richiesta di Franco: in Vista tabellare, ordinamento dei
+//          Retro esteso a un quarto livello — Categoria → Sottocategoria
+//          → Nome → Tipo di Change. Verificato con una simulazione
+//          prima di consegnare.
+// v5.514 — Correzione su chiarimento di Franco: il filtro foto NON deve
+//          mostrare entrambe le pillole insieme — mostra solo
+//          l'etichetta dell'azione disponibile (quella per passare
+//          all'altro stato), mai quella dello stato in cui ci si trova
+//          già, dato che non avrebbe senso poterla selezionare di
+//          nuovo. Tornato a un singolo elemento cliccabile che alterna
+//          etichetta e comportamento in base allo stato corrente.
+// v5.513 — Su richiesta di Franco: il filtro foto spostato dal suo
+//          pulsante standalone (accanto a "+ Aggiungi") alla sezione
+//          filtri (items-filter-toggles), come due pillole separate in
+//          stile radio (stesso schema di "Ebay"): "📷 Con e senza foto"
+//          (rinominato da "Mostra tutti"/"Mostra tutte") e "📷 Solo
+//          senza foto" — ora disponibile per tutte e quattro le
+//          sezioni (prima Figurine/Retro soltanto, essendo un pulsante
+//          fisso). Nuova funzione setNoPhotoFilter(val), sostituisce
+//          toggleNoPhotoFilter(). Rimossi due riferimenti morti al
+//          vecchio pulsante non più esistente.
+// v5.512 — Ripensamento su richiesta di Franco: invece del suffisso nel
+//          nome, "Tipo di change" è ora una colonna dedicata, subito
+//          dopo Nome, solo per la sezione Retro — editabile per l'admin
+//          come le altre colonne (riusa saveBulkCell(), già generico
+//          per qualsiasi campo).
+// v5.511 — Su richiesta di Franco: in Vista tabellare, per i Retro con
+//          changeType impostato, ora compare "NOME RETRO - TIPO DI
+//          CHANGE" nella colonna Nome — per l'admin il tipo è mostrato
+//          come testo separato accanto al campo editabile (non incluso
+//          nel valore salvato, per non alterare il nome vero e proprio
+//          se qualcuno modifica la cella).
+// v5.510 — Su segnalazione di Franco: nella ricerca/filtri dentro una
+//          serie (Figurine/Retro/Album/Altri oggetti), il numero di
+//          risultati non veniva mai mostrato, né prima né dopo un
+//          filtro. Aggiunto un conteggio (nuova funzione condivisa
+//          updateItemsCountDisplay()) subito sotto la barra di ricerca,
+//          sia in vista a griglia sia in Vista tabellare — resta
+//          sempre aggiornato con qualunque combinazione di ricerca e
+//          filtri attivi.
+// v5.509 — Su segnalazione di Franco: confermato il bug — in Vista
+//          tabellare i Retro venivano ordinati per "numero" (campo che
+//          per i Retro non è nemmeno mostrato in tabella, sostituito da
+//          Categoria/Sottocategoria), invece che per Categoria →
+//          Sottocategoria → Nome come già avviene correttamente nella
+//          vista a griglia. Allineato lo stesso ordinamento (con
+//          locale 'it', come nella griglia) anche qui. Verificato con
+//          una simulazione prima di consegnare.
+// v5.508 — Su richiesta di Franco: aggiunta una X per svuotare in un
+//          click sia la ricerca globale dell'Inventario sia quella
+//          dentro le serie (Figurine/Retro/Album/Altri oggetti) —
+//          compare solo quando il campo contiene testo. Nuove funzioni
+//          riusabili clearSearchField()/toggleSearchClearBtn().
+//          Aumentato il padding destro di .search-input per fare spazio
+//          al pulsante.
+// v5.507 — Su richiesta di Franco: le intestazioni di tipologia
+//          (Figurine/Retro/Album/Altri oggetti) nella ricerca globale
+//          ora in arancione e con font più grande.
+// v5.506 — Su richiesta di Franco: migliorato il contrasto delle
+//          etichette nella ricerca globale. Per i retro: "Change" in
+//          giallo, il tipo di change in azzurro. Per le figurine
+//          variazione/change: l'etichetta tipo (Variazione ufficiale/
+//          non ufficiale/Change) in giallo, il nome del retro associato
+//          in azzurro.
+// v5.505 — Su richiesta di Franco: le miniature di figurina base e
+//          retro associato spostate prima del testo, coerenti con come
+//          la foto propria compare già prima per gli oggetti base
+//          (prima erano dopo l'etichetta testuale).
+// v5.504 — Su richiesta di Franco: nella ricerca globale
+//          dell'Inventario, per variazioni (ufficiali/non ufficiali) e
+//          change, ora compaiono anche le miniature della figurina base
+//          e del retro associato (se presente), accanto alla foto della
+//          figurina stessa. Estesa anche l'etichetta testuale per
+//          coprire i change (prima solo variazioni). Verificato con una
+//          simulazione per entrambi i casi prima di consegnare.
+// v5.503 — Correzione su segnalazione di Franco: l'ordinamento per
+//          priorità (base/var uff/var non uff/change) valeva a livello
+//          globale, non raggruppato per figurina base — ora prima si
+//          raggruppa per numero della figurina base (risalendo tramite
+//          baseFigurineId per le variazioni/change), poi si applica la
+//          priorità di tipo dentro ciascun gruppo. Verificato con una
+//          simulazione che ricalca esattamente l'esempio dato da
+//          Franco, con ordine di input mescolato, prima di consegnare.
+// v5.502 — Su richiesta di Franco: nella ricerca globale
+//          dell'Inventario, i risultati Figurine ora ordinati per
+//          priorità — prima le figurine base, poi le variazioni
+//          ufficiali, poi le non ufficiali, infine i change — mantenendo
+//          l'ordine relativo tra elementi dello stesso tipo. Verificato
+//          con una simulazione con dati in ordine misto prima di
+//          consegnare.
+// v5.501 — Su segnalazione di Franco: il nome della figurina base
+//          compariva due volte nell'etichetta variazione, dato che il
+//          nome della variazione (f.name) è già identico a quello della
+//          figurina base — il primo veniva già mostrato subito prima.
+//          Rimossa la ripetizione, ora solo "Variazione ufficiale/non
+//          ufficiale - [retro]".
+// v5.500 — Su richiesta di Franco: nella ricerca globale
+//          dell'Inventario, per i risultati Figurine che sono
+//          variazioni (ufficiali o non ufficiali), ora compare anche
+//          "[nome figurina base] - Variazione ufficiale/non ufficiale -
+//          [nome retro associato]" dopo il nome, sullo stesso schema
+//          già usato per il "Change:" dei retro. Verificato con una
+//          simulazione per entrambi i tipi di variazione prima di
+//          consegnare.
+// v5.499 — Su richiesta di Franco: nella ricerca globale
+//          dell'Inventario, per i risultati di tipo Retro con
+//          changeType impostato, ora compare anche "Change: [tipo]"
+//          dopo il nome.
+// v5.498 — Su segnalazione di Franco: nella ricerca globale
+//          dell'Inventario (barra sopra l'elenco serie), i risultati di
+//          tipo diverso (Figurine/Retro/Album/Altri oggetti) venivano
+//          mostrati tutti mescolati in un unico elenco, senza etichetta
+//          che li distinguesse. Ora raggruppati per tipologia, con
+//          intestazione ("Retro:", "Figurine:", ecc.) prima di ciascun
+//          gruppo. Verificato con una simulazione con dati misti prima
+//          di consegnare.
+// v5.497 — Su richiesta di Franco: nuova sotto-sezione "🏷️ Impostazioni
+//          Ebay" dentro Impostazioni, con i tre valori di default per
+//          l'export (Corriere/costo spedizione, Tempo massimo di
+//          spedizione, Migliore Offerta con soglie di accettazione/
+//          rifiuto automatico) — salvati in settings/ebay_export,
+//          stesso schema già usato per il Reply-To e-mail. Questi
+//          valori verranno mostrati (e modificabili al volo) nel modal
+//          di conferma quando si genererà davvero il file di export,
+//          non ancora costruito.
+// v5.496 — Su richiesta di Franco: il modal Ebay ora si chiude solo a
+//          salvataggio concluso (in coincidenza con il messaggio di
+//          successo), non più immediatamente al click su "Applica".
+//          _applyBulkFigurineUpdate() ora restituisce true/false in
+//          base all'esito, così il modal resta aperto se il
+//          salvataggio fallisce (utente vede l'errore e può riprovare
+//          senza dover reinserire i dati).
+// v5.495 — Su richiesta di Franco: il pulsante "Ebay" apre ora un modal
+//          dedicato (Prezzo, Quantità, Condizione) invece di applicare
+//          direttamente forSale:true con valori di default — i valori
+//          inseriti nel modal si applicano a tutti gli oggetti
+//          attualmente filtrati, sovrascrivendo qualunque valore
+//          avessero prima. Nuove funzioni openEbayBulkModal() e
+//          confirmEbayBulkApply(); aggiunto il parametro skipConfirm a
+//          _applyBulkFigurineUpdate(), dato che qui il modal stesso
+//          funge da conferma (niente popup nativo doppio). Verificato
+//          con una simulazione con valori di partenza diversi tra loro,
+//          prima di consegnare.
+// v5.494 — Su richiesta di Franco: il pulsante "Ebay" nella scheda
+//          della serie rinominato "Vista Ebay" e ricolorato in azzurro,
+//          per distinguerlo visivamente dagli altri due pulsanti Ebay/
+//          No Ebay (bianchi).
+// v5.493 — Su richiesta di Franco: nel modal Ebay della serie, sotto ai
+//          contatori, nuova tabella con tutti gli oggetti marcati Ebay
+//          (di tutte le tipologie), colonne: Tipo, Numero, Nome,
+//          Prezzo, Quantità, Condizione — le colonne cresceranno via
+//          via che si aggiungono i campi per l'export eBay. Modal
+//          allargato (modal-wide) per fare spazio. Verificato con una
+//          simulazione con dati misti prima di consegnare.
+// v5.492 — Su richiesta di Franco: il modal Ebay della serie ora usa il
+//          normale layout a righe campo/valore (detail-row), come nel
+//          resto del sito, invece dei box con il numero grande al
+//          centro.
+// v5.491 — Su chiarimento di Franco: "Ebay" non deve essere esclusivo
+//          con "Solo base"/"Solo variazioni"/"Solo Change" (che lo sono
+//          tra loro, da cui il nome "Solo") — deve combinarsi in AND.
+//          Prima condivideva la stessa variabile radio _itemTypeFilter
+//          di quei filtri. Introdotta una variabile indipendente
+//          (_ebayFilter), applicata come condizione AND separata in
+//          getCurrentlyFilteredItems(). Verificato con una simulazione
+//          dedicata (Solo variazioni + Ebay → solo l'intersezione) prima
+//          di consegnare.
+// v5.490 — Su richiesta di Franco: nuovo pulsante "🏷️ Ebay" nella
+//          scheda della serie, subito sotto "Modifica serie" (stesso
+//          stile bianco dei pulsanti Ebay/No Ebay), che apre un nuovo
+//          modal dedicato (series-ebay-modal) con 4 contatori — uno per
+//          Figurine, Retro, Album, Altri oggetti — che mostrano quanti
+//          oggetti di quella tipologia, in quella serie, sono marcati
+//          "Ebay" (su quanti totali). Verificato con una simulazione
+//          con dati misti prima di consegnare.
+// v5.489 — Su richiesta di Franco: pulsanti "Ebay"/"No Ebay" a sfondo
+//          bianco (testo scuro per leggibilità) e spostati in fondo a
+//          destra sulla stessa riga di "Tutto in lista"/"Svuota lista",
+//          con margin-left:auto nel contenitore flex condiviso.
+// v5.488 — Trovata la causa del baco segnalato da Franco (con 160
+//          figurine, meno di 160 risultavano marcate "Ebay"): le
+//          figurine vivono dentro il documento della loro serie, quindi
+//          ogni modifica richiede di riscrivere l'INTERO documento
+//          serie (Firestore non permette di sostituire un singolo
+//          elemento di un array per contenuto) — markFilteredForSale()/
+//          unmarkFilteredForSale() facevano una scrittura separata PER
+//          OGNI figurina (160 scritture in sequenza), senza try/catch:
+//          se anche una sola falliva a metà (rete, dimensione del
+//          documento), il ciclo si fermava lì senza errore visibile,
+//          lasciando le figurine successive non modificate. Riscritte
+//          entrambe (nuova funzione condivisa
+//          _applyBulkFigurineUpdate()) per accumulare tutte le modifiche
+//          in memoria e scrivere il documento serie UNA SOLA VOLTA alla
+//          fine — più affidabile e molto più veloce. Verificato con una
+//          simulazione dedicata a 160 elementi, in entrambe le
+//          direzioni, prima di consegnare.
+// v5.487 — Su richiesta di Franco: nuovo pulsante "🚫 No Ebay" accanto a
+//          "Ebay", che toglie il flag da tutti gli oggetti attualmente
+//          filtrati (stessa logica di getCurrentlyFilteredItems() già
+//          usata per "Ebay"). Azzera anche prezzo/quantità/condizione,
+//          per coerenza con quanto già fanno le due form di modifica
+//          quando si toglie la spunta manualmente. Contenitore
+//          admin-ebay-btn-wrap passato da display:block a display:flex,
+//          per affiancare i due pulsanti.
+// v5.486 — Su richiesta di Franco: "Da vendere" rinominato "Ebay" in
+//          tutti i punti (campo nelle due form di modifica, vista
+//          dettaglio, filtro tipo, pulsante). Il pulsante spostato
+//          accanto a "Svuota lista" con margine extra — dato che deve
+//          restare disponibile anche per Album/Altri oggetti (dove
+//          "Svuota lista" si nasconde), i due pulsanti sono stati messi
+//          in un contenitore comune sempre a riga (bulk-controls-row),
+//          con la loro visibilità che resta indipendente l'una
+//          dall'altra: affiancati quando entrambi visibili, altrimenti
+//          "Ebay" resta comunque disponibile da solo.
+// v5.485 — Su segnalazione di Franco: il campo "Da vendere" non
+//          compariva nella vista di sola lettura del dettaglio oggetto
+//          (openFigDetail) — l'avevo aggiunto solo nelle due form di
+//          modifica, non nella visualizzazione. Aggiunta una riga
+//          dedicata, visibile solo all'admin, che mostra prezzo,
+//          quantità e condizione quando l'oggetto è marcato da vendere.
+// v5.484 — Su richiesta di Franco: nuovo filtro "🏷️ Da vendere" (solo
+//          admin), dopo "Tutte", disponibile in tutte e quattro le
+//          sezioni (Figurine, Retro, Album, Altri oggetti) — prima
+//          renderItemTypeFilters() usciva subito per Album/Altri
+//          oggetti, mostrando nessun filtro lì. Riscritta perché mostri
+//          sempre almeno "Tutte" + "Da vendere" ovunque, con i filtri
+//          tipo specifici (Solo base/Variazioni/Change) solo per
+//          Figurine/Retro come prima. Verificato con una simulazione su
+//          più sezioni e sulla visibilità admin-only prima di
+//          consegnare.
+// v5.483 — Su richiesta di Franco: nuovo pulsante "🏷️ Da vendere"
+//          accanto a "Vista tabellare" (admin-only), che marca come
+//          forSale:true tutti gli oggetti attualmente visualizzati
+//          (già filtrati per ricerca/tipo/foto mancante), riusando
+//          getCurrentlyFilteredItems(). Imposta anche quantità=1 e
+//          condizione=Nuovo di default se non già impostate. Trovato e
+//          corretto per strada un bug preesistente non segnalato: tre
+//          elementi (bulk-owned-btns, il nuovo user-table-view-btn, e
+//          reg-nationality-preview) avevano "display:none" e
+//          "display:flex" nello STESSO attributo style — in CSS vince
+//          l'ultima dichiarazione, quindi sarebbero stati visibili di
+//          default finché il JS non li correggeva a runtime. Rimossa la
+//          dichiarazione duplicata in tutti e tre, e reso esplicito
+//          'flex' (invece di stringa vuota) dove il JS doveva mostrarli.
+// v5.482 — Su segnalazione di Franco: il box "Da vendere" c'era solo
+//          nella scheda di creazione/modifica classica (add-fig-modal),
+//          ma NON nel percorso di modifica rapida dal dettaglio
+//          (switchToEditMode/saveFigFromDetail) — due UI di modifica
+//          parallele e separate, cosa non ovvia. Aggiunto lo stesso
+//          blocco anche lì (toggleFeForSaleFields, campi fe-for-sale/
+//          fe-price/fe-quantity/fe-condition), salvato correttamente
+//          nel merge finale di saveFigFromDetail().
+// v5.481 — STEP 1 del progetto export eBay, su richiesta di Franco:
+//          aggiunta la sezione "🏷️ Da vendere" nella scheda di
+//          modifica/aggiunta oggetto (vale per tutti e quattro i tipi:
+//          Figurine, Retro, Album, Altri oggetti), con Prezzo (€),
+//          Quantità e Condizione (Nuovo/Usato) — visibili solo quando
+//          il checkbox è spuntato. Nuovi campi salvati sulla stessa
+//          collezione figurines già esistente (nessuna modifica alle
+//          regole Firestore necessaria). Prossimo passo (Step 2): una
+//          sezione admin dedicata che elenca solo gli oggetti marcati
+//          da vendere.
+// v5.480 — Su richiesta di Franco: promemoria per la cancellazione
+//          manuale da Firebase Console → Authentication, sia nel popup
+//          di conferma prima della cancellazione utente da admin, sia
+//          nel messaggio dopo l'avvenuta cancellazione (durata estesa a
+//          7 secondi per dare tempo di leggerlo).
+// v5.479 — Su richiesta di Franco: resi bianchi anche gli ultimi campi
+//          del modal di registrazione — "Nome utente", "Nazionalità",
+//          il testo del checkbox "Confermo di avere almeno 16 anni" e
+//          la frase di accettazione della Privacy Policy.
+// v5.478 — Su segnalazione di Franco: trovate altre due etichette
+//          "E-mail"/"Password" ancora scure — erano quelle del modal di
+//          Login (diverso da quello di Registrazione, corretto in
+//          precedenza, pur condividendo le stesse chiavi di traduzione
+//          form.email/form.password). Rese bianche anche queste.
+// v5.477 — Su richiesta di Franco: etichetta "Indirizzo E-mail" nel
+//          modal reset password resa bianca; etichette "E-mail" e
+//          "Password" nel modal di registrazione anch'esse rese
+//          bianche.
+// v5.476 — Su richiesta di Franco: pulsante "Invia link di reset" →
+//          "Inviami e-mail con link per reset password", entrambe le
+//          lingue.
+// v5.475 — Su richiesta di Franco: la frase "Hai dimenticato anche
+//          l'e-mail..." spostata subito sotto al box e-mail (prima
+//          stava sotto al pulsante), con un po' di spazio prima del box
+//          azzurro dei messaggi.
+// v5.474 — Su richiesta di Franco: "Attenzione!" tutto maiuscolo
+//          ("ATTENZIONE!"), e il collegamento ipertestuale ridotto alla
+//          sola parola "Contatti"/"Contacts", non più tutta la frase.
+//          Entrambe le lingue.
+// v5.473 — Su richiesta di Franco: le due frasi grigie del modal reset
+//          password (introduzione e frase finale) ora bianche. Rimossa
+//          l'emoji ✅ davanti al messaggio azzurro, che non aggiungeva
+//          valore.
+// v5.472 — Revisione completa del modal reset password su richiesta di
+//          Franco: titolo "Resetta la password", frase introduttiva
+//          accorciata su due righe, messaggio dopo il pulsante ridotto
+//          al minimo (tre righe: attendi e-mail, avviso Spam, link
+//          Contatti), colore del messaggio cambiato da verde lime ad
+//          azzurro, più spazio prima del pulsante, font della frase
+//          finale aumentato. Entrambe le lingue.
+// v5.471 — Su richiesta di Franco: accorciato il testo del messaggio di
+//          conferma reset password, tre righe separate (registrazione,
+//          avviso Spam, link a Contatti). Tradotto in inglese.
+// v5.470 — Su richiesta di Franco: aggiunto un link cliccabile a
+//          Contatti nel messaggio di conferma del reset password, per
+//          chiedere un reset manuale se l'e-mail non dovesse mai
+//          arrivare. Rimossa la chiusura automatica del modal dopo 3
+//          secondi (restava solo la riabilitazione del pulsante), dato
+//          che ora c'è un link da poter leggere e cliccare — prima si
+//          sarebbe chiuso troppo in fretta.
+// v5.469 — Su richiesta di Franco: il messaggio mostrato dopo aver
+//          chiesto un reset password ora ricorda esplicitamente di
+//          controllare anche la cartella Spam/Posta indesiderata, dato
+//          che non abbiamo modo di sapere se l'e-mail di Firebase
+//          arriva davvero.
+// v5.468 — Trovata, grazie alla verifica passo-passo di Franco (console
+//          senza errori = indizio decisivo), la causa reale degli utenti
+//          "orfani" dopo la cancellazione da admin: in fsGetAll(),
+//          fsGet(), la funzione di ricerca utente al login e
+//          loadMyContactMessages(), l'oggetto veniva costruito come
+//          { id: d.id, ...d.data() } — se il documento aveva AL SUO
+//          INTERNO un campo chiamato "id" (residuo di una vecchia
+//          migrazione, con un valore diverso dal vero ID Firestore),
+//          quel valore vecchio sovrascriveva silenziosamente il vero ID
+//          per via dell'ordine dello spread. Cancellare quell'utente
+//          quindi cancellava "un documento con quell'ID" che non esiste
+//          — Firestore non dà errore in questo caso, sembra tutto
+//          riuscito, ma il vero documento resta intatto. Corretto
+//          invertendo l'ordine ({ ...d.data(), id: d.id }) in tutti e
+//          quattro i punti trovati, così il vero ID Firestore vince
+//          sempre. Riprova pure a cancellare gli utenti "orfani" già
+//          trovati: ora dovrebbe funzionare correttamente.
+// v5.467 — Su richiesta di Franco: la modale utente ora si chiude da
+//          sola 3 secondi dopo che l'admin ha inviato con successo
+//          un'e-mail di reset password, stesso schema già usato per il
+//          reset lato login. Resta aperta in caso di errore, così
+//          l'admin vede il messaggio e può riprovare.
+// v5.466 — Su segnalazione di Franco: il contatore reset password
+//          "tornava a 1" — causa: la funzione leggeva il valore attuale
+//          prima di incrementarlo, ma quella lettura richiede permessi
+//          admin (per proteggere il dato); per un utente non admin
+//          falliva silenziosamente, facendo ripartire il conteggio da
+//          zero ad ogni sua richiesta. Riscritta con l'incremento
+//          atomico di Firestore (increment()), che non ha bisogno di
+//          leggere prima — risolve il problema alla radice. Aggiunto
+//          l'import di increment(), non ancora esposto. Il contatore
+//          e-mail EmailJS non è stato toccato: è attivato solo
+//          dall'admin (che ha sempre i permessi di lettura), quindi non
+//          era davvero a rischio dello stesso bug.
+// v5.465 — Su segnalazione di Franco: "Segna come letto" nella tabella
+//          Eventi era testo fisso in italiano, senza condizionale di
+//          lingua (dimenticato nel giro di correzioni v5.443). Aggiunto
+//          l'equivalente inglese "Mark as read".
+// v5.464 — Su segnalazione di Franco: la busta dell'evento non veniva
+//          creata per un reset password richiesto dal form di login.
+//          Causa: la collezione eventi richiedeva permessi admin anche
+//          per la sola scrittura — stesso identico problema già visto
+//          per email_stats, contact_messages ed email_log in questa
+//          sessione, qui non ancora corretto. logEvent() falliva
+//          silenziosamente (catch senza avviso visibile) per chiunque
+//          non fosse loggato come admin. Corretto solo in
+//          firestore.rules (nessuna modifica app.js necessaria): la
+//          correzione è a livello di permessi, quindi risolve il
+//          problema per qualsiasi tipo di evento, non solo il reset
+//          password. Franco deve ripubblicare le regole di nuovo.
+// v5.463 — Su chiarimento di Franco: negli Eventi vanno tracciati solo i
+//          reset password richiesti da un utente per sé stesso (admin
+//          compreso), non quelli che l'admin fa per un altro utente —
+//          lo scopo era sapere "qualcuno ha chiesto un reset", non
+//          registrare ogni azione amministrativa. Rimossa la voce
+//          Eventi da adminResetPassword() (resta comunque tracciato nel
+//          log e-mail e nel contatore, solo non più negli Eventi).
+// v5.462 — Su chiarimento di Franco: le richieste di reset password ora
+//          compaiono anche in "E-mail inviate" (sezione Comunicazioni),
+//          con icona distinta 🔑 nella colonna Origine — restano invece
+//          separati i due CONTATORI (EmailJS 200/mese e Firebase
+//          Authentication), dato che hanno limiti diversi. Nuova
+//          funzione logPwdResetEmail(): scrive nel log e-mail senza il
+//          passaggio di pulizia di logEmail() (che richiede permessi
+//          admin), dato che la richiesta può arrivare anche da un
+//          utente non loggato. Messaggio del dettaglio corpo-mancante
+//          personalizzato per queste voci, dato che il contenuto non è
+//          "mancante" ma semplicemente mai visibile (lo genera
+//          Firebase, non noi). Aggiornata anche firestore.rules per
+//          email_log (creazione libera, lettura/modifica solo admin) —
+//          Franco deve ripubblicare le regole di nuovo.
+// v5.461 — Su richiesta di Franco: il campo e-mail del form di reset
+//          password si precompila con quanto già digitato nel form di
+//          login, per chi prova prima ad accedere e poi chiede il
+//          reset. Corretto anche il placeholder, prima sempre in
+//          italiano indipendentemente dalla lingua del sito (mancava
+//          l'attributo data-i18n-placeholder).
+// v5.460 — Su richiesta di Franco: pulsante "Visualizza" nella tabella
+//          Utenti, da viola a verde lime — non è davvero un'azione di
+//          modifica dati in tabella, quindi non rientrava nella
+//          categoria giusta secondo lo standard colori concordato.
+// v5.459 — Su segnalazione di Franco: l'admin vedeva ancora "I miei
+//          messaggi con lo staff" nel proprio profilo. Causa: il
+//          controllo saltava solo la CHIAMATA di renderMyMessages() per
+//          l'admin, ma non nascondeva esplicitamente la sezione — se
+//          era stata mostrata durante un'impersonificazione (giusto,
+//          per l'utente impersonato), tornando admin restava visibile
+//          con il contenuto residuo dell'ultimo utente impersonato,
+//          perché nulla la aggiornava più. Ora nascosta esplicitamente
+//          per l'admin.
+// v5.458 — Su richiesta di Franco: il contatore reset password spostato
+//          da Impostazioni a Risorse (è consumo di una risorsa, non
+//          un'impostazione), subito dopo il box e-mail EmailJS.
+//          Rinominati entrambi i box per chiarezza: "E-mail" →
+//          "E-mail inviate con EmailJS", "Reset password richiesti" →
+//          "E-mail inviate con Firebase Authentication (reset
+//          password)". Entrambe le lingue.
+// v5.457 — Su richiesta di Franco: contatore delle richieste di reset
+//          password (mese per mese, come quello e-mail), mostrato nel
+//          nuovo tab Impostazioni. È un conteggio NOSTRO — non il dato
+//          ufficiale di Firebase Auth, che il sito non può consultare —
+//          ma affidabile, perché ogni richiesta (sia dal form di login
+//          sia dal pannello admin) passa comunque dal nostro codice.
+//          Aggiunta la regola firestore.rules dedicata: a differenza del
+//          contatore e-mail, questo deve essere scrivibile anche da
+//          utenti non loggati, dato che il reset può partire dal form di
+//          login prima di autenticarsi — Franco deve ripubblicare le
+//          regole.
 // v5.456 — Su richiesta di Franco: nuovo tab admin "Impostazioni",
 //          posizionato subito dopo Comunicazioni. Contiene il box
 //          "Impostazioni Email" (indirizzo Reply-To + info credenziali
@@ -2171,6 +2612,51 @@ async function getEmailReplyTo() {
   return _cache.emailReplyTo;
 }
 
+// Valori di default per l'export Ebay (corriere/costo spedizione, tempo di
+// spedizione, Migliore Offerta) — salvati una volta, richiamati e mostrati
+// (modificabili) ogni volta al momento dell'export, così Franco può
+// cambiarli in autonomia senza bisogno di intervenire sul codice
+async function getEbaySettings() {
+  if (_cache.ebaySettings !== undefined) return _cache.ebaySettings;
+  try {
+    const docs = await fsGetAll('settings');
+    const found = docs.find(d => d.id === 'ebay_export');
+    _cache.ebaySettings = found || {};
+  } catch(e) { _cache.ebaySettings = {}; }
+  return _cache.ebaySettings;
+}
+
+async function loadEbaySettingsFields() {
+  const s = await getEbaySettings();
+  document.getElementById('ebay-settings-shipping-service').value = s.shippingService || '';
+  document.getElementById('ebay-settings-shipping-cost').value = s.shippingCost ?? '';
+  document.getElementById('ebay-settings-dispatch-days').value = s.dispatchDays || '';
+  document.getElementById('ebay-settings-best-offer').checked = s.bestOfferEnabled || false;
+  document.getElementById('ebay-settings-best-offer-accept-pct').value = s.bestOfferAcceptPct ?? '';
+  document.getElementById('ebay-settings-best-offer-min-pct').value = s.bestOfferMinPct ?? '';
+  toggleEbaySettingsBestOfferFields();
+}
+
+function toggleEbaySettingsBestOfferFields() {
+  const checked = document.getElementById('ebay-settings-best-offer').checked;
+  document.getElementById('ebay-settings-best-offer-fields').style.display = checked ? 'grid' : 'none';
+}
+
+async function saveEbaySettings() {
+  const settings = {
+    id: 'ebay_export',
+    shippingService: document.getElementById('ebay-settings-shipping-service').value.trim(),
+    shippingCost: parseFloat(document.getElementById('ebay-settings-shipping-cost').value) || 0,
+    dispatchDays: parseInt(document.getElementById('ebay-settings-dispatch-days').value) || 4,
+    bestOfferEnabled: document.getElementById('ebay-settings-best-offer').checked,
+    bestOfferAcceptPct: parseInt(document.getElementById('ebay-settings-best-offer-accept-pct').value) || null,
+    bestOfferMinPct: parseInt(document.getElementById('ebay-settings-best-offer-min-pct').value) || null,
+  };
+  await fsSave('settings', settings);
+  _cache.ebaySettings = settings;
+  toast(currentLang === 'it' ? '✅ Impostazioni Ebay salvate!' : '✅ Ebay settings saved!', 'success');
+}
+
 async function saveEmailReplyTo(value) {
   await fsSave('settings', { id: 'email', replyTo: value });
   _cache.emailReplyTo = value;
@@ -2260,7 +2746,7 @@ async function renderEmailLogInto(targetId, filterSource) {
     if (!logs.length) { el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Nessuna e-mail registrata.' : 'No emails recorded.') + '</p>'; return; }
     const display = logs.slice(0, 50);
     const note = logs.length > 50 ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrate le ultime 50 di ' + logs.length : 'Showing last 50 of ' + logs.length}</p>` : '';
-    const sourceLabel = (s) => s === 'newsletter' ? '📬 Newsletter' : '↩️ ' + (currentLang === 'it' ? 'Messaggio ricevuto' : 'Received message');
+    const sourceLabel = (s) => s === 'newsletter' ? '📬 Newsletter' : s === 'pwdreset' ? '🔑 ' + (currentLang === 'it' ? 'Reset password' : 'Password reset') : '↩️ ' + (currentLang === 'it' ? 'Messaggio ricevuto' : 'Received message');
     const showSourceCol = filterSource === 'all';
     const rows = display.map((e, idx) => {
       const rowId = targetId + '-row-' + idx;
@@ -2275,7 +2761,9 @@ async function renderEmailLogInto(targetId, filterSource) {
       const colspan = showSourceCol ? 4 : 3;
       const bodyHtml = e.body
         ? '<div style="white-space:pre-line;font-size:0.88rem;line-height:1.6;color:var(--text);padding:0.5rem 0;">' + e.body.replace(/[<]/g,'&lt;').replace(/[>]/g,'&gt;') + '</div>'
-        : '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Corpo non disponibile (email inviata prima di questa funzionalità)' : 'Body not available (email sent before this feature)') + '</p>';
+        : e.source === 'pwdreset'
+          ? '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Contenuto non disponibile: questa e-mail è generata e inviata direttamente da Firebase Authentication, non dal nostro sistema.' : 'Content not available: this e-mail is generated and sent directly by Firebase Authentication, not by our system.') + '</p>'
+          : '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Corpo non disponibile (email inviata prima di questa funzionalità)' : 'Body not available (email sent before this feature)') + '</p>';
       const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="' + colspan + '" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
         '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + e.to + '</div>' +
         '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + e.subject + '</div>' +
@@ -2509,7 +2997,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.456';
+const JS_VERSION = 'v5.519';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -2613,12 +3101,12 @@ function loadDemoData() {
 
 async function initFirebase() {
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-  const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove, increment } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
   const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, deleteUser: fbDeleteAuthUser, reauthenticateWithPopup, updatePassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
   fbApp = initializeApp(FIREBASE_CONFIG);
   db = getFirestore(fbApp);
   fbAuth = getAuth(fbApp);
-  window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove };
+  window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove, increment };
   window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, fbDeleteAuthUser, reauthenticateWithPopup, updatePassword };
   console.log('Firebase ready');
 
@@ -2685,7 +3173,7 @@ async function fsGetAll(collName) {
   try {
     const { collection, getDocs } = window._fb;
     const snap = await getDocs(collection(db, collName));
-    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const docs = snap.docs.map(d => ({ ...d.data(), id: d.id }));
     // Contatore letture giornaliero
     _trackReads(docs.length);
     return docs;
@@ -2699,7 +3187,7 @@ async function fsGet(collName, id) {
     const snap = await getDoc(doc(db, collName, id));
     _trackReads(1);
     if (!snap.exists()) return null;
-    return { id: snap.id, ...snap.data() };
+    return { ...snap.data(), id: snap.id };
   } catch(e) { console.error('fsGet', e); return null; }
 }
 
@@ -3174,7 +3662,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Score selected','catalog.haveall':'✅ Add all to list','catalog.havenone':'❌ Clear list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'⭐ Score selected','catalog.haveall':'✅ Add all to list','catalog.havenone':'❌ Clear list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -3222,14 +3710,14 @@ const i18n = {
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
-'form.fig.descPlaceholder':'Describe this sticker...',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Price (€)','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used',
 'profile.title':'My Profile','profile.owned':'In My List','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
 
 'pwd.current':'Current password',
-'pwd.resetDesc':'Enter your email address. If it\u2019s registered, you\u2019ll receive a link to reset your password.',
-'modal.resetPwd.title':'🔑 Reset password','modal.resetPwd.emailLabel':'E-mail address','modal.resetPwd.send':'Send reset link','modal.resetPwd.forgotEmail':'Forgot which e-mail you registered with too? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contact the administrator</a>.',
+'pwd.resetDesc':'Enter your email address.<br>If it\u2019s registered, you\u2019ll receive a link to reset your password.',
+'modal.resetPwd.title':'🔑 Reset your password','modal.resetPwd.emailLabel':'E-mail address','modal.resetPwd.emailPh':'your@email.com','modal.resetPwd.send':'Send me an e-mail with the reset link','modal.resetPwd.forgotEmail':'Forgot which e-mail you registered with too? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contact the administrator</a>.',
 'admin.series.title':'Manage Series','admin.figurines.title':'Manage Stickers',
 'admin.contacts.title':'Received Messages',
 'admin.users.title':'Registered Users',
@@ -3297,7 +3785,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio selezionati','catalog.haveall':'✅ Tutto in lista','catalog.havenone':'❌ Svuota lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'⭐ Punteggio selezionati','catalog.haveall':'✅ Tutto in lista','catalog.havenone':'❌ Svuota lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Torna all\'Inventario','detail.owned':'Nella mia lista','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -3310,8 +3798,8 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
-    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario di figurinesgorbions.it.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>• oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>• figurine presenti nella tua lista (serie non complete)<br>• figurine delle tue serie complete','wantlist.pageTitle':'Lista figurine (e non solo...)','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella mia lista</i>.','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la mia lista di figurine (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta la mia lista di figurine (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella mia lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail. Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Reimposta password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.send':'Invia link di reset','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...',
+    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario di figurinesgorbions.it.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>• oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>• figurine presenti nella tua lista (serie non complete)<br>• figurine delle tue serie complete','wantlist.pageTitle':'Lista figurine (e non solo...)','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella mia lista</i>.','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la mia lista di figurine (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta la mia lista di figurine (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella mia lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -3372,6 +3860,7 @@ let _realAdmin = null; // traccia l'admin originale durante l'impersonificazione
 let currentSeriesId = null;
 let _noPhotoFilter = false; // filtro figurine senza foto
 let _itemTypeFilter = 'base'; // 'base' | 'variation' | 'unofficialVariation' | 'change' | 'all' — sempre uno solo attivo
+let _ebayFilter = false; // indipendente da _itemTypeFilter: si combina in AND, non è esclusivo con "Solo base"/ecc.
 let editingSeriesImg = null;
 let editingFigImg = null;
 
@@ -3449,7 +3938,7 @@ async function _findUserByAuthUid(uid) {
     const snap = await getDocs(q);
     if (snap.empty) return null;
     const docSnap = snap.docs[0];
-    const user = { id: docSnap.id, ...docSnap.data() };
+    const user = { ...docSnap.data(), id: docSnap.id };
     // Aggiorna la cache solo se era già una lista realmente popolata (es. per
     // l'admin). Altrimenti NON creiamo qui una lista con un solo utente: 
     // verrebbe scambiata per l'elenco completo (è successo, ed è un bug
@@ -3889,7 +4378,8 @@ async function doChangePassword() {
 // ============================================================
 function openResetModal() {
   closeModal('auth-modal');
-  document.getElementById('reset-email-input').value = '';
+  const loginEmail = document.getElementById('login-email')?.value.trim() || '';
+  document.getElementById('reset-email-input').value = loginEmail;
   const fb = document.getElementById('reset-pwd-feedback');
   fb.style.display = 'none';
   document.getElementById('reset-pwd-modal').classList.remove('hidden');
@@ -3900,6 +4390,61 @@ function generateTempPassword() {
   let pwd = '';
   for (let i = 0; i < 8; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
   return pwd;
+}
+
+// Conta le richieste di reset password, mese per mese — stesso schema del
+// contatore e-mail EmailJS. È un conteggio NOSTRO, non quello reale di
+// Firebase Auth (che non è consultabile dal sito), ma è affidabile perché
+// ogni richiesta passa comunque dal nostro codice
+// Registra nel log e-mail (quello di "E-mail inviate") il fatto che
+// abbiamo chiesto a Firebase Auth di mandare un'e-mail di reset password
+// — non possiamo vederne il contenuto (lo manda Firebase, non noi), ma
+// tracciamo comunque che la richiesta è stata fatta. A differenza di
+// logEmail(), niente lettura di pulizia: la richiesta può arrivare anche
+// da un utente non loggato (dal form di login), che non ha i permessi
+// per leggere l'intera collezione email_log
+async function logPwdResetEmail(toEmail) {
+  try {
+    await fsSave('email_log', {
+      to: toEmail,
+      subject: currentLang === 'it' ? 'Reimposta la tua password' : 'Reset your password',
+      source: 'pwdreset',
+      body: '',
+      status: 'sent',
+      date: new Date().toISOString()
+    });
+  } catch(e) { console.error('logPwdResetEmail error', e); }
+}
+
+async function incrementPwdResetCounter() {
+  try {
+    const now = new Date();
+    const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    const { doc, setDoc, increment } = window._fb;
+    const ref = doc(db, 'pwd_reset_stats', 'counter');
+    // Incremento atomico: non serve leggere prima il valore attuale (cosa
+    // che falliva per gli utenti non admin, dato che la lettura di questa
+    // collezione è riservata all'admin — causava un azzeramento apparente
+    // del contatore ad ogni richiesta da un utente non admin)
+    await setDoc(ref, { total: increment(1), months: { [monthKey]: increment(1) } }, { merge: true });
+  } catch(e) { console.error('Pwd reset counter error', e); }
+}
+
+async function refreshPwdResetCountWidget() {
+  const el = document.getElementById('pwd-reset-count-display');
+  if (!el) return;
+  try {
+    const now = new Date();
+    const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    const { doc, getDoc } = window._fb;
+    const ref = doc(db, 'pwd_reset_stats', 'counter');
+    let count = 0;
+    try {
+      const snap = await getDoc(ref);
+      if (snap.exists()) { const data = snap.data(); count = (data.months && data.months[monthKey]) || 0; }
+    } catch(e) {}
+    el.textContent = count;
+  } catch(e) { console.error('Pwd reset widget error', e); }
 }
 
 async function doResetPassword() {
@@ -3920,10 +4465,10 @@ async function doResetPassword() {
 
   // Sempre lo stesso messaggio, indipendentemente dal fatto che l'indirizzo sia
   // registrato o meno (non riveliamo l'esistenza di un account a chi non è autenticato)
-  fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
-  fb.textContent = currentLang === 'it'
-    ? '✅ Se l\'indirizzo è registrato, riceverai un\'e-mail con le istruzioni per reimpostare la password.'
-    : '✅ If the address is registered, you\'ll receive an e-mail with instructions to reset your password.';
+  fb.style.cssText = 'display:block;background:rgba(77,184,255,0.1);border:1px solid rgba(77,184,255,0.3);color:#4db8ff;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
+  fb.innerHTML = currentLang === 'it'
+    ? 'Attendi la e-mail contenente il link per resettare la password.<br><br>ATTENZIONE! Controlla la cartella Spam/Posta indesiderata.<br><br>Se proprio non arriva, scrivici da <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:#4db8ff;text-decoration:underline;">Contatti</a> per chiedere un reset manuale.'
+    : 'Wait for the e-mail with the link to reset your password.<br><br>ATTENTION! Check your Spam/Junk folder.<br><br>If it really doesn\'t arrive, write to us from <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:#4db8ff;text-decoration:underline;">Contacts</a> to request a manual reset.';
   if (btn) btn.disabled = true;
 
   // Un evento per ogni richiesta (non sappiamo se poi viene davvero
@@ -3934,13 +4479,14 @@ async function doResetPassword() {
   try {
     const { sendPasswordResetEmail } = window._fbAuth;
     await sendPasswordResetEmail(fbAuth, email);
+    incrementPwdResetCounter();
+    logPwdResetEmail(email);
   } catch(err) {
     // Non mostriamo l'errore all'utente per non rivelare se l'indirizzo esiste (es. auth/user-not-found)
     console.warn('sendPasswordResetEmail', err.code || err.message);
   }
 
   setTimeout(() => {
-    closeModal('reset-pwd-modal');
     if (btn) btn.disabled = false;
   }, 3000);
 }
@@ -4066,6 +4612,51 @@ function toggleSeriesCountGroups() {
   if (gVar) gVar.style.display = hasVar ? '' : 'none';
   if (gUnoff) gUnoff.style.display = hasUnoff ? '' : 'none';
   if (gChg) gChg.style.display = hasChg ? '' : 'none';
+}
+
+// Mostra, per la serie attualmente aperta, quanti oggetti di ciascuna
+// tipologia (Figurine/Retro/Album/Altri oggetti) sono marcati "Ebay"
+function openSeriesEbayModal() {
+  const series = getData('series', []).find(s => s.id === currentSeriesId);
+  if (!series) return;
+  document.getElementById('series-ebay-modal-name').textContent = series.name;
+  const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId);
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: currentLang === 'it' ? 'Album' : 'Albums', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items' };
+  const sectionOrder = ['figurines', 'retros', 'albums', 'extras'];
+  const counters = document.getElementById('series-ebay-counters');
+  counters.innerHTML = sectionOrder.map(sec => {
+    const total = figs.filter(f => (f.section || 'figurines') === sec).length;
+    const forSaleCount = figs.filter(f => (f.section || 'figurines') === sec && f.forSale).length;
+    return `<div class="detail-row"><span class="detail-label">${sectionLabels[sec]}</span><span class="detail-value">${forSaleCount} ${currentLang === 'it' ? 'su' : 'of'} ${total}</span></div>`;
+  }).join('');
+
+  // Tabella con tutti gli oggetti marcati Ebay — le colonne cresceranno
+  // via via che aggiungiamo i campi che servono per l'export
+  const forSaleItems = figs.filter(f => f.forSale)
+    .sort((a,b) => sectionOrder.indexOf(a.section||'figurines') - sectionOrder.indexOf(b.section||'figurines') || (a.number||0) - (b.number||0));
+  const tableEl = document.getElementById('series-ebay-table');
+  if (!forSaleItems.length) {
+    tableEl.innerHTML = `<p style="color:var(--muted);font-style:italic;font-size:0.88rem;">${currentLang === 'it' ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
+  } else {
+    const rows = forSaleItems.map(f => `<tr>
+      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;color:var(--muted);white-space:nowrap;">${sectionLabels[f.section || 'figurines']}</td>
+      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;white-space:nowrap;">${f.number || '—'}</td>
+      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;">${f.name || ''}</td>
+      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;white-space:nowrap;">€${(f.price||0).toFixed(2)}</td>
+      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;text-align:center;white-space:nowrap;">${f.quantity||1}</td>
+      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;white-space:nowrap;">${f.condition === 'used' ? (currentLang === 'it' ? 'Usato' : 'Used') : (currentLang === 'it' ? 'Nuovo' : 'New')}</td>
+    </tr>`).join('');
+    tableEl.innerHTML = `<table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>
+      <th style="padding:0.4rem 0.6rem;text-align:left;">${currentLang === 'it' ? 'Tipo' : 'Type'}</th>
+      <th style="padding:0.4rem 0.6rem;text-align:left;">N.</th>
+      <th style="padding:0.4rem 0.6rem;text-align:left;">${currentLang === 'it' ? 'Nome' : 'Name'}</th>
+      <th style="padding:0.4rem 0.6rem;text-align:left;">${currentLang === 'it' ? 'Prezzo' : 'Price'}</th>
+      <th style="padding:0.4rem 0.6rem;text-align:left;">${currentLang === 'it' ? 'Q.tà' : 'Qty'}</th>
+      <th style="padding:0.4rem 0.6rem;text-align:left;">${currentLang === 'it' ? 'Condizione' : 'Condition'}</th>
+      </tr></thead><tbody>${rows}</tbody></table>`;
+  }
+
+  document.getElementById('series-ebay-modal').classList.remove('hidden');
 }
 
 function openAddSeriesModal(seriesId) {
@@ -4204,6 +4795,35 @@ async function deleteSeries(id) {
   toast((currentLang === 'it' ? 'Serie eliminata' : 'Series deleted'), 'success');
 }
 
+// Pulsante "X" per svuotare un campo di ricerca in un click, invece di
+// doverlo selezionare e cancellare a mano
+// Mostra quanti oggetti risultano dai filtri/ricerca attivi, sia in vista
+// a griglia sia in Vista tabellare — prima non veniva mostrato da nessuna
+// parte, né con né senza filtri applicati
+function updateItemsCountDisplay(count) {
+  const el = document.getElementById('items-count-display');
+  if (!el) return;
+  el.textContent = count === 1
+    ? (currentLang === 'it' ? '1 oggetto trovato' : '1 item found')
+    : (currentLang === 'it' ? `${count} oggetti trovati` : `${count} items found`);
+}
+
+function clearSearchField(inputId, renderFn) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  input.value = '';
+  toggleSearchClearBtn(inputId);
+  if (renderFn) renderFn();
+  input.focus();
+}
+
+function toggleSearchClearBtn(inputId) {
+  const input = document.getElementById(inputId);
+  const btn = document.getElementById(inputId + '-clear');
+  if (!input || !btn) return;
+  btn.style.display = input.value ? '' : 'none';
+}
+
 function renderCatalog() {
   const q = (document.getElementById('series-search')?.value || '').trim();
   if (q) { renderCatalogSearch(q); return; }
@@ -4272,13 +4892,49 @@ function renderCatalogSearch(q) {
         </div>
         ${r.figs.length ? `<span style="font-size:0.7rem;color:var(--muted);white-space:nowrap;margin-left:0.5rem;flex-shrink:0;">${r.figs.length} ${currentLang==='it'?'trovati':'found'}</span>` : ''}
       </div>`;
+    const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: currentLang === 'it' ? 'Album' : 'Albums', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items' };
+    const sectionOrder = ['figurines', 'retros', 'albums', 'extras'];
     const figsHTML = r.figs.length
-      ? `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
-          ${r.figs.map(f => `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
-            ${f.img ? `<img src="${cloudinaryUrl(f.img,'w_32,h_32,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : ''}
-            <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${f.name}</span>
-          </span>`).join('')}
-        </div>` : '';
+      ? sectionOrder.map(sec => {
+          let inSection = r.figs.filter(f => (f.section || 'figurines') === sec);
+          if (sec === 'figurines') {
+            const allFigs = getData('figurines', []);
+            const priority = f => f.isVariation ? 1 : f.isUnofficialVariation ? 2 : f.isChange ? 3 : 0;
+            const groupNumber = f => {
+              if (f.baseFigurineId) {
+                const base = allFigs.find(x => x.id === f.baseFigurineId);
+                if (base) return base.number ?? base.name;
+              }
+              return f.number ?? f.name;
+            };
+            inSection = [...inSection].sort((a, b) => {
+              const g = String(groupNumber(a)).localeCompare(String(groupNumber(b)), undefined, { numeric: true });
+              if (g !== 0) return g;
+              return priority(a) - priority(b);
+            });
+          }
+          if (!inSection.length) return '';
+          return `<div style="margin-bottom:0.4rem;">
+            <div style="font-size:0.9rem;color:#ff9d3d;font-weight:600;margin-bottom:0.25rem;">${sectionLabels[sec]}:</div>
+            <div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
+              ${inSection.map(f => {
+                const isVarOrChange = sec === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange);
+                const baseFig = (isVarOrChange && f.baseFigurineId) ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
+                const retroFig = (isVarOrChange && f.retroId) ? getData('figurines', []).find(x => x.id === f.retroId) : null;
+                const varLabel = f.isVariation ? (currentLang === 'it' ? 'Variazione ufficiale' : 'Official variation')
+                  : f.isUnofficialVariation ? (currentLang === 'it' ? 'Variazione non ufficiale' : 'Unofficial variation')
+                  : f.isChange ? (currentLang === 'it' ? 'Change' : 'Change') : '';
+                const smallImg = (url, title) => url ? `<img src="${cloudinaryUrl(url,'w_32,h_32,c_fit,q_auto,f_auto')}" title="${title}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);border:1px solid var(--border);">` : '';
+                return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
+                ${f.img ? `<img src="${cloudinaryUrl(f.img,'w_32,h_32,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : ''}
+                ${baseFig ? smallImg(baseFig.img, currentLang === 'it' ? 'Figurina base' : 'Base sticker') : ''}
+                ${retroFig ? smallImg(retroFig.img, currentLang === 'it' ? 'Retro associato' : 'Associated retro') : ''}
+                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">Change:</span> <span style="color:#4db8ff;">'+f.changeType+'</span></span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (retroFig ? ' - <span style="color:#4db8ff;">' + retroFig.name + '</span>' : '') + '</span>' : ''}</span>
+              </span>`;
+              }).join('')}
+            </div>
+          </div>`;
+        }).join('') : '';
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.6rem 0.75rem;margin-bottom:0.6rem;">
       ${seriesHeader}
       ${figsHTML}
@@ -4397,6 +5053,8 @@ function openSeriesDetail(seriesId) {
   document.getElementById('detail-desc').textContent = desc || '';
   const editSeriesBtn = document.getElementById('detail-edit-series-btn');
   if (editSeriesBtn) editSeriesBtn.style.display = currentUser?.isAdmin ? '' : 'none';
+  const ebaySeriesBtn = document.getElementById('detail-ebay-series-btn');
+  if (ebaySeriesBtn) ebaySeriesBtn.style.display = currentUser?.isAdmin ? '' : 'none';
 
   // Campi meta nella hero
   const metaEl = document.getElementById('detail-meta');
@@ -4450,8 +5108,6 @@ function updateSectionCounts() {
 function openSeriesSection(section) {
   _noPhotoFilter = false;
   _itemTypeFilter = 'base';
-  const noPhotoBtn = document.getElementById('no-photo-filter-btn');
-  if (noPhotoBtn) { noPhotoBtn.style.background=''; noPhotoBtn.style.borderColor=''; noPhotoBtn.style.color=''; noPhotoBtn.textContent = currentLang === 'it' ? '📷 Solo senza foto' : '📷 Missing photo only'; }
   currentSection = section;
   const si = document.getElementById('items-search'); if (si) { si.value = ''; si.placeholder = currentLang === 'it' ? 'Cerca figurine...' : 'Search stickers...'; }
   currentItemPage = 1;
@@ -4464,8 +5120,10 @@ function openSeriesSection(section) {
   document.getElementById('items-section').style.display = '';
   document.getElementById('items-section-title').textContent = getSectionLabel(section);
   document.getElementById('admin-add-item-btn').style.display = currentUser?.isAdmin ? '' : 'none';
+  const ebayBtnWrap = document.getElementById('admin-ebay-btn-wrap');
+  if (ebayBtnWrap) ebayBtnWrap.style.display = currentUser?.isAdmin ? 'flex' : 'none';
   const tableViewBtn = document.getElementById('user-table-view-btn');
-  if (tableViewBtn) tableViewBtn.style.display = currentUser ? '' : 'none';
+  if (tableViewBtn) tableViewBtn.style.display = currentUser ? 'flex' : 'none';
   // Show bulk score button only for figurines and retros sections
   const bulkScoreBtn = document.querySelector('#admin-add-item-btn .btn-secondary');
   if (bulkScoreBtn) bulkScoreBtn.style.display = (section === 'figurines' || section === 'retros') ? '' : 'none';
@@ -4684,6 +5342,11 @@ function toggleBaseFigurineGroup() {
   }
 }
 
+function toggleForSaleFields() {
+  const checked = document.getElementById('fig-for-sale-input').checked;
+  document.getElementById('fig-for-sale-fields').style.display = checked ? 'grid' : 'none';
+}
+
 function openAddItemModal(itemId) {
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
   document.getElementById('edit-fig-id').value = itemId || '';
@@ -4721,6 +5384,10 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-is-change-input').checked = f.isChange || false;
       populateBaseFigurineSelect(itemId, f.baseFigurineId);
       populateRetroSelect(f.retroId || null);
+      document.getElementById('fig-for-sale-input').checked = f.forSale || false;
+      document.getElementById('fig-price-input').value = f.price || '';
+      document.getElementById('fig-quantity-input').value = f.quantity || 1;
+      document.getElementById('fig-condition-input').value = f.condition || 'new';
       if (f.img) { const pr = document.getElementById('fig-img-preview'); pr.src = f.img; pr.style.display = 'block'; editingFigImg = f.img; }
     }
   } else {
@@ -4732,9 +5399,14 @@ function openAddItemModal(itemId) {
     document.getElementById('fig-is-change-input').checked = false;
     populateBaseFigurineSelect(null, null);
     populateRetroSelect(null);
+    document.getElementById('fig-for-sale-input').checked = false;
+    document.getElementById('fig-price-input').value = '';
+    document.getElementById('fig-quantity-input').value = 1;
+    document.getElementById('fig-condition-input').value = 'new';
     const rctSel = document.getElementById('fig-retro-change-type-input');
     if (rctSel) rctSel.value = '';
   }
+  toggleForSaleFields();
   toggleBaseFigurineGroup();
   if (itemId && existingItem?.changeType) {
     const sel = document.getElementById('fig-retro-change-type-input');
@@ -4936,23 +5608,16 @@ async function loadAllOwnedFromFirebase() {
   } catch(e) { console.error('loadAllOwned error', e); }
 }
 
-function toggleNoPhotoFilter() {
-  _noPhotoFilter = !_noPhotoFilter;
-  const btn = document.getElementById('no-photo-filter-btn');
-  if (btn) {
-    btn.style.background = _noPhotoFilter ? 'rgba(77,184,255,0.15)' : '';
-    btn.style.borderColor = _noPhotoFilter ? '#4db8ff' : '';
-    btn.style.color = _noPhotoFilter ? '#4db8ff' : '';
-    btn.textContent = _noPhotoFilter ? (currentLang === 'it' ? (currentSection === 'retros' ? '📷 Mostra tutti' : '📷 Mostra tutte') : '📷 Show all') : (currentLang === 'it' ? '📷 Solo senza foto' : '📷 Missing photo only');
-  }
-  try { renderItems(); } catch(e) { console.error('renderItems (toggleNoPhotoFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleNoPhotoFilter)', e); }
+function setNoPhotoFilter(val) {
+  _noPhotoFilter = val;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (setNoPhotoFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setNoPhotoFilter)', e); }
 }
 
 function renderItemTypeFilters() {
   const el = document.getElementById('items-filter-toggles');
   if (!el) return;
-  if (currentSection !== 'figurines' && currentSection !== 'retros') { el.innerHTML = ''; return; }
 
   const item = (key, label, icon, bold) => `
     <div style="display:flex;align-items:center;gap:0.4rem;">
@@ -4962,21 +5627,40 @@ function renderItemTypeFilters() {
 
   let html = '<div style="display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center;justify-content:space-between;">';
   html += '<div style="display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center;">';
+  html += item('all', currentSection === 'retros' ? (currentLang === 'it' ? 'Tutti' : 'All') : (currentLang === 'it' ? 'Tutte' : 'All'), '', true);
   if (currentSection === 'figurines') {
     html += item('base', currentLang === 'it' ? 'Solo base' : 'Base only', '⭐', true);
     html += item('variation', currentLang === 'it' ? 'Solo Variazioni ufficiali' : 'Official variations only', '🎨');
     html += item('unofficialVariation', currentLang === 'it' ? 'Solo Variazioni non ufficiali' : 'Unofficial variations only', '🎨');
     html += item('change', currentLang === 'it' ? 'Solo Change' : 'Change only', '🔄');
-  } else {
+  } else if (currentSection === 'retros') {
     html += item('base', currentLang === 'it' ? 'Solo base' : 'Base only', '⭐', true);
     html += item('change', currentLang === 'it' ? 'Solo Change' : 'Change only', '🔄');
     html += item('printError', currentLang === 'it' ? 'Solo Errori di stampa' : 'Print errors only', '🖨️');
   }
   html += '</div>';
-  html += item('all', currentSection === 'retros' ? (currentLang === 'it' ? 'Tutti' : 'All') : (currentLang === 'it' ? 'Tutte' : 'All'), '', true);
+  if (currentUser?.isAdmin) {
+    html += `
+      <div style="display:flex;align-items:center;gap:0.4rem;">
+        <button class="toggle-btn-blue ${_noPhotoFilter ? 'on' : ''}" onclick="setNoPhotoFilter(${!_noPhotoFilter})" title="${_noPhotoFilter ? (currentLang === 'it' ? 'Con e senza foto' : 'With and without photo') : (currentLang === 'it' ? 'Solo senza foto' : 'Missing photo only')}"></button>
+        <span style="font-size:0.82rem;color:var(--muted);">📷 ${_noPhotoFilter ? (currentLang === 'it' ? 'Con e senza foto' : 'With and without photo') : (currentLang === 'it' ? 'Solo senza foto' : 'Missing photo only')}</span>
+      </div>`;
+    html += `
+    <div style="display:flex;align-items:center;gap:0.4rem;">
+      <button class="toggle-btn-blue ${_ebayFilter ? 'on' : ''}" onclick="toggleEbayFilter()" title="Ebay"></button>
+      <span style="font-size:0.82rem;color:var(--muted);">🏷️ Ebay</span>
+    </div>`;
+  }
   html += '</div>';
 
   el.innerHTML = html;
+}
+
+function toggleEbayFilter() {
+  _ebayFilter = !_ebayFilter;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleEbayFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleEbayFilter)', e); }
 }
 
 function toggleItemTypeFilter(type) {
@@ -4991,6 +5675,81 @@ function toggleItemTypeFilter(type) {
 // testuale, filtro "solo senza foto", filtro tipo). Funzione condivisa per
 // evitare che i tre punti (griglia, tabella, Punteggio selezionati)
 // finiscano per applicare criteri leggermente diversi tra loro.
+// Applica una modifica a tutte le figurine attualmente filtrate con UNA
+// SOLA scrittura del documento serie (invece di una scrittura separata per
+// ogni figurina) — dato che il documento serie viene comunque riscritto
+// per intero ad ogni modifica (Firestore non permette di sostituire un
+// singolo elemento di un array per contenuto), fare 160 scritture in
+// sequenza è sia lento sia a rischio: se anche una sola fallisce a metà
+// (rete, dimensione del documento), il ciclo si ferma lì senza errore
+// visibile, lasciando le figurine successive non modificate — esattamente
+// il bug segnalato da Franco
+async function _applyBulkFigurineUpdate(updateFn, confirmMsg, successMsg, skipConfirm) {
+  const items = getCurrentlyFilteredItems();
+  if (!items.length) { toast(currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali' : 'No items found with the current filters', 'error'); return false; }
+  if (!skipConfirm && !confirm(confirmMsg(items.length))) return false;
+  const seriesList = getData('series', []);
+  const sIdx = seriesList.findIndex(s => s.id === currentSeriesId);
+  if (sIdx < 0) { toast(currentLang === 'it' ? 'Serie non trovata' : 'Series not found', 'error'); return false; }
+  const series = seriesList[sIdx];
+  series.items = series.items || [];
+  const targetIds = new Set(items.map(i => i.id));
+  series.items.forEach((it, idx) => {
+    if (targetIds.has(it.id)) series.items[idx] = updateFn(it);
+  });
+  _recomputeSeriesCounts(series);
+  try {
+    await fsSave('series', series);
+  } catch(e) {
+    toast((currentLang === 'it' ? '❌ Salvataggio fallito, riprova: ' : '❌ Save failed, please retry: ') + e.message, 'error');
+    return false;
+  }
+  let figs = getData('figurines', []);
+  targetIds.forEach(id => {
+    const flatIdx = figs.findIndex(x => x.id === id);
+    const updated = series.items.find(x => x.id === id);
+    if (flatIdx >= 0 && updated) figs[flatIdx] = updated;
+  });
+  _cache.figurines = figs;
+  renderItems();
+  if (bulkEditActive) renderBulkEditView();
+  toast(successMsg(items.length), 'success');
+  return true;
+}
+
+function openEbayBulkModal() {
+  const items = getCurrentlyFilteredItems();
+  if (!items.length) { toast(currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali' : 'No items found with the current filters', 'error'); return; }
+  document.getElementById('ebay-bulk-modal-desc').textContent = currentLang === 'it'
+    ? `I valori inseriti verranno applicati a tutti i ${items.length} oggetti attualmente visualizzati.`
+    : `These values will be applied to all ${items.length} currently displayed items.`;
+  document.getElementById('ebay-bulk-price').value = '';
+  document.getElementById('ebay-bulk-quantity').value = 1;
+  document.getElementById('ebay-bulk-condition').value = 'new';
+  document.getElementById('ebay-bulk-modal').classList.remove('hidden');
+}
+
+async function confirmEbayBulkApply() {
+  const price = parseFloat(document.getElementById('ebay-bulk-price').value) || 0;
+  const quantity = parseInt(document.getElementById('ebay-bulk-quantity').value) || 1;
+  const condition = document.getElementById('ebay-bulk-condition').value;
+  const ok = await _applyBulkFigurineUpdate(
+    it => ({ ...it, forSale: true, price, quantity, condition }),
+    null,
+    n => currentLang === 'it' ? `✅ ${n} oggetti aggiornati per Ebay` : `✅ ${n} items updated for Ebay`,
+    true
+  );
+  if (ok) closeModal('ebay-bulk-modal');
+}
+
+async function unmarkFilteredForSale() {
+  await _applyBulkFigurineUpdate(
+    it => ({ ...it, forSale: false, price: null, quantity: null, condition: null }),
+    n => currentLang === 'it' ? `Togliere "Ebay" a tutti i ${n} oggetti attualmente visualizzati?` : `Remove "Ebay" from all ${n} currently displayed items?`,
+    n => currentLang === 'it' ? `✅ "Ebay" tolto da ${n} oggetti` : `✅ "Ebay" removed from ${n} items`
+  );
+}
+
 function getCurrentlyFilteredItems() {
   const searchQ = (document.getElementById('items-search')?.value || '').toLowerCase().trim();
   return getData('figurines', []).filter(f => {
@@ -5012,6 +5771,7 @@ function getCurrentlyFilteredItems() {
         (_itemTypeFilter === 'printError' && isPrintError);
       if (!matchesType) return false;
     }
+    if (_ebayFilter && !f.forSale) return false;
     if (!searchQ) return true;
     return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ);
   });
@@ -5082,6 +5842,7 @@ function renderItems() {
     if (!b.number) return -1;
     return a.number - b.number;
   });
+  updateItemsCountDisplay(allItems.length);
   const owned = getOwned();
   const pw = document.getElementById('detail-progress-wrap');
   // Show bulk owned buttons for figurines and retros sections when logged in
@@ -5315,6 +6076,10 @@ async function _saveFigurineInner() {
   const isChange = document.getElementById('fig-is-change-input')?.checked || false;
   const baseFigurineId = document.getElementById('fig-base-figurine-input')?.value || null;
   const retroId = document.getElementById('fig-retro-input')?.value || null;
+  const forSale = document.getElementById('fig-for-sale-input')?.checked || false;
+  const price = forSale ? (parseFloat(document.getElementById('fig-price-input').value) || 0) : null;
+  const quantity = forSale ? (parseInt(document.getElementById('fig-quantity-input').value) || 1) : null;
+  const condition = forSale ? document.getElementById('fig-condition-input').value : null;
   const isRetrosSection = currentSection === 'retros';
   const changeType = (isRetrosSection && isChange) ? (document.getElementById('fig-retro-change-type-input')?.value || null) : null;
   const isVarOrChgSection = isVariation || isUnofficialVariation || isChange;
@@ -5369,12 +6134,12 @@ async function _saveFigurineInner() {
     if (editId) {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || figs[idx].img };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || figs[idx].img, forSale, price, quantity, condition };
         await fsSave('figurines', figs[idx]);
         _cache.figurines = figs;
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || null };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || null, forSale, price, quantity, condition };
       const saved = await fsSave('figurines', newF);
     }
   } catch(e) {
@@ -5591,7 +6356,7 @@ async function loadMyContactMessages() {
     const { collection: col, query: qf, where: wf, getDocs: gd } = window._fb;
     const q = qf(col(db, 'contact_messages'), wf('email', '==', currentUser.email));
     const snap = await gd(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    return snap.docs.map(d => ({ ...d.data(), id: d.id }));
   } catch(e) {
     console.error('loadMyContactMessages', e);
     return [];
@@ -5665,7 +6430,12 @@ function renderProfile() {
   // Show anon toggle (only for non-admin users)
   const anonWrap = document.getElementById('profile-anon-wrap');
   if (anonWrap) anonWrap.style.display = currentUser.isAdmin ? 'none' : '';
-  if (!currentUser.isAdmin) renderMyMessages();
+  if (currentUser.isAdmin) {
+    const myMsgsWrap = document.getElementById('profile-my-messages');
+    if (myMsgsWrap) myMsgsWrap.style.display = 'none';
+  } else {
+    renderMyMessages();
+  }
   // L'autocancellazione account non deve mai essere visibile all'admin, né
   // per il proprio account né per nessun utente durante l'impersonificazione
   const dangerZone = document.getElementById('profile-danger-zone');
@@ -5764,7 +6534,7 @@ function adminTab(tab) {
   if (tab === 'foto') renderAdminFoto();
   if (tab === 'errori') renderAdminErrori();
   if (tab === 'email') { renderEmailLog(); refreshEmailCountWidgets(); }
-  if (tab === 'settings') { loadReplyToField(); }
+  if (tab === 'settings') { loadReplyToField(); loadEbaySettingsFields(); }
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 function renderAdminSeries() {
@@ -6021,7 +6791,7 @@ function renderAdminUsers() {
     <th style="cursor:pointer;" onclick="sortAdminUsers('lastLogin')">${(currentLang === 'it') ? 'Ultima login' : 'Last login'}${arrow('lastLogin')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('joined')">${(currentLang === 'it') ? 'Iscritto dal' : 'Member since'}${arrow('joined')}</th></tr></thead><tbody>
     ${users.map(u => `<tr>
-      <td><div style="display:flex;gap:0.3rem;"><button class="tbl-btn tbl-btn-edit" onclick="openEditUserModal('${u.id}')">${currentLang === 'it' ? 'Visualizza' : 'View'}</button>${!u.isAdmin ? `<button class="tbl-btn" style="background:rgba(255,180,0,0.15);border-color:rgba(255,180,0,0.4);color:#ffb400;" onclick="impersonateUser('${u.id}')">🎭 ${(currentLang === 'it') ? 'Impersona' : 'Impersonate'}</button>` : ''}</div></td>
+      <td><div style="display:flex;gap:0.3rem;"><button class="tbl-btn" style="background:rgba(181,255,46,0.12);border-color:rgba(181,255,46,0.4);color:var(--accent);" onclick="openEditUserModal('${u.id}')">${currentLang === 'it' ? 'Visualizza' : 'View'}</button>${!u.isAdmin ? `<button class="tbl-btn" style="background:rgba(255,180,0,0.15);border-color:rgba(255,180,0,0.4);color:#ffb400;" onclick="impersonateUser('${u.id}')">🎭 ${(currentLang === 'it') ? 'Impersona' : 'Impersonate'}</button>` : ''}</div></td>
       <td>
         <div style="display:flex;align-items:center;gap:0.4rem;">
           <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : (u.username || '?')[0].toUpperCase()}</div>
@@ -6227,6 +6997,7 @@ async function refreshEmailCountWidgets() {
 async function renderAdminRisorse() {
   // Email counter — reads from same source as Mail tab
   await refreshEmailCountWidgets();
+  await refreshPwdResetCountWidget();
 
   // Firebase doc count
   try {
@@ -6320,7 +7091,7 @@ function renderAdminEventi() {
     <td style="white-space:nowrap;font-size:0.78rem;">${new Date(e.date).toLocaleDateString('it-IT')} ${new Date(e.date).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}</td>
     <td>${typeIcon[e.type] || '📌'}</td>
     <td>${e.description}</td>
-    <td><button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : 'Segna come letto'}</button></td>
+    <td><button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : (currentLang === 'it' ? 'Segna come letto' : 'Mark as read')}</button></td>
   </tr>`).join('')}
   </tbody></table>`;
 }
@@ -6545,6 +7316,12 @@ function openFigDetail(figId) {
     rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Punteggio' : 'Score'}</span><span class="detail-value">${f.score > 0 ? '⭐ ' + f.score + ' pt' : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non assegnato' : 'not assigned') + '</span>'}</span></div>`);
   }
 
+  // Da vendere (solo admin)
+  if (isAdmin) {
+    const conditionLabel = f.condition === 'used' ? (currentLang === 'it' ? 'Usato' : 'Used') : (currentLang === 'it' ? 'Nuovo' : 'New');
+    rows.push(`<div class="detail-row"><span class="detail-label">🏷️ Ebay</span><span class="detail-value">${f.forSale ? `<span style="color:var(--accent);">✓ €${(f.price||0).toFixed(2)} · ${currentLang === 'it' ? 'Q.tà' : 'Qty'} ${f.quantity||1} · ${conditionLabel}</span>` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'no' : 'no') + '</span>'}</span></div>`);
+  }
+
   // Flag Variazione ufficiale / non ufficiale / Change (solo se attivi, come frase)
   if (f.isVariation) {
     rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${currentLang === 'it' ? 'Questa figurina è una variazione ufficiale' : 'This sticker is an official variation'}</span></div>`);
@@ -6723,6 +7500,11 @@ function switchLinkedFigTab(key) {
 
 function editItemFromDetail(itemId) {
   switchToEditMode(itemId);
+}
+
+function toggleFeForSaleFields() {
+  const checked = document.getElementById('fe-for-sale').checked;
+  document.getElementById('fe-for-sale-fields').style.display = checked ? 'grid' : 'none';
 }
 
 function toggleFeBaseFigurineGroup() {
@@ -6918,6 +7700,19 @@ function switchToEditMode(figId) {
     '</div>';
   }
 
+  // Vendita (Da vendere / Prezzo / Quantità / Condizione)
+  html += '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin:0.75rem 0;">' +
+    '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;font-weight:600;margin-bottom:' + (f.forSale ? '0.6rem' : '0') + ';">' +
+    '<input type="checkbox" id="fe-for-sale" onchange="toggleFeForSaleFields()" ' + (f.forSale ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
+    '<span>🏷️ Ebay</span></label>' +
+    '<div id="fe-for-sale-fields" style="display:' + (f.forSale ? 'grid' : 'none') + ';grid-template-columns:1fr 1fr 1fr;gap:0.6rem;">' +
+    '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Prezzo (€)':'Price (€)') + '</label><input class="form-input" type="number" id="fe-price" value="' + (f.price||'') + '" min="0" step="0.01" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
+    '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Quantità':'Quantity') + '</label><input class="form-input" type="number" id="fe-quantity" value="' + (f.quantity||1) + '" min="1" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
+    '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Condizione':'Condition') + '</label><select class="form-input" id="fe-condition" style="padding:0.3rem 0.5rem;font-size:0.85rem;">' +
+    '<option value="new"' + (f.condition!=='used'?' selected':'') + '>' + (currentLang==='it'?'Nuovo':'New') + '</option>' +
+    '<option value="used"' + (f.condition==='used'?' selected':'') + '>' + (currentLang==='it'?'Usato':'Used') + '</option>' +
+    '</select></div></div></div>';
+
   // Descrizione (in fondo, campo più grande)
   html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang==='it'?'Descrizione':'Description') + '</span><span class="detail-value"><textarea id="fe-desc" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + (f.desc||'') + '</textarea></span></div>';
 
@@ -7102,6 +7897,10 @@ async function saveFigFromDetail(figId) {
     isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
     isChange: document.getElementById('fe-is-change')?.checked || false,
     changeType: document.getElementById('fe-retro-change-type')?.value || null,
+    forSale: document.getElementById('fe-for-sale')?.checked || false,
+    price: document.getElementById('fe-for-sale')?.checked ? (parseFloat(document.getElementById('fe-price').value) || 0) : null,
+    quantity: document.getElementById('fe-for-sale')?.checked ? (parseInt(document.getElementById('fe-quantity').value) || 1) : null,
+    condition: document.getElementById('fe-for-sale')?.checked ? document.getElementById('fe-condition').value : null,
   };
 
   if ([updates.isVariation, updates.isUnofficialVariation, updates.isChange].filter(Boolean).length > 1) {
@@ -7336,7 +8135,7 @@ async function deleteUserFromModal() {
   const users = getData('users', []);
   const user = users.find(u => u.id === userId);
   if (!user) return;
-  if (!confirm('Eliminare definitivamente l\'utente ' + user.username + '?')) return;
+  if (!confirm('Eliminare definitivamente l\'utente ' + user.username + '?\n\n⚠️ Promemoria: dopo la cancellazione, ricordati di eliminare a mano anche il suo account da Firebase Console → Authentication — non possiamo farlo automaticamente dal sito.')) return;
   await deleteUser(userId);
   closeModal('edit-user-modal');
 }
@@ -7391,11 +8190,13 @@ async function adminResetPassword() {
   try {
     const { sendPasswordResetEmail } = window._fbAuth;
     await sendPasswordResetEmail(fbAuth, user.email);
-    logEvent('reset_pwd', 'Reset password richiesto da admin per: ' + user.username);
+    incrementPwdResetCounter();
+    logPwdResetEmail(user.email);
     if (fb) {
       fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;margin-top:0.5rem;';
       fb.textContent = '✅ E-mail di reset inviata a ' + user.email;
     }
+    setTimeout(() => closeModal('edit-user-modal'), 3000);
   } catch(err) {
     console.error('adminResetPassword', err);
     if (fb) {
@@ -7434,7 +8235,7 @@ async function deleteUser(userId) {
   if (_cache.public_profiles) _cache.public_profiles = _cache.public_profiles.filter(p => p.id !== userId);
   if (_cache.ownedMap) delete _cache.ownedMap[userId];
   renderAdminUsers();
-  toast(currentLang === 'it' ? 'Utente eliminato' : 'User deleted', 'success');
+  toast(currentLang === 'it' ? '✅ Utente eliminato dal sito.<br><span style="font-size:0.85em;opacity:0.85;">⚠️ Ricordati di eliminarlo anche da Firebase Console → Authentication.</span>' : '✅ User deleted from the site.<br><span style="font-size:0.85em;opacity:0.85;">⚠️ Remember to also delete it from Firebase Console → Authentication.</span>', 'success', null, 7000);
 }
 
 // ============================================================
@@ -7504,7 +8305,7 @@ function updateOwnedCounter() {
 //  MODAL HELPERS
 // ============================================================
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
-const NO_CLICK_CLOSE = ['auth-modal', 'change-pwd-modal', 'reset-pwd-modal', 'add-series-modal', 'add-fig-modal'];
+const NO_CLICK_CLOSE = ['auth-modal', 'change-pwd-modal', 'reset-pwd-modal', 'add-series-modal', 'add-fig-modal', 'ebay-bulk-modal'];
 document.querySelectorAll('.modal-overlay').forEach(m => {
   if (!NO_CLICK_CLOSE.includes(m.id)) {
     m.addEventListener('click', e => { if (e.target === m) m.classList.add('hidden'); });
@@ -8276,7 +9077,7 @@ function renderAdminFoto() {
           ${currentLang==='it'?'✨ Rimuovi sfondo automaticamente (AI locale)':'✨ Remove background automatically (local AI)'}
         </label>
         <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;margin-bottom:0.75rem;">
-          <input type="checkbox" id="foto-overwrite" checked style="width:auto;">
+          <input type="checkbox" id="foto-overwrite" style="width:auto;">
           ${currentLang==='it'?'Sovrascrivi foto già presenti':'Overwrite existing photos'}
         </label>
 
@@ -8323,7 +9124,7 @@ function renderAdminFoto() {
         ${currentLang==='it'?'✨ Rimuovi sfondo automaticamente (AI locale)':'✨ Remove background automatically (local AI)'}
       </label>
       <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;margin-bottom:0.75rem;">
-        <input type="checkbox" id="fotonn-overwrite" checked style="width:auto;">
+        <input type="checkbox" id="fotonn-overwrite" style="width:auto;">
         ${currentLang==='it'?'Sovrascrivi foto già presenti':'Overwrite existing photos'}
       </label>
 
@@ -8654,12 +9455,6 @@ function renderAll() {
         ? (currentLang === 'it' ? '🔲 Vista griglia' : '🔲 Grid view')
         : (currentLang === 'it' ? '📋 Vista tabellare' : '📋 Table view');
     }
-    const noPhotoBtn2 = document.getElementById('no-photo-filter-btn');
-    if (noPhotoBtn2) {
-      noPhotoBtn2.textContent = _noPhotoFilter
-        ? (currentLang === 'it' ? (currentSection === 'retros' ? '📷 Mostra tutti' : '📷 Mostra tutte') : '📷 Show all')
-        : (currentLang === 'it' ? '📷 Solo senza foto' : '📷 Missing photo only');
-    }
     renderItems();
     // Re-trigger WIP banner
     if (currentSection && currentSeriesId) {
@@ -8894,7 +9689,22 @@ function renderBulkEditView() {
   const currentSeriesHasSizes = currentSeries?.hasSizes || false;
   const currentSeriesHasSubseries = currentSeries?.hasSubseries || false;
   const allItems = getCurrentlyFilteredItems()
-    .sort((a,b) => { if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||''); if (!a.number) return 1; if (!b.number) return -1; return a.number - b.number; });
+    .sort((a,b) => {
+      if (currentSection === 'retros') {
+        const catCmp = (a.category||'').localeCompare(b.category||'', 'it');
+        if (catCmp !== 0) return catCmp;
+        const subcatCmp = (a.subcategory||'').localeCompare(b.subcategory||'', 'it');
+        if (subcatCmp !== 0) return subcatCmp;
+        const nameCmp = (a.name||'').localeCompare(b.name||'', 'it');
+        if (nameCmp !== 0) return nameCmp;
+        return (a.changeType||'').localeCompare(b.changeType||'', 'it');
+      }
+      if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||'');
+      if (!a.number) return 1;
+      if (!b.number) return -1;
+      return a.number - b.number;
+    });
+  updateItemsCountDisplay(allItems.length);
 
   if (!allItems.length) { bulkView.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali.' : 'No items found with the current filters.'}</p>`; return; }
 
@@ -8914,6 +9724,7 @@ function renderBulkEditView() {
           ${currentSection === 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Categoria</th><th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottocategoria</th>' : ''}
           ${currentSection !== 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>' : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Nome</th>
+          ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</th>` : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
           ${currentSeriesHasSizes ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
           ${isAdmin ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>` : `
@@ -8930,7 +9741,8 @@ function renderBulkEditView() {
           ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
           ${currentSection === 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
           ${currentSection !== 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? '#'+f.number : '')) : ''}
-          ${isAdmin ? `<td style="padding:4px;width:99%;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:480px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.name, 300)}
+          ${isAdmin ? `<td style="padding:4px;width:99%;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:340px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.name, 300)}
+          ${currentSection === 'retros' ? (isAdmin ? `<td style="padding:4px;"><input data-field="changeType" data-id="${f.id}" value="${f.changeType||''}" style="width:140px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.changeType, 140)) : ''}
           ${isAdmin ? `<td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0)}
           ${currentSeriesHasSizes ? (isAdmin ? '<td style="padding:4px;"><input data-field="size" data-id="'+f.id+'" value="'+(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.size)) : ''}
           ${isAdmin ? `<td style="padding:4px;"><button class="tbl-btn tbl-btn-edit" onclick="openAddItemModal('${f.id}')">&#9998;</button></td>` : `
