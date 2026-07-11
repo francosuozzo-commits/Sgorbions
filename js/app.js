@@ -1,6 +1,23 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.586 — Bug segnalato da Franco: nel tab Utenti, la data di ultima
+//          login risultava vuota per un utente appena registrato.
+//          Causa trovata: in ENTRAMBI i flussi di registrazione
+//          (email/password e Google), l'oggetto newUser non includeva
+//          affatto il campo lastLogin al momento della creazione —
+//          veniva impostato solo ai login SUCCESSIVI, mai al primo
+//          accesso implicito dopo la registrazione. Corretto
+//          aggiungendo lastLogin: new Date().toISOString() a entrambi
+//          gli oggetti newUser. NOTA: questo fix vale solo per le
+//          nuove registrazioni da ora in poi — l'utente di oggi
+//          registrato prima di questo fix avrà comunque la data vuota,
+//          va corretta a mano se serve (Admin → Utenti → Modifica).
+// v5.585 — Su richiesta di Franco: i box "Classifica" ed "Ebay" ora
+//          affiancati sulla stessa riga (ciascuno con il proprio
+//          titoletto sopra), invece che impilati verticalmente —
+//          rimosso il vecchio contenitore bulk-controls-row, non più
+//          necessario con la nuova struttura a due colonne.
 // v5.584 — Su richiesta di Franco: i titoli dei tre box a spessore fine
 //          ("La mia lista", "Ebay", "Classifica") ora bianchi
 //          (var(--text)), erano grigio muted (var(--muted)).
@@ -3640,7 +3657,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.584';
+const JS_VERSION = 'v5.586';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -4745,7 +4762,7 @@ async function signInWithGoogle() {
     // Primo accesso con questo account Google: creo un nuovo utente
     const baseName = cred.user.displayName || (cred.user.email || '').split('@')[0];
     const username = _generateUniqueUsername(baseName);
-    const newUser = { id: Date.now().toString(), authUid: cred.user.uid, username, email: cred.user.email || '', isAdmin: false, joined: new Date().toISOString(), nationalityCode: '', nationalityName: '', ageConfirmed16: true, ageConfirmedAt: new Date().toISOString() };
+    const newUser = { id: Date.now().toString(), authUid: cred.user.uid, username, email: cred.user.email || '', isAdmin: false, joined: new Date().toISOString(), lastLogin: new Date().toISOString(), nationalityCode: '', nationalityName: '', ageConfirmed16: true, ageConfirmedAt: new Date().toISOString() };
     const saved = await fsSave('users', newUser);
     _cache.users = _cache.users || [];
     _cache.users.push(saved);
@@ -4814,7 +4831,7 @@ async function doRegister() {
     if (waitNotice) waitNotice.style.display = 'none';
     return;
   }
-  const newUser = { id: Date.now().toString(), authUid, username: u, email: e, isAdmin: false, joined: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName, ageConfirmed16: true, ageConfirmedAt: new Date().toISOString() };
+  const newUser = { id: Date.now().toString(), authUid, username: u, email: e, isAdmin: false, joined: new Date().toISOString(), lastLogin: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName, ageConfirmed16: true, ageConfirmedAt: new Date().toISOString() };
   const saved = await fsSave('users', newUser);
   _cache.users = _cache.users || [];
   _cache.users.push(saved);
