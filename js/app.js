@@ -1,6 +1,67 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.525 — Su richiesta di Franco: dopo aver corretto un collegamento
+//          rotto dal tab Errori (pulsante "Correggi"), chiudendo la
+//          scheda (con Salva, con Elimina, o col pulsante ✕ senza
+//          salvare) si torna ora automaticamente su Admin → Errori,
+//          invece di restare sulla pagina della serie. Nuovo flag
+//          _returnToErroriAfterSave, nuova funzione closeFigModal()
+//          (usata dal pulsante ✕, gestisce anche la chiusura senza
+//          salvare).
+// v5.524 — Su richiesta di Franco: il conteggio "Collegamenti Retro
+//          rotti" ora esposto subito come numero, stesso stile già
+//          usato per "Figurine senza numero" — niente più pulsante
+//          manuale "Controlla ora" (rimossa scanBrokenRetroLinks(),
+//          calcolo integrato direttamente in renderAdminErrori()). Il
+//          dettaglio si apre con una tendina a triangolo (riusa
+//          toggleImportSection(), già generica), elenco ordinato per
+//          Serie → Numero/Nome (numerico, non alfabetico) → Tipo
+//          (Variazione ufficiale, non ufficiale, Change). Verificato
+//          con una simulazione l'ordinamento prima di consegnare.
+// v5.523 — Su richiesta di Franco: nuova sezione diagnostica "🔗
+//          Collegamenti Retro rotti" nel tab Errori, che elenca le
+//          variazioni/change il cui retroId non corrisponde a nessuna
+//          figurina esistente — probabile residuo della vecchia
+//          migrazione al formato per-serie, fatta prima della
+//          correzione del bug dell'ordine dello spread in
+//          fsGetAll()/fsGet() (v5.468): quel fix impedisce il problema
+//          da ora in poi, ma non ripara i dati già corrotti in
+//          precedenza. Ogni riga ha un pulsante "Correggi" che apre
+//          direttamente la scheda dell'oggetto nella serie giusta, per
+//          ri-selezionare a mano il Retro corretto — riparazione
+//          manuale, più sicura di un tentativo automatico sui dati
+//          reali. Verificato con una simulazione la logica di
+//          rilevamento prima di consegnare.
+// v5.522 — Su richiesta di Franco: rimossa la parola "vendere" dal sito
+//          — "Da vendere [su Ebay]" diventa semplicemente "Ebay" in
+//          tutti e tre i punti (checkbox nella scheda di modifica,
+//          checkbox nella modifica rapida, etichetta nella vista di
+//          sola lettura). Lasciata invariata la frase della Privacy
+//          Policy ("Non vendiamo... i tuoi dati") — contesto
+//          completamente diverso (dati personali, non figurine),
+//          terminologia legale standard dove "Ebay" non avrebbe senso.
+// v5.521 — Su segnalazione di Franco: il tab Ebay c'era solo nelle due
+//          form di modifica, non nella vista di sola lettura (prima di
+//          premere Modifica). Aggiunto anche lì (solo per l'admin, dato
+//          il contenuto sensibile): tab "Generale"/"Ebay", con la foto
+//          Ebay in sola lettura (solo Figurine/Retro) e le info Da
+//          vendere/Prezzo/Quantità/Condizione. Pulsanti Modifica/
+//          Elimina/Segnala errore tenuti fuori da entrambi i tab,
+//          sempre visibili. Nuova funzione switchFigDetailTab().
+// v5.520 — Su richiesta di Franco: nuova sezione a tab "📋 Generale" /
+//          "🏷️ Ebay" in ENTRAMBE le form di modifica (quella classica
+//          "+ Aggiungi" e la modifica rapida dal dettaglio). Il tab
+//          Ebay ora contiene: il blocco Da vendere/Prezzo/Quantità/
+//          Condizione (spostato lì), più un nuovo campo foto dedicato
+//          (nuovo campo dati "ebayImg", indipendente dalla foto
+//          catalogo esistente) — visibile solo per Figurine e Retro,
+//          non per Album/Altri oggetti. Nuove funzioni:
+//          switchFigModalTab()/switchFeTab() (cambio tab),
+//          handleFigEbayImg()/handleFeEbayImg() (caricamento foto,
+//          stesso schema differito già usato per la foto principale —
+//          caricata su Cloudinary solo al salvataggio, non alla
+//          selezione del file).
 // v5.519 — Su richiesta di Franco: la X per svuotare la ricerca
 //          spostata dalla destra alla sinistra (subito dopo la lente),
 //          più comoda su barre di ricerca lunghe. Aggiustato il padding
@@ -2997,7 +3058,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.519';
+const JS_VERSION = 'v5.525';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -3710,7 +3771,7 @@ const i18n = {
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Price (€)','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used',
 'profile.title':'My Profile','profile.owned':'In My List','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -3863,6 +3924,29 @@ let _itemTypeFilter = 'base'; // 'base' | 'variation' | 'unofficialVariation' | 
 let _ebayFilter = false; // indipendente da _itemTypeFilter: si combina in AND, non è esclusivo con "Solo base"/ecc.
 let editingSeriesImg = null;
 let editingFigImg = null;
+let editingFigEbayImg = null;
+let editingFigEbayImgFileSave = null;
+let _returnToErroriAfterSave = false;
+
+function closeFigModal() {
+  closeModal('add-fig-modal');
+  if (_returnToErroriAfterSave) {
+    _returnToErroriAfterSave = false;
+    showPage('admin');
+    adminTab('errori');
+  }
+}
+
+function switchFigModalTab(tab) {
+  const genDiv = document.getElementById('fig-tab-generale');
+  const ebayDiv = document.getElementById('fig-tab-ebay');
+  const genBtn = document.getElementById('fig-tab-btn-generale');
+  const ebayBtn = document.getElementById('fig-tab-btn-ebay');
+  if (genDiv) genDiv.style.display = tab === 'generale' ? '' : 'none';
+  if (ebayDiv) ebayDiv.style.display = tab === 'ebay' ? '' : 'none';
+  if (genBtn) { genBtn.style.borderBottomColor = tab === 'generale' ? 'var(--accent)' : 'transparent'; genBtn.style.color = tab === 'generale' ? 'var(--accent)' : 'var(--muted)'; }
+  if (ebayBtn) { ebayBtn.style.borderBottomColor = tab === 'ebay' ? 'var(--accent)' : 'transparent'; ebayBtn.style.color = tab === 'ebay' ? 'var(--accent)' : 'var(--muted)'; }
+}
 
 
 // Admin seeding is handled in loadAllData() after Firebase is ready
@@ -5367,6 +5451,12 @@ function openAddItemModal(itemId) {
   document.getElementById('fig-img-preview').style.display = 'none';
   editingFigImg = null;
   editingFigImgFileSave = null;
+  document.getElementById('fig-ebay-img-preview').style.display = 'none';
+  editingFigEbayImg = null;
+  editingFigEbayImgFileSave = null;
+  const ebayImgGroup = document.getElementById('fig-ebay-img-group');
+  if (ebayImgGroup) ebayImgGroup.style.display = (currentSection === 'figurines' || currentSection === 'retros') ? '' : 'none';
+  switchFigModalTab('generale');
   if (itemId) {
     const f = getData('figurines', []).find(x => x.id === itemId);
     if (f) {
@@ -5389,6 +5479,7 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-quantity-input').value = f.quantity || 1;
       document.getElementById('fig-condition-input').value = f.condition || 'new';
       if (f.img) { const pr = document.getElementById('fig-img-preview'); pr.src = f.img; pr.style.display = 'block'; editingFigImg = f.img; }
+      if (f.ebayImg) { const pr2 = document.getElementById('fig-ebay-img-preview'); pr2.src = f.ebayImg; pr2.style.display = 'block'; editingFigEbayImg = f.ebayImg; }
     }
   } else {
     ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input','fig-category-input','fig-subcategory-input'].forEach(id => document.getElementById(id).value = '');
@@ -5475,7 +5566,13 @@ async function deleteFigurineFromModal() {
   await fsDelete('figurines', itemId);
   _cache.figurines = _cache.figurines.filter(x => x.id !== itemId);
   closeModal('add-fig-modal');
-  renderItems(); renderHomeStats(); updateSectionCounts();
+  if (_returnToErroriAfterSave) {
+    _returnToErroriAfterSave = false;
+    showPage('admin');
+    adminTab('errori');
+  } else {
+    renderItems(); renderHomeStats(); updateSectionCounts();
+  }
   toast(currentLang === 'it' ? 'Eliminato' : 'Deleted', 'success');
 }
 
@@ -6048,6 +6145,17 @@ function handleFigImg(e) {
   reader.readAsDataURL(file);
 }
 
+function handleFigEbayImg(e) {
+  const file = e.target.files[0]; if (!file) return;
+  editingFigEbayImgFileSave = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const pr = document.getElementById('fig-ebay-img-preview');
+    pr.src = ev.target.result; pr.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
 let _savingFigurine = false;
 async function saveFigurine() {
   if (_savingFigurine) return; // evita duplicati da doppio click o click ripetuto durante il salvataggio
@@ -6128,18 +6236,23 @@ async function _saveFigurineInner() {
     try { imgUrl = await uploadToCloudinary(editingFigImgFileSave); }
     catch(e) { toast((currentLang === 'it' ? 'Caricamento immagine fallito' : 'Image upload failed'), 'error'); return; }
   }
+  let ebayImgUrl = editingFigEbayImg || null;
+  if (editingFigEbayImgFileSave) {
+    try { ebayImgUrl = await uploadToCloudinary(editingFigEbayImgFileSave); }
+    catch(e) { toast((currentLang === 'it' ? 'Caricamento foto Ebay fallito' : 'Ebay photo upload failed'), 'error'); return; }
+  }
   let figs = getData('figurines', []);
   const editId = document.getElementById('edit-fig-id').value;
   try {
     if (editId) {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || figs[idx].img, forSale, price, quantity, condition };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition };
         await fsSave('figurines', figs[idx]);
         _cache.figurines = figs;
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || null, forSale, price, quantity, condition };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition };
       const saved = await fsSave('figurines', newF);
     }
   } catch(e) {
@@ -6148,8 +6261,15 @@ async function _saveFigurineInner() {
     return;
   }
   editingFigImgFileSave = null;
+  editingFigEbayImgFileSave = null;
   closeModal('add-fig-modal');
-  renderItems(); renderHomeStats(); updateSectionCounts();
+  if (_returnToErroriAfterSave) {
+    _returnToErroriAfterSave = false;
+    showPage('admin');
+    adminTab('errori');
+  } else {
+    renderItems(); renderHomeStats(); updateSectionCounts();
+  }
   toast((currentLang === 'it' ? 'Salvato! 🧟' : 'Saved! 🧟'), 'success');
 }
 
@@ -7242,6 +7362,17 @@ function updateBellBadge() {
   }
 }
 
+function switchFigDetailTab(tab) {
+  const genDiv = document.getElementById('figdetail-tab-generale');
+  const ebayDiv = document.getElementById('figdetail-tab-ebay');
+  const genBtn = document.getElementById('figdetail-tab-btn-generale');
+  const ebayBtn = document.getElementById('figdetail-tab-btn-ebay');
+  if (genDiv) genDiv.style.display = tab === 'generale' ? '' : 'none';
+  if (ebayDiv) ebayDiv.style.display = tab === 'ebay' ? '' : 'none';
+  if (genBtn) { genBtn.style.borderBottomColor = tab === 'generale' ? 'var(--accent)' : 'transparent'; genBtn.style.color = tab === 'generale' ? 'var(--accent)' : 'var(--muted)'; }
+  if (ebayBtn) { ebayBtn.style.borderBottomColor = tab === 'ebay' ? 'var(--accent)' : 'transparent'; ebayBtn.style.color = tab === 'ebay' ? 'var(--accent)' : 'var(--muted)'; }
+}
+
 function openFigDetail(figId) {
   _figEditImgData = null; // reset immagine editing precedente
   _currentDetailFigId = figId;
@@ -7316,11 +7447,7 @@ function openFigDetail(figId) {
     rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Punteggio' : 'Score'}</span><span class="detail-value">${f.score > 0 ? '⭐ ' + f.score + ' pt' : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non assegnato' : 'not assigned') + '</span>'}</span></div>`);
   }
 
-  // Da vendere (solo admin)
-  if (isAdmin) {
-    const conditionLabel = f.condition === 'used' ? (currentLang === 'it' ? 'Usato' : 'Used') : (currentLang === 'it' ? 'Nuovo' : 'New');
-    rows.push(`<div class="detail-row"><span class="detail-label">🏷️ Ebay</span><span class="detail-value">${f.forSale ? `<span style="color:var(--accent);">✓ €${(f.price||0).toFixed(2)} · ${currentLang === 'it' ? 'Q.tà' : 'Qty'} ${f.quantity||1} · ${conditionLabel}</span>` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'no' : 'no') + '</span>'}</span></div>`);
-  }
+  // Da vendere: spostato nel tab Ebay, vedi sotto
 
   // Flag Variazione ufficiale / non ufficiale / Change (solo se attivi, come frase)
   if (f.isVariation) {
@@ -7418,19 +7545,37 @@ function openFigDetail(figId) {
   // Figurine collegate (variazioni/change di cui questa è la base) — tab
   rows.push(buildLinkedFiguresTabsHTML(f.id));
 
-  // Bottom buttons
+  // Bottom buttons (tenuti fuori dai tab, sempre visibili)
+  let bottomButtons = '';
   if (isAdmin) {
-    rows.push(`<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
+    bottomButtons = `<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
       <button onclick="switchToEditMode('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--accent3);background:transparent;color:var(--accent3);cursor:pointer;">✏️ ${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>
       <button onclick="deleteItemFromDetail('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid #ff6464;background:transparent;color:#ff6464;cursor:pointer;">🗑️ ${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button>
-    </div>`);
+    </div>`;
   } else if (currentUser) {
-    rows.push(`<div style="margin-top:1rem;text-align:right;">
+    bottomButtons = `<div style="margin-top:1rem;text-align:right;">
       <button onclick="closeModal('fig-detail-modal');openSegnalazioneModal('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩 ${currentLang === 'it' ? 'Segnala errore' : 'Report an error'}</button>
-    </div>`);
+    </div>`;
   }
 
-  document.getElementById('fig-detail-content').innerHTML = rows.join('');
+  if (isAdmin) {
+    const conditionLabel = f.condition === 'used' ? (currentLang === 'it' ? 'Usato' : 'Used') : (currentLang === 'it' ? 'Nuovo' : 'New');
+    const ebayRows = [];
+    ebayRows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Ebay' : 'For sale'}</span><span class="detail-value">${f.forSale ? `<span style="color:var(--accent);">✓ €${(f.price||0).toFixed(2)} · ${currentLang === 'it' ? 'Q.tà' : 'Qty'} ${f.quantity||1} · ${conditionLabel}</span>` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'no' : 'no') + '</span>'}</span></div>`);
+    if (f.section === 'figurines' || f.section === 'retros') {
+      ebayRows.push(`<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">📷 ${currentLang === 'it' ? 'Foto Ebay' : 'Ebay photo'}</span><span class="detail-value">${f.ebayImg ? `<img src="${cloudinaryUrl(f.ebayImg,'w_200,h_200,c_fit,q_auto,f_auto')}" style="max-width:140px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'nessuna foto' : 'no photo') + '</span>'}</span></div>`);
+    }
+    const tabNav = `<div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin-bottom:1rem;">
+      <button type="button" id="figdetail-tab-btn-generale" onclick="switchFigDetailTab('generale')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>
+      <button type="button" id="figdetail-tab-btn-ebay" onclick="switchFigDetailTab('ebay')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>
+    </div>`;
+    document.getElementById('fig-detail-content').innerHTML = tabNav +
+      '<div id="figdetail-tab-generale">' + rows.join('') + '</div>' +
+      '<div id="figdetail-tab-ebay" style="display:none;">' + ebayRows.join('') + '</div>' +
+      bottomButtons;
+  } else {
+    document.getElementById('fig-detail-content').innerHTML = rows.join('') + bottomButtons;
+  }
   document.getElementById('fig-detail-modal').classList.remove('hidden');
 }
 
@@ -7500,6 +7645,37 @@ function switchLinkedFigTab(key) {
 
 function editItemFromDetail(itemId) {
   switchToEditMode(itemId);
+}
+
+let editingFeEbayImgFileSave = null;
+
+function switchFeTab(tab) {
+  const genDiv = document.getElementById('fe-tab-generale');
+  const ebayDiv = document.getElementById('fe-tab-ebay');
+  const genBtn = document.getElementById('fe-tab-btn-generale');
+  const ebayBtn = document.getElementById('fe-tab-btn-ebay');
+  if (genDiv) genDiv.style.display = tab === 'generale' ? '' : 'none';
+  if (ebayDiv) ebayDiv.style.display = tab === 'ebay' ? '' : 'none';
+  if (genBtn) { genBtn.style.borderBottomColor = tab === 'generale' ? 'var(--accent)' : 'transparent'; genBtn.style.color = tab === 'generale' ? 'var(--accent)' : 'var(--muted)'; }
+  if (ebayBtn) { ebayBtn.style.borderBottomColor = tab === 'ebay' ? 'var(--accent)' : 'transparent'; ebayBtn.style.color = tab === 'ebay' ? 'var(--accent)' : 'var(--muted)'; }
+}
+
+function handleFeEbayImg(e) {
+  const file = e.target.files[0]; if (!file) return;
+  editingFeEbayImgFileSave = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const pr = document.getElementById('fe-ebay-img-preview');
+    if (pr.tagName === 'IMG') { pr.src = ev.target.result; }
+    else {
+      const img = document.createElement('img');
+      img.id = 'fe-ebay-img-preview';
+      img.src = ev.target.result;
+      img.style.cssText = 'max-width:160px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;';
+      pr.replaceWith(img);
+    }
+  };
+  reader.readAsDataURL(file);
 }
 
 function toggleFeForSaleFields() {
@@ -7599,6 +7775,7 @@ function clearFeRetroLinkIfEmpty() {
 function switchToEditMode(figId) {
   const f = getData('figurines', []).find(x => x.id === figId);
   if (!f) return;
+  editingFeEbayImgFileSave = null;
   const figSeries = getData('series', []).find(s => s.id === f.seriesId);
   const content = document.getElementById('fig-detail-content');
   const photo = document.getElementById('fig-detail-photo');
@@ -7626,6 +7803,12 @@ function switchToEditMode(figId) {
 
   // Serie (prima informazione, sempre visibile, non modificabile qui)
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Serie':'Series') + '</span><span class="detail-value" style="font-weight:600;">' + (figSeries?.name||'') + '</span></div>';
+
+  html += '<div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin:0.75rem 0 1rem;">' +
+    '<button type="button" id="fe-tab-btn-generale" onclick="switchFeTab(\'generale\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>' +
+    '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>' +
+    '</div>';
+  html += '<div id="fe-tab-generale">';
 
   const isRetrosItem = f.section === 'retros';
 
@@ -7700,11 +7883,20 @@ function switchToEditMode(figId) {
     '</div>';
   }
 
-  // Vendita (Da vendere / Prezzo / Quantità / Condizione)
-  html += '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin:0.75rem 0;">' +
+  // Descrizione (in fondo, campo più grande)
+  html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang==='it'?'Descrizione':'Description') + '</span><span class="detail-value"><textarea id="fe-desc" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + (f.desc||'') + '</textarea></span></div>';
+
+  // Figurine collegate (variazioni/change di cui questa è la base) — tab
+  html += buildLinkedFiguresTabsHTML(f.id);
+
+  html += '</div>'; // chiude fe-tab-generale
+
+  // Tab Ebay: Vendita (Da vendere / Prezzo / Quantità / Condizione) + foto dedicata
+  html += '<div id="fe-tab-ebay" style="display:none;">';
+  html += '<div style="background:var(--card2);border-radius:10px;padding:0.75rem 0.9rem;margin-bottom:0.75rem;">' +
     '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;font-weight:600;margin-bottom:' + (f.forSale ? '0.6rem' : '0') + ';">' +
     '<input type="checkbox" id="fe-for-sale" onchange="toggleFeForSaleFields()" ' + (f.forSale ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
-    '<span>🏷️ Ebay</span></label>' +
+    '<span>🏷️ ' + (currentLang==='it'?'Ebay':'For sale on Ebay') + '</span></label>' +
     '<div id="fe-for-sale-fields" style="display:' + (f.forSale ? 'grid' : 'none') + ';grid-template-columns:1fr 1fr 1fr;gap:0.6rem;">' +
     '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Prezzo (€)':'Price (€)') + '</label><input class="form-input" type="number" id="fe-price" value="' + (f.price||'') + '" min="0" step="0.01" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
     '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Quantità':'Quantity') + '</label><input class="form-input" type="number" id="fe-quantity" value="' + (f.quantity||1) + '" min="1" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
@@ -7712,12 +7904,17 @@ function switchToEditMode(figId) {
     '<option value="new"' + (f.condition!=='used'?' selected':'') + '>' + (currentLang==='it'?'Nuovo':'New') + '</option>' +
     '<option value="used"' + (f.condition==='used'?' selected':'') + '>' + (currentLang==='it'?'Usato':'Used') + '</option>' +
     '</select></div></div></div>';
-
-  // Descrizione (in fondo, campo più grande)
-  html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang==='it'?'Descrizione':'Description') + '</span><span class="detail-value"><textarea id="fe-desc" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + (f.desc||'') + '</textarea></span></div>';
-
-  // Figurine collegate (variazioni/change di cui questa è la base) — tab
-  html += buildLinkedFiguresTabsHTML(f.id);
+  html += '<div style="margin-bottom:0.75rem;' + ((f.section === 'figurines' || f.section === 'retros') ? '' : 'display:none;') + '">' +
+    '<label class="detail-label" style="display:block;margin-bottom:0.4rem;">📷 ' + (currentLang==='it'?'Foto per Ebay':'Ebay photo') + '</label>' +
+    '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang==='it'?'Foto dedicata da usare per l\'annuncio Ebay, indipendente da quella del catalogo':'Dedicated photo for the Ebay listing, separate from the catalog one') + '</div>' +
+    (f.ebayImg
+      ? '<img id="fe-ebay-img-preview" src="' + cloudinaryUrl(f.ebayImg,'w_320,h_320,c_fit,q_auto,f_auto') + '" style="max-width:160px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
+      : '<div id="fe-ebay-img-preview" style="width:160px;height:120px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.72rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + (currentLang==='it'?'Nessuna foto':'No photo') + '</div>') +
+    '<label style="cursor:pointer;display:inline-block;">' +
+    '<span style="display:inline-block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;">📷 ' + (currentLang==='it'?'Carica foto':'Upload photo') + '</span>' +
+    '<input type="file" id="fe-ebay-img-file" accept="image/*" style="display:none;" onchange="handleFeEbayImg(event)">' +
+    '</label></div>';
+  html += '</div>'; // chiude fe-tab-ebay
 
   // Pulsanti
   html += '<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">';
@@ -7943,6 +8140,15 @@ async function saveFigFromDetail(figId) {
     } catch(e) { console.error('Upload img error', e); }
   }
   _figEditImgData = null;
+
+  // Gestione foto Ebay
+  if (editingFeEbayImgFileSave) {
+    try {
+      const uploadedEbay = await uploadToCloudinary(editingFeEbayImgFileSave);
+      if (uploadedEbay) updates.ebayImg = uploadedEbay;
+    } catch(e) { console.error('Upload ebayImg error', e); toast((currentLang === 'it' ? 'Caricamento foto Ebay fallito' : 'Ebay photo upload failed'), 'error'); }
+  }
+  editingFeEbayImgFileSave = null;
 
   // Mantieni i campi esistenti non modificati
   const existing = getData('figurines', []).find(x => x.id === figId);
@@ -8898,6 +9104,18 @@ function toggleImportSection(key) {
   if (chevron) chevron.textContent = isOpen ? '▶' : '▼';
 }
 
+// Apre direttamente la serie e la scheda di modifica dell'oggetto,
+// comodo per correggere un collegamento rotto trovato dal diagnostico
+function switchToSeriesFromErrori(seriesId, figId) {
+  const series = getData('series', []).find(s => s.id === seriesId);
+  const fig = getData('figurines', []).find(f => f.id === figId);
+  if (!series || !fig) return;
+  _returnToErroriAfterSave = true;
+  openSeriesDetail(seriesId);
+  openSeriesSection(fig.section || 'figurines');
+  setTimeout(() => openAddItemModal(figId), 300);
+}
+
 function renderAdminErrori() {
   const el = document.getElementById('admin-errori-content');
   if (!el) return;
@@ -8913,6 +9131,23 @@ function renderAdminErrori() {
     const s = seriesList.find(x => x.id === f.seriesId);
     return !(s?.noNumbers);
   });
+
+  // Variazioni/Change il cui retroId non corrisponde a nessuna figurina esistente —
+  // probabile residuo della vecchia migrazione al formato per-serie (v5.468)
+  const figsById = new Set(allFigs.map(f => f.id));
+  const typePriority = f => f.isVariation ? 0 : f.isUnofficialVariation ? 1 : 2;
+  const brokenRetroLinks = allFigs
+    .filter(f => f.retroId && !figsById.has(f.retroId))
+    .sort((a, b) => {
+      const sA = seriesList.find(x => x.id === a.seriesId)?.name || '';
+      const sB = seriesList.find(x => x.id === b.seriesId)?.name || '';
+      const sCmp = sA.localeCompare(sB, 'it');
+      if (sCmp !== 0) return sCmp;
+      const nA = a.number ?? a.name, nB = b.number ?? b.name;
+      const nCmp = String(nA).localeCompare(String(nB), 'it', { numeric: true });
+      if (nCmp !== 0) return nCmp;
+      return typePriority(a) - typePriority(b);
+    });
 
   el.innerHTML = `
     <div style="max-width:900px;">
@@ -8942,6 +9177,39 @@ function renderAdminErrori() {
                 <span style="color:var(--muted);">${sName}</span> — ${f.name}
               </a>`;
             }).join('')}
+        </div>` : ''}
+      </div>
+
+      <hr class="divider" style="margin:1.5rem 0;">
+
+      <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
+          <div style="font-size:2.6rem;font-weight:700;color:${brokenRetroLinks.length ? '#ff6464' : 'var(--accent)'};">${brokenRetroLinks.length}</div>
+          <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">🔗 ${currentLang==='it'?'Collegamenti Retro rotti':'Broken Retro links'}</div>
+        </div>
+        ${brokenRetroLinks.length ? `
+        <div style="flex:1;min-width:280px;">
+          <h4 onclick="toggleImportSection('brokenretro')" style="font-family:var(--font-ui);margin-bottom:0.5rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;font-size:0.95rem;"><span id="import-brokenretro-chevron">▶</span> ${currentLang==='it'?'Mostra elenco':'Show list'}</h4>
+          <div id="import-brokenretro-section-content" style="display:none;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+              <thead><tr style="border-bottom:1px solid var(--border);color:var(--muted);text-align:left;">
+                <th style="padding:6px 10px;">${currentLang==='it'?'Serie':'Series'}</th>
+                <th style="padding:6px 10px;">${currentLang==='it'?'Numero/Nome':'Number/Name'}</th>
+                <th style="padding:6px 10px;">${currentLang==='it'?'Tipo':'Type'}</th>
+                <th style="padding:6px 10px;"></th>
+              </tr></thead>
+              <tbody>${brokenRetroLinks.map(f => {
+                const sName = seriesList.find(x => x.id === f.seriesId)?.name || (currentLang==='it'?'Serie sconosciuta':'Unknown series');
+                const typeLabel = f.isVariation ? (currentLang==='it'?'Variazione ufficiale':'Official variation') : f.isUnofficialVariation ? (currentLang==='it'?'Variazione non ufficiale':'Unofficial variation') : 'Change';
+                return `<tr>
+                  <td style="padding:6px 10px;">${sName}</td>
+                  <td style="padding:6px 10px;">${f.number ? '#' + f.number + ' ' : ''}${f.name}</td>
+                  <td style="padding:6px 10px;color:var(--muted);">${typeLabel}</td>
+                  <td style="padding:6px 10px;"><button class="tbl-btn tbl-btn-edit" onclick="switchToSeriesFromErrori('${f.seriesId}','${f.id}')">✏️ ${currentLang==='it'?'Correggi':'Fix'}</button></td>
+                </tr>`;
+              }).join('')}</tbody>
+            </table>
+          </div>
         </div>` : ''}
       </div>
     </div>`;
