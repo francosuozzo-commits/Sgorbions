@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.591 — Ultimo errore residuo trovato: dentro logEmail(), il
+//          controllo di sfoltimento a 200 voci leggeva l'intera
+//          collezione email_log (fsGetAll), riservata all'admin dalle
+//          regole Firestore — per un utente normale (es. la propria
+//          email di benvenuto alla registrazione) questo falliva
+//          sempre con "Missing or insufficient permissions", loggato
+//          genericamente da fsGetAll() stesso. Corretto saltando questo
+//          controllo per i non-admin: è comunque una manutenzione
+//          periodica, non serve farla ad ogni singolo invio, e un
+//          utente normale non ha comunque i permessi per farla.
 // v5.590 — Trovata la vera causa degli errori "Missing or insufficient
 //          permissions" segnalati da Franco per logEvent/logEmail
 //          (persistevano anche dopo la correzione delle regole
@@ -3709,7 +3719,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.590';
+const JS_VERSION = 'v5.591';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10998,15 +11008,22 @@ async function logEmail(toEmail, subject, source = 'other', body = '', status = 
       status: status,
       date: new Date().toISOString()
     });
-    // Keep only latest 200 in Firebase
-    try {
-      const allLogs = await fsGetAll('email_log');
-      if (allLogs.length > 200) {
-        allLogs.sort((a,b) => new Date(a.date) - new Date(b.date));
-        const toDelete = allLogs.slice(0, allLogs.length - 200);
-        for (const log of toDelete) await fsDelete('email_log', log.id);
-      }
-    } catch(e) { console.error('email_log trim error', e); }
+    // Sfoltimento a 200 voci più recenti — solo per l'admin, dato che leggere
+    // l'intera collezione email_log richiede permessi di amministratore (le
+    // regole Firestore riservano la lettura solo all'admin); per un utente
+    // normale (es. la propria email di benvenuto) questo controllo va
+    // semplicemente saltato, è comunque una manutenzione periodica, non
+    // serve farla ad ogni singolo invio
+    if (currentUser?.isAdmin) {
+      try {
+        const allLogs = await fsGetAll('email_log');
+        if (allLogs.length > 200) {
+          allLogs.sort((a,b) => new Date(a.date) - new Date(b.date));
+          const toDelete = allLogs.slice(0, allLogs.length - 200);
+          for (const log of toDelete) await fsDelete('email_log', log.id);
+        }
+      } catch(e) { console.error('email_log trim error', e); }
+    }
     // Refresh log if Mail tab is open
     if (typeof renderEmailLog === 'function') {
       const mailTab = document.getElementById('admin-email-log');
