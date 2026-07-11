@@ -1,6 +1,41 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.528 — Su segnalazione di Franco: chiudendo la scheda di correzione
+//          (X, Elimina o Salva) restava su una pagina vuota. Causa: la
+//          funzione "torna a Errori" (già esistente da una sessione
+//          precedente, in closeFigModal()/deleteFigurineFromModal()/
+//          _saveFigurineInner()) chiamava showPage('admin') — pagina
+//          che non esiste, l'admin console vive dentro la pagina
+//          "profile" (#admin-panel), non come pagina a sé. Corretto in
+//          tutti e tre i punti. Rimossa anche una mia aggiunta
+//          ridondante e in conflitto (avevo reimplementato la stessa
+//          funzionalità con un flag diverso, _returnToErroriAfterFigModal,
+//          non sapendo che esisteva già _returnToErroriAfterSave con la
+//          stessa logica, da una sessione precedente) — ora un solo
+//          meccanismo, coerente.
+// v5.527 — Su segnalazione di Franco: confermato che l'elenco
+//          etichettava scorrettamente come "Change" qualsiasi oggetto
+//          senza isVariation/isUnofficialVariation, anche se non aveva
+//          affatto il flag isChange — vero per le figurine base con un
+//          retroId residuo anomalo (che normalmente non dovrebbero
+//          averne uno). Corretta l'etichetta ("⚠️ Figurina base con
+//          retroId anomalo"), e per questi casi sostituito il pulsante
+//          "Correggi" (che avrebbe aperto una scheda priva del campo
+//          Retro, essendo pensato solo per le variazioni) con "🧹
+//          Rimuovi collegamento" — nuova funzione clearStrayRetroId(),
+//          che azzera direttamente il retroId senza passare dalla
+//          scheda di modifica. Verificato con una simulazione tutti e
+//          quattro i casi prima di consegnare.
+// v5.526 — Su richiesta di Franco: dopo aver usato "Correggi" da
+//          Errori, chiudendo la scheda di modifica (sia con Salva sia
+//          con la X) si torna automaticamente al tab Errori — prima
+//          restava sulla pagina della serie. Nuovo flag globale
+//          _returnToErroriAfterFigModal, controllato dentro
+//          closeModal() quando si chiude add-fig-modal. Aggiunto anche
+//          un reset di sicurezza in openAddItemModal(), per evitare che
+//          il flag resti "vero" per errore in una futura apertura
+//          normale non passata da "Correggi".
 // v5.525 — Su richiesta di Franco: dopo aver corretto un collegamento
 //          rotto dal tab Errori (pulsante "Correggi"), chiudendo la
 //          scheda (con Salva, con Elimina, o col pulsante ✕ senza
@@ -3058,7 +3093,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.525';
+const JS_VERSION = 'v5.528';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -3932,7 +3967,7 @@ function closeFigModal() {
   closeModal('add-fig-modal');
   if (_returnToErroriAfterSave) {
     _returnToErroriAfterSave = false;
-    showPage('admin');
+    showPage('profile');
     adminTab('errori');
   }
 }
@@ -5433,6 +5468,7 @@ function toggleForSaleFields() {
 
 function openAddItemModal(itemId) {
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
+  _returnToErroriAfterSave = false;
   document.getElementById('edit-fig-id').value = itemId || '';
   let existingItem = null;
   if (itemId) {
@@ -5568,7 +5604,7 @@ async function deleteFigurineFromModal() {
   closeModal('add-fig-modal');
   if (_returnToErroriAfterSave) {
     _returnToErroriAfterSave = false;
-    showPage('admin');
+    showPage('profile');
     adminTab('errori');
   } else {
     renderItems(); renderHomeStats(); updateSectionCounts();
@@ -6265,7 +6301,7 @@ async function _saveFigurineInner() {
   closeModal('add-fig-modal');
   if (_returnToErroriAfterSave) {
     _returnToErroriAfterSave = false;
-    showPage('admin');
+    showPage('profile');
     adminTab('errori');
   } else {
     renderItems(); renderHomeStats(); updateSectionCounts();
@@ -9106,14 +9142,41 @@ function toggleImportSection(key) {
 
 // Apre direttamente la serie e la scheda di modifica dell'oggetto,
 // comodo per correggere un collegamento rotto trovato dal diagnostico
+// Rimuove un retroId anomalo su una figurina base (che non dovrebbe
+// averne uno) — usa lo stesso schema di scrittura singola del documento
+// serie già usato per le operazioni di massa Ebay
+async function clearStrayRetroId(figId) {
+  const fig = getData('figurines', []).find(f => f.id === figId);
+  if (!fig) return;
+  const seriesList = getData('series', []);
+  const sIdx = seriesList.findIndex(s => s.id === fig.seriesId);
+  if (sIdx < 0) { toast(currentLang === 'it' ? 'Serie non trovata' : 'Series not found', 'error'); return; }
+  const series = seriesList[sIdx];
+  series.items = series.items || [];
+  const iIdx = series.items.findIndex(x => x.id === figId);
+  if (iIdx < 0) { toast(currentLang === 'it' ? 'Oggetto non trovato' : 'Item not found', 'error'); return; }
+  series.items[iIdx] = { ...series.items[iIdx], retroId: null };
+  try {
+    await fsSave('series', series);
+  } catch(e) {
+    toast((currentLang === 'it' ? '❌ Salvataggio fallito, riprova: ' : '❌ Save failed, please retry: ') + e.message, 'error');
+    return;
+  }
+  const figs = getData('figurines', []);
+  const flatIdx = figs.findIndex(x => x.id === figId);
+  if (flatIdx >= 0) figs[flatIdx] = series.items[iIdx];
+  _cache.figurines = figs;
+  toast(currentLang === 'it' ? '✅ Collegamento rimosso' : '✅ Link removed', 'success');
+  renderAdminErrori();
+}
+
 function switchToSeriesFromErrori(seriesId, figId) {
   const series = getData('series', []).find(s => s.id === seriesId);
   const fig = getData('figurines', []).find(f => f.id === figId);
   if (!series || !fig) return;
-  _returnToErroriAfterSave = true;
   openSeriesDetail(seriesId);
   openSeriesSection(fig.section || 'figurines');
-  setTimeout(() => openAddItemModal(figId), 300);
+  setTimeout(() => { openAddItemModal(figId); _returnToErroriAfterSave = true; }, 300);
 }
 
 function renderAdminErrori() {
@@ -9200,12 +9263,16 @@ function renderAdminErrori() {
               </tr></thead>
               <tbody>${brokenRetroLinks.map(f => {
                 const sName = seriesList.find(x => x.id === f.seriesId)?.name || (currentLang==='it'?'Serie sconosciuta':'Unknown series');
-                const typeLabel = f.isVariation ? (currentLang==='it'?'Variazione ufficiale':'Official variation') : f.isUnofficialVariation ? (currentLang==='it'?'Variazione non ufficiale':'Unofficial variation') : 'Change';
+                const isBaseAnomaly = !f.isVariation && !f.isUnofficialVariation && !f.isChange;
+                const typeLabel = f.isVariation ? (currentLang==='it'?'Variazione ufficiale':'Official variation') : f.isUnofficialVariation ? (currentLang==='it'?'Variazione non ufficiale':'Unofficial variation') : f.isChange ? 'Change' : (currentLang==='it'?'⚠️ Figurina base (con retroId anomalo)':'⚠️ Base sticker (stray retroId)');
+                const actionBtn = isBaseAnomaly
+                  ? `<button class="tbl-btn" style="background:rgba(255,180,0,0.15);border-color:rgba(255,180,0,0.4);color:#ffb400;" onclick="clearStrayRetroId('${f.id}')">🧹 ${currentLang==='it'?'Rimuovi collegamento':'Remove link'}</button>`
+                  : `<button class="tbl-btn tbl-btn-edit" onclick="switchToSeriesFromErrori('${f.seriesId}','${f.id}')">✏️ ${currentLang==='it'?'Correggi':'Fix'}</button>`;
                 return `<tr>
                   <td style="padding:6px 10px;">${sName}</td>
                   <td style="padding:6px 10px;">${f.number ? '#' + f.number + ' ' : ''}${f.name}</td>
                   <td style="padding:6px 10px;color:var(--muted);">${typeLabel}</td>
-                  <td style="padding:6px 10px;"><button class="tbl-btn tbl-btn-edit" onclick="switchToSeriesFromErrori('${f.seriesId}','${f.id}')">✏️ ${currentLang==='it'?'Correggi':'Fix'}</button></td>
+                  <td style="padding:6px 10px;">${actionBtn}</td>
                 </tr>`;
               }).join('')}</tbody>
             </table>
