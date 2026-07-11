@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.519</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.525</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -986,7 +986,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.519</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.525</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1139,12 +1139,17 @@
   <div class="modal modal-wide">
     <div class="modal-header">
       <h2 class="modal-title" id="fig-modal-title" data-i18n="modal.fig.title">Add Figurine</h2>
-      <button class="modal-close" onclick="closeModal('add-fig-modal')">✕</button>
+      <button class="modal-close" onclick="closeFigModal()">✕</button>
     </div>
     <input type="hidden" id="edit-fig-id">
     <div id="fig-modal-series-indicator" style="margin-bottom:1rem;font-size:0.85rem;color:var(--muted);">
       <span data-i18n="form.fig.series">Serie</span>: <strong id="fig-modal-series-name" style="color:var(--text);"></strong>
     </div>
+    <div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin-bottom:1.25rem;">
+      <button type="button" id="fig-tab-btn-generale" onclick="switchFigModalTab('generale')" style="padding:0.5rem 1rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.9rem;cursor:pointer;">📋 Generale</button>
+      <button type="button" id="fig-tab-btn-ebay" onclick="switchFigModalTab('ebay')" style="padding:0.5rem 1rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.9rem;cursor:pointer;">🏷️ Ebay</button>
+    </div>
+    <div id="fig-tab-generale">
     <div id="fig-modal-grid" style="display:grid;grid-template-columns:80px minmax(0,70px);gap:1rem;align-items:end;">
       <div class="form-group" id="fig-category-group" style="margin-bottom:0;display:none;">
         <label class="form-label" data-i18n="form.fig.category">Categoria</label>
@@ -1215,6 +1220,24 @@
       <div id="fig-retro-selected-preview" style="display:none;margin-top:6px;font-size:0.85rem;color:var(--accent);"></div>
       <div class="form-hint" data-i18n="form.fig.retroHint">Indica il Retro che rappresenta il retro di questa variazione</div>
     </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.fig.desc">Descrizione</label>
+      <textarea class="form-textarea" id="fig-desc-input" rows="3" data-i18n-placeholder="form.fig.descPlaceholder" placeholder="Descrivi questa figurina..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.fig.image">Image</label>
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div class="file-drop" onclick="document.getElementById('fig-img-file').click()" style="padding:0.5rem 1rem;display:flex;align-items:center;gap:0.5rem;flex:1;">
+          <span style="font-size:1.2rem;">🧟</span>
+          <span class="file-drop-text"><strong data-i18n="form.click">Click to upload</strong></span>
+        </div>
+        <img id="fig-img-preview" class="file-preview" style="margin-top:0;max-height:48px;max-width:48px;border-radius:6px;object-fit:contain;">
+      </div>
+      <input type="file" id="fig-img-file" accept="image/*" style="display:none;" onchange="handleFigImg(event)">
+    </div>
+    </div>
+    <div id="fig-tab-ebay" style="display:none;">
     <div style="background:var(--card2);border-radius:10px;padding:0.85rem 1rem;margin-bottom:1.25rem;">
       <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;">
         <input type="checkbox" id="fig-for-sale-input" onchange="toggleForSaleFields()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
@@ -1238,21 +1261,18 @@
         </div>
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.fig.desc">Descrizione</label>
-      <textarea class="form-textarea" id="fig-desc-input" rows="3" data-i18n-placeholder="form.fig.descPlaceholder" placeholder="Descrivi questa figurina..."></textarea>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.fig.image">Image</label>
+    <div class="form-group" id="fig-ebay-img-group">
+      <label class="form-label">📷 Foto per Ebay</label>
+      <div class="form-hint" style="margin-bottom:0.5rem;">Foto dedicata da usare per l'annuncio Ebay, indipendente da quella del catalogo</div>
       <div style="display:flex;align-items:center;gap:0.75rem;">
-        <div class="file-drop" onclick="document.getElementById('fig-img-file').click()" style="padding:0.5rem 1rem;display:flex;align-items:center;gap:0.5rem;flex:1;">
-          <span style="font-size:1.2rem;">🧟</span>
+        <div class="file-drop" onclick="document.getElementById('fig-ebay-img-file').click()" style="padding:0.5rem 1rem;display:flex;align-items:center;gap:0.5rem;flex:1;">
+          <span style="font-size:1.2rem;">📷</span>
           <span class="file-drop-text"><strong data-i18n="form.click">Click to upload</strong></span>
         </div>
-        <img id="fig-img-preview" class="file-preview" style="margin-top:0;max-height:48px;max-width:48px;border-radius:6px;object-fit:contain;">
+        <img id="fig-ebay-img-preview" class="file-preview" style="margin-top:0;max-height:48px;max-width:48px;border-radius:6px;object-fit:contain;display:none;">
       </div>
-      <input type="file" id="fig-img-file" accept="image/*" style="display:none;" onchange="handleFigImg(event)">
+      <input type="file" id="fig-ebay-img-file" accept="image/*" style="display:none;" onchange="handleFigEbayImg(event)">
+    </div>
     </div>
     <div style="display:flex;gap:0.5rem;">
       <button class="btn-primary" style="flex:1;" onclick="saveFigurine()" data-i18n="modal.fig.save">Save Figurine</button>
