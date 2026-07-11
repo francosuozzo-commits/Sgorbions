@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.587 — Su segnalazione di Franco: registrandosi con Google, lo
+//          username pubblico veniva impreso automaticamente da nome e
+//          cognome dell'account Google, senza possibilità di
+//          modificarlo. Aggiunta una funzione minima di modifica: nuovo
+//          pulsante "✏️ Cambia nome utente" nel profilo, apre un modal
+//          con validazione (solo lettere/numeri/underscore, univocità,
+//          max 20 caratteri) — salva su users e sincronizza
+//          public_profiles tramite la funzione già esistente
+//          _syncPublicProfile(). Le regole Firestore già esistenti
+//          permettono questa modifica senza bisogno di aggiornamenti
+//          (utente proprietario, non cambia il proprio stato admin).
+//          Tradotto in entrambe le lingue.
 // v5.586 — Bug segnalato da Franco: nel tab Utenti, la data di ultima
 //          login risultava vuota per un utente appena registrato.
 //          Causa trovata: in ENTRAMBI i flussi di registrazione
@@ -3657,7 +3669,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.586';
+const JS_VERSION = 'v5.587';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -4304,7 +4316,7 @@ const i18n = {
 
     'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send \"What I\'m looking for\" to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"',
 'profile.anon':'Show me as anonymous in the ranking',
-'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.deleteAccount':'🗑️ Delete my account','profile.myMessages.title':'My messages with the staff',
+'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Only letters, numbers and underscores, max 20 characters. This is your public name, visible to other users (e.g. in the Leaderboard).','profile.changeUsername.save':'Save','profile.deleteAccount':'🗑️ Delete my account','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
 'modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go!','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
@@ -4397,7 +4409,7 @@ const i18n = {
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
 'nav.onlineSince':'Online dal 21.06.2026',
-'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','profile.deleteAccount':'🗑️ Elimina il mio account','profile.myMessages.title':'I miei messaggi con lo staff',
+'profile.changeNat':'✏️ Cambia nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','profile.changeUsername':'✏️ Cambia nome utente','profile.changeUsername.title':'✏️ Cambia nome utente','profile.changeUsername.hint':'Solo lettere, numeri e underscore, massimo 20 caratteri. È il nome pubblico visibile ad altri utenti (es. nella Classifica).','profile.changeUsername.save':'Salva','profile.deleteAccount':'🗑️ Elimina il mio account','profile.myMessages.title':'I miei messaggi con lo staff',
 'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua "Mia lista" e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua lista "Ciò che cerco"','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
 'modal.accountDeleted.title':'Account eliminato','modal.accountDeleted.desc':'Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via!','modal.accountDeleted.close':'Chiudi',
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
@@ -7746,6 +7758,55 @@ function renderAdminUsers() {
 
 let pendingNatCode = '';
 let pendingNatName = '';
+
+function openUsernameModal() {
+  if (!currentUser) return;
+  document.getElementById('new-username-input').value = currentUser.username || '';
+  const errEl = document.getElementById('username-modal-error');
+  if (errEl) errEl.style.display = 'none';
+  document.getElementById('username-modal').classList.remove('hidden');
+}
+
+async function saveNewUsername() {
+  if (!currentUser) return;
+  const errEl = document.getElementById('username-modal-error');
+  const raw = (document.getElementById('new-username-input').value || '').trim();
+  const clean = raw.replace(/[^a-zA-Z0-9_]/g, '');
+  if (!clean) {
+    if (errEl) { errEl.style.display = ''; errEl.textContent = currentLang === 'it' ? 'Il nome utente non può essere vuoto' : 'Username cannot be empty'; }
+    return;
+  }
+  if (clean !== raw) {
+    if (errEl) { errEl.style.display = ''; errEl.textContent = currentLang === 'it' ? 'Solo lettere, numeri e underscore sono ammessi' : 'Only letters, numbers and underscores are allowed'; }
+    return;
+  }
+  if (clean === currentUser.username) { closeModal('username-modal'); return; }
+  const profiles = getData('public_profiles', []);
+  if (profiles.find(x => x.username === clean && x.id !== currentUser.id)) {
+    if (errEl) { errEl.style.display = ''; errEl.textContent = currentLang === 'it' ? 'Questo nome utente è già in uso' : 'This username is already taken'; }
+    return;
+  }
+  currentUser.username = clean;
+  LOCAL.set('currentUser', currentUser);
+  try {
+    await fsSave('users', currentUser);
+    await _syncPublicProfile(currentUser);
+  } catch(e) {
+    console.error('saveNewUsername', e);
+    if (errEl) { errEl.style.display = ''; errEl.textContent = currentLang === 'it' ? 'Salvataggio non riuscito, riprova' : 'Save failed, please retry'; }
+    return;
+  }
+  const users = getData('users', []);
+  const idx = users.findIndex(u => u.id === currentUser.id);
+  if (idx >= 0) { users[idx] = currentUser; _cache.users = users; }
+  if (Array.isArray(_cache.public_profiles)) {
+    const pIdx = _cache.public_profiles.findIndex(p => p.id === currentUser.id);
+    if (pIdx >= 0) _cache.public_profiles[pIdx] = { ..._cache.public_profiles[pIdx], username: clean };
+  }
+  closeModal('username-modal');
+  renderProfile();
+  toast(currentLang === 'it' ? 'Nome utente aggiornato! ✏️' : 'Username updated! ✏️', 'success');
+}
 
 function openNationalityModal() {
   if (!currentUser) return;
