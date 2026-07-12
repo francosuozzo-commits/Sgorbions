@@ -618,13 +618,17 @@ body {
 }
 
 /* ===== TOAST ===== */
-#toast-container { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%); z-index: 9999; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+/* Toast al centro dello schermo (era: bottom 2rem). pointer-events:none sul
+   contenitore perché, essendo ora al centro, intercetterebbe i clic sul
+   contenuto sottostante — i toast non sono comunque interattivi. */
+#toast-container { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; pointer-events: none; }
 .toast {
   background: var(--card2); border: 1px solid var(--border2);
   color: var(--text); padding: 0.75rem 1.25rem; border-radius: 12px;
   font-family: var(--font-ui); font-size: 1rem;
   animation: toast-in 0.3s ease; display: flex; align-items: center; gap: 0.5rem;
   box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+  text-align: center; line-height: 1.5; max-width: min(90vw, 520px);
 }
 .toast.success { border-color: rgba(181,255,46,0.3); }
 .toast.error { border-color: rgba(255,100,100,0.3); }
