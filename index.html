@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.596</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.607</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -431,6 +431,10 @@
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Cookie</h3>
         <p>Il sito non usa cookie di tracciamento. Usa esclusivamente la memoria locale del browser (localStorage) per ricordare la tua sessione e le tue preferenze — un dato tecnico che resta sul tuo dispositivo, non viene inviato a terzi per finalità pubblicitarie.</p>
 
+        <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Newsletter</h3>
+        <p>La newsletter è <strong>facoltativa</strong> e viene inviata solo a chi ha dato un consenso esplicito. Puoi darlo — o revocarlo — in qualsiasi momento dal tuo profilo, nel box <strong>"Preferenze e-mail"</strong>: la revoca è immediata e non richiede di scriverci.</p>
+        <p>Non sono newsletter, e quindi continuano ad arrivarti finché il tuo account è attivo, le <strong>e-mail di servizio</strong>: il messaggio di benvenuto alla registrazione, la notifica quando qualcuno risponde a un tuo post sul blog, la risposta a un messaggio che ci hai scritto tu, e il link per reimpostare la password se lo richiedi. Servono a farti funzionare il servizio che hai chiesto, non a promuoverti qualcosa.</p>
+
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Per quanto tempo conserviamo i dati</h3>
         <p>Finché il tuo account resta attivo. Puoi cancellarlo in autonomia in qualsiasi momento dal tuo profilo ("Elimina il mio account"): l'operazione è immediata e cancella account, collezione, "Ciò che cerco" e profilo pubblico. Gli eventuali post/commenti scritti sul blog restano visibili per continuità del contenuto condiviso, ma il tuo nome viene sostituito con "Utente eliminato".</p>
 
@@ -486,6 +490,10 @@
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Cookies</h3>
         <p>The site does not use tracking cookies. It only uses the browser's local storage (localStorage) to remember your session and preferences — a technical piece of data that stays on your device, never sent to third parties for advertising purposes.</p>
 
+        <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Newsletter</h3>
+        <p>The newsletter is <strong>optional</strong> and is only sent to those who gave explicit consent. You can give it — or withdraw it — at any time from your profile, in the <strong>"E-mail preferences"</strong> box: withdrawal is immediate and doesn't require writing to us.</p>
+        <p>These are not newsletters, and will keep reaching you for as long as your account is active: the <strong>service e-mails</strong> — the welcome message on registration, the notification when someone replies to your blog post, the reply to a message you sent us, and the password reset link if you request it. They exist to make the service you asked for work, not to promote anything to you.</p>
+
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">How long we keep data</h3>
         <p>For as long as your account stays active. You can delete it yourself at any time from your profile ("Delete my account"): the operation is immediate and deletes your account, collection, "What I'm looking for" list and public profile. Any posts/comments written on the blog remain visible for the continuity of shared content, but your name is replaced with "Deleted user".</p>
 
@@ -532,7 +540,18 @@
             <button id="profile-change-nat-btn" onclick="openNationalityModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;">✏️ Cambia nazionalità</button>
             <button id="profile-change-pwd-btn" onclick="openChangePwdModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.changePwd">🔑 Cambia password</button>
           </div>
-          <div id="profile-stats-title" style="font-size:0.75rem;color:var(--text);margin-top:0.75rem;margin-bottom:0.3rem;" data-i18n="profile.statsTitle">I tuoi numeri Sgorbions</div>
+          <!-- PREFERENZE E-MAIL (consenso newsletter, revocabile in ogni momento) -->
+          <div id="profile-email-prefs-wrap" style="display:none;">
+            <div style="font-size:0.95rem;color:var(--text);margin-top:0.75rem;margin-bottom:0.3rem;" data-i18n="profile.emailPrefs.title">Preferenze e-mail</div>
+            <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">
+              <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-size:0.88rem;color:var(--text);">
+                <input type="checkbox" id="profile-newsletter-toggle" onchange="saveNewsletterConsent()" style="width:16px;height:16px;flex-shrink:0;cursor:pointer;">
+                <span data-i18n="profile.newsletter">Voglio ricevere la newsletter di figurinesgorbions.it</span>
+              </label>
+              <p style="font-size:0.85rem;color:var(--muted);margin:0.4rem 0 0 2.2rem;line-height:1.5;" data-i18n-html="profile.newsletter.hint">Ricevi le ultime novità sull'inventario degli Sgorbions.<br>Puoi attivarla o disattivarla quando vuoi.</p>
+            </div>
+          </div>
+          <div id="profile-stats-title" style="font-size:0.95rem;color:var(--text);margin-top:0.75rem;margin-bottom:0.3rem;" data-i18n="profile.statsTitle">I tuoi numeri Sgorbions</div>
           <div class="profile-stats" id="profile-stats-box" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;margin-top:0;">
             <div><div class="profile-stat-num" id="profile-owned">0</div><div class="profile-stat-label" data-i18n="profile.owned">Figurines Owned</div></div>
             <div><div class="profile-stat-num" id="profile-series-count">0</div><div class="profile-stat-label" data-i18n="profile.series">Series Tracked</div></div>
@@ -878,7 +897,7 @@
       <div class="section-header">
         <h1 class="section-title" data-i18n="newsletter.title">Invia Newsletter</h1>
       </div>
-      <div style="max-width:640px;margin:0 auto;">
+      <div style="max-width:900px;margin:0 auto;">
         <div class="form-group">
           <label class="form-label" data-i18n="newsletter.subject">Oggetto</label>
           <input class="form-input" type="text" id="newsletter-subject" data-i18n-placeholder="newsletter.subject.ph" placeholder="es. Nuova serie aggiunta!">
@@ -895,7 +914,8 @@
               <button class="tbl-btn tbl-btn-edit" onclick="selectAllNewsletterUsers(false)" data-i18n="newsletter.deselectAll">Deseleziona tutti</button>
             </div>
           </div>
-          <div id="newsletter-users-list" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;max-height:200px;overflow-y:auto;display:flex;flex-direction:column;gap:0.5rem;"></div>
+          <div id="newsletter-consent-summary" style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;"></div>
+          <div id="newsletter-users-list" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0;max-height:min(55vh, 620px);overflow-y:auto;"></div>
         </div>
         <button class="btn-primary" onclick="sendNewsletterFromAdmin()" data-i18n="newsletter.send">📧 Invia agli utenti selezionati</button>
         <hr class="divider">
@@ -1016,7 +1036,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.596</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.607</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1043,6 +1063,14 @@
         <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#fff;line-height:1.4;">
           <input type="checkbox" id="reg-age-confirm" style="width:16px;height:16px;flex-shrink:0;margin-top:2px;cursor:pointer;">
           <span data-i18n="form.ageConfirm">Confermo di avere almeno 16 anni</span>
+        </label>
+      </div>
+      <!-- Consenso newsletter: FACOLTATIVO e NON pre-spuntato (GDPR: il consenso
+           deve essere un'azione positiva dell'utente, mai un default da spegnere) -->
+      <div class="form-group" style="margin-top:0.5rem;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#fff;line-height:1.4;">
+          <input type="checkbox" id="reg-newsletter-consent" style="width:16px;height:16px;flex-shrink:0;margin-top:2px;cursor:pointer;">
+          <span data-i18n="form.newsletterConsent">Voglio ricevere la newsletter di figurinesgorbions.it (facoltativo)</span>
         </label>
       </div>
       <p style="font-size:0.78rem;color:#fff;margin-top:0.4rem;" data-i18n-html="form.privacyNotice">Registrandoti, accetti la nostra <a href="#" onclick="closeModal('auth-modal');showPage('privacy');return false;" style="color:var(--accent);">Privacy Policy</a>.</p>
@@ -1574,6 +1602,23 @@
       <div id="username-modal-error" style="display:none;color:#ff6464;font-size:0.85rem;margin-top:0.4rem;"></div>
     </div>
     <button class="btn-primary" style="width:100%;" onclick="saveNewUsername()" data-i18n="profile.changeUsername.save">Salva</button>
+  </div>
+</div>
+
+<!-- PROMPT CONSENSO NEWSLETTER (una tantum, per chi non l'ha mai espresso).
+     Volutamente senza ✕: le due risposte sono entrambe legittime e vanno
+     entrambe registrate — chiudere senza rispondere lascerebbe il campo
+     undefined e riproporrebbe il modal a ogni accesso. -->
+<div class="modal-overlay hidden" id="newsletter-consent-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" data-i18n="newsletterConsent.title">📧 Vuoi ricevere la newsletter?</h2>
+    </div>
+    <p style="font-size:0.9rem;color:var(--text);line-height:1.6;margin-bottom:1.25rem;" data-i18n-html="newsletterConsent.body">Non te l'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell'Inventario Sgorbions.<br>Nessuna pubblicità!<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.</p>
+    <div style="display:flex;gap:0.6rem;">
+      <button class="btn-primary" style="flex:1;" onclick="setNewsletterConsentFromPrompt(true)" data-i18n="newsletterConsent.yes">Sì, iscrivimi</button>
+      <button class="btn-secondary" style="flex:1;" onclick="setNewsletterConsentFromPrompt(false)" data-i18n="newsletterConsent.no">No, grazie</button>
+    </div>
   </div>
 </div>
 
