@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.591</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.596</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -278,8 +278,8 @@
         <span id="detail-progress-label" style="margin-left:0.4rem;">0 / 0</span>
       </div>
       <div id="bulk-owned-btns" style="display:none;gap:0.75rem;flex-wrap:wrap;align-items:center;">
-        <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;" data-i18n="catalog.haveall" data-i18n-title="catalog.haveall.hint" title="Aggiungi tutti gli oggetti mostrati in griglia (o nella vista tabellare) alla tua lista">✅ Tutto in lista</button>
-        <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;" data-i18n="catalog.havenone" data-i18n-title="catalog.havenone.hint" title="Svuota completamente la tua lista">❌ Svuota lista</button>
+        <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;" data-i18n="catalog.haveall" data-i18n-title="catalog.haveall.hint" title="Aggiungi tutti gli oggetti mostrati in griglia (o nella vista tabellare) alla tua lista">✅ Aggiungi tutto nella mia lista</button>
+        <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;" data-i18n="catalog.havenone" data-i18n-title="catalog.havenone.hint" title="Svuota completamente la tua lista">❌ Svuota la mia lista</button>
         <span id="set-all-msg" style="display:none;font-size:0.85rem;color:var(--accent);font-family:var(--font-ui);"></span>
       </div>
       <div id="items-complete-msg" style="display:none;width:100%;color:var(--accent);font-size:0.9rem;font-style:italic;"></div>
@@ -515,6 +515,7 @@
   <section class="section">
     <div class="section-inner">
       <div id="profile-content">
+      <button id="profile-back-btn" onclick="showPage(_previousPage)" style="display:flex;align-items:center;gap:0.4rem;font-size:0.9rem;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;margin-bottom:1rem;">← <span id="profile-back-btn-label">Torna a Home</span></button>
       <div class="profile-header">
         <div class="profile-avatar" id="profile-avatar" onclick="document.getElementById('avatar-upload').click()" style="cursor:pointer;position:relative;" title="Clicca per cambiare foto">
         <input type="file" id="avatar-upload" accept="image/*" style="display:none;" onchange="uploadAvatar(event)">
@@ -531,7 +532,8 @@
             <button id="profile-change-nat-btn" onclick="openNationalityModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;">✏️ Cambia nazionalità</button>
             <button id="profile-change-pwd-btn" onclick="openChangePwdModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.changePwd">🔑 Cambia password</button>
           </div>
-          <div class="profile-stats" id="profile-stats-box">
+          <div id="profile-stats-title" style="font-size:0.75rem;color:var(--text);margin-top:0.75rem;margin-bottom:0.3rem;" data-i18n="profile.statsTitle">I tuoi numeri Sgorbions</div>
+          <div class="profile-stats" id="profile-stats-box" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;margin-top:0;">
             <div><div class="profile-stat-num" id="profile-owned">0</div><div class="profile-stat-label" data-i18n="profile.owned">Figurines Owned</div></div>
             <div><div class="profile-stat-num" id="profile-series-count">0</div><div class="profile-stat-label" data-i18n="profile.series">Series Tracked</div></div>
           </div>
@@ -1014,7 +1016,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.591</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.596</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1568,7 +1570,7 @@
     <div class="form-group">
       <label class="form-label" data-i18n="form.username">Nome utente</label>
       <input class="form-input" type="text" id="new-username-input" maxlength="20" autocomplete="off">
-      <p style="font-size:0.78rem;color:var(--muted);margin-top:0.4rem;" data-i18n="profile.changeUsername.hint">Solo lettere, numeri e underscore, massimo 20 caratteri. È il nome pubblico visibile ad altri utenti (es. nella Classifica).</p>
+      <p style="font-size:0.78rem;color:var(--muted);margin-top:0.4rem;" data-i18n-html="profile.changeUsername.hint">Il nome utente è il nome pubblico visibile ad altri utenti (es. nella Classifica).<br><br>Usare solo lettere, numeri e underscore, massimo 20 caratteri.</p>
       <div id="username-modal-error" style="display:none;color:#ff6464;font-size:0.85rem;margin-top:0.4rem;"></div>
     </div>
     <button class="btn-primary" style="width:100%;" onclick="saveNewUsername()" data-i18n="profile.changeUsername.save">Salva</button>
