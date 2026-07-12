@@ -1,6 +1,180 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.607 — Su richiesta di Franco: ritoccato il testo del prompt di
+//          consenso — "Nessuna pubblicità!" con il punto esclamativo,
+//          riga vuota prima dell'ultima frase e punto finale su
+//          "...dal tuo profilo utente.". Adeguata la versione inglese
+//          (stessa punteggiatura e stessa spaziatura) e l'HTML statico
+//          di fallback.
+// v5.606 — Su richiesta di Franco: riscritto il testo del prompt di
+//          consenso alla newsletter. Ora la seconda parte è spezzata in
+//          tre righe brevi ("È solo qualche comunicazione sulle ultime
+//          novità dell'Inventario Sgorbions." / "Nessuna pubblicità." /
+//          "Puoi cambiare idea quando vuoi dal tuo profilo utente")
+//          invece di un unico periodo. Aggiornate entrambe le lingue e
+//          l'HTML statico di fallback.
+// v5.605 — Su richiesta di Franco: la tabella destinatari della Newsletter
+//          si ordina cliccando sull'intestazione. Ordinabili: Utente,
+//          E-mail, Naz., Consenso; un secondo clic inverte il verso
+//          (freccia ▲/▼ sulla colonna attiva). Non ordinabili le tre
+//          colonne di caselle: la selezione è uno stato transitorio, non
+//          un dato dell'utente.
+//          Due scelte non banali:
+//          - LA SELEZIONE VIENE PRESERVATA. Rigenerare la tabella
+//            distrugge le caselle spuntate: chi avesse selezionato dieci
+//            utenti e poi cliccato su un'intestazione avrebbe perso tutto
+//            senza capire perché. Prima di riordinare, lo stato delle tre
+//            serie di caselle viene fotografato per id utente
+//            (_snapshotNewsletterSelection) e rimesso dopo il render
+//            (_restoreNewsletterSelection). Una casella E-mail disabilitata
+//            per mancanza di consenso resta spenta anche al ripristino.
+//          - IL CONSENSO NON SI ORDINA ALFABETICAMENTE. Ha un ordine suo,
+//            dal più al meno raggiungibile: sì → mai chiesto → no. È
+//            l'informazione che serve davvero all'admin; un ordinamento
+//            per etichetta ("Mai chiesto", "No", "Sì") non direbbe nulla.
+//          La nazionalità ordina per nome, con chi non l'ha impostata in
+//          fondo (e non in cima, com'è naturale per una stringa vuota).
+//          Stato iniziale: nessun ordinamento, ordine originale, nessuna
+//          freccia — non si impone un ordine che nessuno ha chiesto.
+// v5.604 — Su segnalazione di Franco: la tabella destinatari della
+//          Newsletter costringeva a scorrere lateralmente. Causa: NON la
+//          tabella, ma il contenitore — l'intera pagina Newsletter vive
+//          dentro un max-width:640px (index.html), troppo stretto per
+//          sette colonne; e siccome il riquadro ha overflow-y:auto, il
+//          browser attiva in automatico anche l'overflow-x. Contenitore
+//          portato a 900px.
+//          Aggiunto però anche table-layout:fixed sulla tabella, che
+//          prima non c'era: senza, il browser dimensiona le colonne sul
+//          contenuto e un solo indirizzo e-mail lungo basterebbe ad
+//          allargare di nuovo la tabella oltre il contenitore, facendo
+//          ricomparire lo scorrimento laterale — allargare il contenitore
+//          da solo non sarebbe stata una soluzione stabile. Con le
+//          larghezze dichiarate (36+56+130+70+80 = 372px fissi, Utente al
+//          22%) restano 328px per l'e-mail su 898px utili; Utente ed
+//          E-mail vanno a capo (overflow-wrap:anywhere) invece di
+//          spingere la tabella.
+// v5.603 — Su richiesta di Franco: i titoli dei due box del profilo
+//          ("Preferenze e-mail" e "I tuoi numeri Sgorbions") ingranditi
+//          da 0.75rem a 0.95rem. Tenuti identici tra loro, come già
+//          erano: sono due etichette dello stesso livello gerarchico e
+//          una differenza di corpo tra le due si noterebbe. Restano sopra
+//          il testo esplicativo del box e-mail (0.85rem dalla v5.601),
+//          così la gerarchia titolo → testo resta leggibile.
+//          Modificato solo index.html (stili inline).
+// v5.602 — Su richiesta di Franco: (1) i toast di conferma compaiono ora
+//          al CENTRO dello schermo, non più in basso — modifica al
+//          contenitore #toast-container in style.css (era bottom:2rem,
+//          ora top/left 50% con translate(-50%,-50%)). Vale per TUTTI i
+//          toast del sito, non solo per quelli della newsletter.
+//          Aggiunto pointer-events:none al contenitore: stando ora al
+//          centro, intercetterebbe i clic sul contenuto sottostante (i
+//          toast non sono interattivi, quindi non perde nulla). Aggiunti
+//          anche text-align:center, line-height e una larghezza massima,
+//          per i messaggi su più righe.
+//          (2) Nuovi messaggi di conferma per l'attivazione e la
+//          disattivazione della newsletter dal profilo, su più righe
+//          (toast() usa innerHTML quando trova un <br>) e con durata più
+//          lunga del default di 3.5s — tre righe non si leggono in tre
+//          secondi e mezzo. Il "sì" del prompt una-tantum usa lo stesso
+//          messaggio del toggle; il "no" no, perché lì non c'è nessuna
+//          disattivazione da rimpiangere: è una prima risposta, non una
+//          revoca.
+// v5.601 — Su richiesta di Franco: riscritto il testo esplicativo del box
+//          "Preferenze e-mail" nel profilo — ora "Ricevi le ultime novità
+//          sull'inventario degli Sgorbions." su una riga, "Puoi attivarla
+//          o disattivarla quando vuoi." sulla successiva. Passato da
+//          data-i18n a data-i18n-html per poter inserire l'interruzione di
+//          riga, in entrambe le lingue. Font ingrandito da 0.75rem a
+//          0.85rem (interlinea da 1.4 a 1.5).
+//          Nota: il testo non elenca più le e-mail di servizio che
+//          arrivano comunque (benvenuto, risposte) — l'informazione resta
+//          nella Privacy Policy, sezione Newsletter.
+// v5.600 — Su richiesta di Franco: l'elenco destinatari del pannello
+//          Newsletter è ora una tabella (classe .data-table compact, già
+//          esistente — nessuna modifica al CSS), invece di righe di testo
+//          a scorrimento libero: con sette informazioni per riga le
+//          colonne non risultavano allineate. Colonne: selezione, Utente,
+//          E-mail, Naz., Consenso, Invia e-mail, Invia messaggio.
+//          - L'intestazione è sticky in cima all'area di scorrimento.
+//          - Il riepilogo consensi è uscito dall'area di scorrimento (suo
+//            elemento dedicato #newsletter-consent-summary), così non
+//            consuma righe di elenco.
+//          - La colonna Consenso mostra i TRE stati reali del dato, non
+//            due: "✅ Sì", "⛔ No" e "— Mai chiesto" (campo undefined).
+//            Un rifiuto esplicito e un consenso mai richiesto sono
+//            situazioni diverse e all'admin serve distinguerle; il
+//            tooltip riporta data e origine del consenso.
+//          Invariata la logica di invio: la casella E-mail resta
+//          disattivata senza consenso, quella Messaggio resta sempre
+//          attiva (è in-app, non è un'e-mail).
+// v5.599 — Su segnalazione di Franco: registrandosi con il sito in
+//          italiano, al primo accesso il sito passava all'inglese. Due
+//          bachi distinti, uno dei quali ne nascondeva un altro.
+//          (1) OVERRIDE DA NAZIONALITÀ SUL CAMPO VUOTO. Alla fine di
+//          doRegister/doLogin/signInWithGoogle la lingua veniva dedotta
+//          così: (nationalityCode === 'it') ? 'it' : 'en'. Tutto ciò che
+//          non è 'it' diventa inglese — COMPRESA la nazionalità vuota,
+//          che nel form non è validata come obbligatoria (e che per un
+//          nuovo utente Google è sempre vuota, perché Google non la
+//          fornisce). Chi non sceglieva la nazionalità finiva quindi in
+//          inglese qualunque lingua stesse usando. Ora la nazionalità
+//          sovrascrive la lingua solo SE è stata scelta: è un gesto
+//          deliberato e come tale prevale sulla lingua della form (che
+//          può venire da un rilevamento automatico); se è vuota non c'è
+//          nulla da far prevalere e si tiene la lingua in uso.
+//          (2) RILEVAMENTO navigator.language MAI ESEGUITO (codice morto).
+//          Il blocco in loadAllData() era protetto da "!LOCAL.get('lang')"
+//          — ma setLang(), chiamato nel blocco INIT PRIMA di
+//          initFirebase()→loadAllData(), scrive già LOCAL('lang'). La
+//          condizione era quindi sempre falsa. Conseguenza: un visitatore
+//          nuovo con browser inglese vedeva il sito in italiano, per via
+//          del default hardcoded "LOCAL.get('lang') || 'it'". Di fatto la
+//          misura GDPR che aveva sostituito ipapi.co con navigator.language
+//          non produceva alcun effetto. Il rilevamento è ora fatto alla
+//          prima assegnazione di currentLang (_detectBrowserLang), dove
+//          l'ordine di esecuzione è corretto; il fallback resta l'italiano
+//          quando il browser non dichiara alcuna lingua.
+// v5.598 — Su segnalazione di Franco: l'elenco destinatari del pannello
+//          Newsletter era troppo corto. Causa: un max-height fisso di
+//          200px sul contenitore (index.html) — con in più il riepilogo
+//          consensi introdotto in v5.597, che scorrendo insieme alla
+//          lista le rubava altro spazio utile. Due correzioni:
+//          - altezza ora proporzionale alla finestra, min(55vh, 620px),
+//            invece di un valore in pixel deciso a priori: si adatta allo
+//            schermo, e il tetto a 620px evita che su un monitor molto
+//            alto la lista scappi sotto il pulsante di invio;
+//          - il riepilogo consensi è ora sticky in cima all'area di
+//            scorrimento: resta sempre visibile e non consuma più righe
+//            di elenco.
+// v5.597 — CONSENSO NEWSLETTER (GDPR). Causa: la newsletter veniva
+//          inviata a tutti gli utenti registrati senza alcun consenso
+//          raccolto né tracciato — il GDPR lo richiede per le
+//          comunicazioni non transazionali, e richiede anche di poterlo
+//          DIMOSTRARE. Introdotti tre campi su users:
+//          newsletterConsent (bool), newsletterConsentDate (ISO),
+//          newsletterConsentSource ('registration'|'profile'|'prompt').
+//          - Registrazione e-mail/password: nuova casella FACOLTATIVA e
+//            NON pre-spuntata (il considerando 32 GDPR e la sentenza
+//            Planet49 escludono le caselle pre-spuntate: il consenso
+//            deve essere un'azione positiva dell'utente).
+//          - Profilo: nuovo box "Preferenze e-mail" con toggle, che
+//            consente di dare o revocare il consenso in ogni momento.
+//          - Utenti preesistenti (e nuovi utenti Google): il campo resta
+//            undefined = "mai chiesto". Al primo accesso utile compare
+//            un modal che chiede sì/no (maybeAskNewsletterConsent).
+//            Finché non rispondono, NON ricevono la newsletter: il
+//            silenzio non vale come consenso.
+//          - Invio: filtro sul consenso sia in sendNewsletterFromAdmin()
+//            sia in sendNewsletterEmail(). Il filtro NON è solo nella UI
+//            ma anche nella funzione di invio (difesa in profondità).
+//          - Le e-mail TRANSAZIONALI restano invariate e non filtrate
+//            (benvenuto, risposta a un post, risposta a un messaggio,
+//            reset password): non sono marketing, non serve il consenso.
+//          - Il canale "Messaggio" interno del pannello Newsletter resta
+//            aperto a tutti: è in-app, non è un'e-mail.
+//          - Ogni newsletter porta in calce un rimando al profilo per
+//            gestire le preferenze (revoca sempre disponibile).
 // v5.596 — Su richiesta di Franco: pulsante rinominato "Svuota la mia
 //          lista" (era "Svuota lista"), in entrambe le lingue e
 //          nell'HTML statico di fallback.
@@ -3411,16 +3585,115 @@ async function saveEmailReplyTo(value) {
   _cache.emailReplyTo = value;
 }
 
+// ============================================================
+//  CONSENSO NEWSLETTER (GDPR)
+// ------------------------------------------------------------
+//  hasNewsletterConsent() è l'unico punto di verità: un utente riceve la
+//  newsletter SOLO se newsletterConsent === true. Il campo undefined
+//  ("mai chiesto", tutti gli utenti registrati prima della v5.597) vale
+//  come NO — il silenzio non è consenso.
+// ============================================================
+function hasNewsletterConsent(user) {
+  return user?.newsletterConsent === true;
+}
+
+// Chiede il consenso a chi non l'ha mai espresso (campo undefined): tutti gli
+// utenti registrati prima della v5.597, e i nuovi utenti Google (che non
+// passano dal form di registrazione, quindi non vedono la casella).
+// Non viene mai chiesto all'admin, né durante un'impersonificazione.
+function maybeAskNewsletterConsent() {
+  if (!currentUser || currentUser.isAdmin) return;
+  if (typeof isImpersonating === 'function' && isImpersonating()) return;
+  if (currentUser.newsletterConsent !== undefined) return; // già chiesto: sì o no che sia
+  const modal = document.getElementById('newsletter-consent-modal');
+  if (modal) modal.classList.remove('hidden');
+}
+
+// Risposta al prompt. Registra SEMPRE la scelta (anche il "no"), con data e
+// origine: il GDPR chiede di poter dimostrare il consenso, e registrare anche
+// il rifiuto evita di riproporre il modal a ogni accesso.
+async function setNewsletterConsentFromPrompt(value) {
+  const modal = document.getElementById('newsletter-consent-modal');
+  if (modal) modal.classList.add('hidden');
+  if (!currentUser) return;
+  currentUser.newsletterConsent = !!value;
+  currentUser.newsletterConsentDate = new Date().toISOString();
+  currentUser.newsletterConsentSource = 'prompt';
+  LOCAL.set('currentUser', currentUser);
+  await fsSave('users', currentUser);
+  const L = currentLang === 'it';
+  // Il "sì" del prompt usa lo stesso messaggio del toggle nel profilo. Il "no"
+  // no: qui non c'è nessuna disattivazione da rimpiangere — è una prima
+  // risposta, non una revoca.
+  if (value) {
+    toast(L
+      ? "Hai attivato l'iscrizione alla newsletter figurinesgorbions.it<br>Complimenti e grazie!"
+      : "You've subscribed to the figurinesgorbions.it newsletter<br>Thank you!",
+      'success', null, 5000);
+  } else {
+    toast(L
+      ? 'Nessuna newsletter: rispetteremo la tua scelta.<br>Potrai attivarla quando vuoi dal tuo profilo.'
+      : "No newsletter: we'll respect your choice.<br>You can enable it anytime from your profile.",
+      'success', null, 5000);
+  }
+}
+
+// Toggle nel profilo: dà o revoca il consenso in qualsiasi momento.
+async function saveNewsletterConsent() {
+  if (!currentUser) return;
+  const cb = document.getElementById('profile-newsletter-toggle');
+  const enabling = cb?.checked || false;
+  currentUser.newsletterConsent = enabling;
+  currentUser.newsletterConsentDate = new Date().toISOString();
+  currentUser.newsletterConsentSource = 'profile';
+  LOCAL.set('currentUser', currentUser);
+  try {
+    await fsSave('users', currentUser);
+  } catch(e) {
+    console.error('saveNewsletterConsent', e);
+    if (cb) cb.checked = !enabling; // ripristino lo stato: il salvataggio non è andato
+    toast(currentLang === 'it' ? 'Salvataggio non riuscito, riprova' : 'Save failed, please retry', 'error');
+    return;
+  }
+  const L = currentLang === 'it';
+  // Messaggi su più righe: toast() passa a innerHTML quando trova un <br>.
+  // Durata più lunga di quella di default (3.5s): tre righe non si leggono in
+  // tre secondi e mezzo.
+  if (enabling) {
+    toast(L
+      ? "Hai attivato l'iscrizione alla newsletter figurinesgorbions.it<br>Complimenti e grazie!"
+      : "You've subscribed to the figurinesgorbions.it newsletter<br>Thank you!",
+      'success', null, 5000);
+  } else {
+    toast(L
+      ? "Ci dispiace che tu abbia disattivato la newsletter!<br>Potrai riattivarla quando vuoi.<br>Ricorda che è l'unico modo per rimanere aggiornato sull'Inventario Sgorbions via e-mail."
+      : "We're sorry to see you unsubscribe!<br>You can turn it back on whenever you like.<br>Remember it's the only way to stay up to date on the Sgorbions Inventory by e-mail.",
+      'success', null, 7000);
+  }
+}
+
+const NEWSLETTER_FOOTER = (username) =>
+  '\n\n———\n' +
+  'Ricevi questa e-mail perché hai acconsentito alla newsletter di figurinesgorbions.it.\n' +
+  'Puoi revocare il consenso in qualsiasi momento dal tuo profilo, sezione "Preferenze e-mail":\n' +
+  'https://figurinesgorbions.it';
+
 async function sendEmail(toEmail, username, subject, messaggio, options = {}) {
   // Log always, regardless of EmailJS outcome
   if (typeof emailjs === 'undefined') { console.warn('EmailJS not loaded'); await logEmail(toEmail, subject, options.source || 'other', messaggio, 'failed'); return { ok: false, error: 'EmailJS non caricato' }; }
   try {
     const replyTo = await getEmailReplyTo();
+    // Solo la newsletter porta in calce il rimando alla revoca del consenso:
+    // le e-mail transazionali (benvenuto, risposte) non sono marketing e non
+    // hanno una disiscrizione da offrire.
+    const bodyToSend = (options.source === 'newsletter')
+      ? messaggio + NEWSLETTER_FOOTER(username)
+      : messaggio;
     const payload = {
       email: toEmail,
       username: username,
       subject: subject,
-      messaggio: messaggio
+      messaggio: bodyToSend
     };
     if (replyTo) payload.reply_to = replyTo;
     if (options.bcc) payload.bcc = options.bcc;
@@ -3652,30 +3925,124 @@ async function saveReplyToField() {
   toast(currentLang === 'it' ? '✅ Indirizzo salvato!' : '✅ Address saved!', 'success');
 }
 
+// Stato dell'ordinamento della tabella destinatari. col=null → ordine
+// originale (quello di getData), nessuna freccia mostrata.
+let _nlSort = { col: null, dir: 'asc' };
+
+// Rigenerare la tabella distrugge le caselle spuntate: prima di riordinare le
+// fotografiamo e poi le rimettiamo, altrimenti l'admin che seleziona dieci
+// utenti e poi clicca su un'intestazione perde la selezione senza capire perché.
+function _snapshotNewsletterSelection() {
+  const grab = (cls) => new Set([...document.querySelectorAll('.' + cls)].filter(cb => cb.checked).map(cb => cb.dataset.id));
+  return { sel: grab('newsletter-user-cb'), email: grab('newsletter-user-email-cb'), msg: grab('newsletter-user-msg-cb') };
+}
+function _restoreNewsletterSelection(snap) {
+  if (!snap) return;
+  const put = (cls, set) => document.querySelectorAll('.' + cls).forEach(cb => {
+    if (cb.disabled) return; // una casella E-mail disabilitata (nessun consenso) resta spenta
+    cb.checked = set.has(cb.dataset.id);
+  });
+  put('newsletter-user-cb', snap.sel);
+  put('newsletter-user-email-cb', snap.email);
+  put('newsletter-user-msg-cb', snap.msg);
+}
+
+function sortNewsletterUsers(col) {
+  if (_nlSort.col === col) _nlSort.dir = (_nlSort.dir === 'asc') ? 'desc' : 'asc';
+  else _nlSort = { col, dir: 'asc' };
+  const snap = _snapshotNewsletterSelection();
+  renderNewsletterUsers();
+  _restoreNewsletterSelection(snap);
+}
+
 function renderNewsletterUsers() {
   renderNewsletterLog('newsletter-email-log');
   const el = document.getElementById('newsletter-users-list');
+  const sumEl = document.getElementById('newsletter-consent-summary');
   if (!el) return;
-  const users = getData('users', []).filter(u => !u.isAdmin && u.email);
-  if (!users.length) { el.innerHTML = '<p style="color:var(--muted);font-size:0.88rem;">Nessun utente registrato.</p>'; return; }
-  el.innerHTML = users.map(u => `
-    <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-size:0.9rem;padding:4px 0;">
-      <input type="checkbox" class="newsletter-user-cb" data-id="${u.id}" data-email="${u.email}" data-username="${u.username}"
-        style="width:16px;height:16px;cursor:pointer;">
-      <span>${u.username}</span>
-      <span style="color:var(--muted);font-size:0.8rem;">&lt;${u.email}&gt;</span>
-      ${u.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''}
-      <span style="margin-left:auto;display:flex;gap:0.75rem;">
-        <label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;font-size:0.78rem;color:var(--muted);" onclick="event.stopPropagation();">
-          <input type="checkbox" class="newsletter-user-email-cb" data-id="${u.id}" checked style="width:14px;height:14px;cursor:pointer;">
-          ${currentLang === 'it' ? 'E-mail' : 'E-mail'}
-        </label>
-        <label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;font-size:0.78rem;color:var(--muted);" onclick="event.stopPropagation();">
-          <input type="checkbox" class="newsletter-user-msg-cb" data-id="${u.id}" style="width:14px;height:14px;cursor:pointer;">
-          ${currentLang === 'it' ? 'Messaggio' : 'Message'}
-        </label>
-      </span>
-    </label>`).join('');
+  const L = currentLang === 'it';
+  let users = getData('users', []).filter(u => !u.isAdmin && u.email);
+  if (!users.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:0.88rem;padding:0.75rem;">' + (L ? 'Nessun utente registrato.' : 'No registered users.') + '</p>';
+    if (sumEl) sumEl.innerHTML = '';
+    return;
+  }
+
+  // Riepilogo consensi, fuori dall'area di scorrimento: resta sempre visibile
+  const yes   = users.filter(u => u.newsletterConsent === true).length;
+  const no    = users.filter(u => u.newsletterConsent === false).length;
+  const never = users.length - yes - no; // undefined: mai chiesto
+  if (sumEl) {
+    sumEl.innerHTML = L
+      ? `📧 <strong style="color:var(--text);">${yes}</strong> con consenso · <strong style="color:var(--text);">${no}</strong> senza · <strong style="color:var(--text);">${never}</strong> mai chiesto. A chi non ha dato il consenso la casella E-mail è disattivata — puoi comunque raggiungerlo con un Messaggio interno.`
+      : `📧 <strong style="color:var(--text);">${yes}</strong> consented · <strong style="color:var(--text);">${no}</strong> declined · <strong style="color:var(--text);">${never}</strong> never asked. The E-mail box is disabled for those without consent — you can still reach them with an internal Message.`;
+  }
+
+  // Ordinamento. Il consenso non è alfabetico: ha un ordine suo, dal più al meno
+  // raggiungibile (sì → mai chiesto → no), che è l'informazione utile all'admin.
+  if (_nlSort.col) {
+    const consentRank = (u) => u.newsletterConsent === true ? 0 : (u.newsletterConsent === undefined ? 1 : 2);
+    const key = (u) => {
+      switch (_nlSort.col) {
+        case 'username': return (u.username || '').toLowerCase();
+        case 'email':    return (u.email || '').toLowerCase();
+        case 'nat':      return (u.nationalityName || '\uffff').toLowerCase(); // senza nazionalità in fondo
+        case 'consent':  return consentRank(u);
+        default:         return '';
+      }
+    };
+    const mul = (_nlSort.dir === 'asc') ? 1 : -1;
+    users = [...users].sort((a, b) => {
+      const ka = key(a), kb = key(b);
+      if (typeof ka === 'number') return (ka - kb) * mul;
+      return ka.localeCompare(kb, L ? 'it' : 'en') * mul;
+    });
+  }
+
+  const arrow = (col) => _nlSort.col === col ? (_nlSort.dir === 'asc' ? ' ▲' : ' ▼') : '';
+  const th  = 'padding:0.4rem 0.75rem;position:sticky;top:0;z-index:1;background:var(--card2);';
+  const thS = th + 'cursor:pointer;user-select:none;'; // intestazione ordinabile
+  // table-layout:fixed — le larghezze dichiarate sotto vengono rispettate e lo
+  // spazio restante è diviso tra Utente ed E-mail. Senza, il browser dimensiona
+  // in base al contenuto e un indirizzo e-mail lungo allargherebbe la tabella
+  // oltre il contenitore, riportando lo scorrimento orizzontale.
+  el.innerHTML = `<table class="data-table compact" style="border-spacing:0;table-layout:fixed;width:100%;">
+    <thead><tr>
+      <th style="${th}width:36px;"></th>
+      <th style="${thS}width:22%;" onclick="sortNewsletterUsers('username')" title="${L ? 'Ordina per utente' : 'Sort by user'}">${L ? 'Utente' : 'User'}${arrow('username')}</th>
+      <th style="${thS}" onclick="sortNewsletterUsers('email')" title="${L ? 'Ordina per e-mail' : 'Sort by e-mail'}">E-mail${arrow('email')}</th>
+      <th style="${thS}width:56px;text-align:center;" onclick="sortNewsletterUsers('nat')" title="${L ? 'Ordina per nazionalità' : 'Sort by nationality'}">${L ? 'Naz.' : 'Nat.'}${arrow('nat')}</th>
+      <th style="${thS}width:130px;" onclick="sortNewsletterUsers('consent')" title="${L ? 'Ordina per consenso' : 'Sort by consent'}">${L ? 'Consenso' : 'Consent'}${arrow('consent')}</th>
+      <th style="${th}width:70px;text-align:center;">${L ? 'Invia e-mail' : 'Send e-mail'}</th>
+      <th style="${th}width:80px;text-align:center;">${L ? 'Invia messaggio' : 'Send message'}</th>
+    </tr></thead>
+    <tbody>` + users.map(u => {
+      const ok = hasNewsletterConsent(u);
+      return `<tr style="opacity:${ok ? '1' : '0.75'};">
+        <td style="text-align:center;">
+          <input type="checkbox" class="newsletter-user-cb" data-id="${u.id}" data-email="${u.email}" data-username="${u.username}" style="width:16px;height:16px;cursor:pointer;">
+        </td>
+        <td style="overflow-wrap:anywhere;">${u.username}</td>
+        <td style="color:var(--muted);overflow-wrap:anywhere;">${u.email}</td>
+        <td style="text-align:center;">${u.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName || ''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : '<span style="color:var(--muted);">—</span>'}</td>
+        <td>${consentCell(u)}</td>
+        <td style="text-align:center;" title="${ok ? '' : (L ? 'Nessun consenso: e-mail non inviabile' : 'No consent: e-mail cannot be sent')}">
+          <input type="checkbox" class="newsletter-user-email-cb" data-id="${u.id}" ${ok ? 'checked' : 'disabled'} style="width:16px;height:16px;cursor:${ok ? 'pointer' : 'not-allowed'};">
+        </td>
+        <td style="text-align:center;">
+          <input type="checkbox" class="newsletter-user-msg-cb" data-id="${u.id}" style="width:16px;height:16px;cursor:pointer;">
+        </td>
+      </tr>`;
+    }).join('') + `</tbody></table>`;
+
+  function consentCell(u) {
+    const when = u.newsletterConsentDate ? new Date(u.newsletterConsentDate).toLocaleDateString(L ? 'it-IT' : 'en-GB') : '';
+    const src  = u.newsletterConsentSource || '';
+    const tip  = when ? `${L ? 'Il' : 'On'} ${when}${src ? ' (' + src + ')' : ''}` : (L ? 'Consenso mai richiesto' : 'Consent never requested');
+    if (u.newsletterConsent === true)  return `<span title="${tip}" style="color:var(--accent);">✅ ${L ? 'Sì' : 'Yes'}</span>`;
+    if (u.newsletterConsent === false) return `<span title="${tip}" style="color:#ff6464;">⛔ ${L ? 'No' : 'No'}</span>`;
+    return `<span title="${tip}" style="color:#ffb400;">— ${L ? 'Mai chiesto' : 'Never asked'}</span>`;
+  }
 }
 
 function selectAllNewsletterUsers(select) {
@@ -3715,22 +4082,35 @@ async function sendNewsletterFromAdmin() {
   if (!confirm((currentLang === 'it' ? 'Inviare la newsletter a ' : 'Send newsletter to ') + selected.length + (currentLang === 'it' ? ' utenti?' : ' users?'))) return;
   const adminUser = getData('users', []).find(u => u.isAdmin);
   const bcc = adminUser?.email || null;
-  let emailCount = 0, msgCount = 0;
+  let emailCount = 0, msgCount = 0, blockedCount = 0;
+  const allUsers = getData('users', []);
   for (const cb of selected) {
     const wantsEmail = document.querySelector(`.newsletter-user-email-cb[data-id="${cb.dataset.id}"]`)?.checked;
     const wantsMsg = document.querySelector(`.newsletter-user-msg-cb[data-id="${cb.dataset.id}"]`)?.checked;
-    if (wantsEmail) { await sendEmail(cb.dataset.email, cb.dataset.username, subject, body, { bcc, source: 'newsletter' }); emailCount++; }
+    // Guardia sul consenso: ricontrollata qui e non solo nella UI. Se la
+    // casella fosse riabilitata a mano (o il dato cambiasse nel frattempo),
+    // l'e-mail non parte comunque.
+    const u = allUsers.find(x => x.id === cb.dataset.id);
+    if (wantsEmail && !hasNewsletterConsent(u)) {
+      blockedCount++;
+      console.warn('Newsletter non inviata a', cb.dataset.email, '— nessun consenso');
+    } else if (wantsEmail) {
+      await sendEmail(cb.dataset.email, cb.dataset.username, subject, body, { bcc, source: 'newsletter' }); emailCount++;
+    }
     if (wantsMsg) { await sendNewsletterMessage({ username: cb.dataset.username, email: cb.dataset.email }, subject, body); msgCount++; }
   }
   if (emailCount) await incrementEmailCounter(emailCount);
-  toast((currentLang === 'it' ? `Newsletter inviata: ${emailCount} e-mail, ${msgCount} messaggi! 📧` : `Newsletter sent: ${emailCount} e-mails, ${msgCount} messages! 📧`), 'success');
+  const blockedNote = blockedCount ? (currentLang === 'it' ? ` — ${blockedCount} e-mail non inviate (nessun consenso)` : ` — ${blockedCount} e-mails not sent (no consent)`) : '';
+  toast((currentLang === 'it' ? `Newsletter inviata: ${emailCount} e-mail, ${msgCount} messaggi! 📧${blockedNote}` : `Newsletter sent: ${emailCount} e-mails, ${msgCount} messages! 📧${blockedNote}`), 'success');
   document.getElementById('newsletter-subject').value = '';
   document.getElementById('newsletter-body').value = '';
   renderNewsletterLog('newsletter-email-log');
 }
 
 async function sendNewsletterEmail(subject, messaggio) {
-  const users = getData('users', []).filter(u => !u.isAdmin && u.email);
+  // Filtro sul consenso: chi non l'ha dato (o non ha ancora risposto al
+  // prompt) non riceve la newsletter, mai.
+  const users = getData('users', []).filter(u => !u.isAdmin && u.email && hasNewsletterConsent(u));
   // BCC dinamico: legge l'email dell'admin dal database ad ogni invio,
   // così riflette sempre quella attuale (modificabile dal Profilo).
   const adminUser = getData('users', []).find(u => u.isAdmin);
@@ -3746,7 +4126,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.596';
+const JS_VERSION = 'v5.607';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -4226,15 +4606,9 @@ async function migrateFigurinesIntoSeries() {
 async function loadAllData() {
   showLoadingOverlay(true);
 
-  // Rilevamento lingua iniziale per i visitatori anonimi (senza login e senza
-  // preferenza lingua già salvata). Usiamo navigator.language (informazione
-  // già presente nel browser) invece di un servizio di geolocalizzazione IP
-  // di terze parti, per non inviare l'IP del visitatore a servizi esterni
-  // senza consenso prima ancora che l'utente interagisca con il sito.
-  if (!currentUser && !LOCAL.get('lang')) {
-    const browserLang = (navigator.language || navigator.userLanguage || '').toLowerCase();
-    currentLang = browserLang.startsWith('it') ? 'it' : 'en';
-  }
+  // (Il rilevamento della lingua del browser è stato spostato alla prima
+  // assegnazione di currentLang — qui non veniva mai eseguito: vedi la nota
+  // su _detectBrowserLang.)
 
   // Cache in sessionStorage per ridurre le letture Firebase
   // Le collection che cambiano raramente vengono cachate per la sessione corrente
@@ -4441,7 +4815,7 @@ const i18n = {
 'contact.location.val':'Italy 🇮🇹','contact.resp':'Response time','contact.resp.val':'Usually within 24–48 hours',
 'form.name.ph':'Sgorbions Fan','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio!',
 'form.message':'Message','form.message.ph':'Tell me everything...',
-'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality','form.ageConfirm':'I confirm I am at least 16 years old','form.privacyNotice':'By registering, you agree to our <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Privacy Policy</a>.','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
+'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality','form.ageConfirm':'I confirm I am at least 16 years old','form.newsletterConsent':'I want to receive the figurinesgorbions.it newsletter (optional)','profile.emailPrefs.title':'E-mail preferences','profile.newsletter':'I want to receive the figurinesgorbions.it newsletter','profile.newsletter.hint':'Get the latest news about the Sgorbions inventory.<br>You can turn it on or off whenever you like.','newsletterConsent.title':'📧 Would you like the newsletter?','newsletterConsent.body':'We never actually asked you — and without your consent we won\'t send it.<br><br>It\'s just the occasional update on the latest news from the Sgorbions Inventory.<br>No advertising!<br><br>You can change your mind anytime from your profile.','newsletterConsent.yes':'Yes, sign me up','newsletterConsent.no':'No, thanks','form.privacyNotice':'By registering, you agree to our <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Privacy Policy</a>.','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
 'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Stickers',
 'form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.desc.en':'Description (English)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Cover Image',
 'form.click':'Click to upload','form.drag':'or drag and drop',
@@ -4544,7 +4918,7 @@ const i18n = {
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'E-mail','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
-    'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','form.privacyNotice':'Registrandoti, accetti la nostra <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Informativa sulla Privacy</a>.','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
+    'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','form.newsletterConsent':'Voglio ricevere la newsletter di figurinesgorbions.it (facoltativo)','profile.emailPrefs.title':'Preferenze e-mail','profile.newsletter':'Voglio ricevere la newsletter di figurinesgorbions.it','profile.newsletter.hint':'Ricevi le ultime novità sull\'inventario degli Sgorbions.<br>Puoi attivarla o disattivarla quando vuoi.','newsletterConsent.title':'📧 Vuoi ricevere la newsletter?','newsletterConsent.body':'Non te l\'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell\'Inventario Sgorbions.<br>Nessuna pubblicità!<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.','newsletterConsent.yes':'Sì, iscrivimi','newsletterConsent.no':'No, grazie','form.privacyNotice':'Registrandoti, accetti la nostra <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Informativa sulla Privacy</a>.','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.desc.en':'Descrizione (Inglese)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
@@ -4566,7 +4940,21 @@ const i18n = {
   ,'form.fig.noNumber':'Non ha numero','auth.googleBtn':'Accedi con Google','auth.or':'oppure'}
 };
 
-let currentLang = LOCAL.get('lang') || 'it';
+// Lingua del browser (navigator.language: informazione già presente nel
+// browser, nessuna richiesta di rete verso terzi — vedi Privacy Policy).
+// Se il browser non dichiara nulla, il default è l'italiano.
+function _detectBrowserLang() {
+  const b = (navigator.language || navigator.userLanguage || '').toLowerCase();
+  if (!b) return 'it';
+  return b.startsWith('it') ? 'it' : 'en';
+}
+
+// ATTENZIONE all'ordine: il rilevamento va fatto QUI, alla prima assegnazione.
+// Farlo più tardi (com'era in loadAllData) è inutile — setLang(), chiamato nel
+// blocco INIT prima di initFirebase(), scrive già LOCAL('lang'), quindi il
+// controllo "!LOCAL.get('lang')" là in fondo risultava sempre falso e il
+// rilevamento non veniva MAI eseguito.
+let currentLang = LOCAL.get('lang') || _detectBrowserLang();
 
 function t(key) { return (i18n[currentLang] || i18n.en)[key] || (i18n.en)[key] || key; }
 
@@ -4796,10 +5184,12 @@ async function doLogin() {
   user.lastLogin = new Date().toISOString();
   currentUser = user;
   LOCAL.set('currentUser', user);
-  // Set language based on nationality only if user hasn't explicitly set a language
-  if (!LOCAL.get('lang_set_by_user_' + user.id)) {
-    const lang = (user.nationalityCode === 'it') ? 'it' : 'en';
-    setLang(lang);
+  // Al login la Nazionalità reimposta la lingua, ma solo se: (a) l'utente non ha
+  // scelto esplicitamente una lingua cliccando la bandierina, e (b) una
+  // nazionalità c'è davvero. Se è vuota si tiene la lingua in uso — prima veniva
+  // trattata come "non italiano" e forzava l'inglese.
+  if (!LOCAL.get('lang_set_by_user_' + user.id) && user.nationalityCode) {
+    setLang(user.nationalityCode === 'it' ? 'it' : 'en');
     applyI18n();
   }
   fsSave('users', user); // lastLogin: non blocca il login, non serve attenderlo
@@ -4815,6 +5205,7 @@ async function doLogin() {
     welcomeEl.textContent = (currentLang === 'it' ? 'Bentornato, ' : 'Welcome back, ') + user.username + '! 👾';
     setTimeout(() => { welcomeEl.style.display = 'none'; }, 4000);
   }
+  maybeAskNewsletterConsent(); // utenti pre-v5.597: consenso mai chiesto
 }
 function _generateUniqueUsername(base) {
   const profiles = getData('public_profiles', []);
@@ -4873,9 +5264,12 @@ async function signInWithGoogle() {
 
   currentUser = user;
   LOCAL.set('currentUser', user);
-  if (!LOCAL.get('lang_set_by_user_' + user.id)) {
-    const lang = (user.nationalityCode === 'it') ? 'it' : 'en';
-    setLang(lang);
+  // Stessa regola del login e-mail/password. Nota: un nuovo utente Google ha
+  // sempre nationalityCode vuoto (Google non la fornisce), quindi non subisce
+  // mai un cambio di lingua alla registrazione — prima invece finiva sempre in
+  // inglese, qualunque lingua stesse usando.
+  if (!LOCAL.get('lang_set_by_user_' + user.id) && user.nationalityCode) {
+    setLang(user.nationalityCode === 'it' ? 'it' : 'en');
     applyI18n();
   }
   if (!isNewUser) fsSave('users', user); // lastLogin: non blocca, non serve attenderlo (per un nuovo utente è già stato salvato sopra)
@@ -4894,7 +5288,16 @@ async function signInWithGoogle() {
   // Nuovo utente Google: chiediamo esplicitamente se vuole personalizzare il nome utente
   // (generato automaticamente da nome e cognome dell'account Google) — molti non
   // scoprirebbero mai da soli che è possibile cambiarlo dal profilo
-  if (isNewUser) openUsernameModal(true);
+  if (isNewUser) {
+    // Il consenso newsletter non è chiesto qui: il nuovo utente Google non passa
+    // dal form di registrazione, quindi il campo resta undefined e il prompt gli
+    // viene mostrato subito dopo il modal del nome utente (vedi saveNewUsername).
+    // Se chiude quel modal senza salvare, lo vedrà al prossimo accesso: in nessun
+    // caso il consenso viene dato per scontato.
+    openUsernameModal(true);
+  } else {
+    maybeAskNewsletterConsent();
+  }
 }
 
 async function doRegister() {
@@ -4935,7 +5338,12 @@ async function doRegister() {
     if (waitNotice) waitNotice.style.display = 'none';
     return;
   }
-  const newUser = { id: Date.now().toString(), authUid, username: u, email: e, isAdmin: false, joined: new Date().toISOString(), lastLogin: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName, ageConfirmed16: true, ageConfirmedAt: new Date().toISOString() };
+  // Consenso newsletter: casella facoltativa e NON pre-spuntata. Se l'utente
+  // non la tocca il consenso è false — ma è comunque un consenso "chiesto e
+  // rifiutato", quindi lo registriamo con data e origine (non resta undefined,
+  // così non gli riproporremo il prompt).
+  const nlConsent = document.getElementById('reg-newsletter-consent')?.checked || false;
+  const newUser = { id: Date.now().toString(), authUid, username: u, email: e, isAdmin: false, joined: new Date().toISOString(), lastLogin: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName, ageConfirmed16: true, ageConfirmedAt: new Date().toISOString(), newsletterConsent: nlConsent, newsletterConsentDate: new Date().toISOString(), newsletterConsentSource: 'registration' };
   const saved = await fsSave('users', newUser);
   _cache.users = _cache.users || [];
   _cache.users.push(saved);
@@ -4952,10 +5360,14 @@ async function doRegister() {
     welcomeEl2.textContent = (currentLang === 'it' ? 'Benvenuto nella famiglia Sgorbions, ' : 'Welcome to the Sgorbions family, ') + u + '! 🎉';
     setTimeout(() => { welcomeEl2.style.display = 'none'; }, 4000);
   }
-  // Set language based on nationality at first registration
-  if (!LOCAL.get('lang_set_by_user_' + saved.id)) {
-    const lang = (saved.nationalityCode === 'it') ? 'it' : 'en';
-    setLang(lang);
+  // Lingua: la Nazionalità, se scelta, vince sulla lingua della form — quella
+  // può essere il frutto di un rilevamento automatico (navigator.language),
+  // cioè di un'azione non voluta; la nazionalità è invece un gesto deliberato.
+  // Ma se la Nazionalità NON è stata scelta non c'è nessun gesto deliberato da
+  // far vincere: si tiene la lingua in uso. Prima invece il campo vuoto veniva
+  // trattato come "non italiano" e forzava l'inglese — era questo il baco.
+  if (saved.nationalityCode) {
+    setLang(saved.nationalityCode === 'it' ? 'it' : 'en');
     applyI18n();
   }
   logEvent('new_user', 'Nuovo utente registrato: ' + u);
@@ -7499,6 +7911,11 @@ function renderProfile() {
   if (dangerZone) dangerZone.style.display = (currentUser.isAdmin || isImpersonating()) ? 'none' : '';
   const anonCb = document.getElementById('profile-anon-toggle');
   if (anonCb) anonCb.checked = currentUser.isAnonymous || false;
+  // Preferenze e-mail: il box non ha senso per l'admin (è lui che la manda)
+  const nlWrap = document.getElementById('profile-email-prefs-wrap');
+  if (nlWrap) nlWrap.style.display = currentUser.isAdmin ? 'none' : '';
+  const nlCb = document.getElementById('profile-newsletter-toggle');
+  if (nlCb) nlCb.checked = hasNewsletterConsent(currentUser); // undefined ("mai chiesto") = spento
   const natDisplay = document.getElementById('profile-nationality-display');
   if (natDisplay) {
     if (currentUser.nationalityCode) {
@@ -7894,7 +8311,7 @@ async function saveNewUsername() {
     if (errEl) { errEl.style.display = ''; errEl.textContent = currentLang === 'it' ? 'Solo lettere, numeri e underscore sono ammessi' : 'Only letters, numbers and underscores are allowed'; }
     return;
   }
-  if (clean === currentUser.username) { closeModal('username-modal'); return; }
+  if (clean === currentUser.username) { closeModal('username-modal'); maybeAskNewsletterConsent(); return; }
   const profiles = getData('public_profiles', []);
   if (profiles.find(x => x.username === clean && x.id !== currentUser.id)) {
     if (errEl) { errEl.style.display = ''; errEl.textContent = currentLang === 'it' ? 'Questo nome utente è già in uso' : 'This username is already taken'; }
@@ -7920,6 +8337,7 @@ async function saveNewUsername() {
   closeModal('username-modal');
   renderProfile();
   toast(currentLang === 'it' ? 'Nome utente aggiornato! ✏️' : 'Username updated! ✏️', 'success');
+  maybeAskNewsletterConsent(); // nuovo utente Google: subito dopo il nome, il consenso
 }
 
 function openNationalityModal() {
