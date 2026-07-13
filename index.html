@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="css/style.css?v=5.626">
+<script src="js/email.min.js?v=5.633"></script>
+<link rel="stylesheet" href="css/style.css?v=5.633">
 
 </head>
 <body>
@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.626</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.633</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -44,8 +44,8 @@
       <div style="position:relative;" id="lang-switcher">
         <img id="lang-current-btn" onclick="toggleLangDropdown()" src="" style="width:32px;height:21px;cursor:pointer;border-radius:3px;object-fit:cover;display:block;border:0;outline:none;" title="Cambia lingua">
         <div id="lang-dropdown" style="display:none;position:absolute;top:34px;right:0;background:var(--card);border:1px solid var(--border2);border-radius:8px;overflow:hidden;z-index:999;min-width:120px;box-shadow:0 4px 16px rgba(0,0,0,0.3);">
-          <button onclick="setLang('en', true);toggleLangDropdown()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;background:none;border:none;cursor:pointer;color:var(--text);font-family:var(--font-ui);font-size:0.88rem;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='none'"><img src="https://flagcdn.com/w40/gb.png" style="width:24px;height:16px;border-radius:2px;object-fit:cover;"> English</button>
-          <button onclick="setLang('it', true);toggleLangDropdown()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;background:none;border:none;cursor:pointer;color:var(--text);font-family:var(--font-ui);font-size:0.88rem;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='none'"><img src="https://flagcdn.com/w40/it.png" style="width:24px;height:16px;border-radius:2px;object-fit:cover;"> Italiano</button>
+          <button onclick="setLang('en', true);toggleLangDropdown()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;background:none;border:none;cursor:pointer;color:var(--text);font-family:var(--font-ui);font-size:0.88rem;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='none'"><img src="flags/gb.png" style="width:24px;height:16px;border-radius:2px;object-fit:cover;"> English</button>
+          <button onclick="setLang('it', true);toggleLangDropdown()" style="display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;background:none;border:none;cursor:pointer;color:var(--text);font-family:var(--font-ui);font-size:0.88rem;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='none'"><img src="flags/it.png" style="width:24px;height:16px;border-radius:2px;object-fit:cover;"> Italiano</button>
         </div>
       </div>
     </div>
@@ -414,6 +414,11 @@
       <div class="lang-block-it" style="line-height:1.7;color:var(--text);">
         <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.5rem;">Ultimo aggiornamento: Luglio 2026</p>
 
+        <div style="background:rgba(181,255,46,0.06);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:1rem 1.25rem;margin-bottom:1.75rem;">
+          <p style="margin:0 0 0.6rem 0;line-height:1.7;">figurinesgorbions.it è un <strong>progetto personale</strong>, nato dalla passione per gli Sgorbions. Non è un'azienda, non vende niente e non campa di pubblicità.</p>
+          <p style="margin:0 0 0.6rem 0;line-height:1.7;">L'approccio ai tuoi dati è di conseguenza semplice: raccogliamo <strong>solo quello che serve perché il sito funzioni</strong>, non lo diamo a nessuno, e puoi cancellarlo quando vuoi — da solo, con un pulsante, senza scriverci.</p>
+          <p style="margin:0;line-height:1.7;color:var(--muted);font-size:0.9rem;">Il resto di questa pagina lo dice in modo più preciso, come chiede la legge. Ma la sostanza è questa.</p>
+        </div>
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Titolare del trattamento</h3>
         <p>figurinesgorbions.it è un progetto gestito da un singolo titolare. Per qualsiasi domanda su questa informativa o sui tuoi dati, puoi scrivere a <a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);">postmaster@figurinesgorbions.it</a>, oppure usare la <a href="#" onclick="showPage('contact');return false;" style="color:var(--accent);">pagina Contatti</a>.</p>
 
@@ -425,10 +430,24 @@
           <li><strong>Collezione</strong>: quali figurine/oggetti hai aggiunto alla tua lista ("Mia lista") e la tua lista "Ciò che cerco". Dati privati, visibili solo a te e all'amministratore</li>
           <li><strong>Profilo pubblico</strong>: nickname, avatar, nazionalità e punteggio aggregato, visibili nella Classifica — <u>mai</u> l'e-mail. Puoi in qualsiasi momento scegliere di apparire in forma anonima nella Classifica, dal tuo profilo</li>
           <li><strong>Conferma età</strong>: una dichiarazione booleana ("ho almeno 16 anni") con la data, richiesta dalla legge per l'iscrizione dei minori</li>
+          <li><strong>Scelta sulla newsletter</strong>: se hai detto sì o no, <u>insieme alla data e al punto in cui l'hai espressa</u> (la registrazione, la domanda che ti compare al primo accesso, il tuo profilo, o il link in fondo a una newsletter). Conserviamo data e origine perché la legge non ci chiede soltanto di avere il tuo consenso, ma di poterlo <u>dimostrare</u> — a te per primo, se un giorno ci chiedessi conto di come l'abbiamo ottenuto</li>
+          <li><strong>Lingua</strong>: la lingua in cui stai usando il sito, per poterti scrivere nella tua e non in quella dell'amministratore</li>
           <li><strong>Blog</strong>: i post e i commenti che scrivi, pubblici e visibili a tutti</li>
           <li><strong>Messaggi di contatto</strong>: nome (facoltativo, come preferisci firmarti), e-mail e messaggio, se usi il form Contatti</li>
         </ul>
         <p><strong>Cosa non raccogliamo</strong>: nome e cognome reali, età, sesso, la tua posizione geografica.</p>
+
+        <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Cosa non facciamo</h3>
+        <p>Elencare quello che <u>non</u> facciamo è più utile di qualunque rassicurazione. Ognuna di queste righe è verificabile aprendo il codice del sito.</p>
+        <ul>
+          <li><strong>Non vendiamo i tuoi dati.</strong> A nessuno, per nessuna cifra.</li>
+          <li><strong>Non facciamo pubblicità.</strong> Non c'è un banner in tutto il sito, e non ci sarà.</li>
+          <li><strong>Non ti tracciamo.</strong> Niente Google Analytics, niente pixel di Facebook, nessuno strumento di statistica. Non sappiamo quante volte torni, da dove arrivi, quanto ti fermi o cosa guardi.</li>
+          <li><strong>Non profiliamo la tua collezione.</strong> Sappiamo quali figurine hai perché servono a mostrartele e a calcolare il punteggio della Classifica. Non le analizziamo per dedurre nient'altro su di te.</li>
+          <li><strong>Non ti scriviamo se non ce l'hai chiesto.</strong> La newsletter parte solo con il tuo consenso. Il resto sono risposte a cose che hai fatto tu.</li>
+          <li><strong>Non chiediamo dati che non ci servono.</strong> Il tuo nome vero non lo sappiamo, e non ci interessa.</li>
+          <li><strong>Non facciamo scaricare al tuo browser roba di terzi.</strong> I caratteri tipografici, le bandierine, le librerie: <u>stanno tutti sul nostro sito</u>. Le uniche eccezioni sono l'infrastruttura su cui il sito è costruito — Google (Firebase), Cloudinary e GitHub — spiegate più avanti.</li>
+        </ul>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Perché li raccogliamo</h3>
         <p>Per farti usare le funzionalità del sito che richiedono un account (collezione, classifica, "Ciò che cerco", blog), per rispondere alle tue richieste tramite il form Contatti, e per rispettare l'obbligo di legge sull'età minima per l'iscrizione.</p>
@@ -439,15 +458,35 @@
           <li><strong>Google Firebase</strong> — autenticazione e database (dove sono conservati account, collezioni, "Ciò che cerco", post)</li>
           <li><strong>Cloudinary</strong> — hosting delle immagini (avatar, foto delle figurine)</li>
           <li><strong>EmailJS</strong>, con invio tramite <strong>Aruba</strong> — per le e-mail che ti inviamo (benvenuto, newsletter, notifiche)</li>
+          <li><strong>GitHub Pages</strong> — ospita il sito. Come qualunque fornitore di hosting, riceve l'indirizzo IP di chi apre le pagine: è una conseguenza tecnica inevitabile del fatto stesso di visitare un sito</li>
         </ul>
         <p style="font-size:0.85rem;color:var(--muted);">Alcuni di questi servizi hanno sede negli Stati Uniti: il trasferimento dei dati è regolato dalle clausole contrattuali standard previste da questi fornitori.</p>
 
+        <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Cosa carica il tuo browser</h3>
+        <p>Quando apri una pagina, il tuo browser scarica dei file. Ogni file preso da un server altrui fa arrivare a quel server il tuo <strong>indirizzo IP</strong>, anche se non hai cliccato nulla. Per questo <u>ospitiamo noi</u> tutto ciò che possiamo: i caratteri tipografici, le bandierine, la libreria per le e-mail e quella per i fogli di calcolo <u>stanno sul nostro sito</u>, non su reti di distribuzione di terzi.</p>
+        <p>Restano tre eccezioni, e sono inevitabili:</p>
+        <ul>
+          <li><strong>Google</strong> — il codice di Firebase, e il database stesso. Toglierlo non toglierebbe Google dal quadro: il tuo account e la tua collezione <u>sono</u> su Firebase, e il sito ci parla a ogni operazione</li>
+          <li><strong>Cloudinary</strong> — le immagini (il logo, le foto delle figurine)</li>
+          <li><strong>GitHub</strong> — le pagine del sito</li>
+        </ul>
+        <p>Nessuno dei tre è un servizio pubblicitario o di tracciamento: sono l'infrastruttura su cui il sito è costruito.</p>
+
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Cookie</h3>
-        <p>Il sito non usa cookie di tracciamento. Usa esclusivamente la memoria locale del browser (localStorage) per ricordare la tua sessione e le tue preferenze — un dato tecnico che resta sul tuo dispositivo, non viene inviato a terzi per finalità pubblicitarie.</p>
+        <p>Il sito non usa cookie di tracciamento, e non usa <u>alcun</u> servizio di statistiche o di analisi del comportamento: niente Google Analytics, niente pixel di Facebook, niente. Usa esclusivamente la memoria locale del browser (localStorage) per ricordare la tua sessione e le tue preferenze — un dato tecnico che resta sul tuo dispositivo e non viene inviato a nessuno.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Newsletter</h3>
-        <p>La newsletter è <strong>facoltativa</strong> e viene inviata solo a chi ha dato un consenso esplicito. Puoi darlo — o revocarlo — in qualsiasi momento dal tuo profilo, nel box <strong>"Preferenze e-mail"</strong>. In calce a ogni newsletter trovi inoltre un link che porta direttamente a una pagina di disiscrizione: ti basta un clic (dopo l'accesso, necessario solo per essere certi che sia tu). La revoca è immediata e non richiede di scriverci.</p>
-        <p>Non sono newsletter, e quindi continuano ad arrivarti finché il tuo account è attivo, le <strong>e-mail di servizio</strong>: il messaggio di benvenuto alla registrazione, la notifica quando qualcuno risponde a un tuo post sul blog, la risposta a un messaggio che ci hai scritto tu, e il link per reimpostare la password se lo richiedi. Servono a farti funzionare il servizio che hai chiesto, non a promuoverti qualcosa.</p>
+        <p>La newsletter è <strong>facoltativa</strong> e viene inviata solo a chi ha dato un consenso esplicito a riceverla. Chi non ha espressamente indicato di volerla ricevere non la riceve.</p>
+        <p>Alla registrazione viene chiesto di scegliere se riceverla o meno, e rispondere è obbligatorio. Rispondere "non acconsento" equivale a un No.</p>
+        <p>Il consenso alla ricezione può essere revocato in qualsiasi momento dal profilo utente, nel box <strong>"Preferenze e-mail"</strong>. In calce a ogni e-mail newsletter è presente un link che porta direttamente a una pagina di disiscrizione. La revoca è immediata e non richiede di scriverci.</p>
+
+        <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Le e-mail che ti inviamo</h3>
+        <p>Dal sito partono verso di te <strong>due tipi</strong> di e-mail, e si fondano su basi giuridiche diverse:</p>
+        <ul>
+          <li><strong>E-mail di servizio</strong> — il messaggio di benvenuto alla registrazione, la notifica quando qualcuno risponde a un tuo post sul blog, la risposta a un messaggio che ci hai scritto tu, e il link per reimpostare la password se lo richiedi.<br>Base giuridica: l'<u>esecuzione del servizio</u> che hai chiesto iscrivendoti (art. 6.1.b GDPR). Non richiedono consenso e non sono disattivabili finché il tuo account è attivo — senza, il servizio non funzionerebbe: non potremmo nemmeno risponderti se ci scrivessi.</li>
+          <li><strong>Newsletter</strong> — le novità dell'Inventario Sgorbions.<br>Base giuridica: il tuo <u>consenso</u> (art. 6.1.a GDPR), revocabile in qualsiasi momento come descritto qui sopra.</li>
+        </ul>
+        <p>Sono cose diverse: <strong>revocare il consenso alla newsletter non ferma le e-mail di servizio</strong>, e non deve farlo.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Per quanto tempo conserviamo i dati</h3>
         <p>Finché il tuo account resta attivo. Puoi cancellarlo in autonomia in qualsiasi momento dal tuo profilo ("Elimina il mio account"): l'operazione è immediata e cancella account, collezione, "Ciò che cerco" e profilo pubblico. Gli eventuali post/commenti scritti sul blog restano visibili per continuità del contenuto condiviso, ma il tuo nome viene sostituito con "Utente eliminato".</p>
@@ -473,6 +512,11 @@
       <div class="lang-block-en" style="line-height:1.7;color:var(--text);">
         <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.5rem;">Last updated: July 2026</p>
 
+        <div style="background:rgba(181,255,46,0.06);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:1rem 1.25rem;margin-bottom:1.75rem;">
+          <p style="margin:0 0 0.6rem 0;line-height:1.7;">figurinesgorbions.it is a <strong>personal project</strong>, born out of a passion for Sgorbions stickers. It is not a company, it sells nothing, and it does not live off advertising.</p>
+          <p style="margin:0 0 0.6rem 0;line-height:1.7;">Our approach to your data follows from that, and it is simple: we collect <strong>only what the site needs to work</strong>, we give it to no one, and you can delete it whenever you like — yourself, with a button, without writing to us.</p>
+          <p style="margin:0;line-height:1.7;color:var(--muted);font-size:0.9rem;">The rest of this page says it more precisely, as the law requires. But this is the substance of it.</p>
+        </div>
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Data controller</h3>
         <p>figurinesgorbions.it is a project run by a single data controller. For any question about this policy or your data, you can write to <a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);">postmaster@figurinesgorbions.it</a>, or use the <a href="#" onclick="showPage('contact');return false;" style="color:var(--accent);">Contact page</a>.</p>
 
@@ -484,10 +528,24 @@
           <li><strong>Collection</strong>: which stickers/items you've added to your list ("My list") and your "What I'm looking for" list. Private data, visible only to you and the administrator</li>
           <li><strong>Public profile</strong>: nickname, avatar, nationality and aggregate score, visible in the Ranking — <u>never</u> your e-mail. You can choose to appear anonymously in the Ranking at any time, from your profile</li>
           <li><strong>Age confirmation</strong>: a boolean statement ("I am at least 16 years old") with the date, required by law for minors' registration</li>
+          <li><strong>Newsletter choice</strong>: whether you said yes or no, <u>together with the date and the point where you expressed it</u> (registration, the question shown on your first sign-in, your profile, or the link at the bottom of a newsletter). We keep the date and origin because the law does not merely require us to have your consent, but to be able to <u>demonstrate</u> it — to you first of all, should you ever ask us how we obtained it</li>
+          <li><strong>Language</strong>: the language you are using the site in, so we can write to you in yours rather than in the administrator's</li>
           <li><strong>Blog</strong>: the posts and comments you write, public and visible to everyone</li>
           <li><strong>Contact messages</strong>: name (optional, however you'd like to sign it), e-mail and message, if you use the Contact form</li>
         </ul>
         <p><strong>What we don't collect</strong>: your real first/last name, age, gender, your geographic location.</p>
+
+        <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">What we don't do</h3>
+        <p>Listing what we do <u>not</u> do is more useful than any reassurance. Every line below can be checked by opening the site's source code.</p>
+        <ul>
+          <li><strong>We don't sell your data.</strong> To no one, for no amount.</li>
+          <li><strong>We don't run advertising.</strong> There is not a single banner on the site, and there won't be.</li>
+          <li><strong>We don't track you.</strong> No Google Analytics, no Facebook pixel, no analytics tool of any kind. We do not know how often you come back, where you came from, how long you stay or what you look at.</li>
+          <li><strong>We don't profile your collection.</strong> We know which stickers you have because they are needed to show them to you and to compute your Ranking score. We do not analyse them to infer anything else about you.</li>
+          <li><strong>We don't write to you unless you asked.</strong> The newsletter is sent only with your consent. Everything else is a reply to something you did.</li>
+          <li><strong>We don't ask for data we don't need.</strong> We do not know your real name, and we are not interested in it.</li>
+          <li><strong>We don't make your browser download third-party stuff.</strong> The fonts, the flags, the libraries: <u>they all live on our own site</u>. The only exceptions are the infrastructure the site is built on — Google (Firebase), Cloudinary and GitHub — explained further down.</li>
+        </ul>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Why we collect it</h3>
         <p>To let you use the site's account features (collection, ranking, "What I'm looking for", blog), to respond to your requests via the Contact form, and to comply with the legal requirement on the minimum age for registration.</p>
@@ -498,15 +556,35 @@
           <li><strong>Google Firebase</strong> — authentication and database (where accounts, collections, "What I'm looking for" lists, posts are stored)</li>
           <li><strong>Cloudinary</strong> — image hosting (avatars, sticker photos)</li>
           <li><strong>EmailJS</strong>, sending via <strong>Aruba</strong> — for the e-mails we send you (welcome, newsletter, notifications)</li>
+          <li><strong>GitHub Pages</strong> — hosts the site. Like any hosting provider, it receives the IP address of whoever opens the pages: an unavoidable technical consequence of visiting a website at all</li>
         </ul>
         <p style="font-size:0.85rem;color:var(--muted);">Some of these services are based in the United States: data transfer is governed by the standard contractual clauses provided by these vendors.</p>
 
+        <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">What your browser loads</h3>
+        <p>When you open a page, your browser downloads files. Every file fetched from someone else's server hands that server your <strong>IP address</strong>, even if you clicked nothing. That is why we <u>host ourselves</u> everything we can: the fonts, the flags, the e-mail library and the spreadsheet library <u>live on our own site</u>, not on third-party content delivery networks.</p>
+        <p>Three exceptions remain, and they are unavoidable:</p>
+        <ul>
+          <li><strong>Google</strong> — the Firebase code, and the database itself. Removing it would not remove Google from the picture: your account and your collection <u>are</u> on Firebase, and the site talks to it on every operation</li>
+          <li><strong>Cloudinary</strong> — the images (the logo, the sticker photos)</li>
+          <li><strong>GitHub</strong> — the site's pages</li>
+        </ul>
+        <p>None of the three is an advertising or tracking service: they are the infrastructure the site is built on.</p>
+
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Cookies</h3>
-        <p>The site does not use tracking cookies. It only uses the browser's local storage (localStorage) to remember your session and preferences — a technical piece of data that stays on your device, never sent to third parties for advertising purposes.</p>
+        <p>The site does not use tracking cookies, and uses <u>no</u> analytics or behaviour-tracking service whatsoever: no Google Analytics, no Facebook pixel, nothing. It only uses the browser's local storage (localStorage) to remember your session and preferences — a technical piece of data that stays on your device and is sent to no one.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Newsletter</h3>
-        <p>The newsletter is <strong>optional</strong> and is only sent to those who gave explicit consent. You can give it — or withdraw it — at any time from your profile, in the <strong>"E-mail preferences"</strong> box. Every newsletter also carries a link straight to an unsubscribe page: one click is enough (after signing in, required only to make sure it is really you). Withdrawal is immediate and doesn't require writing to us.</p>
-        <p>These are not newsletters, and will keep reaching you for as long as your account is active: the <strong>service e-mails</strong> — the welcome message on registration, the notification when someone replies to your blog post, the reply to a message you sent us, and the password reset link if you request it. They exist to make the service you asked for work, not to promote anything to you.</p>
+        <p>The newsletter is <strong>optional</strong> and is sent only to those who gave explicit consent to receive it. Anyone who has not expressly said they want it does not receive it.</p>
+        <p>At registration you are asked to choose whether to receive it, and answering is mandatory. Answering "I do not consent" counts as a No.</p>
+        <p>Consent can be withdrawn at any time from your user profile, in the <strong>"E-mail preferences"</strong> box. At the bottom of every newsletter e-mail there is a link leading straight to an unsubscribe page. Withdrawal is immediate and does not require writing to us.</p>
+
+        <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">The e-mails we send you</h3>
+        <p>The site sends you <strong>two kinds</strong> of e-mail, resting on different legal bases:</p>
+        <ul>
+          <li><strong>Service e-mails</strong> — the welcome message on registration, the notification when someone replies to your blog post, the reply to a message you sent us, and the password reset link if you request it.<br>Legal basis: <u>performance of the service</u> you asked for by signing up (GDPR art. 6.1.b). They require no consent and cannot be switched off while your account is active — without them the service would not work: we could not even reply to you if you wrote to us.</li>
+          <li><strong>Newsletter</strong> — news about the Sgorbions Inventory.<br>Legal basis: your <u>consent</u> (GDPR art. 6.1.a), withdrawable at any time as described above.</li>
+        </ul>
+        <p>They are different things: <strong>withdrawing consent to the newsletter does not stop service e-mails</strong>, and it should not.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">How long we keep data</h3>
         <p>For as long as your account stays active. You can delete it yourself at any time from your profile ("Delete my account"): the operation is immediate and deletes your account, collection, "What I'm looking for" list and public profile. Any posts/comments written on the blog remain visible for the continuity of shared content, but your name is replaced with "Deleted user".</p>
@@ -804,7 +882,7 @@
         </div>
 
         <div id="admin-users" class="admin-section">
-          <h3 style="font-family:var(--font-ui);margin-bottom:1rem;" data-i18n="admin.users.title">Registered Users</h3>
+          <h3 style="font-family:var(--font-ui);margin-bottom:1rem;"><span data-i18n="admin.users.title">Registered Users:</span><span id="admin-users-count" style="color:var(--muted);font-weight:400;margin-left:0.5rem;"></span></h3>
           <div id="admin-users-table"></div>
         </div>
         <div id="admin-foto" class="admin-section">
@@ -1055,7 +1133,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.626</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.633</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1719,7 +1797,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.626"></script>
+<script src="js/app.js?v=5.633"></script>
 <script>
 /* Rete di sicurezza contro la cache.
    index.html non viene praticamente mai servito dalla cache; app.js e style.css
@@ -1728,7 +1806,7 @@
    "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
    Questo controllo lo trasforma in un messaggio esplicito in console. */
 (function () {
-  var expected = 'v5.626'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.633'; // deve coincidere con JS_VERSION in app.js
   if (typeof JS_VERSION === 'undefined') {
     console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
     return;
