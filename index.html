@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
-<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/style.css?v=5.620">
 
 </head>
 <body>
@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.607</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.620</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -389,6 +389,20 @@
   </section>
 </div>
 
+<!-- ==================== DISISCRIZIONE NEWSLETTER (link profondo) ====================
+     Pagina raggiungibile SOLO dal link in calce alle newsletter
+     (?unsubscribe=1). Non compare nel menu: esiste perché chi vuole
+     disiscriversi lo faccia con un clic, senza cercare la spunta nel profilo.
+     Il contenuto è generato da renderUnsubscribePage(), che si adatta allo
+     stato del consenso (iscritto / non iscritto / appena disiscritto). -->
+<div id="page-unsubscribe" class="page">
+  <section class="section">
+    <div class="section-inner" style="max-width:620px;">
+      <div id="unsubscribe-content" style="text-align:center;padding:2rem 0;"></div>
+    </div>
+  </section>
+</div>
+
 <!-- ==================== PRIVACY POLICY ==================== -->
 <div id="page-privacy" class="page">
   <section class="section">
@@ -432,7 +446,7 @@
         <p>Il sito non usa cookie di tracciamento. Usa esclusivamente la memoria locale del browser (localStorage) per ricordare la tua sessione e le tue preferenze — un dato tecnico che resta sul tuo dispositivo, non viene inviato a terzi per finalità pubblicitarie.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Newsletter</h3>
-        <p>La newsletter è <strong>facoltativa</strong> e viene inviata solo a chi ha dato un consenso esplicito. Puoi darlo — o revocarlo — in qualsiasi momento dal tuo profilo, nel box <strong>"Preferenze e-mail"</strong>: la revoca è immediata e non richiede di scriverci.</p>
+        <p>La newsletter è <strong>facoltativa</strong> e viene inviata solo a chi ha dato un consenso esplicito. Puoi darlo — o revocarlo — in qualsiasi momento dal tuo profilo, nel box <strong>"Preferenze e-mail"</strong>. In calce a ogni newsletter trovi inoltre un link che porta direttamente a una pagina di disiscrizione: ti basta un clic (dopo l'accesso, necessario solo per essere certi che sia tu). La revoca è immediata e non richiede di scriverci.</p>
         <p>Non sono newsletter, e quindi continuano ad arrivarti finché il tuo account è attivo, le <strong>e-mail di servizio</strong>: il messaggio di benvenuto alla registrazione, la notifica quando qualcuno risponde a un tuo post sul blog, la risposta a un messaggio che ci hai scritto tu, e il link per reimpostare la password se lo richiedi. Servono a farti funzionare il servizio che hai chiesto, non a promuoverti qualcosa.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Per quanto tempo conserviamo i dati</h3>
@@ -491,7 +505,7 @@
         <p>The site does not use tracking cookies. It only uses the browser's local storage (localStorage) to remember your session and preferences — a technical piece of data that stays on your device, never sent to third parties for advertising purposes.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Newsletter</h3>
-        <p>The newsletter is <strong>optional</strong> and is only sent to those who gave explicit consent. You can give it — or withdraw it — at any time from your profile, in the <strong>"E-mail preferences"</strong> box: withdrawal is immediate and doesn't require writing to us.</p>
+        <p>The newsletter is <strong>optional</strong> and is only sent to those who gave explicit consent. You can give it — or withdraw it — at any time from your profile, in the <strong>"E-mail preferences"</strong> box. Every newsletter also carries a link straight to an unsubscribe page: one click is enough (after signing in, required only to make sure it is really you). Withdrawal is immediate and doesn't require writing to us.</p>
         <p>These are not newsletters, and will keep reaching you for as long as your account is active: the <strong>service e-mails</strong> — the welcome message on registration, the notification when someone replies to your blog post, the reply to a message you sent us, and the password reset link if you request it. They exist to make the service you asked for work, not to promote anything to you.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">How long we keep data</h3>
@@ -641,10 +655,15 @@
               </div>
             </div>
             <p style="font-size:0.88rem;color:var(--muted);margin-top:0.75rem;" data-i18n="admin.email.plan">Piano gratuito EmailJS: 200 e-mail/mese (si azzera il 1° di ogni mese).</p>
-            <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem;">
-              <label style="font-size:0.88rem;color:var(--muted);" data-i18n="admin.email.fix">Correggi contatore:</label>
+            <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem;flex-wrap:wrap;">
+              <label style="font-size:0.88rem;color:var(--muted);" data-i18n="admin.email.fix">E-mail rimanenti (come su EmailJS):</label>
               <input type="number" id="email-count-edit" min="0" max="200" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:8px;font-size:0.88rem;">
               <button class="btn-secondary" style="font-size:0.85rem;padding:4px 14px;" onclick="saveEmailCounter()" data-i18n="admin.save">Salva</button>
+            </div>
+            <p style="font-size:0.78rem;color:var(--muted);margin:0.35rem 0 0 0;line-height:1.4;" data-i18n="admin.email.fix.hint">Inserisci il numero che leggi sul pannello EmailJS, cioè quante e-mail ti restano. Il riquadro qui sopra continua invece a mostrare quelle già inviate.</p>
+            <div style="margin-top:0.6rem;">
+              <button id="email-recalc-btn" class="btn-secondary" style="font-size:0.85rem;padding:4px 14px;" onclick="recalcEmailCounterFromLog()" data-i18n="admin.email.recalc">🔄 Ricalcola dal log</button>
+              <p style="font-size:0.78rem;color:var(--muted);margin:0.35rem 0 0 0;line-height:1.4;" data-i18n="admin.email.recalc.hint">Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.</p>
             </div>
           </div>
 
@@ -1036,7 +1055,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.607</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.620</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1065,13 +1084,23 @@
           <span data-i18n="form.ageConfirm">Confermo di avere almeno 16 anni</span>
         </label>
       </div>
-      <!-- Consenso newsletter: FACOLTATIVO e NON pre-spuntato (GDPR: il consenso
-           deve essere un'azione positiva dell'utente, mai un default da spegnere) -->
-      <div class="form-group" style="margin-top:0.5rem;">
-        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#fff;line-height:1.4;">
-          <input type="checkbox" id="reg-newsletter-consent" style="width:16px;height:16px;flex-shrink:0;margin-top:2px;cursor:pointer;">
-          <span data-i18n="form.newsletterConsent">Voglio ricevere la newsletter di figurinesgorbions.it (facoltativo)</span>
-        </label>
+      <!-- Consenso newsletter: risposta OBBLIGATORIA, ma libera.
+           Non una casella pre-spuntata (vietata dal GDPR), e nemmeno una casella
+           non spuntata: quella confonde "ho scelto di no" con "non l'ho vista",
+           e produce dei "No" che nessuno ha davvero espresso. La tendina impone
+           una scelta consapevole.
+           Attenzione alla distinzione: è obbligatorio RISPONDERE, non è
+           obbligatorio ACCONSENTIRE. Con "No" ci si registra normalmente — un
+           consenso imposto come condizione del servizio sarebbe nullo (GDPR
+           art. 7 par. 4, "consenso liberamente prestato"). -->
+      <div class="form-group" style="margin-top:0.75rem;">
+        <label class="form-label" style="color:#fff;" data-i18n="form.newsletterLabel">Vuoi ricevere la newsletter? *</label>
+        <select class="form-select" id="reg-newsletter-consent">
+          <option value="" data-i18n="form.newsletter.opt.none">— Seleziona —</option>
+          <option value="yes" data-i18n="form.newsletter.opt.yes">Sì, voglio riceverla</option>
+          <option value="no" data-i18n="form.newsletter.opt.no">No, grazie</option>
+        </select>
+        <p style="font-size:0.78rem;color:rgba(255,255,255,0.7);margin-top:0.4rem;line-height:1.4;" data-i18n="form.newsletter.hint">Rispondere è obbligatorio, ma sei libero di dire di no: la registrazione funziona comunque. Potrai cambiare idea quando vuoi dal tuo profilo.</p>
       </div>
       <p style="font-size:0.78rem;color:#fff;margin-top:0.4rem;" data-i18n-html="form.privacyNotice">Registrandoti, accetti la nostra <a href="#" onclick="closeModal('auth-modal');showPage('privacy');return false;" style="color:var(--accent);">Privacy Policy</a>.</p>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doRegister()" id="reg-submit-btn" data-i18n="auth.reg.btn">Create Account</button>
@@ -1690,6 +1719,25 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js"></script>
+<script src="js/app.js?v=5.620"></script>
+<script>
+/* Rete di sicurezza contro la cache.
+   index.html non viene praticamente mai servito dalla cache; app.js e style.css
+   sì (stesso nome file a ogni release). Il ?v= sopra lo impedisce — ma se per
+   qualsiasi ragione arrivasse comunque un app.js vecchio, il sintomo sarebbe
+   "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
+   Questo controllo lo trasforma in un messaggio esplicito in console. */
+(function () {
+  var expected = 'v5.620'; // deve coincidere con JS_VERSION in app.js
+  if (typeof JS_VERSION === 'undefined') {
+    console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
+    return;
+  }
+  if (JS_VERSION !== expected) {
+    console.warn('[Sgorbions] VERSIONI DISALLINEATE — index.html si aspetta ' + expected +
+      ', ma l\'app.js caricato è ' + JS_VERSION + '.\nProbabile causa: app.js non ricaricato su GitHub, oppure servito dalla cache del browser/CDN.');
+  }
+})();
+</script>
 </body>
 </html>
