@@ -1,6 +1,95 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.658 — Su richiesta di Franco: nella tabella delle segnalazioni compare ora
+//          anche l'E-MAIL dell'utente, in una colonna sua, come gia' si fa
+//          altrove. Il record della segnalazione non la contiene (ha solo userId
+//          e username): viene ripescata dall'elenco utenti, come si faceva gia'
+//          per la bandierina. Se l'utente non esiste piu', la cella dice "—".
+//
+//          XSS CHIUSA (trovata per strada, non richiesta). Il COMMENTO e il NOME
+//          UTENTE finivano in innerHTML SENZA FILTRO. Il commento lo scrive
+//          l'utente, quindi bastava mandare una segnalazione contenente
+//          "<img src=x onerror=...>" per eseguire codice nel pannello admin, con
+//          la sessione dell'admin. E' la terza della stessa famiglia: v5.619
+//          (titoli dei post), v5.635 (messaggi di contatto), ora questa.
+//          Applicata esc() a username, commento, serieName, figName e
+//          nationalityName.
+//
+//          Ottimizzazione venuta gratis: la ricerca dell'utente stava DENTRO il
+//          .map(), quindi per ogni segnalazione si riscorreva l'intero elenco
+//          utenti. Ora si costruisce una mappa una volta sola. Con 9 utenti e 3
+//          segnalazioni non cambia nulla; con 500 utenti e 200 segnalazioni sono
+//          100.000 confronti evitati a ogni disegno della tabella.
+// v5.657 — Franco: dopo aver svuotato la cache i MESSAGGI sono spariti, le
+//          SEGNALAZIONI no. Quindi non era (solo) la cache: le segnalazioni non
+//          venivano cancellate davvero. Baco vero, e solo su quella raccolta.
+//          LA CAUSA: le segnalazioni si cercano per authUid, perche' le regole
+//          Firestore ancorano l'identita' a quello. Ma authUid esiste solo dalla
+//          v5.637 in poi: le segnalazioni create PRIMA ne sono prive, e una
+//          ricerca per authUid non le trova. Restano li' con dentro nome utente e
+//          commento — cioe' il buco che stavamo chiudendo.
+//          E il codice, in quel caso, SALTAVA IL BLOCCO IN SILENZIO: nessun
+//          errore, nessuna riga nel riepilogo. L'admin leggeva
+//          "contact_messages: 1 · email_log: 1" e non si accorgeva che di
+//          segnalazioni non si era proprio parlato. E' il difetto peggiore dei
+//          due: un errore che non si vede e' un errore che non si cerca.
+//          È anche, a conti fatti, il prezzo della migrazione che avevo scritto
+//          in v5.637 e che ho tolto in v5.639 perche' "le segnalazioni erano
+//          zero". Erano zero in quel momento: poi ne e' nata una durante i test,
+//          su codice che non scriveva ancora authUid.
+//          CORREZIONI:
+//          1. Niente piu' salti silenziosi: se le segnalazioni non si possono
+//             verificare, il riepilogo lo DICE ("segnalazioni: NON VERIFICATE").
+//          2. Ripiego per le segnalazioni vecchie: se a cancellare e' l'ADMIN, si
+//             cercano anche per userId (l'id applicativo, che c'e' sempre stato).
+//             Le regole gli danno lettura e cancellazione su TUTTE le
+//             segnalazioni, quindi puo' farlo. L'utente che cancella se stesso no
+//             — le regole non glielo consentono — ma per lui il problema non si
+//             pone: le sue segnalazioni hanno tutte authUid.
+//          3. I due elenchi si fondono in una mappa per id: nessun documento
+//             viene cancellato due volte.
+//          Cosi' anche le segnalazioni orfane rimaste dai test precedenti
+//          verranno rimosse alla cancellazione del loro autore.
+// v5.656 — Franco, provando la cancellazione dal pannello admin: le e-mail
+//          sparivano, i messaggi e le segnalazioni no. Il MODO in cui si e' rotto
+//          diceva quasi tutto, perche' quelle tre raccolte hanno una differenza:
+//            contact_messages e segnalazioni  →  stanno in CACHE (_cache)
+//            email_log                        →  NON sta in cache: le tabelle lo
+//                                                rileggono da Firestore ogni volta
+//          E _deleteUserTraces cancellava da Firestore senza MAI toccare la cache.
+//          Quindi i dati erano cancellati davvero — ma il pannello continuava a
+//          pescare dalla copia vecchia in memoria, e mostrava messaggi e
+//          segnalazioni di un utente che non esisteva piu'. Le e-mail
+//          "funzionavano" solo perche' non c'era nessuna copia vecchia da mostrare.
+//          PERCHE' NON ERA EMERSO NELL'AUTODISTRUZIONE (passo 6, andato bene):
+//          l'utente che si cancella viene sloggato all'istante e la pagina si
+//          ricarica — la cache muore con lui. L'admin invece resta dentro, con la
+//          cache di prima. Lo stesso codice, due esiti diversi, e la differenza
+//          non e' nel codice ma in CHI lo esegue.
+//          Correzioni: _deleteUserTraces ora ripulisce _cache.contact_messages e
+//          _cache.segnalazioni; deleteUser ridisegna le tabelle interessate e
+//          rifa' i contatori (i badge contavano messaggi e segnalazioni non letti
+//          di un utente cancellato).
+//          NOTA: il dato era gia' corretto. Ma un pannello che mostra righe che
+//          non esistono piu' e' una bugia che costa cara: ti fa cancellare due
+//          volte, oppure ti fa cercare per ore un baco che non c'e'.
+// v5.655 — Su richiesta di Franco: dopo l'invio, la pagina Contatti si chiude da
+//          sola. Prima restava aperta su un modulo vuoto, e bisognava andarsene a
+//          mano — chi ha appena scritto non ha piu' nulla da fare li'.
+//          Si torna DA DOVE SI VENIVA (_previousPage), non genericamente alla
+//          Home: e' lo stesso meccanismo del pulsante "← Torna a ...". Se uno
+//          stava sfogliando l'Inventario ed e' passato di qui per una domanda, e'
+//          all'Inventario che vuole tornare. Ripiego sulla Home se la provenienza
+//          non e' nota.
+//          Ritardo di 1,5 secondi: la conferma va vista prima che la pagina
+//          cambi, altrimenti il cambio di pagina sembra la risposta e il messaggio
+//          passa inosservato.
+//          Ora si svuota anche il campo E-MAIL, non solo oggetto e testo. Restava
+//          compilato, e aveva un senso finche' si rimaneva sulla pagina (magari
+//          volevi scrivere un altro messaggio); ora che si esce non ne ha piu' —
+//          e su un computer condiviso sarebbe l'indirizzo di qualcuno lasciato in
+//          un campo di una pagina che nessuno sta piu' guardando.
 // v5.654 — Su richiesta di Franco: dopo i totali, le procedure di caricamento
 //          RIPETONO l'elenco delle righe andate in errore.
 //          Il problema era che gli scarti venivano scritti MENTRE l'importazione
@@ -5457,7 +5546,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.654';
+const JS_VERSION = 'v5.658';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -6957,8 +7046,16 @@ async function _deleteUserTraces(user) {
   if (mail) {
     try {
       const snap = await gd(qf(col(db, 'contact_messages'), wf('email', '==', mail)));
-      for (const d of snap.docs) await fsDelete('contact_messages', d.id);
-      esiti.push(`contact_messages: ${snap.docs.length}`);
+      const ids = snap.docs.map(d => d.id);
+      for (const id of ids) await fsDelete('contact_messages', id);
+      // La CACHE va ripulita, non solo Firestore. Se la si lascia sporca, il
+      // pannello continua a mostrare i messaggi di un utente che non esiste piu':
+      // il dato e' a posto, ma l'admin vede una bugia — e conclude, comprensibil-
+      // mente, che la cancellazione non abbia funzionato.
+      if (_cache.contact_messages) {
+        _cache.contact_messages = _cache.contact_messages.filter(m => !ids.includes(m.id));
+      }
+      esiti.push(`contact_messages: ${ids.length}`);
     } catch(e) { console.warn('[cancellazione] contact_messages', e.message); esiti.push('contact_messages: ERRORE'); }
   }
 
@@ -6967,6 +7064,9 @@ async function _deleteUserTraces(user) {
     try {
       const snap = await gd(qf(col(db, 'email_log'), wf('to', '==', mail)));
       for (const d of snap.docs) await fsDelete('email_log', d.id);
+      // email_log non ha cache: le tabelle lo rileggono da Firestore a ogni
+      // disegno. E' per questo che, prima di questa correzione, le e-mail
+      // sparivano subito dal pannello e messaggi e segnalazioni no.
       esiti.push(`email_log: ${snap.docs.length}`);
     } catch(e) { console.warn('[cancellazione] email_log', e.message); esiti.push('email_log: ERRORE'); }
   }
@@ -6976,12 +7076,56 @@ async function _deleteUserTraces(user) {
   // request.auth.uid con un campo del documento, quindi una query su userId
   // verrebbe rifiutata (l'utente non ha il permesso di leggere righe altrui, e
   // Firestore non puo' saperlo in anticipo se il filtro non e' quello giusto).
-  if (auid) {
-    try {
-      const snap = await gd(qf(col(db, 'segnalazioni'), wf('authUid', '==', auid)));
-      for (const d of snap.docs) await fsDelete('segnalazioni', d.id);
-      esiti.push(`segnalazioni: ${snap.docs.length}`);
-    } catch(e) { console.warn('[cancellazione] segnalazioni', e.message); esiti.push('segnalazioni: ERRORE'); }
+  // Le segnalazioni si cercano per authUid, perche' le regole Firestore ancorano
+  // l'identita' a quello. Ma authUid esiste solo dalla v5.637 in poi: le
+  // segnalazioni piu' vecchie ne sono prive, e una ricerca per authUid non le
+  // trova — restano li' con dentro nome utente e commento.
+  //
+  // Fino alla v5.656 questo caso veniva saltato IN SILENZIO: niente errore,
+  // niente riga nel riepilogo. L'admin leggeva "contact_messages: 1 · email_log: 1"
+  // e non si accorgeva che delle segnalazioni non si era proprio parlato.
+  //
+  // Se chi cancella e' l'ADMIN, c'e' una seconda strada: le regole gli danno
+  // lettura e cancellazione su TUTTE le segnalazioni, quindi puo' cercarle anche
+  // per userId (l'id applicativo), che c'e' sempre stato. L'utente che cancella
+  // se stesso non puo' farlo — le regole non glielo consentono — ma per lui il
+  // problema non si pone: le sue segnalazioni recenti hanno tutte authUid.
+  {
+    const trovati = new Map(); // id -> doc, per non cancellare due volte lo stesso
+    let errore = false;
+
+    if (auid) {
+      try {
+        const snap = await gd(qf(col(db, 'segnalazioni'), wf('authUid', '==', auid)));
+        snap.docs.forEach(d => trovati.set(d.id, true));
+      } catch(e) { console.warn('[cancellazione] segnalazioni (authUid)', e.message); errore = true; }
+    }
+
+    // Ripiego per le segnalazioni vecchie, praticabile solo dall'admin.
+    if (currentUser?.isAdmin && user.id) {
+      try {
+        const snap2 = await gd(qf(col(db, 'segnalazioni'), wf('userId', '==', String(user.id))));
+        const nuove = snap2.docs.filter(d => !trovati.has(d.id)).length;
+        snap2.docs.forEach(d => trovati.set(d.id, true));
+        if (nuove) console.log(`[cancellazione] ${nuove} segnalazioni senza authUid recuperate per userId (create prima della v5.637)`);
+      } catch(e) { console.warn('[cancellazione] segnalazioni (userId)', e.message); errore = true; }
+    }
+
+    if (!auid && !currentUser?.isAdmin) {
+      // Caso che prima spariva senza dire nulla.
+      console.warn('[cancellazione] segnalazioni NON verificate: utente senza authUid');
+      esiti.push('segnalazioni: NON VERIFICATE');
+    } else {
+      const ids = [...trovati.keys()];
+      for (const id of ids) {
+        try { await fsDelete('segnalazioni', id); }
+        catch(e) { console.warn('[cancellazione] segnalazione', id, e.message); errore = true; }
+      }
+      if (_cache.segnalazioni) {
+        _cache.segnalazioni = _cache.segnalazioni.filter(x => !trovati.has(x.id));
+      }
+      esiti.push(errore ? 'segnalazioni: ERRORE' : `segnalazioni: ${ids.length}`);
+    }
   }
 
   console.log('[cancellazione account] tracce rimosse →', esiti.join(' · '));
@@ -9403,8 +9547,24 @@ async function sendContact() {
   const msg = { email, subject, message, date: new Date().toISOString(), read: false };
   const saved = await fsSave('contact_messages', msg);
   _cache.contact_messages.unshift(saved);
-  ['contact-subject','contact-message'].forEach(id => document.getElementById(id).value = '');
+  // Si svuota anche l'indirizzo, non solo oggetto e testo. Finora restava li':
+  // aveva un senso quando si rimaneva sulla pagina (magari volevi scriverne un
+  // altro), ma ora che si esce non ne ha piu' — e su un computer condiviso
+  // sarebbe l'indirizzo di qualcuno lasciato in un campo di una pagina che nessuno
+  // sta piu' guardando.
+  ['contact-email','contact-subject','contact-message'].forEach(id => document.getElementById(id).value = '');
   toast(currentLang === 'it' ? 'Messaggio inviato! Ti risponderemo presto 📩' : 'Message sent! We\'ll get back to you soon 📩', 'success');
+
+  // Chi ha appena scritto non ha piu' nulla da fare qui: la pagina Contatti resta
+  // aperta su un modulo vuoto, e va abbandonata a mano. Lo si fa da soli.
+  // Si torna DA DOVE SI VENIVA (_previousPage, lo stesso meccanismo del pulsante
+  // "← Torna a ..."), non genericamente alla Home: se uno stava sfogliando
+  // l'Inventario ed e' passato di qui per una domanda, e' li' che vuole tornare.
+  // Il ritardo lascia vedere la conferma prima che la pagina cambi.
+  setTimeout(() => {
+    const dove = (_previousPage && _previousPage !== 'contact') ? _previousPage : 'home';
+    showPage(dove);
+  }, 1500);
 }
 
 // ============================================================
@@ -11487,16 +11647,21 @@ function renderAdminSegnalazioni() {
     el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Nessuna segnalazione ancora.' : 'No comments yet.') + '</p>';
     return;
   }
+  // L'utente si ritrova una volta sola, non a ogni riga: prima la ricerca era
+  // dentro il .map(), quindi rifatta su tutto l'elenco utenti per OGNI segnalazione.
+  const perId = new Map(getData('users', []).map(u => [String(u.id), u]));
+
   el.innerHTML = `<table class="data-table compact"><thead><tr>
-    <th>${(currentLang === 'it') ? 'Data' : 'Date'}</th><th>${(currentLang === 'it') ? 'Utente' : 'User'}</th><th>${(currentLang === 'it') ? 'Figurina' : 'Sticker'}</th><th>${(currentLang === 'it') ? 'Commento' : 'Comment'}</th><th></th>
+    <th>${(currentLang === 'it') ? 'Data' : 'Date'}</th><th>${(currentLang === 'it') ? 'Utente' : 'User'}</th><th>${(currentLang === 'it') ? 'E-mail' : 'E-mail'}</th><th>${(currentLang === 'it') ? 'Figurina' : 'Sticker'}</th><th>${(currentLang === 'it') ? 'Commento' : 'Comment'}</th><th></th>
   </tr></thead><tbody>
-  ${segnalazioni.map(s => `<tr style="${s.read ? '' : 'background:rgba(181,255,46,0.05);'}">
+  ${segnalazioni.map(s => { const u = perId.get(String(s.userId)); return `<tr style="${s.read ? '' : 'background:rgba(181,255,46,0.05);'}">
     <td style="white-space:nowrap;font-size:0.78rem;">${new Date(s.date).toLocaleDateString('it-IT')}</td>
-    <td style="display:flex;align-items:center;gap:6px;">${s.username}${(() => { const u = getData('users',[]).find(x=>x.id===s.userId); return u?.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''; })()}</td>
-    <td style="font-size:0.82rem;">${s.serieName}<br><span style="color:var(--muted);">${s.figNumber ? '#'+s.figNumber+' ' : ''}${s.figName}</span></td>
-    <td>${s.commento}</td>
+    <td style="display:flex;align-items:center;gap:6px;">${esc(s.username || '—')}${u?.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${esc(u.nationalityName || '')}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''}</td>
+    <td style="font-size:0.8rem;color:var(--muted);">${u?.email ? esc(u.email) : '—'}</td>
+    <td style="font-size:0.82rem;">${esc(s.serieName || '')}<br><span style="color:var(--muted);">${s.figNumber ? '#'+esc(String(s.figNumber))+' ' : ''}${esc(s.figName || '')}</span></td>
+    <td style="white-space:pre-wrap;">${esc(s.commento || '')}</td>
     <td style="display:flex;gap:0.4rem;"><button class="tbl-btn tbl-btn-edit" onclick="markSegnalazioneRead('${s.id}')">${s.read ? '✓' : (currentLang === 'it' ? 'Segna come letta' : 'Mark as read')}</button><button class="tbl-btn tbl-btn-del" onclick="deleteSegnalazione('${s.id}')" title="${(currentLang === 'it') ? 'Elimina questa segnalazione' : 'Delete this report'}">🗑️</button></td>
-  </tr>`).join('')}
+  </tr>`; }).join('')}
   </tbody></table>`;
 }
 
@@ -11686,6 +11851,14 @@ async function deleteUser(userId) {
   if (_cache.public_profiles) _cache.public_profiles = _cache.public_profiles.filter(p => p.id !== userId);
   if (_cache.ownedMap) delete _cache.ownedMap[userId];
   renderAdminUsers();
+  // Le tabelle delle raccolte ripulite vanno RIDISEGNATE: la cache e' aggiornata,
+  // ma cio' che e' gia' a schermo resterebbe li' finche' non si cambia scheda.
+  // (Ogni render esce da sola se la sua scheda non e' aperta.)
+  renderAdminContacts();
+  renderAdminSegnalazioni();
+  renderAdminEventi();
+  updateMsgBadge();
+  updateBellBadge();
   toast(currentLang === 'it' ? '✅ Utente eliminato dal sito.<br><span style="font-size:0.85em;opacity:0.85;">⚠️ Ricordati di eliminarlo anche da Firebase Console → Authentication.</span>' : '✅ User deleted from the site.<br><span style="font-size:0.85em;opacity:0.85;">⚠️ Remember to also delete it from Firebase Console → Authentication.</span>', 'success', null, 7000);
 }
 
