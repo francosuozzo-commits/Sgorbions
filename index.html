@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.658"></script>
-<link rel="stylesheet" href="css/style.css?v=5.658">
+<script src="js/email.min.js?v=5.676"></script>
+<link rel="stylesheet" href="css/style.css?v=5.676">
 
 </head>
 <body>
@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.658</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.676</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -278,8 +278,8 @@
         <span id="detail-progress-label" style="margin-left:0.4rem;">0 / 0</span>
       </div>
       <div id="bulk-owned-btns" style="display:none;gap:0.75rem;flex-wrap:wrap;align-items:center;">
-        <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;" data-i18n="catalog.haveall" data-i18n-title="catalog.haveall.hint" title="Aggiungi tutti gli oggetti mostrati in griglia (o nella vista tabellare) alla tua lista">✅ Aggiungi tutto nella mia lista</button>
-        <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;" data-i18n="catalog.havenone" data-i18n-title="catalog.havenone.hint" title="Svuota completamente la tua lista">❌ Svuota la mia lista</button>
+        <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.haveall.hint" title="Inserisce nella tua lista tutti gli elementi visualizzati, considerando anche le pagine successive"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/></svg><span data-i18n="catalog.haveall">Aggiungi tutti gli oggetti visualizzati alla mia lista</span></button>
+        <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.havenone.hint" title="Rimuove dalla tua lista tutti gli elementi visualizzati, considerando anche le pagine successive"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 14V3"/><path d="M8 7l4-4 4 4"/></svg><span data-i18n="catalog.havenone">Rimuovi tutti gli oggetti visualizzati dalla mia lista</span></button>
         <span id="set-all-msg" style="display:none;font-size:0.85rem;color:var(--accent);font-family:var(--font-ui);"></span>
       </div>
       <div id="items-complete-msg" style="display:none;width:100%;color:var(--accent);font-size:0.9rem;font-style:italic;"></div>
@@ -287,7 +287,6 @@
     <div class="progress-bar-wrap" id="detail-progress-wrap" style="display:none;margin-bottom:1.5rem;">
       <div class="progress-bar"><div class="progress-fill" id="detail-progress-fill" style="width:0%"></div></div>
     </div>
-    <div id="wip-photos-banner" style="display:none;background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);border-radius:10px;padding:0.6rem 1rem;margin-bottom:1rem;font-size:0.85rem;color:#ffb400;">📷 <span id="wip-photos-msg"></span></div>
     <div class="search-bar" style="margin-bottom:0.75rem;">
       <div class="search-input-wrap">
         <span class="search-icon">🔍</span>
@@ -296,17 +295,17 @@
       </div>
     </div>
     <div id="items-count-display" style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;"></div>
-    <div id="items-filter-intro" style="display:none;font-size:0.85rem;color:var(--muted);margin-bottom:0.5rem;text-align:left;width:min(1800px, 96vw);max-width:1800px;margin-left:50%;margin-right:0;transform:translateX(-50%);align-items:center;gap:0.4rem;">
-      <span id="items-filter-intro-text" data-i18n="items.filterIntro">Affina la tua ricerca coi seguenti filtri:</span>
-      <button onclick="openFilterLegendModal()" title="Cosa significano questi termini?" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:50%;width:18px;height:18px;font-size:0.7rem;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;">i</button>
+    <div id="items-filter-box" style="width:min(1800px, 96vw);max-width:1800px;margin-left:50%;margin-right:0;transform:translateX(-50%);margin-bottom:1rem;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.85rem 1.1rem;">
+      <div id="items-filter-intro" style="display:none;font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;text-align:left;align-items:center;gap:0.4rem;"><span id="items-filter-intro-text" data-i18n="items.filterIntro">Affina la tua ricerca coi seguenti filtri:</span>
+      <button onclick="openFilterLegendModal()" title="Cosa significano questi termini?" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:50%;width:18px;height:18px;font-size:0.7rem;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;">i</button></div>
+      <div id="items-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
     </div>
-    <div id="items-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1rem;width:min(1800px, 96vw);max-width:1800px;margin-left:50%;margin-right:0;transform:translateX(-50%);"></div>
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
       <div id="user-table-view-btn" style="display:none;gap:0.75rem;flex-wrap:wrap;">
         <button class="btn-primary" onclick="toggleBulkEditView()" id="bulk-edit-toggle-btn" style="font-size:0.9rem;padding:0.4rem 1.1rem;">📋 Vista tabellare</button>
       </div>
       <div id="retro-view-selector" style="display:none;align-items:center;gap:0.5rem;">
-        <label style="font-size:0.82rem;color:var(--muted);white-space:nowrap;" data-i18n="items.retroViewMode.label">Modalità visualizzazione:</label>
+        <label style="font-size:0.82rem;color:var(--text);white-space:nowrap;" data-i18n="items.retroViewMode.label">Modalità visualizzazione:</label>
         <select id="retro-view-mode-select" onchange="setRetroViewMode(this.value)" title="Retro sempre grande: impila se il retro è orizzontale, affianca se è verticale.&#10;Fronte sempre grande: impila se il fronte è orizzontale, affianca se è verticale.&#10;Fronte e retro sempre grandi: mai rimpiccioliti — le colonne della griglia diventano più larghe (e quindi meno numerose). Impila solo se sono entrambi orizzontali, altrimenti li affianca." style="font-size:0.82rem;padding:0.3rem 0.5rem;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--text);">
           <option value="destra-piena" data-i18n="items.retroViewMode.destraPiena">Fronte e retro sempre grandi</option>
           <option value="sotto" data-i18n="items.retroViewMode.sotto">Retro sempre sotto</option>
@@ -373,7 +372,8 @@
           <div style="display:flex;gap:2rem;justify-content:center;flex-wrap:wrap;">
             <div class="contact-item">
               <div class="contact-icon">📧</div>
-              <div><h4>E-mail</h4><p><a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);text-decoration:none;">postmaster@figurinesgorbions.it</a></p></div>
+              <h4>E-mail:</h4>
+              <p><a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);text-decoration:none;">postmaster@figurinesgorbions.it</a></p>
             </div>
           </div>
         </div>
@@ -483,6 +483,7 @@
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Per quanto tempo conserviamo i dati</h3>
         <p>Finché il tuo account resta attivo. Puoi cancellarlo in autonomia in qualsiasi momento dal tuo profilo ("Elimina il mio account"): l'operazione è immediata e cancella account, collezione, "Ciò che cerco" e profilo pubblico. Gli eventuali post/commenti scritti sul blog restano visibili per continuità del contenuto condiviso, ma il tuo nome viene sostituito con "Utente eliminato".</p>
+        <p><strong>Segnalazioni sulle figurine.</strong> Quando ci segnali un errore nell'Inventario, conserviamo la segnalazione — con il tuo nome utente e il tuo commento — per <strong>6 mesi</strong>, il tempo di verificarla e correggere il catalogo. Poi viene cancellata. Sparisce comunque prima, se elimini il tuo account.</p>
         <p><strong>Registro di sicurezza.</strong> Teniamo un registro tecnico degli accessi, delle registrazioni, delle richieste di reimpostazione password e delle cancellazioni di account. Serve a controllare che nessuno stia facendo cose strane con gli account altrui, ed è l'unica cosa che <u>sopravvive</u> alla cancellazione dell'account — perché sapere che un account è stato eliminato, e quando, è proprio il motivo per cui il registro esiste. Non sopravvive però al tempo: le righe più vecchie di <strong>6 mesi</strong> vengono cancellate.</p>
         <p><strong>Quando elimini l'account, sparisce tutto.</strong> Non solo il profilo e la collezione: anche i messaggi che ci hai scritto dai Contatti, le segnalazioni sulle figurine e il registro delle e-mail che ti abbiamo inviato — <u>testo compreso</u>. L'unica cosa che resta sono i tuoi post e commenti sul blog, per non lasciare buchi nelle conversazioni altrui: ma il tuo nome viene sostituito con "Utente eliminato".</p>
 
@@ -583,6 +584,7 @@
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">How long we keep data</h3>
         <p>For as long as your account stays active. You can delete it yourself at any time from your profile ("Delete my account"): the operation is immediate and deletes your account, collection, "What I'm looking for" list and public profile. Any posts/comments written on the blog remain visible for the continuity of shared content, but your name is replaced with "Deleted user".</p>
+        <p><strong>Sticker reports.</strong> When you report a mistake in the Inventory, we keep the report — with your username and your comment — for <strong>6 months</strong>, long enough to check it and fix the catalogue. Then it is deleted. It goes sooner anyway if you delete your account.</p>
         <p><strong>Security log.</strong> We keep a technical log of sign-ins, registrations, password reset requests and account deletions. It exists to check that nobody is doing anything strange with other people's accounts, and it is the one thing that <u>survives</u> account deletion — because knowing that an account was deleted, and when, is precisely why the log exists. It does not survive time, though: entries older than <strong>6 months</strong> are deleted.</p>
         <p><strong>When you delete your account, everything goes.</strong> Not just your profile and collection: also the messages you sent us through the Contact form, the sticker reports, and the log of the e-mails we sent you — <u>text included</u>. The only thing that stays are your blog posts and comments, so as not to leave holes in other people's conversations: but your name is replaced with "Deleted user".</p>
         <p><strong>Messages sent through the Contact form.</strong> If you <u>do not have an account</u> on the site, your message — e-mail address included — is <strong>deleted entirely after 6 months</strong>. This is not a partial anonymisation: the record goes, because clearing the address alone would not be enough (people sign their messages). The period exists so that we can reply to you and find the conversation again if you write back.<br>If you <u>do have an account</u>, messages stay for as long as you keep it: you can see them in your profile, and they disappear when you delete it.</p>
@@ -1131,7 +1133,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.658</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.676</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1213,7 +1215,7 @@
       </div>
       <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.count">N. di Figurine</label>
-        <input class="form-input" type="number" id="series-count-input" placeholder="30" min="1">
+        <input class="form-input" type="number" id="series-count-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;" title="Calcolato dall'Inventario: le figurine senza alcun contrassegno (né variazione, né change)">
       </div>
       <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.firstNumber" title="Lascia vuoto se non numerata">N. prima figurina</label>
@@ -1628,6 +1630,17 @@
 </div>
 
 <!-- ACCOUNT DELETED CONFIRMATION MODAL -->
+<!-- PUNTEGGIO GUADAGNATO -->
+<div class="modal-overlay hidden" id="score-boost-modal">
+  <div class="modal" style="max-width:420px;text-align:center;">
+    <div style="font-size:3rem;margin-bottom:0.5rem;">🎉</div>
+    <h2 class="modal-title" style="justify-content:center;" data-i18n="modal.scoreBoost.title">Complimenti!</h2>
+    <p id="score-boost-added" style="color:var(--muted);font-size:0.95rem;margin:0.9rem 0 0.4rem;"></p>
+    <p id="score-boost-total" style="color:var(--accent);font-size:1.15rem;font-weight:600;font-family:var(--font-ui);margin:0 0 1.35rem;"></p>
+    <button class="btn-primary" style="width:100%;" onclick="closeModal('score-boost-modal')" data-i18n="modal.scoreBoost.ok">Perfetto!</button>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="account-deleted-modal">
   <div class="modal" style="max-width:420px;text-align:center;">
     <div style="font-size:3rem;margin-bottom:0.5rem;">👋</div>
@@ -1795,7 +1808,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.658"></script>
+<script src="js/app.js?v=5.676"></script>
 <script>
 /* Rete di sicurezza contro la cache.
    index.html non viene praticamente mai servito dalla cache; app.js e style.css
@@ -1804,7 +1817,7 @@
    "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
    Questo controllo lo trasforma in un messaggio esplicito in console. */
 (function () {
-  var expected = 'v5.658'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.676'; // deve coincidere con JS_VERSION in app.js
   if (typeof JS_VERSION === 'undefined') {
     console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
     return;
