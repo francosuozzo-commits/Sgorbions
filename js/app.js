@@ -1,6 +1,349 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.654 — Su richiesta di Franco: dopo i totali, le procedure di caricamento
+//          RIPETONO l'elenco delle righe andate in errore.
+//          Il problema era che gli scarti venivano scritti MENTRE l'importazione
+//          scorreva, mescolati all'avanzamento riga per riga: su un file da 500
+//          righe, quando arrivi in fondo sono a centinaia di righe di distanza, e
+//          i totali ti dicono QUANTI errori ci sono stati ma non QUALI. Per
+//          ritrovarli bisognava risalire tutto il registro a occhio.
+//          Ora ogni riga scartata viene anche RACCOLTA, e in coda — dopo il
+//          "--- FINE: ..." con i totali — compare un blocco
+//          "--- RIGHE NON IMPORTATE (n) ---" con l'elenco completo, pronto da
+//          leggere o da copiare.
+//          Applicato a TUTTE E CINQUE le procedure, non solo a quella da cui e'
+//          nata la richiesta: importazione variazioni, retro, figurine, e le due
+//          di caricamento foto (dove il blocco si chiama "FILE NON CARICATI").
+//          Erano tutte affette dallo stesso difetto, e sistemarne una sola
+//          avrebbe solo spostato il problema alla prossima volta.
+//          IMPLEMENTAZIONE: introdotta in ogni procedura una funzione unica
+//          errRiga(msg), che scrive a video, registra E incrementa il contatore.
+//          Prima le tre cose erano separate (log + errors++), ed e' proprio il
+//          genere di duplicazione da cui nascono le incoerenze: bastava un
+//          percorso di errore che incrementasse il contatore senza loggare — o
+//          viceversa — perche' i totali e l'elenco non tornassero. Verificato che
+//          non resti NESSUN errors++ fuori da errRiga: il riepilogo non puo'
+//          quindi omettere righe che il totale ha contato.
+// v5.653 — Rimosso il tooltip col nome utente che avevo tenuto in v5.652.
+//          Franco ha ragione e la mia giustificazione non stava in piedi: alla
+//          modale ci si arriva SOLO cliccando su un utente preciso, e la modale
+//          mostra il suo nome nel titolo e i suoi dati nei campi. Quando premi
+//          "Elimina utente" hai la sua scheda davanti. Non c'era nessuna
+//          ambiguita' da risolvere, quindi il tooltip non risolveva nulla.
+//          Il ragionamento valeva per la v5.651, quando il pulsante era diventato
+//          una sola icona senza etichetta: li' il tooltip serviva davvero. Poi il
+//          pulsante e' tornato ad avere la sua etichetta e io ho conservato il
+//          tooltip SENZA RIFARE IL RAGIONAMENTO — la soluzione di un problema
+//          che nel frattempo era sparito.
+// v5.652 — Il pulsante di eliminazione utente TORNA IN FONDO alla modale, dove
+//          stava prima della v5.651. Franco ha accettato l'obiezione: la testata
+//          e' dove si clicca per CHIUDERE, e un cestino a un centimetro dalla X,
+//          per un'azione irreversibile su un'altra persona, e' un incidente che
+//          aspetta solo di succedere. In fondo ci si arriva solo scendendo
+//          apposta — e questo, per un pulsante del genere, e' una funzionalita',
+//          non un difetto.
+//          Ripristinati: la testata (titolo + X), il pulsante a larghezza piena
+//          con etichetta "🗑️ Elimina utente", la chiave i18n admin.user.delete
+//          in entrambe le lingue, e display:'block' (fuori da un contenitore
+//          flex, per un elemento a larghezza piena, ha di nuovo senso).
+//          CONSERVATO dalla v5.651 il tooltip che NOMINA l'utente ("Elimina
+//          l'utente mario_99"): l'etichetta dice cosa fa il pulsante, non su chi
+//          — e prima di un'azione irreversibile saperlo non guasta.
+// v5.651 — Su richiesta di Franco: il pulsante di eliminazione utente e' passato
+//          dal FONDO della modale del profilo alla sua TESTATA, in alto a destra
+//          accanto alla X, come cestino 🗑️ (coerente con l'uniformazione fatta in
+//          v5.647).
+//          DETTAGLIO CHE POTEVA ROMPERSI: .modal-header e' un flex con
+//          justify-content:space-between. Infilandoci un terzo figlio sciolto, i
+//          tre elementi si sarebbero distribuiti — titolo a sinistra, CESTINO AL
+//          CENTRO, X a destra. Cestino e X sono quindi raggruppati in un div, che
+//          resta un unico figlio e va tutto a destra.
+//          La visibilita' passa da display:'block' a display:'' — 'block' su un
+//          elemento dentro un contenitore flex e' una dichiarazione che non ha
+//          senso, e conviene lasciare che sia il flex a decidere. Resta il caso
+//          che contava: per un admin il pulsante NON compare.
+//          Il tooltip ora nomina l'utente ("Elimina l'utente mario_99"). Il
+//          pulsante e' diventato una sola icona: senza etichetta il tooltip e'
+//          l'unica cosa che dice cosa fa — e su un'azione irreversibile, e ora
+//          per giunta a un centimetro dalla X di chiusura, vale la pena che dica
+//          anche SU CHI.
+//          Rimossa la chiave i18n admin.user.delete, rimasta orfana.
+// v5.650 — Su richiesta di Franco: tolto il riquadro "Tempo di risposta medio"
+//          ("Di solito in poche ore") dalla pagina Contatti.
+//          Era una promessa che il sito non ha modo di mantenere ne' di
+//          misurare: nessuno conta davvero i tempi di risposta, e prometterli a
+//          chi scrive significa solo creare un'aspettativa che poi si disattende.
+//          Restava anche l'unica affermazione non verificabile in una pagina che
+//          in questi giorni abbiamo ripulito proprio dalle affermazioni non
+//          verificabili.
+//          Rimosse anche le due chiavi i18n rimaste orfane (contact.responseTime,
+//          contact.responseDesc) da entrambi i dizionari: una chiave che nessuno
+//          usa e' peso morto che al prossimo giro fa perdere tempo a capire dove
+//          finisca.
+//          Il riquadro E-mail resta, e si ricentra da solo (il contenitore usa
+//          justify-content:center).
+// v5.649 — La v5.648 non aveva risolto: il cestino continuava a sovrapporsi alla
+//          colonna Origine. Avevo curato il sintomo sbagliato.
+//          IL CONTO VERO: .tbl-btn ha padding 3px 10px, un bordo, e — cosa che
+//          avevo dimenticato — un margin-right di 4px. Con il glifo del cestino
+//          il pulsante misura circa 46px, ai quali si somma il padding della
+//          cella (24px): servono ~70px. La colonna ne dichiarava 60.
+//          Non era quindi un problema di contenimento del testo di Origine (che
+//          in v5.648 avevo comunque fatto bene, e resta): era il CESTINO a non
+//          starci dentro, e senza overflow:hidden tracimava sulla cella accanto.
+//          Correzioni: colonna del cestino 60 → 90px; la sua cella ha ora
+//          overflow:hidden e testo centrato (rete di sicurezza: anche se un
+//          giorno il pulsante crescesse, non potrebbe piu' invadere nulla);
+//          margin-right azzerato sul pulsante del registro, che e' l'ultimo
+//          della riga e non ha nulla a destra da cui distanziarsi.
+//          Larghezze minime rifatte di conseguenza: 850px, e 990px per la
+//          Newsletter che ha una colonna in piu'. Il Soggetto conserva 240px
+//          garantiti in tutte e tre le viste.
+// v5.648 — Su segnalazione di Franco: nella tabella delle e-mail inviate il
+//          cestino si sovrapponeva alla colonna Origine.
+//          LA CAUSA non era la larghezza, ed e' istruttiva: la cella Origine
+//          aveva white-space:nowrap SENZA overflow:hidden. Con
+//          table-layout:fixed, un testo che non puo' andare a capo e non viene
+//          tagliato non allarga la cella: TRACIMA su quella accanto. Finche' la
+//          colonna accanto non c'era, il difetto non si vedeva; aggiungendo il
+//          cestino e' venuto fuori. Allargare e basta avrebbe nascosto il
+//          sintomo, non tolto la causa: al primo testo piu' lungo sarebbe
+//          tornato.
+//          Aggiunto overflow:hidden + text-overflow:ellipsis alle tre celle
+//          interessate (Origine e Mezzo, nelle tre viste).
+//          Colonne Origine/Mezzo allargate da 110 a 130px: "Reset password" e
+//          "📬 Newsletter" ci stavano stretti davvero.
+//          Le tabelle ora hanno una LARGHEZZA MINIMA e scorrono in orizzontale
+//          invece di schiacciarsi (820px, e 960px per la Newsletter che ha una
+//          colonna in piu'). Cosi' alla colonna Soggetto restano sempre almeno
+//          220px: senza il minimo, su una finestra stretta si sarebbe ridotta a
+//          nulla e il difetto sarebbe riapparso in altra forma.
+// v5.647 — Su richiesta di Franco: UNIFORMATI tutti i pulsanti di cancellazione.
+//          Erano nove, e non se ne assomigliava uno: due dicevano "Elimina", due
+//          "Cancella", uno "🗑️ Elimina", uno usava lo stile scritto a mano invece
+//          della classe tbl-btn-del che il CSS aveva gia' pronta dalla riga 686.
+//          Ora sono tutti uguali: cestino 🗑️, classe tbl-btn-del, e un title che
+//          dice COSA si sta per cancellare ("Elimina questa serie", "Elimina
+//          questo post"...). L'icona da sola e' ambigua; il tooltip la disambigua
+//          senza allargare la colonna.
+//          Trovata anche una stringa italiana cablata nella tabella eventi
+//          ("Nessun evento ancora."), tradotta.
+//          NOTA sul punto 1 di Franco ("Eventi non la cancellazione"): il
+//          pulsante c'e' ed e' dentro renderAdminEventi(), l'unica funzione che
+//          disegna admin-eventi-table — verificato anche nella preview v5.646, in
+//          cui deleteEvento compare 5 volte. Se non si vede o non funziona, la
+//          causa e' altrove e serve la console.
+// v5.646 — Su richiesta di Franco: cancellazione RIGA PER RIGA nelle tabelle
+//          amministrative, per poter ripulire i dati di prova senza aspettare
+//          la scadenza a 6 mesi.
+//          Verificato prima di scrivere: MESSAGGI e SEGNALAZIONI il pulsante ce
+//          l'avevano gia' (deleteContactMsg, deleteSegnalazione). Mancavano
+//          EVENTI e REGISTRO E-MAIL — quest'ultimo in tutte e tre le viste
+//          (E-mail inviate, Newsletter, Messaggi inviati).
+//          Aggiunte deleteEvento() e deleteLogRow(). Le regole Firestore
+//          consentono gia' all'admin di cancellare in tutte e quattro le
+//          raccolte: nessuna modifica alle regole.
+//          IL PUNTO DELICATO: le tabelle del registro mescolano DUE raccolte —
+//          le e-mail vere (email_log) e le newsletter recapitate come messaggio
+//          interno (contact_messages con isAnnouncement). Il pulsante deve
+//          quindi sapere da DOVE togliere, e la .map() che costruisce le righe
+//          BUTTAVA VIA l'id del documento: senza recuperarlo non ci sarebbe
+//          stato modo di cancellare nulla. Ora ogni riga porta id e raccolta di
+//          provenienza. Passare la raccolta sbagliata non avrebbe dato errore:
+//          semplicemente non avrebbe cancellato niente, in silenzio.
+//          Il pulsante fa event.stopPropagation(): le righe sono cliccabili per
+//          aprire il dettaglio, e senza quello un clic sul cestino avrebbe anche
+//          espanso la riga.
+//          Adeguati i colspan delle righe di dettaglio in tutte le viste
+//          (4→5, 5→6): con una colonna in piu' e il colspan vecchio, la tabella
+//          si sfalsa visibilmente appena si apre un dettaglio.
+//          deleteEvento richiama updateBellBadge(): l'evento cancellato poteva
+//          essere non letto, e il contatore della campanella sarebbe rimasto
+//          indietro.
+// v5.645 — Su decisione di Franco, il registro EVENTI:
+//          (1) Ogni evento porta ora authUid, cosi' gli eventi di un utente sono
+//          RITROVABILI. Finora la descrizione era testo libero, e cercarci dentro
+//          il nome sarebbe stato fragile e sbagliato: basta un utente che si
+//          chiami "login" o "admin" per pescare righe altrui.
+//          L'authUid e' quello del SOGGETTO dell'evento, non di chi lo scrive:
+//          per la cancellazione fatta dall'admin viene registrato il bersaglio,
+//          altrimenti l'evento risulterebbe di chi ha premuto il pulsante.
+//          Resta null per 'reset_pwd', e non c'e' modo di fare altrimenti: quella
+//          richiesta parte dal form di login, da un utente NON autenticato. E'
+//          l'unico evento che non sara' mai riconducibile a nessuno — ed e'
+//          anche l'unico che contiene un indirizzo e-mail, per giunta digitato a
+//          mano e non necessariamente di un nostro utente.
+//          (2) SCADENZA a 6 mesi (purgeOldEventi). Il registro sopravvive alla
+//          cancellazione dell'account — scelta di Franco, difendibile: e' un
+//          registro di sicurezza, e sapere CHI se n'e' andato e quando e' proprio
+//          il motivo per cui esiste — ma non sopravvive al tempo. Per gli eventi
+//          senza authUid (reset_pwd) la scadenza e' anzi l'UNICA pulizia
+//          possibile.
+//          Gira all'apertura del pannello admin, a tetto di 40, come la pulizia
+//          dei messaggi di contatto: il sito e' statico, non c'e' un processo
+//          notturno.
+//          Dichiarato nell'informativa (IT + EN), compreso il fatto che il
+//          registro e' l'unica cosa che sopravvive alla cancellazione
+//          dell'account — e il perche'.
+// v5.644 — Su richiesta di Franco: nuovo evento 'account_deleted' (icona 🗑️)
+//          quando un utente elimina il proprio account. Suona la campanella.
+//          Con il NOME UTENTE, come chiesto: senza, l'evento direbbe che
+//          "qualcuno" se n'e' andato, che non serve a niente.
+//          Senza indirizzo e-mail, pero': e' la persona che ci ha appena chiesto
+//          di essere dimenticata, e ricopiarle l'indirizzo in un altro registro
+//          sarebbe il contrario di cio' che ha chiesto.
+//          Registrato PRIMA di cancellare il documento utente: dopo, il nome non
+//          esisterebbe piu' e resterebbe solo un id.
+//          Aggiunto anche l'evento per la cancellazione fatta DALL'ADMIN, con
+//          causale diversa ("e' stato eliminato dall'amministratore"): sono due
+//          fatti diversi e non vanno confusi nel registro. E se la rimozione dal
+//          pannello evade una richiesta scritta di cancellazione, quella riga e'
+//          la prova di averla onorata.
+//
+//          !!! TROVATO CERCANDO QUESTO — DA AFFRONTARE !!!
+//          La raccolta 'eventi' NON e' toccata dalla cascata di cancellazione, e
+//          contiene gia' oggi, in chiaro:
+//            "Login effettuato da: mario_99"        (decine di righe per utente)
+//            "Nuovo utente registrato: mario_99"
+//            "Nuovo post nel blog di mario_99: ..."
+//            "Richiesto reset password per: mario@gmail.com"   ← INDIRIZZO E-MAIL
+//          Quindi un utente che si cancella lascia comunque dietro di se' il
+//          proprio nome utente in molte righe, e il proprio indirizzo e-mail se
+//          ha mai chiesto un reset password. Non e' il nuovo evento a essere una
+//          traccia: e' TUTTO IL REGISTRO, e non ce n'eravamo accorti.
+//          Gli eventi non hanno alcun riferimento strutturato all'utente (solo
+//          testo libero), quindi non si possono ripulire per utente senza prima
+//          cambiare lo schema. Non ho deciso da solo: proposte a Franco.
+// v5.643 — Su richiesta di Franco: il pulsante "Cambia password" nel profilo e'
+//          ora DISABILITATO (grigiato) durante l'impersonificazione.
+//          Il motivo e' che Firebase Auth non sa nulla dell'impersonificazione:
+//          e' una finzione che vive solo nel nostro codice. La sessione
+//          autenticata resta quella dell'ADMIN, quindi un cambio password
+//          agirebbe sulla password dell'admin, non su quella dell'utente
+//          impersonato. Era un pulsante che, se premuto, faceva la cosa
+//          sbagliata sull'account sbagliato — e senza dirlo.
+//          Grigiato e non nascosto (Franco lasciava la scelta): cosi' si vede
+//          che la funzione esiste e il tooltip spiega PERCHE' non e' disponibile,
+//          invece di far chiedere dove sia finita.
+//          Guardia ripetuta anche dentro openChangePwdModal(): un pulsante
+//          disabilitato e' un'indicazione, non una garanzia, e la funzione resta
+//          richiamabile per altre vie.
+//          Nota: la sezione "Elimina il mio account" era gia' nascosta durante
+//          l'impersonificazione, per la stessa ragione di fondo. Restava scoperta
+//          solo la password.
+// v5.642 — Su domanda di Franco ("la cascata parte anche se a cancellare e'
+//          l'admin?"). No — e la verifica ha scoperchiato DUE difetti, non uno.
+//          (1) LA CANCELLAZIONE FATTA DALL'ADMIN ERA PIU' INCOMPLETA DI QUELLA
+//          FATTA DALL'UTENTE. deleteUser() cancellava users, public_profiles,
+//          owned e wishlists — e basta. Non anonimizzava nemmeno i post (che
+//          restavano firmati col nome dell'utente cancellato), e non toccava
+//          contact_messages, email_log e segnalazioni.
+//          L'esito della cancellazione dipendeva quindi da CHI premeva il
+//          pulsante, il che non ha alcun senso: e' la stessa operazione. Ed e'
+//          per giunta il percorso sbagliato in cui avere il buco, perche'
+//          cancellare un utente dal pannello e' proprio il modo in cui si evade
+//          una richiesta di cancellazione arrivata per iscritto (art. 17 GDPR).
+//          deleteUser() ora chiama _anonymizeUserContent() e _deleteUserTraces()
+//          esattamente come l'auto-eliminazione. L'utente viene letto PRIMA di
+//          cancellarlo: dopo fsDelete('users') e-mail e authUid non ci sarebbero
+//          piu', e senza quelli le tracce non si ritrovano.
+//          (2) _deleteUserTraces LEGGEVA currentUser. Funzionava per caso, solo
+//          perche' l'unico chiamante era l'auto-eliminazione, dove currentUser E'
+//          il bersaglio. Chiamandola dal pannello admin avrebbe cercato le
+//          segnalazioni con l'authUid dell'ADMIN: non solo avrebbe mancato il
+//          bersaglio, ma avrebbe potuto cancellare le segnalazioni dell'admin
+//          stesso. Ora riceve l'utente bersaglio come parametro e non deduce piu'
+//          nulla da chi sta eseguendo l'operazione.
+//          E' il tipo di baco che non si manifesta finche' non aggiungi il
+//          secondo chiamante — e allora fa danni silenziosi sui dati sbagliati.
+// v5.641 — Su richiesta di Franco: nel registro delle Newsletter inviate, utente
+//          e indirizzo e-mail stavano impilati sulla stessa cella. Ora sono DUE
+//          COLONNE distinte — "Utente" (bandierina + nome) ed "E-mail" — e la
+//          tabella e' passata da 4 a 5 colonne.
+//          Vale per ENTRAMBI i punti che Franco ha citato: il tab Newsletter e
+//          Admin → Comunicazioni → Newsletter. Non sono due tabelle diverse:
+//          usano la stessa renderNewsletterLog() con un id di destinazione
+//          diverso, quindi una modifica sola li copre tutti e due.
+//          Quando l'invio e' avvenuto come MESSAGGIO interno, la cella E-mail
+//          resta VUOTA (un trattino), non contiene l'indirizzo: a quell'indirizzo
+//          non e' stato mandato nulla, e scriverlo li' farebbe credere il
+//          contrario — in un pannello che serve anche a dimostrare cosa e' stato
+//          spedito e a chi.
+//          Adeguato anche il colspan della riga di dettaglio (4 → 5): senza,
+//          il pannello espanso sarebbe rimasto stretto di una colonna e la
+//          tabella si sarebbe sfalsata.
+// v5.640 — Su richiesta di Franco, nel registro delle Newsletter inviate:
+//          (1) il destinatario e' ora identificato da BANDIERINA + NOME UTENTE,
+//          come nel resto del pannello, e non piu' dal solo indirizzo e-mail.
+//          (2) Quando la newsletter e' stata recapitata come MESSAGGIO INTERNO,
+//          l'indirizzo e-mail NON viene piu' mostrato. Franco ha ragione a
+//          chiamarla informazione fuorviante: a quell'indirizzo non e' stato
+//          mandato NULLA, e vederlo accanto alla riga fa credere il contrario —
+//          il che, in un pannello che serve anche a dimostrare cosa si e'
+//          spedito e a chi, e' un errore che si paga.
+//          L'indirizzo continua a essere usato internamente, ma solo per
+//          RITROVARE l'utente: viene stampato solo per gli invii davvero
+//          avvenuti per e-mail.
+//          Corretto anche il DETTAGLIO espanso, dove lo stesso equivoco si
+//          ripeteva un livello piu' in basso: il campo "A:" mostrava
+//          l'indirizzo anche per i messaggi interni. Ora mostra il nome utente.
+//          Se l'utente non esiste piu' (account cancellato) resta il solo
+//          indirizzo, che e' tutto cio' che sappiamo di lui.
+//          Oggetto e nome passano ora da esc(): sono testo che finisce in
+//          innerHTML, e l'oggetto di un annuncio lo scrive l'admin, ma il nome
+//          utente no.
+// v5.639 — Su rilievo di Franco: RIMOSSA backfillSegnalazioniAuthUid(),
+//          introdotta in v5.637. Era una migrazione per riempire il campo
+//          authUid sulle segnalazioni preesistenti — ma di segnalazioni
+//          preesistenti non ce n'era NESSUNA.
+//          Avevo dedotto l'esistenza di dati vecchi dal fatto che il campo
+//          mancava, invece di chiedere quante segnalazioni ci fossero in
+//          archivio. Bastava una domanda.
+//          Non faceva danno (usciva subito con l'elenco vuoto, zero quota
+//          consumata), ma era peso morto: cinquanta righe, un aggancio in piu'
+//          in _loadAdminOnlyData, e una cosa in piu' da capire fra sei mesi.
+//          Le nuove segnalazioni nascono gia' con authUid (v5.637), quindi non
+//          c'e' nulla da recuperare: la cancellazione dell'account le trova e le
+//          elimina.
+// v5.638 — Su segnalazione di Franco: inviando una segnalazione con il sito in
+//          inglese, la conferma compariva in italiano.
+//          Non era un caso isolato: cercando la causa sono saltate fuori
+//          CINQUE stringhe cablate in italiano, tutte tradotte ora.
+//          Nel flusso segnalazioni ce n'erano DUE, non una: oltre alla conferma
+//          ("Segnalazione inviata! Grazie.") anche il messaggio di validazione
+//          quando il commento e' vuoto ("Inserisci un commento") — quello Franco
+//          non l'aveva visto perche' per incontrarlo bisogna sbagliare.
+//          Altre tre altrove: "Il titolo è obbligatorio" e "Post pubblicato!"
+//          (blog), "Nazionalità aggiornata!" (profilo).
+//          Restano zero toast con testo italiano cablato: verificato cercando
+//          le lettere accentate dentro le stringhe letterali passate a toast().
+// v5.637 — Completamento della v5.636, dopo aver letto le regole Firestore
+//          REALI di Franco. Le mie regole di ieri erano scritte a naso e su un
+//          punto sarebbero state inutilizzabili.
+//          IL PROBLEMA. Le regole ancorano l'identita' ad authUid: isOwner()
+//          confronta request.auth.uid con un campo del documento. Ma le
+//          SEGNALAZIONI non hanno authUid — hanno solo userId, che e' l'id
+//          applicativo (un timestamp) e con request.auth.uid non c'entra nulla.
+//          Nessuna regola avrebbe potuto riconoscere il proprietario. In piu'
+//          segnalazioni era read: if isAdmin(), quindi l'utente non poteva
+//          nemmeno TROVARE le proprie righe: per cancellarle bisogna prima
+//          poterle interrogare.
+//          COSA HO FATTO:
+//          - le nuove segnalazioni portano authUid;
+//          - _deleteUserTraces interroga segnalazioni per authUid, non userId;
+//          - [RIMOSSA in v5.639] avevo scritto anche una migrazione per
+//            riempire authUid sulle segnalazioni vecchie. Non serviva: Franco
+//            mi ha fatto notare che di segnalazioni in archivio non ce n'era
+//            NESSUNA. Avevo dedotto l'esistenza di dati vecchi dal fatto che il
+//            campo mancava, invece di chiedere. Bastava una domanda.
+//          contact_messages ed email_log non richiedono invece alcuna modifica
+//          ai dati: la prima ha gia' il campo email (e le regole ci confrontano
+//          gia' request.auth.token.email), la seconda ha il campo "to".
+//          REGOLE COMPLETE in firestore_rules_v5637.txt: sono le TUE regole, con
+//          tre soli blocchi cambiati (contact_messages, segnalazioni, email_log)
+//          piu' una funzione di supporto isOwnerByEmail(). Da incollare al posto
+//          delle attuali. Non consuma quota.
 // v5.636 — PUNTO 4 (seconda parte): LA CANCELLAZIONE DELL'ACCOUNT ORA CANCELLA
 //          DAVVERO TUTTO. Fino a ieri l'auto-eliminazione toccava users,
 //          public_profiles, owned e wishlists e anonimizzava i post — ma
@@ -27,7 +370,7 @@
 //          Chi cancella il proprio account NON e' l'admin. Senza una regola che
 //          gli consenta di cancellare le PROPRIE righe, Firestore rifiuta le
 //          chiamate e la cancellazione fallisce IN SILENZIO. Regole pronte in
-//          firestore_rules_v5636.txt, consegnato con questa versione.
+//          firestore_rules_v5637.txt, consegnato con questa versione.
 //          Gli errori non interrompono la cancellazione dell'account: se una
 //          raccolta non fosse raggiungibile l'account viene comunque eliminato e
 //          l'errore finisce in console. Meglio un residuo segnalato che un
@@ -4664,6 +5007,36 @@ function switchEmailArchiveTab(filter) {
 
 // targetId: id del contenitore dove disegnare la tabella
 // filterSource: 'all' | 'newsletter' | 'messages' — se omesso usa _emailArchiveFilter (pannello E-mail)
+// Cancellazione di una riga dal registro delle comunicazioni.
+// ATTENZIONE: le tabelle mescolano DUE raccolte — le e-mail vere (email_log) e le
+// newsletter recapitate come messaggio interno (contact_messages con
+// isAnnouncement). Il pulsante deve quindi sapere da dove togliere: passare la
+// raccolta sbagliata significherebbe non cancellare nulla, in silenzio.
+async function deleteLogRow(coll, id) {
+  if (!confirm(currentLang === 'it'
+    ? 'Eliminare questa riga dal registro?'
+    : 'Delete this row from the log?')) return;
+  try {
+    await fsDelete(coll, id);
+    if (coll === 'contact_messages' && _cache.contact_messages) {
+      _cache.contact_messages = _cache.contact_messages.filter(m => m.id !== id);
+    }
+    // email_log non e' in cache: le tabelle lo rileggono da Firestore a ogni
+    // disegno, quindi basta ridisegnare.
+    renderEmailLog();
+    renderNewsletterLog('newsletter-email-log');
+    toast(currentLang === 'it' ? 'Riga eliminata' : 'Row deleted', 'success');
+  } catch(e) {
+    console.error('deleteLogRow', e);
+    toast(currentLang === 'it' ? 'Eliminazione non riuscita' : 'Delete failed', 'error');
+  }
+}
+
+// Il pulsante, uguale in tutte e tre le viste.
+function logDeleteBtn(coll, id) {
+  return '<button class="tbl-btn tbl-btn-del" style="margin-right:0;" onclick="event.stopPropagation();deleteLogRow(\'' + coll + '\',\'' + id + '\')" title="' + (currentLang === 'it' ? 'Elimina questa riga' : 'Delete this row') + '">🗑️</button>';
+}
+
 async function renderEmailLogInto(targetId, filterSource) {
   const el = document.getElementById(targetId);
   if (!el) return;
@@ -4687,9 +5060,10 @@ async function renderEmailLogInto(targetId, filterSource) {
         '<td style="white-space:nowrap;font-size:0.88rem;padding:0.4rem 0.75rem;">' + statusIcon + new Date(e.date).toLocaleDateString('it-IT') + ' ' + new Date(e.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td>' +
         '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + e.to + '</td>' +
         '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;">' + e.subject + '</td>' +
-        (showSourceCol ? '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;">' + sourceLabel(e.source) + '</td>' : '') +
+        (showSourceCol ? '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + sourceLabel(e.source) + '</td>' : '') +
+        '<td style="padding:0.4rem 0.5rem;white-space:nowrap;overflow:hidden;text-align:center;">' + logDeleteBtn('email_log', e.id) + '</td>' +
         '</tr>';
-      const colspan = showSourceCol ? 4 : 3;
+      const colspan = showSourceCol ? 5 : 4;
       const bodyHtml = e.body
         ? '<div style="white-space:pre-line;font-size:0.88rem;line-height:1.6;color:var(--text);padding:0.5rem 0;">' + e.body.replace(/[<]/g,'&lt;').replace(/[>]/g,'&gt;') + '</div>'
         : e.source === 'pwdreset'
@@ -4702,12 +5076,13 @@ async function renderEmailLogInto(targetId, filterSource) {
         '</td></tr>';
       return mainRow + detailRow;
     }).join('');
-    el.innerHTML = note + '<table class="data-table" style="border-spacing:0;table-layout:fixed;width:100%;"><thead><tr>' +
+    el.innerHTML = note + '<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;table-layout:fixed;width:100%;min-width:850px;"><thead><tr>' +
       '<th style="padding:0.4rem 0.75rem;width:170px;">' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th>' +
       '<th style="padding:0.4rem 0.75rem;width:220px;">' + (currentLang === 'it' ? 'Destinatario' : 'Recipient') + '</th>' +
       '<th style="padding:0.4rem 0.75rem;">' + (currentLang === 'it' ? 'Soggetto' : 'Subject') + '</th>' +
-      (showSourceCol ? '<th style="padding:0.4rem 0.75rem;width:110px;">' + (currentLang === 'it' ? 'Origine' : 'Source') + '</th>' : '') +
-      '</tr></thead><tbody>' + rows + '</tbody></table>';
+      (showSourceCol ? '<th style="padding:0.4rem 0.75rem;width:130px;">' + (currentLang === 'it' ? 'Origine' : 'Source') + '</th>' : '') +
+      '<th style="padding:0.4rem 0.75rem;width:90px;"></th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   } catch(err) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Errore caricamento log.' : 'Error loading log.') + '</p>'; }
 }
 
@@ -4736,42 +5111,85 @@ async function renderNewsletterLog(targetId) {
   if (!el) return;
   el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Caricamento...' : 'Loading...') + '</p>';
   try {
+    // Il destinatario si mostra con nome utente e bandierina, come nel resto del
+    // pannello. L'indirizzo e-mail invece NON e' un dato neutro: stamparlo accanto
+    // a una newsletter recapitata come MESSAGGIO interno sarebbe fuorviante,
+    // perche' a quell'indirizzo non e' stato mandato nulla. Lo si usa solo per
+    // ritrovare l'utente, e lo si stampa solo quando l'invio e' avvenuto davvero
+    // per e-mail.
+    const perEmail = new Map(
+      getData('users', []).map(u => [(u.email || '').toLowerCase(), u])
+    );
+    // id e coll servono al pulsante di cancellazione: senza, il .map() li perdeva
+    // e non ci sarebbe stato modo di sapere COSA cancellare e DOVE.
     const emailLogs = (await fsGetAll('email_log')).filter(e => e.source === 'newsletter').map(e => ({
-      date: e.date, to: e.to, subject: e.subject, body: e.body, method: 'email', status: e.status
+      id: e.id, coll: 'email_log',
+      date: e.date, to: e.to, subject: e.subject, body: e.body, method: 'email', status: e.status,
+      user: perEmail.get((e.to || '').toLowerCase()) || null
     }));
     const msgLogs = getData('contact_messages', []).filter(m => m.isAnnouncement).map(m => ({
-      date: m.repliedAt || m.date, to: m.email, subject: m.subject, body: m.message, method: 'message', status: 'ok'
+      id: m.id, coll: 'contact_messages',
+      date: m.repliedAt || m.date, to: m.email, subject: m.subject, body: m.message, method: 'message', status: 'ok',
+      // il record dell'annuncio porta gia' il nome utente; la nazionalita' si
+      // ritrova per indirizzo, che pero' non verra' mostrato.
+      user: perEmail.get((m.email || '').toLowerCase()) || (m.name ? { username: m.name } : null)
     }));
     const combined = [...emailLogs, ...msgLogs].sort((a,b) => new Date(b.date) - new Date(a.date));
     if (!combined.length) { el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Nessuna newsletter inviata.' : 'No newsletter sent.') + '</p>'; return; }
     const display = combined.slice(0, 50);
     const note = combined.length > 50 ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrate le ultime 50 di ' + combined.length : 'Showing last 50 of ' + combined.length}</p>` : '';
     const methodLabel = (e) => e.method === 'email' ? '✉️ E-mail' : '💬 ' + (currentLang === 'it' ? 'Messaggio' : 'Message');
+
+    // DUE COLONNE distinte, non due righe impilate: l'utente (bandierina + nome)
+    // e l'indirizzo e-mail.
+    // L'indirizzo si stampa SOLO se l'invio e' avvenuto davvero per e-mail. Per un
+    // messaggio interno la cella resta VUOTA — non un trattino, non l'indirizzo:
+    // scrivere li' un indirizzo a cui non e' stato mandato nulla farebbe credere
+    // il contrario, e questo pannello serve anche a dimostrare cosa e' stato
+    // spedito e a chi.
+    const cellaUtente = (e) => {
+      const u = e.user;
+      if (!u?.username) return '<span style="color:var(--muted);">—</span>';
+      const bandiera = u.nationalityCode
+        ? `<img src="${flagUrl(u.nationalityCode)}" title="${esc(u.nationalityName || '')}" style="width:20px;height:15px;object-fit:cover;border-radius:2px;vertical-align:middle;margin-right:0.45rem;">`
+        : '';
+      return bandiera + `<span style="vertical-align:middle;">${esc(u.username)}</span>`;
+    };
+    const cellaEmail = (e) => (e.method === 'email' && e.to)
+      ? esc(e.to)
+      : '<span style="color:var(--muted);">—</span>';
     const rows = display.map((e, idx) => {
       const detailId = targetId + '-detail-' + idx;
       const statusIcon = e.status === 'failed' ? '<span title="Invio fallito" style="color:#ff6464;">❌ </span>' : '<span style="color:#b5ff2e;">✓ </span>';
       const mainRow = '<tr style="cursor:pointer;" onclick="toggleEmailDetail(\'' + detailId + '\')">' +
         '<td style="white-space:nowrap;font-size:0.88rem;padding:0.4rem 0.75rem;">' + statusIcon + new Date(e.date).toLocaleDateString('it-IT') + ' ' + new Date(e.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td>' +
-        '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + e.to + '</td>' +
-        '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;">' + (e.subject || '') + '</td>' +
-        '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;">' + methodLabel(e) + '</td>' +
+        '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + cellaUtente(e) + '</td>' +
+        '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + cellaEmail(e) + '</td>' +
+        '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;">' + esc(e.subject || '') + '</td>' +
+        '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + methodLabel(e) + '</td>' +
+        '<td style="padding:0.4rem 0.5rem;white-space:nowrap;overflow:hidden;text-align:center;">' + logDeleteBtn(e.coll, e.id) + '</td>' +
         '</tr>';
       const bodyHtml = e.body
         ? '<div style="white-space:pre-line;font-size:0.88rem;line-height:1.6;color:var(--text);padding:0.5rem 0;">' + e.body.replace(/[<]/g,'&lt;').replace(/[>]/g,'&gt;') + '</div>'
         : '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Corpo non disponibile' : 'Body not available') + '</p>';
-      const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="4" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
-        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + e.to + '</div>' +
-        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + (e.subject || '') + '</div>' +
+      const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="6" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
+        // Anche qui: per un messaggio interno il "A:" non e' un indirizzo e-mail —
+        // e' il destinatario dentro il sito. Mostrare l'indirizzo farebbe credere
+        // che gli sia stata scritta un'e-mail, che non e' successo.
+        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + esc(e.method === 'email' ? (e.to || '') : (e.user?.username || '—')) + '</div>' +
+        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + esc(e.subject || '') + '</div>' +
         bodyHtml +
         '</td></tr>';
       return mainRow + detailRow;
     }).join('');
-    el.innerHTML = note + '<table class="data-table" style="border-spacing:0;table-layout:fixed;width:100%;"><thead><tr>' +
-      '<th style="padding:0.4rem 0.75rem;width:170px;">' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th>' +
-      '<th style="padding:0.4rem 0.75rem;width:220px;">' + (currentLang === 'it' ? 'Destinatario' : 'Recipient') + '</th>' +
+    el.innerHTML = note + '<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;table-layout:fixed;width:100%;min-width:990px;"><thead><tr>' +
+      '<th style="padding:0.4rem 0.75rem;width:150px;">' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th>' +
+      '<th style="padding:0.4rem 0.75rem;width:170px;">' + (currentLang === 'it' ? 'Utente' : 'User') + '</th>' +
+      '<th style="padding:0.4rem 0.75rem;width:210px;">' + (currentLang === 'it' ? 'E-mail' : 'E-mail') + '</th>' +
       '<th style="padding:0.4rem 0.75rem;">' + (currentLang === 'it' ? 'Soggetto' : 'Subject') + '</th>' +
-      '<th style="padding:0.4rem 0.75rem;width:110px;">' + (currentLang === 'it' ? 'Mezzo' : 'Method') + '</th>' +
-      '</tr></thead><tbody>' + rows + '</tbody></table>';
+      '<th style="padding:0.4rem 0.75rem;width:130px;">' + (currentLang === 'it' ? 'Mezzo' : 'Method') + '</th>' +
+      '<th style="padding:0.4rem 0.75rem;width:90px;"></th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   } catch(err) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Errore caricamento log.' : 'Error loading log.') + '</p>'; }
 }
 
@@ -4801,23 +5219,25 @@ async function renderSentMessagesLog(targetId) {
       '<td style="white-space:nowrap;font-size:0.88rem;padding:0.4rem 0.75rem;">' + new Date(dateVal).toLocaleDateString('it-IT') + ' ' + new Date(dateVal).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td>' +
       '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + m.email + '</td>' +
       '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;">' + (m.subject || '') + '</td>' +
-      '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;">' + originLabel(m) + '</td>' +
+      '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + originLabel(m) + '</td>' +
+      '<td style="padding:0.4rem 0.5rem;white-space:nowrap;overflow:hidden;text-align:center;">' + logDeleteBtn('contact_messages', m.id) + '</td>' +
       '</tr>';
     const bodyText = m.isAnnouncement ? m.message : (m.replyText || '');
     const bodyHtml = '<div style="white-space:pre-line;font-size:0.88rem;line-height:1.6;color:var(--text);padding:0.5rem 0;">' + bodyText.replace(/[<]/g,'&lt;').replace(/[>]/g,'&gt;') + '</div>';
-    const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="4" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
+    const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="5" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
       '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + m.email + '</div>' +
       '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + (m.subject || '') + '</div>' +
       bodyHtml +
       '</td></tr>';
     return mainRow + detailRow;
   }).join('');
-  el.innerHTML = note + '<table class="data-table" style="border-spacing:0;table-layout:fixed;width:100%;"><thead><tr>' +
+  el.innerHTML = note + '<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;table-layout:fixed;width:100%;min-width:850px;"><thead><tr>' +
     '<th style="padding:0.4rem 0.75rem;width:170px;">' + (currentLang === 'it' ? 'Data invio' : 'Sent date') + '</th>' +
     '<th style="padding:0.4rem 0.75rem;width:220px;">' + (currentLang === 'it' ? 'Destinatario' : 'Recipient') + '</th>' +
     '<th style="padding:0.4rem 0.75rem;">' + (currentLang === 'it' ? 'Soggetto' : 'Subject') + '</th>' +
-    '<th style="padding:0.4rem 0.75rem;width:110px;">' + (currentLang === 'it' ? 'Origine' : 'Source') + '</th>' +
-    '</tr></thead><tbody>' + rows + '</tbody></table>';
+    '<th style="padding:0.4rem 0.75rem;width:130px;">' + (currentLang === 'it' ? 'Origine' : 'Source') + '</th>' +
+    '<th style="padding:0.4rem 0.75rem;width:90px;"></th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 }
 
 async function loadReplyToField() {
@@ -5037,7 +5457,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.636';
+const JS_VERSION = 'v5.654';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -5745,14 +6165,14 @@ const i18n = {
 'admin.cloudinary.plan':'Free plan: 25 credits/month (storage + transformations + bandwidth).',
 'admin.cloudinary.link':'For updated details go to <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.',
 'admin.eventi.title':'System events','admin.segnalazioni.title':'User comments','admin.eventi.markRead':'✓ Mark all as read',
-'admin.user.save':'Save changes','admin.user.reset':'🔑 Reset password','admin.user.delete':'🗑️ Delete user',
+'admin.user.delete':'🗑️ Delete user','admin.user.save':'Save changes','admin.user.reset':'🔑 Reset password',
 'admin.user.joined':'Member since','admin.user.lastlogin':'Last login','admin.user.level':'Level',
 
 'admin.user.role':'User type','admin.user.collector':'Collector','admin.user.admin':'Admin',
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'✅ Add everything to my list','catalog.havenone':'❌ Clear my list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'✅ Add everything to my list','catalog.havenone':'❌ Clear my list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -5839,7 +6259,7 @@ const i18n = {
 'admin.cloudinary.plan':'Piano gratuito: 25 crediti/mese (storage + trasformazioni + banda).',
 'admin.cloudinary.link':'Per il dettaglio aggiornato vai su <a href="https://console.cloudinary.com" target="_blank" style="color:var(--accent);">console.cloudinary.com</a>.',
 'admin.eventi.title':'Eventi di sistema','admin.segnalazioni.title':'Segnalazioni utenti','admin.eventi.markRead':'✓ Segna tutte come lette',
-'admin.user.save':'Salva modifiche','admin.user.reset':'🔑 Reset password','admin.user.delete':'🗑️ Elimina utente',
+'admin.user.delete':'🗑️ Elimina utente','admin.user.save':'Salva modifiche','admin.user.reset':'🔑 Reset password',
 'admin.user.joined':'Iscritto dal','admin.user.lastlogin':'Ultima login','admin.user.level':'Livello',
 
 'admin.user.role':'Tipologia di utente','admin.user.collector':'Collezionista','admin.user.admin':'Admin',
@@ -5847,7 +6267,7 @@ const i18n = {
 'contact.title':'Contatta <span class=\'hi\'>l\'amministratore</span>',
 'contact.intro':'Hai trovato qualche pezzo raro che non è censito nel sito?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
 'contact.email.ph':'la-tua@e-mail.com',
-'contact.info':'Informazioni di contatto','contact.responseTime':'Tempo di risposta medio','contact.responseDesc':'Di solito in poche ore',
+'contact.info':'Informazioni di contatto',
 'newsletter.title':'Invia Newsletter','newsletter.subject':'Oggetto','newsletter.subject.ph':'es. Nuova serie aggiunta!','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate',
 'classifica.best':'Classifica dei migliori collezionisti','classifica.sub':'Chi ha costruito la lista più grande?','classifica.levels':'Livelli di Collezionista Sgorbions',
 'admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio minimo','admin.levels.save':'Salva livello',
@@ -6128,6 +6548,7 @@ async function _loadAdminOnlyData() {
   // processo notturno. Non e' atteso (niente await): se fosse lento non deve
   // rallentare l'apertura del pannello.
   purgeOldContactMessages();
+  purgeOldEventi();
 }
 
 async function doLogin() {
@@ -6174,7 +6595,7 @@ async function doLogin() {
     applyI18n();
   }
   fsSave('users', user); // lastLogin: non blocca il login, non serve attenderlo
-  if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + bold(user.username), { read: true });
+  if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + bold(user.username), { read: true, authUid: user.authUid || null });
   else await _loadAdminOnlyData();
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
@@ -6245,7 +6666,7 @@ async function signInWithGoogle() {
     _cache.users.push(saved);
     user = saved;
     sendWelcomeEmail(saved);
-    logEvent('new_user', 'Nuovo utente registrato con Google: ' + bold(username));
+    logEvent('new_user', 'Nuovo utente registrato con Google: ' + bold(username), { authUid: newUser.authUid || null });
   }
 
   currentUser = user;
@@ -6259,7 +6680,7 @@ async function signInWithGoogle() {
     applyI18n();
   }
   if (!isNewUser) fsSave('users', user); // lastLogin: non blocca, non serve attenderlo (per un nuovo utente è già stato salvato sopra)
-  if (!isNewUser && !user.isAdmin) logEvent('login', 'Login effettuato da: ' + bold(user.username), { read: true });
+  if (!isNewUser && !user.isAdmin) logEvent('login', 'Login effettuato da: ' + bold(user.username), { read: true, authUid: user.authUid || null });
   if (!isNewUser && user.isAdmin) await _loadAdminOnlyData();
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
@@ -6374,7 +6795,7 @@ async function doRegister() {
     setLang(finalLang);
     applyI18n();
   }
-  logEvent('new_user', 'Nuovo utente registrato: ' + bold(u));
+  logEvent('new_user', 'Nuovo utente registrato: ' + bold(u), { authUid: authUid || null });
 }
 
 // ============================================================
@@ -6402,6 +6823,16 @@ function toggleDemoBtn() {
 }
 
 function openChangePwdModal() {
+  // Seconda guardia: il pulsante e' gia' disabilitato durante l'impersonificazione
+  // (renderProfile), ma un pulsante grigiato e' un'indicazione, non una garanzia —
+  // la funzione resta richiamabile per altre vie. E qui l'errore sarebbe grave:
+  // si cambierebbe la password DELL'ADMIN credendo di cambiare quella dell'utente.
+  if (isImpersonating()) {
+    toast(currentLang === 'it'
+      ? "Non disponibile durante l'impersonificazione: cambieresti la password dell'admin."
+      : "Not available while impersonating: you would change the admin's password.", 'error');
+    return;
+  }
   document.getElementById('change-pwd-current').value = '';
   document.getElementById('change-pwd-new').value = '';
   document.getElementById('change-pwd-confirm').value = '';
@@ -6505,15 +6936,21 @@ function displayAuthorName(name) {
 //  il proprio account NON e' l'admin: senza una regola che gli consenta di
 //  cancellare le PROPRIE righe, queste chiamate verrebbero rifiutate e
 //  fallirebbero in silenzio. Le regole necessarie sono nel file
-//  firestore_rules_v5636.txt consegnato insieme a questa versione.
+//  firestore_rules_v5637.txt consegnato insieme a questa versione.
 //  Gli errori qui NON interrompono la cancellazione dell'account: se una
 //  raccolta non fosse raggiungibile, l'account viene comunque eliminato e
 //  l'errore finisce in console. Meglio un residuo segnalato che un utente
 //  bloccato a meta' strada, con l'account a pezzi.
 // ============================================================
-async function _deleteUserTraces(userId, email) {
+// L'utente BERSAGLIO va passato per intero: la funzione NON deve dedurlo da
+// currentUser. Serve infatti anche all'admin che cancella un ALTRO utente, e in
+// quel caso currentUser e' l'admin — cercare le segnalazioni con il SUO authUid
+// non solo mancherebbe il bersaglio, ma rischierebbe di cancellare le proprie.
+async function _deleteUserTraces(user) {
+  if (!user) return;
   const { collection: col, query: qf, where: wf, getDocs: gd } = window._fb;
-  const mail = (email || '').trim();
+  const mail = (user.email || '').trim();
+  const auid = user.authUid;
   const esiti = [];
 
   // 1. Messaggi dal form Contatti (interrogati per indirizzo, come loadMyContactMessages)
@@ -6534,12 +6971,18 @@ async function _deleteUserTraces(userId, email) {
     } catch(e) { console.warn('[cancellazione] email_log', e.message); esiti.push('email_log: ERRORE'); }
   }
 
-  // 3. Segnalazioni — cancellate per intero, commento compreso (scelta di Franco)
-  try {
-    const snap = await gd(qf(col(db, 'segnalazioni'), wf('userId', '==', String(userId))));
-    for (const d of snap.docs) await fsDelete('segnalazioni', d.id);
-    esiti.push(`segnalazioni: ${snap.docs.length}`);
-  } catch(e) { console.warn('[cancellazione] segnalazioni', e.message); esiti.push('segnalazioni: ERRORE'); }
+  // 3. Segnalazioni — cancellate per intero, commento compreso (scelta di Franco).
+  // Si interroga per authUid e NON per userId: le regole Firestore confrontano
+  // request.auth.uid con un campo del documento, quindi una query su userId
+  // verrebbe rifiutata (l'utente non ha il permesso di leggere righe altrui, e
+  // Firestore non puo' saperlo in anticipo se il filtro non e' quello giusto).
+  if (auid) {
+    try {
+      const snap = await gd(qf(col(db, 'segnalazioni'), wf('authUid', '==', auid)));
+      for (const d of snap.docs) await fsDelete('segnalazioni', d.id);
+      esiti.push(`segnalazioni: ${snap.docs.length}`);
+    } catch(e) { console.warn('[cancellazione] segnalazioni', e.message); esiti.push('segnalazioni: ERRORE'); }
+  }
 
   console.log('[cancellazione account] tracce rimosse →', esiti.join(' · '));
 }
@@ -6575,7 +7018,16 @@ async function _performAccountDeletion(fbUser) {
     // Le tracce vanno rimosse PRIMA di cancellare il documento utente: alcune
     // regole Firestore verificano l'identita' del richiedente contro i suoi dati,
     // e senza il documento utente il permesso potrebbe non essere piu' concedibile.
-    await _deleteUserTraces(userId, currentUser?.email);
+    await _deleteUserTraces(currentUser);
+
+    // Evento registrato PRIMA di cancellare il documento utente: dopo, il nome
+    // utente non esisterebbe piu' e resterebbe solo un id.
+    // Il nome c'e' (richiesta di Franco): senza, l'evento direbbe che "qualcuno"
+    // se n'e' andato, che non serve a nulla.
+    // L'indirizzo e-mail invece NO: e' la persona che ci ha appena chiesto di
+    // essere dimenticata, e ricopiarle l'indirizzo in un altro registro sarebbe
+    // il contrario di quello che ha chiesto.
+    logEvent('account_deleted', "L'utente " + bold(currentUser.username) + " ha eliminato il proprio account");
 
     await fsDelete('users', userId);
     try { await fsDelete('public_profiles', userId); } catch(e) { console.warn('delete public_profiles', e.message); }
@@ -8698,13 +9150,13 @@ async function savePost() {
   const type = document.getElementById('post-type').value;
   const title = document.getElementById('post-title-input').value.trim();
   const body = document.getElementById('post-body-input').value.trim();
-  if (!title) { toast('Il titolo è obbligatorio', 'error'); return; }
+  if (!title) { toast(currentLang === 'it' ? 'Il titolo è obbligatorio' : 'The title is required', 'error'); return; }
   const newPost = { type, title, body, author: currentUser.username, authorId: currentUser.id, authorAuthUid: currentUser.authUid || null, date: new Date().toISOString(), comments: [] };
   const saved = await fsSave('posts', newPost);
   _cache.posts.unshift(saved);
   closeModal('post-modal');
   renderBlog();
-  toast('Post pubblicato! 💬', 'success');
+  toast(currentLang === 'it' ? 'Post pubblicato! 💬' : 'Post published! 💬', 'success');
   logEvent('new_post', 'Nuovo post nel blog di ' + bold(currentUser.username) + ': ' + esc(title));
 }
 
@@ -8817,7 +9269,7 @@ function renderBlog() {
         <span class="blog-author">@${displayAuthorName(p.author)}</span>
         <span class="blog-date">${dateStr}</span>
         <span class="blog-type-badge ${badgeClass}">${badgeLabel}</span>
-        ${currentUser?.isAdmin ? `<button class="tbl-btn tbl-btn-del" style="margin-left:auto;" onclick="deletePost('${p.id}')">${currentLang === 'it' ? "Cancella" : "Delete"}</button>` : ''}
+        ${currentUser?.isAdmin ? `<button class="tbl-btn tbl-btn-del" style="margin-left:auto;" onclick="deletePost('${p.id}')" title="${currentLang === 'it' ? 'Elimina questo post' : 'Delete this post'}">🗑️</button>` : ''}
       </div>
       <div class="blog-title">${p.title}</div>
       ${p.body ? `<div class="blog-excerpt">${p.body}</div>` : ''}
@@ -8857,6 +9309,52 @@ function renderBlog() {
 // ============================================================
 const CONTACT_RETENTION_MONTHS = 6;
 const CONTACT_PURGE_MAX_PER_RUN = 40; // tetto per non consumare la quota Firestore in un colpo
+
+// ============================================================
+//  CONSERVAZIONE DEL REGISTRO EVENTI (6 mesi)
+// ------------------------------------------------------------
+//  Il registro sopravvive alla cancellazione dell'account — scelta di Franco, ed
+//  e' difendibile: e' un registro di sicurezza, e sapere CHI se n'e' andato e
+//  quando e' proprio il motivo per cui esiste. Ma non sopravvive al TEMPO.
+//  Nelle descrizioni ci sono nomi utente e, per le richieste di reset password,
+//  indirizzi e-mail digitati sul form di login — che non sono nemmeno detto
+//  appartengano a un nostro utente: chiunque puo' scriverci quello che vuole.
+//  Per quelli la scadenza e' l'unica pulizia possibile, perche' un evento
+//  generato da chi non e' autenticato non ha authUid e non e' riconducibile a
+//  nessuno.
+//  Come per i messaggi di contatto: gira all'apertura del pannello admin (il
+//  sito e' statico, non c'e' nessun processo notturno), a tetto per non
+//  consumare la quota.
+// ============================================================
+const EVENTI_PURGE_MAX_PER_RUN = 40;
+
+async function purgeOldEventi() {
+  try {
+    const eventi = getData('eventi', []);
+    if (!eventi.length) return;
+
+    const limite = new Date();
+    limite.setMonth(limite.getMonth() - EVENTI_RETENTION_MONTHS);
+
+    const scaduti = eventi.filter(e => e.date && new Date(e.date) < limite);
+    if (!scaduti.length) return;
+
+    const lotto = scaduti.slice(0, EVENTI_PURGE_MAX_PER_RUN);
+    let fatti = 0;
+    for (const e of lotto) {
+      try { await fsDelete('eventi', e.id); fatti++; }
+      catch(err) { console.warn('[retention] evento non cancellato', e.id, err.message); }
+    }
+    if (fatti) {
+      _cache.eventi = getData('eventi', []).filter(e => !lotto.some(x => x.id === e.id));
+      updateBellBadge();
+      console.log(`[retention] cancellati ${fatti} eventi piu' vecchi di ${EVENTI_RETENTION_MONTHS} mesi`);
+      if (scaduti.length > lotto.length) {
+        console.log(`[retention] ne restano ${scaduti.length - lotto.length}: al prossimo accesso`);
+      }
+    }
+  } catch(e) { console.warn('[retention] purgeOldEventi', e.message); }
+}
 
 async function purgeOldContactMessages() {
   try {
@@ -9042,6 +9540,29 @@ function renderProfile() {
   // per il proprio account né per nessun utente durante l'impersonificazione
   const dangerZone = document.getElementById('profile-danger-zone');
   if (dangerZone) dangerZone.style.display = (currentUser.isAdmin || isImpersonating()) ? 'none' : '';
+  // "Cambia password": non puo' funzionare durante l'impersonificazione. Firebase
+  // Auth non sa nulla dell'impersonificazione — e' una finzione che vive solo nel
+  // nostro codice — quindi la sessione autenticata resta quella dell'ADMIN, e un
+  // cambio password agirebbe sulla password DELL'ADMIN, non su quella dell'utente
+  // impersonato. Un pulsante che, se premuto, farebbe la cosa sbagliata
+  // sull'account sbagliato.
+  // Grigiato e non nascosto: cosi' l'admin vede che la funzione esiste e capisce
+  // PERCHE' non e' disponibile, invece di chiedersi dove sia finita.
+  // (La sezione "Elimina il mio account" e' gia' nascosta qui sopra, per la
+  // stessa ragione di fondo.)
+  const pwdBtn = document.getElementById('profile-change-pwd-btn');
+  if (pwdBtn) {
+    const bloccato = isImpersonating();
+    pwdBtn.disabled = bloccato;
+    pwdBtn.style.opacity = bloccato ? '0.4' : '';
+    pwdBtn.style.cursor = bloccato ? 'not-allowed' : '';
+    pwdBtn.title = bloccato
+      ? (currentLang === 'it'
+          ? "Non disponibile durante l'impersonificazione: la sessione autenticata è quella dell'admin, quindi cambieresti la password dell'admin."
+          : "Not available while impersonating: the authenticated session is the admin's, so you would change the admin's password.")
+      : '';
+  }
+
   const anonCb = document.getElementById('profile-anon-toggle');
   if (anonCb) anonCb.checked = currentUser.isAnonymous || false;
   // Preferenze e-mail: il box non ha senso per l'admin (è lui che la manda)
@@ -9175,7 +9696,7 @@ function renderAdminSeries() {
         ${(() => {
           const figCount = (_cache.figurines || getData('figurines',[])).filter(f => f.seriesId === s.id).length;
           return figCount === 0
-            ? `<button class="tbl-btn tbl-btn-del" onclick="deleteSeries('${s.id}')" title="Elimina serie">${currentLang === 'it' ? 'Cancella' : 'Delete'}</button>`
+            ? `<button class="tbl-btn tbl-btn-del" onclick="deleteSeries('${s.id}')" title="${currentLang === 'it' ? 'Elimina questa serie' : 'Delete this series'}">🗑️</button>`
             : '';
         })()}
       </td></tr>`;
@@ -9269,7 +9790,7 @@ function renderAdminFigs() {
       const s = series.find(x => x.id === f.seriesId);
       return `<tr><td>${f.number}</td><td>${f.name}</td><td>${s?s.name:'-'}</td><td>
         <button class="tbl-btn tbl-btn-edit" onclick="currentSeriesId='${f.seriesId}';openAddFigModal('${f.id}')">${currentLang === 'it' ? 'Modifica' : 'Edit'}</button>
-        <button class="tbl-btn tbl-btn-del" onclick="deleteFigurine('${f.id}')">${currentLang === 'it' ? 'Cancella' : 'Delete'}</button>
+        <button class="tbl-btn tbl-btn-del" onclick="deleteFigurine('${f.id}')" title="${currentLang === 'it' ? 'Elimina questa figurina' : 'Delete this sticker'}">🗑️</button>
       </td></tr>`;
     }).join('')}</tbody></table>`;
 }
@@ -9550,7 +10071,7 @@ async function saveNationality() {
   }
   closeModal('nationality-modal');
   renderProfile();
-  toast('Nazionalità aggiornata! 🌍', 'success');
+  toast(currentLang === 'it' ? 'Nazionalità aggiornata! 🌍' : 'Nationality updated! 🌍', 'success');
 }
 
 // ============================================================
@@ -9584,7 +10105,7 @@ function renderAdminPunteggi() {
     <td>${lv.minScore.toLocaleString('it-IT')} pt</td>
     <td>
       <button class="tbl-btn tbl-btn-edit" onclick="editLevel('${lv.id}')">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>
-      <button class="tbl-btn tbl-btn-del" onclick="deleteLevel('${lv.id}')">${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button>
+      <button class="tbl-btn tbl-btn-del" onclick="deleteLevel('${lv.id}')" title="${(currentLang === 'it') ? 'Elimina questo livello' : 'Delete this level'}">🗑️</button>
     </td>
   </tr>`).join('')}
   </tbody></table>`;
@@ -9833,12 +10354,27 @@ function esc(str) {
 // Nome utente in grassetto: uniforme in tutti i log, come da richiesta di Franco.
 function bold(str) { return '<strong>' + esc(str) + '</strong>'; }
 
+// EVENTI_RETENTION_MONTHS: scadenza del registro eventi. Il registro sopravvive
+// alla cancellazione dell'account (scelta di Franco: e' un registro di sicurezza,
+// e sapere CHI se n'e' andato e' proprio il motivo per cui esiste), ma non
+// sopravvive al tempo.
+const EVENTI_RETENTION_MONTHS = 6;
+
 async function logEvent(type, description, extra = {}) {
   const event = {
     type,
     description,
     date: new Date().toISOString(),
     read: false,
+    // authUid rende gli eventi RITROVABILI per utente: finora la descrizione era
+    // testo libero, e cercarci dentro il nome sarebbe stato fragile e sbagliato
+    // (basta un utente che si chiami "login" o "admin").
+    // Resta null per gli eventi generati da chi NON e' autenticato — in pratica
+    // solo 'reset_pwd', che parte dal form di login: li' non c'e' nessuna sessione
+    // da cui prenderlo, e quell'evento non sara' mai riconducibile a un utente.
+    // Un chiamante puo' passarlo esplicitamente in extra (es. registrazione, dove
+    // currentUser non e' ancora impostato).
+    authUid: currentUser?.authUid || null,
     ...extra
   };
   try {
@@ -9854,10 +10390,10 @@ function renderAdminEventi() {
   if (!el) return;
   const eventi = (_cache.eventi || []).sort((a,b) => new Date(b.date) - new Date(a.date));
   if (!eventi.length) {
-    el.innerHTML = '<p style="color:var(--muted);">Nessun evento ancora.</p>';
+    el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Nessun evento ancora.' : 'No events yet.') + '</p>';
     return;
   }
-  const typeIcon = { 'new_user': '👤', 'new_post': '📝', 'reset_pwd': '🔑', 'login': '🔓', 'newsletter_off': '📭' };
+  const typeIcon = { 'new_user': '👤', 'new_post': '📝', 'reset_pwd': '🔑', 'login': '🔓', 'newsletter_off': '📭', 'account_deleted': '🗑️' };
   const noBellEvTypes = ['login'];
   el.innerHTML = `<table class="data-table compact"><thead><tr>
     <th>${(currentLang === 'it') ? 'Data' : 'Date'}</th><th>${(currentLang === 'it') ? 'Tipo' : 'Type'}</th><th>${(currentLang === 'it') ? 'Descrizione' : 'Description'}</th><th></th>
@@ -9866,9 +10402,31 @@ function renderAdminEventi() {
     <td style="white-space:nowrap;font-size:0.78rem;">${new Date(e.date).toLocaleDateString('it-IT')} ${new Date(e.date).toLocaleTimeString('it-IT', {hour:'2-digit',minute:'2-digit'})}</td>
     <td>${typeIcon[e.type] || '📌'}</td>
     <td>${e.description}</td>
-    <td><button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : (currentLang === 'it' ? 'Segna come letto' : 'Mark as read')}</button></td>
+    <td style="white-space:nowrap;">
+      <button class="tbl-btn tbl-btn-edit" onclick="markEventRead('${e.id}')">${e.read ? '✓' : (currentLang === 'it' ? 'Segna come letto' : 'Mark as read')}</button>
+      <button class="tbl-btn tbl-btn-del" style="margin-left:0.35rem;" onclick="deleteEvento('${e.id}')" title="${currentLang === 'it' ? 'Elimina questo evento' : 'Delete this event'}">🗑️</button>
+    </td>
   </tr>`).join('')}
   </tbody></table>`;
+}
+
+// Cancellazione di un singolo evento. Serve soprattutto a ripulire i dati di
+// prova: il registro si sfoltisce da solo a 6 mesi (purgeOldEventi), ma per
+// ripartire puliti quel tempo e' troppo.
+async function deleteEvento(id) {
+  if (!confirm(currentLang === 'it'
+    ? 'Eliminare questo evento dal registro?'
+    : 'Delete this event from the log?')) return;
+  try {
+    await fsDelete('eventi', id);
+    _cache.eventi = getData('eventi', []).filter(e => e.id !== id);
+    updateBellBadge(); // l'evento poteva essere non letto: il contatore va rifatto
+    renderAdminEventi();
+    toast(currentLang === 'it' ? 'Evento eliminato' : 'Event deleted', 'success');
+  } catch(e) {
+    console.error('deleteEvento', e);
+    toast(currentLang === 'it' ? 'Eliminazione non riuscita' : 'Delete failed', 'error');
+  }
 }
 
 async function markEventRead(id) {
@@ -10887,7 +11445,7 @@ function openSegnalazioneModal(figId) {
 async function inviaSegnalazione() {
   const figId = document.getElementById('segnalazione-fig-id').value;
   const commento = document.getElementById('segnalazione-commento').value.trim();
-  if (!commento) { toast('Inserisci un commento', 'error'); return; }
+  if (!commento) { toast(currentLang === 'it' ? 'Inserisci un commento' : 'Please enter a comment', 'error'); return; }
   const allFigs = getData('figurines', []);
   const fig = allFigs.find(f => f.id === figId);
   const series = getData('series', []);
@@ -10898,6 +11456,11 @@ async function inviaSegnalazione() {
     figNumber: fig ? fig.number : null,
     serieName: serie ? serie.name : 'Sconosciuta',
     userId: currentUser.id,
+    // authUid serve alle REGOLE Firestore: isOwner() confronta request.auth.uid con
+    // un campo del documento, e userId (l'id applicativo) non e' quello. Senza
+    // questo campo l'utente non potrebbe cancellare le proprie segnalazioni quando
+    // elimina l'account, e resterebbero li' con il suo nome e le sue parole.
+    authUid: currentUser.authUid || null,
     username: currentUser.username,
     commento,
     date: new Date().toISOString(),
@@ -10909,7 +11472,7 @@ async function inviaSegnalazione() {
   const fb = document.getElementById('segnalazione-feedback');
   fb.style.display = '';
   fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem;border-radius:8px;font-size:0.88rem;margin-bottom:0.75rem;';
-  fb.textContent = '✅ Segnalazione inviata! Grazie.';
+  fb.textContent = currentLang === 'it' ? '✅ Segnalazione inviata! Grazie.' : '✅ Report sent. Thank you!';
   setTimeout(() => closeModal('segnalazione-modal'), 1500);
   updateBellBadge();
   updateMsgBadge();
@@ -10932,7 +11495,7 @@ function renderAdminSegnalazioni() {
     <td style="display:flex;align-items:center;gap:6px;">${s.username}${(() => { const u = getData('users',[]).find(x=>x.id===s.userId); return u?.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''; })()}</td>
     <td style="font-size:0.82rem;">${s.serieName}<br><span style="color:var(--muted);">${s.figNumber ? '#'+s.figNumber+' ' : ''}${s.figName}</span></td>
     <td>${s.commento}</td>
-    <td style="display:flex;gap:0.4rem;"><button class="tbl-btn tbl-btn-edit" onclick="markSegnalazioneRead('${s.id}')">${s.read ? '✓' : (currentLang === 'it' ? 'Segna come letta' : 'Mark as read')}</button><button class="tbl-btn tbl-btn-del" onclick="deleteSegnalazione('${s.id}')">${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button></td>
+    <td style="display:flex;gap:0.4rem;"><button class="tbl-btn tbl-btn-edit" onclick="markSegnalazioneRead('${s.id}')">${s.read ? '✓' : (currentLang === 'it' ? 'Segna come letta' : 'Mark as read')}</button><button class="tbl-btn tbl-btn-del" onclick="deleteSegnalazione('${s.id}')" title="${(currentLang === 'it') ? 'Elimina questa segnalazione' : 'Delete this report'}">🗑️</button></td>
   </tr>`).join('')}
   </tbody></table>`;
 }
@@ -11038,6 +11601,7 @@ function openEditUserModal(userId) {
     }
   }
   const deleteBtn = document.getElementById('edit-user-delete-btn');
+  // Mai per un admin: nessuno cancella un amministratore da qui.
   if (deleteBtn) deleteBtn.style.display = user.isAdmin ? 'none' : 'block';
   document.getElementById('edit-user-modal').classList.remove('hidden');
 }
@@ -11089,6 +11653,29 @@ async function saveEditUser() {
 }
 
 async function deleteUser(userId) {
+  // L'utente va letto PRIMA di cancellarlo: servono la sua e-mail e il suo authUid
+  // per ritrovare le tracce, e dopo fsDelete('users') non li avremmo piu'.
+  const target = getData('users', []).find(u => String(u.id) === String(userId));
+
+  // Le stesse cose che fa l'auto-eliminazione. Fino alla v5.642 la cancellazione
+  // fatta dall'ADMIN era piu' incompleta di quella fatta dall'utente: non
+  // anonimizzava nemmeno i post, e non toccava contact_messages, email_log e
+  // segnalazioni. Il risultato dipendeva quindi da CHI premeva il pulsante — il
+  // che non ha alcun senso: l'esito dev'essere lo stesso, e cancellare un utente
+  // dal pannello e' anzi il modo in cui si evade una richiesta di cancellazione
+  // arrivata per iscritto (art. 17 GDPR).
+  await _anonymizeUserContent(userId);
+  if (target) await _deleteUserTraces(target);
+
+  // Anche la cancellazione fatta dall'admin lascia traccia, ma con una causale
+  // DIVERSA: sono due fatti diversi. Un utente che se ne va da solo e un utente
+  // rimosso dal pannello non vanno confusi nel registro — e se la rimozione
+  // evade una richiesta scritta di cancellazione, questa riga e' la prova di
+  // averla onorata.
+  // authUid del BERSAGLIO, non dell'admin che sta eseguendo: altrimenti l'evento
+  // risulterebbe di chi ha premuto il pulsante.
+  if (target) logEvent('account_deleted', "L'utente " + bold(target.username) + " è stato eliminato dall'amministratore", { authUid: target.authUid || null });
+
   await fsDelete('users', userId);
   // Cancella anche i dati collegati, altrimenti restano "orfani" nel database
   // (è esattamente il problema dei profili pubblici extra scoperto oggi)
@@ -11281,6 +11868,12 @@ async function startImportVar() {
 
   let inserted = 0, updated = 0, unchanged = 0, skip = 0, errors = 0;
 
+  // Le righe scartate vengono anche RACCOLTE, non solo scritte a video: durante
+  // l'importazione scorrono via in mezzo all'avanzamento, e su un file lungo si
+  // perdono. Alla fine, dopo i totali, vengono ripetute tutte insieme.
+  const erroriRighe = [];
+  const errRiga = (msg, lvl) => { varImportLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
+
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     // Legge le colonne (case-insensitive, gestisce spazi)
@@ -11294,14 +11887,14 @@ async function startImportVar() {
     varImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
 
     if (!numStr || !tipo) {
-      varImportLog('⚠️ Riga ' + (i+1) + ': dati mancanti (num=' + numStr + ' tipo=' + tipo + ')', 'warn');
-      errors++; continue;
+      errRiga('⚠️ Riga ' + (i+1) + ': dati mancanti (num=' + numStr + ' tipo=' + tipo + ')', 'warn');
+       continue;
     }
 
     const baseFig = allFigs.find(f => Number(f.number) === Number(numStr) && !f.isVariation && !f.isUnofficialVariation && !f.isChange);
     if (!baseFig) {
-      varImportLog('⚠️ Riga ' + (i+1) + ': nessuna figurina base #' + numStr + ' trovata nella serie', 'warn');
-      errors++; continue;
+      errRiga('⚠️ Riga ' + (i+1) + ': nessuna figurina base #' + numStr + ' trovata nella serie', 'warn');
+       continue;
     }
 
     const tipoLow = tipo.toLowerCase().trim();
@@ -11310,8 +11903,8 @@ async function startImportVar() {
     const isChange = tipoLow === 'change';
 
     if (!isVariation && !isUnofficialVariation && !isChange) {
-      varImportLog('⚠️ Riga ' + (i+1) + ': tipo non riconosciuto "' + tipo + '" (usa Ufficiale / Non ufficiale / Change)', 'warn');
-      errors++; continue;
+      errRiga('⚠️ Riga ' + (i+1) + ': tipo non riconosciuto "' + tipo + '" (usa Ufficiale / Non ufficiale / Change)', 'warn');
+       continue;
     }
 
     const existingFigs = getData('figurines', []);
@@ -11321,8 +11914,8 @@ async function startImportVar() {
     if (isChange) {
       // Change: il Nome è obbligatorio ed è la chiave di riconciliazione (Serie + Figurina base + Nome)
       if (!nome) {
-        varImportLog('⚠️ Riga ' + (i+1) + ': Nome mancante (obbligatorio per un Change)', 'warn');
-        errors++; continue;
+        errRiga('⚠️ Riga ' + (i+1) + ': Nome mancante (obbligatorio per un Change)', 'warn');
+         continue;
       }
       duplicate = existingFigs.find(f =>
         f.seriesId === seriesId &&
@@ -11334,8 +11927,8 @@ async function startImportVar() {
       // Variazione (ufficiale/non ufficiale): il Retro è obbligatorio ed è la chiave di
       // riconciliazione insieme a Serie + Figurina base; il Nome è facoltativo
       if (!retroCategoria || !retroNome) {
-        varImportLog('⚠️ Riga ' + (i+1) + ': Retro (Categoria)/Retro (Nome) mancanti (obbligatori per una Variazione)', 'warn');
-        errors++; continue;
+        errRiga('⚠️ Riga ' + (i+1) + ': Retro (Categoria)/Retro (Nome) mancanti (obbligatori per una Variazione)', 'warn');
+         continue;
       }
       const retroMatch = existingFigs.find(f =>
         f.seriesId === seriesId &&
@@ -11344,8 +11937,8 @@ async function startImportVar() {
         (f.name||'').toLowerCase() === retroNome.toLowerCase()
       );
       if (!retroMatch) {
-        varImportLog('⚠️ Riga ' + (i+1) + ': Retro "' + retroCategoria + ' / ' + retroNome + '" non trovato — riga scartata', 'warn');
-        errors++; continue;
+        errRiga('⚠️ Riga ' + (i+1) + ': Retro "' + retroCategoria + ' / ' + retroNome + '" non trovato — riga scartata', 'warn');
+         continue;
       }
       foundRetroId = retroMatch.id;
       duplicate = existingFigs.find(f =>
@@ -11361,8 +11954,8 @@ async function startImportVar() {
     // riconciliazione è sbagliata, meglio scartare la riga che rischiare di corrompere una
     // figurina base esistente
     if (duplicate && !duplicate.isVariation && !duplicate.isUnofficialVariation && !duplicate.isChange) {
-      varImportLog('❌ Riga ' + (i+1) + ': la riconciliazione ha trovato "' + duplicate.name + '" che è una figurina base, non una variazione/change — riga scartata per sicurezza, nessuna modifica effettuata', 'err');
-      errors++; continue;
+      errRiga('❌ Riga ' + (i+1) + ': la riconciliazione ha trovato "' + duplicate.name + '" che è una figurina base, non una variazione/change — riga scartata per sicurezza, nessuna modifica effettuata', 'err');
+       continue;
     }
 
     // Per le Variazioni il Nome è sempre lo stesso della figurina base (non si legge dal file);
@@ -11412,13 +12005,21 @@ async function startImportVar() {
         inserted++;
       }
     } catch(e) {
-      varImportLog('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
-      errors++;
+      errRiga('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
+      
     }
   }
 
   varImportStatus('✅ Fine: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + errors + ' errori', 100);
   varImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + unchanged + ' invariate · ' + errors + ' errori ---', errors===0?'ok':'warn');
+
+  if (erroriRighe.length) {
+    varImportLog('', 'info');
+    varImportLog('--- ' + (currentLang === 'it'
+      ? 'RIGHE NON IMPORTATE (' + erroriRighe.length + ') ---'
+      : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'warn');
+    erroriRighe.forEach(msg => varImportLog(msg, 'warn'));
+  }
   const _endBtn = document.getElementById('import-var-start-btn'); if (_endBtn) _endBtn.disabled = false;
   renderItems();
 }
@@ -11468,6 +12069,12 @@ async function startImportRetro() {
 
   let inserted = 0, updated = 0, unchanged = 0, errors = 0, skipped = 0;
 
+  // Le righe scartate vengono anche RACCOLTE, non solo scritte a video: durante
+  // l'importazione scorrono via in mezzo all'avanzamento, e su un file lungo si
+  // perdono. Alla fine, dopo i totali, vengono ripetute tutte insieme.
+  const erroriRighe = [];
+  const errRiga = (msg, lvl) => { retroImportLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
+
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     const getCol = (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return String(v[1]).trim(); } return ''; };
@@ -11482,8 +12089,8 @@ async function startImportRetro() {
     retroImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
 
     if (!serieCol) {
-      retroImportLog('⚠️ Riga ' + (i+1) + ': colonna Serie mancante', 'warn');
-      errors++; continue;
+      errRiga('⚠️ Riga ' + (i+1) + ': colonna Serie mancante', 'warn');
+       continue;
     }
     if (serieCol.toLowerCase() !== seriesName.toLowerCase()) {
       retroImportLog('⏭️ Riga ' + (i+1) + ': Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
@@ -11491,8 +12098,8 @@ async function startImportRetro() {
     }
 
     if (!nome || !categoria) {
-      retroImportLog('⚠️ Riga ' + (i+1) + ': dati mancanti (nome=' + nome + ' categoria=' + categoria + ') [Tipo: "' + tipoChange + '"]', 'warn');
-      errors++; continue;
+      errRiga('⚠️ Riga ' + (i+1) + ': dati mancanti (nome=' + nome + ' categoria=' + categoria + ') [Tipo: "' + tipoChange + '"]', 'warn');
+       continue;
     }
 
     const existingFigs = getData('figurines', []);
@@ -11546,8 +12153,8 @@ async function startImportRetro() {
           inserted++;
         }
       } catch(e) {
-        retroImportLog('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
-        errors++;
+        errRiga('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
+        
       }
       continue;
     }
@@ -11559,12 +12166,12 @@ async function startImportRetro() {
     const allowedTypes = currentSeriesObj?.retroChangeTypes || [];
     const matchedType = allowedTypes.find(t => t.toLowerCase().trim() === tipoChange.toLowerCase().trim());
     if (!matchedType) {
-      retroImportLog('❌ Riga ' + (i+1) + ': "Tipo di change" = "' + tipoChange + '" non corrisponde a nessuno dei tipi configurati per questa serie (' + (allowedTypes.join(', ') || 'nessuno configurato') + ')', 'err');
-      errors++; continue;
+      errRiga('❌ Riga ' + (i+1) + ': "Tipo di change" = "' + tipoChange + '" non corrisponde a nessuno dei tipi configurati per questa serie (' + (allowedTypes.join(', ') || 'nessuno configurato') + ')', 'err');
+       continue;
     }
     if (!retroCategoria || !retroNome) {
-      retroImportLog('⚠️ Riga ' + (i+1) + ': "Retro - Categoria" e "Retro - Nome" sono obbligatorie per un Change (identificano il Retro base) [Tipo: "' + tipoChange + '"]', 'warn');
-      errors++; continue;
+      errRiga('⚠️ Riga ' + (i+1) + ': "Retro - Categoria" e "Retro - Nome" sono obbligatorie per un Change (identificano il Retro base) [Tipo: "' + tipoChange + '"]', 'warn');
+       continue;
     }
 
     const baseRetro = existingFigs.find(f =>
@@ -11575,8 +12182,8 @@ async function startImportRetro() {
       (f.category||'').toLowerCase() === retroCategoria.toLowerCase()
     );
     if (!baseRetro) {
-      retroImportLog('❌ Riga ' + (i+1) + ': nessun Retro base trovato con Categoria "' + retroCategoria + '" e Nome "' + retroNome + '" [Tipo: "' + tipoChange + '"] — crea prima il Retro base, o controlla che Retro-Categoria/Retro-Nome coincidano esattamente', 'err');
-      errors++; continue;
+      errRiga('❌ Riga ' + (i+1) + ': nessun Retro base trovato con Categoria "' + retroCategoria + '" e Nome "' + retroNome + '" [Tipo: "' + tipoChange + '"] — crea prima il Retro base, o controlla che Retro-Categoria/Retro-Nome coincidano esattamente', 'err');
+       continue;
     }
 
     const duplicateChange = existingFigs.find(f =>
@@ -11627,13 +12234,21 @@ async function startImportRetro() {
         inserted++;
       }
     } catch(e) {
-      retroImportLog('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
-      errors++;
+      errRiga('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
+      
     }
   }
 
   retroImportStatus('✅ Fine: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + skipped + ' ignorate · ' + errors + ' errori', 100);
   retroImportLog('--- FINE: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + unchanged + ' invariati · ' + skipped + ' ignorate · ' + errors + ' errori ---', errors===0?'ok':'warn');
+
+  if (erroriRighe.length) {
+    retroImportLog('', 'info');
+    retroImportLog('--- ' + (currentLang === 'it'
+      ? 'RIGHE NON IMPORTATE (' + erroriRighe.length + ') ---'
+      : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'warn');
+    erroriRighe.forEach(msg => retroImportLog(msg, 'warn'));
+  }
   const _endBtn = document.getElementById('import-retro-start-btn'); if (_endBtn) _endBtn.disabled = false;
   renderItems(); updateSectionCounts();
 }
@@ -11686,6 +12301,12 @@ async function startImportFig() {
 
   let inserted = 0, updated = 0, unchanged = 0, errors = 0, skipped = 0, retroNotFound = 0;
 
+  // Le righe scartate vengono anche RACCOLTE, non solo scritte a video: durante
+  // l'importazione scorrono via in mezzo all'avanzamento, e su un file lungo si
+  // perdono. Alla fine, dopo i totali, vengono ripetute tutte insieme.
+  const erroriRighe = [];
+  const errRiga = (msg, lvl) => { figImportLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
+
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     const getCol = (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return String(v[1]).trim(); } return ''; };
@@ -11700,16 +12321,16 @@ async function startImportFig() {
     figImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
 
     if (!serieCol) {
-      figImportLog('⚠️ Riga ' + (i+1) + ': colonna Serie mancante', 'warn');
-      errors++; continue;
+      errRiga('⚠️ Riga ' + (i+1) + ': colonna Serie mancante', 'warn');
+       continue;
     }
     if (serieCol.toLowerCase() !== seriesName.toLowerCase()) {
       figImportLog('⏭️ Riga ' + (i+1) + ': Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
       skipped++; continue;
     }
     if (!numero && !nome) {
-      figImportLog('⚠️ Riga ' + (i+1) + ': servono Numero o Nome per identificare la figurina', 'warn');
-      errors++; continue;
+      errRiga('⚠️ Riga ' + (i+1) + ': servono Numero o Nome per identificare la figurina', 'warn');
+       continue;
     }
 
     // Chiave di riconciliazione — esclude esplicitamente variazioni/change, che ereditano lo
@@ -11737,8 +12358,8 @@ async function startImportFig() {
     // lo tocchiamo mai — significa che la riconciliazione è sbagliata, meglio scartare la riga
     // che rischiare di corrompere una variazione/change esistente
     if (duplicate && (duplicate.isVariation || duplicate.isUnofficialVariation || duplicate.isChange)) {
-      figImportLog('❌ Riga ' + (i+1) + ': la riconciliazione ha trovato "' + duplicate.name + '" che non è una figurina base (è una variazione/change) — riga scartata per sicurezza, nessuna modifica effettuata', 'err');
-      errors++; continue;
+      errRiga('❌ Riga ' + (i+1) + ': la riconciliazione ha trovato "' + duplicate.name + '" che non è una figurina base (è una variazione/change) — riga scartata per sicurezza, nessuna modifica effettuata', 'err');
+       continue;
     }
 
     // Ricerca Retro (solo nella stessa serie, chiave Categoria+Nome)
@@ -11787,8 +12408,8 @@ async function startImportFig() {
         }
       } else {
         if (!nome) {
-          figImportLog('⚠️ Riga ' + (i+1) + ': nessuna figurina esistente con Numero ' + numero + ' — per crearne una nuova serve anche il Nome', 'warn');
-          errors++; continue;
+          errRiga('⚠️ Riga ' + (i+1) + ': nessuna figurina esistente con Numero ' + numero + ' — per crearne una nuova serve anche il Nome', 'warn');
+           continue;
         }
         const newFigRec = { ...figData, name: nome, retroId: foundRetroId };
         newFigRec.fullName = computeFullName(newFigRec, existingFigs);
@@ -11797,13 +12418,21 @@ async function startImportFig() {
         inserted++;
       }
     } catch(e) {
-      figImportLog('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
-      errors++;
+      errRiga('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
+      
     }
   }
 
   figImportStatus('✅ Fine: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : ''), 100);
   figImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + unchanged + ' invariate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', errors===0?'ok':'warn');
+
+  if (erroriRighe.length) {
+    figImportLog('', 'info');
+    figImportLog('--- ' + (currentLang === 'it'
+      ? 'RIGHE NON IMPORTATE (' + erroriRighe.length + ') ---'
+      : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'warn');
+    erroriRighe.forEach(msg => figImportLog(msg, 'warn'));
+  }
   const _endBtn = document.getElementById('import-fig-start-btn'); if (_endBtn) _endBtn.disabled = false;
   renderItems(); updateSectionCounts();
 }
@@ -12087,7 +12716,7 @@ function renderAdminErrori() {
                   ${f.img ? `<img src="${cloudinaryUrl(f.img,'w_28,h_28,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : `<span style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.65rem;">${currentLang==='it'?'no foto':'no photo'}</span>`}
                   <a href="#" onclick="openFigDetail('${f.id}');return false;" style="color:var(--accent);text-decoration:underline;">${f.name} ↗</a>
                   <span style="color:var(--muted);font-family:monospace;font-size:0.72rem;">${f.id}</span>
-                  <button class="tbl-btn tbl-btn-del" onclick="deleteDuplicateBaseFig('${f.id}')">🗑️ ${currentLang==='it'?'Elimina':'Delete'}</button>
+                  <button class="tbl-btn tbl-btn-del" onclick="deleteDuplicateBaseFig('${f.id}')" title="${currentLang==='it'?'Elimina questo doppione':'Delete this duplicate'}">🗑️</button>
                 </div>`).join('')}
               </div>`;
             }).join('')}
@@ -12421,14 +13050,18 @@ async function startAdminFotoUpload() {
 
   let ok = 0, skip = 0, errors = 0;
 
+  // Vedi startImportVar: gli scarti si raccolgono, per poterli ripetere in fondo.
+  const erroriRighe = [];
+  const errRiga = (msg, lvl) => { fotoLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
+
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const num = parseInt(file.name.replace(/\.[^.]+$/, ''), 10);
     fotoStatus(file.name + ' (' + (i+1) + '/' + files.length + ')', Math.round((i/files.length)*100));
 
-    if (isNaN(num)) { fotoLog('⚠️ Nome non valido: ' + file.name, 'warn'); errors++; continue; }
+    if (isNaN(num)) { errRiga('⚠️ Nome non valido: ' + file.name, 'warn');  continue; }
     const fig = allFigs.find(f => Number(f.number) === num);
-    if (!fig) { fotoLog('⚠️ Nessuna figurina #' + num + ' trovata', 'warn'); errors++; continue; }
+    if (!fig) { errRiga('⚠️ Nessuna figurina #' + num + ' trovata', 'warn');  continue; }
     if (fig.img && !overwrite) { fotoLog('⏭️ #' + num + ' ' + fig.name + ' — saltata (ha già foto)', 'info'); skip++; continue; }
 
     try {
@@ -12453,13 +13086,21 @@ async function startAdminFotoUpload() {
       fotoLog('✅ #' + num + ' ' + fig.name + ' — completato', 'ok');
       ok++;
     } catch(e) {
-      fotoLog('❌ #' + num + ' — ' + e.message, 'err');
-      errors++;
+      errRiga('❌ #' + num + ' — ' + e.message, 'err');
+      
     }
   }
 
   fotoStatus('✅ Fine: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori', 100);
   fotoLog('--- FINE: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori ---', errors === 0 ? 'ok' : 'warn');
+
+  if (erroriRighe.length) {
+    fotoLog('', 'info');
+    fotoLog('--- ' + (currentLang === 'it'
+      ? 'FILE NON CARICATI (' + erroriRighe.length + ') ---'
+      : 'FILES NOT UPLOADED (' + erroriRighe.length + ') ---'), 'warn');
+    erroriRighe.forEach(msg => fotoLog(msg, 'warn'));
+  }
   document.getElementById('foto-start-btn').disabled = false;
 }
 
@@ -12525,17 +13166,21 @@ async function startAdminFotoNoNumberUpload() {
 
   let ok = 0, skip = 0, errors = 0;
 
+  // Vedi startImportVar: gli scarti si raccolgono, per poterli ripetere in fondo.
+  const erroriRighe = [];
+  const errRiga = (msg, lvl) => { fotoNnLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
+
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const name = file.name.replace(/\.[^.]+$/, '').trim();
     fotoNnStatus(file.name + ' (' + (i+1) + '/' + files.length + ')', Math.round((i/files.length)*100));
 
-    if (!name) { fotoNnLog('⚠️ Nome file non valido: ' + file.name, 'warn'); errors++; continue; }
+    if (!name) { errRiga('⚠️ Nome file non valido: ' + file.name, 'warn');  continue; }
     const matches = candidates.filter(c => c.key.toLowerCase().trim() === name.toLowerCase());
-    if (!matches.length) { fotoNnLog('⚠️ Nessun oggetto trovato con Nome "' + name + '"', 'warn'); errors++; continue; }
+    if (!matches.length) { errRiga('⚠️ Nessun oggetto trovato con Nome "' + name + '"', 'warn');  continue; }
     if (matches.length > 1) {
-      fotoNnLog('⚠️ "' + name + '" è ambiguo: ' + matches.length + ' oggetti nella serie corrispondono — controlla eventuali duplicati nel database', 'warn');
-      errors++; continue;
+      errRiga('⚠️ "' + name + '" è ambiguo: ' + matches.length + ' oggetti nella serie corrispondono — controlla eventuali duplicati nel database', 'warn');
+       continue;
     }
     const fig = matches[0].item;
     if (fig.img && !overwrite) { fotoNnLog('⏭️ "' + name + '" — saltata (ha già foto)', 'info'); skip++; continue; }
@@ -12562,13 +13207,21 @@ async function startAdminFotoNoNumberUpload() {
       fotoNnLog('✅ "' + name + '" — completato', 'ok');
       ok++;
     } catch(e) {
-      fotoNnLog('❌ "' + name + '" — ' + e.message, 'err');
-      errors++;
+      errRiga('❌ "' + name + '" — ' + e.message, 'err');
+      
     }
   }
 
   fotoNnStatus('✅ Fine: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori', 100);
   fotoNnLog('--- FINE: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori ---', errors === 0 ? 'ok' : 'warn');
+
+  if (erroriRighe.length) {
+    fotoNnLog('', 'info');
+    fotoNnLog('--- ' + (currentLang === 'it'
+      ? 'FILE NON CARICATI (' + erroriRighe.length + ') ---'
+      : 'FILES NOT UPLOADED (' + erroriRighe.length + ') ---'), 'warn');
+    erroriRighe.forEach(msg => fotoNnLog(msg, 'warn'));
+  }
   document.getElementById('fotonn-start-btn').disabled = false;
 }
 
@@ -13077,7 +13730,7 @@ function renderClassificaLevels(el) {
       if (isAdmin) {
         row += '<td style="display:flex;gap:0.3rem;">';
         row += '<button class="tbl-btn tbl-btn-edit cl-edit-btn" data-id="' + lv.id + '">' + (currentLang === 'it' ? 'Modifica' : 'Edit') + '</button>';
-        row += '<button class="tbl-btn tbl-btn-del cl-del-btn" data-id="' + lv.id + '">' + (currentLang === 'it' ? 'Elimina' : 'Delete') + '</button>';
+        row += '<button class="tbl-btn tbl-btn-del cl-del-btn" data-id="' + lv.id + '" title="' + (currentLang === 'it' ? 'Elimina questo livello' : 'Delete this level') + '">🗑️</button>';
         row += '</td>';
       }
       row += '</tr>';
