@@ -1,6 +1,30 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.622 — Su richiesta di Franco (il link di disiscrizione ora funziona: il
+//          problema era il sito online fermo a una versione precedente, non il
+//          codice): riscritti titolo e testo della pagina di disiscrizione
+//          nello stato "non iscritto".
+//          Titolo: "Non sei più iscritto alla newsletter", tenuto su UNA riga
+//          con white-space:nowrap. Da solo però, su uno schermo stretto, un
+//          titolo che non può andare a capo esce dallo schermo: gli ho quindi
+//          affiancato un font-size con clamp(), che lo rimpicciolisce quanto
+//          basta a farlo stare su una riga anche sul telefono.
+//          Testo riscritto secondo le parole di Franco, su due righe.
+//          Adeguata anche la versione inglese.
+//          NOTA: "Non sei PIÙ iscritto" presuppone che l'utente lo fosse. È
+//          vero in pratica — a quella schermata ci si arriva dal link in calce
+//          a una newsletter, che riceve solo chi era iscritto, oppure subito
+//          dopo essersi disiscritti. Resterebbe impreciso solo per chi
+//          digitasse #unsubscribe a mano senza essere mai stato iscritto.
+// v5.621 — Su richiesta di Franco: nella tabella destinatari della Newsletter
+//          il nome degli utenti raggiungibili via e-mail (consenso = sì) è ora
+//          scritto in verde (var(--accent), il verde del sito) invece che nel
+//          colore normale del testo.
+//          Nota: quelli che Franco vedeva "in grassetto" non lo erano — sono
+//          le righe SENZA consenso a essere attenuate (opacity 0.75, dalla
+//          v5.600), e le altre risaltavano per contrasto. L'opacità resta:
+//          adesso il segnale è doppio, colore più contrasto.
 // v5.620 — Su segnalazione di Franco: il link di disiscrizione nell'e-mail
 //          chiedeva l'accesso e poi lo scaricava sulla HOME, invece che sulla
 //          pagina di disiscrizione.
@@ -3968,12 +3992,15 @@ function renderUnsubscribePage() {
     // Non iscritto: o non ha mai acconsentito, o si è già disiscritto (magari
     // aprendo il link due volte). In entrambi i casi l'esito che voleva è già
     // quello attuale — glielo diciamo, e gli offriamo la strada inversa.
+    // Titolo su UNA riga: white-space:nowrap lo impedisce di andare a capo, e il
+    // clamp sul corpo lo rimpicciolisce quanto serve sugli schermi stretti —
+    // così resta su una riga anche sul telefono, invece di uscire dallo schermo.
     el.innerHTML = `
       <div style="font-size:3rem;margin-bottom:0.75rem;">✅</div>
-      <h1 class="section-title" style="margin-bottom:0.75rem;">${L ? 'Non sei iscritto alla newsletter' : 'You are not subscribed to the newsletter'}</h1>
+      <h1 class="section-title" style="margin-bottom:0.75rem;white-space:nowrap;font-size:clamp(1.05rem, 4.6vw, 2rem);">${L ? 'Non sei più iscritto alla newsletter' : 'You are no longer subscribed to the newsletter'}</h1>
       <p style="color:var(--muted);line-height:1.6;margin-bottom:1.5rem;">
-        ${L ? 'Non riceverai comunicazioni sulle novità dell\'Inventario. Se invece cambi idea, puoi riattivarla subito qui sotto — o in qualunque momento dal tuo profilo, sezione "Preferenze e-mail".'
-             : 'You will not receive updates about the Inventory. If you change your mind, you can re-enable it right here — or anytime from your profile, "E-mail preferences" section.'}
+        ${L ? 'Non riceverai altre comunicazioni sulle novità dell\'Inventario Sgorbions.<br>Se hai già cambiato idea, puoi riattivarla subito qui sotto — o comunque sia potrai farlo in qualunque momento dal tuo profilo, sezione "Preferenze e-mail".'
+             : 'You will receive no further updates on the Sgorbions Inventory.<br>If you have already changed your mind, you can re-enable it right below — or you can do so at any time from your profile, "E-mail preferences" section.'}
       </p>
       <button class="btn-secondary" style="font-size:0.95rem;padding:0.6rem 1.5rem;" onclick="doResubscribeFromLink()">
         ${L ? '📧 Riattiva la newsletter' : '📧 Re-enable the newsletter'}
@@ -4510,7 +4537,7 @@ function renderNewsletterUsers() {
         <td style="text-align:center;">
           <input type="checkbox" class="newsletter-user-cb" data-id="${u.id}" data-email="${u.email}" data-username="${u.username}" style="width:16px;height:16px;cursor:pointer;">
         </td>
-        <td style="overflow-wrap:anywhere;">${u.username}</td>
+        <td style="overflow-wrap:anywhere;${ok ? 'color:var(--accent);' : ''}">${u.username}</td>
         <td style="color:var(--muted);overflow-wrap:anywhere;">${u.email}</td>
         <td style="text-align:center;">${u.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName || ''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : '<span style="color:var(--muted);">—</span>'}</td>
         <td>${consentCell(u)}</td>
@@ -4613,7 +4640,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.620';
+const JS_VERSION = 'v5.622';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
