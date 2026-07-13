@@ -1,6 +1,301 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.620 — Su segnalazione di Franco: il link di disiscrizione nell'e-mail
+//          chiedeva l'accesso e poi lo scaricava sulla HOME, invece che sulla
+//          pagina di disiscrizione.
+//          DIAGNOSI. Se showPage('unsubscribe') fosse partito senza trovare la
+//          pagina si vedrebbe uno schermo vuoto, non la Home: quindi non è
+//          partito affatto, cioè al momento del login _pendingUnsubscribe era
+//          false, cioè il parametro ?unsubscribe=1 NON c'era più quando lo
+//          script l'ha cercato. Due cause possibili, corrette entrambe.
+//          (A) LA QUERY STRING PUÒ ESSERE PERSA PER STRADA. Un redirect del
+//          dominio (http→https, apex→www, un inoltro lato registrar) o un
+//          client di posta possono riscrivere l'URL e lasciare indietro la
+//          query. Il link nelle e-mail usa ora un FRAMMENTO (#unsubscribe):
+//          il frammento non viene mai trasmesso al server, quindi nessun
+//          redirect può toccarlo. La vecchia forma ?unsubscribe=1 resta
+//          riconosciuta, per non rompere le e-mail già partite.
+//          (B) L'INTENTO VIVEVA SOLO IN MEMORIA. _pendingUnsubscribe era una
+//          variabile JavaScript: qualunque ricaricamento fra il clic e il login
+//          (un refresh, un ritorno indietro, un redirect) la azzerava in
+//          silenzio, e l'utente finiva sulla Home senza capire perché. Ora
+//          l'intento sta in sessionStorage: sopravvive ai ricaricamenti e muore
+//          alla chiusura della scheda, che è esattamente la durata giusta.
+//          Aggiunte tracce in console con prefisso [unsubscribe], per poter
+//          vedere dove si ferma se dovesse ancora fallire.
+// v5.619 — Su richiesta di Franco, tre cose — più una quarta trovata per strada.
+//          (1) L'evento di disiscrizione ora recita "L'utente <nome> si è
+//          disiscritto dalla newsletter (...)" invece di partire dal nome nudo.
+//          (2) NOME UTENTE IN GRASSETTO IN TUTTI I LOG: login, nuovo utente
+//          (e-mail e Google), reset password, nuovo post, disiscrizione.
+//          Introdotta bold(). L'evento new_post non aveva un nome utente da
+//          mettere in grassetto: ora indica l'autore ("Nuovo post nel blog di
+//          <autore>: titolo"), che rende l'informazione anche più utile.
+//          (3) CONFERMA ALLO SPEGNIMENTO della newsletter dal profilo: è una
+//          spunta piccola in mezzo alla pagina, si preme per sbaglio, e chi lo
+//          facesse se ne accorgerebbe solo settimane dopo non ricevendo più
+//          nulla. La conferma è SOLO sullo spegnimento: all'accensione un
+//          "sei sicuro?" suonerebbe come un tentativo di scoraggiare
+//          l'iscrizione, e un'iscrizione fatta per sbaglio si annulla in un
+//          clic. Se l'utente annulla, la spunta torna accesa e non si scrive
+//          nulla.
+//          (4) XSS RISOLTA (non richiesta, trovata mentre facevo il punto 2).
+//          Le descrizioni degli eventi sono rese con innerHTML in
+//          renderAdminEventi, e una di esse conteneva testo libero dell'utente:
+//          il TITOLO di un post. Un utente registrato poteva quindi intitolare
+//          un post "<img src=x onerror=...>" ed eseguire codice arbitrario nel
+//          pannello dell'ADMIN. Aggiunta esc() e applicata a tutto ciò che
+//          proviene dall'utente (titoli, nomi, e-mail); l'unico HTML nelle
+//          descrizioni è ora quello che ci mettiamo noi. Il rischio era
+//          preesistente, ma inserire volutamente del markup in quelle stringhe
+//          lo avrebbe reso strutturale.
+// v5.618 — Su osservazione di Franco, che ha ragione: anche un "No" dato al
+//          prompt una-tantum è una scelta esplicita, informata e libera —
+//          non un silenzio — e quindi va registrata. In v5.617 avevo escluso
+//          quel caso trattandolo come un non-evento: sbagliato.
+//          L'evento 'newsletter_off' scatta ora su OGNI passaggio a "no" che
+//          non sia una ripetizione (prev !== false), ma la descrizione tiene
+//          separati i due casi, che non sono la stessa cosa:
+//            prev === true      → "si è disiscritto dalla newsletter"
+//            prev === undefined → "ha rifiutato la newsletter"
+//          Origine sempre indicata: toggle nel profilo / link in calce alla
+//          newsletter / prompt al primo accesso.
+//          Resta fuori il "No, grazie" scelto in fase di registrazione: passa
+//          da un'altra strada (il consenso è scritto direttamente sul nuovo
+//          utente e non transita da _setNewsletterConsent) ed è comunque già
+//          coperto dall'evento 'new_user' che quella registrazione genera.
+//          Aggiungere un secondo evento per lo stesso atto sarebbe rumore.
+//          La guardia prev !== false impedisce eventi duplicati se lo stesso
+//          "no" venisse riscritto.
+// v5.617 — Su richiesta di Franco: nuovo evento 'newsletter_off' (icona 📭)
+//          quando un utente si disiscrive dalla newsletter. Agganciato al
+//          punto unico di scrittura del consenso introdotto in v5.616, quindi
+//          copre entrambi i percorsi possibili — il toggle nel profilo e il
+//          link in calce alla newsletter — e la descrizione dell'evento dice
+//          da quale dei due è passato.
+//          CONDIZIONE: l'evento scatta solo su una REVOCA VERA, cioè una
+//          transizione da true a false. NON scatta quando qualcuno risponde
+//          "No" al prompt una-tantum (lì lo stato precedente è undefined, non
+//          true): quella persona non si è disiscritta, semplicemente non si
+//          era mai iscritta, e segnalarla come una perdita sarebbe un falso
+//          allarme che ti farebbe suonare la campanella per nulla. Stesso
+//          discorso per chi sceglie "No, grazie" in registrazione.
+//          L'evento fa suonare la campanella (non è fra i noBellEvTypes, dove
+//          sta solo 'login'): una disiscrizione è un fatto che vale la pena
+//          notare quando accade, non quando ci si ricorda di guardare.
+//          Nota: la creazione in 'eventi' è consentita anche ai non-admin
+//          dalle regole Firestore — necessario, dato che a disiscriversi è
+//          l'utente stesso.
+// v5.616 — Su richiesta di Franco: DISISCRIZIONE A UN CLIC. Il link in calce
+//          alle newsletter rimandava genericamente al sito, lasciando
+//          all'utente il compito di trovare la spunta nel profilo. Ora punta
+//          a https://figurinesgorbions.it/?unsubscribe=1, che apre una pagina
+//          dedicata (#page-unsubscribe) con un solo pulsante.
+//          - La pagina NON è nel menu: esiste solo per chi arriva dal link.
+//          - È fra le protectedPages: senza sessione attiva il sito chiede
+//            l'accesso. Non è burocrazia — senza autenticazione chiunque
+//            conoscesse l'indirizzo potrebbe disiscrivere qualcun altro.
+//          - INTENTO IN SOSPESO: se l'utente deve accedere, _pendingUnsubscribe
+//            se lo ricorda e dopo il login lo porta dove voleva andare, invece
+//            di scaricarlo sulla Home (che è il punto in cui la maggior parte
+//            delle disiscrizioni si perde per strada).
+//          - Il parametro viene ripulito dalla barra degli indirizzi con
+//            history.replaceState: un ricaricamento non riapre la pagina, e il
+//            link non resta appeso nella cronologia.
+//          - La pagina è consapevole dello stato: a chi è già disiscritto (o
+//            ha aperto il link due volte) dice che l'esito voluto è già quello
+//            attuale, e offre la strada inversa invece di un errore.
+//          - Origine registrata come 'unsubscribe-link', distinta da 'profile':
+//            nella tabella admin si vede da quale percorso è passata la revoca.
+//          RIFATTORIZZAZIONE: la scrittura del consenso era duplicata in due
+//          funzioni e stava per esserlo in altre due. Ora c'è un punto unico,
+//          _setNewsletterConsent(valore, origine, opzioni), con rollback in
+//          caso di errore di scrittura. Il prompt una-tantum lo usa con
+//          { silent: true } perché conserva i suoi messaggi: un "no" al prompt
+//          non è una REVOCA ma una prima risposta, e dirgli "ci dispiace che tu
+//          abbia disattivato" sarebbe stonato.
+//          Aggiornata anche la Privacy Policy (IT + EN) con il nuovo percorso.
+// v5.615 — Su segnalazione (mia) a Franco: il piè di pagina della newsletter
+//          era una stringa fissa in italiano — un iscritto inglese si vedeva
+//          arrivare "Ricevi questa e-mail perché hai acconsentito...".
+//          Il problema vero non era tradurlo, ma SAPERE IN CHE LINGUA PARLA
+//          IL DESTINATARIO: non lo memorizzavamo da nessuna parte, e usare
+//          currentLang sarebbe stato sbagliato — quella è la lingua
+//          dell'ADMIN che invia, non di chi riceve.
+//          Tre interventi:
+//          (1) Nuovo campo `lang` sul documento utente, salvato alla
+//          registrazione (e-mail/password e Google) e aggiornato quando
+//          l'utente cambia lingua a mano dalla bandierina (setLang con
+//          byUser=true). Prima la scelta viveva solo in localStorage, cioè
+//          su un singolo dispositivo: inutilizzabile per decidere in che
+//          lingua scrivergli.
+//          ATTENZIONE all'ordine in doRegister: la lingua salvata è quella
+//          FINALE, calcolata tenendo conto che la Nazionalità, se scelta,
+//          sovrascrive la lingua della form (v5.599). Prendere currentLang
+//          prima di quell'override avrebbe memorizzato una lingua che un
+//          istante dopo non sarebbe più stata quella dell'utente.
+//          (2) userLangFor(user): user.lang → nationalityCode → italiano.
+//          Il secondo livello copre gli utenti registrati prima di questa
+//          versione (che `lang` non ce l'hanno) con la stessa regola che il
+//          sito applica al login; il terzo è il ripiego per chi non ha né
+//          l'uno né l'altro (il sito è italiano di origine, ed è lo stesso
+//          default di _detectBrowserLang).
+//          (3) NEWSLETTER_FOOTER(lang) tradotto, e la lingua viaggia fino a
+//          sendEmail() attraverso options.lang, valorizzata da entrambi i
+//          percorsi di invio della newsletter.
+// v5.614 — Chiuso il buco più serio del meccanismo di consenso newsletter:
+//          IL PROMPT NON COMPARIVA A CHI RIENTRAVA CON LA SESSIONE GIÀ
+//          ATTIVA. Era agganciato ai soli eventi di login espliciti
+//          (doLogin, signInWithGoogle, e il modal del nome utente per i
+//          nuovi utenti Google). Ma la sessione si ripristina in
+//          initFirebase(), da localStorage più la verifica
+//          onAuthStateChanged, e quel percorso non passa da nessuna di
+//          quelle funzioni: chi riapriva semplicemente il sito non vedeva
+//          mai il prompt. E siccome la sessione persiste, quello non era
+//          un caso limite ma il caso NORMALE — il meccanismo costruito per
+//          raccogliere il consenso degli utenti già registrati rischiava di
+//          non attivarsi proprio su di loro.
+//          Aggiunta la chiamata a maybeAskNewsletterConsent() al termine di
+//          initFirebase(), dopo loadAllData(). Le condizioni (utente
+//          presente, non admin, non impersonificazione, consenso mai
+//          espresso) sono già dentro la funzione, quindi non sono ripetute:
+//          se nessuno è loggato, esce da sola. Il ritardo di 1,2s lascia
+//          chiudere l'overlay di caricamento e completare il primo render,
+//          così il modal non spunta sotto la schermata di attesa.
+//          Nessun rischio di doppio prompt al login: al caricamento pagina
+//          currentUser è ancora null e la chiamata esce subito; il modal lo
+//          apre poi doLogin.
+//          NOTA: currentUser viene ripristinato da localStorage e non
+//          rlietto da Firestore (per non spendere una lettura a ogni
+//          caricamento). Se un utente esprimesse il consenso su un
+//          dispositivo e poi aprisse il sito su un altro dove la copia in
+//          cache è antecedente, il prompt gli ricomparirebbe una volta: la
+//          risposta viene semplicemente risalvata, nessun danno.
+// v5.613 — Su richiesta di Franco: il campo di correzione del contatore
+//          EmailJS ora si esprime in e-mail RIMANENTI, non in e-mail
+//          inviate — così coincide con il numero mostrato dal pannello
+//          EmailJS e si può ricopiare senza fare sottrazioni a mente.
+//          Etichetta aggiornata di conseguenza ("E-mail rimanenti (come su
+//          EmailJS)"), con una riga che chiarisce che il riquadro grande
+//          sopra continua invece a contare le inviate.
+//          IMPORTANTE — la conversione avviene SOLO al confine con
+//          l'interfaccia: internamente il contatore resta memorizzato in
+//          "inviate" (è l'unità in cui vive su Firestore, ed è quella che
+//          increment() somma a ogni invio). Attenzione perché
+//          recalcEmailCounterFromLog() chiama saveEmailCounter() passandogli
+//          un valore già in INVIATE: convertire dentro la funzione avrebbe
+//          rovesciato il ricalcolo, scrivendo 188 dove servivano 12.
+//          L'argomento esplicito è quindi trattato come "inviate" e non
+//          convertito; solo il valore letto dal campo viene sottratto al
+//          limite. Verificate entrambe le direzioni prima della consegna.
+//          Introdotta anche la costante EMAILJS_MONTHLY_LIMIT: il 200 era
+//          cablato in quattro punti diversi.
+// v5.612 — Aggiungendo il pulsante chiesto da Franco sono emersi altri due
+//          bachi nello stesso riquadro.
+//          (A) Il pulsante "Correggi contatore" NON HA MAI FUNZIONATO.
+//          saveEmailCounter() scriveva su email_stats/monthly campo "count",
+//          mentre TUTTI i lettori leggono email_stats/counter campo
+//          months[<anno-mese>]: due documenti diversi. Il toast diceva
+//          "Contatore aggiornato!" e il numero a schermo restava identico.
+//          Ora scrive nel documento giusto, e corregge di conseguenza anche
+//          il totale (differenza fra il valore nuovo e quello precedente del
+//          mese, non una somma cieca).
+//          (B) TRE FUNZIONI MORTE rimosse: renderEmailCounter() aggiornava
+//          gli elementi email-count-month / email-count-total, che in
+//          index.html non esistono (il riquadro vero usa email-count-display,
+//          -label, -pct, -bar); manualFixCounter() leggeva un
+//          fix-counter-input inesistente; fixEmailCounter() era irraggiungibile.
+//          Residui di una versione precedente dell'interfaccia. Le chiamate
+//          orfane — inclusa quella introdotta ieri in v5.611 — ora puntano a
+//          refreshEmailCountWidgets(), che è la funzione realmente collegata
+//          ai widget in pagina. loadEmailCounter() sopravvive ma delega a
+//          quest'ultima.
+//          (C) NUOVO: pulsante "🔄 Ricalcola dal log" (Admin → Risorse,
+//          riquadro EmailJS, su una riga propria sotto "Correggi contatore").
+//          Conta le voci di email_log con stato "sent" e data nel mese
+//          corrente, mostra il numero trovato e chiede conferma prima di
+//          scrivere. Limite dichiarato nella conferma stessa: email_log è
+//          sfoltito a 200 voci, quindi se ne fossero già state eliminate di
+//          questo mese il conteggio sarebbe per difetto.
+// v5.611 — Su segnalazione di Franco: dopo decine di e-mail di prova, il
+//          contatore EmailJS del mese segnava ancora 1. Non era un mancato
+//          incremento: era un AZZERAMENTO ripetuto.
+//          CAUSA. incrementEmailCounter() faceva leggi → somma → riscrivi
+//          l'intero documento. Ma le regole su email_stats sono: scrittura
+//          LIBERA (serve anche ai non-admin, es. la propria e-mail di
+//          benvenuto), lettura SOLO ADMIN. Per un utente appena registrato
+//          la getDoc falliva quindi per permessi, l'errore veniva ingoiato
+//          da un `catch(e) {}` vuoto, `data` restava { total: 0 } e il
+//          setDoc finale SOVRASCRIVEVA il documento reale con { total: 1 }.
+//          Ogni registrazione di prova non aggiungeva un'e-mail al conteggio:
+//          buttava via il conteggio e ripartiva da 1. Il valore 1 osservato
+//          da Franco era esattamente l'ultima registrazione fatta.
+//          CORREZIONE 1 — incremento ATOMICO lato server (increment(), già
+//          importato) con setDoc(..., {merge:true}): non richiede nessuna
+//          lettura, quindi funziona anche per chi non ha il permesso di
+//          leggere, e non può sovrascrivere nulla. La rilettura per
+//          aggiornare il riquadro a schermo resta, ma solo per l'admin —
+//          l'unico che possa leggere e l'unico che quel riquadro lo veda.
+//          CORREZIONE 2 — l'incremento si fa ora DENTRO sendEmail(), nel
+//          ramo di successo, accanto alla scrittura del log. Prima era
+//          sparso fra i chiamanti, e due se l'erano dimenticato: la risposta
+//          a un messaggio dai Contatti e il ciclo di sendNewsletterEmail().
+//          Quelle e-mail partivano senza essere contate. Con un unico punto
+//          di uscita, contatore e log non possono più divergere.
+//          NOTA: il valore attuale su Firestore è corrotto e va ripristinato
+//          a mano (Admin → Comunicazioni → imposta contatore mensile).
+// v5.610 — Su proposta di Franco: nel form di registrazione la casella di
+//          consenso alla newsletter diventa una TENDINA A TRE VALORI
+//          ("— Seleziona —" / "Sì, voglio riceverla" / "No, grazie"), con
+//          risposta obbligatoria. Motivo, e ha ragione: una casella non
+//          spuntata produce dei "No" ambigui — non si distingue chi ha
+//          scelto di rifiutare da chi semplicemente non l'ha vista. Con la
+//          tendina ogni nuovo iscritto ha una scelta deliberata e tracciata,
+//          e lo stato undefined ("mai chiesto") resta correttamente riservato
+//          a chi non è mai passato dal form: utenti pre-v5.597 e
+//          registrazioni con Google.
+//          ATTENZIONE alla distinzione, che regge tutta la validità del
+//          consenso: è obbligatorio RISPONDERE, non ACCONSENTIRE. Con "No"
+//          la registrazione procede normalmente, e il form lo dice
+//          esplicitamente. Un consenso imposto come condizione per accedere
+//          al servizio non sarebbe "liberamente prestato" (GDPR art. 7 par.
+//          4) e sarebbe quindi nullo — otterremmo l'opposto di ciò che
+//          stiamo cercando di fare.
+//          Anche il "no" viene salvato con data e origine ('registration'):
+//          è un rifiuto esplicito, va conservato come tale, e chi lo esprime
+//          non si vedrà mai riproporre il prompt una-tantum.
+//          Rimossa la chiave i18n della vecchia casella (form.newsletterConsent),
+//          ora morta. Nessuna modifica al CSS: .form-select esisteva già.
+// v5.609 — Su richiesta di Franco: emoticon nella prima frase dei messaggi
+//          di conferma della newsletter — 😊 per l'attivazione, 😢 per la
+//          disattivazione, in entrambe le lingue.
+//          Estesa anche al prompt una-tantum, per coerenza: il suo "sì"
+//          riusa già il messaggio dell'attivazione (quindi eredita la 😊),
+//          e senza intervento il suo "no" sarebbe rimasto l'unico rifiuto
+//          senza faccina. Lì il testo resta comunque diverso ("Nessuna
+//          newsletter: rispetteremo la tua scelta") perché non è una
+//          revoca ma una prima risposta: non c'è nulla da rimpiangere.
+// v5.608 — Su segnalazione di Franco: sul sito non compariva la tabella
+//          dei destinatari Newsletter, mentre nella preview sì. Causa: la
+//          preview è un file unico (i tre file sono incorporati), il sito
+//          no — e <script src="js/app.js"> non cambia mai nome da una
+//          release all'altra, quindi il browser e la CDN di GitHub Pages
+//          sono liberi di riservire la copia in cache. index.html viene
+//          invece richiesto ogni volta: da qui il sintomo ingannevole di
+//          un numero di versione nuovo con un comportamento vecchio.
+//          Due misure:
+//          - CACHE-BUSTER sui due riferimenti in index.html
+//            (css/style.css?v=5.608 e js/app.js?v=5.608). L'URL cambia a
+//            ogni release, quindi la cache non si applica. Il numero va
+//            aggiornato a ogni consegna, come già si fa per il badge.
+//          - CONTROLLO DI COERENZA: uno script inline in fondo a
+//            index.html (che NON viene servito dalla cache, quindi è
+//            l'unico posto da cui si possa accorgersene) confronta
+//            JS_VERSION con la versione attesa e, se non coincidono,
+//            scrive un avviso esplicito in console. Un app.js vecchio non
+//            potrebbe mai auto-diagnosticarsi: il controllo deve stare
+//            fuori da app.js, altrimenti non serve a nulla.
 // v5.607 — Su richiesta di Franco: ritoccato il testo del prompt di
 //          consenso — "Nessuna pubblicità!" con il punto esclamativo,
 //          riga vuota prima dell'ultima frase e punto finale su
@@ -3593,6 +3888,173 @@ async function saveEmailReplyTo(value) {
 //  ("mai chiesto", tutti gli utenti registrati prima della v5.597) vale
 //  come NO — il silenzio non è consenso.
 // ============================================================
+// ============================================================
+//  DISISCRIZIONE A UN CLIC (link profondo dalla newsletter)
+// ------------------------------------------------------------
+//  Il link in calce a ogni newsletter (?unsubscribe=1) porta qui. Se la
+//  sessione non è attiva, l'intento resta in sospeso: il sito chiede
+//  l'accesso e, appena ottenuto, ci arriva da solo. Il login NON è un
+//  ostacolo burocratico: senza, chiunque conoscesse l'indirizzo potrebbe
+//  disiscrivere un altro.
+// ============================================================
+// L'intento NON può vivere solo in una variabile in memoria: un ricaricamento
+// qualsiasi (un refresh, un ritorno indietro, un redirect) lo cancellerebbe in
+// silenzio e l'utente atterrerebbe sulla Home senza capire perché. Lo teniamo in
+// sessionStorage: sopravvive ai ricaricamenti, muore alla chiusura della scheda.
+const PENDING_UNSUB_KEY = 'pending_unsubscribe';
+
+// Il link accetta DUE forme:
+//   ?unsubscribe=1  (query string) — usata dalle e-mail già inviate
+//   #unsubscribe    (frammento)    — usata da qui in avanti
+// Il frammento non viene mai trasmesso al server, quindi nessun redirect del
+// dominio (http→https, apex→www, inoltri Aruba) può eliminarlo: è proprio il
+// sospetto numero uno sul perché il link non funzionasse. La query resta
+// supportata per non rompere le e-mail già partite.
+function checkUnsubscribeLink() {
+  try {
+    const hasQuery = new URLSearchParams(window.location.search).get('unsubscribe') === '1';
+    const hasHash  = (window.location.hash || '').toLowerCase() === '#unsubscribe';
+    if (hasQuery || hasHash) {
+      console.log('[unsubscribe] richiesta rilevata (' + (hasHash ? 'frammento' : 'query') + ')');
+      sessionStorage.setItem(PENDING_UNSUB_KEY, '1');
+      // Ripulisce la barra degli indirizzi: un refresh non deve riproporre la
+      // disiscrizione, e il link non resta appeso nella cronologia.
+      history.replaceState(null, '', window.location.pathname);
+    }
+    resumePendingUnsubscribe();
+  } catch(e) { console.warn('[unsubscribe] checkUnsubscribeLink', e.message); }
+}
+
+// Chiamata all'avvio e dopo ogni login. Se l'intento è in sospeso e ora c'è un
+// utente, si va alla pagina; altrimenti si chiede l'accesso e si riproverà dopo.
+function resumePendingUnsubscribe() {
+  let pending = false;
+  try { pending = sessionStorage.getItem(PENDING_UNSUB_KEY) === '1'; } catch(e) {}
+  if (!pending) return false;
+  if (!currentUser) {
+    console.log('[unsubscribe] utente non autenticato: chiedo l\'accesso, intento conservato');
+    openAuth('login');
+    return true;
+  }
+  try { sessionStorage.removeItem(PENDING_UNSUB_KEY); } catch(e) {}
+  console.log('[unsubscribe] apro la pagina di disiscrizione');
+  showPage('unsubscribe');
+  return true;
+}
+
+function renderUnsubscribePage() {
+  const el = document.getElementById('unsubscribe-content');
+  if (!el || !currentUser) return;
+  const L = currentLang === 'it';
+  const iscritto = hasNewsletterConsent(currentUser);
+
+  if (iscritto) {
+    el.innerHTML = `
+      <div style="font-size:3rem;margin-bottom:0.75rem;">📭</div>
+      <h1 class="section-title" style="margin-bottom:0.75rem;">${L ? 'Disiscriverti dalla newsletter?' : 'Unsubscribe from the newsletter?'}</h1>
+      <p style="color:var(--muted);line-height:1.6;margin-bottom:1.5rem;">
+        ${L ? `Stai per revocare il consenso per <strong style="color:var(--text);">${currentUser.email}</strong>. Basta un clic, e non riceverai più la newsletter.<br><br>Le e-mail di servizio (benvenuto, risposte ai tuoi post e ai tuoi messaggi) continueranno ad arrivarti: non sono newsletter.`
+             : `You are about to withdraw consent for <strong style="color:var(--text);">${currentUser.email}</strong>. One click, and you will no longer receive the newsletter.<br><br>Service e-mails (welcome, replies to your posts and messages) will still reach you: they are not newsletters.`}
+      </p>
+      <button class="btn-primary" style="font-size:1rem;padding:0.7rem 2rem;" onclick="doUnsubscribeFromLink()">
+        ${L ? '📭 Disiscrivimi' : '📭 Unsubscribe me'}
+      </button>
+      <div style="margin-top:1.25rem;">
+        <a href="#" onclick="showPage('home');return false;" style="color:var(--muted);font-size:0.88rem;">
+          ${L ? 'No, ho cambiato idea — torna alla Home' : 'No, I changed my mind — back to Home'}
+        </a>
+      </div>`;
+  } else {
+    // Non iscritto: o non ha mai acconsentito, o si è già disiscritto (magari
+    // aprendo il link due volte). In entrambi i casi l'esito che voleva è già
+    // quello attuale — glielo diciamo, e gli offriamo la strada inversa.
+    el.innerHTML = `
+      <div style="font-size:3rem;margin-bottom:0.75rem;">✅</div>
+      <h1 class="section-title" style="margin-bottom:0.75rem;">${L ? 'Non sei iscritto alla newsletter' : 'You are not subscribed to the newsletter'}</h1>
+      <p style="color:var(--muted);line-height:1.6;margin-bottom:1.5rem;">
+        ${L ? 'Non riceverai comunicazioni sulle novità dell\'Inventario. Se invece cambi idea, puoi riattivarla subito qui sotto — o in qualunque momento dal tuo profilo, sezione "Preferenze e-mail".'
+             : 'You will not receive updates about the Inventory. If you change your mind, you can re-enable it right here — or anytime from your profile, "E-mail preferences" section.'}
+      </p>
+      <button class="btn-secondary" style="font-size:0.95rem;padding:0.6rem 1.5rem;" onclick="doResubscribeFromLink()">
+        ${L ? '📧 Riattiva la newsletter' : '📧 Re-enable the newsletter'}
+      </button>
+      <div style="margin-top:1.25rem;">
+        <a href="#" onclick="showPage('home');return false;" style="color:var(--muted);font-size:0.88rem;">
+          ${L ? 'Torna alla Home' : 'Back to Home'}
+        </a>
+      </div>`;
+  }
+}
+
+// L'unico clic. Origine 'unsubscribe-link', così nella tabella admin si distingue
+// da una revoca fatta dal profilo: sono due percorsi diversi e sapere quale sia
+// stato usato è un'informazione, non un dettaglio.
+async function doUnsubscribeFromLink() {
+  if (!currentUser) return;
+  await _setNewsletterConsent(false, 'unsubscribe-link');
+  renderUnsubscribePage();
+}
+
+async function doResubscribeFromLink() {
+  if (!currentUser) return;
+  await _setNewsletterConsent(true, 'unsubscribe-link');
+  renderUnsubscribePage();
+}
+
+// Punto unico di scrittura del consenso: prima la stessa logica era ripetuta in
+// saveNewsletterConsent() e setNewsletterConsentFromPrompt(), e ora sarebbe stata
+// ripetuta una terza e una quarta volta.
+async function _setNewsletterConsent(value, source, opts = {}) {
+  const L = currentLang === 'it';
+  const prev = currentUser.newsletterConsent;
+  currentUser.newsletterConsent = !!value;
+  currentUser.newsletterConsentDate = new Date().toISOString();
+  currentUser.newsletterConsentSource = source;
+  LOCAL.set('currentUser', currentUser);
+  try {
+    await fsSave('users', currentUser);
+  } catch(e) {
+    console.error('_setNewsletterConsent', e);
+    currentUser.newsletterConsent = prev; // ripristino: la scrittura non è andata
+    LOCAL.set('currentUser', currentUser);
+    toast(L ? 'Salvataggio non riuscito, riprova' : 'Save failed, please retry', 'error');
+    return false;
+  }
+  // EVENTO su ogni passaggio a "no" che non sia una ripetizione (prev !== false).
+  // Due casi distinti, e la descrizione li tiene separati perché non sono la
+  // stessa cosa:
+  //   - prev === true      → REVOCA: aveva la newsletter, l'ha disattivata.
+  //   - prev === undefined → RIFIUTO: gli abbiamo chiesto e ha detto di no.
+  // Il secondo caso è comunque una scelta esplicita, informata e libera — non un
+  // silenzio — e come tale merita di essere registrata (Franco, v5.618).
+  // Il "No, grazie" in fase di registrazione resta invece fuori: passa per un'altra
+  // strada (il consenso è scritto direttamente sul nuovo utente) ed è già coperto
+  // dall'evento 'new_user' che quella registrazione genera comunque.
+  if (value === false && prev !== false) {
+    const via = source === 'unsubscribe-link'
+      ? 'link in calce alla newsletter'
+      : (source === 'profile' ? 'toggle nel profilo'
+      : (source === 'prompt' ? 'prompt al primo accesso' : source));
+    const testo = (prev === true)
+      ? `L'utente ${bold(currentUser.username)} si è disiscritto dalla newsletter (${via})`
+      : `L'utente ${bold(currentUser.username)} ha rifiutato la newsletter (${via})`;
+    logEvent('newsletter_off', testo);
+  }
+
+  // opts.silent: il chiamante ha un messaggio suo. È il caso del prompt
+  // una-tantum, dove un "no" non è una REVOCA ma una prima risposta — dirgli
+  // "ci dispiace che tu abbia disattivato" sarebbe stonato.
+  if (!opts.silent) {
+    toast(value
+      ? (L ? "Hai attivato l'iscrizione alla newsletter figurinesgorbions.it 😊<br>Complimenti e grazie!"
+           : "You've subscribed to the figurinesgorbions.it newsletter 😊<br>Thank you!")
+      : (L ? "Ci dispiace che tu abbia disattivato la newsletter! 😢<br>Potrai riattivarla quando vuoi.<br>Ricorda che è l'unico modo per rimanere aggiornato sull'Inventario Sgorbions via e-mail."
+           : "We're sorry to see you unsubscribe! 😢<br>You can turn it back on whenever you like.<br>Remember it's the only way to stay up to date on the Sgorbions Inventory by e-mail."),
+      'success', null, value ? 5000 : 7000);
+  }
+  return true;
+}
+
 function hasNewsletterConsent(user) {
   return user?.newsletterConsent === true;
 }
@@ -3616,24 +4078,20 @@ async function setNewsletterConsentFromPrompt(value) {
   const modal = document.getElementById('newsletter-consent-modal');
   if (modal) modal.classList.add('hidden');
   if (!currentUser) return;
-  currentUser.newsletterConsent = !!value;
-  currentUser.newsletterConsentDate = new Date().toISOString();
-  currentUser.newsletterConsentSource = 'prompt';
-  LOCAL.set('currentUser', currentUser);
-  await fsSave('users', currentUser);
   const L = currentLang === 'it';
-  // Il "sì" del prompt usa lo stesso messaggio del toggle nel profilo. Il "no"
-  // no: qui non c'è nessuna disattivazione da rimpiangere — è una prima
-  // risposta, non una revoca.
+  const ok = await _setNewsletterConsent(value, 'prompt', { silent: true });
+  if (!ok) return;
+  // Messaggi propri: il "sì" coincide con quello dell'attivazione, il "no" no —
+  // qui non c'è nessuna disattivazione da rimpiangere, è una prima risposta.
   if (value) {
     toast(L
-      ? "Hai attivato l'iscrizione alla newsletter figurinesgorbions.it<br>Complimenti e grazie!"
-      : "You've subscribed to the figurinesgorbions.it newsletter<br>Thank you!",
+      ? "Hai attivato l'iscrizione alla newsletter figurinesgorbions.it 😊<br>Complimenti e grazie!"
+      : "You've subscribed to the figurinesgorbions.it newsletter 😊<br>Thank you!",
       'success', null, 5000);
   } else {
     toast(L
-      ? 'Nessuna newsletter: rispetteremo la tua scelta.<br>Potrai attivarla quando vuoi dal tuo profilo.'
-      : "No newsletter: we'll respect your choice.<br>You can enable it anytime from your profile.",
+      ? 'Nessuna newsletter: rispetteremo la tua scelta. 😢<br>Potrai attivarla quando vuoi dal tuo profilo.'
+      : "No newsletter: we'll respect your choice. 😢<br>You can enable it anytime from your profile.",
       'success', null, 5000);
   }
 }
@@ -3643,40 +4101,64 @@ async function saveNewsletterConsent() {
   if (!currentUser) return;
   const cb = document.getElementById('profile-newsletter-toggle');
   const enabling = cb?.checked || false;
-  currentUser.newsletterConsent = enabling;
-  currentUser.newsletterConsentDate = new Date().toISOString();
-  currentUser.newsletterConsentSource = 'profile';
-  LOCAL.set('currentUser', currentUser);
-  try {
-    await fsSave('users', currentUser);
-  } catch(e) {
-    console.error('saveNewsletterConsent', e);
-    if (cb) cb.checked = !enabling; // ripristino lo stato: il salvataggio non è andato
-    toast(currentLang === 'it' ? 'Salvataggio non riuscito, riprova' : 'Save failed, please retry', 'error');
-    return;
-  }
   const L = currentLang === 'it';
-  // Messaggi su più righe: toast() passa a innerHTML quando trova un <br>.
-  // Durata più lunga di quella di default (3.5s): tre righe non si leggono in
-  // tre secondi e mezzo.
-  if (enabling) {
-    toast(L
-      ? "Hai attivato l'iscrizione alla newsletter figurinesgorbions.it<br>Complimenti e grazie!"
-      : "You've subscribed to the figurinesgorbions.it newsletter<br>Thank you!",
-      'success', null, 5000);
-  } else {
-    toast(L
-      ? "Ci dispiace che tu abbia disattivato la newsletter!<br>Potrai riattivarla quando vuoi.<br>Ricorda che è l'unico modo per rimanere aggiornato sull'Inventario Sgorbions via e-mail."
-      : "We're sorry to see you unsubscribe!<br>You can turn it back on whenever you like.<br>Remember it's the only way to stay up to date on the Sgorbions Inventory by e-mail.",
-      'success', null, 7000);
+
+  // Conferma solo allo SPEGNIMENTO. È una spunta piccola in mezzo al profilo:
+  // si preme per sbaglio, e l'utente se ne accorgerebbe solo settimane dopo, non
+  // ricevendo più nulla. All'accensione invece nessuna conferma — un'iscrizione
+  // fatta per errore si annulla in un clic, e chiedere "sei sicuro di volerti
+  // iscrivere?" suonerebbe come un tentativo di scoraggiarlo.
+  if (!enabling) {
+    const ok = confirm(L
+      ? 'Vuoi davvero disattivare la newsletter?\n\nNon riceverai più le novità sull\'Inventario Sgorbions.\nPotrai riattivarla quando vuoi da qui.'
+      : 'Do you really want to turn off the newsletter?\n\nYou will no longer receive updates on the Sgorbions Inventory.\nYou can turn it back on from here whenever you like.');
+    if (!ok) { if (cb) cb.checked = true; return; } // annullato: la spunta torna accesa
   }
+
+  const ok = await _setNewsletterConsent(enabling, 'profile');
+  if (!ok && cb) cb.checked = !enabling; // scrittura fallita: la spunta torna com'era
 }
 
-const NEWSLETTER_FOOTER = (username) =>
-  '\n\n———\n' +
-  'Ricevi questa e-mail perché hai acconsentito alla newsletter di figurinesgorbions.it.\n' +
-  'Puoi revocare il consenso in qualsiasi momento dal tuo profilo, sezione "Preferenze e-mail":\n' +
-  'https://figurinesgorbions.it';
+// Lingua del DESTINATARIO di un'e-mail. Non si può usare currentLang: quella è
+// la lingua dell'admin che sta inviando, non di chi riceve — un admin che scrive
+// con il sito in italiano manderebbe un piè di pagina italiano anche a un inglese.
+// Ordine di preferenza:
+//   1. user.lang — salvato alla registrazione (dalla v5.615). È il dato migliore:
+//      è la lingua che quella persona stava effettivamente usando.
+//   2. nationalityCode — ripiego per gli utenti registrati prima, che user.lang
+//      non ce l'hanno. Stessa regola che il sito applica al login.
+//   3. italiano — se non c'è né l'uno né l'altro. Il sito è italiano di origine
+//      (dominio .it) ed è lo stesso ripiego di _detectBrowserLang.
+function userLangFor(user) {
+  if (user?.lang === 'it' || user?.lang === 'en') return user.lang;
+  if (user?.nationalityCode) return user.nationalityCode === 'it' ? 'it' : 'en';
+  return 'it';
+}
+
+// Link profondo di disiscrizione: porta direttamente alla pagina dedicata, dove
+// basta un clic. Se la sessione non è attiva il sito chiede prima l'accesso e poi
+// ci arriva da solo (l'intento resta in sospeso, vedi _pendingUnsubscribe) — il
+// login è indispensabile: senza, chiunque conoscesse l'indirizzo potrebbe
+// disiscrivere qualcun altro.
+// Frammento, non query: il frammento non viene MAI trasmesso al server, quindi
+// nessun redirect (http→https, apex→www, inoltro del dominio) può eliminarlo
+// per strada. La forma con ?unsubscribe=1 resta comunque riconosciuta, per le
+// e-mail già inviate.
+const UNSUBSCRIBE_URL = 'https://figurinesgorbions.it/#unsubscribe';
+
+const NEWSLETTER_FOOTER = (lang) => (lang === 'en')
+  ? '\n\n———\n' +
+    'You are receiving this e-mail because you consented to the figurinesgorbions.it newsletter.\n' +
+    'To unsubscribe, open this link and confirm with one click:\n' +
+    UNSUBSCRIBE_URL
+  : '\n\n———\n' +
+    'Ricevi questa e-mail perché hai acconsentito alla newsletter di figurinesgorbions.it.\n' +
+    'Per disiscriverti, apri questo link e conferma con un clic:\n' +
+    UNSUBSCRIBE_URL;
+
+// Limite mensile del piano gratuito EmailJS. Era cablato come "200" in più punti;
+// tenerlo in un solo posto evita che un domani ne resti indietro uno.
+const EMAILJS_MONTHLY_LIMIT = 200;
 
 async function sendEmail(toEmail, username, subject, messaggio, options = {}) {
   // Log always, regardless of EmailJS outcome
@@ -3686,8 +4168,10 @@ async function sendEmail(toEmail, username, subject, messaggio, options = {}) {
     // Solo la newsletter porta in calce il rimando alla revoca del consenso:
     // le e-mail transazionali (benvenuto, risposte) non sono marketing e non
     // hanno una disiscrizione da offrire.
+    // options.lang è la lingua del DESTINATARIO, non quella dell'admin.
+    // In sua assenza si ripiega sull'italiano (vedi userLangFor).
     const bodyToSend = (options.source === 'newsletter')
-      ? messaggio + NEWSLETTER_FOOTER(username)
+      ? messaggio + NEWSLETTER_FOOTER(options.lang || 'it')
       : messaggio;
     const payload = {
       email: toEmail,
@@ -3700,6 +4184,12 @@ async function sendEmail(toEmail, username, subject, messaggio, options = {}) {
     await emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, payload);
     console.log('Email inviata a', toEmail);
     await logEmail(toEmail, subject, options.source || 'other', messaggio, 'sent');
+    // Il contatore si incrementa QUI, non nei chiamanti. Prima era sparso fra
+    // loro, e due percorsi se l'erano dimenticato: la risposta a un messaggio dai
+    // Contatti e il ciclo di sendNewsletterEmail(). Contando nell'unico punto da
+    // cui l'e-mail esce davvero, il conteggio non può più divergere dal log —
+    // che è scritto un rigo sopra, dalla stessa condizione di successo.
+    await incrementEmailCounter(1);
     return { ok: true };
   } catch(e) {
     console.error('Errore invio email', e);
@@ -3722,7 +4212,6 @@ async function sendWelcomeEmail(user) {
     'Benvenuto su figurinesgorbions.it! 👾',
     'Benvenuto nella community Sgorbions di figurinesgorbions.it!\n\nIl tuo account è stato creato con successo. Inizia subito a esplorare l\'Inventario e a costruire la tua lista!'
   );
-  incrementEmailCounter(1);
 }
 
 async function sendReplyNotificationEmail(postAuthorId, postTitle, replyAuthor, replyText) {
@@ -3737,7 +4226,6 @@ async function sendReplyNotificationEmail(postAuthorId, postTitle, replyAuthor, 
     'Qualcuno ha risposto al tuo post! 💬',
     replyAuthor + ' ha risposto al tuo post "' + postTitle + '":\n\n"' + replyText + '"\n\nVai a vedere la risposta su figurinesgorbions.it'
   );
-  incrementEmailCounter(1);
 }
 
 let _emailArchiveFilter = 'newsletter';
@@ -4095,11 +4583,10 @@ async function sendNewsletterFromAdmin() {
       blockedCount++;
       console.warn('Newsletter non inviata a', cb.dataset.email, '— nessun consenso');
     } else if (wantsEmail) {
-      await sendEmail(cb.dataset.email, cb.dataset.username, subject, body, { bcc, source: 'newsletter' }); emailCount++;
+      await sendEmail(cb.dataset.email, cb.dataset.username, subject, body, { bcc, source: 'newsletter', lang: userLangFor(u) }); emailCount++;
     }
     if (wantsMsg) { await sendNewsletterMessage({ username: cb.dataset.username, email: cb.dataset.email }, subject, body); msgCount++; }
   }
-  if (emailCount) await incrementEmailCounter(emailCount);
   const blockedNote = blockedCount ? (currentLang === 'it' ? ` — ${blockedCount} e-mail non inviate (nessun consenso)` : ` — ${blockedCount} e-mails not sent (no consent)`) : '';
   toast((currentLang === 'it' ? `Newsletter inviata: ${emailCount} e-mail, ${msgCount} messaggi! 📧${blockedNote}` : `Newsletter sent: ${emailCount} e-mails, ${msgCount} messages! 📧${blockedNote}`), 'success');
   document.getElementById('newsletter-subject').value = '';
@@ -4116,7 +4603,7 @@ async function sendNewsletterEmail(subject, messaggio) {
   const adminUser = getData('users', []).find(u => u.isAdmin);
   const bcc = adminUser?.email || null;
   for (const user of users) {
-    await sendEmail(user.email, user.username, subject, messaggio, { bcc, source: 'newsletter' });
+    await sendEmail(user.email, user.username, subject, messaggio, { bcc, source: 'newsletter', lang: userLangFor(user) });
   }
   toast((currentLang === 'it' ? 'Newsletter inviata a ' : 'Newsletter sent to ') + users.length + (currentLang === 'it' ? ' utenti!' : ' users!'), 'success');
 }
@@ -4126,7 +4613,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.607';
+const JS_VERSION = 'v5.620';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -4261,6 +4748,27 @@ async function initFirebase() {
   });
 
   await loadAllData();
+
+  // Consenso newsletter per chi rientra con la SESSIONE GIÀ ATTIVA.
+  // Il prompt era agganciato solo agli eventi di login espliciti (doLogin,
+  // signInWithGoogle) — ma la sessione si ripristina qui sopra, da localStorage
+  // più onAuthStateChanged, senza passare da nessuno dei due. Chi riapriva
+  // semplicemente il sito non lo vedeva MAI. E siccome la sessione persiste,
+  // "mai" non era l'eccezione: era il caso normale. Tutto il meccanismo di
+  // raccolta del consenso rischiava quindi di non attivarsi quasi su nessuno
+  // degli utenti già registrati, che sono proprio quelli per cui era stato
+  // costruito.
+  // Le condizioni (non admin, non impersonificazione, consenso mai espresso)
+  // sono già dentro maybeAskNewsletterConsent: qui non serve ripeterle. Se
+  // l'utente non è loggato, currentUser è null e la funzione esce subito.
+  // Il ritardo lascia chiudere l'overlay di caricamento e completare il primo
+  // render, così il modal non spunta sotto la schermata di attesa.
+  // Link profondo di disiscrizione (?unsubscribe=1). Ha la precedenza sul prompt
+  // del consenso: chi arriva da li il consenso l'ha gia dato, quindi
+  // maybeAskNewsletterConsent uscirebbe comunque subito -- ma l'ordine conta se
+  // un domani si aggiungessero altri intenti in sospeso.
+  checkUnsubscribeLink();
+  setTimeout(maybeAskNewsletterConsent, 1200);
 }
 
 // ============================================================
@@ -4776,7 +5284,7 @@ const i18n = {
 'modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go!','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
-'admin.email.fix':'Fix counter:','admin.save':'Save','newsletter.settingsTitle':'⚙️ Email Settings','newsletter.replyToLabel':'Reply-To address','newsletter.replyToHint':'When you reply to a message, the email will go to this address',
+'admin.email.fix':'E-mails remaining (as on EmailJS):','admin.email.fix.hint':'Enter the number you read on the EmailJS dashboard, i.e. how many e-mails you have left. The panel above still shows the ones already sent.','admin.save':'Save','newsletter.settingsTitle':'⚙️ Email Settings','newsletter.replyToLabel':'Reply-To address','newsletter.replyToHint':'When you reply to a message, the email will go to this address',
 'admin.firebase.plan':'Free plan (Spark): 1 GB storage, 50,000 reads/day, 20,000 writes/day.',
 'admin.firebase.docs':'total documents',
 'admin.cloudinary.plan':'Free plan: 25 credits/month (storage + transformations + bandwidth).',
@@ -4789,7 +5297,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'✅ Add everything to my list','catalog.havenone':'❌ Clear my list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'✅ Add everything to my list','catalog.havenone':'❌ Clear my list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -4815,7 +5323,7 @@ const i18n = {
 'contact.location.val':'Italy 🇮🇹','contact.resp':'Response time','contact.resp.val':'Usually within 24–48 hours',
 'form.name.ph':'Sgorbions Fan','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio!',
 'form.message':'Message','form.message.ph':'Tell me everything...',
-'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality','form.ageConfirm':'I confirm I am at least 16 years old','form.newsletterConsent':'I want to receive the figurinesgorbions.it newsletter (optional)','profile.emailPrefs.title':'E-mail preferences','profile.newsletter':'I want to receive the figurinesgorbions.it newsletter','profile.newsletter.hint':'Get the latest news about the Sgorbions inventory.<br>You can turn it on or off whenever you like.','newsletterConsent.title':'📧 Would you like the newsletter?','newsletterConsent.body':'We never actually asked you — and without your consent we won\'t send it.<br><br>It\'s just the occasional update on the latest news from the Sgorbions Inventory.<br>No advertising!<br><br>You can change your mind anytime from your profile.','newsletterConsent.yes':'Yes, sign me up','newsletterConsent.no':'No, thanks','form.privacyNotice':'By registering, you agree to our <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Privacy Policy</a>.','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
+'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality','form.ageConfirm':'I confirm I am at least 16 years old','form.newsletterLabel':'Would you like the newsletter? *','form.newsletter.opt.none':'— Select —','form.newsletter.opt.yes':'Yes, I want it','form.newsletter.opt.no':'No, thanks','form.newsletter.hint':'Answering is required, but you are free to say no: registration works anyway. You can change your mind anytime from your profile.','profile.emailPrefs.title':'E-mail preferences','profile.newsletter':'I want to receive the figurinesgorbions.it newsletter','profile.newsletter.hint':'Get the latest news about the Sgorbions inventory.<br>You can turn it on or off whenever you like.','newsletterConsent.title':'📧 Would you like the newsletter?','newsletterConsent.body':'We never actually asked you — and without your consent we won\'t send it.<br><br>It\'s just the occasional update on the latest news from the Sgorbions Inventory.<br>No advertising!<br><br>You can change your mind anytime from your profile.','newsletterConsent.yes':'Yes, sign me up','newsletterConsent.no':'No, thanks','form.privacyNotice':'By registering, you agree to our <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Privacy Policy</a>.','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
 'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Stickers',
 'form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.desc.en':'Description (English)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Cover Image',
 'form.click':'Click to upload','form.drag':'or drag and drop',
@@ -4870,7 +5378,7 @@ const i18n = {
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'E-mail inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 e-mail/mese (si azzera il 1° di ogni mese).',
-'admin.email.fix':'Correggi contatore:','admin.save':'Salva','newsletter.settingsTitle':'⚙️ Impostazioni E-mail','newsletter.replyToLabel':'Indirizzo per le risposte (Reply-To)','newsletter.replyToHint':'Quando rispondi a un messaggio, l\'e-mail arriverà a questo indirizzo',
+'admin.email.fix':'E-mail rimanenti (come su EmailJS):','admin.email.fix.hint':'Inserisci il numero che leggi sul pannello EmailJS, cioè quante e-mail ti restano. Il riquadro qui sopra continua invece a mostrare quelle già inviate.','admin.save':'Salva','newsletter.settingsTitle':'⚙️ Impostazioni E-mail','newsletter.replyToLabel':'Indirizzo per le risposte (Reply-To)','newsletter.replyToHint':'Quando rispondi a un messaggio, l\'e-mail arriverà a questo indirizzo',
 'admin.firebase.plan':'Piano gratuito (Spark): 1 GB storage, 50.000 letture/giorno, 20.000 scritture/giorno.',
 'admin.firebase.docs':'documenti totali',
 'admin.cloudinary.plan':'Piano gratuito: 25 crediti/mese (storage + trasformazioni + banda).',
@@ -4912,13 +5420,13 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'✅ Aggiungi tutto nella mia lista','catalog.havenone':'❌ Svuota la mia lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'✅ Aggiungi tutto nella mia lista','catalog.havenone':'❌ Svuota la mia lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Torna all\'Inventario','detail.owned':'Nella mia lista, per questa serie:','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'E-mail','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
-    'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','form.newsletterConsent':'Voglio ricevere la newsletter di figurinesgorbions.it (facoltativo)','profile.emailPrefs.title':'Preferenze e-mail','profile.newsletter':'Voglio ricevere la newsletter di figurinesgorbions.it','profile.newsletter.hint':'Ricevi le ultime novità sull\'inventario degli Sgorbions.<br>Puoi attivarla o disattivarla quando vuoi.','newsletterConsent.title':'📧 Vuoi ricevere la newsletter?','newsletterConsent.body':'Non te l\'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell\'Inventario Sgorbions.<br>Nessuna pubblicità!<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.','newsletterConsent.yes':'Sì, iscrivimi','newsletterConsent.no':'No, grazie','form.privacyNotice':'Registrandoti, accetti la nostra <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Informativa sulla Privacy</a>.','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
+    'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','form.newsletterLabel':'Vuoi ricevere la newsletter? *','form.newsletter.opt.none':'— Seleziona —','form.newsletter.opt.yes':'Sì, voglio riceverla','form.newsletter.opt.no':'No, grazie','form.newsletter.hint':'Rispondere è obbligatorio, ma sei libero di dire di no: la registrazione funziona comunque. Potrai cambiare idea quando vuoi dal tuo profilo.','profile.emailPrefs.title':'Preferenze e-mail','profile.newsletter':'Voglio ricevere la newsletter di figurinesgorbions.it','profile.newsletter.hint':'Ricevi le ultime novità sull\'inventario degli Sgorbions.<br>Puoi attivarla o disattivarla quando vuoi.','newsletterConsent.title':'📧 Vuoi ricevere la newsletter?','newsletterConsent.body':'Non te l\'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell\'Inventario Sgorbions.<br>Nessuna pubblicità!<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.','newsletterConsent.yes':'Sì, iscrivimi','newsletterConsent.no':'No, grazie','form.privacyNotice':'Registrandoti, accetti la nostra <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Informativa sulla Privacy</a>.','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.desc.en':'Descrizione (Inglese)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
@@ -4976,7 +5484,18 @@ function applyI18n() {
 function setLang(lang, byUser = false) {
   currentLang = lang;
   LOCAL.set('lang', lang);
-  if (byUser && currentUser) LOCAL.set('lang_set_by_user_' + currentUser.id, true);
+  if (byUser && currentUser) {
+    LOCAL.set('lang_set_by_user_' + currentUser.id, true);
+    // Persistiamo la scelta anche sul documento utente: localStorage vive solo su
+    // questo dispositivo, ma per scrivergli un'e-mail nella sua lingua il dato
+    // deve stare nel database. Scrittura non bloccante: cambiare lingua a mano è
+    // un gesto raro, e se fallisce non c'è nulla da interrompere.
+    if (currentUser.lang !== lang) {
+      currentUser.lang = lang;
+      LOCAL.set('currentUser', currentUser);
+      fsSave('users', currentUser).catch(e => console.warn('Lingua utente non salvata', e.message));
+    }
+  }
   // Update flag button
   const btn = document.getElementById('lang-current-btn');
   if (btn) {
@@ -5057,7 +5576,7 @@ function showAdminTab(tab) {
 }
 
 function showPage(page) {
-  const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile', 'newsletter', 'wishlist'];
+  const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile', 'newsletter', 'wishlist', 'unsubscribe'];
   if (protectedPages.includes(page) && !currentUser) {
     openAuth('login');
     return;
@@ -5089,6 +5608,7 @@ function showPage(page) {
   if (page === 'wantlist') renderWantlist();
   if (page === 'newsletter') { renderNewsletterUsers(); renderEmailLog(); }
   if (page === 'wishlist') renderWishlist();
+  if (page === 'unsubscribe') renderUnsubscribePage();
   if (page === 'classifica') renderClassifica();
   if (page === 'admin') adminTab('users');
   if (page === 'contact' && currentUser) {
@@ -5193,7 +5713,7 @@ async function doLogin() {
     applyI18n();
   }
   fsSave('users', user); // lastLogin: non blocca il login, non serve attenderlo
-  if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username, { read: true });
+  if (!user.isAdmin) logEvent('login', 'Login effettuato da: ' + bold(user.username), { read: true });
   else await _loadAdminOnlyData();
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
@@ -5205,6 +5725,9 @@ async function doLogin() {
     welcomeEl.textContent = (currentLang === 'it' ? 'Bentornato, ' : 'Welcome back, ') + user.username + '! 👾';
     setTimeout(() => { welcomeEl.style.display = 'none'; }, 4000);
   }
+  // Chi era arrivato dal link di disiscrizione e ha dovuto accedere viene portato
+  // dove voleva andare, invece di essere scaricato sulla Home.
+  if (resumePendingUnsubscribe()) return;
   maybeAskNewsletterConsent(); // utenti pre-v5.597: consenso mai chiesto
 }
 function _generateUniqueUsername(base) {
@@ -5253,13 +5776,15 @@ async function signInWithGoogle() {
     // Primo accesso con questo account Google: creo un nuovo utente
     const baseName = cred.user.displayName || (cred.user.email || '').split('@')[0];
     const username = _generateUniqueUsername(baseName);
-    const newUser = { id: Date.now().toString(), authUid: cred.user.uid, username, email: cred.user.email || '', isAdmin: false, joined: new Date().toISOString(), lastLogin: new Date().toISOString(), nationalityCode: '', nationalityName: '', ageConfirmed16: true, ageConfirmedAt: new Date().toISOString() };
+    // nationalityCode è sempre vuoto (Google non la fornisce): la lingua è quindi
+    // quella che la persona sta usando in questo momento sul sito.
+    const newUser = { id: Date.now().toString(), authUid: cred.user.uid, username, email: cred.user.email || '', isAdmin: false, joined: new Date().toISOString(), lastLogin: new Date().toISOString(), nationalityCode: '', nationalityName: '', ageConfirmed16: true, ageConfirmedAt: new Date().toISOString(), lang: currentLang };
     const saved = await fsSave('users', newUser);
     _cache.users = _cache.users || [];
     _cache.users.push(saved);
     user = saved;
     sendWelcomeEmail(saved);
-    logEvent('new_user', 'Nuovo utente registrato con Google: ' + username);
+    logEvent('new_user', 'Nuovo utente registrato con Google: ' + bold(username));
   }
 
   currentUser = user;
@@ -5273,7 +5798,7 @@ async function signInWithGoogle() {
     applyI18n();
   }
   if (!isNewUser) fsSave('users', user); // lastLogin: non blocca, non serve attenderlo (per un nuovo utente è già stato salvato sopra)
-  if (!isNewUser && !user.isAdmin) logEvent('login', 'Login effettuato da: ' + user.username, { read: true });
+  if (!isNewUser && !user.isAdmin) logEvent('login', 'Login effettuato da: ' + bold(user.username), { read: true });
   if (!isNewUser && user.isAdmin) await _loadAdminOnlyData();
   await loadAllOwnedFromFirebase();
   closeModal('auth-modal');
@@ -5296,6 +5821,7 @@ async function signInWithGoogle() {
     // caso il consenso viene dato per scontato.
     openUsernameModal(true);
   } else {
+    if (resumePendingUnsubscribe()) return;
     maybeAskNewsletterConsent();
   }
 }
@@ -5312,6 +5838,17 @@ async function doRegister() {
   const ageConfirmed = document.getElementById('reg-age-confirm')?.checked;
   if (!ageConfirmed) {
     const msg = currentLang === 'it' ? 'Devi confermare di avere almeno 16 anni per registrarti' : 'You must confirm you are at least 16 years old to register';
+    if (regErr) { regErr.style.display = ''; regErr.textContent = msg; } else toast(msg, 'error');
+    return;
+  }
+  // Consenso newsletter: la risposta è obbligatoria (tendina a tre valori, di
+  // default "— Seleziona —"), ma il "No" è una risposta perfettamente valida e
+  // non impedisce la registrazione. Blocchiamo solo chi non ha risposto affatto.
+  const nlChoice = document.getElementById('reg-newsletter-consent')?.value || '';
+  if (!nlChoice) {
+    const msg = currentLang === 'it'
+      ? 'Scegli se vuoi ricevere la newsletter — puoi tranquillamente rispondere "No", la registrazione funziona lo stesso'
+      : 'Please choose whether you want the newsletter — you can safely answer "No", registration works anyway';
     if (regErr) { regErr.style.display = ''; regErr.textContent = msg; } else toast(msg, 'error');
     return;
   }
@@ -5338,12 +5875,18 @@ async function doRegister() {
     if (waitNotice) waitNotice.style.display = 'none';
     return;
   }
-  // Consenso newsletter: casella facoltativa e NON pre-spuntata. Se l'utente
-  // non la tocca il consenso è false — ma è comunque un consenso "chiesto e
-  // rifiutato", quindi lo registriamo con data e origine (non resta undefined,
-  // così non gli riproporremo il prompt).
-  const nlConsent = document.getElementById('reg-newsletter-consent')?.checked || false;
-  const newUser = { id: Date.now().toString(), authUid, username: u, email: e, isAdmin: false, joined: new Date().toISOString(), lastLogin: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName, ageConfirmed16: true, ageConfirmedAt: new Date().toISOString(), newsletterConsent: nlConsent, newsletterConsentDate: new Date().toISOString(), newsletterConsentSource: 'registration' };
+  // La scelta è già stata validata sopra: qui è certamente 'yes' o 'no', mai
+  // vuota. Registriamo comunque data e origine anche per il "no" — è un rifiuto
+  // esplicito e consapevole, e va conservato come tale (non resta undefined,
+  // quindi a costui il prompt una-tantum non verrà mai riproposto).
+  const nlConsent = (nlChoice === 'yes');
+  // Lingua da salvare sull'utente (serve per scrivergli nella SUA lingua, es. il
+  // piè di pagina della newsletter). Va calcolata QUI, non presa da currentLang:
+  // qualche riga più sotto la Nazionalità, se scelta, sovrascrive la lingua della
+  // form (v5.599). Salvare currentLang prima di quell'override memorizzerebbe una
+  // lingua che fra un istante non sarà più quella dell'utente.
+  const finalLang = natCode ? (natCode === 'it' ? 'it' : 'en') : currentLang;
+  const newUser = { id: Date.now().toString(), authUid, username: u, email: e, isAdmin: false, joined: new Date().toISOString(), lastLogin: new Date().toISOString(), nationalityCode: natCode, nationalityName: natName, ageConfirmed16: true, ageConfirmedAt: new Date().toISOString(), lang: finalLang, newsletterConsent: nlConsent, newsletterConsentDate: new Date().toISOString(), newsletterConsentSource: 'registration' };
   const saved = await fsSave('users', newUser);
   _cache.users = _cache.users || [];
   _cache.users.push(saved);
@@ -5366,11 +5909,11 @@ async function doRegister() {
   // Ma se la Nazionalità NON è stata scelta non c'è nessun gesto deliberato da
   // far vincere: si tiene la lingua in uso. Prima invece il campo vuoto veniva
   // trattato come "non italiano" e forzava l'inglese — era questo il baco.
-  if (saved.nationalityCode) {
-    setLang(saved.nationalityCode === 'it' ? 'it' : 'en');
+  if (finalLang !== currentLang) {
+    setLang(finalLang);
     applyI18n();
   }
-  logEvent('new_user', 'Nuovo utente registrato: ' + u);
+  logEvent('new_user', 'Nuovo utente registrato: ' + bold(u));
 }
 
 // ============================================================
@@ -5678,7 +6221,7 @@ async function doResetPassword() {
   // Un evento per ogni richiesta (non sappiamo se poi viene davvero
   // completata, ma è comunque un segnale utile: qualcuno ha perso la
   // password — o dice di averla persa)
-  logEvent('reset_pwd', (currentLang === 'it' ? 'Richiesto reset password per: ' : 'Password reset requested for: ') + email);
+  logEvent('reset_pwd', (currentLang === 'it' ? 'Richiesto reset password per: ' : 'Password reset requested for: ') + bold(email));
 
   try {
     const { sendPasswordResetEmail } = window._fbAuth;
@@ -7635,7 +8178,7 @@ async function savePost() {
   closeModal('post-modal');
   renderBlog();
   toast('Post pubblicato! 💬', 'success');
-  logEvent('new_post', 'Nuovo post nel blog: ' + title);
+  logEvent('new_post', 'Nuovo post nel blog di ' + bold(currentUser.username) + ': ' + esc(title));
 }
 
 async function submitComment(postId) {
@@ -8484,12 +9027,84 @@ async function deleteLevel(id) {
 // ============================================================
 //  RISORSE
 // ============================================================
-async function saveEmailCounter() {
-  const val = parseInt(document.getElementById('email-count-edit').value);
-  if (isNaN(val) || val < 0) { toast('Valore non valido', 'error'); return; }
-  await fsSave('email_stats', { id: 'monthly', count: val });
-  toast('Contatore aggiornato!', 'success');
-  renderAdminRisorse();
+// Scrive il contatore del mese corrente. ATTENZIONE: prima scriveva su
+// email_stats/monthly campo "count", mentre TUTTI i lettori leggono
+// email_stats/counter campo months[<anno-mese>]. Due documenti diversi: il
+// pulsante "Correggi contatore" non ha quindi mai avuto alcun effetto — il
+// toast diceva "aggiornato" e il numero a schermo restava identico.
+// L'argomento, quando c'è, è sempre il numero di e-mail INVIATE (è così che lo
+// passa recalcEmailCounterFromLog). Il campo dell'interfaccia invece contiene le
+// e-mail RIMANENTI, per corrispondere al numero che mostra il pannello EmailJS:
+// la conversione avviene qui, al confine, e la logica interna continua a
+// ragionare in "inviate" — l'unità in cui il contatore è memorizzato.
+async function saveEmailCounter(explicitSent) {
+  let val;
+  if (explicitSent !== undefined) {
+    val = explicitSent;
+  } else {
+    const remaining = parseInt(document.getElementById('email-count-edit').value);
+    if (isNaN(remaining) || remaining < 0 || remaining > EMAILJS_MONTHLY_LIMIT) {
+      toast(currentLang === 'it'
+        ? `Inserisci un numero fra 0 e ${EMAILJS_MONTHLY_LIMIT}`
+        : `Enter a number between 0 and ${EMAILJS_MONTHLY_LIMIT}`, 'error');
+      return;
+    }
+    val = EMAILJS_MONTHLY_LIMIT - remaining; // rimanenti → inviate
+  }
+  if (isNaN(val) || val < 0) { toast(currentLang === 'it' ? 'Valore non valido' : 'Invalid value', 'error'); return; }
+  try {
+    const now = new Date();
+    const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    const { doc, getDoc, setDoc } = window._fb;
+    const ref = doc(db, 'email_stats', 'counter');
+    // Qui la lettura è lecita: saveEmailCounter è raggiungibile solo dall'admin,
+    // e l'admin è l'unico che può leggere email_stats.
+    let data = { total: 0, months: {} };
+    const snap = await getDoc(ref);
+    if (snap.exists()) data = snap.data();
+    const prev = (data.months && data.months[monthKey]) || 0;
+    const newTotal = Math.max(0, (data.total || 0) + (val - prev)); // il totale segue la correzione del mese
+    await setDoc(ref, { total: newTotal, months: { ...(data.months || {}), [monthKey]: val } }, { merge: true });
+    await refreshEmailCountWidgets();
+    const remainingNow = EMAILJS_MONTHLY_LIMIT - val;
+    toast(currentLang === 'it'
+      ? `Contatore aggiornato: ${val} inviate, ${remainingNow} rimanenti`
+      : `Counter updated: ${val} sent, ${remainingNow} remaining`, 'success');
+  } catch(e) {
+    console.error('saveEmailCounter', e);
+    toast(currentLang === 'it' ? 'Aggiornamento non riuscito' : 'Update failed', 'error');
+  }
+}
+
+// Ricalcola il contatore del mese contando le e-mail effettivamente registrate
+// in email_log (stato "sent", data nel mese corrente). Utile per rimettere in
+// riga un contatore corrotto senza doverlo contare a mano.
+// LIMITE, dichiarato anche nella conferma: email_log viene sfoltito a 200 voci
+// più recenti. Finché le e-mail del mese sono tutte ancora nel log il conteggio
+// è esatto; se il log fosse già stato tagliato oltre il confine del mese,
+// sottostimerebbe. Meglio comunque di un valore palesemente sbagliato.
+async function recalcEmailCounterFromLog() {
+  const L = currentLang === 'it';
+  const btn = document.getElementById('email-recalc-btn');
+  try {
+    if (btn) { btn.disabled = true; btn.textContent = L ? 'Conteggio…' : 'Counting…'; }
+    const now = new Date();
+    const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+    const logs = await fsGetAll('email_log');
+    const sentThisMonth = logs.filter(e =>
+      e.status === 'sent' && typeof e.date === 'string' && e.date.slice(0, 7) === monthKey
+    ).length;
+    const msg = L
+      ? `Nel log risultano ${sentThisMonth} e-mail inviate in questo mese (${monthKey}).\n\nImpostare il contatore su questo valore?\n\nNota: il log conserva le 200 voci più recenti — se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.`
+      : `The log shows ${sentThisMonth} e-mails sent this month (${monthKey}).\n\nSet the counter to this value?\n\nNote: the log keeps the 200 most recent entries — if any from this month were already trimmed, the count would be an underestimate.`;
+    if (!confirm(msg)) return;
+    await saveEmailCounter(sentThisMonth);
+  } catch(e) {
+    console.error('recalcEmailCounterFromLog', e);
+    toast(L ? 'Ricalcolo non riuscito' : 'Recalculation failed', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = L ? '🔄 Ricalcola dal log' : '🔄 Recalculate from log'; }
+  }
 }
 
 // Legge il conteggio e-mail del mese corrente e aggiorna qualsiasi widget
@@ -8509,15 +9124,18 @@ async function refreshEmailCountWidgets() {
         count = (data.months && data.months[monthKey]) || 0;
       }
     } catch(e) {}
-    const pct = Math.min(Math.round(count / 200 * 100), 100);
+    const pct = Math.min(Math.round(count / EMAILJS_MONTHLY_LIMIT * 100), 100);
+    const remaining = Math.max(0, EMAILJS_MONTHLY_LIMIT - count);
     const color = pct >= 90 ? '#ff4444' : pct >= 70 ? '#ffb400' : 'var(--accent)';
     ['', '-2'].forEach(suffix => {
       const el = document.getElementById('email-count-display' + suffix);
       if (el) el.textContent = count;
+      // Il campo di correzione è in RIMANENTI (come il pannello EmailJS), a
+      // differenza di tutto il resto del riquadro che è in INVIATE.
       const editEl = document.getElementById('email-count-edit' + suffix);
-      if (editEl) editEl.value = count;
+      if (editEl) editEl.value = remaining;
       const label = document.getElementById('email-count-label' + suffix);
-      if (label) label.textContent = count + ' / 200';
+      if (label) label.textContent = count + ' / ' + EMAILJS_MONTHLY_LIMIT;
       const pctEl = document.getElementById('email-count-pct' + suffix);
       if (pctEl) pctEl.textContent = pct + '%';
       const bar = document.getElementById('email-count-bar' + suffix);
@@ -8590,6 +9208,19 @@ async function renderAdminRisorse() {
 // ============================================================
 //  EVENTI
 // ============================================================
+// Le descrizioni degli eventi vengono rese con innerHTML nella tabella admin
+// (renderAdminEventi). Alcune contengono testo scritto dagli utenti — il titolo
+// di un post, per esempio — quindi vanno neutralizzate: senza, un utente potrebbe
+// intitolare un post "<img src=x onerror=...>" e farlo eseguire nel pannello
+// dell'admin. Da qui in avanti l'HTML nelle descrizioni lo mettiamo NOI
+// (il <strong> attorno al nome), e tutto ciò che arriva dall'utente passa da esc().
+function esc(str) {
+  return String(str ?? '').replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+// Nome utente in grassetto: uniforme in tutti i log, come da richiesta di Franco.
+function bold(str) { return '<strong>' + esc(str) + '</strong>'; }
+
 async function logEvent(type, description, extra = {}) {
   const event = {
     type,
@@ -8614,7 +9245,7 @@ function renderAdminEventi() {
     el.innerHTML = '<p style="color:var(--muted);">Nessun evento ancora.</p>';
     return;
   }
-  const typeIcon = { 'new_user': '👤', 'new_post': '📝', 'reset_pwd': '🔑', 'login': '🔓' };
+  const typeIcon = { 'new_user': '👤', 'new_post': '📝', 'reset_pwd': '🔑', 'login': '🔓', 'newsletter_off': '📭' };
   const noBellEvTypes = ['login'];
   el.innerHTML = `<table class="data-table compact"><thead><tr>
     <th>${(currentLang === 'it') ? 'Data' : 'Date'}</th><th>${(currentLang === 'it') ? 'Tipo' : 'Type'}</th><th>${(currentLang === 'it') ? 'Descrizione' : 'Description'}</th><th></th>
@@ -11499,75 +12130,42 @@ async function logEmail(toEmail, subject, source = 'other', body = '', status = 
 }
 
 async function incrementEmailCounter(count) {
+  if (!count || !db || !window._fb) return;
   try {
     const now = new Date();
     const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-    // Get current stats from Firebase
-    const { doc, getDoc, setDoc } = window._fb;
+    const { doc, getDoc, setDoc, increment } = window._fb;
     const ref = doc(db, 'email_stats', 'counter');
-    let data = { total: 0, months: {} };
-    try {
-      const snap = await getDoc(ref);
-      if (snap.exists()) data = snap.data();
-    } catch(e) {}
-    data.total = (data.total || 0) + count;
-    if (!data.months) data.months = {};
-    data.months[monthKey] = (data.months[monthKey] || 0) + count;
-    await setDoc(ref, data);
-    renderEmailCounter(data, monthKey);
+    // INCREMENTO ATOMICO lato server (FieldValue.increment), senza rileggere il
+    // documento. È il punto centrale della correzione: email_stats è SCRIVIBILE
+    // da tutti (serve anche ai non-admin, es. la propria e-mail di benvenuto) ma
+    // LEGGIBILE solo dall'admin. La versione precedente faceva
+    // leggi → somma → riscrivi-tutto: per un utente non-admin la lettura falliva,
+    // l'errore veniva ingoiato da un catch vuoto, e il setDoc finale
+    // SOVRASCRIVEVA il documento reale con { total: 1 }. Ogni registrazione non
+    // incrementava il contatore: lo azzerava. Con increment() non c'è nessuna
+    // lettura da fare, e il valore non può essere sovrascritto.
+    await setDoc(ref, { total: increment(count), months: { [monthKey]: increment(count) } }, { merge: true });
+    // Il riquadro del contatore lo vede solo l'admin — ed è anche l'unico che ha
+    // il permesso di rileggere il documento per aggiornarlo a schermo.
+    if (currentUser?.isAdmin) {
+      try { await refreshEmailCountWidgets(); }
+      catch(e) { console.warn('Contatore e-mail: aggiornamento a schermo non riuscito', e.message); }
+    }
   } catch(e) { console.error('Email counter error', e); }
 }
 
-async function manualFixCounter() {
-  const val = parseInt(document.getElementById('fix-counter-input').value);
-  if (isNaN(val) || val < 0) { toast('Inserisci un numero valido', 'error'); return; }
-  if (!confirm('Impostare il contatore mensile a ' + val + '?')) return;
-  const now = new Date();
-  const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  const { doc, getDoc, setDoc } = window._fb;
-  const ref = doc(db, 'email_stats', 'counter');
-  let data = { total: 0, months: {} };
-  try { const snap = await getDoc(ref); if (snap.exists()) data = snap.data(); } catch(e) {}
-  const diff = val - (data.months?.[monthKey] || 0);
-  data.months[monthKey] = val;
-  data.total = Math.max(0, (data.total || 0) + diff);
-  await setDoc(ref, data);
-  renderEmailCounter(data, monthKey);
-  toast('Contatore aggiornato a ' + val, 'success');
-}
 
-async function fixEmailCounter() {
-  // One-time fix to align counter with EmailJS real count
-  const now = new Date();
-  const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-  const { doc, setDoc } = window._fb;
-  const ref = doc(db, 'email_stats', 'counter');
-  await setDoc(ref, { total: 9, months: { [monthKey]: 9 } });
-  renderEmailCounter({ total: 9, months: { [monthKey]: 9 } }, monthKey);
-  toast('Contatore aggiornato a 9', 'success');
-}
 
+// Alimentava renderEmailCounter(), che scriveva su elementi inesistenti:
+// era quindi un lettore che non produceva alcun effetto visibile. Delega a
+// refreshEmailCountWidgets(), che legge lo stesso documento e aggiorna i widget
+// realmente presenti in pagina. Mantenuta come funzione perché richiamata
+// altrove: rimuoverla avrebbe richiesto di rincorrerne i chiamanti.
 async function loadEmailCounter() {
-  try {
-    const { doc, getDoc } = window._fb;
-    const ref = doc(db, 'email_stats', 'counter');
-    const snap = await getDoc(ref);
-    if (snap.exists()) {
-      const now = new Date();
-      const monthKey = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
-      renderEmailCounter(snap.data(), monthKey);
-    } else {
-      renderEmailCounter({ total: 0, months: {} }, '');
-    }
-  } catch(e) { console.error('Load counter error', e); }
+  await refreshEmailCountWidgets();
 }
 
-function renderEmailCounter(data, monthKey) {
-  const monthEl = document.getElementById('email-count-month');
-  const totalEl = document.getElementById('email-count-total');
-  if (monthEl) monthEl.textContent = (data.months?.[monthKey] || 0) + ' / 200';
-  if (totalEl) totalEl.textContent = data.total || 0;
-}
 
 // ============================================================
 //  AVATAR UPLOAD
