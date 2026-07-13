@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.636"></script>
-<link rel="stylesheet" href="css/style.css?v=5.636">
+<script src="js/email.min.js?v=5.654"></script>
+<link rel="stylesheet" href="css/style.css?v=5.654">
 
 </head>
 <body>
@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.636</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.654</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -375,10 +375,6 @@
               <div class="contact-icon">📧</div>
               <div><h4>E-mail</h4><p><a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);text-decoration:none;">postmaster@figurinesgorbions.it</a></p></div>
             </div>
-            <div class="contact-item">
-              <div class="contact-icon">⚡</div>
-              <div><h4 data-i18n="contact.responseTime">Tempo di risposta medio</h4><p data-i18n="contact.responseDesc">Di solito in poche ore</p></div>
-            </div>
           </div>
         </div>
       </div>
@@ -487,6 +483,7 @@
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Per quanto tempo conserviamo i dati</h3>
         <p>Finché il tuo account resta attivo. Puoi cancellarlo in autonomia in qualsiasi momento dal tuo profilo ("Elimina il mio account"): l'operazione è immediata e cancella account, collezione, "Ciò che cerco" e profilo pubblico. Gli eventuali post/commenti scritti sul blog restano visibili per continuità del contenuto condiviso, ma il tuo nome viene sostituito con "Utente eliminato".</p>
+        <p><strong>Registro di sicurezza.</strong> Teniamo un registro tecnico degli accessi, delle registrazioni, delle richieste di reimpostazione password e delle cancellazioni di account. Serve a controllare che nessuno stia facendo cose strane con gli account altrui, ed è l'unica cosa che <u>sopravvive</u> alla cancellazione dell'account — perché sapere che un account è stato eliminato, e quando, è proprio il motivo per cui il registro esiste. Non sopravvive però al tempo: le righe più vecchie di <strong>6 mesi</strong> vengono cancellate.</p>
         <p><strong>Quando elimini l'account, sparisce tutto.</strong> Non solo il profilo e la collezione: anche i messaggi che ci hai scritto dai Contatti, le segnalazioni sulle figurine e il registro delle e-mail che ti abbiamo inviato — <u>testo compreso</u>. L'unica cosa che resta sono i tuoi post e commenti sul blog, per non lasciare buchi nelle conversazioni altrui: ma il tuo nome viene sostituito con "Utente eliminato".</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">I tuoi diritti</h3>
@@ -586,6 +583,7 @@
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">How long we keep data</h3>
         <p>For as long as your account stays active. You can delete it yourself at any time from your profile ("Delete my account"): the operation is immediate and deletes your account, collection, "What I'm looking for" list and public profile. Any posts/comments written on the blog remain visible for the continuity of shared content, but your name is replaced with "Deleted user".</p>
+        <p><strong>Security log.</strong> We keep a technical log of sign-ins, registrations, password reset requests and account deletions. It exists to check that nobody is doing anything strange with other people's accounts, and it is the one thing that <u>survives</u> account deletion — because knowing that an account was deleted, and when, is precisely why the log exists. It does not survive time, though: entries older than <strong>6 months</strong> are deleted.</p>
         <p><strong>When you delete your account, everything goes.</strong> Not just your profile and collection: also the messages you sent us through the Contact form, the sticker reports, and the log of the e-mails we sent you — <u>text included</u>. The only thing that stays are your blog posts and comments, so as not to leave holes in other people's conversations: but your name is replaced with "Deleted user".</p>
         <p><strong>Messages sent through the Contact form.</strong> If you <u>do not have an account</u> on the site, your message — e-mail address included — is <strong>deleted entirely after 6 months</strong>. This is not a partial anonymisation: the record goes, because clearing the address alone would not be enough (people sign their messages). The period exists so that we can reply to you and find the conversation again if you write back.<br>If you <u>do have an account</u>, messages stay for as long as you keep it: you can see them in your profile, and they disappear when you delete it.</p>
 
@@ -1133,7 +1131,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.636</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.654</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1797,7 +1795,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.636"></script>
+<script src="js/app.js?v=5.654"></script>
 <script>
 /* Rete di sicurezza contro la cache.
    index.html non viene praticamente mai servito dalla cache; app.js e style.css
@@ -1806,7 +1804,7 @@
    "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
    Questo controllo lo trasforma in un messaggio esplicito in console. */
 (function () {
-  var expected = 'v5.636'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.654'; // deve coincidere con JS_VERSION in app.js
   if (typeof JS_VERSION === 'undefined') {
     console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
     return;
