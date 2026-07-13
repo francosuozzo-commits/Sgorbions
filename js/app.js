@@ -1,6 +1,376 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.676 — Su richiesta di Franco: il campo "N. di Figurine" nella form della
+//          serie non e' piu' scritto a mano dall'admin — e' CALCOLATO, e mostra il
+//          conto delle FIGURINE BASE. Stessa etichetta di prima.
+//          Era l'ultimo residuo del giro precedente: dalla v5.674 il badge 📦 della
+//          pagina serie e' calcolato, e s.count non lo leggeva piu' nessuno. Restava
+//          pero' un campo modificabile, che l'admin poteva cambiare senza che
+//          succedesse NULLA — il genere di controllo bugiardo che stiamo togliendo
+//          dal sito da due giorni.
+//          Ora e' readonly come i suoi tre fratelli (variazioni, non ufficiali,
+//          change), che erano gia' calcolati: era l'unico dei quattro scrivibile, e
+//          quindi l'unico che potesse mentire. Bastava importare figurine e
+//          scordarsi di aggiornarlo.
+//          STESSA DEFINIZIONE IN TRE PUNTI: il filtro "Solo figurine set base", il
+//          badge 📦 della pagina serie e questo campo usano ora la stessa condizione
+//          — nessun contrassegno fra Variazione, Variazione non ufficiale e Change.
+//          Non possono piu' divergere.
+//          Tolta anche la riga che riempiva il campo con s.count all'apertura della
+//          form: il calcolo la sovrascriveva subito dopo, quindi il valore vecchio
+//          lampeggiava per un istante — e teneva in vita l'illusione di un campo che
+//          l'admin credeva ancora di controllare.
+//          s.count continua a essere salvato, ma ora contiene il valore calcolato:
+//          e' diventato una copia della verita' invece di una dichiarazione che
+//          poteva contraddirla.
+//          Verificato eseguendo: la form mostra 160 · 96 · 112 · 0.
+// v5.675 — CORREZIONE DI UN MIO ERRORE, introdotto in v5.672/673.
+//          Avevo concluso che "le Change sono varianti del RETRO" e avevo ancorato
+//          i due contatori a section:'retros'. Era SBAGLIATO, e l'ho dedotto
+//          guardando startImportRetro() e generalizzando a sproposito.
+//          La verita': startImportVar() — l'importazione delle VARIAZIONI — ha
+//          sectionType = 'figurines' e isChange = (tipo === 'change'). Crea cioe'
+//          record con section:'figurines' e isChange:true. Le Change fra le
+//          figurine ESISTONO e sono una cosa supportata.
+//          Nella definizione di Franco un Change e' una COPPIA retro + figurina
+//          base: e' quindi una cosa della SERIE, non del retro. I contatori qui
+//          parlano di figurine, e le Change vanno contate fra le figurine.
+//          Le Change presenti nei RETRO sono un'altra cosa e verranno contate a
+//          parte, piu' avanti. Mescolarle qui e' cio' che faceva dire "146" a una
+//          serie che, fra le figurine, di Change non ne ha nessuna — e che ha
+//          mandato Franco a cercare un baco che non c'era.
+//          CORRETTI ENTRAMBI I PUNTI (la riga della pagina serie e la form serie),
+//          perche' avevo sbagliato in due posti:
+//              nChange = figurine.filter(f => f.isChange).length
+//          Etichette rimesse come prima: "🔄 N Change" e "N. Change", senza
+//          "(retro)".
+//          Verificato ESEGUENDO su due insiemi di dati:
+//            - Serie 1 (146 Change nei retro): il badge Change SPARISCE, e il
+//              totale torna 160 + 96 + 112 = 368
+//            - controprova, serie con 20 Change fra le figurine: le mostra, e le
+//              include nel totale (sono figurine). Non e' codice morto — che era
+//              esattamente l'obiezione, sbagliata, con cui mi ero opposto a Franco.
+//          LEZIONE: avevo costruito una teoria ("Change = retro") su un solo punto
+//          del codice, e poi l'ho difesa contro chi il dominio lo conosce. Il
+//          codice diceva anche altro, in una funzione che non avevo aperto.
+// v5.674 — Su richiesta di Franco: il badge "📦 N figurine (set base)" non e' piu'
+//          LETTO dal campo s.count della serie — ora e' CALCOLATO.
+//          s.count e' un campo che l'admin scrive a mano: poteva dire qualunque
+//          cosa. Bastava importare figurine e dimenticarsi di aggiornarlo, e il
+//          badge avrebbe mentito per sempre, senza che nulla lo segnalasse.
+//          LA DEFINIZIONE NON E' INVENTATA: e' LA STESSA del filtro "Solo figurine
+//          set base" — nessun contrassegno fra Variazione, Variazione non
+//          ufficiale e Change. Cosi' badge e filtro non potranno mai raccontare
+//          due storie diverse: se il badge dice 160, quel filtro ne mostrera' 160.
+//          Ora TUTTI E CINQUE i numeri della riga sono contati dall'Inventario, e
+//          il totale torna per costruzione: 160 + 96 + 112 = 368.
+//
+//          BACO CHE HO SCRITTO E POI TROVATO, e vale la pena annotarlo: avevo
+//          messo il badge in cima alla riga, cioe' PRIMA della dichiarazione di
+//          nBase. Un const usato prima di essere dichiarato: la pagina della serie
+//          sarebbe ESPLOSA all'apertura. `node --check` non lo vede — e' un errore
+//          di esecuzione, non di sintassi, e passare il controllo mi aveva dato
+//          l'impressione di aver finito. Risolto con unshift() dopo le
+//          dichiarazioni: il set base si legge per primo ma si calcola per ultimo.
+//          Verificato ESEGUENDO il blocco su dati finti, con s.count = 9999 per
+//          dimostrare che quel campo non viene piu' letto. Il badge ha detto 160.
+//
+//          RESTA APERTO: il campo "N. di Figurine" nella form della serie e' ora
+//          scritto ma non letto da nessuno. Va reso readonly e calcolato, come gia'
+//          sono i suoi tre fratelli (variazioni, non ufficiali, change) — altrimenti
+//          e' un campo che si puo' modificare e che non fa niente.
+// v5.673 — Franco mi ha corretto: la riga dei contatori nella pagina della serie
+//          ha QUATTRO campi, non tre, e non e' quella della v5.672 — e' un'ALTRA
+//          funzione (i badge nella hero: 📦 set base, 🎨 variazioni, 🎨 variazioni
+//          non ufficiali, 🔄 Change). Lo stesso errore, scritto due volte in due
+//          punti diversi. Ne ho corretto uno solo e ho creduto di aver finito.
+//          MEDESIMA CAUSA: si contava su TUTTA la serie, senza filtrare la
+//          sezione, quindi il contatore "Change" pescava i Change dei RETRO e li
+//          mostrava in una riga che parla di FIGURINE — 146 su una serie che, fra
+//          le figurine, non ne ha nessuna.
+//          Ora ogni conteggio dichiara la sua sezione.
+//          SULLE CHANGE ho scelto di NON azzerarle, ma di dire di cosa parlano:
+//          "🔄 146 Change (retro)". Il numero era vero: taceva soltanto su quale
+//          sezione stesse contando. Azzerarlo avrebbe significato scrivere un
+//          filtro (section==='figurines' && isChange) che e' SEMPRE zero per
+//          costruzione — codice morto — e far sparire dalla pagina il fatto che la
+//          serie ha 146 Change nei Retro. La riga mostra gia' "figurine album",
+//          che e' un'altra sezione: dire la sezione e' la strada che quella riga
+//          gia' percorreva.
+//          AGGIUNTO IL TOTALE, in fondo alla riga, in grassetto:
+//              🧮 368 figurine in totale     (160 + 96 + 112)
+//          CONTATO, non sommato: e' la lunghezza dell'insieme delle figurine in
+//          Inventario — lo STESSO da cui nasce il denominatore di "Nella mia
+//          lista, per questa serie: 6 / 368". Coincide quindi per costruzione, non
+//          per fortuna. E se un giorno divergesse da 160+96+112, vorrebbe dire che
+//          il "set base" DICHIARATO sulla serie (s.count, un campo scritto a mano,
+//          non calcolato) non corrisponde a cio' che c'e' davvero — ed e' un
+//          problema che si vuole VEDERE, non nascondere dentro una somma che torna
+//          sempre.
+//          Le Change restano fuori dal totale: non sono figurine.
+// v5.672 — Il "N. Change" della form serie diceva 146 su una serie che, fra le
+//          figurine, di Change non ne ha nessuna. Non era un errore di calcolo:
+//          le CHANGE sono varianti del RETRO, non del fronte. Nascono con
+//          section:'retros' e il selettore Change esiste solo nella sezione Retro.
+//          Quei 146 esistono davvero — stanno nei Retro.
+//          MA IL CAMPO ERA MAL FATTO, e ha ingannato Franco:
+//          1. updateSeriesVariationCounts() contava su TUTTA la serie, senza
+//             filtrare per sezione. Funzionava per caso, perche' ogni contrassegno
+//             vive di fatto nella sua sezione; ma sarebbe bastato che una figurina
+//             finisse marcata isChange per errore perche' venisse conteggiata li'
+//             dentro in silenzio. Ora ogni conteggio DICHIARA la sua sezione:
+//             variazioni e variazioni non ufficiali → 'figurines'
+//             change                                → 'retros'
+//          2. L'etichetta diceva solo "N. Change", incolonnata sotto due numeri
+//             che parlano di figurine. Tre numeri in fila, di cui due su una
+//             sezione e il terzo su un'altra, senza che nulla lo dicesse. Ora dice
+//             "N. Change (retro)" / "No. of Change (retro)".
+//          Franco aveva ragione a fidarsi dell'etichetta: era l'etichetta a tacere.
+//          NOTA DI METODO: ho scritto le due traduzioni assegnandole per ORDINE di
+//          comparsa nel file, dando per scontato che l'italiano venisse prima. E'
+//          l'inglese a venire prima. Le due etichette sono finite ognuna nel
+//          dizionario sbagliato, e me ne sono accorto solo perche' sono andato a
+//          ricontrollare. L'ordine dei dizionari non e' un'informazione: si verifica.
+// v5.671 — Franco: "Nella mia lista, per questa serie: 6 / 368" — il numero dopo
+//          lo slash deve essere il totale della SERIE, come dice l'etichetta, non
+//          il risultato del filtro. Ha ragione: il contatore usava allItems, cioe'
+//          l'insieme FILTRATO. Bastava filtrare per variazioni e il denominatore
+//          crollava da 368 a 3 — l'etichetta prometteva una cosa e il numero ne
+//          diceva un'altra.
+//          E c'era di peggio, trovato correggendo: LO STESSO NUMERO era calcolato
+//          in DUE punti, in due modi diversi —
+//            renderItems()  → insieme filtrato
+//            toggleOwned()  → sezione intera
+//          quindi il valore SALTAVA: filtravi e leggevi 6/3, poi spuntavi una
+//          figurina e diventava 6/368. Due calcoli per un solo campo, ognuno
+//          convinto di avere ragione.
+//          Corretti insieme il contatore, la percentuale della barra e il
+//          messaggio "🎉 Hai tutte le figurine!" — anche quello guardava
+//          l'insieme filtrato: bastava filtrare per variazioni e possederle tutte
+//          e tre per vedersi annunciare una serie completa che completa non era.
+//          Un complimento falso e' peggio di nessun complimento.
+//          Ora l'avanzamento resta FERMO mentre ci si muove fra i filtri — che e'
+//          il senso stesso di una barra di avanzamento — e resta visibile anche
+//          quando una ricerca non trova nulla: non e' sparita la serie, e' vuoto
+//          il filtro.
+// v5.670 — Franco ha chiesto di riscrivere i due tooltip. Andando a verificare
+//          che la frase fosse VERA, e' saltato fuori un baco serio.
+//          setAllOwned() prendeva TUTTA la sezione:
+//              getData('figurines').filter(f => f.seriesId === ... && f.section === ...)
+//          ignorando completamente la ricerca digitata, il filtro tipo (base /
+//          variazione / change), il filtro "senza variazione ufficiale" e il
+//          filtro "da vendere". La griglia invece mostra solo il sottoinsieme
+//          filtrato.
+//          QUINDI: filtri per "variazioni", vedi 12 figurine, premi "Rimuovi tutti
+//          gli oggetti visualizzati" — e il codice ti svuota dalla lista l'INTERA
+//          SEZIONE. Centinaia di oggetti invece di dodici, dopo una conferma che
+//          aveva promesso altro. Distruttivo, silenzioso, e senza modo di
+//          accorgersene se non ricontando la propria lista.
+//          Le etichette che avevo scritto in v5.662 ("tutti gli oggetti
+//          visualizzati") erano dunque FALSE anche loro: le avevo scritte
+//          fidandomi del nome della funzione invece di leggerla. Stesso errore
+//          della v5.662, commesso mentre la correggevo.
+//          CORREZIONE: setAllOwned usa ora getCurrentlyFilteredItems(), la
+//          funzione condivisa che gia' usavano renderItems e altri CINQUE punti —
+//          setAllOwned era l'unico rimasto fuori. Restituisce gli elementi
+//          filtrati di TUTTE le pagine (l'impaginazione avviene dopo), che e'
+//          esattamente cio' che i tooltip di Franco promettono.
+//          Tooltip nuovi (parole di Franco), IT + EN.
+//          La conferma ora dice QUANTI oggetti verranno toccati: "Rimuovere dalla
+//          tua lista 146 oggetti?". Un "tutti quelli visualizzati?" e' vero ma
+//          astratto — si vedono 12 righe e ce ne possono essere 300 nelle pagine
+//          dopo. Il numero rende concreto cio' che si sta per fare, e in rimozione
+//          e' un'azione che butta via il lavoro di mesi.
+// v5.669 — Su richiesta di Franco: anche l'etichetta "Modalita' visualizzazione:"
+//          passa da var(--muted) a var(--text), come la frase dei filtri in
+//          v5.668. Stesso bianco del resto del sito, non un #ffffff puro.
+//          Verificato che sia l'unica etichetta in quella riga di controlli:
+//          altrimenti sarebbe rimasta una vicina grigia a fare da contrasto
+//          stonato, che e' il modo tipico in cui questi ritocchi peggiorano le
+//          cose invece di migliorarle.
+//          Modificato solo index.html.
+// v5.668 — Su richiesta di Franco: la frase "Affina la tua ricerca coi seguenti
+//          filtri:" passa da var(--muted) a var(--text), cioe' al bianco.
+//          Usato var(--text) (#f0eaff) e non un #ffffff puro: e' il bianco di
+//          TUTTO il resto del testo del sito. Un bianco pieno l'avrebbe resa piu'
+//          luminosa del titolo che le sta sopra — piu' evidente, ma stonata.
+//          Il pulsantino "?" della legenda ha uno stile proprio e resta discreto:
+//          e' un aiuto, non deve competere con la frase.
+//          Modificato solo index.html.
+// v5.667 — Su richiesta di Franco: la zona dei filtri e' ora racchiusa in un
+//          riquadro (items-filter-box), con lo stesso stile dei riquadri gia'
+//          presenti sulla pagina — sfondo var(--card), bordo fine var(--border2),
+//          angoli var(--radius-lg). Contiene la riga introduttiva ("Affina la tua
+//          ricerca coi seguenti filtri" + il pulsante della legenda) e i pulsanti
+//          filtro. Ricerca e conteggio restano fuori: non sono filtri.
+//          IL DETTAGLIO CHE AVREBBE ROTTO L'IMPAGINAZIONE: i due blocchi usavano
+//          un trucco di centratura — width:min(1800px,96vw) + margin-left:50% +
+//          transform:translateX(-50%) — per uscire dalla larghezza del contenitore
+//          e allargarsi a tutta la pagina. Racchiuderli in un riquadro senza
+//          toccarlo avrebbe fatto spostare i due blocchi UNA SECONDA VOLTA,
+//          stavolta rispetto al riquadro: sarebbero usciti dal loro stesso bordo.
+//          Il trucco e' quindi salito SUL riquadro, e i due blocchi dentro ora
+//          seguono la larghezza del genitore, come e' giusto che sia.
+//          Nessun rischio di riquadro vuoto: dalla v5.484 renderItemTypeFilters()
+//          mostra sempre almeno "Tutte" in ogni sezione, quindi il contenuto c'e'
+//          sempre. Verificato che i <div> della pagina restino bilanciati.
+// v5.666 — Su richiesta di Franco: eliminato l'avviso "Sito ancora in
+//          allestimento: le foto delle figurine saranno inserite prossimamente."
+//          Non era una frase fissa: era un BANNER CONDIZIONATO che compariva da
+//          solo quando meno del 50% delle figurine della sezione aveva una foto.
+//          Lo stesso identico congegno era ripetuto in TRE punti (renderItems,
+//          renderSection e il gestore del cambio lingua) — tre copie della stessa
+//          logica, che e' anche il motivo per cui bastava mancasse una foto in una
+//          serie qualsiasi perche' l'avviso ricomparisse.
+//          Rimosso l'intero meccanismo, non solo il testo: i tre blocchi JS, il
+//          contenitore <div id="wip-photos-banner"> in index.html e la sua
+//          <span> interna. Lasciare il contenitore vuoto avrebbe significato
+//          tenersi in casa un elemento morto che nessuno, fra un anno, avrebbe
+//          saputo perche' c'era.
+//          Verificato: zero riferimenti residui in app.js, index.html e style.css.
+//          NOTA: resta l'altro banner, quello generale "Sito in costruzione"
+//          (chiave banner.wip). Sono due cose diverse — questa riguardava solo le
+//          FOTO delle figurine. Se anche quello va tolto, basta dirlo.
+// v5.665 — Su scelta di Franco (opzione A): le emoji 📥/📤 sui due pulsanti sono
+//          sostituite da ICONE DISEGNATE (SVG) — una freccia che entra in una
+//          scatola aperta e una che ne esce.
+//          Perche' le emoji non andavano: 📥 e 📤 sono "vassoi da ufficio", a 14
+//          pixel diventano un rettangolino indistinguibile (Franco ci ha visto un
+//          bidone), e soprattutto CAMBIANO ASPETTO da un sistema all'altro —
+//          quello che vede Franco su Windows non e' quello che vede un utente su
+//          iPhone. Un'icona disegnata e' nitida a ogni dimensione, identica
+//          ovunque, e la controlliamo del tutto.
+//          Le icone usano stroke="currentColor": prendono il colore dal pulsante,
+//          quindi resteranno coerenti anche se un domani il verde cambia.
+//          DETTAGLIO CHE AVREBBE ROTTO TUTTO: i pulsanti usano data-i18n, che
+//          scrive con textContent — al primo cambio di lingua l'SVG sarebbe
+//          SPARITO, sostituito da testo semplice. Il testo e' quindi stato
+//          spostato in uno <span data-i18n>, e l'icona vive fuori: la traduzione
+//          tocca solo lo span. Il pulsante e' inline-flex, cosi' icona e testo si
+//          allineano al centro.
+//          Emoji tolte anche dalle stringhe del dizionario e dal messaggino di
+//          esito: l'icona ora sta nel markup, non nel testo. Un'icona dentro una
+//          stringa traducibile e' un errore concettuale — non e' linguaggio.
+// v5.664 — Su richiesta di Franco, i badge sulle figurine cambiano colore:
+//              variazione ufficiale      → bianco   (#ffffff)
+//              variazione non ufficiale  → azzurro  (#7fd4ff)
+//              Change                    → rosa     (#ff9ecb)
+//          Erano tutti e tre verde lime, cioe' var(--accent) — il colore dei
+//          PULSANTI. Franco ha ragione, e la ragione e' piu' profonda della
+//          semplice estetica: in un'interfaccia il colore e' una promessa. Il
+//          verde lime, qui, significa "questo si clicca". Un'etichetta puramente
+//          informativa che ne indossa il colore invita a cliccarla — e sotto non
+//          c'e' niente. Ora nessuna etichetta usa piu' il colore delle azioni.
+//          Il vantaggio in piu': tre colori distinti rendono il tipo
+//          riconoscibile a colpo d'occhio, senza nemmeno leggere il badge. Con
+//          l'etichetta unica di prima, e con il colore unico, bisognava leggere.
+//          Contrasto verificato: il testo scuro (#0e0a1a) sta su tutti e tre i
+//          fondi con rapporti fra 10:1 e 19:1, ben oltre la soglia AA (4.5:1).
+//          Sono tutti fondi chiari, quindi il colore del testo non cambia.
+//          Modificato anche style.css.
+// v5.663 — Su richiesta di Franco: il badge verde sulle figurine variazione non
+//          dice piu' un generico "Variazione", ma distingue le due specie —
+//          e su DUE RIGHE:
+//              Variazione            Variazione
+//              ufficiale             non ufficiale
+//          Accorpare le due in un'unica etichetta nascondeva proprio la sola
+//          informazione che aveva senso leggere: QUALE delle due fosse. Il dato
+//          c'era gia' nel record (isVariation / isUnofficialVariation), non veniva
+//          mostrato.
+//          ORDINE DELLE PAROLE PER LINGUA, non traduzione riga per riga:
+//              IT: "Variazione / ufficiale"   (aggettivo dopo)
+//              EN: "Official / variation"     (aggettivo prima)
+//          Tradurre meccanicamente riga per riga avrebbe prodotto
+//          "Variation / official", che in inglese non si dice. E' il tipo di
+//          errore che rivela subito una traduzione fatta a pezzi.
+//          CSS: il badge aveva border-radius 20px, pensato per una riga sola. Su
+//          due righe quel raggio lo trasformava in un OVALE. Portato a 10px, con
+//          interlinea compatta e testo centrato.
+//          Il badge "Change" resta su una riga: e' gia' una parola sola.
+//          Modificato anche style.css.
+// v5.662 — Su richiesta di Franco, i due pulsanti in cima alla scheda di una
+//          serie ora dicono ESATTAMENTE cosa fanno:
+//            📥 Aggiungi tutti gli oggetti visualizzati alla mia lista
+//            📤 Rimuovi tutti gli oggetti visualizzati dalla mia lista
+//          Icone nuove: freccia che ENTRA in un contenitore / freccia che ESCE.
+//          Prima erano ✅ e ❌, che dicono "sì/no", non "dentro/fuori".
+//          IL PROBLEMA VERO era il secondo pulsante: si chiamava "❌ Svuota la
+//          mia lista" e il suo tooltip diceva addirittura "Svuota completamente
+//          la tua lista". Ma setAllOwned() opera SOLO sulla sezione corrente
+//          della serie corrente. Prometteva quindi un'azione DISTRUTTIVA molto
+//          piu' ampia di quella che compiva.
+//          Franco ci e' inciampato di persona: ha svuotato "la lista" dell'admin,
+//          ha lanciato il ricalcolo del punteggio, e vedendolo invariato ha
+//          pensato a un baco nel ricalcolo. Il ricalcolo era corretto: era il
+//          pulsante a mentire. E se ci e' cascato lui, che il codice lo conosce,
+//          un utente qualunque non ha speranze.
+//          Corretti anche: il testo della conferma (diceva "tutti gli oggetti" e
+//          "svuotare la tua lista"), i due tooltip (resi simmetrici e precisi:
+//          "solo gli oggetti attualmente visualizzati: le altre sezioni e le
+//          altre serie non vengono toccate"), il messaggino di esito, e il testo
+//          di ripiego cablato in index.html.
+//          Tutto in IT ed EN.
+//          NOTA A ME STESSO: in v5.661 ho toccato il pulsante "Aggiungi" per la
+//          finestra dei punti e NON HO GUARDATO il suo gemello, che diceva una
+//          cosa falsa a due centimetri di distanza. Quando si tocca un pulsante,
+//          si guarda anche quello accanto.
+// v5.661 — Su richiesta di Franco: dopo "Aggiungi tutto nella mia lista" compare
+//          una finestra che dice quanti punti sono stati guadagnati e a quanto
+//          e' arrivato il punteggio complessivo della lista.
+//          I PUNTI NUOVI si contano solo sugli oggetti che l'utente NON aveva
+//          gia': si fotografa la lista PRIMA dell'aggiunta (giaAveva) e si
+//          sommano solo i punti dei nuovi arrivati. Senza questa distinzione, chi
+//          aveva gia' mezza serie si sarebbe visto accreditare anche quella meta'
+//          — un complimento per qualcosa che aveva fatto mesi prima.
+//          IL TOTALE invece si ricalcola su TUTTA la lista, non solo sulla serie
+//          corrente: e' il punteggio che finisce in classifica.
+//          NON si mostra se i punti nuovi sono ZERO (l'utente aveva gia' tutto):
+//          "Complimenti, hai aggiunto 0 punti" sarebbe una presa in giro. In quel
+//          caso resta il messaggino "✅ Tutti aggiunti!" di sempre. Non si mostra
+//          nemmeno svuotando la lista, dove non c'e' nulla da festeggiare.
+//          TRADUZIONE, come raccomandato: testo IT ed EN, chiavi modal.scoreBoost
+//          in entrambi i dizionari, e singolare/plurale gestiti a mano ("1 punto"
+//          / "2 punti", "1 point" / "2 points"). Scrivere "1 punti" e' il genere
+//          di dettaglio che fa sembrare tradotto male tutto il resto.
+//          I numeri usano il separatore delle migliaia della lingua in uso (1.275
+//          in italiano, 1,275 in inglese): un punteggio a quattro cifre scritto di
+//          fila si legge male.
+// v5.660 — Su richiesta di Franco: nella sezione Contatti, icona, etichetta e
+//          indirizzo stanno ora tutti sulla STESSA RIGA ("📧 E-mail:
+//          postmaster@figurinesgorbions.it").
+//          Perche' prima si incolonnavano: etichetta e indirizzo erano annidati
+//          in un <div> a parte, quindi il flex del contenitore li vedeva come un
+//          elemento SOLO — e dentro quel div, <h4> e <p> essendo elementi di
+//          blocco andavano uno sotto l'altro. Non bastava quindi toccare il CSS:
+//          andava tolto il div che li teneva insieme. Ora sono tre figli diretti
+//          e il flex li allinea in orizzontale.
+//          Azzerati i margini di h4 e p (avevano margin-bottom, pensato per
+//          l'incolonnamento) e allineamento sulla linea di base, cosi' l'etichetta
+//          e l'indirizzo appoggiano sulla stessa base pur avendo corpi diversi.
+//          Aggiunti i due punti dopo "E-mail": senza, etichetta e valore si
+//          leggevano appiccicati ("E-mail postmaster@...").
+//          La classe .contact-item e' usata solo qui: nessun effetto altrove.
+//          Modificato anche style.css, che non si toccava da parecchie versioni.
+// v5.659 — Su decisione di Franco: SEGNALAZIONI cancellate dopo 6 mesi
+//          (purgeOldSegnalazioni). Era l'ULTIMA raccolta senza un termine, e con
+//          questa il punto 4 della lista privacy e' chiuso: contatti, e-mail,
+//          eventi e segnalazioni hanno tutti una scadenza dichiarata.
+//          Sparivano gia' con la cancellazione dell'account o a mano dal
+//          pannello, ma di un utente che resta iscritto per anni restavano li'
+//          per sempre, con nome utente e commento.
+//          UNA DIFFERENZA DALLE ALTRE TRE, che vale la pena ricordare: una
+//          segnalazione non e' solo un dato personale, e' un ERRORE
+//          DELL'INVENTARIO che qualcuno ci ha indicato. Se dopo sei mesi non e'
+//          stato corretto, cancellandola si perde l'informazione — e l'errore
+//          resta nel catalogo senza che nessuno lo ricordi piu'. La scadenza qui
+//          e' anche una scadenza sul lavoro dell'admin.
+//          Per questo, se fra le segnalazioni cancellate ce ne sono di NON LETTE,
+//          la console lo dice con un avviso esplicito: erano errori mai
+//          esaminati, ed e' bene accorgersene.
+//          Come le altre: gira all'apertura del pannello admin (il sito e'
+//          statico, non c'e' un processo notturno), a tetto di 40 per volta.
+//          Dichiarata nell'informativa (IT + EN).
 // v5.658 — Su richiesta di Franco: nella tabella delle segnalazioni compare ora
 //          anche l'E-MAIL dell'utente, in una colonna sua, come gia' si fa
 //          altrove. Il record della segnalazione non la contiene (ha solo userId
@@ -5546,7 +5916,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.658';
+const JS_VERSION = 'v5.676';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -6245,7 +6615,7 @@ const i18n = {
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
-'modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go!','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
+'modal.scoreBoost.title':'Congratulations!','modal.scoreBoost.ok':'Great!','modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go!','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
 'admin.email.fix':'E-mails remaining (as on EmailJS):','admin.email.fix.hint':'Enter the number you read on the EmailJS dashboard, i.e. how many e-mails you have left. The panel above still shows the ones already sent.','admin.save':'Save','newsletter.settingsTitle':'⚙️ Email Settings','newsletter.replyToLabel':'Reply-To address','newsletter.replyToHint':'When you reply to a message, the email will go to this address',
@@ -6261,7 +6631,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'✅ Add everything to my list','catalog.havenone':'❌ Clear my list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add all displayed items to my list','catalog.havenone':'Remove all displayed items from my list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -6304,12 +6674,12 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','items.filterIntro':'Refine your search with these filters:','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: front variant intentionally made by the manufacturer','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Add all items shown in the grid (or table view) to your list','catalog.havenone.hint':'Completely empty your list',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','items.filterIntro':'Refine your search with these filters:','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: front variant intentionally made by the manufacturer','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list all the items displayed, including those on the following pages','catalog.havenone.hint':'Removes from your list all the items displayed, including those on the following pages',
 'profile.title':'My Profile','profile.owned':'In My List','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -6338,7 +6708,7 @@ const i18n = {
 'nav.onlineSince':'Online dal 21.06.2026',
 'profile.changeNat':'✏️ Cambia nazionalità','profile.setNat':'✏️ Imposta nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','profile.changeUsername':'✏️ Cambia nome utente','profile.changeUsername.title':'✏️ Cambia nome utente','profile.changeUsername.hint':'Il nome utente è il nome pubblico visibile ad altri utenti (es. nella Classifica).<br><br>Usare solo lettere, numeri e underscore, massimo 20 caratteri.','profile.changeUsername.save':'Salva','profile.changeUsername.welcomeIntro':'Ti abbiamo assegnato questo nome utente in automatico. Vuoi personalizzarlo? Puoi sempre cambiarlo in seguito dal tuo profilo.','profile.deleteAccount':'🗑️ Elimina il mio account','profile.statsTitle':'I tuoi numeri Sgorbions','profile.myMessages.title':'I miei messaggi con lo staff',
 'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua "Mia lista" e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua lista "Ciò che cerco"','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
-'modal.accountDeleted.title':'Account eliminato','modal.accountDeleted.desc':'Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via!','modal.accountDeleted.close':'Chiudi',
+'modal.scoreBoost.title':'Complimenti!','modal.scoreBoost.ok':'Perfetto!','modal.accountDeleted.title':'Account eliminato','modal.accountDeleted.desc':'Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via!','modal.accountDeleted.close':'Chiudi',
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'E-mail inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 e-mail/mese (si azzera il 1° di ogni mese).',
@@ -6384,7 +6754,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'✅ Aggiungi tutto nella mia lista','catalog.havenone':'❌ Svuota la mia lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi tutti gli oggetti visualizzati alla mia lista','catalog.havenone':'Rimuovi tutti gli oggetti visualizzati dalla mia lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Torna all\'Inventario','detail.owned':'Nella mia lista, per questa serie:','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -6398,7 +6768,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario di figurinesgorbions.it.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>• oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>• figurine presenti nella tua lista (serie non complete)<br>• figurine delle tue serie complete','wantlist.pageTitle':'Lista figurine (e non solo...)','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella mia lista</i>.','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la mia lista di figurine (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta la mia lista di figurine (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella mia lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','items.filterIntro':'Affina la tua ricerca coi seguenti filtri:','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante di fronte voluto dal produttore','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La mia lista','catalog.haveall.hint':'Aggiungi tutti gli oggetti mostrati in griglia (o nella vista tabellare) alla tua lista','catalog.havenone.hint':'Svuota completamente la tua lista',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','items.filterIntro':'Affina la tua ricerca coi seguenti filtri:','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante di fronte voluto dal produttore','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La mia lista','catalog.haveall.hint':'Inserisce nella tua lista tutti gli elementi visualizzati, considerando anche le pagine successive','catalog.havenone.hint':'Rimuove dalla tua lista tutti gli elementi visualizzati, considerando anche le pagine successive',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -6638,6 +7008,7 @@ async function _loadAdminOnlyData() {
   // rallentare l'apertura del pannello.
   purgeOldContactMessages();
   purgeOldEventi();
+  purgeOldSegnalazioni();
 }
 
 async function doLogin() {
@@ -7461,12 +7832,31 @@ updateNavUser();
 // contando le figurine della serie con i relativi flag a true.
 function updateSeriesVariationCounts(seriesId) {
   const figs = seriesId ? getData('figurines', []).filter(f => f.seriesId === seriesId) : [];
-  const nVar = figs.filter(f => f.isVariation).length;
-  const nUnoff = figs.filter(f => f.isUnofficialVariation).length;
-  const nChg = figs.filter(f => f.isChange).length;
+  // Ogni conteggio dichiara la SEZIONE in cui il suo tipo vive. Prima nessuno lo
+  // faceva: si contava su tutta la serie, mescolando Figurine, Retro, Album e
+  // Altri oggetti. Funzionava per caso — ogni contrassegno vive di fatto nella
+  // sua sezione — ma bastava che una figurina finisse marcata isChange per errore
+  // e sarebbe stata conteggiata li' dentro senza che nessuno se ne accorgesse.
+  // Le CHANGE sono varianti del RETRO, non del fronte: nascono con
+  // section:'retros' e il selettore Change esiste solo nella sezione Retro.
+  // E' l'equivoco in cui e' caduto Franco, leggendo "146 Change" in una serie che
+  // di Change (fra le figurine) non ne ha nessuna. Aveva ragione a fidarsi
+  // dell'etichetta: era l'etichetta a tacere.
+  // "N. di Figurine" era l'UNICO dei quattro contatori scritto a mano dall'admin, e
+  // per questo l'unico che poteva mentire: bastava importare figurine e scordarsi
+  // di aggiornarlo. Ora e' calcolato come gli altri tre — e con la STESSA
+  // definizione del filtro "Solo figurine set base" e del badge 📦 della pagina
+  // serie: nessun contrassegno fra Variazione, Variazione non ufficiale e Change.
+  // Tre punti, una sola definizione: non possono piu' divergere.
+  const nBase  = figs.filter(f => f.section === 'figurines' && !f.isVariation && !f.isUnofficialVariation && !f.isChange).length;
+  const nVar   = figs.filter(f => f.section === 'figurines' && f.isVariation).length;
+  const nUnoff = figs.filter(f => f.section === 'figurines' && f.isUnofficialVariation).length;
+  const nChg   = figs.filter(f => f.section === 'figurines' && f.isChange).length;
+  const elBase = document.getElementById('series-count-input');
   const elVar = document.getElementById('series-count-variations-input');
   const elUnoff = document.getElementById('series-count-unofficial-variations-input');
   const elChg = document.getElementById('series-count-change-input');
+  if (elBase) elBase.value = nBase;
   if (elVar) elVar.value = nVar;
   if (elUnoff) elUnoff.value = nUnoff;
   if (elChg) elChg.value = nChg;
@@ -7540,7 +7930,10 @@ function openAddSeriesModal(seriesId) {
     if (s) {
       document.getElementById('series-name-input').value = s.name;
       document.getElementById('series-year-input').value = s.year;
-      document.getElementById('series-count-input').value = s.count;
+      // (series-count-input NON si riempie piu' da s.count: e' calcolato piu' sotto
+      //  da updateSeriesVariationCounts. Scrivere qui il valore vecchio significava
+      //  mostrarlo per un istante prima di sovrascriverlo — e tenere in vita un campo
+      //  che l'admin credeva ancora di controllare.)
       document.getElementById('series-first-number-input').value = s.firstNumber || '';
       document.getElementById('series-last-number-input').value = s.lastNumber || '';
       document.getElementById('series-album-count-input').value = s.albumCount || '';
@@ -7967,16 +8360,54 @@ function openSeriesDetail(seriesId) {
   const metaEl = document.getElementById('detail-meta');
   if (metaEl) {
     const meta = [];
-    if (s.count) meta.push(`<span>📦 ${s.count} ${currentLang === 'it' ? 'figurine (set base)' : 'stickers (base set)'}</span>`);
     if (s.albumCount) meta.push(`<span>📖 ${s.albumCount} ${currentLang === 'it' ? 'figurine album' : 'album stickers'}</span>`);
-    // Conteggi calcolati dinamicamente dalle figurine della serie
+    // Conteggi calcolati dalle figurine della serie.
+    // OGNUNO DICHIARA LA SUA SEZIONE. Prima nessuno lo faceva: si contava su tutta
+    // la serie, mescolando Figurine, Retro, Album e Altri oggetti. Cosi' il
+    // contatore "Change" pescava i Change dei RETRO e li mostrava in una riga che
+    // parla di FIGURINE — 146 su una serie che, fra le figurine, non ne ha nessuna.
+    // (Stesso errore corretto in v5.672 sulla form serie: era scritto due volte.)
     const seriesFigs = getData('figurines', []).filter(f => f.seriesId === s.id);
-    const nVariation = seriesFigs.filter(f => f.isVariation).length;
-    const nUnofficialVariation = seriesFigs.filter(f => f.isUnofficialVariation).length;
-    const nChange = seriesFigs.filter(f => f.isChange).length;
+    const figurine = seriesFigs.filter(f => f.section === 'figurines');
+    const nVariation = figurine.filter(f => f.isVariation).length;
+    const nUnofficialVariation = figurine.filter(f => f.isUnofficialVariation).length;
+    // Le Change contate QUI sono quelle delle FIGURINE. Esistono davvero:
+    // startImportVar() crea record con section:'figurines' e isChange:true quando
+    // la colonna "Tipo" dice "change". Un Change, nella definizione di Franco, e'
+    // una coppia retro + figurina base — e' quindi una cosa della serie, non del
+    // retro, e va contata fra le figurine.
+    // (Le Change presenti nei RETRO sono un'altra cosa e verranno contate a parte,
+    // piu' avanti. Mescolarle qui e' l'errore che faceva dire "146" a una serie che
+    // di Change, fra le figurine, non ne ha nessuna.)
+    const nChange = figurine.filter(f => f.isChange).length;
+    // Totale delle figurine EFFETTIVAMENTE in Inventario: e' lo stesso insieme da
+    // cui nasce il denominatore di "Nella mia lista, per questa serie: 6 / 368".
+    // Contato, non sommato: se un giorno divergesse da 160+96+112 vorrebbe dire che
+    // il "set base" dichiarato sulla serie non corrisponde a cio' che c'e' davvero,
+    // e quello e' un problema che si vuole VEDERE, non nascondere dentro una somma.
+    // SET BASE, ora CALCOLATO e non piu' letto da s.count (un campo che l'admin
+    // scriveva a mano, e che quindi poteva dire qualunque cosa: bastava
+    // dimenticarsi di aggiornarlo dopo un'importazione).
+    // La definizione non e' inventata: e' LA STESSA del filtro "Solo figurine set
+    // base" (nessun contrassegno fra Variazione, Variazione non ufficiale e
+    // Change). Cosi' il badge e il filtro non potranno mai raccontare due storie
+    // diverse — se il badge dice 160, quel filtro ne mostrera' 160.
+    const nBase = figurine.filter(f => !f.isVariation && !f.isUnofficialVariation && !f.isChange).length;
+    const nTotale = figurine.length;
+    // unshift, non push: il set base va letto per PRIMO, ma puo' essere calcolato
+    // solo dopo che 'figurine' esiste. Metterlo in cima all'array risolve entrambe
+    // le esigenze — mentre scriverlo prima, come avevo fatto, usava una const non
+    // ancora dichiarata e avrebbe fatto esplodere la pagina all'apertura.
+    if (nBase) meta.unshift(`<span>📦 ${nBase.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US')} ${currentLang === 'it' ? 'figurine (set base)' : 'stickers (base set)'}</span>`);
     if (nVariation) meta.push(`<span>🎨 ${nVariation} ${currentLang === 'it' ? (nVariation === 1 ? 'variazione ufficiale' : 'variazioni ufficiali') : (nVariation === 1 ? 'official variation' : 'official variations')}</span>`);
     if (nUnofficialVariation) meta.push(`<span>🎨 ${nUnofficialVariation} ${currentLang === 'it' ? (nUnofficialVariation === 1 ? 'variazione non ufficiale' : 'variazioni non ufficiali') : (nUnofficialVariation === 1 ? 'unofficial variation' : 'unofficial variations')}</span>`);
+    // "(retro)" e' la sola parola che mancava: il numero era gia' giusto, taceva
+    // solo su quale sezione stesse contando.
     if (nChange) meta.push(`<span>🔄 ${nChange} Change</span>`);
+    // Il totale va IN FONDO, dopo i suoi addendi: e' la somma di cio' che lo
+    // precede (set base + variazioni + variazioni non ufficiali), e le Change non
+    // ne fanno parte perche' non sono figurine.
+    if (nTotale) meta.push(`<span style="font-weight:600;color:var(--text);">🧮 ${nTotale.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US')} ${currentLang === 'it' ? (nTotale === 1 ? 'figurina in totale' : 'figurine in totale') : (nTotale === 1 ? 'sticker in total' : 'stickers in total')}</span>`);
     metaEl.innerHTML = meta.join('');
   }
   const cover = document.getElementById('detail-cover');
@@ -8045,23 +8476,6 @@ function openSeriesSection(section) {
   if (addBtn) addBtn.textContent = addLabels[section] || (currentLang === 'it' ? '+ Aggiungi' : '+ Add');
   renderItems();
   // Show WIP banner if less than 50% of stickers have photos
-  const wipBanner = document.getElementById('wip-photos-banner');
-  const wipMsg = document.getElementById('wip-photos-msg');
-  if (wipBanner && wipMsg && section === 'figurines') {
-    const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === 'figurines');
-    const withPhoto = figs.filter(f => f.img).length;
-    const pct = figs.length ? withPhoto / figs.length : 1;
-    if (pct < 0.5 && figs.length > 0) {
-      wipMsg.textContent = currentLang === 'it'
-        ? 'Sito ancora in allestimento: le foto delle figurine saranno inserite prossimamente.'
-        : 'Site still being set up: sticker photos will be added soon.';
-      wipBanner.style.display = '';
-    } else {
-      wipBanner.style.display = 'none';
-    }
-  } else if (wipBanner) {
-    wipBanner.style.display = 'none';
-  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -8883,17 +9297,29 @@ function renderItems() {
   const bulkBtns = document.getElementById('bulk-owned-btns');
   if (bulkBtns) bulkBtns.style.display = (currentUser && (currentSection === 'figurines' || currentSection === 'retros') && allItems.length) ? 'flex' : 'none';
 
-  if (currentUser && allItems.length) {
+  // Il contatore "Nella mia lista, per questa serie" NON deve seguire i filtri:
+  // l'etichetta promette il totale della SERIE, e quello deve dire. Prima usava
+  // allItems, cioe' l'insieme FILTRATO — bastava filtrare per variazioni e il
+  // denominatore crollava da 368 a 3, contraddicendo la sua stessa etichetta.
+  // Peggio: lo stesso numero era calcolato anche in toggleOwned(), la' pero'
+  // sull'intera sezione. Quindi il valore SALTAVA: filtravi e leggevi 6/3, poi
+  // spuntavi una figurina e diventava 6/368. Due calcoli, un solo campo.
+  // Ora entrambi usano l'insieme non filtrato, e l'avanzamento resta fermo mentre
+  // ci si muove fra i filtri — che e' il senso stesso di una barra di avanzamento.
+  const itemsSerie = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
+  if (currentUser && itemsSerie.length) {
     pw.style.display = '';
     if (progressTopRow) progressTopRow.style.display = 'flex';
     if (progressTitle) progressTitle.style.display = '';
-    const ownedCount = allItems.filter(f => owned.includes(f.id)).length;
-    const pct = Math.round(ownedCount / allItems.length * 100);
-    document.getElementById('detail-progress-label').textContent = ownedCount + ' / ' + allItems.length;
-    // Show complete message for figurines section
+    const ownedCount = itemsSerie.filter(f => owned.includes(f.id)).length;
+    const pct = Math.round(ownedCount / itemsSerie.length * 100);
+    document.getElementById('detail-progress-label').textContent = ownedCount + ' / ' + itemsSerie.length;
+    // "Serie completa": si e' completi rispetto a TUTTA la serie, non al filtro.
+    // Prima bastava filtrare per variazioni e possedere quelle tre per vedersi
+    // annunciare "Hai tutte le figurine!" — un complimento falso.
     const completeMsg = document.getElementById('items-complete-msg');
     if (completeMsg) {
-      const isComplete = currentSection === 'figurines' && ownedCount === allItems.length && allItems.length > 0;
+      const isComplete = currentSection === 'figurines' && ownedCount === itemsSerie.length && itemsSerie.length > 0;
       completeMsg.style.display = isComplete ? '' : 'none';
       if (isComplete) completeMsg.textContent = currentLang === 'it' ? '🎉 Hai tutte le figurine in lista, per questa serie!' : '🎉 You have all the stickers listed, for this series!';
     }
@@ -9031,10 +9457,34 @@ function renderItems() {
     if (!imgHTML) {
       imgHTML = displayImg ? `<img src="${cloudinaryUrl(displayImg)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;text-align:center;"><span style="font-size:1.5rem;">${icon}</span><span style="font-size:0.6rem;color:var(--muted);line-height:1.2;">Foto non ancora disponibile</span></div>`;
     }
-    const typeBadge = (currentSection === 'figurines')
-      ? ((f.isVariation || f.isUnofficialVariation) ? (currentLang === 'it' ? 'Variazione' : 'Variation') : f.isChange ? 'Change' : '')
-      : '';
-    const typeBadgeHTML = typeBadge ? `<div class="fig-owned-badge">${typeBadge}</div>` : '';
+    // Il badge distingue ora le due variazioni, invece di accorparle in un
+    // generico "Variazione" che non diceva quale delle due fosse — proprio la sola
+    // informazione che serviva saperne.
+    // Su DUE RIGHE, e con l'ordine delle parole giusto per ciascuna lingua:
+    //   IT: "Variazione / ufficiale"  (aggettivo dopo)
+    //   EN: "Official / variation"    (aggettivo prima)
+    // Tradurre riga per riga avrebbe prodotto "Variation / official", che in
+    // inglese non si dice.
+    let typeBadgeHTML = '';
+    if (currentSection === 'figurines') {
+      const it = currentLang === 'it';
+      let r1 = '', r2 = '', cls = '';
+      if (f.isVariation) {
+        r1 = it ? 'Variazione' : 'Official';
+        r2 = it ? 'ufficiale'  : 'variation';
+        cls = 'fig-badge-official';
+      } else if (f.isUnofficialVariation) {
+        r1 = it ? 'Variazione'   : 'Unofficial';
+        r2 = it ? 'non ufficiale': 'variation';
+        cls = 'fig-badge-unofficial';
+      } else if (f.isChange) {
+        r1 = 'Change';
+        cls = 'fig-badge-change';
+      }
+      if (r1) {
+        typeBadgeHTML = `<div class="fig-owned-badge ${cls}">${esc(r1)}${r2 ? '<br>' + esc(r2) : ''}</div>`;
+      }
+    }
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button></div>` : '';
     const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="${currentLang === 'it' ? 'Segnala qualcosa all\'amministratore per questa figurina' : 'Report something to the administrator about this sticker'}" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
@@ -9109,23 +9559,6 @@ function changeItemPage(page) {
   currentItemPage = page;
   renderItems();
   // Show WIP banner if less than 50% of stickers have photos
-  const wipBanner = document.getElementById('wip-photos-banner');
-  const wipMsg = document.getElementById('wip-photos-msg');
-  if (wipBanner && wipMsg && section === 'figurines') {
-    const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === 'figurines');
-    const withPhoto = figs.filter(f => f.img).length;
-    const pct = figs.length ? withPhoto / figs.length : 1;
-    if (pct < 0.5 && figs.length > 0) {
-      wipMsg.textContent = currentLang === 'it'
-        ? 'Sito ancora in allestimento: le foto delle figurine saranno inserite prossimamente.'
-        : 'Site still being set up: sticker photos will be added soon.';
-      wipBanner.style.display = '';
-    } else {
-      wipBanner.style.display = 'none';
-    }
-  } else if (wipBanner) {
-    wipBanner.style.display = 'none';
-  }
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -9498,6 +9931,59 @@ async function purgeOldEventi() {
       }
     }
   } catch(e) { console.warn('[retention] purgeOldEventi', e.message); }
+}
+
+// ============================================================
+//  CONSERVAZIONE DELLE SEGNALAZIONI (6 mesi)
+// ------------------------------------------------------------
+//  Era l'ultima raccolta senza un termine. Sparivano se l'autore cancellava
+//  l'account, o se l'admin le cancellava a mano — ma di un utente che resta
+//  iscritto per anni, le segnalazioni restavano li' per sempre, con nome utente e
+//  commento.
+//
+//  ATTENZIONE, e' diversa dalle altre: una segnalazione non e' solo un dato
+//  personale, e' un ERRORE DELL'INVENTARIO che qualcuno ci ha indicato. Se dopo
+//  sei mesi non e' stato corretto, cancellandola si perde l'informazione — e
+//  l'errore resta nel catalogo senza che nessuno lo ricordi piu'. La scadenza,
+//  qui, e' anche una scadenza sul lavoro dell'admin.
+//  Prima di cancellarne una NON LETTA, quindi, lo si dice a voce alta in console:
+//  se ne spariscono di non lette, vuol dire che sono passate inosservate per sei
+//  mesi, ed e' bene saperlo.
+// ============================================================
+const SEGN_RETENTION_MONTHS = 6;
+const SEGN_PURGE_MAX_PER_RUN = 40;
+
+async function purgeOldSegnalazioni() {
+  try {
+    const segn = getData('segnalazioni', []);
+    if (!segn.length) return;
+
+    const limite = new Date();
+    limite.setMonth(limite.getMonth() - SEGN_RETENTION_MONTHS);
+
+    const scadute = segn.filter(x => x.date && new Date(x.date) < limite);
+    if (!scadute.length) return;
+
+    const lotto = scadute.slice(0, SEGN_PURGE_MAX_PER_RUN);
+    const nonLette = lotto.filter(x => !x.read).length;
+    let fatti = 0;
+    for (const x of lotto) {
+      try { await fsDelete('segnalazioni', x.id); fatti++; }
+      catch(e) { console.warn('[retention] segnalazione non cancellata', x.id, e.message); }
+    }
+    if (fatti) {
+      _cache.segnalazioni = getData('segnalazioni', []).filter(x => !lotto.some(y => y.id === x.id));
+      updateBellBadge();
+      renderAdminSegnalazioni();
+      console.log(`[retention] cancellate ${fatti} segnalazioni piu' vecchie di ${SEGN_RETENTION_MONTHS} mesi`);
+      if (nonLette) {
+        console.warn(`[retention] ATTENZIONE: ${nonLette} di queste NON erano state lette. Erano errori dell'Inventario mai esaminati.`);
+      }
+      if (scadute.length > lotto.length) {
+        console.log(`[retention] ne restano ${scadute.length - lotto.length}: al prossimo accesso`);
+      }
+    }
+  } catch(e) { console.warn('[retention] purgeOldSegnalazioni', e.message); }
 }
 
 async function purgeOldContactMessages() {
@@ -13476,23 +13962,6 @@ function renderAll() {
         : (currentLang === 'it' ? '📋 Vista tabellare' : '📋 Table view');
     }
     renderItems();
-    // Re-trigger WIP banner
-    if (currentSection && currentSeriesId) {
-      const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === 'figurines');
-      const pct = figs.length ? figs.filter(f => f.img).length / figs.length : 1;
-      const wipBanner = document.getElementById('wip-photos-banner');
-      const wipMsg = document.getElementById('wip-photos-msg');
-      if (wipBanner && wipMsg) {
-        if (currentSection === 'figurines' && pct < 0.5 && figs.length > 0) {
-          wipMsg.textContent = currentLang === 'it'
-            ? 'Sito ancora in allestimento: le foto delle figurine saranno inserite prossimamente.'
-            : 'Site still being set up: sticker photos will be added soon.';
-          wipBanner.style.display = '';
-        } else {
-          wipBanner.style.display = 'none';
-        }
-      }
-    }
   }
 
   // Re-render admin if open — preserve active tab
@@ -13615,9 +14084,31 @@ async function uploadAvatar(e) {
 // ============================================================
 async function setAllOwned(ownAll) {
   if (!currentUser) return;
-  const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
+  // Agisce su cio' che il filtro ha SELEZIONATO, non sull'intera sezione.
+  // Fino alla v5.669 questa riga prendeva tutte le figurine della sezione,
+  // ignorando ricerca, filtro tipo, "senza variazione ufficiale" e "da vendere".
+  // I pulsanti dicevano "tutti gli oggetti VISUALIZZATI" e ne toccavano molti di
+  // piu': con un filtro attivo su 12 variazioni, "Rimuovi" svuotava dalla lista
+  // l'INTERA sezione — centinaia di oggetti — dopo una conferma che aveva
+  // promesso altro. Distruttivo e silenzioso.
+  // getCurrentlyFilteredItems() e' la funzione condivisa che gia' usano renderItems
+  // e altri cinque punti: restituisce gli elementi filtrati di TUTTE le pagine
+  // (l'impaginazione avviene dopo). Era l'unico posto rimasto fuori.
+  const items = getCurrentlyFilteredItems();
   if (!items.length) return;
-  const msg = ownAll ? (currentLang === 'it' ? 'Aggiungere tutti gli oggetti alla tua lista?' : 'Add all items to your list?') : (currentLang === 'it' ? 'Svuotare la tua lista?' : 'Clear your list?');
+  // La conferma dice QUANTI oggetti verranno toccati. Un "tutti gli oggetti
+  // visualizzati?" e' vero ma astratto: con un filtro attivo si vedono 12 righe e
+  // ce ne possono essere 300 nelle pagine successive. Il numero rende concreto
+  // cio' che si sta per fare — e questa, in rimozione, e' un'azione che butta via
+  // il lavoro di mesi.
+  const n = items.length;
+  const msg = ownAll
+    ? (currentLang === 'it'
+        ? `Aggiungere alla tua lista ${n} ${n === 1 ? 'oggetto' : 'oggetti'}?`
+        : `Add ${n} ${n === 1 ? 'item' : 'items'} to your list?`)
+    : (currentLang === 'it'
+        ? `Rimuovere dalla tua lista ${n} ${n === 1 ? 'oggetto' : 'oggetti'}?`
+        : `Remove ${n} ${n === 1 ? 'item' : 'items'} from your list?`);
   if (!confirm(msg)) return;
   let owned = getOwned();
   if (ownAll) {
@@ -13632,12 +14123,60 @@ async function setAllOwned(ownAll) {
   saveOwnedToFirebase(currentUser.id, owned);
   renderItems();
   updateOwnedCounter();
+  // Punti guadagnati con QUESTA azione, e punteggio complessivo della lista.
+  // I punti nuovi si contano solo sugli oggetti che l'utente NON aveva: chi aveva
+  // gia' mezza serie non deve vedersi accreditare anche quella meta'.
+  // Il totale invece si ricalcola su TUTTA la lista, non solo su questa serie.
+  let puntiAggiunti = 0, punteggioTotale = 0;
+  if (ownAll) {
+    puntiAggiunti = items
+      .filter(f => !giaAveva.has(f.id))
+      .reduce((somma, f) => somma + (f.score || 0), 0);
+    punteggioTotale = getData('figurines', [])
+      .filter(f => owned.includes(f.id))
+      .reduce((somma, f) => somma + (f.score || 0), 0);
+  }
+
+  // La finestra si mostra solo se c'e' davvero qualcosa da festeggiare. Se
+  // l'utente aveva gia' tutto, i punti nuovi sono ZERO: "Complimenti, hai aggiunto
+  // 0 punti" sarebbe una presa in giro. In quel caso resta il messaggino di sempre.
+  if (ownAll && puntiAggiunti > 0) {
+    mostraPunteggioGuadagnato(puntiAggiunti, punteggioTotale);
+    return;
+  }
+
   const setAllMsgEl = document.getElementById('set-all-msg');
   if (setAllMsgEl) {
-    setAllMsgEl.textContent = ownAll ? (currentLang === 'it' ? '✅ Tutti aggiunti!' : '✅ All added!') : (currentLang === 'it' ? '❌ Tutti rimossi!' : '❌ All removed!');
+    setAllMsgEl.textContent = ownAll ? (currentLang === 'it' ? 'Tutti aggiunti!' : 'All added!') : (currentLang === 'it' ? 'Tutti rimossi!' : 'All removed!');
     setAllMsgEl.style.display = '';
     setTimeout(() => { setAllMsgEl.style.display = 'none'; }, 3000);
   }
+}
+
+// Finestra "Complimenti": quanti punti ha appena guadagnato e a quanto e' arrivato.
+// I numeri usano il separatore delle migliaia della lingua in uso (1.234 in
+// italiano, 1,234 in inglese): un punteggio a quattro cifre scritto di fila si
+// legge male.
+// Singolare e plurale sono gestiti a mano ("1 punto" / "2 punti", "1 point" /
+// "2 points"): scrivere "1 punti" e' il dettaglio che fa sembrare tradotto male
+// tutto il resto.
+function mostraPunteggioGuadagnato(aggiunti, totale) {
+  const it = currentLang === 'it';
+  const loc = it ? 'it-IT' : 'en-US';
+  const nA = aggiunti.toLocaleString(loc);
+  const nT = totale.toLocaleString(loc);
+  const pA = it ? (aggiunti === 1 ? 'punto' : 'punti') : (aggiunti === 1 ? 'point' : 'points');
+  const pT = it ? (totale === 1 ? 'punto' : 'punti') : (totale === 1 ? 'point' : 'points');
+
+  const elA = document.getElementById('score-boost-added');
+  const elT = document.getElementById('score-boost-total');
+  if (elA) elA.textContent = it
+    ? 'Hai aggiunto ' + nA + ' ' + pA + ' alla classifica della tua lista.'
+    : 'You added ' + nA + ' ' + pA + " to your list's ranking.";
+  if (elT) elT.textContent = it
+    ? 'La tua lista ha ora un punteggio di ' + nT + ' ' + pT + '!'
+    : 'Your list now has a score of ' + nT + ' ' + pT + '!';
+  document.getElementById('score-boost-modal')?.classList.remove('hidden');
 }
 
 // ============================================================
