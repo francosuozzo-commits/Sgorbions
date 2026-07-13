@@ -1,6 +1,34 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.623 — Su segnalazione di Franco, che ha aperto il link di disiscrizione
+//          mentre era autenticato come ADMIN: il link NON diceva a chi fosse
+//          indirizzata l'e-mail. Diceva solo "qualcuno vuole disiscriversi", e
+//          la pagina agiva su chiunque fosse autenticato in quel browser.
+//          Conseguenza concreta: l'admin che apre il link di una newsletter
+//          mandata a Mario avrebbe scritto newsletterConsent=false sul PROPRIO
+//          documento — evento "L'utente franco si e' disiscritto" — mentre
+//          Mario sarebbe rimasto iscritto. Stesso problema su un computer
+//          condiviso con un altro utente autenticato.
+//          CORREZIONE. Il link porta ora l'id del destinatario
+//          (#unsubscribe=<id>) e la pagina VERIFICA che l'utente autenticato sia
+//          quello. Quattro esiti distinti:
+//            1. bersaglio diverso  → "Questo link non e' per te", NESSUNA
+//               modifica, e il pulsante per uscire e rientrare con l'account
+//               giusto. Disiscrivere chi e' autenticato sarebbe doppiamente
+//               sbagliato: il destinatario resterebbe iscritto e un innocente
+//               verrebbe disiscritto senza averlo chiesto.
+//            2. admin con link generico → glielo si dice: l'account admin non
+//               riceve la newsletter, non c'e' nulla da disiscrivere.
+//            3. destinatario giusto, iscritto → disiscrizione a un clic.
+//            4. destinatario giusto, non iscritto → messaggio + riattivazione.
+//          L'id nel link NON e' una credenziale e non autorizza nulla: il login
+//          resta obbligatorio, e l'id serve solo a riconoscere il bersaglio. La
+//          verifica e' ripetuta anche dentro doUnsubscribeFromLink: la UI e'
+//          un'indicazione, non una garanzia.
+//          Le forme vecchie del link (#unsubscribe e ?unsubscribe=1, senza id)
+//          restano riconosciute per le e-mail gia' partite: li' il destinatario
+//          non e' noto e si agisce su chi e' autenticato, come prima.
 // v5.622 — Su richiesta di Franco (il link di disiscrizione ora funziona: il
 //          problema era il sito online fermo a una versione precedente, non il
 //          codice): riscritti titolo e testo della pagina di disiscrizione
@@ -3925,92 +3953,139 @@ async function saveEmailReplyTo(value) {
 // qualsiasi (un refresh, un ritorno indietro, un redirect) lo cancellerebbe in
 // silenzio e l'utente atterrerebbe sulla Home senza capire perché. Lo teniamo in
 // sessionStorage: sopravvive ai ricaricamenti, muore alla chiusura della scheda.
-const PENDING_UNSUB_KEY = 'pending_unsubscribe';
+const PENDING_UNSUB_KEY = 'pending_unsubscribe'; // '1' (link vecchio) oppure l'id del destinatario
 
-// Il link accetta DUE forme:
-//   ?unsubscribe=1  (query string) — usata dalle e-mail già inviate
-//   #unsubscribe    (frammento)    — usata da qui in avanti
-// Il frammento non viene mai trasmesso al server, quindi nessun redirect del
-// dominio (http→https, apex→www, inoltri Aruba) può eliminarlo: è proprio il
-// sospetto numero uno sul perché il link non funzionasse. La query resta
-// supportata per non rompere le e-mail già partite.
+// Il link accetta tre forme:
+//   #unsubscribe=<id>  → forma attuale: dice ANCHE a chi era indirizzata l'e-mail
+//   #unsubscribe       → forma della v5.620, senza destinatario
+//   ?unsubscribe=1     → forma della v5.616, senza destinatario
+// Le due vecchie restano riconosciute per non rompere le e-mail gia' partite: in
+// quel caso non sappiamo chi fosse il destinatario e si agisce su chi e'
+// autenticato, che e' il comportamento di prima.
+// Il frammento non viene mai trasmesso al server: nessun redirect puo' toglierlo.
 function checkUnsubscribeLink() {
   try {
-    const hasQuery = new URLSearchParams(window.location.search).get('unsubscribe') === '1';
-    const hasHash  = (window.location.hash || '').toLowerCase() === '#unsubscribe';
-    if (hasQuery || hasHash) {
-      console.log('[unsubscribe] richiesta rilevata (' + (hasHash ? 'frammento' : 'query') + ')');
-      sessionStorage.setItem(PENDING_UNSUB_KEY, '1');
-      // Ripulisce la barra degli indirizzi: un refresh non deve riproporre la
-      // disiscrizione, e il link non resta appeso nella cronologia.
+    const hash = (window.location.hash || '').toLowerCase();
+    const rawHash = window.location.hash || '';
+    let target = null;
+    if (hash.startsWith('#unsubscribe')) {
+      const eq = rawHash.indexOf('=');
+      target = eq >= 0 ? decodeURIComponent(rawHash.slice(eq + 1)) : '1';
+    } else if (new URLSearchParams(window.location.search).get('unsubscribe') === '1') {
+      target = '1';
+    }
+    if (target) {
+      console.log('[unsubscribe] richiesta rilevata, destinatario:', target === '1' ? '(non indicato)' : target);
+      sessionStorage.setItem(PENDING_UNSUB_KEY, target);
       history.replaceState(null, '', window.location.pathname);
     }
     resumePendingUnsubscribe();
   } catch(e) { console.warn('[unsubscribe] checkUnsubscribeLink', e.message); }
 }
 
-// Chiamata all'avvio e dopo ogni login. Se l'intento è in sospeso e ora c'è un
-// utente, si va alla pagina; altrimenti si chiede l'accesso e si riproverà dopo.
+function pendingUnsubTarget() {
+  try { return sessionStorage.getItem(PENDING_UNSUB_KEY); } catch(e) { return null; }
+}
+
 function resumePendingUnsubscribe() {
-  let pending = false;
-  try { pending = sessionStorage.getItem(PENDING_UNSUB_KEY) === '1'; } catch(e) {}
-  if (!pending) return false;
+  const target = pendingUnsubTarget();
+  if (!target) return false;
   if (!currentUser) {
-    console.log('[unsubscribe] utente non autenticato: chiedo l\'accesso, intento conservato');
+    console.log('[unsubscribe] non autenticato: chiedo l\'accesso, intento conservato');
     openAuth('login');
     return true;
   }
-  try { sessionStorage.removeItem(PENDING_UNSUB_KEY); } catch(e) {}
   console.log('[unsubscribe] apro la pagina di disiscrizione');
   showPage('unsubscribe');
   return true;
+}
+
+// La chiave resta in sessionStorage finche' la pagina non ha finito il suo lavoro
+// (o l'utente non se ne va): serve a renderUnsubscribePage per sapere a chi era
+// indirizzata l'e-mail, e va tolta solo quando l'operazione e' conclusa.
+function clearPendingUnsubscribe() {
+  try { sessionStorage.removeItem(PENDING_UNSUB_KEY); } catch(e) {}
 }
 
 function renderUnsubscribePage() {
   const el = document.getElementById('unsubscribe-content');
   if (!el || !currentUser) return;
   const L = currentLang === 'it';
+  const target = pendingUnsubTarget();            // id del destinatario, o '1' (link vecchio), o null
+  const hasTarget = target && target !== '1';
+  const home = `<div style="margin-top:1.25rem;"><a href="#" onclick="showPage('home');return false;" style="color:var(--muted);font-size:0.88rem;">${L ? 'Torna alla Home' : 'Back to Home'}</a></div>`;
+
+  // --- CASO 1: il link era per un ALTRO account -----------------------------
+  // Qui NON si tocca nulla. Disiscrivere chi e' autenticato sarebbe il bersaglio
+  // sbagliato: il destinatario resterebbe iscritto e un innocente si troverebbe
+  // disiscritto senza averlo chiesto. Tipico su un computer condiviso — o quando
+  // l'admin apre il link di una newsletter mandata a qualcun altro.
+  if (hasTarget && String(currentUser.id) !== String(target)) {
+    // Il nome del destinatario si puo' mostrare solo se lo abbiamo gia' in memoria
+    // (l'admin ha l'elenco utenti; un utente normale no, e non deve averlo).
+    const dest = (getData('users', []) || []).find(u => String(u.id) === String(target));
+    const chi = dest ? `<strong style="color:var(--text);">${esc(dest.username)}</strong>` : (L ? 'un altro account' : 'another account');
+    el.innerHTML = `
+      <div style="font-size:3rem;margin-bottom:0.75rem;">⚠️</div>
+      <h1 class="section-title" style="margin-bottom:0.75rem;white-space:nowrap;font-size:clamp(1.05rem, 4.6vw, 2rem);">${L ? 'Questo link non è per te' : 'This link is not for you'}</h1>
+      <p style="color:var(--muted);line-height:1.6;margin-bottom:1.5rem;">
+        ${L ? `Quella newsletter era indirizzata a ${chi}, ma su questo browser sei entrato come <strong style="color:var(--text);">${esc(currentUser.username)}</strong>.<br><br>Non ho toccato nulla: disiscrivere te lascerebbe iscritto il destinatario e toglierebbe la newsletter a chi non l'ha chiesto. Esci e rientra con l'account giusto, poi riapri il link.`
+             : `That newsletter was addressed to ${chi}, but on this browser you are signed in as <strong style="color:var(--text);">${esc(currentUser.username)}</strong>.<br><br>Nothing has been changed: unsubscribing you would leave the recipient subscribed and remove the newsletter from someone who never asked. Sign out, sign in with the right account, then open the link again.`}
+      </p>
+      <button class="btn-secondary" style="font-size:0.95rem;padding:0.6rem 1.5rem;" onclick="logout()">
+        ${L ? '🚪 Esci' : '🚪 Sign out'}
+      </button>${home}`;
+    return;
+  }
+
+  // --- CASO 2: admin, con un link generico (senza destinatario) -------------
+  // L'admin non riceve la newsletter (e' escluso dagli invii) e nel profilo non
+  // ha nemmeno il box "Preferenze e-mail": mostrargli "riattiva la newsletter"
+  // non avrebbe senso.
+  if (currentUser.isAdmin) {
+    el.innerHTML = `
+      <div style="font-size:3rem;margin-bottom:0.75rem;">🛠️</div>
+      <h1 class="section-title" style="margin-bottom:0.75rem;">${L ? 'Sei entrato come amministratore' : 'You are signed in as administrator'}</h1>
+      <p style="color:var(--muted);line-height:1.6;margin-bottom:1.5rem;">
+        ${L ? "L'account amministratore non riceve la newsletter, quindi non c'è nulla da disiscrivere.<br><br>Se stavi provando il link di un altro utente, esci e rientra con quell'account."
+             : 'The administrator account does not receive the newsletter, so there is nothing to unsubscribe.<br><br>If you were testing another user\'s link, sign out and sign in with that account.'}
+      </p>${home}`;
+    return;
+  }
+
   const iscritto = hasNewsletterConsent(currentUser);
 
+  // --- CASO 3: e' proprio lui, ed e' iscritto -------------------------------
   if (iscritto) {
     el.innerHTML = `
       <div style="font-size:3rem;margin-bottom:0.75rem;">📭</div>
       <h1 class="section-title" style="margin-bottom:0.75rem;">${L ? 'Disiscriverti dalla newsletter?' : 'Unsubscribe from the newsletter?'}</h1>
       <p style="color:var(--muted);line-height:1.6;margin-bottom:1.5rem;">
-        ${L ? `Stai per revocare il consenso per <strong style="color:var(--text);">${currentUser.email}</strong>. Basta un clic, e non riceverai più la newsletter.<br><br>Le e-mail di servizio (benvenuto, risposte ai tuoi post e ai tuoi messaggi) continueranno ad arrivarti: non sono newsletter.`
-             : `You are about to withdraw consent for <strong style="color:var(--text);">${currentUser.email}</strong>. One click, and you will no longer receive the newsletter.<br><br>Service e-mails (welcome, replies to your posts and messages) will still reach you: they are not newsletters.`}
+        ${L ? `Stai per revocare il consenso per <strong style="color:var(--text);">${esc(currentUser.email)}</strong>. Basta un clic, e non riceverai più la newsletter.<br><br>Le e-mail di servizio (benvenuto, risposte ai tuoi post e ai tuoi messaggi) continueranno ad arrivarti: non sono newsletter.`
+             : `You are about to withdraw consent for <strong style="color:var(--text);">${esc(currentUser.email)}</strong>. One click, and you will no longer receive the newsletter.<br><br>Service e-mails (welcome, replies to your posts and messages) will still reach you: they are not newsletters.`}
       </p>
       <button class="btn-primary" style="font-size:1rem;padding:0.7rem 2rem;" onclick="doUnsubscribeFromLink()">
         ${L ? '📭 Disiscrivimi' : '📭 Unsubscribe me'}
       </button>
       <div style="margin-top:1.25rem;">
-        <a href="#" onclick="showPage('home');return false;" style="color:var(--muted);font-size:0.88rem;">
+        <a href="#" onclick="clearPendingUnsubscribe();showPage('home');return false;" style="color:var(--muted);font-size:0.88rem;">
           ${L ? 'No, ho cambiato idea — torna alla Home' : 'No, I changed my mind — back to Home'}
         </a>
       </div>`;
-  } else {
-    // Non iscritto: o non ha mai acconsentito, o si è già disiscritto (magari
-    // aprendo il link due volte). In entrambi i casi l'esito che voleva è già
-    // quello attuale — glielo diciamo, e gli offriamo la strada inversa.
-    // Titolo su UNA riga: white-space:nowrap lo impedisce di andare a capo, e il
-    // clamp sul corpo lo rimpicciolisce quanto serve sugli schermi stretti —
-    // così resta su una riga anche sul telefono, invece di uscire dallo schermo.
-    el.innerHTML = `
-      <div style="font-size:3rem;margin-bottom:0.75rem;">✅</div>
-      <h1 class="section-title" style="margin-bottom:0.75rem;white-space:nowrap;font-size:clamp(1.05rem, 4.6vw, 2rem);">${L ? 'Non sei più iscritto alla newsletter' : 'You are no longer subscribed to the newsletter'}</h1>
-      <p style="color:var(--muted);line-height:1.6;margin-bottom:1.5rem;">
-        ${L ? 'Non riceverai altre comunicazioni sulle novità dell\'Inventario Sgorbions.<br>Se hai già cambiato idea, puoi riattivarla subito qui sotto — o comunque sia potrai farlo in qualunque momento dal tuo profilo, sezione "Preferenze e-mail".'
-             : 'You will receive no further updates on the Sgorbions Inventory.<br>If you have already changed your mind, you can re-enable it right below — or you can do so at any time from your profile, "E-mail preferences" section.'}
-      </p>
-      <button class="btn-secondary" style="font-size:0.95rem;padding:0.6rem 1.5rem;" onclick="doResubscribeFromLink()">
-        ${L ? '📧 Riattiva la newsletter' : '📧 Re-enable the newsletter'}
-      </button>
-      <div style="margin-top:1.25rem;">
-        <a href="#" onclick="showPage('home');return false;" style="color:var(--muted);font-size:0.88rem;">
-          ${L ? 'Torna alla Home' : 'Back to Home'}
-        </a>
-      </div>`;
+    return;
   }
+
+  // --- CASO 4: non e' (piu') iscritto ---------------------------------------
+  el.innerHTML = `
+    <div style="font-size:3rem;margin-bottom:0.75rem;">✅</div>
+    <h1 class="section-title" style="margin-bottom:0.75rem;white-space:nowrap;font-size:clamp(1.05rem, 4.6vw, 2rem);">${L ? 'Non sei più iscritto alla newsletter' : 'You are no longer subscribed to the newsletter'}</h1>
+    <p style="color:var(--muted);line-height:1.6;margin-bottom:1.5rem;">
+      ${L ? 'Non riceverai altre comunicazioni sulle novità dell\'Inventario Sgorbions.<br>Se hai già cambiato idea, puoi riattivarla subito qui sotto — o comunque sia potrai farlo in qualunque momento dal tuo profilo, sezione "Preferenze e-mail".'
+           : 'You will receive no further updates on the Sgorbions Inventory.<br>If you have already changed your mind, you can re-enable it right below — or you can do so at any time from your profile, "E-mail preferences" section.'}
+    </p>
+    <button class="btn-secondary" style="font-size:0.95rem;padding:0.6rem 1.5rem;" onclick="doResubscribeFromLink()">
+      ${L ? '📧 Riattiva la newsletter' : '📧 Re-enable the newsletter'}
+    </button>${home}`;
 }
 
 // L'unico clic. Origine 'unsubscribe-link', così nella tabella admin si distingue
@@ -4018,13 +4093,24 @@ function renderUnsubscribePage() {
 // stato usato è un'informazione, non un dettaglio.
 async function doUnsubscribeFromLink() {
   if (!currentUser) return;
-  await _setNewsletterConsent(false, 'unsubscribe-link');
+  // Guardia finale: se il bersaglio non coincide, non si scrive nulla. La pagina
+  // non mostrerebbe nemmeno il pulsante, ma la verifica sta anche qui — la UI e'
+  // un'indicazione, non una garanzia.
+  const target = pendingUnsubTarget();
+  if (target && target !== '1' && String(currentUser.id) !== String(target)) {
+    console.warn('[unsubscribe] bersaglio non coincidente: nessuna modifica');
+    renderUnsubscribePage();
+    return;
+  }
+  const ok = await _setNewsletterConsent(false, 'unsubscribe-link');
+  if (ok) clearPendingUnsubscribe(); // operazione conclusa
   renderUnsubscribePage();
 }
 
 async function doResubscribeFromLink() {
   if (!currentUser) return;
-  await _setNewsletterConsent(true, 'unsubscribe-link');
+  const ok = await _setNewsletterConsent(true, 'unsubscribe-link');
+  if (ok) clearPendingUnsubscribe();
   renderUnsubscribePage();
 }
 
@@ -4171,17 +4257,25 @@ function userLangFor(user) {
 // nessun redirect (http→https, apex→www, inoltro del dominio) può eliminarlo
 // per strada. La forma con ?unsubscribe=1 resta comunque riconosciuta, per le
 // e-mail già inviate.
-const UNSUBSCRIBE_URL = 'https://figurinesgorbions.it/#unsubscribe';
+// Il link porta con se' l'ID DEL DESTINATARIO. Senza, direbbe soltanto "qualcuno
+// vuole disiscriversi" e la pagina agirebbe su chiunque fosse autenticato in quel
+// browser: l'admin che apre il link di una newsletter mandata a Mario
+// disiscriverebbe SE STESSO, e Mario resterebbe iscritto.
+// L'id NON e' una credenziale e non autorizza nulla: la pagina richiede comunque
+// il login e verifica che l'utente autenticato SIA quel destinatario. Serve solo
+// a riconoscere il bersaglio giusto e a dirlo chiaramente quando non coincide.
+const UNSUBSCRIBE_URL = (userId) =>
+  'https://figurinesgorbions.it/#unsubscribe=' + encodeURIComponent(userId || '');
 
-const NEWSLETTER_FOOTER = (lang) => (lang === 'en')
+const NEWSLETTER_FOOTER = (lang, userId) => (lang === 'en')
   ? '\n\n———\n' +
     'You are receiving this e-mail because you consented to the figurinesgorbions.it newsletter.\n' +
     'To unsubscribe, open this link and confirm with one click:\n' +
-    UNSUBSCRIBE_URL
+    UNSUBSCRIBE_URL(userId)
   : '\n\n———\n' +
     'Ricevi questa e-mail perché hai acconsentito alla newsletter di figurinesgorbions.it.\n' +
     'Per disiscriverti, apri questo link e conferma con un clic:\n' +
-    UNSUBSCRIBE_URL;
+    UNSUBSCRIBE_URL(userId);
 
 // Limite mensile del piano gratuito EmailJS. Era cablato come "200" in più punti;
 // tenerlo in un solo posto evita che un domani ne resti indietro uno.
@@ -4198,7 +4292,7 @@ async function sendEmail(toEmail, username, subject, messaggio, options = {}) {
     // options.lang è la lingua del DESTINATARIO, non quella dell'admin.
     // In sua assenza si ripiega sull'italiano (vedi userLangFor).
     const bodyToSend = (options.source === 'newsletter')
-      ? messaggio + NEWSLETTER_FOOTER(options.lang || 'it')
+      ? messaggio + NEWSLETTER_FOOTER(options.lang || 'it', options.userId)
       : messaggio;
     const payload = {
       email: toEmail,
@@ -4610,7 +4704,7 @@ async function sendNewsletterFromAdmin() {
       blockedCount++;
       console.warn('Newsletter non inviata a', cb.dataset.email, '— nessun consenso');
     } else if (wantsEmail) {
-      await sendEmail(cb.dataset.email, cb.dataset.username, subject, body, { bcc, source: 'newsletter', lang: userLangFor(u) }); emailCount++;
+      await sendEmail(cb.dataset.email, cb.dataset.username, subject, body, { bcc, source: 'newsletter', lang: userLangFor(u), userId: u?.id }); emailCount++;
     }
     if (wantsMsg) { await sendNewsletterMessage({ username: cb.dataset.username, email: cb.dataset.email }, subject, body); msgCount++; }
   }
@@ -4630,7 +4724,7 @@ async function sendNewsletterEmail(subject, messaggio) {
   const adminUser = getData('users', []).find(u => u.isAdmin);
   const bcc = adminUser?.email || null;
   for (const user of users) {
-    await sendEmail(user.email, user.username, subject, messaggio, { bcc, source: 'newsletter', lang: userLangFor(user) });
+    await sendEmail(user.email, user.username, subject, messaggio, { bcc, source: 'newsletter', lang: userLangFor(user), userId: user.id });
   }
   toast((currentLang === 'it' ? 'Newsletter inviata a ' : 'Newsletter sent to ') + users.length + (currentLang === 'it' ? ' utenti!' : ' users!'), 'success');
 }
@@ -4640,7 +4734,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.622';
+const JS_VERSION = 'v5.623';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
