@@ -1,6 +1,142 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.633 — PUNTO 3 della lista privacy: il tono. Era l'unico punto in cui il
+//          sito con cui ci eravamo confrontati (Fichus) era davvero piu' bravo
+//          di noi. La nostra informativa apriva con "Titolare del trattamento":
+//          corretta, ma la prima cosa che l'utente leggeva era un termine
+//          giuridico.
+//          (1) CAPPELLO INTRODUTTIVO in cima alla pagina: progetto personale,
+//          niente azienda, niente pubblicita', raccogliamo solo il necessario,
+//          puoi cancellare tutto da solo. Poi: "il resto di questa pagina lo
+//          dice in modo piu' preciso, come chiede la legge. Ma la sostanza e'
+//          questa."
+//          (2) SEZIONE "COSA NON FACCIAMO", subito dopo "Quali dati
+//          raccogliamo". Elencare cio' che NON si fa rassicura piu' di
+//          qualunque elenco di cio' che si fa: risponde alla domanda che
+//          l'utente si sta facendo davvero.
+//          IMPORTANTE — questa sezione si poteva scrivere SOLO ORA. Prima
+//          della v5.630 la riga sui terzi ("non facciamo scaricare al tuo
+//          browser roba di terzi") sarebbe stata FALSA: sei CDN ricevevano
+//          l'IP di ogni visitatore. Scriverla allora avrebbe significato
+//          mettere una bugia nel punto piu' rassicurante del documento — il
+//          posto peggiore possibile. Per questo il punto 3 e' stato fatto DOPO
+//          il punto 2, e non prima.
+//          Ogni negazione e' stata verificata sul codice prima di scriverla:
+//          zero analytics, zero pixel, zero pubblicita', zero CDN di terzi,
+//          nessun parametro di affiliazione. La sezione dice anche che sono
+//          affermazioni verificabili aprendo il codice — il che ci impegna a
+//          mantenerle vere.
+//          Modificato solo index.html.
+// v5.632 — Su osservazione di Franco, che aveva ragione sul POSTO: le e-mail
+//          di servizio, infilate in coda alla sezione "Newsletter"
+//          dell'informativa, sembravano una postilla alla disiscrizione. Ma
+//          non erano estranee al documento: erano solo collocate male. Si
+//          stavano sovrapponendo due cose diverse, e ora stanno ciascuna al
+//          posto suo.
+//          (1) INFORMATIVA — nuova sezione "Le e-mail che ti inviamo", che
+//          elenca i DUE tipi di e-mail con le rispettive BASI GIURIDICHE:
+//          servizio → esecuzione del contratto (art. 6.1.b), newsletter →
+//          consenso (art. 6.1.a). E' materia da informativa a pieno titolo
+//          (bisogna dichiarare cosa si invia e su cosa si fonda), ma come
+//          sezione autonoma, non come coda di un'altra.
+//          (2) INTERFACCIA — la conseguenza pratica ("le e-mail di servizio
+//          arrivano comunque") compare ora dove l'utente SPEGNE davvero la
+//          newsletter: nella conferma di spegnimento dal profilo e nella
+//          pagina di disiscrizione. E' lì che serve, non in una pagina legale
+//          che nessuno rilegge: senza, chi revoca il consenso resta convinto
+//          di non ricevere più nulla, e alla prima risposta a un suo messaggio
+//          penserebbe che la disiscrizione non ha funzionato.
+//          Nella pagina di disiscrizione la nota sta SOTTO il testo dettato da
+//          Franco, come riga separata e più piccola: le sue frasi non sono
+//          state toccate.
+// v5.631 — Su testo fornito da Franco: riscritta la sezione "Newsletter"
+//          dell'informativa, piu' asciutta e su tre paragrafi brevi invece che
+//          un unico blocco. Adeguata la versione inglese.
+//          Conservato il paragrafo sulle e-mail DI SERVIZIO (benvenuto,
+//          risposta a un post, risposta a un messaggio, reset password), che
+//          non era nel testo nuovo: e' l'unico punto in cui diciamo all'utente
+//          che quelle continuano ad arrivargli anche dopo la disiscrizione.
+//          Toglierlo lascerebbe credere che revocando il consenso non si
+//          riceva piu' nulla, e alla prima risposta a un suo messaggio si
+//          sentirebbe preso in giro.
+//          Modificato solo index.html.
+// v5.630 — PUNTO 2 della lista privacy: i CDN di terze parti. Il browser di
+//          OGNI visitatore, anche anonimo e prima di qualunque clic, mandava il
+//          proprio indirizzo IP a piu' societa' esterne. Avevamo self-hostato i
+//          font Nunito proprio per evitarlo, e poi lasciato aperte sei porte
+//          laterali.
+//          AUDIT. I sei domini non erano equivalenti. Tre colpivano chiunque a
+//          ogni caricamento (SDK EmailJS da jsDelivr, nel <head>; bandierina del
+//          selettore lingua da flagcdn; SDK Firebase da gstatic). Tre partivano
+//          solo su azione volontaria (XLSX per gli export; XLSX per gli import,
+//          solo admin; rimozione sfondo da esm.sh, solo admin).
+//          Emersa anche una ridondanza che nessuno aveva deciso: la STESSA
+//          libreria XLSX veniva scaricata da TRE domini diversi, in tre versioni
+//          diverse (jsdelivr ESM, cdn.sheetjs ESM, cdnjs UMD).
+//          FATTO:
+//          - SDK EmailJS self-hostato (js/email.min.js, 3,9 KB). Era la
+//            richiesta piu' invasiva: stava nel <head>, quindi partiva sempre.
+//          - 56 bandiere self-hostate (flags/, PNG 40x30, 26 KB in tutto), al
+//            posto di flagcdn. Le prime due (it, gb) sono nella barra in alto e
+//            si caricavano a ogni pagina, per chiunque.
+//          - XLSX: un solo file, nostro (js/xlsx.full.min.js), un solo punto di
+//            caricamento (loadXLSX()), ancora su richiesta — 862 KB non vanno
+//            imposti a chi apre la home.
+//          NON FATTO, E VOLUTAMENTE:
+//          - www.gstatic.com (SDK Firebase) resta. Self-hostarlo sarebbe teatro:
+//            il sito parla comunque con firestore.googleapis.com a ogni
+//            operazione, perche' il database E' di Google. Toglierlo
+//            dall'elenco non toglierebbe Google dal quadro: lo nasconderebbe.
+//          - esm.sh (rimozione sfondo) resta: e' una libreria di ML pesante,
+//            caricata solo dall'admin quando modifica un'immagine. Non tocca mai
+//            l'IP di un utente.
+//          INFORMATIVA: dichiarato GitHub Pages, che ospita il sito e vede l'IP
+//          di ogni visitatore — mancava del tutto, ed era il fornitore piu'
+//          ovvio di tutti. Nuova sezione "Cosa carica il tuo browser", che
+//          spiega perche' self-hostiamo e nomina le tre eccezioni inevitabili
+//          (Google, Cloudinary, GitHub). Sezione Cookie rafforzata: nessun
+//          analytics, nessun pixel, verificato nel codice.
+//          NUOVI FILE DA CARICARE: js/email.min.js, js/xlsx.full.min.js,
+//          cartella flags/ (56 PNG).
+// v5.629 — Su domanda di Franco ("per il punto 1 non dobbiamo aggiornare la
+//          pagina privacy?"): sì, e il disallineamento non era dove sembrava.
+//          La sezione "Newsletter" c'era già ed era corretta. Il problema stava
+//          nell'elenco "QUALI DATI RACCOGLIAMO", che dichiara i dati uno per
+//          uno — e che NON nominava i tre campi introdotti in questi giorni:
+//          la scelta sulla newsletter, la data e l'origine con cui l'abbiamo
+//          registrata, e la lingua dell'utente (campo lang, v5.615).
+//          Non è una svista formale: un'informativa che dichiara di elencare
+//          tutto e poi ne omette un pezzo diventa inesatta. Ed è
+//          particolarmente paradossale tacere proprio data e origine del
+//          consenso, che conserviamo per POTER DIMOSTRARE il consenso stesso.
+//          Aggiunte due voci all'elenco (IT + EN).
+//          Arricchita anche la sezione Newsletter con la frase che il codice ci
+//          consente di scrivere per davvero: "se non ci hai mai risposto non la
+//          ricevi — il silenzio non vale come consenso" (nel codice: il campo
+//          undefined non riceve nulla). E la distinzione fra rispondere, che è
+//          obbligatorio, e acconsentire, che non lo è.
+//          Modificato solo index.html.
+// v5.628 — Su richiesta di Franco, due formattazioni:
+//          - Admin → Utenti: "Utenti Registrati: 9 (8 utenti + 1 admin)".
+//            Il totale è scomposto perché l'elenco comprende l'account
+//            amministratore mentre la tabella dei destinatari Newsletter lo
+//            esclude: senza la scomposizione i due numeri non tornerebbero e
+//            ci si chiederebbe dove sia finito il nono.
+//          - Admin → Newsletter: il riepilogo dei consensi passa da una riga
+//            unica a un elenco su tre righe (con consenso / senza / mai
+//            chiesto), seguito a capo dalla frase sulla casella E-mail
+//            disattivata e sul Messaggio interno, che resta comunque
+//            disponibile verso tutti.
+// v5.627 — Su richiesta di Franco: in Admin → Utenti, accanto al titolo
+//          "Utenti registrati" compare ora il totale. Scomposto anche fra
+//          utenti normali e admin, perché il totale grezzo comprende l'account
+//          amministratore e senza la scomposizione il numero non tornerebbe con
+//          quello dei destinatari della Newsletter (che l'admin lo esclude).
+//          Il numero sta in uno <span> SUO, fratello di quello con data-i18n e
+//          non figlio: applyI18n() riscrive il textContent dell'elemento
+//          tradotto, quindi un conteggio infilato dentro l'h3 tradotto sarebbe
+//          sparito al primo cambio di lingua.
 // v5.626 — Su richiesta di Franco: TOLTA LA SCHERMATA DI CONFERMA della
 //          disiscrizione ("Disiscriverti dalla newsletter?" / "Stai per
 //          revocare il consenso per..."). Non compare piu' in nessun caso.
@@ -4151,7 +4287,11 @@ async function renderUnsubscribePage() {
     </p>
     <button class="btn-secondary" style="font-size:0.95rem;padding:0.6rem 1.5rem;" onclick="doResubscribeFromLink()">
       ${L ? '📧 Riattiva la newsletter' : '📧 Re-enable the newsletter'}
-    </button>${home}`;
+    </button>
+    <p style="color:var(--muted);font-size:0.82rem;line-height:1.5;margin:1.25rem auto 0;max-width:34rem;opacity:0.85;">
+      ${L ? 'Le e-mail di servizio (benvenuto, risposte ai tuoi post e ai tuoi messaggi) continueranno comunque ad arrivarti: non sono newsletter.'
+           : 'Service e-mails (welcome, replies to your posts and messages) will still reach you: they are not newsletters.'}
+    </p>${home}`;
 }
 
 // L'unico clic. Origine 'unsubscribe-link', così nella tabella admin si distingue
@@ -4274,8 +4414,8 @@ async function saveNewsletterConsent() {
   // iscrivere?" suonerebbe come un tentativo di scoraggiarlo.
   if (!enabling) {
     const ok = confirm(L
-      ? 'Vuoi davvero disattivare la newsletter?\n\nNon riceverai più le novità sull\'Inventario Sgorbions.\nPotrai riattivarla quando vuoi da qui.'
-      : 'Do you really want to turn off the newsletter?\n\nYou will no longer receive updates on the Sgorbions Inventory.\nYou can turn it back on from here whenever you like.');
+      ? 'Vuoi davvero disattivare la newsletter?\n\nNon riceverai più le novità sull\'Inventario Sgorbions.\nPotrai riattivarla quando vuoi da qui.\n\nLe e-mail di servizio (benvenuto, risposte ai tuoi post e ai tuoi messaggi) continueranno comunque ad arrivarti: non sono newsletter.'
+      : 'Do you really want to turn off the newsletter?\n\nYou will no longer receive updates on the Sgorbions Inventory.\nYou can turn it back on from here whenever you like.\n\nService e-mails (welcome, replies to your posts and messages) will still reach you: they are not newsletters.');
     if (!ok) { if (cb) cb.checked = true; return; } // annullato: la spunta torna accesa
   }
 
@@ -4648,9 +4788,12 @@ function renderNewsletterUsers() {
   const no    = users.filter(u => u.newsletterConsent === false).length;
   const never = users.length - yes - no; // undefined: mai chiesto
   if (sumEl) {
+    const n = (v) => `<strong style="color:var(--text);">${v}</strong>`;
     sumEl.innerHTML = L
-      ? `📧 <strong style="color:var(--text);">${yes}</strong> con consenso · <strong style="color:var(--text);">${no}</strong> senza · <strong style="color:var(--text);">${never}</strong> mai chiesto. A chi non ha dato il consenso la casella E-mail è disattivata — puoi comunque raggiungerlo con un Messaggio interno.`
-      : `📧 <strong style="color:var(--text);">${yes}</strong> consented · <strong style="color:var(--text);">${no}</strong> declined · <strong style="color:var(--text);">${never}</strong> never asked. The E-mail box is disabled for those without consent — you can still reach them with an internal Message.`;
+      ? `<div style="line-height:1.7;">· ${n(yes)} con consenso<br>· ${n(no)} senza<br>· ${n(never)} mai chiesto.</div>
+         <p style="margin:0.6rem 0 0 0;line-height:1.5;">A chi non ha dato il consenso la casella E-mail è disattivata — puoi comunque raggiungerlo con un Messaggio interno.</p>`
+      : `<div style="line-height:1.7;">· ${n(yes)} consented<br>· ${n(no)} declined<br>· ${n(never)} never asked.</div>
+         <p style="margin:0.6rem 0 0 0;line-height:1.5;">The E-mail box is disabled for those without consent — you can still reach them with an internal Message.</p>`;
   }
 
   // Ordinamento. Il consenso non è alfabetico: ha un ordine suo, dal più al meno
@@ -4800,7 +4943,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.626';
+const JS_VERSION = 'v5.633';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -4820,8 +4963,39 @@ const COUNTRIES = [
   ['ae','Emirati Arabi'],['sa','Arabia Saudita'],['il','Israele'],['sg','Singapore'],['th','Tailandia'],['cu','Cuba'],
 ];
 
+// ============================================================
+//  SheetJS (XLSX) — un solo caricamento, da un solo posto
+// ------------------------------------------------------------
+//  Prima la stessa libreria veniva scaricata da TRE domini diversi e in tre
+//  versioni diverse: cdn.jsdelivr.net (ESM), cdn.sheetjs.com (ESM) e
+//  cdnjs.cloudflare.com (UMD). Nessuno l'aveva deciso: si era stratificato.
+//  Ora il file e' nostro (js/xlsx.full.min.js) e il caricamento e' UNO.
+//  Resta su richiesta: 862 KB non vanno imposti a chi apre la home. Parte solo
+//  quando l'utente esporta o importa davvero qualcosa.
+// ============================================================
+let _xlsxPromise = null;
+function loadXLSX() {
+  if (typeof XLSX !== 'undefined') return Promise.resolve(XLSX);
+  if (_xlsxPromise) return _xlsxPromise; // gia' in corso: non lo si scarica due volte
+  _xlsxPromise = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = 'js/xlsx.full.min.js?v=' + JS_VERSION.replace('v', '');
+    s.onload = () => res(window.XLSX);
+    s.onerror = () => { _xlsxPromise = null; rej(new Error('XLSX non caricato')); };
+    document.head.appendChild(s);
+  });
+  return _xlsxPromise;
+}
+
+// Bandiere self-hostate (cartella flags/): 56 PNG 40x30, 26 KB in tutto.
+// Prima venivano da flagcdn.com, che riceveva cosi' l'IP di ogni visitatore —
+// anche anonimo, perche' la bandierina del selettore lingua sta nella barra in
+// alto e si carica sempre.
 function flagUrl(code) {
-  return `https://flagcdn.com/w40/${code}.png`;
+  const c = (code || '').toLowerCase();
+  // window._FLAGS esiste SOLO nella preview a file unico, che non ha cartelle e
+  // porta le bandiere incorporate. Sul sito vero e' undefined e si usa il file.
+  return (window._FLAGS && window._FLAGS[c]) || `flags/${c}.png`;
 }
 
 function cloudinaryUrl(url, opts = 'w_300,h_300,c_fit,q_auto,f_auto') {
@@ -5542,7 +5716,7 @@ const i18n = {
 'modal.resetPwd.title':'🔑 Reset your password','modal.resetPwd.emailLabel':'E-mail address','modal.resetPwd.emailPh':'your@email.com','modal.resetPwd.send':'Send me an e-mail with the reset link','modal.resetPwd.forgotEmail':'Forgot which e-mail you registered with too? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contact the administrator</a>.',
 'admin.series.title':'Manage Series','admin.figurines.title':'Manage Stickers',
 'admin.contacts.title':'Received Messages',
-'admin.users.title':'Registered Users',
+'admin.users.title':'Registered Users:',
 'footer.desc':'The unofficial fan database dedicated to the legendary Italian sticker collection of the \'90s. Made with 💚 by collectors, for collectors.',
 'footer.nav':'Navigation','footer.account':'Account',
 'footer.copy':'© 2026 figurinesgorbions.it — Unofficial fan site.',
@@ -5627,7 +5801,7 @@ const i18n = {
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
     'profile.sliderHint':'Prova a spostare il cursore! 👆',
     'admin.title':'Pannello Admin','admin.series':'Serie','admin.figurines':'Figurine','admin.contacts':'Messaggi','admin.users':'Utenti',
-    'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati',
+    'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati:',
     'footer.desc':'Il database fan non ufficiale dedicato alla leggendaria collezione di figurine italiana degli anni \'90. Fatto con 💚 da collezionisti, per collezionisti.',
     'footer.nav':'Navigazione','footer.account':'Account','footer.copy':'© 2026 figurinesgorbions.it — Sito fan non ufficiale.',
     'owned.toggle':'Mia lista','owned.yes':'✓ Mia lista'
@@ -5687,7 +5861,7 @@ function setLang(lang, byUser = false) {
   const btn = document.getElementById('lang-current-btn');
   if (btn) {
     const flags = { en: 'gb', it: 'it' };
-    btn.src = 'https://flagcdn.com/w40/' + (flags[lang] || 'gb') + '.png';
+    btn.src = flagUrl(flags[lang] || 'gb');
   }
   document.querySelectorAll('.lang-btn').forEach(b => {
     b.classList.toggle('active', (lang === 'en' && b.textContent === '🇬🇧') || (lang === 'it' && b.textContent === '🇮🇹'));
@@ -8450,7 +8624,7 @@ function renderBlog() {
         <div class="comment-avatar ${c.isAdmin ? 'is-admin' : ''}">${displayAuthorName(c.author)[0].toUpperCase()}</div>
         <div class="comment-bubble ${c.isAdmin ? 'is-admin' : ''}">
           <div class="comment-header">
-            <span class="comment-author">@${displayAuthorName(c.author)}</span>${(()=>{ const u = getData("users",[]).find(x=>x.id===c.authorId); return u?.nationalityCode ? `<img src="https://flagcdn.com/w40/${u.nationalityCode}.png" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : ""; })()}
+            <span class="comment-author">@${displayAuthorName(c.author)}</span>${(()=>{ const u = getData("users",[]).find(x=>x.id===c.authorId); return u?.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : ""; })()}
             ${c.isAdmin ? `<span class="comment-admin-badge">👑 ${t('comment.admin')}</span>` : ''}
             <span class="comment-date">${cDate}</span>
             ${canDel ? `<button class="comment-del-btn" onclick="deleteComment('${p.id}','${c.id}')" title="Delete">✕</button>` : ''}
@@ -8979,6 +9153,20 @@ function sortAdminUsers(col) {
 function renderAdminUsers() {
   const el = document.getElementById('admin-users-table');
   let users = [...getData('users', [])];
+
+  // Conteggio accanto al titolo. Il numero sta in un <span> SUO, fratello di
+  // quello con data-i18n: applyI18n() riscrive il textContent dell'elemento
+  // tradotto, quindi un conteggio infilato lì dentro verrebbe cancellato al
+  // primo cambio di lingua.
+  const cntEl = document.getElementById('admin-users-count');
+  if (cntEl) {
+    const L = currentLang === 'it';
+    const admins = users.filter(u => u.isAdmin).length;
+    const normali = users.length - admins;
+    cntEl.textContent = L
+      ? `${users.length} (${normali} utenti + ${admins} admin)`
+      : `${users.length} (${normali} users + ${admins} admin)`;
+  }
   const { col, dir } = _usersSort;
   users.sort((a, b) => {
     let va, vb;
@@ -10504,7 +10692,7 @@ function renderAdminSegnalazioni() {
   </tr></thead><tbody>
   ${segnalazioni.map(s => `<tr style="${s.read ? '' : 'background:rgba(181,255,46,0.05);'}">
     <td style="white-space:nowrap;font-size:0.78rem;">${new Date(s.date).toLocaleDateString('it-IT')}</td>
-    <td style="display:flex;align-items:center;gap:6px;">${s.username}${(() => { const u = getData('users',[]).find(x=>x.id===s.userId); return u?.nationalityCode ? `<img src="https://flagcdn.com/w40/${u.nationalityCode}.png" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''; })()}</td>
+    <td style="display:flex;align-items:center;gap:6px;">${s.username}${(() => { const u = getData('users',[]).find(x=>x.id===s.userId); return u?.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''; })()}</td>
     <td style="font-size:0.82rem;">${s.serieName}<br><span style="color:var(--muted);">${s.figNumber ? '#'+s.figNumber+' ' : ''}${s.figName}</span></td>
     <td>${s.commento}</td>
     <td style="display:flex;gap:0.4rem;"><button class="tbl-btn tbl-btn-edit" onclick="markSegnalazioneRead('${s.id}')">${s.read ? '✓' : (currentLang === 'it' ? 'Segna come letta' : 'Mark as read')}</button><button class="tbl-btn tbl-btn-del" onclick="deleteSegnalazione('${s.id}')">${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button></td>
@@ -10818,15 +11006,7 @@ async function startImportVar() {
   const fileInput = document.getElementById('import-var-file');
   if (!fileInput.files.length) { toast(currentLang==='it'?'Seleziona un file XLS':'Select an XLS file','error'); return; }
 
-  // Carica SheetJS se non disponibile
-  if (typeof XLSX === 'undefined') {
-    await new Promise((res, rej) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-      s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
-    });
-  }
+  await loadXLSX(); // SheetJS, da js/xlsx.full.min.js
 
   const file = fileInput.files[0];
   const buf = await file.arrayBuffer();
@@ -11029,15 +11209,7 @@ async function startImportRetro() {
   const fileInput = document.getElementById('import-retro-file');
   if (!fileInput.files.length) { toast(currentLang==='it'?'Seleziona un file XLS':'Select an XLS file','error'); return; }
 
-  // Carica SheetJS se non disponibile
-  if (typeof XLSX === 'undefined') {
-    await new Promise((res, rej) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-      s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
-    });
-  }
+  await loadXLSX(); // SheetJS, da js/xlsx.full.min.js
 
   const file = fileInput.files[0];
   const buf = await file.arrayBuffer();
@@ -11255,14 +11427,7 @@ async function startImportFig() {
   const seriesObj = getData('series', []).find(s => s.id === seriesId);
   const hasSubseries = seriesObj?.hasSubseries || false;
 
-  if (typeof XLSX === 'undefined') {
-    await new Promise((res, rej) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-      s.onload = res; s.onerror = rej;
-      document.head.appendChild(s);
-    });
-  }
+  await loadXLSX(); // SheetJS, da js/xlsx.full.min.js
 
   const file = fileInput.files[0];
   const buf = await file.arrayBuffer();
@@ -12844,7 +13009,7 @@ async function renderClassifica() {
       <div style="font-size:1.1rem;width:40px;text-align:center;flex-shrink:0;font-family:var(--font-ui);color:${isTop3 ? 'var(--accent)' : 'var(--muted)'};">#${position}</div>
       ${displayAvatar}
       <div style="flex:1;">
-        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${displayName}${adminNote}${meNote}${!isAnon && user.nationalityCode ? `<img src="https://flagcdn.com/w40/${user.nationalityCode}.png" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}${!isAnon ? `<span style="font-size:0.92rem;color:var(--muted);font-family:var(--font-body);font-weight:400;">(${(currentLang === 'it') ? 'utente dal' : 'member since'} ${user.joined ? new Date(user.joined).toLocaleDateString((currentLang === 'it') ? 'it-IT' : 'en-GB') : '—'})</span>` : ''}</div>
+        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${displayName}${adminNote}${meNote}${!isAnon && user.nationalityCode ? `<img src="${flagUrl(user.nationalityCode)}" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}${!isAnon ? `<span style="font-size:0.92rem;color:var(--muted);font-family:var(--font-body);font-weight:400;">(${(currentLang === 'it') ? 'utente dal' : 'member since'} ${user.joined ? new Date(user.joined).toLocaleDateString((currentLang === 'it') ? 'it-IT' : 'en-GB') : '—'})</span>` : ''}</div>
         <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">${countFigurines} ${(currentLang === 'it') ? 'figurine' : 'stickers'} · ${countAlbums} album · ${countExtras} ${(currentLang === 'it') ? 'altri articoli' : 'extras'}</div>
       </div>
       <div style="display:flex;align-items:center;gap:0.75rem;">
@@ -13433,7 +13598,7 @@ async function exportOwnedIncomplete(btn) {
 
   if (rows.length <= 1) { toast(currentLang === 'it' ? 'Non ti manca nessuna figurina! 🎉' : 'You are not missing any sticker! 🎉', 'success', btn); return; }
 
-  const XLSX = await import('https://cdn.sheetjs.com/xlsx-0.20.0/package/xlsx.mjs');
+  const XLSX = await loadXLSX();
   const ws = XLSX.utils.aoa_to_sheet(rows);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, currentLang === 'it' ? 'Serie incomplete' : 'Incomplete series');
@@ -13480,7 +13645,7 @@ async function exportOwnedList() {
   });
 
   try {
-    const XLSX = await import('https://cdn.jsdelivr.net/npm/xlsx/xlsx.mjs');
+    const XLSX = await loadXLSX();
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 35 }];
     const wb = XLSX.utils.book_new();
@@ -13546,7 +13711,7 @@ async function _exportWantlistImpl() {
 
   // Load SheetJS and generate real .xlsx
   try {
-    const XLSX = await import('https://cdn.jsdelivr.net/npm/xlsx/xlsx.mjs');
+    const XLSX = await loadXLSX();
     const ws = XLSX.utils.aoa_to_sheet(rows);
     // Set column widths
     ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 35 }];
@@ -13573,7 +13738,7 @@ initEmailJS();
 const _langBtn = document.getElementById('lang-current-btn');
 if (_langBtn) {
   const _flags = { en: 'gb', it: 'it' };
-  _langBtn.src = 'https://flagcdn.com/w40/' + (_flags[currentLang] || 'gb') + '.png';
+  _langBtn.src = flagUrl(_flags[currentLang] || 'gb');
 }
 if (currentUser?._impersonated) { _realAdmin = null; currentUser._impersonated = false; } // safety reset on load
 const jsVerEl = document.getElementById('nav-js-version');
