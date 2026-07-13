@@ -1,6 +1,100 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.636 — PUNTO 4 (seconda parte): LA CANCELLAZIONE DELL'ACCOUNT ORA CANCELLA
+//          DAVVERO TUTTO. Fino a ieri l'auto-eliminazione toccava users,
+//          public_profiles, owned e wishlists e anonimizzava i post — ma
+//          lasciava indietro tre raccolte intere:
+//            contact_messages : e-mail + testo dei messaggi inviati
+//            email_log        : e-mail + IL CORPO delle e-mail ricevute
+//            segnalazioni     : nome utente + commento
+//          Chi premeva "Elimina il mio account" pensava di essere sparito, e
+//          invece il suo indirizzo e le sue parole restavano nel database. E'
+//          l'art. 17 (diritto alla cancellazione), cioe' il diritto che le
+//          persone esercitano davvero.
+//          C'era anche un debito con noi stessi: dalla v5.633 il cappello
+//          dell'informativa promette che "puoi cancellarlo quando vuoi — da
+//          solo, con un pulsante". Abbiamo passato tre versioni a rendere vere
+//          le nostre affermazioni; questa era l'ultima scoperta. La promessa si
+//          mantiene col codice, non si ammorbidisce nel testo.
+//          SI CANCELLA, NON SI ANONIMIZZA (decisione di Franco, estesa anche
+//          alle segnalazioni, commento compreso). E' la scelta piu' solida:
+//          svuotare il solo identificativo lascerebbe il TESTO, e nel testo la
+//          gente si firma. Un record con l'e-mail cancellata ma il messaggio
+//          intatto resta un dato personale — con in piu' l'illusione di essere
+//          a posto.
+//          !!! RICHIEDE UN AGGIORNAMENTO DELLE REGOLE FIRESTORE !!!
+//          Chi cancella il proprio account NON e' l'admin. Senza una regola che
+//          gli consenta di cancellare le PROPRIE righe, Firestore rifiuta le
+//          chiamate e la cancellazione fallisce IN SILENZIO. Regole pronte in
+//          firestore_rules_v5636.txt, consegnato con questa versione.
+//          Gli errori non interrompono la cancellazione dell'account: se una
+//          raccolta non fosse raggiungibile l'account viene comunque eliminato e
+//          l'errore finisce in console. Meglio un residuo segnalato che un
+//          utente bloccato a meta', con l'account a pezzi.
+//          Le tracce si rimuovono PRIMA di cancellare il documento utente: certe
+//          regole verificano l'identita' del richiedente contro i suoi dati, e
+//          senza quel documento il permesso potrebbe non essere piu' concedibile.
+//          Informativa aggiornata (IT + EN): ora dichiara che eliminando
+//          l'account sparisce tutto, testo compreso.
+// v5.635 — PUNTO 4 (prima parte): conservazione dei messaggi di contatto.
+//          Su decisione di Franco: i messaggi di chi scrive SENZA avere un
+//          account vengono CANCELLATI DEL TUTTO dopo 6 mesi.
+//          Franco aveva inizialmente pensato all'anonimizzazione dell'indirizzo;
+//          poi ha scelto la cancellazione, ed e' la scelta giusta: svuotare la
+//          sola e-mail sarebbe stato un mezzo lavoro, perche' nei messaggi di
+//          contatto la gente si FIRMA ("sono Mario Rossi di Bergamo...") e il
+//          testo avrebbe continuato a identificarla — il record sarebbe rimasto
+//          un dato personale a tutti gli effetti, con l'illusione di essere a
+//          posto. Cancellando tutto non resta niente da identificare.
+//          Perche' proprio i non registrati: il form Contatti e' aperto agli
+//          anonimi, che non hanno profilo, non hanno pulsanti, e non hanno quindi
+//          NESSUN modo di rivedere o cancellare cio' che ci hanno lasciato. La
+//          conservazione a termine e' l'unico strumento che protegge anche chi
+//          non puo' fare nulla da solo. Chi ha un account li rivede dal profilo,
+//          e li perdera' cancellandolo (cascata ancora da fare).
+//          QUANDO GIRA: il sito e' statico, non c'e' nessun processo notturno.
+//          purgeOldContactMessages() gira all'apertura del pannello admin
+//          (_loadAdminOnlyData), l'unico momento disponibile. Se l'admin non
+//          entrasse per mesi, per mesi non si cancellerebbe nulla: limite
+//          dichiarato, non nascosto. Tetto di 40 cancellazioni per esecuzione,
+//          per non consumare la quota Firestore in un colpo solo; le eccedenze
+//          vanno al giro successivo.
+//          AVVISO NEL FORM: fin qui chiedevamo il dato senza dire NULLA a chi ce
+//          lo dava. L'art. 13 chiede di informare al momento della raccolta, non
+//          solo in una pagina che nessuno apre. Ora sotto il pulsante Invia c'e'
+//          la riga che spiega cosa conserviamo e per quanto. Usa data-i18n-html
+//          e non data-i18n, perche' contiene un <strong> e data-i18n scrive con
+//          textContent: il tag sarebbe comparso come testo.
+//          Dichiarati i 6 mesi anche nell'informativa (IT + EN).
+//          XSS CHIUSA (trovata per strada, non richiesta): il TESTO e l'OGGETTO
+//          dei messaggi di contatto venivano resi con innerHTML senza filtro nel
+//          pannello admin. Chiunque — senza nemmeno registrarsi, perche' il form
+//          e' aperto agli anonimi — poteva inviare un messaggio contenente
+//          "<img src=x onerror=...>" ed eseguire codice nella sessione
+//          dell'admin. E' la stessa classe di falla chiusa in v5.619 sui titoli
+//          dei post, ma piu' grave: quella richiedeva un account, questa no.
+//          Applicata esc() a entrambi i campi.
+// v5.634 — Su decisione di Franco: TOLTO IL CAMPO "NOME" dal form Contatti.
+//          Non serviva a nulla che l'indirizzo e-mail non facesse gia' meglio,
+//          ed era un dato personale in piu' da custodire, dichiarare, cancellare
+//          e su cui rispondere in caso di richiesta. E' minimizzazione (art.
+//          5.1.c GDPR), ed e' la contromisura piu' efficace che esista: il dato
+//          che non raccogli e' l'unico che non ti puo' creare problemi.
+//          Pesa soprattutto perche' il form Contatti e' aperto agli ANONIMI, che
+//          non hanno un account e quindi nessun modo di rivedere o cancellare
+//          cio' che ci hanno lasciato.
+//          Il nome era usato in quattro punti oltre al form, e toglierlo e basta
+//          avrebbe rotto la RIGA DI SALUTO delle risposte (sendEmail riceveva
+//          msg.name come nome del destinatario: sarebbe partito un saluto vuoto).
+//          Catena di ripieghi introdotta:
+//            1. chi ha scritto e' un utente registrato → il suo nome utente;
+//            2. messaggio VECCHIO, che il campo name ce l'ha ancora → si usa;
+//            3. altrimenti → la parte dell'e-mail prima della chiocciola.
+//          Le due viste (elenco admin e "i miei messaggi") ripiegano
+//          sull'indirizzo e-mail, e passano da esc(): i record vecchi hanno un
+//          nome scritto dall'utente, quindi testo non fidato reso via innerHTML.
+//          I record gia' esistenti NON vengono toccati: continuano a funzionare.
 // v5.633 — PUNTO 3 della lista privacy: il tono. Era l'unico punto in cui il
 //          sito con cui ci eravamo confrontati (Fichus) era davvero piu' bravo
 //          di noi. La nostra informativa apriva con "Titolare del trattamento":
@@ -4943,7 +5037,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.633';
+const JS_VERSION = 'v5.636';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -5657,7 +5751,7 @@ const i18n = {
 'admin.user.role':'User type','admin.user.collector':'Collector','admin.user.admin':'Admin',
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
-'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
+"contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
 'contact.info':'Contact information','contact.responseTime':'Average response time','contact.responseDesc':'Usually within a few hours','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Best collectors ranking','classifica.sub':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'✅ Add everything to my list','catalog.havenone':'❌ Clear my list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
@@ -5786,7 +5880,7 @@ const i18n = {
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'E-mail','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
-    'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
+    "contact.privacy":"Per poterti rispondere conserviamo il tuo indirizzo e-mail e il testo del messaggio. Se non hai un account sul sito, dopo 6 mesi il messaggio viene <strong>cancellato del tutto</strong>, indirizzo compreso. Se ce l'hai, resta finché non elimini l'account.",'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
     'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','form.newsletterLabel':'Vuoi ricevere la newsletter? *','form.newsletter.opt.none':'— Seleziona —','form.newsletter.opt.yes':'Sì, voglio riceverla','form.newsletter.opt.no':'No, grazie','form.newsletter.hint':'Rispondere è obbligatorio, ma sei libero di dire di no: la registrazione funziona comunque. Potrai cambiare idea quando vuoi dal tuo profilo.','profile.emailPrefs.title':'Preferenze e-mail','profile.newsletter':'Voglio ricevere la newsletter di figurinesgorbions.it','profile.newsletter.hint':'Ricevi le ultime novità sull\'inventario degli Sgorbions.<br>Puoi attivarla o disattivarla quando vuoi.','newsletterConsent.title':'📧 Vuoi ricevere la newsletter?','newsletterConsent.body':'Non te l\'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell\'Inventario Sgorbions.<br>Nessuna pubblicità!<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.','newsletterConsent.yes':'Sì, iscrivimi','newsletterConsent.no':'No, grazie','form.privacyNotice':'Registrandoti, accetti la nostra <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Informativa sulla Privacy</a>.','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.desc.en':'Descrizione (Inglese)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
@@ -6028,6 +6122,12 @@ async function _loadAdminOnlyData() {
   _cache.segnalazioni = segnalazioni;
   _cache.eventi = eventi;
   updateMsgBadge();
+
+  // Manutenzione: cancella i messaggi dei non registrati oltre i 6 mesi. Gira qui
+  // perche' e' l'unico momento disponibile — il sito e' statico e non ha un
+  // processo notturno. Non e' atteso (niente await): se fosse lento non deve
+  // rallentare l'apertura del pannello.
+  purgeOldContactMessages();
 }
 
 async function doLogin() {
@@ -6382,6 +6482,68 @@ function displayAuthorName(name) {
   return name;
 }
 
+// ============================================================
+//  CANCELLAZIONE ACCOUNT — le tracce nelle tre raccolte residue
+// ------------------------------------------------------------
+//  Fino alla v5.636 l'auto-eliminazione cancellava users, public_profiles, owned
+//  e wishlists, e anonimizzava i post. Lasciava indietro TRE raccolte, in cui
+//  restavano l'indirizzo e-mail dell'utente e le parole che aveva scritto:
+//    - contact_messages : e-mail + testo dei messaggi inviati
+//    - email_log        : e-mail + IL CORPO di ogni e-mail ricevuta da noi
+//    - segnalazioni     : nome utente + commento
+//  Chi premeva "Elimina il mio account" pensava di essere sparito. Non lo era.
+//  E l'informativa, dalla v5.633, gli promette in apertura che puo' cancellare
+//  tutto "da solo, con un pulsante": la promessa va mantenuta dal codice, non
+//  ammorbidita nel testo.
+//
+//  SI CANCELLA, NON SI ANONIMIZZA — decisione di Franco, ed e' la piu' solida:
+//  svuotare il solo identificativo lascerebbe il TESTO, e nel testo la gente si
+//  firma. Un record con l'e-mail cancellata ma il messaggio intatto resta un
+//  dato personale, con in piu' l'illusione di essere a posto.
+//
+//  ATTENZIONE — RICHIEDE UN AGGIORNAMENTO DELLE REGOLE FIRESTORE. Chi cancella
+//  il proprio account NON e' l'admin: senza una regola che gli consenta di
+//  cancellare le PROPRIE righe, queste chiamate verrebbero rifiutate e
+//  fallirebbero in silenzio. Le regole necessarie sono nel file
+//  firestore_rules_v5636.txt consegnato insieme a questa versione.
+//  Gli errori qui NON interrompono la cancellazione dell'account: se una
+//  raccolta non fosse raggiungibile, l'account viene comunque eliminato e
+//  l'errore finisce in console. Meglio un residuo segnalato che un utente
+//  bloccato a meta' strada, con l'account a pezzi.
+// ============================================================
+async function _deleteUserTraces(userId, email) {
+  const { collection: col, query: qf, where: wf, getDocs: gd } = window._fb;
+  const mail = (email || '').trim();
+  const esiti = [];
+
+  // 1. Messaggi dal form Contatti (interrogati per indirizzo, come loadMyContactMessages)
+  if (mail) {
+    try {
+      const snap = await gd(qf(col(db, 'contact_messages'), wf('email', '==', mail)));
+      for (const d of snap.docs) await fsDelete('contact_messages', d.id);
+      esiti.push(`contact_messages: ${snap.docs.length}`);
+    } catch(e) { console.warn('[cancellazione] contact_messages', e.message); esiti.push('contact_messages: ERRORE'); }
+  }
+
+  // 2. Registro e-mail — comprende il CORPO delle e-mail ricevute
+  if (mail) {
+    try {
+      const snap = await gd(qf(col(db, 'email_log'), wf('to', '==', mail)));
+      for (const d of snap.docs) await fsDelete('email_log', d.id);
+      esiti.push(`email_log: ${snap.docs.length}`);
+    } catch(e) { console.warn('[cancellazione] email_log', e.message); esiti.push('email_log: ERRORE'); }
+  }
+
+  // 3. Segnalazioni — cancellate per intero, commento compreso (scelta di Franco)
+  try {
+    const snap = await gd(qf(col(db, 'segnalazioni'), wf('userId', '==', String(userId))));
+    for (const d of snap.docs) await fsDelete('segnalazioni', d.id);
+    esiti.push(`segnalazioni: ${snap.docs.length}`);
+  } catch(e) { console.warn('[cancellazione] segnalazioni', e.message); esiti.push('segnalazioni: ERRORE'); }
+
+  console.log('[cancellazione account] tracce rimosse →', esiti.join(' · '));
+}
+
 async function _anonymizeUserContent(userId) {
   // Post e commenti restano visibili (valore per gli altri lettori del
   // blog), ma con il nome sostituito: non è più possibile risalire a chi
@@ -6410,6 +6572,10 @@ async function _performAccountDeletion(fbUser) {
     // di sicurezza richiedono di essere ancora autenticati per modificare
     // i post del blog
     await _anonymizeUserContent(userId);
+    // Le tracce vanno rimosse PRIMA di cancellare il documento utente: alcune
+    // regole Firestore verificano l'identita' del richiedente contro i suoi dati,
+    // e senza il documento utente il permesso potrebbe non essere piu' concedibile.
+    await _deleteUserTraces(userId, currentUser?.email);
 
     await fsDelete('users', userId);
     try { await fsDelete('public_profiles', userId); } catch(e) { console.warn('delete public_profiles', e.message); }
@@ -8667,16 +8833,79 @@ function renderBlog() {
 // ============================================================
 //  CONTACT
 // ============================================================
+// ============================================================
+//  CONSERVAZIONE DEI MESSAGGI DI CONTATTO (6 mesi per i non registrati)
+// ------------------------------------------------------------
+//  Il form Contatti e' aperto agli ANONIMI: chi scrive senza avere un account
+//  non ha un profilo, non ha un pulsante, e non ha quindi ALCUN modo di rivedere
+//  o cancellare cio' che ci ha lasciato. Un tempo di conservazione automatico e'
+//  l'unico strumento che protegge anche chi non puo' fare nulla da solo.
+//
+//  Si CANCELLA il record intero, non si "anonimizza" l'indirizzo. Svuotare la sola
+//  e-mail sarebbe stato un mezzo lavoro: nei messaggi di contatto la gente si
+//  firma ("sono Mario Rossi di Bergamo..."), quindi il TESTO continuerebbe a
+//  identificarla e il record resterebbe un dato personale a tutti gli effetti.
+//  Cancellando tutto, non resta niente da identificare.
+//
+//  QUANDO GIRA: il sito e' statico, non c'e' nessun processo notturno. L'unico
+//  momento possibile e' l'apertura del pannello da parte dell'admin
+//  (_loadAdminOnlyData). Se l'admin non entrasse per mesi, per mesi non si
+//  cancellerebbe nulla: e' un limite dichiarato, non un difetto nascosto.
+//
+//  NON tocca: i messaggi di chi ha un account (li rivede dal profilo, e spariranno
+//  con la cancellazione dell'account) e gli annunci creati dall'admin.
+// ============================================================
+const CONTACT_RETENTION_MONTHS = 6;
+const CONTACT_PURGE_MAX_PER_RUN = 40; // tetto per non consumare la quota Firestore in un colpo
+
+async function purgeOldContactMessages() {
+  try {
+    const msgs = getData('contact_messages', []);
+    if (!msgs.length) return;
+
+    const limite = new Date();
+    limite.setMonth(limite.getMonth() - CONTACT_RETENTION_MONTHS);
+
+    // Gli indirizzi degli utenti registrati, in minuscolo: i loro messaggi restano.
+    const registrati = new Set(
+      getData('users', []).map(u => (u.email || '').toLowerCase()).filter(Boolean)
+    );
+
+    const scaduti = msgs.filter(m =>
+      !m.isAnnouncement &&
+      m.date && new Date(m.date) < limite &&
+      !registrati.has((m.email || '').toLowerCase())
+    );
+    if (!scaduti.length) return;
+
+    const lotto = scaduti.slice(0, CONTACT_PURGE_MAX_PER_RUN);
+    let fatti = 0;
+    for (const m of lotto) {
+      try { await fsDelete('contact_messages', m.id); fatti++; }
+      catch(e) { console.warn('[retention] cancellazione fallita per', m.id, e.message); }
+    }
+    if (fatti) {
+      _cache.contact_messages = getData('contact_messages', []).filter(m => !lotto.some(x => x.id === m.id));
+      console.log(`[retention] cancellati ${fatti} messaggi di non registrati piu' vecchi di ${CONTACT_RETENTION_MONTHS} mesi`);
+      if (scaduti.length > lotto.length) {
+        console.log(`[retention] ne restano ${scaduti.length - lotto.length}: verranno cancellati al prossimo accesso`);
+      }
+    }
+  } catch(e) { console.warn('[retention] purgeOldContactMessages', e.message); }
+}
+
 async function sendContact() {
-  const name = document.getElementById('contact-name').value.trim();
+  // Il campo Nome e' stato tolto (v5.634): non serviva a nulla che l'e-mail non
+  // facesse gia' meglio, ed era un dato personale in piu' da custodire, dichiarare
+  // e cancellare. Il dato che non raccogli e' l'unico che non ti crea problemi.
   const email = document.getElementById('contact-email').value.trim();
   const subject = document.getElementById('contact-subject').value.trim();
   const message = document.getElementById('contact-message').value.trim();
-  if (!name || !email || !message) { toast(currentLang === 'it' ? 'Compila nome, email e messaggio' : 'Please fill in name, email and message', 'error'); return; }
-  const msg = { name, email, subject, message, date: new Date().toISOString(), read: false };
+  if (!email || !message) { toast(currentLang === 'it' ? 'Compila e-mail e messaggio' : 'Please fill in e-mail and message', 'error'); return; }
+  const msg = { email, subject, message, date: new Date().toISOString(), read: false };
   const saved = await fsSave('contact_messages', msg);
   _cache.contact_messages.unshift(saved);
-  ['contact-name','contact-subject','contact-message'].forEach(id => document.getElementById(id).value = '');
+  ['contact-subject','contact-message'].forEach(id => document.getElementById(id).value = '');
   toast(currentLang === 'it' ? 'Messaggio inviato! Ti risponderemo presto 📩' : 'Message sent! We\'ll get back to you soon 📩', 'success');
 }
 
@@ -9053,7 +9282,7 @@ function renderAdminContacts() {
       <div style="display:flex;align-items:center;gap:0.5rem;">
         ${m.read ? '' : '<span style="font-size:0.7rem;background:#4488ff;color:#fff;border-radius:4px;padding:1px 6px;">NEW</span>'}
         ${m.replied ? `<span style="font-size:0.7rem;background:rgba(181,255,46,0.15);color:var(--accent);border-radius:4px;padding:1px 6px;">✓ ${currentLang === 'it' ? 'RISPOSTO' : 'REPLIED'}</span>` : ''}
-        <strong style="font-family:var(--font-ui);">${m.name} <span style="font-size:0.8rem;color:var(--muted);font-family:var(--font-body);">&lt;${m.email}&gt;</span></strong>
+        <strong style="font-family:var(--font-ui);">${esc(m.name || m.email || "—")} <span style="font-size:0.8rem;color:var(--muted);font-family:var(--font-body);">&lt;${m.email}&gt;</span></strong>
       </div>
       <div style="display:flex;align-items:center;gap:0.5rem;">
         <span style="font-size:0.78rem;color:var(--muted);">${new Date(m.date).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB')}</span>
@@ -9064,8 +9293,8 @@ function renderAdminContacts() {
         </div>
       </div>
     </div>
-    ${m.subject ? `<div style="font-size:0.85rem;color:var(--accent3);margin-bottom:0.35rem;">Re: ${m.subject}</div>` : ''}
-    <div style="font-size:0.88rem;color:var(--muted);">${m.message}</div>
+    ${m.subject ? `<div style="font-size:0.85rem;color:var(--accent3);margin-bottom:0.35rem;">Re: ${esc(m.subject)}</div>` : ''}
+    <div style="font-size:0.88rem;color:var(--muted);white-space:pre-wrap;">${esc(m.message)}</div>
     <div id="reply-box-${m.id}" style="display:none;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">
       <textarea id="reply-text-${m.id}" class="form-textarea" rows="3" placeholder="${currentLang === 'it' ? 'Scrivi la tua risposta...' : 'Write your reply...'}" style="margin-bottom:0.5rem;"></textarea>
       <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--muted);margin-bottom:0.6rem;">
@@ -9103,7 +9332,15 @@ async function sendContactReply(id) {
 
   if (alsoEmail) {
     const subject = (currentLang === 'it' ? 'Re: ' : 'Re: ') + (msg.subject || (currentLang === 'it' ? 'la tua richiesta' : 'your request'));
-    const result = await sendEmail(msg.email, msg.name, subject, replyText, { source: 'messages' });
+    // Nome per il saluto della risposta. Il campo Nome non esiste piu', quindi:
+    //   1. se chi ha scritto e' un utente registrato, si usa il suo nome utente;
+    //   2. i messaggi VECCHI hanno ancora msg.name: si rispetta;
+    //   3. altrimenti la parte dell'e-mail prima della chiocciola.
+    // Senza questa catena le risposte partirebbero con un saluto vuoto.
+    const destName = (getData('users', []).find(u => u.email === msg.email)?.username)
+      || msg.name
+      || (msg.email || '').split('@')[0];
+    const result = await sendEmail(msg.email, destName, subject, replyText, { source: 'messages' });
     if (!result.ok) {
       toast((currentLang === 'it' ? '❌ Invio e-mail fallito: ' : '❌ E-mail send failed: ') + result.error, 'error');
       return;
@@ -13147,7 +13384,7 @@ function renderWishlistAdmin(el) {
   allMsgs.forEach(function(m) {
     html += '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.75rem 1rem;margin-bottom:0.75rem;">';
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">';
-    html += '<span style="font-weight:600;">👤 ' + (m.name || '—') + '</span>';
+    html += '<span style="font-weight:600;">👤 ' + esc(m.name || m.email || '—') + '</span>';
     html += '<div style="display:flex;align-items:center;gap:0.5rem;">';
     html += '<span style="font-size:0.78rem;color:var(--muted);">📨 ' + fmt(m.date) + '</span>';
     html += '<button class="wl-delete-btn" data-msg-id="' + m.id + '" style="font-size:0.75rem;padding:2px 8px;border-radius:6px;border:1px solid rgba(255,100,100,0.4);background:rgba(255,100,100,0.08);color:#ff6464;cursor:pointer;" title="' + (currentLang === 'it' ? 'Elimina' : 'Delete') + '">🗑️</button>';
