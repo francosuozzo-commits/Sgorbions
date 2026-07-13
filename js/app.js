@@ -1,6 +1,49 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.626 — Su richiesta di Franco: TOLTA LA SCHERMATA DI CONFERMA della
+//          disiscrizione ("Disiscriverti dalla newsletter?" / "Stai per
+//          revocare il consenso per..."). Non compare piu' in nessun caso.
+//          Il clic sul link nell'e-mail ora DISISCRIVE SUBITO, e l'utente
+//          legge direttamente l'esito: "Non sei più iscritto alla newsletter".
+//          Aprire quel link significa gia' volersi disiscrivere: chiederglielo
+//          una seconda volta e' un ostacolo, non una cautela — ed era proprio
+//          l'ostacolo che il link "a un clic" doveva eliminare.
+//          E' sicuro perche' la pagina richiede comunque il login: uno scanner
+//          antivirus o l'anteprima di un client di posta che aprisse il link
+//          non e' autenticato, quindi non puo' disiscrivere nessuno. E' il
+//          login, non la conferma, a proteggere dal clic involontario.
+//          ATTENZIONE — clearPendingUnsubscribe() dopo l'esecuzione e'
+//          indispensabile: senza, premendo poi "Riattiva la newsletter" la
+//          pagina si ridisegnerebbe, ritroverebbe l'intento ancora in sospeso e
+//          disiscriverebbe di nuovo, annullando la riattivazione appena fatta.
+//          Nuovo stato "Iscrizione riattivata" per chi preme quel pulsante,
+//          invece di rimandarlo alla schermata soppressa.
+//          Rimossa doUnsubscribeFromLink(), che nessun pulsante chiama piu'.
+//          Restano invariate le due schermate di guardia: link di un altro
+//          account, e admin.
+// v5.625 — Su segnalazione di Franco: cliccando il link nell'e-mail si apriva
+//          la v5.623 del sito, mentre il sito online era gia' alla v5.624 (un
+//          CTRL+SHIFT+R lo confermava). Non era un'incoerenza dell'e-mail: era
+//          la CACHE DEL BROWSER.
+//          PERCHE'. Il cache-buster ?v=... protegge app.js e style.css, ma non
+//          puo' proteggere index.html, che e' il documento d'ingresso e non puo'
+//          contenere un cache-buster per se stesso; GitHub Pages lo serve con
+//          max-age=600. E il FRAMMENTO non fa parte della chiave di cache:
+//          "figurinesgorbions.it/" e "figurinesgorbions.it/#unsubscribe=123"
+//          sono per il browser la stessa risorsa. Quindi il clic sul link
+//          pescava l'index.html vecchio dalla cache, che puntava a un app.js
+//          vecchio.
+//          CORREZIONE. Il link porta ora anche una query con la versione:
+//            https://figurinesgorbions.it/?nl=v5.625#unsubscribe=<id>
+//          La query, a differenza del frammento, FA parte della chiave di cache:
+//          dopo ogni rilascio il primo clic e' per forza un miss e index.html
+//          viene riscaricato fresco.
+//          I due pezzi hanno ruoli diversi e complementari: la query e'
+//          SACRIFICABILE (se un redirect la mangia perdiamo solo il vantaggio
+//          sulla cache), il frammento e' il DATO VERO (l'identita' del
+//          destinatario) e nessun redirect puo' toccarlo. Il parametro nl non
+//          viene nemmeno letto dal codice: esiste solo per rendere l'URL diverso.
 // v5.624 — Su osservazione di Franco: la schermata di mancata corrispondenza
 //          introdotta in v5.623 diceva troppo. Nominava il destinatario
 //          ("quella newsletter era indirizzata a Luca") e spiegava cosa
@@ -4022,26 +4065,18 @@ function clearPendingUnsubscribe() {
   try { sessionStorage.removeItem(PENDING_UNSUB_KEY); } catch(e) {}
 }
 
-function renderUnsubscribePage() {
+async function renderUnsubscribePage() {
   const el = document.getElementById('unsubscribe-content');
   if (!el || !currentUser) return;
   const L = currentLang === 'it';
-  const target = pendingUnsubTarget();            // id del destinatario, o '1' (link vecchio), o null
+  const target = pendingUnsubTarget();            // id destinatario, '1' (link vecchio), o null
   const hasTarget = target && target !== '1';
   const home = `<div style="margin-top:1.25rem;"><a href="#" onclick="showPage('home');return false;" style="color:var(--muted);font-size:0.88rem;">${L ? 'Torna alla Home' : 'Back to Home'}</a></div>`;
 
-  // --- CASO 1: il link era per un ALTRO account -----------------------------
-  // Qui NON si tocca nulla. Disiscrivere chi e' autenticato sarebbe il bersaglio
-  // sbagliato: il destinatario resterebbe iscritto e un innocente si troverebbe
-  // disiscritto senza averlo chiesto. Tipico su un computer condiviso — o quando
-  // l'admin apre il link di una newsletter mandata a qualcun altro.
+  // --- Il link era per un ALTRO account: non si tocca nulla ------------------
+  // Nessun dettaglio sul destinatario ne' sullo scopo del link: chi non e' il
+  // destinatario non ha motivo di sapere ne' l'uno ne' l'altro.
   if (hasTarget && String(currentUser.id) !== String(target)) {
-    // NESSUN DETTAGLIO sull'e-mail o sul destinatario, per riservatezza: dire a
-    // Mario "quella newsletter era per Luca" gli rivelerebbe che scriviamo a Luca
-    // e che Luca e' iscritto. Non e' un'informazione sua, e non gli serve. Non si
-    // dice nemmeno COSA facesse il link: chi non e' il destinatario non ha motivo
-    // di saperlo. Si dice solo che il link non e' legato a questa utenza e che
-    // percio' non e' stato eseguito.
     el.innerHTML = `
       <div style="font-size:3rem;margin-bottom:0.75rem;">⚠️</div>
       <h1 class="section-title" style="margin-bottom:0.75rem;">${L ? 'Link non valido per questo account' : 'Link not valid for this account'}</h1>
@@ -4055,10 +4090,7 @@ function renderUnsubscribePage() {
     return;
   }
 
-  // --- CASO 2: admin, con un link generico (senza destinatario) -------------
-  // L'admin non riceve la newsletter (e' escluso dagli invii) e nel profilo non
-  // ha nemmeno il box "Preferenze e-mail": mostrargli "riattiva la newsletter"
-  // non avrebbe senso.
+  // --- Admin: non riceve la newsletter, non c'e' nulla da disiscrivere -------
   if (currentUser.isAdmin) {
     el.innerHTML = `
       <div style="font-size:3rem;margin-bottom:0.75rem;">🛠️</div>
@@ -4070,29 +4102,46 @@ function renderUnsubscribePage() {
     return;
   }
 
-  const iscritto = hasNewsletterConsent(currentUser);
+  // --- DISISCRIZIONE IMMEDIATA ----------------------------------------------
+  // Nessuna schermata di conferma: aprire quel link SIGNIFICA volersi
+  // disiscrivere, e chiederglielo una seconda volta sarebbe un ostacolo, non una
+  // cautela. E' sicuro perche' la pagina richiede comunque il login: uno scanner
+  // antivirus o un anteprima di posta che aprisse il link non e' autenticato, e
+  // quindi non puo' disiscrivere nessuno.
+  // clearPendingUnsubscribe() e' cruciale: senza, dopo un "Riattiva" la pagina si
+  // ridisegnerebbe, ritroverebbe l'intento in sospeso e disiscriverebbe di nuovo,
+  // annullando la riattivazione appena fatta.
+  if (target && hasNewsletterConsent(currentUser)) {
+    el.innerHTML = `<p style="color:var(--muted);padding:2rem 0;">${L ? 'Un attimo…' : 'One moment…'}</p>`;
+    const ok = await _setNewsletterConsent(false, 'unsubscribe-link');
+    clearPendingUnsubscribe();
+    if (!ok) {
+      el.innerHTML = `
+        <div style="font-size:3rem;margin-bottom:0.75rem;">⚠️</div>
+        <h1 class="section-title" style="margin-bottom:0.75rem;">${L ? 'Disiscrizione non riuscita' : 'Unsubscribe failed'}</h1>
+        <p style="color:var(--muted);line-height:1.6;margin-bottom:1.5rem;">
+          ${L ? 'Qualcosa è andato storto e la modifica non è stata salvata. Riprova fra poco, oppure disattivala dal tuo profilo, sezione "Preferenze e-mail".'
+               : 'Something went wrong and the change was not saved. Try again shortly, or turn it off from your profile, "E-mail preferences" section.'}
+        </p>${home}`;
+      return;
+    }
+  } else if (target) {
+    clearPendingUnsubscribe(); // era gia' disiscritto: niente da fare
+  }
 
-  // --- CASO 3: e' proprio lui, ed e' iscritto -------------------------------
-  if (iscritto) {
+  // --- Riattivata (dopo aver premuto "Riattiva la newsletter") --------------
+  if (hasNewsletterConsent(currentUser)) {
     el.innerHTML = `
-      <div style="font-size:3rem;margin-bottom:0.75rem;">📭</div>
-      <h1 class="section-title" style="margin-bottom:0.75rem;">${L ? 'Disiscriverti dalla newsletter?' : 'Unsubscribe from the newsletter?'}</h1>
+      <div style="font-size:3rem;margin-bottom:0.75rem;">📧</div>
+      <h1 class="section-title" style="margin-bottom:0.75rem;">${L ? 'Iscrizione riattivata' : 'Subscription re-enabled'}</h1>
       <p style="color:var(--muted);line-height:1.6;margin-bottom:1.5rem;">
-        ${L ? `Stai per revocare il consenso per <strong style="color:var(--text);">${esc(currentUser.email)}</strong>. Basta un clic, e non riceverai più la newsletter.<br><br>Le e-mail di servizio (benvenuto, risposte ai tuoi post e ai tuoi messaggi) continueranno ad arrivarti: non sono newsletter.`
-             : `You are about to withdraw consent for <strong style="color:var(--text);">${esc(currentUser.email)}</strong>. One click, and you will no longer receive the newsletter.<br><br>Service e-mails (welcome, replies to your posts and messages) will still reach you: they are not newsletters.`}
-      </p>
-      <button class="btn-primary" style="font-size:1rem;padding:0.7rem 2rem;" onclick="doUnsubscribeFromLink()">
-        ${L ? '📭 Disiscrivimi' : '📭 Unsubscribe me'}
-      </button>
-      <div style="margin-top:1.25rem;">
-        <a href="#" onclick="clearPendingUnsubscribe();showPage('home');return false;" style="color:var(--muted);font-size:0.88rem;">
-          ${L ? 'No, ho cambiato idea — torna alla Home' : 'No, I changed my mind — back to Home'}
-        </a>
-      </div>`;
+        ${L ? 'Tornerai a ricevere le novità sull\'Inventario Sgorbions.<br>Puoi disattivarla quando vuoi dal tuo profilo, sezione "Preferenze e-mail".'
+             : 'You will receive updates on the Sgorbions Inventory again.<br>You can turn it off anytime from your profile, "E-mail preferences" section.'}
+      </p>${home}`;
     return;
   }
 
-  // --- CASO 4: non e' (piu') iscritto ---------------------------------------
+  // --- Esito normale: disiscritto -------------------------------------------
   el.innerHTML = `
     <div style="font-size:3rem;margin-bottom:0.75rem;">✅</div>
     <h1 class="section-title" style="margin-bottom:0.75rem;white-space:nowrap;font-size:clamp(1.05rem, 4.6vw, 2rem);">${L ? 'Non sei più iscritto alla newsletter' : 'You are no longer subscribed to the newsletter'}</h1>
@@ -4108,21 +4157,6 @@ function renderUnsubscribePage() {
 // L'unico clic. Origine 'unsubscribe-link', così nella tabella admin si distingue
 // da una revoca fatta dal profilo: sono due percorsi diversi e sapere quale sia
 // stato usato è un'informazione, non un dettaglio.
-async function doUnsubscribeFromLink() {
-  if (!currentUser) return;
-  // Guardia finale: se il bersaglio non coincide, non si scrive nulla. La pagina
-  // non mostrerebbe nemmeno il pulsante, ma la verifica sta anche qui — la UI e'
-  // un'indicazione, non una garanzia.
-  const target = pendingUnsubTarget();
-  if (target && target !== '1' && String(currentUser.id) !== String(target)) {
-    console.warn('[unsubscribe] bersaglio non coincidente: nessuna modifica');
-    renderUnsubscribePage();
-    return;
-  }
-  const ok = await _setNewsletterConsent(false, 'unsubscribe-link');
-  if (ok) clearPendingUnsubscribe(); // operazione conclusa
-  renderUnsubscribePage();
-}
 
 async function doResubscribeFromLink() {
   if (!currentUser) return;
@@ -4281,8 +4315,23 @@ function userLangFor(user) {
 // L'id NON e' una credenziale e non autorizza nulla: la pagina richiede comunque
 // il login e verifica che l'utente autenticato SIA quel destinatario. Serve solo
 // a riconoscere il bersaglio giusto e a dirlo chiaramente quando non coincide.
+// La query serve SOLO a scavalcare la cache del browser; il carico utile sta nel
+// frammento. Perche' entrambi:
+//   - il FRAMMENTO (#unsubscribe=<id>) non viene mai trasmesso al server, quindi
+//     nessun redirect puo' toglierlo: e' il posto sicuro per l'identita';
+//   - ma il frammento NON fa parte della chiave di cache. "figurinesgorbions.it/"
+//     e "figurinesgorbions.it/#unsubscribe=123" sono per il browser la stessa
+//     risorsa. Chi ha visitato il sito di recente si vedrebbe servire l'index.html
+//     vecchio (GitHub Pages lo manda con max-age=600), che a sua volta punta a un
+//     app.js vecchio: il link aprirebbe una versione superata del sito.
+//   - la QUERY invece fa parte della chiave di cache. Mettendoci la versione,
+//     dopo ogni rilascio il primo clic e' per forza un miss: index.html viene
+//     riscaricato fresco.
+// Divisione dei ruoli: la query e' sacrificabile (se un redirect la mangia non
+// perdiamo nulla, solo il vantaggio sulla cache), il frammento e' il dato vero.
 const UNSUBSCRIBE_URL = (userId) =>
-  'https://figurinesgorbions.it/#unsubscribe=' + encodeURIComponent(userId || '');
+  'https://figurinesgorbions.it/?nl=' + encodeURIComponent(JS_VERSION) +
+  '#unsubscribe=' + encodeURIComponent(userId || '');
 
 const NEWSLETTER_FOOTER = (lang, userId) => (lang === 'en')
   ? '\n\n———\n' +
@@ -4751,7 +4800,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.624';
+const JS_VERSION = 'v5.626';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
