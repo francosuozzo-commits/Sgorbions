@@ -1,6 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.624 — Su osservazione di Franco: la schermata di mancata corrispondenza
+//          introdotta in v5.623 diceva troppo. Nominava il destinatario
+//          ("quella newsletter era indirizzata a Luca") e spiegava cosa
+//          facesse il link.
+//          E' un problema di RISERVATEZZA, non di stile: dirlo a Mario gli
+//          rivela due cose su Luca che non lo riguardano — che scriviamo a
+//          Luca, e che Luca e' iscritto alla newsletter. Chi apre un link che
+//          non e' suo non ha alcun motivo di sapere di chi fosse ne' a cosa
+//          servisse.
+//          Ora la schermata dice soltanto che il link non e' associato
+//          all'utenza connessa e che percio' non e' stato eseguito. Nessun
+//          destinatario, nessuno scopo. Rimossa anche la ricerca del
+//          destinatario in getData('users'), che ora non serve piu'.
+//          Resta l'invito a uscire e rientrare con l'account giusto, che e'
+//          l'unica azione utile e non rivela nulla.
 // v5.623 — Su segnalazione di Franco, che ha aperto il link di disiscrizione
 //          mentre era autenticato come ADMIN: il link NON diceva a chi fosse
 //          indirizzata l'e-mail. Diceva solo "qualcuno vuole disiscriversi", e
@@ -4021,16 +4036,18 @@ function renderUnsubscribePage() {
   // disiscritto senza averlo chiesto. Tipico su un computer condiviso — o quando
   // l'admin apre il link di una newsletter mandata a qualcun altro.
   if (hasTarget && String(currentUser.id) !== String(target)) {
-    // Il nome del destinatario si puo' mostrare solo se lo abbiamo gia' in memoria
-    // (l'admin ha l'elenco utenti; un utente normale no, e non deve averlo).
-    const dest = (getData('users', []) || []).find(u => String(u.id) === String(target));
-    const chi = dest ? `<strong style="color:var(--text);">${esc(dest.username)}</strong>` : (L ? 'un altro account' : 'another account');
+    // NESSUN DETTAGLIO sull'e-mail o sul destinatario, per riservatezza: dire a
+    // Mario "quella newsletter era per Luca" gli rivelerebbe che scriviamo a Luca
+    // e che Luca e' iscritto. Non e' un'informazione sua, e non gli serve. Non si
+    // dice nemmeno COSA facesse il link: chi non e' il destinatario non ha motivo
+    // di saperlo. Si dice solo che il link non e' legato a questa utenza e che
+    // percio' non e' stato eseguito.
     el.innerHTML = `
       <div style="font-size:3rem;margin-bottom:0.75rem;">⚠️</div>
-      <h1 class="section-title" style="margin-bottom:0.75rem;white-space:nowrap;font-size:clamp(1.05rem, 4.6vw, 2rem);">${L ? 'Questo link non è per te' : 'This link is not for you'}</h1>
+      <h1 class="section-title" style="margin-bottom:0.75rem;">${L ? 'Link non valido per questo account' : 'Link not valid for this account'}</h1>
       <p style="color:var(--muted);line-height:1.6;margin-bottom:1.5rem;">
-        ${L ? `Quella newsletter era indirizzata a ${chi}, ma su questo browser sei entrato come <strong style="color:var(--text);">${esc(currentUser.username)}</strong>.<br><br>Non ho toccato nulla: disiscrivere te lascerebbe iscritto il destinatario e toglierebbe la newsletter a chi non l'ha chiesto. Esci e rientra con l'account giusto, poi riapri il link.`
-             : `That newsletter was addressed to ${chi}, but on this browser you are signed in as <strong style="color:var(--text);">${esc(currentUser.username)}</strong>.<br><br>Nothing has been changed: unsubscribing you would leave the recipient subscribed and remove the newsletter from someone who never asked. Sign out, sign in with the right account, then open the link again.`}
+        ${L ? `Il link che hai aperto non è associato all'utenza attualmente connessa (<strong style="color:var(--text);">${esc(currentUser.username)}</strong>), quindi non è stato eseguito.<br><br>Se il link riguardava un altro account, esci e rientra con quello.`
+             : `The link you opened is not associated with the currently signed-in account (<strong style="color:var(--text);">${esc(currentUser.username)}</strong>), so it has not been executed.<br><br>If the link was for a different account, sign out and sign in with that one.`}
       </p>
       <button class="btn-secondary" style="font-size:0.95rem;padding:0.6rem 1.5rem;" onclick="logout()">
         ${L ? '🚪 Esci' : '🚪 Sign out'}
@@ -4734,7 +4751,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.623';
+const JS_VERSION = 'v5.624';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
