@@ -41,6 +41,49 @@
   --card: #1a1030;
   --card2: #221540;
   --accent: #b5ff2e;
+
+  /* CODICE COLORE DELLE TIPOLOGIE (v5.703, deciso da Franco).
+     Vale ovunque: badge sulle card, contatori della serie, etichette dei filtri.
+     Sta QUI e in nessun altro posto: se un domani il rosa diventa viola, si cambia
+     una riga e cambia dappertutto.
+     Il verde --accent NON e' fra questi, ed e' deliberato: il verde promette che una
+     cosa e' CLICCABILE (v5.664). Un tipo non si clicca. */
+  --type-base:       #ffffff;  /* oggetto base */
+  --type-official:   #ffa94d;  /* variazione ufficiale */
+  --type-unofficial: #7fd4ff;  /* variazione non ufficiale */
+  --type-change:     #ff9ecb;  /* Change */
+  --type-printerror: #ff7a6b;  /* Errore di stampa (v5.711) */
+
+  /* IL ROSSO, UNO SOLO (v5.719). Ce n'erano TRE che si somigliavano — #ff6464 (usato
+     ~80 volte), #ff6b6b (nelle classi dei pulsanti) e #ff4444 (sparso) — piu' una
+     decina di rgba(255,100,100, ...) a sei opacita' diverse, che pero' NON erano un
+     quarto rosso: rgba(255,100,100) E' #ff6464, solo con la trasparenza.
+     Tre rossi indistinguibili non sono una scelta: sono tre volte la stessa scelta,
+     fatta in tre momenti diversi. Ora il rosso di "distruggi" e' UNO, e si cambia in
+     una riga.
+     --danger-rgb serve agli rgba(): le opacita' in uso vanno da 0.08 a 0.4, e vanno
+     conservate tutte — sono sfondi di hover, non il colore pieno. */
+  --danger:     #ff6464;
+  --danger-rgb: 255,100,100;
+
+  /* L'AZZURRO DELL'INFORMAZIONE (v5.722). Uno solo, e NON e' quello dei tipi.
+     #7fd4ff (--type-unofficial) appartiene ai TIPI e non lo usa nessun altro.
+     #4db8ff dice "informazione": messaggio di aggiornamento, pannello di riscontro,
+     stato di un'opzione. Erano due azzurri vicinissimi che nella stessa schermata
+     dicevano cose opposte — "hai cliccato" contro "l'oggetto e' fatto cosi'". */
+  --info:     #4db8ff;
+  --info-rgb: 77,184,255;
+
+  /* L'AVVISO, UNO SOLO (v5.724). Erano DUE ambre quasi identiche, e nessuna era una
+     variabile: #ffb400 (10 usi — banner "stai impersonando", banner "cambia password",
+     barre di quota oltre il 70%, note admin) e #ffaa00 (3 usi — SOLO il colore del
+     messaggio type==='warn'). Stesso significato: "attenzione". Due valori.
+     E' la stessa storia dei tre rossi (v5.719), che non avevo ancora raccontata: la
+     stessa scelta fatta due volte, in due momenti, da chi non sapeva dell'altra.
+     Vince il dominante. --warn-rgb serve agli rgba(): rgba(255,180,0) E' #ffb400, solo
+     con la trasparenza — non un terzo giallo. */
+  --warn:     #ffb400;
+  --warn-rgb: 255,180,0;
   --accent2: #ff6b1a;
   --accent3: #c84bff;
   --text: #f0eaff;
@@ -155,11 +198,11 @@ body {
 }
 .btn-logout {
   font-family: var(--font-ui); background: transparent;
-  border: 1px solid rgba(255,100,100,0.3); color: #ff6b6b;
+  border: 1px solid rgba(var(--danger-rgb),0.3); color: var(--danger);
   padding: 0.35rem 0.9rem; border-radius: 8px; cursor: pointer;
   font-size: 0.9rem; transition: all 0.2s;
 }
-.btn-logout:hover { background: rgba(255,100,100,0.1); }
+.btn-logout:hover { background: rgba(var(--danger-rgb),0.1); }
 
 /* ===== PAGES ===== */
 .page { display: none; padding-top: 56px; min-height: 100vh; position: relative; z-index: 1; }
@@ -220,6 +263,49 @@ body {
   letter-spacing: 0.5px;
 }
 .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(181,255,46,0.4); }
+/* IL PULSANTE CHE DISTRUGGE (v5.723). Non esisteva.
+   I pulsanti distruttivi erano DICIASSETTE, vestiti in SEI modi diversi: due
+   btn-primary riverniciati di rosso a mano (la classe che significa "fai questa cosa",
+   su un pulsante che cancella un account), tre SENZA NESSUNA CLASSE, uno btn-secondary,
+   uno comment-del-btn, e sette tbl-btn-del — questi ultimi coerenti fra loro.
+   IL CASO PEGGIORE: deleteBulkSelected — che cancella DEFINITIVAMENTE molti oggetti in
+   ciclo, con fsDelete su ognuno — portava btn-secondary. Trasparente, neutro, identico
+   a un "Annulla". L'azione piu' distruttiva del sito sembrava la meno pericolosa.
+   Non era un problema di stile: era un problema di SICUREZZA. Un pulsante deve
+   assomigliare a cio' che fa.
+   I tbl-btn-del (le icone nelle tabelle) restano come sono: sono un'altra famiglia,
+   gia' coerente. */
+/* MISURE IDENTICHE a .btn-primary: cambia SOLO il colore. Cosi' e' un rimpiazzo
+   esatto — sostituendo la classe, il pulsante non cambia taglia ne' posizione. */
+.btn-danger {
+  font-family: var(--font-ui); font-size: 1.15rem;
+  background: var(--danger); color: #1a0606;
+  border: none; padding: 0.75rem 2rem; border-radius: 12px;
+  cursor: pointer; transition: background 0.2s, opacity 0.2s;
+}
+
+.btn-danger:hover { background: #ff8080; }
+
+.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* IL ROSSO VUOTO (v5.723): "elimina questo", ma la conferma deve ancora arrivare.
+   Erano QUATTRO pulsanti con lo stesso stile scritto a mano quattro volte (bordo rosso,
+   fondo trasparente): elimina figurina dalla maschera, elimina dal dettaglio, elimina
+   utente, apri "elimina il mio account". Stessa scelta ripetuta in punti che non si
+   parlavano — e infatti misure e opacita' divergevano gia'.
+   DUE LIVELLI, non uno solo:
+     .btn-danger-ghost = "elimina" → apre una conferma. Meno invitante al clic.
+     .btn-danger       = il punto di non ritorno, o la cancellazione massiva. Pieno. */
+.btn-danger-ghost {
+  font-family: var(--font-ui); font-size: 0.85rem;
+  background: transparent; color: var(--danger);
+  border: 1px solid var(--danger); border-radius: 8px;
+  padding: 0.6rem 1rem; cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-danger-ghost:hover { background: rgba(var(--danger-rgb), 0.12); }
+
 .btn-secondary {
   font-family: var(--font-ui); font-size: 1.15rem;
   background: transparent; color: var(--text);
@@ -332,12 +418,31 @@ body {
   width: 100%; aspect-ratio: 1; display: flex; align-items: center;
   justify-content: center; font-size: 3rem; flex-shrink: 0;
 }
+/* Badge del tipo di figurina (variazione / change).
+   NON usa piu' var(--accent), il verde lime: quello e' il colore delle AZIONI
+   (i pulsanti). Un'etichetta informativa che ne indossa il colore invita a
+   cliccarla, e non c'e' niente da cliccare. Ogni tipo ha ora un colore suo, che
+   lo rende riconoscibile a colpo d'occhio senza nemmeno leggerlo.
+   Il testo resta scuro su tutti e tre: sono fondi chiari. */
 .fig-owned-badge {
   position: absolute; top: 8px; right: 8px;
-  background: var(--accent); color: #0e0a1a;
+  color: #0e0a1a;
   font-size: 0.7rem; font-family: var(--font-ui); font-weight: 700;
-  padding: 3px 8px; border-radius: 20px;
+  padding: 3px 8px;
+  /* Due righe ("Variazione / non ufficiale"): interlinea compatta, testo
+     centrato, e raggio contenuto — 20px su un riquadro alto due righe lo
+     trasformerebbe in un ovale. */
+  line-height: 1.15; text-align: center;
+  border-radius: 10px;
 }
+/* I badge NON dichiarano piu' il proprio colore: lo prendono dal codice colore
+   definito in :root. Prima ognuno se lo scriveva addosso — e tre punti che
+   dichiarano lo stesso colore sono tre punti che prima o poi divergono. */
+.fig-badge-base       { background: var(--type-base); }
+.fig-badge-official   { background: var(--type-official); }
+.fig-badge-unofficial { background: var(--type-unofficial); }
+.fig-badge-change     { background: var(--type-change); }
+.fig-badge-printerror { background: var(--type-printerror); }
 .fig-body { padding: 0.9rem 1rem 1rem; margin-top: auto; }
 .fig-number { font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; }
 .fig-name { font-family: var(--font-ui); font-size: 1.05rem; color: var(--text); }
@@ -363,20 +468,49 @@ body {
   content: ''; position: absolute; top: 3px; left: 3px;
   width: 14px; height: 14px; border-radius: 50%; background: white; transition: left 0.2s;
 }
-.toggle-btn-blue.on { background: #4db8ff; }
+/* ACCESO = VERDE (v5.721). Franco: "usa il verde per l'acceso degli interruttori".
+   Era azzurro (var(--info)) — e nella riga dei filtri stava a due centimetri dall'etichetta
+   "Solo Variazioni non ufficiali", che e' AZZURRA (#7fd4ff). Due azzurri quasi identici
+   che dicevano cose opposte: uno "hai cliccato", l'altro "l'oggetto e' fatto cosi'".
+   ATTENZIONE, e l'avevo detto male: il verde NON "libera" l'azzurro. Contando davvero,
+   var(--info) e' usato in 14 punti VIVI — la legenda dei filtri, i messaggi di tipo
+   'update', i pulsanti "includi posseduti", e soprattutto IL TESTO DEL changeType nei
+   riferimenti ai retro, che compare accanto ai badge dei tipi. L'incoerenza n.2 non si
+   chiude cambiando l'interruttore: si restringe. Segnalato a Franco.
+   Il verde qui non tradisce il codice dei pulsanti: --accent significa gia' "attivo",
+   ed e' vietato ai TIPI proprio perche' promette che una cosa e' cliccabile (v5.664).
+   NOTA: ora l'interruttore acceso e il bottone "Mia lista" sono ENTRAMBI verdi. La
+   distinzione che Franco ha chiesto (v5.720) regge sulla FORMA, non sul colore:
+   il COLORE dice lo STATO (verde = acceso), la FORMA dice COSA E' —
+   pillola con manopola = filtra una vista; quadrato con spunta = SCRIVE SUL DATABASE. */
+.toggle-btn-blue.on { background: var(--accent); }
 .toggle-btn-blue.on::after { left: 19px; }
 
-.toggle-btn {
-  width: 38px; height: 22px; border-radius: 11px; border: none;
-  background: var(--card2); cursor: pointer; position: relative; transition: all 0.25s;
+/* IL BOTTONE "MIA LISTA" (v5.720). NON e' un interruttore: SCRIVE SU FIRESTORE.
+   Franco: "sono bottoni (che modificano persino il db), non interruttori, quindi
+   tienili distinti".
+   Aveva ragione, ed e' una questione di onesta' del gesto: un interruttore promette
+   che stai cambiando una VISTA — reversibile, privata, senza conseguenze. Questo
+   invece modifica i tuoi dati. Avevano la stessa forma, lo stesso colore e lo stesso
+   clic: l'unica cosa che li distingueva era sapere gia' cosa facevano.
+   Quindi: SQUADRATO (6px, non a pillola), NESSUNA MANOPOLA CHE SCORRE, e una SPUNTA
+   dentro. Da acceso e' VERDE — il colore che nel codice dei pulsanti significa
+   "azione compiuta" (--accent), non azzurro come i filtri. */
+.owned-btn {
+  width: 36px; height: 22px; border-radius: 6px;
+  border: 1px solid var(--border2); background: transparent;
+  color: var(--muted); cursor: pointer; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; line-height: 1;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.toggle-btn::after {
-  content: ''; position: absolute; top: 3px; left: 3px;
-  width: 16px; height: 16px; border-radius: 50%;
-  background: var(--muted); transition: all 0.25s;
+
+.owned-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.owned-btn.on {
+  background: var(--accent); border-color: var(--accent); color: #0e0a1a;
 }
-.toggle-btn.on { background: rgba(181,255,46,0.2); }
-.toggle-btn.on::after { left: 19px; background: var(--accent); }
+
 
 /* ===== SERIES DETAIL PAGE ===== */
 #series-detail { display: none; }
@@ -411,7 +545,7 @@ body {
   font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 3rem);
   color: var(--text); margin-bottom: 1rem; line-height: 1.1;
 }
-.series-description { color: var(--muted); line-height: 1.7; margin-bottom: 1.5rem; max-width: 600px; white-space: pre-line; }
+.series-description { color: var(--text); line-height: 1.7; margin-bottom: 1.5rem; max-width: 600px; white-space: pre-line; }
 .progress-bar-wrap { margin-bottom: 0.5rem; }
 .progress-label { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 6px; }
 .progress-label span:first-child { color: var(--muted); }
@@ -543,11 +677,11 @@ body {
 .comment-date { font-size: 0.72rem; color: var(--muted); margin-left: auto; }
 .comment-text { font-size: 1rem; color: var(--muted); line-height: 1.6; }
 .comment-del-btn {
-  background: transparent; border: none; color: rgba(255,100,100,0.4);
+  background: transparent; border: none; color: rgba(var(--danger-rgb),0.4);
   cursor: pointer; font-size: 0.75rem; padding: 0 4px; margin-left: 6px;
   transition: color 0.15s;
 }
-.comment-del-btn:hover { color: #ff6b6b; }
+.comment-del-btn:hover { color: var(--danger); }
 
 /* Inline reply box */
 .reply-box {
@@ -585,10 +719,14 @@ body {
 .contact-grid { display: grid; grid-template-columns: 1fr 1.6fr; gap: 3rem; align-items: start; }
 .contact-info { }
 .contact-info h3 { font-family: var(--font-ui); font-size: 1.4rem; margin-bottom: 1rem; }
-.contact-item { display: flex; gap: 1rem; margin-bottom: 1.25rem; align-items: flex-start; }
-.contact-icon { font-size: 1.5rem; line-height: 1; margin-top: 2px; }
-.contact-item h4 { font-family: var(--font-ui); font-size: 1rem; margin-bottom: 2px; }
-.contact-item p { font-size: 0.88rem; color: var(--muted); }
+/* Icona, etichetta e indirizzo tutti sulla STESSA riga. Prima etichetta e
+   indirizzo erano annidati in un <div> a parte, e <h4> e <p> essendo blocchi
+   si incolonnavano: il flex del contenitore li vedeva come un elemento solo.
+   Ora sono tre figli diretti, e il flex li allinea in orizzontale. */
+.contact-item { display: flex; gap: 0.6rem; align-items: baseline; justify-content: center; flex-wrap: wrap; }
+.contact-icon { font-size: 1.5rem; line-height: 1; align-self: center; }
+.contact-item h4 { font-family: var(--font-ui); font-size: 1rem; margin: 0; }
+.contact-item p { font-size: 0.88rem; color: var(--muted); margin: 0; }
 
 /* ===== PROFILE PAGE ===== */
 .profile-header {
@@ -631,7 +769,7 @@ body {
   text-align: center; line-height: 1.5; max-width: min(90vw, 520px);
 }
 .toast.success { border-color: rgba(181,255,46,0.3); }
-.toast.error { border-color: rgba(255,100,100,0.3); }
+.toast.error { border-color: rgba(var(--danger-rgb),0.3); }
 @keyframes toast-in { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
 
 /* ===== EMPTY STATE ===== */
@@ -683,8 +821,8 @@ body {
 }
 .tbl-btn-edit { background: transparent; border-color: rgba(200,75,255,0.3); color: var(--accent3); }
 .tbl-btn-edit:hover { background: rgba(200,75,255,0.1); }
-.tbl-btn-del { background: transparent; border-color: rgba(255,100,100,0.3); color: #ff6b6b; }
-.tbl-btn-del:hover { background: rgba(255,100,100,0.1); }
+.tbl-btn-del { background: transparent; border-color: rgba(var(--danger-rgb),0.3); color: var(--danger); }
+.tbl-btn-del:hover { background: rgba(var(--danger-rgb),0.1); }
 
 /* ===== DIVIDER ===== */
 .divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 2rem 0; }
@@ -737,4 +875,4 @@ footer {
 .reveal.visible { opacity: 1; transform: translateY(0); }
 
 /* Legenda definizioni filtri: il termine (prima dei due punti) in azzurro */
-#filter-legend-list strong { color: #4db8ff; }
+#filter-legend-list strong { color: var(--info); }
