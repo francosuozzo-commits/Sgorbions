@@ -1,6 +1,744 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.724 — Franco: "facciamo la 2 (l'ambra)".
+//          Erano DUE ambre quasi identiche, e nessuna delle due era una variabile:
+//            · #ffb400  10 usi — banner "stai impersonando", banner "cambia password",
+//                       barre di quota oltre il 70%, note admin, un pulsante tbl-btn
+//            · #ffaa00   3 usi — SOLO il colore del messaggio type==='warn'
+//          Stesso significato ("attenzione"), due valori. E' la stessa storia dei tre
+//          rossi (v5.719), che non avevo ancora raccontata: la stessa scelta fatta due
+//          volte, in due momenti diversi, da chi non sapeva dell'altra. Il messaggio di
+//          avviso e il banner di avviso NON ERANO DELLO STESSO COLORE.
+//          Ora:
+//            --warn:     #ffb400   (vince il dominante)
+//            --warn-rgb: 255,180,0
+//          La seconda serve agli rgba(): rgba(255,180,0) E' #ffb400 con la trasparenza,
+//          non un terzo giallo — l'errore di conteggio che Franco mi aveva corretto sui
+//          rossi.
+//          17 punti unificati (13 pieni + 4 trasparenze). L'avviso ora si cambia in una
+//          riga.
+//          UNICO EFFETTO VISIBILE: il messaggio 'warn' cambia leggermente tinta
+//          (#ffaa00 → #ffb400). Ora e' la stessa ambra dei banner, invece di un giallo
+//          suo. Era il punto: che l'avviso avesse UN colore.
+//          LEZIONE APPLICATA: il changelog l'ho ESCLUSO PRIMA della sostituzione, non
+//          riparato dopo. Nelle v5.719 e v5.722 ero cascato due volte nella stessa buca
+//          — la sostituzione di massa colpiva i commenti, dove i codici colore sono
+//          DOCUMENTAZIONE e raccontano com'era. Verificato: 0 var(--warn) nei commenti.
+//          NON TOCCATI (e restano da fare, se Franco vorra'): il verde --accent riscritto
+//          a mano 6 volte, l'arancione --accent2 3 volte, il viola --accent3 3 volte, e
+//          #4488ff (i badge "non letto") che non ha variabile. Stessa malattia, ma sono
+//          riscritture larghe con guadagno estetico: l'ambra era l'unica che fosse un
+//          BACO vero (due colori per un significato solo).
+//          Modificati style.css, index.html, app.js.
+// v5.723 — L'incoerenza n.4: "Elimina il mio account" era un btn-primary — la classe che
+//          significa "FAI QUESTA COSA" — riverniciato di rosso a mano.
+//          MA CERCANDO QUANTI FOSSERO, NE HO TROVATI DICIASSETTE, IN SEI COSTUMI DIVERSI.
+//          E uno era grave, non estetico:
+//
+//          *** deleteBulkSelected PORTAVA class="btn-secondary" ***
+//          Cancella DEFINITIVAMENTE molti oggetti in ciclo (fsDelete su ognuno). Era
+//          trasparente, neutro, IDENTICO A UN PULSANTE "ANNULLA". L'azione piu'
+//          distruttiva del sito sembrava la meno pericolosa di tutte.
+//          Non e' un problema di stile: e' un problema di SICUREZZA. Un pulsante deve
+//          assomigliare a cio' che fa.
+//
+//          Altri tre erano SENZA NESSUNA CLASSE, con lo stile rosso scritto a mano —
+//          quattro volte lo stesso stile, in quattro punti che non si parlavano (e
+//          infatti misure e opacita' gia' divergevano). La malattia di sempre.
+//
+//          DUE CLASSI NUOVE, perche' i livelli di pericolo sono DUE:
+//            .btn-danger        rosso PIENO. Il punto di non ritorno (conferma
+//                               eliminazione account) e la cancellazione massiva.
+//                               MISURE IDENTICHE a btn-primary: e' un rimpiazzo esatto,
+//                               cambia solo il colore, il pulsante non cambia taglia.
+//            .btn-danger-ghost  rosso VUOTO (bordo, fondo trasparente). "Elimina" che
+//                               APRE una conferma: deve essere meno invitante al clic.
+//
+//          I 17 pulsanti ora stanno in TRE famiglie coerenti:
+//            btn-danger (3) · btn-danger-ghost (4) · tbl-btn-del (9) + comment-del-btn
+//          Nessuno e' piu' senza segnale di pericolo. Verificato elencandoli tutti.
+//          Allineato anche deleteContactMsg, che era un tbl-btn col rosso a mano invece
+//          di tbl-btn-del come i suoi otto fratelli.
+//          I tbl-btn-del (le icone nelle tabelle) restano come sono: altra famiglia,
+//          gia' coerente fra loro.
+//          Modificati style.css, index.html, app.js.
+// v5.722 — Franco: "sulla 1 per me va bene" — l'incoerenza n.2 (i due azzurri).
+//          META' DEL LAVORO ERA GIA' FATTA: #7fd4ff esiste SOLO come --type-unofficial.
+//          Nessun altro lo usa. Era gia' esclusivo ai tipi.
+//          Il problema era tutto nell'ALTRO azzurro, #4db8ff — e guardando i 14 punti
+//          vivi si vede che faceva DUE MESTIERI:
+//            (a) INFORMAZIONE — messaggio di tipo 'update', pannello di riscontro
+//                "resetta password", legenda dei filtri, stato di "includi posseduti".
+//                Legittimo: azzurro = "ti sto dicendo qualcosa".
+//            (b) DECORAZIONE — il testo del changeType e il nome del retro collegato.
+//                Li' l'azzurro NON DICE NIENTE. Ma compare ACCANTO AI BADGE, dove
+//                azzurro SIGNIFICA "variazione non ufficiale". Era l'unico punto in cui
+//                i due azzurri si toccavano davvero.
+//          FATTO:
+//            · (a) consolidato in --info / --info-rgb. Un azzurro solo, in una riga.
+//            · (b) SPENTO in 4 punti (changeType nella lista, changeType nei riferimenti
+//              ×2, nome del retro collegato) → var(--muted). Sono descrizioni, non tipi:
+//              non devono vestirsi da tipo.
+//          Ora il codice dei TIPI e quello dell'INFORMAZIONE non si toccano piu'.
+//          ERRORE MIO, LO STESSO DELLA v5.719: la sostituzione ha colpito anche IL
+//          CHANGELOG, dove #4db8ff era DOCUMENTAZIONE (raccontava com'era). Ripristinati
+//          i letterali nei commenti. Sono cascato due volte nella stessa buca: la
+//          prossima sostituzione di massa la faccio escludendo il changelog PRIMA.
+//          Modificati style.css, index.html, app.js.
+// v5.721 — Franco: "ci siamo capiti male: ti avevo detto di usare il verde per l'acceso
+//          degli interruttori".
+//          Nel messaggio precedente Franco aveva risposto alla SECONDA domanda (bottoni
+//          vs interruttori) e la PRIMA — sui due azzurri — era rimasta senza risposta:
+//          per questo l'interruttore era rimasto azzurro. Ora e' verde.
+//              .toggle-btn-blue.on  →  background: var(--accent)
+//
+//          CONSEGUENZA DA GUARDARE IN FACCIA: l'interruttore acceso e il bottone
+//          "Mia lista" (v5.720) sono ora ENTRAMBI VERDI. La distinzione che Franco ha
+//          chiesto regge quindi sulla FORMA, non piu' sul colore. Che, a pensarci, e'
+//          un sistema piu' pulito di quello che avevo proposto io:
+//            · il COLORE dice lo STATO      → verde = acceso, sempre, ovunque
+//            · la FORMA dice COSA E'        → pillola con manopola = filtra una vista
+//                                             quadrato con spunta  = SCRIVE SUL DATABASE
+//          Un colore solo, due forme.
+//
+//          MI ERO SBAGLIATO, E ME NE SONO ACCORTO CONTANDO: avevo detto che il verde
+//          "libera l'azzurro" e chiude l'incoerenza n.2. NON E' VERO. #4db8ff e' usato
+//          in 14 PUNTI VIVI, non solo nell'interruttore:
+//            · #filter-legend-list strong (la legenda dei filtri)
+//            · il colore dei messaggi di tipo 'update'
+//            · i pulsanti "includi posseduti" della wantlist
+//            · lo sfondo del riscontro "resetta password"
+//            · IL TESTO DEL changeType nei riferimenti ai retro — e questo e' il piu'
+//              fastidioso, perche' compare ACCANTO ai badge dei tipi, dove la
+//              variazione non ufficiale e' azzurra (#7fd4ff).
+//          L'incoerenza n.2 quindi NON SI CHIUDE cambiando l'interruttore: SI
+//          RESTRINGE. Resta aperta, e va decisa a parte.
+//          Modificati style.css.
+// v5.720 — Franco, sull'incoerenza n.1: "sono bottoni (che modificano persino il db),
+//          non interruttori, quindi tienili distinti".
+//          PRIMA SCOPERTA: L'INCOERENZA N.1 NON ERA UNA SCELTA, ERA CODICE MORTO.
+//          Avevo segnalato "due interruttori, due colori acceso" (.toggle-btn.on verde
+//          contro .toggle-btn-blue.on azzurro). Ma la classe .toggle-btn ha ZERO USI:
+//          esisteva solo nel CSS. Non c'era nessun conflitto da dirimere — c'era un
+//          residuo da buttare. Rimossa (con i suoi due ::after orfani).
+//
+//          LA COSA VERA, che ho trovato guardando DOVE vive l'interruttore azzurro:
+//          FACEVA DUE MESTIERI DIVERSI.
+//            · FILTRI (tipo, possesso, admin, wantlist): cambiano la VISTA. Reversibili,
+//              privati, senza conseguenze.
+//            · toggleOwned / toggleOwnedFromDetail: SCRIVONO SU FIRESTORE
+//              (saveOwnedToFirebase). Modificano i dati dell'utente.
+//          Stessa forma, stesso colore, stesso gesto. L'unica cosa che li distingueva
+//          era SAPERE GIA' cosa facevano. Franco ha ragione: un interruttore PROMETTE
+//          che stai cambiando una vista. Questi cambiano i tuoi dati.
+//          Ora i tre controlli che scrivono (card, dettaglio, tabella) sono BOTTONI:
+//            .owned-btn — SQUADRATO (6px, non a pillola), NESSUNA MANOPOLA CHE SCORRE,
+//            una SPUNTA dentro, e da acceso VERDE (--accent, "azione compiuta" nel
+//            codice dei pulsanti) invece che azzurro.
+//          Aggiunto anche il title: prima erano bottoni VUOTI, muti per chi legge con
+//          uno screen reader.
+//
+//          VERIFICA CHE HA EVITATO DUE BACHI:
+//          1. toggleWantlistMode SEMBRAVA scrivere (il nome inganna) ma chiama solo
+//             renderWantlist(): e' un selettore di VISTA. Stavo per spostarlo fra i
+//             bottoni. Controllato prima: resta un interruttore.
+//          2. toggleOwnedFromDetail RISCRIVEVA A MANO la className con 'toggle-btn-blue'
+//             — in due punti, uno dei quali cerca il bottone DENTRO la card con
+//             querySelector('.toggle-btn-blue'). Dopo il cambio quel selettore non
+//             avrebbe trovato piu' nulla, e l'altro avrebbe CANCELLATO la classe del
+//             bottone: cliccando dal dettaglio, il bottone avrebbe smesso di mostrare
+//             lo stato. node --check non poteva vederlo. Corretti entrambi.
+//
+//          RESTA APERTA L'INCOERENZA N.2: l'interruttore acceso e' #4db8ff e la
+//          variazione non ufficiale e' #7fd4ff — due azzurri quasi identici, che nella
+//          riga dei filtri stanno a due centimetri e dicono cose opposte ("hai
+//          cliccato" contro "l'oggetto e' fatto cosi'"). Franco non ha ancora deciso.
+//          Modificati style.css, app.js.
+// v5.719 — Franco: "punto 3: vuoi uniformare i 3 rossi?"
+//          SI. E FRANCO AVEVA RAGIONE SUL NUMERO: erano TRE, non quattro come avevo
+//          detto io nella v5.718. Avevo contato come quarto rosso gli
+//          rgba(255,100,100, ...) — ma rgba(255,100,100) E' ESATTAMENTE #ff6464, solo
+//          con la trasparenza. Non un colore diverso: lo stesso colore, piu' chiaro.
+//          I TRE VERI:
+//            · #ff6464  ~80 volte (tutti i pieni + tutti gli rgba)
+//            · #ff6b6b    7 volte (le classi dei pulsanti, in style.css)
+//            · #ff4444    5 volte (sparso)
+//          Tre rossi indistinguibili a occhio non sono UNA scelta: sono la stessa
+//          scelta fatta tre volte, in tre momenti diversi, da qualcuno che non sapeva
+//          delle altre due. E' lo stesso difetto che perseguita questa sessione — un
+//          concetto definito in piu' punti — solo travestito da colore.
+//          ORA:
+//            --danger:     #ff6464    (il rosso di "distruggi", uno solo)
+//            --danger-rgb: 255,100,100
+//          La seconda serve agli rgba(): le opacita' in uso sono SEI (0.08, 0.1, 0.15,
+//          0.25, 0.3, 0.4) e vanno conservate tutte — sono sfondi di hover, non il
+//          colore pieno. Con una sola variabile esadecimale le avrei perse.
+//          Unificati 99 punti: 63 colori pieni + 36 trasparenze, in tutti e tre i file.
+//          Il rosso ora si cambia IN UNA RIGA.
+//          CONTROLLATO PRIMA DI TOCCARE: nessuno dei tre rossi stava dentro un'email,
+//          un canvas o un'esportazione — dove una variabile CSS NON funziona (i client
+//          di posta non hanno il :root, e il colore sarebbe sparito). Era il solo modo
+//          per rendere sicura una sostituzione cosi' larga.
+//          NON TOCCATI: #ff6b1a (arancione), rgba(255,180,0) (ambra), #ff7a6b (errore
+//          di stampa) e #ff9ecb (Change) — si somigliano ma dicono altro.
+//          ERRORE MIO, TROVATO CONTROLLANDO: la sostituzione aveva colpito anche IL
+//          CHANGELOG, dove i codici erano DOCUMENTAZIONE (raccontavano com'era). La
+//          v5.718 era diventata "il rosso e' scritto in quattro modi (var(--danger),
+//          var(--danger)...)" — una frase priva di senso. Ripristinati i letterali nei
+//          commenti, e corretto "quattro" in "tre".
+//          Modificati style.css, index.html, app.js.
+// v5.718 — Franco: "il numero dei risultati della ricerca e' troppo piccolo, aumenterei
+//          il font leggermente".
+//          #items-count-display era a 0.8rem — piu' piccolo delle etichette dei filtri
+//          (0.82rem) e della paginazione (0.9rem), pur essendo l'informazione piu'
+//          importante della riga. Portato a 0.95rem.
+//
+//          RECAP DEL CODICE COLORE DEI PULSANTI (chiesto da Franco). Letto dal CSS, non
+//          a memoria. Cinque famiglie:
+//            · VERDE     (--accent #b5ff2e)  "fai questa cosa": btn-primary,
+//                                            btn-register, interruttore acceso
+//            · ROSSO     (#ff6464)           "distruggi, o esci": btn-logout,
+//                                            tbl-btn-del, comment-del-btn, elimina account
+//            · VIOLA     (--accent3)         "modifica, o torna indietro": tbl-btn-edit,
+//                                            hover di back-btn / btn-secondary / btn-login
+//            · AZZURRO   (#4db8ff)           "questo filtro e' acceso": toggle-btn-blue.on
+//            · TRASPARENTE                   azione neutra: back-btn, lang-btn,
+//                                            search-clear-btn, btn-secondary
+//          E' un codice DIVERSO da quello dei TIPI (5 colori, v5.711): quello dice cos'e'
+//          un oggetto, questo dice cosa fa un pulsante. Il verde resta vietato ai tipi
+//          proprio perche' qui PROMETTE CHE UNA COSA E' CLICCABILE (v5.664).
+//
+//          QUATTRO INCOERENZE TROVATE — segnalate a Franco, NON corrette da solo:
+//            1. DUE INTERRUTTORI, DUE COLORI "ACCESO": toggle-btn-blue.on e' AZZURRO,
+//               toggle-btn.on e' VERDE. Stesso significato, due colori.
+//            2. DUE AZZURRI: l'interruttore acceso (#4db8ff) e la variazione non
+//               ufficiale (#7fd4ff). Uno dice "hai cliccato", l'altro "l'oggetto e'
+//               cosi'". Abbastanza vicini da confondersi.
+//            3. IL ROSSO E' SCRITTO IN TRE MODI (#ff6464, #ff6b6b, #ff4444):
+//               non e' una variabile, sono tre rossi che si somigliano.
+//               [Correzione della v5.719: avevo detto QUATTRO, contando anche gli
+//                rgba(255,100,100,...). Franco ha corretto: sono TRE. rgba(255,100,100)
+//                E' #ff6464, solo con la trasparenza — non un quarto rosso.]
+//            4. "Elimina il mio account" e' un btn-primary (la classe del VERDE, "fai
+//               questa cosa") RIVERNICIATO DI ROSSO A MANO. Visivamente giusto, ma la
+//               classe dice il contrario di cio' che fa.
+// v5.717 — Franco: "non riesco a modificare un retro esistente per portarlo da Change a
+//          Errore di stampa: scatta la regola che dice che c'e' gia' un altro retro con
+//          lo stesso Nome+Categoria e lo stesso tipo di Change. Ma questo controllo non
+//          dovrebbe scattare, dato che ora non e' piu' un Change".
+//          BACO CHE HO CREATO IO COL QUINTO TIPO. La regola di unicita' dei Retro
+//          confrontava Categoria + Nome + CHANGETYPE. Usava il changeType come
+//          DISCRIMINANTE FRA I TIPI — e funzionava finche' i tipi di retro erano due:
+//          solo i Change avevano un changeType, i base l'avevano vuoto.
+//          Col quinto tipo la cosa crolla: un retro BASE e un ERRORE DI STAMPA hanno
+//          ENTRAMBI changeType vuoto. Convertendo il Change in errore di stampa il
+//          changeType si svuota, e il controllo trovava il RETRO BASE OMONIMO e
+//          bloccava. Non era un falso positivo: era una chiave di unicita' che aveva
+//          smesso di identificare.
+//          LA CHIAVE ORA COMPRENDE IL TIPO:
+//              seriesId + section + nome + categoria + TIPO
+//              (+ changeType, ma SOLO per i Change: e' cio' che distingue due Change
+//               fra loro, e per gli altri tipi non esiste nemmeno)
+//          Aggiunta tipoDiOggetto(f) — un solo punto di verita', usato da ENTRAMBI i
+//          controlli (le maschere sono due, e due copie della stessa regola divergono
+//          sempre: e' la lezione di tutta questa sessione).
+//          Verificato ESEGUENDO cinque scenari su "Pippo/A" base + "Pippo/A" Change:
+//            · Change → Errore di stampa           PASSA  (era il blocco di Franco)
+//            · secondo errore di stampa omonimo    BLOCCATO
+//            · secondo retro base omonimo          BLOCCATO
+//            · Change omonimo con changeType nuovo PASSA (e' un altro change)
+//            · Change omonimo con lo stesso tipo   BLOCCATO
+//
+//          ERRORE MIO, TROVATO ESEGUENDO: uno script era morto prima di salvare, e
+//          tipoDiOggetto NON ERA STATA SCRITTA NEL FILE — mentre i due controlli la
+//          chiamavano gia'. OGNI SALVATAGGIO DI UN RETRO SAREBBE ESPLOSO.
+//          node --check non poteva vederlo: chiamare una funzione inesistente e'
+//          sintatticamente perfetto (stesso errore della v5.702).
+//          Ho poi verificato TUTTE le funzioni create in questa sessione
+//          (tipoDiOggetto, changeTypesDiSerie, tipiPresenti, refreshSeriesMeta,
+//          migratePrintErrors): tutte definite, tutte usate.
+// v5.716 — Franco: "nella form di modifica da griglia le 4 spunte non sono allineate
+//          verticalmente: le due variazioni sono allineate tra loro, Change e' un po'
+//          piu' in basso, Errore di stampa e' ancora piu' in basso".
+//          DUE CAUSE, e la seconda l'ho creata io.
+//          1. La mia etichetta (v5.711) non aveva class="form-label", che le altre tre
+//             hanno. Quella classe porta margin-bottom:6px e color:var(--muted): senza,
+//             la casella si posiziona piu' in basso E il testo ha un colore diverso.
+//          2. LA SCALETTA A TRE GRADINI VIENE DALLA GRIGLIA. Nella v5.711 l'ho portata
+//             da 3 a 4 colonne per far posto alla quarta casella. Con quattro colonne
+//             le celle si sono STRETTE, e le etichette lunghe ("Variazione non
+//             ufficiale") VANNO A CAPO. Le etichette erano align-items:center — la
+//             casella si centra rispetto al TESTO: due righe la abbassano, una riga la
+//             alza. Da qui i gradini, ciascuno a un'altezza diversa a seconda di quanto
+//             e' lunga la sua etichetta.
+//          LA CURA NON E' PAREGGIARE I MARGINI A MANO — sarebbe una toppa che si
+//          scollerebbe al primo cambio di larghezza o di traduzione (in inglese quelle
+//          etichette hanno lunghezze diverse). E' ANCORARE LE CASELLE IN ALTO:
+//            · griglia: align-items:start (le celle non si stirano)
+//            · etichette: align-items:flex-start invece di center
+//            · caselle: flex-shrink:0 e margin-top:1px, per stare in linea con la PRIMA
+//              riga del testo
+//          Cosi' l'allineamento NON DIPENDE PIU' dalla lunghezza dell'etichetta: vada a
+//          capo o no, le quattro caselle stanno alla stessa altezza.
+//          Aggiunta anche la class="form-label" mancante.
+//          Verificato: 4 etichette con la stessa classe e lo stesso allineamento,
+//          4 caselle modificate (nessuna fuori dal blocco dei tipi), HTML bilanciato.
+// v5.715 — Franco: "come mai la spunta Errore di stampa e' piu' piccola delle altre 3?"
+//          Perche' LO ERA DAVVERO: non era un'illusione ottica. Le altre tre hanno
+//              style="width:18px;height:18px;cursor:pointer;"
+//          e la mia (v5.714) non aveva NESSUNO stile — quindi il browser le dava la
+//          dimensione predefinita, che e' piu' piccola. Allineata.
+//
+//          MA CERCANDO IL PERCHE' HO TROVATO UN BACO PIU' GRAVE, e vale la pena
+//          raccontare come mi era sfuggito.
+//          Le altre tre caselle chiamavano ancora `toggleFeBaseFigurineGroup()` SENZA
+//          argomento. L'esclusivita' (v5.714) si aggancia all'id che riceve: senza id,
+//          non spegne nulla. Quindi cliccando "Variazione", "Non ufficiale" o "Change"
+//          l'esclusivita' NON SCATTAVA — funzionava solo da "Errore di stampa".
+//          Un oggetto poteva ancora essere marcato come due cose insieme: esattamente
+//          il difetto che la v5.711 diceva di aver chiuso.
+//          PERCHE' LA MIA PROVA NON L'AVEVA VISTO: chiamavo toggleFeBaseFigurineGroup(id)
+//          DIRETTAMENTE, passandole l'id a mano. Stavo verificando LA FUNZIONE, non IL
+//          COLLEGAMENTO. La funzione era giusta; era il markup a non chiamarla bene.
+//          Lezione: eseguire non basta se si esegue il pezzo sbagliato. La verifica
+//          adesso legge il MARKUP e controlla che ogni casella passi il proprio id.
+//          Corretto: tutte e quattro passano il proprio id, e tutte e quattro misurano
+//          18px.
+//          NOTATO E NON TOCCATO: le due maschere usano dimensioni diverse fra loro
+//          (16px nella "aggiungi", 18px nella "modifica"). Era gia' cosi' prima di
+//          questa serie di versioni — lo segnalo a Franco, non lo cambio da solo.
+// v5.714 — Franco: "dove hai messo il campo Errore di stampa? nella maschera del retro
+//          non lo vedo. E deve esserci in tutte e 4 le form di modifica: Figurina,
+//          Retro, Album, Altro oggetto".
+//          AVEVA RAGIONE, ED ERA UN BUCO GROSSO: LE MASCHERE SONO DUE.
+//            · #add-fig-modal  → "aggiungi oggetto", con id 'fig-...'
+//            · switchToEditMode() → MODIFICA, con id 'fe-...' — un'altra funzione, che
+//              si costruisce l'HTML da sola.
+//          Nella v5.711 avevo messo la casella SOLO nella prima. La seconda — quella
+//          che Franco apre davvero, cliccando sulla card — non l'aveva mai avuta.
+//
+//          E C'ERA DI PEGGIO, un baco che ho introdotto io nella v5.711: la mia
+//          sostituzione di `const showBase = isVar || isUnoff || isChg;` aveva colpito
+//          ENTRAMBE le funzioni, infilando anche nella seconda la lettura di
+//              document.getElementById('fig-is-printerror-input')
+//          cioe' l'id dell'ALTRA maschera. In quella di modifica quell'elemento non
+//          esiste: getElementById restituiva null, in silenzio.
+//          Peggio ancora, il salvataggio della maschera di modifica (aggiunto poco fa)
+//          leggeva una casella INESISTENTE e salvava quindi isPrintError = false —
+//          CANCELLANDO IL FLAG a ogni singola modifica di un oggetto. Un baco che
+//          avrebbe distrutto i dati appena migrati.
+//          node --check non poteva vedere niente di tutto questo: getElementById su un
+//          id inesistente e' sintatticamente perfetto.
+//
+//          SISTEMATO NELLA MASCHERA DI MODIFICA:
+//            · casella "Errore di stampa", subito dopo Change (dove Franco se
+//              l'aspettava). FUORI dal blocco if(!isRetrosItem), come Change: quindi
+//              compare in tutte e quattro le sezioni. Le due VARIAZIONI restano dentro
+//              quel blocco, e quindi nascoste nei Retro — dove non possono esistere.
+//            · id corretto: 'fe-is-printerror', non 'fig-is-printerror-input'
+//            · ESCLUSIVITA' fra i quattro tipi, come nell'altra maschera: un oggetto e'
+//              una cosa sola. Le quattro caselle ora passano il proprio id alla
+//              funzione, che spegne le altre tre.
+//            · isPrintError salvato davvero.
+//          Verificato ESEGUENDO la sequenza di clic su entrambe le maschere, e
+//          controllato che le due abbiano gli stessi quattro tipi.
+// v5.713 — Franco: "il campo Tipo di change, per i retro, mostra ancora l'opzione
+//          Errore di stampa".
+//          Vero, e non era un dettaglio: dalla v5.711 l'errore di stampa e' un TIPO a
+//          se' (isPrintError). Se resta anche fra i "Tipi di change", LO STESSO
+//          CONCETTO E' RAPPRESENTABILE IN DUE MODI — ed e' esattamente la doppia verita'
+//          che la v5.711 aveva appena chiuso. Un menu che offre la strada vecchia la
+//          rifa' percorrere.
+//          LA LISTA E' LETTA DA TRE PUNTI: il menu della form oggetto, la riga di
+//          dettaglio, e l'importazione massiva. Filtrarla in uno solo avrebbe lasciato
+//          gli altri due a offrirla. Quindi UNA FUNZIONE SOLA — changeTypesDiSerie() —
+//          e tutti e tre la usano.
+//          CHIUSE ANCHE LE DUE PORTE DI RITORNO:
+//            · la form della SERIE non lascia piu' RIMETTERE "errore di stampa" fra i
+//              tipi di change. Lo toglie, e LO DICE con un toast: toglierlo in silenzio
+//              farebbe pensare a Franco di averlo scritto male.
+//            · la MIGRAZIONE (v5.711) ora ripulisce anche i retroChangeTypes delle
+//              serie. Se la stringa restasse nei dati, il menu tornerebbe a offrirla e
+//              finirebbe sui record NUOVI — rifacendo, un pezzo alla volta, il modello
+//              che stiamo smontando.
+//
+//          ERRORE MIO, TROVATO ESEGUENDO — e vale la pena raccontarlo:
+//          avevo scritto l'espressione /^errori?\s+di\s+stampa$/i.
+//          "errori?" significa "error" + una "i" FACOLTATIVA: riconosce "errorI" ma
+//          NON riconosce "errorE". Cioe' il filtro toglieva il plurale e LASCIAVA il
+//          singolare — proprio la forma che Franco usa. Faceva l'esatto opposto del suo
+//          scopo. La prova su sei varianti di scrittura l'ha beccato; node --check no,
+//          perche' l'espressione era sintatticamente perfetta.
+//          Corretta in /^error[ei]\s+di\s+stampa$/i, in tutti e QUATTRO i punti in cui
+//          compariva. Verificato: toglie "Errore di stampa", "ERRORI DI STAMPA",
+//          "  errore di stampa  " e "Errore  di   stampa"; NON tocca "Errore di
+//          stampante", che e' un altro tipo di change.
+// v5.712 — Franco: "pagine dei retro, sezione di ricerca: i filtri sono in verticale;
+//          devono essere in orizzontale, come erano prima".
+//          PRECISAZIONE ONESTA: erano in verticale ANCHE PRIMA. Il contenitore era
+//          flex-direction:column, identico nella v5.710 e nella v5.711 — non l'ha rotto
+//          il quinto tipo. Franco se n'e' accorto ora probabilmente perche' sui Retro i
+//          filtri sono passati da due a quattro, e la colonna si nota di piu'.
+//          Ma la richiesta e' giusta lo stesso, e per una ragione che il codice rende
+//          evidente: NELLA STESSA PAGINA i filtri del POSSESSO sono gia' in riga
+//          (v5.697), e quelli admin pure (v5.699). Una fila e una colonna a due
+//          centimetri di distanza, senza che nulla lo giustifichi.
+//          Ora tutte e tre le righe di filtri usano lo stesso contenitore:
+//              display:flex; flex-wrap:wrap; gap:0.5rem 1.5rem;
+//          flex-wrap fa il resto: sui Retro i 4 filtri (~65 caratteri) stanno su una
+//          riga sola; sulle Figurine i 7 (~174 caratteri) vanno a capo da soli. Il gap
+//          VERTICALE (0.5rem) esiste proprio per quel caso.
+//          Verificato eseguendo: nessun flex-direction:column residuo fra i filtri.
+// v5.711 — QUINTO TIPO DI OGGETTO: "Errore di stampa". Modifica al MODELLO DATI, non
+//          all'aspetto — la piu' profonda della sessione.
+//          PERCHE' ERA URGENTE, piu' di come Franco l'aveva posta: "Errore di stampa"
+//          NON ERA UN TIPO, ERA UNA PAROLA. Ogni serie ha una lista libera di stringhe
+//          (retroChangeTypes) scritta a mano dall'admin; ogni Change porta un
+//          changeType scelto da li'; e il filtro riconosceva l'errore di stampa
+//          CONFRONTANDO LA STRINGA:
+//              f.isChange && changeType.toLowerCase().trim() === 'errore di stampa'
+//          Bastava scrivere "Errori di stampa" al plurale in una serie perche' il
+//          filtro smettesse di trovarli — IN SILENZIO, e senza modo di accorgersene.
+//          In inglese non funzionava affatto. Ora e' un FLAG (isPrintError).
+//
+//          IL MODELLO, deciso con Franco:
+//            · cinque tipi: base | var. ufficiale | var. non ufficiale | Change |
+//              errore di stampa
+//            · valgono in TUTTE E QUATTRO le sezioni (anche Album e Altri oggetti, che
+//              prima non avevano alcun tipo e mostravano solo il totale)
+//            · l'unica impossibilita' STRUTTURALE resta quella dei Retro: una
+//              variazione e' il cambio del dietro, e un retro un dietro non ce l'ha
+//              (v5.707). La form gia' lo impedisce.
+//            · un oggetto E' UNA COSA SOLA: i quattro flag ora SI ESCLUDONO. Prima le
+//              tre caselle erano INDIPENDENTI e il sito risolveva i conflitti per
+//              PRECEDENZA — un oggetto poteva essere due cose insieme, e nessuno lo
+//              diceva. L'esclusivita' scatta al CLIC, non al caricamento: un record
+//              vecchio con due flag si apre com'e', e non lo riscriviamo di nascosto.
+//
+//          FILTRI DINAMICI. Un filtro compare SOLO SE quel tipo esiste davvero in
+//          questa serie e in questa sezione. E' cio' che rende gratis il "alla peggio
+//          non avremo dati" di Franco: la pagina non offre mai un interruttore che,
+//          cliccato, mostra il vuoto — l'errore che avevamo evitato nei Retro (v5.700).
+//          Il giorno che inserisci il primo Change in un Album, il filtro APPARE DA
+//          SOLO. Nessuna riga da scrivere.
+//          I contatori si comportavano gia' cosi'; ora filtri e contatori rispondono
+//          alla STESSA domanda con la STESSA funzione: tipiPresenti(). Un punto solo di
+//          verita' — che e' la cura per la malattia ricorrente di questa sessione (un
+//          concetto definito in due punti diverge sempre, prima o poi).
+//          L'unione "Solo variazioni (ufficiali / non ufficiali)" compare solo se
+//          esistono ENTRAMBE: con una sola sarebbe un doppione del filtro sopra.
+//          Se il filtro acceso punta a un tipo che nella nuova serie non esiste, torna
+//          su "base": un filtro fantasma mostrerebbe una pagina vuota senza spiegazione.
+//
+//          IL SETACCIO E' UN BLOCCO SOLO. Prima ce n'erano due (Figurine e Retro) che
+//          definivano "base" in modo DIVERSO. E' cosi' che nascono le doppie verita'.
+//
+//          COLORE: rosso corallo #ff7a6b (--type-printerror), scelto da Franco. Quinto
+//          e ultimo colore libero: il verde resta VIETATO perche' promette che una cosa
+//          e' cliccabile (v5.664).
+//          BADGE in tutte e quattro le sezioni. Il set base continua a non averne: la
+//          sua assenza E' l'informazione (v5.705).
+//
+//          MIGRAZIONE (Admin → Risorse → "Conta e migra"). I record esistenti
+//          (isChange + changeType "errore di stampa") diventano isPrintError.
+//          CONTA PRIMA e chiede conferma dicendo QUANTE SCRITTURE Firestore costa:
+//          Franco contro la quota giornaliera ci ha gia' sbattuto (v5.682). Se qualcuna
+//          fallisce LO DICE e si puo' rilanciare — riprende solo quelle rimaste. Una
+//          migrazione a meta' fatta in silenzio lascerebbe meta' dei dati nel vecchio
+//          modello e meta' nel nuovo: la peggiore delle due verita'.
+//          VA LANCIATA UNA VOLTA SOLA, e finche' non lo si fa il filtro "Solo Errori di
+//          stampa" non trova nulla (guarda il flag, che i vecchi record non hanno).
+//
+//          Verificato ESEGUENDO: esclusivita' delle 4 caselle; contatori sulle 4
+//          sezioni (base = 160, non piu' 167: gli errori di stampa non ci finiscono
+//          dentro); filtri dinamici (Figurine 7 voci, Retro 3, Album 3, sezione vuota
+//          1); i 7 filtri sul setaccio; i badge sui 10 casi.
+//          ERRORE MIO, TROVATO CONTROLLANDO: riscrivendo renderItemTypeFilters avevo
+//          CANCELLATO il riquadro "Filtri aggiuntivi admin". Ripristinato dalla v5.710.
+//          node --check non poteva vederlo: il codice restava sintatticamente valido.
+//          Modificati style.css, index.html, app.js.
+// v5.710 — Sette ritocchi ai filtri e ai testi della pagina serie, chiesti da Franco:
+//          1. "Tutte" ora e' BIANCO. Il ripiego di item() passa da var(--muted) a
+//             var(--text): ogni etichetta che non sia un tipo eredita il bianco.
+//          2. "Solo Variazioni (ufficiali e non)" → "Solo variazioni (ufficiali / non
+//             ufficiali)".
+//          3. QUELL'ETICHETTA ORA PORTA IL CODICE COLORE DENTRO DI SE': bianca, ma con
+//             "ufficiali" in arancione e "non ufficiali" in azzurro. Non e' un vezzo:
+//             il filtro e' l'UNIONE di due tipi, e cosi' la frase dice DA SOLA quali
+//             due sono — senza costringere a guardare le voci sopra. Nella v5.708
+//             l'avevo lasciata grigia perche' "non e' un tipo"; la soluzione di Franco
+//             e' migliore: non e' UN tipo, sono DUE, e li mostra entrambi.
+//             item() accetta ora un quinto parametro labelHTML (markup interno). Il
+//             title del pulsante resta il TESTO SEMPLICE — verificato eseguendo: se
+//             avesse ereditato l'HTML, il suggerimento avrebbe mostrato i tag.
+//          4. Il box "La tua ricerca" e' un po' piu' largo: margine negativo di 1rem
+//             per lato, che mangia meta' del padding di items-section (2rem). Nessuna
+//             larghezza fissa: si adatta come prima.
+//          5. "Solo presenti nella tua lista" / "Solo mancanti dalla tua lista" →
+//             BIANCHI.
+//          6. La riga centrale della paginazione ("Pagina 1 di 4 | figurine 1..30 |
+//             96 figurine") → BIANCA.
+//          7. La descrizione della serie (.series-description) → BIANCA.
+//
+//          NOTA SUL BIANCO, perche' sembra contraddire la v5.704 e invece la completa:
+//          il bianco torna a essere il colore del TESTO NORMALE. Non e' in conflitto
+//          col codice colore — il SET BASE e' bianco proprio perche' e' il tipo NON
+//          MARCATO. E' l'unico senza badge (v5.705) e l'unico senza un colore suo. Il
+//          bianco non e' "il colore del base": e' l'ASSENZA DI MARCATURA, e il base e'
+//          esattamente cio' che non e' marcato. Le tre decisioni dicono la stessa cosa.
+//          Resta vero cio' che diceva la v5.704: la scritta del tipo sulle card NON
+//          poteva essere bianca, perche' li' il bianco avrebbe nominato un tipo.
+//          Modificati style.css, index.html, app.js.
+// v5.709 — Baco segnalato da Franco: "quando un utente mette delle figurine nella sua
+//          lista (col toggle sulla card o col bottone di aggiunta massiva), i contatori
+//          in alto alla pagina della serie non si aggiornano: deve uscire dalla pagina
+//          e ricaricarla".
+//          Vero. renderSeriesMeta — che disegna anche il numero "N nella tua lista" —
+//          veniva chiamata SOLO in due punti: all'apertura della serie e al cambio di
+//          sezione. Nessuno la richiamava quando la LISTA cambiava. Ne' toggleOwned
+//          (che ridisegnava renderItems e renderProfile) ne' setAllOwned (renderItems e
+//          updateOwnedCounter) la toccavano.
+//          E' LO STESSO DIFETTO DELLA v5.690, in un altro punto: numeri non SBAGLIATI
+//          ma CONGELATI. Allora restavano fermi cambiando sezione; ora restavano fermi
+//          cambiando la lista. La cura e' la stessa: chiamare la funzione quando il
+//          dato che mostra si muove.
+//          Aggiunta refreshSeriesMeta(): UN PUNTO SOLO che ritrova la serie corrente e
+//          ridisegna. Chiamato da toggleOwned e setAllOwned. Un punto solo, e non due
+//          copie della stessa ricerca, perche' la PROSSIMA funzione che modifichera' la
+//          lista non dovra' ricordarsi di ripetere niente: le bastera' chiamarlo.
+//          Verificato ESEGUENDO il ciclo completo: apertura (0 in lista) → aggiunta di
+//          2 base + 1 variazione (i contatori si muovono) → "Aggiungi tutti i risultati"
+//          (compare il 🎉 "Le hai tutte!" su tutte le colonne, senza ricaricare).
+// v5.708 — Franco: "nelle figurine manca un filtro per vedere tutte le variazioni
+//          assieme: ufficiali + non ufficiali". Utile: e' la domanda "fammi vedere
+//          tutto cio' che NON e' standard".
+//          Nuovo filtro 'anyVariation', prima di Change come richiesto. Comportamento
+//          radio come gli altri: se acceso, spegne tutto il resto.
+//          NON E' UN TIPO NUOVO — e' la SOMMA di due tipi che esistono gia'. Non
+//          introduce nessun campo nei dati: il setaccio fa (isVariation ||
+//          isUnofficialVariation), e basta.
+//          NOME: scelto "Solo Variazioni (ufficiali e non)" fra i due che Franco
+//          proponeva. L'altro, "Tutte e sole le variazioni", COMINCIA CON "TUTTE" — e
+//          due voci sopra c'e' gia' un filtro che si chiama "Tutte" e significa
+//          un'altra cosa (tutti gli oggetti). Sarebbe ricaduto esattamente nel
+//          problema che Franco stesso aveva sollevato nella v5.697 ("vorrei non avere
+//          2 Tutti nella stessa pagina"), e per giunta avrebbe rotto lo schema "Solo
+//          X" che tutti gli altri filtri seguono.
+//          COLORE: GRIGIO, e non e' una scelta arbitraria. Il filtro copre DUE tipi,
+//          con DUE colori diversi (arancione e azzurro): nessuno dei due gli
+//          appartiene. Se fosse arancione, il colore direbbe "ufficiali" mentre la
+//          parola dice "tutte". Resta var(--muted), come "Tutte", per la stessa
+//          ragione: NON E' UN TIPO. E il grigio arriva da solo — 'anyVariation' non e'
+//          nella mappa coloreTipo, quindi cade sul ripiego. Nessuna eccezione da
+//          scrivere: la struttura del codice colore aveva gia' la risposta.
+//          Verificato ESEGUENDO su 160 base + 96 ufficiali + 112 non ufficiali + 7
+//          Change: l'unione da' 208 (= 96 + 112), e non pesca ne' base ne' Change.
+// v5.707 — CORREZIONE DI UN MIO ERRORE, fermato da Franco: "per i retro non abbiamo
+//          concepito le variazioni, e per un motivo semplice: variazione e' quando
+//          cambia il DIETRO. I retro non hanno retro, quindi per definizione non ne
+//          abbiamo."
+//          IL "BACO" CHE AVEVO DIMOSTRATO NELLA v5.706 NON ESISTEVA. Avevo mostrato
+//          che il filtro dei retro (base = !isChange) divergeva dal contatore
+//          (base = !isVariation && !isUnofficialVariation && !isChange), su un
+//          inventario finto di 72 base + 20 variazioni ufficiali + 14 non ufficiali.
+//          Ma QUELLE VARIAZIONI NON POSSONO ESISTERE: ho "provato" un baco alimentando
+//          il codice con dati che il dominio non ammette. Se le variazioni nei retro
+//          sono impossibili, !isChange E' GIA' la definizione completa, e il filtro era
+//          corretto com'era. Eseguire non basta: bisogna eseguire su dati VERI.
+//          RIPRISTINATO: setaccio dei retro com'era; tolti i due filtri di variazione
+//          che avevo aggiunto; badge nei Retro limitato al solo Change.
+//          RESTA VALIDO della v5.706: i BADGE nei Retro (richiesta di Franco) e la
+//          scritta in basso ridotta al solo changeType.
+//
+//          MA IL BUCO VERO ERA UN ALTRO, e l'ho trovato mentre verificavo: LA FORM
+//          PERMETTEVA DI MARCARE UN RETRO COME VARIAZIONE. Le due caselle "Variazione
+//          ufficiale" / "Variazione non ufficiale" restavano visibili e cliccabili
+//          nella sezione Retro, e saveItem le leggeva senza guardare la sezione.
+//          Bastava una spunta distratta per creare un dato che il dominio non ammette
+//          — e sarebbe rimasto li', invisibile, a falsare i contatori.
+//          Il codice SAPEVA GIA' la regola di Franco, e l'aveva persino scritta:
+//              "Il campo Retro associato non si applica mai ai Retro stessi
+//               (un retro non ha un retro)"
+//          ma non ne aveva tratto la conseguenza per le variazioni. Ora si':
+//            · le due caselle SPARISCONO nella sezione Retro
+//            · saveItem forza isVariation e isUnofficialVariation a FALSE nei Retro
+//              (nascondere un controllo non basta: se resta spuntato da una modifica
+//              precedente, il suo valore viene letto lo stesso)
+//          Cosi' la regola smette di essere un'intenzione e diventa un fatto.
+//          DA CONTROLLARE, FRANCO: se in passato qualche retro e' stato marcato per
+//          sbaglio come variazione, quel dato e' ancora li'. Vale la pena guardare.
+//          Verificato ESEGUENDO: 4 filtri dei Retro e 5 casi di card.
+// v5.706 — Franco: "i badge servono anche sui Retro: anche li' abbiamo le stesse
+//          tipologie di oggetto". Vero — e verificandolo e' emerso UN BACO.
+//          1. BADGE ANCHE NEI RETRO. La condizione era `currentSection ===
+//             'figurines'`: nei Retro non compariva NESSUN badge, e il tipo lo diceva
+//             solo la scritta in basso. Ora le due sezioni si comportano allo stesso
+//             modo. Il set base continua a non avere badge (v5.705): la sua assenza
+//             E' l'informazione.
+//          2. BACO CORRETTO — contatore e filtro non erano d'accordo su cosa fosse un
+//             "retro set base":
+//                 contatore: !isVariation && !isUnofficialVariation && !isChange
+//                 filtro   : !isChange          ← ci infilava dentro le variazioni!
+//             Il contatore diceva "72 retro set base" e il filtro ne mostrava 106.
+//             E' la stessa malattia della v5.676 (Figurine), rimasta qui: un concetto
+//             definito in due punti diverge sempre, prima o poi. Ora le due
+//             definizioni coincidono — verificato eseguendo: 72 e 72.
+//          3. NEI RETRO MANCAVANO I FILTRI DELLE VARIAZIONI. I contatori della serie
+//             le contavano gia' (gVar, gUnoff), ma non c'era modo di filtrarle: le
+//             voci non esistevano proprio. Aggiunte "Solo Variazioni ufficiali" e
+//             "Solo Variazioni non ufficiali". Ora i Retro hanno gli stessi filtri
+//             delle Figurine, piu' "Errori di stampa" (che non e' un tipo a se': e' un
+//             Change con changeType = "errore di stampa").
+//          4. LA SCRITTA IN BASSO, nei Retro, non ripete piu' "Change" — lo dice gia'
+//             il badge rosa. Resta solo per il DETTAGLIO che il badge non puo'
+//             contenere: il changeType ("Errore di stampa", "Fronte"...). Senza
+//             changeType, sparisce.
+//          Verificato ESEGUENDO: 9 casi di card (4 Figurine, 5 Retro) e tutti e 5 i
+//          filtri dei Retro su un inventario finto di 115 oggetti.
+// v5.705 — Franco: "abbiamo 2 volte la stessa informazione sulle card: il tipo e'
+//          scritto sia in basso sia col badge in alto a destra; i badge te li ho fatti
+//          introdurre io perche' sono piu' visibili".
+//          Vero. Tolta la scritta in basso a sinistra NELLE FIGURINE: il badge dice
+//          gia' il tipo, e lo dice meglio.
+//          MA NON OVUNQUE, ED E' IL PUNTO: nei RETRO IL BADGE NON ESISTE.
+//          typeBadgeHTML si costruisce solo dentro `if (currentSection ===
+//          'figurines')`. Li' quella scritta non era ridondante: era l'UNICA cosa che
+//          diceva il tipo — e per giunta mostrava anche il changeType ("Change -
+//          Fronte"), un dettaglio che il badge non mostra nemmeno nelle Figurine.
+//          Cancellarla ovunque avrebbe tolto un'informazione dai Retro, IN SILENZIO.
+//          La scritta ora vive solo nei Retro, dove serve.
+//          RESPINTA (e Franco ha concordato) l'idea del BADGE BIANCO SUL SET BASE:
+//          il badge segnala un'ECCEZIONE. La sua assenza dice "questa e' base" — non e'
+//          un'omissione, e' un'affermazione. Un badge su ogni card non segnala piu'
+//          niente, e perde esattamente la proprieta' per cui Franco li aveva voluti.
+//          In piu' il fondo e' quasi nero (#0e0a1a): un badge #ffffff sarebbe stato il
+//          PIU' GRIDATO di tutti — il tipo piu' ordinario (160 su 375) avrebbe urlato
+//          piu' del rosa e dell'arancione, che sono i due da notare. Il contrasto
+//          avrebbe lavorato al contrario.
+//          Il bianco del set base resta dov'e' utile: contatori ed etichette dei filtri.
+//          NON SERVE LA LOGICA CONDIZIONALE che Franco proponeva ("mostra i badge solo
+//          se il filtro 'solo set base' e' spento"): col set base privo di badge, quel
+//          comportamento ESCE GRATIS. Filtro "Solo set base" acceso → in pagina non
+//          compare nessun badge, senza scrivere una riga. Una regola in meno da
+//          imparare per l'utente, e una in meno da mantenere.
+//          Verificato ESEGUENDO i sei casi (4 tipi nelle Figurine, 2 nei Retro).
+// v5.704 — Franco: "e' rimasto fuori cio' che scriviamo in basso a sx nella card;
+//          li' rimani neutro, o bianco o un colore diverso da tutti".
+//          Quella scritta NOMINA il tipo ("Figurina base", "Variazione ufficiale",
+//          "Variazione non ufficiale", "Change") — quindi era il punto piu' esposto.
+//          IL BIANCO NON ERA PIU' DISPONIBILE, e vale la pena fermarcisi: dalla
+//          v5.703 il bianco SIGNIFICA "oggetto base". Scrivere "Variazione ufficiale"
+//          in bianco avrebbe fatto dire al COLORE "base" mentre la PAROLA diceva
+//          "ufficiale" — il codice colore che smentisce se stesso al primo utilizzo.
+//          Un codice colore, appena esiste, toglie dei colori dal tavolo: il bianco
+//          non e' piu' neutro, e' un tipo.
+//          Usato quindi var(--muted), il grigio-viola gia' in uso per i testi
+//          secondari: fuori dal codice, in tavolozza, e non promette di essere
+//          cliccabile.
+//          IL COLORE DI PRIMA ANDAVA TOLTO COMUNQUE: era #ffc832, un giallo-ambra
+//          QUASI IDENTICO all'arancione delle variazioni ufficiali (#ffa94d). A colpo
+//          d'occhio quella scritta sembrava dire "ufficiale" SEMPRE — anche quando
+//          diceva "Figurina base". Il codice colore non l'ha creato, questo problema:
+//          l'ha reso visibile.
+//
+//          SEGNALATI A FRANCO, NON TOCCATI: altri tre colori scritti a mano, vicini ai
+//          suoi, ma tutti FUORI dalla griglia (un titolo di sezione, un riquadro di
+//          conferma, un contatore nella pagina "Cio' che cerco"):
+//              #ff9d3d  → a un'unghia dall'arancione ufficiale (#ffa94d)
+//              #5ec8f0  → variante dell'azzurro non ufficiale (#7fd4ff)
+//              #4db8ff  → idem
+//          Non sono tipi, quindi non mentono. Ma se un domani il codice colore uscira'
+//          dalla griglia, sono i primi tre da riguardare.
+// v5.703 — CODICE COLORE DELLE TIPOLOGIE, stabilito da Franco:
+//              oggetto base            → bianco   #ffffff
+//              variazione ufficiale    → arancione #ffa94d
+//              variazione non ufficiale→ azzurro  #7fd4ff
+//              Change                  → rosa     #ff9ecb
+//          Applicato, come richiesto, a BADGE + CONTATORI + ETICHETTE DEI FILTRI.
+//          DEFINITO IN UN POSTO SOLO: quattro variabili CSS in :root
+//          (--type-base, --type-official, --type-unofficial, --type-change). Badge,
+//          contatori e filtri le LEGGONO. Prima ogni badge si scriveva addosso il
+//          proprio colore in style.css — e tre punti che dichiarano lo stesso colore
+//          sono tre punti che prima o poi divergono. Ora se il rosa diventa viola, si
+//          cambia UNA riga.
+//          IL BIANCO CAMBIA PADRONE: fino alla v5.702 il bianco era la VARIAZIONE
+//          UFFICIALE (v5.664); ora e' l'OGGETTO BASE, e l'ufficiale passa
+//          all'arancione. Segnalato a Franco prima di procedere: chi ha imparato il
+//          colore attuale lo dovra' riapprendere. E' una scelta, non una conseguenza.
+//          I CONTATORI NON SONO PIU' TUTTI BIANCHI: la v5.694 li aveva resi bianchi su
+//          richiesta di Franco, e il codice colore ora la sovrascrive — con il suo
+//          assenso esplicito. Il TOTALE resta senza colore: non e' un tipo, e' la
+//          somma dei tipi. Il numero DELLA LISTA resta in var(--accent) su ogni riga,
+//          perche' dice un'altra cosa ("questo e' tuo") e deve restare riconoscibile.
+//          Il bullet e' un quadrato con background:currentColor: si tinge DA SOLO
+//          insieme al testo. Non c'e' modo che il quadrato e la scritta si sfasino.
+//          "Tutte" resta neutro (var(--muted)): non e' un tipo.
+//          IL VERDE NON E' NEL CODICE, ed e' deliberato: il verde --accent promette che
+//          una cosa e' CLICCABILE (v5.664, quando togliemmo il verde dai badge). Un
+//          tipo non si clicca. Da tenere presente se un giorno servira' un quinto tipo.
+//          Verificato ESEGUENDO: i cinque filtri e i cinque contatori escono con le
+//          stesse quattro variabili.
+//          Modificati style.css, index.html, app.js.
+// v5.702 — Franco: "nel tab utenti, si puo' mettere un tasto che richiama il refresh
+//          dei dati dal db? vedo che ci mette un po', dopo un evento generato da un
+//          utente, a mostrarlo all'admin".
+//          IL PROBLEMA E' PIU' GRAVE DI COME LO DESCRIVEVA. Non e' che i dati "ci
+//          mettono un po'": IL SITO NON HA NESSUN ASCOLTATORE IN TEMPO REALE
+//          (onSnapshot: zero occorrenze). I dati del pannello admin si leggono UNA
+//          VOLTA SOLA, all'accesso, e poi restano fermi in _cache. NON si aggiornano
+//          MAI, finche' non si ricarica la pagina. Quello che Franco leggeva come
+//          lentezza era, in realta', un dato congelato — e uno che aspetta di veder
+//          comparire una segnalazione puo' aspettare all'infinito.
+//          Aggiunto refreshAdminData() e il pulsante "Aggiorna dati" (EN: "Refresh
+//          data") sopra la tabella utenti, con l'ora dell'ultimo aggiornamento.
+//          RILEGGE SOLO LE QUATTRO RACCOLTE DEL PANNELLO (users, contact_messages,
+//          segnalazioni, eventi) riusando _loadAdminOnlyData(), che esisteva gia'.
+//          NON tocca figurine, serie e owned: sono migliaia di documenti, e Franco ha
+//          gia' sbattuto contro la quota giornaliera di Firestore. Un pulsante
+//          "aggiorna tutto" sarebbe stato un modo comodo per esaurirla.
+//          IL DOPPIO CLIC E' BLOCCATO: il pulsante si spegne mentre lavora. Due clic
+//          = doppie letture, e la quota si paga a lettura.
+//          SE LA LETTURA FALLISCE LO DICE ("Aggiornamento NON riuscito: stai vedendo i
+//          dati di prima"). Un errore silenzioso, qui, sarebbe il peggio possibile:
+//          l'admin crederebbe di guardare dati freschi mentre guarda quelli vecchi —
+//          esattamente il baco della v5.682, in un altro punto.
+//          ERRORE MIO, TROVATO CONTROLLANDO: avevo chiamato updateAdminBadges(), una
+//          funzione CHE NON ESISTE — me l'ero inventata. I badge veri sono tre:
+//          updateMsgBadge, updateBellBadge, updateWishlistBadge. `node --check` non
+//          poteva vederlo: e' una funzione mancante, non un errore di sintassi.
+//          Verificato ESEGUENDO tre scenari: utente non admin (nessuna lettura),
+//          admin con Firestore funzionante (1 lettura, ora mostrata), admin con
+//          Firestore in errore (avviso esplicito, pulsante riabilitato).
+// v5.701 — UNA VOCE SOLA in tutto il sito. Franco, dopo aver esaminato tutte e 74 le
+//          occorrenze: "nelle azioni useremo 'tua lista', cosi' come in tutto il
+//          resto; nel toggle delle card va bene 'Mia lista'; sempre minuscolo".
+//          E' l'OPPOSTO di come era partita la richiesta (MIA LISTA ovunque, in
+//          maiuscolo) — ed e' la conclusione giusta, perche' il sito parla con UNA
+//          voce sola: la sua, rivolta all'utente.
+//          29 occorrenze normalizzate a "tua lista". Cancellato anche il MAIUSCOLO
+//          introdotto in v5.698 sui due pulsanti: il maiuscolo da' peso PERCHE' E'
+//          RARO, e 74 MIA LISTA urlati non pesano piu' di 74 minuscoli — lo stesso
+//          principio per cui non si festeggia con 🎉 ogni ricerca filtrata (v5.686).
+//          TRE REGISTRI, ciascuno coerente, e ora distinti:
+//            · "Mia lista"   = il NOME della funzione (il toggle sulle card, e le sue
+//                              citazioni fra virgolette). Nome proprio: resta.
+//            · "la tua lista" = il SITO parla all'utente. Tutto il resto.
+//            · "la mia lista" = l'UTENTE parla a un'altra persona.
+//          UNA SOLA OCCORRENZA MESSA AL RIPARO, e vale la pena dirla: app.js:15639,
+//              'Ciao! Ecco la mia lista "Cio' che cerco":'
+//          e' il testo di un messaggio che l'UTENTE INVIA allo staff. Sostituirlo
+//          avrebbe prodotto "Ecco la tua lista" — l'utente che manda allo staff la
+//          lista dello staff. E' il tipo di assurdita' che una sostituzione cieca
+//          produce in silenzio: l'ho isolata prima di sostituire, e rimessa dopo.
+//          PERCHE' LA PRIVACY NON SI POTEVA TOCCARE (6 occorrenze): "Non profiliamo la
+//          MIA LISTA" avrebbe fatto dichiarare al TITOLARE di non profilare la lista
+//          PROPRIA. Un'assurdita' giuridica prima ancora che linguistica, in un
+//          documento che abbiamo passato mezza giornata a rendere vero.
+//          RESTA DA SISTEMARE (index.html:421): "quali figurine hai aggiunto alla tua
+//          lista ("Mia lista") e la tua lista 'Cio' che cerco'". Tre liste in una
+//          frase sola: va riscritta, non sostituita.
+//          Documento di revisione: MIA_LISTA_revisione_v5700.md
 // v5.700 — Franco: "no, c'era anche 'Solo figurine set base prive di variazioni
 //          ufficiali'". Vero — il SESTO filtro admin, che nella v5.699 avevo lasciato
 //          in prima riga. Spostato anche lui nel riquadro "Filtri aggiuntivi admin".
@@ -3635,7 +4373,7 @@
 //          serie, i controlli di DUE export diversi — causa di
 //          confusione riconosciuta dallo stesso Franco) è stata divisa
 //          in due sotto-sezioni chiare e distinte:
-//          — SEZIONE 1a: Lista degli oggetti non nella mia lista (badge,
+//          — SEZIONE 1a: Lista degli oggetti non nella tua lista (badge,
 //            checkbox variazioni/esclusione, barra progresso, toggle
 //            numeri/nomi, elenco a pillole — tutto quello che c'era
 //            prima, ma solo per questo export)
@@ -3704,7 +4442,7 @@
 //          descrizione della sezione Liste, con esempi tra parentesi
 //          (figurine, retro, album, altro...) e (serie non complete),
 //          in entrambe le lingue.
-// v5.409 — Su richiesta di Franco: pulsante "Esporta la mia lista di
+// v5.409 — Su richiesta di Franco: pulsante "Esporta la tua lista di
 //          figurine (serie complete)" → "Esporta lista figurine mie
 //          serie complete" — allineato così anche al testo dell'hint
 //          che lo cita tra virgolette, che era rimasto disallineato
@@ -3758,7 +4496,7 @@
 // v5.398 — Su richiesta di Franco, altre due correzioni testo (solo
 //          italiano) nella sezione Liste: il riferimento al pulsante
 //          nell'hint e il pulsante stesso ora dicono "Esporta lista di
-//          quello non nella mia lista" / "Esporta lista oggetti non
+//          quello non nella tua lista" / "Esporta lista oggetti non
 //          nella mia lista", invece di "che mi manca".
 // v5.397 — Su richiesta di Franco, altre due correzioni testo (solo
 //          italiano) nella sezione Liste: il titolo dell'export
@@ -3843,7 +4581,7 @@
 //          (possesso), sostituito con "nella mia/tua lista" — il nome
 //          "Mancolista" resta invariato, ha un significato preciso nel
 //          collezionismo. Aggiornati: descrizione della pagina, hint di
-//          export, pulsanti "Esporta la mia lista di figurine" (sia per
+//          export, pulsanti "Esporta la tua lista di figurine" (sia per
 //          serie incomplete sia complete), e il messaggio di
 //          congratulazioni quando la lista è completa ("Complimenti! La
 //          tua lista comprende tutti gli oggetti dell'inventario
@@ -6480,7 +7218,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.700';
+const JS_VERSION = 'v5.724';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -6962,6 +7700,82 @@ async function _deleteFigurineItem(id) {
 //  scritta dal resto del codice dopo questa modifica — resta in Firestore
 //  come backup finché non la si cancella manualmente, se lo si desidera.
 // ============================================================
+// MIGRAZIONE (v5.711): "errore di stampa" da STRINGA a TIPO.
+// Fino alla v5.710 un errore di stampa era un Change con changeType scritto a mano.
+// Il filtro lo cercava confrontando la stringa — e bastava scriverla al plurale in una
+// serie perche' smettesse di trovarlo, IN SILENZIO. Ora e' un flag (isPrintError).
+// Questa converte i record esistenti. Va lanciata UNA VOLTA SOLA.
+// CONTA PRIMA, e lo dice: ogni record e' una SCRITTURA su Firestore, e Franco contro
+// la quota giornaliera ci ha gia' sbattuto (v5.682). Nessuna sorpresa da 400 scritture.
+async function migratePrintErrors() {
+  if (!currentUser?.isAdmin) return;
+  const btn = document.getElementById('migrate-printerrors-btn');
+  const prog = document.getElementById('migrate-printerrors-progress');
+  const mostra = (t) => { if (prog) { prog.style.display = 'block'; prog.innerHTML = t; } };
+
+  const figs = getData('figurines', []);
+  // il riconoscimento per stringa, l'ULTIMA volta che lo usiamo: serve proprio a
+  // liberarcene. tollerante su maiuscole e spazi, come faceva il vecchio filtro.
+  const daMigrare = figs.filter(f =>
+    f.isChange && (f.changeType || '').toLowerCase().trim() === 'errore di stampa' && !f.isPrintError);
+
+  if (!daMigrare.length) {
+    mostra('Nessun record da migrare. (Se ti aspettavi di trovarne, controlla in console i changeType realmente in uso: potrebbero essere scritti diversamente.)');
+    return;
+  }
+
+  const perSez = {};
+  daMigrare.forEach(f => { perSez[f.section] = (perSez[f.section] || 0) + 1; });
+  const dettaglio = Object.entries(perSez).map(([k, v]) => `${k}: ${v}`).join(', ');
+
+  if (!confirm(
+    `Trovati ${daMigrare.length} record da convertire in "Errore di stampa" (${dettaglio}).\n\n` +
+    `Diventeranno: isPrintError = true, isChange = false, changeType = vuoto.\n\n` +
+    `Sono ${daMigrare.length} SCRITTURE su Firestore. Procedo?`
+  )) return;
+
+  if (btn) btn.disabled = true;
+  let fatti = 0, falliti = 0;
+  for (const f of daMigrare) {
+    try {
+      const nuovo = { ...f, isPrintError: true, isChange: false, changeType: '' };
+      await fsSave('figurines', nuovo);
+      const idx = figs.findIndex(x => x.id === f.id);
+      if (idx >= 0) figs[idx] = nuovo;
+      fatti++;
+    } catch (e) {
+      console.error('migratePrintErrors', f.id, e);
+      falliti++;
+    }
+    mostra(`Convertiti ${fatti} / ${daMigrare.length}` + (falliti ? ` — ${falliti} FALLITI` : ''));
+  }
+
+  // un fallimento silenzioso qui lascerebbe meta' dei dati nel vecchio modello e meta'
+  // nel nuovo, senza che nessuno lo sappia: la peggiore delle due verita' (v5.682).
+  // ...e ripulisce anche la LISTA delle serie: se "Errore di stampa" restasse fra i
+  // "Tipi di change", il menu tornerebbe a offrirlo e finirebbe sui record NUOVI —
+  // rifacendo, un pezzo alla volta, il modello che stiamo smontando.
+  let serieRipulite = 0;
+  try {
+    for (const sr of getData('series', [])) {
+      const lista = sr.retroChangeTypes || [];
+      const pulita = lista.filter(t => !/^error[ei]\s+di\s+stampa$/i.test((t || '').trim()));
+      if (pulita.length !== lista.length) {
+        await fsSave('series', { ...sr, retroChangeTypes: pulita });
+        sr.retroChangeTypes = pulita;
+        serieRipulite++;
+      }
+    }
+  } catch (e) { console.error('pulizia retroChangeTypes', e); }
+  const coda = serieRipulite ? ` Tolto "errore di stampa" dai Tipi di change di ${serieRipulite} serie.` : '';
+
+  mostra(falliti
+    ? `\u26A0\uFE0F Migrazione INCOMPLETA: ${fatti} riusciti, ${falliti} falliti. Rilancia il pulsante: riprendera' solo quelli rimasti.`
+    : `\u2713 Migrazione completata: ${fatti} record convertiti.${coda} Ricarica la pagina.`);
+  if (btn) btn.disabled = false;
+  try { renderItems(); refreshSeriesMeta(); } catch (e) {}
+}
+
 async function migrateFigurinesIntoSeries() {
   if (!confirm('Migrare tutte le figurine nel nuovo formato per-serie? Operazione da fare una volta sola.')) return;
   const btn = document.getElementById('migrate-figurines-btn');
@@ -7195,7 +8009,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to MY LIST','catalog.havenone':'Remove search results from MY LIST','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to your list','catalog.havenone':'Remove search results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -7238,12 +8052,12 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters:','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: front variant intentionally made by the manufacturer','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters:','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: front variant intentionally made by the manufacturer','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
 'profile.title':'My Profile','profile.owned':'In My List','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -7318,7 +8132,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi alla MIA LISTA i risultati della ricerca','catalog.havenone':'Rimuovi dalla MIA LISTA i risultati della ricerca','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi alla tua lista i risultati della ricerca','catalog.havenone':'Rimuovi dalla tua lista i risultati della ricerca','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Torna all\'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -7331,8 +8145,8 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
-    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario di figurinesgorbions.it.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>• oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>• figurine presenti nella tua lista (serie non complete)<br>• figurine delle tue serie complete','wantlist.pageTitle':'Lista figurine (e non solo...)','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella mia lista</i>.','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la mia lista di figurine (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta la mia lista di figurine (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella mia lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri:','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante di fronte voluto dal produttore','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La mia lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario di figurinesgorbions.it.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>• oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>• figurine presenti nella tua lista (serie non complete)<br>• figurine delle tue serie complete','wantlist.pageTitle':'Lista figurine (e non solo...)','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la tua lista di figurine (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta la tua lista di figurine (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri:','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante di fronte voluto dal produttore','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -7553,6 +8367,48 @@ async function _findUserByAuthUid(uid) {
   } catch(e) {
     console.error('_findUserByAuthUid query failed', e);
     return null;
+  }
+}
+
+// Rilegge da Firestore i dati che il pannello admin mostra, e ridisegna.
+// SERVIVA: il sito non ha NESSUN ascoltatore in tempo reale (onSnapshot: zero). I
+// dati dell'admin si leggono UNA VOLTA SOLA, all'accesso, e poi restano fermi in
+// cache. Non e' che "ci mettono un po'" a comparire, come sembrava a Franco: non
+// comparivano affatto, finche' non si ricaricava la pagina.
+// Rilegge SOLO le quattro raccolte del pannello (users, contact_messages,
+// segnalazioni, eventi) tramite _loadAdminOnlyData, che esisteva gia'. Non tocca
+// figurine, serie, owned: sono migliaia di documenti, e Franco ha gia' sbattuto
+// contro la quota giornaliera di Firestore.
+async function refreshAdminData() {
+  if (!currentUser?.isAdmin) return;
+  const btn = document.getElementById('admin-refresh-btn');
+  const info = document.getElementById('admin-refresh-info');
+  // il doppio clic raddoppierebbe le letture: il pulsante si spegne mentre lavora
+  if (btn?.disabled) return;
+  if (btn) btn.disabled = true;
+  if (info) info.textContent = currentLang === 'it' ? 'Lettura in corso...' : 'Loading...';
+  try {
+    await _loadAdminOnlyData();
+    // ridisegno tutto cio' che dipende da quelle quattro raccolte
+    try { renderAdminUsers(); } catch(e) { console.error('renderAdminUsers', e); }
+    try { renderAdminContacts(); } catch(e) {}
+    try { renderAdminSegnalazioni(); } catch(e) {}
+    try { renderAdminEventi(); } catch(e) {}
+    // i badge veri: updateAdminBadges() NON esiste — me l'ero inventata.
+    try { updateMsgBadge(); } catch(e) {}
+    try { updateBellBadge(); } catch(e) {}
+    try { updateWishlistBadge(); } catch(e) {}
+    const ora = new Date().toLocaleTimeString(currentLang === 'it' ? 'it-IT' : 'en-US');
+    if (info) info.textContent = (currentLang === 'it' ? 'Aggiornato alle ' : 'Updated at ') + ora;
+  } catch(e) {
+    console.error('refreshAdminData', e);
+    // un errore silenzioso qui sarebbe il peggio: l'admin crederebbe di vedere dati
+    // freschi mentre guarda quelli vecchi. Stessa lezione della v5.682.
+    if (info) info.textContent = currentLang === 'it'
+      ? '\u26A0\uFE0F Aggiornamento NON riuscito: stai vedendo i dati di prima.'
+      : '\u26A0\uFE0F Refresh FAILED: you are seeing the previous data.';
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -7850,7 +8706,7 @@ function toggleDemoBtn() {
   if (!btn) return;
   btn._on = !btn._on;
   btn.classList.toggle('on', btn._on);
-  if (label) label.style.color = btn._on ? '#4db8ff' : 'var(--muted)';
+  if (label) label.style.color = btn._on ? 'var(--info)' : 'var(--muted)';
 }
 
 function openChangePwdModal() {
@@ -8145,7 +9001,7 @@ async function doChangePassword() {
   const fb = document.getElementById('change-pwd-feedback');
 
   const showError = (msg) => {
-    fb.style.cssText = 'display:block;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6464;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
+    fb.style.cssText = 'display:block;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
     fb.textContent = msg;
   };
 
@@ -8265,22 +9121,22 @@ async function doResetPassword() {
   const btn = document.querySelector('#reset-pwd-modal .btn-primary');
 
   if (!email) { 
-    fb.style.cssText = 'display:block;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6464;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
+    fb.style.cssText = 'display:block;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
     fb.textContent = currentLang === 'it' ? 'Inserisci il tuo indirizzo e-mail.' : 'Enter your e-mail address.';
     return; 
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    fb.style.cssText = 'display:block;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6464;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
+    fb.style.cssText = 'display:block;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
     fb.textContent = currentLang === 'it' ? 'Inserisci un indirizzo e-mail valido.' : 'Enter a valid e-mail address.';
     return;
   }
 
   // Sempre lo stesso messaggio, indipendentemente dal fatto che l'indirizzo sia
   // registrato o meno (non riveliamo l'esistenza di un account a chi non è autenticato)
-  fb.style.cssText = 'display:block;background:rgba(77,184,255,0.1);border:1px solid rgba(77,184,255,0.3);color:#4db8ff;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
+  fb.style.cssText = 'display:block;background:rgba(var(--info-rgb),0.1);border:1px solid rgba(var(--info-rgb),0.3);color:var(--info);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
   fb.innerHTML = currentLang === 'it'
-    ? 'Attendi la e-mail contenente il link per resettare la password.<br><br>ATTENZIONE! Controlla la cartella Spam/Posta indesiderata.<br><br>Se proprio non arriva, scrivici da <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:#4db8ff;text-decoration:underline;">Contatti</a> per chiedere un reset manuale.'
-    : 'Wait for the e-mail with the link to reset your password.<br><br>ATTENTION! Check your Spam/Junk folder.<br><br>If it really doesn\'t arrive, write to us from <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:#4db8ff;text-decoration:underline;">Contacts</a> to request a manual reset.';
+    ? 'Attendi la e-mail contenente il link per resettare la password.<br><br>ATTENZIONE! Controlla la cartella Spam/Posta indesiderata.<br><br>Se proprio non arriva, scrivici da <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--info);text-decoration:underline;">Contatti</a> per chiedere un reset manuale.'
+    : 'Wait for the e-mail with the link to reset your password.<br><br>ATTENTION! Check your Spam/Junk folder.<br><br>If it really doesn\'t arrive, write to us from <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--info);text-decoration:underline;">Contacts</a> to request a manual reset.';
   if (btn) btn.disabled = true;
 
   // Un evento per ogni richiesta (non sappiamo se poi viene davvero
@@ -8567,8 +9423,20 @@ async function saveSeries() {
   const albumCount = parseInt(document.getElementById('series-album-count-input').value) || null;
   const descIt = document.getElementById('series-desc-input').value.trim();
   const desc = document.getElementById('series-desc-en-input').value.trim();
-  const retroChangeTypes = (document.getElementById('series-retro-change-types-input')?.value || '')
+  let retroChangeTypes = (document.getElementById('series-retro-change-types-input')?.value || '')
     .split('\n').map(v => v.trim()).filter(Boolean);
+  // "Errore di stampa" NON puo' piu' stare qui (v5.713): dalla v5.711 e' un TIPO a se'
+  // (isPrintError), non un sottotipo di Change. Se restasse fra i "Tipi di change", lo
+  // stesso concetto sarebbe rappresentabile in DUE modi — ed e' esattamente la doppia
+  // verita' che la v5.711 aveva chiuso. Lo tolgo, e LO DICO: toglierlo in silenzio
+  // farebbe pensare a Franco di averlo scritto male.
+  if (retroChangeTypes.some(t => /^error[ei]\s+di\s+stampa$/i.test(t))) {
+    retroChangeTypes = retroChangeTypes.filter(t => !/^error[ei]\s+di\s+stampa$/i.test(t));
+    toast(currentLang === 'it'
+      ? '"Errore di stampa" non \u00e8 pi\u00f9 un tipo di change: ora \u00e8 un tipo di oggetto a s\u00e9. L\u2019ho tolto dalla lista.'
+      : '"Print error" is no longer a change type: it is now an object type of its own. Removed from the list.',
+      'info');
+  }
   if (!name || !year) { toast((currentLang === 'it' ? 'Nome e anno sono obbligatori' : 'Name and year are required'), 'error'); return; }
   const fb = document.getElementById('series-save-feedback');
   const btn = document.querySelector('#add-series-modal .btn-primary');
@@ -8802,7 +9670,7 @@ function renderCatalogSearch(q) {
                 ${f.img ? `<img src="${cloudinaryUrl(f.img,'w_32,h_32,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : ''}
                 ${baseFig ? smallImg(baseFig.img, currentLang === 'it' ? 'Figurina base' : 'Base sticker') : ''}
                 ${retroFig ? smallImg(retroFig.img, currentLang === 'it' ? 'Retro associato' : 'Associated retro') : ''}
-                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">Change:</span> <span style="color:#4db8ff;">'+f.changeType+'</span></span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (retroFig ? ' - <span style="color:#4db8ff;">' + retroFig.name + '</span>' : '') + '</span>' : ''}</span>
+                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">Change:</span> <span style="color:var(--muted);">'+f.changeType+'</span></span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (retroFig ? ' - <span style="color:var(--info);">' + retroFig.name + '</span>' : '') + '</span>' : ''}</span>
               </span>`;
               }).join('')}
             </div>
@@ -8957,6 +9825,59 @@ const SECTION_IMAGES = {
 // guardava tutt'altro. Franco: "ogni sezione e' a se stante; se sto vedendo le
 // figurine non voglio informazioni sul resto" — e vale anche al contrario.
 // Ora segue currentSection, e va richiamata a ogni cambio di scheda.
+// QUALI TIPI ESISTONO, in questa serie e in questa sezione? (v5.711)
+// Una domanda sola, una risposta sola — usata SIA dai contatori SIA dai filtri.
+// I contatori gia' si comportavano cosi' (una categoria vuota non compare); ora anche
+// i filtri: se in questa sezione non c'e' nessun Change, il filtro "Solo Change" non
+// si mostra. Franco: "alla peggio non avremo dati" — e cosi' quel "alla peggio" costa
+// zero: la pagina non offre mai un interruttore che non fa niente.
+// E' anche il motivo per cui Album e Altri oggetti possono avere TUTTI i tipi senza
+// che questo si veda finche' non ci metti dentro qualcosa.
+// I "Tipi di change" di una serie, SENZA "errore di stampa" (v5.713).
+// Dalla v5.711 l'errore di stampa e' un TIPO a se' (isPrintError), non un sottotipo di
+// Change. Continuare a offrirlo nel menu "Tipo di change" ricreerebbe la doppia verita'
+// che quella versione aveva appena chiuso: lo stesso concetto rappresentabile in due
+// modi, e nessuno dei due autorevole.
+// UNA FUNZIONE SOLA, perche' la lista viene letta da TRE punti (il menu della form, la
+// riga di dettaglio, l'importazione). Filtrarla in uno solo avrebbe lasciato gli altri
+// due a offrirla ancora.
+// Il confronto e' tollerante (minuscole, spazi) come lo era il vecchio filtro: se in
+// una serie e' scritto "Errori di stampa" o " ERRORE DI STAMPA ", sparisce lo stesso.
+// IL TIPO DI UN OGGETTO, in una parola (v5.717).
+// Serve alla regola di unicita' dei Retro, che prima usava il CHANGETYPE come
+// discriminante. Funzionava finche' i tipi di retro erano due (base e Change), perche'
+// solo i Change avevano un changeType. COL QUINTO TIPO NON REGGE PIU': un retro BASE e
+// un ERRORE DI STAMPA hanno ENTRAMBI changeType vuoto, e il controllo li scambiava per
+// lo stesso oggetto — impedendo a Franco di convertire un Change in errore di stampa,
+// perche' trovava il retro base omonimo e bloccava.
+// La chiave di unicita' deve contenere IL TIPO, non solo il changeType.
+// Stesso ordine di precedenza usato in tutto il sito.
+function tipoDiOggetto(f) {
+  if (f.isPrintError)          return 'printError';
+  if (f.isVariation)           return 'variation';
+  if (f.isUnofficialVariation) return 'unofficialVariation';
+  if (f.isChange)              return 'change';
+  return 'base';
+}
+
+function changeTypesDiSerie(seriesId) {
+  const s = getData('series', []).find(x => x.id === seriesId);
+  return (s?.retroChangeTypes || []).filter(t =>
+    !/^error[ei]\s+di\s+stampa$/i.test((t || '').trim()));
+}
+
+function tipiPresenti(seriesId, section) {
+  const items = getData('figurines', []).filter(f => f.seriesId === seriesId && f.section === section);
+  return {
+    items,
+    base:       items.filter(f => !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError),
+    variation:  items.filter(f => f.isVariation),
+    unofficial: items.filter(f => f.isUnofficialVariation),
+    change:     items.filter(f => f.isChange),
+    printError: items.filter(f => f.isPrintError)
+  };
+}
+
 function renderSeriesMeta(s) {
   const metaEl = document.getElementById('detail-meta');
   if (!metaEl || !s) return;
@@ -8982,11 +9903,18 @@ function renderSeriesMeta(s) {
   const nfmt = n => n.toLocaleString(it ? 'it-IT' : 'en-US');
   const inLista = it ? 'nella tua lista' : 'in your list';
 
-  const colonna = (icona, elenco, etichetta, forte, femminile = true) => {
+  // CODICE COLORE (v5.703): ogni contatore prende il colore del suo tipo, letto dalle
+  // variabili CSS. Il bullet e' un quadrato con background:currentColor, quindi si
+  // tinge DA SOLO insieme al testo — non c'e' modo che i due si sfasino.
+  // Il colore va sulla riga dell'INVENTARIO, non su quella della lista: il numero
+  // della lista resta in var(--accent) perche' dice un'altra cosa ("questo e' tuo"),
+  // e deve restare riconoscibile a colpo d'occhio in ogni riga.
+  const colonna = (icona, elenco, etichetta, forte, femminile = true, colore = null) => {
     const quanti = elenco.length;
     const n = miei(elenco);
     const complete = currentUser && quanti > 0 && n === quanti;
-    const riga1 = `<span${forte ? ' style="font-weight:600;"' : ''}>${icona}${nfmt(quanti)} ${etichetta}</span>`;
+    const stile = (forte ? 'font-weight:600;' : '') + (colore ? `color:${colore};` : '');
+    const riga1 = `<span${stile ? ` style="${stile}"` : ''}>${icona}${nfmt(quanti)} ${etichetta}</span>`;
     let riga2 = '';
     if (currentUser) {
       const testo = complete
@@ -8999,49 +9927,66 @@ function renderSeriesMeta(s) {
     return `<div style="display:flex;flex-direction:column;gap:1px;">${riga1}${riga2}</div>`;
   };
 
+  // I CINQUE TIPI, IN TUTTE E QUATTRO LE SEZIONI (v5.711). Prima Album e Altri oggetti
+  // mostravano SOLO il totale, perche' le loro categorie non erano state decise. Ora lo
+  // sono: le stesse cinque valgono ovunque. Ma una categoria compare SOLO SE HA
+  // QUALCOSA DENTRO — quindi un Album senza variazioni non ne parla, e il giorno che ne
+  // inserisci una la colonna appare da sola. E' cio' che rende gratis il "alla peggio
+  // non avremo dati" di Franco.
+  const g = tipiPresenti(s.id, sez);
+  const nomi = {
+    figurines: { p: it ? 'figurine' : 'stickers', s: it ? 'figurina' : 'sticker', f: true  },
+    retros:    { p: it ? 'retro'    : 'retros',   s: it ? 'retro'    : 'retro',   f: false },
+    albums:    { p: it ? 'album'    : 'albums',   s: it ? 'album'    : 'album',   f: false },
+    extras:    { p: it ? 'oggetti'  : 'items',    s: it ? 'oggetto'  : 'item',    f: false }
+  };
+  const nm = nomi[sez] || nomi.figurines;
   const meta = [];
 
-  // Figurine e Retro condividono le stesse quattro categorie (Franco: "per i Retro
-  // i contatori sono gli stessi"). Cambia solo il NOME dell'oggetto contato.
-  if (sez === 'figurines' || sez === 'retros') {
-    const retro = (sez === 'retros');
-    const nomeP = it ? (retro ? 'retro' : 'figurine') : (retro ? 'retros' : 'stickers');
-    const nomeS = it ? (retro ? 'retro' : 'figurina') : (retro ? 'retro' : 'sticker');
-    // "retro" in italiano e' maschile: "Li hai tutti", non "Le hai tutte".
-    const femm = !retro;
+  if (g.base.length) meta.push(colonna(BULLET, g.base,
+    it ? nm.p + ' set base' : nm.p + ' base set', false, nm.f, 'var(--type-base)'));
 
-    const gBase   = items.filter(f => !f.isVariation && !f.isUnofficialVariation && !f.isChange);
-    const gVar    = items.filter(f => f.isVariation);
-    const gUnoff  = items.filter(f => f.isUnofficialVariation);
-    const gChange = items.filter(f => f.isChange);
+  if (g.variation.length) meta.push(colonna(BULLET, g.variation,
+    it ? (g.variation.length === 1 ? 'variazione ufficiale' : 'variazioni ufficiali')
+       : (g.variation.length === 1 ? 'official variation' : 'official variations'),
+    false, true, 'var(--type-official)'));
 
-    if (gBase.length) meta.push(colonna(BULLET, gBase,
-      it ? nomeP + ' set base' : nomeP + ' base set', false, femm));
+  if (g.unofficial.length) meta.push(colonna(BULLET, g.unofficial,
+    it ? (g.unofficial.length === 1 ? 'variazione non ufficiale' : 'variazioni non ufficiali')
+       : (g.unofficial.length === 1 ? 'unofficial variation' : 'unofficial variations'),
+    false, true, 'var(--type-unofficial)'));
 
-    if (gVar.length) meta.push(colonna(BULLET, gVar,
-      it ? (gVar.length === 1 ? 'variazione ufficiale' : 'variazioni ufficiali')
-         : (gVar.length === 1 ? 'official variation' : 'official variations'), false, true));
+  if (g.change.length) meta.push(colonna(BULLET, g.change,
+    'Change', false, false, 'var(--type-change)'));
 
-    if (gUnoff.length) meta.push(colonna(BULLET, gUnoff,
-      it ? (gUnoff.length === 1 ? 'variazione non ufficiale' : 'variazioni non ufficiali')
-         : (gUnoff.length === 1 ? 'unofficial variation' : 'unofficial variations'), false, true));
+  // il quinto tipo. Maschile: "errori di stampa" → "Li hai tutti!"
+  if (g.printError.length) meta.push(colonna(BULLET, g.printError,
+    it ? (g.printError.length === 1 ? 'errore di stampa' : 'errori di stampa')
+       : (g.printError.length === 1 ? 'print error' : 'print errors'),
+    false, false, 'var(--type-printerror)'));
 
-    if (gChange.length) meta.push(colonna(BULLET, gChange, 'Change', false, false));
-
-    if (items.length) meta.push(colonna(BULLET, items,
-      it ? (items.length === 1 ? nomeS + ' in totale' : nomeP + ' in totale')
-         : (items.length === 1 ? nomeS + ' in total' : nomeP + ' in total'), true, femm));
-
-  } else {
-    // Album e Altri oggetti: le categorie giuste sono ancora da definire con Franco.
-    // Finche' non lo sono, si mostra SOLO il totale della sezione — che e' vero.
-    // Riusare qui le categorie delle figurine sarebbe peggio del non dire nulla.
-    const nome = getSectionLabel(sez).toLowerCase();
-    if (items.length) meta.push(colonna(BULLET, items,
-      (it ? nome + ' in totale' : nome + ' in total'), true, false));
-  }
+  if (g.items.length) meta.push(colonna(BULLET, g.items,
+    it ? (g.items.length === 1 ? nm.s + ' in totale' : nm.p + ' in totale')
+       : (g.items.length === 1 ? nm.s + ' in total' : nm.p + ' in total'),
+    true, nm.f));
 
   metaEl.innerHTML = meta.join('');
+}
+
+// I contatori in alto alla pagina della serie mostrano anche "N nella tua lista".
+// Quel numero cambia ogni volta che l'utente tocca la lista — ma renderSeriesMeta
+// veniva chiamata SOLO all'apertura della serie e al cambio di sezione. Risultato
+// (segnalato da Franco): metti una figurina in lista, i contatori NON si muovono, e
+// per vederli giusti devi uscire dalla pagina e rientrare.
+// E' lo stesso difetto della v5.690 — numeri CONGELATI, non sbagliati — in un altro
+// punto: la stessa funzione, di nuovo non richiamata quando il dato cambia.
+// Un punto solo, chiamato da chiunque tocchi la lista: cosi' la prossima funzione che
+// modifichera' la lista non dovra' ricordarsi di ripetere la ricerca della serie.
+function refreshSeriesMeta() {
+  if (!currentSeriesId) return;
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  if (!s) return;
+  try { renderSeriesMeta(s); } catch(e) { console.error('renderSeriesMeta (refresh)', e); }
 }
 
 function openSeriesDetail(seriesId) {
@@ -9088,7 +10033,7 @@ function updateSectionCounts() {
     const unit = currentLang === 'it' ? ' oggetti' : ' items';
     if (currentUser && total > 0) {
       const ownedCount = items.filter(f => owned.includes(f.id)).length;
-      const ownedLabel = currentLang === 'it' ? ownedCount + ' nella mia lista' : ownedCount + ' in my list';
+      const ownedLabel = currentLang === 'it' ? ownedCount + ' nella tua lista' : ownedCount + ' in my list';
       el.innerHTML = total + unit + '<br>' + ownedLabel;
     } else {
       el.textContent = total + unit;
@@ -9270,7 +10215,7 @@ function filterRetroLink() {
   dd.innerHTML = filtered.slice(0, 50).map(r => {
     const sub = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean).join(' · ');
     return `<div onclick="selectRetroLink('${r.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <div style="font-size:0.9rem;">${r.name}${r.changeType ? ` <span style="color:#4db8ff;">— ${r.changeType}</span>` : ''}</div>
+      <div style="font-size:0.9rem;">${r.name}${r.changeType ? ` <span style="color:var(--muted);">— ${r.changeType}</span>` : ''}</div>
       ${sub ? `<div style="font-size:0.75rem;color:var(--muted);">${sub}</div>` : ''}
     </div>`;
   }).join('');
@@ -9296,7 +10241,26 @@ function clearRetroLinkIfEmpty() {
   }, 200);
 }
 
-function toggleBaseFigurineGroup() {
+// I QUATTRO TIPI SI ESCLUDONO A VICENDA (v5.711). Prima le tre caselle erano
+// INDIPENDENTI, e il sito risolveva i conflitti PER PRECEDENZA (isVariation vinceva su
+// isChange): un oggetto poteva essere marcato come due cose insieme, e nessuno lo
+// diceva mai. Col quinto tipo questo non regge piu' — un oggetto E' UNA COSA SOLA.
+// L'esclusivita' scatta al CLIC, non al caricamento: un record gia' esistente con due
+// flag si apre com'e', ma appena tocchi una casella si sistema. Cosi' non riscriviamo
+// dati vecchi di nascosto.
+function _esclusivitaTipi(appenaSpuntata) {
+  const caselle = ['fig-is-variation-input', 'fig-is-unofficial-variation-input',
+                   'fig-is-change-input', 'fig-is-printerror-input'];
+  const el = document.getElementById(appenaSpuntata);
+  if (!el || !el.checked) return;   // sto SPEGNENDO una casella: non tocco le altre
+  caselle.filter(c => c !== appenaSpuntata).forEach(c => {
+    const x = document.getElementById(c);
+    if (x) x.checked = false;
+  });
+}
+
+function toggleBaseFigurineGroup(appenaSpuntata) {
+  if (appenaSpuntata) _esclusivitaTipi(appenaSpuntata);
   const group = document.getElementById('fig-base-figurine-group');
   const retroGroup = document.getElementById('fig-retro-group');
   const numberGroup = document.getElementById('fig-number-group');
@@ -9305,10 +10269,23 @@ function toggleBaseFigurineGroup() {
   const isVar = document.getElementById('fig-is-variation-input')?.checked;
   const isUnoff = document.getElementById('fig-is-unofficial-variation-input')?.checked;
   const isChg = document.getElementById('fig-is-change-input')?.checked;
-  const showBase = isVar || isUnoff || isChg;
+  const isPE = document.getElementById('fig-is-printerror-input')?.checked;
+  // un errore di stampa, come le variazioni e i Change, e' collegato a un oggetto base
+  const showBase = isVar || isUnoff || isChg || isPE;
   group.style.display = showBase ? '' : 'none';
   // Il campo Retro associato non si applica mai ai Retro stessi (un retro non ha un retro)
   if (retroGroup) retroGroup.style.display = (!isChg && currentSection !== 'retros') ? '' : 'none';
+  // ...E PER LO STESSO IDENTICO MOTIVO, nemmeno le VARIAZIONI (v5.707). Una variazione
+  // E' il cambio del DIETRO: un retro, che un dietro non ce l'ha, per definizione non
+  // puo' variare. Il codice lo sapeva gia' ("un retro non ha un retro", riga sopra) ma
+  // non ne aveva tratto questa conseguenza: le due caselle restavano cliccabili nei
+  // Retro, e saveItem le leggeva. Bastava una spunta distratta per creare un dato che
+  // il dominio non ammette.
+  const varOff = document.getElementById('fig-var-official-label');
+  const varUnoff = document.getElementById('fig-var-unofficial-label');
+  const nascondiVar = (currentSection === 'retros') ? 'none' : '';
+  if (varOff) varOff.style.display = nascondiVar;
+  if (varUnoff) varUnoff.style.display = nascondiVar;
   // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
   if (numberGroup) numberGroup.style.display = (showBase || currentSection === 'retros') ? 'none' : '';
   // Tipo di change: solo per i Change di Retro, con le opzioni configurate sulla serie
@@ -9316,8 +10293,7 @@ function toggleBaseFigurineGroup() {
   if (changeTypeGroup) {
     changeTypeGroup.style.display = isRetroChange ? '' : 'none';
     if (isRetroChange) {
-      const series = getData('series', []).find(s => s.id === currentSeriesId);
-      const types = series?.retroChangeTypes || [];
+      const types = changeTypesDiSerie(currentSeriesId);
       const sel = document.getElementById('fig-retro-change-type-input');
       if (sel) {
         const current = sel.value;
@@ -9500,6 +10476,7 @@ async function toggleOwned(figId) {
   LOCAL.set('owned_' + currentUser.id, owned);
   await saveOwnedToFirebase(currentUser.id, owned);
   renderItems(); renderProfile();
+  refreshSeriesMeta();   // i contatori in alto seguono la lista (v5.709)
   if (bulkEditActive) renderBulkEditView();
 }
 
@@ -9638,28 +10615,97 @@ function renderItemTypeFilters() {
   const el = document.getElementById('items-filter-toggles');
   if (!el) return;
 
-  const item = (key, label, icon, bold) => `
+  const it = (currentLang === 'it');
+  const sez = currentSection || 'figurines';
+
+  // FILTRI DINAMICI (v5.711). Un filtro compare SOLO SE quel tipo esiste davvero in
+  // questa serie e in questa sezione. Stessa regola dei contatori, e la stessa
+  // funzione: tipiPresenti().
+  // Perche': Franco ha deciso che tutti e cinque i tipi sono AMMESSI ovunque ("alla
+  // peggio non avremo dati"). Ma un filtro sempre visibile su una sezione vuota
+  // sarebbe un interruttore che, cliccato, mostra una pagina vuota — l'"interruttore
+  // che non fa niente" che avevamo evitato nei Retro. Cosi' invece il "alla peggio"
+  // costa davvero zero: la pagina non offre mai un comando inutile, e il giorno che
+  // inserisci il primo Change in un Album, il filtro appare DA SOLO.
+  const g = tipiPresenti(currentSeriesId, sez);
+
+  // se il filtro acceso punta a un tipo che qui non esiste (es. cambiando serie),
+  // torna su "base": un filtro fantasma mostrerebbe una pagina vuota senza spiegazione
+  const presente = {
+    all: true,
+    base: g.base.length > 0,
+    variation: g.variation.length > 0,
+    unofficialVariation: g.unofficial.length > 0,
+    anyVariation: g.variation.length > 0 && g.unofficial.length > 0,
+    change: g.change.length > 0,
+    printError: g.printError.length > 0
+  };
+  if (!presente[_itemTypeFilter]) _itemTypeFilter = presente.base ? 'base' : 'all';
+
+  const coloreTipo = {
+    base: 'var(--type-base)',
+    variation: 'var(--type-official)',
+    unofficialVariation: 'var(--type-unofficial)',
+    change: 'var(--type-change)',
+    printError: 'var(--type-printerror)'
+  };
+  const item = (key, label, icon, bold, labelHTML) => {
+    const col = coloreTipo[key] || 'var(--text)';
+    return `
     <div style="display:flex;align-items:center;gap:0.4rem;">
       <button class="toggle-btn-blue ${_itemTypeFilter === key ? 'on' : ''}" onclick="toggleItemTypeFilter('${key}')" title="${label}"></button>
-      <span style="font-size:0.82rem;color:var(--muted);${bold ? 'font-weight:600;' : ''}">${icon ? icon + ' ' : ''}${label}</span>
+      <span style="font-size:0.82rem;color:${col};${bold ? 'font-weight:600;' : ''}">${icon ? icon + ' ' : ''}${labelHTML || label}</span>
     </div>`;
+  };
 
-  let html = '<div style="display:flex;flex-direction:column;gap:0.6rem;">';
-  html += '<div style="display:flex;flex-wrap:wrap;gap:1.2rem;align-items:center;">';
-  html += item('all', currentSection === 'retros' ? (currentLang === 'it' ? 'Tutti' : 'All') : (currentLang === 'it' ? 'Tutte' : 'All'), '', true);
-  if (currentSection === 'figurines') {
-    html += item('base', currentLang === 'it' ? 'Solo figurine set base' : 'Base set stickers only', '', true);
-    html += item('variation', currentLang === 'it' ? 'Solo Variazioni ufficiali' : 'Official variations only', '');
-    html += item('unofficialVariation', currentLang === 'it' ? 'Solo Variazioni non ufficiali' : 'Unofficial variations only', '');
-    html += item('change', currentLang === 'it' ? 'Solo Change' : 'Change only', '');
-  } else if (currentSection === 'retros') {
-    html += item('base', currentLang === 'it' ? 'Solo retro set base' : 'Base set retros only', '', true);
-    html += item('change', currentLang === 'it' ? 'Solo Change' : 'Change only', '');
-    html += item('printError', currentLang === 'it' ? 'Solo Errori di stampa' : 'Print errors only', '');
+  // il nome dell'oggetto cambia con la sezione: "figurine set base", "retro set base",
+  // "album set base", "oggetti set base"
+  const nomeP = { figurines: it ? 'figurine' : 'stickers', retros: it ? 'retro' : 'retros',
+                  albums: it ? 'album' : 'albums', extras: it ? 'oggetti' : 'items' }[sez]
+              || (it ? 'figurine' : 'stickers');
+
+  // IN FILA, non in colonna (v5.712). Erano impilati da sempre — non l'ha rotto la
+  // v5.711 — ma nella stessa pagina i filtri del POSSESSO sono in riga (v5.697): una
+  // fila e una colonna a due centimetri di distanza, senza che nulla lo giustifichi.
+  // flex-wrap: con sette filtri (Figurine) va a capo da solo; con tre (Retro) sta su
+  // una riga sola. Il gap verticale serve proprio per quando va a capo.
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center;">';
+
+  html += item('all', it ? 'Tutti' : 'All', '', false);
+
+  if (presente.base) html += item('base',
+    it ? 'Solo ' + nomeP + ' set base' : 'Base set ' + nomeP + ' only', '', true);
+
+  if (presente.variation) html += item('variation',
+    it ? 'Solo Variazioni ufficiali' : 'Official variations only', '');
+
+  if (presente.unofficialVariation) html += item('unofficialVariation',
+    it ? 'Solo Variazioni non ufficiali' : 'Unofficial variations only', '');
+
+  // l'unione ha senso SOLO se esistono entrambe: con una sola, direbbe la stessa cosa
+  // del filtro qui sopra, e sarebbe un doppione
+  if (presente.anyVariation) {
+    const etIt = 'Solo variazioni (<span style="color:var(--type-official);">ufficiali</span> / <span style="color:var(--type-unofficial);">non ufficiali</span>)';
+    const etEn = 'Variations only (<span style="color:var(--type-official);">official</span> / <span style="color:var(--type-unofficial);">unofficial</span>)';
+    html += item('anyVariation',
+      it ? 'Solo variazioni (ufficiali / non ufficiali)' : 'Variations only (official / unofficial)',
+      '', false, it ? etIt : etEn);
   }
-  html += '</div>';
+
+  if (presente.change) html += item('change', it ? 'Solo Change' : 'Change only', '');
+
+  if (presente.printError) html += item('printError',
+    it ? 'Solo Errori di stampa' : 'Print errors only', '');
+
   html += '</div>';
 
+  el.innerHTML = html;
+
+  // SECONDA RIGA: il filtro sul POSSESSO. Contenitore separato, con una linea
+  // sopra, perche' e' un'altra domanda: il tipo chiede "che cosa e' questo?", il
+  // possesso chiede "ce l'ho?". Si combinano — "le variazioni ufficiali che mi
+  // mancano" — quindi non possono stare nello stesso gruppo radio.
+  // Solo per chi ha fatto l'accesso: senza lista, "cosa mi manca" non vuol dire nulla.
   // I DUE FILTRI ADMIN escono da qui: vanno nel loro riquadro, in ultima posizione
   // (v5.699). Prima erano appesi in coda ai filtri di tipo, dentro lo stesso
   // contenitore — quindi un admin vedeva quattro gruppi di interruttori senza che
@@ -9708,13 +10754,6 @@ function renderItemTypeFilters() {
     }
   }
 
-  el.innerHTML = html;
-
-  // SECONDA RIGA: il filtro sul POSSESSO. Contenitore separato, con una linea
-  // sopra, perche' e' un'altra domanda: il tipo chiede "che cosa e' questo?", il
-  // possesso chiede "ce l'ho?". Si combinano — "le variazioni ufficiali che mi
-  // mancano" — quindi non possono stare nello stesso gruppo radio.
-  // Solo per chi ha fatto l'accesso: senza lista, "cosa mi manca" non vuol dire nulla.
   const elOwned = document.getElementById('items-owned-toggles');
   if (elOwned) {
     if (!currentUser) {
@@ -9726,13 +10765,13 @@ function renderItemTypeFilters() {
       const itemOwned = (key, label) => `
         <div style="display:flex;align-items:center;gap:0.4rem;">
           <button class="toggle-btn-blue ${_ownedFilter === key ? 'on' : ''}" onclick="toggleOwnedFilter('${key}')" title="${label}"></button>
-          <span style="font-size:0.82rem;color:var(--muted);">${label}</span>
+          <span style="font-size:0.82rem;color:var(--text);">${label}</span>
         </div>`;
       // in FILA, non in colonna: i filtri di tipo sono impilati perche' sono tanti,
       // questi sono due e stanno comodamente su una riga sola.
       let h2 = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;">';
-      h2 += itemOwned('owned', itl ? 'Solo presenti nella mia lista' : 'Only those in my list');
-      h2 += itemOwned('missing', itl ? 'Solo mancanti dalla mia lista' : 'Only those missing from my list');
+      h2 += itemOwned('owned', itl ? 'Solo presenti nella tua lista' : 'Only those in my list');
+      h2 += itemOwned('missing', itl ? 'Solo mancanti dalla tua lista' : 'Only those missing from my list');
       h2 += '</div>';
       elOwned.innerHTML = h2;
       elOwned.style.display = 'flex';
@@ -9945,20 +10984,26 @@ function getCurrentlyFilteredItems() {
       if (_ownedFilter === 'owned' && !ceLho) return false;
       if (_ownedFilter === 'missing' && ceLho) return false;
     }
-    if (currentSection === 'figurines' && _itemTypeFilter !== 'all') {
+    // UN SOLO BLOCCO PER TUTTE E QUATTRO LE SEZIONI (v5.711). Prima ce n'erano DUE —
+    // uno per le Figurine e uno per i Retro — che definivano "base" in modo DIVERSO.
+    // E' cosi' che nascono le doppie verita'. I tipi ora sono cinque e valgono
+    // ovunque: QUALI di essi esistano in una sezione lo dicono i DATI, non un ramo del
+    // codice. L'unica impossibilita' strutturale resta quella dei Retro (una variazione
+    // e' il cambio del dietro, e un retro un dietro non ce l'ha) — ma non serve
+    // scriverla qui: la form gia' impedisce di crearne (v5.707), quindi il filtro non
+    // trovera' nulla da solo.
+    if (_itemTypeFilter !== 'all') {
       const matchesType =
-        (_itemTypeFilter === 'base' && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ||
+        (_itemTypeFilter === 'base' && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError) ||
         (_itemTypeFilter === 'variation' && f.isVariation) ||
         (_itemTypeFilter === 'unofficialVariation' && f.isUnofficialVariation) ||
-        (_itemTypeFilter === 'change' && f.isChange);
-      if (!matchesType) return false;
-    }
-    if (currentSection === 'retros' && _itemTypeFilter !== 'all') {
-      const isPrintError = f.isChange && (f.changeType||'').toLowerCase().trim() === 'errore di stampa';
-      const matchesType =
-        (_itemTypeFilter === 'base' && !f.isChange) ||
+        (_itemTypeFilter === 'anyVariation' && (f.isVariation || f.isUnofficialVariation)) ||
         (_itemTypeFilter === 'change' && f.isChange) ||
-        (_itemTypeFilter === 'printError' && isPrintError);
+        // ERA UNA STRINGA, ORA E' UN FLAG. Il vecchio codice faceva:
+        //     f.isChange && (f.changeType||'').toLowerCase().trim() === 'errore di stampa'
+        // Bastava scrivere "Errori di stampa" al plurale in una serie perche' il filtro
+        // smettesse di trovarli — in silenzio, senza modo di accorgersene.
+        (_itemTypeFilter === 'printError' && f.isPrintError);
       if (!matchesType) return false;
     }
     if (currentSection === 'figurines' && _noOfficialVariationFilter) {
@@ -10110,7 +11155,7 @@ function renderItems() {
     return `<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
       ${cur > 1 ? `<button onclick="changeItemPage(1)" class="btn-secondary" style="padding:0.4rem 1rem;">⏮ ${currentLang === 'it' ? 'Prima' : 'First'}</button>` : ''}
       <button onclick="changeItemPage(${cur - 1})" ${cur === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ ${currentLang === 'it' ? 'Precedente' : 'Previous'}</button>
-      <span style="font-family:var(--font-ui);color:var(--muted);font-size:0.9rem;">${label}</span>
+      <span style="font-family:var(--font-ui);color:var(--text);font-size:0.9rem;">${label}</span>
       <button onclick="changeItemPage(${cur + 1})" ${cur === tot ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Successiva' : 'Next'} ▶</button>
       ${cur < tot ? `<button onclick="changeItemPage(${tot})" class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Ultima' : 'Last'} ⏭</button>` : ''}
     </div>`;
@@ -10217,17 +11262,31 @@ function renderItems() {
     // Tradurre riga per riga avrebbe prodotto "Variation / official", che in
     // inglese non si dice.
     let typeBadgeHTML = '';
-    if (currentSection === 'figurines') {
+    // BADGE ANCHE NEI RETRO (v5.706). Franco: "servono anche sui Retro: anche li'
+    // abbiamo le stesse tipologie". Vero — e i contatori della serie le contavano
+    // gia' (gVar, gUnoff): erano solo i badge a fermarsi alle Figurine.
+    // La condizione era `currentSection === 'figurines'`, e nei Retro NON compariva
+    // nessun badge: il tipo lo diceva solo la scritta in basso.
+    if (true) {   // v5.711: i badge valgono in TUTTE E QUATTRO le sezioni
       const it = currentLang === 'it';
       let r1 = '', r2 = '', cls = '';
-      if (f.isVariation) {
+      // Nei RETRO esistono solo due tipi: set base e Change. Le variazioni non
+      // possono esistere (una variazione e' il cambio del dietro; un retro non ha un
+      // dietro). I due rami qui sotto sono percio' inerti nei retro — restano perche'
+      // la stessa funzione serve entrambe le sezioni.
+      if (currentSection === 'figurines' && f.isVariation) {
         r1 = it ? 'Variazione' : 'Official';
         r2 = it ? 'ufficiale'  : 'variation';
         cls = 'fig-badge-official';
-      } else if (f.isUnofficialVariation) {
+      } else if (currentSection === 'figurines' && f.isUnofficialVariation) {
         r1 = it ? 'Variazione'   : 'Unofficial';
         r2 = it ? 'non ufficiale': 'variation';
         cls = 'fig-badge-unofficial';
+      } else if (f.isPrintError) {
+        // il quinto tipo (v5.711). Due righe, come le variazioni: "Errore" / "di stampa"
+        r1 = it ? 'Errore'    : 'Print';
+        r2 = it ? 'di stampa' : 'error';
+        cls = 'fig-badge-printerror';
       } else if (f.isChange) {
         r1 = 'Change';
         cls = 'fig-badge-change';
@@ -10245,16 +11304,29 @@ function renderItems() {
     const catParts = [f.category, f.subcategory].map(v => (v||'').trim()).filter(Boolean);
     const categoryHTML = (currentSection === 'retros' && catParts.length) ? `<div style="font-size:0.78rem;color:var(--muted);">${catParts.join(' · ')}</div>` : '';
     const imgAspectRatio = currentSection === 'retros' ? '1.6' : '1';
-    const typeIndicator = (currentSection === 'figurines') ? (f.isVariation
-      ? (currentLang === 'it' ? 'Variazione ufficiale' : 'Official variation')
-      : f.isUnofficialVariation
-      ? (currentLang === 'it' ? 'Variazione non ufficiale' : 'Unofficial variation')
-      : f.isChange
-      ? 'Change'
-      : (currentLang === 'it' ? 'Figurina base' : 'Base sticker')) : (currentSection === 'retros' && f.isChange) ? ('Change' + (f.changeType ? ' - ' + f.changeType : '')) : '';
-    const typeIndicatorHTML = typeIndicator ? `<div style="font-size:0.72rem;color:#ffc832;font-weight:600;">${typeIndicator}</div>` : '<div></div>';
+    // LA SCRITTA DEL TIPO VIVE SOLO NEI RETRO (v5.705).
+      // Nelle FIGURINE era ridondante: il badge in alto a destra dice gia' il tipo, ed
+      // e' piu' visibile — Franco lo aveva fatto introdurre proprio per questo. Due
+      // volte la stessa informazione sulla stessa card e' una di troppo.
+      // NEI RETRO INVECE IL BADGE NON ESISTE (typeBadgeHTML si costruisce solo se
+      // currentSection === 'figurines'): li' questa scritta e' l'UNICA cosa che dice
+      // il tipo, e per giunta mostra anche il changeType, che il badge non mostra
+      // nemmeno nelle Figurine. Toglierla ovunque avrebbe CANCELLATO
+      // un'informazione dai Retro, in silenzio.
+      // Il set base non ha badge, e non deve averlo: il badge segnala un'ECCEZIONE.
+      // La sua assenza dice "questa e' base" — non e' un'omissione, e' un'affermazione.
+      // Ne segue, gratis, il comportamento che Franco voleva ottenere con una regola:
+      // col filtro "Solo set base" acceso, in pagina non compare nessun badge.
+      // Ora che anche i Retro hanno il badge, la scritta NON deve ripetere "Change":
+      // lo dice gia' il badge rosa. Resta solo per il DETTAGLIO che il badge non puo'
+      // contenere — il changeType ("Errore di stampa", "Fronte"...). Se non c'e'
+      // changeType, non c'e' nulla da aggiungere e la scritta sparisce.
+      const typeIndicator = (currentSection === 'retros' && f.isChange && f.changeType)
+        ? f.changeType
+        : '';
+      const typeIndicatorHTML = typeIndicator ? `<div style="font-size:0.72rem;color:var(--muted);font-weight:600;">${typeIndicator}</div>` : '<div></div>';
     const retroNameHTML = (currentSection === 'figurines' && !f.isChange && f.retroId)
-      ? (() => { const r = getData('figurines', []).find(x => x.id === f.retroId); return r ? `<div style="font-size:0.78rem;color:#4db8ff;">${r.name}</div>` : ''; })()
+      ? (() => { const r = getData('figurines', []).find(x => x.id === f.retroId); return r ? `<div style="font-size:0.78rem;color:var(--muted);">${r.name}</div>` : ''; })()
       : '';
     const isWideFlexMode = currentSection === 'figurines' && _retroViewMode === 'destra-piena';
     const cardSpanStyle = isWideFlexMode
@@ -10276,8 +11348,8 @@ function renderItems() {
           ${typeIndicatorHTML}
           <div class="fig-toggle" style="display:flex;align-items:center;gap:0.5rem;">
             <span class="toggle-label">${t('owned.toggle')}</span>
-            <button class="toggle-btn-blue ${isOwned?'on':''}" onclick="event.stopPropagation();toggleOwned('${f.id}')"></button>
-            ${(currentUser && !currentUser.isAdmin) ? `<button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(_wishlist.includes(f.id)?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${_wishlist.includes(f.id)?'rgba(255,100,100,0.15)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'#ff6464':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'#ff6464':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">${_wishlist.includes(f.id)?'❤️':'♡'}</button>` : ''}
+            <button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista \u2014 clicca per toglierla':'In your list \u2014 click to remove') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="event.stopPropagation();toggleOwned('${f.id}')">\u2713</button>
+            ${(currentUser && !currentUser.isAdmin) ? `<button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(_wishlist.includes(f.id)?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${_wishlist.includes(f.id)?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'var(--danger)':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">${_wishlist.includes(f.id)?'❤️':'♡'}</button>` : ''}
           </div>
         </div>
       </div>
@@ -10362,8 +11434,17 @@ async function _saveFigurineInner() {
   const size = document.getElementById('fig-size-input')?.value.trim() || '';
   const category = document.getElementById('fig-category-input')?.value.trim() || '';
   const subcategory = document.getElementById('fig-subcategory-input')?.value.trim() || '';
-  const isVariation = document.getElementById('fig-is-variation-input')?.checked || false;
-  const isUnofficialVariation = document.getElementById('fig-is-unofficial-variation-input')?.checked || false;
+  // NEI RETRO I FLAG DI VARIAZIONE SONO SEMPRE FALSI, comunque sia la casella.
+  // Nasconderla non basta: se e' rimasta spuntata da una modifica precedente, il suo
+  // valore verrebbe letto lo stesso. Qui la regola diventa un fatto.
+  const _retroNoVar = (currentSection === 'retros');
+  const isVariation = _retroNoVar ? false : (document.getElementById('fig-is-variation-input')?.checked || false);
+  const isUnofficialVariation = _retroNoVar ? false : (document.getElementById('fig-is-unofficial-variation-input')?.checked || false);
+  // ERRORE DI STAMPA (v5.711): quinto tipo, valido in TUTTE E QUATTRO le sezioni.
+  // Prima non era un tipo, era una STRINGA: il filtro cercava changeType === "errore
+  // di stampa". Bastava scriverlo al plurale in una serie perche' smettesse di
+  // trovarlo, in silenzio. Ora e' un flag, e non puo' piu' sbagliarsi.
+  const isPrintError = document.getElementById('fig-is-printerror-input')?.checked || false;
   const isChange = document.getElementById('fig-is-change-input')?.checked || false;
   const baseFigurineId = document.getElementById('fig-base-figurine-input')?.value || null;
   const retroId = document.getElementById('fig-retro-input')?.value || null;
@@ -10377,13 +11458,23 @@ async function _saveFigurineInner() {
   if (!name || (!isRetrosSection && !isVarOrChgSection && !number)) { toast((currentLang === 'it' ? (isRetrosSection || isVarOrChgSection ? 'Il nome è obbligatorio' : 'Numero e nome sono obbligatori') : (isRetrosSection || isVarOrChgSection ? 'Name is required' : 'Number and name are required')), 'error'); return; }
   if (isRetrosSection) {
     const editId = document.getElementById('edit-fig-id').value;
+    // LA CHIAVE DI UNICITA' COMPRENDE IL TIPO (v5.717). Prima confrontava solo il
+    // changeType — e allora un retro BASE e un ERRORE DI STAMPA, che hanno ENTRAMBI
+    // changeType vuoto, sembravano lo stesso oggetto. Convertire un Change in errore di
+    // stampa risultava IMPOSSIBILE: il controllo trovava il retro base omonimo e
+    // bloccava. Il changeType funzionava da discriminante finche' i tipi di retro erano
+    // due; col quinto non regge piu'.
+    const tipoNuovo = tipoDiOggetto({ isVariation, isUnofficialVariation, isChange, isPrintError });
     const dup = getData('figurines', []).find(f =>
       f.id !== editId &&
       f.seriesId === currentSeriesId &&
       f.section === 'retros' &&
       (f.name||'').toLowerCase() === name.toLowerCase() &&
       (f.category||'').toLowerCase() === category.toLowerCase() &&
-      (f.changeType||'').toLowerCase().trim() === (changeType||'').toLowerCase().trim()
+      tipoDiOggetto(f) === tipoNuovo &&
+      // il changeType distingue due CHANGE fra loro; per gli altri tipi non esiste
+      (tipoNuovo !== 'change' ||
+        (f.changeType||'').toLowerCase().trim() === (changeType||'').toLowerCase().trim())
     );
     if (dup) {
       toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, lo stesso Nome e lo stesso Tipo di change in questa serie' : 'A Retro with the same Category, Name and Change type already exists in this series'), 'error');
@@ -10430,13 +11521,13 @@ async function _saveFigurineInner() {
     if (editId) {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition };
         figs[idx].fullName = computeFullName(figs[idx], figs);
         await fsSave('figurines', figs[idx]);
         _cache.figurines = figs;
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition };
       newF.fullName = computeFullName(newF, figs);
       const saved = await fsSave('figurines', newF);
     }
@@ -11207,7 +12298,7 @@ function renderAdminContacts() {
         <div style="display:flex;gap:0.4rem;align-items:center;">
           ${!m.read ? `<button class="tbl-btn tbl-btn-edit" onclick="markContactRead('${m.id}')">${currentLang === 'it' ? 'Segna come letto' : 'Mark as read'}</button>` : '<span style="font-size:0.78rem;color:var(--muted);">✓</span>'}
           <button class="tbl-btn tbl-btn-edit" onclick="toggleReplyBox('${m.id}')">↩️ ${currentLang === 'it' ? 'Rispondi' : 'Reply'}</button>
-          <button class="tbl-btn" style="background:rgba(255,100,100,0.1);border-color:rgba(255,100,100,0.4);color:#ff6464;" onclick="deleteContactMsg('${m.id}')">🗑️</button>
+          <button class="tbl-btn tbl-btn-del" onclick="deleteContactMsg('${m.id}')">🗑️</button>
         </div>
       </div>
     </div>
@@ -11340,7 +12431,7 @@ function renderAdminUsers() {
     <th style="cursor:pointer;" onclick="sortAdminUsers('lastLogin')">${(currentLang === 'it') ? 'Ultima login' : 'Last login'}${arrow('lastLogin')}</th>
     <th style="cursor:pointer;" onclick="sortAdminUsers('joined')">${(currentLang === 'it') ? 'Iscritto dal' : 'Member since'}${arrow('joined')}</th></tr></thead><tbody>
     ${users.map(u => `<tr>
-      <td><div style="display:flex;gap:0.3rem;"><button class="tbl-btn" style="background:rgba(181,255,46,0.12);border-color:rgba(181,255,46,0.4);color:var(--accent);" onclick="openEditUserModal('${u.id}')">${currentLang === 'it' ? 'Visualizza' : 'View'}</button>${!u.isAdmin ? `<button class="tbl-btn" style="background:rgba(255,180,0,0.15);border-color:rgba(255,180,0,0.4);color:#ffb400;" onclick="impersonateUser('${u.id}')">🎭 ${(currentLang === 'it') ? 'Impersona' : 'Impersonate'}</button>` : ''}</div></td>
+      <td><div style="display:flex;gap:0.3rem;"><button class="tbl-btn" style="background:rgba(181,255,46,0.12);border-color:rgba(181,255,46,0.4);color:var(--accent);" onclick="openEditUserModal('${u.id}')">${currentLang === 'it' ? 'Visualizza' : 'View'}</button>${!u.isAdmin ? `<button class="tbl-btn" style="background:rgba(var(--warn-rgb),0.15);border-color:rgba(var(--warn-rgb),0.4);color:var(--warn);" onclick="impersonateUser('${u.id}')">🎭 ${(currentLang === 'it') ? 'Impersona' : 'Impersonate'}</button>` : ''}</div></td>
       <td>
         <div style="display:flex;align-items:center;gap:0.4rem;">
           <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : (u.username || '?')[0].toUpperCase()}</div>
@@ -11656,7 +12747,7 @@ async function refreshEmailCountWidgets() {
     } catch(e) {}
     const pct = Math.min(Math.round(count / EMAILJS_MONTHLY_LIMIT * 100), 100);
     const remaining = Math.max(0, EMAILJS_MONTHLY_LIMIT - count);
-    const color = pct >= 90 ? '#ff4444' : pct >= 70 ? '#ffb400' : 'var(--accent)';
+    const color = pct >= 90 ? 'var(--danger)' : pct >= 70 ? 'var(--warn)' : 'var(--accent)';
     ['', '-2'].forEach(suffix => {
       const el = document.getElementById('email-count-display' + suffix);
       if (el) el.textContent = count;
@@ -11696,7 +12787,7 @@ async function renderAdminRisorse() {
   if (readsEl) {
     const reads = getReadCount();
     const pct = Math.round(reads / 50000 * 100);
-    const color = pct >= 90 ? '#ff4444' : pct >= 60 ? '#ffb400' : 'var(--accent)';
+    const color = pct >= 90 ? 'var(--danger)' : pct >= 60 ? 'var(--warn)' : 'var(--accent)';
     readsEl.innerHTML = `<span style="color:${color};">${reads.toLocaleString('it-IT')}</span> <span style="font-size:0.72rem;color:var(--muted);">(${pct}% del limite)</span>`;
   }
 
@@ -11707,7 +12798,7 @@ async function renderAdminRisorse() {
     const uploads = getCloudinaryUploadCount();
     const credits = (uploads * 0.01).toFixed(2);
     const pct = Math.round(uploads * 0.01 / 25 * 100);
-    const color = pct >= 90 ? '#ff4444' : pct >= 60 ? '#ffb400' : 'var(--accent)';
+    const color = pct >= 90 ? 'var(--danger)' : pct >= 60 ? 'var(--warn)' : 'var(--accent)';
     if (clUploads) clUploads.innerHTML = `<span style="color:${color};">${uploads.toLocaleString('it-IT')}</span>`;
     if (clCredits) clCredits.innerHTML = `<span style="color:${color};">~${credits}</span> <span style="font-size:0.72rem;color:var(--muted);">(${pct}% del limite)</span>`;
   }
@@ -11727,7 +12818,7 @@ async function renderAdminRisorse() {
         '<table class="data-table compact"><thead><tr><th>Data (PT)</th><th>Letture fsGetAll</th><th>% limite</th></tr></thead><tbody>' +
         history.map(r => {
           const pct = Math.round(r.count / 50000 * 100);
-          const color = pct >= 90 ? '#ff4444' : pct >= 60 ? '#ffb400' : 'var(--accent)';
+          const color = pct >= 90 ? 'var(--danger)' : pct >= 60 ? 'var(--warn)' : 'var(--accent)';
           return '<tr><td>' + fmtDate(r.date) + '</td><td style="color:' + color + ';font-weight:600;">' + r.count.toLocaleString('it-IT') + '</td><td style="color:' + color + ';">' + pct + '%</td></tr>';
         }).join('') +
         '</tbody></table>';
@@ -11873,10 +12964,10 @@ function _showImpersonateBanner() {
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'impersonate-banner';
-    banner.style.cssText = 'position:fixed;top:64px;left:1rem;z-index:99999;background:#ffb400;color:#0e0a1a;padding:0.3rem 0.75rem;display:flex;align-items:center;gap:0.75rem;font-family:var(--font-ui);font-size:0.82rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);border-radius:8px;max-width:33vw;';
+    banner.style.cssText = 'position:fixed;top:64px;left:1rem;z-index:99999;background:var(--warn);color:#0e0a1a;padding:0.3rem 0.75rem;display:flex;align-items:center;gap:0.75rem;font-family:var(--font-ui);font-size:0.82rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);border-radius:8px;max-width:33vw;';
     document.body.prepend(banner);
   }
-  banner.innerHTML = '<span>🎭 ' + (currentLang === 'it' ? 'Stai impersonando' : 'Impersonating') + ': <strong>' + currentUser.username + '</strong> — ' + (currentLang === 'it' ? 'WRITE MODE' : 'WRITE MODE') + '</span><button onclick="stopImpersonation()" style="background:#0e0a1a;color:#ffb400;border:none;border-radius:6px;padding:4px 14px;cursor:pointer;font-weight:700;">' + (currentLang === 'it' ? '✕ Torna admin' : '✕ Back to admin') + '</button>';
+  banner.innerHTML = '<span>🎭 ' + (currentLang === 'it' ? 'Stai impersonando' : 'Impersonating') + ': <strong>' + currentUser.username + '</strong> — ' + (currentLang === 'it' ? 'WRITE MODE' : 'WRITE MODE') + '</span><button onclick="stopImpersonation()" style="background:#0e0a1a;color:var(--warn);border:none;border-radius:6px;padding:4px 14px;cursor:pointer;font-weight:700;">' + (currentLang === 'it' ? '✕ Torna admin' : '✕ Back to admin') + '</button>';
   banner.style.display = 'flex';
 }
 
@@ -11933,9 +13024,9 @@ async function toggleWishlist(figId) {
   const inWishlist = _wishlist.includes(figId);
   document.querySelectorAll(`.wishlist-heart-btn[data-wishlist-id="${figId}"]`).forEach(btn => {
     btn.textContent = inWishlist ? '❤️' : '♡';
-    btn.style.background = inWishlist ? 'rgba(255,100,100,0.15)' : 'transparent';
-    btn.style.borderColor = inWishlist ? '#ff6464' : 'rgba(255,255,255,0.15)';
-    btn.style.color = inWishlist ? '#ff6464' : 'var(--muted)';
+    btn.style.background = inWishlist ? 'rgba(var(--danger-rgb),0.15)' : 'transparent';
+    btn.style.borderColor = inWishlist ? 'var(--danger)' : 'rgba(255,255,255,0.15)';
+    btn.style.color = inWishlist ? 'var(--danger)' : 'var(--muted)';
     btn.title = currentLang === 'it' ? (inWishlist ? 'Togli da "Ciò che cerco"' : 'Aggiungi a "Ciò che cerco"') : (inWishlist ? 'Remove from "What I\'m looking for"' : 'Add to "What I\'m looking for"');
   });
   saveWishlist(); // fire-and-forget, non blocchiamo il thread UI
@@ -12036,7 +13127,7 @@ function openFigDetail(figId) {
       const rparts = [linkedRetro.category, linkedRetro.subcategory].map(v => (v||'').trim()).filter(Boolean);
       rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Retro collegato' : 'Linked retro')}</span><span class="detail-value"><a href="#" onclick="openFigDetail('${linkedRetro.id}');return false;" style="color:var(--accent);text-decoration:underline;">${rparts.length ? rparts.join(' · ') + ' — ' : ''}${linkedRetro.name} ↗</a></span></div>`);
     } else {
-      rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Retro collegato' : 'Linked retro')}</span><span class="detail-value" style="color:#ff6464;">${(currentLang === 'it' ? 'ID collegato non trovato: ' : 'Linked ID not found: ')}${f.retroId}</span></div>`);
+      rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Retro collegato' : 'Linked retro')}</span><span class="detail-value" style="color:var(--danger);">${(currentLang === 'it' ? 'ID collegato non trovato: ' : 'Linked ID not found: ')}${f.retroId}</span></div>`);
     }
   }
 
@@ -12140,7 +13231,7 @@ function openFigDetail(figId) {
   if (currentUser) {
     rows.push(`<div class="detail-row" style="align-items:center;">
       <span class="detail-label">${currentLang === 'it' ? "Mia lista" : 'My list'}</span>
-      <button class="toggle-btn-blue ${isOwned ? 'on' : ''}" id="fig-detail-toggle" onclick="toggleOwnedFromDetail('${f.id}')"></button>
+      <button class="owned-btn ${isOwned ? 'on' : ''}" id="fig-detail-toggle" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista':'In your list') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="toggleOwnedFromDetail('${f.id}')">\u2713</button>
     </div>`);
   }
 
@@ -12149,7 +13240,7 @@ function openFigDetail(figId) {
     const inWishlist = _wishlist.includes(f.id);
     rows.push(`<div class="detail-row" style="align-items:center;">
       <span class="detail-label">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</span>
-      <button id="fig-detail-wishlist-btn" data-fig-id="${f.id}" onclick="event.stopPropagation();toggleWishlistFromDetail('${f.id}')" title="${currentLang === 'it' ? (inWishlist ? 'Togli da &quot;Ciò che cerco&quot;' : 'Aggiungi a &quot;Ciò che cerco&quot;') : (inWishlist ? 'Remove from &quot;What I\'m looking for&quot;' : 'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist ? 'rgba(255,100,100,0.15)' : 'transparent'};border:1px solid ${inWishlist ? '#ff6464' : 'rgba(255,255,255,0.15)'};color:${inWishlist ? '#ff6464' : 'var(--muted)'};border-radius:8px;padding:3px 10px;cursor:pointer;font-size:1.1rem;line-height:1;position:relative;z-index:2;">${inWishlist ? '❤️' : '♡'}</button>
+      <button id="fig-detail-wishlist-btn" data-fig-id="${f.id}" onclick="event.stopPropagation();toggleWishlistFromDetail('${f.id}')" title="${currentLang === 'it' ? (inWishlist ? 'Togli da &quot;Ciò che cerco&quot;' : 'Aggiungi a &quot;Ciò che cerco&quot;') : (inWishlist ? 'Remove from &quot;What I\'m looking for&quot;' : 'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist ? 'rgba(var(--danger-rgb),0.15)' : 'transparent'};border:1px solid ${inWishlist ? 'var(--danger)' : 'rgba(255,255,255,0.15)'};color:${inWishlist ? 'var(--danger)' : 'var(--muted)'};border-radius:8px;padding:3px 10px;cursor:pointer;font-size:1.1rem;line-height:1;position:relative;z-index:2;">${inWishlist ? '❤️' : '♡'}</button>
     </div>`);
   }
 
@@ -12161,7 +13252,7 @@ function openFigDetail(figId) {
   if (isAdmin) {
     bottomButtons = `<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
       <button onclick="switchToEditMode('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--accent3);background:transparent;color:var(--accent3);cursor:pointer;">✏️ ${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>
-      <button onclick="deleteItemFromDetail('${f.id}')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid #ff6464;background:transparent;color:#ff6464;cursor:pointer;">🗑️ ${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button>
+      <button class="btn-danger-ghost" onclick="deleteItemFromDetail('${f.id}')" style="font-size:0.82rem;padding:4px 12px;cursor:pointer;">🗑️ ${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button>
     </div>`;
   } else if (currentUser) {
     bottomButtons = `<div style="margin-top:1rem;text-align:right;">
@@ -12294,7 +13385,17 @@ function toggleFeForSaleFields() {
   document.getElementById('fe-for-sale-fields').style.display = checked ? 'grid' : 'none';
 }
 
-function toggleFeBaseFigurineGroup() {
+function toggleFeBaseFigurineGroup(appenaSpuntata) {
+  // esclusivita' fra i quattro tipi, come nell'altra maschera (v5.711): un oggetto e'
+  // una cosa sola
+  if (appenaSpuntata) {
+    const _el = document.getElementById(appenaSpuntata);
+    if (_el && _el.checked) {
+      ['fe-is-variation', 'fe-is-unofficial-variation', 'fe-is-change', 'fe-is-printerror']
+        .filter(c => c !== appenaSpuntata)
+        .forEach(c => { const x = document.getElementById(c); if (x) x.checked = false; });
+    }
+  }
   const group = document.getElementById('fe-base-figurine-group');
   const retroGroup = document.getElementById('fe-retro-group');
   const numberGroup = document.getElementById('fe-number-group');
@@ -12303,7 +13404,13 @@ function toggleFeBaseFigurineGroup() {
   const isVar = document.getElementById('fe-is-variation')?.checked;
   const isUnoff = document.getElementById('fe-is-unofficial-variation')?.checked;
   const isChg = document.getElementById('fe-is-change')?.checked;
-  const showBase = isVar || isUnoff || isChg;
+  // ERRORE MIO (v5.711): qui leggevo 'fig-is-printerror-input', l'id dell'ALTRA
+  // maschera. La mia sostituzione aveva colpito ENTRAMBE le funzioni, e questa usa il
+  // prefisso 'fe-'. node --check non poteva vederlo: getElementById su un id
+  // inesistente non e' un errore di sintassi — restituisce null, in silenzio.
+  const isPE = document.getElementById('fe-is-printerror')?.checked;
+  // un errore di stampa, come le variazioni e i Change, e' collegato a un oggetto base
+  const showBase = isVar || isUnoff || isChg || isPE;
   group.style.display = showBase ? '' : 'none';
   if (retroGroup) retroGroup.style.display = !isChg ? '' : 'none';
   // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
@@ -12359,7 +13466,7 @@ function filterFeRetroLink() {
   dd.innerHTML = filtered.slice(0, 50).map(r => {
     const sub = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean).join(' · ');
     return `<div onclick="selectFeRetroLink('${r.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <div style="font-size:0.9rem;">${r.name}${r.changeType ? ` <span style="color:#4db8ff;">— ${r.changeType}</span>` : ''}</div>
+      <div style="font-size:0.9rem;">${r.name}${r.changeType ? ` <span style="color:var(--muted);">— ${r.changeType}</span>` : ''}</div>
       ${sub ? `<div style="font-size:0.75rem;color:var(--muted);">${sub}</div>` : ''}
     </div>`;
   }).join('');
@@ -12406,7 +13513,7 @@ function switchToEditMode(figId) {
       '<span style="display:block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;white-space:nowrap;">📷 ' + (currentLang==='it'?'Cambia foto':'Change photo') + '</span>' +
       '<input type="file" id="fig-edit-img-file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event)">' +
       '</label>' +
-      (f.img ? '<button onclick="removeFigPhoto()" style="flex:1;font-size:0.72rem;color:#ff6464;border:1px solid rgba(255,100,100,0.4);background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;white-space:nowrap;">🗑️ ' + (currentLang==='it'?'Rimuovi foto':'Remove photo') + '</button>' : '') +
+      (f.img ? '<button onclick="removeFigPhoto()" style="flex:1;font-size:0.72rem;color:var(--danger);border:1px solid rgba(var(--danger-rgb),0.4);background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;white-space:nowrap;">🗑️ ' + (currentLang==='it'?'Rimuovi foto':'Remove photo') + '</button>' : '') +
       '</div>';
   }
 
@@ -12451,14 +13558,18 @@ function switchToEditMode(figId) {
 
   // Flag Variazione ufficiale / non ufficiale (solo Figurine/Album/Altro) e Change (anche Retro)
   if (!isRetrosItem) {
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione ufficiale':'Official variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-variation" onchange="toggleFeBaseFigurineGroup()" ' + (f.isVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione non ufficiale':'Unofficial variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup()" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione ufficiale':'Official variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-variation\')" ' + (f.isVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione non ufficiale':'Unofficial variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-unofficial-variation\')" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
-  html += '<div class="detail-row"><span class="detail-label">Change</span><span class="detail-value"><input type="checkbox" id="fe-is-change" onchange="toggleFeBaseFigurineGroup()" ' + (f.isChange?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+  html += '<div class="detail-row"><span class="detail-label">Change</span><span class="detail-value"><input type="checkbox" id="fe-is-change" onchange="toggleFeBaseFigurineGroup(\'fe-is-change\')" ' + (f.isChange?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+  // ERRORE DI STAMPA (v5.714): la quinta casella, in TUTTE E QUATTRO le sezioni, come
+  // Change. Franco: "deve esserci in tutte e 4 le form di modifica". Nella v5.711
+  // l'avevo messa SOLO nella maschera "aggiungi oggetto" (#add-fig-modal), senza
+  // accorgermi che la maschera di MODIFICA e' un'altra funzione, con i propri id 'fe-'.
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? 'Errore di stampa' : 'Print error') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-printerror" onchange="toggleFeBaseFigurineGroup(\'fe-is-printerror\')" ' + (f.isPrintError?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   if (isRetrosItem) {
     const showChangeType = !!f.isChange;
-    const seriesForTypes = getData('series', []).find(s => s.id === f.seriesId);
-    const retroTypes = seriesForTypes?.retroChangeTypes || [];
+    const retroTypes = changeTypesDiSerie(f.seriesId);
     html += '<div class="detail-row" id="fe-retro-change-type-group" style="' + (showChangeType ? '' : 'display:none;') + '">' +
       '<span class="detail-label">' + (currentLang==='it'?'Tipo di change':'Change type') + '</span>' +
       '<select class="form-input" id="fe-retro-change-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
@@ -12678,14 +13789,23 @@ async function saveFigFromDetail(figId) {
   if (existingForCheck?.section === 'retros') {
     const category = document.getElementById('fe-category')?.value.trim() || '';
     const changeTypeVal = document.getElementById('fe-retro-change-type')?.value || '';
-    const dup = getData('figurines', []).find(f =>
-      f.id !== figId &&
-      f.seriesId === existingForCheck.seriesId &&
-      f.section === 'retros' &&
-      (f.name||'').toLowerCase() === name.toLowerCase() &&
-      (f.category||'').toLowerCase() === category.toLowerCase() &&
-      (f.changeType||'').toLowerCase().trim() === changeTypeVal.toLowerCase().trim()
-    );
+      // stessa correzione del controllo gemello (v5.717): la chiave comprende il TIPO
+      const tipoNuovo = tipoDiOggetto({
+        isVariation: document.getElementById('fe-is-variation')?.checked || false,
+        isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
+        isChange: document.getElementById('fe-is-change')?.checked || false,
+        isPrintError: document.getElementById('fe-is-printerror')?.checked || false
+      });
+      const dup = getData('figurines', []).find(f =>
+        f.id !== figId &&
+        f.seriesId === existingForCheck.seriesId &&
+        f.section === 'retros' &&
+        (f.name||'').toLowerCase() === name.toLowerCase() &&
+        (f.category||'').toLowerCase() === category.toLowerCase() &&
+        tipoDiOggetto(f) === tipoNuovo &&
+        (tipoNuovo !== 'change' ||
+          (f.changeType||'').toLowerCase().trim() === changeTypeVal.toLowerCase().trim())
+      );
     if (dup) {
       toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, lo stesso Nome e lo stesso Tipo di change in questa serie' : 'A Retro with the same Category, Name and Change type already exists in this series'), 'error');
       return;
@@ -12705,6 +13825,7 @@ async function saveFigFromDetail(figId) {
     isVariation: document.getElementById('fe-is-variation')?.checked || false,
     isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
     isChange: document.getElementById('fe-is-change')?.checked || false,
+    isPrintError: document.getElementById('fe-is-printerror')?.checked || false,
     changeType: document.getElementById('fe-retro-change-type')?.value || null,
     forSale: document.getElementById('fe-for-sale')?.checked || false,
     price: document.getElementById('fe-for-sale')?.checked ? (parseFloat(document.getElementById('fe-price').value) || 0) : null,
@@ -12809,14 +13930,14 @@ function toggleOwnedFromDetail(figId) {
   const isNowOwned = owned.includes(figId);
   // Update toggle button in modal
   const btn = document.getElementById('fig-detail-toggle');
-  if (btn) btn.className = 'toggle-btn-blue ' + (isNowOwned ? 'on' : '');
+  if (btn) btn.className = 'owned-btn ' + (isNowOwned ? 'on' : '');   // v5.720: BOTTONE, non interruttore
   // Il cuore "Ciò che cerco" non dipende più dallo stato di "Mia lista":
   // resta sempre visibile e non viene toccato da questo toggle
   // Update the card in the grid without closing the modal
   const card = document.querySelector(`.fig-card[onclick*="${figId}"]`);
   if (card) {
-    const toggleBtn = card.querySelector('.toggle-btn-blue');
-    if (toggleBtn) toggleBtn.className = 'toggle-btn-blue ' + (isNowOwned ? 'on' : '');
+    const toggleBtn = card.querySelector('.owned-btn');
+    if (toggleBtn) toggleBtn.className = 'owned-btn ' + (isNowOwned ? 'on' : '');
     const badge = card.querySelector('.owned-badge');
     if (badge) badge.style.display = isNowOwned ? '' : 'none';
   }
@@ -13025,7 +14146,7 @@ async function adminResetPassword() {
   } catch(err) {
     console.error('adminResetPassword', err);
     if (fb) {
-      fb.style.cssText = 'display:block;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6464;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;margin-top:0.5rem;';
+      fb.style.cssText = 'display:block;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;margin-top:0.5rem;';
       fb.textContent = '❌ Invio non riuscito: ' + (err.code || err.message);
     }
   }
@@ -13146,7 +14267,7 @@ function updateOwnedCounter() {
   if (navEl) {
     if (currentUser && !currentUser.isAdmin) {
       navEl.style.display = '';
-      navEl.innerHTML = '<div style="font-size:0.7rem;opacity:0.75;line-height:1.2;">' + (currentLang === 'it' ? 'Figurine mia lista' : "My list's stickers") + '</div><div style="font-size:0.7rem;line-height:1.2;">' + ownedCount + ' / ' + total + '</div>';
+      navEl.innerHTML = '<div style="font-size:0.7rem;opacity:0.75;line-height:1.2;">' + (currentLang === 'it' ? 'Figurine nella tua lista' : "My list's stickers") + '</div><div style="font-size:0.7rem;line-height:1.2;">' + ownedCount + ' / ' + total + '</div>';
     } else {
       navEl.style.display = 'none';
     }
@@ -13216,7 +14337,7 @@ function varImportLog(msg, type) {
   const el = document.getElementById('import-var-log');
   if (!el) return;
   el.style.display = 'block';
-  const color = type==='ok'?'#b5ff2e':type==='err'?'#ff6464':type==='warn'?'#ffaa00':type==='update'?'#4db8ff':'var(--muted)';
+  const color = type==='ok'?'#b5ff2e':type==='err'?'var(--danger)':type==='warn'?'var(--warn)':type==='update'?'var(--info)':'var(--muted)';
   el.innerHTML += '<div style="color:'+color+';margin-bottom:2px;">'+msg+'</div>';
   el.scrollTop = el.scrollHeight;
 }
@@ -13434,7 +14555,7 @@ function retroImportLog(msg, type) {
   const el = document.getElementById('import-retro-log');
   if (!el) return;
   el.style.display = 'block';
-  const color = type==='ok'?'#b5ff2e':type==='err'?'#ff6464':type==='warn'?'#ffaa00':type==='update'?'#4db8ff':'var(--muted)';
+  const color = type==='ok'?'#b5ff2e':type==='err'?'var(--danger)':type==='warn'?'var(--warn)':type==='update'?'var(--info)':'var(--muted)';
   el.innerHTML += '<div style="color:'+color+';margin-bottom:2px;">'+msg+'</div>';
   el.scrollTop = el.scrollHeight;
 }
@@ -13567,8 +14688,7 @@ async function startImportRetro() {
     // ── Riga di un Change di Retro: Categoria/Sottocategoria/Nome sono i
     //    dati PROPRI del Change; Retro-Categoria/Retro-Nome identificano
     //    il Retro BASE a cui collegarlo ──
-    const currentSeriesObj = getData('series', []).find(s => s.id === seriesId);
-    const allowedTypes = currentSeriesObj?.retroChangeTypes || [];
+    const allowedTypes = changeTypesDiSerie(seriesId);
     const matchedType = allowedTypes.find(t => t.toLowerCase().trim() === tipoChange.toLowerCase().trim());
     if (!matchedType) {
       errRiga('❌ Riga ' + (i+1) + ': "Tipo di change" = "' + tipoChange + '" non corrisponde a nessuno dei tipi configurati per questa serie (' + (allowedTypes.join(', ') || 'nessuno configurato') + ')', 'err');
@@ -13663,7 +14783,7 @@ function figImportLog(msg, type) {
   const el = document.getElementById('import-fig-log');
   if (!el) return;
   el.style.display = 'block';
-  const color = type==='ok'?'#b5ff2e':type==='err'?'#ff6464':type==='warn'?'#ffaa00':type==='update'?'#4db8ff':'var(--muted)';
+  const color = type==='ok'?'#b5ff2e':type==='err'?'var(--danger)':type==='warn'?'var(--warn)':type==='update'?'var(--info)':'var(--muted)';
   el.innerHTML += '<div style="color:'+color+';margin-bottom:2px;">'+msg+'</div>';
   el.scrollTop = el.scrollHeight;
 }
@@ -14043,7 +15163,7 @@ function renderAdminErrori() {
       </p>
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
-          <div style="font-size:2.6rem;font-weight:700;color:${missingNumber.length ? '#ff6464' : 'var(--accent)'};">${missingNumber.length}</div>
+          <div style="font-size:2.6rem;font-weight:700;color:${missingNumber.length ? 'var(--danger)' : 'var(--accent)'};">${missingNumber.length}</div>
           <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">${currentLang==='it'?'Figurine senza numero':'Stickers without a number'}</div>
         </div>
         ${missingNumber.length ? `
@@ -14068,7 +15188,7 @@ function renderAdminErrori() {
 
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
-          <div style="font-size:2.6rem;font-weight:700;color:${brokenRetroLinks.length ? '#ff6464' : 'var(--accent)'};">${brokenRetroLinks.length}</div>
+          <div style="font-size:2.6rem;font-weight:700;color:${brokenRetroLinks.length ? 'var(--danger)' : 'var(--accent)'};">${brokenRetroLinks.length}</div>
           <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">🔗 ${currentLang==='it'?'Collegamenti Retro rotti':'Broken Retro links'}</div>
         </div>
         ${brokenRetroLinks.length ? `
@@ -14087,7 +15207,7 @@ function renderAdminErrori() {
                 const isBaseAnomaly = !f.isVariation && !f.isUnofficialVariation && !f.isChange;
                 const typeLabel = f.isVariation ? (currentLang==='it'?'Variazione ufficiale':'Official variation') : f.isUnofficialVariation ? (currentLang==='it'?'Variazione non ufficiale':'Unofficial variation') : f.isChange ? 'Change' : (currentLang==='it'?'⚠️ Figurina base (con retroId anomalo)':'⚠️ Base sticker (stray retroId)');
                 const actionBtn = isBaseAnomaly
-                  ? `<button class="tbl-btn" style="background:rgba(255,180,0,0.15);border-color:rgba(255,180,0,0.4);color:#ffb400;" onclick="clearStrayRetroId('${f.id}')">🧹 ${currentLang==='it'?'Rimuovi collegamento':'Remove link'}</button>`
+                  ? `<button class="tbl-btn" style="background:rgba(var(--warn-rgb),0.15);border-color:rgba(var(--warn-rgb),0.4);color:var(--warn);" onclick="clearStrayRetroId('${f.id}')">🧹 ${currentLang==='it'?'Rimuovi collegamento':'Remove link'}</button>`
                   : `<button class="tbl-btn tbl-btn-edit" onclick="switchToSeriesFromErrori('${f.seriesId}','${f.id}')">✏️ ${currentLang==='it'?'Correggi':'Fix'}</button>`;
                 return `<tr>
                   <td style="padding:6px 10px;">${sName}</td>
@@ -14105,7 +15225,7 @@ function renderAdminErrori() {
 
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
-          <div style="font-size:2.6rem;font-weight:700;color:${duplicateBaseFigGroups.length ? '#ff6464' : 'var(--accent)'};">${duplicateBaseFigGroups.length}</div>
+          <div style="font-size:2.6rem;font-weight:700;color:${duplicateBaseFigGroups.length ? 'var(--danger)' : 'var(--accent)'};">${duplicateBaseFigGroups.length}</div>
           <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">🧬 ${currentLang==='it'?'Gruppi di Figurine base duplicate':'Duplicate base sticker groups'}</div>
         </div>
         ${duplicateBaseFigGroups.length ? `
@@ -14133,7 +15253,7 @@ function renderAdminErrori() {
 
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
-          <div style="font-size:2.6rem;font-weight:700;color:${duplicateRetroGroups.length ? '#ff6464' : 'var(--accent)'};">${duplicateRetroGroups.length}</div>
+          <div style="font-size:2.6rem;font-weight:700;color:${duplicateRetroGroups.length ? 'var(--danger)' : 'var(--accent)'};">${duplicateRetroGroups.length}</div>
           <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">🧬 ${currentLang==='it'?'Gruppi di Retro duplicati':'Duplicate Retro groups'}</div>
         </div>
         ${duplicateRetroGroups.length ? `
@@ -14170,7 +15290,7 @@ function renderAdminErrori() {
           <option value="">${currentLang==='it'?'— scegli una serie —':'— choose a series —'}</option>
           ${seriesList.slice().sort((a,b) => (a.name||'').localeCompare(b.name||'', 'it')).map(s => `<option value="${s.id}">${s.name}</option>`).join('')}
         </select>
-        <button class="btn-secondary" style="border-color:#ff6464;color:#ff6464;" onclick="resetRetroLinksForSeries()">🧹 ${currentLang==='it'?'Azzera collegamenti':'Reset links'}</button>
+        <button class="btn-secondary" style="border-color:var(--danger);color:var(--danger);" onclick="resetRetroLinksForSeries()">🧹 ${currentLang==='it'?'Azzera collegamenti':'Reset links'}</button>
       </div>
     </div>`;
 }
@@ -14375,7 +15495,7 @@ function fotoLog(msg, type) {
   if (!el) return;
   el.style.display = 'block';
   const line = document.createElement('div');
-  line.style.color = type === 'ok' ? 'var(--accent)' : type === 'err' ? '#ff6464' : type === 'warn' ? '#ffc832' : 'var(--muted)';
+  line.style.color = type === 'ok' ? 'var(--accent)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? '#ffc832' : 'var(--muted)';
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
@@ -14514,7 +15634,7 @@ function fotoNnLog(msg, type) {
   if (!el) return;
   el.style.display = 'block';
   const line = document.createElement('div');
-  line.style.color = type === 'ok' ? 'var(--accent)' : type === 'err' ? '#ff6464' : type === 'warn' ? '#ffc832' : 'var(--muted)';
+  line.style.color = type === 'ok' ? 'var(--accent)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? '#ffc832' : 'var(--muted)';
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
@@ -14869,6 +15989,7 @@ async function setAllOwned(ownAll) {
   await saveOwnedToFirebase(currentUser.id, owned);
   renderItems();
   updateOwnedCounter();
+  refreshSeriesMeta();   // idem per l'aggiunta/rimozione massiva (v5.709)
   // Punti guadagnati con QUESTA azione, e punteggio complessivo della lista.
   // I punti nuovi si contano solo sugli oggetti che l'utente NON aveva: chi aveva
   // gia' mezza serie non deve vedersi accreditare anche quella meta'.
@@ -15010,7 +16131,7 @@ function renderBulkEditView() {
   bulkView.innerHTML = `
     ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
-      <button class="btn-secondary" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
+      <button class="btn-danger" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;font-size:0.9rem;padding:0.5rem 1rem;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
     </div>` : ''}
     <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
       <thead>
@@ -15062,8 +16183,8 @@ function renderBulkEditView() {
           ${isAdmin ? `<td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0)}
           ${currentSeriesHasSizes ? (isAdmin ? '<td style="padding:4px;"><input data-field="size" data-id="'+f.id+'" value="'+(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.size)) : ''}
           ${!isAdmin ? `
-          <td style="padding:4px;text-align:center;"><button class="toggle-btn-blue ${isOwned?'on':''}" onclick="toggleOwned('${f.id}')"></button></td>
-          <td style="padding:4px;text-align:center;"><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" onclick="toggleWishlist('${f.id}')" title="${currentLang==='it'?(inWishlist?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(inWishlist?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist?'rgba(255,100,100,0.15)':'transparent'};border:1px solid ${inWishlist?'#ff6464':'rgba(255,255,255,0.15)'};color:${inWishlist?'#ff6464':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;">${inWishlist?'❤️':'♡'}</button></td>` : ''}
+          <td style="padding:4px;text-align:center;"><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista':'In your list') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="toggleOwned('${f.id}')">\u2713</button></td>
+          <td style="padding:4px;text-align:center;"><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" onclick="toggleWishlist('${f.id}')" title="${currentLang==='it'?(inWishlist?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(inWishlist?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${inWishlist?'var(--danger)':'rgba(255,255,255,0.15)'};color:${inWishlist?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;">${inWishlist?'❤️':'♡'}</button></td>` : ''}
         </tr>`;
         }).join('')}
       </tbody>
@@ -15342,9 +16463,9 @@ async function renderClassifica() {
     const displayAvatar = isAnon
       ? `<div style="width:40px;height:40px;border-radius:50%;background:var(--card2);border:2px solid ${isTop3 ? 'var(--accent)' : 'var(--border)'};display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;">🕵️</div>`
       : avatarHTML;
-    const adminNote = user.isAnonymous && currentUser?.isAdmin ? ` <span style="font-size:0.75rem;color:#ffb400;">🕵️ ${currentLang === 'it' ? 'anonimo' : 'anonymous'}</span>` : '';
+    const adminNote = user.isAnonymous && currentUser?.isAdmin ? ` <span style="font-size:0.75rem;color:var(--warn);">🕵️ ${currentLang === 'it' ? 'anonimo' : 'anonymous'}</span>` : '';
     const meNote = isMe && user.isAnonymous
-      ? ` <span style="font-size:0.78rem;color:#ffb400;font-family:var(--font-ui);">${currentLang === 'it' ? '(tu 🕵️ — nome anonimizzato)' : '(you 🕵️ — anonymous name)'}</span>`
+      ? ` <span style="font-size:0.78rem;color:var(--warn);font-family:var(--font-ui);">${currentLang === 'it' ? '(tu 🕵️ — nome anonimizzato)' : '(you 🕵️ — anonymous name)'}</span>`
       : isMe ? ` <span style="font-size:0.78rem;color:var(--accent);font-family:var(--font-ui);">${currentLang === 'it' ? '(tu)' : '(you)'}</span>` : '';
     const rowBg = isMe
       ? (isTop3 ? 'rgba(181,255,46,0.1)' : 'rgba(181,255,46,0.04)')
@@ -15410,9 +16531,9 @@ function renderWishlist() {
 
   el.innerHTML = seriesSorted.map(s => {
     const figs = bySeries[s.id].sort((a,b) => (a.number||0)-(b.number||0));
-    const chipHtml = f => `<span style="background:rgba(255,100,100,0.08);border:1px solid rgba(255,100,100,0.25);color:var(--text);font-size:0.72rem;padding:2px 8px;border-radius:10px;display:inline-flex;align-items:center;gap:4px;">
+    const chipHtml = f => `<span style="background:rgba(var(--danger-rgb),0.08);border:1px solid rgba(var(--danger-rgb),0.25);color:var(--text);font-size:0.72rem;padding:2px 8px;border-radius:10px;display:inline-flex;align-items:center;gap:4px;">
       ${f.number ? '#'+f.number+' ' : ''}${f.name}
-      <button onclick="toggleWishlist('${f.id}')" style="background:none;border:none;color:#ff6464;cursor:pointer;padding:0;font-size:0.9rem;line-height:1;" title="${currentLang === 'it' ? 'Rimuovi' : 'Remove'}">×</button>
+      <button onclick="toggleWishlist('${f.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:0;font-size:0.9rem;line-height:1;" title="${currentLang === 'it' ? 'Rimuovi' : 'Remove'}">×</button>
     </span>`;
     // Prima si raggruppa per tipo di oggetto (Figurine/Retro/Album/Altri
     // oggetti), altrimenti non si capisce cosa si sta guardando quando una
@@ -15498,7 +16619,7 @@ function renderWishlistAdmin(el) {
     html += '<span style="font-weight:600;">👤 ' + esc(m.name || m.email || '—') + '</span>';
     html += '<div style="display:flex;align-items:center;gap:0.5rem;">';
     html += '<span style="font-size:0.78rem;color:var(--muted);">📨 ' + fmt(m.date) + '</span>';
-    html += '<button class="wl-delete-btn" data-msg-id="' + m.id + '" style="font-size:0.75rem;padding:2px 8px;border-radius:6px;border:1px solid rgba(255,100,100,0.4);background:rgba(255,100,100,0.08);color:#ff6464;cursor:pointer;" title="' + (currentLang === 'it' ? 'Elimina' : 'Delete') + '">🗑️</button>';
+    html += '<button class="wl-delete-btn" data-msg-id="' + m.id + '" style="font-size:0.75rem;padding:2px 8px;border-radius:6px;border:1px solid rgba(var(--danger-rgb),0.4);background:rgba(var(--danger-rgb),0.08);color:var(--danger);cursor:pointer;" title="' + (currentLang === 'it' ? 'Elimina' : 'Delete') + '">🗑️</button>';
     html += '</div>';
     html += '</div>';
     if (m.email) {
@@ -15705,8 +16826,8 @@ function renderWantlist() {
       const incOwned = prefs[s.id]?.includeOwned !== false;
       return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
         <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&!f.isVariation&&!f.isUnofficialVariation&&!f.isChange); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
-        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#4db8ff' : 'var(--border)'};background:${!incOwned ? 'rgba(77,184,255,0.15)' : 'var(--card2)'};color:${!incOwned ? '#4db8ff' : 'var(--muted)'};cursor:pointer;">
-          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della mia lista' : 'Exclude from owned stickers export'}
+        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? 'var(--info)' : 'var(--border)'};background:${!incOwned ? 'rgba(var(--info-rgb),0.15)' : 'var(--card2)'};color:${!incOwned ? 'var(--info)' : 'var(--muted)'};cursor:pointer;">
+          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della tua lista' : 'Exclude from owned stickers export'}
         </button>
       </div>`;
     }).join('');
@@ -15720,7 +16841,7 @@ function renderWantlist() {
     bySeries[f.seriesId].push(f);
   });
 
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine non nella mia lista' : 'Stickers not in my list', retros: currentLang === 'it' ? 'Retro non nella mia lista' : 'Retros not in my list', albums: currentLang === 'it' ? 'Album non nella mia lista' : 'Albums not in my list', extras: currentLang === 'it' ? 'Altri oggetti non nella mia lista' : 'Other items not in my list' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine non nella tua lista' : 'Stickers not in my list', retros: currentLang === 'it' ? 'Retro non nella tua lista' : 'Retros not in my list', albums: currentLang === 'it' ? 'Album non nella tua lista' : 'Albums not in my list', extras: currentLang === 'it' ? 'Altri oggetti non nella tua lista' : 'Other items not in my list' };
 
   const sortedEntries = Object.entries(bySeries).sort(([aId], [bId]) => {
     const aS = series.find(x => x.id === aId);
@@ -15730,8 +16851,8 @@ function renderWantlist() {
 
   // === SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE (titolo generale) ===
   let html = '<h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;">' + (currentLang === 'it' ? 'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE' : 'SECTION 1: EXPORT OF YOUR INCOMPLETE SERIES') + '</h2>';
-  // === SEZIONE 1a: Lista degli oggetti non nella mia lista ===
-  html += '<h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'SEZIONE 1a: LISTA DEGLI OGGETTI NON NELLA MIA LISTA' : 'SECTION 1a: LIST OF ITEMS NOT IN MY LIST') + '</h3><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella mia lista</i>.' : 'Select the series for which to export the list of items not in your list. Then press <i style="color:#fff;">Export items not in my list</i>.') + '</p><div style="margin-bottom:1rem;"><button class="btn-primary" onclick="exportWantlist(this)">' + (currentLang === 'it' ? 'Esporta lista oggetti non nella mia lista' : 'Export items not in my list') + '</button></div>';
+  // === SEZIONE 1a: Lista degli oggetti non nella tua lista ===
+  html += '<h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'SEZIONE 1a: LISTA DEGLI OGGETTI NON NELLA TUA LISTA' : 'SECTION 1a: LIST OF ITEMS NOT IN MY LIST') + '</h3><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.' : 'Select the series for which to export the list of items not in your list. Then press <i style="color:#fff;">Export items not in my list</i>.') + '</p><div style="margin-bottom:1rem;"><button class="btn-primary" onclick="exportWantlist(this)">' + (currentLang === 'it' ? 'Esporta lista oggetti non nella tua lista' : 'Export items not in my list') + '</button></div>';
 
   html += sortedEntries.map(([sId, figs]) => {
     const s = series.find(x => x.id === sId);
@@ -15758,7 +16879,7 @@ function renderWantlist() {
             <span style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;cursor:pointer;" onclick="toggleWantlistCollapse('${sId}')">
               <span style="font-size:0.8rem;color:var(--muted);user-select:none;">${_wantlistCollapsed[sId] ? '▶' : '▼'}</span>
               <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')}</span>
-              <span class="card-badge" style="color:#5ec8f0;">${figurinesOnlyMissing} ${currentLang === 'it' ? 'figurine non nella mia lista su' : 'stickers not in my list out of'} ${figurinesOnlyTotal}</span>
+              <span class="card-badge" style="color:#5ec8f0;">${figurinesOnlyMissing} ${currentLang === 'it' ? 'figurine non nella tua lista su' : 'stickers not in my list out of'} ${figurinesOnlyTotal}</span>
             </span>
             <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
               <input type="checkbox" onchange="toggleIncludeVariations('${sId}')" ${incVariations ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
@@ -15767,7 +16888,7 @@ function renderWantlist() {
           </div>
           <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
             <input type="checkbox" onchange="toggleWantlistExclude('${sId}')" ${excMissing ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span style="color:${excMissing ? '#4db8ff' : 'var(--muted)'};">${currentLang === 'it' ? 'Escludi da export "Oggetti non nella mia lista"' : 'Exclude from export "Items not in my list"'}</span>
+            <span style="color:${excMissing ? 'var(--info)' : 'var(--muted)'};">${currentLang === 'it' ? 'Escludi da export "Oggetti non nella tua lista"' : 'Exclude from export "Items not in my list"'}</span>
           </label>
         </div>
         ${!excMissing ? '<div class="progress-bar" style="margin-bottom:0.5rem;"><div class="progress-fill" style="width:' + Math.round(ownedCount/figurinesOnlyTotal*100) + '%"></div></div>' : ''}
@@ -15845,7 +16966,7 @@ function renderWantlist() {
   }).join('');
 
   // === SEZIONE 1b: Lista figurine nella mia lista (serie incomplete) ===
-  html += '<hr style="border-color:var(--border);margin:1.5rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'SEZIONE 1b: LISTA FIGURINE NELLA MIA LISTA' : 'SECTION 1b: LIST OF STICKERS IN MY LIST') + '</h3><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la mia lista di figurine (solo serie incomplete)</i>.' : 'Select the series for which to export the list of stickers in your list. Then press <i style="color:#fff;">Export my sticker list (incomplete series only)</i>.') + '</p><div style="margin-bottom:1.5rem;"><button class="btn-primary" onclick="exportOwnedIncomplete(this)">' + (currentLang === 'it' ? 'Esporta figurine serie incomplete' : 'Export my sticker list (incomplete series only)') + '</button></div>';
+  html += '<hr style="border-color:var(--border);margin:1.5rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'SEZIONE 1b: LISTA FIGURINE NELLA TUA LISTA' : 'SECTION 1b: LIST OF STICKERS IN MY LIST') + '</h3><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la tua lista di figurine (solo serie incomplete)</i>.' : 'Select the series for which to export the list of stickers in your list. Then press <i style="color:#fff;">Export my sticker list (incomplete series only)</i>.') + '</p><div style="margin-bottom:1.5rem;"><button class="btn-primary" onclick="exportOwnedIncomplete(this)">' + (currentLang === 'it' ? 'Esporta figurine serie incomplete' : 'Export my sticker list (incomplete series only)') + '</button></div>';
 
   html += sortedEntries.map(([sId]) => {
     const s = series.find(x => x.id === sId);
@@ -15856,9 +16977,9 @@ function renderWantlist() {
     const figurinesOnlyMissing = allFigs.filter(f => f.seriesId === sId && (f.section || 'figurines') === 'figurines' && !owned.includes(f.id) && (seriesIncVariations || isBaseItem(f))).length;
     const ownedCount = figurinesOnlyTotal - figurinesOnlyMissing;
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
-      <span style="font-family:var(--font-display);font-size:1.1rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')} <span style="font-size:0.8rem;color:var(--accent);">(${ownedCount}&nbsp;/&nbsp;${figurinesOnlyTotal}&nbsp;${currentLang==='it'?'nella mia lista':'in my list'})</span></span>
-      <button onclick="toggleOwnedInclude('${sId}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#4db8ff' : 'var(--border)'};background:${!incOwned ? 'rgba(77,184,255,0.15)' : 'var(--card2)'};color:${!incOwned ? '#4db8ff' : 'var(--muted)'};cursor:pointer;">
-        ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della mia lista' : 'Exclude from owned stickers export'}
+      <span style="font-family:var(--font-display);font-size:1.1rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')} <span style="font-size:0.8rem;color:var(--accent);">(${ownedCount}&nbsp;/&nbsp;${figurinesOnlyTotal}&nbsp;${currentLang==='it'?'nella tua lista':'in my list'})</span></span>
+      <button onclick="toggleOwnedInclude('${sId}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? 'var(--info)' : 'var(--border)'};background:${!incOwned ? 'rgba(var(--info-rgb),0.15)' : 'var(--card2)'};color:${!incOwned ? 'var(--info)' : 'var(--muted)'};cursor:pointer;">
+        ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della tua lista' : 'Exclude from owned stickers export'}
       </button>
     </div>`;
   }).join('');
@@ -15872,8 +16993,8 @@ function renderWantlist() {
       const incOwned = prefs[s.id]?.includeOwned !== false;
       return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
         <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--accent);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&!f.isVariation&&!f.isUnofficialVariation&&!f.isChange); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
-        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? '#4db8ff' : 'var(--border)'};background:${!incOwned ? 'rgba(77,184,255,0.15)' : 'var(--card2)'};color:${!incOwned ? '#4db8ff' : 'var(--muted)'};cursor:pointer;">
-          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della mia lista' : 'Exclude from owned stickers export'}
+        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? 'var(--info)' : 'var(--border)'};background:${!incOwned ? 'rgba(var(--info-rgb),0.15)' : 'var(--card2)'};color:${!incOwned ? 'var(--info)' : 'var(--muted)'};cursor:pointer;">
+          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della tua lista' : 'Exclude from owned stickers export'}
         </button>
       </div>`;
     }).join('');
@@ -15997,7 +17118,7 @@ async function exportOwnedList() {
     const ws = XLSX.utils.aoa_to_sheet(rows);
     ws['!cols'] = [{ wch: 25 }, { wch: 15 }, { wch: 12 }, { wch: 8 }, { wch: 35 }];
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'La mia lista');
+    XLSX.utils.book_append_sheet(wb, ws, 'La tua lista');
     XLSX.writeFile(wb, (currentLang === 'it' ? 'mia_lista_' : 'my_list_') + currentUser.username + '_' + new Date().toLocaleDateString('it-IT').replace(/\//g,'-') + '.xlsx');
     toast('Lista esportata in Excel! 📊', 'success');
   } catch(e) {
@@ -16120,17 +17241,17 @@ async function toggleWishlistFromDetail(figId) {
   const btn = document.getElementById('fig-detail-wishlist-btn');
   if (btn) {
     btn.textContent = inWishlist ? '❤️' : '♡';
-    btn.style.background = inWishlist ? 'rgba(255,100,100,0.15)' : 'transparent';
-    btn.style.borderColor = inWishlist ? '#ff6464' : 'rgba(255,255,255,0.15)';
-    btn.style.color = inWishlist ? '#ff6464' : 'var(--muted)';
+    btn.style.background = inWishlist ? 'rgba(var(--danger-rgb),0.15)' : 'transparent';
+    btn.style.borderColor = inWishlist ? 'var(--danger)' : 'rgba(255,255,255,0.15)';
+    btn.style.color = inWishlist ? 'var(--danger)' : 'var(--muted)';
     btn.title = currentLang === 'it' ? (inWishlist ? 'Togli da "Ciò che cerco"' : 'Aggiungi a "Ciò che cerco"') : (inWishlist ? 'Remove from "What I\'m looking for"' : 'Add to "What I\'m looking for"');
   }
   // Aggiorna anche tutte le istanze del cuore nella griglia e/o tabella, se visibili
   document.querySelectorAll(`.wishlist-heart-btn[data-wishlist-id="${figId}"]`).forEach(gridBtn => {
     gridBtn.textContent = inWishlist ? '❤️' : '♡';
-    gridBtn.style.background = inWishlist ? 'rgba(255,100,100,0.15)' : 'transparent';
-    gridBtn.style.borderColor = inWishlist ? '#ff6464' : 'rgba(255,255,255,0.15)';
-    gridBtn.style.color = inWishlist ? '#ff6464' : 'var(--muted)';
+    gridBtn.style.background = inWishlist ? 'rgba(var(--danger-rgb),0.15)' : 'transparent';
+    gridBtn.style.borderColor = inWishlist ? 'var(--danger)' : 'rgba(255,255,255,0.15)';
+    gridBtn.style.color = inWishlist ? 'var(--danger)' : 'var(--muted)';
   });
   saveWishlist(); // fire-and-forget
   if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
