@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.676"></script>
-<link rel="stylesheet" href="css/style.css?v=5.676">
+<script src="js/email.min.js?v=5.700"></script>
+<link rel="stylesheet" href="css/style.css?v=5.700">
 
 </head>
 <body>
@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.676</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.700</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -143,7 +143,7 @@
         <div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1.75rem;text-align:center;cursor:pointer;transition:transform 0.2s,border-color 0.2s;" onclick="showPage('classifica')" onmouseover="this.style.transform='translateY(-4px)';this.style.borderColor='var(--accent)'" onmouseout="this.style.transform='';this.style.borderColor=''">
           <div style="font-size:2.875rem;margin-bottom:1rem;">🏆</div>
           <h3 style="font-family:var(--font-ui);font-size:1.32rem;margin-bottom:0.5rem;" data-i18n="hero.challenge">Sfida gli altri</h3>
-          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="hero.challengeDesc">Sfida gli altri collezionisti a chi ha la collezione più grande. Puoi anche scegliere di apparire in modo anonimo.</p>
+          <p style="font-size:0.88rem;color:var(--muted);" data-i18n="hero.challengeDesc">Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.</p>
         </div>
       </div>
     </div>
@@ -200,7 +200,7 @@
             </div>
           </div>
           <h1 class="series-name" id="detail-name"></h1>
-          <div id="detail-meta" style="display:flex;flex-wrap:wrap;gap:0.4rem 1.2rem;margin:0.4rem 0 0.5rem;font-size:0.82rem;color:var(--muted);"></div>
+          <div id="detail-meta" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;margin:0.4rem 0 0.6rem;font-size:0.82rem;color:var(--text);"></div>
           <p class="series-description" id="detail-desc"></p>
         </div>
       </div>
@@ -271,35 +271,33 @@
         </div>
       </div>
     </div>
-    <div id="detail-progress-title" style="display:none;font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;" data-i18n="detail.myListTitle">La mia lista</div>
-    <div id="detail-progress-toprow" style="display:none;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:6px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">
-      <div class="progress-label" style="margin-bottom:0;">
-        <span data-i18n="detail.owned">Nella mia lista, per questa serie:</span>
-        <span id="detail-progress-label" style="margin-left:0.4rem;">0 / 0</span>
+    <div id="items-search-box" style="margin-bottom:1rem;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1rem 1.1rem;">
+      <div style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:0.75rem;" data-i18n="items.searchBox">La tua ricerca</div>
+      <div class="search-bar" style="margin-bottom:0.75rem;">
+        <div class="search-input-wrap">
+          <span class="search-icon">🔍</span>
+          <input class="search-input" type="text" id="items-search" placeholder="Search..." oninput="try{renderItems();}catch(e){console.error('renderItems (search)',e);} try{if(typeof bulkEditActive!=='undefined'&&bulkEditActive)renderBulkEditView();}catch(e){console.error('renderBulkEditView (search)',e);} toggleSearchClearBtn('items-search')">
+          <span class="search-clear-btn" id="items-search-clear" onclick="clearSearchField('items-search', () => { renderItems(); if (typeof bulkEditActive!=='undefined' && bulkEditActive) renderBulkEditView(); })" style="display:none;">✕</span>
+        </div>
       </div>
+        <div id="items-filter-intro" style="display:none;font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;text-align:left;align-items:center;gap:0.4rem;"><span id="items-filter-intro-text" data-i18n="items.filterIntro">Affina la tua ricerca coi seguenti filtri:</span>
+        <button onclick="openFilterLegendModal()" title="Cosa significano questi termini?" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:50%;width:18px;height:18px;font-size:0.7rem;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;">i</button></div>
+        <div id="items-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
+        <div id="items-owned-toggles" style="display:none;flex-wrap:wrap;gap:0.5rem;margin-top:0.7rem;padding-top:0.7rem;border-top:1px solid var(--border2);"></div>
+        <div id="items-admin-filters" style="display:none;margin-top:0.9rem;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.8rem 0.9rem;">
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.6rem;" data-i18n="items.adminFilters">Filtri aggiuntivi admin</div>
+          <div id="items-admin-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center;"></div>
+        </div>
+    </div>
+    <div id="items-results-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.9rem;">
+    <div id="items-count-display" style="font-size:0.8rem;color:var(--muted);margin-bottom:0;"></div>
       <div id="bulk-owned-btns" style="display:none;gap:0.75rem;flex-wrap:wrap;align-items:center;">
-        <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.haveall.hint" title="Inserisce nella tua lista tutti gli elementi visualizzati, considerando anche le pagine successive"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/></svg><span data-i18n="catalog.haveall">Aggiungi tutti gli oggetti visualizzati alla mia lista</span></button>
-        <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.havenone.hint" title="Rimuove dalla tua lista tutti gli elementi visualizzati, considerando anche le pagine successive"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 14V3"/><path d="M8 7l4-4 4 4"/></svg><span data-i18n="catalog.havenone">Rimuovi tutti gli oggetti visualizzati dalla mia lista</span></button>
+        <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.haveall.hint" title="Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/></svg><span data-i18n="catalog.haveall">Aggiungi alla MIA LISTA i risultati della ricerca</span></button>
+        <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.havenone.hint" title="Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 14V3"/><path d="M8 7l4-4 4 4"/></svg><span data-i18n="catalog.havenone">Rimuovi dalla MIA LISTA i risultati della ricerca</span></button>
         <span id="set-all-msg" style="display:none;font-size:0.85rem;color:var(--accent);font-family:var(--font-ui);"></span>
       </div>
+    </div>
       <div id="items-complete-msg" style="display:none;width:100%;color:var(--accent);font-size:0.9rem;font-style:italic;"></div>
-    </div>
-    <div class="progress-bar-wrap" id="detail-progress-wrap" style="display:none;margin-bottom:1.5rem;">
-      <div class="progress-bar"><div class="progress-fill" id="detail-progress-fill" style="width:0%"></div></div>
-    </div>
-    <div class="search-bar" style="margin-bottom:0.75rem;">
-      <div class="search-input-wrap">
-        <span class="search-icon">🔍</span>
-        <input class="search-input" type="text" id="items-search" placeholder="Search..." oninput="try{renderItems();}catch(e){console.error('renderItems (search)',e);} try{if(typeof bulkEditActive!=='undefined'&&bulkEditActive)renderBulkEditView();}catch(e){console.error('renderBulkEditView (search)',e);} toggleSearchClearBtn('items-search')">
-        <span class="search-clear-btn" id="items-search-clear" onclick="clearSearchField('items-search', () => { renderItems(); if (typeof bulkEditActive!=='undefined' && bulkEditActive) renderBulkEditView(); })" style="display:none;">✕</span>
-      </div>
-    </div>
-    <div id="items-count-display" style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;"></div>
-    <div id="items-filter-box" style="width:min(1800px, 96vw);max-width:1800px;margin-left:50%;margin-right:0;transform:translateX(-50%);margin-bottom:1rem;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.85rem 1.1rem;">
-      <div id="items-filter-intro" style="display:none;font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;text-align:left;align-items:center;gap:0.4rem;"><span id="items-filter-intro-text" data-i18n="items.filterIntro">Affina la tua ricerca coi seguenti filtri:</span>
-      <button onclick="openFilterLegendModal()" title="Cosa significano questi termini?" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:50%;width:18px;height:18px;font-size:0.7rem;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;">i</button></div>
-      <div id="items-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
-    </div>
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
       <div id="user-table-view-btn" style="display:none;gap:0.75rem;flex-wrap:wrap;">
         <button class="btn-primary" onclick="toggleBulkEditView()" id="bulk-edit-toggle-btn" style="font-size:0.9rem;padding:0.4rem 1.1rem;">📋 Vista tabellare</button>
@@ -420,13 +418,13 @@
         <ul style="margin:0.5rem 0 1rem 1.3rem;">
           <li><strong>Account</strong>: nickname, indirizzo e-mail, password (gestita da Firebase Authentication — non la vediamo né la conserviamo noi in chiaro)</li>
           <li><strong>Profilo facoltativo</strong>: avatar, nazionalità</li>
-          <li><strong>Collezione</strong>: quali figurine/oggetti hai aggiunto alla tua lista ("Mia lista") e la tua lista "Ciò che cerco". Dati privati, visibili solo a te e all'amministratore</li>
+          <li><strong>La tua lista</strong>: quali figurine/oggetti hai aggiunto alla tua lista ("Mia lista") e la tua lista "Ciò che cerco". Dati privati, visibili solo a te e all'amministratore</li>
           <li><strong>Profilo pubblico</strong>: nickname, avatar, nazionalità e punteggio aggregato, visibili nella Classifica — <u>mai</u> l'e-mail. Puoi in qualsiasi momento scegliere di apparire in forma anonima nella Classifica, dal tuo profilo</li>
           <li><strong>Conferma età</strong>: una dichiarazione booleana ("ho almeno 16 anni") con la data, richiesta dalla legge per l'iscrizione dei minori</li>
-          <li><strong>Scelta sulla newsletter</strong>: se hai detto sì o no, <u>insieme alla data e al punto in cui l'hai espressa</u> (la registrazione, la domanda che ti compare al primo accesso, il tuo profilo, o il link in fondo a una newsletter). Conserviamo data e origine perché la legge non ci chiede soltanto di avere il tuo consenso, ma di poterlo <u>dimostrare</u> — a te per primo, se un giorno ci chiedessi conto di come l'abbiamo ottenuto</li>
-          <li><strong>Lingua</strong>: la lingua in cui stai usando il sito, per poterti scrivere nella tua e non in quella dell'amministratore</li>
+          <li><strong>Scelta sulla newsletter</strong>: se hai detto sì o no, <u>insieme alla data e al punto in cui l'hai espressa</u> (la registrazione, la domanda che ti compare al primo accesso, il tuo profilo, o il link in fondo a una e-mail newsletter). Conserviamo data e origine perché la legge non ci chiede soltanto di avere il tuo consenso, ma di poterlo <u>dimostrare</u> — a te per primo, se un giorno ci chiedessi conto di come l'abbiamo ottenuto</li>
+          <li><strong>Lingua</strong>: la lingua in cui stai usando il sito, per poterti scrivere nella tua</li>
           <li><strong>Blog</strong>: i post e i commenti che scrivi, pubblici e visibili a tutti</li>
-          <li><strong>Messaggi di contatto</strong>: nome (facoltativo, come preferisci firmarti), e-mail e messaggio, se usi il form Contatti</li>
+          <li><strong>Messaggi di contatto</strong>: e-mail, oggetto e messaggio, se usi il form Contatti</li>
         </ul>
         <p><strong>Cosa non raccogliamo</strong>: nome e cognome reali, età, sesso, la tua posizione geografica.</p>
 
@@ -436,19 +434,19 @@
           <li><strong>Non vendiamo i tuoi dati.</strong> A nessuno, per nessuna cifra.</li>
           <li><strong>Non facciamo pubblicità.</strong> Non c'è un banner in tutto il sito, e non ci sarà.</li>
           <li><strong>Non ti tracciamo.</strong> Niente Google Analytics, niente pixel di Facebook, nessuno strumento di statistica. Non sappiamo quante volte torni, da dove arrivi, quanto ti fermi o cosa guardi.</li>
-          <li><strong>Non profiliamo la tua collezione.</strong> Sappiamo quali figurine hai perché servono a mostrartele e a calcolare il punteggio della Classifica. Non le analizziamo per dedurre nient'altro su di te.</li>
+          <li><strong>Non profiliamo la tua lista.</strong> Sappiamo quali figurine ci hai messo dentro, ma non cosa significhi per te: se sia ciò che possiedi, ciò che ti piace o ciò che cerchi, lo sai soltanto tu — e non te lo chiediamo. Ci serve per mostrartela e per calcolare il punteggio della Classifica. Non la analizziamo per dedurre altro su di te.</li>
           <li><strong>Non ti scriviamo se non ce l'hai chiesto.</strong> La newsletter parte solo con il tuo consenso. Il resto sono risposte a cose che hai fatto tu.</li>
           <li><strong>Non chiediamo dati che non ci servono.</strong> Il tuo nome vero non lo sappiamo, e non ci interessa.</li>
           <li><strong>Non facciamo scaricare al tuo browser roba di terzi.</strong> I caratteri tipografici, le bandierine, le librerie: <u>stanno tutti sul nostro sito</u>. Le uniche eccezioni sono l'infrastruttura su cui il sito è costruito — Google (Firebase), Cloudinary e GitHub — spiegate più avanti.</li>
         </ul>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Perché li raccogliamo</h3>
-        <p>Per farti usare le funzionalità del sito che richiedono un account (collezione, classifica, "Ciò che cerco", blog), per rispondere alle tue richieste tramite il form Contatti, e per rispettare l'obbligo di legge sull'età minima per l'iscrizione.</p>
+        <p>Per farti usare le funzionalità del sito che richiedono un account (la tua lista, la classifica, "Ciò che cerco", il blog), per rispondere alle tue richieste tramite il form Contatti, e per rispettare l'obbligo di legge sull'età minima per l'iscrizione.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Con chi condividiamo i dati</h3>
         <p>Non vendiamo né condividiamo i tuoi dati con terzi per scopi commerciali. Ci appoggiamo a questi fornitori di servizio (che trattano i dati per nostro conto, in qualità di responsabili del trattamento):</p>
         <ul style="margin:0.5rem 0 1rem 1.3rem;">
-          <li><strong>Google Firebase</strong> — autenticazione e database (dove sono conservati account, collezioni, "Ciò che cerco", post)</li>
+          <li><strong>Google Firebase</strong> — autenticazione e database (dove sono conservati account, liste, "Ciò che cerco", post)</li>
           <li><strong>Cloudinary</strong> — hosting delle immagini (avatar, foto delle figurine)</li>
           <li><strong>EmailJS</strong>, con invio tramite <strong>Aruba</strong> — per le e-mail che ti inviamo (benvenuto, newsletter, notifiche)</li>
           <li><strong>GitHub Pages</strong> — ospita il sito. Come qualunque fornitore di hosting, riceve l'indirizzo IP di chi apre le pagine: è una conseguenza tecnica inevitabile del fatto stesso di visitare un sito</li>
@@ -459,7 +457,7 @@
         <p>Quando apri una pagina, il tuo browser scarica dei file. Ogni file preso da un server altrui fa arrivare a quel server il tuo <strong>indirizzo IP</strong>, anche se non hai cliccato nulla. Per questo <u>ospitiamo noi</u> tutto ciò che possiamo: i caratteri tipografici, le bandierine, la libreria per le e-mail e quella per i fogli di calcolo <u>stanno sul nostro sito</u>, non su reti di distribuzione di terzi.</p>
         <p>Restano tre eccezioni, e sono inevitabili:</p>
         <ul>
-          <li><strong>Google</strong> — il codice di Firebase, e il database stesso. Toglierlo non toglierebbe Google dal quadro: il tuo account e la tua collezione <u>sono</u> su Firebase, e il sito ci parla a ogni operazione</li>
+          <li><strong>Google</strong> — il codice di Firebase, e il database stesso. Toglierlo non toglierebbe Google dal quadro: il tuo account e la tua lista <u>sono</u> su Firebase, e il sito ci parla a ogni operazione</li>
           <li><strong>Cloudinary</strong> — le immagini (il logo, le foto delle figurine)</li>
           <li><strong>GitHub</strong> — le pagine del sito</li>
         </ul>
@@ -482,10 +480,10 @@
         <p>Sono cose diverse: <strong>revocare il consenso alla newsletter non ferma le e-mail di servizio</strong>, e non deve farlo.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Per quanto tempo conserviamo i dati</h3>
-        <p>Finché il tuo account resta attivo. Puoi cancellarlo in autonomia in qualsiasi momento dal tuo profilo ("Elimina il mio account"): l'operazione è immediata e cancella account, collezione, "Ciò che cerco" e profilo pubblico. Gli eventuali post/commenti scritti sul blog restano visibili per continuità del contenuto condiviso, ma il tuo nome viene sostituito con "Utente eliminato".</p>
+        <p>Finché il tuo account resta attivo. Puoi cancellarlo in autonomia in qualsiasi momento dal tuo profilo ("Elimina il mio account"): l'operazione è immediata e cancella account, lista, "Ciò che cerco" e profilo pubblico. Gli eventuali post/commenti scritti sul blog restano visibili per continuità del contenuto condiviso, ma il tuo nome viene sostituito con "Utente eliminato".</p>
         <p><strong>Segnalazioni sulle figurine.</strong> Quando ci segnali un errore nell'Inventario, conserviamo la segnalazione — con il tuo nome utente e il tuo commento — per <strong>6 mesi</strong>, il tempo di verificarla e correggere il catalogo. Poi viene cancellata. Sparisce comunque prima, se elimini il tuo account.</p>
         <p><strong>Registro di sicurezza.</strong> Teniamo un registro tecnico degli accessi, delle registrazioni, delle richieste di reimpostazione password e delle cancellazioni di account. Serve a controllare che nessuno stia facendo cose strane con gli account altrui, ed è l'unica cosa che <u>sopravvive</u> alla cancellazione dell'account — perché sapere che un account è stato eliminato, e quando, è proprio il motivo per cui il registro esiste. Non sopravvive però al tempo: le righe più vecchie di <strong>6 mesi</strong> vengono cancellate.</p>
-        <p><strong>Quando elimini l'account, sparisce tutto.</strong> Non solo il profilo e la collezione: anche i messaggi che ci hai scritto dai Contatti, le segnalazioni sulle figurine e il registro delle e-mail che ti abbiamo inviato — <u>testo compreso</u>. L'unica cosa che resta sono i tuoi post e commenti sul blog, per non lasciare buchi nelle conversazioni altrui: ma il tuo nome viene sostituito con "Utente eliminato".</p>
+        <p><strong>Quando elimini l'account, sparisce tutto.</strong> Non solo il profilo e la lista: anche i messaggi che ci hai scritto dai Contatti, le segnalazioni sulle figurine e il registro delle e-mail che ti abbiamo inviato — <u>testo compreso</u>. L'unica cosa che resta sono i tuoi post e commenti sul blog, per non lasciare buchi nelle conversazioni altrui: ma il tuo nome viene sostituito con "Utente eliminato".</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">I tuoi diritti</h3>
         <p>In qualsiasi momento puoi chiederci di:</p>
@@ -496,7 +494,7 @@
           <li>Riceverli in un formato trasferibile ad altro servizio</li>
           <li>Opporti al trattamento, in certi casi</li>
         </ul>
-        <p>Per esercitare questi diritti, scrivi a <a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);">postmaster@figurinesgorbions.it</a>. Hai inoltre sempre il diritto di presentare un reclamo al <a href="https://www.garanteprivacy.it" target="_blank" rel="noopener" style="color:var(--accent);">Garante per la protezione dei dati personali</a>.</p>
+        <p>Per esercitare questi diritti, scrivi a <a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);">postmaster@figurinesgorbions.it</a>. Puoi anche presentare un reclamo al <a href="https://www.garanteprivacy.it" target="_blank" rel="noopener" style="color:var(--accent);">Garante per la protezione dei dati personali</a>.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Minori</h3>
         <p>L'iscrizione al sito richiede di dichiarare di avere almeno 16 anni.</p>
@@ -521,13 +519,13 @@
         <ul style="margin:0.5rem 0 1rem 1.3rem;">
           <li><strong>Account</strong>: nickname, e-mail address, password (managed by Firebase Authentication — we never see or store it in plain text)</li>
           <li><strong>Optional profile</strong>: avatar, nationality</li>
-          <li><strong>Collection</strong>: which stickers/items you've added to your list ("My list") and your "What I'm looking for" list. Private data, visible only to you and the administrator</li>
+          <li><strong>Your list</strong>: which stickers/items you've added to your list ("My list") and your "What I'm looking for" list. Private data, visible only to you and the administrator</li>
           <li><strong>Public profile</strong>: nickname, avatar, nationality and aggregate score, visible in the Ranking — <u>never</u> your e-mail. You can choose to appear anonymously in the Ranking at any time, from your profile</li>
           <li><strong>Age confirmation</strong>: a boolean statement ("I am at least 16 years old") with the date, required by law for minors' registration</li>
-          <li><strong>Newsletter choice</strong>: whether you said yes or no, <u>together with the date and the point where you expressed it</u> (registration, the question shown on your first sign-in, your profile, or the link at the bottom of a newsletter). We keep the date and origin because the law does not merely require us to have your consent, but to be able to <u>demonstrate</u> it — to you first of all, should you ever ask us how we obtained it</li>
-          <li><strong>Language</strong>: the language you are using the site in, so we can write to you in yours rather than in the administrator's</li>
+          <li><strong>Newsletter choice</strong>: whether you said yes or no, <u>together with the date and the point where you expressed it</u> (registration, the question shown on your first sign-in, your profile, or the link at the bottom of a newsletter e-mail). We keep the date and origin because the law does not merely require us to have your consent, but to be able to <u>demonstrate</u> it — to you first of all, should you ever ask us how we obtained it</li>
+          <li><strong>Language</strong>: the language you are using the site in, so we can write to you in yours</li>
           <li><strong>Blog</strong>: the posts and comments you write, public and visible to everyone</li>
-          <li><strong>Contact messages</strong>: name (optional, however you'd like to sign it), e-mail and message, if you use the Contact form</li>
+          <li><strong>Contact messages</strong>: e-mail, subject and message, if you use the Contact form</li>
         </ul>
         <p><strong>What we don't collect</strong>: your real first/last name, age, gender, your geographic location.</p>
 
@@ -537,19 +535,19 @@
           <li><strong>We don't sell your data.</strong> To no one, for no amount.</li>
           <li><strong>We don't run advertising.</strong> There is not a single banner on the site, and there won't be.</li>
           <li><strong>We don't track you.</strong> No Google Analytics, no Facebook pixel, no analytics tool of any kind. We do not know how often you come back, where you came from, how long you stay or what you look at.</li>
-          <li><strong>We don't profile your collection.</strong> We know which stickers you have because they are needed to show them to you and to compute your Ranking score. We do not analyse them to infer anything else about you.</li>
+          <li><strong>We don't profile your list.</strong> We know which stickers you have put in it, but not what it means to you: whether it is what you own, what you like or what you are after is yours alone — and we do not ask. We use it to show the list back to you and to compute your Ranking score. We do not analyse it to infer anything else about you.</li>
           <li><strong>We don't write to you unless you asked.</strong> The newsletter is sent only with your consent. Everything else is a reply to something you did.</li>
           <li><strong>We don't ask for data we don't need.</strong> We do not know your real name, and we are not interested in it.</li>
           <li><strong>We don't make your browser download third-party stuff.</strong> The fonts, the flags, the libraries: <u>they all live on our own site</u>. The only exceptions are the infrastructure the site is built on — Google (Firebase), Cloudinary and GitHub — explained further down.</li>
         </ul>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Why we collect it</h3>
-        <p>To let you use the site's account features (collection, ranking, "What I'm looking for", blog), to respond to your requests via the Contact form, and to comply with the legal requirement on the minimum age for registration.</p>
+        <p>To let you use the site's account features (your list, the ranking, "What I'm looking for", the blog), to respond to your requests via the Contact form, and to comply with the legal requirement on the minimum age for registration.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Who we share data with</h3>
         <p>We do not sell or share your data with third parties for commercial purposes. We rely on these service providers (who process data on our behalf, as data processors):</p>
         <ul style="margin:0.5rem 0 1rem 1.3rem;">
-          <li><strong>Google Firebase</strong> — authentication and database (where accounts, collections, "What I'm looking for" lists, posts are stored)</li>
+          <li><strong>Google Firebase</strong> — authentication and database (where accounts, lists, "What I'm looking for" lists, posts are stored)</li>
           <li><strong>Cloudinary</strong> — image hosting (avatars, sticker photos)</li>
           <li><strong>EmailJS</strong>, sending via <strong>Aruba</strong> — for the e-mails we send you (welcome, newsletter, notifications)</li>
           <li><strong>GitHub Pages</strong> — hosts the site. Like any hosting provider, it receives the IP address of whoever opens the pages: an unavoidable technical consequence of visiting a website at all</li>
@@ -560,7 +558,7 @@
         <p>When you open a page, your browser downloads files. Every file fetched from someone else's server hands that server your <strong>IP address</strong>, even if you clicked nothing. That is why we <u>host ourselves</u> everything we can: the fonts, the flags, the e-mail library and the spreadsheet library <u>live on our own site</u>, not on third-party content delivery networks.</p>
         <p>Three exceptions remain, and they are unavoidable:</p>
         <ul>
-          <li><strong>Google</strong> — the Firebase code, and the database itself. Removing it would not remove Google from the picture: your account and your collection <u>are</u> on Firebase, and the site talks to it on every operation</li>
+          <li><strong>Google</strong> — the Firebase code, and the database itself. Removing it would not remove Google from the picture: your account and your list <u>are</u> on Firebase, and the site talks to it on every operation</li>
           <li><strong>Cloudinary</strong> — the images (the logo, the sticker photos)</li>
           <li><strong>GitHub</strong> — the site's pages</li>
         </ul>
@@ -583,10 +581,10 @@
         <p>They are different things: <strong>withdrawing consent to the newsletter does not stop service e-mails</strong>, and it should not.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">How long we keep data</h3>
-        <p>For as long as your account stays active. You can delete it yourself at any time from your profile ("Delete my account"): the operation is immediate and deletes your account, collection, "What I'm looking for" list and public profile. Any posts/comments written on the blog remain visible for the continuity of shared content, but your name is replaced with "Deleted user".</p>
+        <p>For as long as your account stays active. You can delete it yourself at any time from your profile ("Delete my account"): the operation is immediate and deletes your account, list, "What I'm looking for" list and public profile. Any posts/comments written on the blog remain visible for the continuity of shared content, but your name is replaced with "Deleted user".</p>
         <p><strong>Sticker reports.</strong> When you report a mistake in the Inventory, we keep the report — with your username and your comment — for <strong>6 months</strong>, long enough to check it and fix the catalogue. Then it is deleted. It goes sooner anyway if you delete your account.</p>
         <p><strong>Security log.</strong> We keep a technical log of sign-ins, registrations, password reset requests and account deletions. It exists to check that nobody is doing anything strange with other people's accounts, and it is the one thing that <u>survives</u> account deletion — because knowing that an account was deleted, and when, is precisely why the log exists. It does not survive time, though: entries older than <strong>6 months</strong> are deleted.</p>
-        <p><strong>When you delete your account, everything goes.</strong> Not just your profile and collection: also the messages you sent us through the Contact form, the sticker reports, and the log of the e-mails we sent you — <u>text included</u>. The only thing that stays are your blog posts and comments, so as not to leave holes in other people's conversations: but your name is replaced with "Deleted user".</p>
+        <p><strong>When you delete your account, everything goes.</strong> Not just your profile and list: also the messages you sent us through the Contact form, the sticker reports, and the log of the e-mails we sent you — <u>text included</u>. The only thing that stays are your blog posts and comments, so as not to leave holes in other people's conversations: but your name is replaced with "Deleted user".</p>
         <p><strong>Messages sent through the Contact form.</strong> If you <u>do not have an account</u> on the site, your message — e-mail address included — is <strong>deleted entirely after 6 months</strong>. This is not a partial anonymisation: the record goes, because clearing the address alone would not be enough (people sign their messages). The period exists so that we can reply to you and find the conversation again if you write back.<br>If you <u>do have an account</u>, messages stay for as long as you keep it: you can see them in your profile, and they disappear when you delete it.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Your rights</h3>
@@ -598,7 +596,7 @@
           <li>Receive it in a format transferable to another service</li>
           <li>Object to processing, in certain cases</li>
         </ul>
-        <p>To exercise these rights, write to <a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);">postmaster@figurinesgorbions.it</a>. You also always have the right to file a complaint with the <a href="https://www.garanteprivacy.it" target="_blank" rel="noopener" style="color:var(--accent);">Italian Data Protection Authority (Garante Privacy)</a>.</p>
+        <p>To exercise these rights, write to <a href="mailto:postmaster@figurinesgorbions.it" style="color:var(--accent);">postmaster@figurinesgorbions.it</a>. You can also file a complaint with the <a href="https://www.garanteprivacy.it" target="_blank" rel="noopener" style="color:var(--accent);">Italian Data Protection Authority (Garante Privacy)</a>.</p>
 
         <h3 style="margin-top:1.5rem;margin-bottom:0.6rem;">Minors</h3>
         <p>Registering on the site requires confirming you are at least 16 years old.</p>
@@ -1048,8 +1046,7 @@
   <section class="section">
     <div class="section-inner">
       <div class="section-header">
-        <h1 class="section-title">🏆 <span data-i18n="classifica.best">Classifica dei migliori collezionisti</span></h1>
-        <p style="color:var(--muted);font-size:0.9rem;" data-i18n="classifica.sub">Chi ha costruito la lista più grande?</p>
+        <h1 class="section-title">🏆 <span data-i18n="classifica.best">Chi ha costruito la lista più grande?</span></h1>
       </div>
       <div id="classifica-anon-banner" style="background:rgba(100,100,255,0.08);border:1px solid rgba(100,100,255,0.2);border-radius:10px;padding:0.75rem 1.1rem;margin-bottom:1.25rem;font-size:0.95rem;color:var(--muted);display:none;">
         <span data-i18n-html="classifica.anonInfo">🕵️ Vuoi rimanere riservato? Puoi non mostrare il tuo nome nella classifica agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage('profile');return false;" style="color:var(--accent);">Imposta questo anonimato qui</a>.</span>
@@ -1133,7 +1130,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(255,100,100,0.1);border:1px solid rgba(255,100,100,0.3);color:#ff6b6b;padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.676</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.700</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1808,7 +1805,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.676"></script>
+<script src="js/app.js?v=5.700"></script>
 <script>
 /* Rete di sicurezza contro la cache.
    index.html non viene praticamente mai servito dalla cache; app.js e style.css
@@ -1817,7 +1814,7 @@
    "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
    Questo controllo lo trasforma in un messaggio esplicito in console. */
 (function () {
-  var expected = 'v5.676'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.700'; // deve coincidere con JS_VERSION in app.js
   if (typeof JS_VERSION === 'undefined') {
     console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
     return;
