@@ -1,6 +1,56 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.726 — Franco: "quelle tre cose sono tutte informazioni, puoi aggregare" — il
+//          SECONDO azzurro, #4488ff, che la v5.724 aveva ELENCATO fra i "non toccati"
+//          (l'unico azzurro senza variabile) ma non risolto. Era l'ultima coppia della
+//          stessa malattia: due azzurri vicini — --info (#4db8ff) con la variabile e
+//          #4488ff orfano — che nella stessa app dicevano la stessa cosa: "informazione".
+//          Franco ha deciso la semantica: le tre cose sono TUTTE informazione, "non
+//          letto" incluso. Nessun significato a se' per la notifica.
+//          7 punti unificati (3 pieni + 4 tinte):
+//            · app.js  12317  badge "NEW"                #4488ff        → var(--info)
+//            · app.js  12314  riga messaggio non letto   2x rgba(68..)  → var(--info-rgb)
+//            · index.html 62   pallino contatore in nav   #4488ff        → var(--info)
+//            · index.html 871  intestazione "i Cosa misuriamo"  #4488ff  → var(--info)
+//            · index.html 870  box info (sfondo + bordo)  2x rgba(68..)  → var(--info-rgb)
+//          EFFETTO VISIBILE: l'azzurro passa da #4488ff a #4db8ff, un filo piu' chiaro.
+//          Ora l'informazione ha UN azzurro — come "attenzione" ha una sola ambra
+//          (v5.725) e "distruggi" un solo rosso (v5.719). La serie si chiude.
+//          NON TOCCATO, di proposito: il commento app.js:55, dove #4488ff e'
+//          DOCUMENTAZIONE. La sostituzione ha usato ':#4488ff' (col due punti dello
+//          stile inline), che nel commento non c'e' — verificato, il 55 e' intatto.
+//          RESTA in sospeso (emerso nel recap, NON deciso da Franco): il verde "ok"
+//          scritto a mano 6 volte (→ var(--accent) oppure un nuovo --success) e il
+//          gradiente del banner "in costruzione" (accent2/accent3 a mano). Cosmetici,
+//          aspettano una scelta.
+//          Modificati app.js, index.html. style.css INVARIATO: --info / --info-rgb
+//          esistevano gia' dalla v5.722.
+// v5.725 — Franco: "si, sistema" — la TERZA ambra, quella che la v5.724 non aveva visto.
+//          La v5.724 diceva "le ambre erano DUE (#ffb400 e #ffaa00), ora unificate in
+//          --warn". Ne era rimasta una terza, #ffc832 (e la sua tinta rgba(255,200,50)),
+//          che la sostituzione non aveva toccato.
+//          E cercandola bene NON erano 3 punti come avevo detto a Franco, ma CINQUE — di
+//          nuovo il conteggio sbagliato, come coi rossi della v5.719 (dove Franco mi aveva
+//          corretto). I cinque:
+//            · app.js  fotoLog()     — colore msg 'warn'                #ffc832 → var(--warn)
+//            · app.js  fotoNnLog()   — colore msg 'warn'                #ffc832 → var(--warn)
+//            · index.html reg-wait-notice — banner attesa registrazione (color + 2 tinte)
+//            · index.html nota limiti Firestore (avviso quota)          (color + 2 tinte)
+//            · index.html bordo pannello "Ricalcolo punteggi pubblici"  (1 tinta)
+//          Tutte le rgba(255,200,50, X) → rgba(var(--warn-rgb), X): stessa opacita', il
+//          colore ora punta all'unica ambra. UNICO EFFETTO VISIBILE: in questi 5 punti
+//          l'ambra passa da #ffc832 a #ffb400. Ora TUTTI gli avvisi hanno UN colore — era
+//          il punto della v5.724, completato.
+//          NON TOCCATO, di proposito: il commento in app.js:639, dove #ffc832 e'
+//          DOCUMENTAZIONE (racconta com'era). La lezione delle v5.719/v5.722: la
+//          sostituzione non deve colpire i commenti. La sostituzione ha usato '#ffc832'
+//          FRA APICI, che nel commento non ci sono — verificato: il 639 e' intatto.
+//          RESTA (dettaglio minore, non un baco, segnalato ma non fatto perche' Franco ha
+//          approvato solo l'ambra): varImportLog scrive l'"ok" come #b5ff2e a mano, mentre
+//          fotoLog/fotoNnLog usano var(--accent). Stesso valore, letterale-contro-variabile.
+//          Modificati app.js, index.html. style.css INVARIATO: --warn / --warn-rgb
+//          esistevano gia' dalla v5.724 — non serviva ridefinire nulla.
 // v5.724 — Franco: "facciamo la 2 (l'ambra)".
 //          Erano DUE ambre quasi identiche, e nessuna delle due era una variabile:
 //            · #ffb400  10 usi — banner "stai impersonando", banner "cambia password",
@@ -7218,7 +7268,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.724';
+const JS_VERSION = 'v5.726';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12286,10 +12336,10 @@ function renderAdminContacts() {
   const el = document.getElementById('admin-contacts-list');
   const msgs = getData('contact_messages', []).filter(m => !m.isAnnouncement).sort((a,b) => new Date(b.date) - new Date(a.date));
   if (!msgs.length) { el.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun messaggio ancora.' : 'No messages yet.'}</p>`; return; }
-  el.innerHTML = msgs.map(m => `<div style="background:${m.read ? 'var(--card)' : 'rgba(68,136,255,0.06)'};border:1px solid ${m.read ? 'var(--border)' : 'rgba(68,136,255,0.3)'};border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.5rem;">
+  el.innerHTML = msgs.map(m => `<div style="background:${m.read ? 'var(--card)' : 'rgba(var(--info-rgb),0.06)'};border:1px solid ${m.read ? 'var(--border)' : 'rgba(var(--info-rgb),0.3)'};border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.5rem;">
     <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.4rem;align-items:center;">
       <div style="display:flex;align-items:center;gap:0.5rem;">
-        ${m.read ? '' : '<span style="font-size:0.7rem;background:#4488ff;color:#fff;border-radius:4px;padding:1px 6px;">NEW</span>'}
+        ${m.read ? '' : '<span style="font-size:0.7rem;background:var(--info);color:#fff;border-radius:4px;padding:1px 6px;">NEW</span>'}
         ${m.replied ? `<span style="font-size:0.7rem;background:rgba(181,255,46,0.15);color:var(--accent);border-radius:4px;padding:1px 6px;">✓ ${currentLang === 'it' ? 'RISPOSTO' : 'REPLIED'}</span>` : ''}
         <strong style="font-family:var(--font-ui);">${esc(m.name || m.email || "—")} <span style="font-size:0.8rem;color:var(--muted);font-family:var(--font-body);">&lt;${m.email}&gt;</span></strong>
       </div>
@@ -15495,7 +15545,7 @@ function fotoLog(msg, type) {
   if (!el) return;
   el.style.display = 'block';
   const line = document.createElement('div');
-  line.style.color = type === 'ok' ? 'var(--accent)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? '#ffc832' : 'var(--muted)';
+  line.style.color = type === 'ok' ? 'var(--accent)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--muted)';
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
@@ -15634,7 +15684,7 @@ function fotoNnLog(msg, type) {
   if (!el) return;
   el.style.display = 'block';
   const line = document.createElement('div');
-  line.style.color = type === 'ok' ? 'var(--accent)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? '#ffc832' : 'var(--muted)';
+  line.style.color = type === 'ok' ? 'var(--accent)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--muted)';
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
