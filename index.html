@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.724"></script>
-<link rel="stylesheet" href="css/style.css?v=5.724">
+<script src="js/email.min.js?v=5.726"></script>
+<link rel="stylesheet" href="css/style.css?v=5.726">
 
 </head>
 <body>
@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.724</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.726</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -59,7 +59,7 @@
     </div>
     <div id="nav-msg-btn" style="display:none;position:relative;cursor:pointer;" onclick="showAdminTab('contacts')" title="Messaggi">
       <span style="font-size:1.3rem;">✉️</span>
-      <span id="nav-msg-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:#4488ff;color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span>
+      <span id="nav-msg-badge" style="display:none;position:absolute;top:-4px;right:-6px;background:var(--info);color:#fff;font-size:0.65rem;font-weight:bold;border-radius:50%;min-width:16px;height:16px;line-height:16px;text-align:center;padding:0 3px;"></span>
     </div>
     <div id="nav-reply-btn" style="display:none;position:relative;cursor:pointer;" onclick="showPage('profile')" title="I miei messaggi con lo staff">
       <span style="font-size:1.3rem;">📨</span>
@@ -754,7 +754,7 @@
           <!-- FIREBASE -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
             <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🔥 Database per i dati: Firebase Firestore</h4>
-            <p style="font-size:0.78rem;color:rgba(255,200,50,0.8);background:rgba(255,200,50,0.08);border:1px solid rgba(255,200,50,0.2);border-radius:8px;padding:0.4rem 0.75rem;margin-bottom:0.75rem;">
+            <p style="font-size:0.78rem;color:rgba(var(--warn-rgb),0.8);background:rgba(var(--warn-rgb),0.08);border:1px solid rgba(var(--warn-rgb),0.2);border-radius:8px;padding:0.4rem 0.75rem;margin-bottom:0.75rem;">
               ⚠️ Se superi i limiti giornalieri il sito smette di funzionare fino al giorno successivo. Il caricamento massivo di foto consuma molte letture.
             </p>
             <p style="font-size:0.82rem;margin-bottom:0.75rem;">Piano: <strong>Spark (gratuito)</strong> &nbsp;·&nbsp; Reset limiti: <strong>mezzanotte PT (9:00 IT)</strong></p>
@@ -867,8 +867,8 @@
               </div>
             </div>
             <p style="font-size:0.72rem;color:var(--muted);margin-bottom:0.75rem;">* Gli upload sono conteggiati solo da questo browser. 1 upload ≈ 0.01 crediti (stima approssimativa — il credito reale dipende da dimensione e trasformazioni).</p>
-            <div style="background:rgba(68,136,255,0.07);border:1px solid rgba(68,136,255,0.2);border-radius:8px;padding:0.75rem 1rem;font-size:0.78rem;color:var(--muted);line-height:1.6;">
-              <strong style="color:#4488ff;display:block;margin-bottom:0.3rem;">ℹ️ Cosa stiamo misurando e cosa potremmo fare</strong>
+            <div style="background:rgba(var(--info-rgb),0.07);border:1px solid rgba(var(--info-rgb),0.2);border-radius:8px;padding:0.75rem 1rem;font-size:0.78rem;color:var(--muted);line-height:1.6;">
+              <strong style="color:var(--info);display:block;margin-bottom:0.3rem;">ℹ️ Cosa stiamo misurando e cosa potremmo fare</strong>
               <strong>Ora:</strong> contiamo gli upload eseguiti da questo browser tramite <code>uploadToCloudinary()</code>, stimando i crediti consumati (≈0.01 per upload). Non misuriamo le trasformazioni automatiche (resize, format conversion) né la banda usata dalle visualizzazioni.<br><br>
               <strong>Cosa potremmo fare:</strong> Cloudinary ha API ufficiali per leggere l'utilizzo reale (crediti, storage, banda). Il problema è che richiedono l'<em>API Secret</em>, una credenziale che non può stare nel codice frontend per ragioni di sicurezza. Per usarle servirebbe un piccolo backend (es. una Cloud Function di Firebase) che fa la chiamata in modo sicuro e restituisce solo i dati all'app. Più preciso, ma più complesso da implementare.
             </div>
@@ -1076,7 +1076,7 @@
       </div>
 
       <!-- Visibile solo all'admin: ricalcolo una tantum dei punteggi pubblici -->
-      <div id="classifica-admin-backfill" style="display:none;margin-top:2.5rem;background:var(--card2);border-radius:12px;padding:1.25rem;border:1px solid rgba(255,200,50,0.3);">
+      <div id="classifica-admin-backfill" style="display:none;margin-top:2.5rem;background:var(--card2);border-radius:12px;padding:1.25rem;border:1px solid rgba(var(--warn-rgb),0.3);">
         <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🏆 Ricalcolo punteggi pubblici</h4>
         <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">
           Il punteggio di ciascun utente viene calcolato e pubblicato automaticamente ad ogni modifica di "Mia lista" — l'elenco dettagliato di cosa contiene resta privato. Usa questo ricalcolo per gli utenti registrati prima dell'introduzione di questo meccanismo (mostrano 0 finché non lo esegui), o se noti punteggi disallineati.
@@ -1146,7 +1146,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.724</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.726</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1195,7 +1195,7 @@
       </div>
       <p style="font-size:0.78rem;color:#fff;margin-top:0.4rem;" data-i18n-html="form.privacyNotice">Registrandoti, accetti la nostra <a href="#" onclick="closeModal('auth-modal');showPage('privacy');return false;" style="color:var(--accent);">Privacy Policy</a>.</p>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doRegister()" id="reg-submit-btn" data-i18n="auth.reg.btn">Create Account</button>
-      <div id="reg-wait-notice" style="display:none;margin-top:0.75rem;background:rgba(255,200,50,0.1);border:1px solid rgba(255,200,50,0.3);color:#ffc832;padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;text-align:center;">⏳ <span data-i18n="auth.reg.wait">La registrazione può richiedere fino a un minuto: non chiudere questa finestra.</span></div>
+      <div id="reg-wait-notice" style="display:none;margin-top:0.75rem;background:rgba(var(--warn-rgb),0.1);border:1px solid rgba(var(--warn-rgb),0.3);color:var(--warn);padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;text-align:center;">⏳ <span data-i18n="auth.reg.wait">La registrazione può richiedere fino a un minuto: non chiudere questa finestra.</span></div>
       <div id="reg-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
     </div>
   </div>
@@ -1825,7 +1825,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.724"></script>
+<script src="js/app.js?v=5.726"></script>
 <script>
 /* Rete di sicurezza contro la cache.
    index.html non viene praticamente mai servito dalla cache; app.js e style.css
@@ -1834,7 +1834,7 @@
    "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
    Questo controllo lo trasforma in un messaggio esplicito in console. */
 (function () {
-  var expected = 'v5.724'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.726'; // deve coincidere con JS_VERSION in app.js
   if (typeof JS_VERSION === 'undefined') {
     console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
     return;
