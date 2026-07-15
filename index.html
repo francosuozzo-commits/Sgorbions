@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.726"></script>
-<link rel="stylesheet" href="css/style.css?v=5.726">
+<script src="js/email.min.js?v=5.755"></script>
+<link rel="stylesheet" href="css/style.css?v=5.755">
 
 </head>
 <body>
@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.726</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.755</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -166,7 +166,7 @@
           <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n="catalog.sub">All Sgorbions series published</p>
         </div>
         <div id="admin-add-series-btn" style="display:none;">
-          <button class="btn-primary" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
+          <button class="btn-primary btn-admin" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
         </div>
       </div>
       <div class="search-bar">
@@ -195,7 +195,7 @@
           <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
             <div class="series-year" id="detail-year"></div>
             <div style="display:flex;flex-direction:column;gap:0.4rem;align-items:flex-end;">
-              <button id="detail-edit-series-btn" onclick="openAddSeriesModal(currentSeriesId)" style="display:none;font-size:0.78rem;padding:4px 12px;border-radius:8px;border:1px solid var(--accent3);background:transparent;color:var(--accent3);cursor:pointer;">✏️ Modifica serie</button>
+              <button id="detail-edit-series-btn" onclick="openAddSeriesModal(currentSeriesId)" style="display:none;font-size:0.92rem;padding:6px 14px;border-radius:8px;border:1px solid var(--action-admin);background:var(--action-admin);color:#ffffff;cursor:pointer;">&#9998; Modifica serie</button>
               <button id="detail-ebay-series-btn" onclick="openSeriesEbayModal()" style="display:none;font-size:0.78rem;padding:4px 12px;border-radius:8px;border:1px solid rgba(var(--info-rgb),0.4);background:rgba(var(--info-rgb),0.12);color:var(--info);cursor:pointer;font-weight:600;">🏷️ Vista Ebay</button>
             </div>
           </div>
@@ -252,7 +252,7 @@
       </div>
       <div id="admin-add-item-btn" style="display:none;">
         <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-          <button class="btn-primary" onclick="openAddItemModal()" id="admin-add-label" data-i18n="catalog.add">+ Aggiungi</button>
+          <button class="btn-primary btn-admin" onclick="openAddItemModal()" id="admin-add-label" data-i18n="catalog.add">+ Aggiungi</button>
         </div>
       </div>
     </div>
@@ -260,14 +260,14 @@
       <div>
         <div id="admin-classifica-title" style="display:none;font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;">Classifica</div>
         <div id="admin-classifica-btn-wrap" style="display:none;gap:0.75rem;flex-wrap:wrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">
-          <button class="btn-primary" onclick="openBulkScoreModal()" id="bulk-score-toggle" data-i18n="catalog.bulkscore" style="font-size:0.9rem;padding:0.4rem 1.1rem;">Punteggio selezionati</button>
+          <button class="btn-primary btn-admin" onclick="openBulkScoreModal()" id="bulk-score-toggle" data-i18n="catalog.bulkscore" style="font-size:0.9rem;padding:0.4rem 1.1rem;">Punteggio selezionati</button>
         </div>
       </div>
       <div>
         <div id="admin-ebay-title" style="display:none;font-size:0.75rem;color:var(--text);margin-bottom:0.3rem;">Ebay</div>
         <div id="admin-ebay-btn-wrap" style="display:none;gap:0.75rem;flex-wrap:wrap;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">
-          <button class="btn-primary" onclick="openEbayBulkModal()" id="admin-mark-for-sale-btn" style="font-size:0.9rem;padding:0.4rem 1.1rem;">🏷️ Aggiungi a Ebay</button>
-          <button class="btn-primary" onclick="unmarkFilteredForSale()" id="admin-unmark-for-sale-btn" style="font-size:0.9rem;padding:0.4rem 1.1rem;">🚫 Togli da Ebay</button>
+          <button class="btn-primary btn-admin" onclick="openEbayBulkModal()" id="admin-mark-for-sale-btn" style="font-size:0.9rem;padding:0.4rem 1.1rem;">🏷️ Aggiungi a Ebay</button>
+          <button class="btn-primary btn-admin" onclick="unmarkFilteredForSale()" id="admin-unmark-for-sale-btn" style="font-size:0.9rem;padding:0.4rem 1.1rem;">🚫 Togli da Ebay</button>
         </div>
       </div>
     </div>
@@ -680,7 +680,7 @@
         <div id="admin-series" class="admin-section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
             <h3 style="font-family:var(--font-ui);" data-i18n="admin.series.title">Manage Series</h3>
-            <button class="btn-primary" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
+            <button class="btn-primary btn-admin" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
           </div>
           <div id="admin-series-table"></div>
         </div>
@@ -704,7 +704,7 @@
                 <label class="form-label" data-i18n="admin.levels.minScore">Punteggio minimo</label>
                 <input class="form-input" type="number" id="level-score-input" placeholder="Es. 0" min="0">
               </div>
-              <button class="btn-primary" onclick="saveLevel()" style="white-space:nowrap;" data-i18n="admin.levels.save">Salva livello</button>
+              <button class="btn-primary btn-admin" onclick="saveLevel()" style="white-space:nowrap;" data-i18n="admin.levels.save">Salva livello</button>
             </div>
           </div>
         </div>
@@ -812,26 +812,14 @@
             <div id="firebase-reads-history" style="margin-top:1rem;"></div>
           </div>
 
-          <!-- MIGRAZIONE: "errore di stampa" da changeType a TIPO (v5.711) -->
+          <!-- RICALCOLO NOMI COMPLETI (v5.755) -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;border:1px solid var(--border2);">
-            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">Migrazione: Errore di stampa diventa un tipo</h4>
+            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🔤 Ricalcola i Nomi completi</h4>
             <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">
-              Fino alla v5.710 un errore di stampa era un <b>Change</b> con il campo "Tipo di change" scritto a mano come "errore di stampa". Il filtro lo cercava <b>confrontando la stringa</b>: bastava scriverla al plurale in una serie perche&#39; smettesse di trovarlo, in silenzio.<br><br>
-              Ora <b>Errore di stampa</b> e&#39; un tipo vero, come Base, Variazione e Change. Questa migrazione converte i record esistenti.<br><br>
-              <b>Va lanciata una volta sola.</b> Il pulsante <b>conta prima</b> quanti record toccherebbe e chiede conferma: ogni record e&#39; <b>una scrittura</b> su Firestore.
+              Rigenera il <b>Nome completo</b> di figurine e retro di <b>una singola serie</b> secondo le regole attuali (utile dopo aver cambiato la logica di composizione, o il flag &quot;il nome dei retro contiene la categoria&quot; su una serie). Chiede prima <b>il nome esatto della serie</b> a cui applicarlo, cos&igrave; non tocca le serie gi&agrave; a posto. Poi <b>conta</b> quanti record cambierebbero e chiede conferma: ogni record aggiornato &egrave; <b>una scrittura</b> su Firestore. Riscrive solo quelli che cambiano davvero.
             </p>
-            <button class="btn-primary" style="font-size:0.88rem;" onclick="migratePrintErrors()" id="migrate-printerrors-btn">Conta e migra</button>
-            <div id="migrate-printerrors-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-top:0.75rem;"></div>
-          </div>
-
-          <!-- MIGRAZIONE FIGURINE → FORMATO PER-SERIE (v5.326) -->
-          <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;border:1px solid rgba(255,80,80,0.4);">
-            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">📦 Migrazione figurine al nuovo formato per-serie</h4>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">
-              Da questa versione, le figurine non sono più salvate una alla volta (un documento a figurina) ma incorporate dentro il documento della loro serie — riduce drasticamente le letture dell'Inventario. <strong>Prima di usare il sito con questa versione, esegui questa migrazione una volta sola</strong>: sposta tutte le figurine esistenti nel nuovo formato. Finché non la esegui, l'Inventario apparirà vuoto.
-            </p>
-            <button class="btn-primary" style="font-size:0.88rem;" onclick="migrateFigurinesIntoSeries()" id="migrate-figurines-btn">▶ Avvia migrazione</button>
-            <div id="migrate-figurines-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-top:0.5rem;"></div>
+            <button class="btn-primary btn-admin" style="font-size:0.88rem;" onclick="recomputeAllFullNames()" id="recompute-fullnames-btn">Conta e ricalcola</button>
+            <div id="recompute-fullnames-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-top:0.75rem;"></div>
           </div>
 
           <!-- CLOUDINARY -->
@@ -894,7 +882,7 @@
         <div id="admin-users" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:1rem;"><span data-i18n="admin.users.title">Registered Users:</span><span id="admin-users-count" style="color:var(--muted);font-weight:400;margin-left:0.5rem;"></span></h3>
           <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;margin-bottom:0.9rem;">
-            <button class="btn-primary" id="admin-refresh-btn" onclick="refreshAdminData()" style="font-size:0.85rem;padding:0.35rem 0.9rem;" data-i18n="admin.refresh">Aggiorna dati</button>
+            <button class="btn-primary btn-admin" id="admin-refresh-btn" onclick="refreshAdminData()" style="font-size:0.85rem;padding:0.35rem 0.9rem;" data-i18n="admin.refresh">Aggiorna dati</button>
             <span id="admin-refresh-info" style="font-size:0.78rem;color:var(--muted);"></span>
           </div>
           <div id="admin-users-table"></div>
@@ -939,7 +927,7 @@
                 <label class="form-label" data-i18n="newsletter.replyToLabel">Indirizzo per le risposte (Reply-To)</label>
                 <div style="display:flex;gap:0.5rem;">
                   <input class="form-input" type="email" id="newsletter-reply-to" placeholder="postmaster@figurinesgorbions.it" style="flex:1;">
-                  <button class="btn-primary" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveReplyToField()" data-i18n="admin.save">Salva</button>
+                  <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveReplyToField()" data-i18n="admin.save">Salva</button>
                 </div>
                 <div class="form-hint" data-i18n="newsletter.replyToHint">Quando rispondi a un messaggio, l'e-mail arriverà a questo indirizzo</div>
               </div>
@@ -990,7 +978,7 @@
                 </div>
               </div>
 
-              <button class="btn-primary" onclick="saveEbaySettings()">Salva</button>
+              <button class="btn-primary btn-admin" onclick="saveEbaySettings()">Salva</button>
             </div>
           </div>
         </div>
@@ -1028,7 +1016,7 @@
           <div id="newsletter-consent-summary" style="font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;"></div>
           <div id="newsletter-users-list" style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:0;max-height:min(55vh, 620px);overflow-y:auto;"></div>
         </div>
-        <button class="btn-primary" onclick="sendNewsletterFromAdmin()" data-i18n="newsletter.send">📧 Invia agli utenti selezionati</button>
+        <button class="btn-primary btn-admin" onclick="sendNewsletterFromAdmin()" data-i18n="newsletter.send">📧 Invia agli utenti selezionati</button>
         <hr class="divider">
         <h4 style="font-family:var(--font-ui);margin-bottom:1rem;">📬 <span data-i18n="newsletter.log">Ultime e-mail inviate</span></h4>
         <div id="newsletter-email-log"></div>
@@ -1081,7 +1069,7 @@
         <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">
           Il punteggio di ciascun utente viene calcolato e pubblicato automaticamente ad ogni modifica di "Mia lista" — l'elenco dettagliato di cosa contiene resta privato. Usa questo ricalcolo per gli utenti registrati prima dell'introduzione di questo meccanismo (mostrano 0 finché non lo esegui), o se noti punteggi disallineati.
         </p>
-        <button class="btn-primary" style="font-size:0.88rem;" onclick="backfillPublicScores()" id="backfill-score-btn">▶ Ricalcola punteggi di tutti</button>
+        <button class="btn-primary btn-admin" style="font-size:0.88rem;" onclick="backfillPublicScores()" id="backfill-score-btn">▶ Ricalcola punteggi di tutti</button>
         <div id="backfill-score-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-top:0.5rem;"></div>
       </div>
     </div>
@@ -1146,7 +1134,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.726</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.755</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1259,6 +1247,10 @@
           <input type="checkbox" id="series-no-numbers-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
           <span data-i18n="form.series.noNumbers">Non ha numeri</span>
         </label>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+          <input type="checkbox" id="series-retro-name-has-category-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <span data-i18n="form.series.retroNameHasCategory">Il nome dei retro ne contiene la categoria</span>
+        </label>
       </div>
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
@@ -1307,7 +1299,7 @@
       <input type="file" id="series-img-file" accept="image/*" style="display:none;" onchange="handleSeriesImg(event)">
       <img id="series-img-preview" class="file-preview">
     </div>
-    <button class="btn-primary" style="width:100%;" onclick="saveSeries()" data-i18n="modal.series.save">Salva serie</button>
+    <button class="btn-primary btn-admin" style="width:100%;" onclick="saveSeries()" data-i18n="modal.series.save">Salva serie</button>
     <div id="series-save-feedback" style="display:none;margin-top:0.75rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
   </div>
 </div>
@@ -1354,15 +1346,9 @@
       <label class="form-label" data-i18n="form.fig.name">Name</label>
       <input class="form-input" type="text" id="fig-name-input" placeholder="Sgorbio Maximus">
     </div>
-    <div style="display:grid;grid-template-columns:140px 100px;gap:1rem;margin-bottom:1.25rem;">
-      <div class="form-group" id="fig-size-group" style="margin-bottom:0;">
-        <label class="form-label" data-i18n="form.fig.size">Taglia</label>
-        <input class="form-input" type="text" id="fig-size-input" placeholder="es. S, M, L, XL">
-      </div>
-      <div class="form-group" id="fig-score-group" style="margin-bottom:0;">
-        <label class="form-label" style="font-size:0.75rem;white-space:nowrap;" data-i18n="form.fig.score">Punteggio</label>
-        <input class="form-input" type="number" id="fig-score-input" placeholder="0" min="0">
-      </div>
+    <div class="form-group" id="fig-size-group" style="max-width:200px;">
+      <label class="form-label" data-i18n="form.fig.size">Taglia</label>
+      <input class="form-input" type="text" id="fig-size-input" placeholder="es. S, M, L, XL">
     </div>
     <div data-flags-block style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;margin-bottom:0.75rem;align-items:start;">
       <label id="fig-var-official-label" style="display:flex;align-items:flex-start;gap:0.5rem;cursor:pointer;font-size:0.88rem;line-height:1.3;" class="form-label">
@@ -1401,6 +1387,10 @@
       <div id="fig-retro-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:260px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
       <div id="fig-retro-selected-preview" style="display:none;margin-top:6px;font-size:0.85rem;color:var(--accent);"></div>
       <div class="form-hint" data-i18n="form.fig.retroHint">Indica il Retro che rappresenta il retro di questa variazione</div>
+    </div>
+    <div class="form-group" id="fig-score-group" style="max-width:160px;">
+      <label class="form-label" data-i18n="form.fig.score">Punteggio</label>
+      <input class="form-input" type="number" id="fig-score-input" placeholder="0" min="0">
     </div>
     <div class="form-group">
       <label class="form-label" data-i18n="form.fig.desc">Descrizione</label>
@@ -1457,7 +1447,7 @@
     </div>
     </div>
     <div style="display:flex;gap:0.5rem;">
-      <button class="btn-primary" style="flex:1;" onclick="saveFigurine()" data-i18n="modal.fig.save">Save Figurine</button>
+      <button class="btn-primary btn-admin" style="flex:1;" onclick="saveFigurine()" data-i18n="modal.fig.save">Save Figurine</button>
       <button class="btn-danger-ghost" id="fig-modal-delete-btn" style="display:none;font-size:0.85rem;padding:0.6rem 1rem;cursor:pointer;" onclick="deleteFigurineFromModal()">🗑️</button>
     </div>
   </div>
@@ -1516,7 +1506,7 @@
         </select>
       </div>
     </div>
-    <button class="btn-primary" style="width:100%;" onclick="confirmEbayBulkApply()">Applica</button>
+    <button class="btn-primary btn-admin" style="width:100%;" onclick="confirmEbayBulkApply()">Applica</button>
   </div>
 </div>
 
@@ -1562,7 +1552,7 @@
       <label class="form-label" data-i18n="modal.bulkscore.label">Punteggio per ogni oggetto</label>
       <input class="form-input" type="number" id="bulk-score-input" placeholder="es. 10" min="0">
     </div>
-    <button class="btn-primary" style="width:100%;" onclick="saveBulkScore()" data-i18n="modal.bulkscore.apply">Applica ai visibili</button>
+    <button class="btn-primary btn-admin" style="width:100%;" onclick="saveBulkScore()" data-i18n="modal.bulkscore.apply">Applica ai visibili</button>
     <div id="bulk-score-feedback" style="display:none;margin-top:0.75rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
   </div>
 </div>
@@ -1815,7 +1805,7 @@
       </select>
     </div>
 
-    <button class="btn-primary" style="width:100%;" onclick="saveEditUser()" data-i18n="admin.user.save">Salva modifiche</button>
+    <button class="btn-primary btn-admin" style="width:100%;" onclick="saveEditUser()" data-i18n="admin.user.save">Salva modifiche</button>
     <button class="btn-secondary" style="width:100%;margin-top:0.5rem;" onclick="adminResetPassword()" data-i18n="admin.user.reset">🔑 Reset password</button>
     <div id="admin-reset-pwd-feedback" style="display:none;margin-top:0.5rem;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;"></div>
     <button id="edit-user-delete-btn" class="btn-danger-ghost" style="width:100%;margin-top:0.5rem;border-" onclick="deleteUserFromModal()" data-i18n="admin.user.delete">🗑️ Elimina utente</button>
@@ -1825,7 +1815,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.726"></script>
+<script src="js/app.js?v=5.755"></script>
 <script>
 /* Rete di sicurezza contro la cache.
    index.html non viene praticamente mai servito dalla cache; app.js e style.css
@@ -1834,7 +1824,7 @@
    "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
    Questo controllo lo trasforma in un messaggio esplicito in console. */
 (function () {
-  var expected = 'v5.726'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.755'; // deve coincidere con JS_VERSION in app.js
   if (typeof JS_VERSION === 'undefined') {
     console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
     return;
