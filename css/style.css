@@ -42,6 +42,39 @@
   --card2: #221540;
   --accent: #b5ff2e;
 
+  /* HOVER DELL'AZIONE (v5.728). La tinta piu' chiara del pulsante "Registrati",
+     prima era #d4ff60 scritta a mano nel css. Ora e' l'hover dell'azione, una riga. */
+  --accent-hover: #d4ff60;
+
+  /* SUCCESSO, SEPARATO DALL'AZIONE (v5.728 — Franco: "vorrei separare i colori di
+     success e di azione"). Fino alla v5.727 il verde del "ok / stato positivo / spunta"
+     era LO STESSO --accent dell'azione (bottoni, link, nav). Erano due significati su un
+     colore solo. Ora il successo ha una variabile sua: ci puntano la spunta positiva
+     (email inviata, in vendita, conteggio serie), la cella "SI" e il messaggio 'ok' dei
+     log.
+     PER ORA vale #b5ff2e come --accent: NESSUN cambiamento visibile. Ma il senso e'
+     tutto qui — basta cambiare QUESTA riga per dare al successo un verde tutto suo,
+     distinto da quello dell'azione. La divergenza aspetta solo la scelta di Franco. */
+  --success: #b5ff2e;
+
+  /* AZIONE — cliccabile (v5.729, Franco: "il lime lo lascio ai success, per le azioni
+     un bel blu con testo bianco"). Il verde lime NON e' piu' il colore delle azioni:
+     resta la firma del sito (decorazione: numeri statistiche, glow, bordi) e va ai
+     success. I veri bottoni-azione ora sono BLU pieno, testo bianco.
+     Distinto di proposito dall'azzurro --info (#4db8ff, chiaro, per i messaggi): questo
+     e' un blu piu' profondo, da bottone. Due blu, due mestieri, nessuna confusione. */
+  --action:       #2563eb;
+  --action-hover: #1d4ed8;
+  --action-rgb:   37,99,235;
+
+  /* AZIONE ADMIN — potere elevato (v5.729). Le azioni riservate all'admin (migrazioni,
+     ricalcoli, import, gestione catalogo/utenti/newsletter/ebay) hanno un colore CALDO
+     che stacca nettamente dal blu freddo: arancio. A colpo d'occhio "questa e' una leva
+     da admin, occhio". Applicato con la classe .btn-admin IN AGGIUNTA a .btn-primary. */
+  --action-admin:       #ff6b1a;
+  --action-admin-hover: #e85d0f;
+  --action-admin-rgb:   255,107,26;
+
   /* CODICE COLORE DELLE TIPOLOGIE (v5.703, deciso da Franco).
      Vale ovunque: badge sulle card, contatori della serie, etichette dei filtri.
      Sta QUI e in nessun altro posto: se un domani il rosa diventa viola, si cambia
@@ -171,7 +204,7 @@ body {
 }
 #lang-current-btn, #lang-current-btn:focus, #lang-current-btn:active, #lang-current-btn:hover { border: none !important; outline: none !important; box-shadow: none !important; -webkit-appearance: none; appearance: none; }
 .lang-btn.active {
-  border-color: var(--accent); opacity: 1; box-shadow: 0 0 0 1px var(--accent);
+  border-color: var(--action); opacity: 1; box-shadow: 0 0 0 1px var(--action);
 }
 .nav-right { display: flex; gap: 1rem; align-items: center; }
 .btn-login {
@@ -183,11 +216,11 @@ body {
 .btn-login:hover { border-color: var(--accent3); color: var(--accent3); }
 .btn-register {
   font-family: var(--font-ui); font-size: 1.1rem;
-  background: var(--accent); border: 1px solid var(--accent);
-  color: #0e0a1a; padding: 0.35rem 1.2rem; border-radius: 8px;
+  background: var(--action); border: 1px solid var(--action);
+  color: #ffffff; padding: 0.35rem 1.2rem; border-radius: 8px;
   cursor: pointer; transition: all 0.2s; font-weight: 700;
 }
-.btn-register:hover { background: #d4ff60; box-shadow: 0 0 20px rgba(181,255,46,0.4); }
+.btn-register:hover { background: var(--action-hover); box-shadow: 0 0 20px rgba(var(--action-rgb),0.4); }
 #user-nav { display: flex; gap: 0.75rem; align-items: center; }
 .avatar-btn {
   width: 36px; height: 36px; border-radius: 50%;
@@ -257,12 +290,17 @@ body {
 }
 .btn-primary {
   font-family: var(--font-ui); font-size: 1.15rem;
-  background: var(--accent); color: #0e0a1a;
+  background: var(--action); color: #ffffff;
   border: none; padding: 0.75rem 2rem; border-radius: 12px;
   cursor: pointer; font-weight: 700; transition: all 0.2s;
   letter-spacing: 0.5px;
 }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(181,255,46,0.4); }
+.btn-primary:hover { transform: translateY(-2px); background: var(--action-hover); box-shadow: 0 8px 30px rgba(var(--action-rgb),0.4); }
+
+/* AZIONE ADMIN (v5.729): arancio, IN AGGIUNTA a .btn-primary (class="btn-primary btn-admin").
+   Definita DOPO btn-primary: vince lo sfondo. Stessa taglia, cambia solo il colore. */
+.btn-admin { background: var(--action-admin); color: #ffffff; }
+.btn-admin:hover { transform: translateY(-2px); background: var(--action-admin-hover); box-shadow: 0 8px 30px rgba(var(--action-admin-rgb),0.4); }
 /* IL PULSANTE CHE DISTRUGGE (v5.723). Non esisteva.
    I pulsanti distruttivi erano DICIASSETTE, vestiti in SEI modi diversi: due
    btn-primary riverniciati di rosso a mano (la classe che significa "fai questa cosa",
@@ -468,7 +506,16 @@ body {
   content: ''; position: absolute; top: 3px; left: 3px;
   width: 14px; height: 14px; border-radius: 50%; background: white; transition: left 0.2s;
 }
-/* ACCESO = VERDE (v5.721). Franco: "usa il verde per l'acceso degli interruttori".
+/* AGGIORNAMENTO v5.730: l'acceso degli interruttori ora e' BLU (var(--action)), non piu'
+   verde. Franco, rivedendo la v5.729: "i toggle io li considero azioni, e sono ancora
+   lime" — quindi seguono il colore delle azioni. Questo RIBALTA la scelta v5.721 qui
+   sotto (che resta come storia). Il verde ora e' successo/decorazione, non "attivo".
+   NOTA di contesto: l'interruttore torna cosi' vicino, per tinta, all'etichetta azzurra
+   "non ufficiale" (#7fd4ff) di cui parla il testo storico — ma --action (#2563eb) e' un
+   blu MOLTO piu' scuro e saturo di quell'azzurro chiaro: non e' la confusione della v5.721
+   (dove era --info #4db8ff, quasi identico). Da tenere d'occhio comunque.
+   ------------------------------------------------------------------------------------
+   ACCESO = VERDE (v5.721). Franco: "usa il verde per l'acceso degli interruttori".
    Era azzurro (var(--info)) — e nella riga dei filtri stava a due centimetri dall'etichetta
    "Solo Variazioni non ufficiali", che e' AZZURRA (#7fd4ff). Due azzurri quasi identici
    che dicevano cose opposte: uno "hai cliccato", l'altro "l'oggetto e' fatto cosi'".
@@ -483,7 +530,7 @@ body {
    distinzione che Franco ha chiesto (v5.720) regge sulla FORMA, non sul colore:
    il COLORE dice lo STATO (verde = acceso), la FORMA dice COSA E' —
    pillola con manopola = filtra una vista; quadrato con spunta = SCRIVE SUL DATABASE. */
-.toggle-btn-blue.on { background: var(--accent); }
+.toggle-btn-blue.on { background: var(--action); }
 .toggle-btn-blue.on::after { left: 19px; }
 
 /* IL BOTTONE "MIA LISTA" (v5.720). NON e' un interruttore: SCRIVE SU FIRESTORE.
@@ -505,10 +552,10 @@ body {
   transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-.owned-btn:hover { border-color: var(--accent); color: var(--accent); }
+.owned-btn:hover { border-color: var(--action); color: var(--action); }
 
 .owned-btn.on {
-  background: var(--accent); border-color: var(--accent); color: #0e0a1a;
+  background: var(--action); border-color: var(--action); color: #ffffff;
 }
 
 
@@ -587,6 +634,8 @@ body {
 /* ===== FORMS ===== */
 .form-group { margin-bottom: 1.25rem; }
 .form-label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; font-family: var(--font-ui); }
+/* v5.747 — Franco: nella form Figurina le label dei campi sono bianche (non grigie). */
+#add-fig-modal .form-label { color: #ffffff; }
 .form-input, .form-textarea, .form-select {
   width: 100%; background: var(--card); border: 1px solid var(--border);
   color: var(--text); font-family: var(--font-body); font-size: 0.95rem;
@@ -797,11 +846,11 @@ body {
 .admin-tabs { display: flex; gap: 0.5rem; margin-bottom: 2rem; flex-wrap: wrap; }
 .admin-tab {
   font-family: var(--font-ui); font-size: 1rem;
-  background: var(--card); border: 1px solid var(--border);
+  background: var(--card); border: 1px solid rgba(var(--action-admin-rgb),0.3);
   color: var(--muted); padding: 0.5rem 1.2rem; border-radius: 8px;
   cursor: pointer; transition: all 0.2s; white-space: nowrap;
 }
-.admin-tab.active { background: var(--accent); border-color: var(--accent); color: #0e0a1a; font-weight: 700; }
+.admin-tab.active { background: var(--action-admin); border-color: var(--action-admin); color: #ffffff; font-weight: 700; }
 .admin-section { display: none; }
 .admin-section.active { display: block; }
 
@@ -815,14 +864,14 @@ body {
 .data-table tr:hover td { background: rgba(255,255,255,0.02); }
 .data-table.compact td, .data-table.compact th { padding: 0.3rem 0.75rem; font-size: 0.82rem; }
 .tbl-btn {
-  font-family: var(--font-ui); font-size: 0.82rem; padding: 3px 10px;
+  font-family: var(--font-ui); font-size: 0.85rem; padding: 5px 12px;
   border-radius: 6px; cursor: pointer; transition: all 0.15s; border: 1px solid;
   margin-right: 4px;
 }
-.tbl-btn-edit { background: transparent; border-color: rgba(200,75,255,0.3); color: var(--accent3); }
-.tbl-btn-edit:hover { background: rgba(200,75,255,0.1); }
-.tbl-btn-del { background: transparent; border-color: rgba(var(--danger-rgb),0.3); color: var(--danger); }
-.tbl-btn-del:hover { background: rgba(var(--danger-rgb),0.1); }
+.tbl-btn-edit { background: var(--action-admin); border-color: var(--action-admin); color: #ffffff; }
+.tbl-btn-edit:hover { background: var(--action-admin-hover); border-color: var(--action-admin-hover); }
+.tbl-btn-del { background: var(--danger); border-color: var(--danger); color: #ffffff; }
+.tbl-btn-del:hover { background: #e85454; border-color: #e85454; }
 
 /* ===== DIVIDER ===== */
 .divider { border: none; border-top: 1px solid rgba(255,255,255,0.06); margin: 2rem 0; }
