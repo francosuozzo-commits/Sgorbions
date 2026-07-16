@@ -636,6 +636,8 @@ body {
 .form-label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 6px; font-family: var(--font-ui); }
 /* v5.747 — Franco: nella form Figurina le label dei campi sono bianche (non grigie). */
 #add-fig-modal .form-label { color: #ffffff; }
+/* v5.775 — Franco: etichette dei campi bianche anche nelle procedure di caricamento dati. */
+#admin-foto-content .form-label { color: var(--text); }
 .form-input, .form-textarea, .form-select {
   width: 100%; background: var(--card); border: 1px solid var(--border);
   color: var(--text); font-family: var(--font-body); font-size: 0.95rem;
