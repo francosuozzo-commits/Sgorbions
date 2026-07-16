@@ -1,6 +1,196 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.777 — Franco: nel log delle procedure FOTO, la riga di intestazione "--- ELENCO COMPLETO DEI
+//          FILE NON CARICATI (N) ---" e' ora in BIANCO (nuovo tipo di log 'white' -> var(--text)),
+//          non piu' gialla come le righe degli scarti elencate sotto. Modificato app.js, index.html.
+// ------------------------------------------------------------
+// v5.776 — Franco: nel riepilogo finale del "Ricalcola i Nomi completi", ogni riga esplicita ora i
+//          due valori: "VALORE VECCHIO: … → VALORE NUOVO: …" (prima erano solo "vecchio → nuovo").
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.775 — Franco: procedure di caricamento dati: (a) il select "Cosa stai caricando?" (foto senza
+//          numero/retro) ha ora come primo valore un placeholder "-- Seleziona --" (come il campo
+//          Serie) ed e' obbligatorio sceglierlo prima di avviare. (b) Le etichette dei campi
+//          (.form-label) dentro le procedure di caricamento (#admin-foto-content) sono ora in bianco
+//          (var(--text)), non piu' grigie. Modificato app.js, style.css, index.html (versione).
+// ------------------------------------------------------------
+// v5.774 — Franco: (a) NOME COMPLETO degli ERRORI DI STAMPA di retro: tolta la dicitura "Errore di
+//          stampa" nel mezzo (come i Change che non ripetono "Change"): ora "[base] - [Tipo di
+//          errore di stampa]". (b) Il campo NOME e' NASCOSTO nelle form (Aggiungi/Modifica e modifica
+//          inline del dettaglio) per i RETRO di tipo Change o Errore di stampa: per questi il Nome
+//          non ha valore proprio e viene EREDITATO dal retro base al salvataggio (come gia' fanno le
+//          Variazioni di figurina). Il controllo "Nome obbligatorio" e' saltato per questi tipi
+//          (resta "Retro base obbligatorio"). NB: il fullName e' salvato -> rilanciare il ricalcolo
+//          per i retro esistenti. Import Retro invariato (legge ancora la colonna Nome). Modificato
+//          app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.773 — Franco: (a) procedura "Ricalcola i Nomi completi" (Admin → Risorse): la serie ora si
+//          sceglie da un DROPDOWN (popolato in renderAdminRisorse), come nelle procedure di import,
+//          al posto del prompt() col nome digitato; e a fine procedura, oltre al numero di record
+//          aggiornati, viene mostrato l'ELENCO dei Nomi completi riscritti (vecchio → nuovo).
+//          (b) i valori del "Tipo di change" nei dropdown ("Tipo di change" in entrambe le form)
+//          sono ora in ordine ALFABETICO (sort in changeTypesDiSerie; la validazione dell'import
+//          usa .find(), quindi non ne risente). Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.772 — Franco: cambiata la regola del Nome completo per gli ERRORI DI STAMPA di RETRO: da
+//          "[base] - Errore di stampa - [Nome proprio]" a "[base] - Errore di stampa - [Tipo di
+//          errore di stampa]" (usa printErrorType, non piu' name). Vale AUTOMATICAMENTE per il
+//          salvataggio individuale, l'import e la procedura di aggiornamento massivo, che passano
+//          tutti da computeFullName. Record vecchi senza tipo: solo "[base] - Errore di stampa"
+//          (niente trattino penzolante). NB: fullName e' SALVATO -> rilanciare "Ricalcola i Nomi
+//          completi" sui retro esistenti. Figurine/Album/Altro: regola invariata ("base - nome").
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.771 — Franco: il "Tipo di errore di stampa" e' ora OBBLIGATORIO quando "Errore di stampa" e'
+//          selezionato, in ENTRAMBE le form di salvataggio (Aggiungi/Modifica e modifica inline del
+//          dettaglio) — come il "Tipo di change" per i Change. L'import Retro resta invariato (colonna
+//          facoltativa). Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.770 — Franco: nella VISTA dettaglio, la riga "Tipo di errore di stampa" ora e' SEMPRE mostrata
+//          per gli Errori di stampa (prima si nascondeva quando vuota, come il changeType — ma il
+//          changeType e' obbligatorio, il Tipo di errore di stampa no). Quando non impostato mostra
+//          "non impostato". Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.769 — Franco: nella VISTA dettaglio, simmetria completa tra Change ed Errore di stampa. Per gli
+//          Errori di stampa ora compaiono, come per i Change: la frase "Questo retro/Questa figurina
+//          è un errore di stampa", il "Tipo di errore di stampa" (gia' dalla v5.767) e il
+//          collegamento "Errore di stampa di: <base>". Prima il ramo del base-link non includeva
+//          isPrintError, quindi per gli errori di stampa il link alla figurina/retro base non
+//          compariva affatto. La form di modifica era gia' simmetrica (checkbox + campo Tipo di
+//          errore di stampa + selettore base). Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.768 — Franco: nella card Retro, lo slot in fondo (riga del toggle) colora il testo secondo il
+//          COLOR CODE del tipo, in continuita' coi badge: Tipo di change in var(--type-change)
+//          (rosa), Tipo di errore di stampa in var(--type-printerror). Prima erano entrambi bianchi.
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.767 — Franco: (a) CARD RETRO: il "Tipo di change" torna in FONDO alla card, sulla riga del
+//          toggle "Mia lista" (non piu' terza riga come la v5.766), sempre MAIUSCOLO e in bianco.
+//          (b) NUOVO CAMPO printErrorType ("Tipo di errore di stampa"), testo LIBERO, per TUTTE le
+//          sezioni (figurine/retro/album/altro), valorizzabile solo per gli Errori di stampa —
+//          mutuamente esclusivo col Tipo di change. Mostrato AL POSTO del "Tipo di change" (stessa
+//          posizione) in entrambe le form (Aggiungi/Modifica e modifica inline del dettaglio), nella
+//          vista dettaglio, e — per i Retro — nello stesso slot in fondo alla card del changeType
+//          (maiuscolo, bianco). Aggiunto all'import Retro come colonna "Tipo di errore di stampa"
+//          (dopo "Tipo di change"). Corretto en passant un baco: in modifica la checkbox "Errore di
+//          stampa" della modale non veniva ricaricata da f.isPrintError. Nuove chiavi i18n
+//          form.fig.printErrorType (IT/EN). NB: non ancora aggiunto alla Vista tabellare. Modificato
+//          app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.766 — Franco: nella card di un RETRO, TERZA riga = il Tipo di change (changeType), in
+//          MAIUSCOLO e in bianco (var(--text)), solo per i Change che ne hanno uno; stessa
+//          interlinea delle righe sopra. Rimosso il vecchio "typeIndicator" grigio in fondo alla
+//          card (era la stessa informazione, ora non piu' duplicata). Modificato app.js, index.html.
+// ------------------------------------------------------------
+// v5.765 — Franco (prova): la card di un RETRO cambia impaginazione. PRIMA riga = Categoria (con
+//          Sottocategoria se presente, "Categoria · Sottocategoria"); SECONDA riga = Nome. Prima
+//          era: prima riga "Categoria - Nome", seconda riga la Categoria. Le Figurine restano
+//          invariate. Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.764 — Franco: nella VISTA dettaglio di un Retro (openFigDetail) mancava la riga "Nome": il
+//          nome compariva solo nel titolo (dentro il Nome completo) ed era visibile come campo solo
+//          nella form di MODIFICA. Aggiunta la riga Nome tra i campi identita' del retro (dopo
+//          Categoria/Sottocategoria). Vale solo per i Retro. Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.763 — Franco: (a) la ricerca dentro una sezione ora cerca ANCHE nel Nome completo
+//          (fullName), oltre a Nome, Numero, Sottoserie, Categoria e Sottocategoria: cosi' per i
+//          Retro diventa cercabile anche cio' che vive solo nel Nome completo (es. il Tipo di
+//          change in MAIUSCOLO tipo "BORDO ORO"). (b) Il riquadro CLICCABILE dei risultati cambia
+//          titolo: da "Clicca qui per vedere i retro conteggiati per categoria" a "Clicca qui per
+//          filtrare i risultati della ricerca per categoria"; il riquadro in alto (solo Retro
+//          base, statico) mantiene il titolo precedente. Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.762 — Franco: gli specchietti "Retro per categoria" (v5.760) diventano A SCOMPARSA.
+//          Entrambi (in alto e nei risultati) partono CHIUSI al caricamento pagina, si aprono/
+//          chiudono con un triangolo (▶/▼) e ora hanno lo stesso titolo "Clicca qui per vedere i
+//          retro conteggiati per categoria"; il totale si mostra solo da aperti. Nel riquadro dei
+//          RISULTATI i box sono CLICCABILI: un clic applica quella categoria come filtro di
+//          griglia/tabella (box evidenziato); riclick sulla stessa categoria — oppure il badge
+//          "filtro: … ✕" nella testina, visibile anche a pannello chiuso — azzerano il filtro. I
+//          conteggi del riquadro risultati IGNORANO il filtro-categoria stesso (param skipCategory
+//          in getCurrentlyFilteredItems), cosi' tutte le categorie restano visibili e si passa
+//          dall'una all'altra. Nuovo stato _retroCategoryFilter (azzerato al cambio sezione/serie),
+//          _retroCatTopOpen/_retroCatResultsOpen, funzioni toggleRetroCatTop/Results,
+//          setRetroCategoryFilterByIndex, clearRetroCategoryFilter. Modificato app.js, index.html
+//          (versione).
+// ------------------------------------------------------------
+// v5.761 — Franco: (a) il testo delle ISTRUZIONI di tutte e 5 le procedure di caricamento dati
+//          (import Figurine, Variazioni/Change, Retro, foto per numero, foto senza numero/retro)
+//          passa da grigio (var(--muted)) a bianco (var(--text)): piu' leggibile sullo sfondo
+//          scuro, trattandosi di istruzioni. L'intro del tab "Errori" resta grigia (non e' una
+//          procedura di caricamento). (b) Nel riepilogo finale delle procedure FOTO, il titolo
+//          del blocco scarti passa da "--- FILE NON CARICATI (N) ---" a "--- ELENCO COMPLETO DEI
+//          FILE NON CARICATI (N) ---" (EN: "COMPLETE LIST OF FILES NOT UPLOADED"). I titoli
+//          "RIGHE NON IMPORTATE" degli import XLS restano invariati. Modificato app.js,
+//          index.html (versione).
+// ------------------------------------------------------------
+// v5.760 — Franco: nuovo specchietto "Retro per categoria" nella pagina Retro, visibile a
+//          TUTTI. Due riquadri, solo nella sezione Retro: (1) in alto, PRIMA della barra di
+//          ricerca — titolo "Retro - set base - per categoria" — conta SOLO i Retro base (no
+//          Change/Errori di stampa), foto d'insieme della serie che non cambia con la ricerca;
+//          (2) nei risultati, subito sopra griglia/tabella — conteggio per categoria COERENTE
+//          con la ricerca e i filtri in corso (usa getCurrentlyFilteredItems, si aggiorna live).
+//          Categorie in ordine alfabetico. Nuove funzioni _retroCatCounts / _retroCatSummaryHTML
+//          / renderRetroCategorySummaries (chiamata da renderItems), due contenitori in
+//          index.html (retro-cat-summary-top / retro-cat-summary-results). Fuori dai Retro i
+//          riquadri restano nascosti. Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.759 — Franco: BUG chiuso nell'import massivo dei RETRO da XLS: NON impostava il Nome
+//          completo (fullName) sui record salvati — a differenza dell'import Figurine e
+//          Variazioni, che gia' lo facevano. Conseguenza: i retro importati (base, Change ed
+//          Errori di stampa) nascevano senza fullName, e serviva sempre il ricalcolo manuale.
+//          Aggiunto computeFullName() prima di TUTTI e 6 i salvataggi (aggiorna+inserisci per
+//          Retro base, Change ed Errore di stampa), cosi' i retro nuovi nascono gia' col Nome
+//          completo corretto secondo la regola v5.758 (Categoria - Nome, o solo Nome se il Nome
+//          comincia gia' con la categoria). Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.758 — Franco: (a) REGOLA DEL NOME COMPLETO DEI RETRO semplificata. La parte iniziale
+//          (che per un Retro base e' tutto il Nome completo) resta "Categoria - Nome", ma se
+//          il Nome comincia GIA' con la propria Categoria si mostra solo il Nome. La decisione
+//          e' ora per SINGOLO retro (alcuni si portano la categoria nel nome dall'XLS d'origine,
+//          altri no — e dipende dal retro, non dalla serie), non piu' dal flag di serie
+//          retroNameHasCategory. "Comincia con la categoria" = il Nome (a meno di spazi/
+//          maiuscole) inizia con la categoria seguita da fine-stringa o da un carattere non
+//          alfanumerico (cosi' "Animali - Gatto"/"Animali Gatto"/"Animali" contano, "Animalidae"
+//          no). Nuovo helper _retroNameStartsWithCategory(), usato sia in _retroFullName sia
+//          nella prima riga della card del retro. Variazioni/Change/errori di stampa (la parte
+//          FINALE del nome) invariati. NB: il Nome completo e' SALVATO -> rilanciare "Ricalcola
+//          i Nomi completi" per i retro gia' esistenti. (b) RIMOSSO il flag di serie
+//          retroNameHasCategory: checkbox nella scheda serie (index.html), salvataggio,
+//          caricamento in modifica, reset e uso nella card. Le chiavi i18n
+//          form.series.retroNameHasCategory restano inerti (inutilizzate, innocue). (c) Finestra
+//          dei log delle procedure di caricamento piu' alta: max-height dei 5 box (import
+//          figurine/variazioni/retro + foto per numero + foto senza numero) da 300px a 600px.
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.757 — Franco: nella procedura foto "senza numero e retro", il confronto nome-file
+//          ⇄ chiave ora IGNORA il carattere "?". Motivo: Windows non ammette "?" nei
+//          nomi file, ma il Nome (e quindi il Nome completo dei Retro) nel DB puo'
+//          contenerlo — cosi' un Nome completo tipo "Ma davvero? - Rosso" si abbina al
+//          file "Ma davvero - Rosso.jpg". Il "?" viene tolto da ENTRAMBI i lati del
+//          confronto, e si normalizzano anche gli spazi multipli che la sua rimozione
+//          puo' lasciare (piu' maiuscole/minuscole). Nuovo helper normKey() in
+//          startAdminFotoNoNumberUpload, al posto del confronto diretto; aggiornate le
+//          istruzioni a video (IT/EN). Vale sia per il Nome completo dei Retro sia per
+//          il Nome delle Figurine senza numero (un file non puo' contenere "?" comunque).
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
+// v5.756 — Franco: la procedura "Caricamento massivo foto figurine senza numero e
+//          retro", per lo SCOPE RETRO, riconcilia i file sul NOME COMPLETO (fullName)
+//          invece che sul solo Nome. Prima: Retro base per Nome, Change per
+//          "Nome - Tipo". Ora la chiave e' il fullName SALVATO (quello della colonna
+//          "Nome Completo" in Vista tabellare), che include gia' Categoria, Nome e —
+//          per i Change — il Tipo in MAIUSCOLO: si nomina il file esattamente come si
+//          vede l'oggetto. Disambigua da solo un Change dal suo Retro base e due Retro
+//          con lo stesso Nome in Categorie diverse. Le Figurine senza numero restano
+//          sul Nome (per una base fullName = Nome). Aggiornati: chiave di match in
+//          startAdminFotoNoNumberUpload, il messaggio "nessun oggetto trovato" (dice
+//          "Nome completo" per i Retro) e le istruzioni a video (IT/EN). NB: un Retro
+//          con fullName salvato vecchio va prima ri-salvato o ricalcolato
+//          (Admin → Risorse → "Ricalcola i Nomi completi") perche' il nome file
+//          combaci. Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.755 — Franco: ritocco alla regola del Nome completo dei Change (retro): via il " - Change",
 //          si scrive solo il Tipo di change, in MAIUSCOLO. Quindi "Categoria - Nome - TIPO"
 //          (flag off) o "Nome - TIPO" (flag on). Es. "Animali - Gatto - BORDO ORO". L'errore
@@ -7663,7 +7853,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.755';
+const JS_VERSION = 'v5.777';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -8162,11 +8352,12 @@ async function recomputeAllFullNames() {
   const mostra = (t) => { if (prog) { prog.style.display = 'block'; prog.innerHTML = t; } };
 
   const figs = getData('figurines', []); // TUTTE: servono a computeFullName per risalire alle basi
-  // Chiedi a QUALE serie applicare il ricalcolo, per non toccare le serie gia' sistemate.
-  const nomeSerie = prompt('Nome ESATTO della serie a cui applicare il ricalcolo (vuoto = annulla):');
-  if (nomeSerie == null || !nomeSerie.trim()) return;
-  const serie = getData('series', []).find(s => (s.name || '').trim().toLowerCase() === nomeSerie.trim().toLowerCase());
-  if (!serie) { mostra('Serie non trovata: "' + esc(nomeSerie.trim()) + '". Controlla il nome esatto (maiuscole/spazi non contano).'); return; }
+  // La serie si sceglie dal dropdown, come nelle procedure di import (v5.773).
+  const _rcSel = document.getElementById('recompute-fullnames-series-select');
+  const serieId = _rcSel?.value || '';
+  if (!serieId) { mostra('Seleziona prima una serie dall\'elenco.'); return; }
+  const serie = getData('series', []).find(s => s.id === serieId);
+  if (!serie) { mostra('Serie non trovata.'); return; }
 
   const daAgg = [];
   figs.filter(f => f.seriesId === serie.id).forEach(f => {
@@ -8187,12 +8378,14 @@ async function recomputeAllFullNames() {
 
   if (btn) btn.disabled = true;
   let fatti = 0, falliti = 0;
+  const aggiornati = []; // {vecchio, nuovo} dei record effettivamente riscritti, per l'elenco finale
   for (const { f, nuovo } of daAgg) {
     try {
       const rec = { ...f, fullName: nuovo };
       await fsSave('figurines', rec);
       const idx = figs.findIndex(x => x.id === f.id);
       if (idx >= 0) figs[idx] = rec;
+      aggiornati.push({ vecchio: f.fullName || '', nuovo: nuovo || '' });
       fatti++;
     } catch (e) {
       console.error('recomputeAllFullNames', f.id, e);
@@ -8201,7 +8394,11 @@ async function recomputeAllFullNames() {
     mostra(`Ricalcolati ${fatti} / ${daAgg.length}` + (falliti ? ` — ${falliti} FALLITI` : ''));
   }
   _cache.figurines = figs;
-  mostra(`Fatto: ${fatti} aggiornati` + (falliti ? `, ${falliti} falliti` : '') + '.');
+  // Riepilogo finale: numero aggiornati + elenco dei Nomi completi (vecchio → nuovo) (v5.773)
+  const listaHTML = aggiornati.map(({ vecchio, nuovo }) =>
+    `<div style="font-family:monospace;font-size:0.76rem;line-height:1.5;"><span style="color:var(--muted);"><b>VALORE VECCHIO:</b> ${esc(vecchio || '(vuoto)')}</span> → <span style="color:var(--text);"><b>VALORE NUOVO:</b> ${esc(nuovo || '(vuoto)')}</span></div>`).join('');
+  mostra(`<b>Fatto: ${fatti} aggiornati</b>` + (falliti ? `, ${falliti} falliti` : '') + '.' +
+    (aggiornati.length ? `<div style="margin-top:0.6rem;max-height:320px;overflow:auto;border-top:1px solid var(--border2);padding-top:0.5rem;">${listaHTML}</div>` : ''));
   if (btn) btn.disabled = false;
   try { renderItems(); } catch (e) {}
 }
@@ -8551,7 +8748,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -8645,7 +8842,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario di figurinesgorbions.it.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>• oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>• figurine presenti nella tua lista (serie non complete)<br>• figurine delle tue serie complete','wantlist.pageTitle':'Lista figurine (e non solo...)','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la tua lista di figurine (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta la tua lista di figurine (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri:','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante di fronte voluto dal produttore','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri:','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante di fronte voluto dal produttore','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -8744,6 +8941,11 @@ let _itemTypeFilter = 'base'; // 'base' | 'variation' | 'unofficialVariation' | 
 let _ebayFilter = false; // indipendente da _itemTypeFilter: si combina in AND, non è esclusivo con "Solo base"/ecc.
 let _noOfficialVariationFilter = false; // indipendente da _itemTypeFilter come _ebayFilter, ma impone SEMPRE anche "solo base" (non solo AND con il filtro tipo scelto) — mostra solo figurine base senza nessuna Variazione ufficiale collegata
 let _retroViewMode = 'destra-piena'; // 'sotto' | 'destra' | 'dinamico' | 'fronte-grande' | 'destra-piena' — come viene mostrato il Retro rispetto al fronte nella griglia Figurine, visibile a tutti
+// Specchietti "Retro per categoria" (v5.762): stato apertura (chiusi al caricamento) e filtro
+let _retroCatTopOpen = false;      // riquadro in alto (Retro base): chiuso di default
+let _retroCatResultsOpen = false;  // riquadro risultati: chiuso di default
+let _retroCategoryFilter = null;   // filtro categoria attivo (null = off; '' = senza categoria); solo sezione Retro
+let _retroResultCatVals = [];      // valori categoria reali dei box cliccabili dei risultati, per l'onclick via indice
 let _previousPage = 'home'; // pagina da cui si è arrivati, usata dal pulsante "← Torna" nel profilo
 let editingSeriesImg = null;
 let editingFigImg = null;
@@ -9866,7 +10068,6 @@ function openAddSeriesModal(seriesId) {
       const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = s.hasUnofficialVariations || false;
       const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = s.hasChange || false;
       const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = s.noNumbers || false;
-      const rnhc = document.getElementById('series-retro-name-has-category-input'); if (rnhc) rnhc.checked = s.retroNameHasCategory || false;
       document.getElementById('series-desc-input').value = s.descIt || s.desc || '';
       const descEnInput = document.getElementById('series-desc-en-input');
       if (descEnInput) descEnInput.value = s.desc || '';
@@ -9880,7 +10081,6 @@ function openAddSeriesModal(seriesId) {
     const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = false;
     const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = false;
     const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = false;
-    const rnhc = document.getElementById('series-retro-name-has-category-input'); if (rnhc) rnhc.checked = false;
     const rctInput = document.getElementById('series-retro-change-types-input');
     if (rctInput) rctInput.value = '';
   }
@@ -9915,7 +10115,6 @@ async function saveSeries() {
   const hasUnofficialVariations = document.getElementById('series-has-unofficial-variations-input')?.checked || false;
   const hasChange = document.getElementById('series-has-change-input')?.checked || false;
   const noNumbers = document.getElementById('series-no-numbers-input')?.checked || false;
-  const retroNameHasCategory = document.getElementById('series-retro-name-has-category-input')?.checked || false;
   const countVariations = parseInt(document.getElementById('series-count-variations-input').value) || null;
   const countUnofficialVariations = parseInt(document.getElementById('series-count-unofficial-variations-input').value) || null;
   const countChange = parseInt(document.getElementById('series-count-change-input').value) || null;
@@ -9955,12 +10154,12 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, retroNameHasCategory, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes };
+        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes };
         await fsSave('series', series[idx]);
         _cache.series = series;
       }
     } else {
-      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, retroNameHasCategory, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, created: new Date().toISOString() };
+      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -10364,8 +10563,12 @@ function tipoDiOggetto(f) {
 
 function changeTypesDiSerie(seriesId) {
   const s = getData('series', []).find(x => x.id === seriesId);
-  return (s?.retroChangeTypes || []).filter(t =>
-    !/^error[ei]\s+di\s+stampa$/i.test((t || '').trim()));
+  // Ordine ALFABETICO (v5.773): i tipi vengono mostrati ordinati nei dropdown "Tipo di change"
+  // (entrambe le form). La validazione dell'import usa .find(), indipendente dall'ordine.
+  return (s?.retroChangeTypes || [])
+    .filter(t => !/^error[ei]\s+di\s+stampa$/i.test((t || '').trim()))
+    .slice()
+    .sort((a, b) => (a || '').localeCompare((b || ''), 'it', { sensitivity: 'base' }));
 }
 
 function tipiPresenti(seriesId, section) {
@@ -10546,6 +10749,7 @@ function updateSectionCounts() {
 function openSeriesSection(section) {
   _noPhotoFilter = false;
   _itemTypeFilter = 'base';
+  _retroCategoryFilter = null; // il filtro per categoria dei Retro non sopravvive al cambio sezione/serie
   _ownedFilter = 'all'; // si riparte sempre da "tutti": un filtro dimenticato acceso
                         // fra una sezione e l'altra fa sembrare vuota una sezione piena
   currentSection = section;
@@ -10826,6 +11030,14 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
       }
     }
   }
+  // Tipo di errore di stampa (testo libero): in TUTTE le sezioni, quando e' un Errore di stampa
+  // (isPE). Occupa la stessa posizione del "Tipo di change", con cui e' mutuamente esclusivo.
+  const printErrorTypeGroup = document.getElementById('fig-print-error-type-group');
+  if (printErrorTypeGroup) printErrorTypeGroup.style.display = isPE ? '' : 'none';
+  // v5.774 — per un Change o Errore di stampa di RETRO il Nome non ha valore proprio (eredita
+  // quello del retro base): nascondiamo il campo. Al salvataggio il Nome viene comunque derivato.
+  const nameGroup = document.getElementById('fig-name-group');
+  if (nameGroup) nameGroup.style.display = (currentSection === 'retros' && (isChg || isPE)) ? 'none' : '';
 }
 
 function toggleForSaleFields() {
@@ -10875,6 +11087,10 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-is-variation-input').checked = f.isVariation || false;
       document.getElementById('fig-is-unofficial-variation-input').checked = f.isUnofficialVariation || false;
       document.getElementById('fig-is-change-input').checked = f.isChange || false;
+      // in modifica la checkbox "Errore di stampa" NON veniva ricaricata (v5.767): senza di lei il
+      // gruppo "Tipo di errore di stampa" (e il selettore base) non comparivano aprendo un errore.
+      document.getElementById('fig-is-printerror-input').checked = f.isPrintError || false;
+      document.getElementById('fig-print-error-type-input').value = f.printErrorType || '';
       populateBaseFigurineSelect(itemId, f.baseFigurineId);
       populateRetroSelect(f.retroId || null);
       document.getElementById('fig-for-sale-input').checked = f.forSale || false;
@@ -10900,6 +11116,8 @@ function openAddItemModal(itemId) {
     document.getElementById('fig-condition-input').value = 'new';
     const rctSel = document.getElementById('fig-retro-change-type-input');
     if (rctSel) rctSel.value = '';
+    const petInput = document.getElementById('fig-print-error-type-input');
+    if (petInput) petInput.value = '';
   }
   toggleForSaleFields();
   toggleBaseFigurineGroup();
@@ -11492,14 +11710,18 @@ async function unmarkFilteredForSale() {
   );
 }
 
-function getCurrentlyFilteredItems() {
+function getCurrentlyFilteredItems(opts) {
   const searchQ = (document.getElementById('items-search')?.value || '').toLowerCase().trim();
   const allFigs = getData('figurines', []);
   // getOwned() una volta sola, FUORI dal ciclo: dentro verrebbe richiamata per ogni
   // singolo oggetto della serie (368 volte, e per ogni ridisegno).
   const _own = (currentUser && _ownedFilter !== 'all') ? getOwned() : null;
+  const _skipCat = !!(opts && opts.skipCategory); // gli specchietti chiedono i conteggi ignorando il filtro-categoria
   return allFigs.filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
+    // Filtro per categoria (solo Retro), attivato cliccando un box nello specchietto risultati (v5.762)
+    if (!_skipCat && _retroCategoryFilter !== null && currentSection === 'retros'
+        && ((f.category || '').trim()) !== _retroCategoryFilter) return false;
     if (_noPhotoFilter && f.img) return false;
     if (_own) {
       const ceLho = _own.includes(f.id);
@@ -11535,8 +11757,127 @@ function getCurrentlyFilteredItems() {
     }
     if (_ebayFilter && !f.forSale) return false;
     if (!searchQ) return true;
-    return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ) || (f.category||'').toLowerCase().includes(searchQ) || (f.subcategory||'').toLowerCase().includes(searchQ);
+    return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ) || (f.category||'').toLowerCase().includes(searchQ) || (f.subcategory||'').toLowerCase().includes(searchQ) || (f.fullName||'').toLowerCase().includes(searchQ);
   });
+}
+
+// v5.760/762 — Specchietti "Retro per categoria" nella pagina Retro. Due riquadri, entrambi
+// visibili a TUTTI e solo nella sezione Retro, entrambi A SCOMPARSA (triangolo, chiusi al
+// caricamento) e con lo STESSO titolo "Clicca qui per vedere...". Il totale si vede solo da aperto.
+//   1) in alto (prima della ricerca): SOLO i Retro base (esclusi Change ed Errori di stampa),
+//      foto d'insieme della serie, NON cambia con la ricerca. Box statici (non cliccabili).
+//   2) nei risultati (sopra griglia/tabella): conteggi COERENTI con la ricerca/filtri in corso,
+//      MA ignorando il filtro-categoria stesso (cosi' tutte le categorie restano visibili e si
+//      passa dall'una all'altra). I box sono CLICCABILI: cliccando si applica quella categoria
+//      come filtro (evidenziata); riclick sulla stessa, o il badge "✕", azzerano il filtro.
+// Categorie in ordine alfabetico (localeCompare 'it'); categoria vuota = "(Senza categoria)".
+function _retroCatCounts(items) {
+  const map = new Map();
+  for (const f of items) {
+    const cat = (f.category || '').trim(); // valore REALE ('' = senza categoria)
+    map.set(cat, (map.get(cat) || 0) + 1);
+  }
+  return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0], 'it', { sensitivity: 'base' }));
+}
+function _retroCatLabel(cat) {
+  return cat || (currentLang === 'it' ? '(Senza categoria)' : '(No category)');
+}
+// Riquadro a scomparsa. `clickable`: box cliccabili come filtro (riquadro risultati) o statici
+// (riquadro in alto). `open`: stato aperto/chiuso. `toggleFn`: nome funzione toggle da chiamare.
+function _retroCatPanelHTML(pairs, open, clickable, toggleFn) {
+  const it = (currentLang === 'it');
+  const total = pairs.reduce((s, p) => s + p[1], 0);
+  // Titolo diverso per i due riquadri: quello dei risultati (cliccabile) FILTRA, quello in alto
+  // (statico, solo Retro base) è un semplice conteggio.
+  const title = clickable
+    ? (it ? 'Clicca qui per filtrare i risultati della ricerca per categoria'
+          : 'Click here to filter the search results by category')
+    : (it ? 'Clicca qui per vedere i retro conteggiati per categoria'
+          : 'Click here to see the retros counted by category');
+  let header = `<div onclick="${toggleFn}()" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
+    + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '▼' : '▶'}</span>`
+    + `<span style="font-size:0.85rem;font-weight:600;color:var(--text);">${title}</span>`
+    + (open ? `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">· ${it ? 'totale' : 'total'} ${total}</span>` : '');
+  // Badge del filtro attivo + reset — nel riquadro risultati, visibile SEMPRE (anche da chiuso)
+  if (clickable && _retroCategoryFilter !== null) {
+    header += `<span onclick="event.stopPropagation();clearRetroCategoryFilter()" title="${it ? 'Azzera il filtro per categoria' : 'Clear category filter'}" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.3rem;background:var(--accent);color:var(--bg);border-radius:999px;padding:0.1rem 0.55rem;font-size:0.78rem;font-weight:600;">`
+      + `${it ? 'filtro' : 'filter'}: ${esc(_retroCatLabel(_retroCategoryFilter))} ✕</span>`;
+  }
+  header += `</div>`;
+
+  let body = '';
+  if (open) {
+    let chips;
+    if (clickable) {
+      _retroResultCatVals = pairs.map(p => p[0]); // valori reali, per l'onclick via indice
+      chips = pairs.map(([cat, n], i) => {
+        const active = _retroCategoryFilter !== null && _retroCategoryFilter === cat;
+        const bg = active ? 'var(--accent)' : 'var(--card2)';
+        const fg = active ? 'var(--bg)' : 'var(--text)';
+        const nf = active ? 'var(--bg)' : 'var(--accent)';
+        return `<span onclick="setRetroCategoryFilterByIndex(${i})" title="${it ? 'Filtra per questa categoria' : 'Filter by this category'}" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;background:${bg};border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.82rem;line-height:1.4;">`
+          + `<span style="color:${fg};">${esc(_retroCatLabel(cat))}</span>`
+          + `<span style="color:${nf};font-weight:700;">${n}</span></span>`;
+      }).join('');
+    } else {
+      chips = pairs.map(([cat, n]) =>
+        `<span style="display:inline-flex;align-items:center;gap:0.35rem;background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.82rem;line-height:1.4;">`
+        + `<span style="color:var(--text);">${esc(_retroCatLabel(cat))}</span>`
+        + `<span style="color:var(--accent);font-weight:700;">${n}</span></span>`).join('');
+    }
+    body = `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem;">${chips}</div>`;
+  }
+  return `<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.8rem 0.9rem;">${header}${body}</div>`;
+}
+function renderRetroCategorySummaries() {
+  const topEl = document.getElementById('retro-cat-summary-top');
+  const resEl = document.getElementById('retro-cat-summary-results');
+  const isRetro = currentSection === 'retros' && !!currentSeriesId;
+
+  if (topEl) {
+    if (!isRetro) { topEl.style.display = 'none'; topEl.innerHTML = ''; }
+    else {
+      // Solo Retro base della serie: la categoria conta una volta per Retro base, non per Change
+      const baseRetros = getData('figurines', []).filter(f =>
+        f.seriesId === currentSeriesId && f.section === 'retros' && !f.isChange && !f.isPrintError);
+      const pairs = _retroCatCounts(baseRetros);
+      topEl.innerHTML = pairs.length ? _retroCatPanelHTML(pairs, _retroCatTopOpen, false, 'toggleRetroCatTop') : '';
+      topEl.style.display = pairs.length ? '' : 'none';
+    }
+  }
+
+  if (resEl) {
+    if (!isRetro) { resEl.style.display = 'none'; resEl.innerHTML = ''; }
+    else {
+      // skipCategory: i conteggi ignorano il filtro-categoria attivo, cosi' tutte le categorie
+      // restano visibili e cliccabili; la griglia invece lo applica (vedi getCurrentlyFilteredItems)
+      const pairs = _retroCatCounts(getCurrentlyFilteredItems({ skipCategory: true }));
+      resEl.innerHTML = pairs.length ? _retroCatPanelHTML(pairs, _retroCatResultsOpen, true, 'toggleRetroCatResults') : '';
+      resEl.style.display = pairs.length ? '' : 'none';
+    }
+  }
+}
+function toggleRetroCatTop() {
+  _retroCatTopOpen = !_retroCatTopOpen;
+  try { renderRetroCategorySummaries(); } catch(e) { console.error('toggleRetroCatTop', e); }
+}
+function toggleRetroCatResults() {
+  _retroCatResultsOpen = !_retroCatResultsOpen;
+  try { renderRetroCategorySummaries(); } catch(e) { console.error('toggleRetroCatResults', e); }
+}
+function setRetroCategoryFilterByIndex(i) {
+  const cat = _retroResultCatVals[i];
+  if (cat === undefined) return;
+  _retroCategoryFilter = (_retroCategoryFilter === cat) ? null : cat; // riclick sulla stessa = azzera
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (setRetroCategoryFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setRetroCategoryFilter)', e); }
+}
+function clearRetroCategoryFilter() {
+  _retroCategoryFilter = null;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (clearRetroCategoryFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (clearRetroCategoryFilter)', e); }
 }
 
 function renderItems() {
@@ -11547,6 +11888,9 @@ function renderItems() {
 
   // Render filtri tipo (sezione Figurine o Retro)
   renderItemTypeFilters();
+
+  // Specchietto "Retro per categoria" (solo sezione Retro) — v5.760
+  try { renderRetroCategorySummaries(); } catch(e) { console.error('renderRetroCategorySummaries', e); }
 
   // Selettore "Vista retro" — visibile solo nella sezione Figurine, per tutti
   const retroViewSelector = document.getElementById('retro-view-selector');
@@ -11711,12 +12055,9 @@ function renderItems() {
     grid.style.transform = '';
   }
 
-  // v5.745 — Retro nella card: se la serie NON dichiara "il nome contiene già la categoria"
-  // (flag retroNameHasCategory), anteponiamo "Categoria - " al nome. Sostituisce l'hardcode
-  // sperimentale della serie 3 (v5.739). Default (flag non impostato) = come FALSE, cioè
-  // mostra "Categoria - Nome".
-  const _curSeriesForRetro = getData('series', []).find(s => s.id === currentSeriesId);
-  const _retroNameHasCat = !!(_curSeriesForRetro && _curSeriesForRetro.retroNameHasCategory);
+  // v5.758 — Retro nella card: la prima riga antepone "Categoria - " al nome, TRANNE quando il
+  // nome comincia già con la categoria (decisione per singolo retro; ex flag di serie
+  // retroNameHasCategory, rimosso). Stessa regola del Nome completo (_retroNameStartsWithCategory).
 
   grid.innerHTML = items.map(f => {
     const isOwned = owned.includes(f.id);
@@ -11834,8 +12175,18 @@ function renderItems() {
     // Prima riga (nome): se la serie NON dichiara che il nome del retro contiene già la
     // categoria, anteponiamo "Categoria - ". Seconda riga: la Categoria (col Sottocategoria
     // se presente) come sempre.
-    const catPrefix = (currentSection === 'retros' && !_retroNameHasCat && (f.category||'').trim()) ? esc(f.category.trim()) + ' - ' : '';
+    const catPrefix = (currentSection === 'retros' && !_retroNameStartsWithCategory(f) && (f.category||'').trim()) ? esc(f.category.trim()) + ' - ' : '';
     const categoryHTML = (currentSection === 'retros' && catParts.length) ? `<div style="font-size:0.78rem;color:var(--muted);">${catParts.join(' · ')}</div>` : '';
+    // v5.765 — Card Retro: PRIMA riga = Categoria (con Sottocategoria se presente), SECONDA riga
+    // = Nome. Sostituisce il vecchio schema (prima riga "Categoria - Nome", seconda la categoria).
+    // Le Figurine restano invariate. Il vecchio prefisso catPrefix qui per i Retro non serve piu'.
+    const isRetroCard = currentSection === 'retros';
+    const figNameInner = isRetroCard
+      ? esc(catParts.length ? catParts.join(' · ') : (currentLang === 'it' ? '(senza categoria)' : '(no category)'))
+      : `<span class="fig-number" style="font-size:1.05rem;">${figLabel}</span>${figLabel ? ' ' : ''}${catPrefix}${f.name}`;
+    const retroNameLineHTML = isRetroCard
+      ? `<div style="font-size:0.9rem;color:var(--text);margin-top:1px;">${esc(f.name || '')}</div>`
+      : '';
     const imgAspectRatio = currentSection === 'retros' ? '1.6' : '1';
     // LA SCRITTA DEL TIPO VIVE SOLO NEI RETRO (v5.705).
       // Nelle FIGURINE era ridondante: il badge in alto a destra dice gia' il tipo, ed
@@ -11854,10 +12205,18 @@ function renderItems() {
       // lo dice gia' il badge rosa. Resta solo per il DETTAGLIO che il badge non puo'
       // contenere — il changeType ("Errore di stampa", "Fronte"...). Se non c'e'
       // changeType, non c'e' nulla da aggiungere e la scritta sparisce.
-      const typeIndicator = (currentSection === 'retros' && f.isChange && f.changeType)
-        ? f.changeType
-        : '';
-      const typeIndicatorHTML = typeIndicator ? `<div style="font-size:0.72rem;color:var(--muted);font-weight:600;">${typeIndicator}</div>` : '<div></div>';
+      // v5.767/768 — In fondo alla card Retro (alla riga del toggle "Mia lista"), a sinistra: il
+      // Tipo di change per i Change, OPPURE il Tipo di errore di stampa per gli Errori di stampa (i
+      // due sono mutuamente esclusivi), in MAIUSCOLO. v5.768: ciascuno nel COLORE DEL SUO TIPO, in
+      // continuita' col color code — Change = var(--type-change) (rosa), Errore di stampa =
+      // var(--type-printerror). Base/senza tipo: separatore vuoto.
+      const _cardIsChg = currentSection === 'retros' && f.isChange && f.changeType;
+      const _cardIsPE  = currentSection === 'retros' && f.isPrintError && f.printErrorType;
+      const _cardTypeTxt = _cardIsChg ? f.changeType : (_cardIsPE ? f.printErrorType : '');
+      const _cardTypeColor = _cardIsChg ? 'var(--type-change)' : (_cardIsPE ? 'var(--type-printerror)' : 'var(--text)');
+      const typeIndicatorHTML = _cardTypeTxt
+        ? `<div style="font-size:0.82rem;color:${_cardTypeColor};font-weight:600;">${esc((_cardTypeTxt || '').toUpperCase())}</div>`
+        : '<div></div>';
     const retroNameHTML = (currentSection === 'figurines' && !f.isChange && f.retroId)
       ? (() => { const r = getData('figurines', []).find(x => x.id === f.retroId); return r ? `<div style="font-size:0.78rem;color:var(--muted);">${r.name}</div>` : ''; })()
       : '';
@@ -11871,8 +12230,8 @@ function renderItems() {
         ${imgHTML}${typeBadgeHTML}${adminBtns}
       </div>
       <div class="fig-body">
-        <div class="fig-name"><span class="fig-number" style="font-size:1.05rem;">${figLabel}</span>${figLabel ? ' ' : ''}${catPrefix}${f.name}</div>
-        ${categoryHTML}
+        <div class="fig-name">${figNameInner}</div>
+        ${isRetroCard ? retroNameLineHTML : categoryHTML}
         ${retroNameHTML}
         ${descHTML}
         ${sizeHTML}
@@ -11960,7 +12319,7 @@ async function saveFigurine() {
 async function _saveFigurineInner() {
   const number = document.getElementById('fig-number-input').value;
   const noNumber = document.getElementById('fig-no-number-input')?.checked || false;
-  const name = document.getElementById('fig-name-input').value.trim();
+  let name = document.getElementById('fig-name-input').value.trim();
   const desc = document.getElementById('fig-desc-input').value.trim();
   const score = parseInt(document.getElementById('fig-score-input').value) || 0;
   const subseries = document.getElementById('fig-subseries-input')?.value.trim() || '';
@@ -11987,8 +12346,19 @@ async function _saveFigurineInner() {
   const condition = forSale ? document.getElementById('fig-condition-input').value : null;
   const isRetrosSection = currentSection === 'retros';
   const changeType = (isRetrosSection && isChange) ? (document.getElementById('fig-retro-change-type-input')?.value || null) : null;
+  // Tipo di errore di stampa (testo libero, tutte le sezioni): valorizzato solo per gli Errori di
+  // stampa. Mutuamente esclusivo col Tipo di change (isPrintError e isChange non coesistono).
+  const printErrorType = isPrintError ? (document.getElementById('fig-print-error-type-input')?.value.trim() || null) : null;
   const isVarOrChgSection = isVariation || isUnofficialVariation || isChange;
-  if (!name || (!isRetrosSection && !isVarOrChgSection && !isPrintError && !number)) { toast((currentLang === 'it' ? (isRetrosSection || isVarOrChgSection ? 'Il nome è obbligatorio' : 'Numero e nome sono obbligatori') : (isRetrosSection || isVarOrChgSection ? 'Name is required' : 'Number and name are required')), 'error'); return; }
+  // v5.774 — per un Change o Errore di stampa di RETRO il Nome eredita quello del retro base
+  // (il campo e' nascosto nella form). Se il base non e' ancora selezionato ci pensa il controllo
+  // "Retro base obbligatorio" piu' sotto, quindi qui saltiamo il "Nome obbligatorio".
+  const _nomeEreditato = isRetrosSection && (isChange || isPrintError);
+  if (_nomeEreditato && baseFigurineId) {
+    const _bR = getData('figurines', []).find(x => x.id === baseFigurineId);
+    if (_bR) name = _bR.name || '';
+  }
+  if ((!name && !_nomeEreditato) || (!isRetrosSection && !isVarOrChgSection && !isPrintError && !number)) { toast((currentLang === 'it' ? (isRetrosSection || isVarOrChgSection ? 'Il nome è obbligatorio' : 'Numero e nome sono obbligatori') : (isRetrosSection || isVarOrChgSection ? 'Name is required' : 'Number and name are required')), 'error'); return; }
   if (isRetrosSection) {
     const editId = document.getElementById('edit-fig-id').value;
     // LA CHIAVE DI UNICITA' COMPRENDE IL TIPO (v5.717). Prima confrontava solo il
@@ -12031,6 +12401,10 @@ async function _saveFigurineInner() {
     toast((currentLang === 'it' ? 'Il campo "Tipo di change" è obbligatorio per un Change di Retro' : 'The "Change type" field is required for a Retro Change'), 'error');
     return;
   }
+  if (isPrintError && !printErrorType) {
+    toast((currentLang === 'it' ? 'Il campo "Tipo di errore di stampa" è obbligatorio quando è selezionato "Errore di stampa"' : 'The "Print error type" field is required when "Print error" is selected'), 'error');
+    return;
+  }
   toast((currentLang === 'it' ? 'Salvataggio...' : 'Saving...'), 'success');
   // Per Variazioni/Change il Numero eredita quello della figurina base collegata
   let finalNumber = number ? +number : null;
@@ -12054,13 +12428,13 @@ async function _saveFigurineInner() {
     if (editId) {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition };
         figs[idx].fullName = computeFullName(figs[idx], figs);
         await fsSave('figurines', figs[idx]);
         _cache.figurines = figs;
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition };
       newF.fullName = computeFullName(newF, figs);
       const saved = await fsSave('figurines', newF);
     }
@@ -13303,6 +13677,16 @@ async function renderAdminRisorse() {
   await refreshEmailCountWidgets();
   await refreshPwdResetCountWidget();
 
+  // Selettore serie del "Ricalcola i Nomi completi" — stesso stile dei select degli import (v5.773)
+  const rcSel = document.getElementById('recompute-fullnames-series-select');
+  if (rcSel) {
+    const rcSeries = getData('series', []).slice().sort((a, b) => (a.order || 0) - (b.order || 0) || (a.name || '').localeCompare(b.name || '', 'it'));
+    const cur = rcSel.value;
+    rcSel.innerHTML = '<option value="">-- ' + (currentLang === 'it' ? 'Seleziona una serie' : 'Select a series') + ' --</option>' +
+      rcSeries.map(s => `<option value="${s.id}" data-name="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+    if (cur) rcSel.value = cur;
+  }
+
   // Firebase doc count
   try {
     const collections = ['users', 'figurines', 'series', 'posts', 'segnalazioni', 'eventi'];
@@ -13664,12 +14048,15 @@ function openFigDetail(figId) {
     }
   }
 
-  // Categoria (sempre visibile per i Retro) e Sottocategoria (solo se popolata)
+  // Categoria (sempre visibile per i Retro), Sottocategoria (solo se popolata) e Nome.
+  // Il Nome era visibile solo nella form di MODIFICA (v5.764): in vista compariva solo dentro
+  // il titolo (Nome completo). Qui lo mostriamo come riga a sé, come gli altri campi identita'.
   if (f.section === 'retros') {
     rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Categoria' : 'Category')}</span><span class="detail-value">${f.category || '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
     if (f.subcategory) {
       rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottocategoria' : 'Subcategory')}</span><span class="detail-value">${f.subcategory}</span></div>`);
     }
+    rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome' : 'Name')}</span><span class="detail-value">${f.name ? esc(f.name) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostato' : 'not set') + '</span>'}</span></div>`);
   }
 
   // Sottoserie - show only if populated (admin sees it always in edit modal, not here)
@@ -13697,15 +14084,32 @@ function openFigDetail(figId) {
       : (currentLang === 'it' ? 'Questa figurina è un Change' : 'This sticker is a Change');
     rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${changeLabel}</span></div>`);
   }
+  // Simmetrico al Change (v5.769): la frase "Questo … è un errore di stampa"
+  if (f.isPrintError) {
+    const peLabel = f.section === 'retros'
+      ? (currentLang === 'it' ? 'Questo retro è un errore di stampa' : 'This retro is a print error')
+      : (currentLang === 'it' ? 'Questa figurina è un errore di stampa' : 'This sticker is a print error');
+    rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${peLabel}</span></div>`);
+  }
   if (f.section === 'retros' && f.isChange && f.changeType) {
     rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</span><span class="detail-value">${f.changeType}</span></div>`);
   }
-  if ((f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
+  // Tipo di errore di stampa (testo libero, tutte le sezioni) — per gli Errori di stampa la riga
+  // e' SEMPRE mostrata (v5.770): il tipo e' facoltativo, quindi quando vuoto si scrive "non
+  // impostato" invece di nascondere la riga (a differenza del changeType, che e' obbligatorio).
+  if (f.isPrintError) {
+    rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di errore di stampa' : 'Print error type'}</span><span class="detail-value">${f.printErrorType ? esc(f.printErrorType) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostato' : 'not set') + '</span>'}</span></div>`);
+  }
+  if ((f.isVariation || f.isUnofficialVariation || f.isChange || f.isPrintError) && f.baseFigurineId) {
     const baseFig = getData('figurines', []).find(x => x.id === f.baseFigurineId);
     if (baseFig) {
-      const relationLabel = f.section === 'retros'
-        ? (currentLang === 'it' ? 'Change di' : 'Change of')
-        : (currentLang === 'it' ? 'Variazione di' : 'Variation of');
+      // v5.769 — per un Errore di stampa il collegamento dice "Errore di stampa di" (prima il
+      // ramo mancava e per gli errori di stampa il link alla base non compariva affatto).
+      const relationLabel = f.isPrintError
+        ? (currentLang === 'it' ? 'Errore di stampa di' : 'Print error of')
+        : (f.section === 'retros'
+            ? (currentLang === 'it' ? 'Change di' : 'Change of')
+            : (currentLang === 'it' ? 'Variazione di' : 'Variation of'));
       rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--muted);">${relationLabel}: <a href="#" onclick="openFigDetail('${baseFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${baseFig.number ? '#' + baseFig.number + ' ' : ''}${baseFig.name}</a></span></div>`);
     }
   }
@@ -13949,6 +14353,13 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
   // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
   if (numberGroup) numberGroup.style.display = showBase ? 'none' : '';
   if (changeTypeGroup) changeTypeGroup.style.display = isChg ? '' : 'none';
+  const printErrorTypeGroup = document.getElementById('fe-print-error-type-group');
+  if (printErrorTypeGroup) printErrorTypeGroup.style.display = isPE ? '' : 'none';
+  // v5.774 — Nome nascosto per Change/Errore di stampa di RETRO. Un item e' un retro se e' stato
+  // costruito il gruppo Tipo di change (esiste solo per i retro); il Nome verra' derivato dal base.
+  const feNameGroup = document.getElementById('fe-name-group');
+  const isRetroItem = !!changeTypeGroup;
+  if (feNameGroup) feNameGroup.style.display = (isRetroItem && (isChg || isPE)) ? 'none' : '';
 }
 
 let _feBaseFigurineLinkOptions = [];
@@ -14079,7 +14490,9 @@ function switchToEditMode(figId) {
   html += '<div class="detail-row" id="fe-number-group" style="' + ((!isRetrosItem && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ? '' : 'display:none;') + '"><span class="detail-label">N.</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"><label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--muted);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
 
   // Nome
-  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + (f.name||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+  // v5.774 — Nome nascosto per Change/Errore di stampa di RETRO (eredita dal base; derivato al salvataggio)
+  const _feNameHidden = f.section === 'retros' && (f.isChange || f.isPrintError);
+  html += '<div class="detail-row" id="fe-name-group" style="' + (_feNameHidden ? 'display:none;' : '') + '"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + (f.name||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
 
   // Punteggio
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Punteggio':'Score') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
@@ -14110,6 +14523,11 @@ function switchToEditMode(figId) {
       retroTypes.map(t => '<option value="' + t + '"' + (f.changeType === t ? ' selected' : '') + '>' + t + '</option>').join('') +
       '</select></div>';
   }
+  // Tipo di errore di stampa (testo libero) — TUTTE le sezioni, mostrato quando e' un Errore di
+  // stampa. Stessa posizione del Tipo di change, con cui e' mutuamente esclusivo (v5.767).
+  html += '<div class="detail-row" id="fe-print-error-type-group" style="' + (f.isPrintError ? '' : 'display:none;') + '">' +
+    '<span class="detail-label">' + (currentLang==='it'?'Tipo di errore di stampa':'Print error type') + '</span>' +
+    '<input class="form-input" type="text" id="fe-print-error-type" value="' + esc(f.printErrorType||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></div>';
 
   // Figurina/Retro base — ricerca in digitazione (stesso pattern del Retro associato)
   _feBaseFigurineLinkOptions = getData('figurines', [])
@@ -14316,9 +14734,18 @@ function handleFigEditImg(event) {
 }
 
 async function saveFigFromDetail(figId) {
-  const name = document.getElementById('fe-name')?.value.trim();
-  if (!name) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
+  let name = document.getElementById('fe-name')?.value.trim();
   const existingForCheck = getData('figurines', []).find(x => x.id === figId);
+  // v5.774 — per un Change/Errore di stampa di RETRO il Nome eredita quello del retro base (campo
+  // nascosto). Se il base manca, il controllo apposito piu' sotto blocca; qui si salta "Nome obbligatorio".
+  const _isRetroInherit = existingForCheck?.section === 'retros' &&
+    (!!document.getElementById('fe-is-change')?.checked || !!document.getElementById('fe-is-printerror')?.checked);
+  if (_isRetroInherit) {
+    const _baseId = document.getElementById('fe-base-figurine')?.value || null;
+    const _bR = _baseId ? getData('figurines', []).find(x => x.id === _baseId) : null;
+    if (_bR) name = _bR.name || '';
+  }
+  if (!name && !_isRetroInherit) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
   if (existingForCheck?.section === 'retros') {
     const category = document.getElementById('fe-category')?.value.trim() || '';
     const changeTypeVal = document.getElementById('fe-retro-change-type')?.value || '';
@@ -14360,6 +14787,7 @@ async function saveFigFromDetail(figId) {
     isChange: document.getElementById('fe-is-change')?.checked || false,
     isPrintError: document.getElementById('fe-is-printerror')?.checked || false,
     changeType: document.getElementById('fe-retro-change-type')?.value || null,
+    printErrorType: document.getElementById('fe-print-error-type')?.value.trim() || null,
     forSale: document.getElementById('fe-for-sale')?.checked || false,
     price: document.getElementById('fe-for-sale')?.checked ? (parseFloat(document.getElementById('fe-price').value) || 0) : null,
     quantity: document.getElementById('fe-for-sale')?.checked ? (parseInt(document.getElementById('fe-quantity').value) || 1) : null,
@@ -14378,6 +14806,13 @@ async function saveFigFromDetail(figId) {
   // Un Errore di stampa non ha changeType (dalla v5.711 e' un tipo a se'): azzeriamo un
   // eventuale valore residuo del select, coerente con l'import.
   if (updates.isPrintError) updates.changeType = '';
+  // ...e simmetricamente il Tipo di errore di stampa vale solo per gli Errori di stampa.
+  if (!updates.isPrintError) updates.printErrorType = null;
+  // Il Tipo di errore di stampa e' OBBLIGATORIO quando "Errore di stampa" e' selezionato (v5.771)
+  if (updates.isPrintError && !updates.printErrorType) {
+    toast((currentLang === 'it' ? 'Il campo "Tipo di errore di stampa" è obbligatorio quando è selezionato "Errore di stampa"' : 'The "Print error type" field is required when "Print error" is selected'), 'error');
+    return;
+  }
 
   // Per Variazioni/Change/Errore di stampa il Numero eredita quello della figurina base collegata
   if ((updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isPrintError) && updates.baseFigurineId) {
@@ -14881,21 +15316,39 @@ function computeFullName(fig, allFigs) {
 //   Change            -> pezzo + " - " + Tipo di change (in MAIUSCOLO) [v5.755]
 //   Errore di stampa  -> pezzo + " - Errore di stampa - " + Nome (proprio dell'errore)
 //   Retro base        -> solo il pezzo
+// v5.758 (Franco): decide, per un SINGOLO retro, se il suo Nome comincia gia' con la propria
+// Categoria. Serve alla parte iniziale del Nome completo (e alla card): "Categoria - Nome",
+// oppure solo "Nome" quando il Nome se la porta gia' dentro (capita dai file XLS d'origine, e
+// dipende dal retro, non dalla serie — per questo il vecchio flag di serie retroNameHasCategory
+// e' stato rimosso). "Comincia con la categoria" = il Nome (a meno di spazi/maiuscole) inizia
+// con la categoria seguita da fine-stringa o da un carattere non alfanumerico (spazio, '-',
+// ecc.): cosi' "Animali - Gatto", "Animali Gatto" e "Animali" contano, ma "Animalidae" no.
+function _retroNameStartsWithCategory(item) {
+  const cat = ((item && item.category) || '').trim().toLowerCase();
+  const nm  = ((item && item.name) || '').trim().toLowerCase();
+  if (!cat || !nm || !nm.startsWith(cat)) return false;
+  const next = nm.charAt(cat.length); // '' se il Nome coincide esattamente con la categoria
+  return next === '' || !/[\p{L}\p{N}]/u.test(next);
+}
+
 function _retroFullName(fig, allFigs) {
   const base = (fig.isChange || fig.isPrintError)
     ? ((fig.baseFigurineId ? allFigs.find(x => x.id === fig.baseFigurineId) : null) || fig)
     : fig;
-  const serie = getData('series', []).find(s => s.id === base.seriesId);
-  const hasCat = !!(serie && serie.retroNameHasCategory);
   const cat = (base.category || '').trim();
-  const piece = hasCat ? (base.name || '') : ((cat ? cat + ' - ' : '') + (base.name || ''));
+  // Parte iniziale (per un Retro base e' il 100% del Nome completo): "Categoria - Nome",
+  // oppure solo "Nome" se il Nome comincia gia' con la categoria (decisione per singolo retro).
+  const piece = _retroNameStartsWithCategory(base) ? (base.name || '') : ((cat ? cat + ' - ' : '') + (base.name || ''));
   if (fig.isChange) {
     // v5.755 (Franco): per i Change niente più " - Change"; solo il Tipo di change, in MAIUSCOLO.
     return piece + ' - ' + (fig.changeType || '').toUpperCase();
   }
   if (fig.isPrintError) {
-    const lbl = (currentLang === 'it') ? 'Errore di stampa' : 'Print error';
-    return piece + ' - ' + lbl + ' - ' + (fig.name || '');
+    // v5.774 (Franco): come per i Change (che non ripetono "Change"), il Nome completo di un errore
+    // di stampa e' "[base] - [Tipo di errore di stampa]", SENZA la dicitura "Errore di stampa" nel
+    // mezzo. Tipo vuoto (solo record vecchi — il Tipo e' obbligatorio dalla v5.771) -> solo "[base]".
+    const tipoPE = (fig.printErrorType || '').trim();
+    return piece + (tipoPE ? ' - ' + tipoPE : '');
   }
   return piece;
 }
@@ -15180,6 +15633,7 @@ async function startImportRetro() {
     const categoria = getCol('Categoria','category','categoria');
     const sottocategoria = getCol('Sottocategoria','subcategory','sottocategoria');
     const tipoChange = getCol('Tipo di change','tipo di change','change type','tipo','type');
+    const tipoErroreStampa = getCol('Tipo di errore di stampa','tipo di errore di stampa','print error type','printerrortype');
     const retroCategoria = getCol('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria','Retro (Categoria)','retro (categoria)');
     const retroNome = getCol('Retro - Nome','Retro-Nome','retro nome','retro-nome','Retro (Nome)','retro (nome)');
     // Colonna di SOLO SMISTAMENTO (v5.733): non ha campo su Firebase, dice all'importatore
@@ -15253,11 +15707,13 @@ async function startImportRetro() {
         isPrintError: true,
         baseFigurineId: baseRetroPE.id,
         changeType: '',
+        printErrorType: tipoErroreStampa || null,
         img: null
       };
       try {
         if (dupPE) {
           const updatedRec = { ...dupPE, ...printErrorData, id: dupPE.id, img: dupPE.img || null };
+          updatedRec.fullName = computeFullName(updatedRec, existingFigs);
           const changed = _importHasChanges(dupPE, updatedRec, ['name', 'baseFigurineId']);
           if (changed) {
             await fsSave('figurines', updatedRec);
@@ -15270,6 +15726,7 @@ async function startImportRetro() {
             unchanged++;
           }
         } else {
+          printErrorData.fullName = computeFullName(printErrorData, existingFigs);
           await fsSave('figurines', printErrorData);
           retroImportLog('✅ Riga ' + (i+1) + ': Errore di stampa "' + nome + '" — aggiunto (base: "' + baseRetroPE.name + '")', 'ok');
           inserted++;
@@ -15312,6 +15769,7 @@ async function startImportRetro() {
       try {
         if (duplicate) {
           const updatedRec = { ...duplicate, ...retroData, id: duplicate.id, img: duplicate.img || null };
+          updatedRec.fullName = computeFullName(updatedRec, existingFigs);
           const changed = _importHasChanges(duplicate, updatedRec, ['name', 'category', 'subcategory']);
           if (changed) {
             await fsSave('figurines', updatedRec);
@@ -15324,6 +15782,7 @@ async function startImportRetro() {
             unchanged++;
           }
         } else {
+          retroData.fullName = computeFullName(retroData, existingFigs);
           await fsSave('figurines', retroData);
           retroImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta (' + categoria + ') [Tipo: "' + tipoChange + '"]', 'ok');
           inserted++;
@@ -15392,6 +15851,7 @@ async function startImportRetro() {
     try {
       if (duplicateChange) {
         const updatedRec = { ...duplicateChange, ...changeData, id: duplicateChange.id, img: duplicateChange.img || null };
+        updatedRec.fullName = computeFullName(updatedRec, existingFigs);
         const changed = _importHasChanges(duplicateChange, updatedRec, ['name', 'baseFigurineId', 'changeType']);
         if (changed) {
           await fsSave('figurines', updatedRec);
@@ -15404,6 +15864,7 @@ async function startImportRetro() {
           unchanged++;
         }
       } else {
+        changeData.fullName = computeFullName(changeData, existingFigs);
         await fsSave('figurines', changeData);
         retroImportLog('✅ Riga ' + (i+1) + ': Change "' + nome + '" — aggiunto (base: "' + baseRetro.name + '") [Tipo: "' + tipoChange + '"]', 'ok');
         inserted++;
@@ -15955,7 +16416,7 @@ function renderAdminFoto() {
     <div style="max-width:900px;">
       <h3 onclick="toggleImportSection('fig')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-fig-chevron">▶</span> 🃏 ${currentLang==='it'?'Caricamento massivo figurine base (non Variazioni e Change)':'Bulk import of base stickers (not Variations and Change)'}</h3>
       <div id="import-fig-section-content" style="display:none;">
-      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+      <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
           ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne (in ordine); <code>Serie</code> (obbligatoria); <code>Sottoserie</code>; <code>Numero</code>; <code>Nome</code>; <code>Taglia</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>REGOLE DI RICONCILIAZIONE E CAMPI OBBLIGATORI</b><br><br><b>Colonna Numero</b> — facoltativa.<br><br><b>Colonna Nome</b> — se il Numero è presente, il Nome è facoltativo: se compilato aggiorna il nome della figurina, se vuoto si preserva quello già a database. Se il Numero è assente, il Nome è invece obbligatorio ed è la chiave di riconciliazione.<br><br><b>Creazione di una figurina nuova</b> (nessuna corrispondenza trovata) — serve comunque un Nome, altrimenti la riga viene segnalata come errore e scartata.<br><br><b>Chiave di riconciliazione</b> — se la serie ha sottoserie attive e la colonna Sottoserie è compilata: Serie + Sottoserie + Numero (o Nome, se il Numero è vuoto). Altrimenti: Serie + Numero (o Nome, se il Numero è vuoto).<br><br>NOTA: le righe con Serie diversa da quella selezionata vengono ignorate.'
           : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns (in order); <code>Serie</code> (required); <code>Sottoserie</code>; <code>Numero</code>; <code>Nome</code>; <code>Taglia</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>RECONCILIATION RULES AND REQUIRED FIELDS</b><br><br><b>Numero column</b> — optional.<br><br><b>Nome column</b> — if Numero is present, Nome is optional: if filled in it updates the sticker name, if empty the existing database value is preserved. If Numero is absent, Nome is required and is the reconciliation key.<br><br><b>Creating a new sticker</b> (no match found) — a Nome is still needed, otherwise the row is flagged as an error and skipped.<br><br><b>Reconciliation key</b> — if the series has active subseries and the Sottoserie column is filled in: Serie + Sottoserie + Numero (or Nome, if Numero is empty). Otherwise: Serie + Numero (or Nome, if Numero is empty).<br><br>NOTE: rows with a Serie different from the selected one are skipped.'}
@@ -15981,14 +16442,14 @@ function renderAdminFoto() {
         <progress id="import-fig-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="import-fig-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
       </div>
-      <div id="import-fig-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      <div id="import-fig-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
       </div>
 
       <hr class="divider" style="margin:2rem 0;">
 
       <h3 onclick="toggleImportSection('var')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-var-chevron">▶</span> 📊 ${currentLang==='it'?'Caricamento massivo Variazioni e Change':'Bulk import of Variations and Change'}</h3>
       <div id="import-var-section-content" style="display:none;">
-      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+      <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
           ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne (in ordine); <code>Serie</code> (obbligatoria); <code>Numero</code> (obbligatoria); <code>Nome</code>; <code>Tipo</code> (obbligatoria; Ufficiale / Non ufficiale / Change); <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>REGOLE DI RICONCILIAZIONE E CAMPI OBBLIGATORI</b><br><br><b>Colonna Serie</b> — obbligatoria, deve corrispondere esattamente al nome della serie selezionata; le righe con Serie diversa bloccano l\'intero caricamento.<br><br><b>Colonna Numero</b> — obbligatoria: è il numero della figurina base a cui la riga si riferisce (deve già esistere nella serie).<br><br><b>Colonna Tipo</b> — obbligatoria: Ufficiale, Non ufficiale o Change; righe con un valore non riconosciuto vengono scartate.<br><br><b>Per le Variazioni (Ufficiale / Non ufficiale)</b> — <code>Retro (Categoria)</code> e <code>Retro (Nome)</code> sono obbligatorie e fanno parte della chiave di riconciliazione: Serie + Figurina base + Retro (possono esistere più Variazioni dello stesso Tipo per la stessa figurina base, una per ciascun Retro). Se il Retro indicato non esiste, la riga viene scartata. La colonna <b>Nome non viene letta</b>: una Variazione ha sempre lo stesso nome della sua figurina base, assegnato automaticamente.<br><br><b>Per i Change</b> — le colonne Retro non si applicano. Il <b>Nome è obbligatorio</b> e fa parte della chiave di riconciliazione: Serie + Figurina base + Nome.'
           : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns (in order); <code>Serie</code> (required); <code>Numero</code> (required); <code>Nome</code>; <code>Tipo</code> (required; Ufficiale / Non ufficiale / Change); <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>RECONCILIATION RULES AND REQUIRED FIELDS</b><br><br><b>Serie column</b> — required, must exactly match the selected series name; rows with a different Serie block the whole import.<br><br><b>Numero column</b> — required: the number of the base sticker the row refers to (must already exist in the series).<br><br><b>Tipo column</b> — required: Ufficiale, Non ufficiale or Change; rows with an unrecognized value are skipped.<br><br><b>For Variations (Ufficiale / Non ufficiale)</b> — <code>Retro (Categoria)</code> and <code>Retro (Nome)</code> are required and are part of the reconciliation key: Serie + Base sticker + Retro (there can be several Variations of the same Tipo for the same base sticker, one per Retro). If the specified Retro does not exist, the row is skipped. The <b>Nome column is not read</b>: a Variation always has the same name as its base sticker, assigned automatically.<br><br><b>For Change</b> — the Retro columns do not apply. <b>Nome is required</b> and is part of the reconciliation key: Serie + Base sticker + Nome.'}
@@ -16014,17 +16475,17 @@ function renderAdminFoto() {
         <progress id="import-var-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="import-var-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
       </div>
-      <div id="import-var-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      <div id="import-var-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
       </div>
 
       <hr class="divider" style="margin:2rem 0;">
 
       <h3 onclick="toggleImportSection('retro')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-retro-chevron">▶</span> 📇 ${currentLang==='it'?'Caricamento massivo retro':'Bulk import of Retros'}</h3>
       <div id="import-retro-section-content" style="display:none;">
-      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+      <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Un unico file per Retro base, Change ed Errori di stampa.<br>Colonne richieste (nell\'ordine): <code>Serie</code>; <code>Categoria</code>; <code>Sottocategoria</code>; <code>Nome</code>; <code>Errore di stampa</code> (facoltativa); <code>Tipo di change</code> (facoltativa); <code>Retro - Categoria</code> (solo per Change/Errore di stampa); <code>Retro - Nome</code> (solo per un Change/Errore di stampa).<br><br><strong>Change</strong>: "Tipo di change" deve corrispondere a uno dei valori configurati per la serie.<br><strong>Errori di stampa</strong>: metti "x" nella colonna "Errore di stampa" e lascia VUOTO "Tipo di change".<br>"Errore di stampa" e "Tipo di change" sono mutuamente esclusivi.<br><code>Retro - Categoria</code> e <code>Retro - Nome</code> identificano il <u>Retro base</u> di riferimento (quello di cui questa riga registra un errore di stampa). Se non esistente, la riga viene segnalata come errore e scartata.<br>Chiave di riconciliazione: Serie+Categoria+Nome.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.'
-          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>A single file for base Retros, Changes and Print errors.<br>Required columns (in order): <code>Serie</code>; <code>Categoria</code>; <code>Sottocategoria</code>; <code>Nome</code>; <code>Errore di stampa</code> (optional); <code>Tipo di change</code> (optional); <code>Retro - Categoria</code> (Change/Print error only); <code>Retro - Nome</code> (Change/Print error only).<br><br><strong>Change</strong>: "Tipo di change" must match one of the values configured for the series.<br><strong>Print errors</strong>: put "x" in the "Errore di stampa" column and leave "Tipo di change" EMPTY.<br>"Errore di stampa" and "Tipo di change" are mutually exclusive.<br><code>Retro - Categoria</code> and <code>Retro - Nome</code> identify the <u>base Retro</u> this row refers to (the one this row records a print error for). If it does not exist, the row is flagged as an error and skipped.<br>Reconciliation key: Series+Category+Name.<br>NOTE: Rows with a Serie different from the selected one are skipped.'}
+          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Un unico file per Retro base, Change ed Errori di stampa.<br>Colonne richieste (nell\'ordine): <code>Serie</code>; <code>Categoria</code>; <code>Sottocategoria</code>; <code>Nome</code>; <code>Errore di stampa</code> (facoltativa); <code>Tipo di change</code> (facoltativa); <code>Tipo di errore di stampa</code> (facoltativa, solo per gli Errori di stampa); <code>Retro - Categoria</code> (solo per Change/Errore di stampa); <code>Retro - Nome</code> (solo per un Change/Errore di stampa).<br><br><strong>Change</strong>: "Tipo di change" deve corrispondere a uno dei valori configurati per la serie.<br><strong>Errori di stampa</strong>: metti "x" nella colonna "Errore di stampa", lascia VUOTO "Tipo di change" e (facoltativo) compila "Tipo di errore di stampa" — testo libero.<br>"Errore di stampa" e "Tipo di change" sono mutuamente esclusivi.<br><code>Retro - Categoria</code> e <code>Retro - Nome</code> identificano il <u>Retro base</u> di riferimento (quello di cui questa riga registra un errore di stampa). Se non esistente, la riga viene segnalata come errore e scartata.<br>Chiave di riconciliazione: Serie+Categoria+Nome.<br>NOTA: Le righe con Serie diversa da quella selezionata vengono ignorate.'
+          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>A single file for base Retros, Changes and Print errors.<br>Required columns (in order): <code>Serie</code>; <code>Categoria</code>; <code>Sottocategoria</code>; <code>Nome</code>; <code>Errore di stampa</code> (optional); <code>Tipo di change</code> (optional); <code>Tipo di errore di stampa</code> (optional, Print errors only); <code>Retro - Categoria</code> (Change/Print error only); <code>Retro - Nome</code> (Change/Print error only).<br><br><strong>Change</strong>: "Tipo di change" must match one of the values configured for the series.<br><strong>Print errors</strong>: put "x" in the "Errore di stampa" column, leave "Tipo di change" EMPTY and (optionally) fill "Tipo di errore di stampa" — free text.<br>"Errore di stampa" and "Tipo di change" are mutually exclusive.<br><code>Retro - Categoria</code> and <code>Retro - Nome</code> identify the <u>base Retro</u> this row refers to (the one this row records a print error for). If it does not exist, the row is flagged as an error and skipped.<br>Reconciliation key: Series+Category+Name.<br>NOTE: Rows with a Serie different from the selected one are skipped.'}
       </p>
       <a href="templates/template-retro.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
 
@@ -16047,14 +16508,14 @@ function renderAdminFoto() {
         <progress id="import-retro-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="import-retro-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
       </div>
-      <div id="import-retro-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      <div id="import-retro-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
       </div>
 
       <hr class="divider" style="margin:2rem 0;">
 
       <h3 onclick="toggleImportSection('foto')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-foto-chevron">▶</span> 📥 ${currentLang==='it'?'Caricamento massivo foto figurine con numero':'Bulk photo upload — numbered stickers'}</h3>
       <div id="import-foto-section-content" style="display:none;">
-      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+      <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
           ? 'ISTRUZIONI:<br>Solo per figurine numerate. Seleziona la serie, seleziona le foto da caricare (nome file = numero figurina, es. <code>1.jpg</code>).<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
           : 'INSTRUCTIONS:<br>Only for numbered stickers. Select a series, select the photos to upload (filename = sticker number, e.g. <code>1.jpg</code>).<br>The script removes the background with AI and updates the database (Firebase).'}
@@ -16088,17 +16549,17 @@ function renderAdminFoto() {
         <progress id="foto-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="foto-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
       </div>
-      <div id="foto-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      <div id="foto-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
       </div>
 
     <hr class="divider" style="margin:2rem 0;">
 
     <h3 onclick="toggleImportSection('fotonn')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-fotonn-chevron">▶</span> 📥 ${currentLang==='it'?'Caricamento massivo foto figurine senza numero e retro':'Bulk photo upload — unnumbered stickers and Retros'}</h3>
     <div id="import-fotonn-section-content" style="display:none;">
-    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+    <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
       ${currentLang==='it'
-        ? 'ISTRUZIONI:<br>Per figurine senza numero e per i Retro (base e Change), che non hanno un numero proprio. Seleziona la serie e indica cosa stai caricando (Figurine o Retro), poi seleziona le foto.<br><br><b>Figurine</b>: nome file = Nome esatto della figurina, es. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Retro base</b>: nome file = Nome esatto del Retro, es. <code>DI ANTIPATICO.jpg</code>.<br><b>Change di Retro</b>: nome file = Nome del Retro + " - " + Tipo di change, es. <code>DI ANTIPATICO - omaggio nero.jpg</code> — necessario perché un Change può avere lo stesso Nome del suo Retro base, distinguibile solo dal Tipo.<br><br>Se il nome del file non corrisponde a nessun oggetto (o corrisponde a più di uno), viene segnalato e saltato.<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
-        : 'INSTRUCTIONS:<br>For unnumbered stickers and for Retros (base and Change), which don\'t have a number of their own. Select the series and what you\'re uploading (Stickers or Retro), then select the photos.<br><br><b>Stickers</b>: filename = exact sticker Name, e.g. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Base Retro</b>: filename = exact Retro Name, e.g. <code>DI ANTIPATICO.jpg</code>.<br><b>Retro Change</b>: filename = Retro Name + " - " + Change type, e.g. <code>DI ANTIPATICO - omaggio nero.jpg</code> — needed because a Change can share the same Name as its base Retro, distinguishable only by Type.<br><br>If the filename doesn\'t match any item (or matches more than one), it is flagged and skipped.<br>The script removes the background with AI and updates the database (Firebase).'}
+        ? 'ISTRUZIONI:<br>Per figurine senza numero e per i Retro (base e Change), che non hanno un numero proprio. Seleziona la serie e indica cosa stai caricando (Figurine o Retro), poi seleziona le foto.<br><br><b>Figurine</b>: nome file = Nome esatto della figurina, es. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Retro (base e Change)</b>: nome file = <b>Nome completo</b> del Retro, esattamente come appare nella colonna "Nome Completo" della Vista tabellare. Il Nome completo include già Categoria, Nome e — per i Change — il Tipo in MAIUSCOLO, quindi distingue da solo un Change dal suo Retro base, e due Retro con lo stesso Nome in Categorie diverse. Es. <code>Animali - Gatto.jpg</code> per un Retro base, <code>Animali - Gatto - BORDO ORO.jpg</code> per un Change.<br><br>Nota: il carattere <code>?</code> non è ammesso nei nomi file su Windows, quindi va omesso dal nome del file — il confronto lo ignora automaticamente da entrambe le parti (es. il Nome completo <code>Ma davvero? - Rosso</code> si abbina al file <code>Ma davvero - Rosso.jpg</code>).<br><br>Se il nome del file non corrisponde a nessun oggetto (o corrisponde a più di uno), viene segnalato e saltato.<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
+        : 'INSTRUCTIONS:<br>For unnumbered stickers and for Retros (base and Change), which don\'t have a number of their own. Select the series and what you\'re uploading (Stickers or Retro), then select the photos.<br><br><b>Stickers</b>: filename = exact sticker Name, e.g. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Retro (base and Change)</b>: filename = the Retro\'s <b>Full name</b>, exactly as shown in the "Full name" column of the Table view. The full name already includes Category, Name and — for Changes — the Type in UPPERCASE, so it alone tells a Change apart from its base Retro, and two Retros sharing the same Name in different Categories. E.g. <code>Animali - Gatto.jpg</code> for a base Retro, <code>Animali - Gatto - BORDO ORO.jpg</code> for a Change.<br><br>Note: the <code>?</code> character isn\'t allowed in Windows filenames, so leave it out of the filename — the match ignores it on both sides (e.g. the full name <code>Ma davvero? - Rosso</code> matches the file <code>Ma davvero - Rosso.jpg</code>).<br><br>If the filename doesn\'t match any item (or matches more than one), it is flagged and skipped.<br>The script removes the background with AI and updates the database (Firebase).'}
     </p>
 
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
@@ -16110,6 +16571,7 @@ function renderAdminFoto() {
 
       <label class="form-label">${currentLang==='it'?'Cosa stai caricando?':'What are you uploading?'}</label>
       <select id="fotonn-scope-select" class="form-select" style="margin-bottom:0.75rem;">
+        <option value="">-- ${currentLang==='it'?'Seleziona':'Select'} --</option>
         <option value="figurine">${currentLang==='it'?'Figurine (senza numero)':'Stickers (unnumbered)'}</option>
         <option value="retro">Retro</option>
       </select>
@@ -16135,7 +16597,7 @@ function renderAdminFoto() {
       <progress id="fotonn-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
       <div id="fotonn-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
     </div>
-    <div id="fotonn-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:300px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+    <div id="fotonn-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
     </div>
     </div>`;
 }
@@ -16145,7 +16607,7 @@ function fotoLog(msg, type) {
   if (!el) return;
   el.style.display = 'block';
   const line = document.createElement('div');
-  line.style.color = type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--muted)';
+  line.style.color = type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : type === 'white' ? 'var(--text)' : 'var(--muted)';
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
@@ -16272,8 +16734,8 @@ async function startAdminFotoUpload() {
   if (erroriRighe.length) {
     fotoLog('', 'info');
     fotoLog('--- ' + (currentLang === 'it'
-      ? 'FILE NON CARICATI (' + erroriRighe.length + ') ---'
-      : 'FILES NOT UPLOADED (' + erroriRighe.length + ') ---'), 'warn');
+      ? 'ELENCO COMPLETO DEI FILE NON CARICATI (' + erroriRighe.length + ') ---'
+      : 'COMPLETE LIST OF FILES NOT UPLOADED (' + erroriRighe.length + ') ---'), 'white');
     erroriRighe.forEach(msg => fotoLog(msg, 'warn'));
   }
   document.getElementById('foto-start-btn').disabled = false;
@@ -16284,7 +16746,7 @@ function fotoNnLog(msg, type) {
   if (!el) return;
   el.style.display = 'block';
   const line = document.createElement('div');
-  line.style.color = type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--muted)';
+  line.style.color = type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : type === 'white' ? 'var(--text)' : 'var(--muted)';
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
@@ -16305,7 +16767,8 @@ function fotoNnStatus(msg, pct) {
 async function startAdminFotoNoNumberUpload() {
   const seriesId = document.getElementById('fotonn-series-select').value;
   if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series', 'error'); return; }
-  const scope = document.getElementById('fotonn-scope-select').value; // 'figurine' | 'retro'
+  const scope = document.getElementById('fotonn-scope-select').value; // '' | 'figurine' | 'retro'
+  if (!scope) { toast(currentLang==='it'?'Seleziona cosa stai caricando (Figurine o Retro)':'Select what you are uploading (Stickers or Retro)', 'error'); return; }
   const files = Array.from(document.getElementById('fotonn-file-input').files);
   if (!files.length) { toast(currentLang==='it'?'Seleziona almeno una foto':'Select at least one photo', 'error'); return; }
   const doRemoveBg = document.getElementById('fotonn-remove-bg').checked;
@@ -16329,14 +16792,19 @@ async function startAdminFotoNoNumberUpload() {
   document.getElementById('fotonn-log').innerHTML = '';
   fotoNnLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + files.length + ' foto (' + scope + ') ---', 'info');
 
-  // Candidati in base allo scope scelto. Per il Retro, la chiave attesa nel
-  // nome del file è diversa per un Change (Nome + " - " + Tipo) rispetto a
-  // un Retro base (solo Nome) — evita ambiguità quando un Change condivide
-  // il Nome col proprio Retro base.
+  // Candidati in base allo scope scelto. Per il Retro (v5.756) la chiave di
+  // riconciliazione è il NOME COMPLETO (fullName), non più il solo Nome: il
+  // fullName include già Categoria, Nome e — per i Change — il Tipo in MAIUSCOLO
+  // (vedi computeFullName/_retroFullName), quindi disambigua da solo sia un Change
+  // dal proprio Retro base sia due Retro con lo stesso Nome in Categorie diverse.
+  // Si usa il fullName SALVATO — quello mostrato nella colonna "Nome Completo"
+  // della Vista tabellare — così l'utente nomina i file esattamente come li vede;
+  // se per un record non fosse popolato, lo si ricalcola al volo come ripiego.
+  // Le Figurine senza numero restano sul solo Nome (per una base fullName = Nome).
   const allFigs = getData('figurines', []);
   const candidates = allFigs
     .filter(f => f.seriesId === seriesId && (scope === 'retro' ? f.section === 'retros' : (f.section === 'figurines' && !f.number && !f.isVariation && !f.isUnofficialVariation && !f.isChange)))
-    .map(f => ({ item: f, key: (scope === 'retro' && f.isChange) ? (f.name + ' - ' + (f.changeType||'')) : f.name }));
+    .map(f => ({ item: f, key: (scope === 'retro') ? (f.fullName || computeFullName(f, allFigs)) : f.name }));
   fotoNnLog((currentLang==='it'?'Oggetti candidati nella serie:':'Candidate items in series:') + ' ' + candidates.length, 'info');
 
   let ok = 0, skip = 0, errors = 0;
@@ -16345,14 +16813,23 @@ async function startAdminFotoNoNumberUpload() {
   const erroriRighe = [];
   const errRiga = (msg, lvl) => { fotoNnLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
 
+  // Normalizzazione per il confronto nome-file ⇄ chiave (v5.757). Il "?" è ammesso
+  // nel Nome (e quindi nel Nome completo) dentro al DB, ma NON in un nome di file su
+  // Windows: e' un carattere vietato dal file system, quindi chi esporta le foto lo
+  // deve per forza omettere. Lo si ignora quindi da ENTRAMBI i lati del confronto.
+  // Si azzerano anche gli spazi multipli che la rimozione del "?" puo' lasciare, e le
+  // maiuscole/minuscole. Vale per tutte le chiavi (Nome completo dei Retro e Nome
+  // delle Figurine senza numero): un file non puo' contenere "?" in nessun caso.
+  const normKey = s => (s || '').toLowerCase().replace(/\?/g, '').replace(/\s+/g, ' ').trim();
+
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     const name = file.name.replace(/\.[^.]+$/, '').trim();
     fotoNnStatus(file.name + ' (' + (i+1) + '/' + files.length + ')', Math.round((i/files.length)*100));
 
     if (!name) { errRiga('⚠️ Nome file non valido: ' + file.name, 'warn');  continue; }
-    const matches = candidates.filter(c => c.key.toLowerCase().trim() === name.toLowerCase());
-    if (!matches.length) { errRiga('⚠️ Nessun oggetto trovato con Nome "' + name + '"', 'warn');  continue; }
+    const matches = candidates.filter(c => normKey(c.key) === normKey(name));
+    if (!matches.length) { errRiga('⚠️ Nessun oggetto trovato con ' + (scope === 'retro' ? 'Nome completo' : 'Nome') + ' "' + name + '"', 'warn');  continue; }
     if (matches.length > 1) {
       errRiga('⚠️ "' + name + '" è ambiguo: ' + matches.length + ' oggetti nella serie corrispondono — controlla eventuali duplicati nel database', 'warn');
        continue;
@@ -16393,8 +16870,8 @@ async function startAdminFotoNoNumberUpload() {
   if (erroriRighe.length) {
     fotoNnLog('', 'info');
     fotoNnLog('--- ' + (currentLang === 'it'
-      ? 'FILE NON CARICATI (' + erroriRighe.length + ') ---'
-      : 'FILES NOT UPLOADED (' + erroriRighe.length + ') ---'), 'warn');
+      ? 'ELENCO COMPLETO DEI FILE NON CARICATI (' + erroriRighe.length + ') ---'
+      : 'COMPLETE LIST OF FILES NOT UPLOADED (' + erroriRighe.length + ') ---'), 'white');
     erroriRighe.forEach(msg => fotoNnLog(msg, 'warn'));
   }
   document.getElementById('fotonn-start-btn').disabled = false;
