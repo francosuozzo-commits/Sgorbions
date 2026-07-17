@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.804 — Franco: sulla card, quando una Figurina appartiene a una sottoserie, la sottoserie non
+//          sostituisce più il numero. Ora il numero (#N) resta in etichetta e la sottoserie è mostrata su
+//          una riga a parte, nello stesso punto/stile in cui i Retro mostrano la loro categoria
+//          (subseriesHTML, sotto il nome). Solo la card in renderItems.
+// ------------------------------------------------------------
 // v5.803 — Franco: nella Vista tabellare (tab serie) nuova colonna "Foto" con la miniatura (locandina)
 //          dell'oggetto (38×38), subito dopo la colonna "#". Se manca la foto, segnaposto 🃏 (figurine) o
 //          📇 (retro). Vale per tutte le sezioni e sia per admin sia per utente. Solo renderBulkEditView.
@@ -8101,7 +8106,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.803';
+const JS_VERSION = 'v5.804';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12502,13 +12507,18 @@ function renderItems() {
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
     const sizeHTML = f.size ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
-    const figLabel = f.subseries ? `[${f.subseries}]` : (f.number ? `#${f.number}` : '');
+    // v5.804 — Franco: la sottoserie NON sostituisce più il numero sulla card. Il numero resta in
+    // etichetta (#N) e la sottoserie va su una riga a parte, nello stesso punto/stile in cui i Retro
+    // mostrano la loro categoria (vedi subseriesHTML poco sotto).
+    const figLabel = f.number ? `#${f.number}` : '';
     const catParts = [f.category, f.subcategory].map(v => (v||'').trim()).filter(Boolean);
     // Prima riga (nome): se la serie NON dichiara che il nome del retro contiene già la
     // categoria, anteponiamo "Categoria - ". Seconda riga: la Categoria (col Sottocategoria
     // se presente) come sempre.
     const catPrefix = (currentSection === 'retros' && !_retroNameStartsWithCategory(f) && (f.category||'').trim()) ? esc(f.category.trim()) + ' - ' : '';
     const categoryHTML = (currentSection === 'retros' && catParts.length) ? `<div style="font-size:0.78rem;color:var(--muted);">${catParts.join(' · ')}</div>` : '';
+    // v5.804 — riga Sottoserie per le Figurine, nello stesso punto/stile della categoria dei Retro.
+    const subseriesHTML = (currentSection === 'figurines' && f.subseries) ? `<div style="font-size:0.78rem;color:var(--muted);">${esc(f.subseries)}</div>` : '';
     // v5.765 — Card Retro: PRIMA riga = Categoria (con Sottocategoria se presente), SECONDA riga
     // = Nome. Sostituisce il vecchio schema (prima riga "Categoria - Nome", seconda la categoria).
     // Le Figurine restano invariate. Il vecchio prefisso catPrefix qui per i Retro non serve piu'.
@@ -12573,7 +12583,7 @@ function renderItems() {
       </div>
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
-        ${isRetroCard ? retroNameLineHTML : categoryHTML}
+        ${isRetroCard ? retroNameLineHTML : subseriesHTML}
         ${retroNameHTML}
         ${descHTML}
         ${sizeHTML}
