@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.802 — Franco: nell'elenco dello strumento "Sposta figurine in un'altra serie" ogni riga mostra ora
+//          una MINIATURA della foto della figurina (36×36, o un segnaposto 🃏 se manca la foto), per
+//          riconoscerle a colpo d'occhio quando si scelgono quelle da spostare. Solo renderMoveFigList.
+// ------------------------------------------------------------
 // v5.801 — Franco (una tantum): nuovo strumento admin in "Data import" → "🔀 Sposta figurine in
 //          un'altra serie". Sceglie serie di partenza, spunta le figurine base, sceglie la destinazione:
 //          sposta ciascuna figurina (aggiornando seriesId) insieme al suo Retro collegato (e agli
@@ -8093,7 +8097,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.801';
+const JS_VERSION = 'v5.802';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16867,8 +16871,12 @@ function renderMoveFigList() {
       const rid = f.retroId || '';
       const rlbl = rid ? ((it ? ' · retro: ' : ' · retro: ') + esc(retroLabel(rid))) : (it ? ' · nessun retro' : ' · no retro');
       const numStr = (f.number != null && f.number !== '') ? ('#' + f.number + ' ') : '';
-      return `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;font-size:0.85rem;cursor:pointer;">
+      const thumb = f.img
+        ? `<img src="${f.img}" alt="" loading="lazy" style="width:36px;height:36px;object-fit:cover;border-radius:5px;flex-shrink:0;background:var(--card2);border:1px solid var(--border2);">`
+        : `<span style="width:36px;height:36px;border-radius:5px;flex-shrink:0;background:var(--card2);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.9rem;">🃏</span>`;
+      return `<label style="display:flex;align-items:center;gap:0.55rem;padding:0.3rem 0;font-size:0.85rem;cursor:pointer;">
         <input type="checkbox" class="move-fig-cb" value="${f.id}" checked style="width:auto;">
+        ${thumb}
         <span><b>${numStr}</b>${esc(f.name || '')}<span style="color:var(--muted);">${rlbl}</span></span>
       </label>`;
     }).join('');
