@@ -1,6 +1,31 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.778 — Franco: due cose, un colpo solo.
+//          (A) TEMPLATE IMPORT RETRO — chiusa la voce "DA FARE #1" (vedi sotto): a
+//          templates/template-retro.xlsx mancavano DUE colonne che il codice dell'import gia'
+//          leggeva ma il file scaricabile non offriva. Aggiunte, nell'ORDINE ufficiale delle
+//          istruzioni in-app (startImportRetro / blocco ISTRUZIONI): Serie, Categoria,
+//          Sottocategoria, Nome, "Errore di stampa" (NUOVA), "Tipo di change", "Tipo di errore di
+//          stampa" (NUOVA), Retro - Categoria, Retro - Nome. "Errore di stampa" e' la colonna
+//          interruttore (metti "x" = errore di stampa; vuoto/no/0 = no), mutuamente esclusiva con
+//          "Tipo di change". Formattazione preservata identica (Arial bold bianco su 4A3F6B,
+//          header centrato e bloccato, larghezze). Solo il .xlsx e' cambiato: nessuna modifica a
+//          codice/logica dell'import. Modificato templates/template-retro.xlsx.
+//          (B) CONSEGNA A DUE FILE PER VERSIONE (nota di processo, per riprendere da una nuova chat).
+//          Ogni release esce come: (1) uno ZIP unico con la struttura repo (index.html, css/, js/,
+//          flags/, fonts/, templates/, CNAME); (2) un FILE DI PREVIEW autoconsistente
+//          (preview_sgorbions_vX.YZZ.html) con la versione nel <title> -> nome del tab del browser.
+//          Come si costruisce la preview a file unico: <title>="Sgorbions "+JS_VERSION; CSS inline;
+//          le 56 flags/*.png incorporate in window._FLAGS (hook gia' in flagSrc()); i font Nunito
+//          incorporati dai woff2 di fonts/ (self-hosted, ora disponibili dal repo); i TRE blob JS
+//          (email.min.js, xlsx.full.min.js, app.js) iniettati in BASE64 e decodificati a runtime
+//          (NON crudi in <script>: xlsx contiene '<!--' in dei regex e romperebbe il parser HTML);
+//          xlsx incorporato PRIMA di app.js (definisce il global XLSX, loadXLSX() cortocircuita).
+//          Esiste build.py che fa tutto e rileva la versione da JS_VERSION. PUBBLICAZIONE: push su
+//          branch main -> il workflow .github/workflows/deploy.yml ridispiega Pages in automatico.
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.777 — Franco: nel log delle procedure FOTO, la riga di intestazione "--- ELENCO COMPLETO DEI
 //          FILE NON CARICATI (N) ---" e' ora in BIANCO (nuovo tipo di log 'white' -> var(--text)),
 //          non piu' gialla come le righe degli scarti elencate sotto. Modificato app.js, index.html.
@@ -453,6 +478,7 @@
 //          --- DA FARE, segnalato a Franco (NON toccato qui) ---
 //          1) Il file scaricabile templates/template-retro.xlsx e' statico e fuori dal
 //             bundle: va aggiunta la colonna "Errore di stampa" a mano (o caricarmelo).
+//             [FATTO in v5.778: colonna aggiunta al template — vedi voce v5.778.]
 //          2) INCOERENZA nella form MANUALE: saveItem imposta baseFigurineId solo per
 //             Variazione/Change, NON per isPrintError → un errore di stampa creato a mano
 //             resta SCOLLEGATO dal base, mentre quelli da import saranno collegati. Da
@@ -7853,7 +7879,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.777';
+const JS_VERSION = 'v5.778';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
