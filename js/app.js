@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.803 — Franco: nella Vista tabellare (tab serie) nuova colonna "Foto" con la miniatura (locandina)
+//          dell'oggetto (38×38), subito dopo la colonna "#". Se manca la foto, segnaposto 🃏 (figurine) o
+//          📇 (retro). Vale per tutte le sezioni e sia per admin sia per utente. Solo renderBulkEditView.
+// ------------------------------------------------------------
 // v5.802 — Franco: nell'elenco dello strumento "Sposta figurine in un'altra serie" ogni riga mostra ora
 //          una MINIATURA della foto della figurina (36×36, o un segnaposto 🃏 se manca la foto), per
 //          riconoscerle a colpo d'occhio quando si scelgono quelle da spostare. Solo renderMoveFigList.
@@ -8097,7 +8101,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.802';
+const JS_VERSION = 'v5.803';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -17866,6 +17870,7 @@ function renderBulkEditView() {
       <thead>
         <tr style="background:var(--card2);">
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);width:36px;">#</th>
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);width:48px;">${(currentLang === 'it') ? 'Foto' : 'Photo'}</th>
           ${isAdmin ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>` : ''}
           ${isAdmin ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>' : ''}
           ${currentSeriesHasSubseries ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottoserie</th>' : ''}
@@ -17887,6 +17892,9 @@ function renderBulkEditView() {
           const inWishlist = _wishlist.includes(f.id);
           return `<tr id="bulk-row-${f.id}" style="border-bottom:1px solid var(--border);">
           <td style="padding:4px 8px;text-align:center;color:var(--muted);font-size:0.78rem;">${rowIdx + 1}</td>
+          <td style="padding:4px;text-align:center;">${f.img
+            ? `<img src="${f.img}" alt="" loading="lazy" style="width:38px;height:38px;object-fit:cover;border-radius:5px;background:var(--card2);border:1px solid var(--border2);vertical-align:middle;">`
+            : `<span style="display:inline-flex;width:38px;height:38px;border-radius:5px;background:var(--card2);border:1px solid var(--border2);align-items:center;justify-content:center;color:var(--muted);font-size:0.95rem;">${currentSection === 'retros' ? '📇' : '🃏'}</span>`}</td>
           ${isAdmin ? `<td style="padding:4px;white-space:nowrap;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="openAddItemModal('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
           ${isAdmin ? `<td style="padding:4px;text-align:center;"><input type="checkbox" class="bulk-select-row" data-id="${f.id}" onchange="updateBulkDeleteCount()"></td>` : ''}
           ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
