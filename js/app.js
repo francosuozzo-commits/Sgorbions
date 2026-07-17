@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.794 — Franco: spostati i blocchi admin "Classifica" (Punteggio selezionati) ed "Ebay" (Aggiungi/
+//          Togli da Ebay) da SOPRA la casella di ricerca a SOTTO la riga dei risultati, prima della
+//          griglia/vista tabellare — perché quelle azioni si applicano ai risultati filtrati. Solo
+//          spostamento nel DOM (index.html); nessuna logica JS toccata (gli id restano gli stessi).
+//          Modificato index.html, app.js (versione).
+// ------------------------------------------------------------
 // v5.793 — Franco: qualità scarsa della "Rimuovi sfondo", soprattutto sui retro bianchi (foto annerita).
 //          La libreria @imgly/background-removal usava il modello di DEFAULT (isnet_fp16, "medio"), che
 //          sbaglia la maschera sui soggetti chiari a basso contrasto. Passato al modello PIENO
@@ -8041,7 +8047,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.793';
+const JS_VERSION = 'v5.794';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
