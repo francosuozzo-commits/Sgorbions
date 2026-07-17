@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.788 — Franco (baco su Clona): aprendo la modale (Clona/Aggiungi), spuntando "Change" il "Tipo di
+//          change" risultava già valorizzato con l'ULTIMO valore usato in una modifica precedente, anche
+//          se la figurina di partenza (base) ha quel campo vuoto. Causa: la modale riusa lo stesso DOM,
+//          e openAddItemModal impostava il select del changeType SOLO quando la sorgente aveva un valore,
+//          lasciando altrimenti il valore stantìo, che toggleBaseFigurineGroup poi ripristinava. Fix:
+//          reset esplicito del select 'fig-retro-change-type-input' a ogni apertura (valore della
+//          sorgente se presente, altrimenti vuoto). Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.787 — Franco: nel campo "Retro associato" di un Change, mostrare solo i Retro BASE (non i Change /
 //          Errori di stampa di retro), sempre di tutte le serie. Aggiunto il filtro (!isChange &&
 //          !isPrintError) in modalità allSeries a populateRetroSelect e _populateFeRetroOptions.
@@ -7990,7 +7998,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.787';
+const JS_VERSION = 'v5.788';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11297,9 +11305,13 @@ function openAddItemModal(itemId) {
   }
   toggleForSaleFields();
   toggleBaseFigurineGroup();
-  if (itemId && existingItem?.changeType) {
+  // v5.788 — reset ESPLICITO del "Tipo di change". La modale riusa lo stesso DOM tra un'apertura e
+  // l'altra, quindi il select conservava il valore precedente: clonando una figurina base (changeType
+  // vuoto) restava il valore di una modifica precedente, che toggleBaseFigurineGroup poi "ripristinava"
+  // spuntando Change. Ora lo si imposta SEMPRE: al valore della sorgente se c'è, altrimenti vuoto.
+  {
     const sel = document.getElementById('fig-retro-change-type-input');
-    if (sel) sel.value = existingItem.changeType;
+    if (sel) sel.value = (itemId && existingItem?.changeType) ? existingItem.changeType : '';
   }
   // Show/hide conditional fields based on series flags
   const _ser = getData('series', []).find(s => s.id === currentSeriesId);
