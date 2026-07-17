@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.781 — Franco: "un pulsante admin per CLONARE una figurina, disponibile per qualsiasi figurina;
+//          apre una modale con tutti i campi uguali alla figurina di partenza ma il record NON già
+//          salvato (anche perché andrebbe in chiave duplicata)". Fatto: nuova funzione
+//          cloneFigurine(itemId) che riusa openAddItemModal(itemId) per precompilare OGNI campo
+//          (immagine inclusa) e poi SVUOTA edit-fig-id -> saveFigurine crea un record NUOVO invece di
+//          aggiornare (niente pre-salvataggio, si evita la scrittura in chiave duplicata; l'admin
+//          cambia Numero/Nome e salva). Titolo modale "Clona <oggetto>". Pulsante &#10697; (⧉) aggiunto
+//          accanto alla matita in TRE punti: overlay della card, vista tabellare, e pulsanti del
+//          dettaglio (Modifica · Clona · Elimina). Disponibile su qualsiasi oggetto (Figurine/Retro/
+//          Album/Altro), come la matita. Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.780 — Franco: "nelle card dei Retro il Nome è mostrato sotto la Categoria; nei rari casi in cui
 //          il Nome è IDENTICO alla Categoria, non mostrare il Nome, solo la Categoria". Fatto: nella
 //          card Retro la riga del Nome (seconda riga) viene omessa quando f.name === f.category
@@ -7913,7 +7924,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.780';
+const JS_VERSION = 'v5.781';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11262,6 +11273,24 @@ async function deleteFigurineFromModal() {
 // keep openAddFigModal as alias for admin panel
 function openAddFigModal(figId) { openAddItemModal(figId); }
 
+// v5.781 — CLONA un oggetto: apre la modale "Aggiungi" precompilata con TUTTI i campi dell'oggetto
+// di partenza, ma come record NUOVO. Riusa openAddItemModal(itemId) (che popola ogni campo, immagine
+// compresa) e poi SVUOTA edit-fig-id: così saveFigurine CREA invece di aggiornare — nessun record
+// pre-salvato, e si evita di scrivere subito una chiave duplicata. L'admin ritocca ciò che serve
+// (di norma Numero/Nome) e salva. Disponibile su qualsiasi oggetto (Figurine/Retro/Album/Altro).
+function cloneFigurine(itemId) {
+  if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
+  const src = getData('figurines', []).find(x => x.id === itemId);
+  if (!src) { toast((currentLang === 'it' ? 'Oggetto non trovato' : 'Item not found'), 'error'); return; }
+  closeModal('fig-detail-modal');            // se il clone parte dalla scheda di dettaglio, la chiude
+  openAddItemModal(itemId);                  // popola tutti i campi (e l'immagine) dalla sorgente
+  document.getElementById('edit-fig-id').value = '';  // NUOVO record: al salvataggio crea, non aggiorna
+  const labelSingular = getSectionLabelSingular(src.section || currentSection);
+  const t = document.getElementById('fig-modal-title');
+  if (t) t.textContent = (currentLang === 'it' ? 'Clona ' : 'Clone ') + labelSingular;
+  toast((currentLang === 'it' ? '📋 Copia pronta: cambia Numero/Nome e salva' : '📋 Copy ready: change Number/Name and save'), 'success');
+}
+
 function getOwned() {
   const uid = currentUser?.id || 'guest';
   // Use cached Firebase data if available, fallback to localStorage
@@ -12228,7 +12257,7 @@ function renderItems() {
         typeBadgeHTML = `<div class="fig-owned-badge ${cls}">${esc(r1)}${r2 ? '<br>' + esc(r2) : ''}</div>`;
       }
     }
-    const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button></div>` : '';
+    const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="event.stopPropagation();cloneFigurine('${f.id}')">&#10697;</button></div>` : '';
     const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="${currentLang === 'it' ? 'Segnala qualcosa all\'amministratore per questa figurina' : 'Report something to the administrator about this sticker'}" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
     const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
@@ -14260,6 +14289,7 @@ function openFigDetail(figId) {
   if (isAdmin) {
     bottomButtons = `<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">
       <button class="tbl-btn tbl-btn-edit" style="font-size:0.92rem;padding:6px 14px;" onclick="switchToEditMode('${f.id}')">&#9998; ${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>
+      <button class="tbl-btn tbl-btn-edit" style="font-size:0.92rem;padding:6px 14px;" onclick="cloneFigurine('${f.id}')">&#10697; ${(currentLang === 'it') ? 'Clona' : 'Clone'}</button>
       <button class="tbl-btn tbl-btn-del" style="font-size:0.92rem;padding:6px 14px;" onclick="deleteItemFromDetail('${f.id}')">🗑️ ${(currentLang === 'it') ? 'Elimina' : 'Delete'}</button>
     </div>`;
   } else if (currentUser) {
@@ -17379,7 +17409,7 @@ function renderBulkEditView() {
           const inWishlist = _wishlist.includes(f.id);
           return `<tr id="bulk-row-${f.id}" style="border-bottom:1px solid var(--border);">
           <td style="padding:4px 8px;text-align:center;color:var(--muted);font-size:0.78rem;">${rowIdx + 1}</td>
-          ${isAdmin ? `<td style="padding:4px;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" onclick="openAddItemModal('${f.id}')">&#9998;</button></td>` : ''}
+          ${isAdmin ? `<td style="padding:4px;white-space:nowrap;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="openAddItemModal('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
           ${isAdmin ? `<td style="padding:4px;text-align:center;"><input type="checkbox" class="bulk-select-row" data-id="${f.id}" onchange="updateBulkDeleteCount()"></td>` : ''}
           ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
           ${currentSection === 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
