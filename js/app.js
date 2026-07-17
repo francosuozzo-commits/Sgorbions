@@ -1,6 +1,20 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.783 — Franco: "nella card della FIGURINA, per un Change o un Errore di stampa, in fondo alla card
+//          (all'altezza della spunta Mia lista) mostrare il TIPO, col colore relativo, come per i Retro".
+//          La riga in fondo (typeIndicatorHTML a sinistra, toggle Mia lista a destra) è condivisa tra
+//          Retro e figurine: l'indicatore era solo gated ai Retro. Tolto il vincolo -> ora _cardIsChg =
+//          f.isChange && f.changeType e _cardIsPE = f.isPrintError && f.printErrorType valgono per tutte
+//          le sezioni. changeType in --type-change, printErrorType in --type-printerror, MAIUSCOLO.
+//          Per le figurine Change il tipo è stato TOLTO dal testo principale (era ": TIPO", v5.779) e
+//          spostato qui in fondo, per non duplicarlo (e allinearsi ai Retro).
+//          NOTA (Errore di stampa): una figurina Errore di stampa mantiene il proprio NOME (mostrato nel
+//          testo principale della card), a differenza del Retro che lo eredita dalla base. Il campo che
+//          l'indicatore in fondo mostra è il "Tipo di errore di stampa" (printErrorType), analogo al
+//          "Tipo di change". Da confermare con Franco se va bene così o se vuole altro (vedi chat).
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.782 — Franco: "vista dettaglio e form di modifica devono coincidere; capisco che in vista non
 //          si mostrino i campi vuoti, ma a parte quello devono sempre coincidere". Le due erano
 //          divergite: la vista mostrava Numero e Nome solo nel TITOLO (v5.764), non come righe.
@@ -7933,7 +7947,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.782';
+const JS_VERSION = 'v5.783';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10445,7 +10459,7 @@ function renderCatalogSearch(q) {
                 const retroFig = (isVarOrChange && f.retroId) ? getData('figurines', []).find(x => x.id === f.retroId) : null;
                 const varLabel = f.isVariation ? (currentLang === 'it' ? 'Variazione ufficiale' : 'Official variation')
                   : f.isUnofficialVariation ? (currentLang === 'it' ? 'Variazione non ufficiale' : 'Unofficial variation')
-                  : f.isChange ? ('Change' + (f.changeType ? ': ' + f.changeType : '')) : '';
+                  : f.isChange ? (currentLang === 'it' ? 'Change' : 'Change') : '';
                 const smallImg = (url, title) => url ? `<img src="${cloudinaryUrl(url,'w_32,h_32,c_fit,q_auto,f_auto')}" title="${title}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);border:1px solid var(--border);">` : '';
                 return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
                 ${f.img ? `<img src="${cloudinaryUrl(f.img,'w_32,h_32,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : ''}
@@ -12317,8 +12331,12 @@ function renderItems() {
       // due sono mutuamente esclusivi), in MAIUSCOLO. v5.768: ciascuno nel COLORE DEL SUO TIPO, in
       // continuita' col color code — Change = var(--type-change) (rosa), Errore di stampa =
       // var(--type-printerror). Base/senza tipo: separatore vuoto.
-      const _cardIsChg = currentSection === 'retros' && f.isChange && f.changeType;
-      const _cardIsPE  = currentSection === 'retros' && f.isPrintError && f.printErrorType;
+      // v5.783 — indicatore di tipo in fondo alla card (riga del toggle "Mia lista"): ora ANCHE per
+      // le FIGURINE Change/Errore di stampa, non più solo per i Retro. changeType (colore --type-change)
+      // per i Change; printErrorType (colore --type-printerror) per gli Errori di stampa. Per le figurine
+      // Change il tipo è stato tolto dal testo principale (era ": TIPO" in v5.779) e portato qui, come i Retro.
+      const _cardIsChg = f.isChange && f.changeType;
+      const _cardIsPE  = f.isPrintError && f.printErrorType;
       const _cardTypeTxt = _cardIsChg ? f.changeType : (_cardIsPE ? f.printErrorType : '');
       const _cardTypeColor = _cardIsChg ? 'var(--type-change)' : (_cardIsPE ? 'var(--type-printerror)' : 'var(--text)');
       const typeIndicatorHTML = _cardTypeTxt
