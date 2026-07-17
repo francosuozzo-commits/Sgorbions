@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.798 — Franco: il selettore "Senza foto" va al FONDO della seconda riga di selettori (in coda ai
+//          filtri di possesso "Solo presenti/mancanti dalla tua lista"), non su una riga separata sotto.
+//          Ora è reso dentro items-owned-toggles come ultimo toggle; il contenitore separato
+//          items-nophoto-toggle è stato rimosso. La seconda riga è sempre visibile: da anonimo contiene
+//          il solo "Senza foto"; da loggato i filtri di possesso + "Senza foto". Modificato app.js, index.html.
+// ------------------------------------------------------------
 // v5.797 — Franco: nei risultati di ricerca colorare SOLO il numero, non l'intera frase. Il conteggio
 //          "N fanno parte della tua lista" ora ha il numero in BLU (var(--action), lo stesso blu dei
 //          toggle aggiungi/rimuovi lista) e l'etichetta nel colore testo normale; "N oggetti trovati"
@@ -8062,7 +8068,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.797';
+const JS_VERSION = 'v5.798';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11779,41 +11785,32 @@ function renderItemTypeFilters() {
     }
   }
 
+  // SECONDA RIGA di selettori (contenitore items-owned-toggles, separato da un bordo):
+  //  - i filtri di POSSESSO ("Solo presenti/mancanti dalla tua lista") solo per chi ha
+  //    fatto l'accesso (senza lista non vogliono dire nulla);
+  //  - "Senza foto" per TUTTI gli utenti, in CODA a questa stessa riga (v5.798 — Franco:
+  //    va al fondo della seconda riga di selettori, non su una riga separata sotto).
+  // La riga è quindi sempre visibile: da anonimo contiene il solo "Senza foto".
   const elOwned = document.getElementById('items-owned-toggles');
   if (elOwned) {
-    if (!currentUser) {
-      elOwned.style.display = 'none';
-      elOwned.innerHTML = '';
-    } else {
-      const itl = (currentLang === 'it');
-      // stessa identica forma dei filtri di tipo: bottone toggle-btn-blue + etichetta
-      const itemOwned = (key, label) => `
+    const itl = (currentLang === 'it');
+    // stessa identica forma dei filtri di tipo: bottone toggle-btn-blue + etichetta
+    const itemToggle = (isOn, onclickAttr, label) => `
         <div style="display:flex;align-items:center;gap:0.4rem;">
-          <button class="toggle-btn-blue ${_ownedFilter === key ? 'on' : ''}" onclick="toggleOwnedFilter('${key}')" title="${label}"></button>
+          <button class="toggle-btn-blue ${isOn ? 'on' : ''}" onclick="${onclickAttr}" title="${label}"></button>
           <span style="font-size:0.82rem;color:var(--text);">${label}</span>
         </div>`;
-      // in FILA, non in colonna: i filtri di tipo sono impilati perche' sono tanti,
-      // questi sono due e stanno comodamente su una riga sola.
-      let h2 = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;">';
-      h2 += itemOwned('owned', itl ? 'Solo presenti nella tua lista' : 'Only those in my list');
-      h2 += itemOwned('missing', itl ? 'Solo mancanti dalla tua lista' : 'Only those missing from my list');
-      h2 += '</div>';
-      elOwned.innerHTML = h2;
-      elOwned.style.display = 'flex';
+    // in FILA, non in colonna: stanno comodamente su una riga sola (wrap se serve).
+    let h2 = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;">';
+    if (currentUser) {
+      h2 += itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')", itl ? 'Solo presenti nella tua lista' : 'Only those in my list');
+      h2 += itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')", itl ? 'Solo mancanti dalla tua lista' : 'Only those missing from my list');
     }
-  }
-  // v5.796 — filtro "Senza foto" per TUTTI gli utenti (prima solo admin), posizionato DOPO i filtri di
-  // possesso ("Solo mancanti dalla tua lista"). Contenitore separato, sempre visibile (anche anonimi).
-  const elNoPhoto = document.getElementById('items-nophoto-toggle');
-  if (elNoPhoto) {
-    const itl = (currentLang === 'it');
     const senzaFoto = _noPhotoFilter ? (itl ? 'Con foto' : 'With photo') : (itl ? 'Senza foto' : 'Without photo');
-    elNoPhoto.innerHTML = `
-      <div style="display:flex;align-items:center;gap:0.4rem;">
-        <button class="toggle-btn-blue ${_noPhotoFilter ? 'on' : ''}" onclick="setNoPhotoFilter(${!_noPhotoFilter})" title="${senzaFoto}"></button>
-        <span style="font-size:0.82rem;color:var(--text);">${senzaFoto}</span>
-      </div>`;
-    elNoPhoto.style.display = 'flex';
+    h2 += itemToggle(_noPhotoFilter, `setNoPhotoFilter(${!_noPhotoFilter})`, senzaFoto);
+    h2 += '</div>';
+    elOwned.innerHTML = h2;
+    elOwned.style.display = 'flex';
   }
   const introEl = document.getElementById('items-filter-intro');
   if (introEl) {
