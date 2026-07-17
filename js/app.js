@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.791 — Franco: revert della v5.787 — il selettore Retro dei Change deve pescare TUTTI i retro (di
+//          tutte le serie), non solo quelli base. Tolto il filtro (!isChange && !isPrintError) in
+//          modalità allSeries da populateRetroSelect e _populateFeRetroOptions. Modificato app.js,
+//          index.html (versione).
+// ------------------------------------------------------------
 // v5.790 — Franco: rendere gli ERRORI DI STAMPA di FIGURINA identici a quelli di RETRO — niente nome
 //          proprio, il Nome eredita dalla base, identificati dal "Tipo di errore di stampa" (testo
 //          libero, già obbligatorio). Nome completo = "NomeBase - Tipo errore di stampa" (SENZA
@@ -8019,7 +8024,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.790';
+const JS_VERSION = 'v5.791';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11078,10 +11083,9 @@ function _retroLinkLabel(r) {
 }
 function populateRetroSelect(selectedId, allSeries) {
   _retroLinkAllSeries = !!allSeries;
-  // v5.787 — in modalità Change (allSeries) mostriamo solo i Retro BASE (no Change/Errori di stampa di
-  // retro): il retro che "fa" il change è un retro base, di qualunque serie.
+  // v5.791 — (revert v5.787) in modalità Change (allSeries) mostriamo TUTTI i retro, non solo i base.
   _retroLinkOptions = getData('figurines', [])
-    .filter(f => f.section === 'retros' && (allSeries || f.seriesId === currentSeriesId) && (!allSeries || (!f.isChange && !f.isPrintError)))
+    .filter(f => f.section === 'retros' && (allSeries || f.seriesId === currentSeriesId))
     .sort((a,b) => (allSeries ? _retroLinkLabel(a).localeCompare(_retroLinkLabel(b), 'it', {sensitivity:'base'}) : ((a.category||'').localeCompare(b.category||'', 'it') || (a.subcategory||'').localeCompare(b.subcategory||'', 'it') || (a.name||'').localeCompare(b.name||'', 'it'))));
   const hidden = document.getElementById('fig-retro-input');
   const search = document.getElementById('fig-retro-search');
@@ -14676,9 +14680,9 @@ let _feItemSeriesId = null; // v5.786 — serie dell'oggetto in modifica inline 
 // v5.786 — popola le opzioni del selettore Retro inline: allSeries=true (Change) pesca da tutte le serie.
 function _populateFeRetroOptions(seriesId, allSeries) {
   _retroLinkAllSeries = !!allSeries;
-  // v5.787 — in modalità Change (allSeries) solo Retro BASE (no Change/Errori di stampa di retro).
+  // v5.791 — (revert v5.787) in modalità Change (allSeries) TUTTI i retro, non solo i base.
   _feRetroLinkOptions = getData('figurines', [])
-    .filter(x => x.section === 'retros' && (allSeries || x.seriesId === seriesId) && (!allSeries || (!x.isChange && !x.isPrintError)))
+    .filter(x => x.section === 'retros' && (allSeries || x.seriesId === seriesId))
     .sort((a,b) => allSeries
       ? _retroLinkLabel(a).localeCompare(_retroLinkLabel(b), 'it', {sensitivity:'base'})
       : ((a.category||'').localeCompare(b.category||'', 'it') || (a.subcategory||'').localeCompare(b.subcategory||'', 'it') || (a.name||'').localeCompare(b.name||'', 'it')));
