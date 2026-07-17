@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.784 — Franco: "differenza fra le due viste di dettaglio: in modifica il campo Serie sta SOPRA i
+//          due tab; va SOTTO, come in visualizzazione". Nella vista (openFigDetail) la riga Serie è
+//          dentro figdetail-tab-generale (sotto i tab); nella modifica (switchToEditMode) stava prima
+//          dei tab. Spostata: prima i tab, poi (come primo elemento del tab Generale) la riga Serie.
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.783 — Franco: "nella card della FIGURINA, per un Change o un Errore di stampa, in fondo alla card
 //          (all'altezza della spunta Mia lista) mostrare il TIPO, col colore relativo, come per i Retro".
 //          La riga in fondo (typeIndicatorHTML a sinistra, toggle Mia lista a destra) è condivisa tra
@@ -7947,7 +7953,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.783';
+const JS_VERSION = 'v5.784';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -14605,14 +14611,16 @@ function switchToEditMode(figId) {
   // Build edit form
   let html = '';
 
-  // Serie (prima informazione, sempre visibile, non modificabile qui)
-  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Serie':'Series') + '</span><span class="detail-value" style="font-weight:600;">' + (figSeries?.name||'') + '</span></div>';
-
+  // v5.784 — i tab PRIMA, poi (dentro il tab Generale) il campo Serie: così la posizione coincide
+  // con la vista di visualizzazione, dove Serie sta SOTTO i tab. Prima qui stava sopra i tab.
   html += '<div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin:0.75rem 0 1rem;">' +
     '<button type="button" id="fe-tab-btn-generale" onclick="switchFeTab(\'generale\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>' +
     '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>' +
     '</div>';
   html += '<div id="fe-tab-generale">';
+
+  // Serie (prima informazione del tab Generale, sempre visibile, non modificabile qui)
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Serie':'Series') + '</span><span class="detail-value" style="font-weight:600;">' + (figSeries?.name||'') + '</span></div>';
 
   const isRetrosItem = f.section === 'retros';
   _feIsRetro = isRetrosItem; // v5.779 — usato da toggleFeBaseFigurineGroup per le regole del Nome
