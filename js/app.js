@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.801 — Franco (una tantum): nuovo strumento admin in "Data import" → "🔀 Sposta figurine in
+//          un'altra serie". Sceglie serie di partenza, spunta le figurine base, sceglie la destinazione:
+//          sposta ciascuna figurina (aggiornando seriesId) insieme al suo Retro collegato (e agli
+//          eventuali Change/errori di stampa di quel retro, per non orfanarli). Le figurine vivono dentro
+//          series.items, quindi lo spostamento toglie gli item dalla serie di partenza e li aggiunge alla
+//          destinazione riscrivendo 2 soli documenti serie (a prescindere dal numero di figurine).
+//          Avvisi non bloccanti su: retro non nella serie di partenza, retro ancora usato da una figurina
+//          che resta, collisioni di Numero nella destinazione. Nuove funzioni renderMoveFigList /
+//          moveSelectAll / moveFigurinesToSeries; nessuna modifica al modello dati.
+// ------------------------------------------------------------
 // v5.800 — Franco: definizione più solida di "figurina base certa" negli import. Oltre a non essere
 //          variazione/variazione-non-ufficiale/change/errore-di-stampa, deve avere baseFigurineId VUOTO.
 //          Il doppio criterio regge il caso limite di una variazione "orfana" (base cancellata) che può
@@ -8083,7 +8093,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.800';
+const JS_VERSION = 'v5.801';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16824,6 +16834,143 @@ function renderAdminErrori() {
     </div>`;
 }
 
+// ============================================================
+//  v5.801 — STRUMENTO ADMIN UNA TANTUM: sposta figurine (col loro retro
+//  collegato) da una serie all'altra. Le figurine vivono dentro series.items:
+//  spostare = toglierle dagli items della serie di partenza e aggiungerle a
+//  quelli della destinazione, aggiornando seriesId. Scrive UN documento serie
+//  per lato (2 scritture totali), a prescindere da quante figurine.
+// ============================================================
+function renderMoveFigList() {
+  const it = (currentLang === 'it');
+  const src = document.getElementById('move-src-series-select')?.value || '';
+  const box = document.getElementById('move-fig-list');
+  const info = document.getElementById('move-fig-info');
+  if (!box) return;
+  if (!src) { box.innerHTML = ''; box.style.display = 'none'; if (info) info.textContent = ''; return; }
+  const all = getData('figurines', []);
+  const figs = all
+    .filter(f => f.seriesId === src && f.section === 'figurines'
+      && !f.baseFigurineId && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError)
+    .sort((a, b) => ((Number(a.number) || 0) - (Number(b.number) || 0)) || (a.name || '').localeCompare(b.name || ''));
+  if (!figs.length) {
+    box.innerHTML = `<div style="color:var(--muted);font-size:0.85rem;">${it ? 'Nessuna figurina base in questa serie.' : 'No base stickers in this series.'}</div>`;
+    box.style.display = 'block'; if (info) info.textContent = ''; return;
+  }
+  const retroLabel = (id) => { const r = all.find(x => x.id === id); return r ? (r.fullName || r.name || '') : ''; };
+  box.innerHTML =
+    `<div style="margin-bottom:0.5rem;display:flex;gap:0.75rem;">
+       <button onclick="moveSelectAll(true)" style="font-size:0.78rem;padding:0.25rem 0.6rem;background:var(--card2);border:1px solid var(--border2);border-radius:6px;color:var(--text);cursor:pointer;">${it ? 'Seleziona tutte' : 'Select all'}</button>
+       <button onclick="moveSelectAll(false)" style="font-size:0.78rem;padding:0.25rem 0.6rem;background:var(--card2);border:1px solid var(--border2);border-radius:6px;color:var(--text);cursor:pointer;">${it ? 'Deseleziona tutte' : 'Deselect all'}</button>
+     </div>` +
+    figs.map(f => {
+      const rid = f.retroId || '';
+      const rlbl = rid ? ((it ? ' · retro: ' : ' · retro: ') + esc(retroLabel(rid))) : (it ? ' · nessun retro' : ' · no retro');
+      const numStr = (f.number != null && f.number !== '') ? ('#' + f.number + ' ') : '';
+      return `<label style="display:flex;align-items:center;gap:0.5rem;padding:0.25rem 0;font-size:0.85rem;cursor:pointer;">
+        <input type="checkbox" class="move-fig-cb" value="${f.id}" checked style="width:auto;">
+        <span><b>${numStr}</b>${esc(f.name || '')}<span style="color:var(--muted);">${rlbl}</span></span>
+      </label>`;
+    }).join('');
+  box.style.display = 'block';
+  if (info) info.textContent = (it
+    ? figs.length + ' figurine base. Il retro collegato si sposta con la figurina.'
+    : figs.length + ' base stickers. The linked retro moves with the sticker.');
+}
+
+function moveSelectAll(val) {
+  document.querySelectorAll('.move-fig-cb').forEach(cb => { cb.checked = val; });
+}
+
+async function moveFigurinesToSeries() {
+  if (!currentUser?.isAdmin) return;
+  const it = (currentLang === 'it');
+  const src = document.getElementById('move-src-series-select')?.value || '';
+  const dst = document.getElementById('move-dst-series-select')?.value || '';
+  const prog = document.getElementById('move-progress');
+  const mostra = (t) => { if (prog) { prog.style.display = 'block'; prog.innerHTML = t; } };
+  if (!src || !dst) { mostra(it ? 'Seleziona serie di partenza e destinazione.' : 'Select source and target series.'); return; }
+  if (src === dst) { mostra(it ? 'La serie di partenza e quella di destinazione coincidono.' : 'Source and target series are the same.'); return; }
+
+  const seriesList = getData('series', []);
+  const srcS = seriesList.find(s => s.id === src);
+  const dstS = seriesList.find(s => s.id === dst);
+  if (!srcS || !dstS) { mostra(it ? 'Serie non trovata.' : 'Series not found.'); return; }
+  srcS.items = srcS.items || []; dstS.items = dstS.items || [];
+
+  const figIds = Array.from(document.querySelectorAll('.move-fig-cb')).filter(cb => cb.checked).map(cb => cb.value);
+  if (!figIds.length) { mostra(it ? 'Nessuna figurina selezionata.' : 'No sticker selected.'); return; }
+  const figIdSet = new Set(figIds);
+  const movingFigs = srcS.items.filter(x => figIdSet.has(x.id));
+
+  // Retro collegati (dedup) presenti nella serie di partenza
+  const retroIds = new Set();
+  movingFigs.forEach(f => { if (f.retroId) retroIds.add(f.retroId); });
+  const movingRetros = srcS.items.filter(x => x.section === 'retros' && retroIds.has(x.id));
+  const movingRetroIdSet = new Set(movingRetros.map(r => r.id));
+  // Includi anche eventuali Change/errori di stampa DI quei retro, per non orfanarli
+  const retroChildren = srcS.items.filter(x => x.section === 'retros' && x.baseFigurineId && movingRetroIdSet.has(x.baseFigurineId));
+  const allMovingRetros = movingRetros.concat(retroChildren);
+  const allMovingRetroIdSet = new Set(allMovingRetros.map(r => r.id));
+
+  // Avvisi (non bloccanti)
+  const warnings = [];
+  retroIds.forEach(rid => {
+    if (!movingRetroIdSet.has(rid)) {
+      const r = getData('figurines', []).find(x => x.id === rid);
+      warnings.push((it ? 'Retro collegato non presente nella serie di partenza (non spostato): ' : 'Linked retro not in source series (not moved): ') + (r ? (r.fullName || r.name || rid) : rid));
+    }
+  });
+  const stayingFigs = srcS.items.filter(x => x.section === 'figurines' && !figIdSet.has(x.id));
+  allMovingRetros.forEach(r => {
+    if (stayingFigs.some(f => f.retroId === r.id)) {
+      warnings.push((it ? '⚠️ Il retro "' : '⚠️ Retro "') + (r.fullName || r.name || r.id) + (it ? '" è ancora usato da una figurina che resta nella serie di partenza — verrà comunque spostato.' : '" is still used by a sticker staying in the source series — it will be moved anyway.'));
+    }
+  });
+  const dstBaseNums = new Set(dstS.items
+    .filter(x => x.section === 'figurines' && !x.baseFigurineId && !x.isVariation && !x.isUnofficialVariation && !x.isChange && !x.isPrintError && x.number != null && x.number !== '')
+    .map(x => String(x.number)));
+  const collisions = movingFigs.filter(f => f.number != null && f.number !== '' && dstBaseNums.has(String(f.number))).map(f => '#' + f.number + ' ' + (f.name || ''));
+
+  let msg = (it
+    ? `Spostare ${movingFigs.length} figurine e ${allMovingRetros.length} retro da "${srcS.name}" a "${dstS.name}"?`
+    : `Move ${movingFigs.length} stickers and ${allMovingRetros.length} retros from "${srcS.name}" to "${dstS.name}"?`);
+  if (collisions.length) msg += (it
+    ? `\n\nATTENZIONE — numeri già presenti come base nella destinazione: ${collisions.join(', ')}. (Non blocca: la disambiguazione per Nome è attiva.)`
+    : `\n\nWARNING — numbers already present as base in target: ${collisions.join(', ')}. (Not blocking: name disambiguation is active.)`);
+  if (warnings.length) msg += '\n\n' + warnings.join('\n');
+  msg += (it ? '\n\nRiscrive 2 documenti serie. Operazione non annullabile. Procedo?' : '\n\nRewrites 2 series documents. Not undoable. Proceed?');
+  if (!confirm(msg)) { mostra(it ? 'Operazione annullata.' : 'Cancelled.'); return; }
+
+  const moveSet = new Set([...figIdSet, ...allMovingRetroIdSet]);
+  const moving = srcS.items.filter(x => moveSet.has(x.id));
+  moving.forEach(x => { x.seriesId = dst; });
+  srcS.items = srcS.items.filter(x => !moveSet.has(x.id));
+  dstS.items = dstS.items.concat(moving);
+  _recomputeSeriesCounts(srcS);
+  _recomputeSeriesCounts(dstS);
+
+  const btn = document.getElementById('move-start-btn'); if (btn) btn.disabled = true;
+  try {
+    await fsSave('series', srcS);
+    await fsSave('series', dstS);
+  } catch (e) {
+    mostra((it ? '❌ Salvataggio fallito: ' : '❌ Save failed: ') + e.message);
+    if (btn) btn.disabled = false;
+    return;
+  }
+  _cache.figurines = (_cache.figurines || []).map(f => moveSet.has(f.id) ? { ...f, seriesId: dst } : f);
+  if (btn) btn.disabled = false;
+
+  mostra((it
+    ? `✅ Fatto: spostate ${movingFigs.length} figurine e ${allMovingRetros.length} retro in "${dstS.name}".`
+    : `✅ Done: moved ${movingFigs.length} stickers and ${allMovingRetros.length} retros to "${dstS.name}".`)
+    + (warnings.length ? '<div style="margin-top:0.5rem;color:var(--warn);font-size:0.8rem;">' + warnings.map(esc).join('<br>') + '</div>' : ''));
+  try { renderMoveFigList(); } catch (e) {}
+  try { renderItems(); } catch (e) {}
+  try { renderCatalog(); } catch (e) {}
+}
+
 function renderAdminFoto() {
   const el = document.getElementById('admin-foto-content');
   if (!el) return;
@@ -17017,6 +17164,33 @@ function renderAdminFoto() {
     </div>
     <div id="fotonn-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
     </div>
+
+      <hr class="divider" style="margin:2rem 0;">
+
+      <h3 onclick="toggleImportSection('move')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-move-chevron">▶</span> 🔀 ${currentLang==='it'?'Sposta figurine in un\'altra serie (una tantum)':'Move stickers to another series (one-off)'}</h3>
+      <div id="import-move-section-content" style="display:none;">
+        <p style="color:var(--text);font-size:0.85rem;margin-bottom:1rem;">
+          ${currentLang==='it'
+            ? 'Sposta figurine base da una serie all\'altra. Il <b>retro collegato</b> a ciascuna figurina si sposta insieme a lei (con eventuali suoi Change/errori di stampa). Scegli la serie di partenza, spunta le figurine, scegli la destinazione e premi Sposta. Operazione <b>non annullabile</b>: riscrive 2 documenti serie.'
+            : 'Move base stickers from one series to another. Each sticker\'s <b>linked retro</b> moves with it (plus any of its Changes/print errors). Pick the source series, tick the stickers, pick the target and press Move. <b>Not undoable</b>: rewrites 2 series documents.'}
+        </p>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
+          <label class="form-label">${currentLang==='it'?'Serie di partenza':'Source series'}</label>
+          <select id="move-src-series-select" class="form-select" style="margin-bottom:0.75rem;" onchange="renderMoveFigList()">
+            <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
+            ${series.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
+          </select>
+          <div id="move-fig-info" style="font-size:0.8rem;color:var(--muted);margin-bottom:0.4rem;"></div>
+          <div id="move-fig-list" style="display:none;max-height:340px;overflow:auto;border:1px solid var(--border2);border-radius:var(--radius);padding:0.6rem;margin-bottom:0.9rem;"></div>
+          <label class="form-label">${currentLang==='it'?'Serie di destinazione':'Target series'}</label>
+          <select id="move-dst-series-select" class="form-select" style="margin-bottom:0.9rem;">
+            <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
+            ${series.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
+          </select>
+          <button class="btn-primary btn-admin" onclick="moveFigurinesToSeries()" id="move-start-btn">🔀 ${currentLang==='it'?'Sposta selezionate':'Move selected'}</button>
+        </div>
+        <div id="move-progress" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-size:0.82rem;"></div>
+      </div>
     </div>`;
 }
 
