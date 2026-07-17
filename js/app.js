@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.792 — Franco (baco Clona + anteprima ricerca): (1) il Clona copiava anche FOTO, FOTO EBAY e RETRO,
+//          campi propri del singolo pezzo fisico. Ora NON li copia più: il nuovo oggetto avrà la sua foto
+//          e il suo retro (cloneFigurine azzera editingFigImg/EbayImg e ripopola il retro a vuoto).
+//          (2) Nell'anteprima della ricerca globale (Inventario) una figurina Variazione/Change con foto
+//          propria mostrava TRE miniature: foto propria + foto base + foto retro — e con foto propria =
+//          foto base si vedeva due volte la stessa foto. Ora il FRONTE è una sola miniatura (foto propria
+//          se c'è, altrimenti quella della base) + il retro. Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.791 — Franco: revert della v5.787 — il selettore Retro dei Change deve pescare TUTTI i retro (di
 //          tutte le serie), non solo quelli base. Tolto il filtro (!isChange && !isPrintError) in
 //          modalità allSeries da populateRetroSelect e _populateFeRetroOptions. Modificato app.js,
@@ -8024,7 +8032,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.791';
+const JS_VERSION = 'v5.792';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10539,8 +10547,7 @@ function renderCatalogSearch(q) {
                   : f.isChange ? (currentLang === 'it' ? 'Change' : 'Change') : '';
                 const smallImg = (url, title) => url ? `<img src="${cloudinaryUrl(url,'w_32,h_32,c_fit,q_auto,f_auto')}" title="${title}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);border:1px solid var(--border);">` : '';
                 return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
-                ${f.img ? `<img src="${cloudinaryUrl(f.img,'w_32,h_32,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : ''}
-                ${baseFig ? smallImg(baseFig.img, currentLang === 'it' ? 'Figurina base' : 'Base sticker') : ''}
+                ${(() => { const front = isVarOrChange ? (f.img || (baseFig && baseFig.img) || null) : f.img; return front ? `<img src="${cloudinaryUrl(front,'w_32,h_32,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : ''; })()}
                 ${retroFig ? smallImg(retroFig.img, currentLang === 'it' ? 'Retro associato' : 'Associated retro') : ''}
                 <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">Change:</span> <span style="color:var(--muted);">'+f.changeType+'</span></span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (retroFig ? ' - <span style="color:var(--info);">' + retroFig.name + '</span>' : '') + '</span>' : ''}</span>
               </span>`;
@@ -11431,6 +11438,14 @@ function cloneFigurine(itemId) {
   // partenza dev'essere selezionabile come base (tipico: clono una base per farne un suo Change).
   // Ripopolo il selettore base SENZA escludere nulla, preservando l'eventuale base già copiata.
   populateBaseFigurineSelect(null, document.getElementById('fig-base-figurine-input')?.value || null);
+  // v5.792 — il Clona NON copia i campi del singolo PEZZO FISICO: Foto, Foto Ebay e Retro. Il nuovo
+  // oggetto avrà la sua foto e il suo retro. (Franco: "possibile che cloni anche il retro?" + la foto
+  // veniva duplicata nell'anteprima di ricerca perché il change aveva una foto propria = quella base.)
+  editingFigImg = null; editingFigImgFileSave = null;
+  editingFigEbayImg = null; editingFigEbayImgFileSave = null;
+  const _clImgPrev = document.getElementById('fig-img-preview'); if (_clImgPrev) _clImgPrev.style.display = 'none';
+  const _clEbayPrev = document.getElementById('fig-ebay-img-preview'); if (_clEbayPrev) _clEbayPrev.style.display = 'none';
+  populateRetroSelect(null, document.getElementById('fig-is-change-input')?.checked || false);
   const labelSingular = getSectionLabelSingular(src.section || currentSection);
   const t = document.getElementById('fig-modal-title');
   if (t) t.textContent = (currentLang === 'it' ? 'Clona ' : 'Clone ') + labelSingular;
