@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.782 — Franco: "vista dettaglio e form di modifica devono coincidere; capisco che in vista non
+//          si mostrino i campi vuoti, ma a parte quello devono sempre coincidere". Le due erano
+//          divergite: la vista mostrava Numero e Nome solo nel TITOLO (v5.764), non come righe.
+//          Ora la vista mostra anche le RIGHE Numero (quando presente; i Retro non sono numerati ->
+//          assente) e Nome (tutte le sezioni, quando presente), oltre che nel titolo. Gli altri campi
+//          erano già in vista (base, retro collegato, tipo come frase — scelta di Franco: resta frase
+//          —, changeType, tipo errore di stampa, sottoserie, punteggio, taglia, descrizione, ebay).
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.781 — Franco: "un pulsante admin per CLONARE una figurina, disponibile per qualsiasi figurina;
 //          apre una modale con tutti i campi uguali alla figurina di partenza ma il record NON già
 //          salvato (anche perché andrebbe in chiave duplicata)". Fatto: nuova funzione
@@ -7924,7 +7933,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.781';
+const JS_VERSION = 'v5.782';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -14148,15 +14157,23 @@ function openFigDetail(figId) {
     }
   }
 
-  // Categoria (sempre visibile per i Retro), Sottocategoria (solo se popolata) e Nome.
-  // Il Nome era visibile solo nella form di MODIFICA (v5.764): in vista compariva solo dentro
-  // il titolo (Nome completo). Qui lo mostriamo come riga a sé, come gli altri campi identita'.
+  // v5.782 — Franco: "la vista e la modifica devono coincidere (a parte i campi vuoti, che in vista
+  // si nascondono)". Numero e Nome mancavano come righe nella vista (per le figurine comparivano
+  // solo nel titolo, v5.764): ora ci sono, quando presenti. Numero: i Retro non sono numerati, quindi
+  // per loro la riga resta assente. Nome: tutte le sezioni (prima solo Retro).
+  if (f.number) {
+    rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">#${f.number}</span></div>`);
+  }
+  // Categoria (sempre visibile per i Retro), Sottocategoria (solo se popolata).
   if (f.section === 'retros') {
     rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Categoria' : 'Category')}</span><span class="detail-value">${f.category || '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
     if (f.subcategory) {
       rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottocategoria' : 'Subcategory')}</span><span class="detail-value">${f.subcategory}</span></div>`);
     }
-    rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome' : 'Name')}</span><span class="detail-value">${f.name ? esc(f.name) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostato' : 'not set') + '</span>'}</span></div>`);
+  }
+  // Nome — tutte le sezioni, quando presente (hide-empty).
+  if (f.name) {
+    rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome' : 'Name')}</span><span class="detail-value">${esc(f.name)}</span></div>`);
   }
 
   // Sottoserie - show only if populated (admin sees it always in edit modal, not here)
