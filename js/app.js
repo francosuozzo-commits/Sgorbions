@@ -1,6 +1,19 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.785 — Franco: problemi sul selettore "Figurina/Retro base" (in entrambe le form, modale e inline).
+//          (1) c'era un limite .slice(0,50): con ~256 basi la barra "si esauriva subito". Rimosso:
+//          ora mostra TUTTE le opzioni filtrate (dropdown scrollabile). (2) I Retro erano ordinati per
+//          Categoria/Sottocategoria/Nome: ora per NOME COMPLETO (fullName), come chiesto; le Figurine
+//          restano per Numero. Nuovo comparatore condiviso _baseFigurineLinkSort. (3) La ricerca "a
+//          volte funzionava, a volte no": cercava su name/category/subcategory, che per i Retro non
+//          coincide con ciò che è MOSTRATO. Ora cerca sull'ETICHETTA mostrata (_baseFigurineLinkLabel:
+//          Nome completo per i Retro, "#numero Nome" per le Figurine) + numero. _baseFigurineLinkLabel
+//          usa f.section (più robusto di currentSection) e per i Retro mostra il fullName (fallback alla
+//          vecchia forma se assente). Allineati: populateBaseFigurineSelect, filterBaseFigurineLink,
+//          selectFeBaseFigurineLink, filterFeBaseFigurineLink, popolamento inline e valore iniziale.
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.784 — Franco: "differenza fra le due viste di dettaglio: in modifica il campo Serie sta SOPRA i
 //          due tab; va SOTTO, come in visualizzazione". Nella vista (openFigDetail) la riga Serie è
 //          dentro figdetail-tab-generale (sotto i tab); nella modifica (switchToEditMode) stava prima
@@ -7953,7 +7966,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.784';
+const JS_VERSION = 'v5.785';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10919,11 +10932,24 @@ function closeSeriesDetail() {
 // ============================================================
 let _baseFigurineLinkOptions = [];
 function _baseFigurineLinkLabel(f) {
-  if (currentSection === 'retros') {
+  // v5.785 — usa f.section (più robusto di currentSection, valido anche nella form inline del dettaglio).
+  // Per i RETRO l'etichetta è il NOME COMPLETO (richiesta di Franco: elenco base ordinato/mostrato per
+  // Nome completo), con fallback alla vecchia forma "Categoria · Sottocategoria — Nome" se il fullName
+  // non è ancora stato calcolato. Per le Figurine: "#numero Nome".
+  if (f.section === 'retros') {
+    if (f.fullName && f.fullName.trim()) return f.fullName;
     const parts = [f.category, f.subcategory].map(v => (v||'').trim()).filter(Boolean);
-    return (parts.length ? parts.join(' · ') + ' — ' : '') + f.name;
+    return (parts.length ? parts.join(' · ') + ' — ' : '') + (f.name || '');
   }
-  return (f.number ? '#' + f.number + ' ' : '') + f.name;
+  return (f.number ? '#' + f.number + ' ' : '') + (f.name || '');
+}
+
+// v5.785 — ordinamento condiviso delle opzioni "base": Retro per NOME COMPLETO, Figurine per Numero.
+function _baseFigurineLinkSort(a, b) {
+  if ((a.section || '') === 'retros' || (b.section || '') === 'retros') {
+    return (_baseFigurineLinkLabel(a)).localeCompare(_baseFigurineLinkLabel(b), 'it', { sensitivity: 'base' });
+  }
+  return (a.number || 0) - (b.number || 0);
 }
 
 function populateBaseFigurineSelect(excludeId, selectedId) {
@@ -10932,14 +10958,7 @@ function populateBaseFigurineSelect(excludeId, selectedId) {
   if (!hidden || !search) return;
   _baseFigurineLinkOptions = getData('figurines', [])
     .filter(f => f.seriesId === currentSeriesId && f.section === currentSection && f.id !== excludeId && !f.isVariation && !f.isUnofficialVariation && !f.isChange)
-    .sort((a, b) => {
-      if (currentSection === 'retros') {
-        const ka = [(a.category||''), (a.subcategory||''), (a.name||'')].join('|').toLowerCase();
-        const kb = [(b.category||''), (b.subcategory||''), (b.name||'')].join('|').toLowerCase();
-        return ka.localeCompare(kb);
-      }
-      return (a.number||0) - (b.number||0);
-    });
+    .sort(_baseFigurineLinkSort); // v5.785 — Retro per Nome completo, Figurine per Numero
   hidden.value = selectedId || '';
   const dd = document.getElementById('fig-base-figurine-dropdown');
   if (dd) dd.style.display = 'none';
@@ -10955,12 +10974,17 @@ function filterBaseFigurineLink() {
   const q = document.getElementById('fig-base-figurine-search').value.toLowerCase().trim();
   const dd = document.getElementById('fig-base-figurine-dropdown');
   if (!dd) return;
+  // v5.785 — la ricerca combacia con ciò che è mostrato (l'etichetta: Nome completo per i Retro,
+  // "#numero Nome" per le Figurine) + il numero. Prima cercava su name/category/subcategory, che per i
+  // Retro non coincideva col Nome completo mostrato: da qui il "a volte funziona, a volte no".
   const filtered = q
-    ? _baseFigurineLinkOptions.filter(f => (f.name||'').toLowerCase().includes(q) || String(f.number||'').includes(q) || (f.category||'').toLowerCase().includes(q) || (f.subcategory||'').toLowerCase().includes(q))
+    ? _baseFigurineLinkOptions.filter(f => _baseFigurineLinkLabel(f).toLowerCase().includes(q) || String(f.number||'').includes(q))
     : _baseFigurineLinkOptions;
   if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
-  dd.innerHTML = filtered.slice(0, 50).map(f => {
+  // v5.785 — niente più limite di 50 (la barra "si esauriva subito" con ~256 basi): mostra tutte le
+  // opzioni filtrate; il dropdown resta scrollabile.
+  dd.innerHTML = filtered.map(f => {
     return `<div onclick="selectBaseFigurineLink('${f.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
       <div style="font-size:0.9rem;">${_baseFigurineLinkLabel(f)}</div>
     </div>`;
@@ -14514,14 +14538,16 @@ function filterFeBaseFigurineLink() {
   const q = document.getElementById('fe-base-figurine-search').value.toLowerCase().trim();
   const dd = document.getElementById('fe-base-figurine-dropdown');
   if (!dd) return;
+  // v5.785 — come nel selettore modale: ricerca sull'etichetta mostrata (_baseFigurineLinkLabel:
+  // Nome completo per i Retro, "#numero Nome" per le Figurine) + numero, e nessun limite di 50.
   const filtered = q
-    ? _feBaseFigurineLinkOptions.filter(f => (f.name||'').toLowerCase().includes(q) || String(f.number||'').includes(q))
+    ? _feBaseFigurineLinkOptions.filter(f => _baseFigurineLinkLabel(f).toLowerCase().includes(q) || String(f.number||'').includes(q))
     : _feBaseFigurineLinkOptions;
   if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
-  dd.innerHTML = filtered.slice(0, 50).map(f => {
+  dd.innerHTML = filtered.map(f => {
     return `<div onclick="selectFeBaseFigurineLink('${f.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <div style="font-size:0.9rem;">${f.number ? '#' + f.number + ' ' : ''}${f.name}</div>
+      <div style="font-size:0.9rem;">${esc(_baseFigurineLinkLabel(f))}</div>
     </div>`;
   }).join('');
 }
@@ -14530,7 +14556,7 @@ function selectFeBaseFigurineLink(id) {
   const f = _feBaseFigurineLinkOptions.find(x => x.id === id);
   if (!f) return;
   document.getElementById('fe-base-figurine').value = id;
-  document.getElementById('fe-base-figurine-search').value = (f.number ? '#' + f.number + ' ' : '') + f.name;
+  document.getElementById('fe-base-figurine-search').value = _baseFigurineLinkLabel(f);
   document.getElementById('fe-base-figurine-dropdown').style.display = 'none';
 }
 
@@ -14683,13 +14709,13 @@ function switchToEditMode(figId) {
   // Figurina/Retro base — ricerca in digitazione (stesso pattern del Retro associato)
   _feBaseFigurineLinkOptions = getData('figurines', [])
     .filter(x => x.seriesId === f.seriesId && x.section === f.section && x.id !== f.id && !x.isVariation && !x.isUnofficialVariation && !x.isChange)
-    .sort((a,b) => (a.number||0) - (b.number||0));
+    .sort(_baseFigurineLinkSort); // v5.785 — Retro per Nome completo, Figurine per Numero
   const selectedBaseFig = f.baseFigurineId ? _feBaseFigurineLinkOptions.find(x => x.id === f.baseFigurineId) : null;
   const showBaseGroup = f.isVariation || f.isUnofficialVariation || f.isChange || f.isPrintError;
   const baseLabel = isRetrosItem ? (currentLang==='it'?'Retro base':'Base Retro') : (currentLang==='it'?'Figurina base':'Base sticker');
   html += '<div class="detail-row" id="fe-base-figurine-group" style="' + (showBaseGroup ? '' : 'display:none;') + 'flex-direction:column;align-items:stretch;position:relative;">' +
     '<span class="detail-label">' + baseLabel + '</span>' +
-    '<input class="form-input" type="text" id="fe-base-figurine-search" placeholder="' + (currentLang==='it'?'Cerca per numero o nome...':'Search by number or name...') + '" autocomplete="off" value="' + (selectedBaseFig ? ((selectedBaseFig.number ? '#' + selectedBaseFig.number + ' ' : '') + selectedBaseFig.name) : '') + '" oninput="filterFeBaseFigurineLink()" onfocus="filterFeBaseFigurineLink()" onblur="clearFeBaseFigurineLinkIfEmpty()" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
+    '<input class="form-input" type="text" id="fe-base-figurine-search" placeholder="' + (currentLang==='it'?'Cerca per numero o nome...':'Search by number or name...') + '" autocomplete="off" value="' + (selectedBaseFig ? esc(_baseFigurineLinkLabel(selectedBaseFig)) : '') + '" oninput="filterFeBaseFigurineLink()" onfocus="filterFeBaseFigurineLink()" onblur="clearFeBaseFigurineLinkIfEmpty()" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
     '<input type="hidden" id="fe-base-figurine" value="' + (f.baseFigurineId || '') + '">' +
     '<div id="fe-base-figurine-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:220px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>' +
     '</div>';
