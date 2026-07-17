@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.793 — Franco: qualità scarsa della "Rimuovi sfondo", soprattutto sui retro bianchi (foto annerita).
+//          La libreria @imgly/background-removal usava il modello di DEFAULT (isnet_fp16, "medio"), che
+//          sbaglia la maschera sui soggetti chiari a basso contrasto. Passato al modello PIENO
+//          model:'isnet' in tutti e 3 i punti (removeBgFromEdit + le due procedure di caricamento massivo
+//          foto). Prima volta scarica un modello un po' più grande, poi in cache. DA TESTARE nel browser
+//          (nel sandbox non è verificabile: gli host dei modelli ML sono irraggiungibili). Se non basta,
+//          si valuta GrabCut client-side (OpenCV.js) per i retro o l'add-on Cloudinary. Modificato app.js,
+//          index.html (versione).
+// ------------------------------------------------------------
 // v5.792 — Franco (baco Clona + anteprima ricerca): (1) il Clona copiava anche FOTO, FOTO EBAY e RETRO,
 //          campi propri del singolo pezzo fisico. Ora NON li copia più: il nuovo oggetto avrà la sua foto
 //          e il suo retro (cloneFigurine azzera editingFigImg/EbayImg e ripopola il retro a vuoto).
@@ -8032,7 +8041,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.792';
+const JS_VERSION = 'v5.793';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -14962,6 +14971,7 @@ async function removeBgFromEdit() {
 
     // Rimuovi sfondo
     const resultBlob = await removeBackground(blob, {
+      model: 'isnet', // v5.793 — modello PIENO (qualità migliore su soggetti chiari a basso contrasto, es. retro bianchi) invece del default isnet_fp16
       progress: (key, current, total) => {
         if (btn) btn.textContent = currentLang === 'it'
           ? '⏳ ' + Math.round((current/total)*100) + '%'
@@ -17037,6 +17047,7 @@ async function startAdminFotoUpload() {
       if (doRemoveBg) {
         fotoLog('🎨 Rimozione sfondo #' + num + '...', 'info');
         blob = await window._removeBackground(blob, {
+          model: 'isnet', // v5.793 — modello pieno (vedi removeBgFromEdit)
           progress: (key, cur, tot) => fotoStatus('Sfondo #' + num + ': ' + Math.round((cur/tot)*100) + '%', Math.round((i/files.length)*100))
         });
         blob = await fotoCrop(blob);
@@ -17173,6 +17184,7 @@ async function startAdminFotoNoNumberUpload() {
       if (doRemoveBg) {
         fotoNnLog('🎨 Rimozione sfondo "' + name + '"...', 'info');
         blob = await window._removeBackground(blob, {
+          model: 'isnet', // v5.793 — modello pieno (vedi removeBgFromEdit)
           progress: (key, cur, tot) => fotoNnStatus('Sfondo "' + name + '": ' + Math.round((cur/tot)*100) + '%', Math.round((i/files.length)*100))
         });
         blob = await fotoCrop(blob);
