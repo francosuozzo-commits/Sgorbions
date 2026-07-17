@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.799 — Franco: riconciliazione della figurina base negli import. Se nel dataset ci sono due (o più)
+//          figurine base con lo STESSO Numero (differenti solo per Nome), il Numero da solo non basta
+//          e il Retro/i dati finivano sulla base sbagliata. Ora: (a) import figurine base e (b) import
+//          Variazioni/Change cercano la base per Numero tra le sole basi (baseFigurineId vuoto, cioè non
+//          variazione/change) e, SOLO quando c'è più di una base con quel Numero, disambiguano col Nome
+//          (per Variazioni/Change il Nome coincide con quello della base). Con Numero unico il
+//          comportamento è invariato (rename per Numero preservato). Se restano ambigue, la riga viene
+//          saltata con avviso invece di agganciare la figurina sbagliata. Modificato app.js, index.html.
+// ------------------------------------------------------------
 // v5.798 — Franco: il selettore "Senza foto" va al FONDO della seconda riga di selettori (in coda ai
 //          filtri di possesso "Solo presenti/mancanti dalla tua lista"), non su una riga separata sotto.
 //          Ora è reso dentro items-owned-toggles come ultimo toggle; il contenitore separato
@@ -8068,7 +8077,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.798';
+const JS_VERSION = 'v5.799';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -15814,7 +15823,21 @@ async function startImportVar() {
        continue;
     }
 
-    const baseFig = allFigs.find(f => Number(f.number) === Number(numStr) && !f.isVariation && !f.isUnofficialVariation && !f.isChange);
+    // La figurina base si cerca per Numero tra le SOLE basi (esclude variazioni/change, che
+    // condividono il Numero). v5.799 — se nella serie ci sono più basi con lo stesso Numero, si
+    // disambigua col Nome: per Variazioni e Change il Nome della riga coincide col Nome della
+    // base, quindi identifica quella giusta. Se dopo la disambiguazione resta più di una base,
+    // si scarta la riga per non collegare la variazione/change alla base sbagliata.
+    let _baseCands = allFigs.filter(f => Number(f.number) === Number(numStr) && !f.isVariation && !f.isUnofficialVariation && !f.isChange);
+    if (_baseCands.length > 1 && nome) {
+      const _exact = _baseCands.filter(f => (f.name||'').toLowerCase() === nome.toLowerCase());
+      if (_exact.length) _baseCands = _exact;
+    }
+    if (_baseCands.length > 1) {
+      errRiga('⚠️ Riga ' + (i+1) + ': ci sono ' + _baseCands.length + ' figurine base #' + numStr + (nome ? ' e nessuna col Nome "' + nome + '"' : ', e la riga non indica un Nome per distinguerle') + ' — riga scartata per non collegarla alla base sbagliata', 'warn');
+       continue;
+    }
+    const baseFig = _baseCands[0] || null;
     if (!baseFig) {
       errRiga('⚠️ Riga ' + (i+1) + ': nessuna figurina base #' + numStr + ' trovata nella serie', 'warn');
        continue;
@@ -16342,25 +16365,35 @@ async function startImportFig() {
        continue;
     }
 
-    // Chiave di riconciliazione — esclude esplicitamente variazioni/change, che ereditano lo
-    // stesso Numero della loro figurina base: senza questo filtro, .find() potrebbe agganciare
-    // per errore una variazione invece della vera figurina base con quel numero
+    // Chiave di riconciliazione — esclude sempre variazioni/change, che ereditano lo stesso
+    // Numero della loro figurina base: senza questo filtro .find() potrebbe agganciare per
+    // errore una variazione al posto della vera base con quel numero.
+    // v5.799 — Franco: nel dataset possono esserci DUE (o più) figurine base con lo STESSO
+    // Numero (raro, ma capita) che differiscono solo per il Nome. In quel caso il Numero da solo
+    // non è una chiave: si disambigua col Nome. Regola: cerco le basi con quel Numero; se ce n'è
+    // una sola la uso (così il rename per Numero — Numero uguale, Nome nuovo — continua a
+    // funzionare); se ce n'è più d'una scelgo quella col Nome della riga; se restano ambigue
+    // salto la riga, per non attaccare il Retro (e gli altri dati) alla figurina sbagliata.
     const existingFigs = getData('figurines', []);
-    let duplicate = null;
-    if (hasSubseries && sottoserie) {
-      duplicate = existingFigs.find(f =>
-        f.seriesId === seriesId && f.section === 'figurines' &&
-        !f.isVariation && !f.isUnofficialVariation && !f.isChange &&
-        (f.subseries||'').toLowerCase() === sottoserie.toLowerCase() &&
-        (numero ? String(f.number||'') === String(+numero) : (f.name||'').toLowerCase() === nome.toLowerCase())
-      );
+    const _isBaseFig = (f) =>
+      f.seriesId === seriesId && f.section === 'figurines' &&
+      !f.isVariation && !f.isUnofficialVariation && !f.isChange &&
+      (!hasSubseries || !sottoserie || (f.subseries||'').toLowerCase() === sottoserie.toLowerCase());
+    let _baseCands;
+    if (numero) {
+      _baseCands = existingFigs.filter(f => _isBaseFig(f) && String(f.number||'') === String(+numero));
+      if (_baseCands.length > 1 && nome) {
+        const _exact = _baseCands.filter(f => (f.name||'').toLowerCase() === nome.toLowerCase());
+        if (_exact.length) _baseCands = _exact;
+      }
     } else {
-      duplicate = existingFigs.find(f =>
-        f.seriesId === seriesId && f.section === 'figurines' &&
-        !f.isVariation && !f.isUnofficialVariation && !f.isChange &&
-        (numero ? String(f.number||'') === String(+numero) : (f.name||'').toLowerCase() === nome.toLowerCase())
-      );
+      _baseCands = existingFigs.filter(f => _isBaseFig(f) && (f.name||'').toLowerCase() === nome.toLowerCase());
     }
+    if (_baseCands.length > 1) {
+      errRiga('❌ Riga ' + (i+1) + ': ci sono ' + _baseCands.length + ' figurine base con Numero ' + numero + (nome ? ' e nessuna col Nome "' + nome + '"' : ', e la riga non indica un Nome per distinguerle') + ' — riga saltata per non agganciarla alla figurina sbagliata', 'err');
+       continue;
+    }
+    let duplicate = _baseCands[0] || null;
 
     // Controllo esplicito di sicurezza: se per qualunque motivo la riconciliazione ha trovato
     // un record che NON è una figurina base (bug nella query sopra, dato corrotto, ecc.), non
