@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.800 — Franco: definizione più solida di "figurina base certa" negli import. Oltre a non essere
+//          variazione/variazione-non-ufficiale/change/errore-di-stampa, deve avere baseFigurineId VUOTO.
+//          Il doppio criterio regge il caso limite di una variazione "orfana" (base cancellata) che può
+//          ritrovarsi con baseFigurineId vuoto pur restando una variazione: senza il controllo sui flag
+//          verrebbe scambiata per una base. Applicato a import figurine base e import Variazioni/Change.
+// ------------------------------------------------------------
 // v5.799 — Franco: riconciliazione della figurina base negli import. Se nel dataset ci sono due (o più)
 //          figurine base con lo STESSO Numero (differenti solo per Nome), il Numero da solo non basta
 //          e il Retro/i dati finivano sulla base sbagliata. Ora: (a) import figurine base e (b) import
@@ -8077,7 +8083,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.799';
+const JS_VERSION = 'v5.800';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -15828,7 +15834,8 @@ async function startImportVar() {
     // disambigua col Nome: per Variazioni e Change il Nome della riga coincide col Nome della
     // base, quindi identifica quella giusta. Se dopo la disambiguazione resta più di una base,
     // si scarta la riga per non collegare la variazione/change alla base sbagliata.
-    let _baseCands = allFigs.filter(f => Number(f.number) === Number(numStr) && !f.isVariation && !f.isUnofficialVariation && !f.isChange);
+    // v5.800 — base CERTA: baseFigurineId vuoto E nessun flag speciale (regge la variazione orfana).
+    let _baseCands = allFigs.filter(f => Number(f.number) === Number(numStr) && !f.baseFigurineId && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError);
     if (_baseCands.length > 1 && nome) {
       const _exact = _baseCands.filter(f => (f.name||'').toLowerCase() === nome.toLowerCase());
       if (_exact.length) _baseCands = _exact;
@@ -16375,9 +16382,14 @@ async function startImportFig() {
     // funzionare); se ce n'è più d'una scelgo quella col Nome della riga; se restano ambigue
     // salto la riga, per non attaccare il Retro (e gli altri dati) alla figurina sbagliata.
     const existingFigs = getData('figurines', []);
+    // v5.800 — definizione di BASE CERTA: baseFigurineId vuoto E nessun flag speciale
+    // (variazione / variazione non ufficiale / change / errore di stampa). Il doppio criterio
+    // regge anche il caso limite di una variazione "orfana" (base cancellata) che potrebbe
+    // ritrovarsi con baseFigurineId vuoto ma resta comunque una variazione.
     const _isBaseFig = (f) =>
       f.seriesId === seriesId && f.section === 'figurines' &&
-      !f.isVariation && !f.isUnofficialVariation && !f.isChange &&
+      !f.baseFigurineId &&
+      !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError &&
       (!hasSubseries || !sottoserie || (f.subseries||'').toLowerCase() === sottoserie.toLowerCase());
     let _baseCands;
     if (numero) {
