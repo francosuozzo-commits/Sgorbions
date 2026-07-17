@@ -1,6 +1,20 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.790 — Franco: rendere gli ERRORI DI STAMPA di FIGURINA identici a quelli di RETRO — niente nome
+//          proprio, il Nome eredita dalla base, identificati dal "Tipo di errore di stampa" (testo
+//          libero, già obbligatorio). Nome completo = "NomeBase - Tipo errore di stampa" (SENZA
+//          maiuscolo, come i Retro; il maiuscolo resta solo per il Tipo di change). Chiude l'asimmetria
+//          Change/Errore di stampa di figurina. Toccati: computeFullName (ramo isPrintense→printErrorType),
+//          nascondimento del campo Nome (modale _nomeNascosto, inline _feNameHidden + toggle), ereditarietà
+//          del Nome al salvataggio (_nomeEreditato modale, _nameInherited inline) — ora tutti coprono
+//          Change ED Errori di stampa sia Retro sia figurine.
+//          DA SAPERE: le figurine Errore di stampa ESISTENTI (con nome proprio) non hanno il Nome
+//          ereditato finché non le riapri/salvi; il Nome completo, se ricalcolato, diventa "NomeBase -
+//          Tipo errore di stampa" (il vecchio nome proprio non entra più nel Nome completo — se conteneva
+//          informazioni utili, vanno messe nel Tipo di errore di stampa). Se non ne esistono ancora,
+//          nessun problema. Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.789 — Franco (baco su Clona): clonando la figurina base X per farne un suo Change, nel selettore
 //          "Figurina base" X non compariva. Causa: cloneFigurine chiama openAddItemModal(X), che popola
 //          il selettore base con excludeId=X (giusto in MODIFICA: una figurina non è base di sé stessa),
@@ -8005,7 +8019,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.789';
+const JS_VERSION = 'v5.790';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11227,7 +11241,9 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
   // quello del retro base): nascondiamo il campo. Al salvataggio il Nome viene comunque derivato.
   // v5.779 — idem per un Change di FIGURINA: eredita il Nome dalla figurina base, campo nascosto.
   const nameGroup = document.getElementById('fig-name-group');
-  const _nomeNascosto = (currentSection === 'retros' && (isChg || isPE)) || (currentSection === 'figurines' && isChg);
+  // v5.790 — Nome nascosto per Change ED Errori di stampa, sia Retro sia figurine (in tutti eredita
+  // dalla base). Prima le figurine Errore di stampa mostravano ancora il Nome proprio.
+  const _nomeNascosto = (isChg || isPE) && (currentSection === 'retros' || currentSection === 'figurines');
   if (nameGroup) nameGroup.style.display = _nomeNascosto ? 'none' : '';
 }
 
@@ -12586,8 +12602,8 @@ async function _saveFigurineInner() {
   // v5.774 — per un Change o Errore di stampa di RETRO il Nome eredita quello del retro base
   // (il campo e' nascosto nella form). Se il base non e' ancora selezionato ci pensa il controllo
   // "Retro base obbligatorio" piu' sotto, quindi qui saltiamo il "Nome obbligatorio".
-  // v5.779 — il Nome eredita da quello della base anche per un Change di FIGURINA
-  const _nomeEreditato = (isRetrosSection && (isChange || isPrintError)) || (currentSection === 'figurines' && isChange);
+  // v5.779/790 — il Nome eredita dalla base per Change ED Errori di stampa, sia Retro sia figurine.
+  const _nomeEreditato = (isChange || isPrintError) && (isRetrosSection || currentSection === 'figurines');
   if (_nomeEreditato && baseFigurineId) {
     const _bR = getData('figurines', []).find(x => x.id === baseFigurineId);
     if (_bR) name = _bR.name || '';
@@ -14608,9 +14624,9 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
   // v5.774 — Nome nascosto per Change/Errore di stampa di RETRO. Un item e' un retro se e' stato
   // costruito il gruppo Tipo di change (esiste solo per i retro); il Nome verra' derivato dal base.
   const feNameGroup = document.getElementById('fe-name-group');
-  // v5.779 — il Nome si nasconde per QUALUNQUE Change (retro o figurina: eredita dalla base) e
-  // per gli Errori di stampa di RETRO. Un Errore di stampa di FIGURINA mantiene il Nome proprio.
-  if (feNameGroup) feNameGroup.style.display = (isChg || (_feIsRetro && isPE)) ? 'none' : '';
+  // v5.790 — il Nome si nasconde per QUALUNQUE Change o Errore di stampa (retro o figurina): in tutti
+  // il Nome eredita dalla base.
+  if (feNameGroup) feNameGroup.style.display = (isChg || isPE) ? 'none' : '';
 }
 
 // v5.779 — la form inline serve tutte le sezioni; il gruppo "Tipo di change" ora esiste anche
@@ -14762,9 +14778,9 @@ function switchToEditMode(figId) {
   html += '<div class="detail-row" id="fe-number-group" style="' + ((!isRetrosItem && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ? '' : 'display:none;') + '"><span class="detail-label">N.</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"><label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--muted);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
 
   // Nome
-  // v5.774 — Nome nascosto per Change/Errore di stampa di RETRO (eredita dal base; derivato al salvataggio)
-  // v5.779 — idem per un Change di FIGURINA (eredita il Nome dalla figurina base)
-  const _feNameHidden = (f.section === 'retros' && (f.isChange || f.isPrintError)) || (f.section === 'figurines' && f.isChange);
+  // v5.774/779/790 — Nome nascosto per Change ED Errori di stampa, sia Retro sia figurine (eredita
+  // dalla base; derivato al salvataggio).
+  const _feNameHidden = (f.isChange || f.isPrintError) && (f.section === 'retros' || f.section === 'figurines');
   html += '<div class="detail-row" id="fe-name-group" style="' + (_feNameHidden ? 'display:none;' : '') + '"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + (f.name||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
 
   // Punteggio
@@ -15015,9 +15031,9 @@ async function saveFigFromDetail(figId) {
   // nascosto). Se il base manca, il controllo apposito piu' sotto blocca; qui si salta "Nome obbligatorio".
   const _isChgChk = !!document.getElementById('fe-is-change')?.checked;
   const _isPEChk = !!document.getElementById('fe-is-printerror')?.checked;
-  // v5.779 — Nome ereditato dalla base per Change/Errore di stampa di RETRO e per Change di FIGURINA
-  const _nameInherited = (existingForCheck?.section === 'retros' && (_isChgChk || _isPEChk)) ||
-    (existingForCheck?.section === 'figurines' && _isChgChk);
+  // v5.779/790 — Nome ereditato dalla base per Change ED Errori di stampa, sia Retro sia figurine.
+  const _nameInherited = (_isChgChk || _isPEChk) &&
+    (existingForCheck?.section === 'retros' || existingForCheck?.section === 'figurines');
   if (_nameInherited) {
     const _baseId = document.getElementById('fe-base-figurine')?.value || null;
     const _bR = _baseId ? getData('figurines', []).find(x => x.id === _baseId) : null;
@@ -15590,11 +15606,14 @@ function computeFullName(fig, allFigs) {
     return fig.changeType ? baseName + ' - ' + fig.changeType.toUpperCase() : baseName;
   }
   if (fig.isPrintError) {
-    // Errore di stampa di figurina: "NomeBase - NomeProprio" (mantiene il proprio Nome).
-    // (v5.746: prima isPrintError era ignorato, cadeva nel caso base e mostrava solo il nome
-    // secco — nome completo indistinguibile dalla base.)
+    // v5.790 — Errore di stampa di FIGURINA reso identico a quello di RETRO: nessun nome proprio (il
+    // Nome eredita quello della base), identificato dal "Tipo di errore di stampa" (testo libero).
+    // Nome completo: "NomeBase - Tipo errore di stampa", SENZA maiuscolo (come i Retro; il maiuscolo è
+    // solo per il changeType). Senza tipo (dato vecchio) resta il solo NomeBase.
     const base = fig.baseFigurineId ? allFigs.find(x => x.id === fig.baseFigurineId) : null;
-    return base ? base.name + ' - ' + (fig.name || '') : (fig.name || '');
+    const baseName = base ? (base.name || '') : (fig.name || '');
+    const tipoPE = (fig.printErrorType || '').trim();
+    return tipoPE ? baseName + ' - ' + tipoPE : baseName;
   }
   return fig.name || '';
 }
