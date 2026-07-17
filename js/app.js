@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.780 — Franco: "nelle card dei Retro il Nome è mostrato sotto la Categoria; nei rari casi in cui
+//          il Nome è IDENTICO alla Categoria, non mostrare il Nome, solo la Categoria". Fatto: nella
+//          card Retro la riga del Nome (seconda riga) viene omessa quando f.name === f.category
+//          (confronto esatto, trim + case-insensitive; la Sottocategoria non entra nel confronto).
+//          Solo la card; dettaglio e altre viste invariati. Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.779 — Franco: "il campo TIPO DI CHANGE deve esserci anche nella form di una figurina; voglio
 //          caricare anche i change di figurine". + chiarimento: "come per i retro, il Nome completo
 //          non ha il nome proprio del change perché non ce l'hanno; nel campo Nome dei change avremo
@@ -7907,7 +7913,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.779';
+const JS_VERSION = 'v5.780';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12241,7 +12247,13 @@ function renderItems() {
     const figNameInner = isRetroCard
       ? esc(catParts.length ? catParts.join(' · ') : (currentLang === 'it' ? '(senza categoria)' : '(no category)'))
       : `<span class="fig-number" style="font-size:1.05rem;">${figLabel}</span>${figLabel ? ' ' : ''}${catPrefix}${f.name}`;
-    const retroNameLineHTML = isRetroCard
+    // v5.780 — se il Nome del Retro è IDENTICO alla Categoria (caso raro), la riga del Nome è
+    // ridondante rispetto alla prima riga (la Categoria): la omettiamo, mostrando solo la Categoria.
+    // Confronto esatto (trim, case-insensitive); non usa _retroNameStartsWithCategory (che è "inizia
+    // con", troppo largo qui). La Sottocategoria non entra nel confronto: si guarda solo la Categoria.
+    const _retroNameEqualsCategory = (f.name || '').trim() !== '' &&
+      (f.name || '').trim().toLowerCase() === (f.category || '').trim().toLowerCase();
+    const retroNameLineHTML = (isRetroCard && f.name && !_retroNameEqualsCategory)
       ? `<div style="font-size:0.9rem;color:var(--text);margin-top:1px;">${esc(f.name || '')}</div>`
       : '';
     const imgAspectRatio = currentSection === 'retros' ? '1.6' : '1';
