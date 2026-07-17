@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.797 — Franco: nei risultati di ricerca colorare SOLO il numero, non l'intera frase. Il conteggio
+//          "N fanno parte della tua lista" ora ha il numero in BLU (var(--action), lo stesso blu dei
+//          toggle aggiungi/rimuovi lista) e l'etichetta nel colore testo normale; "N oggetti trovati"
+//          resta con il numero in accent. Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.796 — Franco: il filtro "Senza foto" deve essere visibile a TUTTI gli utenti (prima solo admin) e
 //          spostato DOPO "Solo mancanti dalla tua lista". Tolto dal riquadro filtri admin (che resta con
 //          "senza variazioni ufficiali" [figurine] ed "Ebay"); reso in un nuovo contenitore
@@ -8057,7 +8062,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.796';
+const JS_VERSION = 'v5.797';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10432,9 +10437,13 @@ function updateItemsCountDisplay(items) {
   const count = elenco.length;
   const it = currentLang === 'it';
 
-  // v5.795 — numeri dei risultati più grandi ed evidenziati (accent), etichette invariate.
-  const numStyle = 'font-size:1.5rem;font-weight:700;color:var(--accent);';
-  const num = v => `<span style="${numStyle}">${v}</span>`;
+  // v5.795 — numeri dei risultati più grandi ed evidenziati, etichette invariate.
+  // v5.797 — Franco: colorare SOLO il numero (non l'intera frase). Il numero degli
+  //          oggetti nella "tua lista" usa il BLU dei toggle aggiungi/rimuovi lista
+  //          (var(--action)), non l'accent.
+  const numBase = 'font-size:1.5rem;font-weight:700;';
+  const num = v => `<span style="${numBase}color:var(--accent);">${v}</span>`;
+  const numBlue = v => `<span style="${numBase}color:var(--action);">${v}</span>`;
   const cfmt = count.toLocaleString(it ? 'it-IT' : 'en-US');
   const trovati = count === 1
     ? (it ? `${num('1')} oggetto trovato` : `${num('1')} item found`)
@@ -10452,7 +10461,8 @@ function updateItemsCountDisplay(items) {
     const frase = it
       ? (n === 1 ? 'fa parte della tua lista' : 'fanno parte della tua lista')
       : (n === 1 ? 'is part of your list' : 'are part of your list');
-    html += `<span style="color:var(--accent);font-weight:600;">${num(nfmt)} ${frase}</span>`;
+    // Solo il numero è colorato (blu lista); l'etichetta resta nel colore testo.
+    html += `<span>${numBlue(nfmt)} ${frase}</span>`;
   }
 
   el.innerHTML = `<div style="display:flex;flex-direction:column;gap:1px;">${html}</div>`;
