@@ -1,6 +1,34 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.779 — Franco: "il campo TIPO DI CHANGE deve esserci anche nella form di una figurina; voglio
+//          caricare anche i change di figurine". + chiarimento: "come per i retro, il Nome completo
+//          non ha il nome proprio del change perché non ce l'hanno; nel campo Nome dei change avremo
+//          sempre il NomeBase". Quindi il Change di FIGURINA diventa SIMMETRICO al Change di Retro:
+//          - Nome EREDITATO dalla figurina base (nessun nome proprio); campo Nome NASCOSTO nelle due
+//            form (Aggiungi/Modifica modale + modifica inline del dettaglio).
+//          - "Tipo di change" OBBLIGATORIO quando Change=TRUE, scelto dalla STESSA lista di serie dei
+//            Retro (changeTypesDiSerie -> campo retroChangeTypes; nessuna nuova config).
+//          - NOME COMPLETO = "NomeBase - TIPO" (Tipo in MAIUSCOLO), come i Retro. computeFullName:
+//            ramo isChange separato da isPrintError (l'Errore di stampa di figurina mantiene invece
+//            il proprio Nome: "NomeBase - NomeProprio").
+//          - Numero: già ereditato dalla base (come Variazioni/Change).
+//          PUNTI TOCCATI: toggleBaseFigurineGroup (mostra Tipo + nasconde Nome per figurine Change);
+//          form inline (render del gruppo fe-retro-change-type per le figurine; _feNameHidden;
+//          nuovo marcatore _feIsRetro perché la sola presenza del gruppo non identifica più un Retro,
+//          usato in toggleFeBaseFigurineGroup per il Nome); saveFigurine e saveFigFromDetail (lettura
+//          changeType, validazione obbligatoria, eredità Nome); computeFullName; riga "Tipo di change"
+//          nel dettaglio; card in griglia (varLabel "Change: TIPO" per distinguere change diversi
+//          della stessa base); pannello Change collegati (mostra il Tipo anche per le figurine).
+//          DA SAPERE (segnalato a Franco):
+//          1) Figurine Change ESISTENTI (se ce ne sono) non hanno changeType: il loro Nome completo,
+//             se ricalcolato ora, collasserebbe al solo NomeBase (perdendo il vecchio nome proprio).
+//             Vanno riaperte e assegnato un Tipo. Se non ne esistono ancora, nessun problema.
+//          2) L'IMPORT massivo "Variazioni e Change" NON è ancora aggiornato: usa il vecchio modello
+//             (Change di figurina riconciliato per Nome, nessuna colonna Tipo di change). Da fare a
+//             parte se si vogliono caricare i change di figurina anche via Excel.
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.778 — Franco: due cose, un colpo solo.
 //          (A) TEMPLATE IMPORT RETRO — chiusa la voce "DA FARE #1" (vedi sotto): a
 //          templates/template-retro.xlsx mancavano DUE colonne che il codice dell'import gia'
@@ -7879,7 +7907,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.778';
+const JS_VERSION = 'v5.779';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10391,7 +10419,7 @@ function renderCatalogSearch(q) {
                 const retroFig = (isVarOrChange && f.retroId) ? getData('figurines', []).find(x => x.id === f.retroId) : null;
                 const varLabel = f.isVariation ? (currentLang === 'it' ? 'Variazione ufficiale' : 'Official variation')
                   : f.isUnofficialVariation ? (currentLang === 'it' ? 'Variazione non ufficiale' : 'Unofficial variation')
-                  : f.isChange ? (currentLang === 'it' ? 'Change' : 'Change') : '';
+                  : f.isChange ? ('Change' + (f.changeType ? ': ' + f.changeType : '')) : '';
                 const smallImg = (url, title) => url ? `<img src="${cloudinaryUrl(url,'w_32,h_32,c_fit,q_auto,f_auto')}" title="${title}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);border:1px solid var(--border);">` : '';
                 return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
                 ${f.img ? `<img src="${cloudinaryUrl(f.img,'w_32,h_32,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : ''}
@@ -11041,11 +11069,12 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
   if (varUnoff) varUnoff.style.display = nascondiVar;
   // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
   if (numberGroup) numberGroup.style.display = (showBase || currentSection === 'retros') ? 'none' : '';
-  // Tipo di change: solo per i Change di Retro, con le opzioni configurate sulla serie
-  const isRetroChange = currentSection === 'retros' && isChg;
+  // Tipo di change: per i Change di Retro E per i Change di FIGURINA (v5.779), con le opzioni
+  // configurate sulla serie (stessa lista, campo retroChangeTypes).
+  const isTypedChange = isChg && (currentSection === 'retros' || currentSection === 'figurines');
   if (changeTypeGroup) {
-    changeTypeGroup.style.display = isRetroChange ? '' : 'none';
-    if (isRetroChange) {
+    changeTypeGroup.style.display = isTypedChange ? '' : 'none';
+    if (isTypedChange) {
       const types = changeTypesDiSerie(currentSeriesId);
       const sel = document.getElementById('fig-retro-change-type-input');
       if (sel) {
@@ -11062,8 +11091,10 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
   if (printErrorTypeGroup) printErrorTypeGroup.style.display = isPE ? '' : 'none';
   // v5.774 — per un Change o Errore di stampa di RETRO il Nome non ha valore proprio (eredita
   // quello del retro base): nascondiamo il campo. Al salvataggio il Nome viene comunque derivato.
+  // v5.779 — idem per un Change di FIGURINA: eredita il Nome dalla figurina base, campo nascosto.
   const nameGroup = document.getElementById('fig-name-group');
-  if (nameGroup) nameGroup.style.display = (currentSection === 'retros' && (isChg || isPE)) ? 'none' : '';
+  const _nomeNascosto = (currentSection === 'retros' && (isChg || isPE)) || (currentSection === 'figurines' && isChg);
+  if (nameGroup) nameGroup.style.display = _nomeNascosto ? 'none' : '';
 }
 
 function toggleForSaleFields() {
@@ -12371,7 +12402,8 @@ async function _saveFigurineInner() {
   const quantity = forSale ? (parseInt(document.getElementById('fig-quantity-input').value) || 1) : null;
   const condition = forSale ? document.getElementById('fig-condition-input').value : null;
   const isRetrosSection = currentSection === 'retros';
-  const changeType = (isRetrosSection && isChange) ? (document.getElementById('fig-retro-change-type-input')?.value || null) : null;
+  // v5.779 — changeType per i Change di Retro E per i Change di figurina (stessa lista di serie)
+  const changeType = (isChange && (isRetrosSection || currentSection === 'figurines')) ? (document.getElementById('fig-retro-change-type-input')?.value || null) : null;
   // Tipo di errore di stampa (testo libero, tutte le sezioni): valorizzato solo per gli Errori di
   // stampa. Mutuamente esclusivo col Tipo di change (isPrintError e isChange non coesistono).
   const printErrorType = isPrintError ? (document.getElementById('fig-print-error-type-input')?.value.trim() || null) : null;
@@ -12379,7 +12411,8 @@ async function _saveFigurineInner() {
   // v5.774 — per un Change o Errore di stampa di RETRO il Nome eredita quello del retro base
   // (il campo e' nascosto nella form). Se il base non e' ancora selezionato ci pensa il controllo
   // "Retro base obbligatorio" piu' sotto, quindi qui saltiamo il "Nome obbligatorio".
-  const _nomeEreditato = isRetrosSection && (isChange || isPrintError);
+  // v5.779 — il Nome eredita da quello della base anche per un Change di FIGURINA
+  const _nomeEreditato = (isRetrosSection && (isChange || isPrintError)) || (currentSection === 'figurines' && isChange);
   if (_nomeEreditato && baseFigurineId) {
     const _bR = getData('figurines', []).find(x => x.id === baseFigurineId);
     if (_bR) name = _bR.name || '';
@@ -12423,8 +12456,8 @@ async function _saveFigurineInner() {
     toast((currentLang === 'it' ? 'Il campo "Retro associato" è obbligatorio quando è selezionata una Variazione ufficiale o non ufficiale' : 'The "Associated retro" field is required when an official or unofficial Variation is selected'), 'error');
     return;
   }
-  if (isRetrosSection && isChange && !changeType) {
-    toast((currentLang === 'it' ? 'Il campo "Tipo di change" è obbligatorio per un Change di Retro' : 'The "Change type" field is required for a Retro Change'), 'error');
+  if (isChange && (isRetrosSection || currentSection === 'figurines') && !changeType) {
+    toast((currentLang === 'it' ? 'Il campo "Tipo di change" è obbligatorio per un Change' : 'The "Change type" field is required for a Change'), 'error');
     return;
   }
   if (isPrintError && !printErrorType) {
@@ -14117,7 +14150,7 @@ function openFigDetail(figId) {
       : (currentLang === 'it' ? 'Questa figurina è un errore di stampa' : 'This sticker is a print error');
     rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${peLabel}</span></div>`);
   }
-  if (f.section === 'retros' && f.isChange && f.changeType) {
+  if (f.isChange && f.changeType) {
     rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</span><span class="detail-value">${f.changeType}</span></div>`);
   }
   // Tipo di errore di stampa (testo libero, tutte le sezioni) — per gli Errori di stampa la riga
@@ -14272,10 +14305,9 @@ function buildLinkedFiguresTabsHTML(baseId) {
     g.items.forEach(item => {
       let label;
       if (g.key === 'change') {
-        // Per un Change di Retro mostriamo il Tipo di change (più utile del
-        // Nome, che può coincidere con quello del Retro base). Per un
-        // Change di figurina resta il Nome (non ha un Tipo)
-        label = item.section === 'retros' ? (item.changeType || item.name) : item.name;
+        // Mostriamo il Tipo di change (più utile del Nome, che coincide con quello della base).
+        // v5.779 — vale ora sia per i Change di Retro sia per quelli di figurina, entrambi con Tipo.
+        label = item.changeType || item.name;
       } else {
         // Per le Variazioni il Nome coincide sempre con quello della figurina base: inutile
         // ripeterlo. Mostriamo invece il Retro collegato (Categoria + Nome), la vera chiave
@@ -14384,10 +14416,16 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
   // v5.774 — Nome nascosto per Change/Errore di stampa di RETRO. Un item e' un retro se e' stato
   // costruito il gruppo Tipo di change (esiste solo per i retro); il Nome verra' derivato dal base.
   const feNameGroup = document.getElementById('fe-name-group');
-  const isRetroItem = !!changeTypeGroup;
-  if (feNameGroup) feNameGroup.style.display = (isRetroItem && (isChg || isPE)) ? 'none' : '';
+  // v5.779 — il Nome si nasconde per QUALUNQUE Change (retro o figurina: eredita dalla base) e
+  // per gli Errori di stampa di RETRO. Un Errore di stampa di FIGURINA mantiene il Nome proprio.
+  if (feNameGroup) feNameGroup.style.display = (isChg || (_feIsRetro && isPE)) ? 'none' : '';
 }
 
+// v5.779 — la form inline serve tutte le sezioni; il gruppo "Tipo di change" ora esiste anche
+// per le FIGURINE, quindi la sua sola presenza non identifica più un Retro. Questo marcatore,
+// impostato al momento del render, dice se l'oggetto in modifica è un Retro (per le regole di
+// nascondimento del Nome nel toggle).
+let _feIsRetro = false;
 let _feBaseFigurineLinkOptions = [];
 function filterFeBaseFigurineLink() {
   const q = document.getElementById('fe-base-figurine-search').value.toLowerCase().trim();
@@ -14500,6 +14538,7 @@ function switchToEditMode(figId) {
   html += '<div id="fe-tab-generale">';
 
   const isRetrosItem = f.section === 'retros';
+  _feIsRetro = isRetrosItem; // v5.779 — usato da toggleFeBaseFigurineGroup per le regole del Nome
 
   // Categoria (solo per i Retro, prima del Nome)
   if (isRetrosItem) {
@@ -14517,7 +14556,8 @@ function switchToEditMode(figId) {
 
   // Nome
   // v5.774 — Nome nascosto per Change/Errore di stampa di RETRO (eredita dal base; derivato al salvataggio)
-  const _feNameHidden = f.section === 'retros' && (f.isChange || f.isPrintError);
+  // v5.779 — idem per un Change di FIGURINA (eredita il Nome dalla figurina base)
+  const _feNameHidden = (f.section === 'retros' && (f.isChange || f.isPrintError)) || (f.section === 'figurines' && f.isChange);
   html += '<div class="detail-row" id="fe-name-group" style="' + (_feNameHidden ? 'display:none;' : '') + '"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + (f.name||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
 
   // Punteggio
@@ -14539,7 +14579,7 @@ function switchToEditMode(figId) {
   // l'avevo messa SOLO nella maschera "aggiungi oggetto" (#add-fig-modal), senza
   // accorgermi che la maschera di MODIFICA e' un'altra funzione, con i propri id 'fe-'.
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? 'Errore di stampa' : 'Print error') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-printerror" onchange="toggleFeBaseFigurineGroup(\'fe-is-printerror\')" ' + (f.isPrintError?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
-  if (isRetrosItem) {
+  if (isRetrosItem || f.section === 'figurines') {
     const showChangeType = !!f.isChange;
     const retroTypes = changeTypesDiSerie(f.seriesId);
     html += '<div class="detail-row" id="fe-retro-change-type-group" style="' + (showChangeType ? '' : 'display:none;') + '">' +
@@ -14764,14 +14804,17 @@ async function saveFigFromDetail(figId) {
   const existingForCheck = getData('figurines', []).find(x => x.id === figId);
   // v5.774 — per un Change/Errore di stampa di RETRO il Nome eredita quello del retro base (campo
   // nascosto). Se il base manca, il controllo apposito piu' sotto blocca; qui si salta "Nome obbligatorio".
-  const _isRetroInherit = existingForCheck?.section === 'retros' &&
-    (!!document.getElementById('fe-is-change')?.checked || !!document.getElementById('fe-is-printerror')?.checked);
-  if (_isRetroInherit) {
+  const _isChgChk = !!document.getElementById('fe-is-change')?.checked;
+  const _isPEChk = !!document.getElementById('fe-is-printerror')?.checked;
+  // v5.779 — Nome ereditato dalla base per Change/Errore di stampa di RETRO e per Change di FIGURINA
+  const _nameInherited = (existingForCheck?.section === 'retros' && (_isChgChk || _isPEChk)) ||
+    (existingForCheck?.section === 'figurines' && _isChgChk);
+  if (_nameInherited) {
     const _baseId = document.getElementById('fe-base-figurine')?.value || null;
     const _bR = _baseId ? getData('figurines', []).find(x => x.id === _baseId) : null;
     if (_bR) name = _bR.name || '';
   }
-  if (!name && !_isRetroInherit) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
+  if (!name && !_nameInherited) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
   if (existingForCheck?.section === 'retros') {
     const category = document.getElementById('fe-category')?.value.trim() || '';
     const changeTypeVal = document.getElementById('fe-retro-change-type')?.value || '';
@@ -14837,6 +14880,11 @@ async function saveFigFromDetail(figId) {
   // Il Tipo di errore di stampa e' OBBLIGATORIO quando "Errore di stampa" e' selezionato (v5.771)
   if (updates.isPrintError && !updates.printErrorType) {
     toast((currentLang === 'it' ? 'Il campo "Tipo di errore di stampa" è obbligatorio quando è selezionato "Errore di stampa"' : 'The "Print error type" field is required when "Print error" is selected'), 'error');
+    return;
+  }
+  // v5.779 — Il Tipo di change e' OBBLIGATORIO per un Change (Retro o figurina)
+  if (updates.isChange && !updates.changeType) {
+    toast((currentLang === 'it' ? 'Il campo "Tipo di change" è obbligatorio per un Change' : 'The "Change type" field is required for a Change'), 'error');
     return;
   }
 
@@ -15323,10 +15371,18 @@ function computeFullName(fig, allFigs) {
     const retro = fig.retroId ? allFigs.find(x => x.id === fig.retroId) : null;
     return retro ? (fig.name || '') + ' - ' + retro.name : (fig.name || '');
   }
-  if (fig.isChange || fig.isPrintError) {
-    // Change ed Errore di stampa si distinguono dall'oggetto BASE a cui sono collegati:
-    // "NomeBase - NomeProprio". (v5.746: prima isPrintError era ignorato, cadeva nel caso
-    // base e mostrava solo il nome secco — nome completo indistinguibile dalla base.)
+  if (fig.isChange) {
+    // v5.779 — Change di FIGURINA: come il Change di Retro, non ha nome proprio (il Nome eredita
+    // quello della base) e il Nome completo è "NomeBase - TIPO" (Tipo di change in MAIUSCOLO).
+    // Senza changeType (dato vecchio) resta il solo NomeBase, niente trattino penzolante.
+    const base = fig.baseFigurineId ? allFigs.find(x => x.id === fig.baseFigurineId) : null;
+    const baseName = base ? (base.name || '') : (fig.name || '');
+    return fig.changeType ? baseName + ' - ' + fig.changeType.toUpperCase() : baseName;
+  }
+  if (fig.isPrintError) {
+    // Errore di stampa di figurina: "NomeBase - NomeProprio" (mantiene il proprio Nome).
+    // (v5.746: prima isPrintError era ignorato, cadeva nel caso base e mostrava solo il nome
+    // secco — nome completo indistinguibile dalla base.)
     const base = fig.baseFigurineId ? allFigs.find(x => x.id === fig.baseFigurineId) : null;
     return base ? base.name + ' - ' + (fig.name || '') : (fig.name || '');
   }
