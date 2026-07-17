@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.789 — Franco (baco su Clona): clonando la figurina base X per farne un suo Change, nel selettore
+//          "Figurina base" X non compariva. Causa: cloneFigurine chiama openAddItemModal(X), che popola
+//          il selettore base con excludeId=X (giusto in MODIFICA: una figurina non è base di sé stessa),
+//          ma nel Clona il record è una COPIA e X dev'essere selezionabile. Fix: dopo il clone ripopolo
+//          il selettore base con excludeId=null (preservando l'eventuale base già copiata).
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.788 — Franco (baco su Clona): aprendo la modale (Clona/Aggiungi), spuntando "Change" il "Tipo di
 //          change" risultava già valorizzato con l'ULTIMO valore usato in una modifica precedente, anche
 //          se la figurina di partenza (base) ha quel campo vuoto. Causa: la modale riusa lo stesso DOM,
@@ -7998,7 +8005,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.788';
+const JS_VERSION = 'v5.789';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11399,6 +11406,11 @@ function cloneFigurine(itemId) {
   closeModal('fig-detail-modal');            // se il clone parte dalla scheda di dettaglio, la chiude
   openAddItemModal(itemId);                  // popola tutti i campi (e l'immagine) dalla sorgente
   document.getElementById('edit-fig-id').value = '';  // NUOVO record: al salvataggio crea, non aggiorna
+  // v5.789 — openAddItemModal(itemId) aveva escluso la sorgente dal selettore "Figurina base" (una
+  // figurina non è base di sé stessa in MODIFICA). Ma nel Clona il record è una COPIA: la figurina di
+  // partenza dev'essere selezionabile come base (tipico: clono una base per farne un suo Change).
+  // Ripopolo il selettore base SENZA escludere nulla, preservando l'eventuale base già copiata.
+  populateBaseFigurineSelect(null, document.getElementById('fig-base-figurine-input')?.value || null);
   const labelSingular = getSectionLabelSingular(src.section || currentSection);
   const t = document.getElementById('fig-modal-title');
   if (t) t.textContent = (currentLang === 'it' ? 'Clona ' : 'Clone ') + labelSingular;
