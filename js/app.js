@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.796 — Franco: il filtro "Senza foto" deve essere visibile a TUTTI gli utenti (prima solo admin) e
+//          spostato DOPO "Solo mancanti dalla tua lista". Tolto dal riquadro filtri admin (che resta con
+//          "senza variazioni ufficiali" [figurine] ed "Ebay"); reso in un nuovo contenitore
+//          items-nophoto-toggle sempre visibile (anche visitatori anonimi), subito dopo i filtri di
+//          possesso. Modificato app.js, index.html.
+// ------------------------------------------------------------
 // v5.795 — Franco: numeri dei risultati di ricerca più grandi. In items-count-display i numeri ("N
 //          oggetti trovati", "N fanno parte della tua lista") sono ora 1.5rem, bold, in --accent;
 //          le etichette restano invariate. Modificato app.js, index.html (versione).
@@ -8051,7 +8057,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.795';
+const JS_VERSION = 'v5.796';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11736,9 +11742,7 @@ function renderItemTypeFilters() {
       const itl = (currentLang === 'it');
       // niente emoji, per la regola posta da Franco: le icone ci sono sempre o mai.
       // (v5.692 le tolse dai filtri di tipo; queste due erano rimaste indietro.)
-      const senzaFoto = _noPhotoFilter
-        ? (itl ? 'Con foto' : 'With photo')
-        : (itl ? 'Senza foto' : 'Without photo');
+      // v5.796 — "Senza foto" NON è più qui: spostato tra i filtri per tutti gli utenti (vedi sotto).
       let ha = '';
 
       // Solo nelle FIGURINE: il setaccio applica questo filtro unicamente li'
@@ -11755,11 +11759,6 @@ function renderItemTypeFilters() {
           </div>`;
       }
 
-      ha += `
-        <div style="display:flex;align-items:center;gap:0.4rem;">
-          <button class="toggle-btn-blue ${_noPhotoFilter ? 'on' : ''}" onclick="setNoPhotoFilter(${!_noPhotoFilter})" title="${senzaFoto}"></button>
-          <span style="font-size:0.82rem;color:var(--muted);">${senzaFoto}</span>
-        </div>`;
       ha += `
         <div style="display:flex;align-items:center;gap:0.4rem;">
           <button class="toggle-btn-blue ${_ebayFilter ? 'on' : ''}" onclick="toggleEbayFilter()" title="Ebay"></button>
@@ -11792,6 +11791,19 @@ function renderItemTypeFilters() {
       elOwned.innerHTML = h2;
       elOwned.style.display = 'flex';
     }
+  }
+  // v5.796 — filtro "Senza foto" per TUTTI gli utenti (prima solo admin), posizionato DOPO i filtri di
+  // possesso ("Solo mancanti dalla tua lista"). Contenitore separato, sempre visibile (anche anonimi).
+  const elNoPhoto = document.getElementById('items-nophoto-toggle');
+  if (elNoPhoto) {
+    const itl = (currentLang === 'it');
+    const senzaFoto = _noPhotoFilter ? (itl ? 'Con foto' : 'With photo') : (itl ? 'Senza foto' : 'Without photo');
+    elNoPhoto.innerHTML = `
+      <div style="display:flex;align-items:center;gap:0.4rem;">
+        <button class="toggle-btn-blue ${_noPhotoFilter ? 'on' : ''}" onclick="setNoPhotoFilter(${!_noPhotoFilter})" title="${senzaFoto}"></button>
+        <span style="font-size:0.82rem;color:var(--text);">${senzaFoto}</span>
+      </div>`;
+    elNoPhoto.style.display = 'flex';
   }
   const introEl = document.getElementById('items-filter-intro');
   if (introEl) {
