@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.795 — Franco: numeri dei risultati di ricerca più grandi. In items-count-display i numeri ("N
+//          oggetti trovati", "N fanno parte della tua lista") sono ora 1.5rem, bold, in --accent;
+//          le etichette restano invariate. Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.794 — Franco: spostati i blocchi admin "Classifica" (Punteggio selezionati) ed "Ebay" (Aggiungi/
 //          Togli da Ebay) da SOPRA la casella di ricerca a SOTTO la riga dei risultati, prima della
 //          griglia/vista tabellare — perché quelle azioni si applicano ai risultati filtrati. Solo
@@ -8047,7 +8051,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.794';
+const JS_VERSION = 'v5.795';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10422,9 +10426,13 @@ function updateItemsCountDisplay(items) {
   const count = elenco.length;
   const it = currentLang === 'it';
 
+  // v5.795 — numeri dei risultati più grandi ed evidenziati (accent), etichette invariate.
+  const numStyle = 'font-size:1.5rem;font-weight:700;color:var(--accent);';
+  const num = v => `<span style="${numStyle}">${v}</span>`;
+  const cfmt = count.toLocaleString(it ? 'it-IT' : 'en-US');
   const trovati = count === 1
-    ? (it ? '1 oggetto trovato' : '1 item found')
-    : (it ? `${count.toLocaleString('it-IT')} oggetti trovati` : `${count.toLocaleString('en-US')} items found`);
+    ? (it ? `${num('1')} oggetto trovato` : `${num('1')} item found`)
+    : (it ? `${num(cfmt)} oggetti trovati` : `${num(cfmt)} items found`);
 
   let html = `<span>${trovati}</span>`;
 
@@ -10438,7 +10446,7 @@ function updateItemsCountDisplay(items) {
     const frase = it
       ? (n === 1 ? 'fa parte della tua lista' : 'fanno parte della tua lista')
       : (n === 1 ? 'is part of your list' : 'are part of your list');
-    html += `<span style="color:var(--accent);font-weight:600;">${nfmt} ${frase}</span>`;
+    html += `<span style="color:var(--accent);font-weight:600;">${num(nfmt)} ${frase}</span>`;
   }
 
   el.innerHTML = `<div style="display:flex;flex-direction:column;gap:1px;">${html}</div>`;
