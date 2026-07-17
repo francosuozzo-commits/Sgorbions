@@ -1,6 +1,25 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.786 — Franco: modello dati — un CHANGE di figurina può avere "dignità di un retro", cioè un proprio
+//          Retro. Due casi nella definizione di change: (1) stesso personaggio/fronte, elemento grafico
+//          diverso in stampa (il retro coincide con quello della base); (2) stesso fronte, ma è il retro
+//          a fare il change (un retro NON della serie). Quindi:
+//          - Campo "Retro associato" ora VISIBILE anche per i Change (facoltativo), in entrambe le form
+//            (modale + inline del dettaglio).
+//          - Selettore Retro: per i Change pesca da QUALSIASI serie (con la serie fra [ ] in etichetta);
+//            per le Variazioni resta la serie corrente. Rimosso anche qui il limite di 50; ricerca ed
+//            etichetta usano il Nome completo del retro (via _retroLinkLabel). Ripopolamento al toggle del
+//            tipo (nuovo _retroLinkAllSeries, populateRetroSelect(sel, allSeries), _populateFeRetroOptions,
+//            _feItemSeriesId).
+//          - Salvataggio: retroId ora memorizzato anche per i Change (prima forzato a null), facoltativo.
+//          - Card e dettaglio: per un Change il "retro effettivo" = suo retro se presente, altrimenti quello
+//            della figurina base (così se il Change non ha un retro proprio mostra comunque il retro della
+//            base). Fronte = quello della base. Il Nome completo del Change NON cambia (resta 'NomeBase -
+//            TIPO': lo distingue già il Tipo di change — scelta di Franco).
+//          - Legenda "📖 Legenda definizioni figurine": voce Change espansa coi due casi (IT+EN).
+//          Modificato app.js, index.html (versione).
+// ------------------------------------------------------------
 // v5.785 — Franco: problemi sul selettore "Figurina/Retro base" (in entrambe le form, modale e inline).
 //          (1) c'era un limite .slice(0,50): con ~256 basi la barra "si esauriva subito". Rimosso:
 //          ora mostra TUTTE le opzioni filtrate (dropdown scrollabile). (2) I Retro erano ordinati per
@@ -7966,7 +7985,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.785';
+const JS_VERSION = 'v5.786';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -8866,7 +8885,7 @@ const i18n = {
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters:','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: front variant intentionally made by the manufacturer','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters:','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer. Two cases: (1) same character (same front) with a different graphic element in the printing — the back is the same as the base sticker’s; (2) same front, but it is the back that creates the variant — a back that does not belong to the series','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
 'profile.title':'My Profile','profile.owned':'In My List','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -8955,7 +8974,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario di figurinesgorbions.it.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>• oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>• figurine presenti nella tua lista (serie non complete)<br>• figurine delle tue serie complete','wantlist.pageTitle':'Lista figurine (e non solo...)','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la tua lista di figurine (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta la tua lista di figurine (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri:','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante di fronte voluto dal produttore','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri:','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -11010,10 +11029,24 @@ function clearBaseFigurineLinkIfEmpty() {
 }
 
 let _retroLinkOptions = [];
-function populateRetroSelect(selectedId) {
+// v5.786 — allSeries=true: pesca i Retro da QUALSIASI serie (per i Change di figurina, caso raro in cui
+// il Retro che "fa" il change non appartiene alla serie). Default false: solo la serie corrente (Variazioni).
+let _retroLinkAllSeries = false;
+function _retroLinkLabel(r) {
+  // Nome completo del retro se disponibile, altrimenti Nome (+ changeType). In modalità tutte-le-serie
+  // anteponiamo la serie per distinguere retro omonimi di serie diverse.
+  const base = (r.fullName && r.fullName.trim()) ? r.fullName : (r.name || '') + (r.changeType ? ' — ' + r.changeType : '');
+  if (_retroLinkAllSeries) {
+    const s = getData('series', []).find(x => x.id === r.seriesId);
+    return (s ? '[' + s.name + '] ' : '') + base;
+  }
+  return base;
+}
+function populateRetroSelect(selectedId, allSeries) {
+  _retroLinkAllSeries = !!allSeries;
   _retroLinkOptions = getData('figurines', [])
-    .filter(f => f.seriesId === currentSeriesId && f.section === 'retros')
-    .sort((a,b) => (a.category||'').localeCompare(b.category||'', 'it') || (a.subcategory||'').localeCompare(b.subcategory||'', 'it') || (a.name||'').localeCompare(b.name||'', 'it'));
+    .filter(f => f.section === 'retros' && (allSeries || f.seriesId === currentSeriesId))
+    .sort((a,b) => (allSeries ? _retroLinkLabel(a).localeCompare(_retroLinkLabel(b), 'it', {sensitivity:'base'}) : ((a.category||'').localeCompare(b.category||'', 'it') || (a.subcategory||'').localeCompare(b.subcategory||'', 'it') || (a.name||'').localeCompare(b.name||'', 'it'))));
   const hidden = document.getElementById('fig-retro-input');
   const search = document.getElementById('fig-retro-search');
   const preview = document.getElementById('fig-retro-selected-preview');
@@ -11037,15 +11070,17 @@ function filterRetroLink() {
   const q = document.getElementById('fig-retro-search').value.toLowerCase().trim();
   const dd = document.getElementById('fig-retro-dropdown');
   if (!dd) return;
+  // v5.786 — ricerca sull'etichetta mostrata (che in modalità tutte-le-serie include la serie) +
+  // categoria/sottocategoria; nessun limite di 50.
   const filtered = q
-    ? _retroLinkOptions.filter(r => (r.name||'').toLowerCase().includes(q) || (r.category||'').toLowerCase().includes(q) || (r.subcategory||'').toLowerCase().includes(q))
+    ? _retroLinkOptions.filter(r => _retroLinkLabel(r).toLowerCase().includes(q) || (r.category||'').toLowerCase().includes(q) || (r.subcategory||'').toLowerCase().includes(q))
     : _retroLinkOptions;
   if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
-  dd.innerHTML = filtered.slice(0, 50).map(r => {
+  dd.innerHTML = filtered.map(r => {
     const sub = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean).join(' · ');
     return `<div onclick="selectRetroLink('${r.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <div style="font-size:0.9rem;">${r.name}${r.changeType ? ` <span style="color:var(--muted);">— ${r.changeType}</span>` : ''}</div>
+      <div style="font-size:0.9rem;">${esc(_retroLinkLabel(r))}</div>
       ${sub ? `<div style="font-size:0.75rem;color:var(--muted);">${sub}</div>` : ''}
     </div>`;
   }).join('');
@@ -11055,10 +11090,10 @@ function selectRetroLink(id) {
   const r = _retroLinkOptions.find(x => x.id === id);
   if (!r) return;
   document.getElementById('fig-retro-input').value = id;
-  document.getElementById('fig-retro-search').value = r.name + (r.changeType ? ' — ' + r.changeType : '');
+  document.getElementById('fig-retro-search').value = _retroLinkLabel(r);
   document.getElementById('fig-retro-dropdown').style.display = 'none';
   const preview = document.getElementById('fig-retro-selected-preview');
-  if (preview) { const parts = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean); preview.style.display = ''; preview.textContent = '✓ ' + (parts.length ? parts.join(' · ') + ' — ' : '') + r.name + (r.changeType ? ' — ' + r.changeType : ''); }
+  if (preview) { preview.style.display = ''; preview.textContent = '✓ ' + _retroLinkLabel(r); }
 }
 
 function clearRetroLinkIfEmpty() {
@@ -11125,7 +11160,14 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
   const _blt = document.getElementById('fig-base-figurine-label-text');
   if (_blt) _blt.textContent = _baseFigurineLabelText();
   // Il campo Retro associato non si applica mai ai Retro stessi (un retro non ha un retro)
-  if (retroGroup) retroGroup.style.display = (!isChg && currentSection !== 'retros') ? '' : 'none';
+  // v5.786 — il campo Retro ora si mostra ANCHE per i Change (facoltativo): un Change può avere un
+  // proprio Retro (il retro che "fa" il change). Per i Change il selettore pesca da TUTTE le serie;
+  // per le Variazioni resta la serie corrente. Ripopolo al toggle preservando la selezione corrente.
+  if (retroGroup) {
+    const showRetro = currentSection !== 'retros';
+    retroGroup.style.display = showRetro ? '' : 'none';
+    if (showRetro) populateRetroSelect(document.getElementById('fig-retro-input')?.value || null, isChg);
+  }
   // ...E PER LO STESSO IDENTICO MOTIVO, nemmeno le VARIAZIONI (v5.707). Una variazione
   // E' il cambio del DIETRO: un retro, che un dietro non ce l'ha, per definizione non
   // puo' variare. Il codice lo sapeva gia' ("un retro non ha un retro", riga sopra) ma
@@ -11219,7 +11261,7 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-is-printerror-input').checked = f.isPrintError || false;
       document.getElementById('fig-print-error-type-input').value = f.printErrorType || '';
       populateBaseFigurineSelect(itemId, f.baseFigurineId);
-      populateRetroSelect(f.retroId || null);
+      populateRetroSelect(f.retroId || null, !!f.isChange); // v5.786 — Change: retro da tutte le serie
       document.getElementById('fig-for-sale-input').checked = f.forSale || false;
       document.getElementById('fig-price-input').value = f.price || '';
       document.getElementById('fig-quantity-input').value = f.quantity || 1;
@@ -12222,9 +12264,13 @@ function renderItems() {
     let imgHTML;
     let hasWidePair = false;
     const isBaseFig = currentSection === 'figurines' && !f.isVariation && !f.isUnofficialVariation && !f.isChange;
-    if (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && f.retroId) || (isBaseFig && f.retroId)) {
+    // v5.786 — un Change può avere un proprio Retro; se non ce l'ha, usa quello della figurina base
+    // (così sulla card mostra comunque il retro della base). retro effettivo = proprio || della base.
+    const _baseForChange = (f.isChange && f.baseFigurineId) ? (baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId)) : null;
+    const _effRetroId = f.isChange ? (f.retroId || _baseForChange?.retroId || null) : f.retroId;
+    if (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && f.retroId) || (f.isChange && f.baseFigurineId && _effRetroId) || (isBaseFig && f.retroId)) {
       const baseFigDual = isBaseFig ? f : (baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId));
-      const retroFigDual = getData('figurines', []).find(x => x.id === f.retroId);
+      const retroFigDual = getData('figurines', []).find(x => x.id === _effRetroId);
       if (baseFigDual?.img && retroFigDual?.img) {
         if (_retroViewMode === 'destra-piena') hasWidePair = true;
         if (_retroViewMode === 'destra') {
@@ -12585,13 +12631,13 @@ async function _saveFigurineInner() {
     if (editId) {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition };
         figs[idx].fullName = computeFullName(figs[idx], figs);
         await fsSave('figurines', figs[idx]);
         _cache.figurines = figs;
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: !isChange ? (retroId || null) : null, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition };
       newF.fullName = computeFullName(newF, figs);
       const saved = await fsSave('figurines', newF);
     }
@@ -14296,12 +14342,16 @@ function openFigDetail(figId) {
   // Foto (shown in separate right column)
   const photoEl = document.getElementById('fig-detail-photo');
   if (photoEl) {
-    const isVar = f.isVariation || f.isUnofficialVariation;
-    if (f.retroId || (isVar && f.baseFigurineId)) {
-      // Variazione o figurina base con Retro collegato: mostra Fronte (sx) + Retro (dx) affiancati
-      const baseFig = (isVar && f.baseFigurineId) ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
+    // v5.786 — anche i Change usano il FRONTE della figurina base; il retro è quello proprio del Change
+    // se presente, altrimenti quello della base (come sulla card).
+    const isVar = f.isVariation || f.isUnofficialVariation || f.isChange;
+    const _detBase = (isVar && f.baseFigurineId) ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
+    const _detEffRetroId = f.isChange ? (f.retroId || _detBase?.retroId || null) : f.retroId;
+    if (_detEffRetroId || (isVar && f.baseFigurineId)) {
+      // Variazione/Change o figurina base con Retro collegato: mostra Fronte (sx) + Retro (dx) affiancati
+      const baseFig = _detBase;
       const frontImg = baseFig ? baseFig.img : f.img;
-      const retroFig = f.retroId ? getData('figurines', []).find(x => x.id === f.retroId) : null;
+      const retroFig = _detEffRetroId ? getData('figurines', []).find(x => x.id === _detEffRetroId) : null;
       const noPhotoBox = '<div style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non disponibile' : 'Photo not available') + '</div>';
       const baseHTML = frontImg
         ? `<img src="${cloudinaryUrl(frontImg, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
@@ -14514,7 +14564,11 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
   // un errore di stampa, come le variazioni e i Change, e' collegato a un oggetto base
   const showBase = isVar || isUnoff || isChg || isPE;
   group.style.display = showBase ? '' : 'none';
-  if (retroGroup) retroGroup.style.display = !isChg ? '' : 'none';
+  // v5.786 — Retro visibile anche per i Change; per i Change ripopolo il selettore con TUTTE le serie.
+  if (retroGroup) {
+    retroGroup.style.display = '';
+    if (_feItemSeriesId) _populateFeRetroOptions(_feItemSeriesId, isChg);
+  }
   // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
   if (numberGroup) numberGroup.style.display = showBase ? 'none' : '';
   if (changeTypeGroup) changeTypeGroup.style.display = isChg ? '' : 'none';
@@ -14571,19 +14625,29 @@ function clearFeBaseFigurineLinkIfEmpty() {
 }
 
 let _feRetroLinkOptions = [];
+let _feItemSeriesId = null; // v5.786 — serie dell'oggetto in modifica inline (per ripopolare il selettore Retro al toggle)
+// v5.786 — popola le opzioni del selettore Retro inline: allSeries=true (Change) pesca da tutte le serie.
+function _populateFeRetroOptions(seriesId, allSeries) {
+  _retroLinkAllSeries = !!allSeries;
+  _feRetroLinkOptions = getData('figurines', [])
+    .filter(x => x.section === 'retros' && (allSeries || x.seriesId === seriesId))
+    .sort((a,b) => allSeries
+      ? _retroLinkLabel(a).localeCompare(_retroLinkLabel(b), 'it', {sensitivity:'base'})
+      : ((a.category||'').localeCompare(b.category||'', 'it') || (a.subcategory||'').localeCompare(b.subcategory||'', 'it') || (a.name||'').localeCompare(b.name||'', 'it')));
+}
 function filterFeRetroLink() {
   const q = document.getElementById('fe-retro-search').value.toLowerCase().trim();
   const dd = document.getElementById('fe-retro-dropdown');
   if (!dd) return;
   const filtered = q
-    ? _feRetroLinkOptions.filter(r => (r.name||'').toLowerCase().includes(q) || (r.category||'').toLowerCase().includes(q) || (r.subcategory||'').toLowerCase().includes(q))
+    ? _feRetroLinkOptions.filter(r => _retroLinkLabel(r).toLowerCase().includes(q) || (r.category||'').toLowerCase().includes(q) || (r.subcategory||'').toLowerCase().includes(q))
     : _feRetroLinkOptions;
   if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
-  dd.innerHTML = filtered.slice(0, 50).map(r => {
+  dd.innerHTML = filtered.map(r => {
     const sub = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean).join(' · ');
     return `<div onclick="selectFeRetroLink('${r.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <div style="font-size:0.9rem;">${r.name}${r.changeType ? ` <span style="color:var(--muted);">— ${r.changeType}</span>` : ''}</div>
+      <div style="font-size:0.9rem;">${esc(_retroLinkLabel(r))}</div>
       ${sub ? `<div style="font-size:0.75rem;color:var(--muted);">${sub}</div>` : ''}
     </div>`;
   }).join('');
@@ -14593,7 +14657,7 @@ function selectFeRetroLink(id) {
   const r = _feRetroLinkOptions.find(x => x.id === id);
   if (!r) return;
   document.getElementById('fe-retro').value = id;
-  document.getElementById('fe-retro-search').value = r.name + (r.changeType ? ' — ' + r.changeType : '');
+  document.getElementById('fe-retro-search').value = _retroLinkLabel(r);
   document.getElementById('fe-retro-dropdown').style.display = 'none';
 }
 
@@ -14722,13 +14786,15 @@ function switchToEditMode(figId) {
 
   // Selettore Retro associato (non applicabile ai Retro stessi) — ricerca in digitazione (247+ retro in alcune serie)
   if (!isRetrosItem) {
-    _feRetroLinkOptions = getData('figurines', []).filter(x => x.seriesId === f.seriesId && x.section === 'retros')
-      .sort((a,b) => (a.category||'').localeCompare(b.category||'', 'it') || (a.subcategory||'').localeCompare(b.subcategory||'', 'it') || (a.name||'').localeCompare(b.name||'', 'it'));
+    // v5.786 — il selettore Retro ora si applica anche ai Change (facoltativo). Per i Change pesca da
+    // TUTTE le serie; per gli altri tipi resta la serie dell'oggetto. _feItemSeriesId serve al toggle.
+    _feItemSeriesId = f.seriesId;
+    _populateFeRetroOptions(f.seriesId, !!f.isChange);
     const selectedRetro = f.retroId ? _feRetroLinkOptions.find(r => r.id === f.retroId) : null;
-    const showRetroGroup = !f.isChange;
+    const showRetroGroup = true; // visibile per base/variazioni/change/errori di stampa (il toggle lo gestisce dinamicamente)
     html += '<div class="detail-row" id="fe-retro-group" style="' + (showRetroGroup ? '' : 'display:none;') + 'flex-direction:column;align-items:stretch;position:relative;">' +
       '<span class="detail-label">' + (currentLang==='it'?'Retro associato':'Associated retro') + '</span>' +
-      '<input class="form-input" type="text" id="fe-retro-search" placeholder="' + (currentLang==='it'?'Cerca per nome, categoria o sottocategoria...':'Search by name, category or subcategory...') + '" autocomplete="off" value="' + (selectedRetro ? selectedRetro.name + (selectedRetro.changeType ? ' — ' + selectedRetro.changeType : '') : '') + '" oninput="filterFeRetroLink()" onfocus="filterFeRetroLink()" onblur="clearFeRetroLinkIfEmpty()" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
+      '<input class="form-input" type="text" id="fe-retro-search" placeholder="' + (currentLang==='it'?'Cerca per nome, categoria o sottocategoria...':'Search by name, category or subcategory...') + '" autocomplete="off" value="' + (selectedRetro ? esc(_retroLinkLabel(selectedRetro)) : '') + '" oninput="filterFeRetroLink()" onfocus="filterFeRetroLink()" onblur="clearFeRetroLinkIfEmpty()" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
       '<input type="hidden" id="fe-retro" value="' + (f.retroId || '') + '">' +
     '<div id="fe-retro-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:220px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>' +
     '</div>';
@@ -15014,7 +15080,8 @@ async function saveFigFromDetail(figId) {
     toast((currentLang === 'it' ? 'Il campo "Retro associato" è obbligatorio quando è selezionata una Variazione ufficiale o non ufficiale' : 'The "Associated retro" field is required when an official or unofficial Variation is selected'), 'error');
     return;
   }
-  updates.retroId = !updates.isChange
+  // v5.786 — retro anche per i Change (facoltativo). Solo i Retro (section) non hanno il campo.
+  updates.retroId = (existingForCheck?.section !== 'retros')
     ? (document.getElementById('fe-retro')?.value || null)
     : null;
 
