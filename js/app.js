@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.805 — Franco: tolta la parola "Solo"/"only" dalle etichette dei selettori di ricerca — ridondante
+//          (il toggle già significa "restringi") e incoerente (Senza foto/Ebay/Tutti ne erano già privi).
+//          Ora: "Figurine set base", "Variazioni ufficiali/non ufficiali", "Variazioni (ufficiali/non
+//          ufficiali)", "Change", "Errori di stampa", "Figurine set base prive di variazioni ufficiali"
+//          (admin), "Presenti nella tua lista", "Mancanti dalla tua lista" (e relative etichette EN).
+// ------------------------------------------------------------
 // v5.804 — Franco: sulla card, quando una Figurina appartiene a una sottoserie, la sottoserie non
 //          sostituisce più il numero. Ora il numero (#N) resta in etichetta e la sottoserie è mostrata su
 //          una riga a parte, nello stesso punto/stile in cui i Retro mostrano la loro categoria
@@ -8106,7 +8112,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.804';
+const JS_VERSION = 'v5.805';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11750,28 +11756,28 @@ function renderItemTypeFilters() {
   html += item('all', it ? 'Tutti' : 'All', '', false);
 
   if (presente.base) html += item('base',
-    it ? 'Solo ' + nomeP + ' set base' : 'Base set ' + nomeP + ' only', '', true);
+    it ? (nomeP.charAt(0).toUpperCase() + nomeP.slice(1)) + ' set base' : 'Base set ' + nomeP, '', true);
 
   if (presente.variation) html += item('variation',
-    it ? 'Solo Variazioni ufficiali' : 'Official variations only', '');
+    it ? 'Variazioni ufficiali' : 'Official variations', '');
 
   if (presente.unofficialVariation) html += item('unofficialVariation',
-    it ? 'Solo Variazioni non ufficiali' : 'Unofficial variations only', '');
+    it ? 'Variazioni non ufficiali' : 'Unofficial variations', '');
 
   // l'unione ha senso SOLO se esistono entrambe: con una sola, direbbe la stessa cosa
   // del filtro qui sopra, e sarebbe un doppione
   if (presente.anyVariation) {
-    const etIt = 'Solo variazioni (<span style="color:var(--type-official);">ufficiali</span> / <span style="color:var(--type-unofficial);">non ufficiali</span>)';
-    const etEn = 'Variations only (<span style="color:var(--type-official);">official</span> / <span style="color:var(--type-unofficial);">unofficial</span>)';
+    const etIt = 'Variazioni (<span style="color:var(--type-official);">ufficiali</span> / <span style="color:var(--type-unofficial);">non ufficiali</span>)';
+    const etEn = 'Variations (<span style="color:var(--type-official);">official</span> / <span style="color:var(--type-unofficial);">unofficial</span>)';
     html += item('anyVariation',
-      it ? 'Solo variazioni (ufficiali / non ufficiali)' : 'Variations only (official / unofficial)',
+      it ? 'Variazioni (ufficiali / non ufficiali)' : 'Variations (official / unofficial)',
       '', false, it ? etIt : etEn);
   }
 
-  if (presente.change) html += item('change', it ? 'Solo Change' : 'Change only', '');
+  if (presente.change) html += item('change', it ? 'Change' : 'Change', '');
 
   if (presente.printError) html += item('printError',
-    it ? 'Solo Errori di stampa' : 'Print errors only', '');
+    it ? 'Errori di stampa' : 'Print errors', '');
 
   html += '</div>';
 
@@ -11804,8 +11810,8 @@ function renderItemTypeFilters() {
       // che non fa niente — il peggior tipo di comando.
       if (currentSection === 'figurines') {
         const senzaUff = itl
-          ? 'Solo figurine set base prive di variazioni ufficiali'
-          : 'Base set stickers without official variations only';
+          ? 'Figurine set base prive di variazioni ufficiali'
+          : 'Base set stickers without official variations';
         ha += `
           <div style="display:flex;align-items:center;gap:0.4rem;">
             <button class="toggle-btn-blue ${_noOfficialVariationFilter ? 'on' : ''}" onclick="toggleNoOfficialVariationFilter()" title="${senzaUff}"></button>
@@ -11841,8 +11847,8 @@ function renderItemTypeFilters() {
     // in FILA, non in colonna: stanno comodamente su una riga sola (wrap se serve).
     let h2 = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;">';
     if (currentUser) {
-      h2 += itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')", itl ? 'Solo presenti nella tua lista' : 'Only those in my list');
-      h2 += itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')", itl ? 'Solo mancanti dalla tua lista' : 'Only those missing from my list');
+      h2 += itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')", itl ? 'Presenti nella tua lista' : 'In my list');
+      h2 += itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')", itl ? 'Mancanti dalla tua lista' : 'Missing from my list');
     }
     const senzaFoto = _noPhotoFilter ? (itl ? 'Con foto' : 'With photo') : (itl ? 'Senza foto' : 'Without photo');
     h2 += itemToggle(_noPhotoFilter, `setNoPhotoFilter(${!_noPhotoFilter})`, senzaFoto);
