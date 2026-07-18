@@ -1,6 +1,19 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.807 — Franco: IMPORTATORE UNICO "Caricamento massivo figurine" che sostituisce i due import
+//          separati (figurine base + Variazioni/Change/Errori). Una riga è BASE se la colonna "Figurina
+//          base" è vuota (base per Numero, o per Nome nelle serie senza numeri; Retro OBBLIGATORIO),
+//          altrimenti è una VARIANTE di quella base — sotto-tipo dato dall'unica colonna valorizzata tra
+//          "Tipo" (Ufficiale/Non ufficiale → Variazione, Retro obbligatorio), "Tipo di change" (→ Change,
+//          Retro facoltativo proprio) e "Tipo di errore di stampa" (→ Errore di stampa). Il riferimento in
+//          "Figurina base" è riconosciuto automaticamente come Numero (serie numerate) o Nome (serie senza
+//          numeri). Doppia passata interna (basi prima delle varianti) + guardia sui numeri doppi tra basi.
+//          Eliminata la colonna-flag "Errore di stampa (x)": ora l'errore si segnala col solo "Tipo di
+//          errore di stampa" (simmetrico ai change). Nuovo template unico template-figurine.xlsx (rimosso
+//          template-variazioni-change.xlsx); UI: unica sezione "Caricamento massivo figurine" (rimossa la
+//          sezione Variazioni). startImportVar resta come codice morto (nessun chiamante).
+// ------------------------------------------------------------
 // v5.806 — Franco: import Variazioni/Change portato in parità con l'import Retro. Ora una riga è
 //          Variazione (Tipo = Ufficiale/Non ufficiale, Retro obbligatorio), OPPURE Change (colonna "Tipo
 //          di change" valorizzata, obbligatoria e validata sui tipi della serie — chiave Serie+base+Tipo
@@ -8124,7 +8137,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.806';
+const JS_VERSION = 'v5.807';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16360,12 +16373,27 @@ function figImportStatus(msg, pct) {
   if (status) status.textContent = msg;
 }
 
+// v5.807 — IMPORTATORE UNICO "Caricamento massivo figurine". Sostituisce i due import separati
+// (figurine base + Variazioni/Change/Errori). Una riga è:
+//  - FIGURINA BASE  se la colonna "Figurina base" è VUOTA (base identificata per Numero, o per Nome
+//    nelle serie senza numeri); il Retro è OBBLIGATORIO e deve già esistere;
+//  - VARIANTE  se "Figurina base" è valorizzata (= riferimento alla base, per Numero se numerico,
+//    altrimenti per Nome). Sotto-tipo determinato da UNA colonna valorizzata (mutuamente esclusive):
+//      · Variazione: "Tipo" = Ufficiale/Non ufficiale — Retro OBBLIGATORIO (chiave: base + Retro);
+//      · Change: "Tipo di change" valorizzato (validato sui tipi della serie; chiave: base + Tipo di
+//        change); Retro FACOLTATIVO (proprio del Change, altrimenti eredita la base);
+//      · Errore di stampa: "Tipo di errore di stampa" valorizzato (= printErrorType, testo libero;
+//        chiave: base + Tipo di errore di stampa); nessun Retro proprio.
+// Nome di ogni variante = SEMPRE quello della base. DOPPIA PASSATA interna: prima le basi, poi le
+// varianti (così una variante trova la sua base anche se nel file la precede). Guardia sui numeri
+// doppi tra basi come rete di sicurezza (non è un caso legittimo).
 async function startImportFig() {
   const seriesId = document.getElementById('import-fig-series-select').value;
   if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series','error'); return; }
   const fileInput = document.getElementById('import-fig-file');
   if (!fileInput.files.length) { toast(currentLang==='it'?'Seleziona un file XLS':'Select an XLS file','error'); return; }
 
+  const it = (currentLang==='it');
   const seriesObj = getData('series', []).find(s => s.id === seriesId);
   const hasSubseries = seriesObj?.hasSubseries || false;
 
@@ -16377,155 +16405,201 @@ async function startImportFig() {
   const ws = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
 
-  if (!rows.length) { toast(currentLang==='it'?'File vuoto o formato non valido':'Empty file or invalid format','error'); return; }
+  if (!rows.length) { toast(it?'File vuoto o formato non valido':'Empty file or invalid format','error'); return; }
 
   document.getElementById('import-fig-progress-wrap').style.display = 'block';
   document.getElementById('import-fig-log').innerHTML = '';
   document.getElementById('import-fig-log').style.display = 'block';
   const _startBtn = document.getElementById('import-fig-start-btn'); if (_startBtn) _startBtn.disabled = true;
 
-  figImportLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'info');
-
   const selEl = document.getElementById('import-fig-series-select');
   const seriesName = selEl?.selectedOptions[0]?.dataset.name || '';
 
-  let inserted = 0, updated = 0, unchanged = 0, errors = 0, skipped = 0, retroNotFound = 0;
+  figImportLog('--- ' + (it?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'info');
 
-  // Le righe scartate vengono anche RACCOLTE, non solo scritte a video: durante
-  // l'importazione scorrono via in mezzo all'avanzamento, e su un file lungo si
-  // perdono. Alla fine, dopo i totali, vengono ripetute tutte insieme.
+  let inserted = 0, updated = 0, unchanged = 0, errors = 0, skipped = 0, retroNotFound = 0;
   const erroriRighe = [];
   const errRiga = (msg, lvl) => { figImportLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
 
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    const getCol = (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return String(v[1]).trim(); } return ''; };
-    const serieCol = getCol('Serie','series','serie');
-    const numero = getCol('Numero','number','numero');
-    const nome = getCol('Nome','name','nome');
-    const sottoserie = getCol('Sottoserie','subseries','sottoserie');
-    const taglia = getCol('Taglia','size','taglia');
-    const retroCategoria = getCol('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria','Retro (Categoria)','retro (categoria)');
-    const retroNome = getCol('Retro - Nome','Retro-Nome','retro nome','retro-nome','Retro (Nome)','retro (nome)');
+  const mkGet = (row) => (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return String(v[1]).trim(); } return ''; };
 
-    figImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
+  // Retro per Categoria+Nome nella serie corrente.
+  const findRetro = (cat, nom) => getData('figurines', []).find(f =>
+    f.seriesId === seriesId && f.section === 'retros' &&
+    (f.category||'').toLowerCase() === cat.toLowerCase() && (f.name||'').toLowerCase() === nom.toLowerCase());
+  // Base CERTA nella serie (v5.800): baseFigurineId vuoto E nessun flag speciale.
+  const isBaseCert = (f) => f.seriesId === seriesId && f.section === 'figurines' &&
+    !f.baseFigurineId && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError;
 
-    if (!serieCol) {
-      errRiga('⚠️ Riga ' + (i+1) + ': colonna Serie mancante', 'warn');
-       continue;
-    }
+  // DOPPIA PASSATA: prima le righe base (Figurina base vuoto), poi le varianti.
+  const classified = rows.map((row, i) => {
+    const g = mkGet(row);
+    return { row, i, g, figBaseRef: g('Figurina base','figurina base','base','base sticker') };
+  });
+  const ordered = classified.filter(c => !c.figBaseRef).concat(classified.filter(c => c.figBaseRef));
+
+  let done = 0;
+  for (const c of ordered) {
+    const { i, g, figBaseRef } = c;
+    const rn = i + 1;
+    done++;
+    figImportStatus((it?'Riga ':'Row ') + rn + '/' + rows.length, Math.round((done/rows.length)*100));
+
+    const existingFigs = getData('figurines', []);
+    const serieCol = g('Serie','series','serie');
+    if (!serieCol) { errRiga('⚠️ Riga ' + rn + ': colonna Serie mancante', 'warn'); continue; }
     if (serieCol.toLowerCase() !== seriesName.toLowerCase()) {
-      figImportLog('⏭️ Riga ' + (i+1) + ': Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
+      figImportLog('⏭️ Riga ' + rn + ': Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
       skipped++; continue;
     }
-    if (!numero && !nome) {
-      errRiga('⚠️ Riga ' + (i+1) + ': servono Numero o Nome per identificare la figurina', 'warn');
-       continue;
-    }
 
-    // Chiave di riconciliazione — esclude sempre variazioni/change, che ereditano lo stesso
-    // Numero della loro figurina base: senza questo filtro .find() potrebbe agganciare per
-    // errore una variazione al posto della vera base con quel numero.
-    // v5.799 — Franco: nel dataset possono esserci DUE (o più) figurine base con lo STESSO
-    // Numero (raro, ma capita) che differiscono solo per il Nome. In quel caso il Numero da solo
-    // non è una chiave: si disambigua col Nome. Regola: cerco le basi con quel Numero; se ce n'è
-    // una sola la uso (così il rename per Numero — Numero uguale, Nome nuovo — continua a
-    // funzionare); se ce n'è più d'una scelgo quella col Nome della riga; se restano ambigue
-    // salto la riga, per non attaccare il Retro (e gli altri dati) alla figurina sbagliata.
-    const existingFigs = getData('figurines', []);
-    // v5.800 — definizione di BASE CERTA: baseFigurineId vuoto E nessun flag speciale
-    // (variazione / variazione non ufficiale / change / errore di stampa). Il doppio criterio
-    // regge anche il caso limite di una variazione "orfana" (base cancellata) che potrebbe
-    // ritrovarsi con baseFigurineId vuoto ma resta comunque una variazione.
-    const _isBaseFig = (f) =>
-      f.seriesId === seriesId && f.section === 'figurines' &&
-      !f.baseFigurineId &&
-      !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError &&
-      (!hasSubseries || !sottoserie || (f.subseries||'').toLowerCase() === sottoserie.toLowerCase());
-    let _baseCands;
-    if (numero) {
-      _baseCands = existingFigs.filter(f => _isBaseFig(f) && String(f.number||'') === String(+numero));
-      if (_baseCands.length > 1 && nome) {
-        const _exact = _baseCands.filter(f => (f.name||'').toLowerCase() === nome.toLowerCase());
-        if (_exact.length) _baseCands = _exact;
+    const numero = g('Numero','number','numero');
+    const nome = g('Nome','name','nome');
+    const sottoserie = g('Sottoserie','subseries','sottoserie');
+    const taglia = g('Taglia','size','taglia');
+    const tipo = g('Tipo','type','tipo');
+    const tipoChange = g('Tipo di change','tipo di change','change type','changetype');
+    const tipoErroreStampa = g('Tipo di errore di stampa','tipo di errore di stampa','nome errore di stampa','print error type','printerrortype');
+    const retroCategoria = g('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria','Retro (Categoria)','retro (categoria)');
+    const retroNome = g('Retro - Nome','Retro-Nome','retro nome','retro-nome','Retro (Nome)','retro (nome)');
+
+    // ================= FIGURINA BASE (Figurina base vuoto) =================
+    if (!figBaseRef) {
+      // Coerenza: una riga base non deve avere campi da variante.
+      if (tipo || tipoChange || tipoErroreStampa) {
+        errRiga('⚠️ Riga ' + rn + ': riga base (colonna "Figurina base" vuota) ma con Tipo / Tipo di change / Tipo di errore di stampa valorizzati — incoerente, riga scartata', 'warn');
+         continue;
       }
-    } else {
-      _baseCands = existingFigs.filter(f => _isBaseFig(f) && (f.name||'').toLowerCase() === nome.toLowerCase());
-    }
-    if (_baseCands.length > 1) {
-      errRiga('❌ Riga ' + (i+1) + ': ci sono ' + _baseCands.length + ' figurine base con Numero ' + numero + (nome ? ' e nessuna col Nome "' + nome + '"' : ', e la riga non indica un Nome per distinguerle') + ' — riga saltata per non agganciarla alla figurina sbagliata', 'err');
-       continue;
-    }
-    let duplicate = _baseCands[0] || null;
+      if (!numero && !nome) { errRiga('⚠️ Riga ' + rn + ': servono Numero o Nome per identificare la figurina base', 'warn'); continue; }
+      // Retro OBBLIGATORIO per le basi (v5.807) e deve già esistere a sistema.
+      if (!retroCategoria || !retroNome) { errRiga('⚠️ Riga ' + rn + ': Retro (Categoria) e Retro (Nome) sono obbligatori per una figurina base', 'warn'); continue; }
+      const retroMatch = findRetro(retroCategoria, retroNome);
+      if (!retroMatch) { errRiga('❌ Riga ' + rn + ': Retro "' + retroCategoria + ' / ' + retroNome + '" non trovato — riga scartata (il Retro deve già esistere)', 'err'); continue; }
 
-    // Controllo esplicito di sicurezza: se per qualunque motivo la riconciliazione ha trovato
-    // un record che NON è una figurina base (bug nella query sopra, dato corrotto, ecc.), non
-    // lo tocchiamo mai — significa che la riconciliazione è sbagliata, meglio scartare la riga
-    // che rischiare di corrompere una variazione/change esistente
-    if (duplicate && (duplicate.isVariation || duplicate.isUnofficialVariation || duplicate.isChange)) {
-      errRiga('❌ Riga ' + (i+1) + ': la riconciliazione ha trovato "' + duplicate.name + '" che non è una figurina base (è una variazione/change) — riga scartata per sicurezza, nessuna modifica effettuata', 'err');
-       continue;
+      const isBaseFig = (f) => isBaseCert(f) && (!hasSubseries || !sottoserie || (f.subseries||'').toLowerCase() === sottoserie.toLowerCase());
+      let cands;
+      if (numero) {
+        cands = existingFigs.filter(f => isBaseFig(f) && String(f.number||'') === String(+numero));
+        if (cands.length > 1 && nome) { const ex = cands.filter(f => (f.name||'').toLowerCase() === nome.toLowerCase()); if (ex.length) cands = ex; }
+      } else {
+        cands = existingFigs.filter(f => isBaseFig(f) && (f.name||'').toLowerCase() === nome.toLowerCase());
+      }
+      if (cands.length > 1) { errRiga('❌ Riga ' + rn + ': ci sono ' + cands.length + ' figurine base con Numero ' + numero + ' — anomalia (numeri doppi tra basi), riga saltata', 'err'); continue; }
+      const duplicate = cands[0] || null;
+
+      const figData = {
+        seriesId, section: 'figurines', number: numero ? +numero : null,
+        subseries: sottoserie || '', size: taglia || '', desc: '', score: 0, category: '', subcategory: '',
+        isVariation: false, isUnofficialVariation: false, isChange: false, isPrintError: false,
+        baseFigurineId: null, changeType: null, printErrorType: null, retroId: retroMatch.id, img: null
+      };
+      try {
+        if (duplicate) {
+          const finalName = numero ? (nome || duplicate.name) : nome;
+          const updatedRec = { ...duplicate, ...figData, name: finalName, img: duplicate.img, id: duplicate.id };
+          updatedRec.fullName = computeFullName(updatedRec, existingFigs);
+          const changed = _importHasChanges(duplicate, updatedRec, ['number','subseries','size','name','retroId']);
+          if (changed) {
+            await fsSave('figurines', updatedRec);
+            const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec;
+            figImportLog('🔄 Riga ' + rn + ': "' + finalName + '" — base sovrascritta (dati modificati)', 'update'); updated++;
+          } else { figImportLog('⏭️ Riga ' + rn + ': "' + finalName + '" — base già presente, nessuna modifica', 'info'); unchanged++; }
+        } else {
+          if (!nome) { errRiga('⚠️ Riga ' + rn + ': nessuna base con Numero ' + numero + ' — per crearne una nuova serve anche il Nome', 'warn'); continue; }
+          const newRec = { ...figData, name: nome };
+          newRec.fullName = computeFullName(newRec, existingFigs);
+          await fsSave('figurines', newRec);
+          figImportLog('✅ Riga ' + rn + ': "' + nome + '" — base aggiunta', 'ok'); inserted++;
+        }
+      } catch(e) { errRiga('❌ Riga ' + rn + ': ' + e.message, 'err'); }
+      continue;
     }
 
-    // Ricerca Retro (solo nella stessa serie, chiave Categoria+Nome)
-    let foundRetroId = null;
-    let retroSpecified = false;
-    if (retroCategoria && retroNome) {
-      retroSpecified = true;
-      const retroMatch = existingFigs.find(f =>
-        f.seriesId === seriesId &&
-        f.section === 'retros' &&
-        (f.category||'').toLowerCase() === retroCategoria.toLowerCase() &&
-        (f.name||'').toLowerCase() === retroNome.toLowerCase()
-      );
-      if (retroMatch) { foundRetroId = retroMatch.id; }
-      else { figImportLog('⚠️ Riga ' + (i+1) + ': Retro "' + retroCategoria + ' / ' + retroNome + '" non trovato — figurina importata senza collegamento', 'warn'); retroNotFound++; }
+    // ================= VARIANTE / CHANGE / ERRORE DI STAMPA =================
+    // Trova la base indicata da "Figurina base": per Numero se numerico, altrimenti per Nome.
+    let baseFig = null, baseAmb = 0;
+    if (!isNaN(Number(figBaseRef))) {
+      const byNum = existingFigs.filter(f => isBaseCert(f) && String(f.number||'') === String(+figBaseRef));
+      if (byNum.length === 1) baseFig = byNum[0]; else if (byNum.length > 1) baseAmb = byNum.length;
+    }
+    if (!baseFig && !baseAmb) {
+      const byName = existingFigs.filter(f => isBaseCert(f) && (f.name||'').toLowerCase() === figBaseRef.toLowerCase());
+      if (byName.length === 1) baseFig = byName[0]; else if (byName.length > 1) baseAmb = byName.length;
+    }
+    if (baseAmb) { errRiga('❌ Riga ' + rn + ': "Figurina base" = "' + figBaseRef + '" corrisponde a ' + baseAmb + ' figurine base — anomalia, riga saltata', 'err'); continue; }
+    if (!baseFig) { errRiga('⚠️ Riga ' + rn + ': figurina base "' + figBaseRef + '" non trovata nella serie', 'warn'); continue; }
+
+    // Sotto-tipo: uno solo tra Tipo / Tipo di change / Tipo di errore di stampa.
+    const nSignals = [tipo, tipoChange, tipoErroreStampa].filter(Boolean).length;
+    if (nSignals > 1) {
+      errRiga('❌ Riga ' + rn + ': indicati più tipi insieme (Tipo, Tipo di change, Tipo di errore di stampa sono mutuamente esclusivi) — riga scartata', 'warn'); continue;
     }
 
-    const figData = {
-      seriesId,
-      section: 'figurines',
-      number: numero ? +numero : null,
-      subseries: sottoserie || '',
-      size: taglia || '',
-      desc: '', score: 0, category: '', subcategory: '',
-      isVariation: false, isUnofficialVariation: false, isChange: false, baseFigurineId: null,
-      img: null
+    const baseCommon = {
+      seriesId, section: 'figurines', number: baseFig.number, name: baseFig.name,
+      desc: '', score: 0, subseries: '', size: '', category: '', subcategory: '',
+      isVariation: false, isUnofficialVariation: false, isChange: false, isPrintError: false,
+      baseFigurineId: baseFig.id, changeType: null, printErrorType: null, retroId: null, img: null
     };
+    let duplicate = null, figData = null, rowType = '', keyInfo = '';
 
+    if (tipoErroreStampa) {
+      duplicate = existingFigs.find(f => f.seriesId === seriesId && f.section === 'figurines' && f.isPrintError &&
+        f.baseFigurineId === baseFig.id && (f.printErrorType||'').toLowerCase().trim() === tipoErroreStampa.toLowerCase().trim());
+      figData = { ...baseCommon, isPrintError: true, printErrorType: tipoErroreStampa };
+      rowType = (it ? 'Errore di stampa' : 'Print error');
+      keyInfo = ' [Errore di stampa: ' + tipoErroreStampa + ']';
+    } else if (tipoChange) {
+      const allowedTypes = changeTypesDiSerie(seriesId);
+      const matchedType = allowedTypes.find(t => t.toLowerCase().trim() === tipoChange.toLowerCase().trim());
+      if (!matchedType) { errRiga('❌ Riga ' + rn + ': "Tipo di change" = "' + tipoChange + '" non corrisponde a nessuno dei tipi configurati per questa serie (' + (allowedTypes.join(', ') || 'nessuno configurato') + ')', 'err'); continue; }
+      let changeRetroId = null; // retro PROPRIO del Change (facoltativo; altrimenti eredita la base)
+      if (retroCategoria && retroNome) {
+        const rm = findRetro(retroCategoria, retroNome);
+        if (rm) changeRetroId = rm.id;
+        else { figImportLog('⚠️ Riga ' + rn + ': Retro "' + retroCategoria + ' / ' + retroNome + '" del Change non trovato — Change importato senza retro proprio (eredita quello della base)', 'warn'); retroNotFound++; }
+      }
+      duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isChange &&
+        (f.changeType||'').toLowerCase().trim() === matchedType.toLowerCase().trim());
+      figData = { ...baseCommon, isChange: true, changeType: matchedType, retroId: changeRetroId };
+      rowType = 'Change';
+      keyInfo = ' [Tipo di change: ' + matchedType + ']';
+    } else {
+      if (!tipo) { errRiga('⚠️ Riga ' + rn + ': variante senza tipo. Indica "Ufficiale"/"Non ufficiale" (Variazione), oppure "Tipo di change" (Change), oppure "Tipo di errore di stampa" (Errore di stampa)', 'warn'); continue; }
+      const tipoLow = tipo.toLowerCase().trim();
+      const isVariation = tipoLow === 'ufficiale' || tipoLow === 'official';
+      const isUnofficialVariation = tipoLow === 'non ufficiale' || tipoLow === 'unofficial';
+      if (!isVariation && !isUnofficialVariation) { errRiga('⚠️ Riga ' + rn + ': Tipo non riconosciuto "' + tipo + '" (usa Ufficiale / Non ufficiale; per i Change usa "Tipo di change", per gli errori "Tipo di errore di stampa")', 'warn'); continue; }
+      if (!retroCategoria || !retroNome) { errRiga('⚠️ Riga ' + rn + ': Retro (Categoria)/Retro (Nome) mancanti (obbligatori per una Variazione)', 'warn'); continue; }
+      const rm = findRetro(retroCategoria, retroNome);
+      if (!rm) { errRiga('⚠️ Riga ' + rn + ': Retro "' + retroCategoria + ' / ' + retroNome + '" non trovato — riga scartata', 'warn'); continue; }
+      duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.retroId === rm.id && (f.isVariation || f.isUnofficialVariation));
+      figData = { ...baseCommon, isVariation, isUnofficialVariation, retroId: rm.id };
+      rowType = tipo;
+      keyInfo = ' [Retro: ' + retroCategoria + ' / ' + retroNome + ']';
+    }
+
+    if (duplicate && !duplicate.isVariation && !duplicate.isUnofficialVariation && !duplicate.isChange && !duplicate.isPrintError) {
+      errRiga('❌ Riga ' + rn + ': la riconciliazione ha trovato "' + duplicate.name + '" che è una figurina base — riga scartata per sicurezza, nessuna modifica effettuata', 'err'); continue;
+    }
+
+    const finalName = baseFig.name;
     try {
       if (duplicate) {
-        // Con Numero presente: Nome aggiorna se compilato, altrimenti si preserva quello esistente
-        const finalName = numero ? (nome || duplicate.name) : nome;
-        // Il Retro esistente viene preservato se la riga non ne specifica uno nuovo
-        const updatedRec = { ...duplicate, ...figData, name: finalName, img: duplicate.img, retroId: retroSpecified ? foundRetroId : (duplicate.retroId || null), id: duplicate.id };
+        const updatedRec = { ...duplicate, ...figData, img: duplicate.img, id: duplicate.id };
         updatedRec.fullName = computeFullName(updatedRec, existingFigs);
-        const changed = _importHasChanges(duplicate, updatedRec, ['number', 'subseries', 'size', 'name', 'retroId']);
+        const changed = _importHasChanges(duplicate, updatedRec, ['name','isVariation','isUnofficialVariation','isChange','isPrintError','baseFigurineId','retroId','changeType','printErrorType']);
         if (changed) {
           await fsSave('figurines', updatedRec);
-          const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
-          if (idx >= 0) _cache.figurines[idx] = updatedRec;
-          figImportLog('🔄 Riga ' + (i+1) + ': "' + finalName + '" — sovrascritta (dati modificati)', 'update');
-          updated++;
-        } else {
-          figImportLog('⏭️ Riga ' + (i+1) + ': "' + finalName + '" — già presente, nessuna modifica', 'info');
-          unchanged++;
-        }
+          const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec;
+          figImportLog('🔄 Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — sovrascritta (' + rowType + ', dati modificati)', 'update'); updated++;
+        } else { figImportLog('⏭️ Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — già presente, nessuna modifica', 'info'); unchanged++; }
       } else {
-        if (!nome) {
-          errRiga('⚠️ Riga ' + (i+1) + ': nessuna figurina esistente con Numero ' + numero + ' — per crearne una nuova serve anche il Nome', 'warn');
-           continue;
-        }
-        const newFigRec = { ...figData, name: nome, retroId: foundRetroId };
-        newFigRec.fullName = computeFullName(newFigRec, existingFigs);
-        const saved = await fsSave('figurines', newFigRec);
-        figImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta', 'ok');
-        inserted++;
+        figData.fullName = computeFullName(figData, existingFigs);
+        await fsSave('figurines', figData);
+        figImportLog('✅ Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — aggiunta (' + rowType + ')', 'ok'); inserted++;
       }
-    } catch(e) {
-      errRiga('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
-      
-    }
+    } catch(e) { errRiga('❌ Riga ' + rn + ': ' + e.message, 'err'); }
   }
 
   figImportStatus('✅ Fine: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : ''), 100);
@@ -16533,9 +16607,7 @@ async function startImportFig() {
 
   if (erroriRighe.length) {
     figImportLog('', 'info');
-    figImportLog('--- ' + (currentLang === 'it'
-      ? 'RIGHE NON IMPORTATE (' + erroriRighe.length + ') ---'
-      : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'warn');
+    figImportLog('--- ' + (currentLang === 'it' ? 'RIGHE NON IMPORTATE (' + erroriRighe.length + ') ---' : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'warn');
     erroriRighe.forEach(msg => figImportLog(msg, 'warn'));
   }
   const _endBtn = document.getElementById('import-fig-start-btn'); if (_endBtn) _endBtn.disabled = false;
@@ -17024,12 +17096,12 @@ function renderAdminFoto() {
 
   el.innerHTML = `
     <div style="max-width:900px;">
-      <h3 onclick="toggleImportSection('fig')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-fig-chevron">▶</span> 🃏 ${currentLang==='it'?'Caricamento massivo figurine base (non Variazioni e Change)':'Bulk import of base stickers (not Variations and Change)'}</h3>
+      <h3 onclick="toggleImportSection('fig')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-fig-chevron">▶</span> 🃏 ${currentLang==='it'?'Caricamento massivo figurine':'Bulk import of stickers'}</h3>
       <div id="import-fig-section-content" style="display:none;">
       <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne (in ordine); <code>Serie</code> (obbligatoria); <code>Sottoserie</code>; <code>Numero</code>; <code>Nome</code>; <code>Taglia</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>REGOLE DI RICONCILIAZIONE E CAMPI OBBLIGATORI</b><br><br><b>Colonna Numero</b> — facoltativa.<br><br><b>Colonna Nome</b> — se il Numero è presente, il Nome è facoltativo: se compilato aggiorna il nome della figurina, se vuoto si preserva quello già a database. Se il Numero è assente, il Nome è invece obbligatorio ed è la chiave di riconciliazione.<br><br><b>Creazione di una figurina nuova</b> (nessuna corrispondenza trovata) — serve comunque un Nome, altrimenti la riga viene segnalata come errore e scartata.<br><br><b>Chiave di riconciliazione</b> — se la serie ha sottoserie attive e la colonna Sottoserie è compilata: Serie + Sottoserie + Numero (o Nome, se il Numero è vuoto). Altrimenti: Serie + Numero (o Nome, se il Numero è vuoto).<br><br>NOTA: le righe con Serie diversa da quella selezionata vengono ignorate.'
-          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns (in order); <code>Serie</code> (required); <code>Sottoserie</code>; <code>Numero</code>; <code>Nome</code>; <code>Taglia</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>RECONCILIATION RULES AND REQUIRED FIELDS</b><br><br><b>Numero column</b> — optional.<br><br><b>Nome column</b> — if Numero is present, Nome is optional: if filled in it updates the sticker name, if empty the existing database value is preserved. If Numero is absent, Nome is required and is the reconciliation key.<br><br><b>Creating a new sticker</b> (no match found) — a Nome is still needed, otherwise the row is flagged as an error and skipped.<br><br><b>Reconciliation key</b> — if the series has active subseries and the Sottoserie column is filled in: Serie + Sottoserie + Numero (or Nome, if Numero is empty). Otherwise: Serie + Numero (or Nome, if Numero is empty).<br><br>NOTE: rows with a Serie different from the selected one are skipped.'}
+          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS. Un unico file per figurine base, variazioni, change ed errori di stampa.<br>Colonne: <code>Serie</code> · <code>Numero</code> · <code>Nome</code> · <code>Sottoserie</code> · <code>Taglia</code> · <code>Figurina base</code> · <code>Tipo</code> · <code>Tipo di change</code> · <code>Tipo di errore di stampa</code> · <code>Retro (Categoria)</code> · <code>Retro (Nome)</code>.<br><br><b>OGNI RIGA È UNA COSA SOLA.</b> Il tipo si legge dalla colonna <code>Figurina base</code>:<br><br><b>Figurina base</b> — colonna <code>Figurina base</code> <b>vuota</b>. Identificata per <code>Numero</code> (o per <code>Nome</code> nelle serie senza numeri); con sottoserie la chiave è Serie+Sottoserie+Numero. <b>Il Retro è obbligatorio</b> e deve già esistere a sistema.<br><br><b>Variazione</b> — <code>Figurina base</code> valorizzata + <code>Tipo</code> = Ufficiale / Non ufficiale. Retro <b>obbligatorio</b> (chiave: base + Retro).<br><br><b>Change</b> — <code>Figurina base</code> valorizzata + <code>Tipo di change</code> (validato sui tipi della serie; chiave: base + Tipo di change). Retro <b>facoltativo</b> (il retro proprio del change; se assente eredita quello della base).<br><br><b>Errore di stampa</b> — <code>Figurina base</code> valorizzata + <code>Tipo di errore di stampa</code> (testo libero; chiave: base + Tipo di errore di stampa).<br><br><b>La colonna <code>Figurina base</code></b> contiene il riferimento alla base: il suo <b>Numero</b> (serie numerate) o il suo <b>Nome</b> (serie senza numeri) — riconosciuto in automatico. Tipo / Tipo di change / Tipo di errore di stampa sono <b>mutuamente esclusivi</b>. Il Nome di variazioni/change/errori è sempre quello della base.<br><br>NOTA: elenca le figurine base prima delle loro varianti; le righe con Serie diversa da quella selezionata vengono ignorate.'
+          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file. One file for base stickers, variations, changes and print errors.<br>Columns: <code>Serie</code> · <code>Numero</code> · <code>Nome</code> · <code>Sottoserie</code> · <code>Taglia</code> · <code>Figurina base</code> · <code>Tipo</code> · <code>Tipo di change</code> · <code>Tipo di errore di stampa</code> · <code>Retro (Categoria)</code> · <code>Retro (Nome)</code>.<br><br><b>EACH ROW IS ONE THING.</b> The type is read from the <code>Figurina base</code> column:<br><br><b>Base sticker</b> — <code>Figurina base</code> <b>empty</b>. Found by <code>Numero</code> (or <code>Nome</code> in series without numbers); with subseries the key is Serie+Sottoserie+Numero. <b>The Retro is required</b> and must already exist.<br><br><b>Variation</b> — <code>Figurina base</code> set + <code>Tipo</code> = Ufficiale / Non ufficiale. Retro <b>required</b> (key: base + Retro).<br><br><b>Change</b> — <code>Figurina base</code> set + <code>Tipo di change</code> (validated against the series types; key: base + Tipo di change). Retro <b>optional</b> (the change\'s own retro; if empty it inherits the base one).<br><br><b>Print error</b> — <code>Figurina base</code> set + <code>Tipo di errore di stampa</code> (free text; key: base + Tipo di errore di stampa).<br><br><b>The <code>Figurina base</code> column</b> holds the reference to the base: its <b>Numero</b> (numbered series) or its <b>Nome</b> (series without numbers) — auto-detected. Tipo / Tipo di change / Tipo di errore di stampa are <b>mutually exclusive</b>. The name of variations/changes/errors is always the base name.<br><br>NOTE: list base stickers before their variants; rows with a Serie different from the selected one are skipped.'}
       </p>
       <a href="templates/template-figurine.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
 
@@ -17053,39 +17125,6 @@ function renderAdminFoto() {
         <div id="import-fig-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
       </div>
       <div id="import-fig-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
-      </div>
-
-      <hr class="divider" style="margin:2rem 0;">
-
-      <h3 onclick="toggleImportSection('var')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-var-chevron">▶</span> 📊 ${currentLang==='it'?'Caricamento massivo Variazioni e Change':'Bulk import of Variations and Change'}</h3>
-      <div id="import-var-section-content" style="display:none;">
-      <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
-        ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne: <code>Serie</code> (obbligatoria); <code>Numero Figurina</code> (obbligatoria); <code>Nome</code>; <code>Tipo</code> (Ufficiale / Non ufficiale); <code>Tipo di change</code>; <code>Errore di stampa</code>; <code>Nome errore di stampa</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>OGNI RIGA È UNA SOLA COSA</b> (Variazione, Change o Errore di stampa — mutuamente esclusivi):<br><br><b>Variazione</b> — <code>Tipo</code> = Ufficiale o Non ufficiale. <code>Retro (Categoria)</code> e <code>Retro (Nome)</code> obbligatori: chiave di riconciliazione Serie + Figurina base + Retro (più Variazioni per la stessa base, una per Retro). Se il Retro non esiste, la riga viene scartata.<br><br><b>Change</b> — <code>Tipo di change</code> valorizzato (obbligatorio, deve corrispondere a uno dei tipi configurati nella serie). Chiave: Serie + Figurina base + Tipo di change. Le colonne Retro non si applicano.<br><br><b>Errore di stampa</b> — <code>Errore di stampa</code> = <code>x</code>. <code>Nome errore di stampa</code> (facoltativo) diventa il tipo di errore. Chiave: Serie + Figurina base + Nome errore di stampa.<br><br><b>Figurina base</b> — individuata per <code>Numero Figurina</code> (col <code>Nome</code> si disambigua se ci sono più basi con lo stesso numero). <b>Il Nome dell\'oggetto è sempre quello della base</b>, quindi la colonna Nome serve solo a individuare la base, non a nominare Variazione/Change/Errore.<br><br>NOTA: le righe con Serie diversa da quella selezionata bloccano l\'intero caricamento.'
-          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns: <code>Serie</code> (required); <code>Numero Figurina</code> (required); <code>Nome</code>; <code>Tipo</code> (Ufficiale / Non ufficiale); <code>Tipo di change</code>; <code>Errore di stampa</code>; <code>Nome errore di stampa</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>EACH ROW IS ONE THING</b> (Variation, Change or Print error — mutually exclusive):<br><br><b>Variation</b> — <code>Tipo</code> = Ufficiale or Non ufficiale. <code>Retro (Categoria)</code> and <code>Retro (Nome)</code> required: reconciliation key Serie + Base sticker + Retro (several Variations per base, one per Retro). If the Retro does not exist, the row is skipped.<br><br><b>Change</b> — <code>Tipo di change</code> set (required, must match one of the change types configured for the series). Key: Serie + Base sticker + Tipo di change. Retro columns do not apply.<br><br><b>Print error</b> — <code>Errore di stampa</code> = <code>x</code>. <code>Nome errore di stampa</code> (optional) becomes the print error type. Key: Serie + Base sticker + Nome errore di stampa.<br><br><b>Base sticker</b> — found by <code>Numero Figurina</code> (the <code>Nome</code> disambiguates when several bases share the same number). <b>The item name is always the base name</b>, so the Nome column only locates the base, it does not name the Variation/Change/Print error.<br><br>NOTE: rows with a Serie different from the selected one block the whole import.'}
-      </p>
-      <a href="templates/template-variazioni-change.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
-
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
-        <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
-        <select id="import-var-series-select" class="form-select" style="margin-bottom:0.75rem;">
-          <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
-          ${series.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
-        </select>
-
-        <label class="form-label">${currentLang==='it'?'File XLS (.xlsx, .xls)':'XLS File (.xlsx, .xls)'}</label>
-        <input type="file" id="import-var-file" accept=".xlsx,.xls" class="form-input" style="margin-bottom:0.75rem;padding:0.4rem;">
-
-        <button class="btn-primary btn-admin" onclick="startImportVar()" id="import-var-start-btn">
-          ▶ ${currentLang==='it'?'Avvia importazione':'Start import'}
-        </button>
-      </div>
-
-      <div id="import-var-progress-wrap" style="display:none;margin-bottom:0.75rem;">
-        <progress id="import-var-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
-        <div id="import-var-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
-      </div>
-      <div id="import-var-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
       </div>
 
       <hr class="divider" style="margin:2rem 0;">
