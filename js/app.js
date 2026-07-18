@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.806 — Franco: import Variazioni/Change portato in parità con l'import Retro. Ora una riga è
+//          Variazione (Tipo = Ufficiale/Non ufficiale, Retro obbligatorio), OPPURE Change (colonna "Tipo
+//          di change" valorizzata, obbligatoria e validata sui tipi della serie — chiave Serie+base+Tipo
+//          di change), OPPURE Errore di stampa (colonna "Errore di stampa" = x, + "Nome errore di stampa"
+//          come printErrorType — chiave Serie+base+Nome errore di stampa). Casi mutuamente esclusivi. Il
+//          "Change" NON si esprime più con Tipo=Change (Tipo ora solo Ufficiale/Non ufficiale). Nome di
+//          Variazioni/Change/Errori = sempre quello della base (la colonna Nome serve solo a disambiguare
+//          la base per numero). Aggiornati: startImportVar, template-variazioni-change.xlsx (nuove colonne
+//          Tipo di change / Errore di stampa / Nome errore di stampa), istruzioni in-app e hint IT/EN.
+//          Inoltre build.py incorpora i template come data URI nella preview (link "Scarica template"
+//          funzionanti anche offline).
+// ------------------------------------------------------------
 // v5.805 — Franco: tolta la parola "Solo"/"only" dalle etichette dei selettori di ricerca — ridondante
 //          (il toggle già significa "restringi") e incoerente (Senza foto/Ebay/Tutti ne erano già privi).
 //          Ora: "Figurine set base", "Variazioni ufficiali/non ufficiali", "Variazioni (ufficiali/non
@@ -8112,7 +8124,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.805';
+const JS_VERSION = 'v5.806';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -8964,7 +8976,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to your list','catalog.havenone':'Remove search results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations and Changes from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Required columns: Serie · Sticker number · Name · Type (Official / Unofficial / Change)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to your list','catalog.havenone':'Remove search results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
@@ -9087,7 +9099,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi alla tua lista i risultati della ricerca','catalog.havenone':'Rimuovi dalla tua lista i risultati della ricerca','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali e Change da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne richieste: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale / Change)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi alla tua lista i risultati della ricerca','catalog.havenone':'Rimuovi dalla tua lista i risultati della ricerca','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Torna all\'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -15853,13 +15865,20 @@ async function startImportVar() {
     const numStr = getCol('Numero Figurina','numero figurina','numero','number');
     const nome   = getCol('Nome','name','nome');
     const tipo   = getCol('Tipo','type','tipo');
+    const tipoChange = getCol('Tipo di change','tipo di change','change type','changetype');
+    // Colonna di SOLO SMISTAMENTO (come nei Retro): "x" (o qualunque valore non-negativo)
+    // = errore di stampa. Non è un campo su Firebase.
+    const erroreStampaCol = getCol('Errore di stampa','errore di stampa','print error','printerror','print_error','errore stampa','misprint');
+    const nomeErroreStampa = getCol('Nome errore di stampa','nome errore di stampa','tipo di errore di stampa','print error type','printerrortype');
     const retroCategoria = getCol('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria','Retro (Categoria)','retro (categoria)');
     const retroNome = getCol('Retro - Nome','Retro-Nome','retro nome','retro-nome','Retro (Nome)','retro (nome)');
+    const _peVal = (erroreStampaCol || '').toString().trim().toLowerCase();
+    const isErroreStampa = _peVal !== '' && !['no','n','false','falso','0'].includes(_peVal);
 
     varImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
 
-    if (!numStr || !tipo) {
-      errRiga('⚠️ Riga ' + (i+1) + ': dati mancanti (num=' + numStr + ' tipo=' + tipo + ')', 'warn');
+    if (!numStr) {
+      errRiga('⚠️ Riga ' + (i+1) + ': Numero figurina mancante (obbligatorio)', 'warn');
        continue;
     }
 
@@ -15884,42 +15903,66 @@ async function startImportVar() {
        continue;
     }
 
-    const tipoLow = tipo.toLowerCase().trim();
-    const isVariation = tipoLow === 'ufficiale' || tipoLow === 'official';
-    const isUnofficialVariation = tipoLow === 'non ufficiale' || tipoLow === 'unofficial';
-    const isChange = tipoLow === 'change';
-
-    if (!isVariation && !isUnofficialVariation && !isChange) {
-      errRiga('⚠️ Riga ' + (i+1) + ': tipo non riconosciuto "' + tipo + '" (usa Ufficiale / Non ufficiale / Change)', 'warn');
-       continue;
-    }
-
+    // v5.806 — tre casi mutuamente esclusivi, come nell'import dei Retro:
+    //  (1) ERRORE DI STAMPA: colonna "Errore di stampa" = x (+ "Nome errore di stampa" = printErrorType);
+    //  (2) CHANGE: colonna "Tipo di change" valorizzata (obbligatoria, validata sui tipi della serie);
+    //  (3) VARIAZIONE: colonna "Tipo" = Ufficiale / Non ufficiale (il Retro è obbligatorio).
+    // Nome di Variazioni, Change ed Errori di stampa = SEMPRE il Nome della figurina base.
     const existingFigs = getData('figurines', []);
-    let duplicate = null;
-    let foundRetroId = null;
+    let duplicate = null, figData = null, rowType = '', keyInfo = '';
+    const baseCommon = {
+      seriesId, section: sectionType, number: baseFig.number, name: baseFig.name,
+      desc: '', score: 0, subseries: '', size: '',
+      isVariation: false, isUnofficialVariation: false, isChange: false, isPrintError: false,
+      baseFigurineId: baseFig.id, changeType: null, printErrorType: null, retroId: null, img: null
+    };
 
-    if (isChange) {
-      // Change: il Nome è obbligatorio ed è la chiave di riconciliazione (Serie + Figurina base + Nome)
-      if (!nome) {
-        errRiga('⚠️ Riga ' + (i+1) + ': Nome mancante (obbligatorio per un Change)', 'warn');
+    if (isErroreStampa) {
+      if (tipo || tipoChange) {
+        errRiga('❌ Riga ' + (i+1) + ': "Errore di stampa" è mutuamente esclusivo con "Tipo" e "Tipo di change" — riga scartata', 'warn');
+         continue;
+      }
+      const printErrorType = nomeErroreStampa || null;
+      duplicate = existingFigs.find(f =>
+        f.seriesId === seriesId && f.section === 'figurines' && f.isPrintError &&
+        f.baseFigurineId === baseFig.id &&
+        (f.printErrorType||'').toLowerCase().trim() === (printErrorType||'').toLowerCase().trim()
+      );
+      figData = { ...baseCommon, isPrintError: true, printErrorType };
+      rowType = (currentLang==='it' ? 'Errore di stampa' : 'Print error');
+      keyInfo = nomeErroreStampa ? ' [Errore di stampa: ' + nomeErroreStampa + ']' : ' [Errore di stampa]';
+    } else if (tipoChange) {
+      const allowedTypes = changeTypesDiSerie(seriesId);
+      const matchedType = allowedTypes.find(t => t.toLowerCase().trim() === tipoChange.toLowerCase().trim());
+      if (!matchedType) {
+        errRiga('❌ Riga ' + (i+1) + ': "Tipo di change" = "' + tipoChange + '" non corrisponde a nessuno dei tipi configurati per questa serie (' + (allowedTypes.join(', ') || 'nessuno configurato') + ')', 'err');
          continue;
       }
       duplicate = existingFigs.find(f =>
-        f.seriesId === seriesId &&
-        f.baseFigurineId === baseFig.id &&
-        f.isChange &&
-        (f.name||'').toLowerCase() === nome.toLowerCase()
+        f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isChange &&
+        (f.changeType||'').toLowerCase().trim() === matchedType.toLowerCase().trim()
       );
+      figData = { ...baseCommon, isChange: true, changeType: matchedType };
+      rowType = 'Change';
+      keyInfo = ' [Tipo di change: ' + matchedType + ']';
     } else {
-      // Variazione (ufficiale/non ufficiale): il Retro è obbligatorio ed è la chiave di
-      // riconciliazione insieme a Serie + Figurina base; il Nome è facoltativo
+      if (!tipo) {
+        errRiga('⚠️ Riga ' + (i+1) + ': manca il Tipo. Indica "Ufficiale"/"Non ufficiale" (Variazione), oppure "Tipo di change" (Change), oppure "Errore di stampa" = x', 'warn');
+         continue;
+      }
+      const tipoLow = tipo.toLowerCase().trim();
+      const isVariation = tipoLow === 'ufficiale' || tipoLow === 'official';
+      const isUnofficialVariation = tipoLow === 'non ufficiale' || tipoLow === 'unofficial';
+      if (!isVariation && !isUnofficialVariation) {
+        errRiga('⚠️ Riga ' + (i+1) + ': Tipo non riconosciuto "' + tipo + '" (usa Ufficiale / Non ufficiale; per i Change usa la colonna "Tipo di change", per gli errori "Errore di stampa" = x)', 'warn');
+         continue;
+      }
       if (!retroCategoria || !retroNome) {
         errRiga('⚠️ Riga ' + (i+1) + ': Retro (Categoria)/Retro (Nome) mancanti (obbligatori per una Variazione)', 'warn');
          continue;
       }
       const retroMatch = existingFigs.find(f =>
-        f.seriesId === seriesId &&
-        f.section === 'retros' &&
+        f.seriesId === seriesId && f.section === 'retros' &&
         (f.category||'').toLowerCase() === retroCategoria.toLowerCase() &&
         (f.name||'').toLowerCase() === retroNome.toLowerCase()
       );
@@ -15927,59 +15970,33 @@ async function startImportVar() {
         errRiga('⚠️ Riga ' + (i+1) + ': Retro "' + retroCategoria + ' / ' + retroNome + '" non trovato — riga scartata', 'warn');
          continue;
       }
-      foundRetroId = retroMatch.id;
       duplicate = existingFigs.find(f =>
-        f.seriesId === seriesId &&
-        f.baseFigurineId === baseFig.id &&
-        f.retroId === foundRetroId &&
+        f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.retroId === retroMatch.id &&
         (f.isVariation || f.isUnofficialVariation)
       );
+      figData = { ...baseCommon, isVariation, isUnofficialVariation, retroId: retroMatch.id };
+      rowType = tipo;
+      keyInfo = ' [Retro: ' + retroCategoria + ' / ' + retroNome + ']';
     }
 
-    // Controllo esplicito di sicurezza: se per qualunque motivo la riconciliazione ha trovato
-    // una figurina base (non una variazione/change), non la tocchiamo mai — significa che la
-    // riconciliazione è sbagliata, meglio scartare la riga che rischiare di corrompere una
-    // figurina base esistente
-    if (duplicate && !duplicate.isVariation && !duplicate.isUnofficialVariation && !duplicate.isChange) {
-      errRiga('❌ Riga ' + (i+1) + ': la riconciliazione ha trovato "' + duplicate.name + '" che è una figurina base, non una variazione/change — riga scartata per sicurezza, nessuna modifica effettuata', 'err');
+    // Sicurezza: la riconciliazione non deve MAI agganciare una figurina base.
+    if (duplicate && !duplicate.isVariation && !duplicate.isUnofficialVariation && !duplicate.isChange && !duplicate.isPrintError) {
+      errRiga('❌ Riga ' + (i+1) + ': la riconciliazione ha trovato "' + duplicate.name + '" che è una figurina base — riga scartata per sicurezza, nessuna modifica effettuata', 'err');
        continue;
     }
 
-    // Per le Variazioni il Nome è sempre lo stesso della figurina base (non si legge dal file);
-    // per il Change resta quello indicato nella colonna Nome (già obbligatorio e validato sopra)
-    const finalName = isChange ? nome : baseFig.name;
-
-    // Stringa che indica la chiave usata per questa riga, per distinguere righe altrimenti
-    // identiche (es. più Variazioni dello stesso Tipo per la stessa figurina base)
-    const keyInfo = isChange ? '' : (' [Retro: ' + retroCategoria + ' / ' + retroNome + ']');
-
-    const figData = {
-      seriesId,
-      section: sectionType,
-      number: baseFig.number,
-      name: finalName,
-      desc: '',
-      score: 0,
-      subseries: '',
-      size: '',
-      isVariation,
-      isUnofficialVariation,
-      isChange,
-      baseFigurineId: baseFig.id,
-      retroId: isChange ? null : foundRetroId,
-      img: null
-    };
+    const finalName = baseFig.name; // Variazioni, Change ed Errori di stampa ereditano il Nome della base
 
     try {
       if (duplicate) {
         const updatedRec = { ...duplicate, ...figData, img: duplicate.img, id: duplicate.id };
         updatedRec.fullName = computeFullName(updatedRec, existingFigs);
-        const changed = _importHasChanges(duplicate, updatedRec, ['name', 'isVariation', 'isUnofficialVariation', 'isChange', 'baseFigurineId', 'retroId']);
+        const changed = _importHasChanges(duplicate, updatedRec, ['name', 'isVariation', 'isUnofficialVariation', 'isChange', 'isPrintError', 'baseFigurineId', 'retroId', 'changeType', 'printErrorType']);
         if (changed) {
           await fsSave('figurines', updatedRec);
           const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
           if (idx >= 0) _cache.figurines[idx] = updatedRec;
-          varImportLog('🔄 Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — sovrascritta (' + tipo + ', dati modificati)', 'update');
+          varImportLog('🔄 Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — sovrascritta (' + rowType + ', dati modificati)', 'update');
           updated++;
         } else {
           varImportLog('⏭️ Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — già presente, nessuna modifica', 'info');
@@ -15988,7 +16005,7 @@ async function startImportVar() {
       } else {
         figData.fullName = computeFullName(figData, existingFigs);
         const saved = await fsSave('figurines', figData);
-        varImportLog('✅ Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — aggiunta (' + tipo + ')', 'ok');
+        varImportLog('✅ Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — aggiunta (' + rowType + ')', 'ok');
         inserted++;
       }
     } catch(e) {
@@ -17044,8 +17061,8 @@ function renderAdminFoto() {
       <div id="import-var-section-content" style="display:none;">
       <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne (in ordine); <code>Serie</code> (obbligatoria); <code>Numero</code> (obbligatoria); <code>Nome</code>; <code>Tipo</code> (obbligatoria; Ufficiale / Non ufficiale / Change); <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>REGOLE DI RICONCILIAZIONE E CAMPI OBBLIGATORI</b><br><br><b>Colonna Serie</b> — obbligatoria, deve corrispondere esattamente al nome della serie selezionata; le righe con Serie diversa bloccano l\'intero caricamento.<br><br><b>Colonna Numero</b> — obbligatoria: è il numero della figurina base a cui la riga si riferisce (deve già esistere nella serie).<br><br><b>Colonna Tipo</b> — obbligatoria: Ufficiale, Non ufficiale o Change; righe con un valore non riconosciuto vengono scartate.<br><br><b>Per le Variazioni (Ufficiale / Non ufficiale)</b> — <code>Retro (Categoria)</code> e <code>Retro (Nome)</code> sono obbligatorie e fanno parte della chiave di riconciliazione: Serie + Figurina base + Retro (possono esistere più Variazioni dello stesso Tipo per la stessa figurina base, una per ciascun Retro). Se il Retro indicato non esiste, la riga viene scartata. La colonna <b>Nome non viene letta</b>: una Variazione ha sempre lo stesso nome della sua figurina base, assegnato automaticamente.<br><br><b>Per i Change</b> — le colonne Retro non si applicano. Il <b>Nome è obbligatorio</b> e fa parte della chiave di riconciliazione: Serie + Figurina base + Nome.'
-          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns (in order); <code>Serie</code> (required); <code>Numero</code> (required); <code>Nome</code>; <code>Tipo</code> (required; Ufficiale / Non ufficiale / Change); <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>RECONCILIATION RULES AND REQUIRED FIELDS</b><br><br><b>Serie column</b> — required, must exactly match the selected series name; rows with a different Serie block the whole import.<br><br><b>Numero column</b> — required: the number of the base sticker the row refers to (must already exist in the series).<br><br><b>Tipo column</b> — required: Ufficiale, Non ufficiale or Change; rows with an unrecognized value are skipped.<br><br><b>For Variations (Ufficiale / Non ufficiale)</b> — <code>Retro (Categoria)</code> and <code>Retro (Nome)</code> are required and are part of the reconciliation key: Serie + Base sticker + Retro (there can be several Variations of the same Tipo for the same base sticker, one per Retro). If the specified Retro does not exist, the row is skipped. The <b>Nome column is not read</b>: a Variation always has the same name as its base sticker, assigned automatically.<br><br><b>For Change</b> — the Retro columns do not apply. <b>Nome is required</b> and is part of the reconciliation key: Serie + Base sticker + Nome.'}
+          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS.<br>Colonne: <code>Serie</code> (obbligatoria); <code>Numero Figurina</code> (obbligatoria); <code>Nome</code>; <code>Tipo</code> (Ufficiale / Non ufficiale); <code>Tipo di change</code>; <code>Errore di stampa</code>; <code>Nome errore di stampa</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>OGNI RIGA È UNA SOLA COSA</b> (Variazione, Change o Errore di stampa — mutuamente esclusivi):<br><br><b>Variazione</b> — <code>Tipo</code> = Ufficiale o Non ufficiale. <code>Retro (Categoria)</code> e <code>Retro (Nome)</code> obbligatori: chiave di riconciliazione Serie + Figurina base + Retro (più Variazioni per la stessa base, una per Retro). Se il Retro non esiste, la riga viene scartata.<br><br><b>Change</b> — <code>Tipo di change</code> valorizzato (obbligatorio, deve corrispondere a uno dei tipi configurati nella serie). Chiave: Serie + Figurina base + Tipo di change. Le colonne Retro non si applicano.<br><br><b>Errore di stampa</b> — <code>Errore di stampa</code> = <code>x</code>. <code>Nome errore di stampa</code> (facoltativo) diventa il tipo di errore. Chiave: Serie + Figurina base + Nome errore di stampa.<br><br><b>Figurina base</b> — individuata per <code>Numero Figurina</code> (col <code>Nome</code> si disambigua se ci sono più basi con lo stesso numero). <b>Il Nome dell\'oggetto è sempre quello della base</b>, quindi la colonna Nome serve solo a individuare la base, non a nominare Variazione/Change/Errore.<br><br>NOTA: le righe con Serie diversa da quella selezionata bloccano l\'intero caricamento.'
+          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file.<br>Columns: <code>Serie</code> (required); <code>Numero Figurina</code> (required); <code>Nome</code>; <code>Tipo</code> (Ufficiale / Non ufficiale); <code>Tipo di change</code>; <code>Errore di stampa</code>; <code>Nome errore di stampa</code>; <code>Retro (Categoria)</code>; <code>Retro (Nome)</code>.<br><br><b>EACH ROW IS ONE THING</b> (Variation, Change or Print error — mutually exclusive):<br><br><b>Variation</b> — <code>Tipo</code> = Ufficiale or Non ufficiale. <code>Retro (Categoria)</code> and <code>Retro (Nome)</code> required: reconciliation key Serie + Base sticker + Retro (several Variations per base, one per Retro). If the Retro does not exist, the row is skipped.<br><br><b>Change</b> — <code>Tipo di change</code> set (required, must match one of the change types configured for the series). Key: Serie + Base sticker + Tipo di change. Retro columns do not apply.<br><br><b>Print error</b> — <code>Errore di stampa</code> = <code>x</code>. <code>Nome errore di stampa</code> (optional) becomes the print error type. Key: Serie + Base sticker + Nome errore di stampa.<br><br><b>Base sticker</b> — found by <code>Numero Figurina</code> (the <code>Nome</code> disambiguates when several bases share the same number). <b>The item name is always the base name</b>, so the Nome column only locates the base, it does not name the Variation/Change/Print error.<br><br>NOTE: rows with a Serie different from the selected one block the whole import.'}
       </p>
       <a href="templates/template-variazioni-change.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
 
