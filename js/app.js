@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.817 — Franco: pagina Inventario, il sottotitolo "Tutte le serie di Sgorbions mai pubblicate" è ora
+//          sulla STESSA riga del titolo "L'Inventario" (flex, allineato alla base), mantenendo il suo font.
+// ------------------------------------------------------------
 // v5.816 — Franco: nel "Caricamento massivo foto figurine con numero" la foto del fronte ora va sulla
 //          figurina BASE con quel numero (non sulla prima figurina qualsiasi): variazioni/change
 //          condividono il numero ma ereditano il fronte dalla base. Aggiunto il filtro base al match.
@@ -8181,7 +8184,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.816';
+const JS_VERSION = 'v5.817';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
