@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.813 — Franco: il recap dell'importatore figurine ha ora DUE sezioni delimitate da INIZIO/FINE:
+//          (1) "RECAP RIGHE NON IMPORTATE (N)" — righe scartate del tutto; (2) "RECAP RIGHE NON IMPORTATE
+//          COMPLETAMENTE (M)" — righe salvate ma con un dato cercato non trovato (oggi: Retro del Change
+//          non trovato). Nuovo elenco righeIncomplete accanto a erroriRighe.
+// ------------------------------------------------------------
 // v5.812 — Franco: semplificazione. Nell'importatore UNICO figurine la colonna degli errori di stampa si
 //          chiama d'ora in poi solo "Tipo errore di stampa" (senza "di"): getCol semplificato, template
 //          unico e istruzioni allineati. L'import RETRO resta invariato ("Tipo di errore di stampa").
@@ -8162,7 +8167,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.812';
+const JS_VERSION = 'v5.813';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16563,7 +16568,8 @@ async function startImportFig() {
   figImportLog('--- ' + (it?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'info');
 
   let inserted = 0, updated = 0, unchanged = 0, errors = 0, skipped = 0, retroNotFound = 0;
-  const erroriRighe = [];
+  const erroriRighe = [];        // righe scartate del tutto (nessun salvataggio)
+  const righeIncomplete = [];    // righe importate MA con un dato cercato non trovato (es. Retro del Change)
   const errRiga = (msg, lvl) => { figImportLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
 
   const mkGet = (row) => (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return String(v[1]).trim(); } return ''; };
@@ -16702,7 +16708,7 @@ async function startImportFig() {
       if (retroCategoria && retroNome) {
         const rm = findRetro(retroCategoria, retroNome);
         if (rm) changeRetroId = rm.id;
-        else { figImportLog('⚠️ Riga ' + rn + ': Retro "' + retroCategoria + ' / ' + retroNome + '" del Change non trovato — Change importato senza retro proprio (eredita quello della base)', 'warn'); retroNotFound++; }
+        else { const _m = '⚠️ Riga ' + rn + ': Retro "' + retroCategoria + ' / ' + retroNome + '" del Change non trovato — Change importato senza retro proprio (eredita quello della base)'; figImportLog(_m, 'warn'); righeIncomplete.push(_m); retroNotFound++; }
       }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isChange &&
         (f.changeType||'').toLowerCase().trim() === matchedType.toLowerCase().trim());
@@ -16750,13 +16756,18 @@ async function startImportFig() {
   figImportStatus('✅ Fine: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : ''), 100);
   figImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + unchanged + ' invariate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', 'white');
 
-  if (erroriRighe.length) {
+  // Recap: (1) righe NON IMPORTATE (scartate); (2) righe NON IMPORTATE COMPLETAMENTE (salvate ma
+  // con un dato cercato non trovato, es. il Retro del Change). Ciascuna delimitata da INIZIO/FINE.
+  const _recapBlock = (list, labelIt, labelEn) => {
+    if (!list.length) return;
     figImportLog('', 'info');
-    const _rec = (currentLang === 'it' ? 'RECAP RIGHE NON IMPORTATE (' + erroriRighe.length + ')' : 'RECAP ROWS NOT IMPORTED (' + erroriRighe.length + ')');
+    const _rec = (currentLang === 'it' ? labelIt + ' (' + list.length + ')' : labelEn + ' (' + list.length + ')');
     figImportLog('--- ' + (currentLang === 'it' ? 'INIZIO ' : 'START ') + _rec + ' ---', 'white');
-    erroriRighe.forEach(msg => figImportLog(msg, 'warn'));
+    list.forEach(msg => figImportLog(msg, 'warn'));
     figImportLog('--- ' + (currentLang === 'it' ? 'FINE ' : 'END ') + _rec + ' ---', 'white');
-  }
+  };
+  _recapBlock(erroriRighe, 'RECAP RIGHE NON IMPORTATE', 'RECAP ROWS NOT IMPORTED');
+  _recapBlock(righeIncomplete, 'RECAP RIGHE NON IMPORTATE COMPLETAMENTE', 'RECAP ROWS NOT FULLY IMPORTED');
   const _endBtn = document.getElementById('import-fig-start-btn'); if (_endBtn) _endBtn.disabled = false;
   renderItems(); updateSectionCounts();
 }
