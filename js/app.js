@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.811 — Franco: l'importatore figurine ora riconosce la colonna degli errori di stampa sia come
+//          "Tipo di errore di stampa" sia come "Tipo errore di stampa" (senza "di"). Prima, con
+//          l'intestazione senza "di", le righe errore di stampa non venivano riconosciute e finivano in
+//          "variante senza tipo".
+// ------------------------------------------------------------
 // v5.810 — Franco: nel log dell'importatore figurine il recap delle righe non importate è ora delimitato
 //          da due righe (bianche): "--- INIZIO RECAP RIGHE NON IMPORTATE (N) ---" all'inizio e "--- FINE
 //          RECAP RIGHE NON IMPORTATE (N) ---" alla fine.
@@ -8153,7 +8158,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.810';
+const JS_VERSION = 'v5.811';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16595,7 +16600,7 @@ async function startImportFig() {
     const taglia = g('Taglia','size','taglia');
     const tipo = g('Tipo','type','tipo');
     const tipoChange = g('Tipo di change','tipo di change','change type','changetype');
-    const tipoErroreStampa = g('Tipo di errore di stampa','tipo di errore di stampa','nome errore di stampa','print error type','printerrortype');
+    const tipoErroreStampa = g('Tipo di errore di stampa','tipo di errore di stampa','Tipo errore di stampa','tipo errore di stampa','nome errore di stampa','print error type','printerrortype');
     const retroCategoria = g('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria','Retro (Categoria)','retro (categoria)');
     const retroNome = g('Retro - Nome','Retro-Nome','retro nome','retro-nome','Retro (Nome)','retro (nome)');
 
