@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.820 — Franco: scheda dettaglio serie (series-hero). L'anno è ora sulla STESSA riga del nome della
+//          serie (a sinistra; i pulsanti admin Modifica/Ebay restano in alto a destra) e, tolta la riga
+//          separata dell'anno e il margine del nome, tutto il testo (nome, anno, meta, descrizione) sale
+//          in cima allo spazio disponibile. Modificato index.html.
+// ------------------------------------------------------------
 // v5.819 — Franco: card della Serie, anche il PUNTEGGIO va sulla stessa riga di nome+anno: un'unica riga
 //          in alto (dove stava il punteggio) con nome+anno a sinistra e punteggio a destra — è la riga
 //          nome che "sale" alla quota del punteggio, non il punteggio che scende.
@@ -8192,7 +8197,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.819';
+const JS_VERSION = 'v5.820';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
