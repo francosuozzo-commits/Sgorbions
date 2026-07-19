@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.809 — Franco: raggruppamento dei Change per "Tipo di change" nella sezione Figurine, gemello dello
+//          specchietto "Retro per categoria". Due riquadri a scomparsa (change-type-summary-top /
+//          change-type-summary-results), visibili solo nella sezione Figurine e solo se ci sono Change:
+//          quello in alto è una panoramica non filtrata (tutti i Change della serie), quello nei risultati
+//          (dopo i filtri) è CLICCABILE e filtra la griglia mostrando solo i Change del tipo scelto (badge
+//          + ✕ per azzerare). Nuovo stato _changeTypeFilter (azzerato al cambio sezione/serie) applicato in
+//          getCurrentlyFilteredItems. Modificato app.js, index.html.
+// ------------------------------------------------------------
 // v5.808 — Franco: nel log dell'importatore figurine le righe "--- FINE: ... ---" e "--- RIGHE NON
 //          IMPORTATE (n) ---" ora sono in BIANCO (var(--text)) invece che arancione/warn. Aggiunto il tipo
 //          'white' a figImportLog.
@@ -8141,7 +8149,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.808';
+const JS_VERSION = 'v5.809';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9234,6 +9242,11 @@ let _retroCatTopOpen = false;      // riquadro in alto (Retro base): chiuso di d
 let _retroCatResultsOpen = false;  // riquadro risultati: chiuso di default
 let _retroCategoryFilter = null;   // filtro categoria attivo (null = off; '' = senza categoria); solo sezione Retro
 let _retroResultCatVals = [];      // valori categoria reali dei box cliccabili dei risultati, per l'onclick via indice
+// v5.809 — Specchietti "Change per Tipo di change" (sezione Figurine), gemelli di quelli dei Retro.
+let _changeTypeTopOpen = false;      // riquadro in alto (panoramica Change): chiuso di default
+let _changeTypeResultsOpen = false;  // riquadro risultati: chiuso di default
+let _changeTypeFilter = null;        // filtro Tipo di change attivo (null = off); solo sezione Figurine
+let _changeTypeResultVals = [];      // valori Tipo di change dei box cliccabili dei risultati, per l'onclick via indice
 let _previousPage = 'home'; // pagina da cui si è arrivati, usata dal pulsante "← Torna" nel profilo
 let editingSeriesImg = null;
 let editingFigImg = null;
@@ -11046,6 +11059,7 @@ function openSeriesSection(section) {
   _noPhotoFilter = false;
   _itemTypeFilter = 'base';
   _retroCategoryFilter = null; // il filtro per categoria dei Retro non sopravvive al cambio sezione/serie
+  _changeTypeFilter = null; // idem per il filtro Tipo di change (sezione Figurine)
   _ownedFilter = 'all'; // si riparte sempre da "tutti": un filtro dimenticato acceso
                         // fra una sezione e l'altra fa sembrare vuota una sezione piena
   currentSection = section;
@@ -12085,11 +12099,15 @@ function getCurrentlyFilteredItems(opts) {
   // singolo oggetto della serie (368 volte, e per ogni ridisegno).
   const _own = (currentUser && _ownedFilter !== 'all') ? getOwned() : null;
   const _skipCat = !!(opts && opts.skipCategory); // gli specchietti chiedono i conteggi ignorando il filtro-categoria
+  const _skipChangeType = !!(opts && opts.skipChangeType); // idem per lo specchietto Tipo di change
   return allFigs.filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
     // Filtro per categoria (solo Retro), attivato cliccando un box nello specchietto risultati (v5.762)
     if (!_skipCat && _retroCategoryFilter !== null && currentSection === 'retros'
         && ((f.category || '').trim()) !== _retroCategoryFilter) return false;
+    // Filtro per Tipo di change (solo Figurine): mostra SOLO i Change di quel tipo (v5.809)
+    if (!_skipChangeType && _changeTypeFilter !== null && currentSection === 'figurines'
+        && !(f.isChange && ((f.changeType || '').trim()) === _changeTypeFilter)) return false;
     if (_noPhotoFilter && f.img) return false;
     if (_own) {
       const ceLho = _own.includes(f.id);
@@ -12248,6 +12266,113 @@ function clearRetroCategoryFilter() {
   try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (clearRetroCategoryFilter)', e); }
 }
 
+// v5.809 — Specchietti "Change per Tipo di change" nella sezione Figurine. Stesso schema dei "Retro
+// per categoria": due riquadri a scomparsa (chiusi di default), visibili a TUTTI e solo nella sezione
+// Figurine, solo se esistono Change.
+//   1) in alto (prima della ricerca): TUTTI i Change della serie, panoramica non filtrata (box statici);
+//   2) nei risultati (dopo i filtri, sopra la griglia): conteggi coerenti con ricerca/filtri in corso
+//      (ma ignorando il filtro-tipo-change stesso). Box CLICCABILI: cliccando si mostrano solo i Change
+//      di quel tipo; riclick sulla stessa, o il badge "✕", azzerano il filtro.
+function _changeTypeCounts(items) {
+  const map = new Map();
+  for (const f of items) {
+    if (!f.isChange) continue;
+    const ct = (f.changeType || '').trim();
+    map.set(ct, (map.get(ct) || 0) + 1);
+  }
+  return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0], 'it', { sensitivity: 'base' }));
+}
+function _changeTypeLabel(ct) {
+  return ct || (currentLang === 'it' ? '(Senza tipo)' : '(No type)');
+}
+function _changeTypePanelHTML(pairs, open, clickable, toggleFn) {
+  const it = (currentLang === 'it');
+  const total = pairs.reduce((s, p) => s + p[1], 0);
+  const title = clickable
+    ? (it ? 'Clicca qui per filtrare i risultati della ricerca per tipo di change'
+          : 'Click here to filter the search results by change type')
+    : (it ? 'Clicca qui per vedere i Change conteggiati per tipo'
+          : 'Click here to see the Changes counted by type');
+  let header = `<div onclick="${toggleFn}()" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
+    + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '▼' : '▶'}</span>`
+    + `<span style="font-size:0.85rem;font-weight:600;color:var(--text);">${title}</span>`
+    + (open ? `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">· ${it ? 'totale' : 'total'} ${total}</span>` : '');
+  if (clickable && _changeTypeFilter !== null) {
+    header += `<span onclick="event.stopPropagation();clearChangeTypeFilter()" title="${it ? 'Azzera il filtro per tipo di change' : 'Clear change type filter'}" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.3rem;background:var(--accent);color:var(--bg);border-radius:999px;padding:0.1rem 0.55rem;font-size:0.78rem;font-weight:600;">`
+      + `${it ? 'filtro' : 'filter'}: ${esc(_changeTypeLabel(_changeTypeFilter))} ✕</span>`;
+  }
+  header += `</div>`;
+
+  let body = '';
+  if (open) {
+    let chips;
+    if (clickable) {
+      _changeTypeResultVals = pairs.map(p => p[0]);
+      chips = pairs.map(([ct, n], i) => {
+        const active = _changeTypeFilter !== null && _changeTypeFilter === ct;
+        const bg = active ? 'var(--accent)' : 'var(--card2)';
+        const fg = active ? 'var(--bg)' : 'var(--text)';
+        const nf = active ? 'var(--bg)' : 'var(--accent)';
+        return `<span onclick="setChangeTypeFilterByIndex(${i})" title="${it ? 'Filtra per questo tipo di change' : 'Filter by this change type'}" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;background:${bg};border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.82rem;line-height:1.4;">`
+          + `<span style="color:${fg};">${esc(_changeTypeLabel(ct))}</span>`
+          + `<span style="color:${nf};font-weight:700;">${n}</span></span>`;
+      }).join('');
+    } else {
+      chips = pairs.map(([ct, n]) =>
+        `<span style="display:inline-flex;align-items:center;gap:0.35rem;background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.82rem;line-height:1.4;">`
+        + `<span style="color:var(--text);">${esc(_changeTypeLabel(ct))}</span>`
+        + `<span style="color:var(--accent);font-weight:700;">${n}</span></span>`).join('');
+    }
+    body = `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem;">${chips}</div>`;
+  }
+  return `<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.8rem 0.9rem;">${header}${body}</div>`;
+}
+function renderChangeTypeSummaries() {
+  const topEl = document.getElementById('change-type-summary-top');
+  const resEl = document.getElementById('change-type-summary-results');
+  const isFig = currentSection === 'figurines' && !!currentSeriesId;
+  if (topEl) {
+    if (!isFig) { topEl.style.display = 'none'; topEl.innerHTML = ''; }
+    else {
+      const changes = getData('figurines', []).filter(f =>
+        f.seriesId === currentSeriesId && f.section === 'figurines' && f.isChange);
+      const pairs = _changeTypeCounts(changes);
+      topEl.innerHTML = pairs.length ? _changeTypePanelHTML(pairs, _changeTypeTopOpen, false, 'toggleChangeTypeTop') : '';
+      topEl.style.display = pairs.length ? '' : 'none';
+    }
+  }
+  if (resEl) {
+    if (!isFig) { resEl.style.display = 'none'; resEl.innerHTML = ''; }
+    else {
+      const pairs = _changeTypeCounts(getCurrentlyFilteredItems({ skipChangeType: true }));
+      resEl.innerHTML = pairs.length ? _changeTypePanelHTML(pairs, _changeTypeResultsOpen, true, 'toggleChangeTypeResults') : '';
+      resEl.style.display = pairs.length ? '' : 'none';
+    }
+  }
+}
+function toggleChangeTypeTop() {
+  _changeTypeTopOpen = !_changeTypeTopOpen;
+  try { renderChangeTypeSummaries(); } catch(e) { console.error('toggleChangeTypeTop', e); }
+}
+function toggleChangeTypeResults() {
+  _changeTypeResultsOpen = !_changeTypeResultsOpen;
+  try { renderChangeTypeSummaries(); } catch(e) { console.error('toggleChangeTypeResults', e); }
+}
+function setChangeTypeFilterByIndex(i) {
+  const ct = _changeTypeResultVals[i];
+  if (ct === undefined) return;
+  _changeTypeFilter = (_changeTypeFilter === ct) ? null : ct; // riclick sulla stessa = azzera
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (setChangeTypeFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setChangeTypeFilter)', e); }
+}
+function clearChangeTypeFilter() {
+  _changeTypeFilter = null;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (clearChangeTypeFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (clearChangeTypeFilter)', e); }
+}
+
 function renderItems() {
   const grid = document.getElementById('items-grid');
   if (!currentSeriesId || !grid || !currentSection) return;
@@ -12259,6 +12384,9 @@ function renderItems() {
 
   // Specchietto "Retro per categoria" (solo sezione Retro) — v5.760
   try { renderRetroCategorySummaries(); } catch(e) { console.error('renderRetroCategorySummaries', e); }
+
+  // Specchietto "Change per Tipo di change" (solo sezione Figurine) — v5.809
+  try { renderChangeTypeSummaries(); } catch(e) { console.error('renderChangeTypeSummaries', e); }
 
   // Selettore "Vista retro" — visibile solo nella sezione Figurine, per tutti
   const retroViewSelector = document.getElementById('retro-view-selector');
