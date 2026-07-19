@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.818 — Franco: card della Serie, l'anno è ora sulla STESSA riga del nome della serie (mantenendo il
+//          suo font, .card-tag: piccolo, maiuscolo, accent). Tolto dalla riga in alto, dove resta solo
+//          l'eventuale punteggio.
+// ------------------------------------------------------------
 // v5.817 — Franco: pagina Inventario, il sottotitolo "Tutte le serie di Sgorbions mai pubblicate" è ora
 //          sulla STESSA riga del titolo "L'Inventario" (flex, allineato alla base), mantenendo il suo font.
 // ------------------------------------------------------------
@@ -8184,7 +8188,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.817';
+const JS_VERSION = 'v5.818';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10757,11 +10761,8 @@ function seriesCardHTML(s) {
       ${s.img ? `<img src="${cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;padding:8px;">` : '🎴'}
     </div>
     <div class="card-body">
-      <div style="display:flex;align-items:center;justify-content:space-between;">
-        <span class="card-tag">${s.year || ''}</span>
-        ${modeScoreHTML}
-      </div>
-      <div class="card-title">${s.name}</div>
+      ${modeScoreHTML ? `<div style="display:flex;justify-content:flex-end;">${modeScoreHTML}</div>` : ''}
+      <div class="card-title" style="display:flex;align-items:baseline;gap:0.5rem;flex-wrap:wrap;"><span>${s.name}</span>${s.year ? `<span class="card-tag" style="display:inline;margin-bottom:0;">${s.year}</span>` : ''}</div>
       <div class="card-desc">${(desc||'').substring(0,90)}${(desc||'').length>90?'…':''}</div>
       <div class="card-meta">
         <span class="card-badge">${figs.length} ${currentLang === 'it' ? 'figurine' : 'stickers'}</span>
