@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.808 — Franco: nel log dell'importatore figurine le righe "--- FINE: ... ---" e "--- RIGHE NON
+//          IMPORTATE (n) ---" ora sono in BIANCO (var(--text)) invece che arancione/warn. Aggiunto il tipo
+//          'white' a figImportLog.
+// ------------------------------------------------------------
 // v5.807 — Franco: IMPORTATORE UNICO "Caricamento massivo figurine" che sostituisce i due import
 //          separati (figurine base + Variazioni/Change/Errori). Una riga è BASE se la colonna "Figurina
 //          base" è vuota (base per Numero, o per Nome nelle serie senza numeri; Retro OBBLIGATORIO),
@@ -8137,7 +8141,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.807';
+const JS_VERSION = 'v5.808';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16361,7 +16365,7 @@ function figImportLog(msg, type) {
   const el = document.getElementById('import-fig-log');
   if (!el) return;
   el.style.display = 'block';
-  const color = type==='ok'?'var(--success)':type==='err'?'var(--danger)':type==='warn'?'var(--warn)':type==='update'?'var(--info)':'var(--muted)';
+  const color = type==='white'?'var(--text)':type==='ok'?'var(--success)':type==='err'?'var(--danger)':type==='warn'?'var(--warn)':type==='update'?'var(--info)':'var(--muted)';
   el.innerHTML += '<div style="color:'+color+';margin-bottom:2px;">'+msg+'</div>';
   el.scrollTop = el.scrollHeight;
 }
@@ -16603,11 +16607,11 @@ async function startImportFig() {
   }
 
   figImportStatus('✅ Fine: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : ''), 100);
-  figImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + unchanged + ' invariate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', errors===0?'ok':'warn');
+  figImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + unchanged + ' invariate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', 'white');
 
   if (erroriRighe.length) {
     figImportLog('', 'info');
-    figImportLog('--- ' + (currentLang === 'it' ? 'RIGHE NON IMPORTATE (' + erroriRighe.length + ') ---' : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'warn');
+    figImportLog('--- ' + (currentLang === 'it' ? 'RIGHE NON IMPORTATE (' + erroriRighe.length + ') ---' : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'white');
     erroriRighe.forEach(msg => figImportLog(msg, 'warn'));
   }
   const _endBtn = document.getElementById('import-fig-start-btn'); if (_endBtn) _endBtn.disabled = false;
