@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.816 — Franco: nel "Caricamento massivo foto figurine con numero" la foto del fronte ora va sulla
+//          figurina BASE con quel numero (non sulla prima figurina qualsiasi): variazioni/change
+//          condividono il numero ma ereditano il fronte dalla base. Aggiunto il filtro base al match.
+// ------------------------------------------------------------
 // v5.815 — Franco: aggiunta al recap dell'importatore figurine la sezione "RECAP RIGHE AGGIORNATE (N)"
 //          (righe che hanno sovrascritto un record esistente), delimitata da INIZIO/FINE come le altre.
 // ------------------------------------------------------------
@@ -8177,7 +8181,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.815';
+const JS_VERSION = 'v5.816';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -17553,8 +17557,10 @@ async function startAdminFotoUpload() {
     fotoStatus(file.name + ' (' + (i+1) + '/' + files.length + ')', Math.round((i/files.length)*100));
 
     if (isNaN(num)) { errRiga('⚠️ Nome non valido: ' + file.name, 'warn');  continue; }
-    const fig = allFigs.find(f => Number(f.number) === num);
-    if (!fig) { errRiga('⚠️ Nessuna figurina #' + num + ' trovata', 'warn');  continue; }
+    // v5.816 — la foto del FRONTE va sulla figurina BASE (variazioni/change condividono il numero ma
+    // ereditano il fronte dalla base): si cerca la base con quel numero, non la prima figurina qualsiasi.
+    const fig = allFigs.find(f => Number(f.number) === num && !f.baseFigurineId && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError);
+    if (!fig) { errRiga('⚠️ Nessuna figurina base #' + num + ' trovata', 'warn');  continue; }
     if (fig.img && !overwrite) { fotoLog('⏭️ #' + num + ' ' + fig.name + ' — saltata (ha già foto)', 'info'); skip++; continue; }
 
     try {

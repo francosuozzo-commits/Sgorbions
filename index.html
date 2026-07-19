@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.815"></script>
-<link rel="stylesheet" href="css/style.css?v=5.815">
+<script src="js/email.min.js?v=5.816"></script>
+<link rel="stylesheet" href="css/style.css?v=5.816">
 
 </head>
 <body>
@@ -23,7 +23,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.815</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.816</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1144,7 +1144,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.815</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.816</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1825,7 +1825,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.815"></script>
+<script src="js/app.js?v=5.816"></script>
 <script>
 /* Rete di sicurezza contro la cache.
    index.html non viene praticamente mai servito dalla cache; app.js e style.css
@@ -1834,7 +1834,7 @@
    "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
    Questo controllo lo trasforma in un messaggio esplicito in console. */
 (function () {
-  var expected = 'v5.815'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.816'; // deve coincidere con JS_VERSION in app.js
   if (typeof JS_VERSION === 'undefined') {
     console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
     return;
