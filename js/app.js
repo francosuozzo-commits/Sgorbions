@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.810 — Franco: nel log dell'importatore figurine il recap delle righe non importate è ora delimitato
+//          da due righe (bianche): "--- INIZIO RECAP RIGHE NON IMPORTATE (N) ---" all'inizio e "--- FINE
+//          RECAP RIGHE NON IMPORTATE (N) ---" alla fine.
+// ------------------------------------------------------------
 // v5.809 — Franco: raggruppamento dei Change per "Tipo di change" nella sezione Figurine, gemello dello
 //          specchietto "Retro per categoria". Due riquadri a scomparsa (change-type-summary-top /
 //          change-type-summary-results), visibili solo nella sezione Figurine e solo se ci sono Change:
@@ -8149,7 +8153,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.809';
+const JS_VERSION = 'v5.810';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16739,8 +16743,10 @@ async function startImportFig() {
 
   if (erroriRighe.length) {
     figImportLog('', 'info');
-    figImportLog('--- ' + (currentLang === 'it' ? 'RIGHE NON IMPORTATE (' + erroriRighe.length + ') ---' : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'white');
+    const _rec = (currentLang === 'it' ? 'RECAP RIGHE NON IMPORTATE (' + erroriRighe.length + ')' : 'RECAP ROWS NOT IMPORTED (' + erroriRighe.length + ')');
+    figImportLog('--- ' + (currentLang === 'it' ? 'INIZIO ' : 'START ') + _rec + ' ---', 'white');
     erroriRighe.forEach(msg => figImportLog(msg, 'warn'));
+    figImportLog('--- ' + (currentLang === 'it' ? 'FINE ' : 'END ') + _rec + ' ---', 'white');
   }
   const _endBtn = document.getElementById('import-fig-start-btn'); if (_endBtn) _endBtn.disabled = false;
   renderItems(); updateSectionCounts();
