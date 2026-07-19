@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.815 — Franco: aggiunta al recap dell'importatore figurine la sezione "RECAP RIGHE AGGIORNATE (N)"
+//          (righe che hanno sovrascritto un record esistente), delimitata da INIZIO/FINE come le altre.
+// ------------------------------------------------------------
 // v5.814 — Franco: nell'importatore figurine il retro di riferimento può ora essere anche un CHANGE o un
 //          ERRORE DI STAMPA di retro (prima solo il retro base). Due nuove colonne facoltative
 //          "Retro - Tipo di change" e "Retro - Tipo errore di stampa": se valorizzate, la riconciliazione
@@ -8174,7 +8177,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.814';
+const JS_VERSION = 'v5.815';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16577,6 +16580,7 @@ async function startImportFig() {
   let inserted = 0, updated = 0, unchanged = 0, errors = 0, skipped = 0, retroNotFound = 0;
   const erroriRighe = [];        // righe scartate del tutto (nessun salvataggio)
   const righeIncomplete = [];    // righe importate MA con un dato cercato non trovato (es. Retro del Change)
+  const righeAggiornate = [];    // righe che hanno SOVRASCRITTO un record esistente (dati modificati)
   const errRiga = (msg, lvl) => { figImportLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
 
   const mkGet = (row) => (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return String(v[1]).trim(); } return ''; };
@@ -16669,7 +16673,7 @@ async function startImportFig() {
           if (changed) {
             await fsSave('figurines', updatedRec);
             const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec;
-            figImportLog('🔄 Riga ' + rn + ': "' + finalName + '" — base sovrascritta (dati modificati)', 'update'); updated++;
+            { const _u = '🔄 Riga ' + rn + ': "' + finalName + '" — base sovrascritta (dati modificati)'; figImportLog(_u, 'update'); righeAggiornate.push(_u); updated++; }
           } else { figImportLog('⏭️ Riga ' + rn + ': "' + finalName + '" — base già presente, nessuna modifica', 'info'); unchanged++; }
         } else {
           if (!nome) { errRiga('⚠️ Riga ' + rn + ': nessuna base con Numero ' + numero + ' — per crearne una nuova serve anche il Nome', 'warn'); continue; }
@@ -16759,7 +16763,7 @@ async function startImportFig() {
         if (changed) {
           await fsSave('figurines', updatedRec);
           const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec;
-          figImportLog('🔄 Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — sovrascritta (' + rowType + ', dati modificati)', 'update'); updated++;
+          { const _u = '🔄 Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — sovrascritta (' + rowType + ', dati modificati)'; figImportLog(_u, 'update'); righeAggiornate.push(_u); updated++; }
         } else { figImportLog('⏭️ Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — già presente, nessuna modifica', 'info'); unchanged++; }
       } else {
         figData.fullName = computeFullName(figData, existingFigs);
@@ -16772,16 +16776,18 @@ async function startImportFig() {
   figImportStatus('✅ Fine: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : ''), 100);
   figImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + unchanged + ' invariate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', 'white');
 
-  // Recap: (1) righe NON IMPORTATE (scartate); (2) righe NON IMPORTATE COMPLETAMENTE (salvate ma
-  // con un dato cercato non trovato, es. il Retro del Change). Ciascuna delimitata da INIZIO/FINE.
-  const _recapBlock = (list, labelIt, labelEn) => {
+  // Recap, ciascuna sezione delimitata da INIZIO/FINE: (1) righe AGGIORNATE (hanno sovrascritto un
+  // record esistente); (2) righe NON IMPORTATE (scartate); (3) righe NON IMPORTATE COMPLETAMENTE
+  // (salvate ma con un dato cercato non trovato, es. il Retro del Change).
+  const _recapBlock = (list, labelIt, labelEn, itemLvl) => {
     if (!list.length) return;
     figImportLog('', 'info');
     const _rec = (currentLang === 'it' ? labelIt + ' (' + list.length + ')' : labelEn + ' (' + list.length + ')');
     figImportLog('--- ' + (currentLang === 'it' ? 'INIZIO ' : 'START ') + _rec + ' ---', 'white');
-    list.forEach(msg => figImportLog(msg, 'warn'));
+    list.forEach(msg => figImportLog(msg, itemLvl || 'warn'));
     figImportLog('--- ' + (currentLang === 'it' ? 'FINE ' : 'END ') + _rec + ' ---', 'white');
   };
+  _recapBlock(righeAggiornate, 'RECAP RIGHE AGGIORNATE', 'RECAP UPDATED ROWS', 'update');
   _recapBlock(erroriRighe, 'RECAP RIGHE NON IMPORTATE', 'RECAP ROWS NOT IMPORTED');
   _recapBlock(righeIncomplete, 'RECAP RIGHE NON IMPORTATE COMPLETAMENTE', 'RECAP ROWS NOT FULLY IMPORTED');
   const _endBtn = document.getElementById('import-fig-start-btn'); if (_endBtn) _endBtn.disabled = false;
