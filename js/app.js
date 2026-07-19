@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.812 — Franco: semplificazione. Nell'importatore UNICO figurine la colonna degli errori di stampa si
+//          chiama d'ora in poi solo "Tipo errore di stampa" (senza "di"): getCol semplificato, template
+//          unico e istruzioni allineati. L'import RETRO resta invariato ("Tipo di errore di stampa").
+// ------------------------------------------------------------
 // v5.811 — Franco: l'importatore figurine ora riconosce la colonna degli errori di stampa sia come
 //          "Tipo di errore di stampa" sia come "Tipo errore di stampa" (senza "di"). Prima, con
 //          l'intestazione senza "di", le righe errore di stampa non venivano riconosciute e finivano in
@@ -8158,7 +8162,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.811';
+const JS_VERSION = 'v5.812';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16523,8 +16527,8 @@ function figImportStatus(msg, pct) {
 //      · Variazione: "Tipo" = Ufficiale/Non ufficiale — Retro OBBLIGATORIO (chiave: base + Retro);
 //      · Change: "Tipo di change" valorizzato (validato sui tipi della serie; chiave: base + Tipo di
 //        change); Retro FACOLTATIVO (proprio del Change, altrimenti eredita la base);
-//      · Errore di stampa: "Tipo di errore di stampa" valorizzato (= printErrorType, testo libero;
-//        chiave: base + Tipo di errore di stampa); nessun Retro proprio.
+//      · Errore di stampa: "Tipo errore di stampa" valorizzato (= printErrorType, testo libero;
+//        chiave: base + Tipo errore di stampa); nessun Retro proprio.
 // Nome di ogni variante = SEMPRE quello della base. DOPPIA PASSATA interna: prima le basi, poi le
 // varianti (così una variante trova la sua base anche se nel file la precede). Guardia sui numeri
 // doppi tra basi come rete di sicurezza (non è un caso legittimo).
@@ -16600,7 +16604,7 @@ async function startImportFig() {
     const taglia = g('Taglia','size','taglia');
     const tipo = g('Tipo','type','tipo');
     const tipoChange = g('Tipo di change','tipo di change','change type','changetype');
-    const tipoErroreStampa = g('Tipo di errore di stampa','tipo di errore di stampa','Tipo errore di stampa','tipo errore di stampa','nome errore di stampa','print error type','printerrortype');
+    const tipoErroreStampa = g('Tipo errore di stampa','print error type','printerrortype');
     const retroCategoria = g('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria','Retro (Categoria)','retro (categoria)');
     const retroNome = g('Retro - Nome','Retro-Nome','retro nome','retro-nome','Retro (Nome)','retro (nome)');
 
@@ -16608,7 +16612,7 @@ async function startImportFig() {
     if (!figBaseRef) {
       // Coerenza: una riga base non deve avere campi da variante.
       if (tipo || tipoChange || tipoErroreStampa) {
-        errRiga('⚠️ Riga ' + rn + ': riga base (colonna "Figurina base" vuota) ma con Tipo / Tipo di change / Tipo di errore di stampa valorizzati — incoerente, riga scartata', 'warn');
+        errRiga('⚠️ Riga ' + rn + ': riga base (colonna "Figurina base" vuota) ma con Tipo / Tipo di change / Tipo errore di stampa valorizzati — incoerente, riga scartata', 'warn');
          continue;
       }
       if (!numero && !nome) { errRiga('⚠️ Riga ' + rn + ': servono Numero o Nome per identificare la figurina base', 'warn'); continue; }
@@ -16670,10 +16674,10 @@ async function startImportFig() {
     if (baseAmb) { errRiga('❌ Riga ' + rn + ': "Figurina base" = "' + figBaseRef + '" corrisponde a ' + baseAmb + ' figurine base — anomalia, riga saltata', 'err'); continue; }
     if (!baseFig) { errRiga('⚠️ Riga ' + rn + ': figurina base "' + figBaseRef + '" non trovata nella serie', 'warn'); continue; }
 
-    // Sotto-tipo: uno solo tra Tipo / Tipo di change / Tipo di errore di stampa.
+    // Sotto-tipo: uno solo tra Tipo / Tipo di change / Tipo errore di stampa.
     const nSignals = [tipo, tipoChange, tipoErroreStampa].filter(Boolean).length;
     if (nSignals > 1) {
-      errRiga('❌ Riga ' + rn + ': indicati più tipi insieme (Tipo, Tipo di change, Tipo di errore di stampa sono mutuamente esclusivi) — riga scartata', 'warn'); continue;
+      errRiga('❌ Riga ' + rn + ': indicati più tipi insieme (Tipo, Tipo di change, Tipo errore di stampa sono mutuamente esclusivi) — riga scartata', 'warn'); continue;
     }
 
     const baseCommon = {
@@ -16706,11 +16710,11 @@ async function startImportFig() {
       rowType = 'Change';
       keyInfo = ' [Tipo di change: ' + matchedType + ']';
     } else {
-      if (!tipo) { errRiga('⚠️ Riga ' + rn + ': variante senza tipo. Indica "Ufficiale"/"Non ufficiale" (Variazione), oppure "Tipo di change" (Change), oppure "Tipo di errore di stampa" (Errore di stampa)', 'warn'); continue; }
+      if (!tipo) { errRiga('⚠️ Riga ' + rn + ': variante senza tipo. Indica "Ufficiale"/"Non ufficiale" (Variazione), oppure "Tipo di change" (Change), oppure "Tipo errore di stampa" (Errore di stampa)', 'warn'); continue; }
       const tipoLow = tipo.toLowerCase().trim();
       const isVariation = tipoLow === 'ufficiale' || tipoLow === 'official';
       const isUnofficialVariation = tipoLow === 'non ufficiale' || tipoLow === 'unofficial';
-      if (!isVariation && !isUnofficialVariation) { errRiga('⚠️ Riga ' + rn + ': Tipo non riconosciuto "' + tipo + '" (usa Ufficiale / Non ufficiale; per i Change usa "Tipo di change", per gli errori "Tipo di errore di stampa")', 'warn'); continue; }
+      if (!isVariation && !isUnofficialVariation) { errRiga('⚠️ Riga ' + rn + ': Tipo non riconosciuto "' + tipo + '" (usa Ufficiale / Non ufficiale; per i Change usa "Tipo di change", per gli errori "Tipo errore di stampa")', 'warn'); continue; }
       if (!retroCategoria || !retroNome) { errRiga('⚠️ Riga ' + rn + ': Retro (Categoria)/Retro (Nome) mancanti (obbligatori per una Variazione)', 'warn'); continue; }
       const rm = findRetro(retroCategoria, retroNome);
       if (!rm) { errRiga('⚠️ Riga ' + rn + ': Retro "' + retroCategoria + ' / ' + retroNome + '" non trovato — riga scartata', 'warn'); continue; }
@@ -17243,8 +17247,8 @@ function renderAdminFoto() {
       <div id="import-fig-section-content" style="display:none;">
       <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS. Un unico file per figurine base, variazioni, change ed errori di stampa.<br>Colonne: <code>Serie</code> · <code>Numero</code> · <code>Nome</code> · <code>Sottoserie</code> · <code>Taglia</code> · <code>Figurina base</code> · <code>Tipo</code> · <code>Tipo di change</code> · <code>Tipo di errore di stampa</code> · <code>Retro (Categoria)</code> · <code>Retro (Nome)</code>.<br><br><b>OGNI RIGA È UNA COSA SOLA.</b> Il tipo si legge dalla colonna <code>Figurina base</code>:<br><br><b>Figurina base</b> — colonna <code>Figurina base</code> <b>vuota</b>. Identificata per <code>Numero</code> (o per <code>Nome</code> nelle serie senza numeri); con sottoserie la chiave è Serie+Sottoserie+Numero. <b>Il Retro è obbligatorio</b> e deve già esistere a sistema.<br><br><b>Variazione</b> — <code>Figurina base</code> valorizzata + <code>Tipo</code> = Ufficiale / Non ufficiale. Retro <b>obbligatorio</b> (chiave: base + Retro).<br><br><b>Change</b> — <code>Figurina base</code> valorizzata + <code>Tipo di change</code> (validato sui tipi della serie; chiave: base + Tipo di change). Retro <b>facoltativo</b> (il retro proprio del change; se assente eredita quello della base).<br><br><b>Errore di stampa</b> — <code>Figurina base</code> valorizzata + <code>Tipo di errore di stampa</code> (testo libero; chiave: base + Tipo di errore di stampa).<br><br><b>La colonna <code>Figurina base</code></b> contiene il riferimento alla base: il suo <b>Numero</b> (serie numerate) o il suo <b>Nome</b> (serie senza numeri) — riconosciuto in automatico. Tipo / Tipo di change / Tipo di errore di stampa sono <b>mutuamente esclusivi</b>. Il Nome di variazioni/change/errori è sempre quello della base.<br><br>NOTA: elenca le figurine base prima delle loro varianti; le righe con Serie diversa da quella selezionata vengono ignorate.'
-          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file. One file for base stickers, variations, changes and print errors.<br>Columns: <code>Serie</code> · <code>Numero</code> · <code>Nome</code> · <code>Sottoserie</code> · <code>Taglia</code> · <code>Figurina base</code> · <code>Tipo</code> · <code>Tipo di change</code> · <code>Tipo di errore di stampa</code> · <code>Retro (Categoria)</code> · <code>Retro (Nome)</code>.<br><br><b>EACH ROW IS ONE THING.</b> The type is read from the <code>Figurina base</code> column:<br><br><b>Base sticker</b> — <code>Figurina base</code> <b>empty</b>. Found by <code>Numero</code> (or <code>Nome</code> in series without numbers); with subseries the key is Serie+Sottoserie+Numero. <b>The Retro is required</b> and must already exist.<br><br><b>Variation</b> — <code>Figurina base</code> set + <code>Tipo</code> = Ufficiale / Non ufficiale. Retro <b>required</b> (key: base + Retro).<br><br><b>Change</b> — <code>Figurina base</code> set + <code>Tipo di change</code> (validated against the series types; key: base + Tipo di change). Retro <b>optional</b> (the change\'s own retro; if empty it inherits the base one).<br><br><b>Print error</b> — <code>Figurina base</code> set + <code>Tipo di errore di stampa</code> (free text; key: base + Tipo di errore di stampa).<br><br><b>The <code>Figurina base</code> column</b> holds the reference to the base: its <b>Numero</b> (numbered series) or its <b>Nome</b> (series without numbers) — auto-detected. Tipo / Tipo di change / Tipo di errore di stampa are <b>mutually exclusive</b>. The name of variations/changes/errors is always the base name.<br><br>NOTE: list base stickers before their variants; rows with a Serie different from the selected one are skipped.'}
+          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS. Un unico file per figurine base, variazioni, change ed errori di stampa.<br>Colonne: <code>Serie</code> · <code>Numero</code> · <code>Nome</code> · <code>Sottoserie</code> · <code>Taglia</code> · <code>Figurina base</code> · <code>Tipo</code> · <code>Tipo di change</code> · <code>Tipo errore di stampa</code> · <code>Retro (Categoria)</code> · <code>Retro (Nome)</code>.<br><br><b>OGNI RIGA È UNA COSA SOLA.</b> Il tipo si legge dalla colonna <code>Figurina base</code>:<br><br><b>Figurina base</b> — colonna <code>Figurina base</code> <b>vuota</b>. Identificata per <code>Numero</code> (o per <code>Nome</code> nelle serie senza numeri); con sottoserie la chiave è Serie+Sottoserie+Numero. <b>Il Retro è obbligatorio</b> e deve già esistere a sistema.<br><br><b>Variazione</b> — <code>Figurina base</code> valorizzata + <code>Tipo</code> = Ufficiale / Non ufficiale. Retro <b>obbligatorio</b> (chiave: base + Retro).<br><br><b>Change</b> — <code>Figurina base</code> valorizzata + <code>Tipo di change</code> (validato sui tipi della serie; chiave: base + Tipo di change). Retro <b>facoltativo</b> (il retro proprio del change; se assente eredita quello della base).<br><br><b>Errore di stampa</b> — <code>Figurina base</code> valorizzata + <code>Tipo errore di stampa</code> (testo libero; chiave: base + Tipo errore di stampa).<br><br><b>La colonna <code>Figurina base</code></b> contiene il riferimento alla base: il suo <b>Numero</b> (serie numerate) o il suo <b>Nome</b> (serie senza numeri) — riconosciuto in automatico. Tipo / Tipo di change / Tipo errore di stampa sono <b>mutuamente esclusivi</b>. Il Nome di variazioni/change/errori è sempre quello della base.<br><br>NOTA: elenca le figurine base prima delle loro varianti; le righe con Serie diversa da quella selezionata vengono ignorate.'
+          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file. One file for base stickers, variations, changes and print errors.<br>Columns: <code>Serie</code> · <code>Numero</code> · <code>Nome</code> · <code>Sottoserie</code> · <code>Taglia</code> · <code>Figurina base</code> · <code>Tipo</code> · <code>Tipo di change</code> · <code>Tipo errore di stampa</code> · <code>Retro (Categoria)</code> · <code>Retro (Nome)</code>.<br><br><b>EACH ROW IS ONE THING.</b> The type is read from the <code>Figurina base</code> column:<br><br><b>Base sticker</b> — <code>Figurina base</code> <b>empty</b>. Found by <code>Numero</code> (or <code>Nome</code> in series without numbers); with subseries the key is Serie+Sottoserie+Numero. <b>The Retro is required</b> and must already exist.<br><br><b>Variation</b> — <code>Figurina base</code> set + <code>Tipo</code> = Ufficiale / Non ufficiale. Retro <b>required</b> (key: base + Retro).<br><br><b>Change</b> — <code>Figurina base</code> set + <code>Tipo di change</code> (validated against the series types; key: base + Tipo di change). Retro <b>optional</b> (the change\'s own retro; if empty it inherits the base one).<br><br><b>Print error</b> — <code>Figurina base</code> set + <code>Tipo errore di stampa</code> (free text; key: base + Tipo errore di stampa).<br><br><b>The <code>Figurina base</code> column</b> holds the reference to the base: its <b>Numero</b> (numbered series) or its <b>Nome</b> (series without numbers) — auto-detected. Tipo / Tipo di change / Tipo errore di stampa are <b>mutually exclusive</b>. The name of variations/changes/errors is always the base name.<br><br>NOTE: list base stickers before their variants; rows with a Serie different from the selected one are skipped.'}
       </p>
       <a href="templates/template-figurine.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
 
