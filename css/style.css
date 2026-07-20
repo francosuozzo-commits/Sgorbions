@@ -132,7 +132,7 @@
   --font-body: 'Nunito', sans-serif;
 }
 
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 
 body {
   font-family: var(--font-body);
@@ -140,6 +140,7 @@ body {
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
+  position: relative; /* rende il body il contenitore dei blob decorativi absolute, così overflow-x:hidden li ritaglia davvero (niente scroll orizzontale su mobile) */
 }
 
 /* ===== ANIMATED BACKGROUND ===== */
@@ -895,14 +896,76 @@ footer {
 .footer-slime { font-size: 0.82rem; color: var(--accent3); }
 
 /* ===== RESPONSIVE ===== */
+
+/* Pulsante hamburger — nascosto su desktop, visibile su mobile (vedi @media 860px) */
+.nav-hamburger {
+  display: none;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text); width: 42px; height: 38px; border-radius: 8px;
+  cursor: pointer; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-right: 0.6rem; font-size: 1.2rem; line-height: 1;
+  padding: 0;
+}
+.nav-hamburger:hover { border-color: var(--accent3); color: var(--accent3); }
+
+/* ---- Tablet / mobile: la navbar passa al menu a tendina ---- */
+@media (max-width: 860px) {
+  #navbar { padding: 0 1rem; }
+  .nav-hamburger { display: inline-flex; }
+
+  /* meta versione / "online dal" tolti su schermi stretti per far spazio */
+  #nav-js-version-wrap { display: none !important; }
+
+  /* .nav-links diventa un pannello a tendina sotto la navbar */
+  .nav-links {
+    display: none;
+    position: fixed; top: 64px; left: 0; right: 0;
+    flex-direction: column; align-items: stretch; gap: 0;
+    background: rgba(14,10,26,0.98); backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem; max-height: calc(100vh - 64px); overflow-y: auto;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4); z-index: 1200;
+  }
+  #navbar.nav-open .nav-links { display: flex; }
+  .nav-links a {
+    font-size: 1.1rem; padding: 0.85rem 1rem; border-radius: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-links a:last-child { border-bottom: none; }
+
+  #navbar .nav-logo img { height: 30px; }
+}
+
+/* ---- Mobile ---- */
 @media (max-width: 768px) {
-  .nav-links { display: none; }
   .contact-grid { grid-template-columns: 1fr; }
   .footer-top { grid-template-columns: 1fr; gap: 2rem; }
   .hero-stats { gap: 1.5rem; }
+
+  .section { padding: 2.5rem 1rem; }
+
+  /* griglia figurine: da 7 colonne fisse a un numero adatto al telefono */
+  .grid-6 { grid-template-columns: repeat(4, 1fr); gap: 0.5rem; }
 }
+
+/* ---- Telefoni stretti ---- */
+@media (max-width: 560px) {
+  /* schede dettaglio: etichetta sopra, valore sotto (non più affiancati) */
+  .detail-row { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+  .detail-label { min-width: 0; }
+  .detail-value { padding-left: 0; }
+
+  /* campi "in vendita su Ebay" (prezzo/qtà/condizione) a 2 colonne invece di 3 */
+  #fe-for-sale-fields { grid-template-columns: 1fr 1fr !important; }
+
+  /* pulsanti auth un filo più compatti per stare sulla barra */
+  .btn-login, .btn-register { font-size: 0.95rem; padding: 0.35rem 0.75rem; }
+  .nav-right { gap: 0.6rem; }
+}
+
 @media (max-width: 480px) {
   .modal { padding: 1.5rem; }
+  .grid-6 { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* ===== SECTION CHOICE CARDS ===== */
