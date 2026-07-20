@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.821 — Franco: usabilità da MOBILE. (1) Menu di navigazione: sotto gli 860px .nav-links spariva
+//          senza rimpiazzo, quindi da telefono non si navigava; ora c'è un pulsante hamburger (☰/✕)
+//          nella navbar che apre .nav-links come pannello a tendina sotto la barra (chiusura al tocco
+//          di una voce, al click fuori, o allargando la finestra). (2) Overflow orizzontale eliminato:
+//          i blob decorativi (position:absolute) si posizionavano rispetto al viewport, quindi
+//          overflow-x:hidden sul body non li tagliava — aggiunto position:relative al body così il body
+//          ne diventa il contenitore e li ritaglia. (3) Griglia figurine .grid-6 (7 colonne fisse) resa
+//          responsive: 4 colonne <768px, 3 <480px. (4) Schede dettaglio (.detail-row) impilate su
+//          telefoni stretti (etichetta sopra, valore sotto). (5) Campi "in vendita su Ebay" a 2 colonne
+//          invece di 3 sotto i 560px. (6) Padding sezioni e pulsanti auth ridotti su mobile.
+//          Modificato index.html, css/style.css, app.js (solo versione).
+// ------------------------------------------------------------
 // v5.820 — Franco: scheda dettaglio serie (series-hero). L'anno è ora sulla STESSA riga del nome della
 //          serie (a sinistra; i pulsanti admin Modifica/Ebay restano in alto a destra) e, tolta la riga
 //          separata dell'anno e il margine del nome, tutto il testo (nome, anno, meta, descrizione) sale
@@ -8197,7 +8209,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.820';
+const JS_VERSION = 'v5.821';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
