@@ -1,6 +1,35 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.850 - Franco, telefono. SCHEDA SERIE: (1) copertina +15%, da 90 a 104px (anche la colonna
+//          della griglia dell'intestazione, altrimenti si sfasano). (2) I quattro box
+//          Figurine/Retro/Album/Altri oggetti passano da una fila di quattro a DUE FILE DA DUE:
+//          larghi il doppio, icona a 2rem, titolo a 0.95rem e conteggio a 0.72rem tornano
+//          leggibili (erano scesi a 0.66/0.58 solo per farne stare quattro).
+//          PAGINA FIGURINE: (3) i due conteggi ora stanno davvero su una riga sola. Rimpicciolire
+//          il testo non bastava: alla larghezza di un telefono "N oggetti trovati" e "N fanno
+//          parte della tua lista" non ci stanno a un corpo leggibile. Si accorciano quindi le
+//          FRASI - "N trovati" e "N in lista" (EN: found / in list) - e i numeri tornano a
+//          1.15rem invece di 1rem. (4) I due pulsanti blu hanno testo a 0.74rem invece di 0.62 e
+//          icone a 15px: crescono in altezza quanto serve, restando affiancati su una riga.
+//          Modificato js/app.js, css/style.css.
+// ------------------------------------------------------------
+// v5.849 - Franco, dettaglio figurina da telefono: quattro cambi all'ordine e al contenuto.
+//          (1) Via il TITOLO del modale: ripeteva Numero e Nome, che sono le prime righe della
+//          scheda. Nascosto via CSS, non rimosso: resta per i lettori di schermo e per il desktop.
+//          (2) SERIE prima di NUMERO: la riga Serie sale in cima, in testa a #fig-detail-top.
+//          (3) Per le VARIANTI, subito dopo il Nome compare la riga che le QUALIFICA - quella che
+//          le distingue dalla base: "Tipo di change", oppure "Tipo di errore di stampa", oppure,
+//          per le variazioni ufficiali e non ufficiali, il RETRO (con link alla sua scheda), che
+//          e' proprio cio' che le rende varianti. Le prime due esistevano gia' ma stavano in
+//          fondo: su mobile salgono; la riga Retro e' nuova ed e' solo mobile, perche' sul
+//          desktop c'e' gia' la didascalia sotto la foto.
+//          (4) "Mia lista" e "Ciò che cerco" affiancate, meta' larghezza ciascuna, con etichetta
+//          sopra e interruttore sotto: sono due comandi corti, una riga intera a testa era spazio
+//          sprecato. Aggiunte le classi .detail-row-mylist / .detail-row-wishlist, prima non
+//          avevano nulla che le distinguesse dalle altre righe.
+//          Modificato js/app.js, css/style.css.
+// ------------------------------------------------------------
 // v5.848 - Franco, pagina Figurine da telefono, quattro ritocchi.
 //          (1) Via la DESCRIZIONE dalla card: in ~85px di larghezza erano briciole di testo. Alla
 //          descrizione e' stata data la classe .fig-desc in app.js, prima non ne aveva nessuna e
@@ -8473,7 +8502,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.848';
+const JS_VERSION = 'v5.850';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10882,9 +10911,15 @@ function updateItemsCountDisplay(items) {
   const num = v => `<span style="${numBase}color:var(--accent);">${v}</span>`;
   const numBlue = v => `<span style="${numBase}color:var(--action);">${v}</span>`;
   const cfmt = count.toLocaleString(it ? 'it-IT' : 'en-US');
-  const trovati = count === 1
-    ? (it ? `${num('1')} oggetto trovato` : `${num('1')} item found`)
-    : (it ? `${num(cfmt)} oggetti trovati` : `${num(cfmt)} items found`);
+  // v5.850 — su telefono le due frasi vanno tenute su UNA riga: alla larghezza di un telefono
+  // "N oggetti trovati" + "N fanno parte della tua lista" non ci stanno a un corpo leggibile.
+  // Non si rimpicciolisce oltre: si accorcia il testo, che e' la cosa giusta da comprimere.
+  const _mobileCount = _isMobileViewport();
+  const trovati = _mobileCount
+    ? (it ? `${num(cfmt)} trovati` : `${num(cfmt)} found`)
+    : (count === 1
+        ? (it ? `${num('1')} oggetto trovato` : `${num('1')} item found`)
+        : (it ? `${num(cfmt)} oggetti trovati` : `${num(cfmt)} items found`));
 
   let html = `<span>${trovati}</span>`;
 
@@ -10895,9 +10930,11 @@ function updateItemsCountDisplay(items) {
     // Singolare e plurale: "1 FA parte", non "1 fanno parte". Idem in inglese
     // ("is part" / "are part"). E' il dettaglio che, sbagliato, fa sembrare
     // scritto male tutto il resto — anche quando il resto e' giusto.
-    const frase = it
-      ? (n === 1 ? 'fa parte della tua lista' : 'fanno parte della tua lista')
-      : (n === 1 ? 'is part of your list' : 'are part of your list');
+    const frase = _mobileCount
+      ? (it ? 'in lista' : 'in list')
+      : (it
+          ? (n === 1 ? 'fa parte della tua lista' : 'fanno parte della tua lista')
+          : (n === 1 ? 'is part of your list' : 'are part of your list'));
     // Solo il numero è colorato (blu lista); l'etichetta resta nel colore testo.
     html += `<span>${numBlue(nfmt)} ${frase}</span>`;
   }
@@ -14921,6 +14958,9 @@ function openFigDetail(figId) {
   const titleEl = document.getElementById('fig-detail-title');
   const displayNameForTitle = f.fullName || f.name;
   if (titleEl) titleEl.textContent = f.number ? ('#' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle;
+  // v5.849 — su telefono il titolo del modale sparisce: ripete Numero e Nome, che sono le prime
+  // due righe della scheda. Il testo resta comunque impostato, cosi' se la finestra torna larga
+  // (o per i lettori di schermo) c'e'. Nascosto via CSS, vedi .modal-title in sezione mobile.
 
   // Reset contenuto modal (evita residui da aperture precedenti)
   document.getElementById('fig-detail-content').innerHTML = '';
@@ -14937,7 +14977,7 @@ function openFigDetail(figId) {
   let _rowScoreMobile = '';
 
   // Serie (prima informazione, sempre visibile, utile arrivando da una ricerca)
-  rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Serie' : 'Series')}</span><span class="detail-value" style="font-weight:600;">${figSeries?.name || ''}</span></div>`);
+  (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Serie' : 'Series')}</span><span class="detail-value" style="font-weight:600;">${figSeries?.name || ''}</span></div>`);
 
   // v5.841 — la riga "Retro collegato" NON si stampa piu' (ne' su telefono ne' su desktop):
   // sotto la foto del Retro c'e' gia' lo STESSO link (retroCaption, piu' in basso in questa
@@ -15003,14 +15043,28 @@ function openFigDetail(figId) {
       : (currentLang === 'it' ? 'Questa figurina è un errore di stampa' : 'This sticker is a print error');
     rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--accent);">${peLabel}</span></div>`);
   }
+  // v5.849 — su telefono la riga che QUALIFICA la variante (tipo di change, tipo di errore di
+  // stampa, oppure il retro della variazione) sale in cima, subito dopo il Nome: e' quella che
+  // distingue questa figurina dalla sua base, quindi va letta insieme al nome, non in fondo.
   if (f.isChange && f.changeType) {
-    rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</span><span class="detail-value">${f.changeType}</span></div>`);
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</span><span class="detail-value">${f.changeType}</span></div>`);
   }
   // Tipo di errore di stampa (testo libero, tutte le sezioni) — per gli Errori di stampa la riga
   // e' SEMPRE mostrata (v5.770): il tipo e' facoltativo, quindi quando vuoto si scrive "non
   // impostato" invece di nascondere la riga (a differenza del changeType, che e' obbligatorio).
   if (f.isPrintError) {
-    rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di errore di stampa' : 'Print error type'}</span><span class="detail-value">${f.printErrorType ? esc(f.printErrorType) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostato' : 'not set') + '</span>'}</span></div>`);
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di errore di stampa' : 'Print error type'}</span><span class="detail-value">${f.printErrorType ? esc(f.printErrorType) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostato' : 'not set') + '</span>'}</span></div>`);
+  }
+
+  // v5.849 — su telefono, per una VARIAZIONE (ufficiale o non ufficiale) la riga che la qualifica
+  // e' il RETRO: e' proprio il retro a distinguerla dalla base. Sale in cima come fanno il tipo di
+  // change e il tipo di errore di stampa; sul desktop resta la didascalia sotto la foto.
+  if (_mobileDetail && (f.isVariation || f.isUnofficialVariation) && !f.isChange && !f.isPrintError && f.retroId) {
+    const _varRetro = getData('figurines', []).find(x => x.id === f.retroId);
+    if (_varRetro) {
+      const _vp = [_varRetro.category, _varRetro.subcategory].map(v => (v||'').trim()).filter(Boolean);
+      rowsTop.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Retro' : 'Back'}</span><span class="detail-value"><a href="#" onclick="openFigDetail('${_varRetro.id}');return false;" style="color:var(--accent);text-decoration:underline;">${_vp.length ? _vp.join(' · ') + ' — ' : ''}${esc(_varRetro.name || '')} ↗</a></span></div>`);
+    }
   }
   if ((f.isVariation || f.isUnofficialVariation || f.isChange || f.isPrintError) && f.baseFigurineId) {
     const baseFig = getData('figurines', []).find(x => x.id === f.baseFigurineId);
@@ -15082,7 +15136,7 @@ function openFigDetail(figId) {
 
   // Mia lista toggle
   if (currentUser) {
-    rows.push(`<div class="detail-row" style="align-items:center;">
+    rows.push(`<div class="detail-row detail-row-mylist" style="align-items:center;">
       <span class="detail-label">${currentLang === 'it' ? "Mia lista" : 'My list'}</span>
       <button class="owned-btn ${isOwned ? 'on' : ''}" id="fig-detail-toggle" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista':'In your list') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="toggleOwnedFromDetail('${f.id}')">\u2713</button>
     </div>`);
@@ -15091,7 +15145,7 @@ function openFigDetail(figId) {
   // Cuore "Ciò che cerco" (solo per utenti non-admin)
   if (currentUser && !isAdmin) {
     const inWishlist = _wishlist.includes(f.id);
-    rows.push(`<div class="detail-row" style="align-items:center;">
+    rows.push(`<div class="detail-row detail-row-wishlist" style="align-items:center;">
       <span class="detail-label">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</span>
       <button id="fig-detail-wishlist-btn" data-fig-id="${f.id}" onclick="event.stopPropagation();toggleWishlistFromDetail('${f.id}')" title="${currentLang === 'it' ? (inWishlist ? 'Togli da &quot;Ciò che cerco&quot;' : 'Aggiungi a &quot;Ciò che cerco&quot;') : (inWishlist ? 'Remove from &quot;What I\'m looking for&quot;' : 'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist ? 'rgba(var(--danger-rgb),0.15)' : 'transparent'};border:1px solid ${inWishlist ? 'var(--danger)' : 'rgba(255,255,255,0.15)'};color:${inWishlist ? 'var(--danger)' : 'var(--muted)'};border-radius:8px;padding:3px 10px;cursor:pointer;font-size:1.1rem;line-height:1;position:relative;z-index:2;">${inWishlist ? '❤️' : '♡'}</button>
     </div>`);
