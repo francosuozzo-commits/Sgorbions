@@ -435,6 +435,13 @@ body {
 
 /* grid */
 .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+
+/* v5.837 — INVENTARIO: SEMPRE TRE SERIE PER RIGA (regola valida anche sul desktop).
+   .grid-3 e' "quante colonne da almeno 300px ci stanno": su schermo largo (contenitore max
+   1100px) fanno gia' tre, ma nella fascia stretta 860-1000px ne restavano DUE, e sotto gli
+   860 il mobile ne impone tre. Il numero di colonne cambiava quindi tre volte scendendo di
+   larghezza: 3, 2, 3. Qui diventa tre e basta, a ogni misura. */
+#catalog-grid { grid-template-columns: repeat(3, 1fr); }
 .grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; }
 .grid-6 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.75rem; }
 
@@ -965,7 +972,7 @@ footer {
 
 @media (max-width: 480px) {
   .modal { padding: 1.5rem; }
-  .grid-6 { grid-template-columns: repeat(3, 1fr); }
+  /* v5.825 — la griglia figurine resta a 4 colonne anche qui (prima scendeva a 3) */
 }
 
 /* ===== SECTION CHOICE CARDS ===== */
@@ -990,3 +997,251 @@ footer {
 
 /* Legenda definizioni filtri: il termine (prima dei due punti) in azzurro */
 #filter-legend-list strong { color: var(--info); }
+
+
+/* ---- v5.845 — DESKTOP: dettaglio figurina, fronte e retro SEMPRE AFFIANCATI, piu' grandi ----
+   Annullate v5.841/843/844, che li impilavano e li facevano riempire l'altezza della colonna
+   delle informazioni: cosi' la stessa foto cambiava dimensione a seconda di quanto era lunga
+   la scheda accanto, e fra impilate e affiancate. Ora la disposizione e' una sola - fianco a
+   fianco - e a crescere e' il MODALE: da 860px a 1200px, con la colonna delle foto da 320px a
+   620px, cioe' ~300px per immagine invece di ~150px. Le immagini restano alla loro dimensione
+   naturale dentro quella larghezza: nessun legame con l'altezza del testo.
+   Sul telefono non si applica: li' il modale e' a colonna singola. */
+@media (min-width: 861px) {
+  /* v5.846 — il RETRO ha piu' larghezza del fronte: le due foto non hanno le stesse
+     proporzioni (il retro e' tipicamente piu' largo che alto), quindi a parita' di colonna
+     rendeva un'immagine visivamente piu' piccola. Il fronte resta com'e' - Franco lo da' per
+     buono - e a crescere sono la colonna del retro e, di conseguenza, il modale. */
+  #fig-detail-modal .modal { max-width: min(1320px, 97vw) !important; }
+  #fig-detail-modal .modal > div:nth-child(2) {
+    grid-template-columns: 1fr 740px !important;
+  }
+  #fig-detail-photo > div {
+    grid-template-columns: 1fr 1.4fr !important;
+    align-items: stretch !important;
+  }
+  /* il blocco del retro (etichetta, foto, link) centrato verticalmente rispetto al fronte,
+     che di solito e' piu' alto */
+  #fig-detail-photo > div > div:last-child {
+    display: flex; flex-direction: column; justify-content: center;
+  }
+}
+
+/* ============================================================
+   SEZIONE MOBILE — sempre in FONDO al file
+   Tutte le regole solo-telefono vivono qui, dopo ogni regola desktop, cosi'
+   vincono a parita' di specificita' senza bisogno di !important. Le regole
+   desktop non si toccano mai: sopra la soglia il browser non legge questi blocchi.
+   ============================================================ */
+
+/* ---- v5.822 — NIENTE AMMINISTRAZIONE DA TELEFONO ----
+   Sotto gli 860px (stessa soglia dell'hamburger) l'admin resta loggato e vede il sito
+   come un utente normale: corona, avatar ed Esci restano, ma spariscono TUTTI gli
+   strumenti di amministrazione. Serve !important perche' app.js imposta questi elementi
+   con style.display inline (currentUser.isAdmin ? '' : 'none'), e l'inline batte il CSS.
+   Se in futuro si aggiunge un elemento admin, va aggiunto a questa lista (o gli si mette
+   una delle classi .btn-admin / .tbl-btn-edit / .tbl-btn-del, gia' coperte). */
+@media (max-width: 860px) {
+  /* console di amministrazione (dentro la pagina Profilo) */
+  #admin-panel { display: none !important; }
+
+  /* strumenti admin sparsi nelle pagine */
+  #admin-add-series-btn,
+  #admin-add-item-btn,
+  #items-admin-filters,
+  #admin-classifica-title, #admin-classifica-btn-wrap,
+  #admin-ebay-title, #admin-ebay-btn-wrap,
+  #detail-edit-series-btn, #detail-ebay-series-btn,
+  #classifica-admin-backfill { display: none !important; }
+
+  /* strumenti admin nella navbar (campanella eventi, messaggi, newsletter) */
+  #nav-bell-btn, #nav-msg-btn, #nav-newsletter-btn { display: none !important; }
+
+  /* pulsanti admin ovunque siano resi da app.js:
+     .btn-admin  = azioni arancioni ad alto potere
+     .tbl-btn-edit / .tbl-btn-del = matita, clona e cestino su cartellini, dettaglio e tabelle */
+  .btn-admin, .tbl-btn-edit, .tbl-btn-del { display: none !important; }
+
+  /* vista tabellare disattivata su telefono: il selettore sparisce
+     (la guardia JS in index.html riporta alla griglia chi ci arriva restringendo la finestra) */
+  #user-table-view-btn { display: none !important; }
+}
+
+/* ---- v5.842 — IL LOGO ESCE DALLA NAVBAR E DIVENTA UNA FASCIA SOTTO DI ESSA ----
+   Nella navbar da 64px il logo (36px) piu' la riga versione/"online dal" mangiavano la meta'
+   della larghezza, lasciando all'hamburger e ai comandi di destra lo spazio residuo. Su
+   telefono quel blocco viene tolto dal flusso della barra e fissato SOTTO, come fascia a
+   tutta larghezza; il banner "SITO IN COSTRUZIONE" scende ancora piu' giu'.
+   L'altezza della fascia sta in una variabile: banner e spaziature delle pagine la leggono
+   da li', cosi' non si sfasano se un domani la si cambia. Il menu a tendina resta agganciato
+   a 64px e passa SOPRA la fascia (ha z-index piu' alto): da aperto copre il logo, ed e' bene. */
+@media (max-width: 860px) {
+  :root { --logo-band: 44px; }
+
+  /* il blocco logo + versione: primo figlio del contenitore di sinistra della navbar */
+  #navbar > div:first-of-type > div:first-child {
+    position: fixed; top: 64px; left: 0; right: 0;
+    height: var(--logo-band);
+    margin-right: 0 !important;
+    flex-direction: row !important;
+    align-items: center; justify-content: center; gap: 0.6rem;
+    background: rgba(14,10,26,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    z-index: 999;
+  }
+  #navbar .nav-logo img { height: 26px !important; }
+  #navbar > div:first-of-type > div:first-child > div { margin-top: 0 !important; }
+
+  /* tutto quello che stava sotto la navbar scende dell'altezza della fascia */
+  #construction-banner { top: calc(64px + var(--logo-band)) !important; }
+  .page { padding-top: calc(56px + var(--logo-band)); }
+  #series-detail { padding-top: calc(64px + var(--logo-band)) !important; }
+}
+
+/* ---- v5.823 — INVENTARIO: 4 SERIE PER RIGA SU TELEFONO ----
+   La griglia delle serie (.grid-3 = auto-fill minmax(300px,1fr)) su telefono cadeva a una
+   sola colonna. Qui diventa a 4 colonne fisse, e la cartellino si rimpicciolisce di
+   conseguenza: via la descrizione, padding e testi ridotti, badge che vanno a capo.
+   Tutto agganciato a #catalog-grid: le altre .grid-3 del sito (es. home) non cambiano. */
+@media (max-width: 860px) {
+  /* v5.835 — tre serie per riga, come sul desktop (erano quattro dalla v5.823) */
+  #catalog-grid { grid-template-columns: repeat(3, 1fr); gap: 0.45rem; }
+
+  /* descrizione della serie: non entra in 4 colonne, tolta */
+  #catalog-grid .card-desc { display: none; }
+
+  /* con tre colonne il cartellino è più largo: testi un filo più leggibili */
+  #catalog-grid .card-body { padding: 0.5rem 0.5rem 0.6rem; }
+  #catalog-grid .card-title { font-size: 0.88rem; gap: 0.3rem !important; line-height: 1.2; }
+  #catalog-grid .card-tag { font-size: 0.62rem; letter-spacing: 0.5px; }
+
+  /* riga badge: nello stretto vanno a capo invece di schiacciarsi */
+  #catalog-grid .card-meta {
+    margin-top: 0.4rem; padding-top: 0.4rem;
+    flex-wrap: wrap; justify-content: flex-start; gap: 0.2rem;
+  }
+  #catalog-grid .card-badge { font-size: 0.62rem; padding: 1px 6px; }
+
+  /* niente sollevamento al tocco: su telefono resta "appiccicato" dopo il tap */
+  #catalog-grid .card:hover { transform: none; }
+}
+
+/* ---- v5.824 — SCHEDA SERIE SU TELEFONO: copertina piccola, 4 box su una riga ----
+   (1) La copertina della serie (.series-cover, 160px fissi) scende a 90px, così il blocco
+       titolo/anno/meta le sta accanto invece di finirle sotto.
+   (2) I quattro box Figurine / Retro / Album / Altri oggetti stavano in una griglia
+       auto-fit minmax(240px), che su telefono li impilava uno per riga: ora sono 4 colonne
+       fisse su una sola riga, con icona, titolo e conteggio rimpiccioliti per starci.
+   La griglia dei box ha lo stile INLINE nell'HTML, quindi qui serve !important. */
+@media (max-width: 860px) {
+  /* (1) copertina più piccola */
+  .series-cover { width: 90px; min-width: 90px; font-size: 2.2rem; border-radius: 8px; }
+  .series-info { min-width: 0; }
+  .series-hero { padding: 1.5rem 1rem 1.2rem; }
+  .back-btn { margin-bottom: 0.9rem; }
+
+  /* v5.836 — impaginazione dell'intestazione serie sul telefono:
+       riga 1: NOME + ANNO, a tutta larghezza, SOPRA la foto
+       riga 2: foto a sinistra, contatori a destra
+       riga 3: DESCRIZIONE a tutta larghezza, allineata al bordo sinistro della foto
+     Nome, contatori e descrizione stanno dentro .series-info, che sul telefono diventa
+     `display: contents`: sparisce come scatola e i suoi figli entrano nella stessa griglia
+     della copertina, dove possiamo collocarli uno per uno. */
+  .series-title-area {
+    display: grid;
+    grid-template-columns: 90px 1fr;
+    gap: 0.5rem 0.8rem;
+    align-items: start;
+  }
+  .series-info { display: contents; }
+  /* Le RIGHE vanno dette esplicitamente. La copertina viene prima nell'HTML: lasciando fare
+     al piazzamento automatico si prendeva la riga 1, il blocco nome+anno (che occupa due
+     colonne) non ci entrava piu' e finiva sotto la foto — l'ordine rovesciato. */
+  .series-info > div:first-child { grid-row: 1; grid-column: 1 / -1; }  /* nome + anno */
+  .series-cover        { grid-row: 2; grid-column: 1; }                 /* foto */
+  /* numeriche: incolonnate e senza spazio fra una voce e l'altra. Il contenitore ha uno
+     stile inline con gap 0.7rem fra le righe: incolonnandosi diventava un'interlinea
+     grossa fra i tipi. Da qui il !important. */
+  #detail-meta {
+    grid-row: 2; grid-column: 2;
+    margin: 0 !important;
+    flex-direction: column !important;
+    gap: 0 !important;
+    line-height: 1.25;
+  }
+  .series-description  { grid-row: 3; grid-column: 1 / -1; margin-bottom: 0; } /* descrizione */
+  .series-name { font-size: 1.5rem; margin-bottom: 0; }
+
+  /* (2) i quattro box su una sola riga */
+  #section-selector { padding: 1rem 0.6rem !important; }
+  #section-selector > div {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.4rem !important;
+  }
+  .section-choice-card { padding: 0; border-radius: 10px; text-align: left; }
+  .section-choice-icon { font-size: 1.6rem; margin-bottom: 0.3rem; }
+  .section-choice-title { font-size: 0.66rem; margin-bottom: 0.1rem; line-height: 1.15; }
+  .section-choice-count { font-size: 0.58rem; }
+  .section-choice-card:hover { transform: none; box-shadow: none; }
+  /* il blocco di testo dentro il box ha padding inline 1.25rem 1.5rem: troppo per 90px */
+  .section-choice-card > div:last-child { padding: 0.35rem 0.45rem 0.45rem !important; }
+}
+
+/* ---- v5.825 — PAGINA FIGURINE/RETRO/ALBUM/ALTRI: 4 risultati per riga fino in fondo ----
+   .grid-6 (7 colonne sul desktop) in v5.821 scendeva a 4 colonne sotto i 768px e a 3 sotto i 480.
+   Franco vuole 4 per riga su tutto il mobile: qui la fisso a 4 dagli 860px in giù e più sotto
+   viene tolta la regola a 3 colonne del breakpoint 480. La foto della serie in cima a queste
+   pagine è la stessa .series-cover della scheda serie, quindi è già a 90px (v5.824). */
+@media (max-width: 860px) {
+  /* renderItems() scrive stili INLINE sulla griglia, e su Figurine col modo di
+     visualizzazione di default ('destra-piena') la trasforma addirittura in flex con
+     .fig-card a larghezza fissa (flex:0 0 350px / 247px) — ecco perché su telefono
+     usciva UNA card per riga. Qui la riportiamo a griglia a 4 colonne e neutralizziamo
+     la larghezza fissa delle card. Serve !important: l'inline batte tutto il resto. */
+  #items-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 0.4rem !important;
+    width: auto !important; max-width: none !important;
+    margin-left: 0 !important; margin-right: 0 !important;
+    transform: none !important;
+  }
+  #items-grid > .fig-card { flex: 0 0 auto !important; width: auto !important; min-width: 0 !important; }
+
+  #items-section { padding: 0 0.6rem 1.5rem !important; }
+  #items-search-box { padding: 0.7rem 0.8rem !important; }
+
+  /* v5.827 — etichetta della card: numero e nome più piccoli e allineati a sinistra.
+     Il numero ha un font-size INLINE di 1.05rem messo da renderItems(), quindi !important. */
+  #items-grid .fig-body { padding: 0.35rem 0.4rem 0.45rem; text-align: left; }
+  #items-grid .fig-name { font-size: 0.68rem; line-height: 1.2; }
+  #items-grid .fig-number { font-size: 0.68rem !important; }
+  #items-grid .toggle-label { font-size: 0.6rem; }
+  #items-grid .fig-toggle { margin-top: 0.3rem; }
+
+  /* v5.829 — punteggio accanto al numero, stesso corpo del numero; il nome va sotto */
+  #items-grid .fig-score-inline { font-size: 0.68rem; color: var(--accent); margin-left: 0.3rem; white-space: nowrap; }
+  #items-grid .fig-name-line { font-size: 0.68rem; line-height: 1.2; margin-top: 1px; }
+}
+
+/* ---- v5.832 — DETTAGLIO FIGURINA: prima le foto, poi le informazioni ----
+   Il corpo del modale è una griglia INLINE "1fr 320px" (informazioni a sinistra, foto a
+   destra): su telefono le due colonne non ci stanno. Qui diventa una colonna sola e le
+   foto passano in cima con order:-1. È l'unico figlio di .modal dopo l'intestazione,
+   da cui il selettore :nth-child(2); !important perché la griglia è inline. */
+@media (max-width: 860px) {
+  #fig-detail-modal .modal { padding: 1rem 0.9rem 1.1rem; }
+  #fig-detail-modal .modal > div:nth-child(2) {
+    grid-template-columns: 1fr !important;
+    gap: 0.9rem !important;
+  }
+  /* v5.834 — ordine sul telefono: Numero e Nome, poi le foto, poi tutto il resto
+     (col Punteggio in testa, messo li' da openFigDetail) */
+  #fig-detail-top { order: -2; }
+  #fig-detail-photo { order: -1; }
+  #fig-detail-content { order: 0; }
+}
+
+/* sul desktop il contenitore delle righe "sopra la foto" non esiste proprio */
+#fig-detail-top:empty { display: none; }
