@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.863 - Franco, navbar da telefono. (1) Annullata la fascia del logo sotto la navbar (v5.842):
+//          il logo torna DENTRO la barra, come sul desktop, con img a 30px. Tolti anche gli offset
+//          che facevano scendere banner e pagine per far posto alla fascia. (2) Via il NOME UTENTE
+//          (#nav-username): su una barra stretta era ridondante, l'avatar accanto apre comunque il
+//          profilo. Lo spazio liberato dal nome compensa quello ripreso dal logo. Solo css/style.css.
+// ------------------------------------------------------------
 // v5.862 - Franco, pagina "Le mie liste" (ex "Lista figurine (e non solo...)"), IT+EN.
 //          (1) Titolo -> "Le mie liste" (EN "My lists").
 //          (2) Testo introduttivo: "Inventario di figurinesgorbions.it" -> "Inventario del sito";
@@ -8628,7 +8634,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.862';
+const JS_VERSION = 'v5.863';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
