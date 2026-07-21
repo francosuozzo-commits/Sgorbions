@@ -1217,6 +1217,29 @@ footer {
   #items-section { padding: 0 0.6rem 1.5rem !important; }
   #items-search-box { padding: 0.7rem 0.8rem !important; }
 
+  /* v5.848 — via la descrizione dalla card: in 85px di larghezza erano briciole di testo */
+  #items-grid .fig-desc { display: none; }
+
+  /* v5.848 — i due pulsanti blu "Aggiungi / Rimuovi i risultati della ricerca" stavano su due
+     righe e occupavano mezzo schermo: ora dividono in due una riga sola, con testo compatto.
+     Il contenitore ha gap e flex-wrap inline, da cui gli !important. */
+  #bulk-owned-btns { flex-wrap: nowrap !important; gap: 0.4rem !important; }
+  #bulk-owned-btns .btn-primary {
+    flex: 1 1 0; min-width: 0;
+    font-size: 0.62rem !important; padding: 0.35rem 0.5rem !important;
+    line-height: 1.15; text-align: left; gap: 0.3rem !important;
+  }
+  #bulk-owned-btns .btn-primary svg { width: 13px; height: 13px; }
+
+  /* v5.848 — i due conteggi ("N oggetti trovati" / "N fanno parte della tua lista") su una riga
+     sola: numeri da 1.5rem a 1rem (hanno il corpo scritto inline, quindi !important) */
+  #items-count-display {
+    display: flex; flex-wrap: nowrap; align-items: baseline;
+    gap: 0.6rem; font-size: 0.72rem; line-height: 1.2;
+  }
+  #items-count-display > span { display: inline-flex; align-items: baseline; gap: 0.25rem; }
+  #items-count-display span span { font-size: 1rem !important; }
+
   /* v5.827 — etichetta della card: numero e nome più piccoli e allineati a sinistra.
      Il numero ha un font-size INLINE di 1.05rem messo da renderItems(), quindi !important. */
   #items-grid .fig-body { padding: 0.35rem 0.4rem 0.45rem; text-align: left; }
