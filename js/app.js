@@ -1,6 +1,39 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.852 - Franco, etichette dei filtri nella pagina Figurine.
+//          (1) "Tutti" diventa "Tutte", su telefono E su desktop: il filtro parla di figurine,
+//          che sono femminili. (Solo l'italiano: in inglese resta "All".)
+//          (2) Su telefono "Variazioni (ufficiali / non ufficiali)" diventa "Variazioni ufficiali
+//          e non ufficiali": senza parentesi ne' barra si legge di seguito, mentre su riga
+//          stretta andava a capo in mezzo alla parentesi. I due colori restano.
+//          (3) Su telefono i filtri di possesso si accorciano in "Presenti" e "Mancanti" (EN: In
+//          list / Missing), cosi' stanno sulla stessa riga: per esteso sono 45 caratteri in due,
+//          e il riquadro "La tua ricerca" rende gia' chiaro di che lista si parla.
+//          Piu' la correzione della v5.851 sui due conteggi, che restavano su due righe: stanno
+//          dentro un contenitore che app.js crea in colonna, ed era quello - non il contenitore
+//          esterno - a doverli mandare a capo.
+//          Modificato js/app.js, css/style.css.
+// ------------------------------------------------------------
+// v5.851 - Franco, pagina CLASSIFICA da telefono.
+//          (1) La tabella dei LIVELLI sale SOPRA la classifica: era la colonna destra di una
+//          griglia "1fr 360px" e su telefono, impilandosi, finiva in fondo alla pagina. Al
+//          contenitore e' stato dato l'id #classifica-grid, prima non ne aveva e dal CSS non era
+//          raggiungibile.
+//          (2) Nella riga di classifica POSIZIONE e AVATAR ora si impilano invece di stare
+//          affiancati: due elementi stretti in fila rubavano larghezza al nome. La riga diventa
+//          una griglia a tre colonne - posizione+avatar, nome e statistiche, punteggio - con i
+//          primi due nella stessa colonna su due righe. Aggiunte le classi .cl-row / .cl-pos /
+//          .cl-avatar, e l'avatar e' ora avvolto in un contenitore proprio (prima era inserito
+//          nudo e non c'era modo di collocarlo).
+//          (3) Il titolo "Chi ha costruito la lista piu' grande?" scende a 1.25rem: a tutta
+//          larghezza occupava tre righe.
+//          HOMEPAGE, sempre da telefono: i numeroni verdi delle statistiche scendono da 2.53rem
+//          a 1.6rem (etichette a 0.75rem) - occupavano mezza schermata prima ancora del contenuto
+//          - e i blocchi "come funziona" passano da cinque colonne a UNO PER RIGA, con testo
+//          allineato a sinistra. Anche a quella griglia e' stato dato un id (#home-how-grid).
+//          Modificato index.html, js/app.js, css/style.css.
+// ------------------------------------------------------------
 // v5.850 - Franco, telefono. SCHEDA SERIE: (1) copertina +15%, da 90 a 104px (anche la colonna
 //          della griglia dell'intestazione, altrimenti si sfasano). (2) I quattro box
 //          Figurine/Retro/Album/Altri oggetti passano da una fila di quattro a DUE FILE DA DUE:
@@ -8502,7 +8535,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.850';
+const JS_VERSION = 'v5.852';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12177,7 +12210,7 @@ function renderItemTypeFilters() {
   // una riga sola. Il gap verticale serve proprio per quando va a capo.
   let html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center;">';
 
-  html += item('all', it ? 'Tutti' : 'All', '', false);
+  html += item('all', it ? 'Tutte' : 'All', '', false);   // v5.852 — era 'Tutti': il filtro parla di figurine, femminile
 
   if (presente.base) html += item('base',
     it ? (nomeP.charAt(0).toUpperCase() + nomeP.slice(1)) + ' set base' : 'Base set ' + nomeP, '', true);
@@ -12191,10 +12224,19 @@ function renderItemTypeFilters() {
   // l'unione ha senso SOLO se esistono entrambe: con una sola, direbbe la stessa cosa
   // del filtro qui sopra, e sarebbe un doppione
   if (presente.anyVariation) {
-    const etIt = 'Variazioni (<span style="color:var(--type-official);">ufficiali</span> / <span style="color:var(--type-unofficial);">non ufficiali</span>)';
-    const etEn = 'Variations (<span style="color:var(--type-official);">official</span> / <span style="color:var(--type-unofficial);">unofficial</span>)';
+    // v5.852 — su telefono l'etichetta perde parentesi e barra: "Variazioni ufficiali e non
+    // ufficiali" si legge di seguito, mentre "(ufficiali / non ufficiali)" su riga stretta
+    // andava a capo in mezzo alla parentesi. I colori dei due tipi restano.
+    const _mobFilt = _isMobileViewport();
+    const etIt = _mobFilt
+      ? 'Variazioni <span style="color:var(--type-official);">ufficiali</span> e <span style="color:var(--type-unofficial);">non ufficiali</span>'
+      : 'Variazioni (<span style="color:var(--type-official);">ufficiali</span> / <span style="color:var(--type-unofficial);">non ufficiali</span>)';
+    const etEn = _mobFilt
+      ? 'Variations <span style="color:var(--type-official);">official</span> and <span style="color:var(--type-unofficial);">unofficial</span>'
+      : 'Variations (<span style="color:var(--type-official);">official</span> / <span style="color:var(--type-unofficial);">unofficial</span>)';
     html += item('anyVariation',
-      it ? 'Variazioni (ufficiali / non ufficiali)' : 'Variations (official / unofficial)',
+      it ? (_mobFilt ? 'Variazioni ufficiali e non ufficiali' : 'Variazioni (ufficiali / non ufficiali)')
+         : (_mobFilt ? 'Variations official and unofficial' : 'Variations (official / unofficial)'),
       '', false, it ? etIt : etEn);
   }
 
@@ -12271,8 +12313,14 @@ function renderItemTypeFilters() {
     // in FILA, non in colonna: stanno comodamente su una riga sola (wrap se serve).
     let h2 = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;">';
     if (currentUser) {
-      h2 += itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')", itl ? 'Presenti nella tua lista' : 'In my list');
-      h2 += itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')", itl ? 'Mancanti dalla tua lista' : 'Missing from my list');
+      // v5.852 — su telefono le etichette si accorciano, altrimenti i due filtri non stanno
+      // sulla stessa riga: "Presenti nella tua lista" + "Mancanti dalla tua lista" sono 45
+      // caratteri, e il contesto (il riquadro "La tua ricerca") rende il resto superfluo.
+      const _mobOwned = _isMobileViewport();
+      h2 += itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')",
+        itl ? (_mobOwned ? 'Presenti' : 'Presenti nella tua lista') : (_mobOwned ? 'In list' : 'In my list'));
+      h2 += itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')",
+        itl ? (_mobOwned ? 'Mancanti' : 'Mancanti dalla tua lista') : (_mobOwned ? 'Missing' : 'Missing from my list'));
     }
     const senzaFoto = _noPhotoFilter ? (itl ? 'Con foto' : 'With photo') : (itl ? 'Senza foto' : 'Without photo');
     h2 += itemToggle(_noPhotoFilter, `setNoPhotoFilter(${!_noPhotoFilter})`, senzaFoto);
@@ -18886,9 +18934,9 @@ async function renderClassifica() {
       ? 'rgba(181,255,46,0.5)'
       : (isTop3 ? 'rgba(181,255,46,0.2)' : 'var(--border)');
 
-    return `<div style="background:${rowBg};border:1px solid ${rowBorder};border-radius:var(--radius-lg);padding:0.4rem 1rem;margin-bottom:0.3rem;display:flex;align-items:center;gap:1rem;">
-      <div style="font-size:1.1rem;width:40px;text-align:center;flex-shrink:0;font-family:var(--font-ui);color:${isTop3 ? 'var(--accent)' : 'var(--muted)'};">#${position}</div>
-      ${displayAvatar}
+    return `<div class="cl-row" style="background:${rowBg};border:1px solid ${rowBorder};border-radius:var(--radius-lg);padding:0.4rem 1rem;margin-bottom:0.3rem;display:flex;align-items:center;gap:1rem;">
+      <div class="cl-pos" style="font-size:1.1rem;width:40px;text-align:center;flex-shrink:0;font-family:var(--font-ui);color:${isTop3 ? 'var(--accent)' : 'var(--muted)'};">#${position}</div>
+      <div class="cl-avatar">${displayAvatar}</div>
       <div style="flex:1;">
         <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${displayName}${adminNote}${meNote}${!isAnon && user.nationalityCode ? `<img src="${flagUrl(user.nationalityCode)}" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}${!isAnon ? `<span style="font-size:0.92rem;color:var(--muted);font-family:var(--font-body);font-weight:400;">(${(currentLang === 'it') ? 'utente dal' : 'member since'} ${user.joined ? new Date(user.joined).toLocaleDateString((currentLang === 'it') ? 'it-IT' : 'en-GB') : '—'})</span>` : ''}</div>
         <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">${countFigurines} ${(currentLang === 'it') ? 'figurine' : 'stickers'} · ${countAlbums} album · ${countExtras} ${(currentLang === 'it') ? 'altri articoli' : 'extras'}</div>
