@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.871 - Franco: su DESKTOP le tre azioni della card (Mia lista / Cio' che cerco / Errore)
+//          giustificate a destra tutte insieme, cosi' i controlli (toggle, cuore, bandierina)
+//          restano incolonnati e allineati fra card vicine. Prima "Errore" era spinto da solo a
+//          fine riga (margin-left:auto), ora il gruppo intero va a destra. Su mobile restano
+//          impilate. Solo css/style.css.
+// ------------------------------------------------------------
 // v5.870 - Franco, pagina Figurine (mobile+desktop). (1) Etichette dei filtri di ricerca UGUALI su
 //          mobile e desktop: "Tutte" (gia' cosi' dalla v5.852) e "Variazioni (ufficiali e non
 //          ufficiali)" - prima su telefono perdeva le parentesi. (2) ALLINEAMENTO delle card nella
@@ -8690,7 +8696,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.870';
+const JS_VERSION = 'v5.871';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
