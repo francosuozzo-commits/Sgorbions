@@ -1141,7 +1141,8 @@ footer {
    La griglia dei box ha lo stile INLINE nell'HTML, quindi qui serve !important. */
 @media (max-width: 860px) {
   /* (1) copertina più piccola */
-  .series-cover { width: 90px; min-width: 90px; font-size: 2.2rem; border-radius: 8px; }
+  /* v5.850 — copertina +15%: da 90 a 104px */
+  .series-cover { width: 104px; min-width: 104px; font-size: 2.5rem; border-radius: 8px; }
   .series-info { min-width: 0; }
   .series-hero { padding: 1.5rem 1rem 1.2rem; }
   .back-btn { margin-bottom: 0.9rem; }
@@ -1155,7 +1156,7 @@ footer {
      della copertina, dove possiamo collocarli uno per uno. */
   .series-title-area {
     display: grid;
-    grid-template-columns: 90px 1fr;
+    grid-template-columns: 104px 1fr;
     gap: 0.5rem 0.8rem;
     align-items: start;
   }
@@ -1180,17 +1181,19 @@ footer {
 
   /* (2) i quattro box su una sola riga */
   #section-selector { padding: 1rem 0.6rem !important; }
+  /* v5.850 — due file da due invece di una fila da quattro: con box larghi il doppio,
+     icona e testo tornano leggibili */
   #section-selector > div {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 0.4rem !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
   }
   .section-choice-card { padding: 0; border-radius: 10px; text-align: left; }
-  .section-choice-icon { font-size: 1.6rem; margin-bottom: 0.3rem; }
-  .section-choice-title { font-size: 0.66rem; margin-bottom: 0.1rem; line-height: 1.15; }
-  .section-choice-count { font-size: 0.58rem; }
+  .section-choice-icon { font-size: 2rem; margin-bottom: 0.35rem; }
+  .section-choice-title { font-size: 0.95rem; margin-bottom: 0.15rem; line-height: 1.15; }
+  .section-choice-count { font-size: 0.72rem; }
   .section-choice-card:hover { transform: none; box-shadow: none; }
   /* il blocco di testo dentro il box ha padding inline 1.25rem 1.5rem: troppo per 90px */
-  .section-choice-card > div:last-child { padding: 0.35rem 0.45rem 0.45rem !important; }
+  .section-choice-card > div:last-child { padding: 0.5rem 0.6rem 0.6rem !important; }
 }
 
 /* ---- v5.825 — PAGINA FIGURINE/RETRO/ALBUM/ALTRI: 4 risultati per riga fino in fondo ----
@@ -1226,19 +1229,21 @@ footer {
   #bulk-owned-btns { flex-wrap: nowrap !important; gap: 0.4rem !important; }
   #bulk-owned-btns .btn-primary {
     flex: 1 1 0; min-width: 0;
-    font-size: 0.62rem !important; padding: 0.35rem 0.5rem !important;
-    line-height: 1.15; text-align: left; gap: 0.3rem !important;
+    /* v5.850 — testo un po' piu' grande; i box crescono in ALTEZZA quanto serve,
+       restando comunque affiancati su una riga sola */
+    font-size: 0.74rem !important; padding: 0.5rem 0.6rem !important;
+    line-height: 1.2; text-align: left; gap: 0.35rem !important;
   }
-  #bulk-owned-btns .btn-primary svg { width: 13px; height: 13px; }
+  #bulk-owned-btns .btn-primary svg { width: 15px; height: 15px; }
 
   /* v5.848 — i due conteggi ("N oggetti trovati" / "N fanno parte della tua lista") su una riga
      sola: numeri da 1.5rem a 1rem (hanno il corpo scritto inline, quindi !important) */
   #items-count-display {
     display: flex; flex-wrap: nowrap; align-items: baseline;
-    gap: 0.6rem; font-size: 0.72rem; line-height: 1.2;
+    gap: 0.7rem; font-size: 0.82rem; line-height: 1.2; white-space: nowrap;
   }
   #items-count-display > span { display: inline-flex; align-items: baseline; gap: 0.25rem; }
-  #items-count-display span span { font-size: 1rem !important; }
+  #items-count-display span span { font-size: 1.15rem !important; }
 
   /* v5.827 — etichetta della card: numero e nome più piccoli e allineati a sinistra.
      Il numero ha un font-size INLINE di 1.05rem messo da renderItems(), quindi !important. */
@@ -1269,6 +1274,21 @@ footer {
   #fig-detail-top { order: -2; }
   #fig-detail-photo { order: -1; }
   #fig-detail-content { order: 0; }
+
+  /* v5.849 — via il titolo del modale: ripete Numero e Nome, che sono le prime due righe
+     della scheda. Resta nel DOM per i lettori di schermo. */
+  #fig-detail-modal .modal-title { display: none; }
+
+  /* v5.849 — "Mia lista" e "Ciò che cerco" affiancate: sono due interruttori corti, una riga
+     ciascuno era spazio sprecato. Il contenitore diventa una griglia a due colonne solo per
+     queste due righe, con l'etichetta sopra e il comando sotto per starci in metà larghezza. */
+  #fig-detail-content .detail-row-mylist,
+  #fig-detail-content .detail-row-wishlist {
+    display: inline-flex; width: 49%; box-sizing: border-box;
+    flex-direction: column; align-items: flex-start; gap: 0.2rem;
+    vertical-align: top;
+  }
+  #fig-detail-content .detail-row-mylist { padding-right: 0.5rem; }
 }
 
 /* sul desktop il contenitore delle righe "sopra la foto" non esiste proprio */
