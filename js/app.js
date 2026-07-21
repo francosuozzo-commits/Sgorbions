@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.870 - Franco, pagina Figurine (mobile+desktop). (1) Etichette dei filtri di ricerca UGUALI su
+//          mobile e desktop: "Tutte" (gia' cosi' dalla v5.852) e "Variazioni (ufficiali e non
+//          ufficiali)" - prima su telefono perdeva le parentesi. (2) ALLINEAMENTO delle card nella
+//          riglia: il corpo (numero/punti/nome/nome retro e in fondo il trittico Mia lista / Cio'
+//          che cerco / Errore) non e' piu' spinto tutto in fondo (era margin-top:auto su .fig-body):
+//          ora il blocco info sta SUBITO SOTTO le foto e sono le AZIONI a scendere in fondo
+//          (.fig-actions margin-top:auto). Cosi' fra card vicine info in alto e trittico in basso
+//          sono allineati, e la sola cosa che varia e' il nero in mezzo, per via dell'altezza
+//          variabile delle foto ruotate. (3) In inglese la label del cuore diventa "Looking for".
+//          (4) Il box "Bustine" spostato DOPO il box Retro. Modificato index.html, js/app.js,
+//          css/style.css.
+// ------------------------------------------------------------
 // v5.869 - Franco (desktop+mobile): nuova sezione "BUSTINE" (EN "Packs") nella pagina Serie,
 //          quinto box accanto a Figurine/Retro/Album/Altri oggetti. Per ora SENZA immagine
 //          (placeholder 📦, l'immagine arrivera'). Si comporta come Album/Altri oggetti: e' una
@@ -8678,7 +8690,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.869';
+const JS_VERSION = 'v5.870';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12397,19 +12409,13 @@ function renderItemTypeFilters() {
   // l'unione ha senso SOLO se esistono entrambe: con una sola, direbbe la stessa cosa
   // del filtro qui sopra, e sarebbe un doppione
   if (presente.anyVariation) {
-    // v5.852 — su telefono l'etichetta perde parentesi e barra: "Variazioni ufficiali e non
-    // ufficiali" si legge di seguito, mentre "(ufficiali / non ufficiali)" su riga stretta
-    // andava a capo in mezzo alla parentesi. I colori dei due tipi restano.
-    const _mobFilt = _isMobileViewport();
-    const etIt = _mobFilt
-      ? 'Variazioni <span style="color:var(--type-official);">ufficiali</span> e <span style="color:var(--type-unofficial);">non ufficiali</span>'
-      : 'Variazioni (<span style="color:var(--type-official);">ufficiali</span> / <span style="color:var(--type-unofficial);">non ufficiali</span>)';
-    const etEn = _mobFilt
-      ? 'Variations <span style="color:var(--type-official);">official</span> and <span style="color:var(--type-unofficial);">unofficial</span>'
-      : 'Variations (<span style="color:var(--type-official);">official</span> / <span style="color:var(--type-unofficial);">unofficial</span>)';
+    // v5.870 — etichetta UGUALE su mobile e desktop: "Variazioni (ufficiali e non ufficiali)"
+    // con le parentesi e la "e" (prima su telefono si toglievano le parentesi). I due tipi
+    // restano colorati.
+    const etIt = 'Variazioni (<span style="color:var(--type-official);">ufficiali</span> e <span style="color:var(--type-unofficial);">non ufficiali</span>)';
+    const etEn = 'Variations (<span style="color:var(--type-official);">official</span> and <span style="color:var(--type-unofficial);">unofficial</span>)';
     html += item('anyVariation',
-      it ? (_mobFilt ? 'Variazioni ufficiali e non ufficiali' : 'Variazioni (ufficiali / non ufficiali)')
-         : (_mobFilt ? 'Variations official and unofficial' : 'Variations (official / unofficial)'),
+      it ? 'Variazioni (ufficiali e non ufficiali)' : 'Variations (official and unofficial)',
       '', false, it ? etIt : etEn);
   }
 
@@ -13402,7 +13408,7 @@ function renderItems() {
         <div class="fig-actions">
         ${typeIndicatorHTML}
         <div class="fig-act fig-act-mylist"><span class="fig-act-label">${t('owned.toggle')}</span><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista \u2014 clicca per toglierla':'In your list \u2014 click to remove') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="event.stopPropagation();toggleOwned('${f.id}')">\u2713</button></div>
-        ${(currentUser && !currentUser.isAdmin) ? `<div class="fig-act fig-act-wishlist"><span class="fig-act-label">${currentLang==='it'?'Ciò che cerco':'What I&#39;m looking for'}</span><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(_wishlist.includes(f.id)?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${_wishlist.includes(f.id)?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'var(--danger)':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">${_wishlist.includes(f.id)?'❤️':'♡'}</button></div>` : ''}
+        ${(currentUser && !currentUser.isAdmin) ? `<div class="fig-act fig-act-wishlist"><span class="fig-act-label">${currentLang==='it'?'Ciò che cerco':'Looking for'}</span><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(_wishlist.includes(f.id)?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${_wishlist.includes(f.id)?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'var(--danger)':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">${_wishlist.includes(f.id)?'❤️':'♡'}</button></div>` : ''}
         ${reportBtn ? `<div class="fig-act fig-act-report"><span class="fig-act-label">${currentLang==='it'?'Errore?':'Error?'}</span>${reportBtn}</div>` : ''}
         </div>
       </div>
