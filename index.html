@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.857"></script>
-<link rel="stylesheet" href="css/style.css?v=5.857">
+<script src="js/email.min.js?v=5.858"></script>
+<link rel="stylesheet" href="css/style.css?v=5.858">
 
 </head>
 <body>
@@ -24,7 +24,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_36,q_auto,f_auto/SGORBIONS_q9so2o" alt="Sgorbions" style="height:36px;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.857</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.858</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -90,8 +90,8 @@
 <div id="page-home" class="page active">
   <!-- HERO -->
   <section id="hero">
-    <img src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:700px;width:90%;margin:0 auto 1.5rem;display:block;">
-    <p class="hero-desc" data-i18n="hero.desc">Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni '90.</p>
+    <img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:700px;width:90%;margin:0 auto 1.5rem;display:block;">
+    <p class="hero-desc" data-i18n="hero.desc">Il database non ufficiale dedicato alla leggendaria serie italiana degli anni '90.</p>
     <p class="hero-desc" style="margin-top:-2.2rem;" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
     <div class="hero-cta">
@@ -106,7 +106,7 @@
       <div class="stat-item"><span class="stat-num" id="stat-retros">0</span><span class="stat-label" data-i18n="hero.stat2b">Retro</span></div>
       <div class="stat-item"><span class="stat-num" id="stat-albums">0</span><span class="stat-label" data-i18n="hero.stat2c">Album</span></div>
       <div class="stat-item"><span class="stat-num" id="stat-extras">0</span><span class="stat-label" data-i18n="hero.stat2d">Altri oggetti</span></div>
-      <div class="stat-item" id="stat-owned-wrap" style="display:none;"><span class="stat-num" id="stat-owned-hero">0/0</span><span class="stat-label" data-i18n="hero.myvsTotal">Le mie / Totale</span></div>
+      <div class="stat-item" id="stat-owned-wrap" style="display:none;"><span class="stat-num" id="stat-owned-hero">0/0</span><span class="stat-label" data-i18n="hero.myvsTotal">Mia lista / Totale Inventario</span></div>
     </div>
   </section>
 
@@ -151,7 +151,7 @@
   </section>
   <div style="max-width:1100px;margin:1.5rem auto 0;padding:0 2rem;">
     <div style="font-size:0.88rem;font-family:var(--font-body);color:var(--muted);text-align:left;background:rgba(255,255,255,0.04);border-left:3px solid var(--accent);border-radius:0 8px 8px 0;padding:1rem 1.25rem;">
-      <span data-i18n-html="hero.nota">...<strong style="color:var(--accent);">NOTA:</strong><br><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti...</span>
+      <span data-i18n-html="hero.nota"><strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell'amministratore, e non pretendono di essere un'informazione ufficiale.</span>
     </div>
   </div>
   </div><!-- end home-logged-in-content -->
@@ -205,7 +205,7 @@
           </div>
           <div id="detail-meta" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;margin:0.4rem 0 0.6rem;font-size:0.82rem;color:var(--text);"></div>
           <p class="series-description" id="detail-desc"></p>
-          <!-- v5.857 — comando "Mostra tutto / Mostra meno" per la descrizione: solo telefono,
+          <!-- v5.858 — comando "Mostra tutto / Mostra meno" per la descrizione: solo telefono,
                mostrato da openSeriesDetail() quando il testo e' lungo. -->
           <button id="detail-desc-toggle" type="button" onclick="toggleSeriesDesc()" style="display:none;background:none;border:none;padding:0;color:var(--accent);font-family:var(--font-ui);font-size:0.8rem;cursor:pointer;text-decoration:underline;"></button>
         </div>
@@ -310,7 +310,7 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
-      <!-- v5.857 — toggle "Mostra nomi" / "Nascondi nomi", SOLO TELEFONO. Contenuto reso da
+      <!-- v5.858 — toggle "Mostra nomi" / "Nascondi nomi", SOLO TELEFONO. Contenuto reso da
            renderItems(): visibile sotto gli 860px, solo nella sezione Figurine e solo se la serie
            ha i numeri (flag noNumbers). Sul desktop non compare mai. -->
       <div id="fig-label-selector" style="display:none;align-items:center;gap:0.5rem;"></div>
@@ -1154,7 +1154,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.857</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.858</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1707,7 +1707,7 @@
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 320px;gap:2rem;align-items:start;">
-      <!-- v5.857 — contenitore per le righe che su TELEFONO vanno SOPRA le foto (Numero, Nome).
+      <!-- v5.858 — contenitore per le righe che su TELEFONO vanno SOPRA le foto (Numero, Nome).
            Sul desktop resta vuoto e il CSS lo tiene nascosto: nessun effetto. -->
       <div id="fig-detail-top"></div>
       <div id="fig-detail-content"></div>
@@ -1838,7 +1838,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.857"></script>
+<script src="js/app.js?v=5.858"></script>
 <script>
 /* Rete di sicurezza contro la cache.
    index.html non viene praticamente mai servito dalla cache; app.js e style.css
@@ -1847,7 +1847,7 @@
    "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
    Questo controllo lo trasforma in un messaggio esplicito in console. */
 (function () {
-  var expected = 'v5.857'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.858'; // deve coincidere con JS_VERSION in app.js
   if (typeof JS_VERSION === 'undefined') {
     console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
     return;
@@ -1883,7 +1883,7 @@ document.addEventListener('click', function (e) {
 });
 window.addEventListener('resize', function () { if (window.innerWidth > 860) closeNavMenu(); });
 
-/* ===== v5.857 — Vista tabellare non disponibile sotto gli 860px =====
+/* ===== v5.858 — Vista tabellare non disponibile sotto gli 860px =====
    Il pulsante "Vista tabellare" e' gia' nascosto dal CSS, quindi da telefono non si
    attiva. Questa guardia copre l'unico caso rimasto: la vista era attiva su desktop e
    la finestra viene ristretta sotto la soglia -> si torna automaticamente alla griglia. */
