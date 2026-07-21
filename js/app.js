@@ -1,6 +1,35 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.857 - CORREZIONE URGENTE di un bug introdotto con la v5.854: su telefono, nella pagina
+//          Figurine, il conteggio diceva "N trovati" ma al posto della griglia compariva il
+//          segnaposto "nessun risultato". Causa: la condizione "solo fronte col filtro base"
+//          usava _mobileFigCard, che pero' e' dichiarato PIU' SOTTO nella stessa funzione. Con
+//          const/let questo non da' undefined: e' temporal dead zone e LANCIA. L'eccezione
+//          interrompeva il rendering di ogni card, quindi #items-grid restava col segnaposto che
+//          index.html ci mette dentro all'inizio - mentre il conteggio, calcolato prima
+//          dell'errore, continuava a dire il vero. Le due cose sembravano scollegate ed era
+//          proprio quello a renderle confuse.
+//          Ora la condizione si ricalcola dai suoi ingredienti (viewport, sezione, filtro) nel
+//          punto in cui serve.
+//          Nella stessa versione, CLASSIFICA su telefono: interlinea della tabella dei livelli
+//          ridotta (celle a 0.12rem di padding, corpo 0.78rem) - le righe contengono nome e
+//          punteggio e basta, quindi il respiro del desktop qui era solo lunghezza da scorrere.
+//          Modificato js/app.js, css/style.css.
+// ------------------------------------------------------------
+// v5.856 - Franco, scheda serie da telefono: la DESCRIZIONE si chiude a tendina. Parte accorciata
+//          a tre righe (line-clamp, che taglia sul rigo e non spezza le parole) con sotto un
+//          comando "Mostra tutto / Mostra meno". Il comando compare SOLO se il testo supera i ~140
+//          caratteri: sotto quella soglia le tre righe bastano gia', e un comando che non fa
+//          niente e' peggio che non averlo. Sul desktop la descrizione resta sempre distesa e il
+//          comando non viene mai mostrato. Modificato index.html, js/app.js, css/style.css.
+// ------------------------------------------------------------
+// v5.855 - Franco, homepage da telefono: tolto il vuoto fra i numeri verdi e i blocchi sotto.
+//          Non era uno spazio solo ma tre sommati: il fondo della sezione hero (2rem), il padding
+//          in cima alla sezione successiva (2.5rem, dal breakpoint 768) e il margine sotto la sua
+//          intestazione (3rem) - insieme quasi 120px di niente su uno schermo alto 800.
+//          Ridotti rispettivamente a 0.5rem, 0.75rem e 1rem. Solo css/style.css.
+// ------------------------------------------------------------
 // v5.854 - Franco: la griglia figurine su telefono passa da QUATTRO COLONNE FISSE a "quante ne
 //          stanno, larghe almeno 100px" (auto-fill minmax(100px,1fr)). Sono tre su un telefono da
 //          360px e quattro dai ~440 in su: tre e' il minimo, non il numero. Le quattro fisse
@@ -8559,7 +8588,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.854';
+const JS_VERSION = 'v5.857';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9657,6 +9686,31 @@ let _figLabelMode = 'full';   // v5.848 — default: nomi MOSTRATI (prima 'numbe
 try { const _m = localStorage.getItem('sgorbions_fig_label_mode'); if (_m === 'number' || _m === 'full') _figLabelMode = _m; } catch(e) {}
 function _isMobileViewport() { return window.matchMedia('(max-width: 860px)').matches; }
 function _figLabelOnlyNumber() { return _isMobileViewport() && _figLabelMode === 'number'; }
+
+// v5.856 — descrizione della serie richiudibile, solo su telefono.
+function _setupSeriesDescToggle(desc) {
+  const p = document.getElementById('detail-desc');
+  const btn = document.getElementById('detail-desc-toggle');
+  if (!p || !btn) return;
+  const lunga = _isMobileViewport() && (desc || '').trim().length > 140;
+  if (!lunga) {
+    p.classList.remove('desc-collapsed');
+    btn.style.display = 'none';
+    return;
+  }
+  p.classList.add('desc-collapsed');
+  btn.style.display = '';
+  btn.textContent = currentLang === 'it' ? 'Mostra tutto' : 'Show more';
+}
+function toggleSeriesDesc() {
+  const p = document.getElementById('detail-desc');
+  const btn = document.getElementById('detail-desc-toggle');
+  if (!p || !btn) return;
+  const chiusa = p.classList.toggle('desc-collapsed');
+  btn.textContent = chiusa
+    ? (currentLang === 'it' ? 'Mostra tutto' : 'Show more')
+    : (currentLang === 'it' ? 'Mostra meno' : 'Show less');
+}
 function setFigLabelMode(mode) {
   _figLabelMode = (mode === 'full') ? 'full' : 'number';
   try { localStorage.setItem('sgorbions_fig_label_mode', _figLabelMode); } catch(e) {}
@@ -11453,6 +11507,11 @@ function openSeriesDetail(seriesId) {
   document.getElementById('detail-name').textContent = s.name;
   document.getElementById('detail-year').textContent = s.year;
   document.getElementById('detail-desc').textContent = desc || '';
+  // v5.856 — su telefono la descrizione della serie si chiude a tendina: parte accorciata a tre
+  // righe, con un comando "Mostra tutto / Mostra meno" sotto. Il comando compare solo se il testo
+  // e' davvero lungo (oltre ~140 caratteri): sotto quella soglia le tre righe bastano e un
+  // comando che non fa niente e' peggio che non averlo. Sul desktop nulla cambia.
+  _setupSeriesDescToggle(desc || '');
   const editSeriesBtn = document.getElementById('detail-edit-series-btn');
   if (editSeriesBtn) editSeriesBtn.style.display = currentUser?.isAdmin ? '' : 'none';
   const ebaySeriesBtn = document.getElementById('detail-ebay-series-btn');
@@ -13056,7 +13115,12 @@ function renderItems() {
     // v5.853 — su telefono, col filtro "Figurine set base" attivo si mostra SOLO IL FRONTE.
     // Sono tutte figurine base, quindi affiancare il retro dimezza il fronte senza aggiungere
     // informazione. Fuori da quel filtro, e sul desktop, la coppia fronte+retro resta.
-    const _soloFronte = _mobileFigCard && _itemTypeFilter === 'base';
+    // NB: qui NON si puo' usare _mobileFigCard, che e' dichiarato piu' sotto (con const, quindi
+    // in temporal dead zone: leggerlo prima non da' undefined, lancia). Era il bug della v5.854:
+    // ogni card falliva, la griglia restava col segnaposto "nessun risultato" gia' presente in
+    // index.html, mentre il conteggio - calcolato prima - diceva giustamente che i risultati
+    // c'erano. Le condizioni si ricalcolano qui dai loro ingredienti.
+    const _soloFronte = _isMobileViewport() && currentSection === 'figurines' && _itemTypeFilter === 'base';
     if (!_soloFronte && (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && f.retroId) || (f.isChange && f.baseFigurineId && _effRetroId) || (isBaseFig && f.retroId))) {
       const baseFigDual = isBaseFig ? f : (baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId));
       const retroFigDual = getData('figurines', []).find(x => x.id === _effRetroId);
