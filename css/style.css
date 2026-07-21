@@ -1082,6 +1082,12 @@ footer {
   /* logo un filo più contenuto della misura desktop, per non affollare la barra stretta */
   #navbar .nav-logo img { height: 30px !important; }
 
+  /* v5.865 — su telefono via la riga "vX.XXX · Online dal…" sotto il logo: e' il div che segue
+     l'<a class="nav-logo"> nel blocco logo. Sul desktop resta. Cosi' nella barra c'e' solo il
+     logo, centrato verticalmente. */
+  #navbar .nav-logo + div { display: none !important; }
+  #navbar .nav-logo { display: flex; align-items: center; }
+
   /* v5.864 — pagina Profilo su telefono. Nell'intestazione l'AVATAR va a destra e il nome a
      sinistra, allineati in alto: row-reverse mette l'avatar (primo nel DOM) a destra, e
      flex-start li porta alla stessa altezza. nowrap per tenerli in riga anche stretti. */
