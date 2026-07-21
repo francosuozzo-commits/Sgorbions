@@ -1104,6 +1104,50 @@ footer {
   #series-detail { padding-top: calc(64px + var(--logo-band)) !important; }
 }
 
+/* ---- v5.851 — HOMEPAGE SU TELEFONO ----
+   (1) I numeroni verdi delle statistiche scendono da 2.53rem a 1.6rem (etichette a 0.75rem):
+       a quella misura occupavano mezza schermata prima ancora del contenuto.
+   (2) I blocchi "come funziona" passano da cinque colonne a UNO PER RIGA: la griglia ha lo
+       stile inline, quindi serve !important e un id (#home-how-grid) che prima non aveva. */
+@media (max-width: 860px) {
+  .hero-stats { gap: 1rem 1.6rem !important; margin-top: 2rem; }
+  .stat-num { font-size: 1.6rem; }
+  .stat-label { font-size: 0.75rem; }
+
+  #home-how-grid { grid-template-columns: 1fr !important; font-size: 1em !important; }
+  #home-how-grid > div { padding: 1rem 1.1rem !important; text-align: left !important; }
+  #home-how-grid > div > div:first-child { font-size: 1.8rem !important; margin-bottom: 0.4rem !important; }
+  #home-how-grid h3 { font-size: 1.05rem !important; }
+}
+
+/* ---- v5.851 — CLASSIFICA SU TELEFONO ----
+   (1) La tabella dei LIVELLI sale sopra la classifica: era la colonna destra di una griglia
+       "1fr 360px", che su telefono la spingeva in fondo alla pagina.
+   (2) Nella riga di classifica POSIZIONE e AVATAR si impilano invece di stare affiancati: sono
+       due elementi stretti che, in fila, rubavano larghezza al nome. La riga diventa una griglia
+       di tre colonne (posizione+avatar · nome e statistiche · punteggio), con i primi due
+       elementi nella stessa colonna su due righe. Gli stili della riga sono inline, da cui i
+       !important.
+   (3) Il titolo della pagina scende di corpo: a tutta larghezza occupava tre righe. */
+@media (max-width: 860px) {
+  #classifica-grid { grid-template-columns: 1fr !important; gap: 1.2rem !important; }
+  #classifica-grid > div:last-child { order: -1; }
+
+  #page-classifica .section-title { font-size: 1.25rem; line-height: 1.25; }
+
+  .cl-row {
+    display: grid !important;
+    grid-template-columns: 44px 1fr auto;
+    gap: 0.2rem 0.7rem !important;
+    align-items: center;
+    padding: 0.5rem 0.7rem !important;
+  }
+  .cl-row > .cl-pos    { grid-column: 1; grid-row: 1; width: auto !important; }
+  .cl-row > .cl-avatar { grid-column: 1; grid-row: 2; display: flex; justify-content: center; }
+  .cl-row > div:nth-child(3) { grid-column: 2; grid-row: 1 / 3; min-width: 0; }
+  .cl-row > div:nth-child(4) { grid-column: 3; grid-row: 1 / 3; }
+}
+
 /* ---- v5.823 — INVENTARIO: 4 SERIE PER RIGA SU TELEFONO ----
    La griglia delle serie (.grid-3 = auto-fill minmax(300px,1fr)) su telefono cadeva a una
    sola colonna. Qui diventa a 4 colonne fisse, e la cartellino si rimpicciolisce di
@@ -1238,11 +1282,18 @@ footer {
 
   /* v5.848 — i due conteggi ("N oggetti trovati" / "N fanno parte della tua lista") su una riga
      sola: numeri da 1.5rem a 1rem (hanno il corpo scritto inline, quindi !important) */
-  #items-count-display {
-    display: flex; flex-wrap: nowrap; align-items: baseline;
-    gap: 0.7rem; font-size: 0.82rem; line-height: 1.2; white-space: nowrap;
+  /* v5.851 — i due conteggi stanno dentro un contenitore che app.js crea in COLONNA
+     (display:flex;flex-direction:column): era QUELLO a tenerli su due righe, non il
+     contenitore esterno. Qui lo si gira in riga; lo stile e' inline, da cui !important. */
+  #items-count-display { font-size: 0.82rem; line-height: 1.2; }
+  #items-count-display > div {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: baseline !important;
+    gap: 0.7rem !important;
+    white-space: nowrap;
   }
-  #items-count-display > span { display: inline-flex; align-items: baseline; gap: 0.25rem; }
+  #items-count-display > div > span { display: inline-flex; align-items: baseline; gap: 0.25rem; }
   #items-count-display span span { font-size: 1.15rem !important; }
 
   /* v5.827 — etichetta della card: numero e nome più piccoli e allineati a sinistra.
