@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.847 - Franco, telefono: via dalla navbar il contatore "Figurine nella tua lista / N / M"
+//          (#nav-owned-counter). Sono due righe di testo in una barra dove lo spazio serve
+//          all'hamburger e ai comandi di destra. Il dato resta dov'e' utile: nel profilo e nella
+//          scheda serie. app.js lo mostra con style.display inline, quindi la regola usa
+//          !important. Sul desktop il contatore resta. Solo css/style.css.
+// ------------------------------------------------------------
 // v5.846 - Dettaglio figurina (desktop): il RETRO piu' largo del fronte e centrato verticalmente.
 //          Fronte e retro non hanno le stesse proporzioni - il retro e' tipicamente piu' largo che
 //          alto - quindi a parita' di colonna il retro rendeva un'immagine visivamente piu'
@@ -8453,7 +8459,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.846';
+const JS_VERSION = 'v5.847';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
