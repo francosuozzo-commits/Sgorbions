@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.868 - Franco (mobile+desktop), paginazione: dopo Prima/Precedente/Successiva/Ultima il cursore
+//          torna in alto ma NON in cima assoluta. Prima faceva scrollTo(top:0) e si vedevano
+//          ricerca e filtri sopra la griglia, con un salto poco fluido. Ora si ancora alla riga
+//          dei pulsanti di paginazione (#items-pagination-top) sottraendo l'ingombro reale di
+//          navbar + banner: la prima cosa che si vede e' quella riga, e subito sotto la prima riga
+//          di figurine della pagina scelta. Solo js/app.js.
+// ------------------------------------------------------------
 // v5.867 - Franco (mobile+desktop), card figurina: il CUORE e la BANDIERINA erano muti, ora sono
 //          ETICHETTATI. Le azioni in fondo alla card diventano tre gruppi "etichetta + controllo":
 //          "Mia lista" (toggle), "Ciò che cerco" (cuore), "Errore?" (bandierina 🚩). Su DESKTOP
@@ -8657,7 +8664,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.867';
+const JS_VERSION = 'v5.868';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -13413,8 +13420,22 @@ function changeItemPage(page) {
   if (page < 1 || page > totalPages) return;
   currentItemPage = page;
   renderItems();
-  // Show WIP banner if less than 50% of stickers have photos
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  // v5.868 — Franco: dopo il cambio pagina il cursore torna in alto, ma NON in cima assoluta
+  // (dove si vedono ricerca e filtri): si ferma sulla riga dei pulsanti di paginazione, così la
+  // prima cosa visibile è quella riga e SUBITO SOTTO la prima riga di figurine. Ancoriamo a
+  // #items-pagination-top e sottraiamo l'ingombro di navbar + banner (misurati, non a mano, così
+  // restano giusti se cambiano). requestAnimationFrame: aspetta che il nuovo layout sia calcolato.
+  requestAnimationFrame(() => {
+    const anchor = document.getElementById('items-pagination-top') || document.getElementById('items-grid');
+    if (!anchor) { window.scrollTo({ top: 0, behavior: 'smooth' }); return; }
+    let offset = 8;
+    const nav = document.getElementById('navbar');
+    if (nav) offset += nav.offsetHeight;
+    const banner = document.getElementById('construction-banner');
+    if (banner && getComputedStyle(banner).display !== 'none') offset += banner.offsetHeight;
+    const y = anchor.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+  });
 }
 
 // renderFigurines kept as alias for admin panel compatibility
