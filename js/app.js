@@ -1,6 +1,250 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.846 - Dettaglio figurina (desktop): il RETRO piu' largo del fronte e centrato verticalmente.
+//          Fronte e retro non hanno le stesse proporzioni - il retro e' tipicamente piu' largo che
+//          alto - quindi a parita' di colonna il retro rendeva un'immagine visivamente piu'
+//          piccola. Ora la colonna del retro vale 1.4 volte quella del fronte (che resta com'era) e
+//          il contenitore cresce di conseguenza: colonna foto da 620 a 740px, modale a
+//          min(1320px, 97vw). Il blocco del retro - etichetta, foto e link - e' centrato
+//          verticalmente rispetto al fronte, di solito piu' alto. Solo css/style.css.
+// ------------------------------------------------------------
+// v5.845 - Franco: nel dettaglio figurina fronte e retro tornano SEMPRE AFFIANCATI, e il modale si
+//          allarga. Annullate v5.841/843/844, che li impilavano e li facevano riempire l'altezza
+//          della colonna delle informazioni: il difetto era che la stessa foto cambiava dimensione
+//          a seconda di quanto era lunga la scheda accanto, oltre che fra impilate e affiancate.
+//          Una foto non deve cambiare misura per una ragione che non la riguarda. Ora la
+//          disposizione e' una sola - fianco a fianco - e a crescere e' il contenitore: modale da
+//          860 a min(1200px, 96vw), colonna foto da 320 a 620px, cioe' ~300px per immagine invece
+//          di ~150px. Le immagini stanno alla loro dimensione naturale dentro quella larghezza,
+//          senza alcun legame con l'altezza del testo. Sul telefono nulla cambia: li' il modale e'
+//          a colonna singola con le foto in cima. Solo css/style.css.
+// ------------------------------------------------------------
+// v5.844 - Dettaglio figurina (desktop): l'immagine del RETRO non arrivava in fondo. Due cause.
+//          (1) Il bug vero: la regola scritta nella v5.843 per far rimpicciolire i riquadri
+//          "nessuna foto" usava :not(:first-child) e finiva per colpire anche il LINK sotto la
+//          foto del retro, dandogli flex:1 - il link si prendeva meta' cella. Ora il segnaposto e'
+//          selezionato per quello che e' (ha height:200px inline) e il link resta della sua
+//          altezza naturale.
+//          (2) La cella del retro porta comunque quel link, quella del fronte no: sotto il fronte
+//          c'e' ora uno spaziatore vuoto della stessa altezza, cosi' le due immagini partono dallo
+//          stesso budget verticale.
+//          Resta il margine dovuto a object-fit:contain, che rispetta le proporzioni: una foto
+//          piu' larga che alta non tocca comunque il bordo inferiore, e l'alternativa sarebbe
+//          ritagliarla. Solo css/style.css.
+// ------------------------------------------------------------
+// v5.844 - Dettaglio figurina (desktop): l'immagine del RETRO finiva piu' corta di quella del
+//          FRONTE. Le due celle sono alte uguali, ma quella del retro porta anche il link sotto
+//          la foto (~22px), che toglie spazio all'immagine. Ora sotto il fronte c'e' uno
+//          spaziatore vuoto della stessa altezza, cosi' le due immagini partono dallo stesso
+//          budget verticale. Resta il margine dovuto a object-fit:contain, che rispetta le
+//          proporzioni: una foto piu' larga che alta non tocca comunque il bordo inferiore, e
+//          l'alternativa sarebbe ritagliarla. Solo css/style.css.
+// ------------------------------------------------------------
+// v5.843 - Correzione della v5.841: le foto del dettaglio figurina (desktop) devono riempire la
+//          COLONNA DELLE INFORMAZIONI - dalla riga Serie fino in fondo al pulsante Elimina - non
+//          una frazione del viewport. Via il calc(90vh - 8rem) scritto a mano: la riga della
+//          griglia del modale e' gia' alta quanto la colonna delle informazioni, quindi al box
+//          foto basta height:100% e min-height:0. Se le informazioni crescono, crescono anche le
+//          foto, senza numeri da aggiornare. Aggiunto min-height:0 anche alle immagini e ai
+//          riquadri "nessuna foto" (che erano a 200px fissi), altrimenti il loro contenuto
+//          naturale farebbe da pavimento e la colonna non si stringerebbe. Solo css/style.css.
+// ------------------------------------------------------------
+// v5.842 - Franco, telefono: il logo SGORBIONS esce dalla NAVBAR. Nella barra da 64px il logo
+//          (36px) piu' la riga versione/"online dal" occupavano meta' larghezza, lasciando
+//          all'hamburger e ai comandi di destra lo spazio che avanzava. Ora quel blocco e' tolto
+//          dal flusso della barra e fissato SOTTO di essa come fascia a tutta larghezza (logo e
+//          versione affiancati, logo a 26px); il banner "SITO IN COSTRUZIONE" scende ancora piu'
+//          giu'. L'altezza della fascia sta nella variabile --logo-band: banner sticky, .page e
+//          #series-detail leggono da li' la loro spaziatura, cosi' non si sfasano se la si cambia.
+//          Il menu a tendina resta agganciato a 64px e passa sopra la fascia. Solo css/style.css.
+// ------------------------------------------------------------
+// v5.841 - Franco, due modifiche che valgono anche sul DESKTOP (richieste esplicitamente).
+//          (1) La riga "Retro collegato" del dettaglio figurina sparisce ovunque, non piu' solo su
+//          telefono (era la v5.833): sotto la foto del Retro c'e' gia' lo stesso link, che compare
+//          ogni volta che il Retro esiste, anche senza foto. Resta il solo caso guasto - retroId
+//          che punta a un record inesistente - perche' li' il box foto non mostra niente e quella
+//          riga e' l'unica sede in cui il problema si vede.
+//          (2) Nel dettaglio figurina, da 861px in su, FRONTE e RETRO passano da affiancati a
+//          IMPILATI e prendono l'altezza disponibile: prima erano due francobolli in una colonna
+//          da 320px, con tutto lo spazio verticale del modale sprecato. L'altezza va dichiarata
+//          (la riga di una griglia e' alta quanto il contenuto, quindi "stretch" non avrebbe nulla
+//          da riempire): e' legata al modale, max-height 90vh meno ~8rem fra padding e intestazione.
+//          Sul telefono le due foto restano affiancate, che su schermo stretto e' il verso giusto.
+//          Modificato js/app.js, css/style.css.
+// ------------------------------------------------------------
+// v5.840 - Franco, scheda serie da telefono: tolta l'interlinea fra le righe delle numeriche.
+//          #detail-meta ha uno stile inline con gap 0.7rem fra le righe: sul desktop e' una fila
+//          orizzontale che va a capo, ma nella colonna stretta del telefono ogni voce sta su una
+//          riga sua, e quel gap diventava un'interlinea grossa fra un tipo e l'altro. Su mobile
+//          diventa una colonna con gap 0 e line-height 1.25. !important perche' lo stile e'
+//          inline. Solo css/style.css.
+// ------------------------------------------------------------
+// v5.839 - Franco cambia idea su due cose del giro mobile, ed entrambe TORNANO come sul desktop.
+//          (1) Annullata la v5.830: nella scheda serie il conteggio della lista ("N nella tua
+//          lista", in verde) torna SOTTO la riga del tipo, non piu' fra parentesi in linea. Via il
+//          ramo mobile di colonna(): ora c'e' un solo comportamento per tutti.
+//          (2) Annullata la v5.831: "variazioni non ufficiali" torna per esteso, niente "variaz.".
+//          Solo js/app.js.
+// ------------------------------------------------------------
+// v5.838 - Correzione della v5.836: nell'intestazione serie su telefono l'ordine usciva rovesciato
+//          (foto sopra, nome sotto). Avevo indicato solo le COLONNE, lasciando le righe al
+//          piazzamento automatico: ma .series-cover viene prima nell'HTML, quindi si prendeva la
+//          riga 1, e il blocco nome+anno - che occupa due colonne - non ci entrava piu' e slittava
+//          alla riga 2. Ora le righe sono esplicite: 1 nome+anno, 2 foto a sinistra e numeriche a
+//          destra, 3 descrizione a tutta larghezza. Solo css/style.css.
+// ------------------------------------------------------------
+// v5.837 - Franco: pagina Inventario SEMPRE a tre serie per riga. ATTENZIONE, e' la prima regola
+//          di questo giro che vale anche sul DESKTOP, ed e' voluta. .grid-3 e' auto-fill
+//          minmax(300px,1fr), cioe' "quante colonne da almeno 300px ci stanno": su schermo largo
+//          (contenitore max 1100px) erano gia' tre, ma nella fascia stretta 860-1000px ne restavano
+//          DUE, e sotto gli 860 il mobile ne impone tre. Scendendo di larghezza il numero di colonne
+//          faceva quindi 3, 2, 3. Ora #catalog-grid e' repeat(3, 1fr) a ogni misura. Le altre .grid-3
+//          del sito non cambiano: la regola e' agganciata al solo id della griglia Inventario.
+//          Solo css/style.css.
+// ------------------------------------------------------------
+// v5.836 - Franco, intestazione della scheda serie da telefono. Nuova impaginazione: riga 1 NOME e
+//          ANNO a tutta larghezza SOPRA la foto; riga 2 foto a sinistra e contatori a destra;
+//          riga 3 DESCRIZIONE a tutta larghezza, allineata al bordo sinistro della foto (prima
+//          partiva rientrata, dopo la colonna della copertina). Nome, contatori e descrizione
+//          stanno pero' dentro .series-info, quindi col solo CSS non erano collocabili singolarmente:
+//          su mobile .series-info diventa `display: contents`, sparisce come scatola e i suoi figli
+//          entrano nella stessa griglia della copertina, dove ognuno prende il posto suo.
+//          Nessun cambio all'HTML, tutto in @media: desktop invariato. Solo css/style.css.
+// ------------------------------------------------------------
+// v5.835 - Franco, pagina Inventario da telefono: TRE serie per riga invece di quattro, come sul
+//          desktop (le quattro erano della v5.823). Col cartellino piu' largo i testi tornano un
+//          filo piu' leggibili: titolo 0.88rem, anno e badge 0.62rem, padding un po' piu' generoso.
+//          La descrizione della serie resta nascosta. Solo css/style.css (sezione mobile).
+// ------------------------------------------------------------
+// v5.834 - Franco, dettaglio figurina da telefono, ordine della scheda: NUMERO, NOME, le due FOTO,
+//          PUNTEGGIO, e sotto tutto il resto. Numero e Nome finiscono in un contenitore nuovo
+//          #fig-detail-top che il CSS mette prima del box foto (order:-2); il Punteggio viene messo
+//          da parte e rimesso in testa alle righe, cioe' subito sotto le foto. Sul desktop
+//          #fig-detail-top resta vuoto e sparisce del tutto grazie a :empty { display:none } -
+//          altrimenti farebbe da terza colonna nella griglia "1fr 320px" - e l'ordine e' quello di
+//          sempre. Modificato index.html, js/app.js, css/style.css.
+// ------------------------------------------------------------
+// v5.833 - Franco, dettaglio figurina da telefono: il link al Retro compariva DUE volte - la riga
+//          "Retro collegato" fra le informazioni e la didascalia sotto la foto del Retro. Su
+//          mobile resta solo la seconda. La didascalia si vede sempre che il Retro esista, anche
+//          senza foto, quindi non si perde niente. Resta invece sempre la riga d'errore "ID
+//          collegato non trovato" del ramo else: li' il box foto non ha nessun Retro da mostrare
+//          e quella riga e' l'unico posto in cui il guasto si vede. Modificato js/app.js.
+// ------------------------------------------------------------
+// v5.832 - Franco, dettaglio figurina da telefono. (1) Via la sezione EBAY: e' roba da admin, e su
+//          telefono non si amministra. openFigDetail() prende ora il ramo dell'utente normale
+//          (guardia isAdmin && !_isMobileViewport()), quindi i tab Generale/Ebay e la riga Foto
+//          Ebay non vengono nemmeno costruiti. Sul desktop l'admin li vede come sempre.
+//          (2) Le due FOTO (fronte e retro) passano in cima, le informazioni sotto. Il corpo del
+//          modale e' una griglia inline "1fr 320px" (info a sinistra, foto a destra) che su
+//          telefono non ci sta: su mobile diventa una colonna sola e #fig-detail-photo sale con
+//          order:-1. Modificato js/app.js, css/style.css.
+// ------------------------------------------------------------
+// v5.831 - Franco, scheda serie da telefono: "variazioni non ufficiali" (l'etichetta piu' lunga
+//          del gruppo, che mandava la voce a capo) abbreviata in "variaz. non ufficiali", e al
+//          singolare "variaz. non ufficiale". Solo mobile: sul desktop resta per esteso, e l'EN
+//          ("unofficial variations") non cambia, e' gia' corto. Modificato js/app.js.
+// ------------------------------------------------------------
+// v5.830 - Franco, scheda serie da telefono: i contatori per tipologia passano da DUE righe a UNA.
+//          Prima: "160 figurine set base" e sotto "3 nella tua lista". Ora: "160 figurine set base
+//          (3 tua lista)", col conteggio della lista fra parentesi e nel suo verde. Etichetta
+//          accorciata da "nella tua lista" a "tua lista" (EN: "in list"), perche' fra parentesi il
+//          contesto e' gia' chiaro. Il caso "le hai tutte" resta il suo messaggio, sempre fra
+//          parentesi. Guardia _isMobileViewport() in renderSeriesMeta(): sul desktop il blocco
+//          resta su due righe come prima. Modificato js/app.js.
+// ------------------------------------------------------------
+// v5.829 - Franco, card Figurina da telefono: il PUNTEGGIO passa sulla riga del NUMERO, con lo
+//          stesso corpo (0.68rem), e il nome - quando e' mostrato - va sulla riga sotto. Prima il
+//          punteggio aveva una riga tutta sua piu' in basso: su una card da ~85px era una riga
+//          sprecata. Le due cose sono indipendenti: il punteggio sta accanto al numero sia col
+//          toggle "Mostra nomi" acceso sia spento. Il nome esce ora in un <div class="fig-name-line">
+//          proprio, invece di stare in linea col numero e andare a capo per riempimento.
+//          Guardia _mobileFigCard = viewport mobile && non e' una card Retro: sul desktop la card
+//          e' identica a prima (punteggio nella sua riga, numero e nome in linea).
+//          Modificato js/app.js, css/style.css.
+// ------------------------------------------------------------
+// v5.828 - Franco, pagina Figurine da telefono, rifinitura della v5.827.
+//          (1) Il selettore dell'etichetta non e' piu' una <select> ma un INTERRUTTORE nello stile
+//          dei filtri (.toggle-btn-blue), con l'etichetta che segue lo stato: spento "Mostra nomi",
+//          acceso "Nascondi nomi" (EN: Show names / Hide names).
+//          (2) Non compare nelle serie marcate "Non ha numeri" (flag s.noNumbers della scheda
+//          serie): li' la card ha solo il nome, e nasconderlo la lascerebbe muta. Il controllo e'
+//          in _serieHaNumeri().
+//          (3) Col filtro "Solo base" attivo (_itemTypeFilter === 'base'), su telefono la card non
+//          mostra piu' il nome del retro associato: sono tutte figurine base, la riga e' ridondante
+//          e ruba spazio. Come per il resto, guardia di viewport: sul desktop il nome del retro
+//          resta sempre, e il toggle non compare mai.
+//          Modificato index.html, js/app.js.
+// ------------------------------------------------------------
+// v5.827 - Franco, pagina Figurine da telefono. (1) Numero e nome sulla card erano a 1.05rem:
+//          scesi a 0.68rem e allineati a SINISTRA, con il corpo della card e i toggle piu'
+//          compatti. Il numero ha il font-size inline messo da renderItems(), quindi li' serve
+//          !important. (2) NUOVO selettore "Etichetta" (Solo numero / Numero e nome) davanti alla
+//          griglia: compare SOLO sotto gli 860px e SOLO nella sezione Figurine - sul desktop resta
+//          display:none e la barra dei controlli e' identica a prima. Default su telefono: solo
+//          numero. La scelta e' ricordata dal browser (localStorage 'sgorbions_fig_label_mode'),
+//          a differenza di "Modalita' visualizzazione" che non si salva. La guardia di viewport
+//          sta in _figLabelOnlyNumber(): anche con 'number' salvato, il desktop rende sempre
+//          numero+nome. Modificato index.html, css/style.css, js/app.js.
+// ------------------------------------------------------------
+// v5.826 - Franco: due regole mobile della v5.823-825 non facevano effetto. Due cause distinte.
+//          (1) ORDINE NEL CSS. I blocchi @media erano a meta' file, ma le regole base di
+//          .section-choice-* stanno DOPO (sezione "SECTION CHOICE CARDS"): a parita' di
+//          specificita' vince l'ultima, quindi il titolo restava a 1.6rem e il testo centrato.
+//          Tutte le regole solo-mobile sono ora in una "SEZIONE MOBILE" in fondo al file, dopo
+//          ogni regola desktop - d'ora in poi vincono senza bisogno di !important.
+//          (2) STILI INLINE DA renderItems(). Sulla pagina Figurine, col modo di visualizzazione
+//          di default ('destra-piena'), renderItems() trasforma #items-grid in FLEX e da' a ogni
+//          .fig-card una larghezza fissa (flex:0 0 350px, o 247px): ecco perche' su telefono usciva
+//          UNA card per riga nonostante la griglia a 4 colonne. Ora su mobile la griglia e' forzata
+//          a grid/4 colonne e la larghezza fissa delle card e' neutralizzata, con !important perche'
+//          l'inline batte il foglio di stile. Neutralizzati anche width/margin/transform inline.
+//          Modificato css/style.css, index.html (solo versione), app.js (solo versione).
+// ------------------------------------------------------------
+// v5.825 — Franco, mobile: (1) pagine Figurine/Retro/Album/Altri oggetti, i risultati vanno a 4 per
+//          riga su TUTTO il mobile — #items-grid a 4 colonne dagli 860px in giù, e tolta la regola
+//          a 3 colonne del breakpoint 480 introdotta in v5.821; ridotti anche i padding della
+//          sezione e del riquadro di ricerca. La foto della serie in cima a queste pagine è la
+//          stessa .series-cover della scheda serie, quindi era già scesa a 90px con la v5.824.
+//          (2) Scheda serie, i quattro box: titolo da 0.78 a 0.66rem, conteggio a 0.58rem, testo
+//          allineato a SINISTRA invece che centrato, e ridotto il padding inline del blocco di
+//          testo (1.25rem 1.5rem, troppo per un box da 90px). Tutto in @media: desktop invariato.
+//          Modificato css/style.css, index.html (solo versione), app.js (solo versione).
+// ------------------------------------------------------------
+// v5.824 — Franco: scheda SERIE da telefono. (1) La copertina (.series-cover) scende da 160px a
+//          90px, così titolo/anno/meta le stanno accanto invece di finirle sotto; hero con padding
+//          ridotto. (2) I quattro box Figurine/Retro/Album/Altri oggetti stavano in una griglia
+//          auto-fit minmax(240px) che su telefono li impilava uno per riga: ora 4 colonne fisse su
+//          una sola riga, con icona 1.6rem, titolo 0.78rem e conteggio 0.62rem per starci. La
+//          griglia dei box ha lo stile inline nell'HTML, quindi le regole usano !important.
+//          Tutto dentro @media (max-width:860px): desktop invariato.
+//          Modificato css/style.css, index.html (solo versione), app.js (solo versione).
+// ------------------------------------------------------------
+// v5.823 — Franco: pagina Inventario da TELEFONO, 4 serie per riga invece di una. Sotto gli 860px
+//          #catalog-grid passa da .grid-3 (auto-fill minmax 300px, che su telefono dava 1 colonna)
+//          a 4 colonne fisse. Per starci, il cartellino serie si rimpicciolisce: DESCRIZIONE TOLTA
+//          (.card-desc display:none), padding del body ridotto, titolo 0.8rem, anno 0.58rem, riga
+//          badge che va a capo e badge compatti; tolto anche il sollevamento :hover, che su touch
+//          restava appiccicato dopo il tap. Tutto agganciato a #catalog-grid, quindi le altre
+//          .grid-3 del sito non cambiano, e tutto dentro @media: il desktop è invariato.
+//          Modificato css/style.css, index.html (solo versione), app.js (solo versione).
+// ------------------------------------------------------------
+// v5.822 — Franco: da telefono niente amministrazione e niente vista tabellare. Sotto gli 860px
+//          (stessa soglia dell'hamburger) una media query nasconde tutti gli strumenti admin:
+//          la console #admin-panel nel profilo, i pulsanti sparsi nelle pagine (Aggiungi serie,
+//          Aggiungi figurina, filtri admin del catalogo, blocchi Classifica ed Ebay, Modifica/Vista
+//          Ebay della scheda serie, backfill classifica), gli strumenti admin in navbar (campanella
+//          eventi, messaggi, Newsletter) e le classi .btn-admin / .tbl-btn-edit / .tbl-btn-del
+//          ovunque siano rese da app.js (matita, clona e cestino su cartellini, dettaglio e tabelle).
+//          Le regole usano !important perché app.js imposta questi elementi con style.display inline.
+//          L'admin resta loggato — corona, avatar ed Esci restano — e naviga come un utente normale.
+//          Tolta anche la VISTA TABELLARE: #user-table-view-btn nascosto sotto gli 860px, più una
+//          guardia in index.html che riporta alla griglia se la vista era attiva e si restringe la
+//          finestra sotto la soglia. Motivo: .data-table non ha un contenitore con overflow-x:auto e
+//          html/body hanno overflow-x:hidden, quindi su telefono le colonne di destra erano tagliate.
+//          Modificato index.html, css/style.css, app.js (solo versione).
+// ------------------------------------------------------------
 // v5.821 — Franco: usabilità da MOBILE. (1) Menu di navigazione: sotto gli 860px .nav-links spariva
 //          senza rimpiazzo, quindi da telefono non si navigava; ora c'è un pulsante hamburger (☰/✕)
 //          nella navbar che apre .nav-links come pannello a tendina sotto la barra (chiusura al tocco
@@ -8209,7 +8453,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.821';
+const JS_VERSION = 'v5.846';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9297,6 +9541,27 @@ let _itemTypeFilter = 'base'; // 'base' | 'variation' | 'unofficialVariation' | 
 let _ebayFilter = false; // indipendente da _itemTypeFilter: si combina in AND, non è esclusivo con "Solo base"/ecc.
 let _noOfficialVariationFilter = false; // indipendente da _itemTypeFilter come _ebayFilter, ma impone SEMPRE anche "solo base" (non solo AND con il filtro tipo scelto) — mostra solo figurine base senza nessuna Variazione ufficiale collegata
 let _retroViewMode = 'destra-piena'; // 'sotto' | 'destra' | 'dinamico' | 'fronte-grande' | 'destra-piena' — come viene mostrato il Retro rispetto al fronte nella griglia Figurine, visibile a tutti
+
+// v5.827 — ETICHETTA DELLE CARD FIGURINA, SOLO SU TELEFONO.
+// 'number' = sulla card compare il solo numero; 'full' = numero e nome (com'e' sul desktop).
+// Vale ESCLUSIVAMENTE sotto la soglia mobile: _figLabelOnlyNumber() ha la guardia di viewport,
+// quindi il desktop rende sempre numero+nome qualunque cosa ci sia salvato. La scelta e'
+// ricordata dal browser (localStorage), a differenza di _retroViewMode che non si salva.
+let _figLabelMode = 'number';
+try { const _m = localStorage.getItem('sgorbions_fig_label_mode'); if (_m === 'number' || _m === 'full') _figLabelMode = _m; } catch(e) {}
+function _isMobileViewport() { return window.matchMedia('(max-width: 860px)').matches; }
+function _figLabelOnlyNumber() { return _isMobileViewport() && _figLabelMode === 'number'; }
+function setFigLabelMode(mode) {
+  _figLabelMode = (mode === 'full') ? 'full' : 'number';
+  try { localStorage.setItem('sgorbions_fig_label_mode', _figLabelMode); } catch(e) {}
+  try { renderItems(); } catch(e) { console.error('renderItems (setFigLabelMode)', e); }
+}
+function toggleFigLabelMode() { setFigLabelMode(_figLabelMode === 'number' ? 'full' : 'number'); }
+// La serie ha i numeri? Flag "Non ha numeri" della scheda serie (s.noNumbers).
+function _serieHaNumeri() {
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  return !(s && s.noNumbers);
+}
 // Specchietti "Retro per categoria" (v5.762): stato apertura (chiusi al caricamento) e filtro
 let _retroCatTopOpen = false;      // riquadro in alto (Retro base): chiuso di default
 let _retroCatResultsOpen = false;  // riquadro risultati: chiuso di default
@@ -12455,6 +12720,27 @@ function renderItems() {
     if (sel && sel.value !== _retroViewMode) sel.value = _retroViewMode;
   }
 
+  // v5.828 — Toggle "Mostra nomi" / "Nascondi nomi", nello stile dei filtri (.toggle-btn-blue).
+  // Compare SOLO sotto la soglia mobile, SOLO nella sezione Figurine e SOLO se la serie ha i
+  // numeri: in una serie marcata "Non ha numeri" nascondere il nome lascerebbe la card muta.
+  // Sul desktop resta display:none, quindi la barra dei controlli e' identica a prima.
+  const figLabelSelector = document.getElementById('fig-label-selector');
+  if (figLabelSelector) {
+    const showIt = (currentSection === 'figurines') && _isMobileViewport() && _serieHaNumeri();
+    figLabelSelector.style.display = showIt ? 'flex' : 'none';
+    if (showIt) {
+      const on = (_figLabelMode === 'full');
+      const lab = on
+        ? (currentLang === 'it' ? 'Nascondi nomi' : 'Hide names')
+        : (currentLang === 'it' ? 'Mostra nomi' : 'Show names');
+      figLabelSelector.innerHTML =
+        `<button class="toggle-btn-blue ${on ? 'on' : ''}" onclick="toggleFigLabelMode()" title="${lab}"></button>` +
+        `<span style="font-size:0.82rem;color:var(--text);">${lab}</span>`;
+    } else {
+      figLabelSelector.innerHTML = '';
+    }
+  }
+
   const allItems = getCurrentlyFilteredItems().sort((a,b) => {
     if (currentSection === 'figurines') {
       const allFigsForSort = getData('figurines', []);
@@ -12745,9 +13031,18 @@ function renderItems() {
     // = Nome. Sostituisce il vecchio schema (prima riga "Categoria - Nome", seconda la categoria).
     // Le Figurine restano invariate. Il vecchio prefisso catPrefix qui per i Retro non serve piu'.
     const isRetroCard = currentSection === 'retros';
+    // v5.829 — solo telefono, solo card Figurina: PRIMA riga = numero + punteggio (stesso corpo),
+    // SECONDA riga = nome (quando i nomi sono mostrati). Il punteggio esce quindi dalla sua riga
+    // a se' piu' in basso, che su una card da 85px era una riga sprecata.
+    const _mobileFigCard = _isMobileViewport() && !isRetroCard;
+    const scoreInlineHTML = (_mobileFigCard && f.score && f.score > 0)
+      ? `<span class="fig-score-inline">⭐ ${f.score} pt</span>` : '';
     const figNameInner = isRetroCard
       ? esc(catParts.length ? catParts.join(' · ') : (currentLang === 'it' ? '(senza categoria)' : '(no category)'))
-      : `<span class="fig-number" style="font-size:1.05rem;">${figLabel}</span>${figLabel ? ' ' : ''}${catPrefix}${f.name}`;
+      : (_mobileFigCard
+          ? `<span class="fig-number" style="font-size:1.05rem;">${figLabel}</span>${scoreInlineHTML}` +
+            (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line">${catPrefix}${f.name}</div>`)
+          : `<span class="fig-number" style="font-size:1.05rem;">${figLabel}</span>${figLabel ? ' ' : ''}${catPrefix}${f.name}`);
     // v5.780 — se il Nome del Retro è IDENTICO alla Categoria (caso raro), la riga del Nome è
     // ridondante rispetto alla prima riga (la Categoria): la omettiamo, mostrando solo la Categoria.
     // Confronto esatto (trim, case-insensitive); non usa _retroNameStartsWithCategory (che è "inizia
@@ -12791,7 +13086,11 @@ function renderItems() {
       const typeIndicatorHTML = _cardTypeTxt
         ? `<div style="font-size:0.82rem;color:${_cardTypeColor};font-weight:600;">${esc((_cardTypeTxt || '').toUpperCase())}</div>`
         : '<div></div>';
-    const retroNameHTML = (currentSection === 'figurines' && !f.isChange && f.retroId)
+    // v5.828 — col filtro "Solo base" attivo, su telefono NON si mostra il nome del retro
+  // associato: sono tutte figurine base, quindi la riga e' ridondante e ruba spazio.
+  // Guardia di viewport: sul desktop il nome del retro resta sempre.
+  const _hideRetroName = _isMobileViewport() && _itemTypeFilter === 'base';
+  const retroNameHTML = (currentSection === 'figurines' && !f.isChange && f.retroId && !_hideRetroName)
       ? (() => { const r = getData('figurines', []).find(x => x.id === f.retroId); return r ? `<div style="font-size:0.78rem;color:var(--muted);">${r.name}</div>` : ''; })()
       : '';
     const isWideFlexMode = currentSection === 'figurines' && _retroViewMode === 'destra-piena';
@@ -12809,7 +13108,7 @@ function renderItems() {
         ${retroNameHTML}
         ${descHTML}
         ${sizeHTML}
-        <div style="display:flex;align-items:center;gap:0.5rem;">${scoreHTML}${reportBtn}</div>
+        <div style="display:flex;align-items:center;gap:0.5rem;">${_mobileFigCard ? '' : scoreHTML}${reportBtn}</div>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
           ${typeIndicatorHTML}
           <div class="fig-toggle" style="display:flex;align-items:center;gap:0.5rem;">
@@ -14609,19 +14908,26 @@ function openFigDetail(figId) {
 
   // Build content
   const rows = [];
+  // v5.834 — SOLO TELEFONO: l'ordine della scheda diventa Numero, Nome, FOTO, Punteggio, e poi
+  // tutto il resto. Numero e Nome finiscono in rowsTop (contenitore #fig-detail-top, che il CSS
+  // mette prima del box foto); il Punteggio viene messo da parte e rimesso in testa a rows, cioe'
+  // subito SOTTO le foto. Sul desktop rowsTop resta vuoto e l'ordine e' quello di sempre.
+  const _mobileDetail = _isMobileViewport();
+  const rowsTop = [];
+  let _rowScoreMobile = '';
 
   // Serie (prima informazione, sempre visibile, utile arrivando da una ricerca)
   rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Serie' : 'Series')}</span><span class="detail-value" style="font-weight:600;">${figSeries?.name || ''}</span></div>`);
 
-  // Retro collegato: riga sempre visibile (indipendente dal box foto), per aprire direttamente il Retro
-  if (f.retroId) {
-    const linkedRetro = getData('figurines', []).find(x => x.id === f.retroId);
-    if (linkedRetro) {
-      const rparts = [linkedRetro.category, linkedRetro.subcategory].map(v => (v||'').trim()).filter(Boolean);
-      rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Retro collegato' : 'Linked retro')}</span><span class="detail-value"><a href="#" onclick="openFigDetail('${linkedRetro.id}');return false;" style="color:var(--accent);text-decoration:underline;">${rparts.length ? rparts.join(' · ') + ' — ' : ''}${linkedRetro.name} ↗</a></span></div>`);
-    } else {
-      rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Retro collegato' : 'Linked retro')}</span><span class="detail-value" style="color:var(--danger);">${(currentLang === 'it' ? 'ID collegato non trovato: ' : 'Linked ID not found: ')}${f.retroId}</span></div>`);
-    }
+  // v5.841 — la riga "Retro collegato" NON si stampa piu' (ne' su telefono ne' su desktop):
+  // sotto la foto del Retro c'e' gia' lo STESSO link (retroCaption, piu' in basso in questa
+  // funzione), che compare ogni volta che il Retro esiste — anche quando non ha foto, perche'
+  // la didascalia dipende dall'esistenza del Retro, non dell'immagine. Era lo stesso
+  // collegamento due volte nella stessa schermata.
+  // Resta il caso GUASTO: se retroId punta a un record che non esiste piu', il box foto non ha
+  // nessun Retro da mostrare, quindi questa e' l'unica sede in cui il problema si vede.
+  if (f.retroId && !getData('figurines', []).find(x => x.id === f.retroId)) {
+    rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Retro collegato' : 'Linked retro')}</span><span class="detail-value" style="color:var(--danger);">${(currentLang === 'it' ? 'ID collegato non trovato: ' : 'Linked ID not found: ')}${f.retroId}</span></div>`);
   }
 
   // v5.782 — Franco: "la vista e la modifica devono coincidere (a parte i campi vuoti, che in vista
@@ -14629,7 +14935,8 @@ function openFigDetail(figId) {
   // solo nel titolo, v5.764): ora ci sono, quando presenti. Numero: i Retro non sono numerati, quindi
   // per loro la riga resta assente. Nome: tutte le sezioni (prima solo Retro).
   if (f.number) {
-    rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">#${f.number}</span></div>`);
+    const _rowNumero = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">#${f.number}</span></div>`;
+    (_mobileDetail ? rowsTop : rows).push(_rowNumero);
   }
   // Categoria (sempre visibile per i Retro), Sottocategoria (solo se popolata).
   if (f.section === 'retros') {
@@ -14640,7 +14947,8 @@ function openFigDetail(figId) {
   }
   // Nome — tutte le sezioni, quando presente (hide-empty).
   if (f.name) {
-    rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome' : 'Name')}</span><span class="detail-value">${esc(f.name)}</span></div>`);
+    const _rowNome = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome' : 'Name')}</span><span class="detail-value">${esc(f.name)}</span></div>`;
+    (_mobileDetail ? rowsTop : rows).push(_rowNome);
   }
 
   // Sottoserie - show only if populated (admin sees it always in edit modal, not here)
@@ -14650,7 +14958,7 @@ function openFigDetail(figId) {
 
   // Punteggio
   if (f.score > 0 || isAdmin) {
-    rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Punteggio' : 'Score'}</span><span class="detail-value">${f.score > 0 ? '⭐ ' + f.score + ' pt' : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non assegnato' : 'not assigned') + '</span>'}</span></div>`);
+    (_mobileDetail ? { push: v => { _rowScoreMobile = v; } } : rows).push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Punteggio' : 'Score'}</span><span class="detail-value">${f.score > 0 ? '⭐ ' + f.score + ' pt' : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non assegnato' : 'not assigned') + '</span>'}</span></div>`);
   }
 
   // Da vendere: spostato nel tab Ebay, vedi sotto
@@ -14786,7 +15094,15 @@ function openFigDetail(figId) {
     </div>`;
   }
 
-  if (isAdmin) {
+  // v5.832 — la sezione Ebay del dettaglio (tab "Ebay" + foto Ebay) e' roba da admin: su telefono
+  // non si fa amministrazione, quindi qui si prende il ramo dell'utente normale e i tab non
+  // vengono nemmeno costruiti. Sul desktop l'admin li vede come sempre.
+  // v5.834 — telefono: Punteggio subito sotto le foto (in testa alle righe), Numero e Nome sopra.
+  if (_mobileDetail && _rowScoreMobile) rows.unshift(_rowScoreMobile);
+  const topEl = document.getElementById('fig-detail-top');
+  if (topEl) topEl.innerHTML = _mobileDetail ? rowsTop.join('') : '';
+
+  if (isAdmin && !_isMobileViewport()) {
     const conditionLabel = f.condition === 'used' ? (currentLang === 'it' ? 'Usato' : 'Used') : (currentLang === 'it' ? 'Nuovo' : 'New');
     const ebayRows = [];
     ebayRows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Ebay' : 'For sale'}</span><span class="detail-value">${f.forSale ? `<span style="color:var(--success);">✓ €${(f.price||0).toFixed(2)} · ${currentLang === 'it' ? 'Q.tà' : 'Qty'} ${f.quantity||1} · ${conditionLabel}</span>` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'no' : 'no') + '</span>'}</span></div>`);
