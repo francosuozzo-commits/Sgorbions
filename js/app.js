@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.864 - Franco, pagina Profilo. (DESKTOP+MOBILE) La sezione "I tuoi numeri Sgorbions" sale
+//          SOPRA "Preferenze e-mail" (spostamento nell'HTML, vale ovunque). (MOBILE) Nell'intesta-
+//          zione l'avatar va a destra e il nome a sinistra, alla stessa altezza (row-reverse +
+//          align flex-start); i pulsanti "Cambia nome utente" / "Cambia nazionalità" / password si
+//          impilano uno sotto l'altro a tutta larghezza. Modificato index.html, css/style.css.
+// ------------------------------------------------------------
 // v5.863 - Franco, navbar da telefono. (1) Annullata la fascia del logo sotto la navbar (v5.842):
 //          il logo torna DENTRO la barra, come sul desktop, con img a 30px. Tolti anche gli offset
 //          che facevano scendere banner e pagine per far posto alla fascia. (2) Via il NOME UTENTE
@@ -8634,7 +8640,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.863';
+const JS_VERSION = 'v5.864';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
