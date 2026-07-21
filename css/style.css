@@ -509,6 +509,15 @@ body {
 
 .fig-body { padding: 0.9rem 1rem 1rem; flex: 1; display: flex; flex-direction: column; }
 .fig-body > .fig-actions { margin-top: auto; }
+
+/* v5.873 — card SENZA foto: il riquadro "FOTO NON DISPONIBILE" non ha piu' aspect-ratio fisso
+   (che lo teneva quadrato e piccolo) ma si ESPANDE a riempire l'altezza della card. Poiche' nella
+   griglia le card della stessa riga sono alte uguali (align-items:stretch), il placeholder cresce
+   fin quasi all'altezza del box-foto piu' alto della riga (le coppie fronte/retro). Il body torna
+   a dimensione naturale, cosi' non compete col riquadro per lo spazio. */
+.fig-card--noimg { justify-content: flex-start; }
+.fig-card--noimg .fig-img-placeholder { aspect-ratio: auto !important; flex: 1 1 auto; min-height: 120px; }
+.fig-card--noimg .fig-body { flex: 0 0 auto; }
 .fig-number { font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; }
 .fig-name { font-family: var(--font-ui); font-size: 1.05rem; color: var(--text); }
 .fig-toggle {
@@ -1060,6 +1069,9 @@ footer {
 }
 .fig-act { display: inline-flex; align-items: center; gap: 0.35rem; }
 .fig-act-label { font-size: 0.78rem; color: var(--muted); }
+/* v5.873 — il toggle "Mia lista" nella card era piu' massiccio del cuore e della bandierina:
+   ridotto a dimensioni allineate agli altri due controlli del trittico. */
+#items-grid .fig-act-mylist .owned-btn { width: 30px; height: 20px; font-size: 0.72rem; }
 .fig-act-report { margin-left: 0; }
 /* v5.871 — su DESKTOP le tre azioni (Mia lista / Ciò che cerco / Errore) giustificate a destra,
    tutte insieme, così i controlli sono allineati fra card vicine (prima "Errore" era spinto da
