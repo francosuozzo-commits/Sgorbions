@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.872 - Franco: (1) PLACEHOLDER "FOTO NON DISPONIBILE" quando manca la foto della figurina.
+//          Prima il fallback era un box piccolo centrato che lasciava vuoto attorno e rompeva
+//          l'uniformita' delle card; ora e' un riquadro GRIGIO PIENO (testo bianco bold, .fig-noimg)
+//          che occupa tutta l'area immagine come una foto vera. Testo per lingua: "FOTO NON
+//          DISPONIBILE" / "PHOTO NOT AVAILABLE". (2) Box "Bustine" nella pagina serie: al posto
+//          dell'emoji un disegno a tratto (SVG) di due bustine, come segnaposto finche' non arriva
+//          l'immagine definitiva. Modificato index.html, js/app.js, css/style.css.
+// ------------------------------------------------------------
 // v5.871 - Franco: su DESKTOP le tre azioni della card (Mia lista / Cio' che cerco / Errore)
 //          giustificate a destra tutte insieme, cosi' i controlli (toggle, cuore, bandierina)
 //          restano incolonnati e allineati fra card vicine. Prima "Errore" era spinto da solo a
@@ -8696,7 +8704,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.871';
+const JS_VERSION = 'v5.872';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -13267,7 +13275,11 @@ function renderItems() {
       }
     }
     if (!imgHTML) {
-      imgHTML = displayImg ? `<img src="${cloudinaryUrl(displayImg)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:8px;text-align:center;"><span style="font-size:1.5rem;">${icon}</span><span style="font-size:0.6rem;color:var(--muted);line-height:1.2;">Foto non ancora disponibile</span></div>`;
+      // v5.872 — quando manca la foto, un placeholder GRIGIO PIENO "FOTO NON DISPONIBILE" che
+      // riempie tutto il riquadro come una foto vera: cosi' il box immagine ha sempre area piena
+      // e le card restano uniformi (prima il fallback era un box piccolo centrato che lasciava
+      // spazio vuoto attorno).
+      imgHTML = displayImg ? `<img src="${cloudinaryUrl(displayImg)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div class="fig-noimg">${currentLang === 'it' ? 'FOTO NON DISPONIBILE' : 'PHOTO NOT AVAILABLE'}</div>`;
     }
     // Il badge distingue ora le due variazioni, invece di accorparle in un
     // generico "Variazione" che non diceva quale delle due fosse — proprio la sola
