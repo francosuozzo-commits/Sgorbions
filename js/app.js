@@ -1,6 +1,14 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.859 - Franco. NOTA della homepage (IT+EN) riscritta ancora: "Il puro scopo del sito e'
+//          mettere..." -> "Vogliamo mettere i collezionisti di tutto il mondo in contatto tra
+//          loro, e consentire loro di cercare materiale non in loro possesso, trovando altri
+//          collezionisti con cui fare scambi." MOBILE: (a) la bandiera della lingua nella navbar
+//          da 32x21 a 24x16 - su una barra affollata rubava spazio ai comandi di destra. (b) il
+//          footer "2026 figurinesgorbions.it — Privacy Policy" va su DUE righe (via il trattino):
+//          copyright sopra, link sotto. Modificato index.html, js/app.js, css/style.css.
+// ------------------------------------------------------------
 // v5.858 - Franco, homepage, testi e ritocchi.
 //          TESTI (mobile+desktop, IT+EN): tolto "definitivo"/"ultimate" dalla tagline ("Il
 //          database non ufficiale dedicato..."). La NOTA e' riscritta: via "Non e' un sito di
@@ -8600,7 +8608,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.858';
+const JS_VERSION = 'v5.859';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9458,7 +9466,7 @@ const i18n = {
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
 'hero.challenge':'Challenge others','hero.challengeDesc':'Who has the biggest list? You can also choose to appear anonymously.',
 'hero.desc':'The unofficial database dedicated to the legendary Italian sticker series of the \'90s.',
-'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. The sole purpose of the site is to connect collectors from around the world, allowing them to search for items they do not own and find other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
+'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
 'hero.cta1':'Explore the Sgorbions Inventory!','hero.cta2':'Start collecting Sgorbions',
 'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat3':'Collectors',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
@@ -9566,7 +9574,7 @@ const i18n = {
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
+    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri oggetti','hero.stat3':'Collezionisti',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
