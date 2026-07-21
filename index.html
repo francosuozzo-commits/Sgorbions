@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.863"></script>
-<link rel="stylesheet" href="css/style.css?v=5.863">
+<script src="js/email.min.js?v=5.864"></script>
+<link rel="stylesheet" href="css/style.css?v=5.864">
 
 </head>
 <body>
@@ -24,7 +24,7 @@
     <div style="display:flex;flex-direction:column;justify-content:center;flex-shrink:0;margin-right:1.5rem;">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.863</span>
+        <span style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.864</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -205,7 +205,7 @@
           </div>
           <div id="detail-meta" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;margin:0.4rem 0 0.6rem;font-size:0.82rem;color:var(--text);"></div>
           <p class="series-description" id="detail-desc"></p>
-          <!-- v5.863 — comando "Mostra tutto / Mostra meno" per la descrizione: solo telefono,
+          <!-- v5.864 — comando "Mostra tutto / Mostra meno" per la descrizione: solo telefono,
                mostrato da openSeriesDetail() quando il testo e' lungo. -->
           <button id="detail-desc-toggle" type="button" onclick="toggleSeriesDesc()" style="display:none;background:none;border:none;padding:0;color:var(--accent);font-family:var(--font-ui);font-size:0.8rem;cursor:pointer;text-decoration:underline;"></button>
         </div>
@@ -310,7 +310,7 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:0.75rem;">
-      <!-- v5.863 — toggle "Mostra nomi" / "Nascondi nomi", SOLO TELEFONO. Contenuto reso da
+      <!-- v5.864 — toggle "Mostra nomi" / "Nascondi nomi", SOLO TELEFONO. Contenuto reso da
            renderItems(): visibile sotto gli 860px, solo nella sezione Figurine e solo se la serie
            ha i numeri (flag noNumbers). Sul desktop non compare mai. -->
       <div id="fig-label-selector" style="display:none;align-items:center;gap:0.5rem;"></div>
@@ -641,12 +641,18 @@
           <div id="must-change-pwd-banner" style="display:none;background:rgba(var(--warn-rgb),0.15);border:1px solid rgba(var(--warn-rgb),0.4);color:var(--warn);padding:0.5rem 1rem;border-radius:8px;font-size:0.85rem;margin-bottom:0.5rem;">⚠️ Stai usando una password temporanea. <button onclick="openChangePwdModal()" style="background:none;border:none;color:var(--warn);text-decoration:underline;cursor:pointer;font-size:0.85rem;">Cambiala subito!</button></div>
           <h2 id="profile-username">Nickname</h2>
           <p id="profile-email" style="color:var(--muted);font-size:1rem;"></p>
-          <div style="margin-top:0.5rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+          <div id="profile-actions-row" style="margin-top:0.5rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
             <div id="profile-nationality-display" style="font-size:1rem;color:var(--muted);"></div>
             <button onclick="openUsernameModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.changeUsername">✏️ Cambia nome utente</button>
             <button id="profile-change-nat-btn" onclick="openNationalityModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;">✏️ Cambia nazionalità</button>
             <button id="profile-change-pwd-btn" onclick="openChangePwdModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.changePwd">🔑 Cambia password</button>
           </div>
+          <div id="profile-stats-title" style="font-size:0.95rem;color:var(--text);margin-top:0.75rem;margin-bottom:0.3rem;" data-i18n="profile.statsTitle">I tuoi numeri Sgorbions</div>
+          <div class="profile-stats" id="profile-stats-box" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;margin-top:0;">
+            <div><div class="profile-stat-num" id="profile-owned">0</div><div class="profile-stat-label" data-i18n="profile.owned">Figurines Owned</div></div>
+            <div><div class="profile-stat-num" id="profile-series-count">0</div><div class="profile-stat-label" data-i18n="profile.series">Series Tracked</div></div>
+          </div>
+          <p style="font-size:0.78rem;color:var(--muted);font-style:italic;margin-top:0.4rem;" data-i18n="profile.myListHint">La tua lista personale: cosa significhi per te lo decidi solo tu, non è visibile né interpretabile da altri utenti.</p>
           <!-- PREFERENZE E-MAIL (consenso newsletter, revocabile in ogni momento) -->
           <div id="profile-email-prefs-wrap" style="display:none;">
             <div style="font-size:0.95rem;color:var(--text);margin-top:0.75rem;margin-bottom:0.3rem;" data-i18n="profile.emailPrefs.title">Preferenze e-mail</div>
@@ -658,12 +664,6 @@
               <p style="font-size:0.85rem;color:var(--muted);margin:0.4rem 0 0 2.2rem;line-height:1.5;" data-i18n-html="profile.newsletter.hint">Ricevi le ultime novità sull'inventario degli Sgorbions.<br>Puoi attivarla o disattivarla quando vuoi.</p>
             </div>
           </div>
-          <div id="profile-stats-title" style="font-size:0.95rem;color:var(--text);margin-top:0.75rem;margin-bottom:0.3rem;" data-i18n="profile.statsTitle">I tuoi numeri Sgorbions</div>
-          <div class="profile-stats" id="profile-stats-box" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;margin-top:0;">
-            <div><div class="profile-stat-num" id="profile-owned">0</div><div class="profile-stat-label" data-i18n="profile.owned">Figurines Owned</div></div>
-            <div><div class="profile-stat-num" id="profile-series-count">0</div><div class="profile-stat-label" data-i18n="profile.series">Series Tracked</div></div>
-          </div>
-          <p style="font-size:0.78rem;color:var(--muted);font-style:italic;margin-top:0.4rem;" data-i18n="profile.myListHint">La tua lista personale: cosa significhi per te lo decidi solo tu, non è visibile né interpretabile da altri utenti.</p>
           <div id="profile-anon-wrap" style="display:none;margin-top:0.75rem;">
             <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;font-size:0.88rem;color:var(--muted);">
               <input type="checkbox" id="profile-anon-toggle" onchange="saveAnonSetting()" style="width:16px;height:16px;cursor:pointer;">
@@ -1154,7 +1154,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.863</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.864</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1707,7 +1707,7 @@
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 320px;gap:2rem;align-items:start;">
-      <!-- v5.863 — contenitore per le righe che su TELEFONO vanno SOPRA le foto (Numero, Nome).
+      <!-- v5.864 — contenitore per le righe che su TELEFONO vanno SOPRA le foto (Numero, Nome).
            Sul desktop resta vuoto e il CSS lo tiene nascosto: nessun effetto. -->
       <div id="fig-detail-top"></div>
       <div id="fig-detail-content"></div>
@@ -1838,7 +1838,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.863"></script>
+<script src="js/app.js?v=5.864"></script>
 <script>
 /* Rete di sicurezza contro la cache.
    index.html non viene praticamente mai servito dalla cache; app.js e style.css
@@ -1847,7 +1847,7 @@
    "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
    Questo controllo lo trasforma in un messaggio esplicito in console. */
 (function () {
-  var expected = 'v5.863'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.864'; // deve coincidere con JS_VERSION in app.js
   if (typeof JS_VERSION === 'undefined') {
     console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
     return;
@@ -1883,7 +1883,7 @@ document.addEventListener('click', function (e) {
 });
 window.addEventListener('resize', function () { if (window.innerWidth > 860) closeNavMenu(); });
 
-/* ===== v5.863 — Vista tabellare non disponibile sotto gli 860px =====
+/* ===== v5.864 — Vista tabellare non disponibile sotto gli 860px =====
    Il pulsante "Vista tabellare" e' gia' nascosto dal CSS, quindi da telefono non si
    attiva. Questa guardia copre l'unico caso rimasto: la vista era attiva su desktop e
    la finestra viene ristretta sotto la soglia -> si torna automaticamente alla griglia. */
