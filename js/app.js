@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.858 - Franco, homepage, testi e ritocchi.
+//          TESTI (mobile+desktop, IT+EN): tolto "definitivo"/"ultimate" dalla tagline ("Il
+//          database non ufficiale dedicato..."). La NOTA e' riscritta: via "Non e' un sito di
+//          vendita", e "contenute in questo sito"->"contenute nel sito". La coppia di numeri
+//          dell'hero da "Le mie / Totale" a "Mia lista / Totale Inventario" (EN: My list / Total
+//          Inventory).
+//          MOBILE: (a) l'immaginone SGORBIONS sotto il banner rimpicciolito (max 320px, 65% invece
+//          di 700px/90%). (b) il bottone "Esplora l'Inventario Sgorbions!" su una riga sola
+//          (font 1rem, white-space:nowrap). (c) la coppia "Mia lista / Totale" tolta dall'hero
+//          (#stat-owned-wrap nascosto): il dato resta nel profilo. Sul desktop la coppia resta,
+//          solo rinominata. Modificato index.html, js/app.js, css/style.css.
+// ------------------------------------------------------------
 // v5.857 - CORREZIONE URGENTE di un bug introdotto con la v5.854: su telefono, nella pagina
 //          Figurine, il conteggio diceva "N trovati" ma al posto della griglia compariva il
 //          segnaposto "nessun risultato". Causa: la condizione "solo fronte col filtro base"
@@ -8588,7 +8600,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.857';
+const JS_VERSION = 'v5.858';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9443,10 +9455,10 @@ const i18n = {
 'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to your list','catalog.havenone':'Remove search results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
-'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'Mine / Total',
+'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
 'hero.challenge':'Challenge others','hero.challengeDesc':'Who has the biggest list? You can also choose to appear anonymously.',
-'hero.desc':'The ultimate unofficial database dedicated to the legendary Italian sticker series of the \'90s.',
-'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. It is not a sales site. The sole purpose of the site is to connect collectors from around the world, allowing them to search for items they do not own and find other collectors to trade with.<br><br>The information on this site represents the knowledge of the administrator and does not claim to be official information.',
+'hero.desc':'The unofficial database dedicated to the legendary Italian sticker series of the \'90s.',
+'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. The sole purpose of the site is to connect collectors from around the world, allowing them to search for items they do not own and find other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
 'hero.cta1':'Explore the Sgorbions Inventory!','hero.cta2':'Start collecting Sgorbions',
 'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat3':'Collectors',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
@@ -9553,8 +9565,8 @@ const i18n = {
 
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
-    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Le mie / Totale','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale definitivo dedicato alla leggendaria serie italiana degli anni \'90.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Non è un sito di vendita. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute in questo sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
+    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.',
+    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Il puro scopo del sito è mettere i collezionisti di tutto il mondo in contatto tra loro, oltre che consentire loro di cercare materiale non in loro possesso, e trovare altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri oggetti','hero.stat3':'Collezionisti',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
