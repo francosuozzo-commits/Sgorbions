@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.860 - Franco (mobile+desktop), sezione "Le mie liste" (mancolista): i collassatori delle
+//          singole serie partono ora CHIUSI. Prima _wantlistCollapsed[sId] era undefined finche'
+//          non si cliccava, e undefined contava come "aperto": tutte le serie si aprivano da sole
+//          all'ingresso. Ora una serie e' aperta solo se il suo valore e' esplicitamente false;
+//          undefined (mai toccata) e true valgono entrambi "chiusa". Cambiate le tre letture (il
+//          toggle, il glifo ▶/▼ e la guardia del contenuto) di conseguenza. Solo js/app.js.
+// ------------------------------------------------------------
 // v5.859 - Franco. NOTA della homepage (IT+EN) riscritta ancora: "Il puro scopo del sito e'
 //          mettere..." -> "Vogliamo mettere i collezionisti di tutto il mondo in contatto tra
 //          loro, e consentire loro di cercare materiale non in loro possesso, trovando altri
@@ -8608,7 +8615,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.859';
+const JS_VERSION = 'v5.860';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -19361,7 +19368,9 @@ async function submitWishlist() {
 const _wantlistCollapsed = {}; // seriesId -> bool
 
 function toggleWantlistCollapse(sId) {
-  _wantlistCollapsed[sId] = !_wantlistCollapsed[sId];
+  // v5.860 — default CHIUSO: una serie e' considerata aperta solo se _wantlistCollapsed[sId]
+  // vale esplicitamente false. Undefined (mai toccata) e true contano entrambi come "chiusa".
+  _wantlistCollapsed[sId] = (_wantlistCollapsed[sId] === false) ? true : false;
   renderWantlist();
 }
 const wantlistMode = {};
@@ -19452,7 +19461,7 @@ function renderWantlist() {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.4rem;">
           <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
             <span style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;cursor:pointer;" onclick="toggleWantlistCollapse('${sId}')">
-              <span style="font-size:0.8rem;color:var(--muted);user-select:none;">${_wantlistCollapsed[sId] ? '▶' : '▼'}</span>
+              <span style="font-size:0.8rem;color:var(--muted);user-select:none;">${_wantlistCollapsed[sId] === false ? '▼' : '▶'}</span>
               <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')}</span>
               <span class="card-badge" style="color:#5ec8f0;">${figurinesOnlyMissing} ${currentLang === 'it' ? 'figurine non nella tua lista su' : 'stickers not in my list out of'} ${figurinesOnlyTotal}</span>
             </span>
@@ -19469,7 +19478,7 @@ function renderWantlist() {
         ${!excMissing ? '<div class="progress-bar" style="margin-bottom:0.5rem;"><div class="progress-fill" style="width:' + Math.round(ownedCount/figurinesOnlyTotal*100) + '%"></div></div>' : ''}
         `;
       })()}
-      ${(() => { if (_wantlistCollapsed[sId]) return ''; const prefs = getWantlistPrefs(); if (prefs[sId]?.excludeMissing) return '<p style="color:var(--muted);font-size:0.82rem;font-style:italic;">' + (currentLang === 'it' ? 'Esclusa dalla mancolista.' : 'Excluded from missing list.') + '</p>'; const sectionOrder = ['figurines', 'retros', 'albums', 'extras']; return Object.entries(bySection).sort(([secA], [secB]) => sectionOrder.indexOf(secA) - sectionOrder.indexOf(secB)).map(([sec, items]) => {
+      ${(() => { if (_wantlistCollapsed[sId] !== false) return ''; const prefs = getWantlistPrefs(); if (prefs[sId]?.excludeMissing) return '<p style="color:var(--muted);font-size:0.82rem;font-style:italic;">' + (currentLang === 'it' ? 'Esclusa dalla mancolista.' : 'Excluded from missing list.') + '</p>'; const sectionOrder = ['figurines', 'retros', 'albums', 'extras']; return Object.entries(bySection).sort(([secA], [secB]) => sectionOrder.indexOf(secA) - sectionOrder.indexOf(secB)).map(([sec, items]) => {
         const groupKey = sId + '_' + sec;
         const mode = wantlistMode[groupKey] || 'both';
         const hasNumbers = items.some(f => f.number);
