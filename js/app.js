@@ -1,6 +1,30 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.854 - Franco: la griglia figurine su telefono passa da QUATTRO COLONNE FISSE a "quante ne
+//          stanno, larghe almeno 100px" (auto-fill minmax(100px,1fr)). Sono tre su un telefono da
+//          360px e quattro dai ~440 in su: tre e' il minimo, non il numero. Le quattro fisse
+//          della v5.825 andavano bene a 390 ma su un telefono stretto schiacciavano le card a
+//          ~80px. Con card sui 110px i testi tornano a 0.72rem (erano 0.68). Solo css/style.css.
+// ------------------------------------------------------------
+// v5.853 - Franco, pagina Figurine da telefono.
+//          (1) Col filtro "Figurine set base" acceso si mostra SOLO IL FRONTE: sono tutte
+//          figurine base, quindi affiancare il retro dimezzava il fronte senza aggiungere
+//          informazione. Fuori da quel filtro, e sul desktop, la coppia fronte+retro resta.
+//          (2) Il BADGE del tipo ("Variazione ufficiale", "Change", "Errore di stampa") esce dal
+//          riquadro della foto - dove, in posizione assoluta, copriva l'immagine - e va in una
+//          fascia SOPRA di essa. La fascia c'e' SEMPRE, anche sulle figurine base che il badge
+//          non ce l'hanno: e' vuota, ma tiene lo spazio, altrimenti le loro card sarebbero piu'
+//          corte e la griglia si disallineerebbe. Altezza fissa, calcolata sul caso peggiore
+//          (badge a due righe, "Variazione / non ufficiale").
+//          (3) Paginazione: i quattro tasti Prima/Precedente/Successiva/Ultima stanno su una
+//          riga sola e l'etichetta "Pagina N di M" va a capo sotto. Solo mobile.
+//          (4) I filtri di possesso tornano col nome per esteso (la v5.852 li aveva accorciati in
+//          "Presenti"/"Mancanti"): a fare spazio ci pensa il filtro "Senza foto", che su telefono
+//          non compare piu'. E' un filtro di servizio, e vale la pena toglierne uno intero
+//          piuttosto che amputare il nome di due.
+//          Modificato js/app.js, css/style.css.
+// ------------------------------------------------------------
 // v5.852 - Franco, etichette dei filtri nella pagina Figurine.
 //          (1) "Tutti" diventa "Tutte", su telefono E su desktop: il filtro parla di figurine,
 //          che sono femminili. (Solo l'italiano: in inglese resta "All".)
@@ -8535,7 +8559,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.852';
+const JS_VERSION = 'v5.854';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12313,17 +12337,19 @@ function renderItemTypeFilters() {
     // in FILA, non in colonna: stanno comodamente su una riga sola (wrap se serve).
     let h2 = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;">';
     if (currentUser) {
-      // v5.852 — su telefono le etichette si accorciano, altrimenti i due filtri non stanno
-      // sulla stessa riga: "Presenti nella tua lista" + "Mancanti dalla tua lista" sono 45
-      // caratteri, e il contesto (il riquadro "La tua ricerca") rende il resto superfluo.
-      const _mobOwned = _isMobileViewport();
-      h2 += itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')",
-        itl ? (_mobOwned ? 'Presenti' : 'Presenti nella tua lista') : (_mobOwned ? 'In list' : 'In my list'));
-      h2 += itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')",
-        itl ? (_mobOwned ? 'Mancanti' : 'Mancanti dalla tua lista') : (_mobOwned ? 'Missing' : 'Missing from my list'));
+      // v5.853 — le etichette tornano per esteso anche su telefono (la v5.852 le aveva
+      // accorciate in "Presenti"/"Mancanti"): a fare spazio ci pensa il filtro "Senza foto",
+      // che su telefono non compare piu' (vedi sotto). Meglio togliere un filtro intero che
+      // amputare il nome di due.
+      h2 += itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')", itl ? 'Presenti nella tua lista' : 'In my list');
+      h2 += itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')", itl ? 'Mancanti dalla tua lista' : 'Missing from my list');
     }
-    const senzaFoto = _noPhotoFilter ? (itl ? 'Con foto' : 'With photo') : (itl ? 'Senza foto' : 'Without photo');
-    h2 += itemToggle(_noPhotoFilter, `setNoPhotoFilter(${!_noPhotoFilter})`, senzaFoto);
+    // v5.853 — il filtro "Senza foto" su telefono non compare: e' un filtro di servizio, e la
+    // riga serve tutta ai due filtri di possesso, che tornano cosi' col nome per esteso.
+    if (!_isMobileViewport()) {
+      const senzaFoto = _noPhotoFilter ? (itl ? 'Con foto' : 'With photo') : (itl ? 'Senza foto' : 'Without photo');
+      h2 += itemToggle(_noPhotoFilter, `setNoPhotoFilter(${!_noPhotoFilter})`, senzaFoto);
+    }
     h2 += '</div>';
     elOwned.innerHTML = h2;
     elOwned.style.display = 'flex';
@@ -12964,10 +12990,10 @@ function renderItems() {
     const label = currentLang === 'it'
       ? `Pagina ${cur} di ${tot}${rangeStr} &nbsp;|&nbsp; ${total} ${sectionLabelLower}`
       : `Page ${cur} of ${tot}${rangeStr} &nbsp;|&nbsp; ${total} total`;
-    return `<div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+    return `<div class="pag-row" style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
       ${cur > 1 ? `<button onclick="changeItemPage(1)" class="btn-secondary" style="padding:0.4rem 1rem;">⏮ ${currentLang === 'it' ? 'Prima' : 'First'}</button>` : ''}
       <button onclick="changeItemPage(${cur - 1})" ${cur === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ ${currentLang === 'it' ? 'Precedente' : 'Previous'}</button>
-      <span style="font-family:var(--font-ui);color:var(--text);font-size:0.9rem;">${label}</span>
+      <span class="pag-label" style="font-family:var(--font-ui);color:var(--text);font-size:0.9rem;">${label}</span>
       <button onclick="changeItemPage(${cur + 1})" ${cur === tot ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Successiva' : 'Next'} ▶</button>
       ${cur < tot ? `<button onclick="changeItemPage(${tot})" class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Ultima' : 'Last'} ⏭</button>` : ''}
     </div>`;
@@ -13027,7 +13053,11 @@ function renderItems() {
     // (così sulla card mostra comunque il retro della base). retro effettivo = proprio || della base.
     const _baseForChange = (f.isChange && f.baseFigurineId) ? (baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId)) : null;
     const _effRetroId = f.isChange ? (f.retroId || _baseForChange?.retroId || null) : f.retroId;
-    if (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && f.retroId) || (f.isChange && f.baseFigurineId && _effRetroId) || (isBaseFig && f.retroId)) {
+    // v5.853 — su telefono, col filtro "Figurine set base" attivo si mostra SOLO IL FRONTE.
+    // Sono tutte figurine base, quindi affiancare il retro dimezza il fronte senza aggiungere
+    // informazione. Fuori da quel filtro, e sul desktop, la coppia fronte+retro resta.
+    const _soloFronte = _mobileFigCard && _itemTypeFilter === 'base';
+    if (!_soloFronte && (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && f.retroId) || (f.isChange && f.baseFigurineId && _effRetroId) || (isBaseFig && f.retroId))) {
       const baseFigDual = isBaseFig ? f : (baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId));
       const retroFigDual = getData('figurines', []).find(x => x.id === _effRetroId);
       if (baseFigDual?.img && retroFigDual?.img) {
@@ -13204,8 +13234,9 @@ function renderItems() {
       : 'cursor:pointer;';
     const finalAspectRatio = hasWidePair ? '2' : imgAspectRatio;
     return `<div class="fig-card" onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="${cardSpanStyle}">
+      ${_mobileFigCard ? `<div class="fig-badge-row">${typeBadgeHTML}</div>` : ''}
       <div class="fig-img-placeholder" style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
-        ${imgHTML}${typeBadgeHTML}${adminBtns}
+        ${imgHTML}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}
       </div>
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
