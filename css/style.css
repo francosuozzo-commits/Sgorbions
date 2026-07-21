@@ -1008,6 +1008,11 @@ footer {
    naturale dentro quella larghezza: nessun legame con l'altezza del testo.
    Sul telefono non si applica: li' il modale e' a colonna singola. */
 @media (min-width: 861px) {
+  /* v5.866 — logo SGORBIONS della navbar allargato in orizzontale (~12%): sembrava un po'
+     schiacciato in larghezza e nella barra c'e' spazio. object-fit:fill + width fissa stira
+     l'immagine solo in orizzontale, l'altezza resta 36px. Solo desktop. */
+  #navbar .nav-logo img { width: 150px !important; height: 36px !important; object-fit: fill; }
+
   /* v5.846 — il RETRO ha piu' larghezza del fronte: le due foto non hanno le stesse
      proporzioni (il retro e' tipicamente piu' largo che alto), quindi a parita' di colonna
      rendeva un'immagine visivamente piu' piccola. Il fronte resta com'e' - Franco lo da' per
@@ -1026,6 +1031,17 @@ footer {
     display: flex; flex-direction: column; justify-content: center;
   }
 }
+
+/* ---- v5.867 — CARD FIGURINA: azioni etichettate (Mia lista / Ciò che cerco / Errore?) ----
+   Su DESKTOP le tre azioni stanno su UNA riga: prima il tipo, poi "Mia lista" e "Ciò che cerco"
+   vicini, e "Errore?" spinto a destra (margin-left:auto). Su MOBILE si impilano (vedi @media).
+   Ogni azione è etichetta + controllo, così cuore e bandierina non sono più muti. */
+.fig-actions {
+  display: flex; align-items: center; gap: 0.5rem 0.9rem; flex-wrap: wrap; margin-top: 0.4rem;
+}
+.fig-act { display: inline-flex; align-items: center; gap: 0.35rem; }
+.fig-act-label { font-size: 0.78rem; color: var(--muted); }
+.fig-act-report { margin-left: auto; }
 
 /* ============================================================
    SEZIONE MOBILE — sempre in FONDO al file
@@ -1366,6 +1382,13 @@ footer {
   .pag-row { gap: 0.35rem !important; margin-bottom: 0.7rem !important; }
   .pag-row .btn-secondary { padding: 0.35rem 0.5rem !important; font-size: 0.72rem; }
   .pag-row .pag-label { order: 1; flex-basis: 100%; text-align: center; font-size: 0.72rem !important; }
+
+  /* v5.867 — le tre azioni (Mia lista / Ciò che cerco / Errore?) IMPILATE su telefono, una per
+     riga: la card è stretta e in fila non ci stavano. "Errore?" torna in colonna (no margin auto). */
+  #items-grid .fig-actions { flex-direction: column; align-items: stretch; gap: 0.25rem; }
+  #items-grid .fig-act { justify-content: space-between; gap: 0.4rem; }
+  #items-grid .fig-act-label { font-size: 0.6rem; }
+  #items-grid .fig-act-report { margin-left: 0; }
 
   /* v5.829 — punteggio accanto al numero, stesso corpo del numero; il nome va sotto */
   #items-grid .fig-score-inline { font-size: 0.72rem; color: var(--accent); margin-left: 0.3rem; white-space: nowrap; }
