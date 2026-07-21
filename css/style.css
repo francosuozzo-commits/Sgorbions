@@ -1114,6 +1114,14 @@ footer {
   .stat-num { font-size: 1.6rem; }
   .stat-label { font-size: 0.75rem; }
 
+  /* v5.855 — via il vuoto fra i numeri verdi e i blocchi sotto. Erano tre spazi sommati:
+     il fondo della sezione hero (2rem), il padding in cima alla sezione successiva (2.5rem
+     dal breakpoint 768) e il margine sotto la sua intestazione (3rem). Su telefono valgono
+     insieme quasi 120px di nulla. */
+  #hero { padding-bottom: 0.5rem !important; }
+  #home-logged-in-content > .section:first-of-type { padding-top: 0.75rem; }
+  #home-logged-in-content .section-header { margin-bottom: 1rem; }
+
   #home-how-grid { grid-template-columns: 1fr !important; font-size: 1em !important; }
   #home-how-grid > div { padding: 1rem 1.1rem !important; text-align: left !important; }
   #home-how-grid > div > div:first-child { font-size: 1.8rem !important; margin-bottom: 0.4rem !important; }
@@ -1134,6 +1142,14 @@ footer {
   #classifica-grid > div:last-child { order: -1; }
 
   #page-classifica .section-title { font-size: 1.25rem; line-height: 1.25; }
+
+  /* v5.857 — tabella dei livelli più fitta: le righe sono corte (nome e punteggio), il
+     respiro del desktop qui diventa solo lunghezza da scorrere */
+  #classifica-levels-table .data-table td,
+  #classifica-levels-table .data-table th {
+    padding: 0.12rem 0.5rem; font-size: 0.78rem; line-height: 1.25;
+  }
+  #classifica-grid > div:last-child h3 { margin-bottom: 0.5rem !important; }
 
   .cl-row {
     display: grid !important;
@@ -1221,6 +1237,16 @@ footer {
     line-height: 1.25;
   }
   .series-description  { grid-row: 3; grid-column: 1 / -1; margin-bottom: 0; } /* descrizione */
+
+  /* v5.856 — descrizione richiudibile: da chiusa si ferma a tre righe con i puntini.
+     line-clamp taglia sul RIGO, non sul carattere, quindi non spezza le parole a meta'. */
+  .series-description.desc-collapsed {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  #detail-desc-toggle { grid-row: 4; grid-column: 1 / -1; justify-self: start; margin-top: 0.15rem; }
   .series-name { font-size: 1.5rem; margin-bottom: 0; }
 
   /* (2) i quattro box su una sola riga */
