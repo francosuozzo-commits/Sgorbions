@@ -1,6 +1,19 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.867 - Franco (mobile+desktop), card figurina: il CUORE e la BANDIERINA erano muti, ora sono
+//          ETICHETTATI. Le azioni in fondo alla card diventano tre gruppi "etichetta + controllo":
+//          "Mia lista" (toggle), "Ciò che cerco" (cuore), "Errore?" (bandierina 🚩). Su DESKTOP
+//          stanno su una riga - Mia lista e Ciò che cerco vicini, Errore? spinto a destra
+//          (margin-left:auto); su MOBILE si impilano uno sotto l'altro. La bandierina "Errore?"
+//          esce cosi' dalla riga del punteggio dov'era prima. Modificato js/app.js, css/style.css.
+//          [Incluso anche il logo navbar desktop allargato della v5.866.]
+// ------------------------------------------------------------
+// v5.866 - Franco (DESKTOP): il logo SGORBIONS della navbar sembrava un po' schiacciato in
+//          larghezza e nella barra c'e' spazio -> allargato in orizzontale con width fissa 150px e
+//          object-fit:fill, che stira solo l'orizzontale lasciando l'altezza a 36px. Solo desktop
+//          (min-width 861px); su telefono il logo resta a proporzioni naturali. Solo css/style.css.
+// ------------------------------------------------------------
 // v5.865 - Franco, navbar da telefono: nascosta la riga "vX.XXX · Online dal…" sotto il logo, che
 //          era tornata con la v5.863 quando il logo e' rientrato nella barra. Ora nella barra c'e'
 //          solo il logo, centrato. Sul desktop la riga resta. Solo css/style.css.
@@ -8644,7 +8657,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.865';
+const JS_VERSION = 'v5.867';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -13364,14 +13377,12 @@ function renderItems() {
         ${retroNameHTML}
         ${descHTML}
         ${sizeHTML}
-        <div style="display:flex;align-items:center;gap:0.5rem;">${_mobileFigCard ? '' : scoreHTML}${reportBtn}</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;">
-          ${typeIndicatorHTML}
-          <div class="fig-toggle" style="display:flex;align-items:center;gap:0.5rem;">
-            <span class="toggle-label">${t('owned.toggle')}</span>
-            <button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista \u2014 clicca per toglierla':'In your list \u2014 click to remove') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="event.stopPropagation();toggleOwned('${f.id}')">\u2713</button>
-            ${(currentUser && !currentUser.isAdmin) ? `<button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(_wishlist.includes(f.id)?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${_wishlist.includes(f.id)?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'var(--danger)':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">${_wishlist.includes(f.id)?'❤️':'♡'}</button>` : ''}
-          </div>
+        ${_mobileFigCard ? '' : `<div style="display:flex;align-items:center;gap:0.5rem;">${scoreHTML}</div>`}
+        <div class="fig-actions">
+        ${typeIndicatorHTML}
+        <div class="fig-act fig-act-mylist"><span class="fig-act-label">${t('owned.toggle')}</span><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista \u2014 clicca per toglierla':'In your list \u2014 click to remove') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="event.stopPropagation();toggleOwned('${f.id}')">\u2713</button></div>
+        ${(currentUser && !currentUser.isAdmin) ? `<div class="fig-act fig-act-wishlist"><span class="fig-act-label">${currentLang==='it'?'Ciò che cerco':'What I&#39;m looking for'}</span><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(_wishlist.includes(f.id)?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${_wishlist.includes(f.id)?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'var(--danger)':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">${_wishlist.includes(f.id)?'❤️':'♡'}</button></div>` : ''}
+        ${reportBtn ? `<div class="fig-act fig-act-report"><span class="fig-act-label">${currentLang==='it'?'Errore?':'Error?'}</span>${reportBtn}</div>` : ''}
         </div>
       </div>
     </div>`;
