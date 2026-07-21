@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.873 - Franco, card figurina. (1) Il toggle "Mia lista" era piu' grande del cuore e della
+//          bandierina: ridotto (30x20, font 0.72rem) per allinearlo agli altri due. (2) La foto
+//          finta "FOTO NON DISPONIBILE" ora si ESPANDE a riempire l'altezza della card invece di
+//          restare un quadratino: sulla card senza foto viene messa la classe .fig-card--noimg, il
+//          cui riquadro immagine perde l'aspect-ratio fisso e diventa flex:1. Poiche' nella riglia
+//          le card della stessa riga sono alte uguali (stretch), il placeholder cresce fin quasi
+//          all'altezza del box-foto piu' alto della riga (le coppie fronte/retro). E' un'ottima
+//          approssimazione: l'altezza esatta dipende dalle foto che caricano in modo asincrono.
+//          Modificato js/app.js, css/style.css.
+// ------------------------------------------------------------
 // v5.872 - Franco: (1) PLACEHOLDER "FOTO NON DISPONIBILE" quando manca la foto della figurina.
 //          Prima il fallback era un box piccolo centrato che lasciava vuoto attorno e rompeva
 //          l'uniformita' delle card; ora e' un riquadro GRIGIO PIENO (testo bianco bold, .fig-noimg)
@@ -8704,7 +8714,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.872';
+const JS_VERSION = 'v5.873';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -13217,6 +13227,7 @@ function renderItems() {
     // griglia. Esclusi i Change, che di solito differiscono nella parte frontale, non nel retro
     let imgHTML;
     let hasWidePair = false;
+    let _cardNoPhoto = false;  // v5.873
     const isBaseFig = currentSection === 'figurines' && !f.isVariation && !f.isUnofficialVariation && !f.isChange;
     // v5.786 — un Change può avere un proprio Retro; se non ce l'ha, usa quello della figurina base
     // (così sulla card mostra comunque il retro della base). retro effettivo = proprio || della base.
@@ -13279,6 +13290,7 @@ function renderItems() {
       // riempie tutto il riquadro come una foto vera: cosi' il box immagine ha sempre area piena
       // e le card restano uniformi (prima il fallback era un box piccolo centrato che lasciava
       // spazio vuoto attorno).
+      _cardNoPhoto = !displayImg;
       imgHTML = displayImg ? `<img src="${cloudinaryUrl(displayImg)}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;border-radius:0;padding:4px;">` : `<div class="fig-noimg">${currentLang === 'it' ? 'FOTO NON DISPONIBILE' : 'PHOTO NOT AVAILABLE'}</div>`;
     }
     // Il badge distingue ora le due variazioni, invece di accorparle in un
@@ -13411,7 +13423,7 @@ function renderItems() {
       ? (hasWidePair ? 'cursor:pointer;flex:0 0 350px;' : 'cursor:pointer;flex:0 0 247px;')
       : 'cursor:pointer;';
     const finalAspectRatio = hasWidePair ? '2' : imgAspectRatio;
-    return `<div class="fig-card" onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="${cardSpanStyle}">
+    return `<div class="fig-card${_cardNoPhoto ? ' fig-card--noimg' : ''}" onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="${cardSpanStyle}">
       ${_mobileFigCard ? `<div class="fig-badge-row">${typeBadgeHTML}</div>` : ''}
       <div class="fig-img-placeholder" style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
         ${imgHTML}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}
