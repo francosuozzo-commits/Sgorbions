@@ -1,6 +1,20 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.848 - Franco, pagina Figurine da telefono, quattro ritocchi.
+//          (1) Via la DESCRIZIONE dalla card: in ~85px di larghezza erano briciole di testo. Alla
+//          descrizione e' stata data la classe .fig-desc in app.js, prima non ne aveva nessuna e
+//          dal CSS non era raggiungibile.
+//          (2) I due pulsanti blu "Aggiungi / Rimuovi i risultati della ricerca" stavano su due
+//          righe e si prendevano mezzo schermo: ora dividono in due una riga sola, testo a
+//          0.62rem e icone piu' piccole.
+//          (3) I due conteggi ("N oggetti trovati" / "N fanno parte della tua lista") vanno anche
+//          loro su una riga sola: i numeri scendono da 1.5rem a 1rem.
+//          (4) Il toggle "Mostra nomi" parte ora ACCESO (_figLabelMode = 'full', prima 'number').
+//          Chi ha gia' usato il sito conserva la sua scelta: il valore salvato in localStorage
+//          vince sul default, quindi il cambio si vede solo da browser nuovi.
+//          Modificato js/app.js, css/style.css.
+// ------------------------------------------------------------
 // v5.847 - Franco, telefono: via dalla navbar il contatore "Figurine nella tua lista / N / M"
 //          (#nav-owned-counter). Sono due righe di testo in una barra dove lo spazio serve
 //          all'hamburger e ai comandi di destra. Il dato resta dov'e' utile: nel profilo e nella
@@ -8459,7 +8473,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.847';
+const JS_VERSION = 'v5.848';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9553,7 +9567,7 @@ let _retroViewMode = 'destra-piena'; // 'sotto' | 'destra' | 'dinamico' | 'front
 // Vale ESCLUSIVAMENTE sotto la soglia mobile: _figLabelOnlyNumber() ha la guardia di viewport,
 // quindi il desktop rende sempre numero+nome qualunque cosa ci sia salvato. La scelta e'
 // ricordata dal browser (localStorage), a differenza di _retroViewMode che non si salva.
-let _figLabelMode = 'number';
+let _figLabelMode = 'full';   // v5.848 — default: nomi MOSTRATI (prima 'number')
 try { const _m = localStorage.getItem('sgorbions_fig_label_mode'); if (_m === 'number' || _m === 'full') _figLabelMode = _m; } catch(e) {}
 function _isMobileViewport() { return window.matchMedia('(max-width: 860px)').matches; }
 function _figLabelOnlyNumber() { return _isMobileViewport() && _figLabelMode === 'number'; }
@@ -13018,7 +13032,7 @@ function renderItems() {
     }
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="event.stopPropagation();cloneFigurine('${f.id}')">&#10697;</button></div>` : '';
     const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="${currentLang === 'it' ? 'Segnala qualcosa all\'amministratore per questa figurina' : 'Report something to the administrator about this sticker'}" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
-    const descHTML = f.desc ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
+    const descHTML = f.desc ? `<div class="fig-desc" style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
     const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
     const sizeHTML = f.size ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
     // v5.804 — Franco: la sottoserie NON sostituisce più il numero sulla card. Il numero resta in
