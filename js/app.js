@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.865 - Franco, navbar da telefono: nascosta la riga "vX.XXX · Online dal…" sotto il logo, che
+//          era tornata con la v5.863 quando il logo e' rientrato nella barra. Ora nella barra c'e'
+//          solo il logo, centrato. Sul desktop la riga resta. Solo css/style.css.
+// ------------------------------------------------------------
 // v5.864 - Franco, pagina Profilo. (DESKTOP+MOBILE) La sezione "I tuoi numeri Sgorbions" sale
 //          SOPRA "Preferenze e-mail" (spostamento nell'HTML, vale ovunque). (MOBILE) Nell'intesta-
 //          zione l'avatar va a destra e il nome a sinistra, alla stessa altezza (row-reverse +
@@ -8640,7 +8644,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.864';
+const JS_VERSION = 'v5.865';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
