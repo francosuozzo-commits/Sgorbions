@@ -489,7 +489,15 @@ body {
 .fig-badge-unofficial { background: var(--type-unofficial); }
 .fig-badge-change     { background: var(--type-change); }
 .fig-badge-printerror { background: var(--type-printerror); }
-.fig-body { padding: 0.9rem 1rem 1rem; margin-top: auto; }
+/* v5.870 — allineamento delle card nella riga della griglia. Il corpo (numero, punti, nome,
+   nome retro + in fondo il trittico Mia lista/Ciò che cerco/Errore) NON viene piu' spinto tutto
+   in fondo (prima: margin-top:auto). Ora sta SUBITO SOTTO le foto, e sono le AZIONI a scendere in
+   fondo (.fig-actions margin-top:auto). Cosi', a parita' di altezza-card nella riga (grid stretch),
+   il blocco info in alto e il trittico in basso sono allineati fra card vicine, e la sola cosa che
+   varia e' il NERO in mezzo - assorbito dallo spazio flessibile - dovuto all'altezza variabile
+   delle foto (fronte/retro ruotati). */
+.fig-body { padding: 0.9rem 1rem 1rem; flex: 1; display: flex; flex-direction: column; }
+.fig-body > .fig-actions { margin-top: auto; }
 .fig-number { font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; }
 .fig-name { font-family: var(--font-ui); font-size: 1.05rem; color: var(--text); }
 .fig-toggle {
