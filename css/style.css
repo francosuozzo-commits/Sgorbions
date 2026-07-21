@@ -1067,41 +1067,20 @@ footer {
   #user-table-view-btn { display: none !important; }
 }
 
-/* ---- v5.842 — IL LOGO ESCE DALLA NAVBAR E DIVENTA UNA FASCIA SOTTO DI ESSA ----
-   Nella navbar da 64px il logo (36px) piu' la riga versione/"online dal" mangiavano la meta'
-   della larghezza, lasciando all'hamburger e ai comandi di destra lo spazio residuo. Su
-   telefono quel blocco viene tolto dal flusso della barra e fissato SOTTO, come fascia a
-   tutta larghezza; il banner "SITO IN COSTRUZIONE" scende ancora piu' giu'.
-   L'altezza della fascia sta in una variabile: banner e spaziature delle pagine la leggono
-   da li', cosi' non si sfasano se un domani la si cambia. Il menu a tendina resta agganciato
-   a 64px e passa SOPRA la fascia (ha z-index piu' alto): da aperto copre il logo, ed e' bene. */
+/* ---- v5.863 — NAVBAR MOBILE: logo dentro la barra (come desktop), niente nome utente ----
+   Annullata la fascia sotto la navbar della v5.842: il logo torna DENTRO la barra, come sul
+   desktop. Lo spazio che prima mancava si recupera togliendo il NOME UTENTE (#nav-username):
+   l'avatar accanto lo apre comunque, quindi il nome scritto era ridondante su una barra stretta.
+   Restano nascosti il contatore "Figurine nella tua lista" (v5.847) e la riga versione/"online
+   dal" (#nav-js-version-wrap è già display:none per i non-admin). */
 @media (max-width: 860px) {
-  :root { --logo-band: 44px; }
-
-  /* il blocco logo + versione: primo figlio del contenitore di sinistra della navbar */
-  #navbar > div:first-of-type > div:first-child {
-    position: fixed; top: 64px; left: 0; right: 0;
-    height: var(--logo-band);
-    margin-right: 0 !important;
-    flex-direction: row !important;
-    align-items: center; justify-content: center; gap: 0.6rem;
-    background: rgba(14,10,26,0.92);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    z-index: 999;
-  }
-  #navbar .nav-logo img { height: 26px !important; }
-
-  /* v5.847 — via dalla navbar il contatore "Figurine nella tua lista / N / M": due righe di
-     testo in una barra dove lo spazio serve all'hamburger e ai comandi. Il dato resta nel
-     profilo e nella scheda serie. app.js lo mostra con style.display inline, da cui !important. */
   #nav-owned-counter { display: none !important; }
-  #navbar > div:first-of-type > div:first-child > div { margin-top: 0 !important; }
 
-  /* tutto quello che stava sotto la navbar scende dell'altezza della fascia */
-  #construction-banner { top: calc(64px + var(--logo-band)) !important; }
-  .page { padding-top: calc(56px + var(--logo-band)); }
-  #series-detail { padding-top: calc(64px + var(--logo-band)) !important; }
+  /* il nome utente sparisce: ci pensa l'avatar a dare accesso al profilo */
+  #nav-username { display: none !important; }
+
+  /* logo un filo più contenuto della misura desktop, per non affollare la barra stretta */
+  #navbar .nav-logo img { height: 30px !important; }
 }
 
 /* ---- v5.851 — HOMEPAGE SU TELEFONO ----
