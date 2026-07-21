@@ -1133,6 +1133,14 @@ footer {
   /* "Le mie / Totale" tolto da telefono (resta nel profilo). Sul desktop c'è, rinominato. */
   #stat-owned-wrap { display: none !important; }
 
+  /* v5.859 — bandiera della lingua nella navbar più piccola: era 32×21, su una barra affollata
+     rubava spazio ai comandi di destra */
+  #lang-current-btn { width: 24px !important; height: 16px !important; }
+
+  /* footer: "2026 figurinesgorbions.it" e "Privacy Policy" su due righe, via il trattino */
+  #footer-copy-row { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+  #footer-copy-row .footer-sep { display: none; }
+
   #home-how-grid { grid-template-columns: 1fr !important; font-size: 1em !important; }
   #home-how-grid > div { padding: 1rem 1.1rem !important; text-align: left !important; }
   #home-how-grid > div > div:first-child { font-size: 1.8rem !important; margin-bottom: 0.4rem !important; }
