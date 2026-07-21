@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.861 - Franco: il logo della navbar (SGORBIONS_q9so2o) sostituito da una miniatura della
+//          stessa immagine usata grande in homepage (sgorbions_xwmoig), servita da Cloudinary a
+//          h_72 e resa a 36px via CSS. Vale mobile e desktop; su telefono resta nella fascia sotto
+//          la navbar (v5.842), rimpicciolita a 26px. Solo index.html (e versione).
+// ------------------------------------------------------------
 // v5.860 - Franco (mobile+desktop), sezione "Le mie liste" (mancolista): i collassatori delle
 //          singole serie partono ora CHIUSI. Prima _wantlistCollapsed[sId] era undefined finche'
 //          non si cliccava, e undefined contava come "aperto": tutte le serie si aprivano da sole
@@ -8615,7 +8620,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.860';
+const JS_VERSION = 'v5.861';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
