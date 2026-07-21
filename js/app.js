@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.874 - Franco: box "Bustine" della pagina serie con la palette dell'immagine fornita - sfondo
+//          VIOLA (#c9a3ef) e disegno a tratto grigio scuro (#565656), come le altre card. Resta un
+//          SVG ricreato (segnaposto): per usare ESATTAMENTE l'immagine originale serve il file
+//          salvato nella cartella. Solo index.html (e versione).
+// ------------------------------------------------------------
 // v5.873 - Franco, card figurina. (1) Il toggle "Mia lista" era piu' grande del cuore e della
 //          bandierina: ridotto (30x20, font 0.72rem) per allinearlo agli altri due. (2) La foto
 //          finta "FOTO NON DISPONIBILE" ora si ESPANDE a riempire l'altezza della card invece di
@@ -8714,7 +8719,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.873';
+const JS_VERSION = 'v5.874';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
