@@ -1049,7 +1049,13 @@ footer {
 }
 .fig-act { display: inline-flex; align-items: center; gap: 0.35rem; }
 .fig-act-label { font-size: 0.78rem; color: var(--muted); }
-.fig-act-report { margin-left: auto; }
+.fig-act-report { margin-left: 0; }
+/* v5.871 — su DESKTOP le tre azioni (Mia lista / Ciò che cerco / Errore) giustificate a destra,
+   tutte insieme, così i controlli sono allineati fra card vicine (prima "Errore" era spinto da
+   solo a fine riga). Su mobile restano impilate, vedi sezione mobile. */
+@media (min-width: 861px) {
+  .fig-actions { justify-content: flex-end; }
+}
 
 /* ============================================================
    SEZIONE MOBILE — sempre in FONDO al file
