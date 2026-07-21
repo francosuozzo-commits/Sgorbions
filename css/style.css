@@ -1091,6 +1091,11 @@ footer {
     z-index: 999;
   }
   #navbar .nav-logo img { height: 26px !important; }
+
+  /* v5.847 — via dalla navbar il contatore "Figurine nella tua lista / N / M": due righe di
+     testo in una barra dove lo spazio serve all'hamburger e ai comandi. Il dato resta nel
+     profilo e nella scheda serie. app.js lo mostra con style.display inline, da cui !important. */
+  #nav-owned-counter { display: none !important; }
   #navbar > div:first-of-type > div:first-child > div { margin-top: 0 !important; }
 
   /* tutto quello che stava sotto la navbar scende dell'altezza della fascia */
