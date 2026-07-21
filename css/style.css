@@ -1122,6 +1122,17 @@ footer {
   #home-logged-in-content > .section:first-of-type { padding-top: 0.75rem; }
   #home-logged-in-content .section-header { margin-bottom: 1rem; }
 
+  /* v5.858 — l'immaginone SGORBIONS sotto il banner più piccola: era al 90% della larghezza
+     (fino a 700px), su telefono si mangiava mezza schermata prima del testo */
+  #hero .hero-logo-img { max-width: 320px !important; width: 65% !important; margin-bottom: 1rem !important; }
+
+  /* il bottone "Esplora l'Inventario Sgorbions!" su una riga sola: testo un filo più piccolo
+     e niente a-capo (a font pieno la frase si spezzava in due) */
+  #hero .hero-cta .btn-primary { font-size: 1rem !important; padding: 0.7rem 1.3rem !important; white-space: nowrap; }
+
+  /* "Le mie / Totale" tolto da telefono (resta nel profilo). Sul desktop c'è, rinominato. */
+  #stat-owned-wrap { display: none !important; }
+
   #home-how-grid { grid-template-columns: 1fr !important; font-size: 1em !important; }
   #home-how-grid > div { padding: 1rem 1.1rem !important; text-align: left !important; }
   #home-how-grid > div > div:first-child { font-size: 1.8rem !important; margin-bottom: 0.4rem !important; }
