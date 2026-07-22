@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.877 - Franco: Navbar su MOBILE — la versione (solo quella complessiva, non JS/CSS) ora
+//          sta a DESTRA del logo invece che sotto, così torna visibile entro l'altezza della
+//          navbar; "Online dal" nascosto su mobile. .nav-brand row su <=860px. index.html + style.css.
+// ------------------------------------------------------------
+// v5.876 - Franco: Homepage, hero — ridotta l'interlinea tra le DUE file di numeroni:
+//          il `gap` di .hero-stats è stato sdoppiato in column-gap/row-gap, riducendo solo
+//          lo spazio verticale (desktop 3rem/1rem, mobile 1.5rem/0.6rem). Solo css/style.css.
+// ------------------------------------------------------------
+// v5.875 - Franco: Homepage, numeroni della hero — aggiunto il conteggio "Bustine" subito
+//          dopo "Retro" (nuovo id stat-bustine + label i18n hero.stat2e IT/EN + conteggio
+//          in renderHomeStats). Modificato index.html e app.js.
+// ------------------------------------------------------------
 // v5.874 - Franco: box "Bustine" della pagina serie con la palette dell'immagine fornita - sfondo
 //          VIOLA (#c9a3ef) e disegno a tratto grigio scuro (#565656), come le altre card. Resta un
 //          SVG ricreato (segnaposto): per usare ESATTAMENTE l'immagine originale serve il file
@@ -8719,7 +8731,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.874';
+const JS_VERSION = 'v5.877';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9579,7 +9591,7 @@ const i18n = {
 'hero.desc':'The unofficial database dedicated to the legendary Italian sticker series of the \'90s.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
 'hero.cta1':'Explore the Sgorbions Inventory!','hero.cta2':'Start collecting Sgorbions',
-'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat3':'Collectors',
+'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat2e':'Packs','hero.stat3':'Collectors',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
 'home.featured.btn':'View All Series →',
@@ -9686,7 +9698,7 @@ const i18n = {
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
-    'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri oggetti','hero.stat3':'Collezionisti',
+    'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri oggetti','hero.stat2e':'Bustine','hero.stat3':'Collezionisti',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
     'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
@@ -16508,11 +16520,13 @@ function renderHomeStats() {
   const users = getData('public_profiles', []);
   const onlyFigs = figs.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras' && f.section !== 'bustine');
   const retros = figs.filter(f => f.section === 'retros');
+  const bustine = figs.filter(f => f.section === 'bustine');
   const albums = figs.filter(f => f.section === 'albums');
   const extras = figs.filter(f => f.section === 'extras');
   animateCount(document.getElementById('stat-series'), series.length);
   animateCount(document.getElementById('stat-figs'), onlyFigs.length);
   animateCount(document.getElementById('stat-retros'), retros.length);
+  animateCount(document.getElementById('stat-bustine'), bustine.length);
   animateCount(document.getElementById('stat-albums'), albums.length);
   animateCount(document.getElementById('stat-extras'), extras.length);
   animateCount(document.getElementById('stat-users'), users.length);
