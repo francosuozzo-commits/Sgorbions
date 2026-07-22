@@ -490,7 +490,35 @@ body {
 .fig-badge-unofficial { background: var(--type-unofficial); }
 .fig-badge-change     { background: var(--type-change); }
 .fig-badge-printerror { background: var(--type-printerror); }
-.fig-body { padding: 0.9rem 1rem 1rem; margin-top: auto; }
+/* v5.870 — allineamento delle card nella riga della griglia. Il corpo (numero, punti, nome,
+   nome retro + in fondo il trittico Mia lista/Ciò che cerco/Errore) NON viene piu' spinto tutto
+   in fondo (prima: margin-top:auto). Ora sta SUBITO SOTTO le foto, e sono le AZIONI a scendere in
+   fondo (.fig-actions margin-top:auto). Cosi', a parita' di altezza-card nella riga (grid stretch),
+   il blocco info in alto e il trittico in basso sono allineati fra card vicine, e la sola cosa che
+   varia e' il NERO in mezzo - assorbito dallo spazio flessibile - dovuto all'altezza variabile
+   delle foto (fronte/retro ruotati). */
+/* v5.872 — placeholder "FOTO NON DISPONIBILE" (grigio pieno, testo bianco) quando manca la foto:
+   riempie tutto il riquadro immagine come una foto vera, per non rompere l'uniformità delle card. */
+.fig-noimg {
+  position: absolute; inset: 0;
+  background: #7a7a7a; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 6px;
+  font-family: var(--font-ui); font-weight: 800; letter-spacing: 0.5px;
+  font-size: clamp(0.55rem, 3.2vw, 1.1rem); line-height: 1.15;
+}
+
+.fig-body { padding: 0.9rem 1rem 1rem; flex: 1; display: flex; flex-direction: column; }
+.fig-body > .fig-actions { margin-top: auto; }
+
+/* v5.873 — card SENZA foto: il riquadro "FOTO NON DISPONIBILE" non ha piu' aspect-ratio fisso
+   (che lo teneva quadrato e piccolo) ma si ESPANDE a riempire l'altezza della card. Poiche' nella
+   griglia le card della stessa riga sono alte uguali (align-items:stretch), il placeholder cresce
+   fin quasi all'altezza del box-foto piu' alto della riga (le coppie fronte/retro). Il body torna
+   a dimensione naturale, cosi' non compete col riquadro per lo spazio. */
+.fig-card--noimg { justify-content: flex-start; }
+.fig-card--noimg .fig-img-placeholder { aspect-ratio: auto !important; flex: 1 1 auto; min-height: 120px; }
+.fig-card--noimg .fig-body { flex: 0 0 auto; }
 .fig-number { font-size: 0.72rem; color: var(--muted); margin-bottom: 2px; }
 .fig-name { font-family: var(--font-ui); font-size: 1.05rem; color: var(--text); }
 .fig-toggle {
@@ -924,10 +952,6 @@ footer {
   /* meta versione / "online dal" tolti su schermi stretti per far spazio */
   #nav-js-version-wrap { display: none !important; }
 
-  /* v5.877 — su mobile mostra SOLO la versione complessiva, a DESTRA del logo (non sotto) */
-  .nav-brand { flex-direction: row; align-items: center; gap: 0.5rem; margin-right: 0.6rem; }
-  .nav-online { display: none; }
-
   /* .nav-links diventa un pannello a tendina sotto la navbar */
   .nav-links {
     display: none;
@@ -1013,6 +1037,11 @@ footer {
    naturale dentro quella larghezza: nessun legame con l'altezza del testo.
    Sul telefono non si applica: li' il modale e' a colonna singola. */
 @media (min-width: 861px) {
+  /* v5.866 — logo SGORBIONS della navbar allargato in orizzontale (~12%): sembrava un po'
+     schiacciato in larghezza e nella barra c'e' spazio. object-fit:fill + width fissa stira
+     l'immagine solo in orizzontale, l'altezza resta 36px. Solo desktop. */
+  #navbar .nav-logo img { width: 150px !important; height: 36px !important; object-fit: fill; }
+
   /* v5.846 — il RETRO ha piu' larghezza del fronte: le due foto non hanno le stesse
      proporzioni (il retro e' tipicamente piu' largo che alto), quindi a parita' di colonna
      rendeva un'immagine visivamente piu' piccola. Il fronte resta com'e' - Franco lo da' per
@@ -1030,6 +1059,26 @@ footer {
   #fig-detail-photo > div > div:last-child {
     display: flex; flex-direction: column; justify-content: center;
   }
+}
+
+/* ---- v5.867 — CARD FIGURINA: azioni etichettate (Mia lista / Ciò che cerco / Errore?) ----
+   Su DESKTOP le tre azioni stanno su UNA riga: prima il tipo, poi "Mia lista" e "Ciò che cerco"
+   vicini, e "Errore?" spinto a destra (margin-left:auto). Su MOBILE si impilano (vedi @media).
+   Ogni azione è etichetta + controllo, così cuore e bandierina non sono più muti. */
+.fig-actions {
+  display: flex; align-items: center; gap: 0.5rem 0.9rem; flex-wrap: wrap; margin-top: 0.4rem;
+}
+.fig-act { display: inline-flex; align-items: center; gap: 0.35rem; }
+.fig-act-label { font-size: 0.78rem; color: var(--muted); }
+/* v5.873 — il toggle "Mia lista" nella card era piu' massiccio del cuore e della bandierina:
+   ridotto a dimensioni allineate agli altri due controlli del trittico. */
+#items-grid .fig-act-mylist .owned-btn { width: 30px; height: 20px; font-size: 0.72rem; }
+.fig-act-report { margin-left: 0; }
+/* v5.871 — su DESKTOP le tre azioni (Mia lista / Ciò che cerco / Errore) giustificate a destra,
+   tutte insieme, così i controlli sono allineati fra card vicine (prima "Errore" era spinto da
+   solo a fine riga). Su mobile restano impilate, vedi sezione mobile. */
+@media (min-width: 861px) {
+  .fig-actions { justify-content: flex-end; }
 }
 
 /* ============================================================
@@ -1072,41 +1121,121 @@ footer {
   #user-table-view-btn { display: none !important; }
 }
 
-/* ---- v5.842 — IL LOGO ESCE DALLA NAVBAR E DIVENTA UNA FASCIA SOTTO DI ESSA ----
-   Nella navbar da 64px il logo (36px) piu' la riga versione/"online dal" mangiavano la meta'
-   della larghezza, lasciando all'hamburger e ai comandi di destra lo spazio residuo. Su
-   telefono quel blocco viene tolto dal flusso della barra e fissato SOTTO, come fascia a
-   tutta larghezza; il banner "SITO IN COSTRUZIONE" scende ancora piu' giu'.
-   L'altezza della fascia sta in una variabile: banner e spaziature delle pagine la leggono
-   da li', cosi' non si sfasano se un domani la si cambia. Il menu a tendina resta agganciato
-   a 64px e passa SOPRA la fascia (ha z-index piu' alto): da aperto copre il logo, ed e' bene. */
+/* ---- v5.863 — NAVBAR MOBILE: logo dentro la barra (come desktop), niente nome utente ----
+   Annullata la fascia sotto la navbar della v5.842: il logo torna DENTRO la barra, come sul
+   desktop. Lo spazio che prima mancava si recupera togliendo il NOME UTENTE (#nav-username):
+   l'avatar accanto lo apre comunque, quindi il nome scritto era ridondante su una barra stretta.
+   Restano nascosti il contatore "Figurine nella tua lista" (v5.847) e la riga versione/"online
+   dal" (#nav-js-version-wrap è già display:none per i non-admin). */
 @media (max-width: 860px) {
-  :root { --logo-band: 44px; }
-
-  /* il blocco logo + versione: primo figlio del contenitore di sinistra della navbar */
-  #navbar > div:first-of-type > div:first-child {
-    position: fixed; top: 64px; left: 0; right: 0;
-    height: var(--logo-band);
-    margin-right: 0 !important;
-    flex-direction: row !important;
-    align-items: center; justify-content: center; gap: 0.6rem;
-    background: rgba(14,10,26,0.92);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--border);
-    z-index: 999;
-  }
-  #navbar .nav-logo img { height: 26px !important; }
-
-  /* v5.847 — via dalla navbar il contatore "Figurine nella tua lista / N / M": due righe di
-     testo in una barra dove lo spazio serve all'hamburger e ai comandi. Il dato resta nel
-     profilo e nella scheda serie. app.js lo mostra con style.display inline, da cui !important. */
   #nav-owned-counter { display: none !important; }
-  #navbar > div:first-of-type > div:first-child > div { margin-top: 0 !important; }
 
-  /* tutto quello che stava sotto la navbar scende dell'altezza della fascia */
-  #construction-banner { top: calc(64px + var(--logo-band)) !important; }
-  .page { padding-top: calc(56px + var(--logo-band)); }
-  #series-detail { padding-top: calc(64px + var(--logo-band)) !important; }
+  /* il nome utente sparisce: ci pensa l'avatar a dare accesso al profilo */
+  #nav-username { display: none !important; }
+
+  /* logo un filo più contenuto della misura desktop, per non affollare la barra stretta */
+  #navbar .nav-logo img { height: 30px !important; }
+
+  /* v5.865 — su telefono via la riga "vX.XXX · Online dal…" sotto il logo: e' il div che segue
+     l'<a class="nav-logo"> nel blocco logo. Sul desktop resta. Cosi' nella barra c'e' solo il
+     logo, centrato verticalmente. */
+  #navbar .nav-logo + div { display: none !important; }
+  #navbar .nav-logo { display: flex; align-items: center; }
+
+  /* v5.878 — versione (solo quella complessiva) a DESTRA del logo, dentro la barra: la riga
+     versione torna visibile (annulla il display:none della v5.865), ma restano nascosti JS/CSS e "Online dal". */
+  #navbar .nav-brand { flex-direction: row !important; align-items: center; gap: 0.5rem; }
+  #navbar .nav-logo + div { display: flex !important; }
+  #navbar .nav-online { display: none !important; }
+
+  /* v5.864 — pagina Profilo su telefono. Nell'intestazione l'AVATAR va a destra e il nome a
+     sinistra, allineati in alto: row-reverse mette l'avatar (primo nel DOM) a destra, e
+     flex-start li porta alla stessa altezza. nowrap per tenerli in riga anche stretti. */
+  .profile-header { flex-direction: row-reverse; align-items: flex-start; flex-wrap: nowrap; gap: 1rem; padding: 1.25rem; }
+  .profile-avatar { flex-shrink: 0; }
+
+  /* i pulsanti "Cambia nome utente" / "Cambia nazionalità" (e password) uno sotto l'altro */
+  #profile-actions-row { flex-direction: column; align-items: stretch; }
+  #profile-actions-row > button { width: 100%; }
+}
+
+/* ---- v5.851 — HOMEPAGE SU TELEFONO ----
+   (1) I numeroni verdi delle statistiche scendono da 2.53rem a 1.6rem (etichette a 0.75rem):
+       a quella misura occupavano mezza schermata prima ancora del contenuto.
+   (2) I blocchi "come funziona" passano da cinque colonne a UNO PER RIGA: la griglia ha lo
+       stile inline, quindi serve !important e un id (#home-how-grid) che prima non aveva. */
+@media (max-width: 860px) {
+  .hero-stats { gap: 1rem 1.6rem !important; margin-top: 2rem; }
+  .stat-num { font-size: 1.6rem; }
+  .stat-label { font-size: 0.75rem; }
+
+  /* v5.855 — via il vuoto fra i numeri verdi e i blocchi sotto. Erano tre spazi sommati:
+     il fondo della sezione hero (2rem), il padding in cima alla sezione successiva (2.5rem
+     dal breakpoint 768) e il margine sotto la sua intestazione (3rem). Su telefono valgono
+     insieme quasi 120px di nulla. */
+  #hero { padding-bottom: 0.5rem !important; }
+  #home-logged-in-content > .section:first-of-type { padding-top: 0.75rem; }
+  #home-logged-in-content .section-header { margin-bottom: 1rem; }
+
+  /* v5.858 — l'immaginone SGORBIONS sotto il banner più piccola: era al 90% della larghezza
+     (fino a 700px), su telefono si mangiava mezza schermata prima del testo */
+  #hero .hero-logo-img { max-width: 320px !important; width: 65% !important; margin-bottom: 1rem !important; }
+
+  /* il bottone "Esplora l'Inventario Sgorbions!" su una riga sola: testo un filo più piccolo
+     e niente a-capo (a font pieno la frase si spezzava in due) */
+  #hero .hero-cta .btn-primary { font-size: 1rem !important; padding: 0.7rem 1.3rem !important; white-space: nowrap; }
+
+  /* "Le mie / Totale" tolto da telefono (resta nel profilo). Sul desktop c'è, rinominato. */
+  #stat-owned-wrap { display: none !important; }
+
+  /* v5.859 — bandiera della lingua nella navbar più piccola: era 32×21, su una barra affollata
+     rubava spazio ai comandi di destra */
+  #lang-current-btn { width: 24px !important; height: 16px !important; }
+
+  /* footer: "2026 figurinesgorbions.it" e "Privacy Policy" su due righe, via il trattino */
+  #footer-copy-row { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; }
+  #footer-copy-row .footer-sep { display: none; }
+
+  #home-how-grid { grid-template-columns: 1fr !important; font-size: 1em !important; }
+  #home-how-grid > div { padding: 1rem 1.1rem !important; text-align: left !important; }
+  #home-how-grid > div > div:first-child { font-size: 1.8rem !important; margin-bottom: 0.4rem !important; }
+  #home-how-grid h3 { font-size: 1.05rem !important; }
+}
+
+/* ---- v5.851 — CLASSIFICA SU TELEFONO ----
+   (1) La tabella dei LIVELLI sale sopra la classifica: era la colonna destra di una griglia
+       "1fr 360px", che su telefono la spingeva in fondo alla pagina.
+   (2) Nella riga di classifica POSIZIONE e AVATAR si impilano invece di stare affiancati: sono
+       due elementi stretti che, in fila, rubavano larghezza al nome. La riga diventa una griglia
+       di tre colonne (posizione+avatar · nome e statistiche · punteggio), con i primi due
+       elementi nella stessa colonna su due righe. Gli stili della riga sono inline, da cui i
+       !important.
+   (3) Il titolo della pagina scende di corpo: a tutta larghezza occupava tre righe. */
+@media (max-width: 860px) {
+  #classifica-grid { grid-template-columns: 1fr !important; gap: 1.2rem !important; }
+  #classifica-grid > div:last-child { order: -1; }
+
+  #page-classifica .section-title { font-size: 1.25rem; line-height: 1.25; }
+
+  /* v5.857 — tabella dei livelli più fitta: le righe sono corte (nome e punteggio), il
+     respiro del desktop qui diventa solo lunghezza da scorrere */
+  #classifica-levels-table .data-table td,
+  #classifica-levels-table .data-table th {
+    padding: 0.12rem 0.5rem; font-size: 0.78rem; line-height: 1.25;
+  }
+  #classifica-grid > div:last-child h3 { margin-bottom: 0.5rem !important; }
+
+  .cl-row {
+    display: grid !important;
+    grid-template-columns: 44px 1fr auto;
+    gap: 0.2rem 0.7rem !important;
+    align-items: center;
+    padding: 0.5rem 0.7rem !important;
+  }
+  .cl-row > .cl-pos    { grid-column: 1; grid-row: 1; width: auto !important; }
+  .cl-row > .cl-avatar { grid-column: 1; grid-row: 2; display: flex; justify-content: center; }
+  .cl-row > div:nth-child(3) { grid-column: 2; grid-row: 1 / 3; min-width: 0; }
+  .cl-row > div:nth-child(4) { grid-column: 3; grid-row: 1 / 3; }
 }
 
 /* ---- v5.823 — INVENTARIO: 4 SERIE PER RIGA SU TELEFONO ----
@@ -1146,7 +1275,8 @@ footer {
    La griglia dei box ha lo stile INLINE nell'HTML, quindi qui serve !important. */
 @media (max-width: 860px) {
   /* (1) copertina più piccola */
-  .series-cover { width: 90px; min-width: 90px; font-size: 2.2rem; border-radius: 8px; }
+  /* v5.850 — copertina +15%: da 90 a 104px */
+  .series-cover { width: 104px; min-width: 104px; font-size: 2.5rem; border-radius: 8px; }
   .series-info { min-width: 0; }
   .series-hero { padding: 1.5rem 1rem 1.2rem; }
   .back-btn { margin-bottom: 0.9rem; }
@@ -1160,7 +1290,7 @@ footer {
      della copertina, dove possiamo collocarli uno per uno. */
   .series-title-area {
     display: grid;
-    grid-template-columns: 90px 1fr;
+    grid-template-columns: 104px 1fr;
     gap: 0.5rem 0.8rem;
     align-items: start;
   }
@@ -1181,21 +1311,33 @@ footer {
     line-height: 1.25;
   }
   .series-description  { grid-row: 3; grid-column: 1 / -1; margin-bottom: 0; } /* descrizione */
+
+  /* v5.856 — descrizione richiudibile: da chiusa si ferma a tre righe con i puntini.
+     line-clamp taglia sul RIGO, non sul carattere, quindi non spezza le parole a meta'. */
+  .series-description.desc-collapsed {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  #detail-desc-toggle { grid-row: 4; grid-column: 1 / -1; justify-self: start; margin-top: 0.15rem; }
   .series-name { font-size: 1.5rem; margin-bottom: 0; }
 
   /* (2) i quattro box su una sola riga */
   #section-selector { padding: 1rem 0.6rem !important; }
+  /* v5.850 — due file da due invece di una fila da quattro: con box larghi il doppio,
+     icona e testo tornano leggibili */
   #section-selector > div {
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 0.4rem !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
   }
   .section-choice-card { padding: 0; border-radius: 10px; text-align: left; }
-  .section-choice-icon { font-size: 1.6rem; margin-bottom: 0.3rem; }
-  .section-choice-title { font-size: 0.66rem; margin-bottom: 0.1rem; line-height: 1.15; }
-  .section-choice-count { font-size: 0.58rem; }
+  .section-choice-icon { font-size: 2rem; margin-bottom: 0.35rem; }
+  .section-choice-title { font-size: 0.95rem; margin-bottom: 0.15rem; line-height: 1.15; }
+  .section-choice-count { font-size: 0.72rem; }
   .section-choice-card:hover { transform: none; box-shadow: none; }
   /* il blocco di testo dentro il box ha padding inline 1.25rem 1.5rem: troppo per 90px */
-  .section-choice-card > div:last-child { padding: 0.35rem 0.45rem 0.45rem !important; }
+  .section-choice-card > div:last-child { padding: 0.5rem 0.6rem 0.6rem !important; }
 }
 
 /* ---- v5.825 — PAGINA FIGURINE/RETRO/ALBUM/ALTRI: 4 risultati per riga fino in fondo ----
@@ -1211,7 +1353,9 @@ footer {
      la larghezza fissa delle card. Serve !important: l'inline batte tutto il resto. */
   #items-grid {
     display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
+    /* v5.854 — non piu' quattro colonne fisse ma "quante ne stanno, larghe almeno 100px":
+       tre su un telefono da 360, quattro da ~440 in su. Il numero minimo e' tre. */
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important;
     gap: 0.4rem !important;
     width: auto !important; max-width: none !important;
     margin-left: 0 !important; margin-right: 0 !important;
@@ -1231,31 +1375,68 @@ footer {
   #bulk-owned-btns { flex-wrap: nowrap !important; gap: 0.4rem !important; }
   #bulk-owned-btns .btn-primary {
     flex: 1 1 0; min-width: 0;
-    font-size: 0.62rem !important; padding: 0.35rem 0.5rem !important;
-    line-height: 1.15; text-align: left; gap: 0.3rem !important;
+    /* v5.850 — testo un po' piu' grande; i box crescono in ALTEZZA quanto serve,
+       restando comunque affiancati su una riga sola */
+    font-size: 0.74rem !important; padding: 0.5rem 0.6rem !important;
+    line-height: 1.2; text-align: left; gap: 0.35rem !important;
   }
-  #bulk-owned-btns .btn-primary svg { width: 13px; height: 13px; }
+  #bulk-owned-btns .btn-primary svg { width: 15px; height: 15px; }
 
   /* v5.848 — i due conteggi ("N oggetti trovati" / "N fanno parte della tua lista") su una riga
      sola: numeri da 1.5rem a 1rem (hanno il corpo scritto inline, quindi !important) */
-  #items-count-display {
-    display: flex; flex-wrap: nowrap; align-items: baseline;
-    gap: 0.6rem; font-size: 0.72rem; line-height: 1.2;
+  /* v5.851 — i due conteggi stanno dentro un contenitore che app.js crea in COLONNA
+     (display:flex;flex-direction:column): era QUELLO a tenerli su due righe, non il
+     contenitore esterno. Qui lo si gira in riga; lo stile e' inline, da cui !important. */
+  #items-count-display { font-size: 0.82rem; line-height: 1.2; }
+  #items-count-display > div {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: baseline !important;
+    gap: 0.7rem !important;
+    white-space: nowrap;
   }
-  #items-count-display > span { display: inline-flex; align-items: baseline; gap: 0.25rem; }
-  #items-count-display span span { font-size: 1rem !important; }
+  #items-count-display > div > span { display: inline-flex; align-items: baseline; gap: 0.25rem; }
+  #items-count-display span span { font-size: 1.15rem !important; }
 
   /* v5.827 — etichetta della card: numero e nome più piccoli e allineati a sinistra.
      Il numero ha un font-size INLINE di 1.05rem messo da renderItems(), quindi !important. */
   #items-grid .fig-body { padding: 0.35rem 0.4rem 0.45rem; text-align: left; }
-  #items-grid .fig-name { font-size: 0.68rem; line-height: 1.2; }
-  #items-grid .fig-number { font-size: 0.68rem !important; }
+  #items-grid .fig-name { font-size: 0.72rem; line-height: 1.2; }
+  #items-grid .fig-number { font-size: 0.72rem !important; }
   #items-grid .toggle-label { font-size: 0.6rem; }
   #items-grid .fig-toggle { margin-top: 0.3rem; }
 
+  /* v5.853 — il badge del tipo ("Variazione ufficiale", "Change", …) esce dal riquadro della
+     foto, dove copriva l'immagine, e va in una FASCIA SOPRA. La fascia c'è SEMPRE, anche sulle
+     figurine base che il badge non ce l'hanno: altrimenti le loro card sarebbero più corte e
+     la griglia si disallineerebbe. L'altezza è fissa e calcolata su due righe di badge, che è
+     il caso peggiore ("Variazione / non ufficiale"). */
+  #items-grid .fig-badge-row {
+    height: calc(0.62rem * 1.15 * 2 + 6px);
+    display: flex; align-items: flex-start; justify-content: flex-end;
+    padding: 2px 3px 0 3px;
+  }
+  #items-grid .fig-badge-row .fig-owned-badge {
+    position: static !important;
+    font-size: 0.62rem; padding: 1px 5px; line-height: 1.15;
+  }
+
+  /* v5.853 — paginazione: i quattro tasti su UNA riga, l'etichetta "Pagina N di M…" a capo
+     sotto di loro (occupa tutta la larghezza, quindi spinge sé stessa su una riga propria) */
+  .pag-row { gap: 0.35rem !important; margin-bottom: 0.7rem !important; }
+  .pag-row .btn-secondary { padding: 0.35rem 0.5rem !important; font-size: 0.72rem; }
+  .pag-row .pag-label { order: 1; flex-basis: 100%; text-align: center; font-size: 0.72rem !important; }
+
+  /* v5.867 — le tre azioni (Mia lista / Ciò che cerco / Errore?) IMPILATE su telefono, una per
+     riga: la card è stretta e in fila non ci stavano. "Errore?" torna in colonna (no margin auto). */
+  #items-grid .fig-actions { flex-direction: column; align-items: stretch; gap: 0.25rem; }
+  #items-grid .fig-act { justify-content: space-between; gap: 0.4rem; }
+  #items-grid .fig-act-label { font-size: 0.6rem; }
+  #items-grid .fig-act-report { margin-left: 0; }
+
   /* v5.829 — punteggio accanto al numero, stesso corpo del numero; il nome va sotto */
-  #items-grid .fig-score-inline { font-size: 0.68rem; color: var(--accent); margin-left: 0.3rem; white-space: nowrap; }
-  #items-grid .fig-name-line { font-size: 0.68rem; line-height: 1.2; margin-top: 1px; }
+  #items-grid .fig-score-inline { font-size: 0.72rem; color: var(--accent); margin-left: 0.3rem; white-space: nowrap; }
+  #items-grid .fig-name-line { font-size: 0.72rem; line-height: 1.2; margin-top: 1px; }
 }
 
 /* ---- v5.832 — DETTAGLIO FIGURINA: prima le foto, poi le informazioni ----
@@ -1274,6 +1455,21 @@ footer {
   #fig-detail-top { order: -2; }
   #fig-detail-photo { order: -1; }
   #fig-detail-content { order: 0; }
+
+  /* v5.849 — via il titolo del modale: ripete Numero e Nome, che sono le prime due righe
+     della scheda. Resta nel DOM per i lettori di schermo. */
+  #fig-detail-modal .modal-title { display: none; }
+
+  /* v5.849 — "Mia lista" e "Ciò che cerco" affiancate: sono due interruttori corti, una riga
+     ciascuno era spazio sprecato. Il contenitore diventa una griglia a due colonne solo per
+     queste due righe, con l'etichetta sopra e il comando sotto per starci in metà larghezza. */
+  #fig-detail-content .detail-row-mylist,
+  #fig-detail-content .detail-row-wishlist {
+    display: inline-flex; width: 49%; box-sizing: border-box;
+    flex-direction: column; align-items: flex-start; gap: 0.2rem;
+    vertical-align: top;
+  }
+  #fig-detail-content .detail-row-mylist { padding-right: 0.5rem; }
 }
 
 /* sul desktop il contenitore delle righe "sopra la foto" non esiste proprio */
