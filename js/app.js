@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.878 - FIX del rollback della v5.877: la style.css pubblicata era stata ricostruita da una
+//          base vecchia (v5.848) e aveva riportato indietro i fix CSS v5.849-v5.874 (nome utente
+//          nascosto su mobile v5.863, riga versione v5.865, ecc.), facendo uscire logo/versione
+//          dalla navbar e riapparire il nome utente. Ripristinata la style.css VERA v5.874 e
+//          riapplicate le 3 modifiche (Bustine, interlinea, versione mobile a destra del logo).
+// ------------------------------------------------------------
 // v5.877 - Franco: Navbar su MOBILE — la versione (solo quella complessiva, non JS/CSS) ora
 //          sta a DESTRA del logo invece che sotto, così torna visibile entro l'altezza della
 //          navbar; "Online dal" nascosto su mobile. .nav-brand row su <=860px. index.html + style.css.
@@ -8731,7 +8737,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.877';
+const JS_VERSION = 'v5.878';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
