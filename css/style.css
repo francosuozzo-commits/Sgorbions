@@ -1316,6 +1316,12 @@ footer {
   /* v5.886 — SOLO nell'hub (5 blocchi): le numeriche dettagliate non ci stanno accanto alla foto,
      quindi vanno SOTTO, a tutta larghezza. Nelle singole sezioni restano accanto alla foto. */
   #detail-meta.meta-hub { grid-row: 3; grid-column: 1 / -1; margin-top: 0.4rem !important; }
+  /* v5.887 — hub su mobile: nome categoria su riga a se', tipologie una per riga con "(N nella tua lista)" accanto */
+  #detail-meta.meta-hub .hub-cat-row { flex-direction: column !important; gap: 0.05rem !important; margin-bottom: 0.55rem; }
+  #detail-meta.meta-hub .hub-cat-name { min-width: 0 !important; margin-bottom: 0.1rem; }
+  #detail-meta.meta-hub .hub-cat-row > div:not(.hub-cat-name) { flex-direction: row !important; gap: 0.3rem !important; align-items: baseline; }
+  #detail-meta.meta-hub .hub-cat-row .col-own::before { content: "("; }
+  #detail-meta.meta-hub .hub-cat-row .col-own::after { content: ")"; }
   .series-description  { grid-row: 3; grid-column: 1 / -1; margin-bottom: 0; } /* descrizione */
 
   /* v5.856 — descrizione richiudibile: da chiusa si ferma a tre righe con i puntini.
