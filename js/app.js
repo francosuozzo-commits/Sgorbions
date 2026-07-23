@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.887 - Franco: hub su MOBILE, formato compatto: il nome della categoria va su una riga a se',
+//          e ogni tipologia su UNA riga con "(N nella tua lista)" tra parentesi accanto (invece di
+//          due righe e prefisso inline). Solo mobile e solo hub (classe .meta-hub). Aggiunte classi
+//          hub-wrap/hub-cat-row/hub-cat-name/col-own; il resto (desktop, sezioni) invariato.
+// ------------------------------------------------------------
 // v5.886 - Franco (PROVA): nelle schede serie il NOME va sopra la foto anche su desktop, cosi' i
 //          contatori a destra salgono in alto. L'intestazione desktop diventa una griglia come sul
 //          mobile (.series-title-area grid; .series-info display:contents; nome riga1 a tutta
@@ -8780,7 +8785,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.886';
+const JS_VERSION = 'v5.887';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11622,7 +11627,7 @@ function renderSeriesMeta(s) {
             ? (quanti === 1 ? "Ce l'hai!" : (femminile ? 'Le hai tutte!' : 'Li hai tutti!'))
             : (quanti === 1 ? 'You have it!' : 'You have them all!'))
         : nfmt(n) + ' ' + inLista;
-      riga2 = `<span style="color:var(--accent);font-weight:600;">${testo}</span>`;
+      riga2 = `<span class="col-own" style="color:var(--accent);font-weight:600;">${testo}</span>`;
     }
     return `<div style="display:flex;flex-direction:column;gap:1px;">${riga1}${riga2}</div>`;
   };
@@ -11674,9 +11679,9 @@ function renderSeriesMeta(s) {
   if (!currentSection) {
     metaEl.classList.add('meta-hub');  // v5.886: su mobile le numeriche dell'hub vanno sotto la foto
     const cats = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
-    const _pfx = c => '<div style="font-weight:700;color:var(--text);min-width:96px;flex-shrink:0;">' + getSectionLabel(c) + '</div>';
-    metaEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">' +
-      cats.map(c => '<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;">' + _pfx(c) + sezRows(c, true).join('') + '</div>').join('') +
+    const _pfx = c => '<div class="hub-cat-name" style="font-weight:700;color:var(--text);min-width:96px;flex-shrink:0;">' + getSectionLabel(c) + '</div>';
+    metaEl.innerHTML = '<div class="hub-wrap" style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">' +
+      cats.map(c => '<div class="hub-cat-row" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;">' + _pfx(c) + sezRows(c, true).join('') + '</div>').join('') +
       '</div>';
     return;
   }
