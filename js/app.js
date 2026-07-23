@@ -1,6 +1,9 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.888 - Franco: nei contatori l'emoji di completamento va DOPO il testo: "Li hai tutti!\u{1F389}",
+//          "Le hai tutte!\u{1F389}", "Ce l'hai!\u{1F389}" (e le forme EN). Prima era prefissa. Solo app.js.
+// ------------------------------------------------------------
 // v5.887 - Franco: hub su MOBILE, formato compatto: il nome della categoria va su una riga a se',
 //          e ogni tipologia su UNA riga con "(N nella tua lista)" tra parentesi accanto (invece di
 //          due righe e prefisso inline). Solo mobile e solo hub (classe .meta-hub). Aggiunte classi
@@ -8785,7 +8788,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.887';
+const JS_VERSION = 'v5.888';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11623,9 +11626,9 @@ function renderSeriesMeta(s) {
     let riga2 = '';
     if (currentUser && (complete || n > 0)) {  // v5.885: se ne possiedi 0, niente riga ("0 nella tua lista" era brutto)
       const testo = complete
-        ? '\u{1F389} ' + (it
+        ? (it
             ? (quanti === 1 ? "Ce l'hai!" : (femminile ? 'Le hai tutte!' : 'Li hai tutti!'))
-            : (quanti === 1 ? 'You have it!' : 'You have them all!'))
+            : (quanti === 1 ? 'You have it!' : 'You have them all!')) + '\u{1F389}'
         : nfmt(n) + ' ' + inLista;
       riga2 = `<span class="col-own" style="color:var(--accent);font-weight:600;">${testo}</span>`;
     }
