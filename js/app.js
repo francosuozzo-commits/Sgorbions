@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.881 - Franco: Pagina Bustine (e in generale ogni sezione) — i contatori/etichette non
+//          dicevano piu' 'figurine'. (1) Il placeholder della ricerca era hardcoded 'Cerca
+//          figurine...': ora usa il nome della sezione (getSectionLabel) → 'Cerca bustine...',
+//          'Cerca album...', ecc. (2) In renderSeriesMeta mancava 'bustine' nella mappa 'nomi',
+//          quindi i contatori (es. 'X in totale') ripiegavano su 'figurine': aggiunta la voce
+//          bustine (femminile). (3) HUB della serie (pagina dei 5 blocchi): i numeri in alto ora
+//          mostrano UNA RIGA PER CATEGORIA (tutte e 5), non il dettaglio di una sola sezione, e si
+//          aggiornano anche tornando indietro da un blocco (closeItemsSection). Solo app.js.
+// ------------------------------------------------------------
 // v5.880 - Franco: il NUMERO ha senso solo per le FIGURINE. Tolto il campo Numero (e la sua
 //          obbligatorieta') per Retro, Bustine, Album, Altri oggetti: per queste sezioni conta solo
 //          il Nome. Il campo compare solo se currentSection/f.section === 'figurines', sia nel form
@@ -8746,7 +8755,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.880';
+const JS_VERSION = 'v5.881';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11593,6 +11602,23 @@ function renderSeriesMeta(s) {
     return `<div style="display:flex;flex-direction:column;gap:1px;">${riga1}${riga2}</div>`;
   };
 
+  // v5.881 — HUB (pagina dei 5 blocchi, currentSection === null): una RIGA PER OGNI categoria coi
+  // numeri totali di ciascuna, invece del dettaglio di una sola sezione (che prima restava anche
+  // tornando indietro da un blocco). Dentro una sezione vale il codice sotto (dettaglio di quella).
+  if (!currentSection) {
+    const _all = getData('figurines', []).filter(f => f.seriesId === s.id);
+    const _cats = [
+      { k: 'figurines', els: _all.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras' && f.section !== 'bustine'), fem: true  },
+      { k: 'retros',    els: _all.filter(f => f.section === 'retros'),  fem: false },
+      { k: 'bustine',   els: _all.filter(f => f.section === 'bustine'), fem: true  },
+      { k: 'albums',    els: _all.filter(f => f.section === 'albums'),  fem: false },
+      { k: 'extras',    els: _all.filter(f => f.section === 'extras'),  fem: false }
+    ];
+    const _rows = _cats.map(c => colonna(BULLET, c.els, getSectionLabel(c.k), true, c.fem)).join('');
+    metaEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:0.45rem;width:100%;">' + _rows + '</div>';
+    return;
+  }
+
   // I CINQUE TIPI, IN TUTTE E QUATTRO LE SEZIONI (v5.711). Prima Album e Altri oggetti
   // mostravano SOLO il totale, perche' le loro categorie non erano state decise. Ora lo
   // sono: le stesse cinque valgono ovunque. Ma una categoria compare SOLO SE HA
@@ -11604,7 +11630,8 @@ function renderSeriesMeta(s) {
     figurines: { p: it ? 'figurine' : 'stickers', s: it ? 'figurina' : 'sticker', f: true  },
     retros:    { p: it ? 'retro'    : 'retros',   s: it ? 'retro'    : 'retro',   f: false },
     albums:    { p: it ? 'album'    : 'albums',   s: it ? 'album'    : 'album',   f: false },
-    extras:    { p: it ? 'oggetti'  : 'items',    s: it ? 'oggetto'  : 'item',    f: false }
+    extras:    { p: it ? 'oggetti'  : 'items',    s: it ? 'oggetto'  : 'item',    f: false },
+    bustine:   { p: it ? 'bustine'  : 'packs',    s: it ? 'bustina'  : 'pack',    f: true  }
   };
   const nm = nomi[sez] || nomi.figurines;
   const meta = [];
@@ -11726,7 +11753,7 @@ function openSeriesSection(section) {
   // Franco: non numeri sbagliati, numeri CONGELATI.
   const _s = getData('series', []).find(x => x.id === currentSeriesId);
   if (_s) renderSeriesMeta(_s);
-  const si = document.getElementById('items-search'); if (si) { si.value = ''; si.placeholder = currentLang === 'it' ? 'Cerca figurine...' : 'Search stickers...'; }
+  const si = document.getElementById('items-search'); if (si) { si.value = ''; si.placeholder = (currentLang === 'it' ? 'Cerca ' : 'Search ') + (getSectionLabel(section) || (currentLang === 'it' ? 'oggetti' : 'items')).toLowerCase() + '...'; }
   currentItemPage = 1;
   bulkEditActive = false;
   const bulkView = document.getElementById('bulk-edit-view');
@@ -11763,6 +11790,7 @@ function closeItemsSection() {
   document.getElementById('section-selector').style.display = '';
   currentSection = null;
   updateSectionCounts();
+  try { renderSeriesMeta(getData('series', []).find(x => x.id === currentSeriesId)); } catch(e) {} // v5.881: hub -> una riga per categoria (non i numeri della sezione appena lasciata)
 }
 
 function closeSeriesDetail() {
