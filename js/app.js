@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.882 - Franco: HUB della serie — ogni categoria ora replica ESATTAMENTE la riga di dettaglio
+//          (set base, variazioni ufficiali/non ufficiali, change, errori di stampa, in totale),
+//          una riga per categoria (figurine, retro, bustine, album, altri oggetti). Estratta la
+//          costruzione in sezRows(sez, alwaysTotal); nell'hub alwaysTotal=true cosi' anche le
+//          categorie a 0 compaiono (con 'in totale'). Solo app.js.
+// ------------------------------------------------------------
 // v5.881 - Franco: Pagina Bustine (e in generale ogni sezione) — i contatori/etichette non
 //          dicevano piu' 'figurine'. (1) Il placeholder della ricerca era hardcoded 'Cerca
 //          figurine...': ora usa il nome della sezione (getSectionLabel) → 'Cerca bustine...',
@@ -8755,7 +8761,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.881';
+const JS_VERSION = 'v5.882';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11602,30 +11608,7 @@ function renderSeriesMeta(s) {
     return `<div style="display:flex;flex-direction:column;gap:1px;">${riga1}${riga2}</div>`;
   };
 
-  // v5.881 — HUB (pagina dei 5 blocchi, currentSection === null): una RIGA PER OGNI categoria coi
-  // numeri totali di ciascuna, invece del dettaglio di una sola sezione (che prima restava anche
-  // tornando indietro da un blocco). Dentro una sezione vale il codice sotto (dettaglio di quella).
-  if (!currentSection) {
-    const _all = getData('figurines', []).filter(f => f.seriesId === s.id);
-    const _cats = [
-      { k: 'figurines', els: _all.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras' && f.section !== 'bustine'), fem: true  },
-      { k: 'retros',    els: _all.filter(f => f.section === 'retros'),  fem: false },
-      { k: 'bustine',   els: _all.filter(f => f.section === 'bustine'), fem: true  },
-      { k: 'albums',    els: _all.filter(f => f.section === 'albums'),  fem: false },
-      { k: 'extras',    els: _all.filter(f => f.section === 'extras'),  fem: false }
-    ];
-    const _rows = _cats.map(c => colonna(BULLET, c.els, getSectionLabel(c.k), true, c.fem)).join('');
-    metaEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:0.45rem;width:100%;">' + _rows + '</div>';
-    return;
-  }
-
-  // I CINQUE TIPI, IN TUTTE E QUATTRO LE SEZIONI (v5.711). Prima Album e Altri oggetti
-  // mostravano SOLO il totale, perche' le loro categorie non erano state decise. Ora lo
-  // sono: le stesse cinque valgono ovunque. Ma una categoria compare SOLO SE HA
-  // QUALCOSA DENTRO — quindi un Album senza variazioni non ne parla, e il giorno che ne
-  // inserisci una la colonna appare da sola. E' cio' che rende gratis il "alla peggio
-  // non avremo dati" di Franco.
-  const g = tipiPresenti(s.id, sez);
+  // v5.882 — nomi delle categorie (plurale/singolare/genere), usati sia nell'hub sia in sezione.
   const nomi = {
     figurines: { p: it ? 'figurine' : 'stickers', s: it ? 'figurina' : 'sticker', f: true  },
     retros:    { p: it ? 'retro'    : 'retros',   s: it ? 'retro'    : 'retro',   f: false },
@@ -11633,37 +11616,48 @@ function renderSeriesMeta(s) {
     extras:    { p: it ? 'oggetti'  : 'items',    s: it ? 'oggetto'  : 'item',    f: false },
     bustine:   { p: it ? 'bustine'  : 'packs',    s: it ? 'bustina'  : 'pack',    f: true  }
   };
-  const nm = nomi[sez] || nomi.figurines;
-  const meta = [];
 
-  if (g.base.length) meta.push(colonna(BULLET, g.base,
-    it ? nm.p + ' set base' : nm.p + ' base set', false, nm.f, 'var(--type-base)'));
+  // Costruisce le colonne (set base, variazioni ufficiali/non ufficiali, change, errori di stampa,
+  // in totale) di UNA categoria — la riga di dettaglio. alwaysTotal: mostra "in totale" anche a 0
+  // (usato nell'hub, cosi' ogni categoria compare comunque).
+  function sezRows(sez2, alwaysTotal) {
+    const g = tipiPresenti(s.id, sez2);
+    const nm = nomi[sez2] || nomi.figurines;
+    const m = [];
+    if (g.base.length) m.push(colonna(BULLET, g.base,
+      it ? nm.p + ' set base' : nm.p + ' base set', false, nm.f, 'var(--type-base)'));
+    if (g.variation.length) m.push(colonna(BULLET, g.variation,
+      it ? (g.variation.length === 1 ? 'variazione ufficiale' : 'variazioni ufficiali')
+         : (g.variation.length === 1 ? 'official variation' : 'official variations'),
+      false, true, 'var(--type-official)'));
+    if (g.unofficial.length) m.push(colonna(BULLET, g.unofficial,
+      it ? (g.unofficial.length === 1 ? 'variazione non ufficiale' : 'variazioni non ufficiali')
+         : (g.unofficial.length === 1 ? 'unofficial variation' : 'unofficial variations'),
+      false, true, 'var(--type-unofficial)'));
+    if (g.change.length) m.push(colonna(BULLET, g.change,
+      'Change', false, false, 'var(--type-change)'));
+    if (g.printError.length) m.push(colonna(BULLET, g.printError,
+      it ? (g.printError.length === 1 ? 'errore di stampa' : 'errori di stampa')
+         : (g.printError.length === 1 ? 'print error' : 'print errors'),
+      false, false, 'var(--type-printerror)'));
+    if (g.items.length || alwaysTotal) m.push(colonna(BULLET, g.items,
+      it ? (g.items.length === 1 ? nm.s + ' in totale' : nm.p + ' in totale')
+         : (g.items.length === 1 ? nm.s + ' in total' : nm.p + ' in total'),
+      true, nm.f));
+    return m;
+  }
 
-  if (g.variation.length) meta.push(colonna(BULLET, g.variation,
-    it ? (g.variation.length === 1 ? 'variazione ufficiale' : 'variazioni ufficiali')
-       : (g.variation.length === 1 ? 'official variation' : 'official variations'),
-    false, true, 'var(--type-official)'));
+  // HUB (pagina dei 5 blocchi, currentSection === null): per OGNI categoria la sua riga di dettaglio
+  // completa, una riga per categoria. Dentro una sezione: solo il dettaglio di quella sezione.
+  if (!currentSection) {
+    const cats = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
+    metaEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">' +
+      cats.map(c => '<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;">' + sezRows(c, true).join('') + '</div>').join('') +
+      '</div>';
+    return;
+  }
 
-  if (g.unofficial.length) meta.push(colonna(BULLET, g.unofficial,
-    it ? (g.unofficial.length === 1 ? 'variazione non ufficiale' : 'variazioni non ufficiali')
-       : (g.unofficial.length === 1 ? 'unofficial variation' : 'unofficial variations'),
-    false, true, 'var(--type-unofficial)'));
-
-  if (g.change.length) meta.push(colonna(BULLET, g.change,
-    'Change', false, false, 'var(--type-change)'));
-
-  // il quinto tipo. Maschile: "errori di stampa" → "Li hai tutti!"
-  if (g.printError.length) meta.push(colonna(BULLET, g.printError,
-    it ? (g.printError.length === 1 ? 'errore di stampa' : 'errori di stampa')
-       : (g.printError.length === 1 ? 'print error' : 'print errors'),
-    false, false, 'var(--type-printerror)'));
-
-  if (g.items.length) meta.push(colonna(BULLET, g.items,
-    it ? (g.items.length === 1 ? nm.s + ' in totale' : nm.p + ' in totale')
-       : (g.items.length === 1 ? nm.s + ' in total' : nm.p + ' in total'),
-    true, nm.f));
-
-  metaEl.innerHTML = meta.join('');
+  metaEl.innerHTML = sezRows(sez, false).join('');
 }
 
 // I contatori in alto alla pagina della serie mostrano anche "N nella tua lista".
