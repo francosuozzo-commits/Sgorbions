@@ -1,6 +1,12 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.883 - Franco: (1) HUB serie — ogni riga ora ha il PREFISSO col nome della categoria in
+//          grassetto (Figurine, Retro, Bustine, Album, Altri oggetti), cosi' si capisce quale
+//          categoria e' ciascuna riga. (2) La DESCRIZIONE della serie parte dal bordo sinistro
+//          della foto, a tutta larghezza, sotto foto+contatori (spostata fuori da .series-info;
+//          su mobile era gia' cosi'). index.html + css/style.css + app.js.
+// ------------------------------------------------------------
 // v5.882 - Franco: HUB della serie — ogni categoria ora replica ESATTAMENTE la riga di dettaglio
 //          (set base, variazioni ufficiali/non ufficiali, change, errori di stampa, in totale),
 //          una riga per categoria (figurine, retro, bustine, album, altri oggetti). Estratta la
@@ -8761,7 +8767,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.882';
+const JS_VERSION = 'v5.883';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11651,8 +11657,9 @@ function renderSeriesMeta(s) {
   // completa, una riga per categoria. Dentro una sezione: solo il dettaglio di quella sezione.
   if (!currentSection) {
     const cats = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
+    const _pfx = c => '<div style="font-weight:700;color:var(--text);min-width:96px;flex-shrink:0;">' + getSectionLabel(c) + '</div>';
     metaEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">' +
-      cats.map(c => '<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;">' + sezRows(c, true).join('') + '</div>').join('') +
+      cats.map(c => '<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;">' + _pfx(c) + sezRows(c, true).join('') + '</div>').join('') +
       '</div>';
     return;
   }
