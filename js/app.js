@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.890 - Franco: il titolo "La tua ricerca" diventa "Imposta la tua ricerca di <sezione>"
+//          (figurine/retro/bustine/album/altri oggetti), dinamico per sezione. L'elemento (id
+//          items-search-title) perde il data-i18n e viene valorizzato in openSeriesSection.
+//          index.html + app.js.
+// ------------------------------------------------------------
 // v5.889 - Franco: nelle 5 pagine degli elementi, sopra i due numeri dei risultati ("N trovati" +
 //          "N fanno parte della tua lista") aggiunta l'etichetta "I risultati della tua ricerca"
 //          (EN "Your search results"), con lo stesso stile del titolo "La tua ricerca". Solo app.js.
@@ -8792,7 +8797,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.889';
+const JS_VERSION = 'v5.890';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11785,6 +11790,7 @@ function openSeriesSection(section) {
   const _s = getData('series', []).find(x => x.id === currentSeriesId);
   if (_s) renderSeriesMeta(_s);
   const si = document.getElementById('items-search'); if (si) { si.value = ''; si.placeholder = (currentLang === 'it' ? 'Cerca ' : 'Search ') + (getSectionLabel(section) || (currentLang === 'it' ? 'oggetti' : 'items')).toLowerCase() + '...'; }
+  const _st = document.getElementById('items-search-title'); if (_st) _st.textContent = (currentLang === 'it' ? 'Imposta la tua ricerca di ' : 'Set your search for ') + (getSectionLabel(section) || (currentLang === 'it' ? 'oggetti' : 'items')).toLowerCase();  // v5.890
   currentItemPage = 1;
   bulkEditActive = false;
   const bulkView = document.getElementById('bulk-edit-view');
