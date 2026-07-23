@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.886 - Franco (PROVA): nelle schede serie il NOME va sopra la foto anche su desktop, cosi' i
+//          contatori a destra salgono in alto. L'intestazione desktop diventa una griglia come sul
+//          mobile (.series-title-area grid; .series-info display:contents; nome riga1 a tutta
+//          larghezza; foto riga2-col1; #detail-meta riga2-col2). Solo css/style.css (+ versione).
+// ------------------------------------------------------------
 // v5.885 - Franco: nei contatori, quando il posseduto e' 0 non si scrive piu' "0 nella tua lista"
 //          (era brutto): la riga del posseduto compare solo se ne hai almeno uno (o se completa).
 //          Modificato il costruttore colonna(). Solo app.js.
@@ -8775,7 +8780,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.885';
+const JS_VERSION = 'v5.886';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11667,6 +11672,7 @@ function renderSeriesMeta(s) {
   // HUB (pagina dei 5 blocchi, currentSection === null): per OGNI categoria la sua riga di dettaglio
   // completa, una riga per categoria. Dentro una sezione: solo il dettaglio di quella sezione.
   if (!currentSection) {
+    metaEl.classList.add('meta-hub');  // v5.886: su mobile le numeriche dell'hub vanno sotto la foto
     const cats = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
     const _pfx = c => '<div style="font-weight:700;color:var(--text);min-width:96px;flex-shrink:0;">' + getSectionLabel(c) + '</div>';
     metaEl.innerHTML = '<div style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">' +
@@ -11675,6 +11681,7 @@ function renderSeriesMeta(s) {
     return;
   }
 
+  metaEl.classList.remove('meta-hub');
   metaEl.innerHTML = sezRows(sez, false).join('');
 }
 
