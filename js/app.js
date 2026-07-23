@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.884 - Franco: per Bustine, Album, Altri oggetti l'etichetta "set base" diventa "versione
+//          standard" (con plurale "versioni standard") — sia nei contatori (sezRows) sia nel filtro
+//          della vista sezione. Figurine e Retro restano "set base". Solo app.js.
+// ------------------------------------------------------------
 // v5.883 - Franco: (1) HUB serie — ogni riga ora ha il PREFISSO col nome della categoria in
 //          grassetto (Figurine, Retro, Bustine, Album, Altri oggetti), cosi' si capisce quale
 //          categoria e' ciascuna riga. (2) La DESCRIZIONE della serie parte dal bordo sinistro
@@ -8767,7 +8771,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.883';
+const JS_VERSION = 'v5.884';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11631,7 +11635,10 @@ function renderSeriesMeta(s) {
     const nm = nomi[sez2] || nomi.figurines;
     const m = [];
     if (g.base.length) m.push(colonna(BULLET, g.base,
-      it ? nm.p + ' set base' : nm.p + ' base set', false, nm.f, 'var(--type-base)'));
+      (['bustine','albums','extras'].includes(sez2)
+        ? (it ? (g.base.length === 1 ? 'versione standard' : 'versioni standard') : (g.base.length === 1 ? 'standard version' : 'standard versions'))
+        : (it ? nm.p + ' set base' : nm.p + ' base set')),
+      false, nm.f, 'var(--type-base)'));
     if (g.variation.length) m.push(colonna(BULLET, g.variation,
       it ? (g.variation.length === 1 ? 'variazione ufficiale' : 'variazioni ufficiali')
          : (g.variation.length === 1 ? 'official variation' : 'official variations'),
@@ -12485,7 +12492,9 @@ function renderItemTypeFilters() {
   html += item('all', it ? 'Tutte' : 'All', '', false);   // v5.852 — era 'Tutti': il filtro parla di figurine, femminile
 
   if (presente.base) html += item('base',
-    it ? (nomeP.charAt(0).toUpperCase() + nomeP.slice(1)) + ' set base' : 'Base set ' + nomeP, '', true);
+    (['bustine','albums','extras'].includes(currentSection)
+      ? (it ? 'Versione standard' : 'Standard version')
+      : (it ? (nomeP.charAt(0).toUpperCase() + nomeP.slice(1)) + ' set base' : 'Base set ' + nomeP)), '', true);
 
   if (presente.variation) html += item('variation',
     it ? 'Variazioni ufficiali' : 'Official variations', '');
