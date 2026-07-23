@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.889 - Franco: nelle 5 pagine degli elementi, sopra i due numeri dei risultati ("N trovati" +
+//          "N fanno parte della tua lista") aggiunta l'etichetta "I risultati della tua ricerca"
+//          (EN "Your search results"), con lo stesso stile del titolo "La tua ricerca". Solo app.js.
+// ------------------------------------------------------------
 // v5.888 - Franco: nei contatori l'emoji di completamento va DOPO il testo: "Li hai tutti!\u{1F389}",
 //          "Le hai tutte!\u{1F389}", "Ce l'hai!\u{1F389}" (e le forme EN). Prima era prefissa. Solo app.js.
 // ------------------------------------------------------------
@@ -8788,7 +8792,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.888';
+const JS_VERSION = 'v5.889';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11250,7 +11254,7 @@ function updateItemsCountDisplay(items) {
     html += `<span>${numBlue(nfmt)} ${frase}</span>`;
   }
 
-  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:1px;">${html}</div>`;
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:1px;"><div style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:0.35rem;">${it ? 'I risultati della tua ricerca' : 'Your search results'}</div>${html}</div>`;
 }
 
 function clearSearchField(inputId, renderFn) {
