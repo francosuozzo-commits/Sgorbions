@@ -1,6 +1,30 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.900 - Franco: Vista Ebay — (1) modal allargato (con 9 colonne era stretto, non si vedeva la
+//          colonna spedizione/policy): max-width 1180px / 96vw. (2) Selettore mercato IT/COM riportato
+//          al colore ADMIN (arancio var(--action-admin), testo bianco) invece del lime. index.html + app.js.
+// ------------------------------------------------------------
+// v5.899 - Franco: Vista Ebay (openSeriesEbayModal) — tabella ampliata con le colonne concordate per
+//          l'export (Titolo, Prezzo, Q.tà, Condizione, Spedizione, Foto), Descrizione esclusa. Due
+//          tabelle distinte eBay.it / eBay.com con selettore sopra: cambiano Titolo (IT/EN), Prezzo
+//          (€/$), Condizione (Nuovo/Usato vs Ungraded/Used) e Spedizione. I nuovi campi (ebayTitleIt/En,
+//          priceUsd, ebayShipIt/Us) sono placeholder finché non aggiungiamo gli input nel tab Ebay:
+//          per ora mostrano "—". Solo app.js.
+// ------------------------------------------------------------
+// v5.898 - Franco (pipeline foto eBay): i due caricamenti massivi ora gestiscono DUE foto con DUE
+//          flag di sovrascrittura distinti — "foto catalogo (ritaglio)" (campo img) e "foto originale
+//          eBay" (campo ebayImg, si RIUSA quello del caricamento manuale, non più imgOriginal della
+//          v5.897). Logica per pezzo: rifà il ritaglio solo se manca o se spunti il suo flag; carica
+//          l'originale solo se manca o se spunti l'altro. Così un secondo giro "solo originali" non
+//          esegue RMBG (veloce) e non tocca i ritagli già fatti. Solo app.js.
+// ------------------------------------------------------------
+// v5.897 - Franco (base per gli annunci eBay): i due caricamenti massivi foto ora salvano su
+//          Cloudinary ANCHE la foto ORIGINALE (con sfondo), nel nuovo campo imgOriginal, per ogni
+//          pezzo importato (figurine e retro). Serve perché su eBay le foto devono essere quelle
+//          vere, non i ritagli. Se lo sfondo non viene rimosso, imgOriginal riusa l'URL della foto
+//          (niente doppio upload). Solo app.js.
+// ------------------------------------------------------------
 // v5.896 - Franco: ripristinato il pulsante "✨ Rimuovi sfondo" nella form di dettaglio della
 //          figurina (sotto la foto, accanto a Cambia/Rimuovi foto). Era sparito da questa vista:
 //          la funzione removeBgFromEdit esisteva ma il suo bottone non era più renderizzato, quindi
@@ -8824,7 +8848,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.896';
+const JS_VERSION = 'v5.900';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11040,33 +11064,60 @@ function openSeriesEbayModal() {
     return `<div class="detail-row"><span class="detail-label">${sectionLabels[sec]}</span><span class="detail-value">${forSaleCount} ${currentLang === 'it' ? 'su' : 'of'} ${total}</span></div>`;
   }).join('');
 
-  // Tabella con tutti gli oggetti marcati Ebay — le colonne cresceranno
-  // via via che aggiungiamo i campi che servono per l'export
-  const forSaleItems = figs.filter(f => f.forSale)
-    .sort((a,b) => sectionOrder.indexOf(a.section||'figurines') - sectionOrder.indexOf(b.section||'figurines') || (a.number||0) - (b.number||0));
-  const tableEl = document.getElementById('series-ebay-table');
-  if (!forSaleItems.length) {
-    tableEl.innerHTML = `<p style="color:var(--muted);font-style:italic;font-size:0.88rem;">${currentLang === 'it' ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
-  } else {
-    const rows = forSaleItems.map(f => `<tr>
-      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;color:var(--muted);white-space:nowrap;">${sectionLabels[f.section || 'figurines']}</td>
-      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;white-space:nowrap;">${f.number || '—'}</td>
-      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;">${f.name || ''}</td>
-      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;white-space:nowrap;">€${(f.price||0).toFixed(2)}</td>
-      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;text-align:center;white-space:nowrap;">${f.quantity||1}</td>
-      <td style="padding:0.4rem 0.6rem;font-size:0.85rem;white-space:nowrap;">${f.condition === 'used' ? (currentLang === 'it' ? 'Usato' : 'Used') : (currentLang === 'it' ? 'Nuovo' : 'New')}</td>
-    </tr>`).join('');
-    tableEl.innerHTML = `<table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>
-      <th style="padding:0.4rem 0.6rem;text-align:left;">${currentLang === 'it' ? 'Tipo' : 'Type'}</th>
-      <th style="padding:0.4rem 0.6rem;text-align:left;">N.</th>
-      <th style="padding:0.4rem 0.6rem;text-align:left;">${currentLang === 'it' ? 'Nome' : 'Name'}</th>
-      <th style="padding:0.4rem 0.6rem;text-align:left;">${currentLang === 'it' ? 'Prezzo' : 'Price'}</th>
-      <th style="padding:0.4rem 0.6rem;text-align:left;">${currentLang === 'it' ? 'Q.tà' : 'Qty'}</th>
-      <th style="padding:0.4rem 0.6rem;text-align:left;">${currentLang === 'it' ? 'Condizione' : 'Condition'}</th>
-      </tr></thead><tbody>${rows}</tbody></table>`;
-  }
+  // Tabella oggetti marcati Ebay, con selettore mercato IT/COM (v5.899). La Descrizione è esclusa
+  // apposta (troppo lunga per la tabella; resta nell'export).
+  _ebayViewMarket = 'it'; // default a ogni apertura
+  renderEbayViewTable();
 
   document.getElementById('series-ebay-modal').classList.remove('hidden');
+}
+
+// v5.899 — Vista Ebay: due tabelle (eBay.it / eBay.com) con selettore. Le colonne che cambiano tra i
+// due mercati: Titolo (IT/EN), Prezzo (€/$), Condizione (Nuovo/Usato vs Ungraded/Used), Spedizione.
+// I campi ebayTitleIt/En, priceUsd, ebayShipIt/Us verranno popolati dai campi del tab Ebay (in arrivo):
+// finché sono vuoti la cella mostra "—".
+let _ebayViewMarket = 'it';
+function setEbayViewMarket(m) { _ebayViewMarket = m; renderEbayViewTable(); }
+function renderEbayViewTable() {
+  const tableEl = document.getElementById('series-ebay-table');
+  if (!tableEl) return;
+  const it = (currentLang === 'it');
+  const sectionLabels = { figurines: it ? 'Figurine' : 'Stickers', retros: 'Retro', albums: it ? 'Album' : 'Albums', extras: it ? 'Altri oggetti' : 'Other items', bustine: it ? 'Bustine' : 'Wrappers' };
+  const sectionOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
+  const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId);
+  const forSaleItems = figs.filter(f => f.forSale)
+    .sort((a, b) => sectionOrder.indexOf(a.section || 'figurines') - sectionOrder.indexOf(b.section || 'figurines') || (a.number || 0) - (b.number || 0));
+  const market = _ebayViewMarket, isIt = market === 'it', sym = isIt ? '€' : '$';
+  // Bottoni admin = arancioni (var(--action-admin)), non lime.
+  const tab = (m, label) => `<button onclick="setEbayViewMarket('${m}')" style="font-size:0.82rem;padding:5px 14px;border-radius:8px;border:1px solid ${market === m ? 'var(--action-admin)' : 'var(--border)'};background:${market === m ? 'var(--action-admin)' : 'transparent'};color:${market === m ? '#ffffff' : 'var(--muted)'};cursor:pointer;font-weight:${market === m ? '700' : '400'};">${label}</button>`;
+  const selector = `<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">${tab('it', '🇮🇹 eBay.it')}${tab('com', '🇺🇸 eBay.com')}</div>`;
+  if (!forSaleItems.length) {
+    tableEl.innerHTML = selector + `<p style="color:var(--muted);font-style:italic;font-size:0.88rem;">${it ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
+    return;
+  }
+  const muted = x => `<span style="color:var(--muted);">${x}</span>`;
+  const esc = s => (s || '').replace(/</g, '&lt;');
+  const titleOf = f => isIt ? (f.ebayTitleIt || '') : (f.ebayTitleEn || '');
+  const shipOf = f => isIt ? (f.ebayShipIt || '') : (f.ebayShipUs || '');
+  const priceCell = f => { const v = isIt ? f.price : f.priceUsd; return (v == null || v === '') ? muted('—') : sym + Number(v).toFixed(2); };
+  const condOf = f => isIt ? (f.condition === 'used' ? 'Usato' : 'Nuovo') : (f.condition === 'used' ? 'Used' : 'Ungraded');
+  const thumb = f => f.ebayImg ? `<img src="${cloudinaryUrl(f.ebayImg, 'w_48,h_48,c_fit,q_auto,f_auto')}" style="width:36px;height:36px;object-fit:contain;border-radius:4px;background:var(--card2);">` : muted('—');
+  const td = (c, extra = '') => `<td style="padding:0.4rem 0.6rem;font-size:0.82rem;${extra}">${c}</td>`;
+  const rows = forSaleItems.map(f => `<tr>
+    ${td(sectionLabels[f.section || 'figurines'], 'color:var(--muted);white-space:nowrap;')}
+    ${td(f.number || '—', 'white-space:nowrap;')}
+    ${td(esc(f.name))}
+    ${td(esc(titleOf(f)) || muted('—'))}
+    ${td(priceCell(f), 'white-space:nowrap;')}
+    ${td(f.quantity || 1, 'text-align:center;white-space:nowrap;')}
+    ${td(condOf(f), 'white-space:nowrap;')}
+    ${td(esc(shipOf(f)) || muted('—'))}
+    ${td(thumb(f), 'text-align:center;')}
+  </tr>`).join('');
+  const th = t => `<th style="padding:0.4rem 0.6rem;text-align:left;white-space:nowrap;">${t}</th>`;
+  tableEl.innerHTML = selector + `<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>
+    ${th(it ? 'Tipo' : 'Type')}${th('N.')}${th(it ? 'Nome' : 'Name')}${th('Titolo ' + (isIt ? 'IT' : 'EN'))}${th((it ? 'Prezzo' : 'Price') + ' (' + sym + ')')}${th(it ? 'Q.tà' : 'Qty')}${th(it ? 'Condizione' : 'Condition')}${th((it ? 'Spedizione' : 'Shipping') + ' ' + (isIt ? 'IT' : 'US'))}${th('Foto')}
+  </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function openAddSeriesModal(seriesId) {
@@ -18248,9 +18299,13 @@ function renderAdminFoto() {
           <input type="checkbox" id="foto-remove-bg" checked style="width:auto;">
           ${currentLang==='it'?'✨ Rimuovi sfondo automaticamente (AI locale)':'✨ Remove background automatically (local AI)'}
         </label>
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;margin-bottom:0.4rem;">
+          <input type="checkbox" id="foto-overwrite-cut" style="width:auto;">
+          ${currentLang==='it'?'Sovrascrivi foto catalogo (ritaglio) se presente':'Overwrite catalog (cut-out) photo if present'}
+        </label>
         <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;margin-bottom:0.75rem;">
-          <input type="checkbox" id="foto-overwrite" style="width:auto;">
-          ${currentLang==='it'?'Sovrascrivi foto già presenti':'Overwrite existing photos'}
+          <input type="checkbox" id="foto-overwrite-orig" style="width:auto;">
+          ${currentLang==='it'?'Sovrascrivi foto originale eBay se presente':'Overwrite eBay original photo if present'}
         </label>
 
         <button class="btn-primary btn-admin" onclick="startAdminFotoUpload()" id="foto-start-btn">
@@ -18296,9 +18351,13 @@ function renderAdminFoto() {
         <input type="checkbox" id="fotonn-remove-bg" checked style="width:auto;">
         ${currentLang==='it'?'✨ Rimuovi sfondo automaticamente (AI locale)':'✨ Remove background automatically (local AI)'}
       </label>
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;margin-bottom:0.4rem;">
+        <input type="checkbox" id="fotonn-overwrite-cut" style="width:auto;">
+        ${currentLang==='it'?'Sovrascrivi foto catalogo (ritaglio) se presente':'Overwrite catalog (cut-out) photo if present'}
+      </label>
       <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;margin-bottom:0.75rem;">
-        <input type="checkbox" id="fotonn-overwrite" style="width:auto;">
-        ${currentLang==='it'?'Sovrascrivi foto già presenti':'Overwrite existing photos'}
+        <input type="checkbox" id="fotonn-overwrite-orig" style="width:auto;">
+        ${currentLang==='it'?'Sovrascrivi foto originale eBay se presente':'Overwrite eBay original photo if present'}
       </label>
 
       <button class="btn-primary btn-admin" onclick="startAdminFotoNoNumberUpload()" id="fotonn-start-btn">
@@ -18400,7 +18459,11 @@ async function startAdminFotoUpload() {
   const files = Array.from(document.getElementById('foto-file-input').files);
   if (!files.length) { toast(currentLang==='it'?'Seleziona almeno una foto':'Select at least one photo', 'error'); return; }
   const doRemoveBg = document.getElementById('foto-remove-bg').checked;
-  const overwrite = document.getElementById('foto-overwrite').checked;
+  // v5.898 — due flag di sovrascrittura distinti: uno per la foto CATALOGO (ritaglio, img) e uno per
+  // la foto ORIGINALE eBay (ebayImg). Così un secondo giro può riempire solo gli originali sul
+  // già-fatto senza rifare i ritagli (né RMBG).
+  const overwriteCut = document.getElementById('foto-overwrite-cut').checked;
+  const overwriteOrig = document.getElementById('foto-overwrite-orig').checked;
 
   if (doRemoveBg) {
     // Aspetta la libreria fino a 30 secondi
@@ -18441,23 +18504,30 @@ async function startAdminFotoUpload() {
     // ereditano il fronte dalla base): si cerca la base con quel numero, non la prima figurina qualsiasi.
     const fig = allFigs.find(f => Number(f.number) === num && !f.baseFigurineId && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError);
     if (!fig) { errRiga('⚠️ Nessuna figurina base #' + num + ' trovata', 'warn');  continue; }
-    if (fig.img && !overwrite) { fotoLog('⏭️ #' + num + ' ' + fig.name + ' — saltata (ha già foto)', 'info'); skip++; continue; }
+    // v5.898 — decidi cosa serve per QUESTO pezzo: il ritaglio catalogo e/o l'originale eBay.
+    const needCut = !fig.img || overwriteCut;
+    const needOrig = !fig.ebayImg || overwriteOrig;
+    if (!needCut && !needOrig) { fotoLog('⏭️ #' + num + ' ' + fig.name + ' — saltata (foto già presenti)', 'info'); skip++; continue; }
 
     try {
-      let blob = file;
-
-      if (doRemoveBg) {
-        fotoLog('🎨 Rimozione sfondo #' + num + '...', 'info');
-        blob = await window._removeBackground(blob, {
-          model: 'isnet', // v5.793 — modello pieno (vedi removeBgFromEdit)
-          progress: (key, cur, tot) => fotoStatus('Sfondo #' + num + ': ' + Math.round((cur/tot)*100) + '%', Math.round((i/files.length)*100))
-        });
-        blob = await fotoCrop(blob);
+      let cutUrl = fig.img;
+      if (needCut) {
+        let blob = file;
+        if (doRemoveBg) {
+          fotoLog('🎨 Rimozione sfondo #' + num + '...', 'info');
+          blob = await window._removeBackground(blob, {
+            model: 'isnet',
+            progress: (key, cur, tot) => fotoStatus('Sfondo #' + num + ': ' + Math.round((cur/tot)*100) + '%', Math.round((i/files.length)*100))
+          });
+          blob = await fotoCrop(blob);
+        }
+        fotoLog('☁️ Catalogo #' + num + '...', 'info');
+        cutUrl = await uploadToCloudinary(blob);
       }
-
-      fotoLog('☁️ Caricamento ' + (i+1) + '/' + files.length + ' — #' + num + '...', 'info');
-      const url = await uploadToCloudinary(blob);
-      const updated = { ...fig, img: url };
+      // Foto ORIGINALE eBay (con sfondo, foto vera) → sempre il file originale, senza ritaglio.
+      let origUrl = fig.ebayImg;
+      if (needOrig) { fotoLog('☁️ Originale eBay #' + num + '...', 'info'); origUrl = await uploadToCloudinary(file); }
+      const updated = { ...fig, img: cutUrl, ebayImg: origUrl };
       await fsSave('figurines', updated);
       if (_cache.figurines) {
         const idx = _cache.figurines.findIndex(x => x.id === fig.id);
@@ -18515,7 +18585,9 @@ async function startAdminFotoNoNumberUpload() {
   const files = Array.from(document.getElementById('fotonn-file-input').files);
   if (!files.length) { toast(currentLang==='it'?'Seleziona almeno una foto':'Select at least one photo', 'error'); return; }
   const doRemoveBg = document.getElementById('fotonn-remove-bg').checked;
-  const overwrite = document.getElementById('fotonn-overwrite').checked;
+  // v5.898 — due flag distinti (vedi startAdminFotoUpload): ritaglio catalogo e originale eBay.
+  const overwriteCut = document.getElementById('fotonn-overwrite-cut').checked;
+  const overwriteOrig = document.getElementById('fotonn-overwrite-orig').checked;
 
   if (doRemoveBg) {
     let tries = 0;
@@ -18578,23 +18650,29 @@ async function startAdminFotoNoNumberUpload() {
        continue;
     }
     const fig = matches[0].item;
-    if (fig.img && !overwrite) { fotoNnLog('⏭️ "' + name + '" — saltata (ha già foto)', 'info'); skip++; continue; }
+    // v5.898 — vedi startAdminFotoUpload: ritaglio catalogo e/o originale eBay, in base ai due flag.
+    const needCut = !fig.img || overwriteCut;
+    const needOrig = !fig.ebayImg || overwriteOrig;
+    if (!needCut && !needOrig) { fotoNnLog('⏭️ "' + name + '" — saltata (foto già presenti)', 'info'); skip++; continue; }
 
     try {
-      let blob = file;
-
-      if (doRemoveBg) {
-        fotoNnLog('🎨 Rimozione sfondo "' + name + '"...', 'info');
-        blob = await window._removeBackground(blob, {
-          model: 'isnet', // v5.793 — modello pieno (vedi removeBgFromEdit)
-          progress: (key, cur, tot) => fotoNnStatus('Sfondo "' + name + '": ' + Math.round((cur/tot)*100) + '%', Math.round((i/files.length)*100))
-        });
-        blob = await fotoCrop(blob);
+      let cutUrl = fig.img;
+      if (needCut) {
+        let blob = file;
+        if (doRemoveBg) {
+          fotoNnLog('🎨 Rimozione sfondo "' + name + '"...', 'info');
+          blob = await window._removeBackground(blob, {
+            model: 'isnet',
+            progress: (key, cur, tot) => fotoNnStatus('Sfondo "' + name + '": ' + Math.round((cur/tot)*100) + '%', Math.round((i/files.length)*100))
+          });
+          blob = await fotoCrop(blob);
+        }
+        fotoNnLog('☁️ Catalogo "' + name + '"...', 'info');
+        cutUrl = await uploadToCloudinary(blob);
       }
-
-      fotoNnLog('☁️ Caricamento ' + (i+1) + '/' + files.length + ' — "' + name + '"...', 'info');
-      const url = await uploadToCloudinary(blob);
-      const updated = { ...fig, img: url };
+      let origUrl = fig.ebayImg;
+      if (needOrig) { fotoNnLog('☁️ Originale eBay "' + name + '"...', 'info'); origUrl = await uploadToCloudinary(file); }
+      const updated = { ...fig, img: cutUrl, ebayImg: origUrl };
       await fsSave('figurines', updated);
       if (_cache.figurines) {
         const idx = _cache.figurines.findIndex(x => x.id === fig.id);
