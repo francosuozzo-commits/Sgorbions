@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.896 - Franco: ripristinato il pulsante "✨ Rimuovi sfondo" nella form di dettaglio della
+//          figurina (sotto la foto, accanto a Cambia/Rimuovi foto). Era sparito da questa vista:
+//          la funzione removeBgFromEdit esisteva ma il suo bottone non era più renderizzato, quindi
+//          la rimozione sfondo restava raggiungibile solo dai 2 caricamenti massivi. Solo app.js.
+// ------------------------------------------------------------
 // v5.895 - Franco: RIMOZIONE SFONDO — sostituito @imgly/background-removal (modello isnet) con
 //          RMBG-1.4 quantizzato (q8) via transformers.js, qualità molto migliore sui retro bianchi.
 //          Strumento solo admin, caricamento pigro alla prima rimozione (i visitatori non scaricano
@@ -8819,7 +8824,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.895';
+const JS_VERSION = 'v5.896';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -15880,7 +15885,11 @@ function switchToEditMode(figId) {
       '<input type="file" id="fig-edit-img-file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event)">' +
       '</label>' +
       (f.img ? '<button onclick="removeFigPhoto()" style="flex:1;font-size:0.72rem;color:var(--danger);border:1px solid rgba(var(--danger-rgb),0.4);background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;white-space:nowrap;">🗑️ ' + (currentLang==='it'?'Rimuovi foto':'Remove photo') + '</button>' : '') +
-      '</div>';
+      '</div>' +
+      // v5.896 — ripristinato il pulsante "Rimuovi sfondo" (AI locale, ora RMBG-1.4) nella form di
+      // dettaglio: era sparito da questa vista e la funzione restava raggiungibile solo dai caricamenti
+      // massivi. Sempre presente (agisce sulla preview corrente, sia foto esistente che appena caricata).
+      '<button id="fig-edit-remove-bg-btn" onclick="removeBgFromEdit()" style="width:100%;margin-top:0.4rem;font-size:0.72rem;color:var(--accent2);border:1px solid var(--accent2);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">✨ ' + (currentLang==='it'?'Rimuovi sfondo':'Remove background') + '</button>';
   }
 
   // Build edit form
