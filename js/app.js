@@ -1,6 +1,24 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.895 - Franco: RIMOZIONE SFONDO — sostituito @imgly/background-removal (modello isnet) con
+//          RMBG-1.4 quantizzato (q8) via transformers.js, qualità molto migliore sui retro bianchi.
+//          Strumento solo admin, caricamento pigro alla prima rimozione (i visitatori non scaricano
+//          nulla). window._removeBackground(blob)->Blob resta l'interfaccia: i 3 punti di chiamata
+//          (editor singolo + 2 caricamenti massivi) invariati. Solo app.js.
+// ------------------------------------------------------------
+// v5.894 - Franco: su telefono le etichette dei filtri di possesso si accorciano — "Presenti
+//          nella tua lista" -> "Nella tua lista", "Mancanti dalla tua lista" -> "Non nella tua
+//          lista". Su desktop restano per esteso. Solo app.js.
+// ------------------------------------------------------------
+// v5.893 - Franco: (1) su telefono i due filtri di possesso ("Presenti"/"Mancanti nella tua
+//          lista") vanno sulla STESSA riga (contenitore nowrap, toggle flex:1). (2) Coda della
+//          paginazione: da "${sez} 1..30 | 160 ${sez}" a "${sez} 1..30 di 160" (via pipe e
+//          ripetizione della parola), generalizzato per ogni sezione. Solo app.js.
+// ------------------------------------------------------------
+// v5.892 - Franco: la frase "Affina la tua ricerca coi seguenti filtri:" diventa "Affina la tua
+//          ricerca indicando dove vuoi cercare" (IT). index.html + app.js.
+// ------------------------------------------------------------
 // v5.891 - Franco: in INGLESE la sezione Bustine si chiama "Wrappers" (non "Packs"). Sostituite
 //          tutte le occorrenze EN Packs/packs/Pack -> Wrappers/wrappers/wrapper (i18n, mappe
 //          getSectionLabel, nomi, badge, filtri wantlist). L'italiano resta "Bustine". Solo app.js.
@@ -8801,7 +8819,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.891';
+const JS_VERSION = 'v5.895';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9790,7 +9808,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario del sito.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>• oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>• figurine presenti nella tua lista (serie complete)<br>• figurine presenti nella tua lista (serie non complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la tua lista di figurine (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta la tua lista di figurine (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri:','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -12613,20 +12631,29 @@ function renderItemTypeFilters() {
   if (elOwned) {
     const itl = (currentLang === 'it');
     // stessa identica forma dei filtri di tipo: bottone toggle-btn-blue + etichetta
-    const itemToggle = (isOn, onclickAttr, label) => `
-        <div style="display:flex;align-items:center;gap:0.4rem;">
+    const itemToggle = (isOn, onclickAttr, label, extra) => `
+        <div style="display:flex;align-items:center;gap:0.4rem;${extra || ''}">
           <button class="toggle-btn-blue ${isOn ? 'on' : ''}" onclick="${onclickAttr}" title="${label}"></button>
           <span style="font-size:0.82rem;color:var(--text);">${label}</span>
         </div>`;
     // in FILA, non in colonna: stanno comodamente su una riga sola (wrap se serve).
-    let h2 = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;">';
+    // v5.893 — su telefono i due filtri di possesso ("Presenti"/"Mancanti nella tua lista")
+    // devono stare sulla STESSA riga: contenitore nowrap e ciascun toggle flex:1 (min-width:0),
+    // cosi' occupano due colonne uguali e il testo va a capo dentro la colonna se serve.
+    const _mob = _isMobileViewport();
+    let h2 = `<div style="display:flex;flex-wrap:${_mob ? 'nowrap' : 'wrap'};gap:0.5rem 1.5rem;align-items:flex-start;">`;
     if (currentUser) {
       // v5.853 — le etichette tornano per esteso anche su telefono (la v5.852 le aveva
       // accorciate in "Presenti"/"Mancanti"): a fare spazio ci pensa il filtro "Senza foto",
       // che su telefono non compare piu' (vedi sotto). Meglio togliere un filtro intero che
       // amputare il nome di due.
-      h2 += itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')", itl ? 'Presenti nella tua lista' : 'In my list');
-      h2 += itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')", itl ? 'Mancanti dalla tua lista' : 'Missing from my list');
+      // v5.894 — su telefono le etichette IT si accorciano ("Nella tua lista" / "Non nella tua
+      // lista") per stare comode sulla stessa riga; su desktop restano per esteso.
+      const _pairExtra = _mob ? 'flex:1 1 0;min-width:0;' : '';
+      const _lblOwned = itl ? (_mob ? 'Nella tua lista' : 'Presenti nella tua lista') : 'In my list';
+      const _lblMissing = itl ? (_mob ? 'Non nella tua lista' : 'Mancanti dalla tua lista') : 'Missing from my list';
+      h2 += itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')", _lblOwned, _pairExtra);
+      h2 += itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')", _lblMissing, _pairExtra);
     }
     // v5.853 — il filtro "Senza foto" su telefono non compare: e' un filtro di servizio, e la
     // riga serve tutta ai due filtri di possesso, che tornano cosi' col nome per esteso.
@@ -13263,17 +13290,24 @@ function renderItems() {
     const _ser = getData('series', []).find(s => s.id === currentSeriesId);
     const firstNum = currentSection === 'retros' ? 1 : _ser?.firstNumber;
     const sectionLabelLower = (getSectionLabel(currentSection) || (currentLang === 'it' ? 'oggetti' : 'items')).toLowerCase();
-    let rangeStr = '';
+    // v5.893 — la coda dei risultati passa da "${label} ${from}..${to} | ${total} ${label}"
+    // a "${label} ${from}..${to} di ${total}": via la pipe e la ripetizione della parola.
+    // Senza range (sezioni senza numeri) resta "${total} ${label}".
+    let tailStr = '';
     if (firstNum != null) {
       const from = firstNum + (cur - 1) * getItemsPerPage();
       const to = Math.min(firstNum + cur * getItemsPerPage() - 1, firstNum + total - 1);
-      rangeStr = currentLang === 'it'
-        ? ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to}`
-        : ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to}`;
+      tailStr = currentLang === 'it'
+        ? ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to} di ${total}`
+        : ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to} of ${total}`;
+    } else {
+      tailStr = currentLang === 'it'
+        ? ` &nbsp;|&nbsp; ${total} ${sectionLabelLower}`
+        : ` &nbsp;|&nbsp; ${total} total`;
     }
     const label = currentLang === 'it'
-      ? `Pagina ${cur} di ${tot}${rangeStr} &nbsp;|&nbsp; ${total} ${sectionLabelLower}`
-      : `Page ${cur} of ${tot}${rangeStr} &nbsp;|&nbsp; ${total} total`;
+      ? `Pagina ${cur} di ${tot}${tailStr}`
+      : `Page ${cur} of ${tot}${tailStr}`;
     return `<div class="pag-row" style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
       ${cur > 1 ? `<button onclick="changeItemPage(1)" class="btn-secondary" style="padding:0.4rem 1rem;">⏮ ${currentLang === 'it' ? 'Prima' : 'First'}</button>` : ''}
       <button onclick="changeItemPage(${cur - 1})" ${cur === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ ${currentLang === 'it' ? 'Precedente' : 'Previous'}</button>
@@ -16001,16 +16035,47 @@ function switchToEditMode(figId) {
 
 let _figEditImgData = null;
 
-// Carica libreria rimozione sfondo in background all'avvio
-(async function loadRemoveBgLib() {
+// v5.895 — Rimozione sfondo: modello RMBG-1.4 (q8) via transformers.js, al posto di
+// @imgly/background-removal (isnet). Qualità nettamente migliore sui soggetti chiari a basso
+// contrasto (retro bianchi). È uno strumento SOLO admin: si carica in modo PIGRO alla prima
+// rimozione, quindi i visitatori normali non scaricano nulla (nessun impatto su privacy/peso).
+// Espone la stessa identica interfaccia di prima: window._removeBackground(blob) -> Blob PNG
+// con trasparenza, così i 3 punti di chiamata restano invariati.
+let _rmbgPipe = null, _rmbgLoading = null;
+async function _loadRmbgPipe() {
+  if (_rmbgPipe) return _rmbgPipe;
+  if (_rmbgLoading) return _rmbgLoading;
+  _rmbgLoading = (async () => {
+    const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.0');
+    env.allowLocalModels = false; // scarica dal hub, non cerca file locali
+    const device = navigator.gpu ? 'webgpu' : 'wasm';
+    try {
+      _rmbgPipe = await pipeline('background-removal', 'briaai/RMBG-1.4', { dtype: 'q8', device });
+    } catch (e) {
+      // ripiego su WASM se WebGPU non regge
+      if (device !== 'wasm') { _rmbgPipe = await pipeline('background-removal', 'briaai/RMBG-1.4', { dtype: 'q8', device: 'wasm' }); }
+      else throw e;
+    }
+    console.log('RMBG-1.4 background removal ready');
+    return _rmbgPipe;
+  })();
+  return _rmbgLoading;
+}
+// Interfaccia compatibile col codice esistente: riceve un Blob, torna un Blob PNG con alpha.
+// (Il 2° argomento delle vecchie chiamate — {model, progress} — viene semplicemente ignorato.)
+window._removeBackground = async function(blob) {
+  const pipe = await _loadRmbgPipe();
+  const url = URL.createObjectURL(blob);
   try {
-    const mod = await import('https://esm.sh/@imgly/background-removal');
-    window._removeBackground = mod.removeBackground;
-    console.log('Background removal library loaded');
-  } catch(e) {
-    console.warn('Background removal library not available:', e.message);
+    const out = await pipe(url);            // array di RawImage RGBA con sfondo rimosso
+    const raw = out[0];
+    const c = document.createElement('canvas'); c.width = raw.width; c.height = raw.height;
+    c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(raw.data), raw.width, raw.height), 0, 0);
+    return await new Promise(res => c.toBlob(res, 'image/png'));
+  } finally {
+    URL.revokeObjectURL(url);
   }
-})();
+};
 
 async function removeBgFromEdit() {
   const btn = document.getElementById('fig-edit-remove-bg-btn');
