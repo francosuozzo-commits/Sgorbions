@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.885 - Franco: nei contatori, quando il posseduto e' 0 non si scrive piu' "0 nella tua lista"
+//          (era brutto): la riga del posseduto compare solo se ne hai almeno uno (o se completa).
+//          Modificato il costruttore colonna(). Solo app.js.
+// ------------------------------------------------------------
 // v5.884 - Franco: per Bustine, Album, Altri oggetti l'etichetta "set base" diventa "versione
 //          standard" (con plurale "versioni standard") — sia nei contatori (sezRows) sia nel filtro
 //          della vista sezione. Figurine e Retro restano "set base". Solo app.js.
@@ -8771,7 +8775,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.884';
+const JS_VERSION = 'v5.885';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11607,7 +11611,7 @@ function renderSeriesMeta(s) {
     const stile = (forte ? 'font-weight:600;' : '') + (colore ? `color:${colore};` : '');
     const riga1 = `<span${stile ? ` style="${stile}"` : ''}>${icona}${nfmt(quanti)} ${etichetta}</span>`;
     let riga2 = '';
-    if (currentUser) {
+    if (currentUser && (complete || n > 0)) {  // v5.885: se ne possiedi 0, niente riga ("0 nella tua lista" era brutto)
       const testo = complete
         ? '\u{1F389} ' + (it
             ? (quanti === 1 ? "Ce l'hai!" : (femminile ? 'Le hai tutte!' : 'Li hai tutti!'))
