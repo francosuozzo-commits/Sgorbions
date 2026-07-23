@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.891 - Franco: in INGLESE la sezione Bustine si chiama "Wrappers" (non "Packs"). Sostituite
+//          tutte le occorrenze EN Packs/packs/Pack -> Wrappers/wrappers/wrapper (i18n, mappe
+//          getSectionLabel, nomi, badge, filtri wantlist). L'italiano resta "Bustine". Solo app.js.
+// ------------------------------------------------------------
 // v5.890 - Franco: il titolo "La tua ricerca" diventa "Imposta la tua ricerca di <sezione>"
 //          (figurine/retro/bustine/album/altri oggetti), dinamico per sezione. L'elemento (id
 //          items-search-title) perde il data-i18n e viene valorizzato in openSeriesSection.
@@ -8797,7 +8801,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.890';
+const JS_VERSION = 'v5.891';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9649,7 +9653,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Packs','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to your list','catalog.havenone':'Remove search results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to your list','catalog.havenone':'Remove search results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
@@ -9657,7 +9661,7 @@ const i18n = {
 'hero.desc':'The unofficial database dedicated to the legendary Italian sticker series of the \'90s.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
 'hero.cta1':'Explore the Sgorbions Inventory!','hero.cta2':'Start collecting Sgorbions',
-'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat2e':'Packs','hero.stat3':'Collectors',
+'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat2e':'Wrappers','hero.stat3':'Collectors',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
 'home.featured.btn':'View All Series →',
@@ -11004,7 +11008,7 @@ function openSeriesEbayModal() {
   if (!series) return;
   document.getElementById('series-ebay-modal-name').textContent = series.name;
   const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId);
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: currentLang === 'it' ? 'Album' : 'Albums', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Packs' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: currentLang === 'it' ? 'Album' : 'Albums', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Wrappers' };
   const sectionOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
   const counters = document.getElementById('series-ebay-counters');
   counters.innerHTML = sectionOrder.map(sec => {
@@ -11346,7 +11350,7 @@ function renderCatalogSearch(q) {
         </div>
         ${r.figs.length ? `<span style="font-size:0.7rem;color:var(--muted);white-space:nowrap;margin-left:0.5rem;flex-shrink:0;">${r.figs.length} ${currentLang==='it'?'trovati':'found'}</span>` : ''}
       </div>`;
-    const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: currentLang === 'it' ? 'Album' : 'Albums', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Packs' };
+    const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: currentLang === 'it' ? 'Album' : 'Albums', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Wrappers' };
     const sectionOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
     const figsHTML = r.figs.length
       ? sectionOrder.map(sec => {
@@ -11433,7 +11437,7 @@ function seriesCardHTML(s) {
       <div class="card-meta">
         <span class="card-badge">${figs.length} ${currentLang === 'it' ? 'figurine' : 'stickers'}</span>
         ${retros.length ? `<span class="card-badge">${retros.length} ${currentLang === 'it' ? 'retro' : 'retros'}</span>` : ''}
-        ${bustine.length ? `<span class="card-badge">${bustine.length} ${currentLang === 'it' ? (bustine.length === 1 ? 'bustina' : 'bustine') : 'packs'}</span>` : ''}
+        ${bustine.length ? `<span class="card-badge">${bustine.length} ${currentLang === 'it' ? (bustine.length === 1 ? 'bustina' : 'bustine') : 'wrappers'}</span>` : ''}
         ${albums.length ? `<span class="card-badge">${albums.length} ${currentLang === 'it' ? 'album' : 'albums'}</span>` : ''}
         ${extras.length ? `<span class="card-badge">${extras.length} ${currentLang === 'it' ? 'Altro' : 'Other'}</span>` : ''}
       </div>
@@ -11515,12 +11519,12 @@ function getItemsPerPage() {
 
 function getSectionLabel(section) {
   const it = { figurines: 'Figurine', retros: 'Retro', albums: 'Album', extras: 'Altri oggetti', bustine: 'Bustine' };
-  const en = { figurines: 'Stickers', retros: 'Retros', albums: 'Albums', extras: 'Other Items', bustine: 'Packs' };
+  const en = { figurines: 'Stickers', retros: 'Retros', albums: 'Albums', extras: 'Other Items', bustine: 'Wrappers' };
   return (currentLang === 'it' ? it : en)[section] || section;
 }
 function getSectionLabelSingular(section) {
   const it = { figurines: 'figurina', retros: 'retro', albums: 'album', extras: 'oggetto', bustine: 'bustina' };
-  const en = { figurines: 'sticker', retros: 'retro', albums: 'album', extras: 'item', bustine: 'pack' };
+  const en = { figurines: 'sticker', retros: 'retro', albums: 'album', extras: 'item', bustine: 'wrapper' };
   return (currentLang === 'it' ? it : en)[section] || section;
 }
 const SECTION_ICONS = { figurines: '&#129535;', retros: '&#128257;', albums: '&#128210;', extras: '&#127873;', bustine: '&#128230;' };
@@ -11650,7 +11654,7 @@ function renderSeriesMeta(s) {
     retros:    { p: it ? 'retro'    : 'retros',   s: it ? 'retro'    : 'retro',   f: false },
     albums:    { p: it ? 'album'    : 'albums',   s: it ? 'album'    : 'album',   f: false },
     extras:    { p: it ? 'oggetti'  : 'items',    s: it ? 'oggetto'  : 'item',    f: false },
-    bustine:   { p: it ? 'bustine'  : 'packs',    s: it ? 'bustina'  : 'pack',    f: true  }
+    bustine:   { p: it ? 'bustine'  : 'wrappers',    s: it ? 'bustina'  : 'wrapper',    f: true  }
   };
 
   // Costruisce le colonne (set base, variazioni ufficiali/non ufficiali, change, errori di stampa,
@@ -19335,7 +19339,7 @@ function renderWishlist() {
     // Prima si raggruppa per tipo di oggetto (Figurine/Retro/Album/Altri
     // oggetti), altrimenti non si capisce cosa si sta guardando quando una
     // serie ha in lista più tipi diversi mescolati insieme
-    const typeLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Packs' };
+    const typeLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Wrappers' };
     const typeOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
     const byType = {};
     figs.forEach(f => {
@@ -19640,7 +19644,7 @@ function renderWantlist() {
     bySeries[f.seriesId].push(f);
   });
 
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine non nella tua lista' : 'Stickers not in my list', retros: currentLang === 'it' ? 'Retro non nella tua lista' : 'Retros not in my list', albums: currentLang === 'it' ? 'Album non nella tua lista' : 'Albums not in my list', extras: currentLang === 'it' ? 'Altri oggetti non nella tua lista' : 'Other items not in my list', bustine: currentLang === 'it' ? 'Bustine non nella tua lista' : 'Packs not in my list' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine non nella tua lista' : 'Stickers not in my list', retros: currentLang === 'it' ? 'Retro non nella tua lista' : 'Retros not in my list', albums: currentLang === 'it' ? 'Album non nella tua lista' : 'Albums not in my list', extras: currentLang === 'it' ? 'Altri oggetti non nella tua lista' : 'Other items not in my list', bustine: currentLang === 'it' ? 'Bustine non nella tua lista' : 'Wrappers not in my list' };
 
   const sortedEntries = Object.entries(bySeries).sort(([aId], [bId]) => {
     const aS = series.find(x => x.id === aId);
@@ -19880,7 +19884,7 @@ async function exportOwnedList() {
   const owned = getOwned();
   const ownedFigs = allFigs.filter(f => owned.includes(f.id) && f.section === 'figurines' && isBaseFigurine(f));
   const series = getData('series', []);
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurina' : 'Sticker', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustina' : 'Pack' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurina' : 'Sticker', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustina' : 'Wrapper' };
 
   const rows = [[(currentLang === 'it' ? 'Serie' : 'Series'), (currentLang === 'it' ? 'Tipo di oggetto' : 'Item type'), (currentLang === 'it' ? 'Sottoserie' : 'Subseries'), (currentLang === 'it' ? 'Numero' : 'Number'), (currentLang === 'it' ? 'Nome' : 'Name')]];
 
@@ -19943,7 +19947,7 @@ async function _exportWantlistImpl() {
   const owned = getOwned();
   const missing = allFigs.filter(f => !owned.includes(f.id));
   const series = getData('series', []);
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurina' : 'Sticker', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustina' : 'Pack' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurina' : 'Sticker', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustina' : 'Wrapper' };
 
   const rows = [[(currentLang === 'it' ? 'Serie' : 'Series'), (currentLang === 'it' ? 'Tipo di oggetto' : 'Item type'), (currentLang === 'it' ? 'Sottoserie' : 'Subseries'), (currentLang === 'it' ? 'Numero' : 'Number'), (currentLang === 'it' ? 'Nome' : 'Name')]];
 
