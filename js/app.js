@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.880 - Franco: il NUMERO ha senso solo per le FIGURINE. Tolto il campo Numero (e la sua
+//          obbligatorieta') per Retro, Bustine, Album, Altri oggetti: per queste sezioni conta solo
+//          il Nome. Il campo compare solo se currentSection/f.section === 'figurines', sia nel form
+//          di aggiunta sia nella modifica-da-dettaglio. Solo app.js.
+// ------------------------------------------------------------
 // v5.879 - Franco: Pagina serie (card nel catalogo) — aggiunto il badge "N bustine" sotto la
 //          foto, SUBITO DOPO il badge "retro" (prima di album). Condizionale: appare solo se la
 //          serie ha bustine (>0), come album/altro. Solo app.js (seriesCardHTML) e versione.
@@ -8741,7 +8746,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.879';
+const JS_VERSION = 'v5.880';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12157,7 +12162,7 @@ function openAddItemModal(itemId) {
                       document.getElementById('fig-is-change-input')?.checked ||
                       document.getElementById('fig-is-printerror-input')?.checked;
   const numberGroup = document.getElementById('fig-number-group');
-  if (numberGroup) numberGroup.style.display = (isRetros || isVarOrChg) ? 'none' : '';
+  if (numberGroup) numberGroup.style.display = (currentSection === 'figurines' && !isVarOrChg) ? '' : 'none';
   // Sottoserie e Taglia dipendono sia dai flag della serie sia dalla sezione (mai per i Retro)
   const sizeGroup = document.getElementById('fig-size-group');
   if (sizeGroup) sizeGroup.style.display = (hasSizes && !isRetros) ? '' : 'none';
@@ -13600,7 +13605,8 @@ async function _saveFigurineInner() {
     const _bR = getData('figurines', []).find(x => x.id === baseFigurineId);
     if (_bR) name = _bR.name || '';
   }
-  if ((!name && !_nomeEreditato) || (!isRetrosSection && !isVarOrChgSection && !isPrintError && !number)) { toast((currentLang === 'it' ? (isRetrosSection || isVarOrChgSection ? 'Il nome è obbligatorio' : 'Numero e nome sono obbligatori') : (isRetrosSection || isVarOrChgSection ? 'Name is required' : 'Number and name are required')), 'error'); return; }
+  const numberRequired = (currentSection === 'figurines') && !isVarOrChgSection && !isPrintError; // v5.880: il numero ha senso solo per le figurine
+  if ((!name && !_nomeEreditato) || (numberRequired && !number)) { toast((currentLang === 'it' ? (numberRequired ? 'Numero e nome sono obbligatori' : 'Il nome è obbligatorio') : (numberRequired ? 'Number and name are required' : 'Name is required')), 'error'); return; }
   if (isRetrosSection) {
     const editId = document.getElementById('edit-fig-id').value;
     // LA CHIAVE DI UNICITA' COMPRENDE IL TIPO (v5.717). Prima confrontava solo il
@@ -15801,7 +15807,7 @@ function switchToEditMode(figId) {
   }
 
   // Numero (i Retro non sono numerati; le Variazioni/Change ereditano quello della figurina base)
-  html += '<div class="detail-row" id="fe-number-group" style="' + ((!isRetrosItem && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ? '' : 'display:none;') + '"><span class="detail-label">N.</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"><label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--muted);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
+  html += '<div class="detail-row" id="fe-number-group" style="' + ((f.section === 'figurines' && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ? '' : 'display:none;') + '"><span class="detail-label">N.</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"><label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--muted);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
 
   // Nome
   // v5.774/779/790 — Nome nascosto per Change ED Errori di stampa, sia Retro sia figurine (eredita
