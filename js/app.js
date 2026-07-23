@@ -1,6 +1,10 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.879 - Franco: Pagina serie (card nel catalogo) — aggiunto il badge "N bustine" sotto la
+//          foto, SUBITO DOPO il badge "retro" (prima di album). Condizionale: appare solo se la
+//          serie ha bustine (>0), come album/altro. Solo app.js (seriesCardHTML) e versione.
+// ------------------------------------------------------------
 // v5.878 - FIX del rollback della v5.877: la style.css pubblicata era stata ricostruita da una
 //          base vecchia (v5.848) e aveva riportato indietro i fix CSS v5.849-v5.874 (nome utente
 //          nascosto su mobile v5.863, riga versione v5.865, ecc.), facendo uscire logo/versione
@@ -8737,7 +8741,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.878';
+const JS_VERSION = 'v5.879';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11348,6 +11352,7 @@ function seriesCardHTML(s) {
   const retros = allItems.filter(f => f.section === 'retros');
   const albums = allItems.filter(f => f.section === 'albums');
   const extras = allItems.filter(f => f.section === 'extras');
+  const bustine = allItems.filter(f => f.section === 'bustine');
   const figs = allItems.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras' && f.section !== 'bustine');
   const desc = currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt);
   // Calculate mode score (most common score > 0)
@@ -11372,6 +11377,7 @@ function seriesCardHTML(s) {
       <div class="card-meta">
         <span class="card-badge">${figs.length} ${currentLang === 'it' ? 'figurine' : 'stickers'}</span>
         ${retros.length ? `<span class="card-badge">${retros.length} ${currentLang === 'it' ? 'retro' : 'retros'}</span>` : ''}
+        ${bustine.length ? `<span class="card-badge">${bustine.length} ${currentLang === 'it' ? (bustine.length === 1 ? 'bustina' : 'bustine') : 'packs'}</span>` : ''}
         ${albums.length ? `<span class="card-badge">${albums.length} ${currentLang === 'it' ? 'album' : 'albums'}</span>` : ''}
         ${extras.length ? `<span class="card-badge">${extras.length} ${currentLang === 'it' ? 'Altro' : 'Other'}</span>` : ''}
       </div>
