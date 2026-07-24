@@ -1,6 +1,44 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.907 - Franco: regola 2 del Nome completo dei Retro (omissione del prefisso "Categoria - " quando
+//          il Nome inizia già con la Categoria) resa TOLLERANTE AL GENERE: due parole che differiscono
+//          solo per la vocale finale (o/a/e) contano come uguali. Così categoria "RICERCATO" combacia
+//          con un Nome che inizia per "RICERCATA" e il Nome completo parte direttamente dal Nome (senza
+//          duplicare la categoria). _retroNameStartsWithCategory: confronto su versione con vocale
+//          finale di parola rimossa. Testato (RICERCATO/RICERCATA ok; GATTOPARDO≠GATTO). Solo app.js.
+// ------------------------------------------------------------
+// v5.906 - Franco: nella scheda di un RETRO il titolo non ripiega più sul Nome quando il Nome
+//          completo salvato è vuoto — così un fullName non salvato appare vuoto anche lì (prima
+//          sembrava popolato, ma era solo il ripiego sul Nome). Solo retro; altre sezioni invariate.
+// ------------------------------------------------------------
+// v5.905 - Franco: anteprima del Ricalcolo Nomi Completi — righe ordinate per categoria (Figurine,
+//          Retro, Bustine, Album, Altri oggetti), poi Numero e Nome; aggiunta la colonna "Nome"
+//          accanto a "N." per non fare confusione. Solo app.js.
+// ------------------------------------------------------------
+// v5.904 - Franco: procedura "Ricalcola Nomi Completi" (1) spostata dall'area Risorse alla sezione
+//          Data import (renderAdminFoto), come prima sezione collassabile; (2) ora mostra un'ANTEPRIMA
+//          a tabella dei record che cambierebbero — colonna "Nome completo ATTUALE" a sinistra, "NUOVO"
+//          a destra — e un pulsante "Applica le N modifiche" che scrive solo dopo la revisione.
+//          recomputeAllFullNames() sostituita da previewRecomputeFullNames()+applyRecomputeFullNames().
+//          index.html (box rimosso da Risorse) + app.js.
+// ------------------------------------------------------------
+// v5.903 - Franco (bug import foto retro): alcuni retro non venivano abbinati per nome anche se la
+//          ricerca del sito li trovava. Causa: il confronto del nome file col Nome Completo era
+//          esatto e non normalizzava caratteri "invisibili" — accento precomposto vs combinante
+//          (À vs A+◌̀, tipico dei file creati su Mac in NFD contro il DB in NFC), spazi unicode/nbsp,
+//          varianti di trattino. Ora normKey applica normalize('NFC') + normalizza dash e spazi.
+//          NON striscia gli accenti (à resta à), quindi niente falsi abbinamenti. Solo app.js.
+// ------------------------------------------------------------
+// v5.902 - Franco: (1) tasto "🗑️ Svuota log" accanto al log dei due caricamenti massivi (compare
+//          quando c'è del log; il log si azzerava già all'avvio di un nuovo caricamento). (2) Filtro
+//          "Tutte"/"Tutti": genere corretto per sezione — retro/album/altri oggetti (maschile) →
+//          "Tutti", figurine/bustine (femminile) → "Tutte". Solo app.js.
+// ------------------------------------------------------------
+// v5.901 - Franco: (1) nel log dei caricamenti massivi le righe non colorate (info) ora sono BIANCHE
+//          (var(--text)) invece del grigio chiaro. (2) La "Foto per Ebay" nel tab Ebay passa da
+//          max-width:160px a width:100% (stessa dimensione della foto catalogo). Solo app.js.
+// ------------------------------------------------------------
 // v5.900 - Franco: Vista Ebay — (1) modal allargato (con 9 colonne era stretto, non si vedeva la
 //          colonna spedizione/policy): max-width 1180px / 96vw. (2) Selettore mercato IT/COM riportato
 //          al colore ADMIN (arancio var(--action-admin), testo bianco) invece del lime. index.html + app.js.
@@ -8848,7 +8886,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.900';
+const JS_VERSION = 'v5.907';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9340,40 +9378,58 @@ async function _deleteFigurineItem(id) {
 // v5.752 — Ricalcolo dei Nomi completi (fullName) di figurine e retro secondo le regole
 // attuali di computeFullName. Riscrive SOLO i record il cui fullName cambia davvero, per
 // non sprecare scritture Firestore. Conta prima e chiede conferma.
-async function recomputeAllFullNames() {
+// v5.904 — Ricalcolo Nomi Completi: ora PRIMA mostra un'anteprima a tabella (Attuale -> Nuovo) dei
+// record che cambierebbero; poi si applica col pulsante. Spostato nella sezione Data import.
+let _recomputePending = null; // { serieId, daAgg }
+function previewRecomputeFullNames() {
   if (!currentUser?.isAdmin) return;
-  const btn = document.getElementById('recompute-fullnames-btn');
+  const it = currentLang === 'it';
   const prog = document.getElementById('recompute-fullnames-progress');
-  const mostra = (t) => { if (prog) { prog.style.display = 'block'; prog.innerHTML = t; } };
-
-  const figs = getData('figurines', []); // TUTTE: servono a computeFullName per risalire alle basi
-  // La serie si sceglie dal dropdown, come nelle procedure di import (v5.773).
-  const _rcSel = document.getElementById('recompute-fullnames-series-select');
-  const serieId = _rcSel?.value || '';
-  if (!serieId) { mostra('Seleziona prima una serie dall\'elenco.'); return; }
+  const show = (t) => { if (prog) { prog.style.display = 'block'; prog.innerHTML = t; } };
+  const figs = getData('figurines', []);
+  const serieId = document.getElementById('recompute-fullnames-series-select')?.value || '';
+  if (!serieId) { show(it ? "Seleziona prima una serie dall'elenco." : 'Select a series first.'); return; }
   const serie = getData('series', []).find(s => s.id === serieId);
-  if (!serie) { mostra('Serie non trovata.'); return; }
-
+  if (!serie) { show(it ? 'Serie non trovata.' : 'Series not found.'); return; }
   const daAgg = [];
   figs.filter(f => f.seriesId === serie.id).forEach(f => {
     const nuovo = computeFullName(f, figs);
     if ((f.fullName || '') !== (nuovo || '')) daAgg.push({ f, nuovo });
   });
-
-  if (!daAgg.length) { mostra('Serie "' + esc(serie.name) + '": tutti i Nomi completi sono gia\' aggiornati. Nessuna scrittura necessaria.'); return; }
-
-  const perSez = {};
-  daAgg.forEach(({ f }) => { perSez[f.section] = (perSez[f.section] || 0) + 1; });
-  const dettaglio = Object.entries(perSez).map(([k, v]) => `${k}: ${v}`).join(', ');
-
-  if (!confirm(
-    `Serie "${serie.name}" — da ricalcolare: ${daAgg.length} Nomi completi (${dettaglio}).\n\n` +
-    `Sono ${daAgg.length} SCRITTURE su Firestore. Procedo?`
-  )) return;
-
-  if (btn) btn.disabled = true;
+  if (!daAgg.length) { _recomputePending = null; show('Serie "' + esc(serie.name) + '": ' + (it ? 'tutti i Nomi completi sono già aggiornati. Nessuna modifica.' : 'all full names already up to date. No changes.')); return; }
+  _recomputePending = { serieId, daAgg };
+  const secLbl = { figurines: it ? 'Figurine' : 'Stickers', retros: 'Retro', albums: it ? 'Album' : 'Albums', extras: it ? 'Altri oggetti' : 'Other items', bustine: it ? 'Bustine' : 'Wrappers' };
+  // v5.905 — ordina per categoria (Figurine, Retro, Bustine, Album, Altri oggetti), poi Numero, poi Nome.
+  const _ord = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
+  daAgg.sort((a, b) => (_ord.indexOf(a.f.section || 'figurines') - _ord.indexOf(b.f.section || 'figurines')) || ((a.f.number || 0) - (b.f.number || 0)) || (a.f.name || '').localeCompare(b.f.name || '', 'it'));
+  const rows = daAgg.map(({ f, nuovo }) => '<tr>' +
+    '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;color:var(--muted);white-space:nowrap;">' + secLbl[f.section || 'figurines'] + '</td>' +
+    '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;white-space:nowrap;">' + (f.number || '—') + '</td>' +
+    '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;">' + esc(f.name || '') + '</td>' +
+    '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;color:var(--muted);">' + esc(f.fullName || '(vuoto)') + '</td>' +
+    '<td style="padding:0.35rem 0.6rem;font-size:0.9rem;text-align:center;color:var(--action-admin);">→</td>' +
+    '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;color:var(--text);font-weight:600;">' + esc(nuovo || '(vuoto)') + '</td>' +
+  '</tr>').join('');
+  show('<div style="margin-bottom:0.75rem;">Serie "<b>' + esc(serie.name) + '</b>": <b>' + daAgg.length + '</b> ' + (it ? 'Nomi completi da aggiornare' : 'full names to update') + ' (' + (it ? 'ognuno è una scrittura su Firestore' : 'each is a Firestore write') + ').</div>' +
+    '<div style="overflow:auto;max-height:440px;border:1px solid var(--border2);border-radius:8px;"><table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>' +
+    '<th style="padding:0.4rem 0.6rem;text-align:left;">' + (it ? 'Tipo' : 'Type') + '</th><th style="padding:0.4rem 0.6rem;text-align:left;">N.</th>' +
+    '<th style="padding:0.4rem 0.6rem;text-align:left;">' + (it ? 'Nome' : 'Name') + '</th>' +
+    '<th style="padding:0.4rem 0.6rem;text-align:left;">' + (it ? 'Nome completo ATTUALE' : 'Current full name') + '</th><th></th>' +
+    '<th style="padding:0.4rem 0.6rem;text-align:left;">' + (it ? 'NUOVO' : 'New') + '</th>' +
+    '</tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<button class="btn-primary btn-admin" onclick="applyRecomputeFullNames()" id="recompute-apply-btn" style="margin-top:0.9rem;">✅ ' + (it ? ('Applica le ' + daAgg.length + ' modifiche') : ('Apply ' + daAgg.length + ' changes')) + '</button>');
+}
+async function applyRecomputeFullNames() {
+  if (!currentUser?.isAdmin || !_recomputePending) return;
+  const it = currentLang === 'it';
+  const prog = document.getElementById('recompute-fullnames-progress');
+  const show = (t) => { if (prog) { prog.style.display = 'block'; prog.innerHTML = t; } };
+  const applyBtn = document.getElementById('recompute-apply-btn');
+  if (applyBtn) applyBtn.disabled = true;
+  const figs = getData('figurines', []);
+  const { daAgg } = _recomputePending;
   let fatti = 0, falliti = 0;
-  const aggiornati = []; // {vecchio, nuovo} dei record effettivamente riscritti, per l'elenco finale
+  const aggiornati = [];
   for (const { f, nuovo } of daAgg) {
     try {
       const rec = { ...f, fullName: nuovo };
@@ -9382,19 +9438,15 @@ async function recomputeAllFullNames() {
       if (idx >= 0) figs[idx] = rec;
       aggiornati.push({ vecchio: f.fullName || '', nuovo: nuovo || '' });
       fatti++;
-    } catch (e) {
-      console.error('recomputeAllFullNames', f.id, e);
-      falliti++;
-    }
-    mostra(`Ricalcolati ${fatti} / ${daAgg.length}` + (falliti ? ` — ${falliti} FALLITI` : ''));
+    } catch (e) { console.error('applyRecomputeFullNames', f.id, e); falliti++; }
+    show((it ? 'Aggiornati ' : 'Updated ') + fatti + ' / ' + daAgg.length + (falliti ? (' — ' + falliti + (it ? ' FALLITI' : ' FAILED')) : ''));
   }
   _cache.figurines = figs;
-  // Riepilogo finale: numero aggiornati + elenco dei Nomi completi (vecchio → nuovo) (v5.773)
+  _recomputePending = null;
   const listaHTML = aggiornati.map(({ vecchio, nuovo }) =>
-    `<div style="font-family:monospace;font-size:0.76rem;line-height:1.5;"><span style="color:var(--muted);"><b>VALORE VECCHIO:</b> ${esc(vecchio || '(vuoto)')}</span> → <span style="color:var(--text);"><b>VALORE NUOVO:</b> ${esc(nuovo || '(vuoto)')}</span></div>`).join('');
-  mostra(`<b>Fatto: ${fatti} aggiornati</b>` + (falliti ? `, ${falliti} falliti` : '') + '.' +
-    (aggiornati.length ? `<div style="margin-top:0.6rem;max-height:320px;overflow:auto;border-top:1px solid var(--border2);padding-top:0.5rem;">${listaHTML}</div>` : ''));
-  if (btn) btn.disabled = false;
+    '<div style="font-family:monospace;font-size:0.76rem;line-height:1.5;"><span style="color:var(--muted);">' + esc(vecchio || '(vuoto)') + '</span> → <span style="color:var(--text);">' + esc(nuovo || '(vuoto)') + '</span></div>').join('');
+  show('<b>' + (it ? 'Fatto' : 'Done') + ': ' + fatti + (it ? ' aggiornati' : ' updated') + '</b>' + (falliti ? (', ' + falliti + (it ? ' falliti' : ' failed')) : '') + '.' +
+    (aggiornati.length ? ('<div style="margin-top:0.6rem;max-height:320px;overflow:auto;border-top:1px solid var(--border2);padding-top:0.5rem;">' + listaHTML + '</div>') : ''));
   try { renderItems(); } catch (e) {}
 }
 
@@ -12596,7 +12648,8 @@ function renderItemTypeFilters() {
   // una riga sola. Il gap verticale serve proprio per quando va a capo.
   let html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center;">';
 
-  html += item('all', it ? 'Tutte' : 'All', '', false);   // v5.852 — era 'Tutti': il filtro parla di figurine, femminile
+  // v5.902 — genere corretto: retro/album/altri oggetti (maschile) → "Tutti"; figurine/bustine (femminile) → "Tutte".
+  html += item('all', it ? (['retros','albums','extras'].includes(currentSection) ? 'Tutti' : 'Tutte') : 'All', '', false);
 
   if (presente.base) html += item('base',
     (['bustine','albums','extras'].includes(currentSection)
@@ -15433,7 +15486,9 @@ function openFigDetail(figId) {
 
   // Title
   const titleEl = document.getElementById('fig-detail-title');
-  const displayNameForTitle = f.fullName || f.name;
+  // v5.906 — per i RETRO il titolo NON ripiega più sul Nome quando il Nome completo è vuoto: così
+  // un Nome completo non salvato si vede vuoto anche nel titolo (richiesto da Franco). Altre sezioni invariate.
+  const displayNameForTitle = (f.section === 'retros') ? (f.fullName || '') : (f.fullName || f.name);
   if (titleEl) titleEl.textContent = f.number ? ('#' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle;
   // v5.849 — su telefono il titolo del modale sparisce: ripete Numero e Nome, che sono le prime
   // due righe della scheda. Il testo resta comunque impostato, cosi' se la finestra torna larga
@@ -15922,7 +15977,9 @@ function switchToEditMode(figId) {
 
   // Aggiorna titolo modal
   const titleEl = document.getElementById('fig-detail-title');
-  const displayNameForTitle = f.fullName || f.name;
+  // v5.906 — per i RETRO il titolo NON ripiega più sul Nome quando il Nome completo è vuoto: così
+  // un Nome completo non salvato si vede vuoto anche nel titolo (richiesto da Franco). Altre sezioni invariate.
+  const displayNameForTitle = (f.section === 'retros') ? (f.fullName || '') : (f.fullName || f.name);
   if (titleEl) titleEl.textContent = f.number ? ('# ' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle;
 
   // Foto con pulsante cambio immagine
@@ -16070,8 +16127,8 @@ function switchToEditMode(figId) {
     '<label class="detail-label" style="display:block;margin-bottom:0.4rem;">📷 ' + (currentLang==='it'?'Foto per Ebay':'Ebay photo') + '</label>' +
     '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang==='it'?'Foto dedicata da usare per l\'annuncio Ebay, indipendente da quella del catalogo':'Dedicated photo for the Ebay listing, separate from the catalog one') + '</div>' +
     (f.ebayImg
-      ? '<img id="fe-ebay-img-preview" src="' + cloudinaryUrl(f.ebayImg,'w_320,h_320,c_fit,q_auto,f_auto') + '" style="max-width:160px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
-      : '<div id="fe-ebay-img-preview" style="width:160px;height:120px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.72rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + (currentLang==='it'?'Nessuna foto':'No photo') + '</div>') +
+      ? '<img id="fe-ebay-img-preview" src="' + cloudinaryUrl(f.ebayImg,'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
+      : '<div id="fe-ebay-img-preview" style="width:100%;height:240px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + (currentLang==='it'?'Nessuna foto':'No photo') + '</div>') +
     '<label style="cursor:pointer;display:inline-block;">' +
     '<span style="display:inline-block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;">📷 ' + (currentLang==='it'?'Carica foto':'Upload photo') + '</span>' +
     '<input type="file" id="fe-ebay-img-file" accept="image/*" style="display:none;" onchange="handleFeEbayImg(event)">' +
@@ -16868,7 +16925,15 @@ function computeFullName(fig, allFigs) {
 function _retroNameStartsWithCategory(item) {
   const cat = ((item && item.category) || '').trim().toLowerCase();
   const nm  = ((item && item.name) || '').trim().toLowerCase();
-  if (!cat || !nm || !nm.startsWith(cat)) return false;
+  if (!cat || !nm) return false;
+  // v5.907 — TOLLERANZA DI GENERE (Franco): due parole che differiscono solo per la vocale finale
+  // (o/a/e) contano come uguali nel confronto Categoria↔inizio-Nome. Così categoria "RICERCATO"
+  // combacia con un Nome che inizia per "RICERCATA": il prefisso "CATEGORIA - " viene comunque omesso.
+  // Nel confronto tolgo la vocale finale di ogni parola da ENTRAMBE le stringhe. Il controllo di
+  // confine (sotto) usa cat.length sul Nome ORIGINALE: valido perché categoria e prefisso del Nome
+  // hanno la STESSA lunghezza (vocali di genere solo swappate, non aggiunte/tolte).
+  const genderNorm = s => s.replace(/[oae](?=\s|$)/g, '');
+  if (!genderNorm(nm).startsWith(genderNorm(cat))) return false;
   const next = nm.charAt(cat.length); // '' se il Nome coincide esattamente con la categoria
   return next === '' || !/[\p{L}\p{N}]/u.test(next);
 }
@@ -18211,6 +18276,26 @@ function renderAdminFoto() {
 
   el.innerHTML = `
     <div style="max-width:900px;">
+      <h3 onclick="toggleImportSection('recompute')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-recompute-chevron">▶</span> 🔤 ${currentLang==='it'?'Ricalcola i Nomi completi':'Recompute full names'}</h3>
+      <div id="import-recompute-section-content" style="display:none;">
+      <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
+        ${currentLang==='it'
+          ? 'Rigenera il <b>Nome completo</b> di figurine e retro di <b>una serie</b> secondo le regole attuali. Prima ti mostra una <b>anteprima</b> (valore attuale → nuovo) dei record che cambierebbero, poi con <b>Applica</b> li scrive (ogni record = una scrittura su Firestore). Riscrive solo quelli che cambiano davvero.'
+          : 'Regenerate the <b>full name</b> of stickers and retros of <b>one series</b> per current rules. First it <b>previews</b> (current → new) the records that would change, then <b>Apply</b> writes them (each = one Firestore write). Only actually-changed records are rewritten.'}
+      </p>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
+        <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
+        <select id="recompute-fullnames-series-select" class="form-select" style="margin-bottom:0.75rem;">
+          <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
+          ${series.map(s => `<option value="${s.id}" data-name="${esc(s.name)}">${esc(s.name)}</option>`).join('')}
+        </select>
+        <button class="btn-primary btn-admin" onclick="previewRecomputeFullNames()" id="recompute-fullnames-btn">🔍 ${currentLang==='it'?'Conta e mostra anteprima':'Count & preview'}</button>
+      </div>
+      <div id="recompute-fullnames-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-bottom:1rem;"></div>
+      </div>
+
+      <hr class="divider" style="margin:2rem 0;">
+
       <h3 onclick="toggleImportSection('fig')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-fig-chevron">▶</span> 🃏 ${currentLang==='it'?'Caricamento massivo figurine':'Bulk import of stickers'}</h3>
       <div id="import-fig-section-content" style="display:none;">
       <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
@@ -18317,6 +18402,9 @@ function renderAdminFoto() {
         <progress id="foto-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="foto-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
       </div>
+      <div id="foto-log-actions" style="display:none;justify-content:flex-end;margin-bottom:0.4rem;">
+        <button onclick="clearFotoLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
+      </div>
       <div id="foto-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
       </div>
 
@@ -18369,6 +18457,9 @@ function renderAdminFoto() {
       <progress id="fotonn-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
       <div id="fotonn-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
     </div>
+    <div id="fotonn-log-actions" style="display:none;justify-content:flex-end;margin-bottom:0.4rem;">
+      <button onclick="clearFotoNnLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
+    </div>
     <div id="fotonn-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
     </div>
 
@@ -18401,12 +18492,18 @@ function renderAdminFoto() {
     </div>`;
 }
 
+function clearFotoLog() {
+  const el = document.getElementById('foto-log'); if (el) { el.innerHTML = ''; el.style.display = 'none'; }
+  const a = document.getElementById('foto-log-actions'); if (a) a.style.display = 'none';
+}
 function fotoLog(msg, type) {
   const el = document.getElementById('foto-log');
   if (!el) return;
   el.style.display = 'block';
+  const a = document.getElementById('foto-log-actions'); if (a) a.style.display = 'flex';
   const line = document.createElement('div');
-  line.style.color = type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : type === 'white' ? 'var(--text)' : 'var(--muted)';
+  // v5.901 — le righe non colorate (info/default) vanno in BIANCO (var(--text)), non più grigio chiaro.
+  line.style.color = type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--text)';
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
@@ -18554,12 +18651,18 @@ async function startAdminFotoUpload() {
   document.getElementById('foto-start-btn').disabled = false;
 }
 
+function clearFotoNnLog() {
+  const el = document.getElementById('fotonn-log'); if (el) { el.innerHTML = ''; el.style.display = 'none'; }
+  const a = document.getElementById('fotonn-log-actions'); if (a) a.style.display = 'none';
+}
 function fotoNnLog(msg, type) {
   const el = document.getElementById('fotonn-log');
   if (!el) return;
   el.style.display = 'block';
+  const a = document.getElementById('fotonn-log-actions'); if (a) a.style.display = 'flex';
   const line = document.createElement('div');
-  line.style.color = type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : type === 'white' ? 'var(--text)' : 'var(--muted)';
+  // v5.901 — righe non colorate in BIANCO (vedi fotoLog).
+  line.style.color = type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--text)';
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
@@ -18635,7 +18738,18 @@ async function startAdminFotoNoNumberUpload() {
   // Si azzerano anche gli spazi multipli che la rimozione del "?" puo' lasciare, e le
   // maiuscole/minuscole. Vale per tutte le chiavi (Nome completo dei Retro e Nome
   // delle Figurine senza numero): un file non puo' contenere "?" in nessun caso.
-  const normKey = s => (s || '').toLowerCase().replace(/\?/g, '').replace(/\s+/g, ' ').trim();
+  // v5.903 — confronto robusto ai caratteri "invisibili" che rendono due nomi identici a occhio ma
+  // diversi byte-per-byte (tipico dei file creati su Mac, NFD, vs DB in NFC):
+  //  · normalize('NFC') unifica gli accenti precomposti (À) e combinati (A+◌̀) — NON striscia gli accenti;
+  //  · varianti di trattino (‐‑‒–—―−) → '-';  · nbsp e spazi unicode → spazio normale.
+  const normKey = s => (s || '')
+    .normalize('NFC')
+    .toLowerCase()
+    .replace(/[\u00ad\u200b-\u200d\ufeff]/g, '')
+    .replace(/[\u2010-\u2015\u2212]/g, '-')
+    .replace(/\?/g, '')
+    .replace(/[\s\u00a0\u2000-\u200a\u202f\u3000]+/g, ' ')
+    .trim();
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
