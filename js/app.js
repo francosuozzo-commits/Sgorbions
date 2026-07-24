@@ -1,6 +1,11 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.908 - Franco: nuovo filtro di ricerca "Ciò che cerco" (desktop + mobile), accanto ai filtri di
+//          possesso. Se acceso, mostra solo gli oggetti nella wishlist dell'utente (heart ❤️). Stato
+//          _wishlistFilter (riparte spento a ogni sezione), toggleWishlistFilter(), applicato nel
+//          filtro ricerca. Su mobile va a capo sotto ai due filtri di possesso. Solo per utenti loggati.
+// ------------------------------------------------------------
 // v5.907 - Franco: regola 2 del Nome completo dei Retro (omissione del prefisso "Categoria - " quando
 //          il Nome inizia già con la Categoria) resa TOLLERANTE AL GENERE: due parole che differiscono
 //          solo per la vocale finale (o/a/e) contano come uguali. Così categoria "RICERCATO" combacia
@@ -8886,7 +8891,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.907';
+const JS_VERSION = 'v5.908';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9984,6 +9989,7 @@ let _noPhotoFilter = false; // filtro figurine senza foto
 // COMBINANO ("le variazioni ufficiali che mi mancano"). Per questo vive in una
 // variabile propria e in una riga propria, e non fra le opzioni del tipo.
 let _ownedFilter = 'all'; // 'all' | 'owned' (ce l'ho) | 'missing' (mi manca)
+let _wishlistFilter = false; // v5.908 — filtro "Ciò che cerco": se acceso, mostra solo la wishlist dell'utente
 let _itemTypeFilter = 'base'; // 'base' | 'variation' | 'unofficialVariation' | 'change' | 'all' — sempre uno solo attivo
 let _ebayFilter = false; // indipendente da _itemTypeFilter: si combina in AND, non è esclusivo con "Solo base"/ecc.
 let _noOfficialVariationFilter = false; // indipendente da _itemTypeFilter come _ebayFilter, ma impone SEMPRE anche "solo base" (non solo AND con il filtro tipo scelto) — mostra solo figurine base senza nessuna Variazione ufficiale collegata
@@ -11912,6 +11918,7 @@ function openSeriesSection(section) {
   _changeTypeFilter = null; // idem per il filtro Tipo di change (sezione Figurine)
   _ownedFilter = 'all'; // si riparte sempre da "tutti": un filtro dimenticato acceso
                         // fra una sezione e l'altra fa sembrare vuota una sezione piena
+  _wishlistFilter = false; // v5.908 — anche "Ciò che cerco" riparte spento a ogni sezione
   currentSection = section;
   // La riga dei contatori DEVE seguire la scheda. Senza questa chiamata resterebbe
   // quella disegnata all'apertura della serie — cioe' le Figurine — e continuerebbe
@@ -12750,19 +12757,21 @@ function renderItemTypeFilters() {
     // devono stare sulla STESSA riga: contenitore nowrap e ciascun toggle flex:1 (min-width:0),
     // cosi' occupano due colonne uguali e il testo va a capo dentro la colonna se serve.
     const _mob = _isMobileViewport();
-    let h2 = `<div style="display:flex;flex-wrap:${_mob ? 'nowrap' : 'wrap'};gap:0.5rem 1.5rem;align-items:flex-start;">`;
+    // v5.908 — contenitore sempre in wrap: i 2 filtri di possesso restano su UNA riga (sotto-contenitore
+    // nowrap su mobile), mentre il nuovo filtro "Ciò che cerco" va a capo sotto quando serve.
+    let h2 = `<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:flex-start;">`;
     if (currentUser) {
-      // v5.853 — le etichette tornano per esteso anche su telefono (la v5.852 le aveva
-      // accorciate in "Presenti"/"Mancanti"): a fare spazio ci pensa il filtro "Senza foto",
-      // che su telefono non compare piu' (vedi sotto). Meglio togliere un filtro intero che
-      // amputare il nome di due.
       // v5.894 — su telefono le etichette IT si accorciano ("Nella tua lista" / "Non nella tua
       // lista") per stare comode sulla stessa riga; su desktop restano per esteso.
       const _pairExtra = _mob ? 'flex:1 1 0;min-width:0;' : '';
       const _lblOwned = itl ? (_mob ? 'Nella tua lista' : 'Presenti nella tua lista') : 'In my list';
       const _lblMissing = itl ? (_mob ? 'Non nella tua lista' : 'Mancanti dalla tua lista') : 'Missing from my list';
-      h2 += itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')", _lblOwned, _pairExtra);
-      h2 += itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')", _lblMissing, _pairExtra);
+      const _ownedPair = itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')", _lblOwned, _pairExtra)
+                       + itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')", _lblMissing, _pairExtra);
+      // su mobile i due filtri di possesso su una sola riga (nowrap, larghezza piena); su desktop liberi
+      h2 += _mob ? `<div style="display:flex;flex-wrap:nowrap;gap:0.5rem 1.5rem;width:100%;">${_ownedPair}</div>` : _ownedPair;
+      // v5.908 — nuovo filtro "Ciò che cerco": mostra solo la wishlist dell'utente (su mobile va a capo sotto).
+      h2 += itemToggle(_wishlistFilter, 'toggleWishlistFilter()', itl ? 'Ciò che cerco' : "What I'm looking for");
     }
     // v5.853 — il filtro "Senza foto" su telefono non compare: e' un filtro di servizio, e la
     // riga serve tutta ai due filtri di possesso, che tornano cosi' col nome per esteso.
@@ -12880,6 +12889,14 @@ function toggleOwnedFilter(key) {
   try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleOwnedFilter)', e); }
 }
 
+// v5.908 — filtro "Ciò che cerco": interruttore semplice on/off, come i filtri di possesso.
+function toggleWishlistFilter() {
+  _wishlistFilter = !_wishlistFilter;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleWishlistFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleWishlistFilter)', e); }
+}
+
 function toggleItemTypeFilter(type) {
   _itemTypeFilter = type; // comportamento radio puro: sempre uno solo attivo
   currentItemPage = 1;
@@ -12989,6 +13006,8 @@ function getCurrentlyFilteredItems(opts) {
       if (_ownedFilter === 'owned' && !ceLho) return false;
       if (_ownedFilter === 'missing' && ceLho) return false;
     }
+    // v5.908 — filtro "Ciò che cerco": mostra solo gli oggetti nella wishlist dell'utente.
+    if (_wishlistFilter && !getWishlist().includes(f.id)) return false;
     // UN SOLO BLOCCO PER TUTTE E QUATTRO LE SEZIONI (v5.711). Prima ce n'erano DUE —
     // uno per le Figurine e uno per i Retro — che definivano "base" in modo DIVERSO.
     // E' cosi' che nascono le doppie verita'. I tipi ora sono cinque e valgono
