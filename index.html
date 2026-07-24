@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.900"></script>
-<link rel="stylesheet" href="css/style.css?v=5.900">
+<script src="js/email.min.js?v=5.907"></script>
+<link rel="stylesheet" href="css/style.css?v=5.907">
 
 </head>
 <body>
@@ -24,7 +24,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.900</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.907</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -839,18 +839,7 @@
             <div id="firebase-reads-history" style="margin-top:1rem;"></div>
           </div>
 
-          <!-- RICALCOLO NOMI COMPLETI (v5.755) -->
-          <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;border:1px solid var(--border2);">
-            <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🔤 Ricalcola i Nomi completi</h4>
-            <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">
-              Rigenera il <b>Nome completo</b> di figurine e retro di <b>una singola serie</b> secondo le regole attuali (utile dopo aver cambiato la logica di composizione). <b>Scegli la serie dall&rsquo;elenco</b>, cos&igrave; non tocca le serie gi&agrave; a posto. Poi <b>conta</b> quanti record cambierebbero e chiede conferma: ogni record aggiornato &egrave; <b>una scrittura</b> su Firestore. Riscrive solo quelli che cambiano davvero.
-            </p>
-            <select id="recompute-fullnames-series-select" class="form-select" style="margin-bottom:0.75rem;max-width:420px;">
-              <option value="">-- Seleziona una serie --</option>
-            </select>
-            <button class="btn-primary btn-admin" style="font-size:0.88rem;" onclick="recomputeAllFullNames()" id="recompute-fullnames-btn">Conta e ricalcola</button>
-            <div id="recompute-fullnames-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-top:0.75rem;"></div>
-          </div>
+          <!-- RICALCOLO NOMI COMPLETI: spostato nella sezione Data import (renderAdminFoto), v5.907 -->
 
           <!-- CLOUDINARY -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
@@ -1164,7 +1153,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.900</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.907</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1848,7 +1837,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.900"></script>
+<script src="js/app.js?v=5.907"></script>
 <script>
 /* Rete di sicurezza contro la cache.
    index.html non viene praticamente mai servito dalla cache; app.js e style.css
@@ -1857,7 +1846,7 @@
    "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
    Questo controllo lo trasforma in un messaggio esplicito in console. */
 (function () {
-  var expected = 'v5.900'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.907'; // deve coincidere con JS_VERSION in app.js
   if (typeof JS_VERSION === 'undefined') {
     console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
     return;
