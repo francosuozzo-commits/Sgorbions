@@ -1,6 +1,91 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.943 - Franco: nella colonna di sinistra della home l'ordine diventa Lingue del sito,
+//          Collezionisti, Serie (era il contrario). Solo index.html (qui la versione).
+// ------------------------------------------------------------
+// v5.942 - Franco: (1) il logo non era piu' centrato — - colpa della v5.941: rendendo assolute le
+//          due colonne di numeri, l'immagine era rimasta l'unico elemento nel flusso e la griglia
+//          l'aveva messa nella PRIMA colonna. Ora e' dichiarata nella colonna centrale
+//          (grid-column:2). (2) Il resto della pagina riscende un poco: il margine sotto il
+//          blocco passa da 0,5 a 1,75rem. Solo index.html (qui la versione).
+// ------------------------------------------------------------
+// v5.941 - Franco: "tira su tutto il resto della pagina, dalla frase 'Il database...' in giu'".
+//          La causa non era lo spazio sotto il logo ma l'ALTEZZA delle colonne di numeri: erano
+//          celle della stessa griglia, quindi la piu' alta decideva dove ricominciava il testo.
+//          Ora le due colonne sono in posizione ASSOLUTA ai lati — restano dove sono, ma non
+//          fanno piu' altezza — e tutto cio' che segue risale. Sotto i 1100px tornano nel flusso
+//          normale, dove il testo e' largo e si sovrapporrebbero. Solo index.html (qui la versione).
+// ------------------------------------------------------------
+// v5.940 - Franco, home: (1) tolta la voce "Mia lista / Totale Inventario" dai numeroni — il dato
+//          resta nel profilo e nel contatore della navbar, e updateOwnedCounter regge l'assenza
+//          dell'elemento perche' ne verifica l'esistenza prima di scriverci; (2) le voci non sono
+//          piu' allineate a sinistra ma CENTRATE una sull'altra (numero sopra, etichetta sotto),
+//          cosi' le righe di larghezza diversa si dispongono a triangolo — l'"albero di Natale";
+//          (3) le due colonne scendono ancora, da 3,5 a 6rem sotto il bordo, con il logo che
+//          resta in alto. Solo index.html (qui cambia il numero di versione).
+// ------------------------------------------------------------
+// v5.939 - Franco: nella pagina della ricerca, cambiando lingua restavano in inglese il titolo
+//          ("Set your search for stickers") e il segnaposto della buca ("Search stickers..."),
+//          insieme alle etichette dei box filtri. Sono gli unici testi di quella pagina costruiti
+//          a mano, perche' contengono il NOME DELLA SEZIONE e quindi non possono stare in un
+//          data-i18n fisso: venivano scritti una volta sola all'apertura della sezione e
+//          restavano nella lingua di quel momento. Ora stanno in aggiornaTestiRicercaSezione(),
+//          chiamata sia all'apertura sia da applyI18n() ad ogni cambio lingua, che ridisegna
+//          anche i box filtri. Solo app.js.
+// ------------------------------------------------------------
+// v5.938 - Franco, home: i numeroni si allineano in VERTICALE (numeri ed etichette ciascuno sulla
+//          propria linea, uguale nelle due colonne: prima la colonna di sinistra era a bandiera
+//          sul lato destro), le due colonne si spostano verso i bordi — sinistra a sinistra,
+//          destra a destra, con la griglia allargata a 1280px — e scendono di 3,5rem rispetto al
+//          logo, che resta attaccato in alto. Sotto i 1100px la discesa si riduce, sotto gli
+//          860px si torna alle file orizzontali. Solo index.html (qui cambia il numero di versione).
+// ------------------------------------------------------------
+// v5.937 - Franco, sotto i risultati della ricerca: i due pulsanti blu si chiamano ora "Aggiungi
+//          risultati ricerca alla tua lista" e "Rimuovi risultati ricerca dalla tua lista" (le
+//          etichette inglesi erano gia' in quella forma piu' corta), e non galleggiano piu' a
+//          mezz'aria: la riga dei risultati passa da align-items:center a flex-end, cosi' la
+//          loro base coincide con l'ultima riga del blocco — quella blu "N fanno parte della tua
+//          lista". index.html + app.js.
+// ------------------------------------------------------------
+// v5.936 - Franco, due correzioni. HOME: (1) il logo torna attaccato in alto — la griglia era
+//          align-items:center, quindi la colonna piu' alta lo spingeva giu'; ora align-items:start.
+//          (2) I numeroni erano blocchetti sparsi: ogni colonna e' diventata una griglia di DUE
+//          colonne (numero | etichetta) con ogni .stat-item in display:contents, cosi' i numeri
+//          stanno tutti sulla stessa verticale e le etichette pure.
+//          PAGINA SEZIONE: la descrizione della serie continuava a partire sotto la FOTO. Il
+//          motivo: messa nella colonna di destra della griglia restava comunque una cella nuova,
+//          quindi finiva in una riga successiva, che comincia sotto l'elemento piu' alto (la
+//          foto). Ora entra DENTRO il contenitore delle numeriche (#detail-meta, un flex in
+//          wrap) con flex-basis:100%: va a capo subito dopo i contatori, cioe' sotto di essi e a
+//          destra della foto. Poiche' renderSeriesMeta riscrive innerHTML, i nodi vengono messi
+//          al sicuro prima (salvaDescrizioneDaMeta) e ricollocati dopo: senza, al secondo
+//          ridisegno la descrizione sarebbe sparita dal DOM per sempre. index.html + app.js.
+// ------------------------------------------------------------
+// v5.935 - Franco, home e "Cio' che cerco". HOME: l'immagine del logo era il pezzo piu' grande
+//          della pagina (700px) e schiacciava tutto — ora sta in 440px e i NUMERONI le stanno ai
+//          due lati (griglia .hero-top): a sinistra cio' che riguarda il sito — Serie,
+//          Collezionisti e la nuova voce "Lingue del sito" — a destra il contenuto
+//          dell'Inventario (figurine, retro, bustine, album, altri oggetti, Mia lista/Totale).
+//          Le lingue non sono un numero scritto a mano: si contano le voci vere della tendina
+//          della lingua (contaLingueSito), cosi' il conto si aggiorna da solo. Sotto gli 860px la
+//          griglia torna a una colonna con i numeri in fila. Le due colonne si accendono insieme
+//          (mostraNumeroniHero), altrimenti si vedrebbe mezza fila.
+//          "CIO' CHE CERCO": tolta la frase "Puoi modificarla in qualsiasi momento..." (IT+EN) e
+//          tolto il totale in fondo alla lista — era il gemello di quello sopra il box, e lo
+//          stesso numero scritto due volte fa dubitare che siano due numeri diversi.
+//          index.html + app.js.
+// ------------------------------------------------------------
+// v5.934 - Franco: la descrizione della serie, dentro le 5 schede, restava larga quanto la pagina
+//          nonostante lo spostamento della v5.932. Motivo: .series-info e' display:contents,
+//          quindi i suoi figli diventano celle della griglia di .series-title-area, e
+//          .series-description ha in CSS "grid-row:3; grid-column:1/-1" — cioe' torna a occupare
+//          tutte le colonne partendo da sotto la foto (ed e' anche il motivo per cui l'etichetta
+//          finiva nella colonna della foto). Ora, in sezione, etichetta e testo sono inchiodati
+//          alla SECONDA colonna (grid-column:2, grid-row:auto), quindi cadono sotto le numeriche
+//          e a destra della foto; tornando all'hub gli stili inline si tolgono e comanda di nuovo
+//          il CSS. Verificato sul sito misurando le posizioni reali. Solo app.js.
+// ------------------------------------------------------------
 // v5.933 - Franco: il numero di riga nella Vista Ebay si mostra SEMPRE. "Lascia solo titolo" non
 //          lo chiude piu' (restano # e Titolo), la sua intestazione non ha la ✕ e non compare
 //          nella riga "Colonne chiuse". Motivo: e' l'unico appiglio per citare una riga — senza,
@@ -9093,7 +9178,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.933';
+const JS_VERSION = 'v5.943';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9939,7 +10024,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br>You can edit it at any time by adding or removing items.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -9967,7 +10052,7 @@ const i18n = {
 'hero.desc':'The unofficial database dedicated to the legendary Italian sticker series of the \'90s.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
 'hero.cta1':'Explore the Sgorbions Inventory!','hero.cta2':'Start collecting Sgorbions',
-'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat2e':'Wrappers','hero.stat3':'Collectors',
+'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat2e':'Wrappers','hero.stat3':'Collectors','hero.statLangs':'Site languages',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
 'home.featured.btn':'View All Series →',
@@ -10029,7 +10114,7 @@ const i18n = {
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
 'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
-'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
+'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
@@ -10074,7 +10159,7 @@ const i18n = {
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
-    'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri oggetti','hero.stat2e':'Bustine','hero.stat3':'Collezionisti',
+    'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri oggetti','hero.stat2e':'Bustine','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
     'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
@@ -10082,7 +10167,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi alla tua lista i risultati della ricerca','catalog.havenone':'Rimuovi dalla tua lista i risultati della ricerca','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati ricerca alla tua lista','catalog.havenone':'Rimuovi risultati ricerca dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Torna all\'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -10128,6 +10213,21 @@ let currentLang = LOCAL.get('lang') || _detectBrowserLang();
 
 function t(key) { return (i18n[currentLang] || i18n.en)[key] || (i18n.en)[key] || key; }
 
+// v5.939 (Franco) — TITOLO E SEGNAPOSTO DELLA RICERCA, che non si traducevano.
+// Sono gli unici due testi della pagina costruiti a mano ("Imposta la tua ricerca di figurine",
+// "Cerca figurine...") perché contengono il nome della sezione, quindi non possono stare in un
+// data-i18n fisso: venivano scritti una volta sola all'apertura della sezione e restavano nella
+// lingua di quel momento. Ora sono in una funzione, chiamata sia lì sia ad ogni cambio lingua.
+function aggiornaTestiRicercaSezione() {
+  if (!currentSection) return;
+  const it = (currentLang === 'it');
+  const nome = (getSectionLabel(currentSection) || (it ? 'oggetti' : 'items')).toLowerCase();
+  const si = document.getElementById('items-search');
+  if (si) si.placeholder = (it ? 'Cerca ' : 'Search ') + nome + '...';
+  const st = document.getElementById('items-search-title');
+  if (st) st.textContent = (it ? 'Imposta la tua ricerca di ' : 'Set your search for ') + nome;
+}
+
 function applyI18n() {
   document.querySelectorAll('[data-i18n]').forEach(el => {
     el.textContent = t(el.dataset.i18n);
@@ -10141,6 +10241,10 @@ function applyI18n() {
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     el.title = t(el.dataset.i18nTitle);
   });
+  // v5.939 — i due testi della ricerca che contengono il nome della sezione
+  try { aggiornaTestiRicercaSezione(); } catch (e) { console.error('aggiornaTestiRicercaSezione', e); }
+  // e le etichette dei box filtri, anch'esse costruite a mano con il nome della sezione
+  try { if (currentSection) renderItemTypeFilters(); } catch (e) { console.error('renderItemTypeFilters (i18n)', e); }
 }
 
 function setLang(lang, byUser = false) {
@@ -11206,8 +11310,7 @@ function updateNavUser() {
     if (btnCollect) btnCollect.style.display = 'none';
     const homeContent = document.getElementById('home-logged-in-content');
     if (homeContent) homeContent.style.display = '';
-    const heroStats = document.getElementById('hero-stats');
-    if (heroStats) heroStats.style.display = '';
+    mostraNumeroniHero(true);   // v5.935 — due colonne, una per lato dell'immagine
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = '';
     document.getElementById('nav-username').textContent = currentUser.username + (currentUser.isAdmin ? ' 👑' : '');
     const bellBtn = document.getElementById('nav-bell-btn');
@@ -11252,8 +11355,7 @@ function updateNavUser() {
     const quotaBtn2 = document.getElementById('nav-quota-warning-btn');
     if (quotaBtn2) quotaBtn2.style.display = 'none';
     ['nav-catalog','nav-blog','nav-classifica','nav-wishlist'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
-    const heroStats2 = document.getElementById('hero-stats');
-    if (heroStats2) heroStats2.style.display = 'none';
+    mostraNumeroniHero(false);
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = 'none';
   }
 }
@@ -12436,33 +12538,57 @@ function tipiPresenti(seriesId, section) {
 function posizionaDescrizioneSerie() {
   const desc = document.getElementById('detail-desc');
   const toggle = document.getElementById('detail-desc-toggle');
-  const info = document.querySelector('#series-detail .series-info');
+  const meta = document.getElementById('detail-meta');
   const heroInner = document.querySelector('#series-detail .series-hero-inner');
-  if (!desc || !info || !heroInner) return;
+  if (!desc || !meta || !heroInner) return;
   let etichetta = document.getElementById('detail-desc-label');
   if (!etichetta) {
     etichetta = document.createElement('div');
     etichetta.id = 'detail-desc-label';
-    etichetta.style.cssText = 'font-family:var(--font-ui);font-size:0.78rem;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);margin:0.9rem 0 0.25rem;';
   }
   etichetta.textContent = (currentLang === 'it') ? 'Descrizione della serie' : 'Series description';
   const vuota = !(desc.textContent || '').trim();
   if (currentSection) {
-    info.appendChild(etichetta);
-    info.appendChild(desc);
-    if (toggle) info.appendChild(toggle);
+    // v5.936 — non basta metterla nella colonna di destra della griglia: essendo una CELLA
+    // nuova finiva in una riga sotto, e quindi sotto alla foto (che è alta). Ora entra DENTRO
+    // il contenitore delle numeriche (#detail-meta, un flex in wrap): con flex-basis 100% va
+    // a capo subito dopo i contatori — cioè sotto di essi e a destra della foto, che è il
+    // posto chiesto da Franco.
+    [etichetta, desc, toggle].forEach(el => { if (el) { el.style.flexBasis = '100%'; el.style.width = '100%'; el.style.gridColumn = ''; el.style.gridRow = ''; } });
+    etichetta.style.cssText += ';font-family:var(--font-ui);font-size:0.78rem;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);margin:0.7rem 0 0.15rem;';
+    desc.style.margin = '0';
+    meta.appendChild(etichetta);
+    meta.appendChild(desc);
+    if (toggle) meta.appendChild(toggle);
     etichetta.style.display = vuota ? 'none' : '';
   } else {
-    // ritorno alla posizione storica: descrizione (e comando) in coda al blocco eroe
+    // hub: si torna alla descrizione a tutta larghezza in coda al blocco eroe, con il CSS di
+    // nuovo padrone (via tutti gli stili inline messi sopra)
     if (etichetta.parentNode) etichetta.parentNode.removeChild(etichetta);
+    [desc, toggle].forEach(el => { if (el) { el.style.flexBasis = ''; el.style.width = ''; el.style.gridColumn = ''; el.style.gridRow = ''; el.style.margin = ''; } });
     heroInner.appendChild(desc);
     if (toggle) heroInner.appendChild(toggle);
   }
 }
 
+// v5.936 — la descrizione, in sezione, vive DENTRO #detail-meta, che però renderSeriesMeta
+// riscrive con innerHTML: senza questo passaggio i suoi nodi verrebbero distrutti al primo
+// ridisegno e non tornerebbero più (getElementById restituirebbe null). Qui li si mette al
+// sicuro fuori dal contenitore, prima che venga svuotato; ci pensa poi
+// posizionaDescrizioneSerie() a rimetterli al loro posto.
+function salvaDescrizioneDaMeta() {
+  const heroInner = document.querySelector('#series-detail .series-hero-inner');
+  if (!heroInner) return;
+  ['detail-desc-label', 'detail-desc', 'detail-desc-toggle'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.parentElement && el.parentElement.id === 'detail-meta') heroInner.appendChild(el);
+  });
+}
+
 function renderSeriesMeta(s) {
   const metaEl = document.getElementById('detail-meta');
   if (!metaEl || !s) return;
+  salvaDescrizioneDaMeta();   // v5.936 — prima di riscrivere le numeriche
 
   // Bullet UNICO, uguale per tutte le categorie. Le icone di prima pretendevano di
   // distinguerle, e due su cinque erano identiche (\u{1F3A8} sia per le variazioni
@@ -12553,7 +12679,6 @@ function renderSeriesMeta(s) {
 
   // HUB (pagina dei 5 blocchi, currentSection === null): per OGNI categoria la sua riga di dettaglio
   // completa, una riga per categoria. Dentro una sezione: solo il dettaglio di quella sezione.
-  posizionaDescrizioneSerie();
   if (!currentSection) {
     metaEl.classList.add('meta-hub');  // v5.886: su mobile le numeriche dell'hub vanno sotto la foto
     const cats = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
@@ -12561,11 +12686,13 @@ function renderSeriesMeta(s) {
     metaEl.innerHTML = '<div class="hub-wrap" style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">' +
       cats.map(c => '<div class="hub-cat-row" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;">' + _pfx(c) + sezRows(c, true).join('') + '</div>').join('') +
       '</div>';
+    posizionaDescrizioneSerie();   // v5.936 — dopo il render: qui la descrizione torna in coda al blocco eroe
     return;
   }
 
   metaEl.classList.remove('meta-hub');
   metaEl.innerHTML = sezRows(sez, false).join('');
+  posizionaDescrizioneSerie();     // v5.936 — dopo il render, perché entra DENTRO #detail-meta
 }
 
 // I contatori in alto alla pagina della serie mostrano anche "N nella tua lista".
@@ -12656,8 +12783,8 @@ function openSeriesSection(section) {
   // Franco: non numeri sbagliati, numeri CONGELATI.
   const _s = getData('series', []).find(x => x.id === currentSeriesId);
   if (_s) renderSeriesMeta(_s);
-  const si = document.getElementById('items-search'); if (si) { si.value = ''; si.placeholder = (currentLang === 'it' ? 'Cerca ' : 'Search ') + (getSectionLabel(section) || (currentLang === 'it' ? 'oggetti' : 'items')).toLowerCase() + '...'; }
-  const _st = document.getElementById('items-search-title'); if (_st) _st.textContent = (currentLang === 'it' ? 'Imposta la tua ricerca di ' : 'Set your search for ') + (getSectionLabel(section) || (currentLang === 'it' ? 'oggetti' : 'items')).toLowerCase();  // v5.890
+  const si = document.getElementById('items-search'); if (si) si.value = '';
+  aggiornaTestiRicercaSezione();  // v5.939 — titolo e segnaposto, in una funzione sola (v5.890)
   currentItemPage = 1;
   bulkEditActive = false;
   const bulkView = document.getElementById('bulk-edit-view');
@@ -17589,6 +17716,22 @@ function animateCount(el, target) {
     if (current >= target) clearInterval(interval);
   }, 40);
 }
+// v5.935 — i numeroni della home vivono in DUE colonne (a sinistra e a destra dell'immagine):
+// vanno accese e spente insieme, altrimenti si vedrebbe mezza fila.
+function mostraNumeroniHero(visibili) {
+  ['hero-stats', 'hero-stats-right'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = visibili ? '' : 'none';
+  });
+}
+
+// "Lingue del sito": non un numero scritto a mano ma le voci vere della tendina della lingua,
+// così il giorno che se ne aggiunge una il conto si aggiorna da solo.
+function contaLingueSito() {
+  const dd = document.getElementById('lang-dropdown');
+  return dd ? dd.querySelectorAll('button').length : 0;
+}
+
 function renderHomeStats() {
   const series = getData('series', []);
   const figs = getData('figurines', []);
@@ -17605,6 +17748,7 @@ function renderHomeStats() {
   animateCount(document.getElementById('stat-albums'), albums.length);
   animateCount(document.getElementById('stat-extras'), extras.length);
   animateCount(document.getElementById('stat-users'), users.length);
+  animateCount(document.getElementById('stat-langs'), contaLingueSito());
   updateOwnedCounter();
 }
 
@@ -20482,12 +20626,9 @@ function renderWishlist() {
     </div>`;
   }).join('');
 
-  // Totale in fondo alla lista
-  el.innerHTML += `<p style="text-align:center;color:var(--muted);font-size:0.9rem;margin:1rem 0 0.25rem;">
-    ${currentLang === 'it'
-      ? 'La tua lista "Ciò che cerco" conta <strong style="color:var(--text);">' + totalItems + '</strong> figurine.'
-      : 'Your "What I\'m looking for" list contains <strong style="color:var(--text);">' + totalItems + '</strong> items.'}
-  </p>`;
+  // v5.935 — il totale in fondo alla lista se n'è andato: era il gemello di quello
+  // sopra il box (renderWishlistCount), e lo stesso numero scritto due volte fa dubitare
+  // che siano due numeri diversi.
 
   // Storico liste inviate
   renderWishlistHistory();
