@@ -4,9 +4,43 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.933"></script>
-<link rel="stylesheet" href="css/style.css?v=5.933">
+<script src="js/email.min.js?v=5.943"></script>
+<link rel="stylesheet" href="css/style.css?v=5.943">
 
+
+<style>
+/* v5.941 — HOME: il resto della pagina risale.
+   Il problema non era lo spazio sotto il logo ma l'ALTEZZA delle colonne di numeri: essendo
+   celle della stessa griglia, la più alta decideva quanto scendere prima della frase "Il
+   database non ufficiale...". Ora le due colonne sono in POSIZIONE ASSOLUTA ai lati: restano
+   dove sono (6rem sotto il bordo), ma non fanno più altezza, così tutto ciò che segue si
+   riprende lo spazio. Sotto i 1100px tornano nel flusso normale, dove il testo è largo e una
+   sovrapposizione sarebbe possibile. */
+.hero-top { position:relative; display:grid; grid-template-columns:1fr auto 1fr; align-items:start;
+            gap:0 1.5rem; width:100%; max-width:1280px; margin:0 auto 1.75rem; }
+/* v5.942 — l'immagine va DICHIARATA nella colonna centrale: da quando le due colonne di numeri
+   sono in posizione assoluta, non occupano più celle, e il logo — unico elemento rimasto nel
+   flusso — finiva nella prima colonna, cioè spostato a sinistra. */
+.hero-top .hero-logo-img { grid-column:2; margin-top:0; }
+.hero-stats-side { display:flex; flex-direction:column; align-items:center; gap:0.7rem;
+                   position:absolute; top:6rem; width:calc((100% - 460px) / 2); }
+.hero-top > .hero-stats-side:first-of-type { left:0; }
+#hero-stats-right { right:0; }
+.hero-stats-side .stat-item { display:block; text-align:center; }
+.hero-stats-side .stat-num { display:block; text-align:center; line-height:1.1; margin:0; }
+.hero-stats-side .stat-label { display:block; text-align:center; margin:2px 0 0; white-space:nowrap; }
+
+@media (max-width:1100px) {
+  /* niente sovrapposizioni su schermi medi: le colonne tornano nel flusso */
+  .hero-stats-side { position:static; width:auto; padding-top:2.5rem; }
+}
+@media (max-width:860px) {
+  .hero-top { grid-template-columns:1fr; gap:0.6rem; }
+  .hero-stats-side { flex-direction:row; flex-wrap:wrap; justify-content:center;
+                     gap:0.6rem 1.4rem; padding-top:0; }
+  .hero-top > .hero-stats-side:first-of-type { order:3; }
+}
+</style>
 </head>
 <body>
 
@@ -24,7 +58,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.933</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.943</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -90,7 +124,28 @@
 <div id="page-home" class="page active">
   <!-- HERO -->
   <section id="hero">
-    <img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:700px;width:90%;margin:0 auto 1.5rem;display:block;">
+    <!-- v5.935 — i numeroni ai lati dell'immagine: a sinistra cio' che riguarda il sito
+     (serie, collezionisti, lingue), a destra il contenuto dell'Inventario. L'immagine e' piu'
+     piccola: era il pezzo piu' grande della pagina e schiacciava tutto il resto. -->
+<div class="hero-top">
+  <div class="hero-stats-side" id="hero-stats" style="display:none;">
+    <!-- v5.943 — ordine chiesto da Franco: Lingue, Collezionisti, Serie -->
+    <div class="stat-item"><span class="stat-num" id="stat-langs">0</span><span class="stat-label" data-i18n="hero.statLangs">Lingue del sito</span></div>
+    <div class="stat-item"><span class="stat-num" id="stat-users">0</span><span class="stat-label" data-i18n="hero.stat3">Collectors</span></div>
+    <div class="stat-item"><span class="stat-num" id="stat-series">0</span><span class="stat-label" data-i18n="hero.stat1">Series</span></div>
+  </div>
+  <img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:440px;width:100%;margin:0 auto 1rem;display:block;">
+  <div class="hero-stats-side" id="hero-stats-right" style="display:none;">
+    <div class="stat-item"><span class="stat-num" id="stat-figs">0</span><span class="stat-label" data-i18n="hero.stat2">Figurines</span></div>
+    <div class="stat-item"><span class="stat-num" id="stat-retros">0</span><span class="stat-label" data-i18n="hero.stat2b">Retro</span></div>
+    <div class="stat-item"><span class="stat-num" id="stat-bustine">0</span><span class="stat-label" data-i18n="hero.stat2e">Bustine</span></div>
+    <div class="stat-item"><span class="stat-num" id="stat-albums">0</span><span class="stat-label" data-i18n="hero.stat2c">Album</span></div>
+    <div class="stat-item"><span class="stat-num" id="stat-extras">0</span><span class="stat-label" data-i18n="hero.stat2d">Altri oggetti</span></div>
+    <!-- v5.940 — "Mia lista / Totale Inventario" tolto dai numeroni della home (Franco).
+         Il dato resta nel profilo e nel contatore in navbar; updateOwnedCounter regge l'assenza
+         dell'elemento perché controlla che esista prima di scriverci. -->
+  </div>
+</div>
     <p class="hero-desc" data-i18n="hero.desc">Il database non ufficiale dedicato alla leggendaria serie italiana degli anni '90.</p>
     <p class="hero-desc" style="margin-top:-2.2rem;" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
@@ -98,17 +153,7 @@
       <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Esplora l'Inventario Sgorbions!</button>
 <button class="btn-primary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Inizia a collezionare gli Sgorbions</button>
     </div>
-    <div class="hero-stats" id="hero-stats" style="display:none;">
-      <div class="stat-item"><span class="stat-num" id="stat-series">0</span><span class="stat-label" data-i18n="hero.stat1">Series</span></div>
-      <div class="stat-item"><span class="stat-num" id="stat-users">0</span><span class="stat-label" data-i18n="hero.stat3">Collectors</span></div>
-      <div style="flex-basis:100%;height:0;"></div>
-      <div class="stat-item"><span class="stat-num" id="stat-figs">0</span><span class="stat-label" data-i18n="hero.stat2">Figurines</span></div>
-      <div class="stat-item"><span class="stat-num" id="stat-retros">0</span><span class="stat-label" data-i18n="hero.stat2b">Retro</span></div>
-      <div class="stat-item"><span class="stat-num" id="stat-bustine">0</span><span class="stat-label" data-i18n="hero.stat2e">Bustine</span></div>
-      <div class="stat-item"><span class="stat-num" id="stat-albums">0</span><span class="stat-label" data-i18n="hero.stat2c">Album</span></div>
-      <div class="stat-item"><span class="stat-num" id="stat-extras">0</span><span class="stat-label" data-i18n="hero.stat2d">Altri oggetti</span></div>
-      <div class="stat-item" id="stat-owned-wrap" style="display:none;"><span class="stat-num" id="stat-owned-hero">0/0</span><span class="stat-label" data-i18n="hero.myvsTotal">Mia lista / Totale Inventario</span></div>
-    </div>
+    
   </section>
 
   <!-- LOGGED IN CONTENT -->
@@ -301,11 +346,14 @@
           <div id="items-admin-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center;"></div>
         </div>
     </div>
-    <div id="items-results-row" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.9rem;">
+    <!-- v5.937 — allineamento al FONDO: i pulsanti stavano centrati sull'intero blocco dei
+         risultati (titolo + due righe) e quindi galleggiavano a mezz'aria. Con flex-end la loro
+         base coincide con l'ultima riga, quella blu "N fanno parte della tua lista". -->
+    <div id="items-results-row" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.9rem;">
     <div id="items-count-display" style="font-size:0.95rem;color:var(--muted);margin-bottom:0;"></div>
       <div id="bulk-owned-btns" style="display:none;gap:0.75rem;flex-wrap:wrap;align-items:center;">
-        <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.haveall.hint" title="Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/></svg><span data-i18n="catalog.haveall">Aggiungi alla tua lista i risultati della ricerca</span></button>
-        <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.havenone.hint" title="Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 14V3"/><path d="M8 7l4-4 4 4"/></svg><span data-i18n="catalog.havenone">Rimuovi dalla tua lista i risultati della ricerca</span></button>
+        <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.haveall.hint" title="Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/></svg><span data-i18n="catalog.haveall">Aggiungi risultati ricerca alla tua lista</span></button>
+        <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.havenone.hint" title="Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 14V3"/><path d="M8 7l4-4 4 4"/></svg><span data-i18n="catalog.havenone">Rimuovi risultati ricerca dalla tua lista</span></button>
         <span id="set-all-msg" style="display:none;font-size:0.85rem;color:var(--accent);font-family:var(--font-ui);"></span>
       </div>
     </div>
@@ -1058,7 +1106,7 @@
     <div class="section-inner">
       <div style="margin-bottom:1.5rem;">
         <h1 style="font-family:var(--font-ui);font-size:2.2rem;display:flex;align-items:center;gap:0.4rem;"><span data-i18n="nav.wishlist">Ciò che cerco</span> <span style="font-size:1.8rem;line-height:1;">❤️</span></h1>
-        <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n-html="wishlist.desc"><strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando la tua lista "Ciò che cerco" è completa, premi il pulsante 📨 <strong>Invia "Ciò che cerco"</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.</p>
+        <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n-html="wishlist.desc"><strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista "Ciò che cerco" è completa, premi il pulsante 📨 <strong>Invia "Ciò che cerco"</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.</p>
       </div>
       <!-- v5.932 — il conteggio della lista, appena sopra il box: dice a colpo d'occhio quanto
            c'è dentro, senza doverlo contare scorrendo. -->
@@ -1163,7 +1211,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.933</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.943</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1875,7 +1923,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.933"></script>
+<script src="js/app.js?v=5.943"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -1899,7 +1947,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v5.933'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.943'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
