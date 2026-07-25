@@ -1,6 +1,47 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.949 - Franco: su telefono la foto deve toccare il soffitto. Con align-items:center il logo
+//          veniva centrato verticalmente rispetto alla colonna di numeri piu' alta e quindi
+//          scendeva; ora la riga e' allineata in alto (align-items:start) e il logo non ha
+//          margine superiore. Solo index.html.
+// ------------------------------------------------------------
+// v5.948 - Franco: su telefono i due gruppi di numeri stanno ai LATI del logo, come sul desktop,
+//          e per farceli stare il logo si stringe a 190px (dai 320 del CSS del sito). Verificato
+//          misurando in una cornice da 397px: ~80px per lato ai gruppi, ~190 al logo, nessuna
+//          sovrapposizione e centro del logo a 203 contro un centro pagina di 199. Le aree sono
+//          dichiarate ("sx logo dx"): su questa pagina il posizionamento automatico ha gia'
+//          sbagliato tre volte, quindi non decide piu' nulla. Solo index.html.
+// ------------------------------------------------------------
+// v5.947 - Home su telefono, chiusa misurando il rendering VERO dentro una cornice da 397px
+//          (non a occhio): i due gruppi erano gia' ai lati dalla v5.946, ma il logo usciva largo
+//          102px e spostato a sinistra. Due trappole CSS in fila: (a) "grid-column:auto" scritto
+//          dopo "grid-area:logo" annullava la colonna dell'area, rimettendo il logo in una cella
+//          singola; (b) "justify-self:center" riduce l'elemento al contenuto, e il "width:65%" del
+//          logo finiva calcolato su quella base ridotta. Ora resta la sola area, con l'immagine
+//          centrata dai propri margini: logo al centro (196 contro un centro pagina di 199) e
+//          gruppi affiancati sulla stessa riga. Solo index.html.
+// ------------------------------------------------------------
+// v5.946 - Franco (telefono): la disposizione dei numeroni non veniva mai come previsto perche'
+//          ci si affidava al posizionamento AUTOMATICO della griglia — prima il logo si creava
+//          una colonna implicita (v5.944), poi i due gruppi si impilavano sopra e sotto invece di
+//          affiancarsi (v5.945). Ora sotto gli 860px le aree sono DICHIARATE a lettere
+//          (grid-template-areas: "logo logo" / "sx dx"): prima riga tutta per il logo, seconda con
+//          il gruppo del sito a sinistra e quello dell'Inventario a destra. Solo index.html.
+// ------------------------------------------------------------
+// v5.945 - Franco: anche su TELEFONO i due gruppi di numeroni vanno ai lati, non impilati al
+//          centro. Sotto la foto — che ora attraversa tutta la riga — la griglia diventa a due
+//          colonne: i dati del sito si appoggiano al bordo sinistro, quelli dell'Inventario al
+//          bordo destro, con le voci centrate dentro il proprio gruppo. Solo index.html.
+// ------------------------------------------------------------
+// v5.944 - Franco (da telefono): la home era sbilenca. Causa vera: sotto gli 860px la griglia
+//          diventa a UNA colonna, ma il logo restava dichiarato in "grid-column:2" — e su una
+//          griglia a una colonna quel valore ne crea una SECONDA implicita: immagine da una
+//          parte, numeri dall'altra. Ora su telefono il logo torna in colonna 1 e i numeroni,
+//          tutti sotto la foto, sono voci centrate che vanno a capo da sole (larghezza massima
+//          26rem, ultima riga centrata e non appesa a sinistra), con l'Inventario prima e i dati
+//          del sito dopo. Solo index.html (qui la versione).
+// ------------------------------------------------------------
 // v5.943 - Franco: nella colonna di sinistra della home l'ordine diventa Lingue del sito,
 //          Collezionisti, Serie (era il contrario). Solo index.html (qui la versione).
 // ------------------------------------------------------------
@@ -9178,7 +9219,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.943';
+const JS_VERSION = 'v5.949';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
