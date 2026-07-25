@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.917 - Franco (BUG "il box dei filtri della collezione e' sparito"): non era un baco del
+//          codice ma un index.html vecchio in cache. GitHub Pages serve l'index con ~10 min di
+//          cache e l'index e' l'unico file senza ?v= (e' lui a portarlo agli altri): un index
+//          pre-v5.910 non contiene proprio il <div id="items-collection-box">, e chiedendo
+//          app.js?v=<versione vecchia> riceve l'app.js coerente -> il vecchio controllo
+//          expected/JS_VERSION non vedeva nulla. Ora la rete di sicurezza in fondo a index.html
+//          rileva anche questo caso (la versione non puo' andare all'indietro: si confronta con
+//          la piu' alta mai vista, in localStorage) e reagisce con UN solo ricaricamento verso
+//          ?nc=<timestamp> (guardia in sessionStorage, niente loop); se non basta, fascetta
+//          rossa con l'istruzione Ctrl+Shift+R. Solo index.html (app.js: solo JS_VERSION).
+// ------------------------------------------------------------
 // v5.916 - Franco: scheda figurina a schermo intero — (1) il modale è ANCORATO IN ALTO
 //          (align-items:flex-start + padding-top:4vh sul fig-detail-modal) così resta sempre alla
 //          stessa distanza dal top e non "sfarfalla" navigando con le frecce ◀▶; (2) fronte e retro
@@ -8929,7 +8940,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.916';
+const JS_VERSION = 'v5.917';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
