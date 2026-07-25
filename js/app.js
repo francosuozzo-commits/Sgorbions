@@ -1,6 +1,127 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.930 - BUG trovato guardando i dati veri (Franco: "perche' alcune righe sono in bianco?"):
+//          47 oggetti avevano ebayTitleIt scritto senza che nessuno lo avesse voluto. Causa: la
+//          cella del Titolo si apre con l'input GIA' riempito dal titolo generato; all'uscita si
+//          confrontava il valore dell'input col campo salvato (vuoto) — diversi, quindi salvava.
+//          Ogni clic esplorativo su una cella scriveva un titolo. Ora il confronto e' col valore
+//          INIZIALE dell'input (data-iniziale): se non hai scritto nulla, non si salva nulla.
+//          (Il bianco/grigio corsivo era corretto: bianco = titolo salvato, grigio = generato.)
+// ------------------------------------------------------------
+// v5.929 - Franco, regole di troncamento del titolo: la coda commerciale si sacrifica INTERA, mai
+//          a meta' (un titolo che finisce "- Gpk - Top" sembra un errore, non un'abbreviazione).
+//          (1) se per stare negli 80 servirebbe tagliare anche una sola lettera di "Topps" ->
+//          via tutto " - Topps"; (2) se non basta e si taglierebbe dentro "Gpk" -> via anche
+//          " - Gpk". Si prova quindi in ordine: intero -> senza Topps -> senza Gpk -> e solo se
+//          nemmeno il corpo (Sgorbions Serie #N - Nome completo) ci sta, taglio secco a 80.
+//          Di conseguenza "titolo eccedente" cambia significato, e diventa piu' utile: la tabella
+//          elenca ora SOLO i titoli tagliati dentro il nome, quelli che le regole non salvano e
+//          vanno riscritti a mano; perdere la coda non e' un problema da segnalare, e' la regola
+//          che funziona. Nuove ebayTitleCorpo() ed ebayTitleStato(). Solo app.js.
+// ------------------------------------------------------------
+// v5.928 - Franco (se n'e' accorto): con la v5.926 la SCHEDA di dettaglio era rimasta senza porta
+//          d'ingresso dalla Vista Ebay — la riga non era piu' cliccabile tutta e la ✎ portava alla
+//          form di modifica. Ora in fondo alla riga ci sono DUE icone con due destinazioni
+//          distinte: ✎ la form (cambiare prezzo, quantita', foto) e ↗ la scheda di dettaglio
+//          (guardare il pezzo, foto e frecce ◀▶). Valgono in entrambe le tabelle. Solo app.js.
+// ------------------------------------------------------------
+// v5.927 - Franco: bottone "Lascia solo titolo" in cima alla Vista Ebay (accanto al selettore
+//          IT/COM): chiude in un colpo tutte le colonne tranne il Titolo, invece dei sei clic
+//          sulle ✕. Si disabilita da solo quando si e' gia' in quello stato — un comando che non
+//          farebbe niente e' peggio di un comando assente — e per tornare indietro resta la riga
+//          "Colonne chiuse → rimettile tutte". Casella di selezione e ✎ non spariscono: non sono
+//          colonne di dati ma i comandi della riga, e senza di loro la vista diventerebbe di sola
+//          lettura proprio mentre la si usa per lavorare sui titoli. Solo app.js.
+// ------------------------------------------------------------
+// v5.926 - Franco: nella Vista Ebay la riga NON e' piu' cliccabile tutta — da quando il Titolo si
+//          modifica in cella, un clic qualunque era ambiguo (modifico o apro?). Il comando e' ora
+//          un punto solo e dichiarato: la ✎ a fine riga, che apre la FORM DI MODIFICA
+//          dell'oggetto (openAddItemModal, tab Generale/Ebay), non la scheda di lettura: dalla
+//          Vista Ebay si va a cambiare dati. Chiudendo la form con la ✕ si torna alla tabella —
+//          closeModal nasconde solo la finestra in cima e la Vista Ebay resta sotto intatta —
+//          e dopo un salvataggio la tabella si RIDISEGNA, altrimenti avrebbe mostrato ancora il
+//          prezzo o la foto di prima. Stessa ✎ nella tabella dei titoli eccedenti. Solo app.js.
+// ------------------------------------------------------------
+// v5.925 - Franco: il titolo eBay smette di essere solo calcolato e si puo' SCRIVERE. (1) Colonna
+//          di selezione con casella per riga e casella in intestazione (seleziona/deseleziona
+//          l'intera sezione); le righe scelte sono evidenziate. (2) Barra che compare solo quando
+//          c'e' una selezione, con il bottone "Applica Nome completo al Titolo": scrive il titolo
+//          generato in ebayTitleIt ED ebayTitleEn (oggi identici), chiedendo conferma e avvisando
+//          quanti titoli scritti a mano verrebbero sovrascritti. Sui titoli lunghi scrive la
+//          versione TAGLIATA A 80 (scelta di Franco: nel campo ci va solo cio' che eBay accetta).
+//          (3) Cella del Titolo modificabile a mano: clic, Invio salva, Esc annulla, contatore
+//          caratteri che diventa rosso oltre 80; svuotare il campo rimette in gioco il generato.
+//          Il titolo scritto si distingue da quello calcolato: il generato resta grigio corsivo.
+//          Resta la precedenza di sempre: campo pieno = titolo tuo, il generato non lo tocca.
+// ------------------------------------------------------------
+// v5.924 - Franco, due richieste sulla Vista Ebay: (1) NUMERO DI RIGA come prima colonna. E' la
+//          posizione nell'elenco cosi' com'e' ora — riparte da 1 in ogni sezione e si rinumera
+//          quando cambi ordinamento — quindi la sua intestazione NON ordina (ordinare per
+//          "posizione attuale" non vorrebbe dire nulla); si chiude come le altre (ebayThFisso).
+//          (2) RIGA CLICCABILE: apre la scheda dell'oggetto (openFigDetail), che si sovrappone
+//          alla maschera; chiudendola si torna alla Vista Ebay con sezioni, ordinamento e colonne
+//          come li avevi lasciati, perche' quello stato vive fuori dal render. Cliccabile anche
+//          la tabella dei titoli eccedenti: da un titolo troppo lungo si va dritti al pezzo da
+//          sistemare. Solo app.js.
+// ------------------------------------------------------------
+// v5.923 - Franco: la ✕ per chiudere la colonna c'e' anche su "Nome completo" — nessuna colonna
+//          e' privilegiata. Resta un solo limite: l'ULTIMA colonna aperta non si chiude (una
+//          tabella senza colonne non e' una vista), e infatti quando ne resta una sola la ✕ non
+//          compare nemmeno. "Nome completo" entra anche nella riga di ripristino. Solo app.js.
+// ------------------------------------------------------------
+// v5.922 - Franco: nelle tabelle della Vista Ebay le COLONNE SI CHIUDONO. Ogni intestazione ha
+//          due comandi: il testo ordina, la ✕ chiude la colonna (con stopPropagation, altrimenti
+//          chiudere ordinerebbe anche). La tabella e' width:100%, quindi le colonne rimaste si
+//          allargano da sole; le celle chiuse non vengono proprio generate. Sopra le tabelle
+//          compare la riga "Colonne chiuse: [Condizione +] [Foto +] rimettile tutte" — senza,
+//          una colonna chiusa sarebbe una colonna persa. Lo stato (_ebayColHidden) vale per
+//          TUTTE e cinque le sezioni: mostrano gli stessi dati, vederle con colonne diverse
+//          confonderebbe. "Nome completo" non e' chiudibile: e' cio' che identifica la riga.
+//          (Alternativa scartata su indicazione di Franco: togliere del tutto la colonna
+//          Condizione — ora basta chiuderla.) Solo app.js.
+// ------------------------------------------------------------
+// v5.921 - Franco: le tabelle della Vista Ebay ora si ORDINANO cliccando l'intestazione. Ciclo a
+//          tre tempi (crescente ▲ -> decrescente ▼ -> nessun ordinamento, cioe' si torna
+//          all'ordine della vista tabellare): senza il terzo tempo non ci sarebbe modo di tornare
+//          indietro. Lo stato e' PER SEZIONE (_ebaySort): ordinare i prezzi delle figurine non
+//          tocca i retro. Si ordina il valore che si LEGGE nella cella, mercato IT/COM compreso;
+//          numeri confrontati da numeri (3.5 < 12), testo con le regole italiane, celle vuote
+//          sempre in fondo in entrambi i versi. Ordinabile anche la tabella dei titoli eccedenti
+//          (chiave '_oversize'), dove serve soprattutto la colonna Caratteri. Solo app.js.
+// ------------------------------------------------------------
+// v5.920 - Franco: nella Vista Ebay ogni sezione si CHIUDE. Con centinaia di righe, per passare
+//          da una sezione alla successiva si scorreva all'infinito: ora l'intestazione e' un
+//          comando (tutta la riga, non una freccina) e mostra ▾ aperta / ▸ chiusa. Lo stato sta
+//          in _ebaySectionCollapsed, quindi sopravvive al cambio mercato IT/COM e a ogni
+//          ridisegno; all'apertura della maschera sono tutte aperte. Le sezioni senza oggetti
+//          restano senza freccia (non c'e' niente da chiudere). Solo app.js.
+// ------------------------------------------------------------
+// v5.919 - Franco, Vista Ebay rifatta su quattro sue indicazioni: (1) i CONTATORI degli oggetti
+//          marcati Ebay non occupano piu' cinque righe a tutta larghezza ma un riquadro compatto
+//          in alto a sinistra ("160 / 2295" per sezione); (2) niente piu' colonna "Tipo" e tabella
+//          unica: ora CINQUE TABELLE distinte, una per sezione, nell'ordine figurine, retro,
+//          bustine, album, altri oggetti (costante EBAY_SECTIONS, usata anche dai contatori e
+//          dalla tabella dei titoli lunghi); (3) via le colonne "N." e "Nome", al loro posto
+//          NOME COMPLETO, che e' cio' che finisce nel titolo dell'annuncio; (4) nella colonna
+//          Foto, per le sole FIGURINE, accanto alla foto eBay compare la MINIATURA DEL RETRO
+//          associato (○ se il retro c'e' ma non ha foto, — se non e' associato). Le righe di
+//          ogni tabella seguono l'ordine della vista tabellare. Solo app.js.
+// ------------------------------------------------------------
+// v5.918 - Franco (progetto eBay, titoli): il titolo dell'annuncio non e' piu' un segnaposto ma
+//          si genera dai dati, con lo schema deciso da Franco: "Sgorbions <Serie> <Sottoserie>
+//          #<Numero> - <NOME COMPLETO> - Gpk - Topps" (il pezzo centrale e' il Nome completo,
+//          non il solo Nome: e' li' che vivono variazioni, Change ed errori di stampa). eBay
+//          ammette 80 caratteri, quindi il titolo viene troncato li'; NON c'e' nessuna regola
+//          automatica su cosa sacrificare, perche' i casi lunghi si guardano uno per uno.
+//          Per vederli: nuova tabella "Titoli eccedenti la taglia ebay" in fondo alla Vista Ebay,
+//          che elenca i soli oggetti MARCATI EBAY con titolo troncato, mostrando affiancati
+//          titolo troncato e titolo intero + i caratteri in eccesso. Ordinata come la vista
+//          tabellare: l'ordinamento e' stato estratto da renderBulkEditView in cmpVistaTabellare()
+//          e ora e' condiviso dalle due viste (una sola regola, due chiamanti). Nella tabella
+//          principale della Vista Ebay la colonna Titolo mostra il generato, con una forbice
+//          quando e' troncato. index.html + app.js.
+// ------------------------------------------------------------
 // v5.917 - Franco (BUG "il box dei filtri della collezione e' sparito"): non era un baco del
 //          codice ma un index.html vecchio in cache. GitHub Pages serve l'index con ~10 min di
 //          cache e l'index e' l'unico file senza ?v= (e' lui a portarlo agli altri): un index
@@ -8940,7 +9061,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.917';
+const JS_VERSION = 'v5.930';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11162,14 +11283,19 @@ function openSeriesEbayModal() {
   if (!series) return;
   document.getElementById('series-ebay-modal-name').textContent = series.name;
   const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId);
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: currentLang === 'it' ? 'Album' : 'Albums', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Wrappers' };
-  const sectionOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
+  // v5.919 — i contatori occupavano cinque righe a tutta larghezza per dieci numeri: ora sono un
+  // riquadro compatto in alto a sinistra (Franco). Stessa informazione, un ventesimo dello spazio.
   const counters = document.getElementById('series-ebay-counters');
-  counters.innerHTML = sectionOrder.map(sec => {
-    const total = figs.filter(f => (f.section || 'figurines') === sec).length;
-    const forSaleCount = figs.filter(f => (f.section || 'figurines') === sec && f.forSale).length;
-    return `<div class="detail-row"><span class="detail-label">${sectionLabels[sec]}</span><span class="detail-value">${forSaleCount} ${currentLang === 'it' ? 'su' : 'of'} ${total}</span></div>`;
-  }).join('');
+  counters.innerHTML = `<div style="display:inline-block;border:1px solid var(--border);border-radius:10px;padding:0.5rem 0.8rem;background:var(--card2);">
+    ${EBAY_SECTIONS.map(sec => {
+      const total = figs.filter(f => (f.section || 'figurines') === sec).length;
+      const forSaleCount = figs.filter(f => (f.section || 'figurines') === sec && f.forSale).length;
+      return `<div style="display:flex;justify-content:space-between;gap:1.2rem;font-size:0.78rem;line-height:1.5;">
+        <span style="color:var(--muted);">${ebaySectionLabel(sec)}</span>
+        <span style="color:var(--text);font-weight:${forSaleCount ? '700' : '400'};white-space:nowrap;">${forSaleCount} / ${total}</span>
+      </div>`;
+    }).join('')}
+  </div>`;
 
   // Tabella oggetti marcati Ebay, con selettore mercato IT/COM (v5.899). La Descrizione è esclusa
   // apposta (troppo lunga per la tabella; resta nell'export).
@@ -11179,52 +11305,535 @@ function openSeriesEbayModal() {
   document.getElementById('series-ebay-modal').classList.remove('hidden');
 }
 
+// v5.918 — ORDINAMENTO CONDIVISO con la vista tabellare (renderBulkEditView). Estratto da lì
+// perché la tabella "Titoli eccedenti la taglia ebay" deve elencare gli oggetti nello stesso
+// ordine: due copie delle stesse regole sarebbero divergenti al primo ritocco.
+// Regole per sezione: Retro → Categoria, Sottocategoria, Nome, Tipo di change; Figurine →
+// Sottoserie, Numero (i senza numero in fondo), Nome completo; altre sezioni → Numero.
+function cmpVistaTabellare(sezione) {
+  return (a, b) => {
+    if (sezione === 'retros') {
+      const catCmp = (a.category||'').localeCompare(b.category||'', 'it');
+      if (catCmp !== 0) return catCmp;
+      const subcatCmp = (a.subcategory||'').localeCompare(b.subcategory||'', 'it');
+      if (subcatCmp !== 0) return subcatCmp;
+      const nameCmp = (a.name||'').localeCompare(b.name||'', 'it');
+      if (nameCmp !== 0) return nameCmp;
+      return (a.changeType||'').localeCompare(b.changeType||'', 'it');
+    }
+    if (sezione === 'figurines') {
+      const subCmp = (a.subseries||'').localeCompare(b.subseries||'', 'it');
+      if (subCmp !== 0) return subCmp;
+      if (!a.number && !b.number) {
+        const nameCmp = (a.name||'').localeCompare(b.name||'', 'it');
+        if (nameCmp !== 0) return nameCmp;
+      } else if (!a.number) { return 1; }
+      else if (!b.number) { return -1; }
+      else {
+        const numCmp = a.number - b.number;
+        if (numCmp !== 0) return numCmp;
+      }
+      const allFigsForSort2 = getData('figurines', []);
+      const fnA = a.fullName || computeFullName(a, allFigsForSort2);
+      const fnB = b.fullName || computeFullName(b, allFigsForSort2);
+      return fnA.localeCompare(fnB, 'it');
+    }
+    if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||'');
+    if (!a.number) return 1;
+    if (!b.number) return -1;
+    return a.number - b.number;
+  };
+}
+
+// ============================================================
+// TITOLO DELL'ANNUNCIO eBAY (v5.918)
+// Schema deciso da Franco:
+//     Sgorbions <Serie> <Sottoserie> #<Numero> - <Nome completo> - Gpk - Topps
+// Le parti mancanti (sottoserie, numero sugli oggetti "senza numero") spariscono senza
+// lasciare spazi doppi o trattini penzolanti. Il pezzo centrale è il NOME COMPLETO — quello
+// che la vista tabellare mostra nella colonna "Nome Completo" — non il solo Nome: per
+// variazioni, Change ed errori di stampa è lì che sta l'informazione che distingue il pezzo.
+//
+// eBay accetta 80 caratteri e non uno di più, quindi il titolo viene TRONCATO a 80. Non c'è
+// nessuna regola automatica su cosa sacrificare (via "Topps", via il retro, ecc.): i pezzi
+// troncati vanno guardati e sistemati uno per uno, ed è esattamente ciò che elenca la tabella
+// "Titoli eccedenti la taglia ebay" nella Vista Ebay.
+// Un eventuale titolo scritto a mano (ebayTitleIt/En) ha comunque la precedenza sul generato.
+const EBAY_TITLE_MAX = 80;
+// v5.919 — ordine delle sezioni nella Vista Ebay, deciso da Franco: figurine, retro, bustine,
+// album, altri oggetti. Una sola definizione per contatori, tabelle e tabella dei titoli lunghi.
+const EBAY_SECTIONS = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
+function ebaySectionLabel(sec) {
+  const it = (currentLang === 'it');
+  return ({ figurines: it ? 'Figurine' : 'Stickers', retros: 'Retro', bustine: it ? 'Bustine' : 'Wrappers',
+            albums: it ? 'Album' : 'Albums', extras: it ? 'Altri oggetti' : 'Other items' })[sec] || sec;
+}
+// Il CORPO del titolo: l'identità del pezzo, senza la coda commerciale.
+function ebayTitleCorpo(f) {
+  if (!f) return '';
+  const serie = getData('series', []).find(s => s.id === f.seriesId);
+  const testa = ['Sgorbions', serie ? serie.name : '', f.subseries || '',
+                 (f.noNumber || !f.number) ? '' : ('#' + f.number)].filter(Boolean).join(' ');
+  const nome = f.fullName || computeFullName(f, getData('figurines', [])) || f.name || '';
+  return [testa, nome].filter(Boolean).join(' - ');
+}
+function ebayTitleFull(f) {
+  const corpo = ebayTitleCorpo(f);
+  return corpo ? corpo + ' - Gpk - Topps' : '';
+}
+
+// v5.929 — REGOLE DI TRONCAMENTO date da Franco. La coda "- Gpk - Topps" si sacrifica INTERA,
+// mai a metà: un titolo che finisce con "- Gpk - Top" sembra un errore, non un'abbreviazione.
+//   1. se per stare negli 80 servirebbe tagliare anche una sola lettera di "Topps" → via " - Topps"
+//   2. se anche così non basta e servirebbe tagliare dentro "Gpk" → via anche " - Gpk"
+// Quindi si prova, in ordine: titolo intero → senza Topps → senza Gpk → e solo se nemmeno il
+// corpo ci sta si taglia di netto, che è l'unico caso davvero da guardare a mano.
+function ebayTitle(f) {
+  const corpo = ebayTitleCorpo(f);
+  for (const c of [corpo + ' - Gpk - Topps', corpo + ' - Gpk', corpo]) {
+    if (c.length <= EBAY_TITLE_MAX) return c;
+  }
+  return corpo.slice(0, EBAY_TITLE_MAX).replace(/[\s-]+$/, '');
+}
+// "Eccede" ora vuol dire una cosa più precisa e più utile: nemmeno il solo corpo (senza coda)
+// entra negli 80, quindi il titolo viene tagliato dentro il nome. Perdere la coda commerciale,
+// invece, non è un problema da segnalare: è la regola che funziona.
+function ebayTitleEccede(f) { return ebayTitleCorpo(f).length > EBAY_TITLE_MAX; }
+// Serve alla tabella: dire COSA è successo a questo titolo.
+function ebayTitleStato(f) {
+  const corpo = ebayTitleCorpo(f);
+  if (corpo.length + ' - Gpk - Topps'.length <= EBAY_TITLE_MAX) return 'intero';
+  if (corpo.length + ' - Gpk'.length <= EBAY_TITLE_MAX) return 'senzaTopps';
+  if (corpo.length <= EBAY_TITLE_MAX) return 'senzaGpk';
+  return 'tagliato';
+}
+
 // v5.899 — Vista Ebay: due tabelle (eBay.it / eBay.com) con selettore. Le colonne che cambiano tra i
-// due mercati: Titolo (IT/EN), Prezzo (€/$), Condizione (Nuovo/Usato vs Ungraded/Used), Spedizione.
-// I campi ebayTitleIt/En, priceUsd, ebayShipIt/Us verranno popolati dai campi del tab Ebay (in arrivo):
-// finché sono vuoti la cella mostra "—".
+// due mercati: Prezzo (€/$), Condizione (Nuovo/Usato vs Ungraded/Used), Spedizione.
+// v5.918 — il Titolo non è più un segnaposto "—": è generato da ebayTitle() ed è per ora lo stesso
+// sui due mercati (i nomi dei personaggi sono italiani e "Gpk - Topps" è già il richiamo che cerca
+// il collezionista americano). Restano segnaposto priceUsd ed ebayShipIt/Us.
 let _ebayViewMarket = 'it';
 function setEbayViewMarket(m) { _ebayViewMarket = m; renderEbayViewTable(); }
+// v5.920 — sezioni chiuse nella Vista Ebay (chiave = sezione). Tutte aperte all'inizio: la
+// maschera deve mostrare cosa c'è, non nasconderlo; è chi legge a chiudere ciò che ha già visto.
+let _ebaySectionCollapsed = {};
+function toggleEbaySection(sec) {
+  _ebaySectionCollapsed[sec] = !_ebaySectionCollapsed[sec];
+  try { renderEbayViewTable(); } catch (e) { console.error('toggleEbaySection', e); }
+}
+
+// v5.921 (Franco) — ORDINAMENTO DELLE TABELLE della Vista Ebay. Ogni sezione ha il suo stato
+// ({colonna, verso}), perché si lavora su una sezione per volta: ordinare i prezzi delle figurine
+// non deve scombinare i retro. Il ciclo del clic è a TRE tempi — crescente → decrescente →
+// nessun ordinamento — così si torna sempre all'ordine di partenza (quello della vista tabellare)
+// senza dover indovinare come fare. La stessa meccanica vale per la tabella dei titoli eccedenti,
+// tenuta a parte perché ha colonne sue (chiave '_oversize').
+let _ebaySort = {}; // sezione -> { col, dir } ; assente = ordine della vista tabellare
+function setEbaySort(sec, col) {
+  const s = _ebaySort[sec];
+  if (!s || s.col !== col) _ebaySort[sec] = { col, dir: 1 };
+  else if (s.dir === 1) s.dir = -1;
+  else delete _ebaySort[sec];
+  try { sec === '_oversize' ? renderEbayOversizeTable() : renderEbayViewTable(); }
+  catch (e) { console.error('setEbaySort', e); }
+}
+// Intestazione cliccabile con la freccia dello stato corrente.
+function ebayTh(sec, col, label, extra) {
+  const s = _ebaySort[sec];
+  const freccia = (s && s.col === col) ? (s.dir === 1 ? ' ▲' : ' ▼') : '';
+  const attivo = !!freccia;
+  // v5.922 — due comandi nella stessa intestazione: il testo ORDINA, la × CHIUDE la colonna.
+  // La × ferma la propagazione, altrimenti chiudere una colonna la ordinerebbe anche.
+  // v5.923 (Franco) — la × è anche su "Nome completo": nessuna colonna è privilegiata. L'unico
+  // limite che resta è l'ultima rimasta — una tabella senza colonne non è una vista, è il nulla —
+  // e infatti quando ne resta una sola la × non compare.
+  const chiudibile = EBAY_COLS.filter(ebayColVisibile).length > 1;
+  const x = chiudibile
+    ? `<span onclick="event.stopPropagation();nascondiEbayCol('${col}')" title="${currentLang === 'it' ? 'Chiudi questa colonna' : 'Hide this column'}"
+        style="margin-left:0.45rem;color:var(--muted);font-size:0.85em;cursor:pointer;">✕</span>` : '';
+  return `<th onclick="setEbaySort('${sec}','${col}')" title="${currentLang === 'it' ? 'Ordina per questa colonna' : 'Sort by this column'}"
+    style="padding:0.4rem 0.6rem;text-align:left;white-space:nowrap;cursor:pointer;user-select:none;${attivo ? 'color:var(--action-admin);' : ''}${extra || ''}">${label}<span style="font-size:0.75em;">${freccia}</span>${x}</th>`;
+}
+
+// ============================================================
+// SELEZIONE RIGHE E SCRITTURA DEL TITOLO (v5.925, Franco)
+// Fin qui il titolo era solo CALCOLATO: bello da guardare, ma non esisteva da nessuna parte.
+// Ora si può fissarlo nel database — ebayTitleIt ED ebayTitleEn insieme, perché oggi il titolo
+// generato è lo stesso per i due mercati — e poi correggerlo a mano.
+// Regola sui titoli lunghi (scelta di Franco): nel campo finisce SOLO ciò che eBay accetta,
+// quindi la versione tagliata a 80. Un campo con dentro 126 caratteri sarebbe un annuncio che
+// non parte.
+// Da qui in poi vale la precedenza di sempre: campo pieno = titolo tuo, il generato non torna più.
+// ============================================================
+let _ebaySelected = new Set();
+// v5.926 — il comando "apri" della riga: una ✎ a fine riga, che porta alla FORM di modifica
+// (tab Generale/Ebay), non alla scheda di lettura — dalla Vista Ebay si va a cambiare dati.
+// v5.928 — due comandi, due destinazioni diverse: ✎ la FORM di modifica (cambiare dati),
+// ↗ la SCHEDA di dettaglio (guardare il pezzo, con foto e frecce ◀▶). Nella v5.926 era rimasta
+// solo la form e la scheda era diventata irraggiungibile da qui.
+function ebayApriBtn(id) {
+  const it = (currentLang === 'it');
+  const ic = (comando, simbolo, titolo) => `<span onclick="event.stopPropagation();${comando}" title="${titolo}"
+    style="cursor:pointer;color:var(--action-admin);font-size:0.95rem;padding:0 3px;">${simbolo}</span>`;
+  return `<span style="white-space:nowrap;">`
+    + ic(`openAddItemModal('${id}')`, '✎', it ? 'Modifica: apre la form dell\'oggetto' : 'Edit: open the item form')
+    + ic(`openFigDetail('${id}')`, '↗', it ? 'Scheda: apre il dettaglio dell\'oggetto' : 'Card: open the item detail')
+    + `</span>`;
+}
+function ebayToggleSel(id, ev) {
+  if (ev) ev.stopPropagation();
+  _ebaySelected.has(id) ? _ebaySelected.delete(id) : _ebaySelected.add(id);
+  try { renderEbayViewTable(); } catch (e) { console.error('ebayToggleSel', e); }
+}
+// Casella in intestazione: seleziona/deseleziona tutta la sezione (solo le righe che si vedono).
+function ebayToggleSelSezione(sec, ev) {
+  if (ev) ev.stopPropagation();
+  const ids = getData('figurines', [])
+    .filter(f => f.seriesId === currentSeriesId && f.forSale && (f.section || 'figurines') === sec)
+    .map(f => f.id);
+  const tutteGiaSelezionate = ids.length && ids.every(id => _ebaySelected.has(id));
+  ids.forEach(id => tutteGiaSelezionate ? _ebaySelected.delete(id) : _ebaySelected.add(id));
+  try { renderEbayViewTable(); } catch (e) { console.error('ebayToggleSelSezione', e); }
+}
+function ebayDeselezionaTutto() {
+  _ebaySelected.clear();
+  try { renderEbayViewTable(); } catch (e) { console.error('ebayDeselezionaTutto', e); }
+}
+
+// Scrive il titolo generato (tagliato a 80) nei due campi, per le righe selezionate.
+async function ebayApplicaTitoli() {
+  if (!currentUser?.isAdmin) return;
+  const it = (currentLang === 'it');
+  const figs = getData('figurines', []);
+  const scelti = figs.filter(f => _ebaySelected.has(f.id));
+  if (!scelti.length) { toast(it ? 'Nessuna riga selezionata' : 'No rows selected', 'error'); return; }
+  // Sovrascrivere un titolo scritto a mano è la sola cosa irreversibile qui: si chiede prima.
+  const giaScritti = scelti.filter(f => (f.ebayTitleIt || '').trim() || (f.ebayTitleEn || '').trim()).length;
+  const domanda = it
+    ? ('Scrivere il titolo generato su ' + scelti.length + (scelti.length === 1 ? ' oggetto' : ' oggetti') + '?' +
+       (giaScritti ? '\n\nAttenzione: ' + giaScritti + (giaScritti === 1 ? ' ha' : ' hanno') + ' già un titolo scritto a mano, che verrà sovrascritto.' : ''))
+    : ('Write the generated title on ' + scelti.length + ' item(s)?' + (giaScritti ? '\n\n' + giaScritti + ' already have a manual title that will be overwritten.' : ''));
+  if (!confirm(domanda)) return;
+  let salvati = 0;
+  for (const f of scelti) {
+    const t = ebayTitle(f); // già tagliato a 80
+    f.ebayTitleIt = t;
+    f.ebayTitleEn = t;
+    await fsSave('figurines', f);
+    salvati++;
+  }
+  _cache.figurines = figs;
+  _ebaySelected.clear();
+  try { renderEbayViewTable(); } catch (e) { console.error('ebayApplicaTitoli', e); }
+  toast(it ? ('Titolo scritto su ' + salvati + (salvati === 1 ? ' oggetto' : ' oggetti')) : ('Title written on ' + salvati + ' item(s)'), 'success');
+}
+
+// Modifica in cella: il testo diventa un input, Invio o uscita salvano, Esc annulla.
+// Svuotare il campo NON lascia il titolo vuoto: rimette in gioco il generato (è il modo per
+// "tornare indietro" senza dover ricopiare il Nome completo).
+function ebayEditTitolo(id, ev) {
+  if (ev) ev.stopPropagation();
+  const cella = document.getElementById('ebay-titolo-' + id);
+  if (!cella || cella.querySelector('input')) return;
+  const f = getData('figurines', []).find(x => x.id === id);
+  if (!f) return;
+  const isIt = (_ebayViewMarket === 'it');
+  const valore = (isIt ? f.ebayTitleIt : f.ebayTitleEn) || ebayTitle(f);
+  // v5.930 — l'input parte col titolo GENERATO quando il campo è vuoto: comodo da correggere, ma
+  // vuol dire che uscendo senza toccare niente il valore sarebbe "diverso dal campo salvato" e
+  // finirebbe scritto. È così che 47 titoli si sono salvati da soli al primo clic esplorativo.
+  // Il confronto ora è col valore INIZIALE dell'input (data-iniziale), non col campo: se non hai
+  // scritto nulla, non si salva nulla.
+  cella.innerHTML = `<input type="text" value="${(valore || '').replace(/"/g, '&quot;')}" data-iniziale="${(valore || '').replace(/"/g, '&quot;')}"
+      onclick="event.stopPropagation();" onkeydown="ebayEditTitoloTasto(event, '${id}')" onblur="ebaySalvaTitolo('${id}', this.value, this.dataset.iniziale)"
+      oninput="ebayContaCaratteri(this)"
+      style="width:100%;box-sizing:border-box;font-size:0.82rem;padding:3px 6px;border:1px solid var(--action-admin);border-radius:6px;background:var(--card);color:var(--text);">
+    <span class="conta" style="font-size:0.7rem;color:var(--muted);"></span>`;
+  const input = cella.querySelector('input');
+  input.focus(); input.select();
+  ebayContaCaratteri(input);
+}
+function ebayContaCaratteri(input) {
+  const c = input.parentNode.querySelector('.conta');
+  if (!c) return;
+  const n = input.value.length, oltre = n > EBAY_TITLE_MAX;
+  c.textContent = n + ' / ' + EBAY_TITLE_MAX;
+  c.style.color = oltre ? 'var(--danger, #e5484d)' : 'var(--muted)';
+  input.style.borderColor = oltre ? 'var(--danger, #e5484d)' : 'var(--action-admin)';
+}
+function ebayEditTitoloTasto(ev, id) {
+  if (ev.key === 'Enter') { ev.preventDefault(); ev.target.blur(); }
+  else if (ev.key === 'Escape') { ev.preventDefault(); ev.target.onblur = null; renderEbayViewTable(); }
+}
+async function ebaySalvaTitolo(id, valore, iniziale) {
+  const figs = getData('figurines', []);
+  const f = figs.find(x => x.id === id);
+  if (!f) return;
+  const isIt = (_ebayViewMarket === 'it');
+  const nuovo = (valore || '').trim();
+  // v5.930 — si salva solo ciò che è stato DAVVERO modificato rispetto a com'era all'apertura.
+  const partenza = (iniziale === undefined ? ((isIt ? f.ebayTitleIt : f.ebayTitleEn) || '') : iniziale).trim();
+  if (nuovo === partenza) { try { renderEbayViewTable(); } catch (e) {} return; }
+  if (isIt) f.ebayTitleIt = nuovo || null; else f.ebayTitleEn = nuovo || null;
+  _cache.figurines = figs;
+  try { await fsSave('figurines', f); } catch (e) { console.error('ebaySalvaTitolo', e); toast(currentLang === 'it' ? 'Salvataggio fallito' : 'Save failed', 'error'); }
+  try { renderEbayViewTable(); } catch (e) {}
+}
+
+// v5.924 — intestazione di una colonna che NON si ordina (il numero di riga): ha solo la ✕.
+function ebayThFisso(col, label, extra) {
+  const chiudibile = EBAY_COLS.filter(ebayColVisibile).length > 1;
+  const x = chiudibile
+    ? `<span onclick="nascondiEbayCol('${col}')" title="${currentLang === 'it' ? 'Chiudi questa colonna' : 'Hide this column'}"
+        style="margin-left:0.4rem;color:var(--muted);font-size:0.85em;cursor:pointer;">✕</span>` : '';
+  return `<th style="padding:0.4rem 0.6rem;text-align:left;white-space:nowrap;color:var(--muted);${extra || ''}">${label}${x}</th>`;
+}
+
+// v5.922 (Franco) — COLONNE A SCOMPARSA. La tabella è a larghezza piena: appena una colonna esce,
+// le altre si riprendono lo spazio da sole, senza toccare le larghezze a mano.
+// Lo stato è UNICO per tutte e cinque le sezioni: le tabelle mostrano gli stessi dati, e vederle
+// con colonne diverse a seconda della sezione confonderebbe più di quanto aiuti.
+let _ebayColHidden = {};
+// v5.923 — elenco delle colonne, per sapere quante ne restano aperte (l'ultima non si chiude).
+const EBAY_COLS = ['riga', 'nome', 'titolo', 'prezzo', 'qta', 'cond', 'sped', 'foto'];
+function nascondiEbayCol(col) {
+  if (EBAY_COLS.filter(ebayColVisibile).length <= 1) return; // mai zero colonne
+  _ebayColHidden[col] = true;
+  try { renderEbayViewTable(); } catch (e) { console.error('nascondiEbayCol', e); }
+}
+function mostraEbayCol(col) {
+  if (col) delete _ebayColHidden[col]; else _ebayColHidden = {};
+  try { renderEbayViewTable(); } catch (e) { console.error('mostraEbayCol', e); }
+}
+function ebayColVisibile(col) { return !_ebayColHidden[col]; }
+// v5.927 — chiude tutto tranne il Titolo, in un colpo. La casella di selezione e la ✎ restano:
+// non sono colonne di dati, sono i comandi della riga, e senza di loro la vista sarebbe di sola
+// lettura proprio mentre serve per lavorare sui titoli.
+function ebaySoloTitolo() {
+  _ebayColHidden = {};
+  EBAY_COLS.forEach(c => { if (c !== 'titolo') _ebayColHidden[c] = true; });
+  try { renderEbayViewTable(); } catch (e) { console.error('ebaySoloTitolo', e); }
+}
+// Riga di ripristino: senza, una colonna chiusa sarebbe una colonna persa.
+function ebayColRestoreBar(etichette) {
+  const nascoste = Object.keys(_ebayColHidden).filter(c => etichette[c]);
+  if (!nascoste.length) return '';
+  const it = (currentLang === 'it');
+  const chip = c => `<span onclick="mostraEbayCol('${c}')" title="${it ? 'Rimetti questa colonna' : 'Bring this column back'}"
+    style="display:inline-flex;align-items:center;gap:0.3rem;border:1px dashed var(--border);border-radius:999px;padding:1px 9px;font-size:0.76rem;color:var(--muted);cursor:pointer;">${etichette[c]} <span style="font-weight:700;">+</span></span>`;
+  return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;margin-bottom:0.75rem;">
+    <span style="font-size:0.76rem;color:var(--muted);">${it ? 'Colonne chiuse:' : 'Hidden columns:'}</span>
+    ${nascoste.map(chip).join('')}
+    ${nascoste.length > 1 ? `<span onclick="mostraEbayCol()" style="font-size:0.76rem;color:var(--action-admin);cursor:pointer;text-decoration:underline;margin-left:0.2rem;">${it ? 'rimettile tutte' : 'restore all'}</span>` : ''}
+  </div>`;
+}
+// Ordina una copia della lista secondo lo stato; senza stato restituisce l'elenco com'è.
+// I numeri si confrontano da numeri (3.5 < 12), il testo con le regole italiane; i vuoti
+// vanno sempre in fondo, in entrambi i versi: un campo non compilato non è "il più piccolo".
+function ebayApplicaSort(items, sec, valori) {
+  const s = _ebaySort[sec];
+  if (!s || !valori[s.col]) return items;
+  const val = valori[s.col];
+  const vuoto = v => v === null || v === undefined || v === '';
+  return [...items].sort((a, b) => {
+    const va = val(a), vb = val(b);
+    if (vuoto(va) && vuoto(vb)) return 0;
+    if (vuoto(va)) return 1;
+    if (vuoto(vb)) return -1;
+    const cmp = (typeof va === 'number' && typeof vb === 'number')
+      ? va - vb
+      : String(va).localeCompare(String(vb), 'it', { numeric: true, sensitivity: 'base' });
+    return cmp * s.dir;
+  });
+}
 function renderEbayViewTable() {
   const tableEl = document.getElementById('series-ebay-table');
   if (!tableEl) return;
   const it = (currentLang === 'it');
-  const sectionLabels = { figurines: it ? 'Figurine' : 'Stickers', retros: 'Retro', albums: it ? 'Album' : 'Albums', extras: it ? 'Altri oggetti' : 'Other items', bustine: it ? 'Bustine' : 'Wrappers' };
-  const sectionOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
   const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId);
-  const forSaleItems = figs.filter(f => f.forSale)
-    .sort((a, b) => sectionOrder.indexOf(a.section || 'figurines') - sectionOrder.indexOf(b.section || 'figurines') || (a.number || 0) - (b.number || 0));
   const market = _ebayViewMarket, isIt = market === 'it', sym = isIt ? '€' : '$';
   // Bottoni admin = arancioni (var(--action-admin)), non lime.
   const tab = (m, label) => `<button onclick="setEbayViewMarket('${m}')" style="font-size:0.82rem;padding:5px 14px;border-radius:8px;border:1px solid ${market === m ? 'var(--action-admin)' : 'var(--border)'};background:${market === m ? 'var(--action-admin)' : 'transparent'};color:${market === m ? '#ffffff' : 'var(--muted)'};cursor:pointer;font-weight:${market === m ? '700' : '400'};">${label}</button>`;
-  const selector = `<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;">${tab('it', '🇮🇹 eBay.it')}${tab('com', '🇺🇸 eBay.com')}</div>`;
-  if (!forSaleItems.length) {
+  // v5.927 (Franco) — "Lascia solo titolo": una scorciatoia per la lavorazione dei titoli, che
+  // altrimenti costa sei clic sulle ✕. Il bottone si spegne da solo quando è già in quello stato
+  // (niente comando che non fa niente) e la strada del ritorno resta quella di sempre: la riga
+  // "Colonne chiuse → rimettile tutte".
+  const soloTitolo = EBAY_COLS.every(c => c === 'titolo' ? ebayColVisibile(c) : !ebayColVisibile(c));
+  const btnSoloTitolo = `<button onclick="ebaySoloTitolo()" ${soloTitolo ? 'disabled' : ''}
+    title="${it ? 'Chiude tutte le colonne tranne il Titolo' : 'Hides every column but the title'}"
+    style="font-size:0.8rem;padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:${soloTitolo ? 'var(--border)' : 'var(--muted)'};cursor:${soloTitolo ? 'default' : 'pointer'};">${it ? 'Lascia solo titolo' : 'Title only'}</button>`;
+  const selector = `<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;align-items:center;">${tab('it', '🇮🇹 eBay.it')}${tab('com', '🇺🇸 eBay.com')}<span style="flex:1;"></span>${btnSoloTitolo}</div>`;
+  if (!figs.some(f => f.forSale)) {
     tableEl.innerHTML = selector + `<p style="color:var(--muted);font-style:italic;font-size:0.88rem;">${it ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
+    renderEbayOversizeTable();
     return;
   }
   const muted = x => `<span style="color:var(--muted);">${x}</span>`;
   const esc = s => (s || '').replace(/</g, '&lt;');
-  const titleOf = f => isIt ? (f.ebayTitleIt || '') : (f.ebayTitleEn || '');
+  // v5.918 — titolo generato (troncato a 80); un titolo scritto a mano ha la precedenza.
+  const titleOf = f => (isIt ? f.ebayTitleIt : f.ebayTitleEn) || ebayTitle(f);
+  // la cella segnala il taglio: chi guarda la tabella deve accorgersene senza contare i caratteri
+  // v5.925 — la cella è modificabile (clic) e distingue a colpo d'occhio il titolo SCRITTO da
+  // quello solo calcolato: il generato resta in grigio, perché finché è grigio non esiste ancora
+  // da nessuna parte.
+  const titleCell = f => {
+    const manuale = (isIt ? f.ebayTitleIt : f.ebayTitleEn) || '';
+    const testo = esc(titleOf(f));
+    const forbice = (!manuale && ebayTitleEccede(f))
+      ? ` <span title="${it ? 'Titolo troncato agli 80 caratteri di eBay' : 'Title truncated to eBay\'s 80 characters'}" style="color:var(--action-admin);font-weight:700;">✂</span>` : '';
+    const troppoLungo = manuale.length > EBAY_TITLE_MAX
+      ? ` <span title="${it ? 'Oltre gli 80 caratteri: eBay lo rifiuta' : 'Over 80 characters: eBay will reject it'}" style="color:var(--danger, #e5484d);font-weight:700;">${manuale.length}</span>` : '';
+    return `<span id="ebay-titolo-${f.id}" onclick="ebayEditTitolo('${f.id}', event)" title="${it ? 'Clicca per modificare' : 'Click to edit'}"
+      style="display:block;${manuale ? '' : 'color:var(--muted);font-style:italic;'}">${testo}${forbice}${troppoLungo}</span>`;
+  };
   const shipOf = f => isIt ? (f.ebayShipIt || '') : (f.ebayShipUs || '');
   const priceCell = f => { const v = isIt ? f.price : f.priceUsd; return (v == null || v === '') ? muted('—') : sym + Number(v).toFixed(2); };
   const condOf = f => isIt ? (f.condition === 'used' ? 'Usato' : 'Nuovo') : (f.condition === 'used' ? 'Used' : 'Ungraded');
-  const thumb = f => f.ebayImg ? `<img src="${cloudinaryUrl(f.ebayImg, 'w_48,h_48,c_fit,q_auto,f_auto')}" style="width:36px;height:36px;object-fit:contain;border-radius:4px;background:var(--card2);">` : muted('—');
+  const img1 = u => `<img src="${cloudinaryUrl(u, 'w_48,h_48,c_fit,q_auto,f_auto')}" style="width:36px;height:36px;object-fit:contain;border-radius:4px;background:var(--card2);">`;
+  // v5.919 (Franco) — nelle FIGURINE accanto alla foto dell'annuncio va anche la miniatura del
+  // RETRO associato: su eBay il retro è metà di ciò che il collezionista guarda, e da qui si vede
+  // a colpo d'occhio se manca. Le altre sezioni (il retro è già l'oggetto, o non ne hanno) no.
+  const thumb = f => {
+    const mie = f.ebayImg ? img1(f.ebayImg) : muted('—');
+    if ((f.section || 'figurines') !== 'figurines') return mie;
+    const retro = f.retroId ? getData('figurines', []).find(x => x.id === f.retroId) : null;
+    const suo = retro ? (retro.ebayImg || retro.img) : null;
+    const cella = suo ? img1(suo)
+      : `<span title="${retro ? (it ? 'Retro associato senza foto' : 'Linked retro has no photo') : (it ? 'Nessun retro associato' : 'No linked retro')}" style="color:var(--muted);font-size:0.75rem;">${retro ? '○' : '—'}</span>`;
+    return `<div style="display:flex;gap:0.35rem;align-items:center;justify-content:center;">${mie}${cella}</div>`;
+  };
   const td = (c, extra = '') => `<td style="padding:0.4rem 0.6rem;font-size:0.82rem;${extra}">${c}</td>`;
-  const rows = forSaleItems.map(f => `<tr>
-    ${td(sectionLabels[f.section || 'figurines'], 'color:var(--muted);white-space:nowrap;')}
-    ${td(f.number || '—', 'white-space:nowrap;')}
-    ${td(esc(f.name))}
-    ${td(esc(titleOf(f)) || muted('—'))}
-    ${td(priceCell(f), 'white-space:nowrap;')}
-    ${td(f.quantity || 1, 'text-align:center;white-space:nowrap;')}
-    ${td(condOf(f), 'white-space:nowrap;')}
-    ${td(esc(shipOf(f)) || muted('—'))}
-    ${td(thumb(f), 'text-align:center;')}
-  </tr>`).join('');
-  const th = t => `<th style="padding:0.4rem 0.6rem;text-align:left;white-space:nowrap;">${t}</th>`;
-  tableEl.innerHTML = selector + `<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>
-    ${th(it ? 'Tipo' : 'Type')}${th('N.')}${th(it ? 'Nome' : 'Name')}${th('Titolo ' + (isIt ? 'IT' : 'EN'))}${th((it ? 'Prezzo' : 'Price') + ' (' + sym + ')')}${th(it ? 'Q.tà' : 'Qty')}${th(it ? 'Condizione' : 'Condition')}${th((it ? 'Spedizione' : 'Shipping') + ' ' + (isIt ? 'IT' : 'US'))}${th('Foto')}
-  </tr></thead><tbody>${rows}</tbody></table></div>`;
+  // (v5.921: le intestazioni le costruisce ebayTh(), che ci mette anche clic e freccia)
+  // v5.919 (Franco) — non più un'unica tabella con la colonna "Tipo", ma CINQUE tabelle, una per
+  // sezione: le colonne utili cambiano da sezione a sezione e una colonna che ripete la stessa
+  // parola per cento righe è spazio buttato. Anche N. e Nome se ne vanno: al loro posto il NOME
+  // COMPLETO, che è ciò che finisce nel titolo dell'annuncio.
+  // Ordine delle righe: lo stesso della vista tabellare (cmpVistaTabellare).
+  const blocchi = EBAY_SECTIONS.map(sec => {
+    const items = figs.filter(f => f.forSale && (f.section || 'figurines') === sec).sort(cmpVistaTabellare(sec));
+    // v5.920 (Franco) — ogni sezione si chiude: con centinaia di righe, per arrivare alla sezione
+    // dopo si scorreva all'infinito. L'intestazione è il comando (tutta, non una freccina da
+    // centrare) e lo stato resta in _ebaySectionCollapsed, quindi sopravvive al cambio di mercato
+    // IT/COM e a ogni ridisegno finché la maschera è aperta.
+    const chiusa = !!_ebaySectionCollapsed[sec];
+    const testa = (comando) => `<h3 onclick="${comando}" style="font-size:0.92rem;font-weight:700;color:var(--text);margin:1.5rem 0 0.5rem;${comando ? 'cursor:pointer;user-select:none;' : ''}">
+      <span style="display:inline-block;width:1em;color:var(--muted);">${comando ? (chiusa ? '▸' : '▾') : ''}</span>${ebaySectionLabel(sec)} <span style="color:var(--muted);font-weight:400;">(${items.length})</span></h3>`;
+    if (!items.length) {
+      return testa('') + `<p style="color:var(--muted);font-style:italic;font-size:0.85rem;margin:0;">${it ? 'Nessun oggetto marcato Ebay.' : 'No items marked Ebay.'}</p>`;
+    }
+    const titolo = testa(`toggleEbaySection('${sec}')`);
+    if (chiusa) return titolo;
+    // v5.921 — ordinamento per colonna (se attivo su questa sezione). Il valore usato per
+    // ordinare è quello VISTO nella cella, mercato compreso: si ordina ciò che si legge.
+    const ordinati = ebayApplicaSort(items, sec, {
+      nome:   f => f.fullName || f.name || '',
+      titolo: f => titleOf(f),
+      prezzo: f => { const v = isIt ? f.price : f.priceUsd; return (v == null || v === '') ? null : Number(v); },
+      qta:    f => Number(f.quantity || 1),
+      cond:   f => condOf(f),
+      sped:   f => shipOf(f),
+      foto:   f => f.ebayImg ? 1 : 0
+    });
+    // v5.922 — le colonne chiuse non vengono né intestate né riempite (niente celle vuote a
+    // reggere lo spazio: la tabella è width:100% e le superstiti si allargano da sole).
+    const vis = ebayColVisibile;
+    // v5.924 (Franco) — numero di riga come prima colonna. È la POSIZIONE nell'elenco così
+    // com'è ora, non un dato del pezzo: riparte da 1 in ogni sezione e si rinumera quando
+    // cambi ordinamento. Per questo la sua intestazione non ordina (ordinare per "posizione
+    // attuale" non vorrebbe dire nulla); si può però chiudere come le altre.
+    // v5.926 (Franco) — la riga NON è più cliccabile tutta: da quando il Titolo si modifica in
+    // cella, un clic qualunque sulla riga era un'ambiguità (modifico o apro?). Il comando è ora
+    // un punto solo e dichiarato: la ✎ a fine riga, che apre la FORM di modifica dell'oggetto.
+    // Chiudendola con la ✕ si torna qui: closeModal nasconde solo la finestra in cima, e la
+    // Vista Ebay resta sotto con selezione, ordinamento e colonne intatti.
+    const rows = ordinati.map((f, i) => `<tr style="${_ebaySelected.has(f.id) ? 'background:rgba(255,157,61,0.10);' : ''}"
+      onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='${_ebaySelected.has(f.id) ? 'rgba(255,157,61,0.10)' : ''}'">
+      ${td(`<input type="checkbox" ${_ebaySelected.has(f.id) ? 'checked' : ''} onclick="ebayToggleSel('${f.id}', event)" style="cursor:pointer;">`, 'width:1%;text-align:center;')}
+      ${vis('riga') ? td(i + 1, 'color:var(--muted);text-align:right;white-space:nowrap;width:1%;') : ''}
+      ${vis('nome') ? td(esc(f.fullName || f.name)) : ''}
+      ${vis('titolo') ? td(titleCell(f) || muted('—')) : ''}
+      ${vis('prezzo') ? td(priceCell(f), 'white-space:nowrap;') : ''}
+      ${vis('qta') ? td(f.quantity || 1, 'text-align:center;white-space:nowrap;') : ''}
+      ${vis('cond') ? td(condOf(f), 'white-space:nowrap;') : ''}
+      ${vis('sped') ? td(esc(shipOf(f)) || muted('—')) : ''}
+      ${vis('foto') ? td(thumb(f), 'text-align:center;') : ''}
+      ${td(ebayApriBtn(f.id), 'width:1%;text-align:center;')}
+    </tr>`).join('');
+    return titolo + `<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>
+      <th style="padding:0.4rem 0.6rem;width:1%;text-align:center;"><input type="checkbox" onclick="ebayToggleSelSezione('${sec}', event)" title="${it ? 'Seleziona tutta la sezione' : 'Select the whole section'}" ${items.length && items.every(f => _ebaySelected.has(f.id)) ? 'checked' : ''} style="cursor:pointer;"></th>${vis('riga') ? ebayThFisso('riga', '#', 'text-align:right;') : ''}${vis('nome') ? ebayTh(sec, 'nome', it ? 'Nome completo' : 'Full name') : ''}${vis('titolo') ? ebayTh(sec, 'titolo', 'Titolo ' + (isIt ? 'IT' : 'EN')) : ''}${vis('prezzo') ? ebayTh(sec, 'prezzo', (it ? 'Prezzo' : 'Price') + ' (' + sym + ')') : ''}${vis('qta') ? ebayTh(sec, 'qta', it ? 'Q.tà' : 'Qty') : ''}${vis('cond') ? ebayTh(sec, 'cond', it ? 'Condizione' : 'Condition') : ''}${vis('sped') ? ebayTh(sec, 'sped', (it ? 'Spedizione' : 'Shipping') + ' ' + (isIt ? 'IT' : 'US')) : ''}${vis('foto') ? ebayTh(sec, 'foto', it ? 'Foto' : 'Photo') : ''}<th style="width:1%;"></th>
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
+  }).join('');
+  const etichetteCol = {
+    riga: it ? 'Numero di riga' : 'Row number',
+    nome: it ? 'Nome completo' : 'Full name',
+    titolo: 'Titolo', prezzo: it ? 'Prezzo' : 'Price', qta: it ? 'Q.tà' : 'Qty',
+    cond: it ? 'Condizione' : 'Condition', sped: it ? 'Spedizione' : 'Shipping', foto: it ? 'Foto' : 'Photo'
+  };
+  // v5.925 — barra delle azioni: compare solo quando c'è una selezione, così a riposo non
+  // occupa spazio e quando c'è dice subito su quante righe agirà.
+  const n = _ebaySelected.size;
+  const barraAzioni = n ? `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.6rem;margin-bottom:0.75rem;padding:0.5rem 0.8rem;border:1px solid var(--action-admin);border-radius:10px;background:rgba(255,157,61,0.08);">
+    <span style="font-size:0.82rem;color:var(--text);font-weight:600;">${n} ${it ? (n === 1 ? 'riga selezionata' : 'righe selezionate') : (n === 1 ? 'row selected' : 'rows selected')}</span>
+    <button class="btn-primary btn-admin" onclick="ebayApplicaTitoli()" style="font-size:0.82rem;padding:0.35rem 0.9rem;"
+      title="${it ? 'Scrive il titolo generato dal Nome completo nei campi Titolo IT ed EN (tagliato a 80 caratteri)' : 'Writes the generated title into the IT and EN title fields (cut at 80 chars)'}">${it ? '📝 Applica Nome completo al Titolo' : '📝 Apply full name to title'}</button>
+    <span onclick="ebayDeselezionaTutto()" style="font-size:0.78rem;color:var(--muted);cursor:pointer;text-decoration:underline;">${it ? 'deseleziona' : 'clear'}</span>
+  </div>` : '';
+  tableEl.innerHTML = selector + barraAzioni + ebayColRestoreBar(etichetteCol) + blocchi;
+  renderEbayOversizeTable();
+}
+
+// v5.918 — "Titoli eccedenti la taglia ebay" (Franco). Elenca gli oggetti di questa serie
+// MARCATI EBAY il cui titolo generato supera gli 80 caratteri e viene quindi troncato: sono i
+// pezzi da guardare uno per uno, perché il taglio automatico non sa quale parte sia sacrificabile.
+// Ordine: lo stesso della vista tabellare (cmpVistaTabellare), applicato dentro ciascuna sezione,
+// con le sezioni nell'ordine della tabella qui sopra. Mostra titolo intero e titolo troncato
+// affiancati: senza vedere cosa si perde, non si può decidere cosa riscrivere.
+function renderEbayOversizeTable() {
+  const box = document.getElementById('series-ebay-oversize');
+  if (!box) return;
+  const it = (currentLang === 'it');
+  const eccedenti = EBAY_SECTIONS.flatMap(sec =>
+    getData('figurines', [])
+      .filter(f => f.seriesId === currentSeriesId && f.forSale && (f.section || 'figurines') === sec && ebayTitleEccede(f))
+      .sort(cmpVistaTabellare(sec)));
+
+  const titolo = `<h3 style="font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:0.4rem;">${it ? 'Titoli eccedenti la taglia ebay' : 'Titles over the eBay size limit'}</h3>`;
+  if (!eccedenti.length) {
+    box.innerHTML = titolo + `<p style="color:var(--muted);font-style:italic;font-size:0.88rem;">${it ? 'Nessun titolo viene tagliato dentro il nome: le regole automatiche bastano a farli stare tutti negli 80 caratteri.' : 'No title is cut inside the name: the automatic rules keep them all within 80 characters.'}</p>`;
+    return;
+  }
+  const esc = s => (s || '').replace(/</g, '&lt;');
+  const td = (c, extra = '') => `<td style="padding:0.4rem 0.6rem;font-size:0.82rem;${extra}">${c}</td>`;
+  // v5.921 — ordinabile anche questa: qui la colonna che serve davvero è "Caratteri", per
+  // partire dai titoli che sforano di più.
+  const ordinati = ebayApplicaSort(eccedenti, '_oversize', {
+    sezione:  f => ebaySectionLabel(f.section || 'figurines'),
+    nome:     f => f.fullName || f.name || '',
+    troncato: f => ebayTitle(f),
+    intero:   f => ebayTitleFull(f),
+    caratteri: f => ebayTitleFull(f).length
+  });
+  const rows = ordinati.map(f => {
+    const intero = ebayTitleFull(f), troncato = ebayTitle(f);
+    const perse = intero.length - EBAY_TITLE_MAX;
+    // v5.926 — anche qui il comando è la ✎ a fine riga (non la riga intera), e apre la form.
+    return `<tr onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''">
+      ${td(ebaySectionLabel(f.section || 'figurines'), 'color:var(--muted);white-space:nowrap;')}
+      ${td(esc(f.fullName || f.name))}
+      ${td(esc(troncato), 'color:var(--text);')}
+      ${td(esc(intero), 'color:var(--muted);')}
+      ${td('<strong>' + intero.length + '</strong> <span style="color:var(--action-admin);">(+' + perse + ')</span>', 'white-space:nowrap;text-align:right;')}
+      ${td(ebayApriBtn(f.id), 'width:1%;text-align:center;')}
+    </tr>`;
+  }).join('');
+  box.innerHTML = titolo +
+    `<p style="color:var(--muted);font-size:0.85rem;margin-bottom:0.75rem;">${it
+      ? 'Qui finiscono solo i titoli che non si salvano con le regole automatiche: tolta la coda "- Gpk - Topps" restano comunque oltre gli 80 caratteri, e il taglio cade dentro il nome. ' + eccedenti.length + (eccedenti.length === 1 ? ' oggetto' : ' oggetti') + ' da riscrivere a mano.'
+      : 'Only titles the automatic rules cannot save: even without the "- Gpk - Topps" tail they exceed 80 characters, so the cut falls inside the name. ' + eccedenti.length + ' item(s) to rewrite by hand.'}</p>` +
+    `<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>
+      ${ebayTh('_oversize', 'sezione', it ? 'Sezione' : 'Section')}${ebayTh('_oversize', 'nome', it ? 'Nome completo' : 'Full name')}${ebayTh('_oversize', 'troncato', it ? 'Titolo troncato (80)' : 'Truncated title (80)')}${ebayTh('_oversize', 'intero', it ? 'Titolo intero' : 'Full title')}${ebayTh('_oversize', 'caratteri', it ? 'Caratteri' : 'Chars')}<th style="width:1%;"></th>
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 function openAddSeriesModal(seriesId) {
@@ -13994,6 +14603,12 @@ async function _saveFigurineInner() {
     adminTab('errori');
   } else {
     renderItems(); renderHomeStats(); updateSectionCounts();
+  }
+  // v5.926 — se la form è stata aperta dalla Vista Ebay (✎), quella resta aperta sotto: va
+  // ridisegnata, altrimenti mostrerebbe ancora il prezzo o la foto di prima.
+  const ebayModal = document.getElementById('series-ebay-modal');
+  if (ebayModal && !ebayModal.classList.contains('hidden')) {
+    try { renderEbayViewTable(); } catch (e) { console.error('renderEbayViewTable (dopo salvataggio)', e); }
   }
   toast((currentLang === 'it' ? 'Salvato! 🧟' : 'Saved! 🧟'), 'success');
 }
@@ -19264,39 +19879,10 @@ function renderBulkEditView() {
   const currentSeries = getData('series', []).find(s => s.id === currentSeriesId);
   const currentSeriesHasSizes = currentSeries?.hasSizes || false;
   const currentSeriesHasSubseries = currentSeries?.hasSubseries || false;
-  const allItems = getCurrentlyFilteredItems()
-    .sort((a,b) => {
-      if (currentSection === 'retros') {
-        const catCmp = (a.category||'').localeCompare(b.category||'', 'it');
-        if (catCmp !== 0) return catCmp;
-        const subcatCmp = (a.subcategory||'').localeCompare(b.subcategory||'', 'it');
-        if (subcatCmp !== 0) return subcatCmp;
-        const nameCmp = (a.name||'').localeCompare(b.name||'', 'it');
-        if (nameCmp !== 0) return nameCmp;
-        return (a.changeType||'').localeCompare(b.changeType||'', 'it');
-      }
-      if (currentSection === 'figurines') {
-        const subCmp = (a.subseries||'').localeCompare(b.subseries||'', 'it');
-        if (subCmp !== 0) return subCmp;
-        if (!a.number && !b.number) {
-          const nameCmp = (a.name||'').localeCompare(b.name||'', 'it');
-          if (nameCmp !== 0) return nameCmp;
-        } else if (!a.number) { return 1; }
-        else if (!b.number) { return -1; }
-        else {
-          const numCmp = a.number - b.number;
-          if (numCmp !== 0) return numCmp;
-        }
-        const allFigsForSort2 = getData('figurines', []);
-        const fnA = a.fullName || computeFullName(a, allFigsForSort2);
-        const fnB = b.fullName || computeFullName(b, allFigsForSort2);
-        return fnA.localeCompare(fnB, 'it');
-      }
-      if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||'');
-      if (!a.number) return 1;
-      if (!b.number) return -1;
-      return a.number - b.number;
-    });
+  // v5.918 — l'ordinamento è passato in cmpVistaTabellare(sezione), così la tabella
+  // "Titoli eccedenti la taglia ebay" (Vista Ebay) può ordinare ESATTAMENTE come qui
+  // senza duplicare le regole: una sola funzione, due chiamanti.
+  const allItems = getCurrentlyFilteredItems().sort(cmpVistaTabellare(currentSection));
   updateItemsCountDisplay(allItems);
 
   if (!allItems.length) { bulkView.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali.' : 'No items found with the current filters.'}</p>`; return; }
