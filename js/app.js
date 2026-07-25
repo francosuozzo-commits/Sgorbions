@@ -1,6 +1,38 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.933 - Franco: il numero di riga nella Vista Ebay si mostra SEMPRE. "Lascia solo titolo" non
+//          lo chiude piu' (restano # e Titolo), la sua intestazione non ha la ✕ e non compare
+//          nella riga "Colonne chiuse". Motivo: e' l'unico appiglio per citare una riga — senza,
+//          una colonna sola di titoli non si riesce nemmeno a nominare. Solo app.js.
+// ------------------------------------------------------------
+// v5.932 - Franco, due pagine. PAGINA SERIE: dentro una delle 5 schede la descrizione della serie
+//          passa A DESTRA DELLA FOTO, sotto le numeriche, preceduta dall'etichetta "Descrizione
+//          della serie" — lo spazio a destra era libero e la descrizione, stando sotto,
+//          allontanava la ricerca. Nell'hub (schede ancora da scegliere) resta a tutta larghezza
+//          come dalla v5.883. Non e' una copia: e' lo stesso nodo spostato da
+//          posizionaDescrizioneSerie(), cosi' testo e "Mostra tutto" non possono divergere.
+//          PAGINA "CIO' CHE CERCO": testo introduttivo riscritto con il titoletto "Come si usa ?"
+//          (IT ed EN); sopra la lista compare "La tua lista 'Cio' che cerco' conta N oggetti.";
+//          il bottone Invia non e' piu' duplicato sopra e sotto ma sta solo SOTTO la lista (si
+//          invia dopo aver guardato cosa si invia); accanto c'e' il nuovo "Resetta lista", che
+//          chiede conferma dicendo quanti oggetti sta per buttare e sparisce se la lista e' gia'
+//          vuota. Conteggio e pulsante non compaiono all'admin, che in quella pagina vede le liste
+//          altrui. index.html + app.js.
+// ------------------------------------------------------------
+// v5.931 - Franco, tre cose. (1) BUG "la matita dell'ultima tabella non fa niente": la form si
+//          apriva davvero, ma DIETRO la Vista Ebay — tutti i modali hanno z-index 2000, quindi
+//          conta l'ordine nel documento e add-fig-modal (riga ~1330) sta prima della Vista Ebay
+//          (~1557). Ora add-fig-modal ha z-index 2100: e' il modale piu' profondo, ci si arriva
+//          sempre da un altro. (2) Numero di riga come prima colonna anche nella tabella dei
+//          titoli eccedenti. (3) Nel pannello Ebay della scheda oggetto: Titolo IT/EN (con
+//          contatore che avvisa oltre gli 80) e Descrizione IT/EN — nuovi campi ebayDescIt e
+//          ebayDescEn; i quattro campi si mostrano solo con la spunta "Ebay" attiva e il vuoto
+//          si salva come null, cosi' il titolo lasciato vuoto continua a essere quello generato
+//          dal Nome completo. Inoltre le intestazioni della tabella dei titoli eccedenti non
+//          hanno piu' la ✕: quelle colonne sono altre e chiuderle nascondeva le omonime della
+//          tabella principale. index.html + app.js.
+// ------------------------------------------------------------
 // v5.930 - BUG trovato guardando i dati veri (Franco: "perche' alcune righe sono in bianco?"):
 //          47 oggetti avevano ebayTitleIt scritto senza che nessuno lo avesse voluto. Causa: la
 //          cella del Titolo si apre con l'input GIA' riempito dal titolo generato; all'uscita si
@@ -9061,7 +9093,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.930';
+const JS_VERSION = 'v5.933';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9907,7 +9939,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to this list automatically.<br>You can edit it at any time by adding or removing items.<br><br>When you are happy with the list, press the 📨 <strong>&quot;Send \"What I\'m looking for\" to staff&quot;</strong> button on this page: the figurinesgorbions.it team will receive it and do their best to help you find the stickers you are looking for, also thanks to the network of other collectors on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br>You can edit it at any time by adding or removing items.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -9997,8 +10029,8 @@ const i18n = {
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
 'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
-'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>&quot;Invia \"Ciò che cerco\"&quot;</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.',
-'wishlist.submit':'📨 Invia "Ciò che cerco"',
+'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
+'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
 'nav.onlineSince':'Online dal 21.06.2026',
@@ -11448,7 +11480,10 @@ function ebayTh(sec, col, label, extra) {
   // v5.923 (Franco) — la × è anche su "Nome completo": nessuna colonna è privilegiata. L'unico
   // limite che resta è l'ultima rimasta — una tabella senza colonne non è una vista, è il nulla —
   // e infatti quando ne resta una sola la × non compare.
-  const chiudibile = EBAY_COLS.filter(ebayColVisibile).length > 1;
+  // v5.931 — la ✕ vale solo per le colonne della vista principale: nella tabella dei titoli
+  // eccedenti le colonne sono altre (sezione, troncato, intero, caratteri) e chiuderle avrebbe
+  // nascosto le omonime dell'altra tabella. Lì le intestazioni ordinano soltanto.
+  const chiudibile = sec !== '_oversize' && EBAY_COLS.filter(ebayColVisibile).length > 1;
   const x = chiudibile
     ? `<span onclick="event.stopPropagation();nascondiEbayCol('${col}')" title="${currentLang === 'it' ? 'Chiudi questa colonna' : 'Hide this column'}"
         style="margin-left:0.45rem;color:var(--muted);font-size:0.85em;cursor:pointer;">✕</span>` : '';
@@ -11583,7 +11618,8 @@ async function ebaySalvaTitolo(id, valore, iniziale) {
 
 // v5.924 — intestazione di una colonna che NON si ordina (il numero di riga): ha solo la ✕.
 function ebayThFisso(col, label, extra) {
-  const chiudibile = EBAY_COLS.filter(ebayColVisibile).length > 1;
+  // v5.933 — il numero di riga si mostra SEMPRE: niente ✕, e non entra nella riga di ripristino.
+  const chiudibile = (col !== 'riga') && EBAY_COLS.filter(ebayColVisibile).length > 1;
   const x = chiudibile
     ? `<span onclick="nascondiEbayCol('${col}')" title="${currentLang === 'it' ? 'Chiudi questa colonna' : 'Hide this column'}"
         style="margin-left:0.4rem;color:var(--muted);font-size:0.85em;cursor:pointer;">✕</span>` : '';
@@ -11612,7 +11648,9 @@ function ebayColVisibile(col) { return !_ebayColHidden[col]; }
 // lettura proprio mentre serve per lavorare sui titoli.
 function ebaySoloTitolo() {
   _ebayColHidden = {};
-  EBAY_COLS.forEach(c => { if (c !== 'titolo') _ebayColHidden[c] = true; });
+  // v5.933 (Franco) — il numero di riga resta: serve a dire "la settima" mentre si parla di una
+  // riga, e senza di lui una colonna sola di titoli non si riesce nemmeno a citare.
+  EBAY_COLS.forEach(c => { if (c !== 'titolo' && c !== 'riga') _ebayColHidden[c] = true; });
   try { renderEbayViewTable(); } catch (e) { console.error('ebaySoloTitolo', e); }
 }
 // Riga di ripristino: senza, una colonna chiusa sarebbe una colonna persa.
@@ -11765,7 +11803,6 @@ function renderEbayViewTable() {
     </tr></thead><tbody>${rows}</tbody></table></div>`;
   }).join('');
   const etichetteCol = {
-    riga: it ? 'Numero di riga' : 'Row number',
     nome: it ? 'Nome completo' : 'Full name',
     titolo: 'Titolo', prezzo: it ? 'Prezzo' : 'Price', qta: it ? 'Q.tà' : 'Qty',
     cond: it ? 'Condizione' : 'Condition', sped: it ? 'Spedizione' : 'Shipping', foto: it ? 'Foto' : 'Photo'
@@ -11814,11 +11851,12 @@ function renderEbayOversizeTable() {
     intero:   f => ebayTitleFull(f),
     caratteri: f => ebayTitleFull(f).length
   });
-  const rows = ordinati.map(f => {
+  const rows = ordinati.map((f, i) => {
     const intero = ebayTitleFull(f), troncato = ebayTitle(f);
     const perse = intero.length - EBAY_TITLE_MAX;
     // v5.926 — anche qui il comando è la ✎ a fine riga (non la riga intera), e apre la form.
     return `<tr onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''">
+      ${td(i + 1, 'color:var(--muted);text-align:right;white-space:nowrap;width:1%;')}
       ${td(ebaySectionLabel(f.section || 'figurines'), 'color:var(--muted);white-space:nowrap;')}
       ${td(esc(f.fullName || f.name))}
       ${td(esc(troncato), 'color:var(--text);')}
@@ -11832,7 +11870,7 @@ function renderEbayOversizeTable() {
       ? 'Qui finiscono solo i titoli che non si salvano con le regole automatiche: tolta la coda "- Gpk - Topps" restano comunque oltre gli 80 caratteri, e il taglio cade dentro il nome. ' + eccedenti.length + (eccedenti.length === 1 ? ' oggetto' : ' oggetti') + ' da riscrivere a mano.'
       : 'Only titles the automatic rules cannot save: even without the "- Gpk - Topps" tail they exceed 80 characters, so the cut falls inside the name. ' + eccedenti.length + ' item(s) to rewrite by hand.'}</p>` +
     `<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>
-      ${ebayTh('_oversize', 'sezione', it ? 'Sezione' : 'Section')}${ebayTh('_oversize', 'nome', it ? 'Nome completo' : 'Full name')}${ebayTh('_oversize', 'troncato', it ? 'Titolo troncato (80)' : 'Truncated title (80)')}${ebayTh('_oversize', 'intero', it ? 'Titolo intero' : 'Full title')}${ebayTh('_oversize', 'caratteri', it ? 'Caratteri' : 'Chars')}<th style="width:1%;"></th>
+      <th style="padding:0.4rem 0.6rem;text-align:right;white-space:nowrap;color:var(--muted);width:1%;">#</th>${ebayTh('_oversize', 'sezione', it ? 'Sezione' : 'Section')}${ebayTh('_oversize', 'nome', it ? 'Nome completo' : 'Full name')}${ebayTh('_oversize', 'troncato', it ? 'Titolo troncato (80)' : 'Truncated title (80)')}${ebayTh('_oversize', 'intero', it ? 'Titolo intero' : 'Full title')}${ebayTh('_oversize', 'caratteri', it ? 'Caratteri' : 'Chars')}<th style="width:1%;"></th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
@@ -12389,6 +12427,39 @@ function tipiPresenti(seriesId, section) {
   };
 }
 
+// v5.932 (Franco) — DOVE VA LA DESCRIZIONE DELLA SERIE.
+// Nell'hub (le 5 schede ancora da scegliere) resta com'era dalla v5.883: a tutta larghezza, sotto
+// la foto. Dentro una sezione invece va A DESTRA DELLA FOTO, sotto le numeriche — lì lo spazio a
+// destra è libero e la descrizione, messa sotto, allontanava la ricerca di due righe inutili.
+// Non è una copia: è lo STESSO nodo spostato, così il testo, il "Mostra tutto" e la logica di
+// troncamento restano quelli di prima e non possono divergere.
+function posizionaDescrizioneSerie() {
+  const desc = document.getElementById('detail-desc');
+  const toggle = document.getElementById('detail-desc-toggle');
+  const info = document.querySelector('#series-detail .series-info');
+  const heroInner = document.querySelector('#series-detail .series-hero-inner');
+  if (!desc || !info || !heroInner) return;
+  let etichetta = document.getElementById('detail-desc-label');
+  if (!etichetta) {
+    etichetta = document.createElement('div');
+    etichetta.id = 'detail-desc-label';
+    etichetta.style.cssText = 'font-family:var(--font-ui);font-size:0.78rem;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);margin:0.9rem 0 0.25rem;';
+  }
+  etichetta.textContent = (currentLang === 'it') ? 'Descrizione della serie' : 'Series description';
+  const vuota = !(desc.textContent || '').trim();
+  if (currentSection) {
+    info.appendChild(etichetta);
+    info.appendChild(desc);
+    if (toggle) info.appendChild(toggle);
+    etichetta.style.display = vuota ? 'none' : '';
+  } else {
+    // ritorno alla posizione storica: descrizione (e comando) in coda al blocco eroe
+    if (etichetta.parentNode) etichetta.parentNode.removeChild(etichetta);
+    heroInner.appendChild(desc);
+    if (toggle) heroInner.appendChild(toggle);
+  }
+}
+
 function renderSeriesMeta(s) {
   const metaEl = document.getElementById('detail-meta');
   if (!metaEl || !s) return;
@@ -12482,6 +12553,7 @@ function renderSeriesMeta(s) {
 
   // HUB (pagina dei 5 blocchi, currentSection === null): per OGNI categoria la sua riga di dettaglio
   // completa, una riga per categoria. Dentro una sezione: solo il dettaglio di quella sezione.
+  posizionaDescrizioneSerie();
   if (!currentSection) {
     metaEl.classList.add('meta-hub');  // v5.886: su mobile le numeriche dell'hub vanno sotto la foto
     const cats = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
@@ -12910,6 +12982,25 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
 function toggleForSaleFields() {
   const checked = document.getElementById('fig-for-sale-input').checked;
   document.getElementById('fig-for-sale-fields').style.display = checked ? 'grid' : 'none';
+  // v5.931 — titolo e descrizione dell'annuncio seguono la stessa spunta: senza "Ebay" acceso
+  // non ci sarebbe niente da intitolare.
+  const testi = document.getElementById('fig-ebay-testi');
+  if (testi) testi.style.display = checked ? '' : 'none';
+  contaCaratteriEbayTitolo('fig-ebay-title-it-input', 'fig-ebay-title-it-count');
+  contaCaratteriEbayTitolo('fig-ebay-title-en-input', 'fig-ebay-title-en-count');
+}
+
+// v5.931 — contatore dei caratteri del titolo: eBay ne accetta 80 e non uno di piu'.
+// A campo vuoto non dice niente: il vuoto e' legittimo (vince il titolo generato).
+function contaCaratteriEbayTitolo(idInput, idSpan) {
+  const el = document.getElementById(idInput), sp = document.getElementById(idSpan);
+  if (!el || !sp) return;
+  const n = el.value.length;
+  if (!n) { sp.textContent = ''; el.style.borderColor = ''; return; }
+  const oltre = n > EBAY_TITLE_MAX;
+  sp.textContent = '— ' + n + ' / ' + EBAY_TITLE_MAX + (oltre ? (currentLang === 'it' ? ' (eBay lo rifiuta)' : ' (eBay will reject it)') : '');
+  sp.style.color = oltre ? 'var(--danger, #e5484d)' : 'var(--muted)';
+  el.style.borderColor = oltre ? 'var(--danger, #e5484d)' : '';
 }
 
 function openAddItemModal(itemId) {
@@ -12964,6 +13055,11 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-price-input').value = f.price || '';
       document.getElementById('fig-quantity-input').value = f.quantity || 1;
       document.getElementById('fig-condition-input').value = f.condition || 'new';
+      // v5.931 — testi dell'annuncio (vuoti = si usa il titolo generato dal Nome completo)
+      document.getElementById('fig-ebay-title-it-input').value = f.ebayTitleIt || '';
+      document.getElementById('fig-ebay-title-en-input').value = f.ebayTitleEn || '';
+      document.getElementById('fig-ebay-desc-it-input').value = f.ebayDescIt || '';
+      document.getElementById('fig-ebay-desc-en-input').value = f.ebayDescEn || '';
       if (f.img) { const pr = document.getElementById('fig-img-preview'); pr.src = f.img; pr.style.display = 'block'; editingFigImg = f.img; }
       if (f.ebayImg) { const pr2 = document.getElementById('fig-ebay-img-preview'); pr2.src = f.ebayImg; pr2.style.display = 'block'; editingFigEbayImg = f.ebayImg; }
     }
@@ -12981,6 +13077,8 @@ function openAddItemModal(itemId) {
     document.getElementById('fig-price-input').value = '';
     document.getElementById('fig-quantity-input').value = 1;
     document.getElementById('fig-condition-input').value = 'new';
+    ['fig-ebay-title-it-input','fig-ebay-title-en-input','fig-ebay-desc-it-input','fig-ebay-desc-en-input']
+      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     const rctSel = document.getElementById('fig-retro-change-type-input');
     if (rctSel) rctSel.value = '';
     const petInput = document.getElementById('fig-print-error-type-input');
@@ -14492,6 +14590,13 @@ async function _saveFigurineInner() {
   const price = forSale ? (parseFloat(document.getElementById('fig-price-input').value) || 0) : null;
   const quantity = forSale ? (parseInt(document.getElementById('fig-quantity-input').value) || 1) : null;
   const condition = forSale ? document.getElementById('fig-condition-input').value : null;
+  // v5.931 — testi dell'annuncio. Il vuoto diventa null, non stringa vuota: e' il modo in cui
+  // il resto del sito distingue "non lo ho scritto" (→ titolo generato) da "l'ho scritto io".
+  const _txt = id => (document.getElementById(id)?.value || '').trim() || null;
+  const ebayTitleIt = forSale ? _txt('fig-ebay-title-it-input') : null;
+  const ebayTitleEn = forSale ? _txt('fig-ebay-title-en-input') : null;
+  const ebayDescIt  = forSale ? _txt('fig-ebay-desc-it-input')  : null;
+  const ebayDescEn  = forSale ? _txt('fig-ebay-desc-en-input')  : null;
   const isRetrosSection = currentSection === 'retros';
   // v5.779 — changeType per i Change di Retro E per i Change di figurina (stessa lista di serie)
   const changeType = (isChange && (isRetrosSection || currentSection === 'figurines')) ? (document.getElementById('fig-retro-change-type-input')?.value || null) : null;
@@ -14579,13 +14684,13 @@ async function _saveFigurineInner() {
     if (editId) {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn };
         figs[idx].fullName = computeFullName(figs[idx], figs);
         await fsSave('figurines', figs[idx]);
         _cache.figurines = figs;
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn };
       newF.fullName = computeFullName(newF, figs);
       const saved = await fsSave('figurines', newF);
     }
@@ -16085,6 +16190,7 @@ async function saveWishlist() {
     await fsSave('wishlists', { id: currentUser.id, userId: currentUser.id, authUid: currentUser.authUid || null, items: _wishlist });
   } catch(e) { console.error('saveWishlist error', e); }
   updateWishlistBadge();
+  try { renderWishlistCount(); } catch(e) {}
 }
 
 async function toggleWishlist(figId) {
@@ -20264,9 +20370,45 @@ async function renderClassifica() {
 // ============================================================
 //  WISHLIST
 // ============================================================
+// v5.932 (Franco) — riga di conteggio sopra la lista, e comando per azzerarla.
+// Il conteggio compare solo per l'utente normale: l'admin in questa pagina vede le liste ricevute
+// dagli altri, e "la tua lista" lì non vorrebbe dire niente. Stessa ragione per il pulsante.
+function renderWishlistCount() {
+  const el = document.getElementById('wishlist-count');
+  const btn = document.getElementById('wishlist-reset-btn');
+  if (!el) return;
+  const it = (currentLang === 'it');
+  const n = (currentUser && !currentUser.isAdmin) ? (_wishlist || []).length : null;
+  if (n === null) { el.textContent = ''; el.style.display = 'none'; if (btn) btn.style.display = 'none'; return; }
+  el.style.display = '';
+  if (btn) btn.style.display = n ? '' : 'none';   // niente da azzerare = niente comando
+  el.innerHTML = it
+    ? ('La tua lista <strong>"Ciò che cerco"</strong> conta <strong>' + n + '</strong> ' + (n === 1 ? 'oggetto' : 'oggetti') + '.')
+    : ('Your <strong>"What I\'m looking for"</strong> list has <strong>' + n + '</strong> item' + (n === 1 ? '' : 's') + '.');
+}
+
+// Azzeramento della lista: è una perdita di dati, quindi si chiede conferma dicendo QUANTI
+// oggetti si stanno per buttare — "sei sicuro?" da solo non aiuta a decidere.
+async function resetWishlist() {
+  if (!currentUser) { openAuth('login'); return; }
+  const it = (currentLang === 'it');
+  const n = (_wishlist || []).length;
+  if (!n) { toast(it ? 'La lista è già vuota' : 'The list is already empty', 'error'); return; }
+  const domanda = it
+    ? ('Svuotare la lista "Ciò che cerco"?\n\nVerranno tolti tutti i ' + n + ' oggetti che contiene. L\'operazione non si può annullare.')
+    : ('Empty your "What I\'m looking for" list?\n\nAll ' + n + ' items will be removed. This cannot be undone.');
+  if (!confirm(domanda)) return;
+  _wishlist = [];
+  await saveWishlist();
+  try { renderWishlist(); } catch(e) { console.error('renderWishlist (reset)', e); }
+  try { renderItems(); } catch(e) {}
+  toast(it ? 'Lista svuotata' : 'List emptied', 'success');
+}
+
 function renderWishlist() {
   const el = document.getElementById('wishlist-content');
   if (!el) return;
+  renderWishlistCount();
 
   // Vista admin: mostra tutte le liste desiderati ricevute
   if (currentUser?.isAdmin) {
