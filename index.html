@@ -4,23 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.943"></script>
-<link rel="stylesheet" href="css/style.css?v=5.943">
+<script src="js/email.min.js?v=5.949"></script>
+<link rel="stylesheet" href="css/style.css?v=5.949">
 
 
 <style>
-/* v5.941 — HOME: il resto della pagina risale.
-   Il problema non era lo spazio sotto il logo ma l'ALTEZZA delle colonne di numeri: essendo
-   celle della stessa griglia, la più alta decideva quanto scendere prima della frase "Il
-   database non ufficiale...". Ora le due colonne sono in POSIZIONE ASSOLUTA ai lati: restano
-   dove sono (6rem sotto il bordo), ma non fanno più altezza, così tutto ciò che segue si
-   riprende lo spazio. Sotto i 1100px tornano nel flusso normale, dove il testo è largo e una
-   sovrapposizione sarebbe possibile. */
+/* HOME — numeroni ai lati del logo (v5.935 → v5.944).
+   Desktop: due colonne in posizione ASSOLUTA ai lati, così non fanno altezza e il testo sotto
+   ("Il database non ufficiale...") non viene spinto giù; il logo è dichiarato nella colonna
+   centrale, altrimenti — restando l'unico elemento nel flusso — finirebbe nella prima. */
 .hero-top { position:relative; display:grid; grid-template-columns:1fr auto 1fr; align-items:start;
             gap:0 1.5rem; width:100%; max-width:1280px; margin:0 auto 1.75rem; }
-/* v5.942 — l'immagine va DICHIARATA nella colonna centrale: da quando le due colonne di numeri
-   sono in posizione assoluta, non occupano più celle, e il logo — unico elemento rimasto nel
-   flusso — finiva nella prima colonna, cioè spostato a sinistra. */
 .hero-top .hero-logo-img { grid-column:2; margin-top:0; }
 .hero-stats-side { display:flex; flex-direction:column; align-items:center; gap:0.7rem;
                    position:absolute; top:6rem; width:calc((100% - 460px) / 2); }
@@ -31,14 +25,32 @@
 .hero-stats-side .stat-label { display:block; text-align:center; margin:2px 0 0; white-space:nowrap; }
 
 @media (max-width:1100px) {
-  /* niente sovrapposizioni su schermi medi: le colonne tornano nel flusso */
+  /* schermi medi: niente sovrapposizioni, le colonne tornano nel flusso */
   .hero-stats-side { position:static; width:auto; padding-top:2.5rem; }
 }
+
+/* v5.948 — TELEFONO: come sul desktop, numeri a SINISTRA e a DESTRA del logo. Per farceli stare
+   il logo si stringe (190px invece di 320): in una cornice da 397px restano ~80px per lato ai
+   gruppi e ~190 al centro, senza sovrapposizioni — misurato, non stimato.
+   Le aree sono dichiarate a lettere ("sx logo dx"): il posizionamento automatico della griglia,
+   in questa pagina, ha già sbagliato tre volte (colonna implicita, gruppi impilati, logo fuori
+   asse), quindi qui non gli si lascia più nessuna decisione.
+   Il !important sul logo serve perché il CSS del sito impone width:65% e max-width:320px. */
 @media (max-width:860px) {
-  .hero-top { grid-template-columns:1fr; gap:0.6rem; }
-  .hero-stats-side { flex-direction:row; flex-wrap:wrap; justify-content:center;
-                     gap:0.6rem 1.4rem; padding-top:0; }
-  .hero-top > .hero-stats-side:first-of-type { order:3; }
+  /* v5.949 — allineamento in ALTO, non al centro: con align-items:center il logo veniva
+     centrato rispetto alla colonna di numeri più alta, e quindi scendeva. Ora tocca il soffitto,
+     e i due gruppi partono anch'essi dall'alto. */
+  .hero-top { grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"sx logo dx";
+              gap:0 0.4rem; align-items:start; margin-bottom:1rem; }
+  #hero .hero-top .hero-logo-img { grid-area:logo; justify-self:stretch;
+              max-width:190px !important; width:100% !important; margin:0 auto !important;
+              margin-top:0 !important; }
+  .hero-top > .hero-stats-side:first-of-type { grid-area:sx; justify-self:start; }
+  #hero-stats-right { grid-area:dx; justify-self:end; }
+  .hero-stats-side { position:static; width:auto; max-width:none; margin:0; padding-top:0.2rem;
+                     flex-direction:column; align-items:center; gap:0.45rem; }
+  .hero-stats-side .stat-item { min-width:0; }
+  .hero-stats-side .stat-label { white-space:normal; }   /* "Altri oggetti" può andare a capo */
 }
 </style>
 </head>
@@ -58,7 +70,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.943</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.949</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1211,7 +1223,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.943</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.949</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1923,7 +1935,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.943"></script>
+<script src="js/app.js?v=5.949"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -1947,7 +1959,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v5.943'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.949'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
