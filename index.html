@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.930"></script>
-<link rel="stylesheet" href="css/style.css?v=5.930">
+<script src="js/email.min.js?v=5.933"></script>
+<link rel="stylesheet" href="css/style.css?v=5.933">
 
 </head>
 <body>
@@ -24,7 +24,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.930</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.933</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1058,14 +1058,17 @@
     <div class="section-inner">
       <div style="margin-bottom:1.5rem;">
         <h1 style="font-family:var(--font-ui);font-size:2.2rem;display:flex;align-items:center;gap:0.4rem;"><span data-i18n="nav.wishlist">Ciò che cerco</span> <span style="font-size:1.8rem;line-height:1;">❤️</span></h1>
-        <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n-html="wishlist.desc"><strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br>Navigando nell'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto automaticamente a questa lista.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando sei soddisfatto della lista, premi il pulsante 📨 <strong>"Invia \"Ciò che cerco\""</strong> presente in questa pagina: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare le figurine che cerchi, anche grazie alla rete degli altri collezionisti presenti sul sito.</p>
+        <p style="color:var(--muted);font-size:0.9rem;margin-top:4px;" data-i18n-html="wishlist.desc"><strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br>Puoi modificarla in qualsiasi momento, aggiungendo o rimuovendo oggetti.<br><br>Quando la tua lista "Ciò che cerco" è completa, premi il pulsante 📨 <strong>Invia "Ciò che cerco"</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.</p>
       </div>
-      <div style="text-align:center;margin-bottom:1.25rem;">
-        <button class="btn-secondary" onclick="submitWishlist()" data-i18n="wishlist.submit">📨 Invia "Ciò che cerco"</button>
-      </div>
+      <!-- v5.932 — il conteggio della lista, appena sopra il box: dice a colpo d'occhio quanto
+           c'è dentro, senza doverlo contare scorrendo. -->
+      <div id="wishlist-count" style="text-align:center;margin-bottom:1rem;font-size:0.95rem;color:var(--text);"></div>
       <div id="wishlist-content"></div>
-      <div style="text-align:center;margin-top:1.25rem;">
+      <!-- v5.932 — un solo blocco di comandi, SOTTO la lista (prima "Invia" compariva due volte,
+           sopra e sotto): si invia dopo aver guardato cosa si sta inviando, non prima. -->
+      <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:0.75rem;margin-top:1.25rem;">
         <button class="btn-secondary" onclick="submitWishlist()" data-i18n="wishlist.submit">📨 Invia "Ciò che cerco"</button>
+        <button class="btn-secondary" id="wishlist-reset-btn" onclick="resetWishlist()" data-i18n="wishlist.reset">🗑️ Resetta lista "Ciò che cerco"</button>
       </div>
     </div>
   </section>
@@ -1160,7 +1163,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.930</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.933</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1327,7 +1330,11 @@
 </div>
 
 <!-- ADD FIGURINE MODAL -->
-<div class="modal-overlay hidden" id="add-fig-modal">
+<!-- v5.931 — z-index sopra gli altri modali: tutti stanno a 2000, quindi vince l'ordine nel
+     documento, e questo (riga ~1330) finiva DIETRO la Vista Ebay (riga ~1557). La matita in
+     tabella apriva la form senza che si vedesse niente. È il modale più "profondo": ci si
+     arriva sempre da un altro, quindi deve stare sopra. -->
+<div class="modal-overlay hidden" id="add-fig-modal" style="z-index:2100;">
   <div class="modal modal-wide">
     <div class="modal-header">
       <h2 class="modal-title" id="fig-modal-title" data-i18n="modal.fig.title">Add Figurine</h2>
@@ -1456,6 +1463,26 @@
             <option value="new" data-i18n="form.fig.conditionNew">Nuovo</option>
             <option value="used" data-i18n="form.fig.conditionUsed">Usato</option>
           </select>
+        </div>
+      </div>
+      <!-- v5.931 — Titolo e Descrizione dell'annuncio, IT ed EN. Il titolo lasciato vuoto NON è
+           un titolo mancante: la Vista Ebay ci mette quello generato dal Nome completo. -->
+      <div id="fig-ebay-testi" style="display:none;margin-top:1rem;">
+        <div class="form-group" style="margin-bottom:0.9rem;">
+          <label class="form-label">Titolo annuncio 🇮🇹 IT <span id="fig-ebay-title-it-count" style="font-weight:400;color:var(--muted);font-size:0.75rem;"></span></label>
+          <input class="form-input" type="text" id="fig-ebay-title-it-input" oninput="contaCaratteriEbayTitolo('fig-ebay-title-it-input','fig-ebay-title-it-count')" placeholder="vuoto = titolo generato dal Nome completo">
+        </div>
+        <div class="form-group" style="margin-bottom:0.9rem;">
+          <label class="form-label">Titolo annuncio 🇬🇧 EN <span id="fig-ebay-title-en-count" style="font-weight:400;color:var(--muted);font-size:0.75rem;"></span></label>
+          <input class="form-input" type="text" id="fig-ebay-title-en-input" oninput="contaCaratteriEbayTitolo('fig-ebay-title-en-input','fig-ebay-title-en-count')" placeholder="empty = title generated from the full name">
+        </div>
+        <div class="form-group" style="margin-bottom:0.9rem;">
+          <label class="form-label">Descrizione annuncio 🇮🇹 IT</label>
+          <textarea class="form-input" id="fig-ebay-desc-it-input" rows="4" placeholder="Testo dell'annuncio in italiano"></textarea>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Descrizione annuncio 🇬🇧 EN</label>
+          <textarea class="form-input" id="fig-ebay-desc-en-input" rows="4" placeholder="Listing text in English"></textarea>
         </div>
       </div>
     </div>
@@ -1848,7 +1875,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.930"></script>
+<script src="js/app.js?v=5.933"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -1872,7 +1899,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v5.930'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.933'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
