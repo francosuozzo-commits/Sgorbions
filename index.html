@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.916"></script>
-<link rel="stylesheet" href="css/style.css?v=5.916">
+<script src="js/email.min.js?v=5.917"></script>
+<link rel="stylesheet" href="css/style.css?v=5.917">
 
 </head>
 <body>
@@ -24,7 +24,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.916</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.917</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1160,7 +1160,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.916</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.917</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1844,24 +1844,81 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.916"></script>
+<script src="js/app.js?v=5.917"></script>
 <script>
-/* Rete di sicurezza contro la cache.
-   index.html non viene praticamente mai servito dalla cache; app.js e style.css
-   sì (stesso nome file a ogni release). Il ?v= sopra lo impedisce — ma se per
-   qualsiasi ragione arrivasse comunque un app.js vecchio, il sintomo sarebbe
-   "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
-   Questo controllo lo trasforma in un messaggio esplicito in console. */
+/* Rete di sicurezza contro la cache — v5.917.
+   Due guasti diversi, non uno solo:
+
+   (A) APP.JS VECCHIO sotto un index nuovo. Lo si vede confrontando 'expected'
+       (scritto qui) con JS_VERSION (dentro app.js). È il controllo storico.
+
+   (B) INDEX.HTML VECCHIO. Più insidioso: GitHub Pages serve l'index con ~10 min
+       di cache, e l'index è l'unico file che non può avere un ?v= (è lui a
+       portarlo agli altri). Un index vecchio chiede app.js?v=<versione vecchia>
+       e riceve coerentemente l'app.js vecchio: expected === JS_VERSION, il
+       controllo (A) non vede niente — mentre l'utente guarda una pagina di due
+       release fa e crede che una funzionalità sia "sparita". (Caso reale: il box
+       "Filtri legati alla tua collezione", introdotto in v5.910, invisibile a chi
+       aveva ancora in cache un index precedente.)
+       Criterio: la versione NON PUÒ ANDARE ALL'INDIETRO. Teniamo in localStorage
+       la più alta mai vista; se questo index ne dichiara una minore, è cache.
+
+   Rimedio: UN SOLO ricaricamento, verso un URL con ?nc=<timestamp> — un
+   location.reload() normale può ripescare lo stesso index dalla stessa cache,
+   un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
+   un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v5.916'; // deve coincidere con JS_VERSION in app.js
-  if (typeof JS_VERSION === 'undefined') {
-    console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
+  var expected = 'v5.917'; // deve coincidere con JS_VERSION in app.js
+  var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
+  var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
+
+  var seen = null; try { seen = localStorage.getItem(KEY); } catch (e) {}
+  var indexVecchio = n(expected) < n(seen);
+  var appVecchio = (typeof JS_VERSION === 'undefined') || (JS_VERSION !== expected);
+  try { if (n(expected) > n(seen)) localStorage.setItem(KEY, expected); } catch (e) {}
+
+  if (!indexVecchio && !appVecchio) {
+    try { sessionStorage.removeItem(TRIED); } catch (e) {}
+    // pulizia estetica: tolgo il ?nc= dalla barra degli indirizzi, ha già fatto il suo lavoro
+    if (/[?&]nc=/.test(location.search) && history.replaceState) {
+      history.replaceState({}, '', location.pathname + location.hash);
+    }
     return;
   }
-  if (JS_VERSION !== expected) {
-    console.warn('[Sgorbions] VERSIONI DISALLINEATE — index.html si aspetta ' + expected +
-      ', ma l\'app.js caricato è ' + JS_VERSION + '.\nProbabile causa: app.js non ricaricato su GitHub, oppure servito dalla cache del browser/CDN.');
+
+  var msg = indexVecchio
+    ? ('Pagina servita dalla cache: questo index.html è ' + expected + ', ma avevi già visto la ' + seen + '.')
+    : ('VERSIONI DISALLINEATE — index.html si aspetta ' + expected + ', ma l\'app.js caricato è ' +
+       (typeof JS_VERSION === 'undefined' ? 'nessuno' : JS_VERSION) + '.');
+  console.warn('[Sgorbions] ' + msg + '\nProbabile causa: cache del browser/CDN, oppure un file non ricaricato su GitHub.');
+
+  // il rimedio ha senso solo su http(s): dalla preview aperta con doppio clic (file://) un
+  // "?nc=" trasformerebbe il percorso in un file inesistente
+  var online = (location.protocol === 'http:' || location.protocol === 'https:');
+  var tried = false; try { tried = sessionStorage.getItem(TRIED) === '1'; } catch (e) {}
+  if (online && !tried) {
+    try { sessionStorage.setItem(TRIED, '1'); } catch (e) {}
+    location.replace(location.pathname + '?nc=' + Date.now() + location.hash);
+    return;
   }
+  if (!online) return;
+
+  // secondo giro ancora storto: non insisto, lo dico
+  try {
+    var b = document.createElement('div');
+    b.id = 'sg-cache-warning';
+    b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;background:#b3261e;color:#fff;' +
+      'font:600 0.85rem/1.4 system-ui,-apple-system,sans-serif;padding:0.7rem 1rem;text-align:center;' +
+      'box-shadow:0 -2px 12px rgba(0,0,0,0.35);';
+    var testo = document.createElement('span');
+    testo.textContent = 'Stai vedendo una versione vecchia della pagina, salvata nella cache del browser. Ricarica con Ctrl+Shift+R (Cmd+Shift+R su Mac).';
+    var chiudi = document.createElement('span');
+    chiudi.textContent = 'chiudi';
+    chiudi.style.cssText = 'margin-left:0.8rem;text-decoration:underline;cursor:pointer;font-weight:400;';
+    chiudi.onclick = function () { b.parentNode && b.parentNode.removeChild(b); };
+    b.appendChild(testo); b.appendChild(chiudi);
+    document.body.appendChild(b);
+  } catch (e) {}
 })();
 </script>
 <script>
