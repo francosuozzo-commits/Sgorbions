@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.908"></script>
-<link rel="stylesheet" href="css/style.css?v=5.908">
+<script src="js/email.min.js?v=5.916"></script>
+<link rel="stylesheet" href="css/style.css?v=5.916">
 
 </head>
 <body>
@@ -24,7 +24,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.908</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.916</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -275,7 +275,7 @@
     <!-- v5.796 — blocchi admin Classifica/Ebay spostati SOTTO i risultati di ricerca (vedi sotto) -->
     <div id="retro-cat-summary-top" style="display:none;margin-bottom:1rem;margin-left:-1rem;margin-right:-1rem;"></div>
     <div id="change-type-summary-top" style="display:none;margin-bottom:1rem;margin-left:-1rem;margin-right:-1rem;"></div>
-    <div id="items-search-box" style="margin-bottom:1rem;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-left:-1rem;margin-right:-1rem;">
+    <div id="items-search-box" style="margin-bottom:1rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-left:-1rem;margin-right:-1rem;">
       <div id="items-search-title" style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:0.75rem;">Imposta la tua ricerca</div>
       <div class="search-bar" style="margin-bottom:0.75rem;">
         <div class="search-input-wrap">
@@ -286,11 +286,18 @@
       </div>
         <div id="items-filter-intro" style="display:none;font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;text-align:left;align-items:center;gap:0.4rem;"><span id="items-filter-intro-text" data-i18n="items.filterIntro">Affina la tua ricerca indicando dove vuoi cercare</span>
         <button onclick="openFilterLegendModal()" title="Cosa significano questi termini?" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:50%;width:18px;height:18px;font-size:0.7rem;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;">i</button></div>
-        <div id="items-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
-        <!-- v5.798 — seconda riga: filtri di possesso (loggati) + "Senza foto" (tutti), in coda alla stessa riga -->
-        <div id="items-owned-toggles" style="display:none;flex-wrap:wrap;gap:0.5rem;margin-top:0.7rem;padding-top:0.7rem;border-top:1px solid var(--border2);"></div>
-        <div id="items-admin-filters" style="display:none;margin-top:0.9rem;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.8rem 0.9rem;">
-          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.6rem;" data-i18n="items.adminFilters">Filtri aggiuntivi admin</div>
+        <!-- v5.916 — Box "Filtri generici": tipo oggetto (Tutti/e, Set base, Variazioni, Change, Errori di stampa) + Senza foto -->
+        <div id="items-generic-box" style="position:relative;margin-top:0.95rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">
+          <div id="items-generic-box-label" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);">Filtri generici</div>
+          <div id="items-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;"></div>
+        </div>
+        <!-- v5.916 — Box "Filtri legati alla tua collezione": nella mia lista, non nella mia lista, ciò che cerco -->
+        <div id="items-collection-box" style="display:none;position:relative;margin-top:0.95rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">
+          <div id="items-collection-box-label" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);">Filtri legati alla tua collezione</div>
+          <div id="items-owned-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
+        </div>
+        <div id="items-admin-filters" style="display:none;position:relative;margin-top:0.95rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">
+          <div style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);" data-i18n="items.adminFilters">Filtri aggiuntivi admin</div>
           <div id="items-admin-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center;"></div>
         </div>
     </div>
@@ -839,7 +846,7 @@
             <div id="firebase-reads-history" style="margin-top:1rem;"></div>
           </div>
 
-          <!-- RICALCOLO NOMI COMPLETI: spostato nella sezione Data import (renderAdminFoto), v5.908 -->
+          <!-- RICALCOLO NOMI COMPLETI: spostato nella sezione Data import (renderAdminFoto), v5.916 -->
 
           <!-- CLOUDINARY -->
           <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
@@ -1153,7 +1160,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.908</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.916</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1695,7 +1702,7 @@
 </div>
 
 <!-- FIGURINE DETAIL MODAL -->
-<div class="modal-overlay hidden" id="fig-detail-modal">
+<div class="modal-overlay hidden" id="fig-detail-modal" style="align-items:flex-start;padding-top:4vh;">
   <div class="modal modal-wide" style="max-width:860px;">
     <div class="modal-header">
       <h2 class="modal-title" id="fig-detail-title" data-i18n="modal.figdetail.title" style="overflow:hidden;white-space:normal;word-break:break-word;line-height:1.25;font-size:1.1rem;min-width:0;flex:1;">Dettaglio figurina</h2>
@@ -1837,7 +1844,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.908"></script>
+<script src="js/app.js?v=5.916"></script>
 <script>
 /* Rete di sicurezza contro la cache.
    index.html non viene praticamente mai servito dalla cache; app.js e style.css
@@ -1846,7 +1853,7 @@
    "una funzionalità nuova che non c'è", cioè una caccia a un baco inesistente.
    Questo controllo lo trasforma in un messaggio esplicito in console. */
 (function () {
-  var expected = 'v5.908'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.916'; // deve coincidere con JS_VERSION in app.js
   if (typeof JS_VERSION === 'undefined') {
     console.error('[Sgorbions] app.js non è stato caricato (atteso ' + expected + ').');
     return;
