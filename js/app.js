@@ -1,6 +1,44 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.916 - Franco: scheda figurina a schermo intero — (1) il modale è ANCORATO IN ALTO
+//          (align-items:flex-start + padding-top:4vh sul fig-detail-modal) così resta sempre alla
+//          stessa distanza dal top e non "sfarfalla" navigando con le frecce ◀▶; (2) fronte e retro
+//          hanno ALTEZZA FISSA 200px (come il box "foto non disponibile"): sempre alti uguali e area
+//          foto costante. index.html + app.js.
+// ------------------------------------------------------------
+// v5.915 - Franco (BUG): il "Caricamento massivo foto figurine con numero" abbinava per numero
+//          QUALSIASI oggetto della serie (non solo le figurine): in una serie con album numerati 1..6,
+//          le foto delle figurine #1..6 finivano sugli ALBUM. Ora i candidati sono solo section
+//          'figurines'. NB: gli album già toccati vanno risistemati a mano. Solo app.js.
+// ------------------------------------------------------------
+// v5.914 - Franco: l'etichetta del box "Filtri generici" diventa dinamica per sezione — "Filtri legati
+//          alle figurine / ai retro / alle bustine / agli album / agli altri oggetti" (preposizione
+//          articolata corretta). EN: "Filters — <sezione>". Solo app.js.
+// ------------------------------------------------------------
+// v5.913 - Franco: nel log dei caricamenti foto, la foto ritaglio non si chiama più "Catalogo" ma
+//          "Inventario" (☁️ Inventario #n / "nome"). Solo app.js.
+// ------------------------------------------------------------
+// v5.912 - Franco: le 3 etichette dei box filtri ("Filtri generici", "Filtri legati alla tua
+//          collezione", "Filtri aggiuntivi admin") ora sono a cavallo del bordo in alto a sinistra
+//          (stile "legenda"): position:absolute + transform translateY(-50%), sfondo var(--card) che
+//          interrompe la cornice. Solo index.html (bump in app.js).
+// ------------------------------------------------------------
+// v5.911 - Franco: cornice dei box della ricerca resa BIANCA e visibile (era var(--border2), quasi
+//          invisibile): box di ricerca, "Filtri generici", "Filtri legati alla tua collezione" e
+//          "Filtri aggiuntivi admin" → border rgba(255,255,255,0.6). Solo index.html (bump in app.js).
+// ------------------------------------------------------------
+// v5.910 - Franco: filtri della ricerca riorganizzati in DUE box etichettati (tutte le sezioni). Box
+//          "Filtri generici" = tipo oggetto (Tutti/e, Set base, Variazioni, Change, Errori di stampa)
+//          + "Senza foto" (ora per tutti, anche mobile). Box "Filtri legati alla tua collezione" =
+//          Nella/Non nella tua lista + Ciò che cerco (solo se loggato; box nascosto da anonimo).
+//          "Senza foto" tolto dal contenitore possesso. index.html (2 box) + app.js.
+// ------------------------------------------------------------
+// v5.909 - Franco: WAKE LOCK durante i due caricamenti massivi foto — mentre l'import gira, la pagina
+//          chiede lo Screen Wake Lock così il PC non va in sospensione per inattività (che congelava
+//          l'import a metà: il traffico di rete non conta come "attività" per l'OS). Rilasciato a fine
+//          procedura; ri-acquisito se la scheda torna visibile. Solo app.js.
+// ------------------------------------------------------------
 // v5.908 - Franco: nuovo filtro di ricerca "Ciò che cerco" (desktop + mobile), accanto ai filtri di
 //          possesso. Se acceso, mostra solo gli oggetti nella wishlist dell'utente (heart ❤️). Stato
 //          _wishlistFilter (riparte spento a ogni sezione), toggleWishlistFilter(), applicato nel
@@ -8891,7 +8929,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.908';
+const JS_VERSION = 'v5.916';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12600,6 +12638,15 @@ function renderItemTypeFilters() {
   if (!el) return;
 
   const it = (currentLang === 'it');
+  // v5.910 — etichette dei due box "Filtri generici" / "Filtri legati alla tua collezione".
+  // v5.914 — l'etichetta del box "generico" ora è "Filtri legati a[lle/i/gli] <sezione>", con la
+  // preposizione articolata corretta per ciascuna sezione (varia con la scheda di ricerca).
+  const _aForm = { figurines: 'alle figurine', retros: 'ai retro', bustine: 'alle bustine', albums: 'agli album', extras: 'agli altri oggetti' };
+  const _genLbl = it
+    ? ('Filtri legati ' + (_aForm[currentSection] || ('a ' + (getSectionLabel(currentSection) || 'oggetti').toLowerCase())))
+    : ('Filters — ' + (getSectionLabel(currentSection) || 'Items'));
+  const _gbl = document.getElementById('items-generic-box-label'); if (_gbl) _gbl.textContent = _genLbl;
+  const _cbl = document.getElementById('items-collection-box-label'); if (_cbl) _cbl.textContent = it ? 'Filtri legati alla tua collezione' : 'Filters tied to your collection';
   const sez = currentSection || 'figurines';
 
   // FILTRI DINAMICI (v5.711). Un filtro compare SOLO SE quel tipo esiste davvero in
@@ -12687,6 +12734,10 @@ function renderItemTypeFilters() {
   if (presente.printError) html += item('printError',
     it ? 'Errori di stampa' : 'Print errors', '');
 
+  // v5.910 — "Senza foto" ora vive nel box "Filtri generici", per TUTTI gli utenti (desktop e mobile).
+  const _senzaFoto = _noPhotoFilter ? (it ? 'Con foto' : 'With photo') : (it ? 'Senza foto' : 'Without photo');
+  html += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_noPhotoFilter ? 'on' : ''}" onclick="setNoPhotoFilter(${!_noPhotoFilter})" title="${_senzaFoto}"></button><span style="font-size:0.82rem;color:var(--text);">${_senzaFoto}</span></div>`;
+
   html += '</div>';
 
   el.innerHTML = html;
@@ -12773,15 +12824,14 @@ function renderItemTypeFilters() {
       // v5.908 — nuovo filtro "Ciò che cerco": mostra solo la wishlist dell'utente (su mobile va a capo sotto).
       h2 += itemToggle(_wishlistFilter, 'toggleWishlistFilter()', itl ? 'Ciò che cerco' : "What I'm looking for");
     }
-    // v5.853 — il filtro "Senza foto" su telefono non compare: e' un filtro di servizio, e la
-    // riga serve tutta ai due filtri di possesso, che tornano cosi' col nome per esteso.
-    if (!_isMobileViewport()) {
-      const senzaFoto = _noPhotoFilter ? (itl ? 'Con foto' : 'With photo') : (itl ? 'Senza foto' : 'Without photo');
-      h2 += itemToggle(_noPhotoFilter, `setNoPhotoFilter(${!_noPhotoFilter})`, senzaFoto);
-    }
+    // v5.910 — "Senza foto" NON è più qui: spostato nel box "Filtri generici".
     h2 += '</div>';
     elOwned.innerHTML = h2;
     elOwned.style.display = 'flex';
+    // v5.910 — il box "Filtri legati alla tua collezione" appare solo se loggato (senza login non ci
+    // sono filtri di collezione: possesso e "Ciò che cerco" richiedono una lista).
+    const _colBox = document.getElementById('items-collection-box');
+    if (_colBox) _colBox.style.display = currentUser ? '' : 'none';
   }
   const introEl = document.getElementById('items-filter-intro');
   if (introEl) {
@@ -15659,11 +15709,14 @@ function openFigDetail(figId) {
       const frontImg = baseFig ? baseFig.img : f.img;
       const retroFig = _detEffRetroId ? getData('figurines', []).find(x => x.id === _detEffRetroId) : null;
       const noPhotoBox = '<div style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non disponibile' : 'Photo not available') + '</div>';
+      // v5.916 — altezza FISSA 200px su entrambe le foto (come il box "foto non disponibile"): così
+      // fronte e retro sono sempre alti uguali e l'area foto non cambia dimensione tra una figurina e
+      // l'altra (niente sfarfallamento).
       const baseHTML = frontImg
-        ? `<img src="${cloudinaryUrl(frontImg, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+        ? `<img src="${cloudinaryUrl(frontImg, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
         : noPhotoBox;
       const retroHTML = retroFig?.img
-        ? `<img src="${cloudinaryUrl(retroFig.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+        ? `<img src="${cloudinaryUrl(retroFig.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
         : noPhotoBox;
       const retroCaption = retroFig
         ? (() => { const parts = [retroFig.category, retroFig.subcategory].map(v => (v||'').trim()).filter(Boolean); return `<div style="font-size:0.72rem;text-align:center;margin-top:4px;"><a href="#" onclick="openFigDetail('${retroFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${parts.length ? parts.join(' · ') + ' — ' : ''}${retroFig.name} ↗</a></div>`; })()
@@ -18569,6 +18622,28 @@ function fotoCrop(blob) {
   });
 }
 
+// v5.909 — Wake Lock: durante un caricamento lungo tiene lo schermo/sistema sveglio, così il PC non
+// va in sospensione per inattività (che congelerebbe l'import). Il traffico di rete NON basta a tenere
+// sveglio il PC: l'OS guarda solo mouse/tastiera. Si rilascia a fine procedura. Si ri-acquisisce se la
+// scheda torna visibile dopo essere stata nascosta (il lock si perde in quel caso).
+let _wakeLock = null, _wakeLockWanted = false;
+async function acquireWakeLock() {
+  _wakeLockWanted = true;
+  if (!('wakeLock' in navigator)) return;
+  try {
+    _wakeLock = await navigator.wakeLock.request('screen');
+    _wakeLock.addEventListener('release', () => { _wakeLock = null; });
+  } catch (e) { console.warn('Wake Lock non disponibile:', e.message); }
+}
+async function releaseWakeLock() {
+  _wakeLockWanted = false;
+  try { if (_wakeLock) await _wakeLock.release(); } catch (e) {}
+  _wakeLock = null;
+}
+document.addEventListener('visibilitychange', () => {
+  if (_wakeLockWanted && document.visibilityState === 'visible' && !_wakeLock) acquireWakeLock();
+});
+
 async function startAdminFotoUpload() {
   const seriesId = document.getElementById('foto-series-select').value;
   if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series', 'error'); return; }
@@ -18599,9 +18674,14 @@ async function startAdminFotoUpload() {
   document.getElementById('foto-progress-wrap').style.display = 'block';
   document.getElementById('foto-log').innerHTML = '';
   fotoLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + files.length + ' foto ---', 'info');
+  await acquireWakeLock(); // v5.909 — evita la sospensione del PC durante il caricamento
 
   // Carica figurine della serie
-  const allFigs = getData('figurines', []).filter(f => f.seriesId === seriesId);
+  // v5.915 (bug Franco): questa procedura è SOLO per le figurine numerate, ma il match per numero
+  // pescava qualunque oggetto della serie con quel numero — così le foto delle prime figurine
+  // finivano sugli ALBUM (che in quella serie avevano numeri 1..6). Ora si considerano SOLO le
+  // figurine (section 'figurines'), escludendo album/bustine/retro/altri.
+  const allFigs = getData('figurines', []).filter(f => f.seriesId === seriesId && (f.section || 'figurines') === 'figurines');
   fotoLog((currentLang==='it'?'Figurine nella serie:':'Stickers in series:') + ' ' + allFigs.length, 'info');
 
   let ok = 0, skip = 0, errors = 0;
@@ -18637,7 +18717,7 @@ async function startAdminFotoUpload() {
           });
           blob = await fotoCrop(blob);
         }
-        fotoLog('☁️ Catalogo #' + num + '...', 'info');
+        fotoLog('☁️ Inventario #' + num + '...', 'info');
         cutUrl = await uploadToCloudinary(blob);
       }
       // Foto ORIGINALE eBay (con sfondo, foto vera) → sempre il file originale, senza ritaglio.
@@ -18667,6 +18747,7 @@ async function startAdminFotoUpload() {
       : 'COMPLETE LIST OF FILES NOT UPLOADED (' + erroriRighe.length + ') ---'), 'white');
     erroriRighe.forEach(msg => fotoLog(msg, 'warn'));
   }
+  await releaseWakeLock(); // v5.909
   document.getElementById('foto-start-btn').disabled = false;
 }
 
@@ -18728,6 +18809,7 @@ async function startAdminFotoNoNumberUpload() {
   document.getElementById('fotonn-progress-wrap').style.display = 'block';
   document.getElementById('fotonn-log').innerHTML = '';
   fotoNnLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + files.length + ' foto (' + scope + ') ---', 'info');
+  await acquireWakeLock(); // v5.909 — evita la sospensione del PC durante il caricamento
 
   // Candidati in base allo scope scelto. Per il Retro (v5.756) la chiave di
   // riconciliazione è il NOME COMPLETO (fullName), non più il solo Nome: il
@@ -18800,7 +18882,7 @@ async function startAdminFotoNoNumberUpload() {
           });
           blob = await fotoCrop(blob);
         }
-        fotoNnLog('☁️ Catalogo "' + name + '"...', 'info');
+        fotoNnLog('☁️ Inventario "' + name + '"...', 'info');
         cutUrl = await uploadToCloudinary(blob);
       }
       let origUrl = fig.ebayImg;
@@ -18829,6 +18911,7 @@ async function startAdminFotoNoNumberUpload() {
       : 'COMPLETE LIST OF FILES NOT UPLOADED (' + erroriRighe.length + ') ---'), 'white');
     erroriRighe.forEach(msg => fotoNnLog(msg, 'warn'));
   }
+  await releaseWakeLock(); // v5.909
   document.getElementById('fotonn-start-btn').disabled = false;
 }
 
