@@ -1,6 +1,222 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.976 - Franco: sulla card dei RETRO, se la Categoria e' contenuta all'inizio del Nome (al netto
+//          della vocale finale) si nasconde LA CATEGORIA e si mostra il Nome — non il contrario.
+//          Prima la regola sopprimeva il Nome, ma solo sulla coincidenza ESATTA (v5.780): con due
+//          stringhe identiche nascondere l'una o l'altra e' indistinguibile, ed e' per questo che
+//          nessuno si era accorto di quale delle due venisse soppressa. Allargata la condizione a
+//          "inizia con" (riusa _retroNameStartsWithCategory, la stessa che regge il Nome completo),
+//          la scelta conta: su Serie 1, con categoria "CERTIFICATO" e nomi "CERTIFICATO DI ...",
+//          nascondere il Nome avrebbe reso 218 retro identici a schermo. La Sottocategoria non si
+//          perde: quando la categoria sparisce dalla riga 1, scende in riga 2. Solo app.js.
+// ------------------------------------------------------------
+// v5.975 - Franco, SOLO DESKTOP: i cinque box della scheda serie su una riga sola. Non ci stavano
+//          per aritmetica, non per un baco: auto-fit con minmax(240px) e gap 1.5rem in 1036px utili
+//          consente quattro colonne (1032px), cinque ne vorrebbero 1296. Ora le colonne sono
+//          dichiarate (repeat(5,1fr)) e il gap scende a 1rem: 194px per box a pagina piena.
+//          Mobile invariato: sotto gli 860px resta la griglia a quattro colonne della v5.825.
+//          Solo index.html (qui cambia solo la versione).
+// ------------------------------------------------------------
+// v5.974 - Franco, profilo utente: il box "I tuoi numeri Sgorbions" mostra un contatore per
+//          TIPOLOGIA (Figurine, Retro, Album, Bustine, Altri oggetti) invece di un unico numero,
+//          piu' il totale e le serie tracciate in coda. Nota su cosa c'era prima: quel numero era
+//          etichettato "Nella Mia Lista" ma sommava tutte le tipologie, quindi si leggeva come se
+//          fossero figurine. Le celle sono generate dall'elenco delle sezioni, non scritte
+//          nell'HTML, e le etichette hanno un data-i18n perche' renderAll() non ridisegna il
+//          profilo e senza quello un cambio lingua le lascerebbe indietro. La chiave i18n
+//          profile.owned resta nel dizionario ma non e' piu' usata a schermo. app.js (in
+//          index.html cambia solo la versione).
+// ------------------------------------------------------------
+// v5.973 - Franco: nel panino, su telefono, una voce "Mia lista" che apre la mini guida del
+//          selettore (openDemoToggleModal) — la stessa raggiungibile dal riquadro "Costruisci la
+//          Tua Lista" in home, ora disponibile da qualsiasi pagina. Sta prima del Logout, che
+//          resta l'ultima voce. Accesa e spenta qui in updateNavUser insieme alle altre voci da
+//          utente registrato: la guida spiega un comando che esiste solo da loggati, quindi da
+//          sloggato non ha senso mostrarla. index.html + app.js.
+// ------------------------------------------------------------
+// v5.972 - Franco: il font dei tre pulsanti di export deve coincidere. EXPORT 1 e 2 usavano quello
+//          di .btn-primary (1.15rem, lo standard dei pulsanti del sito); EXPORT 3 aveva un
+//          font-size:0.88rem scritto INLINE. Ho tolto l'eccezione invece di aggiungerla agli altri
+//          due: allineare alla classe elimina un'eccezione, allineare al piu' piccolo ne avrebbe
+//          create due, e avrebbe scollegato questi pulsanti dallo standard del sito.
+//          Conseguenza da guardare: a 1.15rem, nella colonna di destra larga 15rem, l'etichetta
+//          lunga di EXPORT 2 va su piu' righe e il pulsante diventa alto. Se da' fastidio si
+//          allarga la colonna (.wl-cta in index.html) o si accorcia il nome. Solo app.js.
+// ------------------------------------------------------------
+// v5.971 - Franco, due richieste che toccano lo stesso punto: i font delle tre sezioni EXPORT
+//          devono corrispondere, e la spunta "Escludi da export" deve stare SEMPRE sotto la riga
+//          del nome della serie. Le tre sezioni hanno la stessa sequenza (titolo, ISTRUZIONI,
+//          rettangoli) ma erano impaginate con misure diverse, resti della storia: EXPORT 2 era
+//          nata come sotto-sezione "1b" e portava ancora un h3 da 1.2rem, ed EXPORT 3 aveva il
+//          paragrafo a 1.05rem invece di 0.88. Allineato tutto a EXPORT 1, che e' la sezione su cui
+//          abbiamo lavorato: titolo h2 1.5rem/mb 0.6rem, paragrafo 0.88rem/mb 0.75rem, nome della
+//          serie 1.2rem (era 1.1), e contatore dentro .card-badge come nella 1 — la pillola e' la
+//          stessa, il COLORE resta diverso per sezione perche' quello porta informazione (azzurro
+//          quel che manca, verde quel che c'e').
+//          I rettangoli di EXPORT 2 e 3 avevano il nome e la spunta sulla stessa riga, allontanati
+//          da justify-content:space-between; ora hanno la struttura a due righe di EXPORT 1
+//          (v5.962). Solo app.js.
+// ------------------------------------------------------------
+// v5.970 - Franco: i tre titoli passano da "SEZIONE n: EXPORT ..." a "EXPORT n: ...". La parola
+//          EXPORT prende il posto di SEZIONE all'inizio, cosi' il titolo dice subito di che export
+//          si tratta e il numero resta l'indice che rimanda all'elenco in cima alla pagina.
+//          Nel testo che mi hai passato il terzo aveva uno spazio prima dei due punti
+//          ("EXPORT 3 :"): l'ho normalizzato a "EXPORT 3:" come gli altri due — se lo volevi
+//          davvero staccato, si rimette. Aggiornati render, chiavi i18n morte, commenti di codice,
+//          IT ed EN. Solo app.js.
+// ------------------------------------------------------------
+// v5.969 - Franco: nelle SEZIONI 2 e 3 la scelta "escludi questa serie dall'export" era un
+//          pulsantino che si colorava e si metteva un ✓ davanti al testo, mentre nella SEZIONE 1 la
+//          stessa scelta e' una vera casella di spunta. Stessa funzione, due controlli diversi: ora
+//          sono tutte checkbox, con la stessa forma e l'etichetta corta "Escludi da export" adottata
+//          in v5.959 (prima qui era "Escludi da export figurine della tua lista").
+//          La casella e' spuntata quando la serie e' ESCLUSA, cioe' su !incOwned: la preferenza
+//          memorizzata dice "includi", l'etichetta chiede "escludi", e la negazione va tenuta qui —
+//          invertire il dato salvato avrebbe cambiato significato alle preferenze gia' sui profili.
+//          Le tre occorrenze sono SEZIONE 2, e SEZIONE 3 in entrambi i suoi rami. Solo app.js.
+// ------------------------------------------------------------
+// v5.968 - Franco: il pulsante della SEZIONE 2 si chiama "Esporta lista figurine presenti nella tua
+//          lista (solo serie incomplete)", e il paragrafo di istruzioni lo cita con lo stesso nome.
+//          Nota: prima NON coincidevano — il paragrafo diceva "Esporta la tua lista di figurine
+//          (solo serie incomplete)" ma sul pulsante c'era scritto "Esporta figurine serie
+//          incomplete", quindi l'istruzione rimandava a un tasto che a schermo si chiamava in un
+//          altro modo. Ora e' una stringa sola in quattro punti (paragrafo, etichetta e le due
+//          chiavi i18n morte tenute allineate), sia IT sia EN. Solo app.js.
+// ------------------------------------------------------------
+// v5.967 - Franco: le due colonne della v5.962 si estendono alle SEZIONI 2 e 3 — rettangoli a
+//          sinistra, pulsante di export a destra all'altezza della prima riga. Le classi .wl-row /
+//          .wl-list / .wl-cta e la loro media query esistevano gia' da v5.962: qui si riusano, non
+//          si duplica CSS. Per la SEZIONE 3 la modifica vale per TUTTE E DUE le occorrenze del
+//          blocco (percorso normale e ramo "non manca nulla"), altrimenti l'impaginazione sarebbe
+//          cambiata a seconda dello stato della lista dell'utente. Solo app.js (in index.html
+//          cambia solo la versione).
+// ------------------------------------------------------------
+// v5.966 - Franco: "ISTRUZIONI:" in bianco e accapo anche nel paragrafo della SEZIONE 3 (serie
+//          complete). Applicato alle DUE occorrenze, perche' quel paragrafo e' scritto due volte:
+//          una nel percorso normale e una nel ramo in cui non manca nulla, dove la SEZIONE 3 e'
+//          l'unica mostrata. Con questa i tre paragrafi di istruzioni della pagina Liste hanno
+//          finalmente la stessa forma. Solo app.js.
+// ------------------------------------------------------------
+// v5.965 - Franco: anche il paragrafo di istruzioni della SEZIONE 2 si apre con "ISTRUZIONI:" in
+//          bianco e va a capo prima di "Poi premi il tasto", come quello della SEZIONE 1 in v5.960.
+//          Ora i due paragrafi hanno la stessa forma: in v5.960 avevo toccato solo il primo perche'
+//          il secondo non era stato chiesto. IT ed EN, piu' la chiave morta
+//          wantlist.hintExportIncomplete tenuta allineata. Solo app.js.
+// ------------------------------------------------------------
+// v5.964 - Franco: "SEZIONE 2: EXPORT DELLE TUE SERIE COMPLETE" diventa "SEZIONE 3", che chiude la
+//          collisione di numeri creata dalla v5.963 (la ex 1b era diventata SEZIONE 2). Rinominate
+//          TUTTE E DUE le occorrenze — quella del percorso normale e quella del ramo in cui non
+//          manca nulla, dove il titolo viene mostrato da solo: lasciarne una a 2 e una a 3 avrebbe
+//          fatto dipendere il numero dallo stato della lista dell'utente. Ora la numerazione segue
+//          l'elenco in alto: 1 oggetti non nella lista, 2 serie non complete, 3 serie complete.
+//          Solo app.js (in index.html cambia solo la versione).
+// ------------------------------------------------------------
+// v5.963 - Franco, schermata Liste: (1) "SEZIONE 1b: LISTA FIGURINE NELLA TUA LISTA" diventa
+//          "SEZIONE 2: EXPORT FIGURINE PRESENTI NELLA TUA LISTA (SERIE NON COMPLETE)"; (2)
+//          nell'elenco in alto le voci 2 e 3 si scambiano, perche' l'ordine deve seguire quello
+//          delle sezioni: prima le serie NON complete, poi le complete.
+//          ATTENZIONE, segnalato a Franco: nel percorso normale esiste gia' una "SEZIONE 2: EXPORT
+//          DELLE TUE SERIE COMPLETE" piu' in basso, quindi ora due titoli portano lo stesso numero.
+//          Per coerenza con la numerazione 1-2-3 dell'elenco in alto quella andrebbe rinominata
+//          SEZIONE 3, ma il nome lo decide lui: non l'ho toccata. index.html + app.js.
+// ------------------------------------------------------------
+// v5.962 - Franco, schermata Liste, tre cose legate fra loro: (1) via la barra della percentuale
+//          dai rettangoli delle serie — ripeteva in grafica il "N figurine non nella tua lista su M"
+//          scritto accanto al nome; (2) al suo posto scendono le DUE SPUNTE ("Includere
+//          variazioni/change nell'export" ed "Escludi da export"), che stavano sulla riga del nome
+//          allargandola; (3) i rettangoli, ora piu' corti, stanno in una colonna e il pulsante
+//          "Esporta lista oggetti non nella tua lista" va alla loro DESTRA, all'altezza del primo.
+//          Nessuna larghezza fissata a mano: il pulsante prende la sua, i rettangoli il resto.
+//          Sotto gli 860px si torna in colonna col pulsante sopra. Sparisce la const ownedCount di
+//          questo blocco, che serviva solo alla barra (quella della 1b resta, la' e' usata).
+//          index.html (classi + media query) + app.js.
+// ------------------------------------------------------------
+// v5.961 - Franco, schermata Liste: l'etichetta "Includere variazioni/change" diventa "Includere
+//          variazioni/change nell'export" — dice a cosa si applica la spunta, che accanto a
+//          "Escludi da export" (accorciata in v5.959) altrimenti restava implicita. IT ed EN.
+//          Solo app.js.
+// ------------------------------------------------------------
+// v5.960 - Franco, schermata Liste: il paragrafo di istruzioni si apre con "ISTRUZIONI:" in bianco
+//          (#fff, lo stesso bianco con cui in quella riga sono gia' evidenziati i nomi dei tasti),
+//          e torna "Seleziona" — la v5.959 aveva messo "Scegli", sostituito dalla richiesta
+//          successiva. L'accapo prima di "Poi premi il tasto" resta. IT ed EN, piu' la chiave morta
+//          wantlist.hintExportMissing tenuta allineata. Solo app.js.
+// ------------------------------------------------------------
+// v5.959 - Franco, schermata Liste: (1) nel paragrafo di istruzioni "Seleziona" diventa "Scegli" e
+//          "Poi premi il tasto..." va a capo; (2) l'etichetta della casella per saltare una serie
+//          si accorcia a "Escludi da export" — il nome dell'export fra virgolette era ridondante,
+//          sta scritto due righe sopra. Aggiornata la coppia IT/EN in entrambi i casi, e allineata
+//          la chiave i18n wantlist.hintExportMissing, che porta lo stesso paragrafo ma e' MORTA
+//          come wantlist.missingTitle (nessun t(), nessun data-i18n). Solo app.js.
+// ------------------------------------------------------------
+// v5.958 - Franco, schermata Liste: (1) l'elenco "Puoi esportare in Excel..." passa dai pallini
+//          alla numerazione 1) 2) 3), cosi' le tre voci si possono citare per numero; (2) il titolo
+//          della SEZIONE 1 diventa "EXPORT OGGETTI NON PRESENTI NELLA TUA LISTA" (prima "EXPORT
+//          DELLE TUE SERIE INCOMPLETE"); (3) via l'intestazione "SEZIONE 1a: LISTA DEGLI OGGETTI
+//          NON NELLA TUA LISTA", che ora ripeteva il titolo sopra. Toccati i dizionari IT ED EN:
+//          la numerazione e il nuovo titolo sono struttura, non lingua, e lasciare l'inglese
+//          indietro avrebbe fatto divergere le due versioni. Resta in piedi una "SEZIONE 1b"
+//          senza piu' una 1a davanti: segnalato a Franco. Allineata anche la chiave i18n
+//          wantlist.missingTitle, che porta lo stesso titolo ma e' MORTA (nessun t() la chiama,
+//          nessun data-i18n la punta): non cambia nulla a schermo, evita che una ricerca futura
+//          del titolo vecchio faccia credere di averlo trovato ancora vivo. index.html + app.js.
+// ------------------------------------------------------------
+// v5.957 - Franco, rifiniture alla mini guida: "Mia lista" in corsivo nel titolo, nel testo e
+//          nella frase finale; via le virgolette; "Il colore cambiera'..." dopo un accapo; la
+//          frase "non e' visibile ne' interpretabile da altri utenti" in rosso (var(--danger)).
+//          La frase finale e' passata da data-i18n a data-i18n-html: applyI18n scrive i primi con
+//          textContent, che avrebbe cancellato il <em>. Nota: la stessa frase sulla privacy esiste
+//          anche nel profilo (profile.myListHint) e li' NON e' stata toccata. index.html + app.js.
+// ------------------------------------------------------------
+// v5.956 - Franco: mini guida del selettore "Mia lista" (dal riquadro "Costruisci la Tua Lista"
+//          in home). Titolo -> "Come funziona il selettore Mia lista"; testo riscritto in termini
+//          di selettore e non di pulsante; "NOTA" davanti alla frase in corsivo; frase finale ->
+//          "Prova a toccare il selettore" (cambiata nel DIZIONARIO, non solo nell'HTML: quel <p>
+//          ha data-i18n e applyI18n lo riscriveva); e nell'esempio la foto VERA di Gastone
+//          Bubbone, cercata nei dati invece di essere incollata a mano. index.html + app.js.
+// ------------------------------------------------------------
+// v5.955 - Correzione della v5.954: la riga della versione su telefono c'era, era display:block e
+//          conteneva il numero, ma non si vedeva — stava DIETRO la navbar. Il banner e' sticky con
+//          top:64px: visivamente sta sotto la navbar, nel flusso parte da y=0, quindi chi lo segue
+//          nasce 64px troppo in alto. Ora il banner e' un contenitore sticky con due righe e la
+//          versione sta dentro, dove la geometria e' corretta per costruzione. Solo index.html
+//          (qui cambia solo la versione).
+// ------------------------------------------------------------
+// v5.954 - Franco: su telefono la versione sta sotto il banner "SITO WEB IN COSTRUZIONE",
+//          non piu' accanto al logo in navbar. Il nuovo elemento non contiene il numero scritto
+//          a mano: lo riempie qui sotto da JS_VERSION, cosi' resta un solo posto da aggiornare
+//          e non puo' disallinearsi. index.html + app.js.
+// ------------------------------------------------------------
+// v5.953 - Franco: su telefono il Logout va nel menu hamburger, come ultima voce, e sparisce
+//          dalla navbar. E' una voce nuova (#nav-logout-link) dentro .nav-links, accesa e spenta
+//          qui in updateNavUser insieme alle altre voci da utente registrato; una media query in
+//          index.html la tiene spenta su desktop e nasconde il pulsante della navbar su mobile.
+//          Due elementi distinti invece di spostare un nodo al resize: la posizione del comando
+//          non deve dipendere da un listener. index.html + app.js.
+// ------------------------------------------------------------
+// v5.952 - Franco: "Sezioni" non a un'altezza fissa sotto "Inventario" ma all'altezza della
+//          SUA riga, accanto al nome della sezione corrente. Ora e' ancorato a #items-section e
+//          non dichiara `top`: resta nella posizione statica, cioe' centrato accanto all'h2 dal
+//          flex della riga. Essendo #items-section largo 1100px e non a tutta pagina, lo
+//          spostamento orizzontale passa da 100vw, che include la scrollbar: cade ~8px piu' a
+//          sinistra di "Inventario" — disallineamento accettato per non muovere "Inventario".
+//          Solo index.html (qui cambia solo la versione).
+// ------------------------------------------------------------
+// v5.951 - Franco: nella scheda serie anche il bottone "Sezioni" va nel margine esterno,
+//          impilato verticalmente sotto "Inventario". I due sono in sottoalberi diversi
+//          (#items-section vive dentro #series-detail) ma sono visibili insieme quando una
+//          sezione e' aperta: ora si posizionano entrambi rispetto a #series-detail, unico
+//          riferimento, cosi' non possono divergere. Solo index.html (qui cambia solo la
+//          versione).
+// ------------------------------------------------------------
+// v5.950 - Franco: nella scheda serie il bottone "Torna all'Inventario" si chiama ora solo
+//          "Inventario" (freccia mantenuta) e sta nel MARGINE ESTERNO a sinistra del
+//          contenitore da 1100px, fuori dal flusso: la riga che occupava da solo in cima
+//          costava ~48px, e liberandola tutto il contenuto della pagina sale. Attivo dai
+//          1440px in su, dove il margine libero (138px a 1440) basta a contenerlo; sotto
+//          quella soglia resta dov'era. Etichetta IT/EN in app.js, resto in index.html.
+// ------------------------------------------------------------
 // v5.949 - Franco: su telefono la foto deve toccare il soffitto. Con align-items:center il logo
 //          veniva centrato verticalmente rispetto alla colonna di numeri piu' alta e quindi
 //          scendeva; ora la riga e' allineata in alto (align-items:start) e il logo non ha
@@ -9219,7 +9435,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.949';
+const JS_VERSION = 'v5.976';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10086,7 +10302,7 @@ const i18n = {
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
 'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to your list','catalog.havenone':'Remove search results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
-'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout',
+'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
 'hero.challenge':'Challenge others','hero.challengeDesc':'Who has the biggest list? You can also choose to appear anonymously.',
@@ -10104,7 +10320,7 @@ const i18n = {
 'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
 'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.addseries':'+ Add Series',
 'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
-'back':'Back to Inventory','detail.addfig':'+ Add Sticker',
+'back':'Inventory','detail.addfig':'+ Add Sticker',
 'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation!',
 'contact.eyebrow':'Get in Touch','contact.sub':'Found a rare piece? Want to contribute? Write to us!',
 'contact.info.title':'Let\'s Talk Sgorbions','contact.email':'Email','contact.location':'Location',
@@ -10134,7 +10350,7 @@ const i18n = {
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
 'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters:','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer. Two cases: (1) same character (same front) with a different graphic element in the printing — the back is the same as the base sticker’s; (2) same front, but it is the back that creates the variant — a back that does not belong to the series','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
-'profile.title':'My Profile','profile.owned':'In My List','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
+'profile.title':'My Profile','profile.owned':'In My List','profile.total':'Total','profile.sec.figurines':'Stickers','profile.sec.retros':'Retros','profile.sec.albums':'Albums','profile.sec.bustine':'Wrappers','profile.sec.extras':'Other Items','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
 
@@ -10151,7 +10367,7 @@ const i18n = {
 'contact.q1':'Do you want more information about Sgorbions?','contact.q2':'Do you want to report an error?',
 'contact.q3':'Or do you just want to compliment the administrator?',
 'contact.cta':'For any of these things, send us a message!',
-'wantlist.desc':'This page shows the series for which your list is complete or incomplete, compared to the site Inventory.<br><br>You can export the following lists to Excel:<br>• items not in your list (stickers, retros, albums, other...)<br>• stickers in your list (complete series)<br>• stickers in your list (incomplete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions stickers in just a few clicks, based on your own personal list built by browsing our Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'SECTION 1: EXPORT OF YOUR INCOMPLETE SERIES','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'Select the series for which to export the list of items not in your list. Then press <i style="color:#fff;">Export items not in my list</i>.','wantlist.hintExportIncomplete':'Select the series for which to export the list of stickers in your list. Then press <i style="color:#fff;">Export my sticker list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in my list','wantlist.exportIncomplete':'Export my sticker list (incomplete series only)','wantlist.export':'Export my complete series stickers'
+'wantlist.desc':'This page shows the series for which your list is complete or incomplete, compared to the site Inventory.<br><br>You can export the following lists to Excel:<br>1) items not in your list (stickers, retros, albums, other...)<br>2) stickers in your list (incomplete series)<br>3) stickers in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions stickers in just a few clicks, based on your own personal list built by browsing our Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:#fff;">Export items not in my list</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:#fff;">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in my list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
 'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
@@ -10196,7 +10412,7 @@ const i18n = {
 
 
 
-'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci',
+'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','nav.mialista':'Mia lista',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
@@ -10209,7 +10425,7 @@ const i18n = {
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
     'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati ricerca alla tua lista','catalog.havenone':'Rimuovi risultati ricerca dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
-    'back':'Torna all\'Inventario','detail.addfig':'+ Aggiungi Figurina',
+    'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'E-mail','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
@@ -10221,12 +10437,12 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
-    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario del sito.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>• oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>• figurine presenti nella tua lista (serie complete)<br>• figurine presenti nella tua lista (serie non complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la tua lista di figurine (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta la tua lista di figurine (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
+    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario del sito.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>2) figurine presenti nella tua lista (serie non complete)<br>3) figurine presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
 'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
-    'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
-    'profile.sliderHint':'Prova a spostare il cursore! 👆',
+    'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
+    'profile.sliderHint':'Prova a toccare il selettore <em>Mia lista</em> !!!',
     'admin.title':'Pannello Admin','admin.series':'Serie','admin.figurines':'Figurine','admin.contacts':'Messaggi','admin.users':'Utenti',
     'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati:',
     'footer.desc':'Il database fan non ufficiale dedicato alla leggendaria collezione di figurine italiana degli anni \'90. Fatto con 💚 da collezionisti, per collezionisti.',
@@ -10841,6 +11057,28 @@ async function doRegister() {
 //  CHANGE PASSWORD
 // ============================================================
 function openDemoToggleModal() {
+  // v5.956 — la figurina d'esempio (Gastone Bubbone, n. 1 della "Serie 1") NON e' scritta a mano
+  // nell'HTML: si cerca nei dati, cosi' se la foto in Inventario cambia cambia anche qui e le due
+  // non possono divergere. La serie si cerca per NOME perche' l'id non e' stabile fra ambienti.
+  // Si prende la figurina base: senza escludere variazioni e Change, un contrassegno sulla n. 1
+  // porterebbe in guida una foto che non e' quella attesa. Se non si trova nulla — dati non
+  // ancora caricati, serie rinominata — resta l'emoji dell'HTML, che e' meglio di un riquadro rotto.
+  const box = document.getElementById('demo-toggle-img');
+  if (box) {
+    const serie = getData('series', []).find(s => (s.name || '').trim().toLowerCase() === 'serie 1');
+    const fig = serie ? getData('figurines', []).find(f => f.seriesId === serie.id
+        && Number(f.number) === 1
+        && (f.section || 'figurines') === 'figurines'
+        && !f.isVariation && !f.isUnofficialVariation && !f.isChange) : null;
+    if (fig && fig.img) {
+      box.innerHTML = '<img src="' + cloudinaryUrl(fig.img, 'w_180,h_180,c_fit,q_auto,f_auto') +
+                      '" alt="" style="width:100%;height:100%;object-fit:contain;">';
+      const nm = document.getElementById('demo-toggle-name');
+      const sb = document.getElementById('demo-toggle-sub');
+      if (nm && fig.name) nm.textContent = fig.name;
+      if (sb) sb.textContent = (serie.name || 'Serie 1') + ' — N. ' + (fig.number != null ? fig.number : 1);
+    }
+  }
   // Reset demo toggle state
   const btn = document.getElementById('demo-toggle-btn');
   if (btn) {
@@ -11342,7 +11580,7 @@ function updateNavUser() {
     guestNav.style.display = 'none';
     userNav.style.display = 'flex';
     if (wantlistLink) wantlistLink.style.display = '';
-    ['nav-catalog','nav-blog','nav-classifica'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
+    ['nav-catalog','nav-blog','nav-classifica','nav-mialista-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = ''; });
     const navBlogEl = document.getElementById('nav-blog');
     if (navBlogEl) navBlogEl.textContent = currentUser.isAdmin ? 'Blog' : t('nav.blog');
     const nwl = document.getElementById('nav-wishlist'); if (nwl) nwl.style.display = currentUser.isAdmin ? 'none' : '';
@@ -11395,7 +11633,7 @@ function updateNavUser() {
     if (bellBtn2) bellBtn2.style.display = 'none';
     const quotaBtn2 = document.getElementById('nav-quota-warning-btn');
     if (quotaBtn2) quotaBtn2.style.display = 'none';
-    ['nav-catalog','nav-blog','nav-classifica','nav-wishlist'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    ['nav-catalog','nav-blog','nav-classifica','nav-wishlist','nav-mialista-link','nav-logout-link'].forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
     mostraNumeroniHero(false);
     if (document.getElementById('btn-explore-catalog')) document.getElementById('btn-explore-catalog').style.display = 'none';
   }
@@ -14565,8 +14803,21 @@ function renderItems() {
     const _mobileFigCard = _isMobileViewport() && !isRetroCard;
     const scoreInlineHTML = (_mobileFigCard && f.score && f.score > 0)
       ? `<span class="fig-score-inline">⭐ ${f.score} pt</span>` : '';
+    // v5.976 — Franco: se la Categoria e' gia' contenuta all'inizio del Nome (al netto della vocale
+    // finale, tolleranza della v5.907), sulla card si nasconde LA CATEGORIA e si mostra il NOME.
+    // Fin qui la regola era l'opposto — si nascondeva il NOME — ma scattava solo sulla coincidenza
+    // ESATTA (v5.780), e in quel caso le due stringhe sono identiche: nascondere l'una o l'altra
+    // dava lo stesso pixel, quindi quale dei due si sopprimesse non si vedeva. Allargando la
+    // condizione a "il nome comincia con la categoria" la scelta diventa visibile, e va nell'altro
+    // verso: con categoria "CERTIFICATO" e nome "CERTIFICATO DI ANTIPATICO", nascondere il nome
+    // avrebbe reso i 218 retro di Serie 1 identici a schermo, cancellando l'unica cosa che li
+    // distingue. La Sottocategoria non si perde: quando la categoria sparisce, scende in riga 2.
+    const _retroCatNelNome = isRetroCard && _retroNameStartsWithCategory(f);
+    const _retroSub = (f.subcategory || '').trim();
     const figNameInner = isRetroCard
-      ? esc(catParts.length ? catParts.join(' · ') : (currentLang === 'it' ? '(senza categoria)' : '(no category)'))
+      ? esc(_retroCatNelNome
+              ? (f.name || '')
+              : (catParts.length ? catParts.join(' · ') : (currentLang === 'it' ? '(senza categoria)' : '(no category)')))
       : (_mobileFigCard
           ? `<span class="fig-number" style="font-size:1.05rem;">${figLabel}</span>${scoreInlineHTML}` +
             (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line">${catPrefix}${f.name}</div>`)
@@ -14577,9 +14828,13 @@ function renderItems() {
     // con", troppo largo qui). La Sottocategoria non entra nel confronto: si guarda solo la Categoria.
     const _retroNameEqualsCategory = (f.name || '').trim() !== '' &&
       (f.name || '').trim().toLowerCase() === (f.category || '').trim().toLowerCase();
-    const retroNameLineHTML = (isRetroCard && f.name && !_retroNameEqualsCategory)
-      ? `<div style="font-size:0.9rem;color:var(--text);margin-top:1px;">${esc(f.name || '')}</div>`
-      : '';
+    const retroNameLineHTML = !isRetroCard ? ''
+      : (_retroCatNelNome
+          // categoria nascosta: in riga 2 resta la sola Sottocategoria, se c'e'
+          ? (_retroSub ? `<div style="font-size:0.78rem;color:var(--muted);">${esc(_retroSub)}</div>` : '')
+          : ((f.name && !_retroNameEqualsCategory)
+              ? `<div style="font-size:0.9rem;color:var(--text);margin-top:1px;">${esc(f.name || '')}</div>`
+              : ''));
     const imgAspectRatio = currentSection === 'retros' ? '1.6' : '1';
     // LA SCRITTA DEL TIPO VIVE SOLO NEI RETRO (v5.705).
       // Nelle FIGURINE era ridondante: il badge in alto a destra dice gia' il tipo, ed
@@ -15424,9 +15679,28 @@ function renderProfile() {
   const ownedFigs = allFigs.filter(f => owned.includes(f.id));
   const profileStatsBox = document.getElementById('profile-stats-box');
   if (profileStatsBox) profileStatsBox.style.display = currentUser.isAdmin ? 'none' : '';
-  document.getElementById('profile-owned').textContent = ownedFigs.length;
   const seriesIds = [...new Set(ownedFigs.map(f => f.seriesId))];
-  document.getElementById('profile-series-count').textContent = seriesIds.length;
+  // v5.974 — "I tuoi numeri Sgorbions" non e' piu' un numero solo: una cella per TIPOLOGIA.
+  // Il totale di prima era etichettato "Nella Mia Lista" ma contava TUTTO insieme — figurine,
+  // retro, album, bustine e altri oggetti — quindi diceva meno di quanto sembrava: chi leggeva
+  // "120" pensava a 120 figurine. Ora le tipologie sono esplicite e il totale resta in coda,
+  // dichiarato come totale.
+  // Le celle si generano dall'elenco delle sezioni: aggiungerne una domani non richiede toccare
+  // l'HTML. Le etichette portano un data-i18n perche' renderAll() NON ridisegna il profilo —
+  // senza quello, cambiando lingua resterebbero nella lingua di prima.
+  // Gli id profile-owned e profile-series-count restano dove sono: updateOwnedCounter() scrive
+  // nel primo, e togliergli l'id lo avrebbe fatto smettere di funzionare in silenzio.
+  if (profileStatsBox) {
+    const sezioni = ['figurines', 'retros', 'albums', 'bustine', 'extras'];
+    const cella = (num, chiave, testo, id) =>
+      '<div><div class="profile-stat-num"' + (id ? ' id="' + id + '"' : '') + '>' + num + '</div>' +
+      '<div class="profile-stat-label" data-i18n="' + chiave + '">' + testo + '</div></div>';
+    profileStatsBox.innerHTML =
+      sezioni.map(sec => cella(ownedFigs.filter(f => (f.section || 'figurines') === sec).length,
+                               'profile.sec.' + sec, getSectionLabel(sec))).join('') +
+      cella(ownedFigs.length, 'profile.total', (currentLang === 'it' ? 'Totale' : 'Total'), 'profile-owned') +
+      cella(seriesIds.length, 'profile.series', (currentLang === 'it' ? 'Serie Tracciate' : 'Series Tracked'), 'profile-series-count');
+  }
   document.getElementById('admin-panel').style.display = currentUser.isAdmin ? '' : 'none';
   if (currentUser.isAdmin) {
     const currentActiveTab = document.querySelector('.admin-tab.active');
@@ -20916,14 +21190,19 @@ function renderWantlist() {
     const prefs = getWantlistPrefs();
     const completeBoxes = completeSeries.map(s => {
       const incOwned = prefs[s.id]?.includeOwned !== false;
-      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
-        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--success);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&!f.isVariation&&!f.isUnofficialVariation&&!f.isChange); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
-        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? 'var(--info)' : 'var(--border)'};background:${!incOwned ? 'rgba(var(--info-rgb),0.15)' : 'var(--card2)'};color:${!incOwned ? 'var(--info)' : 'var(--muted)'};cursor:pointer;">
-          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della tua lista' : 'Exclude from owned stickers export'}
-        </button>
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.35rem;">
+          <span style="font-family:var(--font-display);font-size:1.2rem;">${s.name} <span class="card-badge" style="color:var(--success);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&!f.isVariation&&!f.isUnofficialVariation&&!f.isChange); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:1.1rem;flex-wrap:wrap;margin-bottom:0.4rem;">
+          <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
+            <input type="checkbox" onchange="toggleOwnedInclude('${s.id}')" ${!incOwned ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span style="color:${!incOwned ? 'var(--info)' : 'var(--muted)'};">${(currentLang === 'it') ? 'Escludi da export' : 'Exclude from export'}</span>
+          </label>
+        </div>
       </div>`;
     }).join('');
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! La tua lista comprende tutti gli oggetti dell\'inventario Sgorbions!' : 'Congrats! Your list includes every item in the Sgorbions inventory!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;">' + (currentLang === 'it' ? 'SEZIONE 2: EXPORT DELLE TUE SERIE COMPLETE' : 'SECTION 2: EXPORT OF YOUR COMPLETE SERIES') + '</h2><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto <i style="color:#fff;">Esporta lista figurine mie serie complete</i>.' : 'Select the series for which you want to export your stickers. Then press <i style="color:#fff;">Export my complete series stickers</i>.') + '</p><div style="margin-bottom:1rem;"><button class="btn-primary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes : '');
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! La tua lista comprende tutti gli oggetti dell\'inventario Sgorbions!' : 'Congrats! Your list includes every item in the Sgorbions inventory!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;">' + (currentLang === 'it' ? 'EXPORT 3: LE TUE SERIE COMPLETE' : 'EXPORT 3: YOUR COMPLETE SERIES') + '</h2><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? '<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per le quali esportare l\'elenco delle figurine.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine mie serie complete</i>.' : '<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which you want to export your stickers.<br>Then press <i style="color:#fff;">Export my complete series stickers</i>.') + '</p><div class="wl-row"><div class="wl-list">' + completeBoxes + '</div><div class="wl-cta"><button class="btn-primary" onclick="exportOwnedList()">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div></div>' : '');
     return;
   }
 
@@ -20941,18 +21220,26 @@ function renderWantlist() {
     return (aS?.order ?? 9999) - (bS?.order ?? 9999);
   });
 
-  // === SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE (titolo generale) ===
-  let html = '<h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;">' + (currentLang === 'it' ? 'SEZIONE 1: EXPORT DELLE TUE SERIE INCOMPLETE' : 'SECTION 1: EXPORT OF YOUR INCOMPLETE SERIES') + '</h2>';
-  // === SEZIONE 1a: Lista degli oggetti non nella tua lista ===
-  html += '<h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'SEZIONE 1a: LISTA DEGLI OGGETTI NON NELLA TUA LISTA' : 'SECTION 1a: LIST OF ITEMS NOT IN MY LIST') + '</h3><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.' : 'Select the series for which to export the list of items not in your list. Then press <i style="color:#fff;">Export items not in my list</i>.') + '</p><div style="margin-bottom:1rem;"><button class="btn-primary" onclick="exportWantlist(this)">' + (currentLang === 'it' ? 'Esporta lista oggetti non nella tua lista' : 'Export items not in my list') + '</button></div>';
+  // === EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA (titolo generale) ===
+  let html = '<h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;">' + (currentLang === 'it' ? 'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA' : 'EXPORT 1: ITEMS NOT IN YOUR LIST') + '</h2>';
+  // === Oggetti non nella tua lista ===
+  // v5.958 — l'intestazione "SEZIONE 1a: LISTA DEGLI OGGETTI NON NELLA TUA LISTA" e' stata TOLTA
+  // (Franco): il titolo della SEZIONE 1 ora dice la stessa cosa e ripeterla era rumore. Restano
+  // il paragrafo di istruzioni e il pulsante di export, che erano attaccati a quell'h3.
+  html += '<p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? '<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.' : '<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:#fff;">Export items not in my list</i>.') + '</p>';
 
+  // v5.962 — due colonne: a sinistra i rettangoli delle serie, a destra il pulsante di export,
+  // allineato in alto e quindi all'altezza del PRIMO rettangolo. Il pulsante stava sopra l'elenco;
+  // di fianco, i rettangoli si stringono esattamente di quanto serve a lui, senza fissare nessuna
+  // larghezza a mano. Le classi vivono in index.html, dove c'e' anche la media query che sotto gli
+  // 860px rimette tutto in colonna col pulsante di nuovo SOPRA (order:-1), com'era prima.
+  html += '<div class="wl-row"><div class="wl-list">';
   html += sortedEntries.map(([sId, figs]) => {
     const s = series.find(x => x.id === sId);
     const seriesPrefs = getWantlistPrefs();
     const seriesIncVariations = seriesPrefs[sId]?.includeVariations || false;
     const figurinesOnlyMissing = allFigs.filter(f => f.seriesId === sId && (f.section || 'figurines') === 'figurines' && !owned.includes(f.id) && (seriesIncVariations || isBaseItem(f))).length;
     const figurinesOnlyTotal = allFigs.filter(f => f.seriesId === sId && (f.section || 'figurines') === 'figurines' && (seriesIncVariations || isBaseItem(f))).length;
-    const ownedCount = figurinesOnlyTotal - figurinesOnlyMissing;
     const bySection = {};
     figs.forEach(f => {
       const sec = f.section || 'figurines';
@@ -20966,24 +21253,27 @@ function renderWantlist() {
         const excMissing = prefs[sId]?.excludeMissing || false;
         const incVariations = prefs[sId]?.includeVariations || false; // default false
         return `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem;flex-wrap:wrap;gap:0.4rem;">
-          <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
-            <span style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;cursor:pointer;" onclick="toggleWantlistCollapse('${sId}')">
-              <span style="font-size:0.8rem;color:var(--muted);user-select:none;">${_wantlistCollapsed[sId] === false ? '▼' : '▶'}</span>
-              <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')}</span>
-              <span class="card-badge" style="color:#5ec8f0;">${figurinesOnlyMissing} ${currentLang === 'it' ? 'figurine non nella tua lista su' : 'stickers not in my list out of'} ${figurinesOnlyTotal}</span>
-            </span>
-            <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
-              <input type="checkbox" onchange="toggleIncludeVariations('${sId}')" ${incVariations ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-              <span style="color:${incVariations ? 'var(--accent)' : 'var(--muted)'};">${currentLang === 'it' ? 'Includere variazioni/change' : 'Include variations/change'}</span>
-            </label>
-          </div>
+        <!-- v5.962 — RIGA 1: solo freccia, nome e badge. Le due spunte sono scese alla riga 2,
+             al posto della barra della percentuale: la barra ripeteva in grafica il "N su M" del
+             badge accanto al nome. Cosi' la riga 1 e' corta e il rettangolo puo' stringersi,
+             lasciando spazio al pulsante di export sulla destra. -->
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.35rem;">
+          <span style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;cursor:pointer;" onclick="toggleWantlistCollapse('${sId}')">
+            <span style="font-size:0.8rem;color:var(--muted);user-select:none;">${_wantlistCollapsed[sId] === false ? '▼' : '▶'}</span>
+            <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')}</span>
+            <span class="card-badge" style="color:#5ec8f0;">${figurinesOnlyMissing} ${currentLang === 'it' ? 'figurine non nella tua lista su' : 'stickers not in my list out of'} ${figurinesOnlyTotal}</span>
+          </span>
+        </div>
+        <div style="display:flex;align-items:center;gap:1.1rem;flex-wrap:wrap;margin-bottom:0.4rem;">
+          <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
+            <input type="checkbox" onchange="toggleIncludeVariations('${sId}')" ${incVariations ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span style="color:${incVariations ? 'var(--accent)' : 'var(--muted)'};">${currentLang === 'it' ? 'Includere variazioni/change nell\'export' : 'Include variations/change in the export'}</span>
+          </label>
           <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
             <input type="checkbox" onchange="toggleWantlistExclude('${sId}')" ${excMissing ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span style="color:${excMissing ? 'var(--info)' : 'var(--muted)'};">${currentLang === 'it' ? 'Escludi da export "Oggetti non nella tua lista"' : 'Exclude from export "Items not in my list"'}</span>
+            <span style="color:${excMissing ? 'var(--info)' : 'var(--muted)'};">${currentLang === 'it' ? 'Escludi da export' : 'Exclude from export'}</span>
           </label>
         </div>
-        ${!excMissing ? '<div class="progress-bar" style="margin-bottom:0.5rem;"><div class="progress-fill" style="width:' + Math.round(ownedCount/figurinesOnlyTotal*100) + '%"></div></div>' : ''}
         `;
       })()}
       ${(() => { if (_wantlistCollapsed[sId] !== false) return ''; const prefs = getWantlistPrefs(); if (prefs[sId]?.excludeMissing) return '<p style="color:var(--muted);font-size:0.82rem;font-style:italic;">' + (currentLang === 'it' ? 'Esclusa dalla mancolista.' : 'Excluded from missing list.') + '</p>'; const sectionOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine']; return Object.entries(bySection).sort(([secA], [secB]) => sectionOrder.indexOf(secA) - sectionOrder.indexOf(secB)).map(([sec, items]) => {
@@ -21056,10 +21346,14 @@ function renderWantlist() {
       }).join(''); })()}
     </div>`;
   }).join('');
+  html += '</div><div class="wl-cta"><button class="btn-primary" onclick="exportWantlist(this)">' + (currentLang === 'it' ? 'Esporta lista oggetti non nella tua lista' : 'Export items not in my list') + '</button></div></div>';
 
-  // === SEZIONE 1b: Lista figurine nella mia lista (serie incomplete) ===
-  html += '<hr style="border-color:var(--border);margin:1.5rem 0;"><h3 style="font-family:var(--font-ui);font-size:1.2rem;margin-bottom:0.4rem;">' + (currentLang === 'it' ? 'SEZIONE 1b: LISTA FIGURINE NELLA TUA LISTA' : 'SECTION 1b: LIST OF STICKERS IN MY LIST') + '</h3><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? 'Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista. Poi premi il tasto <i style="color:#fff;">Esporta la tua lista di figurine (solo serie incomplete)</i>.' : 'Select the series for which to export the list of stickers in your list. Then press <i style="color:#fff;">Export my sticker list (incomplete series only)</i>.') + '</p><div style="margin-bottom:1.5rem;"><button class="btn-primary" onclick="exportOwnedIncomplete(this)">' + (currentLang === 'it' ? 'Esporta figurine serie incomplete' : 'Export my sticker list (incomplete series only)') + '</button></div>';
+  // === EXPORT 2: figurine presenti nella tua lista, serie NON complete ===
+  html += '<hr style="border-color:var(--border);margin:1.5rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;">' + (currentLang === 'it' ? 'EXPORT 2: FIGURINE PRESENTI NELLA TUA LISTA (SERIE NON COMPLETE)' : 'EXPORT 2: STICKERS IN YOUR LIST (INCOMPLETE SERIES)') + '</h2><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? '<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.' : '<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:#fff;">Export list of stickers in your list (incomplete series only)</i>.') + '</p>';
 
+  // v5.967 — come la SEZIONE 1 (v5.962): rettangoli a sinistra, pulsante di export a destra,
+  // allineato in alto e quindi all'altezza della prima riga.
+  html += '<div class="wl-row"><div class="wl-list">';
   html += sortedEntries.map(([sId]) => {
     const s = series.find(x => x.id === sId);
     const prefs = getWantlistPrefs();
@@ -21068,13 +21362,19 @@ function renderWantlist() {
     const figurinesOnlyTotal = allFigs.filter(f => f.seriesId === sId && (f.section || 'figurines') === 'figurines' && (seriesIncVariations || isBaseItem(f))).length;
     const figurinesOnlyMissing = allFigs.filter(f => f.seriesId === sId && (f.section || 'figurines') === 'figurines' && !owned.includes(f.id) && (seriesIncVariations || isBaseItem(f))).length;
     const ownedCount = figurinesOnlyTotal - figurinesOnlyMissing;
-    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
-      <span style="font-family:var(--font-display);font-size:1.1rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')} <span style="font-size:0.8rem;color:var(--accent);">(${ownedCount}&nbsp;/&nbsp;${figurinesOnlyTotal}&nbsp;${currentLang==='it'?'nella tua lista':'in my list'})</span></span>
-      <button onclick="toggleOwnedInclude('${sId}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? 'var(--info)' : 'var(--border)'};background:${!incOwned ? 'rgba(var(--info-rgb),0.15)' : 'var(--card2)'};color:${!incOwned ? 'var(--info)' : 'var(--muted)'};cursor:pointer;">
-        ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della tua lista' : 'Exclude from owned stickers export'}
-      </button>
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.35rem;">
+        <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')} <span class="card-badge" style="color:var(--accent);">(${ownedCount}&nbsp;/&nbsp;${figurinesOnlyTotal}&nbsp;${currentLang==='it'?'nella tua lista':'in my list'})</span></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:1.1rem;flex-wrap:wrap;margin-bottom:0.4rem;">
+        <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
+          <input type="checkbox" onchange="toggleOwnedInclude('${sId}')" ${!incOwned ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <span style="color:${!incOwned ? 'var(--info)' : 'var(--muted)'};">${(currentLang === 'it') ? 'Escludi da export' : 'Exclude from export'}</span>
+        </label>
+      </div>
     </div>`;
   }).join('');
+  html += '</div><div class="wl-cta"><button class="btn-primary" onclick="exportOwnedIncomplete(this)">' + (currentLang === 'it' ? 'Esporta lista figurine presenti nella tua lista (solo serie incomplete)' : 'Export list of stickers in your list (incomplete series only)') + '</button></div></div>';
 
   el.innerHTML = html;
 
@@ -21083,14 +21383,19 @@ function renderWantlist() {
     const prefs = getWantlistPrefs();
     const completeBoxes = completeSeries.map(s => {
       const incOwned = prefs[s.id]?.includeOwned !== false;
-      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.4rem;">
-        <span style="font-family:var(--font-display);font-size:1.1rem;">${s.name} <span style="font-size:0.8rem;color:var(--success);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&!f.isVariation&&!f.isUnofficialVariation&&!f.isChange); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
-        <button onclick="toggleOwnedInclude('${s.id}')" style="font-size:0.72rem;padding:2px 8px;border-radius:8px;border:1px solid ${!incOwned ? 'var(--info)' : 'var(--border)'};background:${!incOwned ? 'rgba(var(--info-rgb),0.15)' : 'var(--card2)'};color:${!incOwned ? 'var(--info)' : 'var(--muted)'};cursor:pointer;">
-          ${!incOwned ? '✓ ' : ''}${(currentLang === 'it') ? 'Escludi da export figurine della tua lista' : 'Exclude from owned stickers export'}
-        </button>
+      return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;">
+        <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.35rem;">
+          <span style="font-family:var(--font-display);font-size:1.2rem;">${s.name} <span class="card-badge" style="color:var(--success);">✓ (${(() => { const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id&&f.section==='figurines'&&!f.isVariation&&!f.isUnofficialVariation&&!f.isChange); return figs.length; })()}&nbsp;${currentLang==='it'?'figurine':'stickers'})</span></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:1.1rem;flex-wrap:wrap;margin-bottom:0.4rem;">
+          <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.82rem;">
+            <input type="checkbox" onchange="toggleOwnedInclude('${s.id}')" ${!incOwned ? 'checked' : ''} style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span style="color:${!incOwned ? 'var(--info)' : 'var(--muted)'};">${(currentLang === 'it') ? 'Escludi da export' : 'Exclude from export'}</span>
+          </label>
+        </div>
       </div>`;
     }).join('');
-    el.innerHTML += '<hr style="border-color:var(--border);margin:1.5rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;">' + (currentLang === 'it' ? 'SEZIONE 2: EXPORT DELLE TUE SERIE COMPLETE' : 'SECTION 2: EXPORT OF YOUR COMPLETE SERIES') + '</h2><p style="font-size:1.05rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang === 'it' ? 'Seleziona le serie per le quali esportare l\'elenco delle figurine. Poi premi il tasto <i style="color:#fff;">Esporta lista figurine mie serie complete</i>.' : 'Select the series for which you want to export your stickers. Then press <i style="color:#fff;">Export my complete series stickers</i>.') + '</p><div style="margin-bottom:1rem;"><button class="btn-primary" onclick="exportOwnedList()" style="font-size:0.88rem;">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div>' + completeBoxes;
+    el.innerHTML += '<hr style="border-color:var(--border);margin:1.5rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;">' + (currentLang === 'it' ? 'EXPORT 3: LE TUE SERIE COMPLETE' : 'EXPORT 3: YOUR COMPLETE SERIES') + '</h2><p style="color:var(--muted);font-size:0.88rem;margin-bottom:0.75rem;">' + (currentLang === 'it' ? '<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per le quali esportare l\'elenco delle figurine.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine mie serie complete</i>.' : '<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which you want to export your stickers.<br>Then press <i style="color:#fff;">Export my complete series stickers</i>.') + '</p><div class="wl-row"><div class="wl-list">' + completeBoxes + '</div><div class="wl-cta"><button class="btn-primary" onclick="exportOwnedList()">' + (currentLang === 'it' ? 'Esporta lista figurine mie serie complete' : 'Export my complete series stickers') + '</button></div></div>';
   }
 }
 
@@ -21304,6 +21609,10 @@ if (_langBtn) {
 if (currentUser?._impersonated) { _realAdmin = null; currentUser._impersonated = false; } // safety reset on load
 const jsVerEl = document.getElementById('nav-js-version');
 if (jsVerEl) jsVerEl.textContent = JS_VERSION;
+// v5.954 — la versione mostrata sotto il banner su telefono: presa da JS_VERSION, non scritta
+// nell'HTML, per non aggiungere un punto di versione da bumpare a mano ad ogni release.
+const appVerMobEl = document.getElementById('nav-app-version-mobile');
+if (appVerMobEl) appVerMobEl.textContent = JS_VERSION;
 const cssVerEl = document.getElementById('nav-css-version');
 if (cssVerEl) cssVerEl.textContent = CSS_VERSION;
 initFirebase().catch(e => {
