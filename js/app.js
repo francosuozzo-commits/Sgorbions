@@ -1,6 +1,60 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.978 - Franco, terza segnalazione dello stesso difetto (v5.336, v5.564, oggi): l'ultima riga
+//          di ogni pagina lasciava celle vuote. Le prime due volte era stata sostituita una stima
+//          con un'altra stima; questa volta si MISURA. Causa vera, e non c'entravano le famiglie:
+//          il tetto era contato in CARD (30) e le colonne reali sono 4, quindi 30 = 7x4 + 2 e quel
+//          resto di 2 era il buco — presente anche col filtro "solo carte base", dove di famiglie
+//          da tenere insieme non ce n'e' nessuna. Il 30 nasceva da ROWS_PER_PAGE(6) x 5 colonne,
+//          e il 5 da _estimateWideModeCols() che assumeva un contenitore di 1800px (il max-width
+//          della griglia): 5x350 + 4x12 = 1798 <= 1800, cinque colonne per 2 pixel. La griglia
+//          vera su una finestra da 1536px CSS e' 1475px, dove entrano 4 card. Il 6 di ROWS_PER_PAGE
+//          non era a sua volta motivato: in v5.336 fu ricavato all'indietro da 42/7 per non
+//          cambiare il numero di card che le Figurine avevano prima.
+//          Cosa cambia: (a) nuova _gridGeometry() che LEGGE colonne e larghezza dallo stile
+//          calcolato — e decide da lui, non da _retroViewMode, perche' sotto gli 860px il CSS
+//          riporta la griglia a 4 colonne con !important anche in 'destra-piena' (v5.821);
+//          (b) via _estimateWideModeCols() e getItemsPerPage(): la pagina si misura in RIGHE
+//          (ROWS_PER_PAGE ora 7) e il tetto in card non esiste piu' come concetto, e' una
+//          conseguenza; (c) buildItemPages() riempie a famiglie intere finche' sta nelle righe.
+//          Col filtro base il buco sparisce del tutto; con variazioni/Change/errori in pagina puo'
+//          restare 1-3 celle, e non e' pigrizia: le famiglie sono blocchi indivisibili da 1 a 5 e
+//          nella Serie 1 124 su 160 hanno dimensione PARI, quindi un buco dispari non e' colmabile
+//          da nessuna di esse. Le alternative misurate sono peggio (arretrare a riga tonda da'
+//          pagine da UNA riga; crescere fa ballare la pagina fra 28 e 36 card).
+//          Corretta anche una divergenza vera: _itemHasWidePair() non coincideva col renderer —
+//          ignorava che i CHANGE con retro proprio o ereditato sono card larghe (v5.786) e che su
+//          telefono col filtro base il retro non si affianca (v5.853). La paginazione partiva
+//          quindi da larghezze sbagliate.
+//          PRESTAZIONI, trovate misurando invece di supporre: l'ordinamento costava 163 ms per le
+//          800 figurine della Serie 3 AD OGNI cambio pagina, perche' il comparatore cercava base e
+//          retro con allFigs.find(...) — scansione lineare di ~3300 oggetti fino a tre volte per
+//          confronto. Nuova _figIndex() (Map id -> oggetto, costruita una volta per render): 1,4 ms,
+//          con ordine identico verificato carattere per carattere. Totale per click da ~180 ms a
+//          ~2,6 ms, di cui 0,3 per il calcolo delle pagine. Nessuna cache: a 2,6 ms non serve, e
+//          una cache va invalidata. Spostato il blocco che imposta la geometria della griglia PRIMA
+//          del calcolo delle pagine, altrimenti la misura descrive il render precedente. Solo app.js.
+// ------------------------------------------------------------
+// v5.977 - Franco: una pagina non deve mai finire con una figurina separata dalle sue variazioni,
+//          Change ed errori di stampa; se il taglio cadrebbe li' dentro, l'intera famiglia slitta
+//          alla pagina successiva. Vale identico per i Retro (Change ed errori di stampa; le
+//          variazioni per loro non esistono). La famiglia e' "base + tutto cio' che ha quel
+//          baseFigurineId", contata sui soli oggetti VISIBILI: con il filtro "solo base" ogni
+//          famiglia vale 1 e la regola degenera nella paginazione di prima, senza casi speciali.
+//          Non e' servito toccare l'ORDINAMENTO: simulato su tutte e 6 le serie, entrambe le
+//          sezioni, le famiglie erano gia' contigue in 100% dei casi (max 5 elementi). Nuove
+//          buildItemPages() e _familyKey(); i confini vivono in _itemPages e da li' li leggono
+//          renderItems, l'etichetta e changeItemPage. Conseguenza voluta: le pagine hanno
+//          lunghezza VARIABILE (<= tetto) e l'ultima riga puo' restare spaiata.
+//          Due cose che dipendevano dal "tutte le pagine lunghe uguale" e ora non piu':
+//          (a) l'intervallo "figurine 1..30 di 800" era firstNum + (pagina-1) x tetto, e avrebbe
+//              annunciato numeri non presenti nella pagina: ora si legge dai confini veri;
+//          (b) changeItemPage ricalcolava il totale pagine dividendo l'elenco NON filtrato della
+//              sezione — con un filtro attivo dava piu' pagine di quelle esistenti e lasciava i
+//              pulsanti attivi su pagine vuote (lo rattoppava renderItems a valle). Difetto
+//              preesistente, sparito ora che la fonte del totale e' una sola. Solo app.js.
+// ------------------------------------------------------------
 // v5.976 - Franco: sulla card dei RETRO, se la Categoria e' contenuta all'inizio del Nome (al netto
 //          della vocale finale) si nasconde LA CATEGORIA e si mostra il Nome — non il contrario.
 //          Prima la regola sopprimeva il Nome, ma solo sulla coincidenza ESATTA (v5.780): con due
@@ -9435,7 +9489,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.976';
+const JS_VERSION = 'v5.978';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12681,50 +12735,149 @@ function navigateFigDetail(direction) {
   if (newIdx < 0 || newIdx >= _gridOrderedIds.length) return;
   openFigDetail(_gridOrderedIds[newIdx]);
 }
-const ROWS_PER_PAGE = 6;
-// Determina se una figurina, nella griglia, mostrerà la coppia fronte+retro (card larga,
-// 350px) invece della singola foto (card normale, 247px) — stessa logica usata in
-// renderItems() per costruire le card, estratta qui per essere riusata anche nel calcolo
-// della paginazione (getItemsPerPage) in modalità "Fronte e retro sempre grandi"
-function _itemHasWidePair(f, allFigs) {
+const ROWS_PER_PAGE = 7;
+
+// Indice id -> oggetto, costruito UNA VOLTA per render e passato a chi serve. Prima ogni
+// confronto dell'ordinamento cercava la figurina base e il retro con allFigs.find(...), cioe' una
+// scansione lineare di ~3300 oggetti fino a tre volte per confronto: 163 ms per ordinare 800
+// figurine, e l'ordinamento gira ad OGNI cambio pagina. Con la Map: 1,4 ms, a ordine identico
+// (verificato confrontando le due sequenze di id carattere per carattere). Non si conserva fra
+// una chiamata e l'altra di proposito: costa 0,6 ms rifarla, e una Map tenuta in giro andrebbe
+// invalidata ad ogni scrittura sui dati — le cache mal invalidate sono il bug che poi si
+// manifesta come "la modifica non c'e'".
+function _figIndex(allFigs) {
+  const m = new Map();
+  for (let i = 0; i < allFigs.length; i++) m.set(allFigs[i].id, allFigs[i]);
+  return m;
+}
+
+// Una figurina mostrera' nella griglia la card LARGA (350px) invece di quella normale (247px)?
+// v5.978 — questa funzione ora ricalca ESATTAMENTE il ramo di renderItems() che accende
+// hasWidePair. Prima divergeva in due punti, e la paginazione partiva quindi da larghezze
+// sbagliate: (1) ignorava i CHANGE, che nel renderer sono larghi quando hanno un retro proprio
+// o ereditato dalla base (_effRetroId, v5.786); (2) ignorava _soloFronte, cioe' che su telefono
+// col filtro "Figurine set base" il retro non si affianca affatto (v5.853). Aggiunto anche il
+// controllo sulla modalita': la card larga esiste solo in 'destra-piena'.
+// Se un giorno cambia il ramo in renderItems, va cambiato qui: sono due copie della stessa
+// verita', e l'unica difesa e' che questo commento lo dica.
+function _itemHasWidePair(f, allFigs, idx) {
   if (f.section !== 'figurines') return false;
+  if (_retroViewMode !== 'destra-piena') return false;
+  if (_isMobileViewport() && _itemTypeFilter === 'base') return false; // _soloFronte
+  const get = id => (idx ? idx.get(id) : allFigs.find(x => x.id === id));
   const isBaseFig = !f.isVariation && !f.isUnofficialVariation && !f.isChange;
-  if (!(((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && f.retroId) || (isBaseFig && f.retroId))) return false;
-  const baseFigDual = isBaseFig ? f : allFigs.find(x => x.id === f.baseFigurineId);
-  const retroFigDual = allFigs.find(x => x.id === f.retroId);
+  const baseForChange = (f.isChange && f.baseFigurineId) ? get(f.baseFigurineId) : null;
+  const effRetroId = f.isChange ? (f.retroId || baseForChange?.retroId || null) : f.retroId;
+  if (!(((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && f.retroId)
+      || (f.isChange && f.baseFigurineId && effRetroId)
+      || (isBaseFig && f.retroId))) return false;
+  const baseFigDual = isBaseFig ? f : (baseForChange || get(f.baseFigurineId));
+  const retroFigDual = get(effRetroId);
   return !!(baseFigDual?.img && retroFigDual?.img);
 }
 
-// Stima quante card entrano per riga in modalità "Fronte e retro sempre grandi", dato il
-// mix di card larghe (350px, quelle con coppia fronte+retro) e normali (247px) presenti
-// nell'insieme filtrato corrente — non è precisa al 100% (il mix esatto per riga dipende
-// dall'ordine specifico degli oggetti), ma è una buona approssimazione, molto meglio del
-// presupposto fisso di 7 colonne uguali usato dalle altre modalità
-function _estimateWideModeCols(items) {
-  if (!items.length) return 5;
-  const allFigs = getData('figurines', []);
-  const wideCount = items.filter(f => _itemHasWidePair(f, allFigs)).length;
-  const wideRatio = wideCount / items.length;
-  const avgWidth = wideRatio * 350 + (1 - wideRatio) * 247;
-  const gap = 12; // 0.75rem
-  const containerW = 1800;
-  return Math.max(1, Math.floor((containerW + gap) / (avgWidth + gap)));
+// Geometria REALE della griglia. Nessun numero di colonne assunto: si LEGGE quello che c'e'.
+// Questo sostituisce _estimateWideModeCols(), che assumeva un contenitore di 1800px (il
+// max-width della griglia) e ne ricavava 5 colonne con un margine di 2 pixel:
+// 5x350 + 4x12 = 1798 <= 1800. Su una finestra da 1536px CSS il contenitore vero e' 1475px, dove
+// entrano 4 card, non 5 — ed e' da qui che veniva il tetto di 30 (ROWS_PER_PAGE 6 x 5) e le due
+// celle orfane in fondo ad ogni pagina, segnalate da Franco in v5.336, in v5.564 e di nuovo oggi.
+// Le prime due volte una stima e' stata sostituita da un'altra stima; questa volta si misura.
+// Si decide dallo stile CALCOLATO, non da _retroViewMode: sotto gli 860px il CSS riporta la
+// griglia a 4 colonne con !important anche in 'destra-piena' (v5.821), e leggendo la modalita'
+// si crederebbe di essere in flex mentre il browser sta impaginando a griglia.
+// UNA sola lettura di layout per render: leggere clientWidth/getComputedStyle forza il calcolo
+// del layout, e farlo dentro un ciclo sarebbe il modo classico di rendere lento tutto.
+// Quante colonne dice il valore CALCOLATO di grid-template-columns. Non e' banale: a griglia
+// VISIBILE il browser lo restituisce risolto in pixel ("285.3px 285.3px ..." — cinque token per
+// cinque colonne) e basta contarli; a griglia NASCOSTA lo restituisce NON risolto, cosi' com'e'
+// scritto ("repeat(7, 1fr)"), e contare i token a spazi darebbe 2. Verificato sul sito in entrambi
+// gli stati: e' un errore che sarebbe passato inosservato, perche' 2 colonne non fanno eccezione,
+// fanno solo pagine sbagliate.
+function _colsFromTracks(tracks, fallback) {
+  if (!tracks || tracks === 'none') return fallback;
+  const tok = tracks.trim().split(/\s+/);
+  if (tok.length && tok.every(t => t.endsWith('px'))) return tok.length;
+  const m = tracks.match(/repeat\(\s*(\d+)/);
+  if (m) return parseInt(m[1], 10);
+  return fallback;
 }
 
-function getItemsPerPage() {
-  // In modalità "Fronte e retro sempre grandi", le colonne non sono un numero fisso (le
-  // card hanno larghezze diverse) — le stimiamo dal mix reale di card larghe/normali
-  // dell'insieme filtrato corrente, così la paginazione riempie comunque righe complete
-  // (un multiplo del numero di colonne stimato), come nelle altre 4 modalità
-  if (currentSection === 'figurines' && _retroViewMode === 'destra-piena') {
-    const cols = _estimateWideModeCols(getCurrentlyFilteredItems());
-    return ROWS_PER_PAGE * cols;
+function _gridGeometry() {
+  const fallbackCols = currentSection === 'retros' ? 5 : 7;
+  const grid = document.getElementById('items-grid');
+  if (!grid) return { kind: 'grid', cols: fallbackCols };
+  const cs = getComputedStyle(grid);
+  if (cs.display !== 'flex') {
+    return { kind: 'grid', cols: Math.max(1, _colsFromTracks(cs.gridTemplateColumns, fallbackCols)) };
   }
-  // Colonne reali della griglia per la sezione corrente (vedi renderItems):
-  // 5 per i Retro, 7 per tutte le altre sezioni (classe CSS .grid-6)
-  const cols = currentSection === 'retros' ? 5 : 7;
-  return ROWS_PER_PAGE * cols;
+  // Griglia in flex (modalita' 'destra-piena'): le card hanno due larghezze, quindi il numero di
+  // card per riga NON e' costante e va simulato riga per riga. Se la sezione e' nascosta
+  // clientWidth vale 0: si ripiega sulla stessa formula che renderItems scrive su grid.style.width.
+  const width = grid.clientWidth || Math.min(1800, Math.round(window.innerWidth * 0.96));
+  const gap = parseFloat(cs.columnGap) || parseFloat(cs.gap) || 12;
+  return { kind: 'flex', width, gap };
 }
+
+// Chiave di FAMIGLIA: un oggetto base e tutto cio' che vi si aggancia (variazioni ufficiali e non,
+// Change, errori di stampa) portano la stessa chiave. Il legame e' sempre baseFigurineId — vale
+// identico per Figurine e Retro (i Retro non hanno variazioni, ma hanno Change ed errori di stampa).
+function _familyKey(f) { return f.baseFigurineId || f.id; }
+
+// Confini delle pagine, sull'elenco GIA' ORDINATO e GIA' FILTRATO. Due regole, in quest'ordine:
+//   1. una FAMIGLIA non viene mai spezzata fra due pagine;
+//   2. la pagina si misura in RIGHE (ROWS_PER_PAGE), non in un numero di card.
+// Si aggiungono famiglie intere finche' ci si sta dentro. La 2 e' il punto che elimina le celle
+// orfane: un tetto contato in card (30) diviso per le colonne reali (4) lasciava un resto di 2 e
+// quel resto era il buco, sempre, anche col filtro "solo carte base" dove di famiglie non ce n'e'
+// nessuna da rispettare. Contando in righe il resto non esiste piu'.
+// Cosa NON si puo' garantire, e perche': quando in pagina ci sono anche variazioni, Change ed
+// errori di stampa, le famiglie sono blocchi indivisibili da 1 a 5 e le righe buche da 1 a 3. Se
+// la famiglia che segue e' piu' grande del buco, il buco resta. Nella Serie 1, 124 famiglie su 160
+// hanno dimensione PARI (2 o 4): un buco dispari non potra' mai essere colmato da loro. Le
+// alternative sono peggio: arretrare a una riga tonda produce pagine da una riga sola, crescere
+// fino a chiuderla fa ballare la pagina fra 28 e 36 card. Col filtro base ogni famiglia vale 1 e
+// il buco non si presenta mai.
+// Caso limite: una famiglia piu' alta di una pagina intera non ha collocazione possibile, e
+// arretrare darebbe una pagina vuota, cioe' un ciclo che non termina. Allora la si prende intera
+// sforando le righe. Oggi la famiglia piu' grande e' di 5 card contro 7 righe, quindi il ramo non
+// scatta: c'e' perche' un ciclo che puo' non terminare non si lascia in piedi per fiducia.
+function buildItemPages(allItems) {
+  const geo = _gridGeometry();
+  const allFigs = getData('figurines', []);
+  const idx = _figIndex(allFigs);
+  const famEnd = i => { let j = i + 1; const k = _familyKey(allItems[i]);
+                        while (j < allItems.length && _familyKey(allItems[j]) === k) j++; return j; };
+  const pages = [];
+  let start = 0;
+  while (start < allItems.length) {
+    let end = start, x = 0, rows = 1; // x = larghezza occupata (flex) o card nella riga (grid)
+    while (end < allItems.length) {
+      const fe = famEnd(end);
+      let xx = x, rr = rows, entra = true;
+      for (let i = end; i < fe; i++) {
+        if (geo.kind === 'flex') {
+          const w = _itemHasWidePair(allItems[i], allFigs, idx) ? 350 : 247;
+          if (xx > 0 && xx + geo.gap + w > geo.width) { rr++; xx = w; } else { xx = xx > 0 ? xx + geo.gap + w : w; }
+        } else {
+          xx++; if (xx > geo.cols) { rr++; xx = 1; }
+        }
+        if (rr > ROWS_PER_PAGE) { entra = false; break; }
+      }
+      if (!entra) break;          // la famiglia sfonderebbe le righe: slitta alla pagina dopo
+      x = xx; rows = rr; end = fe;
+    }
+    if (end === start) end = famEnd(start); // famiglia piu' alta della pagina (vedi sopra)
+    pages.push({ start, end });
+    start = end;
+  }
+  return pages;
+}
+
+// Confini dell'ultimo render, per changeItemPage: il numero di pagine dipende dai confini reali
+// e non da una divisione, quindi non lo si puo' piu' ricalcolare al volo da un elenco qualsiasi.
+let _itemPages = [];
+
 
 function getSectionLabel(section) {
   const it = { figurines: 'Figurine', retros: 'Retro', albums: 'Album', extras: 'Altri oggetti', bustine: 'Bustine' };
@@ -14485,13 +14638,18 @@ function renderItems() {
     }
   }
 
+  // v5.978 — indice id -> oggetto costruito UNA VOLTA, fuori dal comparatore. Dentro, ogni
+  // confronto faceva allFigsForSort.find(...) su ~3300 oggetti fino a tre volte: 163 ms per
+  // ordinare le 800 figurine della Serie 3, ad ogni cambio pagina. Ora 1,4 ms, ordine identico.
+  const _allFigs = getData('figurines', []);
+  const _idx = _figIndex(_allFigs);
   const allItems = getCurrentlyFilteredItems().sort((a,b) => {
     if (currentSection === 'figurines') {
-      const allFigsForSort = getData('figurines', []);
+      const allFigsForSort = _idx;
       // Figurina di riferimento: se stessa se è base, altrimenti la figurina base collegata
       const refFig = f => {
         if (!f.isVariation && !f.isUnofficialVariation && !f.isChange) return f;
-        return f.baseFigurineId ? allFigsForSort.find(x => x.id === f.baseFigurineId) : null;
+        return f.baseFigurineId ? allFigsForSort.get(f.baseFigurineId) : null;
       };
       const refA = refFig(a), refB = refFig(b);
       const numA = refA?.number, numB = refB?.number;
@@ -14521,8 +14679,8 @@ function renderItems() {
         return (a.name||'').localeCompare(b.name||'', 'it');
       }
       // Variazioni (ufficiali o non ufficiali): per Retro (Categoria + Nome)
-      const retroA = a.retroId ? allFigsForSort.find(x => x.id === a.retroId) : null;
-      const retroB = b.retroId ? allFigsForSort.find(x => x.id === b.retroId) : null;
+      const retroA = a.retroId ? allFigsForSort.get(a.retroId) : null;
+      const retroB = b.retroId ? allFigsForSort.get(b.retroId) : null;
       const catCmp = (retroA?.category||'').localeCompare(retroB?.category||'', 'it');
       if (catCmp !== 0) return catCmp;
       const subcatCmp = (retroA?.subcategory||'').localeCompare(retroB?.subcategory||'', 'it');
@@ -14577,48 +14735,11 @@ function renderItems() {
     document.getElementById('items-pagination').innerHTML = '';
     return;
   }
-  // Pagination
-  const totalPages = Math.ceil(allItems.length / getItemsPerPage());
-  if (currentItemPage > totalPages) currentItemPage = totalPages;
-  const start = (currentItemPage - 1) * getItemsPerPage();
-  const items = allItems.slice(start, start + getItemsPerPage());
-  // Elenco completo ordinato (tutte le pagine), usato per navigare avanti/indietro nel dettaglio
-  _gridOrderedIds = allItems.map(f => f.id);
-  // Pagination controls (top)
-  const paginationTop = document.getElementById('items-pagination-top');
-  const totalPagesTop = Math.ceil(allItems.length / getItemsPerPage());
-  function paginationHTML(cur, tot, total) {
-    if (tot <= 1) return '';
-    const _ser = getData('series', []).find(s => s.id === currentSeriesId);
-    const firstNum = currentSection === 'retros' ? 1 : _ser?.firstNumber;
-    const sectionLabelLower = (getSectionLabel(currentSection) || (currentLang === 'it' ? 'oggetti' : 'items')).toLowerCase();
-    // v5.893 — la coda dei risultati passa da "${label} ${from}..${to} | ${total} ${label}"
-    // a "${label} ${from}..${to} di ${total}": via la pipe e la ripetizione della parola.
-    // Senza range (sezioni senza numeri) resta "${total} ${label}".
-    let tailStr = '';
-    if (firstNum != null) {
-      const from = firstNum + (cur - 1) * getItemsPerPage();
-      const to = Math.min(firstNum + cur * getItemsPerPage() - 1, firstNum + total - 1);
-      tailStr = currentLang === 'it'
-        ? ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to} di ${total}`
-        : ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to} of ${total}`;
-    } else {
-      tailStr = currentLang === 'it'
-        ? ` &nbsp;|&nbsp; ${total} ${sectionLabelLower}`
-        : ` &nbsp;|&nbsp; ${total} total`;
-    }
-    const label = currentLang === 'it'
-      ? `Pagina ${cur} di ${tot}${tailStr}`
-      : `Page ${cur} of ${tot}${tailStr}`;
-    return `<div class="pag-row" style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
-      ${cur > 1 ? `<button onclick="changeItemPage(1)" class="btn-secondary" style="padding:0.4rem 1rem;">⏮ ${currentLang === 'it' ? 'Prima' : 'First'}</button>` : ''}
-      <button onclick="changeItemPage(${cur - 1})" ${cur === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ ${currentLang === 'it' ? 'Precedente' : 'Previous'}</button>
-      <span class="pag-label" style="font-family:var(--font-ui);color:var(--text);font-size:0.9rem;">${label}</span>
-      <button onclick="changeItemPage(${cur + 1})" ${cur === tot ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Successiva' : 'Next'} ▶</button>
-      ${cur < tot ? `<button onclick="changeItemPage(${tot})" class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Ultima' : 'Last'} ⏭</button>` : ''}
-    </div>`;
-  }
-  if (paginationTop) paginationTop.innerHTML = paginationHTML(currentItemPage, totalPagesTop, allItems.length);
+  // v5.978 — La geometria della griglia si imposta QUI, PRIMA di calcolare le pagine: e' da
+  // questi stili che _gridGeometry() legge quante colonne ci sono e quanto e' larga la griglia.
+  // Se il blocco restasse dopo (com'era fino alla v5.977, quando le colonne erano un numero
+  // assunto e nessuno le leggeva), al primo render e ad ogni cambio di modalita' la misura
+  // descriverebbe il render PRECEDENTE.
 
   if (currentSection === 'retros' || currentSection === 'figurines') {
     const useFlexForWideMode = currentSection === 'figurines' && _retroViewMode === 'destra-piena';
@@ -14646,6 +14767,58 @@ function renderItems() {
     grid.style.marginRight = '';
     grid.style.transform = '';
   }
+
+  // Pagination — i confini NON sono piu' multipli del tetto: li decide buildItemPages(), che non
+  // spezza mai una famiglia fra due pagine (v5.977). Da qui in giu' si legge SEMPRE da _itemPages,
+  // mai piu' da moltiplicazioni per getItemsPerPage(): erano quelle a dare per scontato che tutte
+  // le pagine fossero lunghe uguale.
+  _itemPages = buildItemPages(allItems);
+  const totalPages = _itemPages.length;
+  if (currentItemPage > totalPages) currentItemPage = totalPages;
+  if (currentItemPage < 1) currentItemPage = 1;
+  const { start, end } = _itemPages[currentItemPage - 1];
+  const items = allItems.slice(start, end);
+  // Elenco completo ordinato (tutte le pagine), usato per navigare avanti/indietro nel dettaglio
+  _gridOrderedIds = allItems.map(f => f.id);
+  // Pagination controls (top)
+  const paginationTop = document.getElementById('items-pagination-top');
+  const totalPagesTop = totalPages;
+  function paginationHTML(cur, tot, total) {
+    if (tot <= 1) return '';
+    const _ser = getData('series', []).find(s => s.id === currentSeriesId);
+    const firstNum = currentSection === 'retros' ? 1 : _ser?.firstNumber;
+    const sectionLabelLower = (getSectionLabel(currentSection) || (currentLang === 'it' ? 'oggetti' : 'items')).toLowerCase();
+    // v5.893 — la coda dei risultati passa da "${label} ${from}..${to} | ${total} ${label}"
+    // a "${label} ${from}..${to} di ${total}": via la pipe e la ripetizione della parola.
+    // Senza range (sezioni senza numeri) resta "${total} ${label}".
+    let tailStr = '';
+    if (firstNum != null) {
+      // v5.977 — l'intervallo si legge dai confini VERI della pagina. Con le pagine di lunghezza
+      // variabile, "firstNum + (cur-1) * tetto" annuncerebbe numeri che nella pagina non ci sono.
+      const b = _itemPages[cur - 1] || { start: 0, end: total };
+      const from = firstNum + b.start;
+      const to = Math.min(firstNum + b.end - 1, firstNum + total - 1);
+      tailStr = currentLang === 'it'
+        ? ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to} di ${total}`
+        : ` &nbsp;|&nbsp; ${sectionLabelLower} ${from}..${to} of ${total}`;
+    } else {
+      tailStr = currentLang === 'it'
+        ? ` &nbsp;|&nbsp; ${total} ${sectionLabelLower}`
+        : ` &nbsp;|&nbsp; ${total} total`;
+    }
+    const label = currentLang === 'it'
+      ? `Pagina ${cur} di ${tot}${tailStr}`
+      : `Page ${cur} of ${tot}${tailStr}`;
+    return `<div class="pag-row" style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+      ${cur > 1 ? `<button onclick="changeItemPage(1)" class="btn-secondary" style="padding:0.4rem 1rem;">⏮ ${currentLang === 'it' ? 'Prima' : 'First'}</button>` : ''}
+      <button onclick="changeItemPage(${cur - 1})" ${cur === 1 ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">◀ ${currentLang === 'it' ? 'Precedente' : 'Previous'}</button>
+      <span class="pag-label" style="font-family:var(--font-ui);color:var(--text);font-size:0.9rem;">${label}</span>
+      <button onclick="changeItemPage(${cur + 1})" ${cur === tot ? 'disabled style="opacity:0.3;"' : ''} class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Successiva' : 'Next'} ▶</button>
+      ${cur < tot ? `<button onclick="changeItemPage(${tot})" class="btn-secondary" style="padding:0.4rem 1rem;">${currentLang === 'it' ? 'Ultima' : 'Last'} ⏭</button>` : ''}
+    </div>`;
+  }
+  if (paginationTop) paginationTop.innerHTML = paginationHTML(currentItemPage, totalPagesTop, allItems.length);
+
 
   // v5.758 — Retro nella card: la prima riga antepone "Categoria - " al nome, TRANNE quando il
   // nome comincia già con la categoria (decisione per singolo retro; ex flag di serie
@@ -14917,15 +15090,18 @@ function renderItems() {
   // Render pagination controls (bottom)
   const paginationEl = document.getElementById('items-pagination');
   if (paginationEl) {
-    paginationEl.innerHTML = paginationHTML(currentItemPage, Math.ceil(allItems.length / getItemsPerPage()), allItems.length);
+    paginationEl.innerHTML = paginationHTML(currentItemPage, totalPages, allItems.length);
     paginationEl.style.marginTop = '1.5rem';
   }
 }
 
 function changeItemPage(page) {
-  const allItems = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
-  const totalPages = Math.ceil(allItems.length / getItemsPerPage());
-  if (page < 1 || page > totalPages) return;
+  // v5.977 — il numero di pagine si legge dai confini dell'ultimo render (_itemPages). Prima si
+  // ricalcolava qui dividendo l'elenco NON filtrato della sezione: con un filtro attivo dava un
+  // totale piu' alto di quello vero, e i pulsanti restavano abilitati su pagine inesistenti (era
+  // renderItems, a valle, a riportare l'indice nei ranghi). Ora la fonte e' una sola.
+  const totalPages = _itemPages.length;
+  if (!totalPages || page < 1 || page > totalPages) return;
   currentItemPage = page;
   renderItems();
   // v5.868 — Franco: dopo il cambio pagina il cursore torna in alto, ma NON in cima assoluta
