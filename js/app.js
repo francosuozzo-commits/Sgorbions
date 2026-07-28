@@ -1,6 +1,82 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.980 - SOTTONOME dei retro: un campo nuovo, e per ora NIENTE che si veda. Il Nome di alcuni
+//          retro e' fatto di due parti — il nome vero e proprio e un pezzo scritto altrove nel
+//          disegno — e finora stavano insieme in `name`. Per tenere il secondo fuori dal titolo
+//          eBay la v5.979 sottraeva 35 frasi da un elenco: una toppa a valle di un'informazione
+//          compressa a monte. Ora sono due campi.
+//          Cosa cambia a schermo: NULLA, ed e' il punto. _retroNomeLungo() rimette insieme nome e
+//          sottonome, ed e' quello che usano tutti i punti che mostrano qualcosa — Nome completo,
+//          card, schede, menu di collegamento, ricerca. _retroNomeCorto() dara' il nome per il
+//          titolo eBay, ma solo dalla v5.981: prima Franco deve popolare il campo, e finche' e'
+//          vuoto i due nomi coincidono, quindi anche i titoli restano quelli di oggi.
+//          Dove si mette: scheda del retro (dettaglio e modifica rapida) e form completo, solo
+//          per la sezione Retro. La chiave di deduplica dell'import include il sottonome,
+//          altrimenti due retro diversi solo per quello diventerebbero lo stesso record.
+//          CARD FIGURINA (Franco): numero in BIANCO come il nome — sono la stessa cosa, e in
+//          grigio sembravano due informazioni di peso diverso. E il retro collegato su DUE righe,
+//          il suo nome e sotto il suo sottonome in azzurro, come sulla card Retro.
+//          ORDINE DELLA CARD (Franco): riga 1 nome, riga 2 sottonome, riga 3 tipo di change o di
+//          errore di stampa; in fondo, sulla stessa riga, punteggio e "Mia lista". Il punteggio
+//          era una riga a se' sopra la barra delle azioni, quindi la sua altezza dipendeva da
+//          quante righe aveva la card e in griglia non era mai allineato fra una card e l'altra;
+//          ancorato alla barra si allinea da solo. Il tipo, al contrario, e' risalito fra le righe
+//          di testo, dov'e' un'informazione da leggere insieme al nome: in fondo resta solo cio'
+//          che si guarda o si preme. Su telefono, nelle card Figurina, il punteggio resta dov'era,
+//          in cima accanto al numero (v5.829).
+//          CARD del retro: il Sottonome ha una riga sua, la terza (Categoria / Nome / Sottonome).
+//          Prima stava dentro il Nome e appariva sulla riga 2 senza distinguersi: dividerlo senza
+//          mostrarlo avrebbe voluto dire nasconderlo. La riga propria e' anche piu' fedele alla
+//          carta vera, dove quel testo sta in un'altra parte del disegno.
+//          Dove si popola: VISTA TABELLARE dei Retro, colonna Sottonome accanto al Nome (Franco).
+//          Toccando li' un retro si ricalcola il Nome completo suo E di chi lo referenzia — i
+//          suoi Change/errori di stampa e le Variazioni di figurina collegate — altrimenti il
+//          campo salvato resterebbe indietro mostrando un nome che non esiste piu'. Una sola
+//          scrittura: stanno tutti nel documento della stessa serie.
+//          28 controlli automatici verificano l'unica cosa che conta qui: che le stringhe
+//          visibili dopo lo split siano IDENTICHE a quelle di prima. Modificato app.js, index.html.
+// v5.979 - Titoli eBay: le quattro versioni speciali si riconoscono, e l'inglese e' davvero
+//          inglese. (a) MARCATORE: dopo il Nome completo compare (VARIAZIONE), (VARIAZIONE NON
+//          UFFICIALE), (CHANGE) o (ERRORE DI STAMPA). Serviva: computeFullName() da' "Nome -
+//          NomeRetro" sia per una variazione ufficiale sia per una non ufficiale, quindi nel
+//          titolo le due erano indistinguibili. Il marcatore lo mette la composizione, nei dati
+//          non c'e'. (b) GLOSSARIO IT->EN, tenuto da Franco: non si traduce nulla che non sia li'
+//          dentro, e il NOME COMPLETO non si traduce mai — il glossario tocca solo la testa
+//          (serie, sottoserie) e il marcatore. Applicato per parole intere e con le espressioni
+//          piu' lunghe per prime, che non e' teoria: "VARIAZIONE NON UFFICIALE" contiene
+//          "VARIAZIONE", e all'incontrario si otterrebbe "VARIATION NON UFFICIALE". Il caso si
+//          conserva ("Serie 3" -> "Series 3", "SERIE 3" -> "SERIES 3"). (c) ebayTitle() e
+//          compagne prendono ora il MERCATO; "Applica Nome completo al Titolo" scrive due testi
+//          diversi nei due campi. (d) ebayTitleEccede() senza mercato risponde per ENTRAMBI: un
+//          titolo che si taglia solo in inglese va guardato lo stesso. (e) TERZO TAB "Titoli
+//          mercato a confronto" (Franco): tabella piatta, i due titoli affiancati, ordinata per
+//          titolo italiano, sola lettura; le due lingue INCOLONNATE (due righe per oggetto), non
+//          affiancate: due colonne da 80 caratteri non ci stanno, ma soprattutto due titoli quasi
+//          uguali si confrontano guardandoli uno sopra l'altro, dove le parti identiche si
+//          allineano. Segna con "=" le righe dove le due lingue coincidono — con le serie
+//          chiamate "Serie N" non capita mai fra titoli generati (SERIE->SERIES), quindi in
+//          pratica segnala i casi in cui lo stesso testo e' stato scritto a mano in tutti e due.
+//          (f) SOTTONOMI (Franco): certi Nomi completi hanno un pezzo in piu' fra il nome e il
+//          Tipo di change / errore di stampa ("... - CANE DOMESTICO - OMAGGIO NERO"). Nel titolo
+//          si tengono SOLO SE CI STANNO, e per intero: sono il primo sacrificio, prima ancora
+//          della coda commerciale. Ordine completo: pieno -> senza sottonomi -> senza Topps ->
+//          senza Gpk -> taglio secco. E' un ELENCO (EBAY_SOTTONOMI, 35 frasi, lo tiene Franco) e
+//          non una regola perche' nella stringa composta il confine fra nome, sottonome e tipo
+//          non esiste piu': per indovinare quale trattino sia quello giusto bisognerebbe dedurlo.
+//          Il taglio e' per SEGMENTO INTERO fra " - ", mai per sottostringa.
+//          (g) RIGENERAZIONE COMPLETA (Franco): bottone nel tab di confronto che riscrive
+//          ebayTitleIt/En di TUTTI gli oggetti marcati Ebay del catalogo. Serviva perche' il
+//          valore salvato vince sempre sul generato: senza, i punti (a)-(f) sarebbero rimasti
+//          invisibili sugli oggetti gia' esistenti. UN SOLO SALVATAGGIO PER SERIE — le figurine
+//          vivono dentro il documento della serie, quindi salvarle una per una avrebbe riscritto
+//          l'intera serie ad ogni oggetto (settecento riscritture invece di cinque).
+//          (h) LA FORBICE cambia significato: non piu' "il titolo non e' salvato ed eccede" ma
+//          "il testo che vedi e' il risultato di un taglio DENTRO IL NOME". Con la vecchia regola
+//          sarebbe sparita subito dopo la rigenerazione, cioe' esattamente quando serve. Ora
+//          compare anche sui titoli salvati, e se ne va da sola quando ne riscrivi uno a mano.
+//          Perdere la coda commerciale non e' forbice: quella e' la regola che funziona.
+//          Modificato app.js (e index.html per i soli punti di versione).
 // v5.978 - Franco, terza segnalazione dello stesso difetto (v5.336, v5.564, oggi): l'ultima riga
 //          di ogni pagina lasciava celle vuote. Le prime due volte era stata sostituita una stima
 //          con un'altra stima; questa volta si MISURA. Causa vera, e non c'entravano le famiglie:
@@ -9489,7 +9565,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.978';
+const JS_VERSION = 'v5.980';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11835,17 +11911,135 @@ function ebaySectionLabel(sec) {
   return ({ figurines: it ? 'Figurine' : 'Stickers', retros: 'Retro', bustine: it ? 'Bustine' : 'Wrappers',
             albums: it ? 'Album' : 'Albums', extras: it ? 'Altri oggetti' : 'Other items' })[sec] || sec;
 }
-// Il CORPO del titolo: l'identità del pezzo, senza la coda commerciale.
-function ebayTitleCorpo(f) {
+// v5.979 — MARCATORE DELLE VERSIONI SPECIALI (Franco). Fino alla v5.978 il titolo diceva solo
+// il Nome completo, e per le varianti quello NON basta: computeFullName() dà "Nome - NomeRetro"
+// sia per una variazione UFFICIALE sia per una NON ufficiale, quindi nel titolo le due erano
+// indistinguibili. Il marcatore lo mette la composizione, non sta nei dati: nel Nome completo la
+// parola "VARIAZIONE" non compare da nessuna parte.
+// I quattro flag sono mutuamente esclusivi, ma l'ordine qui è comunque dal più specifico al meno:
+// se un dato vecchio avesse per errore due flag, meglio la risposta più precisa.
+function ebayMarcatore(f) {
   if (!f) return '';
-  const serie = getData('series', []).find(s => s.id === f.seriesId);
-  const testa = ['Sgorbions', serie ? serie.name : '', f.subseries || '',
-                 (f.noNumber || !f.number) ? '' : ('#' + f.number)].filter(Boolean).join(' ');
-  const nome = f.fullName || computeFullName(f, getData('figurines', [])) || f.name || '';
-  return [testa, nome].filter(Boolean).join(' - ');
+  if (f.isUnofficialVariation) return 'VARIAZIONE NON UFFICIALE';
+  if (f.isVariation)           return 'VARIAZIONE';
+  if (f.isChange)              return 'CHANGE';
+  if (f.isPrintError)          return 'ERRORE DI STAMPA';
+  return '';
 }
-function ebayTitleFull(f) {
-  const corpo = ebayTitleCorpo(f);
+
+// v5.979 — SOTTONOMI DA NON METTERE NEL TITOLO (Franco). Alcuni oggetti hanno, dentro il Nome
+// completo, un pezzo in più fra il nome e il Tipo di change / Tipo di errore di stampa:
+//   RICERCATO PER FURTO CON SCASSAMENTO - CANE DOMESTICO - OMAGGIO NERO
+//                                          ^^^^^^^^^^^^^^ questo
+// Nel titolo eBay non ci va. È un ELENCO e non una regola per una ragione precisa: nella stringa
+// composta il confine fra nome, sottonome e tipo non esiste più, e per indovinare quale trattino
+// sia quello giusto bisognerebbe dedurlo. Un elenco di frasi invece è esatto e si controlla a
+// occhio. Lo tiene Franco, come il glossario.
+const EBAY_SOTTONOMI = [
+  'SORELLINA MINORE',
+  'PROFESSORESSA',
+  'DOTTORE',
+  'PAPÀ',
+  'MICROBO UMANO',
+  'COCCOLO DELLA MAESTRA',
+  'DENTISTA',
+  'BUGIARDO SPARABALLE',
+  'NEGOZIANTE DI DOLCI',
+  'PRESIDE',
+  'BARBIERE (DETTO ANCHE MACELLAIO)',
+  'MAMMA',
+  'SORELLA MAGGIORE',
+  'VICINA',
+  'NETTEZZA URBANA',
+  'FRATELLINO MINORE',
+  'AVIDONE',
+  'BULLO DELLA CLASSE',
+  'INFERMIERA DELLA SCUOLA',
+  'MECCANICO',
+  'PROFESSORE SUPPLENTE',
+  'FRATELLO MAGGIORE',
+  'CANE DOMESTICO',
+  'IDRAULICO',
+  'FUMATORE FOLLE',
+  'POSTINO',
+  'BIBLIOTECARIO',
+  'CRIMINALOIDE',
+  'BABY-SITTER',
+  'CICCIONE',
+  'CUOCO DELLA MENSA SCOLASTICA',
+  'POLTRONE',
+  'GATTO',
+  'MATTACCHIONE',
+  'GUIDATORE DI AUTOBUS'
+];
+const _EBAY_SOTTONOMI = new Set(EBAY_SOTTONOMI.map(x => x.trim().toUpperCase()));
+// Si tolgono quando SERVONO PER STARE NEGLI 80 (Franco): se il titolo ci sta anche con loro,
+// restano — un'informazione in più non fa male, è lo spazio che manca.
+// Il taglio è per SEGMENTO INTERO fra " - ", mai per sottostringa: così non può capitare di
+// tagliare in mezzo a una parola né di colpire un pezzo che si chiama quasi come un altro.
+// Se togliendoli non restasse niente, si tiene il nome com'era: un titolo senza nome sarebbe
+// peggio del problema che stiamo risolvendo.
+function ebayTogliSottonomi(nome) {
+  if (!nome) return nome || '';
+  const pezzi = String(nome).split(' - ');
+  const tenuti = pezzi.filter(p => !_EBAY_SOTTONOMI.has(p.trim().toUpperCase()));
+  return (tenuti.length ? tenuti : pezzi).join(' - ');
+}
+
+// v5.979 — GLOSSARIO IT→EN (Franco). Lo tiene Franco: non si traduce NULLA che non sia qui dentro.
+// "CHANGE" non ha voce perché è già inglese.
+const EBAY_GLOSSARIO = {
+  'VARIAZIONE NON UFFICIALE': 'UNOFFICIAL VARIATION',
+  'ERRORE DI STAMPA':         'PRINT ERROR',
+  'VARIAZIONE':               'VARIATION',
+  'SERIE':                    'SERIES'
+};
+// Le voci si applicano dalla PIÙ LUNGA alla più corta, e non è teoria: "VARIAZIONE NON UFFICIALE"
+// contiene "VARIAZIONE", quindi sostituendo prima la corta non si otterrebbe mai
+// "UNOFFICIAL VARIATION" ma sempre "VARIATION NON UFFICIALE".
+const _EBAY_GLOSSARIO_ORDINATO = Object.keys(EBAY_GLOSSARIO).sort((a, b) => b.length - a.length);
+// Solo PAROLE INTERE: con una voce "ORO → GOLD", sostituendo anche dentro le parole "TESORO"
+// diventerebbe "TESGOLD".
+// Il caso si conserva: i dati sono quasi tutti in maiuscolo, ma il nome della serie no
+// ("Serie 3"), e "Sgorbions SERIES 3" stonerebbe accanto a "Sgorbions Serie 3".
+function _ebayApplicaCaso(originale, tradotto) {
+  if (originale === originale.toUpperCase()) return tradotto.toUpperCase();
+  if (originale === originale.toLowerCase()) return tradotto.toLowerCase();
+  if (originale[0] === originale[0].toUpperCase()) {
+    return tradotto.charAt(0).toUpperCase() + tradotto.slice(1).toLowerCase();
+  }
+  return tradotto;
+}
+function ebayTraduci(testo) {
+  if (!testo) return testo || '';
+  let out = testo;
+  for (const voce of _EBAY_GLOSSARIO_ORDINATO) {
+    const cerca = voce.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    out = out.replace(new RegExp('\\b' + cerca + '\\b', 'gi'),
+                      m => _ebayApplicaCaso(m, EBAY_GLOSSARIO[voce]));
+  }
+  return out;
+}
+
+// Il CORPO del titolo: l'identità del pezzo, senza la coda commerciale.
+// v5.979 — ora dipende dal MERCATO. Il glossario si applica alla testa (serie, sottoserie) e al
+// marcatore, MAI al Nome completo: quello è il nome dell'oggetto e non si traduce (regola di
+// Franco). Il numero resta dov'era, nella testa: nel Nome completo non c'è mai.
+function ebayTitleCorpo(f, mercato, tieniSottonomi) {
+  if (!f) return '';
+  const en = (mercato === 'com');
+  const tr = x => en ? ebayTraduci(x) : (x || '');
+  const serie = getData('series', []).find(s => s.id === f.seriesId);
+  const testa = ['Sgorbions', tr(serie ? serie.name : ''), tr(f.subseries || ''),
+                 (f.noNumber || !f.number) ? '' : ('#' + f.number)].filter(Boolean).join(' ');
+  const grezzo = f.fullName || computeFullName(f, getData('figurines', [])) || f.name || '';
+  const nome = tieniSottonomi ? grezzo : ebayTogliSottonomi(grezzo);
+  const marc = ebayMarcatore(f);
+  const centro = [nome, marc ? '(' + tr(marc) + ')' : ''].filter(Boolean).join(' ');
+  return [testa, centro].filter(Boolean).join(' - ');
+}
+function ebayTitleFull(f, mercato) {
+  const corpo = ebayTitleCorpo(f, mercato, true); // "intero" = tutto, sottonomi compresi
   return corpo ? corpo + ' - Gpk - Topps' : '';
 }
 
@@ -11855,24 +12049,50 @@ function ebayTitleFull(f) {
 //   2. se anche così non basta e servirebbe tagliare dentro "Gpk" → via anche " - Gpk"
 // Quindi si prova, in ordine: titolo intero → senza Topps → senza Gpk → e solo se nemmeno il
 // corpo ci sta si taglia di netto, che è l'unico caso davvero da guardare a mano.
-function ebayTitle(f) {
-  const corpo = ebayTitleCorpo(f);
-  for (const c of [corpo + ' - Gpk - Topps', corpo + ' - Gpk', corpo]) {
+// v5.979 — i sottonomi sono il PRIMO sacrificio, prima ancora della coda commerciale: se il
+// titolo ci sta anche con loro restano, altrimenti se ne vanno e si riparte dalla scala di prima.
+function ebayTitle(f, mercato) {
+  const pieno = ebayTitleCorpo(f, mercato, true);
+  const magro = ebayTitleCorpo(f, mercato, false);
+  for (const c of [pieno + ' - Gpk - Topps',
+                   magro + ' - Gpk - Topps',
+                   magro + ' - Gpk',
+                   magro]) {
     if (c.length <= EBAY_TITLE_MAX) return c;
   }
-  return corpo.slice(0, EBAY_TITLE_MAX).replace(/[\s-]+$/, '');
+  return magro.slice(0, EBAY_TITLE_MAX).replace(/[\s-]+$/, '');
 }
 // "Eccede" ora vuol dire una cosa più precisa e più utile: nemmeno il solo corpo (senza coda)
 // entra negli 80, quindi il titolo viene tagliato dentro il nome. Perdere la coda commerciale,
 // invece, non è un problema da segnalare: è la regola che funziona.
-function ebayTitleEccede(f) { return ebayTitleCorpo(f).length > EBAY_TITLE_MAX; }
+// v5.979 — senza mercato risponde per ENTRAMBI: le due lingue hanno lunghezze diverse
+// ("SERIES" è più lungo di "SERIE", "VARIATION" più corto di "VARIAZIONE"), e un titolo che si
+// taglia solo in inglese va guardato lo stesso.
+function ebayTitleEccede(f, mercato) {
+  if (mercato) return ebayTitleCorpo(f, mercato, false).length > EBAY_TITLE_MAX;
+  return ebayTitleCorpo(f, 'it', false).length > EBAY_TITLE_MAX
+      || ebayTitleCorpo(f, 'com', false).length > EBAY_TITLE_MAX;
+}
 // Serve alla tabella: dire COSA è successo a questo titolo.
-function ebayTitleStato(f) {
-  const corpo = ebayTitleCorpo(f);
-  if (corpo.length + ' - Gpk - Topps'.length <= EBAY_TITLE_MAX) return 'intero';
-  if (corpo.length + ' - Gpk'.length <= EBAY_TITLE_MAX) return 'senzaTopps';
-  if (corpo.length <= EBAY_TITLE_MAX) return 'senzaGpk';
+function ebayTitleStato(f, mercato) {
+  const pieno = ebayTitleCorpo(f, mercato, true);
+  const magro = ebayTitleCorpo(f, mercato, false);
+  if (pieno.length + ' - Gpk - Topps'.length <= EBAY_TITLE_MAX) return 'intero';
+  if (magro.length + ' - Gpk - Topps'.length <= EBAY_TITLE_MAX) return 'senzaSottonomi';
+  if (magro.length + ' - Gpk'.length <= EBAY_TITLE_MAX) return 'senzaTopps';
+  if (magro.length <= EBAY_TITLE_MAX) return 'senzaGpk';
   return 'tagliato';
+}
+
+// v5.979 — La forbice: si mostra quando il titolo VISIBILE è il risultato di un taglio dentro
+// il nome. Perdere la coda commerciale non è un problema da segnalare (è la regola che funziona);
+// perdere pezzi di nome sì. Confrontando col testo mostrato, un titolo riscritto a mano perde la
+// forbice da solo, senza che nessuno debba ricordarsi di toglierla.
+function ebayForbice(f, mercato, testoMostrato) {
+  if (ebayTitleStato(f, mercato) !== 'tagliato') return '';
+  if (testoMostrato !== ebayTitle(f, mercato)) return '';
+  const it = (currentLang === 'it');
+  return ` <span title="${it ? 'Tagliato dentro il nome per stare negli 80 caratteri di eBay' : 'Cut inside the name to fit eBay\'s 80 characters'}" style="color:var(--action-admin);font-weight:700;">✂</span>`;
 }
 
 // v5.899 — Vista Ebay: due tabelle (eBay.it / eBay.com) con selettore. Le colonne che cambiano tra i
@@ -11918,7 +12138,9 @@ function ebayTh(sec, col, label, extra) {
   // v5.931 — la ✕ vale solo per le colonne della vista principale: nella tabella dei titoli
   // eccedenti le colonne sono altre (sezione, troncato, intero, caratteri) e chiuderle avrebbe
   // nascosto le omonime dell'altra tabella. Lì le intestazioni ordinano soltanto.
-  const chiudibile = sec !== '_oversize' && EBAY_COLS.filter(ebayColVisibile).length > 1;
+  // v5.979 — vale anche per la tabella di confronto: le sue colonne sono altre (titoloIt,
+  // titoloEn) e la ✕ avrebbe chiuso le omonime della vista principale.
+  const chiudibile = sec !== '_oversize' && sec !== '_confronto' && EBAY_COLS.filter(ebayColVisibile).length > 1;
   const x = chiudibile
     ? `<span onclick="event.stopPropagation();nascondiEbayCol('${col}')" title="${currentLang === 'it' ? 'Chiudi questa colonna' : 'Hide this column'}"
         style="margin-left:0.45rem;color:var(--muted);font-size:0.85em;cursor:pointer;">✕</span>` : '';
@@ -11929,8 +12151,9 @@ function ebayTh(sec, col, label, extra) {
 // ============================================================
 // SELEZIONE RIGHE E SCRITTURA DEL TITOLO (v5.925, Franco)
 // Fin qui il titolo era solo CALCOLATO: bello da guardare, ma non esisteva da nessuna parte.
-// Ora si può fissarlo nel database — ebayTitleIt ED ebayTitleEn insieme, perché oggi il titolo
-// generato è lo stesso per i due mercati — e poi correggerlo a mano.
+// Ora si può fissarlo nel database — ebayTitleIt ED ebayTitleEn insieme — e poi correggerlo a
+// mano. v5.979: i due non sono più lo stesso testo, ciascuno riceve il titolo del proprio
+// mercato (l'inglese passa dal glossario).
 // Regola sui titoli lunghi (scelta di Franco): nel campo finisce SOLO ciò che eBay accetta,
 // quindi la versione tagliata a 80. Un campo con dentro 126 caratteri sarebbe un annuncio che
 // non parte.
@@ -11972,6 +12195,67 @@ function ebayDeselezionaTutto() {
 }
 
 // Scrive il titolo generato (tagliato a 80) nei due campi, per le righe selezionate.
+// v5.979 (Franco) — RIGENERAZIONE COMPLETA. Riscrive ebayTitleIt ed ebayTitleEn di ogni oggetto
+// marcato Ebay dell'INTERO catalogo, non della sola serie aperta: serve dopo un cambio delle
+// regole di composizione (marcatori, glossario, sottonomi), che altrimenti resterebbe invisibile
+// — il valore salvato vince sempre sul generato.
+//
+// UN SOLO SALVATAGGIO PER SERIE, e non è un dettaglio: le figurine vivono dentro il documento
+// della loro serie, quindi fsSave('figurines', ...) riscrive l'INTERA serie ad ogni oggetto.
+// Su settecento pezzi sarebbero settecento riscritture complete invece di cinque. Gli oggetti in
+// series.items sono gli stessi di _cache.figurines (stessi riferimenti), quindi modificarli una
+// volta li aggiorna in tutti e due.
+async function ebayRigeneraTitoli() {
+  if (!currentUser?.isAdmin) return;
+  const it = (currentLang === 'it');
+  const serie = getData('series', []);
+
+  const bersagli = [];
+  for (const s of serie) for (const item of (s.items || [])) if (item.forSale) bersagli.push({ s, item });
+  if (!bersagli.length) { toast(it ? 'Nessun oggetto marcato Ebay nel catalogo' : 'No items marked Ebay', 'error'); return; }
+
+  const scritti = bersagli.filter(b => (b.item.ebayTitleIt || '').trim() || (b.item.ebayTitleEn || '').trim()).length;
+  const domanda = it
+    ? ('Rigenerare titolo IT ed EN di ' + bersagli.length + ' oggetti, in tutto il catalogo?' +
+       (scritti ? '\n\nAttenzione: ' + scritti + ' hanno già un titolo salvato, comprese le correzioni fatte a mano. Verranno sovrascritti.' : ''))
+    : ('Regenerate IT and EN titles of ' + bersagli.length + ' items across the whole catalogue?' +
+       (scritti ? '\n\n' + scritti + ' already have a saved title, including manual fixes. They will be overwritten.' : ''));
+  if (!confirm(domanda)) return;
+
+  let cambiati = 0, tagliati = 0;
+  const daSalvare = new Set();
+  for (const { s, item } of bersagli) {
+    const nuovoIt = ebayTitle(item, 'it');
+    const nuovoEn = ebayTitle(item, 'com');
+    if (item.ebayTitleIt !== nuovoIt || item.ebayTitleEn !== nuovoEn) {
+      item.ebayTitleIt = nuovoIt;
+      item.ebayTitleEn = nuovoEn;
+      cambiati++;
+      daSalvare.add(s);
+    }
+    if (ebayTitleStato(item, 'it') === 'tagliato' || ebayTitleStato(item, 'com') === 'tagliato') tagliati++;
+  }
+
+  if (!daSalvare.size) {
+    toast(it ? 'Erano già tutti aggiornati: niente da riscrivere' : 'Already up to date: nothing to write');
+    return;
+  }
+
+  let errori = 0;
+  for (const s of daSalvare) {
+    try { await fsSave('series', s); } catch (e) { console.error('rigenerazione, serie ' + s.id, e); errori++; }
+  }
+
+  const esito = it
+    ? (cambiati + ' titoli riscritti in ' + daSalvare.size + (daSalvare.size === 1 ? ' serie' : ' serie') +
+       (tagliati ? ' — ' + tagliati + ' con la forbice ✂, da guardare a mano' : '') +
+       (errori ? ' (' + errori + ' serie NON salvate, vedi console)' : ''))
+    : (cambiati + ' titles rewritten in ' + daSalvare.size + ' series' +
+       (tagliati ? ' — ' + tagliati + ' truncated ✂' : '') + (errori ? ' (' + errori + ' failed)' : ''));
+  toast(esito, errori ? 'error' : 'success');
+  try { renderEbayViewTable(); } catch (e) { console.error('ridisegno dopo rigenerazione', e); }
+}
+
 async function ebayApplicaTitoli() {
   if (!currentUser?.isAdmin) return;
   const it = (currentLang === 'it');
@@ -11987,9 +12271,9 @@ async function ebayApplicaTitoli() {
   if (!confirm(domanda)) return;
   let salvati = 0;
   for (const f of scelti) {
-    const t = ebayTitle(f); // già tagliato a 80
-    f.ebayTitleIt = t;
-    f.ebayTitleEn = t;
+    // v5.979 — i due mercati non hanno più lo stesso titolo: l'inglese passa dal glossario.
+    f.ebayTitleIt = ebayTitle(f, 'it');   // già tagliati a 80
+    f.ebayTitleEn = ebayTitle(f, 'com');
     await fsSave('figurines', f);
     salvati++;
   }
@@ -12136,7 +12420,11 @@ function renderEbayViewTable() {
   const btnSoloTitolo = `<button onclick="ebaySoloTitolo()" ${soloTitolo ? 'disabled' : ''}
     title="${it ? 'Chiude tutte le colonne tranne il Titolo' : 'Hides every column but the title'}"
     style="font-size:0.8rem;padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:${soloTitolo ? 'var(--border)' : 'var(--muted)'};cursor:${soloTitolo ? 'default' : 'pointer'};">${it ? 'Lascia solo titolo' : 'Title only'}</button>`;
-  const selector = `<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;align-items:center;">${tab('it', '🇮🇹 eBay.it')}${tab('com', '🇺🇸 eBay.com')}<span style="flex:1;"></span>${btnSoloTitolo}</div>`;
+  // v5.979 (Franco) — terzo tab: i due titoli affiancati. Serve perché da quando l'inglese passa
+  // dal glossario i due mercati non dicono più la stessa cosa, e alternare fra due schede per
+  // confrontarli è il modo peggiore di accorgersi di una differenza.
+  const selector = `<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;align-items:center;">${tab('it', '🇮🇹 eBay.it')}${tab('com', '🇺🇸 eBay.com')}${tab('confronto', '⇄ ' + (it ? 'Titoli mercato a confronto' : 'Titles side by side'))}<span style="flex:1;"></span>${market === 'confronto' ? '' : btnSoloTitolo}</div>`;
+  if (market === 'confronto') { renderEbayConfrontoTitoli(tableEl, selector); renderEbayOversizeTable(); return; }
   if (!figs.some(f => f.forSale)) {
     tableEl.innerHTML = selector + `<p style="color:var(--muted);font-style:italic;font-size:0.88rem;">${it ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
     renderEbayOversizeTable();
@@ -12145,16 +12433,21 @@ function renderEbayViewTable() {
   const muted = x => `<span style="color:var(--muted);">${x}</span>`;
   const esc = s => (s || '').replace(/</g, '&lt;');
   // v5.918 — titolo generato (troncato a 80); un titolo scritto a mano ha la precedenza.
-  const titleOf = f => (isIt ? f.ebayTitleIt : f.ebayTitleEn) || ebayTitle(f);
+  const titleOf = f => (isIt ? f.ebayTitleIt : f.ebayTitleEn) || ebayTitle(f, market);
   // la cella segnala il taglio: chi guarda la tabella deve accorgersene senza contare i caratteri
   // v5.925 — la cella è modificabile (clic) e distingue a colpo d'occhio il titolo SCRITTO da
   // quello solo calcolato: il generato resta in grigio, perché finché è grigio non esiste ancora
   // da nessuna parte.
   const titleCell = f => {
     const manuale = (isIt ? f.ebayTitleIt : f.ebayTitleEn) || '';
-    const testo = esc(titleOf(f));
-    const forbice = (!manuale && ebayTitleEccede(f))
-      ? ` <span title="${it ? 'Titolo troncato agli 80 caratteri di eBay' : 'Title truncated to eBay\'s 80 characters'}" style="color:var(--action-admin);font-weight:700;">✂</span>` : '';
+    const titoloMostrato = titleOf(f);
+    const testo = esc(titoloMostrato);
+    // v5.979 — la forbice non dipende più dal fatto che il titolo sia salvato o calcolato: dopo
+    // una rigenerazione sono TUTTI salvati, e con la vecchia regola sarebbe sparita proprio
+    // quando serve. Ora segnala una cosa più precisa: il testo che stai vedendo è esattamente
+    // quello che la composizione ha dovuto TAGLIARE DENTRO IL NOME. Se lo riscrivi a mano, la
+    // forbice se ne va da sola — perché quel testo non è più il troncato.
+    const forbice = ebayForbice(f, market, titoloMostrato);
     const troppoLungo = manuale.length > EBAY_TITLE_MAX
       ? ` <span title="${it ? 'Oltre gli 80 caratteri: eBay lo rifiuta' : 'Over 80 characters: eBay will reject it'}" style="color:var(--danger, #e5484d);font-weight:700;">${manuale.length}</span>` : '';
     return `<span id="ebay-titolo-${f.id}" onclick="ebayEditTitolo('${f.id}', event)" title="${it ? 'Clicca per modificare' : 'Click to edit'}"
@@ -12253,6 +12546,83 @@ function renderEbayViewTable() {
   </div>` : '';
   tableEl.innerHTML = selector + barraAzioni + ebayColRestoreBar(etichetteCol) + blocchi;
   renderEbayOversizeTable();
+}
+
+// v5.979 — "Titoli mercato a confronto" (Franco). Terzo tab della Vista Ebay: una sola tabella
+// piatta con i due titoli accanto, non cinque tabelle per sezione. Il senso è il confronto, e per
+// confrontare serve vedere le due colonne sulla stessa riga: la sezione di appartenenza, qui, non
+// aggiunge niente.
+// Ordine: per TITOLO ITALIANO (Franco), non l'ordine della vista tabellare. È l'ordine giusto per
+// una lista che si legge come un elenco di annunci, e mette vicine le righe che si somigliano —
+// che è dove le differenze fra le due lingue si notano.
+// Sola lettura di proposito: la modifica di un titolo ha già il suo posto, la cella cliccabile
+// nelle due schede di mercato. Qui non si saprebbe quale dei due si sta modificando.
+function renderEbayConfrontoTitoli(tableEl, selector) {
+  const it = (currentLang === 'it');
+  const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.forSale);
+  if (!figs.length) {
+    tableEl.innerHTML = selector + `<p style="color:var(--muted);font-style:italic;font-size:0.88rem;">${it ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
+    return;
+  }
+  const esc = s => (s || '').replace(/</g, '&lt;');
+  // Un titolo scritto a mano vince su quello generato, come nelle altre tabelle; e come là, il
+  // generato resta in grigio corsivo — finché è grigio non esiste ancora da nessuna parte.
+  const dati = figs.map(f => {
+    const manIt = (f.ebayTitleIt || '').trim(), manEn = (f.ebayTitleEn || '').trim();
+    return { f,
+      it:  manIt || ebayTitle(f, 'it'),  itManuale: !!manIt,
+      en:  manEn || ebayTitle(f, 'com'), enManuale: !!manEn };
+  }).sort((a, b) => a.it.localeCompare(b.it, 'it', { numeric: true, sensitivity: 'base' }));
+
+  const ordinati = dati; // ordine fisso: titolo italiano (Franco)
+
+  const td = (c, extra = '') => `<td style="padding:0.35rem 0.6rem;font-size:0.82rem;${extra}">${c}</td>`;
+  const testoCella = (testo, manuale, uguale, f, mercato) => {
+    // Il generato resta in grigio corsivo, come nelle altre tabelle: finché è grigio non esiste
+    // ancora da nessuna parte.
+    const stile = manuale ? '' : 'color:var(--muted);font-style:italic;';
+    // Due titoli identici non sono un errore — succede quando nel testo non compare nessuna
+    // parola del glossario — ma in una tabella che esiste per confrontarli vale la pena vederlo.
+    const segno = uguale ? ` <span title="${it ? 'Identico al titolo italiano: nessuna parola da tradurre' : 'Identical to the Italian title: no glossary word here'}" style="color:var(--muted);">=</span>` : '';
+    return `<span style="${stile}">${esc(testo)}${ebayForbice(f, mercato, testo)}${segno}</span>`;
+  };
+
+  // v5.979 — le due lingue INCOLONNATE, non affiancate (Franco). Due colonne da 80 caratteri non
+  // ci stanno nella maschera, ma soprattutto: due titoli quasi uguali si confrontano guardandoli
+  // uno sopra l'altro, dove le parti identiche si allineano e la differenza salta all'occhio.
+  // Affiancati bisogna cercarla.
+  const bordo = 'border-top:1px solid var(--border);';
+  const rows = ordinati.map((r, i) => {
+    const uguale = (r.it === r.en);
+    return `<tr onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''">
+      ${td(i + 1, bordo + 'color:var(--muted);text-align:right;white-space:nowrap;width:1%;vertical-align:top;')}
+      ${td('🇮🇹', bordo + 'width:1%;white-space:nowrap;')}
+      ${td(testoCella(r.it, r.itManuale, false, r.f, 'it'), bordo)}
+    </tr>
+    <tr onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''">
+      ${td('', 'width:1%;')}
+      ${td('🇺🇸', 'width:1%;white-space:nowrap;')}
+      ${td(testoCella(r.en, r.enManuale, uguale, r.f, 'com'))}
+    </tr>`;
+  }).join('');
+
+  const identici = ordinati.filter(r => r.it === r.en).length;
+  const tagliati = ordinati.filter(r => ebayTitleStato(r.f, 'it') === 'tagliato' || ebayTitleStato(r.f, 'com') === 'tagliato').length;
+  const btnRigenera = currentUser?.isAdmin ? `<div style="margin-bottom:0.75rem;">
+    <button class="btn-primary btn-admin" onclick="ebayRigeneraTitoli()" style="font-size:0.82rem;padding:0.35rem 0.9rem;"
+      title="${it ? 'Riscrive ebayTitleIt ed ebayTitleEn di TUTTI gli oggetti marcati Ebay del catalogo' : 'Rewrites the IT and EN titles of EVERY item marked Ebay in the catalogue'}">${it ? '🔁 Rigenera tutti i titoli (tutto il catalogo)' : '🔁 Regenerate all titles (whole catalogue)'}</button>
+  </div>` : '';
+  const th = (label, extra = '') => `<th style="padding:0.4rem 0.6rem;text-align:left;white-space:nowrap;color:var(--muted);${extra}">${label}</th>`;
+  tableEl.innerHTML = selector + btnRigenera +
+    `<p style="color:var(--muted);font-size:0.85rem;margin-bottom:0.75rem;">${it
+      ? ordinati.length + (ordinati.length === 1 ? ' oggetto marcato Ebay' : ' oggetti marcati Ebay') + ', ordinati per titolo italiano; per ciascuno le due righe di mercato. ' +
+        (tagliati ? tagliati + (tagliati === 1 ? ' porta la forbice ✂ (tagliato dentro il nome). ' : ' portano la forbice ✂ (tagliati dentro il nome). ') : '') +
+        (identici ? identici + (identici === 1 ? ' ha' : ' hanno') + ' i due titoli identici (=): in quel testo non compare nessuna parola del glossario.' : 'Nessuna coppia identica.')
+      : ordinati.length + ' item(s) marked Ebay, sorted by Italian title; two market rows each. ' +
+        (identici ? identici + ' have identical titles (=): no glossary word appears in that text.' : 'No identical pair.')}</p>` +
+    `<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>
+      ${th('#', 'text-align:right;width:1%;')}${th(it ? 'Mercato' : 'Market', 'width:1%;')}${th(it ? 'Titolo' : 'Title')}
+    </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
 // v5.918 — "Titoli eccedenti la taglia ebay" (Franco). Elenca gli oggetti di questa serie
@@ -12649,7 +13019,7 @@ function renderCatalogSearch(q) {
                 return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
                 ${(() => { const front = isVarOrChange ? (f.img || (baseFig && baseFig.img) || null) : f.img; return front ? `<img src="${cloudinaryUrl(front,'w_32,h_32,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : ''; })()}
                 ${retroFig ? smallImg(retroFig.img, currentLang === 'it' ? 'Retro associato' : 'Associated retro') : ''}
-                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">Change:</span> <span style="color:var(--muted);">'+f.changeType+'</span></span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (retroFig ? ' - <span style="color:var(--info);">' + retroFig.name + '</span>' : '') + '</span>' : ''}</span>
+                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${sec === 'retros' ? _retroNomeLungo(f) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">Change:</span> <span style="color:var(--muted);">'+f.changeType+'</span></span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (retroFig ? ' - <span style="color:var(--info);">' + _retroNomeLungo(retroFig) + '</span>' : '') + '</span>' : ''}</span>
               </span>`;
               }).join('')}
             </div>
@@ -13361,7 +13731,7 @@ let _retroLinkAllSeries = false;
 function _retroLinkLabel(r) {
   // Nome completo del retro se disponibile, altrimenti Nome (+ changeType). In modalità tutte-le-serie
   // anteponiamo la serie per distinguere retro omonimi di serie diverse.
-  const base = (r.fullName && r.fullName.trim()) ? r.fullName : (r.name || '') + (r.changeType ? ' — ' + r.changeType : '');
+  const base = (r.fullName && r.fullName.trim()) ? r.fullName : _retroNomeLungo(r) + (r.changeType ? ' — ' + r.changeType : '');
   if (_retroLinkAllSeries) {
     const s = getData('series', []).find(x => x.id === r.seriesId);
     return (s ? '[' + s.name + '] ' : '') + base;
@@ -13384,8 +13754,8 @@ function populateRetroSelect(selectedId, allSeries) {
   if (selectedId) {
     const r = _retroLinkOptions.find(x => x.id === selectedId);
     if (r) {
-      search.value = r.name + (r.changeType ? ' — ' + r.changeType : '');
-      if (preview) { const parts = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean); preview.style.display = ''; preview.textContent = '✓ ' + (parts.length ? parts.join(' · ') + ' — ' : '') + r.name + (r.changeType ? ' — ' + r.changeType : ''); }
+      search.value = _retroNomeLungo(r) + (r.changeType ? ' — ' + r.changeType : '');
+      if (preview) { const parts = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean); preview.style.display = ''; preview.textContent = '✓ ' + (parts.length ? parts.join(' · ') + ' — ' : '') + _retroNomeLungo(r) + (r.changeType ? ' — ' + r.changeType : ''); }
     }
   } else {
     search.value = '';
@@ -13596,6 +13966,7 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-no-number-input').checked = f.noNumber || false;
       document.getElementById('fig-category-input').value = f.category || '';
       document.getElementById('fig-subcategory-input').value = f.subcategory || '';
+      document.getElementById('fig-subname-input').value = f.subname || '';
       document.getElementById('fig-name-input').value = f.name;
       document.getElementById('fig-desc-input').value = f.desc || '';
       document.getElementById('fig-score-input').value = f.score || 0;
@@ -13623,7 +13994,7 @@ function openAddItemModal(itemId) {
       if (f.ebayImg) { const pr2 = document.getElementById('fig-ebay-img-preview'); pr2.src = f.ebayImg; pr2.style.display = 'block'; editingFigEbayImg = f.ebayImg; }
     }
   } else {
-    ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input','fig-category-input','fig-subcategory-input'].forEach(id => document.getElementById(id).value = '');
+    ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input','fig-category-input','fig-subcategory-input','fig-subname-input'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('fig-no-number-input').checked = false;
     document.getElementById('fig-score-input').value = 0;
     document.getElementById('fig-is-variation-input').checked = false;
@@ -13689,6 +14060,9 @@ function openAddItemModal(itemId) {
   if (categoryGroup) categoryGroup.style.display = isRetros ? '' : 'none';
   const subcategoryGroup = document.getElementById('fig-subcategory-group');
   if (subcategoryGroup) subcategoryGroup.style.display = isRetros ? '' : 'none';
+  // v5.980 — Sottonome: solo per i Retro, come Categoria e Sottocategoria.
+  const subnameGroup = document.getElementById('fig-subname-group');
+  if (subnameGroup) subnameGroup.style.display = isRetros ? '' : 'none';
   // Per i Retro, in griglia restano Categoria, Sottocategoria e Nome
   if (figGrid && isRetros) {
     figGrid.style.gridTemplateColumns = 'minmax(0,140px) minmax(0,140px) 1fr';
@@ -14952,7 +15326,13 @@ function renderItems() {
     const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="event.stopPropagation();cloneFigurine('${f.id}')">&#10697;</button></div>` : '';
     const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="${currentLang === 'it' ? 'Segnala qualcosa all\'amministratore per questa figurina' : 'Report something to the administrator about this sticker'}" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
     const descHTML = f.desc ? `<div class="fig-desc" style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
-    const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);margin-top:4px;">⭐ ${f.score} pt</div>` : '';
+    // v5.980 (Franco) — il punteggio sta SEMPRE in fondo alla card, in riga con "Mia lista".
+    // Prima era una riga a se' sopra la barra delle azioni: la sua altezza dipendeva da quante
+    // righe aveva la card (nome corto o lungo, sottoserie, sottonome, descrizione), quindi in una
+    // griglia il punteggio non era mai alla stessa altezza da una card all'altra. Ancorandolo alla
+    // barra delle azioni si allinea da solo, qualunque cosa ci sia sopra. Niente margin-top: qui
+    // l'allineamento lo da' la riga.
+    const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);">⭐ ${f.score} pt</div>` : '';
     const sizeHTML = f.size ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
     // v5.804 — Franco: la sottoserie NON sostituisce più il numero sulla card. Il numero resta in
     // etichetta (#N) e la sottoserie va su una riga a parte, nello stesso punto/stile in cui i Retro
@@ -14992,9 +15372,11 @@ function renderItems() {
               ? (f.name || '')
               : (catParts.length ? catParts.join(' · ') : (currentLang === 'it' ? '(senza categoria)' : '(no category)')))
       : (_mobileFigCard
-          ? `<span class="fig-number" style="font-size:1.05rem;">${figLabel}</span>${scoreInlineHTML}` +
+          ? `<span class="fig-number" style="font-size:1.05rem;color:var(--text);">${figLabel}</span>${scoreInlineHTML}` +
             (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line">${catPrefix}${f.name}</div>`)
-          : `<span class="fig-number" style="font-size:1.05rem;">${figLabel}</span>${figLabel ? ' ' : ''}${catPrefix}${f.name}`);
+          // v5.980 (Franco) — il numero in BIANCO come il nome: sono la stessa cosa, l'identita'
+          // della figurina, e col grigio sembravano due informazioni di peso diverso.
+          : `<span class="fig-number" style="font-size:1.05rem;color:var(--text);">${figLabel}</span>${figLabel ? ' ' : ''}${catPrefix}${f.name}`);
     // v5.780 — se il Nome del Retro è IDENTICO alla Categoria (caso raro), la riga del Nome è
     // ridondante rispetto alla prima riga (la Categoria): la omettiamo, mostrando solo la Categoria.
     // Confronto esatto (trim, case-insensitive); non usa _retroNameStartsWithCategory (che è "inizia
@@ -15008,6 +15390,16 @@ function renderItems() {
           : ((f.name && !_retroNameEqualsCategory)
               ? `<div style="font-size:0.9rem;color:var(--text);margin-top:1px;">${esc(f.name || '')}</div>`
               : ''));
+    // v5.980 (Franco) — Riga del Sottonome sulla card Retro, a capo, in AZZURRO.
+    // In grigio muted spariva. L'azzurro nel sito segna le variazioni non ufficiali, ma quelle
+    // esistono solo per le Figurine: su una card Retro il colore e' libero, e non si crea nessuna
+    // ambiguita'. (Scartati: lime = cose cliccabili, verde = punteggio, giallo = avvisi.) Fino alla v5.979 stava
+    // dentro il Nome e appariva sulla riga 2 senza distinguersi; ora che e' un campo suo va
+    // mostrato lo stesso — altrimenti dividerlo avrebbe voluto dire nasconderlo — ma su una riga
+    // propria, che e' anche piu' fedele alla carta vera, dove quel testo sta in un'altra parte
+    // del disegno. Si mostra solo se c'e': una riga vuota su centinaia di retro sarebbe rumore.
+    const retroSubnameLineHTML = (isRetroCard && (f.subname || '').trim())
+      ? `<div style="font-size:0.82rem;color:var(--info);margin-top:1px;">${esc(f.subname.trim())}</div>` : '';
     const imgAspectRatio = currentSection === 'retros' ? '1.6' : '1';
     // LA SCRITTA DEL TIPO VIVE SOLO NEI RETRO (v5.705).
       // Nelle FIGURINE era ridondante: il badge in alto a destra dice gia' il tipo, ed
@@ -15041,13 +15433,31 @@ function renderItems() {
       const _cardTypeColor = _cardIsChg ? 'var(--type-change)' : (_cardIsPE ? 'var(--type-printerror)' : 'var(--text)');
       const typeIndicatorHTML = _cardTypeTxt
         ? `<div style="font-size:0.82rem;color:${_cardTypeColor};font-weight:600;">${esc((_cardTypeTxt || '').toUpperCase())}</div>`
-        : '<div></div>';
+        : '';
+      // v5.980 (Franco) — ordine della card, dall'alto: nome, sottonome, tipo di change o di
+      // errore di stampa; e in fondo, sulla stessa riga, punteggio e "Mia lista".
+      // Il tipo e' quindi risalito fra le righe di testo, dov'e' un'informazione da leggere
+      // insieme al nome; in fondo resta solo cio' che si guarda o si preme.
+      // Su telefono, nelle card Figurina, il punteggio e' gia' in cima accanto al numero (v5.829)
+      // e qui non si ripete: resta il div vuoto, che tiene "Mia lista" nella sua colonna.
+      const _scoreInActions = _mobileFigCard ? '' : scoreHTML;
+      const slotSinistraHTML = _scoreInActions || '<div></div>';
     // v5.828 — col filtro "Solo base" attivo, su telefono NON si mostra il nome del retro
   // associato: sono tutte figurine base, quindi la riga e' ridondante e ruba spazio.
   // Guardia di viewport: sul desktop il nome del retro resta sempre.
   const _hideRetroName = _isMobileViewport() && _itemTypeFilter === 'base';
+  // v5.980 (Franco) — il retro collegato occupa DUE righe, non una: il suo nome, e sotto il suo
+  // sottonome in azzurro. Stesso schema della card Retro, cosi' le due sezioni si leggono allo
+  // stesso modo. Finche' il sottonome e' vuoto la seconda riga non c'e' e l'aspetto e' quello di
+  // sempre.
   const retroNameHTML = (currentSection === 'figurines' && !f.isChange && f.retroId && !_hideRetroName)
-      ? (() => { const r = getData('figurines', []).find(x => x.id === f.retroId); return r ? `<div style="font-size:0.78rem;color:var(--muted);">${r.name}</div>` : ''; })()
+      ? (() => {
+          const r = getData('figurines', []).find(x => x.id === f.retroId);
+          if (!r) return '';
+          const sotto = (r.subname || '').trim();
+          return `<div style="font-size:0.78rem;color:var(--muted);">${esc(_retroNomeCorto(r))}</div>` +
+                 (sotto ? `<div style="font-size:0.78rem;color:var(--info);">${esc(sotto)}</div>` : '');
+        })()
       : '';
     const isWideFlexMode = currentSection === 'figurines' && _retroViewMode === 'destra-piena';
     const cardSpanStyle = isWideFlexMode
@@ -15061,13 +15471,13 @@ function renderItems() {
       </div>
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
-        ${isRetroCard ? retroNameLineHTML : subseriesHTML}
+        ${isRetroCard ? retroNameLineHTML + retroSubnameLineHTML : subseriesHTML}
+        ${typeIndicatorHTML}
         ${retroNameHTML}
         ${descHTML}
         ${sizeHTML}
-        ${_mobileFigCard ? '' : `<div style="display:flex;align-items:center;gap:0.5rem;">${scoreHTML}</div>`}
         <div class="fig-actions">
-        ${typeIndicatorHTML}
+        ${slotSinistraHTML}
         <div class="fig-act fig-act-mylist"><span class="fig-act-label">${t('owned.toggle')}</span><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista \u2014 clicca per toglierla':'In your list \u2014 click to remove') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="event.stopPropagation();toggleOwned('${f.id}')">\u2713</button></div>
         ${(currentUser && !currentUser.isAdmin) ? `<div class="fig-act fig-act-wishlist"><span class="fig-act-label">${currentLang==='it'?'Ciò che cerco':'Looking for'}</span><button class="wishlist-heart-btn" data-wishlist-id="${f.id}" title="${currentLang==='it'?(_wishlist.includes(f.id)?'Togli da &quot;Ciò che cerco&quot;':'Aggiungi a &quot;Ciò che cerco&quot;'):(_wishlist.includes(f.id)?'Remove from &quot;What I\'m looking for&quot;':'Add to &quot;What I\'m looking for&quot;')}" style="background:${_wishlist.includes(f.id)?'rgba(var(--danger-rgb),0.15)':'transparent'};border:1px solid ${_wishlist.includes(f.id)?'var(--danger)':'rgba(255,255,255,0.15)'};color:${_wishlist.includes(f.id)?'var(--danger)':'var(--muted)'};border-radius:8px;padding:3px 8px;cursor:pointer;font-size:1rem;line-height:1;position:relative;z-index:2;">${_wishlist.includes(f.id)?'❤️':'♡'}</button></div>` : ''}
         ${reportBtn ? `<div class="fig-act fig-act-report"><span class="fig-act-label">${currentLang==='it'?'Errore?':'Error?'}</span>${reportBtn}</div>` : ''}
@@ -15171,6 +15581,9 @@ async function _saveFigurineInner() {
   const size = document.getElementById('fig-size-input')?.value.trim() || '';
   const category = document.getElementById('fig-category-input')?.value.trim() || '';
   const subcategory = document.getElementById('fig-subcategory-input')?.value.trim() || '';
+  // v5.980 — Sottonome, solo per i Retro: la seconda parte del nome, quella scritta altrove nel
+  // disegno. Fuori dai Retro resta vuoto anche se la casella fosse rimasta piena.
+  const subname = (currentSection === 'retros') ? (document.getElementById('fig-subname-input')?.value.trim() || '') : '';
   // NEI RETRO I FLAG DI VARIAZIONE SONO SEMPRE FALSI, comunque sia la casella.
   // Nasconderla non basta: se e' rimasta spuntata da una modifica precedente, il suo
   // valore verrebbe letto lo stesso. Qui la regola diventa un fatto.
@@ -15283,13 +15696,13 @@ async function _saveFigurineInner() {
     if (editId) {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn };
         figs[idx].fullName = computeFullName(figs[idx], figs);
         await fsSave('figurines', figs[idx]);
         _cache.figurines = figs;
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn };
       newF.fullName = computeFullName(newF, figs);
       const saved = await fsSave('figurines', newF);
     }
@@ -16954,6 +17367,10 @@ function openFigDetail(figId) {
     rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Categoria' : 'Category')}</span><span class="detail-value">${f.category || '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
     if (f.subcategory) {
       rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottocategoria' : 'Subcategory')}</span><span class="detail-value">${f.subcategory}</span></div>`);
+    // v5.980 — Sottonome: la seconda parte del nome, quella scritta altrove nel disegno. Si mostra
+    // solo se c'è: una riga vuota su centinaia di retro che non ce l'hanno sarebbe rumore.
+    if ((f.subname || '').trim())
+      rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${f.subname}</span></div>`);
     }
   }
   // Nome — tutte le sezioni, quando presente (hide-empty).
@@ -17014,7 +17431,7 @@ function openFigDetail(figId) {
     const _varRetro = getData('figurines', []).find(x => x.id === f.retroId);
     if (_varRetro) {
       const _vp = [_varRetro.category, _varRetro.subcategory].map(v => (v||'').trim()).filter(Boolean);
-      rowsTop.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Retro' : 'Back'}</span><span class="detail-value"><a href="#" onclick="openFigDetail('${_varRetro.id}');return false;" style="color:var(--accent);text-decoration:underline;">${_vp.length ? _vp.join(' · ') + ' — ' : ''}${esc(_varRetro.name || '')} ↗</a></span></div>`);
+      rowsTop.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Retro' : 'Back'}</span><span class="detail-value"><a href="#" onclick="openFigDetail('${_varRetro.id}');return false;" style="color:var(--accent);text-decoration:underline;">${_vp.length ? _vp.join(' · ') + ' — ' : ''}${esc(_retroNomeLungo(_varRetro))} ↗</a></span></div>`);
     }
   }
   if ((f.isVariation || f.isUnofficialVariation || f.isChange || f.isPrintError) && f.baseFigurineId) {
@@ -17069,7 +17486,7 @@ function openFigDetail(figId) {
         ? `<img src="${cloudinaryUrl(retroFig.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
         : noPhotoBox;
       const retroCaption = retroFig
-        ? (() => { const parts = [retroFig.category, retroFig.subcategory].map(v => (v||'').trim()).filter(Boolean); return `<div style="font-size:0.72rem;text-align:center;margin-top:4px;"><a href="#" onclick="openFigDetail('${retroFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${parts.length ? parts.join(' · ') + ' — ' : ''}${retroFig.name} ↗</a></div>`; })()
+        ? (() => { const parts = [retroFig.category, retroFig.subcategory].map(v => (v||'').trim()).filter(Boolean); return `<div style="font-size:0.72rem;text-align:center;margin-top:4px;"><a href="#" onclick="openFigDetail('${retroFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${parts.length ? parts.join(' · ') + ' — ' : ''}${_retroNomeLungo(retroFig)} ↗</a></div>`; })()
         : '';
       photoEl.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
@@ -17187,7 +17604,7 @@ function buildLinkedFiguresTabsHTML(baseId) {
         // ripeterlo. Mostriamo invece il Retro collegato (Categoria + Nome), la vera chiave
         const retroFig = item.retroId ? getData('figurines', []).find(x => x.id === item.retroId) : null;
         label = retroFig
-        ? (() => { const parts = [retroFig.category, retroFig.subcategory].map(v => (v||'').trim()).filter(Boolean); return parts.length ? parts.join(' · ') + ' — ' + retroFig.name : retroFig.name; })()
+        ? (() => { const parts = [retroFig.category, retroFig.subcategory].map(v => (v||'').trim()).filter(Boolean); return parts.length ? parts.join(' · ') + ' — ' + _retroNomeLungo(retroFig) : _retroNomeLungo(retroFig); })()
           : (currentLang === 'it' ? 'Nessun Retro collegato' : 'No Retro linked');
       }
       html += `<a href="#" onclick="openFigDetail('${item.id}');return false;" style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;border-radius:8px;background:var(--card2);text-decoration:none;color:var(--text);font-size:0.85rem;">
@@ -17443,6 +17860,7 @@ function switchToEditMode(figId) {
   if (isRetrosItem) {
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category" value="' + (f.category||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory" value="' + (f.subcategory||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"></span></div>';
   }
 
   // Sottoserie (solo se la serie ha hasSubseries)
@@ -17784,6 +18202,7 @@ async function saveFigFromDetail(figId) {
     size: document.getElementById('fe-size')?.value.trim() || '',
     category: document.getElementById('fe-category')?.value.trim() || '',
     subcategory: document.getElementById('fe-subcategory')?.value.trim() || '',
+    subname: document.getElementById('fe-subname')?.value.trim() || '',
     isVariation: document.getElementById('fe-is-variation')?.checked || false,
     isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
     isChange: document.getElementById('fe-is-change')?.checked || false,
@@ -18322,7 +18741,8 @@ function computeFullName(fig, allFigs) {
   if (fig.section === 'retros') return _retroFullName(fig, allFigs);
   if (fig.isVariation || fig.isUnofficialVariation) {
     const retro = fig.retroId ? allFigs.find(x => x.id === fig.retroId) : null;
-    return retro ? (fig.name || '') + ' - ' + retro.name : (fig.name || '');
+    // v5.980 — nome LUNGO del retro: qui si sta costruendo ciò che si vede, non il titolo eBay.
+    return retro ? (fig.name || '') + ' - ' + _retroNomeLungo(retro) : (fig.name || '');
   }
   if (fig.isChange) {
     // v5.779 — Change di FIGURINA: come il Change di Retro, non ha nome proprio (il Nome eredita
@@ -18377,14 +18797,38 @@ function _retroNameStartsWithCategory(item) {
   return next === '' || !/[\p{L}\p{N}]/u.test(next);
 }
 
+// v5.980 — I due nomi di un retro, in un posto solo.
+//   LUNGO  = quello che si vede: nome + sottonome, uniti come stavano prima in un campo unico
+//   CORTO  = solo il nome, quello che va nel titolo eBay
+// Chi mostra qualcosa all'utente usa il lungo; il titolo eBay usa il corto. Con `subname` vuoto
+// (cioè oggi, e per tutti i retro che non hanno un sottonome) i due coincidono, e infatti finché
+// il campo non viene popolato NULLA cambia — né a schermo né nei titoli.
+function _retroNomeLungo(retro) {
+  if (!retro) return '';
+  const nome = (retro.name || '').trim();
+  const sotto = (retro.subname || '').trim();
+  return sotto ? (nome + ' - ' + sotto) : nome;
+}
+function _retroNomeCorto(retro) {
+  return retro ? (retro.name || '').trim() : '';
+}
+
 function _retroFullName(fig, allFigs) {
   const base = (fig.isChange || fig.isPrintError)
     ? ((fig.baseFigurineId ? allFigs.find(x => x.id === fig.baseFigurineId) : null) || fig)
     : fig;
   const cat = (base.category || '').trim();
+  // v5.980 — NOME LUNGO e NOME CORTO di un retro. Il Nome di alcuni retro è fatto di due parti:
+  // il nome vero e proprio e un SOTTONOME, che nella carta è scritto da un'altra parte del
+  // disegno. Fino alla v5.979 stavano tutti e due dentro `name`, e per tenere il sottonome fuori
+  // dal titolo eBay servivano due liste di frasi da sottrarre — una toppa a valle di
+  // un'informazione compressa a monte.
+  // Ora sono due campi. Il Nome completo, che è ciò che si VEDE ovunque nel sito, li rimette
+  // insieme: a schermo non cambia niente. È il titolo eBay che userà il nome corto.
+  const nomeLungo = _retroNomeLungo(base);
   // Parte iniziale (per un Retro base e' il 100% del Nome completo): "Categoria - Nome",
   // oppure solo "Nome" se il Nome comincia gia' con la categoria (decisione per singolo retro).
-  const piece = _retroNameStartsWithCategory(base) ? (base.name || '') : ((cat ? cat + ' - ' : '') + (base.name || ''));
+  const piece = _retroNameStartsWithCategory(base) ? nomeLungo : ((cat ? cat + ' - ' : '') + nomeLungo);
   if (fig.isChange) {
     // v5.755 (Franco): per i Change niente più " - Change"; solo il Tipo di change, in MAIUSCOLO.
     return piece + ' - ' + (fig.changeType || '').toUpperCase();
@@ -19412,7 +19856,7 @@ function renderAdminErrori() {
   // da quello che si vede sfogliando normalmente la sezione Retro (es. senza foto)
   const retroGroups = {};
   allFigs.filter(f => f.section === 'retros').forEach(r => {
-    const key = r.seriesId + '|' + (r.category||'').toLowerCase().trim() + '|' + (r.name||'').toLowerCase().trim();
+    const key = r.seriesId + '|' + (r.category||'').toLowerCase().trim() + '|' + _retroNomeLungo(r).toLowerCase();
     if (!retroGroups[key]) retroGroups[key] = [];
     retroGroups[key].push(r);
   });
@@ -20648,6 +21092,7 @@ function renderBulkEditView() {
           ${currentSection !== 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>' : ''}
           ${currentSection === 'figurines' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Tipo' : 'Type'}</th>` : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentSection === 'figurines' ? (currentLang === 'it' ? 'Nome Completo' : 'Full Name') : 'Nome'}</th>
+          ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Sottonome' : 'Subname'}</th>` : ''}
           ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</th>` : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
           ${currentSeriesHasSizes ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
@@ -20686,6 +21131,7 @@ function renderBulkEditView() {
               ? `<td style="padding:4px;width:99%;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:280px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`
               : readCell(f.name, 300);
           })()}
+          ${currentSection === 'retros' ? (isAdmin ? `<td style="padding:4px;"><input data-field="subname" data-id="${f.id}" value="${(f.subname||'').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? 'seconda parte del nome' : 'second part of the name'}" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.subname, 200)) : ''}
           ${currentSection === 'retros' ? (isAdmin ? `<td style="padding:4px;"><input data-field="changeType" data-id="${f.id}" value="${f.changeType||''}" style="width:140px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.changeType, 140)) : ''}
           ${isAdmin ? `<td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0)}
           ${currentSeriesHasSizes ? (isAdmin ? '<td style="padding:4px;"><input data-field="size" data-id="'+f.id+'" value="'+(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.size)) : ''}
@@ -20747,6 +21193,18 @@ async function saveBulkCell(input) {
   figs[idx][field] = value;
   if (field === 'name' && figs[idx].section === 'figurines') {
     figs[idx].fullName = computeFullName(figs[idx], figs);
+  }
+  // v5.980 — Toccando un RETRO cambia il Nome completo di piu' record: il suo, quello dei suoi
+  // Change ed errori di stampa (che lo prendono come base), e quello delle Variazioni di figurina
+  // che lo hanno collegato. Se non si ricalcolano, il campo salvato resta indietro e mostra un
+  // nome che non esiste piu' — proprio il campo su cui poggia tutto il resto.
+  // Basta una sola scrittura: le figurine vivono dentro il documento della serie, quindi
+  // fsSave qui sotto porta con se' anche gli altri record ricalcolati.
+  const rec = figs[idx];
+  if (rec.section === 'retros' && ['name', 'subname', 'category', 'changeType', 'printErrorType'].includes(field)) {
+    const dipendenti = figs.filter(x =>
+      x.id === rec.id || x.baseFigurineId === rec.id || x.retroId === rec.id);
+    for (const d of dipendenti) d.fullName = computeFullName(d, figs);
   }
   _cache.figurines = figs;
   await fsSave('figurines', figs[idx]);
