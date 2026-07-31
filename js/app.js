@@ -1,6 +1,66 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v5.982 - Tolto il SEGNAPOSTO dal campo "Tipi di Retro (per i Change di Retro)" nella scheda
+//          serie. Modificato index.html.
+//          Proponeva tre righe di esempio, e la terza era "errore di stampa" - un valore che
+//          dalla v5.713 questo stesso campo RIFIUTA: saveSeries lo filtra via e avvisa con un
+//          toast, perche' dalla v5.711 l'errore di stampa e' un tipo di oggetto a se' e non un
+//          sottotipo di Change. Un esempio che invita a scrivere una cosa vietata e' peggio di
+//          nessun esempio: chi lo segue vede sparire quello che ha appena salvato e non ha modo
+//          di collegare le due cose. Il suggerimento sotto al campo dice gia' "Un valore per
+//          riga", quindi il formato resta spiegato e non si perde niente.
+//          Il filtro NON e' stato toccato: la regola resta, sparisce solo l'invito a violarla.
+// v5.981 - MODELLO DATI eBAY completato, in vista dell'integrazione con le API. Nessuna chiamata a
+//          eBay in questa versione: il sito prepara i dati, pubblicare sara' compito di un
+//          programma sul PC di Franco (vedi ebay-integrazione.md). Modificato index.html + app.js.
+//          - priceUsd: ora ha il suo campo nella scheda (era una colonna che non poteva che
+//            mostrare "—", perche' nessun punto del sito lo scriveva). A mano, deciso da Franco:
+//            nessuna conversione automatica. Il vuoto resta null e NON diventa 0 — "lo regalo" e
+//            "non l'ho deciso" sono cose diverse, e solo la seconda deve fermare la pubblicazione.
+//          - daPubblicare: la coda. Si alza DA SOLA quando cambia qualcosa che eBay deve sapere
+//            (prezzo, priceUsd, quantita', condizione, titoli, descrizioni, foto, Nome completo),
+//            piu' spunta nella scheda e comando in blocco nella Vista Ebay. Funziona perche' su
+//            eBay pubblicare e aggiornare sono la stessa operazione: rimettere in coda non produce
+//            doppioni. Non serve un campo per "ritira": se un oggetto in coda ha forSale falso e
+//            ha gia' un listingId, va ritirato, e lo deduce il programma.
+//          - QUATTRO ACCOUNT VENDITORE, non uno. Franco vende sul proprio account e su tre di
+//            amici a cui ha accesso, e la stessa figurina puo' (di rado) finire su piu' di uno.
+//            L'applicazione registrata su eBay resta UNA: sono gli account a darle il permesso,
+//            uno per uno. Gli account si configurano in Impostazioni (etichetta libera, codice
+//            interno generato e immutabile, uno predefinito) e ognuno porta le SUE business
+//            policy: appartengono all'account, non all'applicazione.
+//          - ebay: esito per ACCOUNT e per mercato — f.ebay['<idAccount>'] = { it, us }, ognuno
+//            con { offerId, listingId, stato, ultimoErrore, aggiornatoIl }. In SOLA LETTURA: li
+//            scrive il programma, il sito li mostra e basta (colonna Stato nella Vista Ebay con
+//            selettore account, riquadro di dettaglio nella scheda). Lo SKU non e' salvato: e' una
+//            regola (SGB-<idFirestore>-IT/US) e si ricalcola sempre; lo stesso SKU su account
+//            diversi non fa collisione, perche' vive nello spazio del singolo venditore.
+//            NOTA: una prima stesura di questa stessa versione aveva ebayIt/ebayUs, due caselle
+//            fisse. Dava per scontato un venditore solo — cosi' diceva il documento — e non
+//            aveva posto per dire QUALE account avesse pubblicato. Rifatta prima di uscire, che
+//            e' l'unico momento in cui cambiare la forma dei dati costa zero: quei campi sono
+//            ancora vuoti su tutte le figurine.
+//          - ebayAccounts sull'oggetto: su quali account va venduto. Vuoto = il predefinito, e
+//            non "nessuno": e' cio' che evita di dover toccare migliaia di figurine gia' marcate
+//            per dire una cosa che si sa gia'. Cambiarlo mette in coda, in piu' o in meno.
+//          - VIA ebayShipIt/ebayShipUs e la colonna Spedizione: rimossi, non completati. Con le
+//            business policy la spedizione non e' un dato dell'oggetto, e una colonna che non puo'
+//            che essere vuota e' peggio di una colonna assente. Al suo posto lo Stato.
+//          - settings/ebay_export riscritto: via shippingService/shippingCost/dispatchDays (e
+//            cancellati davvero da Firestore con deleteField, perche' setDoc usa merge:true e li
+//            avrebbe lasciati la' per sempre). Dentro: accounts[] con per ciascuno i tre policyId
+//            per mercato e il merchantLocationKey in sola lettura (li legge il programma da eBay),
+//            piu' categorie e bestOffer, che sono comuni — la categoria descrive l'oggetto, non
+//            chi lo vende. Lettura tollerante della forma vecchia, per non perdere le soglie
+//            gia' impostate.
+//          - Avviso Best Offer accanto alla spunta, nelle Impostazioni: gli oggetti comprati con
+//            una proposta d'acquisto NON rientrano nella spedizione combinata. Detto una volta,
+//            dove si prende la decisione.
+//          NOTA sul sottonome: la voce v5.980 qui sotto annunciava che dalla v5.981 il titolo eBay
+//          avrebbe usato _retroNomeCorto(). NON e' in questa versione — resta da fare, e dipende
+//          dal campo sottonome che va prima popolato.
+// ------------------------------------------------------------
 // v5.980 - SOTTONOME dei retro: un campo nuovo, e per ora NIENTE che si veda. Il Nome di alcuni
 //          retro e' fatto di due parti — il nome vero e proprio e un pezzo scritto altrove nel
 //          disegno — e finora stavano insieme in `name`. Per tenere il secondo fuori dal titolo
@@ -8635,35 +8695,243 @@ async function getEbaySettings() {
   return _cache.ebaySettings;
 }
 
+// v5.981 — Le categorie di default. Costanti di eBay, non preferenze: stanno qui perché il campo
+// deve poter essere corretto se eBay riorganizza l'albero, non perché ci si aspetti che cambino.
+// Sono comuni a tutti gli account: la categoria descrive l'oggetto, non chi lo vende.
+const EBAY_CATEGORIA_IT = '183490';   // Album e figurine
+const EBAY_CATEGORIA_US = '183050';   // Trading Card Singles
+
+// ============================================================
+//  v5.981 — GLI ACCOUNT VENDITORE
+// ============================================================
+// Non è uno. Franco vende sul proprio account e su tre di amici a cui ha accesso, e la stessa
+// figurina può — di rado — finire su più di uno.
+//
+// L'APPLICAZIONE registrata su eBay resta UNA (il keyset è legato al suo account developer):
+// sono gli ACCOUNT a darle il permesso, uno per uno. Quindi un refresh token per account, e
+// business policy separate per ciascuno — le policy appartengono all'account, non all'applicazione.
+//
+// L'id di un account è GENERATO e non si modifica più, come lo SKU: è ciò a cui puntano i dati
+// scritti sulle figurine. L'etichetta invece è libera e si può correggere quando si vuole, perché
+// non la punta nessuno. Confondere le due cose è il modo classico di orfanare dei dati.
+function _ebayNuovoIdAccount() {
+  return 'acc-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 6);
+}
+
+// Lettura tollerante: su Firestore il documento può essere ancora nella forma dell'export a file
+// (bestOfferEnabled/AcceptPct/MinPct piatti, nessun account). Si accettano entrambe, così le
+// soglie già impostate da Franco non si perdono nel passaggio.
+function _ebayBestOffer(s) {
+  const b = s.bestOffer || {};
+  return {
+    abilitato: b.abilitato ?? s.bestOfferEnabled ?? false,
+    accettaOltrePct: b.accettaOltrePct ?? s.bestOfferAcceptPct ?? null,
+    rifiutaSottoPct: b.rifiutaSottoPct ?? s.bestOfferMinPct ?? null,
+  };
+}
+function ebayAccounts(s) { return Array.isArray(s?.accounts) ? s.accounts : []; }
+function ebayAccountPredefinito(s) {
+  const a = ebayAccounts(s);
+  return a.find(x => x.predefinito) || a[0] || null;
+}
+// Su quali account va pubblicato un oggetto. Il campo vuoto NON significa "nessuno" ma "quello
+// predefinito": è ciò che permette alle migliaia di figurine già marcate Ebay di restare come
+// sono, senza una migrazione che le tocchi una per una per dire una cosa che si sa già.
+function ebayAccountsDiOggetto(f, s) {
+  const scelti = Array.isArray(f?.ebayAccounts) ? f.ebayAccounts.filter(Boolean) : [];
+  if (scelti.length) return scelti;
+  const pre = ebayAccountPredefinito(s);
+  return pre ? [pre.id] : [];
+}
+
+let _ebayAccountsBozza = [];   // copia di lavoro mentre si modifica il pannello
+
+// v5.981 — Le spunte "su quali account" dentro la scheda dell'oggetto.
+// Nessuna spunta = quello predefinito, e la riga del predefinito lo dice a chiare lettere invece
+// di lasciarlo indovinare da una casella vuota.
+function renderEbayAccountScelta(f, s) {
+  const box = document.getElementById('fig-ebay-account-lista');
+  const gruppo = document.getElementById('fig-ebay-account-group');
+  if (!box || !gruppo) return;
+  const it = (currentLang === 'it');
+  const conti = ebayAccounts(s);
+  const attr = t => String(t || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  // Con un account solo non c'e' niente da scegliere: la domanda "su quale?" ha una risposta sola,
+  // e un elenco di una voce e' solo un ingombro.
+  if (conti.length < 2) {
+    gruppo.dataset.vuoto = '1';
+    box.innerHTML = conti.length
+      ? `<div style="font-size:0.82rem;color:var(--muted);">${attr(conti[0].etichetta)}</div>`
+      : `<div style="font-size:0.82rem;color:var(--muted);font-style:italic;">${it ? 'Nessun account configurato — vedi Impostazioni → Impostazioni Ebay' : 'No account configured'}</div>`;
+    return;
+  }
+  gruppo.dataset.vuoto = '';
+  const scelti = Array.isArray(f?.ebayAccounts) ? f.ebayAccounts.filter(Boolean) : [];
+  const pre = ebayAccountPredefinito(s);
+  box.innerHTML = conti.map(a => `
+    <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;padding:0.15rem 0;">
+      <input type="checkbox" data-ebay-account="${attr(a.id)}" ${scelti.includes(a.id) ? 'checked' : ''}
+        style="width:15px;height:15px;cursor:pointer;flex-shrink:0;">
+      <span>${attr(a.etichetta)}${a.id === pre?.id ? ` <span style="color:var(--muted);font-weight:400;">${it ? '(predefinito)' : '(default)'}</span>` : ''}</span>
+    </label>`).join('') +
+    `<div class="form-hint" style="margin-top:0.3rem;">${it
+      ? 'Nessuna spunta = solo l\'account predefinito.'
+      : 'No tick = the default account only.'}</div>`;
+}
+// v5.981 — I due riquadri eBay della scheda (scelta account e stato) hanno bisogno delle
+// impostazioni, che si leggono da Firestore. openAddItemModal() e' sincrona ed e' chiamata da mezzo
+// sito: renderla async per due riquadri sarebbe un cambiamento grosso per un guadagno nullo. Si
+// disegnano quindi appena le impostazioni arrivano — di solito subito, perche' sono in cache.
+function aggiornaRiquadriEbayScheda(f) {
+  getEbaySettings()
+    .then(s => { renderEbayAccountScelta(f, s); renderEbayStatoScheda(f, s); toggleForSaleFields(); })
+    .catch(e => console.error('riquadri eBay della scheda', e));
+}
+
+// Il valore da salvare. Se le spunte coincidono esattamente col solo predefinito si salva null e
+// non l'elenco: cosi' cambiare in futuro quale account e' il predefinito continua a valere per
+// tutti gli oggetti che non hanno espresso una preferenza, che e' il senso di "predefinito".
+function leggiEbayAccountScelta(s) {
+  const box = document.getElementById('fig-ebay-account-lista');
+  if (!box) return null;
+  const scelti = Array.from(box.querySelectorAll('input[data-ebay-account]'))
+    .filter(i => i.checked).map(i => i.getAttribute('data-ebay-account'));
+  if (!scelti.length) return null;
+  const pre = ebayAccountPredefinito(s);
+  if (scelti.length === 1 && pre && scelti[0] === pre.id) return null;
+  return scelti;
+}
+
 async function loadEbaySettingsFields() {
   const s = await getEbaySettings();
-  document.getElementById('ebay-settings-shipping-service').value = s.shippingService || '';
-  document.getElementById('ebay-settings-shipping-cost').value = s.shippingCost ?? '';
-  document.getElementById('ebay-settings-dispatch-days').value = s.dispatchDays || '';
-  document.getElementById('ebay-settings-best-offer').checked = s.bestOfferEnabled || false;
-  document.getElementById('ebay-settings-best-offer-accept-pct').value = s.bestOfferAcceptPct ?? '';
-  document.getElementById('ebay-settings-best-offer-min-pct').value = s.bestOfferMinPct ?? '';
+  document.getElementById('ebay-settings-category-it').value = s.categorie?.it || s.it?.categoryId || EBAY_CATEGORIA_IT;
+  document.getElementById('ebay-settings-category-us').value = s.categorie?.us || s.us?.categoryId || EBAY_CATEGORIA_US;
+  const bo = _ebayBestOffer(s);
+  document.getElementById('ebay-settings-best-offer').checked = bo.abilitato;
+  document.getElementById('ebay-settings-best-offer-accept-pct').value = bo.accettaOltrePct ?? '';
+  document.getElementById('ebay-settings-best-offer-min-pct').value = bo.rifiutaSottoPct ?? '';
+  _ebayAccountsBozza = ebayAccounts(s).map(a => ({ ...a }));
+  renderEbayAccounts();
   toggleEbaySettingsBestOfferFields();
+}
+
+function renderEbayAccounts() {
+  const box = document.getElementById('ebay-settings-accounts');
+  if (!box) return;
+  const it = (currentLang === 'it');
+  if (!_ebayAccountsBozza.length) {
+    box.innerHTML = `<p style="font-size:0.82rem;color:var(--muted);font-style:italic;margin:0 0 0.5rem;">${it ? 'Nessun account ancora. Finché non ce n\'è almeno uno, non c\'è nessuno per conto del quale pubblicare.' : 'No accounts yet.'}</p>`;
+    return;
+  }
+  const attr = t => String(t || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const mancante = `<span style="color:var(--muted);font-style:italic;">${it ? 'da leggere da eBay' : 'to read from eBay'}</span>`;
+  const val = v => v ? `<code style="font-size:0.72rem;">${attr(v)}</code>` : mancante;
+  box.innerHTML = _ebayAccountsBozza.map((a, i) => `
+    <div style="background:var(--card);border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.5rem;">
+      <div style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+        <input class="form-input" type="text" value="${attr(a.etichetta)}" style="flex:1;min-width:140px;font-size:0.85rem;padding:0.3rem 0.5rem;"
+          placeholder="${it ? 'nome dell\'account (per te)' : 'account label'}" oninput="ebayModificaAccount(${i}, 'etichetta', this.value)">
+        <label style="display:flex;align-items:center;gap:0.35rem;font-size:0.8rem;cursor:pointer;white-space:nowrap;">
+          <input type="radio" name="ebay-acc-pre" ${a.predefinito ? 'checked' : ''} onchange="ebayAccountPredefinitoSet(${i})" style="cursor:pointer;">
+          ${it ? 'predefinito' : 'default'}
+        </label>
+        <span onclick="ebayRimuoviAccount(${i})" title="${it ? 'Togli questo account' : 'Remove'}" style="cursor:pointer;color:var(--danger, #e5484d);font-size:0.9rem;">🗑️</span>
+      </div>
+      <div style="display:grid;grid-template-columns:auto auto 1fr;gap:0.1rem 0.6rem;font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">
+        <span>🇮🇹</span><span>${it ? 'pagamento / spedizione / resi' : 'payment / shipping / returns'}</span>
+        <span>${val(a.it?.paymentPolicyId)} ${val(a.it?.fulfillmentPolicyId)} ${val(a.it?.returnPolicyId)}</span>
+        <span>🇺🇸</span><span>${it ? 'pagamento / spedizione / resi' : 'payment / shipping / returns'}</span>
+        <span>${val(a.us?.paymentPolicyId)} ${val(a.us?.fulfillmentPolicyId)} ${val(a.us?.returnPolicyId)}</span>
+        <span></span><span>${it ? 'magazzino' : 'location'}</span><span>${val(a.merchantLocationKey)}</span>
+      </div>
+      <div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem;">${it ? 'codice interno' : 'internal id'} <code>${attr(a.id)}</code></div>
+    </div>`).join('');
+}
+
+function ebayModificaAccount(i, campo, valore) {
+  if (_ebayAccountsBozza[i]) _ebayAccountsBozza[i][campo] = valore;
+  // di proposito NON si ridisegna: il campo di testo perderebbe il cursore a ogni lettera
+}
+function ebayAccountPredefinitoSet(i) {
+  _ebayAccountsBozza.forEach((a, k) => { a.predefinito = (k === i); });
+  renderEbayAccounts();
+}
+function ebayAggiungiAccount() {
+  const it = (currentLang === 'it');
+  _ebayAccountsBozza.push({
+    id: _ebayNuovoIdAccount(),
+    etichetta: '',
+    predefinito: _ebayAccountsBozza.length === 0,   // il primo è predefinito per forza
+    it: {}, us: {}, merchantLocationKey: null,
+  });
+  renderEbayAccounts();
+}
+function ebayRimuoviAccount(i) {
+  const it = (currentLang === 'it');
+  const a = _ebayAccountsBozza[i];
+  if (!a) return;
+  // Togliere un account non cancella quello che è già stato pubblicato con lui: gli annunci
+  // restano su eBay, e le figurine continuano a portarne lo stato. Va detto prima, non dopo.
+  if (!confirm(it
+    ? ('Togliere l\'account "' + (a.etichetta || a.id) + '"?\n\nGli annunci gia\' pubblicati con questo account restano su eBay: il sito smette solo di proporlo. Lo stato registrato sulle figurine non viene cancellato.')
+    : ('Remove account "' + (a.etichetta || a.id) + '"? Listings already published stay on eBay.'))) return;
+  _ebayAccountsBozza.splice(i, 1);
+  if (_ebayAccountsBozza.length && !_ebayAccountsBozza.some(x => x.predefinito)) _ebayAccountsBozza[0].predefinito = true;
+  renderEbayAccounts();
 }
 
 function toggleEbaySettingsBestOfferFields() {
   const checked = document.getElementById('ebay-settings-best-offer').checked;
   document.getElementById('ebay-settings-best-offer-fields').style.display = checked ? 'grid' : 'none';
+  const avviso = document.getElementById('ebay-settings-best-offer-avviso');
+  if (avviso) avviso.style.display = checked ? '' : 'none';
 }
 
 async function saveEbaySettings() {
+  const it = (currentLang === 'it');
+  const s = await getEbaySettings();
+  const _int = id => parseInt(document.getElementById(id).value) || null;
+
+  // Un account senza etichetta si riconosce solo dal codice interno, che non dice niente a nessuno.
+  const senzaNome = _ebayAccountsBozza.filter(a => !(a.etichetta || '').trim());
+  if (senzaNome.length) {
+    toast(it ? 'Dai un nome a ogni account prima di salvare' : 'Name every account before saving', 'error');
+    return;
+  }
   const settings = {
     id: 'ebay_export',
-    shippingService: document.getElementById('ebay-settings-shipping-service').value.trim(),
-    shippingCost: parseFloat(document.getElementById('ebay-settings-shipping-cost').value) || 0,
-    dispatchDays: parseInt(document.getElementById('ebay-settings-dispatch-days').value) || 4,
-    bestOfferEnabled: document.getElementById('ebay-settings-best-offer').checked,
-    bestOfferAcceptPct: parseInt(document.getElementById('ebay-settings-best-offer-accept-pct').value) || null,
-    bestOfferMinPct: parseInt(document.getElementById('ebay-settings-best-offer-min-pct').value) || null,
+    // I policyId e il magazzino di ciascun account NON si toccano da qui: si conservano quelli che
+    // ci sono. Questo pannello non li conosce e non deve poterli sovrascrivere con un vuoto.
+    accounts: _ebayAccountsBozza.map(a => ({
+      id: a.id,
+      etichetta: (a.etichetta || '').trim(),
+      predefinito: !!a.predefinito,
+      it: a.it || {}, us: a.us || {},
+      merchantLocationKey: a.merchantLocationKey || null,
+    })),
+    categorie: {
+      it: document.getElementById('ebay-settings-category-it').value.trim() || EBAY_CATEGORIA_IT,
+      us: document.getElementById('ebay-settings-category-us').value.trim() || EBAY_CATEGORIA_US,
+    },
+    bestOffer: {
+      abilitato: document.getElementById('ebay-settings-best-offer').checked,
+      accettaOltrePct: _int('ebay-settings-best-offer-accept-pct'),
+      rifiutaSottoPct: _int('ebay-settings-best-offer-min-pct'),
+    },
   };
-  await fsSave('settings', settings);
+  // v5.981 — i campi del vecchio modello si CANCELLANO davvero. fsSave usa setDoc con
+  // { merge: true }, quindi ignorarli non basta: sopravvivrebbero indefinitamente, e un costo di
+  // spedizione stantio che qualcuno un giorno rilegge è peggio di un campo che non c'è.
+  // I sentinel deleteField() vanno solo a Firestore, non nella cache in memoria.
+  const daCancellare = ['shippingService', 'shippingCost', 'dispatchDays',
+                        'bestOfferEnabled', 'bestOfferAcceptPct', 'bestOfferMinPct'];
+  const perFirestore = { ...settings };
+  const df = window._fb?.deleteField;
+  if (df) daCancellare.forEach(k => { if (k in s) perFirestore[k] = df(); });
+  await fsSave('settings', perFirestore);
   _cache.ebaySettings = settings;
-  toast(currentLang === 'it' ? '✅ Impostazioni Ebay salvate!' : '✅ Ebay settings saved!', 'success');
+  renderEbayAccounts();
+  toast(it ? '✅ Impostazioni Ebay salvate!' : '✅ Ebay settings saved!', 'success');
 }
 
 async function saveEmailReplyTo(value) {
@@ -9565,7 +9833,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.980';
+const JS_VERSION = 'v5.982';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10479,7 +10747,7 @@ const i18n = {
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters:','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer. Two cases: (1) same character (same front) with a different graphic element in the printing — the back is the same as the base sticker’s; (2) same front, but it is the back that creates the variant — a back that does not belong to the series','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters:','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer. Two cases: (1) same character (same front) with a different graphic element in the printing — the back is the same as the base sticker’s; (2) same front, but it is the back that creates the variant — a back that does not belong to the series','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
 'profile.title':'My Profile','profile.owned':'In My List','profile.total':'Total','profile.sec.figurines':'Stickers','profile.sec.retros':'Retros','profile.sec.albums':'Albums','profile.sec.bustine':'Wrappers','profile.sec.extras':'Other Items','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -10568,7 +10836,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario del sito.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>2) figurine presenti nella tua lista (serie non complete)<br>3) figurine presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -12099,7 +12367,10 @@ function ebayForbice(f, mercato, testoMostrato) {
 // due mercati: Prezzo (€/$), Condizione (Nuovo/Usato vs Ungraded/Used), Spedizione.
 // v5.918 — il Titolo non è più un segnaposto "—": è generato da ebayTitle() ed è per ora lo stesso
 // sui due mercati (i nomi dei personaggi sono italiani e "Gpk - Topps" è già il richiamo che cerca
-// il collezionista americano). Restano segnaposto priceUsd ed ebayShipIt/Us.
+// il collezionista americano).
+// v5.981 — non restano segnaposto: priceUsd ora ha il suo campo nella scheda, ed ebayShipIt/Us
+// sono stati rimossi invece di completati (la spedizione sta nella business policy di eBay, non
+// sull'oggetto). Al posto della colonna Spedizione c'è lo Stato di pubblicazione.
 let _ebayViewMarket = 'it';
 function setEbayViewMarket(m) { _ebayViewMarket = m; renderEbayViewTable(); }
 // v5.920 — sezioni chiuse nella Vista Ebay (chiave = sezione). Tutte aperte all'inizio: la
@@ -12256,6 +12527,49 @@ async function ebayRigeneraTitoli() {
   try { renderEbayViewTable(); } catch (e) { console.error('ridisegno dopo rigenerazione', e); }
 }
 
+// v5.981 — Mette (o toglie) dalla coda di pubblicazione le righe selezionate.
+//
+// Il salvataggio parte da series.items e NON da getData('figurines'), e non è pignoleria: le
+// figurine vivono dentro il documento della loro serie, quindi si salva una serie per volta
+// invece di una serie per oggetto (la lezione di ebayRigeneraTitoli). Ma c'è un secondo motivo,
+// meno ovvio: _cache.figurines contiene gli STESSI riferimenti di series.items solo quando i dati
+// arrivano da Firestore (righe 10231/10299). Quando arrivano dalla cache di sessione (riga 10272)
+// sono copie distinte, uscite da un JSON.parse. Perciò si scrive in serie — che è ciò che si
+// salva — e si riallinea a mano _cache.figurines, che è ciò che si disegna.
+async function ebayImpostaCoda(valore) {
+  if (!currentUser?.isAdmin) return;
+  const it = (currentLang === 'it');
+  if (!_ebaySelected.size) { toast(it ? 'Nessuna riga selezionata' : 'No rows selected', 'error'); return; }
+  const daSalvare = new Set();
+  let toccati = 0;
+  for (const s of getData('series', [])) {
+    for (const item of (s.items || [])) {
+      if (!_ebaySelected.has(item.id)) continue;
+      if ((item.daPubblicare || false) === valore) continue;   // già come lo si vuole
+      item.daPubblicare = valore;
+      toccati++;
+      daSalvare.add(s);
+    }
+  }
+  if (!daSalvare.size) {
+    toast(it ? 'Erano già tutte così: niente da salvare' : 'Already in that state: nothing to save');
+    return;
+  }
+  // il gemello disegnato (vedi sopra): senza questo, a cache di sessione calda la tabella
+  // continuerebbe a mostrare lo stato vecchio pur avendo salvato quello nuovo.
+  getData('figurines', []).forEach(f => { if (_ebaySelected.has(f.id)) f.daPubblicare = valore; });
+  let errori = 0;
+  for (const s of daSalvare) {
+    try { await fsSave('series', s); } catch (e) { console.error('ebayImpostaCoda, serie ' + s.id, e); errori++; }
+  }
+  _ebaySelected.clear();
+  try { renderEbayViewTable(); } catch (e) { console.error('ebayImpostaCoda, ridisegno', e); }
+  const esito = it
+    ? (valore ? (toccati + (toccati === 1 ? ' oggetto messo' : ' oggetti messi') + ' in coda') : (toccati + (toccati === 1 ? ' oggetto tolto' : ' oggetti tolti') + ' dalla coda'))
+    : (toccati + ' item(s) ' + (valore ? 'queued' : 'removed from the queue'));
+  toast(esito + (errori ? (it ? ' (' + errori + ' serie NON salvate, vedi console)' : ' (' + errori + ' series failed)') : ''), errori ? 'error' : 'success');
+}
+
 async function ebayApplicaTitoli() {
   if (!currentUser?.isAdmin) return;
   const it = (currentLang === 'it');
@@ -12351,7 +12665,10 @@ function ebayThFisso(col, label, extra) {
 // con colonne diverse a seconda della sezione confonderebbe più di quanto aiuti.
 let _ebayColHidden = {};
 // v5.923 — elenco delle colonne, per sapere quante ne restano aperte (l'ultima non si chiude).
-const EBAY_COLS = ['riga', 'nome', 'titolo', 'prezzo', 'qta', 'cond', 'sped', 'foto'];
+// v5.981 — via 'sped', dentro 'stato'. La spedizione non è più un dato dell'oggetto: con le
+// business policy dell'Inventory API sta nella fulfillment policy, e nell'annuncio finisce solo
+// l'ID della policy. Una colonna che non può che essere vuota è peggio di una colonna assente.
+const EBAY_COLS = ['riga', 'nome', 'titolo', 'prezzo', 'qta', 'cond', 'stato', 'foto'];
 function nascondiEbayCol(col) {
   if (EBAY_COLS.filter(ebayColVisibile).length <= 1) return; // mai zero colonne
   _ebayColHidden[col] = true;
@@ -12404,12 +12721,27 @@ function ebayApplicaSort(items, sec, valori) {
     return cmp * s.dir;
   });
 }
+// v5.981 — quale account si sta guardando nella Vista Ebay. null = il predefinito.
+// Come per il mercato, la scelta è di chi guarda e vale finché la maschera resta aperta.
+let _ebayViewAccount = null;
+function setEbayViewAccount(id) { _ebayViewAccount = id || null; renderEbayViewTable(); }
+
 function renderEbayViewTable() {
   const tableEl = document.getElementById('series-ebay-table');
   if (!tableEl) return;
   const it = (currentLang === 'it');
   const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId);
   const market = _ebayViewMarket, isIt = market === 'it', sym = isIt ? '€' : '$';
+  // Le impostazioni servono per gli account, ma questa funzione è sincrona (la chiamano una
+  // dozzina di punti). Si usa la cache; se non c'è ancora, si disegna lo stesso e si ridisegna
+  // una volta sola appena arriva — meglio una tabella completa un istante dopo che una funzione
+  // async che costringe a rincorrere tutti i chiamanti.
+  const impostazioni = _cache.ebaySettings || {};
+  if (_cache.ebaySettings === undefined) {
+    getEbaySettings().then(() => renderEbayViewTable()).catch(e => console.error('impostazioni eBay', e));
+  }
+  const contiEbay = ebayAccounts(impostazioni);
+  const accountCorrente = _ebayViewAccount || ebayAccountPredefinito(impostazioni)?.id || null;
   // Bottoni admin = arancioni (var(--action-admin)), non lime.
   const tab = (m, label) => `<button onclick="setEbayViewMarket('${m}')" style="font-size:0.82rem;padding:5px 14px;border-radius:8px;border:1px solid ${market === m ? 'var(--action-admin)' : 'var(--border)'};background:${market === m ? 'var(--action-admin)' : 'transparent'};color:${market === m ? '#ffffff' : 'var(--muted)'};cursor:pointer;font-weight:${market === m ? '700' : '400'};">${label}</button>`;
   // v5.927 (Franco) — "Lascia solo titolo": una scorciatoia per la lavorazione dei titoli, che
@@ -12423,7 +12755,15 @@ function renderEbayViewTable() {
   // v5.979 (Franco) — terzo tab: i due titoli affiancati. Serve perché da quando l'inglese passa
   // dal glossario i due mercati non dicono più la stessa cosa, e alternare fra due schede per
   // confrontarli è il modo peggiore di accorgersi di una differenza.
-  const selector = `<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;align-items:center;">${tab('it', '🇮🇹 eBay.it')}${tab('com', '🇺🇸 eBay.com')}${tab('confronto', '⇄ ' + (it ? 'Titoli mercato a confronto' : 'Titles side by side'))}<span style="flex:1;"></span>${market === 'confronto' ? '' : btnSoloTitolo}</div>`;
+  // v5.981 — seconda riga di scelta: l'account venditore. Compare solo con almeno due account,
+  // perché con uno solo non c'è niente da scegliere e sarebbe una riga di ingombro.
+  const _attrA = t => String(t || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const tabAcc = a => `<button onclick="setEbayViewAccount('${_attrA(a.id)}')" style="font-size:0.78rem;padding:4px 11px;border-radius:8px;border:1px solid ${accountCorrente === a.id ? 'var(--action-admin)' : 'var(--border)'};background:${accountCorrente === a.id ? 'var(--action-admin)' : 'transparent'};color:${accountCorrente === a.id ? '#ffffff' : 'var(--muted)'};cursor:pointer;font-weight:${accountCorrente === a.id ? '700' : '400'};">${_attrA(a.etichetta)}</button>`;
+  const selettoreAccount = (contiEbay.length > 1 && market !== 'confronto')
+    ? `<div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;align-items:center;flex-wrap:wrap;">
+         <span style="font-size:0.78rem;color:var(--muted);">${it ? 'Account:' : 'Account:'}</span>${contiEbay.map(tabAcc).join('')}</div>`
+    : '';
+  const selector = `<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;align-items:center;">${tab('it', '🇮🇹 eBay.it')}${tab('com', '🇺🇸 eBay.com')}${tab('confronto', '⇄ ' + (it ? 'Titoli mercato a confronto' : 'Titles side by side'))}<span style="flex:1;"></span>${market === 'confronto' ? '' : btnSoloTitolo}</div>` + selettoreAccount;
   if (market === 'confronto') { renderEbayConfrontoTitoli(tableEl, selector); renderEbayOversizeTable(); return; }
   if (!figs.some(f => f.forSale)) {
     tableEl.innerHTML = selector + `<p style="color:var(--muted);font-style:italic;font-size:0.88rem;">${it ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
@@ -12453,7 +12793,43 @@ function renderEbayViewTable() {
     return `<span id="ebay-titolo-${f.id}" onclick="ebayEditTitolo('${f.id}', event)" title="${it ? 'Clicca per modificare' : 'Click to edit'}"
       style="display:block;${manuale ? '' : 'color:var(--muted);font-style:italic;'}">${testo}${forbice}${troppoLungo}</span>`;
   };
-  const shipOf = f => isIt ? (f.ebayShipIt || '') : (f.ebayShipUs || '');
+  // v5.981 — Stato di pubblicazione del mercato che si sta guardando. Sola lettura: questi campi
+  // li scrive il programma sul PC, il sito non li tocca mai. Sono due cose sovrapposte in una
+  // cella: l'ESITO (cos'è successo l'ultima volta) e la CODA (cosa succederà al prossimo lancio),
+  // e servono insieme — "pubblicato" con la coda alzata significa "pubblicato, ma non più
+  // aggiornato", che è esattamente il caso che si vuole vedere a colpo d'occhio.
+  const statoEbay = f => accountCorrente ? ebayStatoDi(f, accountCorrente, market) : null;
+  // Un oggetto che non va su questo account non ha "mai pubblicato" come stato: non ha proprio uno
+  // stato, ed e' una cosa diversa. Confonderle vorrebbe dire vedere centinaia di righe che sembrano
+  // in attesa di essere pubblicate quando invece non c'entrano niente con questo venditore.
+  const riguardaAccount = f => !accountCorrente ||
+    ebayAccountsDiOggetto(f, impostazioni).includes(accountCorrente) ||
+    ebayAccountConStato(f).includes(accountCorrente);
+  const EBAY_STATI = {
+    'pubblicato':      { seg: '●', col: 'var(--success, #3fb950)', it: 'pubblicato',      en: 'published' },
+    'ritirato':        { seg: '○', col: 'var(--muted)',            it: 'ritirato',        en: 'ended' },
+    'errore':          { seg: '▲', col: 'var(--danger, #e5484d)',  it: 'errore',          en: 'error' },
+    'mai pubblicato':  { seg: '·', col: 'var(--muted)',            it: 'mai pubblicato',  en: 'never published' },
+  };
+  const statoCell = f => {
+    if (!riguardaAccount(f)) return `<span style="color:var(--border);" title="${it ? 'Questo oggetto non va in vendita su questo account' : 'Not for sale on this account'}">${it ? 'non qui' : 'not here'}</span>`;
+    const e = statoEbay(f);
+    const inCoda = f.daPubblicare
+      ? `<span title="${it ? 'In coda: al prossimo lancio del programma viene creato o aggiornato' : 'Queued for the next run'}">📤</span> ` : '';
+    const s = EBAY_STATI[e?.stato] || EBAY_STATI['mai pubblicato'];
+    // Il dettaglio (listingId, errore, data) sta nella scheda dell'oggetto: qui ci va nel tooltip,
+    // perché una colonna di tabella non è il posto per un messaggio d'errore di eBay.
+    const dettaglio = [
+      e?.listingId ? (it ? 'Annuncio n. ' : 'Listing no. ') + e.listingId : '',
+      e?.ultimoErrore || '',
+      e?.aggiornatoIl ? (it ? 'aggiornato il ' : 'updated ') + new Date(e.aggiornatoIl).toLocaleString(it ? 'it-IT' : 'en-GB') : '',
+    ].filter(Boolean).join(' — ');
+    const etichetta = it ? s.it : s.en;
+    // ultimoErrore arriva da eBay e può contenere qualunque cosa, virgolette comprese: qui finisce
+    // DENTRO un attributo, dove esc() (che tocca solo "<") non basterebbe a chiudere il buco.
+    const attr = t => String(t || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    return `${inCoda}<span title="${attr(dettaglio || etichetta)}" style="color:${s.col};white-space:nowrap;">${s.seg} ${etichetta}</span>`;
+  };
   const priceCell = f => { const v = isIt ? f.price : f.priceUsd; return (v == null || v === '') ? muted('—') : sym + Number(v).toFixed(2); };
   const condOf = f => isIt ? (f.condition === 'used' ? 'Usato' : 'Nuovo') : (f.condition === 'used' ? 'Used' : 'Ungraded');
   const img1 = u => `<img src="${cloudinaryUrl(u, 'w_48,h_48,c_fit,q_auto,f_auto')}" style="width:36px;height:36px;object-fit:contain;border-radius:4px;background:var(--card2);">`;
@@ -12498,7 +12874,9 @@ function renderEbayViewTable() {
       prezzo: f => { const v = isIt ? f.price : f.priceUsd; return (v == null || v === '') ? null : Number(v); },
       qta:    f => Number(f.quantity || 1),
       cond:   f => condOf(f),
-      sped:   f => shipOf(f),
+      // v5.981 — ordinando per stato le righe che chiedono attenzione si radunano: prima gli
+      // errori, poi la coda, e in fondo quello che è già a posto.
+      stato:  f => { if (!riguardaAccount(f)) return 9; const e = statoEbay(f); const ordine = { 'errore': 0, 'mai pubblicato': 2, 'ritirato': 3, 'pubblicato': 4 }; return (ordine[e?.stato] ?? 2) - (f.daPubblicare ? 0.5 : 0); },
       foto:   f => f.ebayImg ? 1 : 0
     });
     // v5.922 — le colonne chiuse non vengono né intestate né riempite (niente celle vuote a
@@ -12522,18 +12900,18 @@ function renderEbayViewTable() {
       ${vis('prezzo') ? td(priceCell(f), 'white-space:nowrap;') : ''}
       ${vis('qta') ? td(f.quantity || 1, 'text-align:center;white-space:nowrap;') : ''}
       ${vis('cond') ? td(condOf(f), 'white-space:nowrap;') : ''}
-      ${vis('sped') ? td(esc(shipOf(f)) || muted('—')) : ''}
+      ${vis('stato') ? td(statoCell(f), 'white-space:nowrap;') : ''}
       ${vis('foto') ? td(thumb(f), 'text-align:center;') : ''}
       ${td(ebayApriBtn(f.id), 'width:1%;text-align:center;')}
     </tr>`).join('');
     return titolo + `<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>
-      <th style="padding:0.4rem 0.6rem;width:1%;text-align:center;"><input type="checkbox" onclick="ebayToggleSelSezione('${sec}', event)" title="${it ? 'Seleziona tutta la sezione' : 'Select the whole section'}" ${items.length && items.every(f => _ebaySelected.has(f.id)) ? 'checked' : ''} style="cursor:pointer;"></th>${vis('riga') ? ebayThFisso('riga', '#', 'text-align:right;') : ''}${vis('nome') ? ebayTh(sec, 'nome', it ? 'Nome completo' : 'Full name') : ''}${vis('titolo') ? ebayTh(sec, 'titolo', 'Titolo ' + (isIt ? 'IT' : 'EN')) : ''}${vis('prezzo') ? ebayTh(sec, 'prezzo', (it ? 'Prezzo' : 'Price') + ' (' + sym + ')') : ''}${vis('qta') ? ebayTh(sec, 'qta', it ? 'Q.tà' : 'Qty') : ''}${vis('cond') ? ebayTh(sec, 'cond', it ? 'Condizione' : 'Condition') : ''}${vis('sped') ? ebayTh(sec, 'sped', (it ? 'Spedizione' : 'Shipping') + ' ' + (isIt ? 'IT' : 'US')) : ''}${vis('foto') ? ebayTh(sec, 'foto', it ? 'Foto' : 'Photo') : ''}<th style="width:1%;"></th>
+      <th style="padding:0.4rem 0.6rem;width:1%;text-align:center;"><input type="checkbox" onclick="ebayToggleSelSezione('${sec}', event)" title="${it ? 'Seleziona tutta la sezione' : 'Select the whole section'}" ${items.length && items.every(f => _ebaySelected.has(f.id)) ? 'checked' : ''} style="cursor:pointer;"></th>${vis('riga') ? ebayThFisso('riga', '#', 'text-align:right;') : ''}${vis('nome') ? ebayTh(sec, 'nome', it ? 'Nome completo' : 'Full name') : ''}${vis('titolo') ? ebayTh(sec, 'titolo', 'Titolo ' + (isIt ? 'IT' : 'EN')) : ''}${vis('prezzo') ? ebayTh(sec, 'prezzo', (it ? 'Prezzo' : 'Price') + ' (' + sym + ')') : ''}${vis('qta') ? ebayTh(sec, 'qta', it ? 'Q.tà' : 'Qty') : ''}${vis('cond') ? ebayTh(sec, 'cond', it ? 'Condizione' : 'Condition') : ''}${vis('stato') ? ebayTh(sec, 'stato', (it ? 'Stato' : 'Status') + ' ' + (isIt ? 'IT' : 'US')) : ''}${vis('foto') ? ebayTh(sec, 'foto', it ? 'Foto' : 'Photo') : ''}<th style="width:1%;"></th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
   }).join('');
   const etichetteCol = {
     nome: it ? 'Nome completo' : 'Full name',
     titolo: 'Titolo', prezzo: it ? 'Prezzo' : 'Price', qta: it ? 'Q.tà' : 'Qty',
-    cond: it ? 'Condizione' : 'Condition', sped: it ? 'Spedizione' : 'Shipping', foto: it ? 'Foto' : 'Photo'
+    cond: it ? 'Condizione' : 'Condition', stato: it ? 'Stato' : 'Status', foto: it ? 'Foto' : 'Photo'
   };
   // v5.925 — barra delle azioni: compare solo quando c'è una selezione, così a riposo non
   // occupa spazio e quando c'è dice subito su quante righe agirà.
@@ -12542,6 +12920,10 @@ function renderEbayViewTable() {
     <span style="font-size:0.82rem;color:var(--text);font-weight:600;">${n} ${it ? (n === 1 ? 'riga selezionata' : 'righe selezionate') : (n === 1 ? 'row selected' : 'rows selected')}</span>
     <button class="btn-primary btn-admin" onclick="ebayApplicaTitoli()" style="font-size:0.82rem;padding:0.35rem 0.9rem;"
       title="${it ? 'Scrive il titolo generato dal Nome completo nei campi Titolo IT ed EN (tagliato a 80 caratteri)' : 'Writes the generated title into the IT and EN title fields (cut at 80 chars)'}">${it ? '📝 Applica Nome completo al Titolo' : '📝 Apply full name to title'}</button>
+    <button class="btn-primary btn-admin" onclick="ebayImpostaCoda(true)" style="font-size:0.82rem;padding:0.35rem 0.9rem;"
+      title="${it ? 'Al prossimo lancio del programma questi annunci vengono creati o aggiornati' : 'These listings will be created or updated the next time the program runs'}">${it ? '📤 Metti in coda' : '📤 Queue'}</button>
+    <button class="btn-danger-ghost" onclick="ebayImpostaCoda(false)" style="font-size:0.82rem;padding:0.35rem 0.9rem;cursor:pointer;"
+      title="${it ? 'Toglie dalla coda: il programma li ignora. Torneranno in coda da sé alla prossima modifica' : 'Removes from the queue. They will return on their own at the next change'}">${it ? '↩︎ Togli dalla coda' : '↩︎ Unqueue'}</button>
     <span onclick="ebayDeselezionaTutto()" style="font-size:0.78rem;color:var(--muted);cursor:pointer;text-decoration:underline;">${it ? 'deseleziona' : 'clear'}</span>
   </div>` : '';
   tableEl.innerHTML = selector + barraAzioni + ebayColRestoreBar(etichetteCol) + blocchi;
@@ -13915,6 +14297,18 @@ function toggleForSaleFields() {
   // non ci sarebbe niente da intitolare.
   const testi = document.getElementById('fig-ebay-testi');
   if (testi) testi.style.display = checked ? '' : 'none';
+  // v5.981 — la coda di pubblicazione segue la stessa spunta: un oggetto che non va su eBay non
+  // ha una coda in cui stare.
+  const coda = document.getElementById('fig-ebay-coda');
+  if (coda) coda.style.display = checked ? '' : 'none';
+  // v5.981 — lo stato su eBay si mostra solo se c'è qualcosa da mostrare: su un oggetto nuovo
+  // (nessun id, quindi nessuno SKU) il riquadro resta vuoto e non deve occupare spazio.
+  const stato = document.getElementById('fig-ebay-stato');
+  if (stato) stato.style.display = (checked && stato.dataset.vuoto !== '1' && stato.innerHTML) ? '' : 'none';
+  // v5.981 — e la scelta degli account si mostra solo se c'è davvero una scelta da fare: con un
+  // account solo configurato la domanda non esiste.
+  const acc = document.getElementById('fig-ebay-account-group');
+  if (acc) acc.style.display = (checked && acc.dataset.vuoto !== '1') ? '' : 'none';
   contaCaratteriEbayTitolo('fig-ebay-title-it-input', 'fig-ebay-title-it-count');
   contaCaratteriEbayTitolo('fig-ebay-title-en-input', 'fig-ebay-title-en-count');
 }
@@ -13983,6 +14377,9 @@ function openAddItemModal(itemId) {
       populateRetroSelect(f.retroId || null, !!f.isChange); // v5.786 — Change: retro da tutte le serie
       document.getElementById('fig-for-sale-input').checked = f.forSale || false;
       document.getElementById('fig-price-input').value = f.price || '';
+      document.getElementById('fig-price-usd-input').value = f.priceUsd || '';   // v5.981
+      document.getElementById('fig-da-pubblicare-input').checked = f.daPubblicare || false;  // v5.981
+      aggiornaRiquadriEbayScheda(f);                                                         // v5.981
       document.getElementById('fig-quantity-input').value = f.quantity || 1;
       document.getElementById('fig-condition-input').value = f.condition || 'new';
       // v5.931 — testi dell'annuncio (vuoti = si usa il titolo generato dal Nome completo)
@@ -14005,6 +14402,9 @@ function openAddItemModal(itemId) {
     populateRetroSelect(null);
     document.getElementById('fig-for-sale-input').checked = false;
     document.getElementById('fig-price-input').value = '';
+    document.getElementById('fig-price-usd-input').value = '';                 // v5.981
+    document.getElementById('fig-da-pubblicare-input').checked = false;        // v5.981
+    aggiornaRiquadriEbayScheda(null);                                         // v5.981
     document.getElementById('fig-quantity-input').value = 1;
     document.getElementById('fig-condition-input').value = 'new';
     ['fig-ebay-title-it-input','fig-ebay-title-en-input','fig-ebay-desc-it-input','fig-ebay-desc-en-input']
@@ -15558,6 +15958,136 @@ function handleFigEbayImg(e) {
   reader.readAsDataURL(file);
 }
 
+// ============================================================
+//  v5.981 — SKU eBAY
+// ============================================================
+// Lo SKU non è un dato: è una REGOLA, e si ricalcola sempre dall'id Firestore. Per questo non
+// viene salvato da nessuna parte — un dato salvato può divergere, una regola no.
+//
+// L'id Firestore e non il numero di figurina, né il nome: se lo SKU cambia, eBay non vede una
+// modifica, vede un oggetto nuovo, e il vecchio resta orfano in inventario a tempo indeterminato.
+// Il numero e il nome si possono correggere; l'id no. È l'unica cosa immutabile che abbiamo.
+function ebaySku(itemId, mercato) {
+  return 'SGB-' + itemId + '-' + (mercato === 'com' || mercato === 'us' ? 'US' : 'IT');
+}
+
+// v5.981 — Lo stato di pubblicazione di un oggetto, per account e per mercato.
+//
+//   f.ebay = { '<idAccount>': { it: {...}, us: {...} } }
+//
+// e non due caselle fisse ebayIt/ebayUs, com'era in una prima stesura di questa stessa versione:
+// quella forma dava per scontato UN venditore, e i venditori sono quattro. Un elenco con una voce
+// sola costa quanto una casella, ma quando serve la seconda voce c'è gia' posto.
+//
+// Dentro ogni coppia account+mercato: { offerId, listingId, stato, ultimoErrore, aggiornatoIl }.
+// Lo SKU non c'e' perche' non e' un dato: si ricalcola da ebaySku(). E notare che lo stesso SKU su
+// account diversi non fa collisione — lo SKU vive nello spazio del singolo venditore.
+function ebayStatoDi(f, idAccount, mercato) {
+  const perAccount = f?.ebay?.[idAccount];
+  if (!perAccount) return null;
+  return (mercato === 'com' || mercato === 'us') ? (perAccount.us || null) : (perAccount.it || null);
+}
+// Gli account su cui questo oggetto risulta gia' pubblicato — che possono essere diversi da quelli
+// su cui DEVE essere pubblicato (se ne togli uno dall'elenco, l'annuncio resta su eBay).
+function ebayAccountConStato(f) { return Object.keys(f?.ebay || {}); }
+
+// Esito della pubblicazione, in sola lettura, dentro la scheda dell'oggetto.
+// Non c'è nessun comando qui: la colonna Stato della Vista Ebay serve a guardare l'insieme,
+// questo riquadro a leggere il dettaglio di uno — SKU, numero dell'annuncio, errore, data.
+function renderEbayStatoScheda(f, s) {
+  const box = document.getElementById('fig-ebay-stato');
+  if (!box) return;
+  const it = (currentLang === 'it');
+  // Un oggetto nuovo non ha ancora un id, e quindi non ha ancora uno SKU: non è un errore, è che
+  // non esiste ancora niente da dire.
+  if (!f?.id) { box.innerHTML = ''; box.dataset.vuoto = '1'; return; }
+  const attr = t => String(t || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  const conti = ebayAccounts(s);
+  const nomeDi = id => attr(conti.find(a => a.id === id)?.etichetta || id);
+
+  // Si mostrano gli account su cui l'oggetto DEVE andare, più quelli su cui è già finito anche se
+  // nel frattempo sono stati tolti dall'elenco: quegli annunci esistono davvero, e nasconderli
+  // sarebbe il modo più facile per dimenticarli su eBay.
+  const previsti = ebayAccountsDiOggetto(f, s);
+  const ids = [...new Set([...previsti, ...ebayAccountConStato(f)])];
+  if (!ids.length) { box.innerHTML = ''; box.dataset.vuoto = '1'; return; }
+  box.dataset.vuoto = '';
+
+  const riga = (bandiera, mercato, e) => {
+    const stato = e?.stato || (it ? 'mai pubblicato' : 'never published');
+    const colore = e?.stato === 'errore' ? 'var(--danger, #e5484d)'
+                 : e?.stato === 'pubblicato' ? 'var(--success, #3fb950)' : 'var(--muted)';
+    const voci = [];
+    if (e?.listingId) voci.push((it ? 'annuncio n. ' : 'listing no. ') + attr(e.listingId));
+    if (e?.offerId) voci.push('offerId ' + attr(e.offerId));
+    if (e?.aggiornatoIl) voci.push((it ? 'il ' : 'on ') + new Date(e.aggiornatoIl).toLocaleString(it ? 'it-IT' : 'en-GB'));
+    return `<div style="display:flex;gap:0.5rem;align-items:baseline;flex-wrap:wrap;font-size:0.78rem;padding:0.15rem 0 0.15rem 0.9rem;">
+      <span style="flex-shrink:0;">${bandiera}</span>
+      <code style="font-size:0.7rem;color:var(--muted);">${attr(ebaySku(f.id, mercato))}</code>
+      <span style="color:${colore};font-weight:600;">${attr(stato)}</span>
+      <span style="color:var(--muted);">${voci.join(' · ')}</span>
+      ${e?.ultimoErrore ? `<div style="width:100%;color:var(--danger, #e5484d);font-size:0.73rem;">${attr(e.ultimoErrore)}</div>` : ''}
+    </div>`;
+  };
+  const blocchi = ids.map(id => {
+    const orfano = !conti.some(a => a.id === id);
+    return `<div style="margin-top:0.35rem;">
+      <div style="font-size:0.8rem;font-weight:600;">${nomeDi(id)}${orfano
+        ? ` <span title="${it ? 'Account non più in elenco: gli annunci però esistono ancora su eBay' : 'Account no longer listed'}" style="color:var(--action-admin);font-weight:400;">${it ? '— non più in elenco' : '— not listed'}</span>` : ''}</div>
+      ${riga('🇮🇹', 'it', ebayStatoDi(f, id, 'it'))}
+      ${riga('🇺🇸', 'com', ebayStatoDi(f, id, 'com'))}
+    </div>`;
+  }).join('');
+  box.innerHTML = `<div style="background:var(--card2);border-radius:8px;padding:0.6rem 0.8rem;">
+    <div style="font-size:0.8rem;font-weight:700;">${it ? 'Stato su eBay' : 'Status on eBay'}
+      <span style="font-weight:400;color:var(--muted);">${it ? '— lo scrive il programma, non si modifica da qui' : '— written by the program, read-only here'}</span></div>
+    ${blocchi}
+  </div>`;
+}
+
+// ============================================================
+//  v5.981 — CODA DI PUBBLICAZIONE eBAY (campo daPubblicare)
+// ============================================================
+// Tre campi che sembrano lo stesso e non lo sono:
+//   forSale        appartenenza — "questo oggetto prima o poi va su eBay". Lo decide Franco.
+//   daPubblicare   coda — "al prossimo lancio, fallo". Lo alza il sito, da solo.
+//   ebayIt/ebayUs  esito — cosa e' successo davvero. Lo scrive il programma sul PC, non il sito.
+//
+// La coda si alza DA SOLA perche' su eBay pubblicare e aggiornare sono la stessa operazione:
+// l'annuncio si corregge sul posto e il listingId non cambia, quindi rimetterlo in coda non
+// rischia doppioni. Il costo di un falso positivo e' una chiamata in piu'; il costo di un falso
+// negativo e' un annuncio che resta a un prezzo vecchio, e non se ne accorge nessuno.
+//
+// Non serve un campo separato per "ritira": lo deduce il programma. Se un oggetto in coda ha
+// forSale falso e possiede gia' un listingId, va ritirato; altrimenti pubblicato o aggiornato.
+const EBAY_CAMPI_RILEVANTI = [
+  'forSale', 'price', 'priceUsd', 'quantity', 'condition',
+  'ebayTitleIt', 'ebayTitleEn', 'ebayDescIt', 'ebayDescEn', 'ebayImg',
+  // fullName entra perche' il titolo, se il campo manuale e' vuoto, si genera da lui: cambiare il
+  // Nome completo cambia il titolo dell'annuncio senza toccare nessun campo ebay*.
+  'fullName',
+  // v5.981 — e gli account su cui va venduto: aggiungerne uno vuol dire un annuncio in piu' da
+  // creare, toglierne uno un annuncio da ritirare. In coda in entrambi i casi.
+  'ebayAccounts',
+];
+function ebayCampiCambiati(prima, dopo) {
+  if (!prima) return !!dopo?.forSale;          // oggetto nuovo: in coda se nasce marcato Ebay
+  if (!prima.forSale && !dopo.forSale) return false;  // non riguarda eBay ne' prima ne' dopo
+  const _n = v => (v === undefined || v === '') ? null : v;
+  // Gli array vanno confrontati per contenuto: con !== due elenchi identici risulterebbero sempre
+  // diversi (sono oggetti), e ogni salvataggio rimetterebbe tutto in coda. L'ORDINE non conta —
+  // gli stessi account elencati in ordine diverso sono gli stessi account.
+  const uguali = (a, b) => {
+    if (Array.isArray(a) || Array.isArray(b)) {
+      const A = (Array.isArray(a) ? a : []).filter(Boolean).slice().sort();
+      const B = (Array.isArray(b) ? b : []).filter(Boolean).slice().sort();
+      return A.length === B.length && A.every((v, i) => v === B[i]);
+    }
+    return _n(a) === _n(b);
+  };
+  return EBAY_CAMPI_RILEVANTI.some(k => !uguali(prima[k], dopo[k]));
+}
+
 let _savingFigurine = false;
 async function saveFigurine() {
   if (_savingFigurine) return; // evita duplicati da doppio click o click ripetuto durante il salvataggio
@@ -15600,6 +16130,20 @@ async function _saveFigurineInner() {
   const retroId = document.getElementById('fig-retro-input')?.value || null;
   const forSale = document.getElementById('fig-for-sale-input')?.checked || false;
   const price = forSale ? (parseFloat(document.getElementById('fig-price-input').value) || 0) : null;
+  // v5.981 — priceUsd: il vuoto resta null, NON diventa 0 come il prezzo in euro. Qui la
+  // differenza conta: 0 significa "lo regalo", null significa "non l'ho ancora deciso", e solo
+  // nel secondo caso il programma deve rifiutarsi di pubblicare su eBay.com.
+  const _pUsd = forSale ? parseFloat(document.getElementById('fig-price-usd-input')?.value) : NaN;
+  const priceUsd = Number.isFinite(_pUsd) ? _pUsd : null;
+  // v5.981 — la spunta della coda si legge SOLO con forSale acceso: a spunta Ebay spenta il
+  // controllo e' nascosto e leggerebbe false, cancellando la coda proprio nel caso in cui serve
+  // di piu' — un oggetto tolto da eBay che aspetta di essere RITIRATO. null = non toccarlo.
+  const daPubblicareSpunta = forSale
+    ? (document.getElementById('fig-da-pubblicare-input')?.checked || false)
+    : null;
+  // v5.981 — su quali account. null = "quello predefinito", che è il caso normale.
+  const _impostazioniEbay = await getEbaySettings();
+  const ebayAccountsScelti = forSale ? leggiEbayAccountScelta(_impostazioniEbay) : null;
   const quantity = forSale ? (parseInt(document.getElementById('fig-quantity-input').value) || 1) : null;
   const condition = forSale ? document.getElementById('fig-condition-input').value : null;
   // v5.931 — testi dell'annuncio. Il vuoto diventa null, non stringa vuota: e' il modo in cui
@@ -15696,13 +16240,23 @@ async function _saveFigurineInner() {
     if (editId) {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn };
+        const _prima = figs[idx];   // v5.981 — riferimento all'oggetto PRIMA della sovrascrittura
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti };
         figs[idx].fullName = computeFullName(figs[idx], figs);
+        // v5.981 — la coda: prima quello che dice la spunta (o il valore esistente, se la spunta
+        // era nascosta), poi l'automatismo, che puo' solo ALZARLA. Cosi' togliere la spunta a mano
+        // vale finche' non cambia davvero qualcosa che eBay deve sapere.
+        // Il confronto va DOPO computeFullName, altrimenti il titolo generato cambierebbe senza
+        // che nessuno metta l'oggetto in coda.
+        figs[idx].daPubblicare = (daPubblicareSpunta === null)
+          ? (_prima.daPubblicare || false)
+          : daPubblicareSpunta;
+        if (ebayCampiCambiati(_prima, figs[idx])) figs[idx].daPubblicare = true;
         await fsSave('figurines', figs[idx]);
         _cache.figurines = figs;
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti, daPubblicare: forSale/* v5.981: nasce marcato Ebay = nasce in coda */ };
       newF.fullName = computeFullName(newF, figs);
       const saved = await fsSave('figurines', newF);
     }
