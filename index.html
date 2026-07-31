@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.982"></script>
-<link rel="stylesheet" href="css/style.css?v=5.982">
+<script src="js/email.min.js?v=6.007"></script>
+<link rel="stylesheet" href="css/style.css?v=6.007">
 
 
 <style>
@@ -189,7 +189,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.982</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.007</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -400,11 +400,30 @@
           <div id="detail-meta" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;margin:0.4rem 0 0.6rem;font-size:0.82rem;color:var(--text);"></div>
         </div>
       </div>
-      <!-- v5.883 — descrizione a tutta larghezza, dal bordo sinistro della foto (spostata fuori da .series-info) -->
+      <!-- v5.993 — niente contenitore attorno a descrizione e "Mostra tutto": posizionaDescrizioneSerie()
+           SPOSTA quei due nodi (v5.932), quindi un wrapper si sarebbe svuotato al primo spostamento e
+           nasconderlo non avrebbe piu' nascosto niente. La visibilita' si decide su di essi, dove sono.
+           v5.883 — descrizione a tutta larghezza, dal bordo sinistro della foto (spostata fuori da .series-info) -->
       <p class="series-description" id="detail-desc"></p>
       <!-- v5.874 — comando "Mostra tutto / Mostra meno" per la descrizione: solo telefono,
            mostrato da openSeriesDetail() quando il testo e' lungo. -->
       <button id="detail-desc-toggle" type="button" onclick="toggleSeriesDesc()" style="display:none;background:none;border:none;padding:0;color:var(--accent);font-family:var(--font-ui);font-size:0.8rem;cursor:pointer;text-decoration:underline;"></button>
+      <!-- v5.989 — gli specchietti PANORAMICI (Retro per categoria, Change per tipo) stanno qui:
+           nella testata della serie, sotto la descrizione, insieme alla foto e ai dati della
+           serie. E' il posto che corrisponde a cosa sono — una scheda di cosa contiene la serie,
+           non un riscontro della ricerca. Restano a scomparsa e NON cliccabili: quelli che
+           filtrano sono gli altri due, nei risultati.
+           Niente margini negativi qui: servivano a compensare il padding di #items-section, che
+           in questa testata non c'e' - lasciarli avrebbe fatto sbordare i riquadri oltre la foto. -->
+      <div id="retro-cat-summary-top" style="display:none;margin-top:1rem;"></div>
+      <div id="change-type-summary-top" style="display:none;margin-top:1rem;"></div>
+      <!-- v6.001 — SOLO TELEFONO e SOLO dentro una delle cinque sezioni: richiude la testata
+           della serie (foto, titolo, contatori, specchietti) per arrivare prima alla griglia.
+           Nella pagina coi cinque box non compare: li' la testata E' la pagina. Il pulsante non
+           si richiude insieme al resto - altrimenti non ci sarebbe modo di riaprire - e resta
+           sempre l'ULTIMO figlio del blocco eroe, rimesso li' dopo ogni spostamento di nodi
+           (v5.932/v5.994). -->
+      <button id="series-hero-toggle" type="button" onclick="toggleTestataSerie()" style="display:none;margin-top:0.5rem;background:none;border:none;padding:0.3rem 0;color:var(--action);font-family:var(--font-ui);font-size:0.85rem;font-weight:600;cursor:pointer;text-align:left;text-decoration:underline;"></button>
     </div>
   </div>
   <!-- SECTION SELECTOR -->
@@ -466,8 +485,6 @@
       </div>
     </div>
     <!-- v5.796 — blocchi admin Classifica/Ebay spostati SOTTO i risultati di ricerca (vedi sotto) -->
-    <div id="retro-cat-summary-top" style="display:none;margin-bottom:1rem;margin-left:-1rem;margin-right:-1rem;"></div>
-    <div id="change-type-summary-top" style="display:none;margin-bottom:1rem;margin-left:-1rem;margin-right:-1rem;"></div>
     <div id="items-search-box" style="margin-bottom:1rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-left:-1rem;margin-right:-1rem;">
       <div id="items-search-title" style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:0.75rem;">Imposta la tua ricerca</div>
       <div class="search-bar" style="margin-bottom:0.75rem;">
@@ -506,6 +523,12 @@
       </div>
     </div>
       <div id="items-complete-msg" style="display:none;width:100%;color:var(--accent);font-size:0.9rem;font-style:italic;"></div>
+    <!-- v5.988 — gli specchietti dei RISULTATI stanno qui, subito sotto la ricerca e PRIMA dei
+         blocchi admin Classifica/Ebay. Prima erano piu' in basso, appena sopra la griglia: sono
+         il primo riscontro di cosa ha trovato la ricerca, e leggerli dopo i comandi di massa
+         significava passare accanto ai bottoni prima di sapere su quanti oggetti agiscono. -->
+    <div id="retro-cat-summary-results" style="display:none;margin-bottom:0.9rem;"></div>
+    <div id="change-type-summary-results" style="display:none;margin-bottom:0.9rem;"></div>
     <!-- v5.796 — blocchi admin Classifica/Ebay: qui, SOTTO i risultati di ricerca a cui si applicano, prima della griglia/vista tabellare -->
     <div style="display:flex;flex-wrap:wrap;gap:1.5rem;margin-bottom:1rem;">
       <div>
@@ -541,8 +564,6 @@
         </select>
       </div>
     </div>
-    <div id="retro-cat-summary-results" style="display:none;margin-bottom:0.9rem;"></div>
-    <div id="change-type-summary-results" style="display:none;margin-bottom:0.9rem;"></div>
     <div id="items-pagination-top"></div>
     <div class="grid-6" id="items-grid">
       <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora!</p></div>
@@ -1378,7 +1399,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.982</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.007</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1639,6 +1660,18 @@
       <div id="fig-retro-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:260px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
       <div id="fig-retro-selected-preview" style="display:none;margin-top:6px;font-size:0.85rem;color:var(--accent);"></div>
       <div class="form-hint" data-i18n="form.fig.retroHint">Indica il Retro che rappresenta il retro di questa variazione</div>
+    </div>
+    <!-- v6.006 — RETRO BIANCO. Tre stati diversi, che restano diversi:
+         (1) questa spunta = la figurina NON HA un vero retro, il suo dietro e' bianco;
+         (2) nessun retro collegato = non l'ho ancora censito (temporaneo);
+         (3) retro collegato ma senza foto = censito, foto da fare (temporaneo).
+         I casi 2 e 3 spariranno col censimento, il caso 1 no: e' un dato della figurina. -->
+    <div class="form-group" id="fig-retro-bianco-group" style="display:none;">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+        <input type="checkbox" id="fig-retro-bianco-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+        <span data-i18n="form.fig.retroBianco">Retro bianco (la figurina non ha un vero retro)</span>
+      </label>
+      <div class="form-hint" data-i18n="form.fig.retroBiancoHint">Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.</div>
     </div>
     <div class="form-group" id="fig-score-group" style="max-width:160px;">
       <label class="form-label" data-i18n="form.fig.score">Punteggio</label>
@@ -2126,7 +2159,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.982"></script>
+<script src="js/app.js?v=6.007"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2150,7 +2183,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v5.982'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.007'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
