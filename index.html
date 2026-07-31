@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=5.980"></script>
-<link rel="stylesheet" href="css/style.css?v=5.980">
+<script src="js/email.min.js?v=5.982"></script>
+<link rel="stylesheet" href="css/style.css?v=5.982">
 
 
 <style>
@@ -189,7 +189,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.980</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v5.982</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1166,29 +1166,48 @@
             </div>
             <div style="background:var(--card2);border-radius:12px;padding:1.25rem;">
               <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">🏷️ Impostazioni Ebay</h4>
-              <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">Valori di default usati nell'export per eBay — vengono mostrati (e modificabili) ogni volta al momento dell'esportazione.</p>
+              <!-- v5.981 — Riscritto per le API. Prima questi campi descrivevano la spedizione
+                   annuncio per annuncio, che è il modo del vecchio export a file. Con l'Inventory
+                   API spedizione, pagamento e resi non sono più campi: sono "business policy"
+                   configurate su eBay, e nell'annuncio finisce solo il loro ID. -->
+              <p style="font-size:0.85rem;color:var(--muted);margin-bottom:1rem;">Configurazione usata dal programma di pubblicazione su eBay. Spedizione, pagamento e resi non stanno più qui: sono business policy che si configurano su eBay, e qui si vedono solo i loro identificativi.</p>
 
-              <div class="form-group">
-                <label class="form-label">Corriere/servizio di spedizione</label>
-                <input class="form-input" type="text" id="ebay-settings-shipping-service" placeholder="es. Poste Italiane Posta 4">
-              </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                 <div class="form-group">
-                  <label class="form-label">Costo spedizione (€)</label>
-                  <input class="form-input" type="number" id="ebay-settings-shipping-cost" placeholder="0.00" min="0" step="0.01">
+                  <label class="form-label">Categoria eBay.it</label>
+                  <input class="form-input" type="text" id="ebay-settings-category-it" placeholder="183490">
+                  <div class="form-hint">183490 — Album e figurine</div>
                 </div>
                 <div class="form-group">
-                  <label class="form-label">Tempo massimo di spedizione (giorni)</label>
-                  <input class="form-input" type="number" id="ebay-settings-dispatch-days" placeholder="4" min="1">
+                  <label class="form-label">Categoria eBay.com</label>
+                  <input class="form-input" type="text" id="ebay-settings-category-us" placeholder="183050">
+                  <div class="form-hint">183050 — Trading Card Singles</div>
                 </div>
               </div>
 
               <hr class="divider" style="margin:1rem 0;">
 
-              <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;">
+              <!-- v5.981 — Gli account venditore. Non sono uno: Franco vende sul proprio e su tre
+                   account di amici a cui ha accesso. L'applicazione registrata su eBay resta UNA
+                   (la sua), e ogni account le dà il permesso una volta per conto suo. -->
+              <label class="form-label" style="display:block;margin-bottom:0.4rem;">👥 Account venditore</label>
+              <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.6rem;">Gli account eBay su cui si vende. Il <strong>predefinito</strong> è quello usato dagli oggetti che non ne indicano uno. Le regole di pagamento, spedizione e resi appartengono a ciascun account: le legge il programma da eBay, non si scrivono qui.</p>
+              <div id="ebay-settings-accounts" style="margin-bottom:0.6rem;"></div>
+              <button class="btn-secondary" onclick="ebayAggiungiAccount()" style="font-size:0.82rem;padding:0.35rem 0.9rem;cursor:pointer;">➕ Aggiungi account</button>
+
+              <hr class="divider" style="margin:1rem 0;">
+
+              <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;font-weight:600;margin-bottom:0.5rem;">
                 <input type="checkbox" id="ebay-settings-best-offer" onchange="toggleEbaySettingsBestOfferFields()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
                 <span>Accetta "Migliore Offerta"</span>
               </label>
+              <!-- v5.981 — L'avviso sta QUI, dove si prende la decisione, e viene detto una volta.
+                   Era stato ipotizzato come avviso del programma di pubblicazione, cioè ripetuto
+                   per ogni figurina di ogni lotto: migliaia di righe identiche su una scelta che
+                   Franco fa una volta sola. -->
+              <div id="ebay-settings-best-offer-avviso" style="display:none;font-size:0.8rem;color:var(--action-admin);background:rgba(255,157,61,0.10);border-radius:8px;padding:0.5rem 0.7rem;margin-bottom:0.75rem;">
+                ⚠️ Gli oggetti comprati con una proposta d'acquisto <strong>non rientrano nella spedizione combinata</strong>: chi prende dodici figurine facendo una proposta su ognuna paga dodici spedizioni. Le due cose si escludono, è una scelta.
+              </div>
               <div id="ebay-settings-best-offer-fields" style="display:none;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;">
                 <div class="form-group" style="margin-bottom:0;">
                   <label class="form-label">Accetta automaticamente se ≥ (%)</label>
@@ -1359,7 +1378,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.980</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v5.982</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1506,7 +1525,7 @@
 
     <div class="form-group">
       <label class="form-label" data-i18n="form.series.retroChangeTypes">Tipi di Retro (per i Change di Retro — uno per riga)</label>
-      <textarea class="form-input" id="series-retro-change-types-input" rows="3" placeholder="omaggio nero&#10;omaggio rosso&#10;errore di stampa" style="resize:vertical;font-family:inherit;"></textarea>
+      <textarea class="form-input" id="series-retro-change-types-input" rows="3" style="resize:vertical;font-family:inherit;"></textarea>
       <div class="form-hint" data-i18n="form.series.retroChangeTypesHint">Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.</div>
     </div>
 
@@ -1648,10 +1667,16 @@
         <input type="checkbox" id="fig-for-sale-input" onchange="toggleForSaleFields()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
         <span data-i18n="form.fig.forSale">🏷️ Ebay</span>
       </label>
-      <div id="fig-for-sale-fields" style="display:none;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
+      <div id="fig-for-sale-fields" style="display:none;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;">
         <div class="form-group" style="margin-bottom:0;">
           <label class="form-label" data-i18n="form.fig.price">Prezzo (€)</label>
           <input class="form-input" type="number" id="fig-price-input" placeholder="0.00" min="0" step="0.01">
+        </div>
+        <!-- v5.981 — Prezzo in dollari per eBay.com. Campo a mano, deciso da Franco: nessuna
+             conversione automatica. Vuoto = eBay.com non si pubblica (lo dirà il programma). -->
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label" data-i18n="form.fig.priceUsd">Prezzo ($)</label>
+          <input class="form-input" type="number" id="fig-price-usd-input" placeholder="0.00" min="0" step="0.01">
         </div>
         <div class="form-group" style="margin-bottom:0;">
           <label class="form-label" data-i18n="form.fig.quantity">Quantità</label>
@@ -1665,6 +1690,27 @@
           </select>
         </div>
       </div>
+      <!-- v5.981 — Su quali account venditore va messo in vendita questo oggetto. Nessuna spunta
+           significa "quello predefinito", che è il caso normale: così le migliaia di figurine già
+           marcate Ebay non vanno toccate una per una per dire una cosa che si sa già. -->
+      <div id="fig-ebay-account-group" style="display:none;margin-top:1rem;">
+        <label class="form-label" style="display:block;margin-bottom:0.35rem;">👥 Su quali account</label>
+        <div id="fig-ebay-account-lista"></div>
+      </div>
+      <!-- v5.981 — Coda di pubblicazione. Il sito alza questa spunta da solo quando cambia
+           qualcosa che eBay deve sapere; qui si vede e si può forzare a mano. Chi pubblica
+           davvero è il programma sul PC, non il sito. -->
+      <div id="fig-ebay-coda" style="display:none;margin-top:1rem;">
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;font-weight:600;">
+          <input type="checkbox" id="fig-da-pubblicare-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <span data-i18n="form.fig.daPubblicare">📤 In coda per eBay</span>
+        </label>
+        <div class="form-hint" style="margin-top:0.35rem;" data-i18n="form.fig.daPubblicareHint">Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l'annuncio viene creato o aggiornato.</div>
+      </div>
+      <!-- v5.981 — Esito della pubblicazione sui due mercati. SOLA LETTURA: questi campi li
+           scrive il programma sul PC. Se il sito potesse scriverli direbbe cose che su eBay non
+           sono vere. Lo riempie renderEbayStatoScheda(). -->
+      <div id="fig-ebay-stato" style="display:none;margin-top:1rem;"></div>
       <!-- v5.931 — Titolo e Descrizione dell'annuncio, IT ed EN. Il titolo lasciato vuoto NON è
            un titolo mancante: la Vista Ebay ci mette quello generato dal Nome completo. -->
       <div id="fig-ebay-testi" style="display:none;margin-top:1rem;">
@@ -2080,7 +2126,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=5.980"></script>
+<script src="js/app.js?v=5.982"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2104,7 +2150,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v5.980'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v5.982'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
