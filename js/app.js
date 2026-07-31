@@ -1,6 +1,318 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.007 - "Retro bianco" compare ora anche nella SCHEDA di dettaglio. Segnalato da Franco, che
+//          nella v6.006 non lo trovava. Solo app.js.
+//          Motivo: lo stesso oggetto ha DUE editor - la finestra Aggiungi/Modifica (campi fig-*,
+//          in index.html) e l'editor dentro la scheda (campi fe-*, costruito in JS). Un campo
+//          aggiunto a uno solo dei due semplicemente non esiste per chi usa l'altro, e non c'e'
+//          nessun errore che lo segnali: si vede solo cercandolo e non trovandolo.
+//          La v5.782 diceva gia' che vista e modifica devono coincidere; vale anche fra i due
+//          editor fra loro. Ogni campo nuovo va aggiunto in DUE posti, e questa nota sta qui
+//          perche' la prossima volta non serva scoprirlo di nuovo.
+// v6.006 - RETRO BIANCO: nuovo campo sulla FIGURINA. Chiesto da Franco. app.js, index.html.
+//          Tre stati che ora restano distinti, e che prima venivano confusi da un retro finto
+//          chiamato "RETRO TUTTO BIANCO" messo in catalogo per rappresentare il vuoto:
+//            1. retroBianco = true  -> la figurina NON HA un vero retro, il dietro e' bianco.
+//               Dato permanente: queste figurine esisteranno sempre.
+//            2. nessun retro collegato -> non ancora censito. Temporaneo, invariato.
+//            3. retro collegato senza foto -> censito, foto da fare. Temporaneo, invariato.
+//          Il flag sta sulla FIGURINA e non sul retro (era la mia prima proposta, peggiore):
+//          cosi' il retro finto si puo' CANCELLARE invece di nascondere, e non serve nessun
+//          meccanismo per tenerlo fuori dal catalogo.
+//          Il bianco e' un'immagine SVG finta (RETRO_BIANCO_IMG) che entra nei layout
+//          fronte+retro come se fosse la foto di un retro: nessuno dei cinque modi di
+//          visualizzazione deve sapere che esiste questo caso. cloudinaryUrl() lascia passare
+//          intatto cio' che non e' un URL Cloudinary, quindi il data-URI arriva a destinazione.
+//          Retro collegato e retro bianco si escludono: insieme direbbero che la figurina ha un
+//          retro e insieme che non ce l'ha. Vince il retro vero.
+//          Aggiunte le due voci i18n (IT+EN): un data-i18n senza voce nel dizionario fa sparire
+//          l'etichetta al primo applyI18n, ed e' la trappola descritta nel paragrafo 5 della
+//          procedura di deploy.
+// v6.005 - La testata della serie, su telefono, parte CHIUSA. Chiesto da Franco. Solo app.js.
+//          Dentro una sezione la testata e' un preambolo che si e' appena letto entrando: partire
+//          chiusi porta subito alla ricerca e alla griglia, che sono il motivo per cui si e' li'.
+//          Chi la apre se la ritrova aperta, come prima: cambia solo da che parte si comincia.
+//          Dettaglio che poteva passare inosservato: la chiave in localStorage NON esiste al primo
+//          accesso, quindi il default vive nella variabile e la memoria puo' solo contraddirlo
+//          con '0'. Tenere il vecchio `=== '1'` avrebbe lasciato il default "aperta" per chiunque
+//          non avesse mai toccato il comando, cioe' per tutti.
+// v6.004 - Due correzioni chieste da Franco. Modificato app.js, index.html.
+//          - Il comando della testata torna TESTO nel blu delle azioni, non bottone pieno: apre
+//            e chiude, non agisce, e un bottone pieno gli dava il peso di un comando che fa
+//            qualcosa. La v6.003 aveva scelto il bottone per leggibilita' - preoccupazione mia,
+//            non richiesta: sottolineato e in grassetto il testo si legge, e la coerenza vince.
+//          - Il TOTALE delle numeriche passa da azzurro a FUCSIA. L'azzurro della v6.002 era
+//            sbagliato per un motivo che si vede solo guardando la riga intera: l'azzurro chiaro
+//            e' gia' la VARIAZIONE NON UFFICIALE, e due azzurri vicini si confondono proprio
+//            dove devono distinguersi. Il fucsia --accent3 e' l'unica tinta della palette che su
+//            quella riga non significa gia' qualcos'altro.
+// v6.003 - RINUMERAZIONE (Franco): dopo la v5.999 si passa all'intero successivo, non a una
+//          quarta cifra. Le tre versioni v5.1000/1001/1002, mai pubblicate e vissute solo in
+//          locale, diventano v6.001/6.002/6.003; rinominate anche le cartelle in archivio, cosi'
+//          non resta in giro una numerazione che il progetto non usa.
+//          Il motivo non e' estetico: 'v5.1000' rompe la lettura "cinque-punto-tre-cifre" che il
+//          sito ha da sempre, e a occhio 5.1000 sembra minore di 5.999.
+//          Il controllo cache dell'index regge entrambe le forme e non va toccato: n() calcola
+//          major*10000 + minor, quindi v6.001 vale 60001 contro i 50999 della v5.999. Verificato
+//          leggendo la funzione, non dedotto dal fatto che i numeri crescono.
+// v6.003 - Il comando della testata diventa "Nascondi dettagli serie" / "Mostra dettagli
+//           serie", in BLU. Chiesto da Franco. Modificato app.js, index.html.
+//           E' un bottone blu pieno con testo bianco, non testo blu: e' la forma che --action ha
+//           nel resto del sito dalla v5.729, e il solo testo in #2563eb su questo viola quasi nero
+//           si leggerebbe male. Sarebbe anche l'unico punto in cui quel blu non e' un bottone.
+//           Via il triangolino e via il nome della serie da chiuso: l'etichetta ora dice per
+//           esteso cosa fa, e il nome della serie resta comunque nel titolo della sezione poco
+//           sotto.
+// v6.002 - Due colori chiesti da Franco. Solo app.js.
+//           - Negli specchietti in alto, "totale N" passa da grigio a BIANCO, come tutti gli
+//             altri contatori. Resta grigio il solo punto medio: quello e' un separatore, non un
+//             dato.
+//           - Nelle numeriche della testata il TOTALE diventa AZZURRO. Era bianco come il set
+//             base, e due numeri dello stesso colore sulla stessa riga si leggono come due voci
+//             alla pari - mentre uno e' la somma degli altri. L'azzurro (--info) e' l'unica tinta
+//             libera in quella riga (bianco = base, arancione = variazione ufficiale, azzurro
+//             chiaro = non ufficiale, rosa = Change, salmone = errore di stampa) e nel sito
+//             significa gia' "informazione", che e' il mestiere di un totale.
+//             Vale sia nell'hub sia dentro una sezione: la riga la costruisce una funzione sola.
+// v6.001 - SOLO TELEFONO, SOLO dentro le cinque sezioni: la testata della serie si richiude.
+//           Chiesto da Franco. Modificato app.js, index.html.
+//           Sotto gli 860px, in coda al blocco eroe, compare "nascondi i dettagli": sparisce la
+//           testata - foto, titolo, contatori, specchietti - e si arriva subito alla ricerca e
+//           alla griglia. Da chiusa il comando porta il nome della serie, altrimenti sparirebbe
+//           l'unica cosa che dice dove sei. Il pulsante NON si chiude con il resto: senza, non ci
+//           sarebbe piu' modo di riaprire.
+//           Nella pagina coi cinque box il comando non compare: li' la testata E' la pagina, e
+//           chiuderla lascerebbe uno schermo quasi vuoto. Sul desktop non compare mai.
+//           La scelta si ricorda (localStorage): chi la chiude la vuole chiusa anche nella
+//           sezione dopo.
+//           Due punti delicati, entrambi dovuti a com'e' fatta questa testata:
+//           - il pulsante viene RIMESSO ultimo figlio a ogni ridisegno: i nodi qui dentro vengono
+//             spostati (v5.932, v5.994), quindi una posizione scritta nell'HTML non ci resta;
+//           - riaprendo non si ripristina niente a mano: si ripassa da _mostraTestataSerie, che
+//             fa RIDECIDERE le visibilita' a chi le sa. La stessa regola in due posti ha gia'
+//             prodotto due bachi in questa sessione (v5.992 e la testata sempre visibile).
+//           Nota sulla numerazione: dopo la v5.999 viene la v6.001 e il controllo cache regge -
+//           n() calcola major*10000 + minor, quindi 51000 > 50999. Verificato, non dedotto.
+// v5.999 - Lo specchietto "Retro base per categoria" sale: margine superiore da 0.7rem a
+//          0.15rem. Chiesto da Franco. Solo app.js.
+//          Lo 0.7rem era ereditato dalla descrizione, che li' ci stava con la sua etichetta
+//          sopra; il riquadro invece ha gia' un bordo e un padding suoi, quindi quello stacco si
+//          sommava e lo faceva galleggiare lontano dai contatori a cui si riferisce.
+// v5.998 - Interlinea dei due specchietti in alto da 1.9 a 1.45. Chiesto da Franco. Solo app.js.
+//          L'1.9 veniva dalle pillole, che avevano bisogno di aria per non toccarsi fra una riga
+//          e l'altra. Tolte quelle (v5.996) l'aria e' rimasta senza il motivo che la giustificava:
+//          righe di testo distanti quasi il doppio della loro altezza si leggono come un elenco
+//          sparso invece che come un blocco. Con 1.45 restano separate ma appartengono allo stesso
+//          gruppo, e otto righe occupano un terzo di spazio in meno accanto a una foto di 160px.
+// v5.997 - Specchietto "Retro base per categoria": massimo 8 righe per colonna, e il riquadro si
+//          stringe sul proprio contenuto. Chiesto da Franco. Modificato app.js.
+//          - OTTO RIGHE, poi una colonna nuova a destra. Le serie con molte categorie sono, guarda
+//            caso, proprio quelle senza sottocategorie: righe corte e tantissime, cioe' il caso in
+//            cui una colonna sola diventa un elenco interminabile accanto a una foto di 160px.
+//            Riempimento PER COLONNE (le prime 8 nella prima), non a serpentina: l'ordine
+//            alfabetico si legge dall'alto in basso, ed e' l'unico modo per cercare un nome senza
+//            rimbalzare da una colonna all'altra.
+//          - width:max-content invece della larghezza piena. Con poche categorie corte il riquadro
+//            si allargava a tutta la colonna dei contatori e restava mezzo vuoto a destra. Cosi'
+//            si stringe su cio' che contiene, e con piu' colonne cresce quanto serve - sforare la
+//            riga sopra, in quel caso, e' voluto.
+//          - box-sizing:border-box e max-width:100% messi a mano perche' il sito NON ha un
+//            box-sizing globale (verificato nel CSS): senza, padding e bordo si sommerebbero alla
+//            larghezza e il riquadro sborderebbe di 1,8rem oltre la colonna.
+// v5.996 - I due specchietti IN ALTO perdono le pillole e diventano righe compatte. Scelta di
+//          Franco fra tre proposte. Modificato app.js.
+//          Le cornicette davano a categoria e sottocategoria lo stesso peso visivo, cioe'
+//          dicevano il contrario della gerarchia che c'e'. E su box non cliccabili un bordo che
+//          assomiglia a un bottone promette una pressione che non succede.
+//          Forma nuova: una riga per categoria - nome giallo, contatore bianco - e dopo un
+//          trattino le sue sottocategorie in arancione, separate da un punto medio. Il gemello
+//          dei Change fa lo stesso su un livello solo, col nome del tipo in rosa (--type-change,
+//          che nel sito significa gia' Change).
+//          Il riquadro dei RISULTATI tiene le pillole, ed e' voluto: li' i box si cliccano
+//          davvero, e il bordo e' l'unica cosa che dice dove finisce un bersaglio e comincia
+//          l'altro. Due rappresentazioni diverse perche' fanno due mestieri diversi.
+// v5.995 - Il codice colore vale anche nello specchietto "Retro base per categoria": nomi delle
+//          categorie GIALLI, nomi delle sottocategorie ARANCIONI, contatori BIANCHI. E il
+//          riquadro in alto si chiama ora "Retro base per categoria". Chiesto da Franco.
+//          Modificato app.js.
+//          I contatori erano lime, cioe' il colore delle cose cliccabili: su box che in un
+//          riquadro si cliccano davvero e nell'altro no, il lime prometteva un'azione anche dove
+//          non c'era. In bianco sono un numero e basta.
+//          Da SELEZIONATO un box resta com'era - riempito di lime, testo sul colore di sfondo:
+//          giallo e arancione li' non si leggerebbero, e in quel momento il colore che deve
+//          parlare e' quello dello sfondo, che dice che il filtro e' attivo.
+//          Le due tinte si chiamano ora COL_CATEGORIA e COL_SOTTOCAT: erano CARD_COL_*, ma non
+//          sono piu' solo delle card e un prefisso che restringe fa cercare altrove.
+// v5.994 - Lo specchietto panoramico prende DAVVERO il posto della descrizione: a destra della
+//          foto della serie, sotto le numeriche. E perde il collassatore. Chiesto da Franco.
+//          Modificato app.js.
+//          - COLLOCAZIONE: nella v5.993 la descrizione spariva ma lo specchietto restava in coda
+//            al blocco eroe, cioe' SOTTO la foto. Ora entra dentro #detail-meta con flex-basis
+//            100%, come faceva la descrizione dalla v5.932: e' un flex in wrap, quindi va a capo
+//            subito dopo i contatori - sotto di essi e a destra della foto. Metterlo dopo
+//            #detail-meta lo avrebbe rimandato sotto la foto, che e' alta: identica trappola.
+//          - COLLASSATORE VIA dal riquadro in alto: sta nella testata, in vista, ed e' li' per
+//            essere letto. Un triangolino da premere per vedere quattro numeri era un passaggio
+//            in piu' verso qualcosa che ormai e' gia' davanti agli occhi. Il titolo smette di
+//            essere un invito a cliccare e diventa quello che il riquadro e': "Retro per
+//            categoria", "Change per tipo". Il riquadro dei RISULTATI resta a scomparsa: li' e'
+//            uno strumento fra altri e chiuderlo serve. Tolti _retroCatTopOpen,
+//            _changeTypeTopOpen e le due funzioni toggle: senza collasso non avevano piu' un
+//            mestiere, e uno stato che nessuno legge e' una trappola per chi lo trova.
+//          - NOMI: salvaDescrizioneDaMeta -> salvaNodiDaMeta e posizionaDescrizioneSerie ->
+//            posizionaTestataSerie. Non trattano piu' la sola descrizione, e un nome che dice
+//            meno di quel che fa fa cercare altrove il codice che si ha gia' sotto gli occhi.
+// v5.993 - La descrizione della serie ora sparisce DAVVERO dentro una sezione. La v5.992 non
+//          funzionava. Modificato app.js, index.html.
+//          Motivo dell'errore: dalla v5.932 posizionaTestataSerie() non nasconde e non mostra
+//          - SPOSTA i nodi, dentro #detail-meta in sezione e in coda al blocco eroe nell'hub. Il
+//          contenitore che la v5.992 aveva messo attorno si svuotava al primo spostamento, e
+//          nasconderlo non nascondeva piu' niente. Un contenitore non trattiene un figlio che
+//          qualcun altro sta traslocando.
+//          Ora la visibilita' si decide dove i nodi vivono, cioe' dentro quella stessa funzione:
+//          in sezione restano nel blocco eroe spenti, nell'hub tornano accesi. Il trasloco dentro
+//          #detail-meta non si fa piu': spostare un nodo invisibile e' lavoro che puo' solo
+//          rompersi. Il wrapper della v5.992 e' stato tolto dall'index invece che lasciato inerte.
+//          Il "Mostra tutto" non si riaccende a mano: lo decide _setupSeriesDescToggle in base
+//          alla lunghezza del testo e alla larghezza dello schermo. Riaccenderlo qui avrebbe
+//          voluto dire riscrivere quella regola in un secondo posto.
+// v5.992 - Testata della serie: la DESCRIZIONE si vede solo nella pagina principale (quella coi
+//          box delle sezioni); dentro una sezione sparisce, e al suo posto - sotto le numeriche -
+//          restano gli specchietti panoramici. Chiesto da Franco. Modificato app.js, index.html.
+//          BACO chiuso con la stessa modifica, segnalato da Franco: gli specchietti comparivano
+//          anche nella pagina dei box. Fino alla v5.988 vivevano dentro #items-section e si
+//          nascondevano con lei; portati nella testata (v5.989), che resta visibile sempre,
+//          nessuno li spegneva piu': si ridisegnano solo da renderItems(), che li' non gira mai,
+//          e restavano quelli dell'ultima sezione visitata.
+//          Ora un punto solo decide cosa si vede nella testata, _mostraTestataSerie(), chiamata
+//          dai tre passaggi (apertura serie, apertura sezione, ritorno ai box). Gli specchietti
+//          non li spegne a mano: richiama le loro funzioni, che guardano currentSection. Due punti
+//          che stabiliscono la stessa cosa sono due punti che prima o poi divergono.
+//          Descrizione e suo "Mostra tutto" sono ora in #detail-desc-wrap: il pulsante ha una
+//          logica di visibilita' propria (compare solo se il testo e' lungo), e nasconderli
+//          separatamente avrebbe imposto di ricordarsi se riaccenderlo al ritorno.
+// v5.991 - Card Retro: la SOTTOCATEGORIA va su una riga sua, sotto la Categoria. Chiesto da
+//          Franco. Modificato app.js.
+//          Stavano sulla stessa riga unite da ' \u00b7 ', eredita' di quando erano un'informazione
+//          sola e tutta grigia. Con i due colori della v5.990 la riga unica faceva sembrare
+//          l'arancione una coda del giallo invece di un dato per conto suo.
+//          Ordine della card retro, ora una riga per dato: Categoria (gialla), Sottocategoria
+//          (arancione), Nome (bianco), Sottonome (azzurro).
+//          La riga della Sottocategoria esiste anche quando la categoria e' nascosta perche' gia'
+//          contenuta nel nome (v5.976): prima in quel caso la sottocategoria scivolava nella riga
+//          del nome, cioe' cambiava posto a seconda di come era scritto il nome. Ora sta ferma.
+//          Se non c'e' ne' categoria ne' sottocategoria resta "(senza categoria)"; se c'e' la sola
+//          sottocategoria, la riga della categoria non si stampa affatto invece di dire il falso.
+// v5.990 - CODICE COLORE sulle card: categoria GIALLA, sottocategoria ARANCIONE, nome BIANCO.
+//          Chiesto da Franco. Solo le card: non la vista tabellare, non la scheda di dettaglio.
+//          Modificato app.js.
+//          Perche' solo li': fuori dalle card l'arancione significa gia' "variazione ufficiale"
+//          (--type-official) e il giallo "avviso" (--warn), e sono significati che vedono tutti,
+//          non solo l'admin. Sulle card dei RETRO invece quel conflitto non esiste: un retro non
+//          puo' avere variazioni - la form lo impedisce dalla v5.707 - quindi vi compaiono solo
+//          il rosa dei Change e il salmone degli Errori di stampa. Giallo e arancione sono liberi
+//          per assenza di occupanti, non per convenzione.
+//          La riga 1 della card retro era UNA stringa ("CATEGORIA \u00b7 SOTTOCATEGORIA"), e dentro
+//          una stringa sola due colori non ci stanno: ora sono due <span>, separatore neutro.
+//          Il nome era gia' in var(--text) e resta, reso esplicito anche nel ramo in cui la riga 1
+//          mostra il nome al posto della categoria (v5.976).
+//          Le due tinte stanno in COL_CATEGORIA e COL_SOTTOCAT: cambiarle e' due righe.
+// v5.989 - Gli specchietti PANORAMICI (Retro per categoria, Change per tipo) si spostano nella
+//          TESTATA della serie, sotto la descrizione, accanto a foto e dati. Chiesto da Franco.
+//          Modificato index.html.
+//          Stavano sopra il campo di ricerca, in mezzo agli strumenti dei risultati, e li'
+//          sembravano un terzo riscontro della ricerca pur non essendolo: sono una scheda di
+//          cosa contiene la serie. Nella testata dicono la stessa cosa senza doverlo spiegare.
+//          Restano a scomparsa e NON cliccabili: a filtrare sono gli altri due, nei risultati.
+//          Tolti i margini negativi laterali: compensavano il padding di #items-section, che
+//          nella testata non esiste - lasciarli avrebbe fatto sbordare i riquadri oltre la foto.
+//          Spostati entrambi i gemelli, come nella v5.988.
+// v5.988 - Gli specchietti dei RISULTATI (Retro per categoria, Change per tipo) salgono sopra i
+//          blocchi admin "Classifica" ed "Ebay". Chiesto da Franco. Modificato index.html.
+//          Stavano appena sopra la griglia, quindi DOPO i comandi di massa: si passava accanto a
+//          "Aggiungi a Ebay" e "Punteggio selezionati" prima di leggere su quanti oggetti la
+//          ricerca in corso li farebbe agire. Ora il conteggio si legge per primo.
+//          Spostati entrambi, non solo quello dei Retro: sono gemelli dichiarati (v5.809) e
+//          occupano lo stesso posto in due sezioni diverse - lasciarne uno indietro avrebbe
+//          creato la solita differenza fra due cose che si assomigliano.
+//          Nessuna modifica al codice: cambia solo la posizione dei due contenitori nell'HTML.
+// v5.987 - Specchietti "Retro per categoria": sotto ogni box di categoria compaiono ora i box
+//          delle sue SOTTOCATEGORIE, in entrambi i riquadri (in alto e nei risultati). Chiesto
+//          da Franco. Modificato app.js.
+//          - Nel riquadro dei RISULTATI i sotto-box sono CLICCABILI e filtrano la griglia; in
+//            alto restano statici, come le categorie.
+//          - Il filtro seleziona la COPPIA (categoria, sottocategoria), non la sola
+//            sottocategoria: lo stesso nome puo' esistere sotto categorie diverse, e filtrare
+//            per il solo nome le mescolerebbe senza dirlo. Riclick sullo stesso sotto-box torna
+//            alla sola categoria; cliccare una categoria azzera la sottocategoria (si allarga);
+//            la ✕ del badge azzera entrambi.
+//          - Una categoria i cui retro non hanno MAI la sottocategoria non mostra niente sotto:
+//            sarebbe una riga "(senza sottocategoria)" ripetuta ovunque, che dice solo che il
+//            campo non e' in uso. Se pero' almeno uno ce l'ha, il bucket vuoto SI mostra, cosi'
+//            i sotto-numeri sommano al totale della categoria: un conteggio che non torna e'
+//            peggio di un box in piu'.
+//          - Ogni categoria e' ora una COLONNA (box + sotto-box), non piu' un box in una riga
+//            unica: appendendo i sotto-box allo stesso flusso, al primo a-capo sarebbero finiti
+//            accanto alla categoria sbagliata, con un raggruppamento falso ma credibile.
+//          Nuovi: _retroSubcategoryFilter, _retroResultSubVals, _retroSubLabel,
+//          setRetroSubcategoryFilterByIndex, opzione skipSubcategory di
+//          getCurrentlyFilteredItems. _retroCatCounts ora restituisce [cat, totale, sotto[]].
+// v5.986 - Pagina Retro: lo specchietto "Retro per categoria" IN ALTO ora segue i filtri, e
+//          continua a ignorare la ricerca. Segnalato da Franco. Modificato app.js.
+//          Era cieco a tutto: leggeva direttamente i retro base della serie senza passare da
+//          getCurrentlyFilteredItems. Il commento prometteva solo "NON cambia con la ricerca",
+//          e nessuno si era accorto che nel farlo aveva perso anche i filtri - una promessa
+//          scritta al singolare per un comportamento che ne copriva due.
+//          Ora: filtri SI (tipo, senza foto, posseduti, wishlist, eBay, e anche il filtro per
+//          categoria), ricerca NO. Cadendo il vincolo "solo Retro base", Change ed Errori di
+//          stampa entrano nei conteggi quando i filtri li lasciano passare: i numeri in alto
+//          possono quindi essere diversi da prima, ed e' voluto - il riquadro dice cosa c'e'
+//          nella serie secondo i filtri correnti, non cosa c'era in una definizione fissa.
+//          Nuova opzione skipSearch di getCurrentlyFilteredItems. Il riquadro nei RISULTATI
+//          non e' stato toccato: seguiva gia' filtri e ricerca, che e' come deve stare.
+// v5.985 - Import RETRO: la SOTTOCATEGORIA entra nella chiave di riconciliazione, in tutti e tre
+//          i rami (Retro base, Change, Errore di stampa). Modificato app.js.
+//          Il difetto, trovato da Franco su dati veri: la chiave cercava il record esistente per
+//          Nome + Categoria, ma `subcategory` era fra i campi CONFRONTATI E SCRITTI. Due righe
+//          dello stesso file con stessi Nome e Categoria e sottocategoria diversa - nel caso
+//          reale "RISATE ROSSO" e "RISATE! ROSSO" - trovavano quindi lo STESSO record e si
+//          riscrivevano a vicenda: 11 coppie = 22 righe "aggiornate" a ogni reimportazione dello
+//          stesso file invariato, per sempre. Nessun dato corrotto e nessun doppione: un solo
+//          record che oscillava fra due valori.
+//          Regola generale che questo caso illustra: un campo che viene SCRITTO ma non entra
+//          nella chiave permette a due righe diverse di finire sullo stesso record. Chiave e
+//          campi scritti vanno tenuti allineati.
+//          PREZZO, da sapere: un campo nella chiave non e' piu' correggibile reimportando.
+//          Correggere una sottocategoria nel file ora fa nascere un record NUOVO invece di
+//          sistemare quello esistente - come gia' accade per Nome e Categoria.
+//          Al primo import dopo questa versione le 11 coppie diventano 22 retro distinti: 11
+//          verranno CREATI, ed e' l'effetto voluto.
+//          `subcategory` resta anche fra i campi confrontati del ramo base: ora non puo' piu'
+//          differire, quindi non cambia nulla, ma toglierlo renderebbe muto il confronto se un
+//          domani la chiave cambiasse ancora.
+// v5.984 - Log degli importatori: ora dicono QUALE campo e' cambiato, e sparisce un'etichetta che
+//          non diceva mai niente. Modificato app.js.
+//          - "sovrascritta (dati modificati)" diventa "sovrascritta [modificati: name: \"Omaggio
+//            nero\" -> \"OMAGGIO NERO\"]", in tutti e sei i punti di sovrascrittura dei tre
+//            importatori. Sapere CHE un record e' cambiato senza sapere QUALE campo rende
+//            impossibile spiegare perche', reimportando lo STESSO file invariato, certe righe
+//            risultino di nuovo aggiornate - ed e' esattamente la domanda da cui nasce questa
+//            versione. Nuove _importDiff e _importDiffTxt; _importHasChanges resta, costruita
+//            sopra la prima.
+//          - [Tipo: ""] non si scrive piu' quando il tipo e' vuoto. Nel ramo dei Retro BASE lo era
+//            SEMPRE, per costruzione: ci si entra proprio quando "Tipo di change" manca. Dove il
+//            tipo c'e' davvero (rami Change) l'etichetta resta.
+// v5.983 - Log dell'importatore RETRO: le righe "--- FINE: ... ---" e "--- RIGHE NON IMPORTATE
+//          (n) ---" sono ora in BIANCO (var(--text)). Modificato app.js.
+//          E' l'allineamento di una differenza che non aveva ragione di esistere: la v5.808 aveva
+//          fatto esattamente questo per l'importatore FIGURINE, aggiungendo il tipo 'white' a
+//          figImportLog, e retroImportLog era rimasto indietro. Stesso riquadro, stesse righe di
+//          riepilogo, due colori diversi a seconda di quale dei due import avevi lanciato.
+//          La riga FINE non e' piu' verde/arancione secondo gli errori: il conteggio degli errori
+//          e' scritto dentro la riga stessa, quindi il colore ripeteva un'informazione gia' li'.
+//          Le singole righe scartate restano arancioni: quelle il colore lo usano per distinguersi
+//          dall'intestazione, non per dire se e' andata bene.
 // v5.982 - Tolto il SEGNAPOSTO dal campo "Tipi di Retro (per i Change di Retro)" nella scheda
 //          serie. Modificato index.html.
 //          Proponeva tre righe di esempio, e la terza era "errore di stampa" - un valore che
@@ -543,7 +855,7 @@
 //          della serie" — lo spazio a destra era libero e la descrizione, stando sotto,
 //          allontanava la ricerca. Nell'hub (schede ancora da scegliere) resta a tutta larghezza
 //          come dalla v5.883. Non e' una copia: e' lo stesso nodo spostato da
-//          posizionaDescrizioneSerie(), cosi' testo e "Mostra tutto" non possono divergere.
+//          posizionaTestataSerie(), cosi' testo e "Mostra tutto" non possono divergere.
 //          PAGINA "CIO' CHE CERCO": testo introduttivo riscritto con il titoletto "Come si usa ?"
 //          (IT ed EN); sopra la lista compare "La tua lista 'Cio' che cerco' conta N oggetti.";
 //          il bottone Invia non e' piu' duplicato sopra e sotto ma sta solo SOTTO la lista (si
@@ -9833,7 +10145,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v5.982';
+const JS_VERSION = 'v6.007';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -9888,6 +10200,16 @@ function flagUrl(code) {
   return (window._FLAGS && window._FLAGS[c]) || `flags/${c}.png`;
 }
 
+// v6.006 (Franco) - RETRO BIANCO. Una figurina puo' non avere un vero retro: il suo
+// dietro e' bianco e basta. Non e' la stessa cosa di "retro non ancora collegato" ne' di
+// "retro collegato ma senza foto" - quei due sono stati temporanei del censimento e
+// spariranno, questo e' un dato permanente della figurina.
+// Il bianco e' un'immagine finta generata qui: cosi' entra nei layout fronte+retro senza
+// che nessuno dei cinque debba sapere che e' un caso speciale. cloudinaryUrl() lascia
+// passare intatto tutto cio' che non e' un URL Cloudinary, quindi il data-URI arriva a
+// destinazione com'e'.
+const RETRO_BIANCO_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#ffffff"/></svg>');
 function cloudinaryUrl(url, opts = 'w_300,h_300,c_fit,q_auto,f_auto') {
   if (!url || !url.includes('cloudinary.com')) return url;
   // Insert transformation parameters after /upload/
@@ -10742,7 +11064,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -10836,7 +11158,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario del sito.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>2) figurine presenti nella tua lista (serie non complete)<br>3) figurine presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -11002,12 +11324,27 @@ function _serieHaNumeri() {
   return !(s && s.noNumbers);
 }
 // Specchietti "Retro per categoria" (v5.762): stato apertura (chiusi al caricamento) e filtro
-let _retroCatTopOpen = false;      // riquadro in alto (Retro base): chiuso di default
 let _retroCatResultsOpen = false;  // riquadro risultati: chiuso di default
 let _retroCategoryFilter = null;   // filtro categoria attivo (null = off; '' = senza categoria); solo sezione Retro
 let _retroResultCatVals = [];      // valori categoria reali dei box cliccabili dei risultati, per l'onclick via indice
+// v5.987 - il filtro per SOTTOcategoria. Non vive da solo: sceglierne una implica
+// anche la sua categoria, perche' la stessa sottocategoria puo' esistere sotto
+// categorie diverse e filtrare per il solo nome le mescolerebbe.
+// v5.990/v5.995 - CODICE COLORE di categoria e sottocategoria (Franco): categoria
+// gialla, sottocategoria arancione. Vale sulle CARD e nello specchietto "Retro base
+// per categoria" - non nella vista tabellare ne' nella scheda di dettaglio, dove
+// l'arancione significa gia' "variazione ufficiale" (--type-official) e il giallo
+// "avviso" (--warn).
+// Sulle card dei RETRO quel conflitto non esiste: un retro non puo' avere
+// variazioni (la form lo impedisce dalla v5.707), quindi li' compaiono solo il
+// rosa dei Change e il salmone degli Errori di stampa. Le due tinte sono percio'
+// libere davvero, non per convenzione ma perche' non c'e' niente che le usi.
+// Cambiare tinta = cambiare queste due righe.
+const COL_CATEGORIA = '#ffd84d';    // giallo
+const COL_SOTTOCAT  = '#ffa94d';    // arancione
+let _retroSubcategoryFilter = null; // null = off; '' = senza sottocategoria
+let _retroResultSubVals = [];       // coppie {cat, sub} dei sotto-box cliccabili, per l'onclick via indice
 // v5.809 — Specchietti "Change per Tipo di change" (sezione Figurine), gemelli di quelli dei Retro.
-let _changeTypeTopOpen = false;      // riquadro in alto (panoramica Change): chiuso di default
 let _changeTypeResultsOpen = false;  // riquadro risultati: chiuso di default
 let _changeTypeFilter = null;        // filtro Tipo di change attivo (null = off); solo sezione Figurine
 let _changeTypeResultVals = [];      // valori Tipo di change dei box cliccabili dei risultati, per l'onclick via indice
@@ -13719,7 +14056,7 @@ function tipiPresenti(seriesId, section) {
 // destra è libero e la descrizione, messa sotto, allontanava la ricerca di due righe inutili.
 // Non è una copia: è lo STESSO nodo spostato, così il testo, il "Mostra tutto" e la logica di
 // troncamento restano quelli di prima e non possono divergere.
-function posizionaDescrizioneSerie() {
+function posizionaTestataSerie() {
   const desc = document.getElementById('detail-desc');
   const toggle = document.getElementById('detail-desc-toggle');
   const meta = document.getElementById('detail-meta');
@@ -13731,39 +14068,67 @@ function posizionaDescrizioneSerie() {
     etichetta.id = 'detail-desc-label';
   }
   etichetta.textContent = (currentLang === 'it') ? 'Descrizione della serie' : 'Series description';
-  const vuota = !(desc.textContent || '').trim();
+  // v5.993 (Franco) — DENTRO UNA SEZIONE LA DESCRIZIONE NON SI MOSTRA PIU'.
+  // Il posto che occupava - a destra della foto, sotto le numeriche (v5.932) - e' ora
+  // degli specchietti panoramici. I nodi restano nel blocco eroe, spenti: spostarli
+  // dentro #detail-meta per poi non mostrarli sarebbe lavoro che puo' solo rompersi,
+  // ed e' esattamente il trasloco che obbliga salvaNodiDaMeta() a metterli in
+  // salvo prima di ogni ridisegno delle numeriche.
+  const specchietti = ['retro-cat-summary-top', 'change-type-summary-top']
+    .map(id => document.getElementById(id)).filter(Boolean);
   if (currentSection) {
-    // v5.936 — non basta metterla nella colonna di destra della griglia: essendo una CELLA
-    // nuova finiva in una riga sotto, e quindi sotto alla foto (che è alta). Ora entra DENTRO
-    // il contenitore delle numeriche (#detail-meta, un flex in wrap): con flex-basis 100% va
-    // a capo subito dopo i contatori — cioè sotto di essi e a destra della foto, che è il
-    // posto chiesto da Franco.
-    [etichetta, desc, toggle].forEach(el => { if (el) { el.style.flexBasis = '100%'; el.style.width = '100%'; el.style.gridColumn = ''; el.style.gridRow = ''; } });
-    etichetta.style.cssText += ';font-family:var(--font-ui);font-size:0.78rem;font-weight:700;letter-spacing:0.5px;text-transform:uppercase;color:var(--muted);margin:0.7rem 0 0.15rem;';
-    desc.style.margin = '0';
-    meta.appendChild(etichetta);
-    meta.appendChild(desc);
-    if (toggle) meta.appendChild(toggle);
-    etichetta.style.display = vuota ? 'none' : '';
-  } else {
-    // hub: si torna alla descrizione a tutta larghezza in coda al blocco eroe, con il CSS di
-    // nuovo padrone (via tutti gli stili inline messi sopra)
     if (etichetta.parentNode) etichetta.parentNode.removeChild(etichetta);
-    [desc, toggle].forEach(el => { if (el) { el.style.flexBasis = ''; el.style.width = ''; el.style.gridColumn = ''; el.style.gridRow = ''; el.style.margin = ''; } });
+    [desc, toggle].forEach(el => { if (el) {
+      el.style.flexBasis = ''; el.style.width = ''; el.style.gridColumn = ''; el.style.gridRow = ''; el.style.margin = '';
+      el.style.display = 'none';
+    }});
     heroInner.appendChild(desc);
     if (toggle) heroInner.appendChild(toggle);
+    // v5.994 (Franco) - gli specchietti prendono il posto che era della descrizione: DENTRO
+    // #detail-meta, che e' un flex in wrap, con flex-basis 100% per andare a capo subito dopo
+    // le numeriche. Cioe' sotto i contatori e A DESTRA della foto. Metterli semplicemente dopo
+    // #detail-meta li avrebbe rimandati sotto la foto, che e' alta: la stessa trappola in cui
+    // era caduta la v5.932 con la descrizione, e risolta allora nello stesso modo.
+    specchietti.forEach(el => {
+      el.style.flexBasis = '100%'; el.style.width = '100%'; el.style.marginTop = '0.15rem';
+      meta.appendChild(el);
+    });
+    return;
   }
+  // hub: gli specchietti tornano in coda al blocco eroe. Sono comunque spenti (le loro
+  // funzioni li accendono solo dentro la sezione giusta), ma lasciarli figli di #detail-meta
+  // significherebbe farli distruggere dal primo ridisegno delle numeriche.
+  specchietti.forEach(el => {
+    el.style.flexBasis = ''; el.style.width = ''; el.style.marginTop = '';
+    heroInner.appendChild(el);
+  });
+  // hub: descrizione a tutta larghezza in coda al blocco eroe, con il CSS di nuovo
+  // padrone (via tutti gli stili inline che la v5.932 metteva per la sezione)
+  if (etichetta.parentNode) etichetta.parentNode.removeChild(etichetta);
+  [desc, toggle].forEach(el => { if (el) { el.style.flexBasis = ''; el.style.width = ''; el.style.gridColumn = ''; el.style.gridRow = ''; el.style.margin = ''; } });
+  desc.style.display = '';
+  heroInner.appendChild(desc);
+  if (toggle) heroInner.appendChild(toggle);
+  // Il "Mostra tutto" non si riaccende a mano: la sua visibilita' dipende dalla lunghezza
+  // del testo e dalla larghezza dello schermo, e la decide _setupSeriesDescToggle.
+  // Rimetterlo visibile qui vorrebbe dire duplicare quella regola, e sbagliarla.
+  _setupSeriesDescToggle(desc.textContent || '');
 }
 
 // v5.936 — la descrizione, in sezione, vive DENTRO #detail-meta, che però renderSeriesMeta
 // riscrive con innerHTML: senza questo passaggio i suoi nodi verrebbero distrutti al primo
 // ridisegno e non tornerebbero più (getElementById restituirebbe null). Qui li si mette al
 // sicuro fuori dal contenitore, prima che venga svuotato; ci pensa poi
-// posizionaDescrizioneSerie() a rimetterli al loro posto.
-function salvaDescrizioneDaMeta() {
+// posizionaTestataSerie() a rimetterli al loro posto.
+function salvaNodiDaMeta() {
   const heroInner = document.querySelector('#series-detail .series-hero-inner');
   if (!heroInner) return;
-  ['detail-desc-label', 'detail-desc', 'detail-desc-toggle'].forEach(id => {
+  // v5.994 - non piu' solo la descrizione: ora dentro #detail-meta ci vanno anche i due
+  // specchietti panoramici. L'elenco e' uno solo perche' il pericolo e' uno solo:
+  // renderSeriesMeta riscrive quel contenitore con innerHTML, e cio' che sta dentro
+  // sparisce per sempre - getElementById tornerebbe null e non se ne accorgerebbe nessuno.
+  ['detail-desc-label', 'detail-desc', 'detail-desc-toggle',
+   'retro-cat-summary-top', 'change-type-summary-top'].forEach(id => {
     const el = document.getElementById(id);
     if (el && el.parentElement && el.parentElement.id === 'detail-meta') heroInner.appendChild(el);
   });
@@ -13772,7 +14137,7 @@ function salvaDescrizioneDaMeta() {
 function renderSeriesMeta(s) {
   const metaEl = document.getElementById('detail-meta');
   if (!metaEl || !s) return;
-  salvaDescrizioneDaMeta();   // v5.936 — prima di riscrivere le numeriche
+  salvaNodiDaMeta();   // v5.936/v5.994 — prima di riscrivere le numeriche
 
   // Bullet UNICO, uguale per tutte le categorie. Le icone di prima pretendevano di
   // distinguerle, e due su cinque erano identiche (\u{1F3A8} sia per le variazioni
@@ -13854,10 +14219,16 @@ function renderSeriesMeta(s) {
       it ? (g.printError.length === 1 ? 'errore di stampa' : 'errori di stampa')
          : (g.printError.length === 1 ? 'print error' : 'print errors'),
       false, false, 'var(--type-printerror)'));
+    // v6.004 (Franco) - il TOTALE in FUCSIA. Era bianco (come il set base), poi azzurro
+    // --info nella v6.002: ma su questa riga l'azzurro chiaro e' gia' la variazione NON
+    // ufficiale, e due azzurri vicini si confondono proprio dove servono distinti. Il fucsia
+    // --accent3 e' l'unica tinta della palette che qui non significa gia' qualcos'altro:
+    // bianco = base, arancione = ufficiale, azzurro = non ufficiale, rosa = Change,
+    // salmone = errore di stampa.
     if (g.items.length || alwaysTotal) m.push(colonna(BULLET, g.items,
       it ? (g.items.length === 1 ? nm.s + ' in totale' : nm.p + ' in totale')
          : (g.items.length === 1 ? nm.s + ' in total' : nm.p + ' in total'),
-      true, nm.f));
+      true, nm.f, 'var(--accent3)'));
     return m;
   }
 
@@ -13870,13 +14241,15 @@ function renderSeriesMeta(s) {
     metaEl.innerHTML = '<div class="hub-wrap" style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">' +
       cats.map(c => '<div class="hub-cat-row" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;">' + _pfx(c) + sezRows(c, true).join('') + '</div>').join('') +
       '</div>';
-    posizionaDescrizioneSerie();   // v5.936 — dopo il render: qui la descrizione torna in coda al blocco eroe
+    posizionaTestataSerie();   // v5.936 — dopo il render: qui la descrizione torna in coda al blocco eroe
+    try { _applicaChiusuraTestata(); } catch(e) {}   // v6.001
     return;
   }
 
   metaEl.classList.remove('meta-hub');
   metaEl.innerHTML = sezRows(sez, false).join('');
-  posizionaDescrizioneSerie();     // v5.936 — dopo il render, perché entra DENTRO #detail-meta
+  posizionaTestataSerie();     // v5.936 — dopo il render, perché entra DENTRO #detail-meta
+  try { _applicaChiusuraTestata(); } catch(e) {}   // v6.001
 }
 
 // I contatori in alto alla pagina della serie mostrano anche "N nella tua lista".
@@ -13924,6 +14297,7 @@ function openSeriesDetail(seriesId) {
   // show selector, hide items section
   document.getElementById('section-selector').style.display = '';
   document.getElementById('items-section').style.display = 'none';
+  _mostraTestataSerie(); // hub: descrizione SI, specchietti NO
   // set section images
   ['figurines','retros','albums','extras','bustine'].forEach(sec => {
     const img = document.getElementById('sec-img-' + sec);
@@ -13956,6 +14330,7 @@ function openSeriesSection(section) {
   _noPhotoFilter = false;
   _itemTypeFilter = 'base';
   _retroCategoryFilter = null; // il filtro per categoria dei Retro non sopravvive al cambio sezione/serie
+  _retroSubcategoryFilter = null; // idem per la sottocategoria (v5.987)
   _changeTypeFilter = null; // idem per il filtro Tipo di change (sezione Figurine)
   _ownedFilter = 'all'; // si riparte sempre da "tutti": un filtro dimenticato acceso
                         // fra una sezione e l'altra fa sembrare vuota una sezione piena
@@ -13977,6 +14352,7 @@ function openSeriesSection(section) {
   if (btn) btn.textContent = currentLang === 'it' ? '📋 Vista tabellare' : '📋 Table view';
   document.getElementById('section-selector').style.display = 'none';
   document.getElementById('items-section').style.display = '';
+  _mostraTestataSerie(); // sezione: descrizione NO, specchietti SI
   document.getElementById('items-section-title').textContent = getSectionLabel(section);
   document.getElementById('admin-add-item-btn').style.display = currentUser?.isAdmin ? '' : 'none';
   const ebayBtnWrap = document.getElementById('admin-ebay-btn-wrap');
@@ -14000,10 +14376,73 @@ function openSeriesSection(section) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
+// v5.992 - Cosa si vede nella TESTATA della serie, secondo dove sei.
+//   pagina principale (i box delle sezioni): la DESCRIZIONE, e nient'altro;
+//   dentro una sezione: niente descrizione, e al suo posto - sotto le numeriche -
+//   gli specchietti panoramici.
+// Gli specchietti non si nascondono a mano: si richiamano le loro funzioni, che
+// decidono da sole in base a currentSection. Spegnerli qui vorrebbe dire avere due
+// punti che stabiliscono la stessa cosa, e prima o poi uno dei due si dimentica.
+// BACO CHIUSO QUI (v5.989 -> v5.992): finche' vivevano dentro #items-section si
+// nascondevano insieme a lei; spostati nella testata, che resta visibile sempre,
+// nessuno li spegneva piu' e comparivano anche sulla pagina dei box.
+// v6.001 (Franco) - SOLO TELEFONO e SOLO dentro una delle cinque sezioni: la testata
+// della serie si richiude, per arrivare prima alla griglia. Nella pagina coi cinque box
+// il comando non compare: li' la testata E' la pagina, e chiuderla lascerebbe uno schermo
+// vuoto. Sul desktop non compare mai.
+// La scelta si ricorda: chi la chiude la vuole chiusa anche nella sezione dopo.
+// v6.005 (Franco) - default CHIUSA. Su telefono, dentro una sezione, la testata e' un
+// preambolo che si e' gia' letto entrando: partire chiusi porta subito alla ricerca e
+// alla griglia, che sono il motivo per cui si e' in quella pagina.
+// Attenzione al valore assente: la chiave non c'e' al primo accesso, quindi il default
+// si scrive nella variabile e localStorage puo' solo CONTRADDIRLO con '0'. Scrivere
+// `=== '1'` avrebbe reso il default "aperta" per chiunque non avesse mai toccato il
+// comando - cioe' per tutti.
+let _testataSerieChiusa = true;
+try { if (localStorage.getItem('sgorbions_testata_chiusa') === '0') _testataSerieChiusa = false; } catch(e) {}
+function toggleTestataSerie() {
+  _testataSerieChiusa = !_testataSerieChiusa;
+  try { localStorage.setItem('sgorbions_testata_chiusa', _testataSerieChiusa ? '1' : '0'); } catch(e) {}
+  // Si ripassa da _mostraTestataSerie e non si ripristina a mano: riaprendo, le visibilita'
+  // vanno RIDECISE da chi le sa (descrizione, "Mostra tutto", specchietti). Riscriverle qui
+  // sarebbe la stessa regola in due posti, che in questa sessione ha gia' prodotto due bachi.
+  try { _mostraTestataSerie(); } catch(e) { console.error('toggleTestataSerie', e); }
+}
+function _applicaChiusuraTestata() {
+  const btn = document.getElementById('series-hero-toggle');
+  const heroInner = document.querySelector('#series-detail .series-hero-inner');
+  if (!btn || !heroInner) return;
+  const it = (currentLang === 'it');
+  const disponibile = _isMobileViewport() && !!currentSection;
+  btn.style.display = disponibile ? '' : 'none';
+  heroInner.appendChild(btn); // sempre ultimo: i nodi qui sopra vengono spostati
+  const chiusa = disponibile && _testataSerieChiusa;
+  // v6.004 (Franco) - TESTO nel blu delle azioni, non bottone pieno: apre e chiude, non
+  // agisce, e un bottone pieno gli darebbe il peso di un comando che fa qualcosa.
+  btn.textContent = chiusa
+    ? (it ? 'Mostra dettagli serie' : 'Show series details')
+    : (it ? 'Nascondi dettagli serie' : 'Hide series details');
+  const area = document.querySelector('#series-detail .series-title-area');
+  if (area) area.style.display = chiusa ? 'none' : '';
+  if (!chiusa) return; // aperta: le visibilita' le hanno gia' decise gli altri
+  ['detail-desc', 'detail-desc-toggle', 'detail-desc-label',
+   'retro-cat-summary-top', 'change-type-summary-top'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+}
+function _mostraTestataSerie() {
+  try { posizionaTestataSerie(); } catch(e) { console.error('_mostraTestataSerie/desc', e); }
+  try { renderRetroCategorySummaries(); } catch(e) { console.error('_mostraTestataSerie/retro', e); }
+  try { renderChangeTypeSummaries(); } catch(e) { console.error('_mostraTestataSerie/change', e); }
+  // per ultimo: spegne cio' che gli altri hanno appena acceso, se la testata e' chiusa
+  try { _applicaChiusuraTestata(); } catch(e) { console.error('_mostraTestataSerie/chiusura', e); }
+}
 function closeItemsSection() {
   document.getElementById('items-section').style.display = 'none';
   document.getElementById('section-selector').style.display = '';
   currentSection = null;
+  _mostraTestataSerie(); // DOPO currentSection = null, cosi' descrizione e specchietti si regolano da soli
   updateSectionCounts();
   try { renderSeriesMeta(getData('series', []).find(x => x.id === currentSeriesId)); } catch(e) {} // v5.881: hub -> una riga per categoria (non i numeri della sezione appena lasciata)
 }
@@ -14246,6 +14685,10 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
     const showRetro = currentSection !== 'retros';
     retroGroup.style.display = showRetro ? '' : 'none';
     if (showRetro) populateRetroSelect(document.getElementById('fig-retro-input')?.value || null, isChg);
+    // v6.006 - la spunta "Retro bianco" compare dove compare il retro: e' l'alternativa a
+    // collegarne uno, non un campo a se'.
+    const rbGroup = document.getElementById('fig-retro-bianco-group');
+    if (rbGroup) rbGroup.style.display = showRetro ? '' : 'none';
   }
   // ...E PER LO STESSO IDENTICO MOTIVO, nemmeno le VARIAZIONI (v5.707). Una variazione
   // E' il cambio del DIETRO: un retro, che un dietro non ce l'ha, per definizione non
@@ -14364,6 +14807,7 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-name-input').value = f.name;
       document.getElementById('fig-desc-input').value = f.desc || '';
       document.getElementById('fig-score-input').value = f.score || 0;
+      const rbIn = document.getElementById('fig-retro-bianco-input'); if (rbIn) rbIn.checked = !!f.retroBianco;
       document.getElementById('fig-subseries-input').value = f.subseries || '';
       document.getElementById('fig-size-input').value = f.size || '';
       document.getElementById('fig-is-variation-input').checked = f.isVariation || false;
@@ -14394,6 +14838,7 @@ function openAddItemModal(itemId) {
     ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input','fig-category-input','fig-subcategory-input','fig-subname-input'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('fig-no-number-input').checked = false;
     document.getElementById('fig-score-input').value = 0;
+    const rbIn0 = document.getElementById('fig-retro-bianco-input'); if (rbIn0) rbIn0.checked = false;
     document.getElementById('fig-is-variation-input').checked = false;
     document.getElementById('fig-is-unofficial-variation-input').checked = false;
     document.getElementById('fig-is-change-input').checked = false;
@@ -15093,11 +15538,19 @@ function getCurrentlyFilteredItems(opts) {
   const _own = (currentUser && _ownedFilter !== 'all') ? getOwned() : null;
   const _skipCat = !!(opts && opts.skipCategory); // gli specchietti chiedono i conteggi ignorando il filtro-categoria
   const _skipChangeType = !!(opts && opts.skipChangeType); // idem per lo specchietto Tipo di change
+  const _skipSub = !!(opts && opts.skipSubcategory); // idem per i sotto-box delle sottocategorie (v5.987)
+  // v5.986 - lo specchietto in ALTO vuole i filtri ma non la ricerca: e' una
+  // panoramica di cio' che i filtri lasciano passare, non dei risultati di una
+  // ricerca. La ricerca resta invece nel riquadro dei risultati.
+  const _skipSearch = !!(opts && opts.skipSearch);
   return allFigs.filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
     // Filtro per categoria (solo Retro), attivato cliccando un box nello specchietto risultati (v5.762)
     if (!_skipCat && _retroCategoryFilter !== null && currentSection === 'retros'
         && ((f.category || '').trim()) !== _retroCategoryFilter) return false;
+    // Filtro per sottocategoria (solo Retro), dai sotto-box dello specchietto risultati (v5.987)
+    if (!_skipSub && _retroSubcategoryFilter !== null && currentSection === 'retros'
+        && ((f.subcategory || '').trim()) !== _retroSubcategoryFilter) return false;
     // Filtro per Tipo di change (solo Figurine): mostra SOLO i Change di quel tipo (v5.809)
     if (!_skipChangeType && _changeTypeFilter !== null && currentSection === 'figurines'
         && !(f.isChange && ((f.changeType || '').trim()) === _changeTypeFilter)) return false;
@@ -15137,7 +15590,7 @@ function getCurrentlyFilteredItems(opts) {
       if (hasOfficialVariation) return false;
     }
     if (_ebayFilter && !f.forSale) return false;
-    if (!searchQ) return true;
+    if (_skipSearch || !searchQ) return true;
     return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ) || (f.category||'').toLowerCase().includes(searchQ) || (f.subcategory||'').toLowerCase().includes(searchQ) || (f.fullName||'').toLowerCase().includes(searchQ);
   });
 }
@@ -15152,13 +15605,31 @@ function getCurrentlyFilteredItems(opts) {
 //      passa dall'una all'altra). I box sono CLICCABILI: cliccando si applica quella categoria
 //      come filtro (evidenziata); riclick sulla stessa, o il badge "✕", azzerano il filtro.
 // Categorie in ordine alfabetico (localeCompare 'it'); categoria vuota = "(Senza categoria)".
+// v5.987 - Restituisce [cat, totale, [[sotto, n], ...]] per ogni categoria. La lista
+// delle sottocategorie e' VUOTA quando nessun retro di quella categoria ne ha una:
+// una riga di "(senza sottocategoria)" sotto ogni box direbbe soltanto che il campo
+// non e' in uso, ripetuta per tutte le categorie. Se invece almeno uno ce l'ha, il
+// bucket vuoto SI mostra: altrimenti i sotto-numeri non sommerebbero al totale, e un
+// conteggio che non torna e' peggio di un conteggio in piu'.
 function _retroCatCounts(items) {
-  const map = new Map();
+  const map = new Map(); // cat -> Map(sotto -> n)
   for (const f of items) {
     const cat = (f.category || '').trim(); // valore REALE ('' = senza categoria)
-    map.set(cat, (map.get(cat) || 0) + 1);
+    const sub = (f.subcategory || '').trim();
+    if (!map.has(cat)) map.set(cat, new Map());
+    const sm = map.get(cat);
+    sm.set(sub, (sm.get(sub) || 0) + 1);
   }
-  return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0], 'it', { sensitivity: 'base' }));
+  const ordina = (a, b) => a[0].localeCompare(b[0], 'it', { sensitivity: 'base' });
+  return [...map.entries()].sort(ordina).map(([cat, sm]) => {
+    const totale = [...sm.values()].reduce((s, n) => s + n, 0);
+    const soloVuota = sm.size === 1 && sm.has('');
+    const sotto = soloVuota ? [] : [...sm.entries()].sort(ordina);
+    return [cat, totale, sotto];
+  });
+}
+function _retroSubLabel(sub) {
+  return sub || (currentLang === 'it' ? '(Senza sottocategoria)' : '(No subcategory)');
 }
 function _retroCatLabel(cat) {
   return cat || (currentLang === 'it' ? '(Senza categoria)' : '(No category)');
@@ -15175,38 +15646,111 @@ function _retroCatPanelHTML(pairs, open, clickable, toggleFn) {
           : 'Click here to filter the search results by category')
     : (it ? 'Clicca qui per vedere i retro conteggiati per categoria'
           : 'Click here to see the retros counted by category');
-  let header = `<div onclick="${toggleFn}()" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
-    + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '▼' : '▶'}</span>`
-    + `<span style="font-size:0.85rem;font-weight:600;color:var(--text);">${title}</span>`
-    + (open ? `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">· ${it ? 'totale' : 'total'} ${total}</span>` : '');
-  // Badge del filtro attivo + reset — nel riquadro risultati, visibile SEMPRE (anche da chiuso)
-  if (clickable && _retroCategoryFilter !== null) {
-    header += `<span onclick="event.stopPropagation();clearRetroCategoryFilter()" title="${it ? 'Azzera il filtro per categoria' : 'Clear category filter'}" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.3rem;background:var(--accent);color:var(--bg);border-radius:999px;padding:0.1rem 0.55rem;font-size:0.78rem;font-weight:600;">`
-      + `${it ? 'filtro' : 'filter'}: ${esc(_retroCatLabel(_retroCategoryFilter))} ✕</span>`;
-  }
-  header += `</div>`;
+  // v5.994 (Franco) - il riquadro IN ALTO non si chiude piu': sta nella testata della
+  // serie, dove ha preso il posto della descrizione, ed e' li' per essere letto. Un
+  // triangolino da premere per vedere quattro numeri era un passaggio in piu' verso
+  // qualcosa che ormai e' gia' in vista. Quello dei RISULTATI resta a scomparsa: li'
+  // e' uno strumento fra altri, e chiuderlo serve.
+  const collassabile = clickable;
+  if (!collassabile) open = true;
+  const titoloTxt = clickable ? title : (it ? 'Retro base per categoria' : 'Base retros by category');
+  // v6.002 - il numero del totale in BIANCO come tutti gli altri contatori dello
+  // specchietto; resta muted il solo punto medio, che e' un separatore e non un dato.
+  const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">\u00b7 </span>`
+    + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;">${it ? 'totale' : 'total'} ${total}</span>`;
+  let header = collassabile
+    ? `<div onclick="${toggleFn}()" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
+      + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '\u25bc' : '\u25b6'}</span>`
+      + `<span style="font-size:0.85rem;font-weight:600;color:var(--text);">${titoloTxt}</span>`
+      + (open ? totaleSpan : '')
+    : `<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">`
+      + `<span style="font-size:0.85rem;font-weight:600;color:var(--text);">${titoloTxt}</span>`
+      + totaleSpan;
+header += `</div>`;
 
   let body = '';
   if (open) {
-    let chips;
-    if (clickable) {
-      _retroResultCatVals = pairs.map(p => p[0]); // valori reali, per l'onclick via indice
-      chips = pairs.map(([cat, n], i) => {
+    // v5.987 - ogni categoria e' una COLONNA: il box della categoria e, sotto, i box
+    // delle sue sottocategorie. Prima era una riga sola di box: appendere i sotto-box
+    // allo stesso flusso li avrebbe fatti scorrere accanto alla categoria sbagliata
+    // appena la riga andava a capo - un raggruppamento che a occhio sembra giusto e
+    // non lo e'.
+    // v5.996 (Franco) - il riquadro IN ALTO non usa piu' le pillole. Le cornicette davano a
+    // categoria e sottocategoria lo stesso peso, cioe' dicevano il contrario della gerarchia
+    // che c'e'; e su box non cliccabili un bordo che assomiglia a un bottone promette una
+    // pressione che non succede. Restano il colore (categoria gialla, sottocategoria arancione,
+    // contatori bianchi) e una riga per categoria: dentro la riga, dopo un trattino, le sue
+    // sottocategorie. Il riquadro dei RISULTATI tiene le pillole: li' si cliccano davvero, e il
+    // bordo e' l'unica cosa che dice dove finisce un bersaglio e comincia l'altro.
+    if (!clickable) {
+      const numero = v => `<span style="color:var(--text);font-weight:700;">${v}</span>`;
+      const righe = pairs.map(([cat, n, sotto]) => {
+        const testa = `<span style="color:${COL_CATEGORIA};">${esc(_retroCatLabel(cat))}</span> ` + numero(n);
+        if (!sotto.length) return `<div>${testa}</div>`;
+        const coda = sotto
+          .map(([s, sn]) => `<span style="color:${COL_SOTTOCAT};">${esc(_retroSubLabel(s))}</span> ` + numero(sn))
+          .join(`<span style="color:var(--muted);"> \u00b7 </span>`);
+        return `<div>${testa} <span style="color:var(--muted);">\u2014</span> ${coda}</div>`;
+      });
+      // v5.997 (Franco) - MASSIMO 8 RIGHE PER COLONNA, poi si apre una colonna a destra.
+      // Le serie con molte categorie sono, guarda caso, quelle senza sottocategorie: righe
+      // corte e tantissime, cioe' il caso in cui una colonna sola diventa un elenco
+      // interminabile accanto a una foto alta 160px. Riempimento per colonne (le prime 8
+      // nella prima), non a serpentina: l'ordine alfabetico si legge dall'alto in basso, ed
+      // e' l'unico modo per cercare un nome senza rimbalzare da una colonna all'altra.
+      const PER_COLONNA = 8;
+      const colonne = [];
+      for (let i = 0; i < righe.length; i += PER_COLONNA) colonne.push(righe.slice(i, i + PER_COLONNA));
+      const corpo = colonne
+        .map(c => `<div style="display:flex;flex-direction:column;">${c.join('')}</div>`)
+        .join('');
+      // width:max-content = il riquadro si stringe su cio' che contiene invece di allargarsi
+      // a tutta la colonna dei contatori, che con poche categorie corte lo lasciava mezzo
+      // vuoto. Con piu' colonne cresce quanto serve, e sforare la riga sopra e' voluto.
+      // max-width:100% e box-sizing:border-box perche' il sito NON ha un box-sizing globale:
+      // senza, padding e bordo si sommerebbero alla larghezza e il riquadro sborderebbe.
+      return `<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.8rem 0.9rem;box-sizing:border-box;width:max-content;max-width:100%;">`
+        + header
+        + `<div style="display:flex;gap:0 1.6rem;align-items:flex-start;flex-wrap:wrap;font-size:0.82rem;line-height:1.45;margin-top:0.45rem;">${corpo}</div></div>`;
+    }
+    _retroResultCatVals = pairs.map(p => p[0]); // valori reali, per l'onclick via indice
+    _retroResultSubVals = [];
+    const gruppi = pairs.map(([cat, n, sotto], i) => {
+      let chipCat;
+      if (clickable) {
         const active = _retroCategoryFilter !== null && _retroCategoryFilter === cat;
+        // v5.995 - codice colore: nome categoria GIALLO, contatore BIANCO. Da SELEZIONATO
+        // il box si riempie di lime e il testo va sul colore di sfondo: li' il giallo non
+        // si leggerebbe, e il colore che conta e' quello dello sfondo - dice che il filtro
+        // e' attivo, che in quel momento e' l'informazione piu' importante.
         const bg = active ? 'var(--accent)' : 'var(--card2)';
-        const fg = active ? 'var(--bg)' : 'var(--text)';
-        const nf = active ? 'var(--bg)' : 'var(--accent)';
-        return `<span onclick="setRetroCategoryFilterByIndex(${i})" title="${it ? 'Filtra per questa categoria' : 'Filter by this category'}" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;background:${bg};border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.82rem;line-height:1.4;">`
+        const fg = active ? 'var(--bg)' : COL_CATEGORIA;
+        const nf = active ? 'var(--bg)' : 'var(--text)';
+        chipCat = `<span onclick="setRetroCategoryFilterByIndex(${i})" title="${it ? 'Filtra per questa categoria' : 'Filter by this category'}" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;background:${bg};border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.82rem;line-height:1.4;">`
           + `<span style="color:${fg};">${esc(_retroCatLabel(cat))}</span>`
           + `<span style="color:${nf};font-weight:700;">${n}</span></span>`;
-      }).join('');
-    } else {
-      chips = pairs.map(([cat, n]) =>
-        `<span style="display:inline-flex;align-items:center;gap:0.35rem;background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.82rem;line-height:1.4;">`
-        + `<span style="color:var(--text);">${esc(_retroCatLabel(cat))}</span>`
-        + `<span style="color:var(--accent);font-weight:700;">${n}</span></span>`).join('');
-    }
-    body = `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem;">${chips}</div>`;
+      }
+      let chipsSotto = '';
+      if (sotto.length) {
+        chipsSotto = sotto.map(([s, sn]) => {
+          if (clickable) {
+            const idx = _retroResultSubVals.push({ cat: cat, sub: s }) - 1;
+            const attivo = _retroSubcategoryFilter !== null && _retroSubcategoryFilter === s
+                        && _retroCategoryFilter === cat;
+            const bg = attivo ? 'var(--accent)' : 'transparent';
+            const fg = attivo ? 'var(--bg)' : COL_SOTTOCAT;   // v5.995 - arancione
+            const nf = attivo ? 'var(--bg)' : 'var(--text)';  // contatore bianco
+            return `<span onclick="setRetroSubcategoryFilterByIndex(${idx})" title="${it ? 'Filtra per questa sottocategoria' : 'Filter by this subcategory'}" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.3rem;background:${bg};border:1px solid var(--border2);border-radius:999px;padding:0.05rem 0.5rem;font-size:0.74rem;line-height:1.4;">`
+              + `<span style="color:${fg};">${esc(_retroSubLabel(s))}</span>`
+              + `<span style="color:${nf};font-weight:700;">${sn}</span></span>`;
+          }
+          return '';
+        }).join('');
+        chipsSotto = `<div style="display:flex;flex-wrap:wrap;gap:0.25rem;padding-left:0.5rem;">${chipsSotto}</div>`;
+      }
+      return `<div style="display:flex;flex-direction:column;gap:0.25rem;">${chipCat}${chipsSotto}</div>`;
+    }).join('');
+    body = `<div style="display:flex;flex-wrap:wrap;gap:0.5rem 0.7rem;margin-top:0.6rem;align-items:flex-start;">${gruppi}</div>`;
   }
   return `<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.8rem 0.9rem;">${header}${body}</div>`;
 }
@@ -15218,11 +15762,14 @@ function renderRetroCategorySummaries() {
   if (topEl) {
     if (!isRetro) { topEl.style.display = 'none'; topEl.innerHTML = ''; }
     else {
-      // Solo Retro base della serie: la categoria conta una volta per Retro base, non per Change
-      const baseRetros = getData('figurines', []).filter(f =>
-        f.seriesId === currentSeriesId && f.section === 'retros' && !f.isChange && !f.isPrintError);
-      const pairs = _retroCatCounts(baseRetros);
-      topEl.innerHTML = pairs.length ? _retroCatPanelHTML(pairs, _retroCatTopOpen, false, 'toggleRetroCatTop') : '';
+      // v5.986 - Prima leggeva TUTTI i retro base della serie senza passare da
+      // getCurrentlyFilteredItems: era cieco alla ricerca (voluto) ma anche ai
+      // filtri (non voluto, e non se ne era accorto nessuno perche' il commento
+      // parlava solo della ricerca). Ora applica i filtri - compreso quello per
+      // categoria e quello per tipo, quindi Change ed Errori di stampa entrano
+      // nei conteggi se i filtri li lasciano passare - e ignora la sola ricerca.
+      const pairs = _retroCatCounts(getCurrentlyFilteredItems({ skipSearch: true }));
+      topEl.innerHTML = pairs.length ? _retroCatPanelHTML(pairs, true, false, null) : '';
       topEl.style.display = pairs.length ? '' : 'none';
     }
   }
@@ -15232,15 +15779,11 @@ function renderRetroCategorySummaries() {
     else {
       // skipCategory: i conteggi ignorano il filtro-categoria attivo, cosi' tutte le categorie
       // restano visibili e cliccabili; la griglia invece lo applica (vedi getCurrentlyFilteredItems)
-      const pairs = _retroCatCounts(getCurrentlyFilteredItems({ skipCategory: true }));
+      const pairs = _retroCatCounts(getCurrentlyFilteredItems({ skipCategory: true, skipSubcategory: true }));
       resEl.innerHTML = pairs.length ? _retroCatPanelHTML(pairs, _retroCatResultsOpen, true, 'toggleRetroCatResults') : '';
       resEl.style.display = pairs.length ? '' : 'none';
     }
   }
-}
-function toggleRetroCatTop() {
-  _retroCatTopOpen = !_retroCatTopOpen;
-  try { renderRetroCategorySummaries(); } catch(e) { console.error('toggleRetroCatTop', e); }
 }
 function toggleRetroCatResults() {
   _retroCatResultsOpen = !_retroCatResultsOpen;
@@ -15249,13 +15792,33 @@ function toggleRetroCatResults() {
 function setRetroCategoryFilterByIndex(i) {
   const cat = _retroResultCatVals[i];
   if (cat === undefined) return;
+  // Scegliere una categoria e' allargare: la sottocategoria eventualmente attiva
+  // apparteneva a una scelta piu' stretta e non sopravvive (v5.987).
+  _retroSubcategoryFilter = null;
   _retroCategoryFilter = (_retroCategoryFilter === cat) ? null : cat; // riclick sulla stessa = azzera
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (setRetroCategoryFilter)', e); }
   try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setRetroCategoryFilter)', e); }
 }
+// v5.987 - Un sotto-box seleziona la COPPIA (categoria, sottocategoria): la stessa
+// sottocategoria puo' esistere sotto categorie diverse. Riclick sullo stesso sotto-box
+// torna alla sola categoria, non azzera tutto: e' il passo indietro che ci si aspetta.
+function setRetroSubcategoryFilterByIndex(i) {
+  const v = _retroResultSubVals[i];
+  if (!v) return;
+  if (_retroSubcategoryFilter === v.sub && _retroCategoryFilter === v.cat) {
+    _retroSubcategoryFilter = null;
+  } else {
+    _retroCategoryFilter = v.cat;
+    _retroSubcategoryFilter = v.sub;
+  }
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (setRetroSubcategoryFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setRetroSubcategoryFilter)', e); }
+}
 function clearRetroCategoryFilter() {
   _retroCategoryFilter = null;
+  _retroSubcategoryFilter = null;
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (clearRetroCategoryFilter)', e); }
   try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (clearRetroCategoryFilter)', e); }
@@ -15288,18 +15851,42 @@ function _changeTypePanelHTML(pairs, open, clickable, toggleFn) {
           : 'Click here to filter the search results by change type')
     : (it ? 'Clicca qui per vedere i Change conteggiati per tipo'
           : 'Click here to see the Changes counted by type');
-  let header = `<div onclick="${toggleFn}()" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
-    + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '▼' : '▶'}</span>`
-    + `<span style="font-size:0.85rem;font-weight:600;color:var(--text);">${title}</span>`
-    + (open ? `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">· ${it ? 'totale' : 'total'} ${total}</span>` : '');
-  if (clickable && _changeTypeFilter !== null) {
-    header += `<span onclick="event.stopPropagation();clearChangeTypeFilter()" title="${it ? 'Azzera il filtro per tipo di change' : 'Clear change type filter'}" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.3rem;background:var(--accent);color:var(--bg);border-radius:999px;padding:0.1rem 0.55rem;font-size:0.78rem;font-weight:600;">`
-      + `${it ? 'filtro' : 'filter'}: ${esc(_changeTypeLabel(_changeTypeFilter))} ✕</span>`;
-  }
-  header += `</div>`;
+  // v5.994 (Franco) - il riquadro IN ALTO non si chiude piu': sta nella testata della
+  // serie, dove ha preso il posto della descrizione, ed e' li' per essere letto. Un
+  // triangolino da premere per vedere quattro numeri era un passaggio in piu' verso
+  // qualcosa che ormai e' gia' in vista. Quello dei RISULTATI resta a scomparsa: li'
+  // e' uno strumento fra altri, e chiuderlo serve.
+  const collassabile = clickable;
+  if (!collassabile) open = true;
+  const titoloTxt = clickable ? title : (it ? 'Change per tipo' : 'Changes by type');
+  // v6.002 - il numero del totale in BIANCO come tutti gli altri contatori dello
+  // specchietto; resta muted il solo punto medio, che e' un separatore e non un dato.
+  const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">\u00b7 </span>`
+    + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;">${it ? 'totale' : 'total'} ${total}</span>`;
+  let header = collassabile
+    ? `<div onclick="${toggleFn}()" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
+      + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '\u25bc' : '\u25b6'}</span>`
+      + `<span style="font-size:0.85rem;font-weight:600;color:var(--text);">${titoloTxt}</span>`
+      + (open ? totaleSpan : '')
+    : `<div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">`
+      + `<span style="font-size:0.85rem;font-weight:600;color:var(--text);">${titoloTxt}</span>`
+      + totaleSpan;
+header += `</div>`;
 
   let body = '';
   if (open) {
+    // v5.996 - gemello del riquadro Retro: in alto niente pillole. Il nome del tipo di
+    // change resta ROSA, che nel sito significa gia' "Change" (--type-change); il
+    // contatore bianco, come negli altri specchietti.
+    if (!clickable) {
+      const righe = pairs.map(([ct, n]) =>
+        `<span style="color:var(--type-change);">${esc(_changeTypeLabel(ct))}</span> `
+        + `<span style="color:var(--text);font-weight:700;">${n}</span>`
+      ).join(`<span style="color:var(--muted);"> \u00b7 </span>`);
+      return `<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.8rem 0.9rem;box-sizing:border-box;width:max-content;max-width:100%;">`
+        + header
+        + `<div style="font-size:0.82rem;line-height:1.45;margin-top:0.45rem;">${righe}</div></div>`;
+    }
     let chips;
     if (clickable) {
       _changeTypeResultVals = pairs.map(p => p[0]);
@@ -15332,7 +15919,7 @@ function renderChangeTypeSummaries() {
       const changes = getData('figurines', []).filter(f =>
         f.seriesId === currentSeriesId && f.section === 'figurines' && f.isChange);
       const pairs = _changeTypeCounts(changes);
-      topEl.innerHTML = pairs.length ? _changeTypePanelHTML(pairs, _changeTypeTopOpen, false, 'toggleChangeTypeTop') : '';
+      topEl.innerHTML = pairs.length ? _changeTypePanelHTML(pairs, true, false, null) : '';
       topEl.style.display = pairs.length ? '' : 'none';
     }
   }
@@ -15344,10 +15931,6 @@ function renderChangeTypeSummaries() {
       resEl.style.display = pairs.length ? '' : 'none';
     }
   }
-}
-function toggleChangeTypeTop() {
-  _changeTypeTopOpen = !_changeTypeTopOpen;
-  try { renderChangeTypeSummaries(); } catch(e) { console.error('toggleChangeTypeTop', e); }
 }
 function toggleChangeTypeResults() {
   _changeTypeResultsOpen = !_changeTypeResultsOpen;
@@ -15621,6 +16204,10 @@ function renderItems() {
     // (così sulla card mostra comunque il retro della base). retro effettivo = proprio || della base.
     const _baseForChange = (f.isChange && f.baseFigurineId) ? (baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId)) : null;
     const _effRetroId = f.isChange ? (f.retroId || _baseForChange?.retroId || null) : f.retroId;
+    // v6.006 - il retro bianco si comporta come un retro con la sua foto: un oggetto finto
+    // con la sola immagine. Cosi' i cinque modi di visualizzazione (destra, sotto, dinamico,
+    // fronte-grande, destra-piena) non hanno bisogno di sapere che esiste questo caso.
+    const _retroBianco = !!f.retroBianco && !f.retroId;
     // v5.853 — su telefono, col filtro "Figurine set base" attivo si mostra SOLO IL FRONTE.
     // Sono tutte figurine base, quindi affiancare il retro dimezza il fronte senza aggiungere
     // informazione. Fuori da quel filtro, e sul desktop, la coppia fronte+retro resta.
@@ -15630,9 +16217,11 @@ function renderItems() {
     // index.html, mentre il conteggio - calcolato prima - diceva giustamente che i risultati
     // c'erano. Le condizioni si ricalcolano qui dai loro ingredienti.
     const _soloFronte = _isMobileViewport() && currentSection === 'figurines' && _itemTypeFilter === 'base';
-    if (!_soloFronte && (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && f.retroId) || (f.isChange && f.baseFigurineId && _effRetroId) || (isBaseFig && f.retroId))) {
+    if (!_soloFronte && (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && (f.retroId || _retroBianco)) || (f.isChange && f.baseFigurineId && _effRetroId) || (isBaseFig && (f.retroId || _retroBianco)))) {
       const baseFigDual = isBaseFig ? f : (baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId));
-      const retroFigDual = getData('figurines', []).find(x => x.id === _effRetroId);
+      const retroFigDual = _retroBianco
+        ? { img: RETRO_BIANCO_IMG, name: '' }
+        : getData('figurines', []).find(x => x.id === _effRetroId);
       if (baseFigDual?.img && retroFigDual?.img) {
         if (_retroViewMode === 'destra-piena') hasWidePair = true;
         if (_retroViewMode === 'destra') {
@@ -15767,16 +16356,30 @@ function renderItems() {
     // distingue. La Sottocategoria non si perde: quando la categoria sparisce, scende in riga 2.
     const _retroCatNelNome = isRetroCard && _retroNameStartsWithCategory(f);
     const _retroSub = (f.subcategory || '').trim();
+    // v5.991 - una riga per dato: categoria, sottocategoria, nome. Fino alla v5.990
+    // categoria e sottocategoria stavano sulla STESSA riga unite da ' · ', eredita' di
+    // quando erano un'informazione sola e tutta grigia; con due colori distinti la riga
+    // unica faceva sembrare l'arancione una coda del giallo invece di un dato suo.
+    const _catNuda = (f.category || '').trim();
+    const _riga1Retro = _retroCatNelNome
+      ? `<span style="color:var(--text);">${esc(f.name || '')}</span>`
+      : (_catNuda
+          ? `<span style="color:${COL_CATEGORIA};">${esc(_catNuda)}</span>`
+          : (_retroSub ? '' : `<span style="color:var(--muted);">${currentLang === 'it' ? '(senza categoria)' : '(no category)'}</span>`));
     const figNameInner = isRetroCard
-      ? esc(_retroCatNelNome
-              ? (f.name || '')
-              : (catParts.length ? catParts.join(' · ') : (currentLang === 'it' ? '(senza categoria)' : '(no category)')))
+      ? _riga1Retro
       : (_mobileFigCard
           ? `<span class="fig-number" style="font-size:1.05rem;color:var(--text);">${figLabel}</span>${scoreInlineHTML}` +
             (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line">${catPrefix}${f.name}</div>`)
           // v5.980 (Franco) — il numero in BIANCO come il nome: sono la stessa cosa, l'identita'
           // della figurina, e col grigio sembravano due informazioni di peso diverso.
           : `<span class="fig-number" style="font-size:1.05rem;color:var(--text);">${figLabel}</span>${figLabel ? ' ' : ''}${catPrefix}${f.name}`);
+    // v5.991 - la Sottocategoria ha una riga sua, subito sotto la Categoria. Vale in
+    // ENTRAMBI i casi: anche quando la categoria e' nascosta perche' gia' contenuta nel
+    // nome (v5.976), la sottocategoria resta al suo posto invece di cambiare riga a
+    // seconda di com'e' scritto il nome.
+    const retroSubcatLineHTML = (isRetroCard && _retroSub)
+      ? `<div style="font-size:0.78rem;color:${COL_SOTTOCAT};">${esc(_retroSub)}</div>` : '';
     // v5.780 — se il Nome del Retro è IDENTICO alla Categoria (caso raro), la riga del Nome è
     // ridondante rispetto alla prima riga (la Categoria): la omettiamo, mostrando solo la Categoria.
     // Confronto esatto (trim, case-insensitive); non usa _retroNameStartsWithCategory (che è "inizia
@@ -15784,9 +16387,10 @@ function renderItems() {
     const _retroNameEqualsCategory = (f.name || '').trim() !== '' &&
       (f.name || '').trim().toLowerCase() === (f.category || '').trim().toLowerCase();
     const retroNameLineHTML = !isRetroCard ? ''
+      // v5.991 - qui ora c'e' SOLO il nome. Se la categoria e' gia' dentro il nome, il
+      // nome sta gia' in riga 1 e questa riga non esiste: ripeterlo sarebbe un doppione.
       : (_retroCatNelNome
-          // categoria nascosta: in riga 2 resta la sola Sottocategoria, se c'e'
-          ? (_retroSub ? `<div style="font-size:0.78rem;color:var(--muted);">${esc(_retroSub)}</div>` : '')
+          ? ''
           : ((f.name && !_retroNameEqualsCategory)
               ? `<div style="font-size:0.9rem;color:var(--text);margin-top:1px;">${esc(f.name || '')}</div>`
               : ''));
@@ -15871,7 +16475,7 @@ function renderItems() {
       </div>
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
-        ${isRetroCard ? retroNameLineHTML + retroSubnameLineHTML : subseriesHTML}
+        ${isRetroCard ? retroSubcatLineHTML + retroNameLineHTML + retroSubnameLineHTML : subseriesHTML}
         ${typeIndicatorHTML}
         ${retroNameHTML}
         ${descHTML}
@@ -16128,6 +16732,9 @@ async function _saveFigurineInner() {
   const isChange = document.getElementById('fig-is-change-input')?.checked || false;
   const baseFigurineId = document.getElementById('fig-base-figurine-input')?.value || null;
   const retroId = document.getElementById('fig-retro-input')?.value || null;
+  // v6.006 - collegare un retro VERO ha la precedenza: le due cose insieme direbbero che la
+  // figurina ha un retro e insieme che non ce l'ha, e non c'e' modo di scegliere dopo.
+  const retroBianco = !retroId && !!document.getElementById('fig-retro-bianco-input')?.checked;
   const forSale = document.getElementById('fig-for-sale-input')?.checked || false;
   const price = forSale ? (parseFloat(document.getElementById('fig-price-input').value) || 0) : null;
   // v5.981 — priceUsd: il vuoto resta null, NON diventa 0 come il prezzo in euro. Qui la
@@ -16241,7 +16848,7 @@ async function _saveFigurineInner() {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
         const _prima = figs[idx];   // v5.981 — riferimento all'oggetto PRIMA della sovrascrittura
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti };
         figs[idx].fullName = computeFullName(figs[idx], figs);
         // v5.981 — la coda: prima quello che dice la spunta (o il valore esistente, se la spunta
         // era nascosta), poi l'automatismo, che puo' solo ALZARLA. Cosi' togliere la spunta a mano
@@ -16256,7 +16863,7 @@ async function _saveFigurineInner() {
         _cache.figurines = figs;
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti, daPubblicare: forSale/* v5.981: nasce marcato Ebay = nasce in coda */ };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti, daPubblicare: forSale/* v5.981: nasce marcato Ebay = nasce in coda */ };
       newF.fullName = computeFullName(newF, figs);
       const saved = await fsSave('figurines', newF);
     }
@@ -18494,6 +19101,16 @@ function switchToEditMode(figId) {
       '<input type="hidden" id="fe-retro" value="' + (f.retroId || '') + '">' +
     '<div id="fe-retro-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:220px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>' +
     '</div>';
+    // v6.007 - la spunta "Retro bianco" anche QUI. La v6.006 l'aveva messa solo nella
+    // finestra Aggiungi/Modifica (campi fig-*), ma la scheda di dettaglio ha un editor
+    // tutto suo (campi fe-*): due form per lo stesso oggetto, e un campo aggiunto a una
+    // sola delle due semplicemente non esiste per chi usa l'altra. E' la v5.782 a dire che
+    // vista e modifica devono coincidere - vale anche fra i due editor.
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Retro bianco':'Blank back') + '</span>' +
+      '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">' +
+      '<input type="checkbox" id="fe-retro-bianco" ' + (f.retroBianco ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
+      '<span style="color:var(--muted);">' + (currentLang==='it'?'la figurina non ha un vero retro':'this sticker has no real back') + '</span>' +
+      '</label></span></div>';
   }
 
   // Descrizione (in fondo, campo più grande)
@@ -18813,6 +19430,10 @@ async function saveFigFromDetail(figId) {
   updates.retroId = (existingForCheck?.section !== 'retros')
     ? (document.getElementById('fe-retro')?.value || null)
     : null;
+  // v6.007 - come nell'altra form: un retro VERO ha la precedenza sul retro bianco.
+  updates.retroBianco = (existingForCheck?.section !== 'retros')
+    ? (!updates.retroId && !!document.getElementById('fe-retro-bianco')?.checked)
+    : false;
 
   // Gestione immagine
   if (_figEditImgData === '__remove__') {
@@ -19397,8 +20018,30 @@ function _retroFullName(fig, allFigs) {
   return piece;
 }
 
+// v5.984 - Non basta sapere CHE un record e' cambiato: senza sapere QUALE
+// campo, un "sovrascritto" che si ripete a ogni reimportazione dello stesso
+// file non e' diagnosticabile, e si finisce a dedurre invece che a guardare.
+// _importDiff restituisce l'elenco delle differenze gia' scritto per il log;
+// _importHasChanges resta, costruito sopra, per non toccare chi la usa senza
+// volere il dettaglio.
+function _importDiff(oldRec, newRec, fields) {
+  const mostra = (v) => {
+    if (v === undefined) return '(assente)';
+    if (v === null) return '(vuoto)';
+    if (v === '') return '""';
+    return typeof v === 'string' ? '"' + v + '"' : String(v);
+  };
+  return fields
+    .filter(k => JSON.stringify(oldRec?.[k] ?? null) !== JSON.stringify(newRec?.[k] ?? null))
+    .map(k => k + ': ' + mostra(oldRec?.[k]) + ' -> ' + mostra(newRec?.[k]));
+}
+// Le differenze in coda alla riga di log. Stringa vuota se non ce ne sono,
+// cosi' si concatena sempre senza doverla condizionare al punto di chiamata.
+function _importDiffTxt(diff) {
+  return diff.length ? ' [modificati: ' + diff.join('; ') + ']' : '';
+}
 function _importHasChanges(oldRec, newRec, fields) {
-  return fields.some(k => JSON.stringify(oldRec?.[k] ?? null) !== JSON.stringify(newRec?.[k] ?? null));
+  return _importDiff(oldRec, newRec, fields).length > 0;
 }
 
 function varImportLog(msg, type) {
@@ -19601,12 +20244,13 @@ async function startImportVar() {
       if (duplicate) {
         const updatedRec = { ...duplicate, ...figData, img: duplicate.img, id: duplicate.id };
         updatedRec.fullName = computeFullName(updatedRec, existingFigs);
-        const changed = _importHasChanges(duplicate, updatedRec, ['name', 'isVariation', 'isUnofficialVariation', 'isChange', 'isPrintError', 'baseFigurineId', 'retroId', 'changeType', 'printErrorType']);
+        const _diff = _importDiff(duplicate, updatedRec, ['name', 'isVariation', 'isUnofficialVariation', 'isChange', 'isPrintError', 'baseFigurineId', 'retroId', 'changeType', 'printErrorType']);
+        const changed = _diff.length > 0;
         if (changed) {
           await fsSave('figurines', updatedRec);
           const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
           if (idx >= 0) _cache.figurines[idx] = updatedRec;
-          varImportLog('🔄 Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — sovrascritta (' + rowType + ', dati modificati)', 'update');
+          varImportLog('🔄 Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — sovrascritta (' + rowType + ')' + _importDiffTxt(_diff), 'update');
           updated++;
         } else {
           varImportLog('⏭️ Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — già presente, nessuna modifica', 'info');
@@ -19643,7 +20287,9 @@ function retroImportLog(msg, type) {
   const el = document.getElementById('import-retro-log');
   if (!el) return;
   el.style.display = 'block';
-  const color = type==='ok'?'var(--success)':type==='err'?'var(--danger)':type==='warn'?'var(--warn)':type==='update'?'var(--info)':'var(--muted)';
+  // 'white' esisteva solo in figImportLog dalla v5.808: stesso log, stesse
+  // righe di riepilogo, due comportamenti diversi. Allineato in v5.983.
+  const color = type==='white'?'var(--text)':type==='ok'?'var(--success)':type==='err'?'var(--danger)':type==='warn'?'var(--warn)':type==='update'?'var(--info)':'var(--muted)';
   el.innerHTML += '<div style="color:'+color+';margin-bottom:2px;">'+msg+'</div>';
   el.scrollTop = el.scrollHeight;
 }
@@ -19705,6 +20351,11 @@ async function startImportRetro() {
     const erroreStampaCol = getCol('Errore di stampa','errore di stampa','print error','printerror','print_error','errore stampa','misprint');
     const _peVal = (erroreStampaCol || '').toString().trim().toLowerCase();
     const isErroreStampa = _peVal !== '' && !['no','n','false','falso','0'].includes(_peVal);
+    // v5.984 - [Tipo: ""] compariva anche nel ramo dei Retro BASE, dove per
+    // definizione il tipo e' vuoto (ci si entra proprio quando manca): una
+    // parentesi che non ha mai detto niente, ripetuta su ogni riga. Ora
+    // l'etichetta si scrive solo quando c'e' qualcosa da scriverci dentro.
+    const _tipoTag = tipoChange ? ' [Tipo: "' + tipoChange + '"]' : '';
 
     retroImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
 
@@ -19718,7 +20369,7 @@ async function startImportRetro() {
     }
 
     if (!nome || !categoria) {
-      errRiga('⚠️ Riga ' + (i+1) + ': dati mancanti (nome=' + nome + ' categoria=' + categoria + ') [Tipo: "' + tipoChange + '"]', 'warn');
+      errRiga('⚠️ Riga ' + (i+1) + ': dati mancanti (nome=' + nome + ' categoria=' + categoria + ')' + _tipoTag, 'warn');
        continue;
     }
 
@@ -19752,7 +20403,8 @@ async function startImportRetro() {
         f.section === 'retros' &&
         f.isPrintError &&
         (f.name||'').toLowerCase() === nome.toLowerCase() &&
-        (f.category||'').toLowerCase() === categoria.toLowerCase()
+        (f.category||'').toLowerCase() === categoria.toLowerCase() &&
+        (f.subcategory||'').toLowerCase().trim() === (sottocategoria||'').toLowerCase().trim()
       );
       const printErrorData = {
         seriesId,
@@ -19778,12 +20430,13 @@ async function startImportRetro() {
         if (dupPE) {
           const updatedRec = { ...dupPE, ...printErrorData, id: dupPE.id, img: dupPE.img || null };
           updatedRec.fullName = computeFullName(updatedRec, existingFigs);
-          const changed = _importHasChanges(dupPE, updatedRec, ['name', 'baseFigurineId']);
+          const _diff = _importDiff(dupPE, updatedRec, ['name', 'baseFigurineId']);
+          const changed = _diff.length > 0;
           if (changed) {
             await fsSave('figurines', updatedRec);
             const idx = _cache.figurines.findIndex(f => f.id === dupPE.id);
             if (idx >= 0) _cache.figurines[idx] = updatedRec;
-            retroImportLog('🔄 Riga ' + (i+1) + ': Errore di stampa "' + nome + '" — sovrascritto (dati modificati)', 'update');
+            retroImportLog('🔄 Riga ' + (i+1) + ': Errore di stampa "' + nome + '" — sovrascritto' + _importDiffTxt(_diff), 'update');
             updated++;
           } else {
             retroImportLog('⏭️ Riga ' + (i+1) + ': Errore di stampa "' + nome + '" — già presente, nessuna modifica', 'info');
@@ -19803,12 +20456,17 @@ async function startImportRetro() {
 
     if (!tipoChange) {
       // ── Riga di un Retro BASE (comportamento invariato) ──
+      // v5.985 - la SOTTOCATEGORIA fa parte della chiave. Prima no, ed era
+      // scritta lo stesso: due righe con stessi Nome e Categoria ma
+      // sottocategoria diversa finivano sullo STESSO record e si riscrivevano
+      // a vicenda a ogni import, all'infinito. Vedi il CHANGELOG.
       const duplicate = existingFigs.find(f =>
         f.seriesId === seriesId &&
         f.section === 'retros' &&
         !f.isChange && !f.isPrintError &&
         (f.name||'').toLowerCase() === nome.toLowerCase() &&
-        (f.category||'').toLowerCase() === categoria.toLowerCase()
+        (f.category||'').toLowerCase() === categoria.toLowerCase() &&
+        (f.subcategory||'').toLowerCase().trim() === (sottocategoria||'').toLowerCase().trim()
       );
 
       const retroData = {
@@ -19834,21 +20492,22 @@ async function startImportRetro() {
         if (duplicate) {
           const updatedRec = { ...duplicate, ...retroData, id: duplicate.id, img: duplicate.img || null };
           updatedRec.fullName = computeFullName(updatedRec, existingFigs);
-          const changed = _importHasChanges(duplicate, updatedRec, ['name', 'category', 'subcategory']);
+          const _diff = _importDiff(duplicate, updatedRec, ['name', 'category', 'subcategory']);
+          const changed = _diff.length > 0;
           if (changed) {
             await fsSave('figurines', updatedRec);
             const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
             if (idx >= 0) _cache.figurines[idx] = updatedRec;
-            retroImportLog('🔄 Riga ' + (i+1) + ': "' + nome + '" — sovrascritta (dati modificati) [Tipo: "' + tipoChange + '"]', 'update');
+            retroImportLog('🔄 Riga ' + (i+1) + ': "' + nome + '" — sovrascritta' + _importDiffTxt(_diff), 'update');
             updated++;
           } else {
-            retroImportLog('⏭️ Riga ' + (i+1) + ': "' + nome + '" — già presente, nessuna modifica [Tipo: "' + tipoChange + '"]', 'info');
+            retroImportLog('⏭️ Riga ' + (i+1) + ': "' + nome + '" — già presente, nessuna modifica', 'info');
             unchanged++;
           }
         } else {
           retroData.fullName = computeFullName(retroData, existingFigs);
           await fsSave('figurines', retroData);
-          retroImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta (' + categoria + ') [Tipo: "' + tipoChange + '"]', 'ok');
+          retroImportLog('✅ Riga ' + (i+1) + ': "' + nome + '" — aggiunta (' + categoria + ')', 'ok');
           inserted++;
         }
       } catch(e) {
@@ -19868,7 +20527,7 @@ async function startImportRetro() {
        continue;
     }
     if (!retroCategoria || !retroNome) {
-      errRiga('⚠️ Riga ' + (i+1) + ': "Retro - Categoria" e "Retro - Nome" sono obbligatorie per un Change (identificano il Retro base) [Tipo: "' + tipoChange + '"]', 'warn');
+      errRiga('⚠️ Riga ' + (i+1) + ': "Retro - Categoria" e "Retro - Nome" sono obbligatorie per un Change (identificano il Retro base)' + _tipoTag, 'warn');
        continue;
     }
 
@@ -19880,7 +20539,7 @@ async function startImportRetro() {
       (f.category||'').toLowerCase() === retroCategoria.toLowerCase()
     );
     if (!baseRetro) {
-      errRiga('❌ Riga ' + (i+1) + ': nessun Retro base trovato con Categoria "' + retroCategoria + '" e Nome "' + retroNome + '" [Tipo: "' + tipoChange + '"] — crea prima il Retro base, o controlla che Retro-Categoria/Retro-Nome coincidano esattamente', 'err');
+      errRiga('❌ Riga ' + (i+1) + ': nessun Retro base trovato con Categoria "' + retroCategoria + '" e Nome "' + retroNome + '"' + _tipoTag + ' — crea prima il Retro base, o controlla che Retro-Categoria/Retro-Nome coincidano esattamente', 'err');
        continue;
     }
 
@@ -19890,6 +20549,7 @@ async function startImportRetro() {
       f.isChange &&
       (f.name||'').toLowerCase() === nome.toLowerCase() &&
       (f.category||'').toLowerCase() === categoria.toLowerCase() &&
+      (f.subcategory||'').toLowerCase().trim() === (sottocategoria||'').toLowerCase().trim() &&
       (f.changeType||'').toLowerCase().trim() === matchedType.toLowerCase().trim()
     );
 
@@ -19916,21 +20576,22 @@ async function startImportRetro() {
       if (duplicateChange) {
         const updatedRec = { ...duplicateChange, ...changeData, id: duplicateChange.id, img: duplicateChange.img || null };
         updatedRec.fullName = computeFullName(updatedRec, existingFigs);
-        const changed = _importHasChanges(duplicateChange, updatedRec, ['name', 'baseFigurineId', 'changeType']);
+        const _diff = _importDiff(duplicateChange, updatedRec, ['name', 'baseFigurineId', 'changeType']);
+        const changed = _diff.length > 0;
         if (changed) {
           await fsSave('figurines', updatedRec);
           const idx = _cache.figurines.findIndex(f => f.id === duplicateChange.id);
           if (idx >= 0) _cache.figurines[idx] = updatedRec;
-          retroImportLog('🔄 Riga ' + (i+1) + ': Change "' + nome + '" — sovrascritto (dati modificati) [Tipo: "' + tipoChange + '"]', 'update');
+          retroImportLog('🔄 Riga ' + (i+1) + ': Change "' + nome + '" — sovrascritto' + _tipoTag + _importDiffTxt(_diff), 'update');
           updated++;
         } else {
-          retroImportLog('⏭️ Riga ' + (i+1) + ': Change "' + nome + '" — già presente, nessuna modifica [Tipo: "' + tipoChange + '"]', 'info');
+          retroImportLog('⏭️ Riga ' + (i+1) + ': Change "' + nome + '" — già presente, nessuna modifica' + _tipoTag, 'info');
           unchanged++;
         }
       } else {
         changeData.fullName = computeFullName(changeData, existingFigs);
         await fsSave('figurines', changeData);
-        retroImportLog('✅ Riga ' + (i+1) + ': Change "' + nome + '" — aggiunto (base: "' + baseRetro.name + '") [Tipo: "' + tipoChange + '"]', 'ok');
+        retroImportLog('✅ Riga ' + (i+1) + ': Change "' + nome + '" — aggiunto (base: "' + baseRetro.name + '")' + _tipoTag, 'ok');
         inserted++;
       }
     } catch(e) {
@@ -19940,13 +20601,13 @@ async function startImportRetro() {
   }
 
   retroImportStatus('✅ Fine: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + skipped + ' ignorate · ' + errors + ' errori', 100);
-  retroImportLog('--- FINE: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + unchanged + ' invariati · ' + skipped + ' ignorate · ' + errors + ' errori ---', errors===0?'ok':'warn');
+  retroImportLog('--- FINE: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + unchanged + ' invariati · ' + skipped + ' ignorate · ' + errors + ' errori ---', 'white');
 
   if (erroriRighe.length) {
     retroImportLog('', 'info');
     retroImportLog('--- ' + (currentLang === 'it'
       ? 'RIGHE NON IMPORTATE (' + erroriRighe.length + ') ---'
-      : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'warn');
+      : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'white');
     erroriRighe.forEach(msg => retroImportLog(msg, 'warn'));
   }
   const _endBtn = document.getElementById('import-retro-start-btn'); if (_endBtn) _endBtn.disabled = false;
@@ -20106,11 +20767,12 @@ async function startImportFig() {
           const finalName = numero ? (nome || duplicate.name) : nome;
           const updatedRec = { ...duplicate, ...figData, name: finalName, img: duplicate.img, id: duplicate.id };
           updatedRec.fullName = computeFullName(updatedRec, existingFigs);
-          const changed = _importHasChanges(duplicate, updatedRec, ['number','subseries','size','name','retroId']);
+          const _diff = _importDiff(duplicate, updatedRec, ['number','subseries','size','name','retroId']);
+          const changed = _diff.length > 0;
           if (changed) {
             await fsSave('figurines', updatedRec);
             const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec;
-            { const _u = '🔄 Riga ' + rn + ': "' + finalName + '" — base sovrascritta (dati modificati)'; figImportLog(_u, 'update'); righeAggiornate.push(_u); updated++; }
+            { const _u = '🔄 Riga ' + rn + ': "' + finalName + '" — base sovrascritta' + _importDiffTxt(_diff); figImportLog(_u, 'update'); righeAggiornate.push(_u); updated++; }
           } else { figImportLog('⏭️ Riga ' + rn + ': "' + finalName + '" — base già presente, nessuna modifica', 'info'); unchanged++; }
         } else {
           if (!nome) { errRiga('⚠️ Riga ' + rn + ': nessuna base con Numero ' + numero + ' — per crearne una nuova serve anche il Nome', 'warn'); continue; }
@@ -20196,11 +20858,12 @@ async function startImportFig() {
       if (duplicate) {
         const updatedRec = { ...duplicate, ...figData, img: duplicate.img, id: duplicate.id };
         updatedRec.fullName = computeFullName(updatedRec, existingFigs);
-        const changed = _importHasChanges(duplicate, updatedRec, ['name','isVariation','isUnofficialVariation','isChange','isPrintError','baseFigurineId','retroId','changeType','printErrorType']);
+        const _diff = _importDiff(duplicate, updatedRec, ['name','isVariation','isUnofficialVariation','isChange','isPrintError','baseFigurineId','retroId','changeType','printErrorType']);
+        const changed = _diff.length > 0;
         if (changed) {
           await fsSave('figurines', updatedRec);
           const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec;
-          { const _u = '🔄 Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — sovrascritta (' + rowType + ', dati modificati)'; figImportLog(_u, 'update'); righeAggiornate.push(_u); updated++; }
+          { const _u = '🔄 Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — sovrascritta (' + rowType + ')' + _importDiffTxt(_diff); figImportLog(_u, 'update'); righeAggiornate.push(_u); updated++; }
         } else { figImportLog('⏭️ Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — già presente, nessuna modifica', 'info'); unchanged++; }
       } else {
         figData.fullName = computeFullName(figData, existingFigs);
