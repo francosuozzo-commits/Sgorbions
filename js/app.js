@@ -1,6 +1,93 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.038 - Per un CHANGE o un ERRORE DI STAMPA di retro comandano i campi della BASE: Nome,
+//          Sottonome, Categoria e Sottocategoria. Chiesto da Franco. Solo app.js.
+//          PRIMA: solo il Nome era derivato dalla base (v5.774) e nascosto nelle form. Gli altri
+//          tre restavano quelli digitati e potevano allontanarsi dalla base senza che niente lo
+//          segnalasse. Non e' teoria: il 1 agosto 2026 erano gia' stati corretti a mano quattro
+//          Change di Serie 2 con la sottocategoria divergente (vedi §13 del documento).
+//          ORA: al salvataggio i quattro campi si riscrivono dalla base, in ENTRAMBE le form; e i
+//          tre campi si nascondono quando il tipo e' Change o errore di stampa, come gia' il Nome.
+//          Un campo che verra' sovrascritto non va mostrato modificabile: scriverci dentro e
+//          vedere sparire il proprio testo e' peggio che non poterlo scrivere.
+//          Derivare al salvataggio, invece di controllare e segnalare, e' l'unica forma che rende
+//          la divergenza IMPOSSIBILE anziche' scoprirla dopo.
+//          La visibilita' sta in _visibilitaCampiRetro(), una funzione sola: va aggiornata sia
+//          all'apertura della finestra sia a ogni clic sulle caselle del tipo, e due copie della
+//          stessa regola divergono al primo che se ne dimentica una (successo con la classe della
+//          v6.027, corretta nella v6.032).
+//          MISURATO PRIMA: dei 285 Change/errori di stampa di retro, categoria e sottocategoria
+//          coincidevano gia' con la base in tutti e 285; divergevano 12 Nomi e 2 Sottonomi. I 14
+//          record sono stati elencati a Franco, non riscritti d'ufficio: 12 sono gli "X (CIAO)"
+//          di Serie 3, che potrebbero essere voluti.
+// v6.037 - CARD DEI RETRO: quattro righe fisse - Nome, Sottonome, Categoria, Sottocategoria - piu'
+//          la riga in fondo con tipo, punteggio e Mia lista. Chiesto da Franco. Solo app.js.
+//          IL PROBLEMA (Franco): "lo stesso tipo di contenuto e' sfalsato tra card della stessa
+//          riga". Non era l'ordine: era che una riga mancante faceva risalire tutte quelle sotto,
+//          quindi la Sottocategoria di una card si trovava all'altezza del Nome di quella accanto.
+//          I dati lo garantiscono: 411 retro su 1013 non mostrano la Categoria (il Nome la
+//          contiene gia'), 172 hanno una Sottocategoria, 48 un Sottonome - quasi ogni combinazione
+//          esiste davvero.
+//          LA SOLUZIONE: ogni riga esiste sempre, vuota se il dato manca ('&nbsp;', che tiene
+//          l'altezza di quella riga senza inventare un min-height per ogni misura di font). Cosi'
+//          l'allineamento e' una proprieta' del LAYOUT, non una fortuna dei dati: vale anche per le
+//          combinazioni di campi che oggi non esistono.
+//          ORDINE NUOVO: prima il Nome (era la Categoria), poi il Sottonome che gli sta sotto come
+//          in tutte le altre schermate dalla v6.030-31, poi Categoria e Sottocategoria.
+//          La Categoria NON si ripete quando il Nome la contiene gia' (scelta di Franco, in linea
+//          con la v5.976): la sua riga c'e' ma resta vuota. Prima quella soppressione costava
+//          l'allineamento; ora non costa piu' niente.
+//          Cade il ripiego "(senza categoria)": serviva quando la riga 1 ERA la categoria e senza
+//          di lei restava bianca. Ora la riga 1 e' il Nome. (Sui dati veri non compariva comunque
+//          mai: tutti e 1013 i retro hanno una categoria.)
+//          Cade anche la soppressione del Nome quando coincide con la Categoria (v5.780): il Nome
+//          e' la riga 1 e non puo' mancare; a non ripetersi e' la Categoria, in riga 3.
+// v6.036 - Il campo SOTTONOME si sposta SOTTO il campo Nome, in tutte e due le form. Chiesto da
+//          Franco. Modificati app.js e index.html.
+//          Stava fra i campi della categoria e prima ancora del Nome: nella scheda era
+//          Categoria, Sottocategoria, Sottonome, Numero, Nome; nella finestra Aggiungi/Modifica
+//          addirittura Categoria, Sottonome, Sottocategoria, ... , Nome. Il sottonome e' la
+//          SECONDA PARTE DEL NOME (v5.980), quindi chiedeva la seconda parte prima della prima.
+//          E' la stessa disposizione che la v6.026 aveva gia' corretto nella VISTA della scheda:
+//          "vista e modifica devono coincidere" (regola di Franco, v5.782), e finora non
+//          coincidevano.
+//          Spostato in ENTRAMBE le form e non solo in quella segnalata: sono lo stesso campo, e
+//          lasciarne una col vecchio ordine avrebbe creato la differenza che questa modifica
+//          toglie. Vedi anche §12.1 del documento, dove le due form devono diventare una sola.
+// v6.035 - BACO (Franco): la SOTTOCATEGORIA entra nella chiave di unicita' dei Retro nelle due
+//          form. Solo app.js.
+//          IL PROBLEMA: la chiave della form era Serie + Categoria + Nome + Tipo (+ Tipo di change
+//          per i soli Change). La chiave dell'IMPORT invece la sottocategoria ce l'ha dalla v5.985,
+//          aggiunta dopo una segnalazione di Franco sugli stessi dati. Due chiavi diverse sullo
+//          stesso dato: l'import creava - correttamente - due retro che differiscono solo per la
+//          sottocategoria, e poi la form si rifiutava di salvare sia l'uno sia l'altro.
+//          MISURATO SUI DATI VERI prima di toccare: su 1013 retro la chiave vecchia vede 12 gruppi
+//          in collisione, 24 record. Undici dei dodici sono i "RICERCATO" BLU contro ROSSO: record
+//          veri e distinti, che oggi non si riescono a salvare. Con la sottocategoria nella chiave
+//          ne resta UNO: due errori di stampa "OFFERTA SPECIALE! / ROSA / 174 - SET DA PESCA",
+//          identici in ogni campo compreso il sottonome. Quello e' un doppione vero, da guardare a
+//          mano - la chiave ora dice la verita' anche su di lui.
+//          Il SOTTONOME resta fuori: si allinea alla chiave dell'import, non se ne inventa una
+//          terza. Da verificare a parte: una nota della v5.980 dice che l'import lo include, ma nel
+//          codice dell'import non c'e' (e l'import dei retro non legge nemmeno una colonna
+//          sottonome).
+//          Aggiornato anche il messaggio d'errore, che elencava Categoria/Nome/Tipo di change e
+//          taceva sia la Sottocategoria sia il Tipo: un messaggio che non dice cosa ha guardato
+//          davvero manda a cercare il doppione nel posto sbagliato.
+// v6.034 - La riga di riepilogo del CARICAMENTO FOTO ("--- FINE: N ok · N saltate · N errori ---")
+//          va in bianco. Chiesto da Franco. Solo app.js.
+//          Prima era verde quando gli errori erano zero e gialla quando ce n'erano: la riga che
+//          delimita il blocco si tingeva del suo esito, e in un log dove il verde e il giallo
+//          significano gia' qualcosa riga per riga, quella era la sola a usarli per dire un'altra
+//          cosa. Ora e' bianca sempre - la stessa scelta gia' fatta per l'importatore RETRO
+//          (v5.983) e per quello FIGURINE (v5.808): stessa forma di riga, stesso colore.
+//          Vale per ENTRAMBE le procedure di caricamento foto, quella numerata e quella per
+//          figurine senza numero e retro: sono la stessa schermata in due copie, e farne una sola
+//          bianca avrebbe creato la differenza che questa modifica toglie.
+//          'white' diventa un tipo NOMINATO in fotoLog/fotoNnLog invece di appoggiarsi al colore
+//          di default (che oggi e' lo stesso): se un domani si cambia il default, la riga di
+//          riepilogo non lo segue per sbaglio.
 // v6.033 - Le frecce del dettaglio funzionano anche quando si arriva da un tab dei collegati, e
 //          scorrono l'elenco DI QUEL TAB. Chiesto da Franco. Solo app.js.
 //          PRIMA: le frecce cercavano l'oggetto in _gridOrderedIds, cioe' nell'elenco della
@@ -10499,7 +10586,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.033';
+const JS_VERSION = 'v6.038';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -15119,6 +15206,24 @@ function toggleRetroBianco() {
   }
   try { toggleBaseFigurineGroup(); } catch(e) { console.error('toggleRetroBianco', e); }
 }
+// v6.038 (Franco) - Categoria, Sottocategoria e Sottonome esistono solo per i RETRO, e per un
+// Change o un errore di stampa li scrive la BASE al salvataggio: li' non si mostrano, come il Nome
+// dalla v5.774. Un campo che verra' sovrascritto e' un invito a perdere tempo.
+// Sta in una funzione sola perche' la visibilita' va aggiornata in DUE momenti - all'apertura della
+// finestra e a ogni clic sulle caselle del tipo - e due copie della stessa regola divergono al
+// primo che si dimentica (e' successo con la classe della v6.027, corretta nella v6.032).
+function _visibilitaCampiRetro() {
+  const isRetros = currentSection === 'retros';
+  const daBase = isRetros && (
+    document.getElementById('fig-is-change-input')?.checked ||
+    document.getElementById('fig-is-printerror-input')?.checked);
+  const mostra = isRetros && !daBase;
+  [['fig-category-group'], ['fig-subcategory-group'], ['fig-subname-group']].forEach(([id]) => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = mostra ? '' : 'none';
+  });
+}
+
 function toggleBaseFigurineGroup(appenaSpuntata) {
   if (appenaSpuntata) _esclusivitaTipi(appenaSpuntata);
   const group = document.getElementById('fig-base-figurine-group');
@@ -15130,6 +15235,7 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
   const isUnoff = document.getElementById('fig-is-unofficial-variation-input')?.checked;
   const isChg = document.getElementById('fig-is-change-input')?.checked;
   const isPE = document.getElementById('fig-is-printerror-input')?.checked;
+  try { _visibilitaCampiRetro(); } catch(e) { console.error('_visibilitaCampiRetro', e); } // v6.038
   // un errore di stampa, come le variazioni e i Change, e' collegato a un oggetto base
   const showBase = isVar || isUnoff || isChg || isPE;
   group.style.display = showBase ? '' : 'none';
@@ -15364,13 +15470,9 @@ function openAddItemModal(itemId) {
   if (sizeGroup) sizeGroup.style.display = (hasSizes && !isRetros) ? '' : 'none';
   const subseriesGroup = document.getElementById('fig-subseries-group');
   if (subseriesGroup) subseriesGroup.style.display = (hasSubseries && !isRetros) ? '' : 'none';
-  const categoryGroup = document.getElementById('fig-category-group');
-  if (categoryGroup) categoryGroup.style.display = isRetros ? '' : 'none';
-  const subcategoryGroup = document.getElementById('fig-subcategory-group');
-  if (subcategoryGroup) subcategoryGroup.style.display = isRetros ? '' : 'none';
   // v5.980 — Sottonome: solo per i Retro, come Categoria e Sottocategoria.
-  const subnameGroup = document.getElementById('fig-subname-group');
-  if (subnameGroup) subnameGroup.style.display = isRetros ? '' : 'none';
+  // v6.038 - le tre visibilita' stanno in _visibilitaCampiRetro(), che tiene conto anche del tipo.
+  _visibilitaCampiRetro();
   // Per i Retro, in griglia restano Categoria, Sottocategoria e Nome
   if (figGrid && isRetros) {
     figGrid.style.gridTemplateColumns = 'minmax(0,140px) minmax(0,140px) 1fr';
@@ -16864,49 +16966,31 @@ function renderItems() {
     // quando erano un'informazione sola e tutta grigia; con due colori distinti la riga
     // unica faceva sembrare l'arancione una coda del giallo invece di un dato suo.
     const _catNuda = (f.category || '').trim();
-    const _riga1Retro = _retroCatNelNome
-      ? `<span style="color:var(--text);">${esc(f.name || '')}</span>`
-      : (_catNuda
-          ? `<span style="color:${COL_CATEGORIA};">${esc(_catNuda)}</span>`
-          : (_retroSub ? '' : `<span style="color:var(--muted);">${currentLang === 'it' ? '(senza categoria)' : '(no category)'}</span>`));
+    // v6.037 (Franco) - LA CARD RETRO HA QUATTRO RIGHE FISSE, in quest'ordine: Nome, Sottonome,
+    // Categoria, Sottocategoria. Ogni riga ESISTE SEMPRE, anche vuota.
+    // Il problema non era l'ordine ma il fatto che una riga mancante faceva risalire tutte quelle
+    // sotto: due card sulla stessa riga di griglia mostravano lo stesso tipo di dato ad altezze
+    // diverse, e l'occhio non poteva confrontarle. Misurato: 411 retro su 1013 non mostrano la
+    // Categoria (il Nome la contiene gia'), 172 hanno una Sottocategoria, 48 un Sottonome - cioe'
+    // quasi ogni combinazione di righe presenti esiste davvero nei dati.
+    // Riservare la riga costa una riga vuota e toglie lo sfalsamento SENZA dipendere da quali
+    // campi sono popolati: e' una proprieta' del layout, non una fortuna dei dati.
+    // La Categoria resta NON ripetuta quando il Nome la contiene gia' (scelta di Franco, in linea
+    // con la v5.976): li' la riga c'e' ma e' vuota. L'allineamento non dipende piu' da lei.
+    const _rigaCard = (testo, stile) => `<div style="${stile}">${testo || '&nbsp;'}</div>`;
+    const _retroRigheHTML = !isRetroCard ? '' : (
+        _rigaCard(esc((f.subname || '').trim()), 'font-size:0.82rem;color:var(--info);margin-top:1px;') +
+        _rigaCard(_retroCatNelNome ? '' : esc(_catNuda), 'font-size:0.82rem;color:' + COL_CATEGORIA + ';margin-top:1px;') +
+        _rigaCard(esc(_retroSub), 'font-size:0.78rem;color:' + COL_SOTTOCAT + ';margin-top:1px;')
+      );
     const figNameInner = isRetroCard
-      ? _riga1Retro
+      ? `<span style="color:var(--text);">${esc(f.name || '')}</span>` /* v6.037 - riga 1 = il Nome */
       : (_mobileFigCard
           ? `<span class="fig-number" style="font-size:1.05rem;color:var(--text);">${figLabel}</span>${scoreInlineHTML}` +
             (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line">${catPrefix}${f.name}</div>`)
           // v5.980 (Franco) — il numero in BIANCO come il nome: sono la stessa cosa, l'identita'
           // della figurina, e col grigio sembravano due informazioni di peso diverso.
           : `<span class="fig-number" style="font-size:1.05rem;color:var(--text);">${figLabel}</span>${figLabel ? ' ' : ''}${catPrefix}${f.name}`);
-    // v5.991 - la Sottocategoria ha una riga sua, subito sotto la Categoria. Vale in
-    // ENTRAMBI i casi: anche quando la categoria e' nascosta perche' gia' contenuta nel
-    // nome (v5.976), la sottocategoria resta al suo posto invece di cambiare riga a
-    // seconda di com'e' scritto il nome.
-    const retroSubcatLineHTML = (isRetroCard && _retroSub)
-      ? `<div style="font-size:0.78rem;color:${COL_SOTTOCAT};">${esc(_retroSub)}</div>` : '';
-    // v5.780 — se il Nome del Retro è IDENTICO alla Categoria (caso raro), la riga del Nome è
-    // ridondante rispetto alla prima riga (la Categoria): la omettiamo, mostrando solo la Categoria.
-    // Confronto esatto (trim, case-insensitive); non usa _retroNameStartsWithCategory (che è "inizia
-    // con", troppo largo qui). La Sottocategoria non entra nel confronto: si guarda solo la Categoria.
-    const _retroNameEqualsCategory = (f.name || '').trim() !== '' &&
-      (f.name || '').trim().toLowerCase() === (f.category || '').trim().toLowerCase();
-    const retroNameLineHTML = !isRetroCard ? ''
-      // v5.991 - qui ora c'e' SOLO il nome. Se la categoria e' gia' dentro il nome, il
-      // nome sta gia' in riga 1 e questa riga non esiste: ripeterlo sarebbe un doppione.
-      : (_retroCatNelNome
-          ? ''
-          : ((f.name && !_retroNameEqualsCategory)
-              ? `<div style="font-size:0.9rem;color:var(--text);margin-top:1px;">${esc(f.name || '')}</div>`
-              : ''));
-    // v5.980 (Franco) — Riga del Sottonome sulla card Retro, a capo, in AZZURRO.
-    // In grigio muted spariva. L'azzurro nel sito segna le variazioni non ufficiali, ma quelle
-    // esistono solo per le Figurine: su una card Retro il colore e' libero, e non si crea nessuna
-    // ambiguita'. (Scartati: lime = cose cliccabili, verde = punteggio, giallo = avvisi.) Fino alla v5.979 stava
-    // dentro il Nome e appariva sulla riga 2 senza distinguersi; ora che e' un campo suo va
-    // mostrato lo stesso — altrimenti dividerlo avrebbe voluto dire nasconderlo — ma su una riga
-    // propria, che e' anche piu' fedele alla carta vera, dove quel testo sta in un'altra parte
-    // del disegno. Si mostra solo se c'e': una riga vuota su centinaia di retro sarebbe rumore.
-    const retroSubnameLineHTML = (isRetroCard && (f.subname || '').trim())
-      ? `<div style="font-size:0.82rem;color:var(--info);margin-top:1px;">${esc(f.subname.trim())}</div>` : '';
     const imgAspectRatio = currentSection === 'retros' ? '1.6' : '1';
     // LA SCRITTA DEL TIPO VIVE SOLO NEI RETRO (v5.705).
       // Nelle FIGURINE era ridondante: il badge in alto a destra dice gia' il tipo, ed
@@ -16980,7 +17064,7 @@ function renderItems() {
       </div>
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
-        ${isRetroCard ? retroSubcatLineHTML + retroNameLineHTML + retroSubnameLineHTML : subseriesHTML}
+        ${isRetroCard ? _retroRigheHTML : subseriesHTML}
         ${typeIndicatorHTML}
         ${retroNameHTML}
         ${descHTML}
@@ -17218,11 +17302,11 @@ async function _saveFigurineInner() {
   const score = parseInt(document.getElementById('fig-score-input').value) || 0;
   const subseries = document.getElementById('fig-subseries-input')?.value.trim() || '';
   const size = document.getElementById('fig-size-input')?.value.trim() || '';
-  const category = document.getElementById('fig-category-input')?.value.trim() || '';
-  const subcategory = document.getElementById('fig-subcategory-input')?.value.trim() || '';
+  let category = document.getElementById('fig-category-input')?.value.trim() || ''; // v6.038: puo' essere derivato dalla base
+  let subcategory = document.getElementById('fig-subcategory-input')?.value.trim() || ''; // v6.038
   // v5.980 — Sottonome, solo per i Retro: la seconda parte del nome, quella scritta altrove nel
   // disegno. Fuori dai Retro resta vuoto anche se la casella fosse rimasta piena.
-  const subname = (currentSection === 'retros') ? (document.getElementById('fig-subname-input')?.value.trim() || '') : '';
+  let subname = (currentSection === 'retros') ? (document.getElementById('fig-subname-input')?.value.trim() || '') : ''; // v6.038
   // NEI RETRO I FLAG DI VARIAZIONE SONO SEMPRE FALSI, comunque sia la casella.
   // Nasconderla non basta: se e' rimasta spuntata da una modifica precedente, il suo
   // valore verrebbe letto lo stesso. Qui la regola diventa un fatto.
@@ -17277,9 +17361,23 @@ async function _saveFigurineInner() {
   // "Retro base obbligatorio" piu' sotto, quindi qui saltiamo il "Nome obbligatorio".
   // v5.779/790 — il Nome eredita dalla base per Change ED Errori di stampa, sia Retro sia figurine.
   const _nomeEreditato = (isChange || isPrintError) && (isRetrosSection || currentSection === 'figurines');
+  // v6.038 (Franco) - PER UN CHANGE O UN ERRORE DI STAMPA DI RETRO COMANDANO I CAMPI DELLA BASE:
+  // Nome, Sottonome, Categoria e Sottocategoria. Il Nome lo faceva gia' dalla v5.774; gli altri tre
+  // restavano quelli digitati, e potevano allontanarsi dalla base senza che niente lo segnalasse.
+  // Non e' teoria: il 1 agosto 2026 (vedi §13 del documento) erano gia' stati corretti a mano
+  // quattro Change di Serie 2 con la sottocategoria divergente dalla base.
+  // Derivarli qui, al salvataggio, e' l'unico modo per cui il dato NON possa piu' divergere: un
+  // controllo che segnala la divergenza la scopre dopo, questo la rende impossibile.
   if (_nomeEreditato && baseFigurineId) {
     const _bR = getData('figurines', []).find(x => x.id === baseFigurineId);
-    if (_bR) name = _bR.name || '';
+    if (_bR) {
+      name = _bR.name || '';
+      if (isRetrosSection) {
+        subname = _bR.subname || '';
+        category = _bR.category || '';
+        subcategory = _bR.subcategory || '';
+      }
+    }
   }
   const numberRequired = (currentSection === 'figurines') && !isVarOrChgSection && !isPrintError; // v5.880: il numero ha senso solo per le figurine
   if ((!name && !_nomeEreditato) || (numberRequired && !number)) { toast((currentLang === 'it' ? (numberRequired ? 'Numero e nome sono obbligatori' : 'Il nome è obbligatorio') : (numberRequired ? 'Number and name are required' : 'Name is required')), 'error'); return; }
@@ -17292,19 +17390,32 @@ async function _saveFigurineInner() {
     // bloccava. Il changeType funzionava da discriminante finche' i tipi di retro erano
     // due; col quinto non regge piu'.
     const tipoNuovo = tipoDiOggetto({ isVariation, isUnofficialVariation, isChange, isPrintError });
+    // v6.035 (Franco) - LA SOTTOCATEGORIA ENTRA NELLA CHIAVE. L'import ce l'ha dalla v5.985,
+    // dopo una segnalazione di Franco su dati veri; queste due form no, e le due chiavi
+    // dicevano cose diverse sullo stesso dato: l'import creava legittimamente due retro che
+    // differiscono solo per la sottocategoria, e poi la form si rifiutava di salvarli.
+    // Misurato prima di toccare: su 1013 retro la chiave vecchia vedeva 12 gruppi in collisione
+    // (24 record); 11 dei 12 sono i "RICERCATO" BLU/ROSSO, cioe' record veri e distinti che
+    // oggi non si possono salvare. Con la sottocategoria ne resta 1: due errori di stampa
+    // "OFFERTA SPECIALE! / ROSA / 174 - SET DA PESCA" identici in tutto - quello e' un doppione
+    // vero, non un difetto della chiave.
+    // Il SOTTONOME resta fuori, perche' fuori e' anche nella chiave dell'import: si allinea a
+    // quella, non si inventa una terza chiave. (Una nota della v5.980 dice che l'import lo
+    // include: nel codice dell'import non c'e' - da verificare a parte.)
     const dup = getData('figurines', []).find(f =>
       f.id !== editId &&
       f.seriesId === currentSeriesId &&
       f.section === 'retros' &&
       (f.name||'').toLowerCase() === name.toLowerCase() &&
       (f.category||'').toLowerCase() === category.toLowerCase() &&
+      (f.subcategory||'').toLowerCase().trim() === (subcategory||'').toLowerCase().trim() && // v6.035
       tipoDiOggetto(f) === tipoNuovo &&
       // il changeType distingue due CHANGE fra loro; per gli altri tipi non esiste
       (tipoNuovo !== 'change' ||
         (f.changeType||'').toLowerCase().trim() === (changeType||'').toLowerCase().trim())
     );
     if (dup) {
-      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, lo stesso Nome e lo stesso Tipo di change in questa serie' : 'A Retro with the same Category, Name and Change type already exists in this series'), 'error');
+      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, la stessa Sottocategoria, lo stesso Nome e lo stesso Tipo in questa serie (per i Change conta anche il Tipo di change)' : 'A Retro with the same Category, Subcategory, Name and Type already exists in this series (for Changes the Change type counts too)'), 'error');
       return;
     }
   }
@@ -19677,6 +19788,11 @@ function switchToEditMode(figId) {
 
   // Build edit form
   let html = '';
+  // v6.038 - un campo che al salvataggio viene sovrascritto dalla base non si mostra modificabile:
+  // scriverci dentro e vedere il proprio testo sparire e' peggio che non poterlo scrivere. Vale per
+  // Nome, Sottonome, Categoria e Sottocategoria di un Change/errore di stampa.
+  const _feNameHidden = (f.isChange || f.isPrintError) && (f.section === 'retros' || f.section === 'figurines');
+  const _feCampiDaBase = (f.isChange || f.isPrintError) && f.section === 'retros'; // v6.038
 
   // v5.784 — i tab PRIMA, poi (dentro il tab Generale) il campo Serie: così la posizione coincide
   // con la vista di visualizzazione, dove Serie sta SOTTO i tab. Prima qui stava sopra i tab.
@@ -19694,9 +19810,8 @@ function switchToEditMode(figId) {
 
   // Categoria (solo per i Retro, prima del Nome)
   if (isRetrosItem) {
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category" value="' + (f.category||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory" value="' + (f.subcategory||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"></span></div>';
+    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category" value="' + (f.category||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory" value="' + (f.subcategory||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   }
 
   // Sottoserie (solo se la serie ha hasSubseries)
@@ -19710,8 +19825,15 @@ function switchToEditMode(figId) {
   // Nome
   // v5.774/779/790 — Nome nascosto per Change ED Errori di stampa, sia Retro sia figurine (eredita
   // dalla base; derivato al salvataggio).
-  const _feNameHidden = (f.isChange || f.isPrintError) && (f.section === 'retros' || f.section === 'figurines');
+  // (il flag e' dichiarato piu' in alto, v6.038: lo usano anche Categoria/Sottocategoria/Sottonome)
   html += '<div class="detail-row" id="fe-name-group" style="' + (_feNameHidden ? 'display:none;' : '') + '"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + (f.name||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+  // v6.036 (Franco) - il SOTTONOME sta SOTTO IL NOME, di cui e' la seconda parte. Stava fra
+  // Sottocategoria e Numero, cioe' in mezzo ai campi della categoria e prima ancora del Nome: la
+  // stessa disposizione che la v6.026 aveva gia' corretto nella VISTA della scheda. Vista e
+  // modifica devono coincidere (regola di Franco, v5.782), e finora non coincidevano.
+  if (f.section === 'retros') {
+    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"></span></div>';
+  }
 
   // Punteggio
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Punteggio':'Score') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
@@ -20022,15 +20144,38 @@ async function saveFigFromDetail(figId) {
   // v5.779/790 — Nome ereditato dalla base per Change ED Errori di stampa, sia Retro sia figurine.
   const _nameInherited = (_isChgChk || _isPEChk) &&
     (existingForCheck?.section === 'retros' || existingForCheck?.section === 'figurines');
+  // v6.038 - i tre campi che, per un Change/errore di stampa di RETRO, comandano dalla base.
+  // Letti qui una volta sola: li usano sia il controllo di chiave duplicata sia `updates`, e
+  // leggerli due volte in due punti e' il modo in cui i due finiscono per non coincidere.
+  let _catEff     = document.getElementById('fe-category')?.value.trim() || '';
+  let _subcatEff  = document.getElementById('fe-subcategory')?.value.trim() || '';
+  let _subnameEff = document.getElementById('fe-subname')?.value.trim() || '';
+  // v6.038 (Franco) - PER UN CHANGE O UN ERRORE DI STAMPA DI RETRO COMANDANO I CAMPI DELLA BASE:
+  // Nome, Sottonome, Categoria e Sottocategoria. Il Nome lo faceva gia' dalla v5.774; gli altri tre
+  // restavano quelli digitati, e potevano allontanarsi dalla base senza che niente lo segnalasse.
+  // Non e' teoria: il 1 agosto 2026 (vedi §13 del documento) erano gia' stati corretti a mano
+  // quattro Change di Serie 2 con la sottocategoria divergente dalla base.
+  // Derivarli qui, al salvataggio, e' l'unico modo per cui il dato NON possa piu' divergere: un
+  // controllo che segnala la divergenza la scopre dopo, questo la rende impossibile.
   if (_nameInherited) {
     const _baseId = document.getElementById('fe-base-figurine')?.value || null;
     const _bR = _baseId ? getData('figurines', []).find(x => x.id === _baseId) : null;
-    if (_bR) name = _bR.name || '';
+    if (_bR) {
+      name = _bR.name || '';
+      if (existingForCheck?.section === 'retros') {
+        _subnameEff = _bR.subname || '';
+        _catEff     = _bR.category || '';
+        _subcatEff  = _bR.subcategory || '';
+      }
+    }
   }
   if (!name && !_nameInherited) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
   if (existingForCheck?.section === 'retros') {
-    const category = document.getElementById('fe-category')?.value.trim() || '';
+    const category = _catEff; // v6.038
     const changeTypeVal = document.getElementById('fe-retro-change-type')?.value || '';
+    // v6.035 - letta qui e non riusata da `updates`, che si costruisce piu' sotto: nella form A la
+    // stessa cosa e' una const in cima, qui il valore va preso dal campo prima del controllo.
+    const subcategoryVal = _subcatEff; // v6.038
       // stessa correzione del controllo gemello (v5.717): la chiave comprende il TIPO
       const tipoNuovo = tipoDiOggetto({
         isVariation: document.getElementById('fe-is-variation')?.checked || false,
@@ -20038,18 +20183,31 @@ async function saveFigFromDetail(figId) {
         isChange: document.getElementById('fe-is-change')?.checked || false,
         isPrintError: document.getElementById('fe-is-printerror')?.checked || false
       });
+      // v6.035 (Franco) - LA SOTTOCATEGORIA ENTRA NELLA CHIAVE. L'import ce l'ha dalla v5.985,
+      // dopo una segnalazione di Franco su dati veri; queste due form no, e le due chiavi
+      // dicevano cose diverse sullo stesso dato: l'import creava legittimamente due retro che
+      // differiscono solo per la sottocategoria, e poi la form si rifiutava di salvarli.
+      // Misurato prima di toccare: su 1013 retro la chiave vecchia vedeva 12 gruppi in collisione
+      // (24 record); 11 dei 12 sono i "RICERCATO" BLU/ROSSO, cioe' record veri e distinti che
+      // oggi non si possono salvare. Con la sottocategoria ne resta 1: due errori di stampa
+      // "OFFERTA SPECIALE! / ROSA / 174 - SET DA PESCA" identici in tutto - quello e' un doppione
+      // vero, non un difetto della chiave.
+      // Il SOTTONOME resta fuori, perche' fuori e' anche nella chiave dell'import: si allinea a
+      // quella, non si inventa una terza chiave. (Una nota della v5.980 dice che l'import lo
+      // include: nel codice dell'import non c'e' - da verificare a parte.)
       const dup = getData('figurines', []).find(f =>
         f.id !== figId &&
         f.seriesId === existingForCheck.seriesId &&
         f.section === 'retros' &&
         (f.name||'').toLowerCase() === name.toLowerCase() &&
         (f.category||'').toLowerCase() === category.toLowerCase() &&
+        (f.subcategory||'').toLowerCase().trim() === subcategoryVal.toLowerCase().trim() && // v6.035
         tipoDiOggetto(f) === tipoNuovo &&
         (tipoNuovo !== 'change' ||
           (f.changeType||'').toLowerCase().trim() === changeTypeVal.toLowerCase().trim())
       );
     if (dup) {
-      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, lo stesso Nome e lo stesso Tipo di change in questa serie' : 'A Retro with the same Category, Name and Change type already exists in this series'), 'error');
+      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, la stessa Sottocategoria, lo stesso Nome e lo stesso Tipo in questa serie (per i Change conta anche il Tipo di change)' : 'A Retro with the same Category, Subcategory, Name and Type already exists in this series (for Changes the Change type counts too)'), 'error');
       return;
     }
   }
@@ -20062,9 +20220,9 @@ async function saveFigFromDetail(figId) {
     desc: document.getElementById('fe-desc')?.value.trim() || '',
     score: +(document.getElementById('fe-score')?.value || 0),
     size: document.getElementById('fe-size')?.value.trim() || '',
-    category: document.getElementById('fe-category')?.value.trim() || '',
-    subcategory: document.getElementById('fe-subcategory')?.value.trim() || '',
-    subname: document.getElementById('fe-subname')?.value.trim() || '',
+    category: _catEff, // v6.038
+    subcategory: _subcatEff, // v6.038
+    subname: _subnameEff, // v6.038
     isVariation: document.getElementById('fe-is-variation')?.checked || false,
     isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
     isChange: document.getElementById('fe-is-change')?.checked || false,
@@ -22350,7 +22508,10 @@ function fotoLog(msg, type) {
   const a = document.getElementById('foto-log-actions'); if (a) a.style.display = 'flex';
   const line = document.createElement('div');
   // v5.901 — le righe non colorate (info/default) vanno in BIANCO (var(--text)), non più grigio chiaro.
-  line.style.color = type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--text)';
+  // v6.034 — 'white' è un tipo NOMINATO, non il ripiego del default: la riga di riepilogo lo chiede
+  // apposta (vedi sotto), e se un domani si cambia il colore di default quella non deve seguirlo.
+  // Stessa forma di figImportLog (v5.808) e retroImportLog (v5.983).
+  line.style.color = type === 'white' ? 'var(--text)' : type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--text)';
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
@@ -22513,7 +22674,7 @@ async function startAdminFotoUpload() {
   }
 
   fotoStatus('✅ Fine: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori', 100);
-  fotoLog('--- FINE: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori ---', errors === 0 ? 'ok' : 'warn');
+  fotoLog('--- FINE: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori ---', 'white'); // v6.034 (Franco)
 
   if (erroriRighe.length) {
     fotoLog('', 'info');
@@ -22537,7 +22698,8 @@ function fotoNnLog(msg, type) {
   const a = document.getElementById('fotonn-log-actions'); if (a) a.style.display = 'flex';
   const line = document.createElement('div');
   // v5.901 — righe non colorate in BIANCO (vedi fotoLog).
-  line.style.color = type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--text)';
+  // v6.034 — 'white' nominato, come in fotoLog.
+  line.style.color = type === 'white' ? 'var(--text)' : type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--text)';
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
@@ -22677,7 +22839,7 @@ async function startAdminFotoNoNumberUpload() {
   }
 
   fotoNnStatus('✅ Fine: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori', 100);
-  fotoNnLog('--- FINE: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori ---', errors === 0 ? 'ok' : 'warn');
+  fotoNnLog('--- FINE: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori ---', 'white'); // v6.034 (Franco)
 
   if (erroriRighe.length) {
     fotoNnLog('', 'info');
