@@ -1,6 +1,92 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.043 - Tre cose, tutte segnalate da Franco. Modificati app.js e index.html.
+//          (1) IL CLONE CHE NON SI SALVAVA: il codice era "invalid-argument", cioe' Firestore che
+//              rifiuta un `undefined`. Un campo assente sul record di partenza (nel caso vero:
+//              ebayAccounts) arriva alla scrittura come undefined, e Firestore scarta l'intero
+//              documento, non il campo. Ora gli undefined si tolgono prima di scrivere - e si
+//              SCRIVONO IN CONSOLE, perche' toglierli in silenzio curerebbe il sintomo lasciando
+//              invisibile la causa, che sta in chi costruisce il record. Per Firestore un campo
+//              assente e un campo undefined sono la stessa cosa: toglierlo non perde niente.
+//          (2) LA FRASE SOTTO "RETRO BASE" diceva sempre "la figurina originale di cui questa e'
+//              una variazione o un change" - dentro la sezione Retro parlava di figurine, e di
+//              variazioni per un tipo che non ne ha. L'etichetta si adattava dalla v5.748, la frase
+//              no: stava ferma nell'HTML. Ora la scrive _baseFigurineHintText(), accanto alla
+//              gemella che fa l'etichetta, con le stesse tre condizioni.
+//          (3) CINQUE CHIAVI i18n MANCANTI, trovate cercandole tutte e 305: 'form.fig.subname' e
+//              'catalog.add' mancavano in ENTRAMBE le lingue (percio' Franco vedeva scritto
+//              "form.fig.subname" al posto di "Sottonome"), e 'form.fig.number', 'form.fig.name',
+//              'form.fig.desc' mancavano solo in INGLESE - in inglese quei tre campi mostravano la
+//              chiave grezza. t() ripiega sulla chiave stessa quando non trova niente, quindi
+//              l'errore si vede ma non si annuncia.
+// v6.042 - BACO (Franco): dopo UN salvataggio fallito, nella stessa serie non si riusciva piu' a
+//          salvare NIENTE finche' non si ricaricava la pagina. Solo app.js.
+//          LA DIAGNOSI E' TUTTA NELLE TRE RIGHE DI FRANCO: "modifico un retro e va; provo a clonare
+//          X e il salvataggio fallisce; provo a modificare lo stesso retro di prima e fallisce".
+//          LA CAUSA: _saveFigurineItem() mette l'oggetto dentro series.items PRIMA di scrivere. Se
+//          la scrittura fallisce, l'oggetto resta in memoria; e ogni modifica successiva di quella
+//          serie passa dal ramo "elemento esistente", che riscrive il documento INTERO - quindi si
+//          porta dietro l'elemento guasto e fallisce a sua volta. Un errore singolo diventava una
+//          sessione bloccata, e l'unica via d'uscita era ricaricare la pagina, senza che niente lo
+//          suggerisse.
+//          LA CORREZIONE: si tiene lo stato precedente (elemento e counts) e lo si rimette
+//          esattamente com'era se la scrittura non riesce - in tutti e tre i rami (arrayUnion, il
+//          suo ripiego, e la riscrittura per un elemento esistente). Chi fallisce fallisce da solo.
+//          Questo NON risolve il motivo per cui la scrittura del clone fallisce da Franco: quello
+//          resta aperto. Da qui pero' si riesce a diagnosticarlo, perche' il difetto non si
+//          propaga piu' e perche'...
+//          ...I TRE MESSAGGI ORA DICONO LA VERITA'. Dicevano "controlla la connessione" per
+//          QUALUNQUE eccezione: erano un catch generico travestito da diagnosi, e mandavano a
+//          cercare il problema nella rete. Ora mostrano il codice vero (permission-denied,
+//          invalid-argument, not-found...). Un messaggio che nomina la causa sbagliata costa piu'
+//          di un messaggio che non dice niente.
+// v6.041 - BACO (Franco): un Nome che contiene i doppi apici veniva TRONCATO alla prima virgoletta.
+//          Solo app.js.
+//          DOVE: nella form della SCHEDA (switchToEditMode) cinque campi finivano dentro
+//          value="..." senza escape - Categoria, Sottocategoria, Sottoserie, Nome, Taglia. Un " nel
+//          valore chiude l'attributo in anticipo: il campo mostra solo la parte prima della
+//          virgoletta, e al salvataggio quella parte tronca VIENE SCRITTA sul record. Non e' un
+//          problema di visualizzazione, e' perdita di dato - e silenziosa, perche' il campo sembra
+//          semplicemente contenere un nome piu' corto.
+//          Corretti anche il menu dei Tipi di change (il testo lo decide la serie) e l'etichetta
+//          della tendina "figurina base" nella form A: le sue gemelle usavano gia' esc(), lei no.
+//          NOTA: esc() (~18855) sfugge anche " e ', quindi va bene per gli attributi; e' la stessa
+//          funzione, non ne serve una nuova. I campi numerici (numero, punteggio, prezzo, quantita')
+//          restano come sono: un numero non puo' contenere virgolette.
+//          Sui dati di oggi non c'e' NESSUN record con i doppi apici in un campo di testo - il che
+//          e' coerente col sospetto di Franco che i nomi con le virgolette siano gia' stati troncati
+//          da qualche parte, e non ci sia rimasta traccia.
+// v6.040 - Caricamento foto "senza numero e retro": il confronto nome-file ignora TUTTI e nove i
+//          caratteri vietati nei nomi file, non piu' uno alla volta. Chiesto da Franco (che aveva
+//          chiesto i doppi apici). Solo app.js.
+//              \  /  :  *  ?  "  <  >  |
+//          La ragione e' la stessa per tutti e non dipende dal carattere: nel DB ci possono stare,
+//          in un nome di file no - lo vieta il file system, quindi chi esporta le foto li deve per
+//          forza omettere. Trattarli a uno a uno significava una versione per carattere: v5.757 il
+//          "?", v6.039 la barra, e i doppi apici sarebbero stati la terza in mezza giornata.
+//          MISURATO PRIMA DI ALLARGARE: nei dati veri i vietati presenti sono solo "/" (84) e "?"
+//          (38) - i doppi apici NON ci sono ancora, Franco stava anticipando un nome da inserire.
+//          E passare da tre a nove caratteri non crea nessuna nuova ambiguita': le chiavi che
+//          collidono restano 1190 su 3307, le stesse di prima. Costo zero, e copre anche i nomi che
+//          non esistono ancora.
+//          Resta vero quel che diceva la v6.039: i caratteri vanno TOLTI, non sostituiti con un
+//          trattino o un underscore. Le istruzioni a video ora elencano tutti e nove.
+// v6.039 - Caricamento foto "senza numero e retro": il confronto nome-file ignora anche la BARRA
+//          "/", come gia' il "?" dalla v5.757. Chiesto da Franco. Solo app.js.
+//          IL PUNTO: la barra nei nomi file non e' scomoda, e' IMPOSSIBILE - su Windows e' un
+//          carattere vietato, su Mac/Linux e' il separatore di cartella. Nel DB pero' c'e': la
+//          categoria "COMIC / FLICK IT" se la porta dentro, e con lei 42 Nomi completi di retro.
+//          Senza questa riga quei 42 non si abbinavano a nessun file e non c'era modo di rimediare
+//          rinominando: a impedirlo era il file system, non una svista di chi esporta.
+//          MISURATO PRIMA: 84 occorrenze della barra nei dati (42 fullName + 42 category), e in
+//          TUTTE E 84 ha la forma " / " con gli spazi attorno. Togliendola resta un doppio spazio,
+//          che il collasso degli spazi gia' presente in normKey riduce a uno: quindi il file va
+//          bene sia scritto "COMIC FLICK IT - ..." sia "COMIC  FLICK IT - ...".
+//          COSA NON COPRE, ed e' scritto anche nelle istruzioni a video: un file in cui la barra e'
+//          stata SOSTITUITA da un trattino o un underscore. Li' il carattere c'e' ancora, e' solo
+//          un altro, e togliere anche i trattini renderebbe il confronto troppo largo - il " - " e'
+//          il separatore fra Categoria, Nome e Tipo, cioe' la struttura stessa della chiave.
 // v6.038 - Per un CHANGE o un ERRORE DI STAMPA di retro comandano i campi della BASE: Nome,
 //          Sottonome, Categoria e Sottocategoria. Chiesto da Franco. Solo app.js.
 //          PRIMA: solo il Nome era derivato dalla base (v5.774) e nascosto nelle form. Gli altri
@@ -10586,7 +10672,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.038';
+const JS_VERSION = 'v6.043';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11004,7 +11090,41 @@ function _recomputeSeriesCounts(series) {
   };
 }
 
+// v6.043 (Franco, baco) - FIRESTORE RIFIUTA `undefined`, e lo fa con "invalid-argument".
+// E' il codice che compariva provando a clonare un retro: un campo che nel record di partenza non
+// esiste arriva alla scrittura come undefined, e Firestore butta via l'intero documento - non il
+// campo, il documento. Il record non nasce, e (fino alla v6.042) la sessione restava bloccata.
+// Qui i campi undefined si tolgono prima di scrivere, e si SCRIVE IN CONSOLE quali erano: toglierli
+// in silenzio avrebbe risolto il sintomo lasciando invisibile la causa, che sta a monte, in chi
+// costruisce il record. Un campo assente e un campo undefined sono la stessa cosa per Firestore:
+// toglierlo non perde niente.
+// Nota su cosa NON fa: non tocca i null (Firestore li accetta e significano "vuoto per scelta") e
+// non tocca gli array - quelli non si possono annidare dentro arrayUnion, ma nei dati non ce ne
+// sono e sarebbe un altro problema, da affrontare quando esistera'.
+function _sanificaPerFirestore(obj, percorso, rimossi) {
+  percorso = percorso || ''; rimossi = rimossi || [];
+  if (Array.isArray(obj)) return { valore: obj.map((v, i) => _sanificaPerFirestore(v, percorso + '[' + i + ']', rimossi).valore), rimossi };
+  if (obj && typeof obj === 'object' && !(obj instanceof Date)) {
+    const pulito = {};
+    Object.keys(obj).forEach(k => {
+      const v = obj[k];
+      if (v === undefined) { rimossi.push((percorso ? percorso + '.' : '') + k); return; }
+      pulito[k] = _sanificaPerFirestore(v, (percorso ? percorso + '.' : '') + k, rimossi).valore;
+    });
+    return { valore: pulito, rimossi };
+  }
+  return { valore: obj, rimossi };
+}
+
 async function _saveFigurineItem(item) {
+  // v6.043 - vedi sopra: via gli undefined, ma detti ad alta voce.
+  {
+    const r = _sanificaPerFirestore(item);
+    if (r.rimossi.length) {
+      console.warn('[v6.043] campi undefined tolti prima di scrivere (' + (item && item.id || 'nuovo') + '):', r.rimossi.join(', '));
+      item = r.valore;
+    }
+  }
   const seriesList = getData('series', []);
   const sIdx = seriesList.findIndex(s => s.id === item.seriesId);
   if (sIdx < 0) throw new Error('Serie non trovata per la figurina: ' + item.seriesId);
@@ -11014,6 +11134,28 @@ async function _saveFigurineItem(item) {
   if (!item.id) item.id = _generateFigurineId();
   const iIdx = series.items.findIndex(x => x.id === item.id);
   const isNew = iIdx < 0;
+  // v6.042 (Franco, baco) - QUESTA MODIFICA IN MEMORIA VA DISFATTA SE LA SCRITTURA FALLISCE.
+  // Il difetto, raccontato da Franco in tre righe che sono una diagnosi migliore di qualunque
+  // messaggio d'errore: "modifico un retro e va; provo a clonare X e il salvataggio fallisce;
+  // provo a modificare lo stesso retro di prima e fallisce".
+  // Il perche' e' qui: l'oggetto entra in series.items PRIMA della scrittura. Se la scrittura non
+  // riesce, l'oggetto resta li' - e da quel momento ogni modifica successiva di QUELLA serie passa
+  // dal ramo "esistente", che riscrive il documento INTERO, quindi si porta dietro l'elemento
+  // guasto e fallisce a sua volta. Un errore singolo diventa una sessione bloccata, e l'unico modo
+  // per uscirne era ricaricare la pagina - senza che niente lo dicesse.
+  // Ora si tiene lo stato di prima e lo si rimette esattamente com'era: chi fallisce fallisce da
+  // solo. Non nasconde il problema a monte, gli toglie la capacita' di propagarsi.
+  const _primaItem = isNew ? null : series.items[iIdx];
+  const _primaCounts = series.counts ? { ...series.counts } : series.counts;
+  const _disfa = () => {
+    if (isNew) {
+      const k = series.items.indexOf(item);
+      if (k >= 0) series.items.splice(k, 1);
+    } else {
+      series.items[iIdx] = _primaItem;
+    }
+    series.counts = _primaCounts;
+  };
   if (isNew) series.items.push(item); else series.items[iIdx] = item;
   _recomputeSeriesCounts(series);
 
@@ -11030,13 +11172,23 @@ async function _saveFigurineItem(item) {
       await updateDoc(doc(db, 'series', series.id), { items: arrayUnion(item), counts: series.counts });
     } catch(e) {
       console.warn('arrayUnion non riuscito, riscrivo l\u2019intera serie come fallback:', e.message);
-      await fsSave('series', series);
+      try {
+        await fsSave('series', series);
+      } catch(e2) {
+        _disfa(); // v6.042 - fallito anche il ripiego: la serie in memoria torna com'era
+        throw e2;
+      }
     }
   } else {
     // Modifica di un elemento esistente: Firestore non permette di
     // sostituire un singolo elemento di un array per contenuto, quindi
     // qui serve riscrivere l'intero documento della serie
-    await fsSave('series', series);
+    try {
+      await fsSave('series', series);
+    } catch(e) {
+      _disfa(); // v6.042 - vedi sopra: una modifica fallita non deve restare in memoria
+      throw e;
+    }
   }
 
   // Aggiorna la cache piatta usata da tutto il resto del codice, che
@@ -11462,7 +11614,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to your list','catalog.havenone':'Remove search results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to your list','catalog.havenone':'Remove search results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
@@ -11585,7 +11737,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati ricerca alla tua lista','catalog.havenone':'Rimuovi risultati ricerca dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati ricerca alla tua lista','catalog.havenone':'Rimuovi risultati ricerca dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -11594,7 +11746,7 @@ const i18n = {
     'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','form.newsletterLabel':'Vuoi ricevere la newsletter? *','form.newsletter.opt.none':'— Seleziona —','form.newsletter.opt.yes':'Sì, voglio riceverla','form.newsletter.opt.no':'No, grazie','form.newsletter.hint':'Rispondere è obbligatorio, ma sei libero di dire di no: la registrazione funziona comunque. Potrai cambiare idea quando vuoi dal tuo profilo.','profile.emailPrefs.title':'Preferenze e-mail','profile.newsletter':'Voglio ricevere la newsletter di figurinesgorbions.it','profile.newsletter.hint':'Ricevi le ultime novità sull\'inventario degli Sgorbions.<br>Puoi attivarla o disattivarla quando vuoi.','newsletterConsent.title':'📧 Vuoi ricevere la newsletter?','newsletterConsent.body':'Non te l\'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell\'Inventario Sgorbions.<br>Nessuna pubblicità!<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.','newsletterConsent.yes':'Sì, iscrivimi','newsletterConsent.no':'No, grazie','form.privacyNotice':'Registrandoti, accetti la nostra <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Informativa sulla Privacy</a>.','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.desc.en':'Descrizione (Inglese)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
-    'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
+    'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.subname':'Sottonome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
@@ -14011,7 +14163,7 @@ async function saveSeries() {
     console.error('saveSeries', e);
     if (fb) { fb.style.display = 'none'; fb.textContent = ''; }
     if (btn) btn.disabled = false;
-    toast((currentLang === 'it' ? '❌ Salvataggio fallito, riprova (controlla la connessione)' : '❌ Save failed, please retry (check your connection)'), 'error');
+    toast((currentLang === 'it' ? '❌ Salvataggio fallito: ' + (e?.code || e?.name || 'errore') + ' — riprova' : '❌ Save failed: ' + (e?.code || e?.name || 'error') + ' — please retry'), 'error');
     return;
   }
   editingSeriesImgFile = null;
@@ -15032,7 +15184,7 @@ function filterBaseFigurineLink() {
   // opzioni filtrate; il dropdown resta scrollabile.
   dd.innerHTML = filtered.map(f => {
     return `<div onclick="selectBaseFigurineLink('${f.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <div style="font-size:0.9rem;">${_baseFigurineLinkLabel(f)}</div>
+      <div style="font-size:0.9rem;">${esc(_baseFigurineLinkLabel(f))}</div>
     </div>`;
   }).join('');
 }
@@ -15175,6 +15327,27 @@ function _esclusivitaTipi(appenaSpuntata) {
 // variazioni; per Change/Errore di stampa la parola giusta ("un Change" / "un errore di
 // stampa"), perche' quelli NON sono varianti. Vale sia per figurine sia per retro (dove
 // le variazioni non esistono proprio).
+// v6.043 (Franco) - la FRASE sotto il selettore diceva sempre "la figurina originale di cui questa
+// e' una variazione o un change", anche per un Change di RETRO: parlava di figurine dentro la
+// sezione Retro, e di variazioni per un tipo che variazioni non ne ha. L'etichetta si adattava dal
+// la v5.748, la frase no - stava ferma nell'HTML.
+// Le due frasi si costruiscono con le STESSE tre condizioni, una accanto all'altra: se un domani
+// nasce un quarto tipo, chi lo aggiunge le vede insieme.
+function _baseFigurineHintText() {
+  const isRetros = currentSection === 'retros';
+  const isChg = document.getElementById('fig-is-change-input')?.checked;
+  const isPE = document.getElementById('fig-is-printerror-input')?.checked;
+  if (currentLang === 'it') {
+    const cosa = isRetros ? 'il Retro base' : 'la figurina originale';
+    const pron = isRetros ? 'questo è' : 'questa è';
+    const rel = isChg ? 'un Change' : (isPE ? 'un errore di stampa' : 'una variazione');
+    return 'Indica ' + cosa + ' di cui ' + pron + ' ' + rel;
+  }
+  const cosa = isRetros ? 'the base Retro' : 'the original sticker';
+  const rel = isChg ? 'a Change' : (isPE ? 'a print error' : 'a variation');
+  return 'Select ' + cosa + ' this is ' + rel + ' of';
+}
+
 function _baseFigurineLabelText() {
   const isRetros = currentSection === 'retros';
   const isChg = document.getElementById('fig-is-change-input')?.checked;
@@ -15241,6 +15414,8 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
   group.style.display = showBase ? '' : 'none';
   const _blt = document.getElementById('fig-base-figurine-label-text');
   if (_blt) _blt.textContent = _baseFigurineLabelText();
+  const _bht = document.getElementById('fig-base-figurine-hint'); // v6.043
+  if (_bht) _bht.textContent = _baseFigurineHintText();
   // Il campo Retro associato non si applica mai ai Retro stessi (un retro non ha un retro)
   // v5.786 — il campo Retro ora si mostra ANCHE per i Change (facoltativo): un Change può avere un
   // proprio Retro (il retro che "fa" il change). Per i Change il selettore pesca da TUTTE le serie;
@@ -17485,7 +17660,7 @@ async function _saveFigurineInner() {
     }
   } catch(e) {
     console.error('saveFigurine', e);
-    toast((currentLang === 'it' ? '❌ Salvataggio fallito, riprova (controlla la connessione)' : '❌ Save failed, please retry (check your connection)'), 'error');
+    toast((currentLang === 'it' ? '❌ Salvataggio fallito: ' + (e?.code || e?.name || 'errore') + ' — riprova' : '❌ Save failed: ' + (e?.code || e?.name || 'error') + ' — please retry'), 'error');
     return;
   }
   editingFigImgFileSave = null;
@@ -19810,13 +19985,13 @@ function switchToEditMode(figId) {
 
   // Categoria (solo per i Retro, prima del Nome)
   if (isRetrosItem) {
-    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category" value="' + (f.category||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
-    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory" value="' + (f.subcategory||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category" value="' + esc((f.category||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory" value="' + esc((f.subcategory||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   }
 
   // Sottoserie (solo se la serie ha hasSubseries)
   if (figSeries?.hasSubseries) {
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottoserie':'Subseries') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subseries" value="' + (f.subseries||'') + '" placeholder="es. OLO" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottoserie':'Subseries') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subseries" value="' + esc((f.subseries||'')) + '" placeholder="es. OLO" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   }
 
   // Numero (i Retro non sono numerati; le Variazioni/Change ereditano quello della figurina base)
@@ -19826,7 +20001,7 @@ function switchToEditMode(figId) {
   // v5.774/779/790 — Nome nascosto per Change ED Errori di stampa, sia Retro sia figurine (eredita
   // dalla base; derivato al salvataggio).
   // (il flag e' dichiarato piu' in alto, v6.038: lo usano anche Categoria/Sottocategoria/Sottonome)
-  html += '<div class="detail-row" id="fe-name-group" style="' + (_feNameHidden ? 'display:none;' : '') + '"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + (f.name||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+  html += '<div class="detail-row" id="fe-name-group" style="' + (_feNameHidden ? 'display:none;' : '') + '"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + esc((f.name||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   // v6.036 (Franco) - il SOTTONOME sta SOTTO IL NOME, di cui e' la seconda parte. Stava fra
   // Sottocategoria e Numero, cioe' in mezzo ai campi della categoria e prima ancora del Nome: la
   // stessa disposizione che la v6.026 aveva gia' corretto nella VISTA della scheda. Vista e
@@ -19840,7 +20015,7 @@ function switchToEditMode(figId) {
 
   // Taglia (solo se la serie ha taglie)
   if (figSeries?.hasSizes) {
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-size" value="' + (f.size||'') + '" placeholder="S/M/L/XL" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;border:none;background:transparent;"></span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-size" value="' + esc((f.size||'')) + '" placeholder="S/M/L/XL" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;border:none;background:transparent;"></span></div>';
   }
 
   // Flag Variazione ufficiale / non ufficiale (solo Figurine/Album/Altro) e Change (anche Retro)
@@ -19861,7 +20036,7 @@ function switchToEditMode(figId) {
       '<span class="detail-label">' + (currentLang==='it'?'Tipo di change':'Change type') + '</span>' +
       '<select class="form-input" id="fe-retro-change-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
       '<option value="">' + (currentLang==='it'?'— scegli —':'— choose —') + '</option>' +
-      retroTypes.map(t => '<option value="' + t + '"' + (f.changeType === t ? ' selected' : '') + '>' + t + '</option>').join('') +
+      retroTypes.map(t => '<option value="' + esc(t) + '"' + (f.changeType === t ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + /* v6.041 */
       '</select></div>';
   }
   // Tipo di errore di stampa (testo libero) — TUTTE le sezioni, mostrato quando e' un Errore di
@@ -20319,7 +20494,7 @@ async function saveFigFromDetail(figId) {
     await fsSave('figurines', merged);
   } catch(e) {
     console.error('saveFigFromDetail', e);
-    toast((currentLang === 'it' ? '❌ Salvataggio fallito, riprova (controlla la connessione)' : '❌ Save failed, please retry (check your connection)'), 'error');
+    toast((currentLang === 'it' ? '❌ Salvataggio fallito: ' + (e?.code || e?.name || 'errore') + ' — riprova' : '❌ Save failed: ' + (e?.code || e?.name || 'error') + ' — please retry'), 'error');
     return;
   }
   if (_cache.figurines) {
@@ -22419,8 +22594,8 @@ function renderAdminFoto() {
     <div id="import-fotonn-section-content" style="display:none;">
     <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
       ${currentLang==='it'
-        ? 'ISTRUZIONI:<br>Per figurine senza numero e per i Retro (base e Change), che non hanno un numero proprio. Seleziona la serie e indica cosa stai caricando (Figurine o Retro), poi seleziona le foto.<br><br><b>Figurine</b>: nome file = Nome esatto della figurina, es. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Retro (base e Change)</b>: nome file = <b>Nome completo</b> del Retro, esattamente come appare nella colonna "Nome Completo" della Vista tabellare. Il Nome completo include già Categoria, Nome e — per i Change — il Tipo in MAIUSCOLO, quindi distingue da solo un Change dal suo Retro base, e due Retro con lo stesso Nome in Categorie diverse. Es. <code>Animali - Gatto.jpg</code> per un Retro base, <code>Animali - Gatto - BORDO ORO.jpg</code> per un Change.<br><br>Nota: il carattere <code>?</code> non è ammesso nei nomi file su Windows, quindi va omesso dal nome del file — il confronto lo ignora automaticamente da entrambe le parti (es. il Nome completo <code>Ma davvero? - Rosso</code> si abbina al file <code>Ma davvero - Rosso.jpg</code>).<br><br>Se il nome del file non corrisponde a nessun oggetto (o corrisponde a più di uno), viene segnalato e saltato.<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
-        : 'INSTRUCTIONS:<br>For unnumbered stickers and for Retros (base and Change), which don\'t have a number of their own. Select the series and what you\'re uploading (Stickers or Retro), then select the photos.<br><br><b>Stickers</b>: filename = exact sticker Name, e.g. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Retro (base and Change)</b>: filename = the Retro\'s <b>Full name</b>, exactly as shown in the "Full name" column of the Table view. The full name already includes Category, Name and — for Changes — the Type in UPPERCASE, so it alone tells a Change apart from its base Retro, and two Retros sharing the same Name in different Categories. E.g. <code>Animali - Gatto.jpg</code> for a base Retro, <code>Animali - Gatto - BORDO ORO.jpg</code> for a Change.<br><br>Note: the <code>?</code> character isn\'t allowed in Windows filenames, so leave it out of the filename — the match ignores it on both sides (e.g. the full name <code>Ma davvero? - Rosso</code> matches the file <code>Ma davvero - Rosso.jpg</code>).<br><br>If the filename doesn\'t match any item (or matches more than one), it is flagged and skipped.<br>The script removes the background with AI and updates the database (Firebase).'}
+        ? 'ISTRUZIONI:<br>Per figurine senza numero e per i Retro (base e Change), che non hanno un numero proprio. Seleziona la serie e indica cosa stai caricando (Figurine o Retro), poi seleziona le foto.<br><br><b>Figurine</b>: nome file = Nome esatto della figurina, es. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Retro (base e Change)</b>: nome file = <b>Nome completo</b> del Retro, esattamente come appare nella colonna "Nome Completo" della Vista tabellare. Il Nome completo include già Categoria, Nome e — per i Change — il Tipo in MAIUSCOLO, quindi distingue da solo un Change dal suo Retro base, e due Retro con lo stesso Nome in Categorie diverse. Es. <code>Animali - Gatto.jpg</code> per un Retro base, <code>Animali - Gatto - BORDO ORO.jpg</code> per un Change.<br><br>Nota: i caratteri <code>\ / : * ? " &lt; &gt; |</code> non sono ammessi nei nomi file, quindi vanno <b>omessi</b> dal nome del file — il confronto li ignora automaticamente da entrambe le parti (es. il Nome completo <code>Ma davvero? - Rosso</code> si abbina al file <code>Ma davvero - Rosso.jpg</code>, e <code>COMIC / FLICK IT - Anita</code> si abbina a <code>COMIC FLICK IT - Anita.jpg</code>). Vanno <b>tolti</b>, non sostituiti: se al posto di uno di questi metti un trattino o un underscore, il file non viene riconosciuto.<br><br>Se il nome del file non corrisponde a nessun oggetto (o corrisponde a più di uno), viene segnalato e saltato.<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
+        : 'INSTRUCTIONS:<br>For unnumbered stickers and for Retros (base and Change), which don\'t have a number of their own. Select the series and what you\'re uploading (Stickers or Retro), then select the photos.<br><br><b>Stickers</b>: filename = exact sticker Name, e.g. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Retro (base and Change)</b>: filename = the Retro\'s <b>Full name</b>, exactly as shown in the "Full name" column of the Table view. The full name already includes Category, Name and — for Changes — the Type in UPPERCASE, so it alone tells a Change apart from its base Retro, and two Retros sharing the same Name in different Categories. E.g. <code>Animali - Gatto.jpg</code> for a base Retro, <code>Animali - Gatto - BORDO ORO.jpg</code> for a Change.<br><br>Note: the characters <code>\ / : * ? " &lt; &gt; |</code> aren\'t allowed in filenames, so <b>leave them out</b> — the match ignores them on both sides (e.g. the full name <code>Ma davvero? - Rosso</code> matches <code>Ma davvero - Rosso.jpg</code>, and <code>COMIC / FLICK IT - Anita</code> matches <code>COMIC FLICK IT - Anita.jpg</code>). They must be <b>removed</b>, not replaced: a dash or underscore in their place will not match.<br><br>If the filename doesn\'t match any item (or matches more than one), it is flagged and skipped.<br>The script removes the background with AI and updates the database (Firebase).'}
     </p>
 
     <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
@@ -22773,6 +22948,28 @@ async function startAdminFotoNoNumberUpload() {
   // nel Nome (e quindi nel Nome completo) dentro al DB, ma NON in un nome di file su
   // Windows: e' un carattere vietato dal file system, quindi chi esporta le foto lo
   // deve per forza omettere. Lo si ignora quindi da ENTRAMBI i lati del confronto.
+  // v6.040 (Franco) — non piu' un carattere alla volta: si ignorano TUTTI e nove i caratteri che
+  // un nome file non puo' contenere:   \  /  :  *  ?  "  <  >  |
+  // La ragione e' identica per tutti e non dipende dal carattere: nel DB il Nome puo' averli, in un
+  // nome di file NO - non e' scomodo, e' vietato dal file system, quindi chi esporta le foto li
+  // deve per forza omettere e non ha modo di fare altrimenti. Trattarli uno per uno voleva dire una
+  // versione per carattere (v5.757 il "?", v6.039 la barra, e i doppi apici stavano per essere la
+  // terza): meglio la famiglia, che e' la vera regola.
+  // MISURATO PRIMA DI ALLARGARE: sui dati veri i vietati presenti sono solo due, "/" (84
+  // occorrenze) e "?" (38). Passare da tre caratteri a nove NON crea nessuna nuova ambiguita': le
+  // chiavi che collidono restano esattamente le stesse (1190 su 3307, tutte gia' collidenti per
+  // conto loro). Allargare qui costa zero e chiude il problema anche per i nomi che non esistono
+  // ancora - il caso dei doppi apici e' nato cosi', da un nome che Franco doveva ancora inserire.
+  // v6.039 — la BARRA "/", che nei nomi file e' vietata su Windows
+  // quanto il "?" (e su Mac/Linux e' il separatore di cartella: li' non e' proprio scrivibile).
+  // Nel DB pero' c'e': la categoria "COMIC / FLICK IT" la porta dentro, e con lei 42 Nomi completi
+  // di retro. Senza questa riga quei 42 non si abbinano a nessun file, e non c'e' modo di
+  // rinominare il file per farli abbinare — e' il file system a impedirlo, non una svista.
+  // Sui dati veri la barra compare SEMPRE come " / ", con gli spazi attorno (84 occorrenze su 84):
+  // togliendola resta un doppio spazio, che il collasso degli spazi qui sotto riduce a uno solo.
+  // Quindi "COMIC / FLICK IT - ANITA" si abbina sia a "COMIC FLICK IT - ANITA.jpg" sia a
+  // "COMIC  FLICK IT - ANITA.jpg". NON si abbina a un file in cui la barra e' stata SOSTITUITA da
+  // un trattino o un underscore: li' il carattere c'e' ancora, e' solo un altro.
   // Si azzerano anche gli spazi multipli che la rimozione del "?" puo' lasciare, e le
   // maiuscole/minuscole. Vale per tutte le chiavi (Nome completo dei Retro e Nome
   // delle Figurine senza numero): un file non puo' contenere "?" in nessun caso.
@@ -22785,7 +22982,7 @@ async function startAdminFotoNoNumberUpload() {
     .toLowerCase()
     .replace(/[\u00ad\u200b-\u200d\ufeff]/g, '')
     .replace(/[\u2010-\u2015\u2212]/g, '-')
-    .replace(/\?/g, '')
+    .replace(/[\\/:*?"<>|]/g, '') /* v6.040 - TUTTI i caratteri vietati nei nomi file */
     .replace(/[\s\u00a0\u2000-\u200a\u202f\u3000]+/g, ' ')
     .trim();
 
