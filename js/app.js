@@ -1,6 +1,111 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.018 - Lo specchietto "Change per tipo" fa colonne da 5 righe, non da 8. Chiesto da Franco.
+//          Solo app.js. Quello dei Retro resta a 8: i tipi di change sono pochi e con nomi
+//          lunghi, le categorie dei retro sono tante e con nomi corti. Stessa forma, numero
+//          diverso, e il numero sta scritto una volta sola in ciascuno dei due.
+// v6.017 - Lo specchietto "Change per tipo" prende la stessa forma di quello dei Retro: una riga
+//          per tipo, massimo 8 per colonna, poi una colonna nuova a destra. Chiesto da Franco.
+//          Solo app.js.
+//          Era rimasto una riga sola con i tipi separati da un punto medio - forma che con pochi
+//          tipi funziona e con molti diventa un paragrafo da leggere invece di un elenco da
+//          scorrere. Ora i due specchietti si leggono allo stesso modo.
+//          Il nome del tipo va in MAIUSCOLO, come chiesto: e' gia' cosi' sulle card (v5.783),
+//          quindi la stessa cosa si riconosce nei due posti senza doverci pensare. Il colore
+//          resta il rosa --type-change, che nel sito significa Change.
+// v6.016 - La foto della scheda non cambia piu' dimensione premendo Modifica. Segnalato da
+//          Franco. Solo app.js.
+//          In VISTA l'immagine ha height:200px fissa con object-fit:contain; in MODIFICA non
+//          aveva NESSUNA altezza - solo width:100% - quindi si allargava fino al bordo e
+//          l'altezza la decideva la proporzione dell'immagine. Su una foto verticale diventava
+//          enorme, e la scheda saltava sotto le dita al primo clic.
+//          Allineata a 200px; anche il riquadro "nessuna foto" passa da 240 a 200, cosi' i tre
+//          casi (foto, senza foto, in modifica) occupano lo stesso spazio e la pagina non si
+//          muove piu' passando da uno all'altro. La v5.782 chiedeva che vista e modifica
+//          coincidessero: valeva anche per le dimensioni, non solo per i campi.
+// v6.015 - Nella scheda di un oggetto, l'elenco dei collegati mostra ora anche gli ERRORI DI
+//          STAMPA. Segnalato da Franco. Solo app.js.
+//          Erano l'unico dei quattro tipi a mancare: il riquadro elencava variazioni ufficiali,
+//          non ufficiali e Change, ed era rimasto indietro dalla v5.711, quando gli errori di
+//          stampa hanno smesso di essere un sottotipo di Change e sono diventati un tipo a se'.
+//          Da un retro con un errore di stampa collegato non c'era modo di arrivarci.
+//          Nel nuovo gruppo l'etichetta e' il TIPO di errore, non il Nome: il Nome coincide con
+//          quello della base, quindi due errori dello stesso oggetto sarebbero comparsi come due
+//          righe identiche - proprio il caso che Franco ha appena trovato nell'import.
+// v6.014 - Import RETRO: il TIPO di errore di stampa entra nella chiave di riconciliazione E nel
+//          confronto. Trovato da Franco su dati veri: un retro con DUE errori di stampa, l'import
+//          dichiarava 2 righe importate e nel catalogo ne compariva uno solo. Solo app.js.
+//          Due difetti, stessa causa - printErrorType veniva scritto ma non guardato:
+//          1. NON era nella chiave, quindi due errori di stampa dello stesso retro (stessi Nome,
+//             Categoria, Sottocategoria) finivano sullo stesso record e il secondo sovrascriveva
+//             il primo, in silenzio;
+//          2. NON era nel confronto, quindi correggere il solo tipo nel file non aveva effetto:
+//             l'import diceva "gia' presente, nessuna modifica" e non salvava. Il file diceva una
+//             cosa, il database ne teneva un'altra.
+//          E' l'esatto gemello di cio' che il ramo Change fa da sempre con changeType, in
+//          entrambe le colonne. Qui era rimasto fuori per dimenticanza, non per scelta.
+//          ATTENZIONE AI DATI ESISTENTI: dove una collisione ha gia' cancellato un errore di
+//          stampa, il record perso NON torna da solo. Va rilanciato l'import di quelle righe:
+//          ora la seconda riga trova la chiave libera e crea il record che le spetta.
+// v6.013 - Vista tabellare: la colonna della SELEZIONE diventa la PRIMA. Chiesto da Franco.
+//          Solo app.js.
+//          Stava in quarta posizione, dopo progressivo, Foto e Modifica: per spuntare una riga
+//          bisognava attraversare con gli occhi tre colonne che non c'entrano con la selezione,
+//          e su molte righe di fila e' proprio il movimento che stanca.
+//          Spostate insieme intestazione e cella: sono due punti distanti del codice, e muoverne
+//          uno solo sfalsa tutte le colonne senza che nessun controllo se ne accorga - le tabelle
+//          HTML non si lamentano se le celle non corrispondono alle intestazioni.
+// v6.012 - CORREZIONE della v6.011: sul telefono il logo restava comunque visibile nella home.
+//          Solo app.js.
+//          Causa: _aggiornaLogoNavbar veniva chiamata solo da showPage, che pero' NON viene
+//          eseguita all'avvio - la home e' gia' la pagina attiva nell'HTML (class="page active"),
+//          quindi al primo caricamento nessuno accendeva la regola. Si vedeva giusta solo
+//          navigando altrove e tornando indietro.
+//          Ora la funzione viene chiamata anche a file caricato, e riagganciata al
+//          RIDIMENSIONAMENTO: la condizione dipende dalla larghezza dello schermo, quindi
+//          ruotare il telefono o cambiare preset nel banco prova deve aggiornarla. Senza,
+//          restava giusta solo per la larghezza che c'era al caricamento.
+//          Lezione generale: una regola che dipende dallo stato iniziale va accesa ANCHE
+//          all'avvio, non solo nei punti che quello stato lo cambiano.
+// v6.011 - SOLO TELEFONO: nella home il logo sparisce dalla navbar. Chiesto da Franco. app.js.
+//          Lo stesso logo e' gia' grande in mezzo alla home: due volte la stessa immagine a un
+//          palmo di distanza, su uno schermo dove lo spazio verticale e' la risorsa scarsa.
+//          Fuori dalla home resta: li' e' l'unico posto in cui compare, ed e' anche il modo per
+//          tornare indietro.
+//          La condizione si LEGGE dal DOM (pagina attiva + scheda serie chiusa) invece di essere
+//          passata come parametro: chi apre una serie non passa da showPage, e un parametro
+//          avrebbe imposto di ricordarsene in ogni punto di navigazione - cioe' di dimenticarlo
+//          in uno.
+// v6.010 - Anche il "totale N" degli specchietti passa al FUCSIA. Chiesto da Franco. Solo app.js.
+//          Chiude una piccola incoerenza nata in due passi: la v6.002 lo aveva fatto bianco come
+//          gli altri contatori, la v6.004 aveva portato al fucsia il totale della riga dei
+//          contatori. Restavano due totali dello stesso schermo con due colori diversi.
+//          Ora la regola e' una sola e si legge senza spiegazioni: i numeri delle voci sono
+//          bianchi, il numero che le SOMMA e' fucsia. Vale su entrambi gli specchietti.
+//          Il punto medio resta grigio: e' un separatore, non un dato.
+// v6.009 - CORREZIONE URGENTE della v6.008: il sito non si collegava piu' a Firebase e il login
+//          non funzionava. Solo app.js.
+//          Causa: inserendo toggleFeRetroBianco ho usato come ancora "function
+//          saveFigFromDetail(figId) {", che nel file e' preceduto da "async". La sostituzione ha
+//          quindi lasciato un "async" orfano su una riga sua, seguito da un commento e poi da
+//          un'altra funzione.
+//          Perche' non l'ha preso nessun controllo: NON e' un errore di sintassi - fra "async" e
+//          "function" c'e' un a capo, quindi JavaScript smette di leggerli come una cosa sola e
+//          "async" diventa un'espressione valida. node --check passa. A runtime pero' e' una
+//          variabile inesistente: ReferenceError, e TUTTO il codice successivo non viene mai
+//          eseguito - Firebase compreso.
+//          Lezione, che vale piu' della correzione: quando si inserisce codice usando come ancora
+//          l'inizio di una funzione, l'ancora deve comprendere la parola "async" se c'e'. E
+//          node --check NON basta a dire che un file gira: dice solo che si puo' leggere.
+// v6.008 - Spuntando "Retro bianco" il campo "Retro associato" SPARISCE e si SVUOTA. Chiesto da
+//          Franco. Modificato app.js, index.html. Fatto in ENTRAMBE le form.
+//          Sono alternative, non due dati: lasciare il campo visibile inviterebbe a riempirlo per
+//          poi vederlo ignorato. E non basta nasconderlo - senza svuotarlo resterebbe un
+//          collegamento vivo e invisibile che al salvataggio VINCE, perche' il retro vero ha la
+//          precedenza sul bianco (v6.006). Sarebbe un campo che decide di nascosto.
+//          La spunta invece resta sempre visibile: e' l'unico modo per tornare indietro.
+//          Riaprendo una scheda con retroBianco gia' vero, la riga del Retro nasce nascosta.
 // v6.007 - "Retro bianco" compare ora anche nella SCHEDA di dettaglio. Segnalato da Franco, che
 //          nella v6.006 non lo trovava. Solo app.js.
 //          Motivo: lo stesso oggetto ha DUE editor - la finestra Aggiungi/Modifica (campi fig-*,
@@ -10145,7 +10250,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.007';
+const JS_VERSION = 'v6.018';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11397,6 +11502,23 @@ function showAdminTab(tab) {
   adminTab(tab);
 }
 
+// v6.011 (Franco) - SOLO TELEFONO: nella home il logo sparisce dalla navbar, perche' lo
+// stesso logo e' gia' grande in mezzo alla pagina. Due volte la stessa immagine a un palmo
+// di distanza, su uno schermo dove lo spazio verticale e' la risorsa scarsa.
+// Fuori dalla home il logo resta: li' e' l'unico posto in cui compare, ed e' anche il modo
+// per tornare indietro.
+// Lo stato non si passa come parametro ma si LEGGE dal DOM (quale pagina e' attiva, e se
+// la scheda serie e' aperta): chi apre una serie non passa da showPage, e un parametro
+// avrebbe richiesto di ricordarsene in ogni punto di navigazione.
+function _aggiornaLogoNavbar() {
+  const logo = document.querySelector('#navbar .nav-logo');
+  if (!logo) return;
+  const attiva = document.querySelector('.page.active');
+  const dettaglioSerie = document.getElementById('series-detail');
+  const inHome = !!attiva && attiva.id === 'page-home'
+    && (!dettaglioSerie || dettaglioSerie.style.display === 'none');
+  logo.style.display = (_isMobileViewport() && inHome) ? 'none' : '';
+}
 function showPage(page) {
   const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile', 'newsletter', 'wishlist', 'unsubscribe'];
   if (protectedPages.includes(page) && !currentUser) {
@@ -11416,6 +11538,7 @@ function showPage(page) {
   document.querySelectorAll('.nav-links a').forEach(a => {
     a.classList.toggle('active', a.dataset.page === page);
   });
+  try { _aggiornaLogoNavbar(); } catch(e) { console.error('_aggiornaLogoNavbar', e); }
   window.scrollTo({ top: 0, behavior: 'smooth' });
   if (page === 'catalog') renderCatalog();
   if (page === 'blog') renderBlog();
@@ -14298,6 +14421,7 @@ function openSeriesDetail(seriesId) {
   document.getElementById('section-selector').style.display = '';
   document.getElementById('items-section').style.display = 'none';
   _mostraTestataSerie(); // hub: descrizione SI, specchietti NO
+  try { _aggiornaLogoNavbar(); } catch(e) {}   // v6.011 - aprendo una serie il logo torna
   // set section images
   ['figurines','retros','albums','extras','bustine'].forEach(sec => {
     const img = document.getElementById('sec-img-' + sec);
@@ -14661,6 +14785,22 @@ function _baseFigurineLabelText() {
   return noun + ' (the one this is ' + rel + ' of)';
 }
 
+// v6.008 (Franco) - spuntando "Retro bianco" il Retro associato non solo sparisce: si
+// SVUOTA. Nasconderlo e basta lascerebbe un collegamento vivo che non si vede piu' - e al
+// salvataggio vincerebbe lui, perche' il retro vero ha la precedenza sul bianco.
+function toggleRetroBianco() {
+  if (document.getElementById('fig-retro-bianco-input')?.checked) {
+    const hidden = document.getElementById('fig-retro-input');
+    const search = document.getElementById('fig-retro-search');
+    const prev = document.getElementById('fig-retro-selected-preview');
+    if (hidden) hidden.value = '';
+    if (search) search.value = '';
+    if (prev) { prev.style.display = 'none'; prev.innerHTML = ''; }
+    const dd = document.getElementById('fig-retro-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
+  try { toggleBaseFigurineGroup(); } catch(e) { console.error('toggleRetroBianco', e); }
+}
 function toggleBaseFigurineGroup(appenaSpuntata) {
   if (appenaSpuntata) _esclusivitaTipi(appenaSpuntata);
   const group = document.getElementById('fig-base-figurine-group');
@@ -14682,13 +14822,18 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
   // proprio Retro (il retro che "fa" il change). Per i Change il selettore pesca da TUTTE le serie;
   // per le Variazioni resta la serie corrente. Ripopolo al toggle preservando la selezione corrente.
   if (retroGroup) {
-    const showRetro = currentSection !== 'retros';
+    // v6.008 (Franco) - col Retro bianco il campo "Retro associato" sparisce: sono
+    // alternative, e lasciarlo visibile inviterebbe a riempirlo per poi vederlo ignorato.
+    const _rb = !!document.getElementById('fig-retro-bianco-input')?.checked;
+    const showRetro = currentSection !== 'retros' && !_rb;
     retroGroup.style.display = showRetro ? '' : 'none';
     if (showRetro) populateRetroSelect(document.getElementById('fig-retro-input')?.value || null, isChg);
     // v6.006 - la spunta "Retro bianco" compare dove compare il retro: e' l'alternativa a
     // collegarne uno, non un campo a se'.
+    // la spunta resta visibile anche quando nasconde il campo: e' l'unico modo per tornare
+    // indietro. Sparisce solo nei Retro, dove non ha senso.
     const rbGroup = document.getElementById('fig-retro-bianco-group');
-    if (rbGroup) rbGroup.style.display = showRetro ? '' : 'none';
+    if (rbGroup) rbGroup.style.display = (currentSection !== 'retros') ? '' : 'none';
   }
   // ...E PER LO STESSO IDENTICO MOTIVO, nemmeno le VARIAZIONI (v5.707). Una variazione
   // E' il cambio del DIETRO: un retro, che un dietro non ce l'ha, per definizione non
@@ -15657,7 +15802,7 @@ function _retroCatPanelHTML(pairs, open, clickable, toggleFn) {
   // v6.002 - il numero del totale in BIANCO come tutti gli altri contatori dello
   // specchietto; resta muted il solo punto medio, che e' un separatore e non un dato.
   const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">\u00b7 </span>`
-    + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;">${it ? 'totale' : 'total'} ${total}</span>`;
+    + `<span style="color:var(--accent3);font-size:0.82rem;font-weight:400;">${it ? 'totale' : 'total'} ${total}</span>`;
   let header = collassabile
     ? `<div onclick="${toggleFn}()" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
       + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '\u25bc' : '\u25b6'}</span>`
@@ -15862,7 +16007,7 @@ function _changeTypePanelHTML(pairs, open, clickable, toggleFn) {
   // v6.002 - il numero del totale in BIANCO come tutti gli altri contatori dello
   // specchietto; resta muted il solo punto medio, che e' un separatore e non un dato.
   const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">\u00b7 </span>`
-    + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;">${it ? 'totale' : 'total'} ${total}</span>`;
+    + `<span style="color:var(--accent3);font-size:0.82rem;font-weight:400;">${it ? 'totale' : 'total'} ${total}</span>`;
   let header = collassabile
     ? `<div onclick="${toggleFn}()" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
       + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '\u25bc' : '\u25b6'}</span>`
@@ -15879,13 +16024,26 @@ header += `</div>`;
     // change resta ROSA, che nel sito significa gia' "Change" (--type-change); il
     // contatore bianco, come negli altri specchietti.
     if (!clickable) {
+      // v6.017 (Franco) - stessa forma dello specchietto dei Retro: una riga per tipo,
+      // massimo 8 per colonna, poi una colonna nuova a destra. Prima era una riga sola con
+      // i tipi separati da un punto medio: con pochi tipi funzionava, con molti diventava
+      // un paragrafo da leggere invece di un elenco da scorrere.
+      // Nome del tipo in MAIUSCOLO: e' come compare gia' sulle card (typeIndicatorHTML,
+      // v5.783), quindi qui e li' si riconosce la stessa cosa senza doverci pensare.
+      const numero = v => `<span style="color:var(--text);font-weight:700;">${v}</span>`;
       const righe = pairs.map(([ct, n]) =>
-        `<span style="color:var(--type-change);">${esc(_changeTypeLabel(ct))}</span> `
-        + `<span style="color:var(--text);font-weight:700;">${n}</span>`
-      ).join(`<span style="color:var(--muted);"> \u00b7 </span>`);
+        `<div><span style="color:var(--type-change);">${esc((_changeTypeLabel(ct) || '').toUpperCase())}</span> ` + numero(n) + `</div>`);
+      // v6.018 (Franco) - qui le colonne sono da 5, non da 8 come nei Retro: i tipi di change
+      // sono pochi e con nomi lunghi, quindi cinque righe bastano e la colonna resta stretta.
+      const PER_COLONNA = 5;
+      const colonne = [];
+      for (let x = 0; x < righe.length; x += PER_COLONNA) colonne.push(righe.slice(x, x + PER_COLONNA));
+      const corpo = colonne
+        .map(c => `<div style="display:flex;flex-direction:column;">${c.join('')}</div>`)
+        .join('');
       return `<div style="background:var(--card);border:1px solid var(--border2);border-radius:var(--radius-lg);padding:0.8rem 0.9rem;box-sizing:border-box;width:max-content;max-width:100%;">`
         + header
-        + `<div style="font-size:0.82rem;line-height:1.45;margin-top:0.45rem;">${righe}</div></div>`;
+        + `<div style="display:flex;gap:0 1.6rem;align-items:flex-start;flex-wrap:wrap;font-size:0.82rem;line-height:1.45;margin-top:0.45rem;">${corpo}</div></div>`;
     }
     let chips;
     if (clickable) {
@@ -18739,6 +18897,11 @@ function buildLinkedFiguresTabsHTML(baseId) {
     { key: 'variation', label: currentLang === 'it' ? 'Variazioni ufficiali' : 'Official variations', icon: '🎨', items: linked.filter(x => x.isVariation) },
     { key: 'unofficialVariation', label: currentLang === 'it' ? 'Variazioni non ufficiali' : 'Unofficial variations', icon: '🎨', items: linked.filter(x => x.isUnofficialVariation) },
     { key: 'change', label: 'Change', icon: '🔄', items: linked.filter(x => x.isChange) },
+    // v6.015 (Franco) - gli ERRORI DI STAMPA mancavano: erano l'unico dei quattro tipi non
+    // elencato qui, rimasto indietro dalla v5.711 quando hanno smesso di essere un
+    // sottotipo di Change e sono diventati un tipo a se'. Chi apriva un retro con un errore
+    // di stampa collegato non aveva modo di arrivarci dalla sua scheda.
+    { key: 'printError', label: currentLang === 'it' ? 'Errori di stampa' : 'Print errors', icon: '🖨️', items: linked.filter(x => x.isPrintError) },
   ].filter(g => g.items.length > 0);
 
   if (!groups.length) return '';
@@ -18756,10 +18919,12 @@ function buildLinkedFiguresTabsHTML(baseId) {
     html += '<div style="display:flex;flex-direction:column;gap:0.4rem;">';
     g.items.forEach(item => {
       let label;
-      if (g.key === 'change') {
-        // Mostriamo il Tipo di change (più utile del Nome, che coincide con quello della base).
-        // v5.779 — vale ora sia per i Change di Retro sia per quelli di figurina, entrambi con Tipo.
-        label = item.changeType || item.name;
+      if (g.key === 'change' || g.key === 'printError') {
+        // Mostriamo il TIPO (più utile del Nome, che coincide con quello della base).
+        // v5.779 — vale sia per i Change di Retro sia per quelli di figurina, entrambi con Tipo.
+        // v6.015 — e per gli Errori di stampa, che hanno il loro printErrorType: senza, due
+        // errori dello stesso oggetto sarebbero due righe con la stessa scritta.
+        label = item.changeType || item.printErrorType || item.name;
       } else {
         // Per le Variazioni il Nome coincide sempre con quello della figurina base: inutile
         // ripeterlo. Mostriamo invece il Retro collegato (Categoria + Nome), la vera chiave
@@ -18985,8 +19150,8 @@ function switchToEditMode(figId) {
   // Foto con pulsante cambio immagine
   if (photo) {
     photo.innerHTML = (f.img
-      ? '<img id="fig-edit-img-preview" src="' + cloudinaryUrl(f.img,'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
-      : '<div id="fig-edit-img-preview" style="width:100%;height:240px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">Nessuna foto</div>') +
+      ? '<img id="fig-edit-img-preview" src="' + cloudinaryUrl(f.img,'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
+      : '<div id="fig-edit-img-preview" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">Nessuna foto</div>') +
       '<div style="display:flex;gap:0.4rem;margin-top:0.3rem;">' +
       '<label style="flex:1;cursor:pointer;text-align:center;">' +
       '<span style="display:block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;white-space:nowrap;">📷 ' + (currentLang==='it'?'Cambia foto':'Change photo') + '</span>' +
@@ -19094,7 +19259,8 @@ function switchToEditMode(figId) {
     _feItemSeriesId = f.seriesId;
     _populateFeRetroOptions(f.seriesId, !!f.isChange);
     const selectedRetro = f.retroId ? _feRetroLinkOptions.find(r => r.id === f.retroId) : null;
-    const showRetroGroup = true; // visibile per base/variazioni/change/errori di stampa (il toggle lo gestisce dinamicamente)
+    // v6.008 - col Retro bianco gia' spuntato, la riga del Retro associato nasce nascosta
+    const showRetroGroup = !f.retroBianco;
     html += '<div class="detail-row" id="fe-retro-group" style="' + (showRetroGroup ? '' : 'display:none;') + 'flex-direction:column;align-items:stretch;position:relative;">' +
       '<span class="detail-label">' + (currentLang==='it'?'Retro associato':'Associated retro') + '</span>' +
       '<input class="form-input" type="text" id="fe-retro-search" placeholder="' + (currentLang==='it'?'Cerca per nome, categoria o sottocategoria...':'Search by name, category or subcategory...') + '" autocomplete="off" value="' + (selectedRetro ? esc(_retroLinkLabel(selectedRetro)) : '') + '" oninput="filterFeRetroLink()" onfocus="filterFeRetroLink()" onblur="clearFeRetroLinkIfEmpty()" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
@@ -19108,7 +19274,7 @@ function switchToEditMode(figId) {
     // vista e modifica devono coincidere - vale anche fra i due editor.
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Retro bianco':'Blank back') + '</span>' +
       '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">' +
-      '<input type="checkbox" id="fe-retro-bianco" ' + (f.retroBianco ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
+      '<input type="checkbox" id="fe-retro-bianco" onchange="toggleFeRetroBianco()" ' + (f.retroBianco ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
       '<span style="color:var(--muted);">' + (currentLang==='it'?'la figurina non ha un vero retro':'this sticker has no real back') + '</span>' +
       '</label></span></div>';
   }
@@ -19321,6 +19487,21 @@ function handleFigEditImg(event) {
   reader.readAsDataURL(file);
 }
 
+// v6.008 - gemello di toggleRetroBianco per la scheda. Stesso comportamento: il campo
+// sparisce e si svuota, la spunta resta per poter tornare indietro.
+function toggleFeRetroBianco() {
+  const chk = document.getElementById('fe-retro-bianco');
+  const group = document.getElementById('fe-retro-group');
+  if (chk?.checked) {
+    const hidden = document.getElementById('fe-retro');
+    const search = document.getElementById('fe-retro-search');
+    if (hidden) hidden.value = '';
+    if (search) search.value = '';
+    const dd = document.getElementById('fe-retro-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
+  if (group) group.style.display = chk?.checked ? 'none' : '';
+}
 async function saveFigFromDetail(figId) {
   let name = document.getElementById('fe-name')?.value.trim();
   const existingForCheck = getData('figurines', []).find(x => x.id === figId);
@@ -20398,13 +20579,19 @@ async function startImportRetro() {
         errRiga('❌ Riga ' + (i+1) + ': nessun Retro base trovato con Categoria "' + retroCategoria + '" e Nome "' + retroNome + '"', 'err');
         continue;
       }
+      // v6.014 (Franco, su dati veri) - il TIPO di errore di stampa entra nella chiave.
+      // Senza, due errori di stampa dello STESSO retro collidevano sullo stesso record: il
+      // log diceva "2 importati" e ne restava uno solo. E' l'esatto gemello di cio' che il
+      // ramo Change fa da sempre con changeType - qui era rimasto fuori, e non per una
+      // ragione: solo per dimenticanza.
       const dupPE = existingFigs.find(f =>
         f.seriesId === seriesId &&
         f.section === 'retros' &&
         f.isPrintError &&
         (f.name||'').toLowerCase() === nome.toLowerCase() &&
         (f.category||'').toLowerCase() === categoria.toLowerCase() &&
-        (f.subcategory||'').toLowerCase().trim() === (sottocategoria||'').toLowerCase().trim()
+        (f.subcategory||'').toLowerCase().trim() === (sottocategoria||'').toLowerCase().trim() &&
+        (f.printErrorType||'').toLowerCase().trim() === (tipoErroreStampa||'').toLowerCase().trim()
       );
       const printErrorData = {
         seriesId,
@@ -20430,7 +20617,11 @@ async function startImportRetro() {
         if (dupPE) {
           const updatedRec = { ...dupPE, ...printErrorData, id: dupPE.id, img: dupPE.img || null };
           updatedRec.fullName = computeFullName(updatedRec, existingFigs);
-          const _diff = _importDiff(dupPE, updatedRec, ['name', 'baseFigurineId']);
+          // v6.014 - printErrorType anche nel CONFRONTO: prima veniva scritto ma non
+          // guardato, quindi correggere il solo tipo nel file non aveva effetto - l'import
+          // diceva "nessuna modifica" e non salvava. Un campo scritto e mai confrontato e'
+          // un campo che il file crede di controllare e non controlla.
+          const _diff = _importDiff(dupPE, updatedRec, ['name', 'baseFigurineId', 'printErrorType']);
           const changed = _diff.length > 0;
           if (changed) {
             await fsSave('figurines', updatedRec);
@@ -22300,10 +22491,10 @@ function renderBulkEditView() {
     <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
       <thead>
         <tr style="background:var(--card2);">
+          ${isAdmin ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>' : ''}
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);width:36px;">#</th>
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);width:48px;">${(currentLang === 'it') ? 'Foto' : 'Photo'}</th>
           ${isAdmin ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>` : ''}
-          ${isAdmin ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>' : ''}
           ${currentSeriesHasSubseries ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottoserie</th>' : ''}
           ${currentSection === 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Categoria</th><th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottocategoria</th>' : ''}
           ${currentSection !== 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>' : ''}
@@ -22323,12 +22514,12 @@ function renderBulkEditView() {
           const isOwned = owned.includes(f.id);
           const inWishlist = _wishlist.includes(f.id);
           return `<tr id="bulk-row-${f.id}" style="border-bottom:1px solid var(--border);">
+          ${isAdmin ? `<td style="padding:4px;text-align:center;"><input type="checkbox" class="bulk-select-row" data-id="${f.id}" onchange="updateBulkDeleteCount()"></td>` : ''}
           <td style="padding:4px 8px;text-align:center;color:var(--muted);font-size:0.78rem;">${rowIdx + 1}</td>
           <td style="padding:4px;text-align:center;">${f.img
             ? `<img src="${f.img}" alt="" loading="lazy" style="width:38px;height:38px;object-fit:cover;border-radius:5px;background:var(--card2);border:1px solid var(--border2);vertical-align:middle;">`
             : `<span style="display:inline-flex;width:38px;height:38px;border-radius:5px;background:var(--card2);border:1px solid var(--border2);align-items:center;justify-content:center;color:var(--muted);font-size:0.95rem;">${currentSection === 'retros' ? '📇' : '🃏'}</span>`}</td>
           ${isAdmin ? `<td style="padding:4px;white-space:nowrap;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="openAddItemModal('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
-          ${isAdmin ? `<td style="padding:4px;text-align:center;"><input type="checkbox" class="bulk-select-row" data-id="${f.id}" onchange="updateBulkDeleteCount()"></td>` : ''}
           ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
           ${currentSection === 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
           ${currentSection !== 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? '#'+f.number : '')) : ''}
@@ -23509,3 +23700,15 @@ async function toggleWishlistFromDetail(figId) {
   if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
 }
 
+
+// v6.012 (Franco) - il logo restava visibile nella home su telefono: _aggiornaLogoNavbar
+// veniva chiamata solo da showPage, che pero' NON gira all'avvio - la home e' gia' quella
+// attiva nell'HTML (class="page active"), quindi nessuno la accendeva.
+// Qui la si chiama una volta a file caricato (app.js sta in fondo al body, il DOM c'e'
+// gia'), e la si riaggancia al ridimensionamento: la condizione dipende dalla larghezza
+// dello schermo, quindi ruotare il telefono o cambiare preset nel banco prova deve
+// aggiornarla. Senza, restava giusta solo per la larghezza che c'era al caricamento.
+try { _aggiornaLogoNavbar(); } catch (e) { console.error('_aggiornaLogoNavbar (avvio)', e); }
+window.addEventListener('resize', function () {
+  try { _aggiornaLogoNavbar(); } catch (e) {}
+});
