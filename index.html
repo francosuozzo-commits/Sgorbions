@@ -4,30 +4,44 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.018"></script>
-<link rel="stylesheet" href="css/style.css?v=6.018">
+<script src="js/email.min.js?v=6.019"></script>
+<link rel="stylesheet" href="css/style.css?v=6.019">
 
 
 <style>
-/* HOME — numeroni ai lati del logo (v5.935 → v5.944).
-   Desktop: due colonne in posizione ASSOLUTA ai lati, così non fanno altezza e il testo sotto
-   ("Il database non ufficiale...") non viene spinto giù; il logo è dichiarato nella colonna
-   centrale, altrimenti — restando l'unico elemento nel flusso — finirebbe nella prima. */
-.hero-top { position:relative; display:grid; grid-template-columns:1fr auto 1fr; align-items:start;
-            gap:0 1.5rem; width:100%; max-width:1280px; margin:0 auto 1.75rem; }
-.hero-top .hero-logo-img { grid-column:2; margin-top:0; }
-.hero-stats-side { display:flex; flex-direction:column; align-items:center; gap:0.7rem;
-                   position:absolute; top:6rem; width:calc((100% - 460px) / 2); }
-.hero-top > .hero-stats-side:first-of-type { left:0; }
-#hero-stats-right { right:0; }
+/* HOME — numeroni ATTORNO al logo su quattro lati (v6.019, chiesto da Franco).
+   Fino alla v6.018 erano due sole colonne ai lati, in posizione ASSOLUTA: sinistra le cose del
+   sito (3), destra l'Inventario (5). Ora sono due per lato — sopra Lingue e Collezionisti, a
+   sinistra Serie e Figurine, a destra Retro e Bustine, sotto Album e Altri oggetti — quindi la
+   distinzione sito/Inventario non c'è più: era il prezzo della simmetria, ed è stato scelto.
+
+   Via il position:absolute. Serviva a non far crescere in altezza le due colonne laterali; ma
+   le file sopra e sotto DEVONO fare altezza (è dove stanno), e mescolare assoluto e flusso
+   nella stessa griglia significa che i due gruppi laterali non partecipano al calcolo delle
+   righe e finiscono sopra il logo. Griglia 3x3 con AREE DICHIARATE A LETTERE: su questa pagina
+   il posizionamento automatico ha già sbagliato tre volte (vedi la nota del breakpoint 860),
+   quindi non gli si lascia nessuna decisione.
+
+   Le colonne laterali restano più basse del logo (due voci contro ~440px), perciò la riga di
+   mezzo la detta il logo e i fianchi non allungano la pagina. */
+.hero-top { position:relative; display:grid; grid-template-columns:1fr auto 1fr;
+            grid-template-areas:".  top     ."
+                                "sx logo    dx"
+                                ".  bottom  .";
+            align-items:center; justify-items:center;
+            gap:0.9rem 1.5rem; width:100%; max-width:1280px; margin:0 auto 1.75rem; }
+.hero-top .hero-logo-img { grid-area:logo; margin-top:0; }
+.hero-stats-top    { grid-area:top; }
+.hero-stats-left   { grid-area:sx; }
+.hero-stats-right  { grid-area:dx; }
+.hero-stats-bottom { grid-area:bottom; }
+.hero-stats-side { display:flex; align-items:center; justify-content:center; }
+/* fianchi in colonna, file sopra/sotto in riga: è l'unica differenza fra i quattro gruppi */
+.hero-stats-left, .hero-stats-right   { flex-direction:column; gap:0.7rem; }
+.hero-stats-top,  .hero-stats-bottom  { flex-direction:row;    gap:3rem; }
 .hero-stats-side .stat-item { display:block; text-align:center; }
 .hero-stats-side .stat-num { display:block; text-align:center; line-height:1.1; margin:0; }
 .hero-stats-side .stat-label { display:block; text-align:center; margin:2px 0 0; white-space:nowrap; }
-
-@media (max-width:1100px) {
-  /* schermi medi: niente sovrapposizioni, le colonne tornano nel flusso */
-  .hero-stats-side { position:static; width:auto; padding-top:2.5rem; }
-}
 
 /* v5.948 — TELEFONO: come sul desktop, numeri a SINISTRA e a DESTRA del logo. Per farceli stare
    il logo si stringe (190px invece di 320): in una cornice da 397px restano ~80px per lato ai
@@ -37,18 +51,20 @@
    asse), quindi qui non gli si lascia più nessuna decisione.
    Il !important sul logo serve perché il CSS del sito impone width:65% e max-width:320px. */
 @media (max-width:860px) {
-  /* v5.949 — allineamento in ALTO, non al centro: con align-items:center il logo veniva
-     centrato rispetto alla colonna di numeri più alta, e quindi scendeva. Ora tocca il soffitto,
-     e i due gruppi partono anch'essi dall'alto. */
-  .hero-top { grid-template-columns:auto minmax(0,1fr) auto; grid-template-areas:"sx logo dx";
-              gap:0 0.4rem; align-items:start; margin-bottom:1rem; }
+  /* v6.019 — su telefono la disposizione è la STESSA del desktop (scelta di Franco): quattro
+     lati, non due colonne. Cambiano solo le misure. Le tre righe restano dichiarate a lettere. */
+  .hero-top { grid-template-columns:auto minmax(0,1fr) auto;
+              grid-template-areas:".  top     ."
+                                  "sx logo    dx"
+                                  ".  bottom  .";
+              gap:0.5rem 0.4rem; align-items:center; margin-bottom:1rem; }
   #hero .hero-top .hero-logo-img { grid-area:logo; justify-self:stretch;
               max-width:190px !important; width:100% !important; margin:0 auto !important;
               margin-top:0 !important; }
-  .hero-top > .hero-stats-side:first-of-type { grid-area:sx; justify-self:start; }
-  #hero-stats-right { grid-area:dx; justify-self:end; }
-  .hero-stats-side { position:static; width:auto; max-width:none; margin:0; padding-top:0.2rem;
-                     flex-direction:column; align-items:center; gap:0.45rem; }
+  .hero-stats-side { max-width:none; margin:0; padding-top:0; }
+  .hero-stats-left, .hero-stats-right  { gap:0.45rem; }
+  /* le file sopra/sotto: 3rem fra due voci è un vuoto da desktop, in 397px è metà schermo */
+  .hero-stats-top, .hero-stats-bottom  { gap:1.4rem; }
   .hero-stats-side .stat-item { min-width:0; }
   .hero-stats-side .stat-label { white-space:normal; }   /* "Altri oggetti" può andare a capo */
 }
@@ -189,7 +205,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.018</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.019</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -272,21 +288,33 @@
 <div id="page-home" class="page active">
   <!-- HERO -->
   <section id="hero">
-    <!-- v5.935 — i numeroni ai lati dell'immagine: a sinistra cio' che riguarda il sito
-     (serie, collezionisti, lingue), a destra il contenuto dell'Inventario. L'immagine e' piu'
-     piccola: era il pezzo piu' grande della pagina e schiacciava tutto il resto. -->
+    <!-- v6.019 — i numeroni ATTORNO al logo, due per lato (Franco). Fino alla v6.018 stavano in
+     due sole colonne: a sinistra le cose del sito (Lingue, Collezionisti, Serie), a destra
+     l'Inventario (Figurine, Retro, Bustine, Album, Altri oggetti). Otto voci su quattro lati non
+     si dividono conservando quel taglio 3+5, quindi la distinzione sito/Inventario è caduta: la
+     simmetria è stata preferita, ed è una scelta, non una svista.
+     Gli id dei quattro contenitori NON servono più a mostrarli/nasconderli — mostraNumeroniHero
+     ora lavora sulla classe .hero-stats-side (v6.019, vedi app.js) — così spostare una voce da un
+     lato all'altro, o aggiungere un quinto gruppo, non richiede più di toccare il JavaScript. -->
 <div class="hero-top">
-  <div class="hero-stats-side" id="hero-stats" style="display:none;">
-    <!-- v5.943 — ordine chiesto da Franco: Lingue, Collezionisti, Serie -->
+  <div class="hero-stats-side hero-stats-top" id="hero-stats-top" style="display:none;">
     <div class="stat-item"><span class="stat-num" id="stat-langs">0</span><span class="stat-label" data-i18n="hero.statLangs">Lingue del sito</span></div>
     <div class="stat-item"><span class="stat-num" id="stat-users">0</span><span class="stat-label" data-i18n="hero.stat3">Collectors</span></div>
-    <div class="stat-item"><span class="stat-num" id="stat-series">0</span><span class="stat-label" data-i18n="hero.stat1">Series</span></div>
   </div>
-  <img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:440px;width:100%;margin:0 auto 1rem;display:block;">
-  <div class="hero-stats-side" id="hero-stats-right" style="display:none;">
+  <div class="hero-stats-side hero-stats-left" id="hero-stats" style="display:none;">
+    <div class="stat-item"><span class="stat-num" id="stat-series">0</span><span class="stat-label" data-i18n="hero.stat1">Series</span></div>
     <div class="stat-item"><span class="stat-num" id="stat-figs">0</span><span class="stat-label" data-i18n="hero.stat2">Figurines</span></div>
+  </div>
+  <!-- v6.019 — via il margin-bottom:1rem del logo. Con i numeroni ai soli fianchi non dava
+       fastidio; ora che la riga di mezzo è centrata verticalmente, quel margine fa parte della
+       cella e spinge l'IMMAGINE 8px sopra il centro — misurato, i due gruppi laterali
+       risultavano 8px più in basso del logo. Lo spazio lo fa il gap della griglia. -->
+  <img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:440px;width:100%;margin:0 auto;display:block;">
+  <div class="hero-stats-side hero-stats-right" id="hero-stats-right" style="display:none;">
     <div class="stat-item"><span class="stat-num" id="stat-retros">0</span><span class="stat-label" data-i18n="hero.stat2b">Retro</span></div>
     <div class="stat-item"><span class="stat-num" id="stat-bustine">0</span><span class="stat-label" data-i18n="hero.stat2e">Bustine</span></div>
+  </div>
+  <div class="hero-stats-side hero-stats-bottom" id="hero-stats-bottom" style="display:none;">
     <div class="stat-item"><span class="stat-num" id="stat-albums">0</span><span class="stat-label" data-i18n="hero.stat2c">Album</span></div>
     <div class="stat-item"><span class="stat-num" id="stat-extras">0</span><span class="stat-label" data-i18n="hero.stat2d">Altri oggetti</span></div>
     <!-- v5.940 — "Mia lista / Totale Inventario" tolto dai numeroni della home (Franco).
@@ -1399,7 +1427,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.018</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.019</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -2159,7 +2187,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.018"></script>
+<script src="js/app.js?v=6.019"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2183,7 +2211,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.018'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.019'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
