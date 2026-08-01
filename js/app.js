@@ -1,6 +1,20 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.019 - HOME: i numeroni verdi ora stanno ATTORNO al logo, due per lato. Chiesto da Franco.
+//          Modificato index.html e app.js.
+//          Sopra Lingue e Collezionisti, a sinistra Serie e Figurine, a destra Retro e Bustine,
+//          sotto Album e Altri oggetti. Otto voci su quattro lati non si dividono conservando il
+//          vecchio taglio (sinistra = il sito, 3 voci; destra = l'Inventario, 5): la distinzione
+//          e' caduta in cambio della simmetria, ed e' una scelta esplicita, non una svista.
+//          CSS: griglia 3x3 con le aree dichiarate a lettere; via il position:absolute che
+//          teneva fuori dal flusso le due colonne laterali. Serviva a non far crescere in
+//          altezza la hero, ma le file sopra e sotto devono farla, l'altezza: mescolare
+//          assoluto e flusso nella stessa griglia lasciava i fianchi fuori dal conto delle righe.
+//          app.js: mostraNumeroniHero non lavora piu' su un ELENCO DI ID ma sulla classe
+//          .hero-stats-side. Con l'elenco, aggiungere un gruppo e scordarsi questa riga non dava
+//          nessun errore - il gruppo restava visibile a utente sloggato, e non si vedeva.
+//          Stessa disposizione anche su telefono (chiesto da Franco): cambiano solo i gap.
 // v6.018 - Lo specchietto "Change per tipo" fa colonne da 5 righe, non da 8. Chiesto da Franco.
 //          Solo app.js. Quello dei Retro resta a 8: i tipi di change sono pochi e con nomi
 //          lunghi, le categorie dei retro sono tante e con nomi corti. Stessa forma, numero
@@ -10250,7 +10264,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.018';
+const JS_VERSION = 'v6.019';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -19982,12 +19996,15 @@ function animateCount(el, target) {
     if (current >= target) clearInterval(interval);
   }, 40);
 }
-// v5.935 — i numeroni della home vivono in DUE colonne (a sinistra e a destra dell'immagine):
-// vanno accese e spente insieme, altrimenti si vedrebbe mezza fila.
+// v6.019 — i numeroni della home stanno in QUATTRO gruppi attorno al logo (sopra, sinistra,
+// destra, sotto): vanno accesi e spenti insieme, altrimenti si vedrebbe mezza corona.
+// Si cercano per CLASSE, non per elenco di id. Con l'elenco, spostare una voce di lato o
+// aggiungere un gruppo obbligava a ricordarsi anche di questa riga — e dimenticarsene non dava
+// nessun errore: il gruppo restava semplicemente visibile a utente sloggato. La classe non si
+// può dimenticare, perché è la stessa che il CSS usa già per disegnarli.
 function mostraNumeroniHero(visibili) {
-  ['hero-stats', 'hero-stats-right'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = visibili ? '' : 'none';
+  document.querySelectorAll('.hero-stats-side').forEach(el => {
+    el.style.display = visibili ? '' : 'none';
   });
 }
 
