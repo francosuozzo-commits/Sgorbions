@@ -1,6 +1,174 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.033 - Le frecce del dettaglio funzionano anche quando si arriva da un tab dei collegati, e
+//          scorrono l'elenco DI QUEL TAB. Chiesto da Franco. Solo app.js.
+//          PRIMA: le frecce cercavano l'oggetto in _gridOrderedIds, cioe' nell'elenco della
+//          griglia. Aprendo un Change dal tab "Change di questo retro" quell'oggetto in griglia non
+//          c'e' (la griglia mostra i retro, non i loro Change): indice -1, frecce nascoste. Proprio
+//          dove servivano, perche' i Change di uno stesso retro sono la serie che si vuole sfogliare.
+//          ORA: openFigDetail prende un secondo argomento facoltativo, l'elenco su cui scorrere. Le
+//          righe dei tab passano gli id del proprio gruppo; le frecce, muovendosi, se lo ripassano,
+//          quindi si resta dentro l'elenco da cui si e' partiti. Vale per tutti i tab, non solo i
+//          Change: variazioni, errori di stampa e figurine-che-usano-questo-retro.
+//          Chi apre da una card NON passa niente e l'elenco torna quello della griglia: il reset e'
+//          una conseguenza della chiamata, non uno stato da ricordarsi di azzerare - che e' il modo
+//          in cui una cosa cosi' si rompe tre versioni dopo, quando nessuno se lo ricorda piu'.
+// v6.032 - BACO (Franco): aprendo un Change dal tab "Change di questo retro" si vedeva la foto del
+//          retro BASE invece della propria, piu' un box "Retro" vuoto. Solo app.js.
+//          LA CAUSA: il ramo a due foto (fronte + retro affiancati) si accendeva per qualunque
+//          oggetto con baseFigurineId. Un retro che e' un Change ce l'ha - e' il retro base da cui
+//          deriva - quindi finiva li' dentro: come "fronte" prendeva la foto della base, e come
+//          "retro" un box vuoto, perche' un retro un retro non ce l'ha.
+//          LA CORREZIONE: il paio fronte+retro esiste solo nella sezione FIGURINE, e ora la
+//          decisione sta in _schedaDueFoto(). La griglia questo errore non lo faceva gia' prima:
+//          la sua condizione chiede anche _effRetroId, che per un retro e' sempre nullo.
+//          DA NOTARE: la classe detail-solo-foto della v6.027 era una COPIA di quella condizione,
+//          scritta due giorni fa. Essendo copia si era allineata alla versione sbagliata, e dava
+//          al Change di retro la colonna larga 740 pensata per due immagini. Ora le due cose sono
+//          la stessa chiamata: non e' un dettaglio di stile, e' il motivo per cui il baco ha
+//          potuto esistere in due posti insieme.
+// v6.031 - Il sottonome su riga propria anche negli altri DUE punti che mostrano il Nome completo
+//          di un retro: la didascalia sotto la foto nella scheda, e la riga "Retro" di una
+//          variazione su telefono. Chiesto da Franco. Solo app.js.
+//          Con la v6.030 quei due punti erano rimasti su una riga sola: la stessa informazione
+//          scritta in due forme diverse nella stessa schermata, che e' la premessa di ogni
+//          divergenza futura. Ora i tre punti chiamano gli stessi due helper
+//          (_retroNomeCompletoSenzaSottonome + _retroSottonome) e non c'e' piu' un posto dove il
+//          sottonome finisce in coda al nome.
+//          Il sottonome NON entra nel link, come gia' sulle card: e' un pezzo del nome, non un
+//          secondo posto dove cliccare.
+//          Tolto _vp nella riga "Retro" su telefono: si costruiva categoria+sottocategoria e non
+//          lo leggeva nessuno - il Nome completo se le porta gia' dentro.
+// v6.030 - Nel tab "Variazioni ufficiali / non ufficiali" il SOTTONOME del retro va su una riga
+//          sua. Chiesto da Franco. Solo app.js.
+//          IL PERCHE': in quella colonna lo spazio manca in orizzontale ma avanza in verticale, e
+//          il Nome completo del retro andava a capo da solo, spezzato dove capitava. Ora la prima
+//          riga porta gli STESSI campi del Nome completo meno il sottonome, e il sottonome sta
+//          sotto in azzurro: e' lo stesso schema che usano gia' la card della sezione Retro
+//          (~16761) e la card di una figurina (~16817), quindi non e' una forma inventata qui.
+//          COME: NON si taglia la stringa gia' fatta - sarebbe la toppa a valle che la v5.980 ha
+//          tolto separando i due campi - si ricostruisce con la stessa regola chiedendo il nome
+//          CORTO al posto del lungo: _retroFullName prende un terzo parametro `senzaSottonome`.
+//          Quando il retro NON ha sottonome le due forme coincidono e si continua a leggere il
+//          `fullName` SALVATO come fa tutto il resto: 965 retro su 1013 non cambiano strada.
+//          Di contorno: la scelta del "retro base del nome" (per un Change e' quello collegato)
+//          esce da dentro _retroFullName e diventa _retroBaseDelNome(), perche' ora la chiede
+//          anche chi vuole il solo sottonome - e le due cose devono pescare dallo stesso record,
+//          altrimenti la prima riga direbbe il nome di un retro e la seconda il sottonome di un
+//          altro.
+// v6.029 - Foto della scheda piu' grandi (200 -> 300px) e la finestra smette di ballare quando si
+//          scorre con le frecce. Chiesto da Franco. Modificati index.html e app.js.
+//          (1) LE FOTO. L'altezza fissa a 200px (v5.916) le teneva piccole mentre le loro celle
+//              sono larghe 305 e 427px: una figurina quadrata rendeva 200x200 dentro 305, cioe'
+//              105px di larghezza buttati. Ora 300px, che e' il massimo utile senza allargare
+//              niente: a 300 il fronte tocca il limite della sua cella (305), oltre crescerebbe
+//              solo lo spazio vuoto. Le due immagini si chiedono a Cloudinary con w_800 invece di
+//              w_400: a 300px di altezza il retro arriva a ~411px di larghezza, e con w_400 lo si
+//              sarebbe INGRANDITO oltre la sua risoluzione - lo stesso difetto trovato nella
+//              v6.027, in un punto diverso. Il segnaposto "Foto non disponibile" passa anche lui a
+//              300px: e' lui a tenere in piedi la cella quando l'immagine manca.
+//              NON toccate: la preview della form di MODIFICA (~19519) e la miniatura del ritaglio
+//              (~19847) hanno la stessa stringa di stile ma sono altre schermate.
+//          (2) LO SFARFALLIO NON VENIVA DALLE FOTO. Otto figurine di fila: la finestra faceva
+//              483/483/483/483/519/519/570/570, 87px di ballo. La colonna foto pero' era alta
+//              240px e non era mai la piu' alta - a cambiare era la colonna delle INFORMAZIONI, da
+//              354 a 441px secondo quanti dati ha l'oggetto. Su 42 oggetti di ogni tipo (base,
+//              variazioni, change, errori di stampa, retro, descrizioni lunghe) quell'altezza
+//              prende cinque soli valori: 282, 353, 388, 390, 441 - identici da admin e da utente.
+//              Da qui il min-height di 445px nell'index: un pavimento appena sopra il massimo
+//              osservato, che rende tutte le schede alte uguali. E' un numero MISURATO, non
+//              dedotto: se si aggiungono righe alla scheda va rimisurato.
+//              A 300px la colonna foto e' alta 325, ancora sotto i 445 - quindi le foto piu' grandi
+//              non contribuiscono all'altezza della finestra.
+// v6.028 - "Mia lista" e "Ciò che cerco" sotto la foto, centrati; e la finestra del dettaglio piu'
+//          stretta dove la foto e' una sola. Chiesto da Franco. Modificati index.html e app.js.
+//          (1) I DUE COMANDI SOTTO LA FOTO, in tutte le schede. Erano due righe etichetta/valore
+//              in mezzo ai dati: gli unici due comandi di quella colonna, vestiti da dati. Ora
+//              sono dentro #fig-detail-photo, quindi su telefono seguono la foto senza bisogno di
+//              nessuna regola in piu' (li' il CSS mette gia' la foto prima delle informazioni).
+//              Gli id (`fig-detail-toggle`, `fig-detail-wishlist-btn`) restano quelli: i due
+//              toggle li ripescano per id dopo il clic, e spostarli senza id si sarebbe rotto in
+//              silenzio - il clic funziona, il bottone non cambia aspetto.
+//          (2) FINESTRA PIU' STRETTA, senza toccare font ne' foto. Il numero non e' a occhio: la
+//              finestra si restringe esattamente dei 222px che la foto ha lasciato con la v6.027
+//              (1320 - 222 = 1098), cosi' la colonna delle informazioni torna larga com'era prima
+//              (misurato: 704px a 1320, 482px a 1098, contro i 477px originali) e il testo va a
+//              capo dove andava prima. La foto non si muove: misura 518x381 con la finestra a 1320
+//              come a 940, perche' la sua colonna e' fissa e non elastica.
+//              Vale dove c'e' UNA foto sola (classe detail-solo-foto, v6.027): la scheda di una
+//              figurina col retro affiancato ha ancora due immagini e resta a 1320.
+// v6.027 - Scheda di un RETRO (desktop): la foto rimpicciolita del 30%. Chiesto da Franco.
+//          Modificati index.html e app.js.
+//          IL PERCHE' ERA GRANDE: la colonna della foto vale 740px perche' nella scheda di una
+//          FIGURINA ci stanno DUE immagini affiancate - fronte e retro (v5.845 l'aveva portata da
+//          320 a 620, "~300px per immagine"; v5.846 da 620 a 740 per dare al retro 1.4 volte il
+//          fronte). La scheda di un RETRO usa lo stesso contenitore ma ha UNA immagine sola, che
+//          si prendeva tutti i 740px: una misura pensata per due, applicata a una. Non era una
+//          scelta sui retro, era una misura che non li aveva mai considerati.
+//          IN PIU' L'IMMAGINE ERA INGRANDITA: la si chiede a Cloudinary con w_640 e la si
+//          disegnava a 740 (misurato sul sito vero: naturale 640x467, resa 740x543). A 518px -
+//          740 meno il 30% - si torna sotto i 640 nativi: piu' piccola e anche piu' nitida.
+//          COME: classe `detail-solo-foto` sul modale, messa da openFigDetail con la STESSA
+//          condizione che piu' sotto sceglie il ramo a una immagine del box foto - la classe dice
+//          "qui c'e' una foto sola", non "questo e' un retro", cosi' non ci sono due idee diverse
+//          della stessa cosa. La regola CSS sta nell'index (convenzione dalla v5.878) e vince sui
+//          740 !important di style.css per specificita', non per ordine.
+//          Solo da 861px in su: sotto, il modale e' gia' a colonna singola e la foto sta in cima a
+//          tutta larghezza, che su un telefono e' quello che serve.
+// v6.026 - Scheda di un RETRO su telefono: sopra la foto anche Categoria e Sottocategoria; e il
+//          Sottonome sganciato dalla Sottocategoria. Chiesto da Franco. Solo app.js.
+//          (1) SOPRA LA FOTO. Su telefono #fig-detail-top sta prima del box foto (CSS, order:-2) e
+//              conteneva Serie, Numero, Nome. Per un retro pero' l'identita' e' "Categoria + Nome",
+//              e la Categoria restava sotto la foto: le due meta' dello stesso nome finivano ai due
+//              lati dell'immagine, cioe' in due schermate diverse. Ora sopra la foto ci sono Serie,
+//              Categoria, Sottocategoria, Nome, Sottonome - nell'ordine del Nome completo. Effetto
+//              collaterale utile: su telefono il titolo del modale e' nascosto via CSS e per i retro
+//              IL TITOLO E' il Nome completo, quindi finora sul telefono non si vedeva da nessuna
+//              parte; ora se ne vedono tutti i pezzi, in ordine.
+//          (2) SOTTONOME. Il suo push stava dentro l'if della Sottocategoria: usciva solo per un
+//              retro che avesse entrambe. Sui dati veri: 1013 retro, 48 col sottonome, 172 con
+//              sottocategoria, intersezione ZERO - la riga non era mai comparsa da quando esiste
+//              (v5.980), mentre il sottonome si vedeva sulle card e dentro il Nome completo. Ora e'
+//              una condizione sua e sta subito dopo il Nome, di cui e' la seconda parte. Sul
+//              desktop cambia l'ordine: prima era (mai) fra Sottocategoria e Nome, ora dopo il Nome.
+//              Di contorno: Categoria, Sottocategoria e Sottonome passano da esc().
+// v6.025 - Nella scheda di un RETRO i tab dei collegati si chiamano "Change di questo retro" ed
+//          "Errori di stampa di questo retro". Chiesto da Franco. Solo app.js.
+//          Il nome cambia SOLO li': nella scheda di una figurina quei tab elencano i Change della
+//          figurina, e dirli "di questo retro" sarebbe falso - restano "Change" ed "Errori di
+//          stampa". La condizione e' _selfRetro, la stessa che accende il tab delle figurine:
+//          una sola idea di "sto guardando un retro", non due che possono divergere.
+// v6.024 - Le due osservazioni di Franco sul tab nuovo. Solo app.js.
+//          (1) NIENTE NOME DEL RETRO nelle righe. Erano le sole Variazioni: il loro Nome completo
+//              e' "Nome - <retro>" (computeFullName ~20264). Altrove e' giusto - fra due variazioni
+//              della stessa base il retro e' l'unica differenza - ma DENTRO la scheda di un retro
+//              e' cio' che tutte le righe hanno in comune, quindi non distingue niente. Change ed
+//              errori di stampa restano col loro suffisso: li' il suffisso e' il tipo, cioe'
+//              l'identita' della riga.
+//          (2) LA FOTO MANCAVA sulle stesse righe, e non era un caso: una Variazione/Change spesso
+//              non ha foto propria e mostra quella della figurina base. La griglia lo faceva da
+//              sempre, i tab dei collegati no. Nuova _fotoFigurina(f, allFigs) con quella regola;
+//              la usano ORA la griglia (che perde la sua copia inline) e tutte le righe dei tab dei
+//              collegati - quindi anche Variazioni/Change/errori nella scheda di una figurina, che
+//              soffrivano dello stesso segnaposto.
+// v6.023 - Nella scheda di un RETRO, il tab "Figurine che usano questo retro". Chiesto da Franco.
+//          Solo app.js.
+//          IL PUNTO: il collegamento esiste in un verso solo. Una figurina sa qual e' il suo retro
+//          (campo retroId); un retro non sa da chi e' usato, e finora dalla sua scheda non c'era
+//          modo di scoprirlo - si poteva solo scendere dall'altra parte, una figurina per volta.
+//          COSA FA: nuova _figurineCheUsanoIlRetro(retroId, allFigs), che scorre le figurine e
+//          raccoglie chi punta a quel retro. Il risultato diventa il PRIMO tab dei collegati,
+//          accanto a Change / Errori di stampa (buildLinkedFiguresTabsHTML), e compare SOLO nella
+//          scheda di un retro. Righe "#numero - Nome completo", ordinate per numero.
+//          I DUE MODI DI PUNTARE, tenuti distinti: retroId scritto sul record (diretto) e Change
+//          senza retroId proprio la cui base punta qui (ereditato, marcato "(dalla base)"). La
+//          seconda e' la stessa regola di _effRetroId nella griglia: senza, un Change comparirebbe
+//          col retro nella griglia e non nel tab.
+//          Il Nome completo si legge da `fullName` con ripiego su computeFullName(), come fa
+//          _retroNomeCompleto dalla v6.022: una sola idea di "nome completo" per scheda.
+//          Di contorno: dentro la funzione la lista figurine si legge una volta sola (era due), e
+//          l'etichetta di riga passa da esc() - i Nomi con & o < finora finivano crudi nell'HTML.
 // v6.022 - Il nome di un retro si scrive in UN POSTO SOLO. Segnalato da Franco. Solo app.js.
 //          IL SINTOMO: nella scheda di una figurina, il link al Retro mostrava la categoria
 //          ripetuta - "PERMESSO — PERMESSO DI RIPETERE L'ANNO" - mentre aprendo quel retro il suo
@@ -10331,7 +10499,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.022';
+const JS_VERSION = 'v6.033';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -14054,13 +14222,28 @@ let currentItemPage = 1;
 let _gridOrderedIds = []; // elenco ordinato completo (tutte le pagine) per navigazione avanti/indietro nel dettaglio
 let _currentDetailFigId = null;
 
+// v6.033 (Franco) - SU COSA SCORRONO LE FRECCE del dettaglio.
+// Di norma sull'elenco della GRIGLIA. Ma aprendo un oggetto da uno dei tab dei collegati - i
+// Change di un retro, le variazioni di una figurina, le figurine che usano un retro - quasi mai
+// quell'oggetto sta in griglia: la griglia mostra i retro, non i loro Change. Li' l'indice usciva
+// -1 e le frecce sparivano, proprio dove servivano.
+// Ora l'elenco di navigazione e' un parametro di openFigDetail: chi apre da un tab passa gli id di
+// QUEL tab, e finche' si resta dentro le frecce scorrono quello. Chi apre da una card non passa
+// niente e torna alla griglia - il reset e' automatico, non c'e' uno stato da ricordarsi di
+// azzerare, che e' il modo in cui questa roba si rompe.
+let _elencoNav = null;
+function _navIdsCorrenti(figId) {
+  return (_elencoNav && _elencoNav.includes(figId)) ? _elencoNav : _gridOrderedIds;
+}
+
 function navigateFigDetail(direction) {
   if (!_currentDetailFigId) return;
-  const idx = _gridOrderedIds.indexOf(_currentDetailFigId);
+  const ids = _navIdsCorrenti(_currentDetailFigId);
+  const idx = ids.indexOf(_currentDetailFigId);
   if (idx === -1) return;
   const newIdx = idx + direction;
-  if (newIdx < 0 || newIdx >= _gridOrderedIds.length) return;
-  openFigDetail(_gridOrderedIds[newIdx]);
+  if (newIdx < 0 || newIdx >= ids.length) return;
+  openFigDetail(ids[newIdx], _elencoNav); // v6.033 - restando nello stesso elenco
 }
 const ROWS_PER_PAGE = 7;
 
@@ -16505,12 +16688,13 @@ function renderItems() {
     const icon = SECTION_ICONS[currentSection];
     // Una Variazione/Change è essenzialmente un collegamento (Figurina base + Retro): se non ha
     // una foto propria, riusiamo quella della figurina base collegata, senza duplicare il dato
-    let displayImg = f.img;
+    // v6.024 - la regola sta in _fotoFigurina(). Qui resta baseFigForImg, che serve piu' sotto a
+    // _baseForChange e a baseFigDual: e' il record della base, non la foto.
     let baseFigForImg = null;
-    if (!displayImg && currentSection === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
+    if (!f.img && currentSection === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
       baseFigForImg = getData('figurines', []).find(x => x.id === f.baseFigurineId);
-      if (baseFigForImg?.img) displayImg = baseFigForImg.img;
     }
+    const displayImg = _fotoFigurina(f, getData('figurines', []));
     // Per le Variazioni (non Change) e per le figurine base, se sono disponibili sia la foto
     // propria (fronte) sia quella del Retro collegato, le mostriamo impilate verticalmente
     // nella stessa altezza totale del box: colpo d'occhio immediato per riconoscerle nella
@@ -18767,19 +18951,52 @@ function switchFigDetailTab(tab) {
   if (ebayBtn) { ebayBtn.style.borderBottomColor = tab === 'ebay' ? 'var(--accent)' : 'transparent'; ebayBtn.style.color = tab === 'ebay' ? 'var(--accent)' : 'var(--muted)'; }
 }
 
-function openFigDetail(figId) {
+// v6.032 (Franco, baco) - la scheda mostra DUE foto affiancate (fronte + retro) o UNA sola?
+// Il paio fronte+retro esiste SOLO nella sezione figurine: un retro ha una faccia sola, la sua.
+// IL BACO: un retro che e' un Change ha comunque un baseFigurineId - il retro base da cui il
+// change deriva - e quello bastava a prendere il ramo a due foto. Risultato: aprendo un Change
+// dal tab "Change di questo retro" si vedeva la foto del retro BASE al posto della propria, piu'
+// un secondo box "Retro" vuoto, perche' un retro un retro non ce l'ha.
+// La griglia questo errore non lo faceva: la sua condizione (~16539) chiede anche _effRetroId, che
+// per un retro e' sempre nullo. Era il solo dettaglio a sbagliare.
+// La stessa funzione la usa ora anche la classe detail-solo-foto (v6.027), che era una COPIA di
+// questa condizione: essendo copia, si era allineata alla versione sbagliata e dava al Change di
+// retro la colonna larga 740 pensata per due immagini.
+function _schedaDueFoto(f, allFigs) {
+  if (!f || f.section !== 'figurines') return false;
+  const figs = allFigs || getData('figurines', []);
+  const isVar = f.isVariation || f.isUnofficialVariation || f.isChange;
+  const base = (isVar && f.baseFigurineId) ? figs.find(x => x.id === f.baseFigurineId) : null;
+  const effRetroId = f.isChange ? (f.retroId || base?.retroId || null) : f.retroId;
+  return !!(effRetroId || (isVar && f.baseFigurineId));
+}
+
+function openFigDetail(figId, elencoNav) {
   _figEditImgData = null; // reset immagine editing precedente
+  // v6.033 - l'elenco su cui scorrono le frecce arriva da chi apre la scheda. Senza argomento
+  // torna null, cioe' si riparte dalla griglia: aprendo una card non resta appiccicato l'elenco
+  // dell'ultimo tab visitato.
+  _elencoNav = Array.isArray(elencoNav) && elencoNav.length ? elencoNav.slice() : null;
   _currentDetailFigId = figId;
   const allFigs = getData('figurines', []);
   const f = allFigs.find(x => x.id === figId);
   if (!f) return;
+  // v6.027 (Franco) - la colonna della foto e' larga 740px perche' nella scheda di una FIGURINA ci
+  // stanno DUE immagini affiancate (fronte + retro). Nella scheda di un RETRO ce n'e' UNA sola, e
+  // si prendeva tutta la larghezza pensata per due. La classe dice esattamente questo - "qui c'e'
+  // una foto sola" - e non "questo e' un retro": e' la condizione che conta, ed e' la stessa che
+  // piu' sotto sceglie il ramo a una immagine del box foto.
+  document.getElementById('fig-detail-modal')?.classList.toggle('detail-solo-foto', !_schedaDueFoto(f, allFigs)); // v6.032 - stessa fonte del ramo del box foto
   const owned = getOwned();
   const isOwned = owned.includes(f.id);
   const isAdmin = currentUser?.isAdmin;
   const figSeries = getData('series', []).find(s => s.id === f.seriesId);
 
-  // Frecce di navigazione avanti/indietro (solo se la figurina fa parte dell'elenco attualmente in griglia)
-  const navIdx = _gridOrderedIds.indexOf(figId);
+  // Frecce di navigazione avanti/indietro. v6.033: l'elenco e' quello della griglia, oppure quello
+  // del tab da cui si e' arrivati (vedi _navIdsCorrenti). Se l'oggetto non sta in nessuno dei due,
+  // le frecce restano nascoste come prima.
+  const _navIds = _navIdsCorrenti(figId);
+  const navIdx = _navIds.indexOf(figId);
   const prevBtn = document.getElementById('fig-detail-prev-btn');
   const nextBtn = document.getElementById('fig-detail-next-btn');
   if (prevBtn && nextBtn) {
@@ -18793,8 +19010,8 @@ function openFigDetail(figId) {
       nextBtn.style.visibility = '';
       prevBtn.disabled = navIdx <= 0;
       prevBtn.style.opacity = navIdx <= 0 ? '0.3' : '1';
-      nextBtn.disabled = navIdx >= _gridOrderedIds.length - 1;
-      nextBtn.style.opacity = navIdx >= _gridOrderedIds.length - 1 ? '0.3' : '1';
+      nextBtn.disabled = navIdx >= _navIds.length - 1;
+      nextBtn.style.opacity = navIdx >= _navIds.length - 1 ? '0.3' : '1';
     }
   }
 
@@ -18845,20 +19062,34 @@ function openFigDetail(figId) {
     (_mobileDetail ? rowsTop : rows).push(_rowNumero);
   }
   // Categoria (sempre visibile per i Retro), Sottocategoria (solo se popolata).
+  // v6.026 (Franco) — su TELEFONO salgono sopra la foto, insieme a Serie e Nome. Per un retro
+  // "Categoria + Nome" e' l'identita' — e' la regola del Nome completo: prima dico DI COSA parlo,
+  // poi COSA mostro — e tenere la Categoria sotto la foto spezzava quel nome in due meta' ai due
+  // lati dell'immagine, che sul telefono sono due schermate diverse. Sul desktop, dove le righe
+  // sono gia' consecutive, non cambia niente.
   if (f.section === 'retros') {
-    rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Categoria' : 'Category')}</span><span class="detail-value">${f.category || '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Categoria' : 'Category')}</span><span class="detail-value">${f.category ? esc(f.category) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
     if (f.subcategory) {
-      rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottocategoria' : 'Subcategory')}</span><span class="detail-value">${f.subcategory}</span></div>`);
-    // v5.980 — Sottonome: la seconda parte del nome, quella scritta altrove nel disegno. Si mostra
-    // solo se c'è: una riga vuota su centinaia di retro che non ce l'hanno sarebbe rumore.
-    if ((f.subname || '').trim())
-      rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${f.subname}</span></div>`);
+      (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottocategoria' : 'Subcategory')}</span><span class="detail-value">${esc(f.subcategory)}</span></div>`);
     }
   }
   // Nome — tutte le sezioni, quando presente (hide-empty).
   if (f.name) {
     const _rowNome = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome' : 'Name')}</span><span class="detail-value">${esc(f.name)}</span></div>`;
     (_mobileDetail ? rowsTop : rows).push(_rowNome);
+  }
+
+  // v5.980 — Sottonome: la seconda parte del nome, quella scritta altrove nel disegno. Si mostra
+  // solo se c'e': una riga vuota su centinaia di retro che non ce l'hanno sarebbe rumore.
+  // v6.026 (Franco) — SGANCIATO DALLA SOTTOCATEGORIA. Fino alla v6.025 questo push stava DENTRO
+  // l'if della Sottocategoria, quindi la riga usciva solo per un retro che avesse ENTRAMBE. Sui
+  // dati veri del sito: 1013 retro, 48 col sottonome (tutti in Serie 1), 172 con sottocategoria,
+  // intersezione ZERO. Cioe' questa riga non e' mai comparsa per nessun retro da quando esiste,
+  // mentre lo stesso sottonome si vedeva regolarmente sulle card e dentro il Nome completo: il
+  // posto dove il dato non si vedeva era proprio la sua scheda. Fra i due campi non c'e' nessun
+  // nesso — il Sottonome e' la seconda parte del NOME, e infatti ora sta subito dopo il Nome.
+  if (f.section === 'retros' && (f.subname || '').trim()) {
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${esc(f.subname.trim())}</span></div>`);
   }
 
   // Sottoserie - show only if populated (admin sees it always in edit modal, not here)
@@ -18912,8 +19143,14 @@ function openFigDetail(figId) {
   if (_mobileDetail && (f.isVariation || f.isUnofficialVariation) && !f.isChange && !f.isPrintError && f.retroId) {
     const _varRetro = getData('figurines', []).find(x => x.id === f.retroId);
     if (_varRetro) {
-      const _vp = [_varRetro.category, _varRetro.subcategory].map(v => (v||'').trim()).filter(Boolean);
-      rowsTop.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Retro' : 'Back'}</span><span class="detail-value"><a href="#" onclick="openFigDetail('${_varRetro.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(_retroNomeCompleto(_varRetro))} ↗</a></span></div>`);
+      // v6.031 (Franco) - sottonome su riga propria, come nel tab Variazioni e sotto la foto.
+      // Qui serve piu' che altrove: su telefono la larghezza e' quella che e', e il Nome completo
+      // intero andava a capo da solo.
+      // (v6.031: tolto _vp, che si costruiva categoria+sottocategoria e non veniva usato da
+      //  nessuno - il Nome completo se le porta gia' dentro.)
+      const _allF = getData('figurines', []);
+      const _varSotto = _retroSottonome(_varRetro, _allF);
+      rowsTop.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Retro' : 'Back'}</span><span class="detail-value"><a href="#" onclick="openFigDetail('${_varRetro.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(_retroNomeCompletoSenzaSottonome(_varRetro, _allF))} ↗</a>${_varSotto ? `<div style="font-size:0.78rem;color:var(--info);margin-top:1px;">${esc(_varSotto)}</div>` : ''}</span></div>`);
     }
   }
   if ((f.isVariation || f.isUnofficialVariation || f.isChange || f.isPrintError) && f.baseFigurineId) {
@@ -18952,23 +19189,27 @@ function openFigDetail(figId) {
     const isVar = f.isVariation || f.isUnofficialVariation || f.isChange;
     const _detBase = (isVar && f.baseFigurineId) ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
     const _detEffRetroId = f.isChange ? (f.retroId || _detBase?.retroId || null) : f.retroId;
-    if (_detEffRetroId || (isVar && f.baseFigurineId)) {
+    if (_schedaDueFoto(f, allFigs)) { // v6.032 - unica fonte, vedi _schedaDueFoto()
       // Variazione/Change o figurina base con Retro collegato: mostra Fronte (sx) + Retro (dx) affiancati
       const baseFig = _detBase;
       const frontImg = baseFig ? baseFig.img : f.img;
       const retroFig = _detEffRetroId ? getData('figurines', []).find(x => x.id === _detEffRetroId) : null;
-      const noPhotoBox = '<div style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non disponibile' : 'Photo not available') + '</div>';
+      const noPhotoBox = '<div style="width:100%;height:300px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non disponibile' : 'Photo not available') + '</div>';
       // v5.916 — altezza FISSA 200px su entrambe le foto (come il box "foto non disponibile"): così
       // fronte e retro sono sempre alti uguali e l'area foto non cambia dimensione tra una figurina e
       // l'altra (niente sfarfallamento).
       const baseHTML = frontImg
-        ? `<img src="${cloudinaryUrl(frontImg, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+        ? `<img src="${cloudinaryUrl(frontImg, 'w_800,h_800,c_fit,q_auto,f_auto')}" style="width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
         : noPhotoBox;
       const retroHTML = retroFig?.img
-        ? `<img src="${cloudinaryUrl(retroFig.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+        ? `<img src="${cloudinaryUrl(retroFig.img, 'w_800,h_800,c_fit,q_auto,f_auto')}" style="width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
         : noPhotoBox;
+      // v6.031 (Franco) - come nel tab Variazioni (v6.030): il sottonome su una riga sua, in
+      // azzurro, e il link resta sulla prima. Il sottonome non entra nel link, come sulle card:
+      // e' un pezzo del nome, non un secondo posto dove cliccare.
+      const _capSotto = retroFig ? _retroSottonome(retroFig, getData('figurines', [])) : '';
       const retroCaption = retroFig
-        ? `<div style="font-size:0.72rem;text-align:center;margin-top:4px;"><a href="#" onclick="openFigDetail('${retroFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(_retroNomeCompleto(retroFig))} ↗</a></div>` /* v6.022 */
+        ? `<div style="font-size:0.72rem;text-align:center;margin-top:4px;"><a href="#" onclick="openFigDetail('${retroFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(_retroNomeCompletoSenzaSottonome(retroFig, getData('figurines', [])))} ↗</a>${_capSotto ? `<div style="color:var(--info);margin-top:1px;">${esc(_capSotto)}</div>` : ''}</div>` /* v6.031 */
         : '';
       photoEl.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
@@ -18987,21 +19228,32 @@ function openFigDetail(figId) {
     }
   }
 
-  // Mia lista toggle
-  if (currentUser) {
-    rows.push(`<div class="detail-row detail-row-mylist" style="align-items:center;">
-      <span class="detail-label">${currentLang === 'it' ? "Mia lista" : 'My list'}</span>
+  // v6.028 (Franco) - "Mia lista" e il cuore "Ciò che cerco" stanno SOTTO LA FOTO, centrati, in
+  // tutte le schede. Prima erano due righe etichetta/valore nella colonna delle informazioni, in
+  // mezzo ai dati: sono gli unici due COMANDI di quella colonna, e stavano vestiti da dati.
+  // Sotto la foto ci vanno bene anche su telefono senza nessuna regola in piu': li' il CSS mette
+  // gia' #fig-detail-photo (order:-1) prima di #fig-detail-content, quindi restano attaccati alla
+  // foto in entrambe le larghezze.
+  // Gli id restano `fig-detail-toggle` e `fig-detail-wishlist-btn`: toggleOwnedFromDetail (~20020)
+  // e toggleWishlistFromDetail (~24029) li ripescano per id dopo il clic, e spostare il nodo senza
+  // portarsi dietro l'id avrebbe rotto l'aggiornamento del bottone in silenzio.
+  // Nota: in css/style.css restano le regole mobile per .detail-row-mylist/.detail-row-wishlist
+  // dentro #fig-detail-content (li affiancavano al 49%); ora non trovano piu' nulla. Non le tolgo
+  // qui perche' vivono nel file grande, che si tocca a parte.
+  if (currentUser && photoEl) {
+    const _azioni = [];
+    _azioni.push(`<span style="display:inline-flex;align-items:center;gap:0.45rem;">
+      <span style="font-size:0.8rem;color:var(--muted);">${currentLang === 'it' ? 'Mia lista' : 'My list'}</span>
       <button class="owned-btn ${isOwned ? 'on' : ''}" id="fig-detail-toggle" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista':'In your list') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="toggleOwnedFromDetail('${f.id}')">\u2713</button>
-    </div>`);
-  }
-
-  // Cuore "Ciò che cerco" (solo per utenti non-admin)
-  if (currentUser && !isAdmin) {
-    const inWishlist = _wishlist.includes(f.id);
-    rows.push(`<div class="detail-row detail-row-wishlist" style="align-items:center;">
-      <span class="detail-label">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</span>
-      <button id="fig-detail-wishlist-btn" data-fig-id="${f.id}" onclick="event.stopPropagation();toggleWishlistFromDetail('${f.id}')" title="${currentLang === 'it' ? (inWishlist ? 'Togli da &quot;Ciò che cerco&quot;' : 'Aggiungi a &quot;Ciò che cerco&quot;') : (inWishlist ? 'Remove from &quot;What I\'m looking for&quot;' : 'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist ? 'rgba(var(--danger-rgb),0.15)' : 'transparent'};border:1px solid ${inWishlist ? 'var(--danger)' : 'rgba(255,255,255,0.15)'};color:${inWishlist ? 'var(--danger)' : 'var(--muted)'};border-radius:8px;padding:3px 10px;cursor:pointer;font-size:1.1rem;line-height:1;position:relative;z-index:2;">${inWishlist ? '❤️' : '♡'}</button>
-    </div>`);
+    </span>`);
+    if (!isAdmin) {
+      const inWishlist = _wishlist.includes(f.id);
+      _azioni.push(`<span style="display:inline-flex;align-items:center;gap:0.45rem;">
+        <span style="font-size:0.8rem;color:var(--muted);">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</span>
+        <button id="fig-detail-wishlist-btn" data-fig-id="${f.id}" onclick="event.stopPropagation();toggleWishlistFromDetail('${f.id}')" title="${currentLang === 'it' ? (inWishlist ? 'Togli da &quot;Ciò che cerco&quot;' : 'Aggiungi a &quot;Ciò che cerco&quot;') : (inWishlist ? 'Remove from &quot;What I\'m looking for&quot;' : 'Add to &quot;What I\'m looking for&quot;')}" style="background:${inWishlist ? 'rgba(var(--danger-rgb),0.15)' : 'transparent'};border:1px solid ${inWishlist ? 'var(--danger)' : 'rgba(255,255,255,0.15)'};color:${inWishlist ? 'var(--danger)' : 'var(--muted)'};border-radius:8px;padding:3px 10px;cursor:pointer;font-size:1.1rem;line-height:1;position:relative;z-index:2;">${inWishlist ? '❤️' : '♡'}</button>
+      </span>`);
+    }
+    photoEl.insertAdjacentHTML('beforeend', `<div id="fig-detail-photo-actions" style="display:flex;justify-content:center;align-items:center;gap:1.5rem;flex-wrap:wrap;margin-top:0.9rem;">${_azioni.join('')}</div>`);
   }
 
   // Figurine collegate (variazioni/change di cui questa è la base) — tab
@@ -19052,19 +19304,80 @@ function openFigDetail(figId) {
 
 // Costruisce l'HTML con i tab delle figurine collegate (variazioni/change)
 // di cui la figurina "baseId" è la base. Restituisce '' se non ce ne sono.
+// v6.023 (Franco) - chi USA un retro. Il collegamento retro->figurina non esiste come campo:
+// esiste solo il verso opposto (figurina.retroId), quindi l'elenco si costruisce scorrendo le
+// figurine. Due modi di puntare allo stesso retro, e restano DISTINTI perche' non sono la stessa
+// cosa:
+//   - diretto:   la figurina ha retroId = questo retro (dato scritto sul suo record);
+//   - ereditato: un Change SENZA retroId proprio, la cui BASE punta qui. E' la stessa regola di
+//                _effRetroId che usa la griglia (~16525). Ometterla farebbe comparire quel Change
+//                col retro nella griglia e non qui: due punti che mostrano la stessa cosa e non
+//                concordano, cioe' il difetto chiuso con la v6.022.
+// I retro non compaiono: un retro non "usa" un retro.
+// v6.024 (Franco) - la foto da mostrare per un oggetto, in un posto solo. Una Variazione/Change
+// e' essenzialmente un COLLEGAMENTO (figurina base + retro): spessissimo non ha una foto propria,
+// e la sua faccia e' quella della base. La griglia lo sapeva gia' e lo faceva inline (~16525); i
+// tab dei collegati no, e mostravano il segnaposto 🖼️ proprio sulle righe che una foto ce
+// l'hanno. Due punti che mostrano la stessa cosa e non concordavano: la regola sta qui, e la
+// leggono entrambi.
+function _fotoFigurina(f, allFigs) {
+  if (!f) return null;
+  if (f.img) return f.img;
+  // v5.785 - f.section, non currentSection: vale anche fuori dalla griglia (la scheda, i tab).
+  if (f.section === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
+    const base = (allFigs || getData('figurines', [])).find(x => x.id === f.baseFigurineId);
+    if (base && base.img) return base.img;
+  }
+  return null;
+}
+
+function _figurineCheUsanoIlRetro(retroId, allFigs) {
+  const figs = allFigs || getData('figurines', []);
+  const byId = new Map(figs.map(f => [f.id, f]));
+  const items = [];
+  const ereditati = new Set();
+  figs.forEach(f => {
+    if (!f || f.id === retroId || f.section === 'retros') return;
+    if (f.retroId === retroId) { items.push(f); return; }
+    if (f.isChange && !f.retroId && f.baseFigurineId) {
+      const base = byId.get(f.baseFigurineId);
+      if (base && base.retroId === retroId) { items.push(f); ereditati.add(f.id); }
+    }
+  });
+  items.sort((a, b) => (a.number || 0) - (b.number || 0)
+    || String(a.name || '').localeCompare(String(b.name || ''), 'it', { sensitivity: 'base' }));
+  return { items, ereditati };
+}
+
 function buildLinkedFiguresTabsHTML(baseId) {
-  const linked = getData('figurines', []).filter(x => x.baseFigurineId === baseId);
-  if (!linked.length) return '';
+  const allFigs = getData('figurines', []);
+  const linked = allFigs.filter(x => x.baseFigurineId === baseId);
+  // v6.023 - il tab "Figurine che usano questo retro" solo nella scheda di un RETRO: altrove non
+  // vorrebbe dire niente. Il primo dei tab, perche' e' la domanda che si fa aprendo un retro.
+  const _self = allFigs.find(x => x.id === baseId);
+  const _selfRetro = !!_self && _self.section === 'retros'; // v6.025 - unica fonte: la usano il tab nuovo e i nomi dei due tab sotto
+  const _usano = _selfRetro
+    ? _figurineCheUsanoIlRetro(baseId, allFigs)
+    : { items: [], ereditati: new Set() };
+  if (!linked.length && !_usano.items.length) return '';
 
   const groups = [
+    { key: 'usaRetro', label: currentLang === 'it' ? 'Figurine che usano questo retro' : 'Figurines using this back', icon: '🎴', items: _usano.items, ereditati: _usano.ereditati },
     { key: 'variation', label: currentLang === 'it' ? 'Variazioni ufficiali' : 'Official variations', icon: '🎨', items: linked.filter(x => x.isVariation) },
     { key: 'unofficialVariation', label: currentLang === 'it' ? 'Variazioni non ufficiali' : 'Unofficial variations', icon: '🎨', items: linked.filter(x => x.isUnofficialVariation) },
-    { key: 'change', label: 'Change', icon: '🔄', items: linked.filter(x => x.isChange) },
+    // v6.025 (Franco) - nella scheda di un RETRO i due tab dicono "di questo retro", in parallelo
+    // col tab delle figurine. Altrove NO: nella scheda di una figurina i Change elencati sono
+    // della figurina, e chiamarli "di questo retro" sarebbe semplicemente falso. La condizione e'
+    // la stessa che accende il tab nuovo (_self e' un retro), non una seconda idea di "sono in un
+    // retro".
+    { key: 'change', label: _selfRetro ? (currentLang === 'it' ? 'Change di questo retro' : 'Changes of this back') : 'Change', icon: '🔄', items: linked.filter(x => x.isChange) },
     // v6.015 (Franco) - gli ERRORI DI STAMPA mancavano: erano l'unico dei quattro tipi non
     // elencato qui, rimasto indietro dalla v5.711 quando hanno smesso di essere un
     // sottotipo di Change e sono diventati un tipo a se'. Chi apriva un retro con un errore
     // di stampa collegato non aveva modo di arrivarci dalla sua scheda.
-    { key: 'printError', label: currentLang === 'it' ? 'Errori di stampa' : 'Print errors', icon: '🖨️', items: linked.filter(x => x.isPrintError) },
+    { key: 'printError', label: _selfRetro
+        ? (currentLang === 'it' ? 'Errori di stampa di questo retro' : 'Print errors of this back')
+        : (currentLang === 'it' ? 'Errori di stampa' : 'Print errors'), icon: '🖨️', items: linked.filter(x => x.isPrintError) },
   ].filter(g => g.items.length > 0);
 
   if (!groups.length) return '';
@@ -19078,11 +19391,36 @@ function buildLinkedFiguresTabsHTML(baseId) {
   html += '</div>';
 
   groups.forEach((g, i) => {
+    // v6.033 - gli id di QUESTO gruppo: diventano l'elenco su cui scorrono le frecce quando si
+    // apre una di queste righe. Serializzati con &quot; perche' l'attributo onclick sta fra
+    // virgolette doppie; il browser decodifica le entita' prima di dare la stringa a JS.
+    const _idsGruppo = JSON.stringify(g.items.map(x => x.id)).replace(/"/g, '&quot;');
     html += `<div class="linked-fig-tab-panel" data-tab="${g.key}" style="${i===0?'':'display:none;'}">`;
     html += '<div style="display:flex;flex-direction:column;gap:0.4rem;">';
     g.items.forEach(item => {
       let label;
-      if (g.key === 'change' || g.key === 'printError') {
+      let labelExtra = ''; // v6.030 - seconda riga (oggi: il sottonome del retro)
+      if (g.key === 'usaRetro') {
+        // v6.023 - Numero + Nome completo (scelta di Franco). Il Nome completo e' il campo SALVATO,
+        // con ripiego su computeFullName(): la stessa coppia di _retroNomeCompleto, per non tenere
+        // due idee diverse di "nome completo" dentro la stessa scheda.
+        // v6.024 (Franco) - via il nome del RETRO dalle righe: siamo dentro la scheda di quel
+        // retro, quindi e' l'unica cosa che TUTTE le righe hanno in comune, e ripeterla su ognuna
+        // non distingue niente. Riguarda le sole Variazioni: per loro computeFullName() fa
+        // "Nome - <retro>" (~20264), che altrove e' giusto perche' li' il retro e' cio' che le
+        // distingue fra loro. Gli altri tipi NON si toccano: per un Change il suffisso e' il TIPO
+        // e per un errore di stampa e' il tipo di errore - li' il suffisso E' l'identita' della
+        // riga, non un di piu'.
+        const _isVar = item.isVariation || item.isUnofficialVariation;
+        const nome = _isVar
+          ? (item.name || item.fullName || '')
+          : ((item.fullName && item.fullName.trim()) ? item.fullName : computeFullName(item, allFigs));
+        const num = (!item.noNumber && item.number) ? '#' + item.number + ' \u2014 ' : '';
+        label = num + (nome || item.name || '');
+        // Il "(dalla base)" non e' un dettaglio estetico: dice che quella riga viene da un dato che
+        // sul record NON c'e', e che quindi cambia da sola se si cambia il retro della base.
+        if (g.ereditati && g.ereditati.has(item.id)) label += currentLang === 'it' ? ' (dalla base)' : ' (from base)';
+      } else if (g.key === 'change' || g.key === 'printError') {
         // Mostriamo il TIPO (più utile del Nome, che coincide con quello della base).
         // v5.779 — vale sia per i Change di Retro sia per quelli di figurina, entrambi con Tipo.
         // v6.015 — e per gli Errori di stampa, che hanno il loro printErrorType: senza, due
@@ -19091,14 +19429,23 @@ function buildLinkedFiguresTabsHTML(baseId) {
       } else {
         // Per le Variazioni il Nome coincide sempre con quello della figurina base: inutile
         // ripeterlo. Mostriamo invece il Retro collegato (Categoria + Nome), la vera chiave
-        const retroFig = item.retroId ? getData('figurines', []).find(x => x.id === item.retroId) : null;
+        // v6.030 (Franco) - il SOTTONOME va sulla seconda riga. Nella colonna c'e' spazio in
+        // verticale ma non in orizzontale: la riga andava a capo da sola, e spezzata a caso.
+        // Cosi' invece la prima riga porta gli stessi campi del Nome completo MENO il sottonome, e
+        // il sottonome sta sotto, in azzurro - lo stesso schema che la card della sezione Retro e
+        // la card di una figurina usano gia' (~16761, ~16817), quindi non e' una forma nuova.
+        // Riguarda 48 retro su 1013: per tutti gli altri la riga resta identica a prima.
+        const retroFig = item.retroId ? allFigs.find(x => x.id === item.retroId) : null;
         label = retroFig
-          ? _retroNomeCompleto(retroFig) /* v6.022 */
+          ? _retroNomeCompletoSenzaSottonome(retroFig, allFigs) /* v6.030 */
           : (currentLang === 'it' ? 'Nessun Retro collegato' : 'No Retro linked');
+        const _sotto = retroFig ? _retroSottonome(retroFig, allFigs) : '';
+        if (_sotto) labelExtra = `<div style="font-size:0.78rem;color:var(--info);margin-top:1px;">${esc(_sotto)}</div>`;
       }
-      html += `<a href="#" onclick="openFigDetail('${item.id}');return false;" style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;border-radius:8px;background:var(--card2);text-decoration:none;color:var(--text);font-size:0.85rem;">
-        ${item.img ? `<img src="${cloudinaryUrl(item.img,'w_60,h_60,c_fit,q_auto,f_auto')}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;background:var(--card);">` : '<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">🖼️</span>'}
-        <span>${label}</span>
+      const _foto = _fotoFigurina(item, allFigs); // v6.024 - foto propria, o della base
+      html += `<a href="#" onclick="openFigDetail('${item.id}', ${_idsGruppo});return false;" style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;border-radius:8px;background:var(--card2);text-decoration:none;color:var(--text);font-size:0.85rem;">
+        ${_foto ? `<img src="${cloudinaryUrl(_foto,'w_60,h_60,c_fit,q_auto,f_auto')}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;background:var(--card);">` : '<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">🖼️</span>'}
+        <span>${esc(label)}${labelExtra}</span>
       </a>`;
     });
     html += '</div></div>';
@@ -20335,10 +20682,40 @@ function _retroNomeCorto(retro) {
   return retro ? (retro.name || '').trim() : '';
 }
 
-function _retroFullName(fig, allFigs) {
-  const base = (fig.isChange || fig.isPrintError)
-    ? ((fig.baseFigurineId ? allFigs.find(x => x.id === fig.baseFigurineId) : null) || fig)
+// v6.030 - il retro da cui si prendono nome, categoria, sottocategoria e sottonome: per un Change
+// o un errore di stampa e' il retro COLLEGATO, altrimenti e' il retro stesso. Era scritto dentro
+// _retroFullName; ora sta qui perche' lo chiede anche chi vuole il solo SOTTONOME, e le due cose
+// devono pescare dallo stesso record - se no la prima riga direbbe il nome di un retro e la
+// seconda il sottonome di un altro.
+function _retroBaseDelNome(fig, allFigs) {
+  if (!fig) return null;
+  const figs = allFigs || getData('figurines', []);
+  return (fig.isChange || fig.isPrintError)
+    ? ((fig.baseFigurineId ? figs.find(x => x.id === fig.baseFigurineId) : null) || fig)
     : fig;
+}
+
+// v6.030 - il SOTTONOME da mostrare per un retro (quello del suo retro base, vedi sopra).
+function _retroSottonome(fig, allFigs) {
+  const b = _retroBaseDelNome(fig, allFigs);
+  return b ? (b.subname || '').trim() : '';
+}
+
+// v6.030 (Franco) - il Nome completo SENZA il sottonome, per chi mette il sottonome su una riga
+// sua. Non si taglia una stringa gia' fatta - sarebbe la toppa a valle che la v5.980 ha tolto -
+// si ricostruisce con la stessa regola chiedendo il nome CORTO invece del lungo.
+// Quando il retro non ha sottonome le due forme coincidono, e allora si usa il `fullName` SALVATO
+// come fa tutto il resto: cosi' 965 retro su 1013 continuano a leggere il dato memorizzato, e solo
+// i 48 che un sottonome ce l'hanno passano dal ricalcolo (dove comunque il salvato conterrebbe il
+// sottonome, cioe' proprio cio' che qui non si vuole).
+function _retroNomeCompletoSenzaSottonome(fig, allFigs) {
+  const figs = allFigs || getData('figurines', []);
+  if (!_retroSottonome(fig, figs)) return _retroNomeCompleto(fig);
+  return _retroFullName(fig, figs, true);
+}
+
+function _retroFullName(fig, allFigs, senzaSottonome) {
+  const base = _retroBaseDelNome(fig, allFigs);
   const cat = (base.category || '').trim();
   // v5.980 — NOME LUNGO e NOME CORTO di un retro. Il Nome di alcuni retro è fatto di due parti:
   // il nome vero e proprio e un SOTTONOME, che nella carta è scritto da un'altra parte del
@@ -20347,7 +20724,7 @@ function _retroFullName(fig, allFigs) {
   // un'informazione compressa a monte.
   // Ora sono due campi. Il Nome completo, che è ciò che si VEDE ovunque nel sito, li rimette
   // insieme: a schermo non cambia niente. È il titolo eBay che userà il nome corto.
-  const nomeLungo = _retroNomeLungo(base);
+  const nomeLungo = senzaSottonome ? _retroNomeCorto(base) : _retroNomeLungo(base); // v6.030
   // v6.021 (Franco) — LA SOTTOCATEGORIA entra nel Nome completo. Come categoria e nome, si legge
   // dalla BASE: un Change e un errore di stampa condividono con la base nome, categoria e
   // sottocategoria (regola di Franco). Sui 4 Change di Serie 2 che avevano un `subcategory`
