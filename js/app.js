@@ -1,6 +1,31 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.020 - Pagina Figurine da telefono: nuovo interruttore "Mostra retro", e il selettore
+//          "Modalita' visualizzazione" sparisce quando non serve. Chiesto da Franco.
+//          Modificato index.html (solo i punti di versione) e app.js.
+//          IL PROBLEMA, notato da Franco: col filtro "Figurine set base" su telefono i retro non
+//          si vedono (v5.853), ma il selettore delle cinque modalita' restava li'. Nessuna delle
+//          cinque cambiava qualcosa, perche' agiscono tutte dentro il ramo saltato da _soloFronte.
+//          Un comando che c'e', si muove, e non fa niente.
+//          E ne faceva una sbagliata: "Fronte e retro sempre grandi" e' letto anche FUORI da quel
+//          ramo (useFlexForWideMode, isWideFlexMode) e passava comunque la griglia da grid a flex
+//          con card a 247px fissi. Non un'opzione inerte quindi, ma un effetto collaterale.
+//          COSA CAMBIA:
+//          (1) il selettore compare solo se i retro si vedono davvero;
+//          (2) nuovo interruttore "Mostra retro" accanto a "Mostra nomi", visibile SOLO quando i
+//              retro sarebbero nascosti. Acceso: tornano le immagini dei retro e ricompare il
+//              selettore delle modalita'. L'etichetta segue lo stato come quella accanto
+//              ("Nascondi retro" da acceso). NON si salva: ogni apertura riparte spenta (Franco);
+//          (3) il NOME del retro resta nascosto anche a interruttore acceso (Franco): _hideRetroName
+//              non e' stato toccato. L'interruttore parla delle immagini;
+//          (4) useFlexForWideMode e isWideFlexMode ora chiedono anche !_soloFronteMobile().
+//          LA CONDIZIONE E' UNA SOLA: _soloFronteMobile(). Stava scritta due volte - in renderItems
+//          e in _itemHasWidePair - e il commento di quest'ultima ammetteva che erano "due copie
+//          della stessa verita'". Aggiungendo lo stato nuovo sarebbero diventate quattro copie.
+//          Il contenitore dei due interruttori si accende se ne serve ALMENO UNO: legarlo alla
+//          condizione di "Mostra nomi" avrebbe fatto sparire "Mostra retro" nelle serie marcate
+//          "Non ha numeri", dove invece serve come dappertutto.
 // v6.019 - HOME: i numeroni verdi ora stanno ATTORNO al logo, due per lato. Chiesto da Franco.
 //          Modificato index.html e app.js.
 //          Sopra Lingue e Collezionisti, a sinistra Serie e Figurine, a destra Retro e Bustine,
@@ -10264,7 +10289,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.019';
+const JS_VERSION = 'v6.020';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11406,6 +11431,40 @@ let _figLabelMode = 'full';   // v5.848 — default: nomi MOSTRATI (prima 'numbe
 try { const _m = localStorage.getItem('sgorbions_fig_label_mode'); if (_m === 'number' || _m === 'full') _figLabelMode = _m; } catch(e) {}
 function _isMobileViewport() { return window.matchMedia('(max-width: 860px)').matches; }
 function _figLabelOnlyNumber() { return _isMobileViewport() && _figLabelMode === 'number'; }
+
+// v6.020 — "MOSTRA RETRO" quando su telefono il filtro "Figurine set base" li nasconde.
+// Dalla v5.853 con quel filtro attivo la card mostra il solo fronte: sono tutte figurine base,
+// affiancare il retro dimezzava il fronte senza distinguere niente. Resta vero come DEFAULT, ma
+// da qui in poi e' una scelta dell'utente e non piu' un fatto: l'interruttore sta accanto a
+// "Mostra nomi" e compare SOLO nella situazione in cui i retro sarebbero nascosti.
+// NON si salva in localStorage (scelta di Franco): ogni apertura del sito riparte spenta, come
+// _retroViewMode e a differenza di _figLabelMode. Dentro la sessione invece regge, cosi'
+// cambiare filtro e tornare su "base" non fa perdere la scelta appena fatta.
+let _mostraRetroSoloBase = false;
+
+// LA condizione "su telefono si vede il solo fronte". Prima della v6.020 stava scritta due volte,
+// in renderItems e in _itemHasWidePair, e il commento di quest'ultima diceva apertamente che
+// erano "due copie della stessa verita' e l'unica difesa e' che questo commento lo dica".
+// Con l'aggiunta di _mostraRetroSoloBase le copie sarebbero diventate tre: qui diventa una.
+// Chi la chiama da _itemHasWidePair guarda currentSection e non f.section, ma quella funzione
+// esce gia' prima se f.section !== 'figurines', e viene chiamata solo mentre si impagina la
+// sezione corrente: le due letture coincidono.
+function _soloFronteMobile() {
+  return _isMobileViewport()
+      && currentSection === 'figurines'
+      && _itemTypeFilter === 'base'
+      && !_mostraRetroSoloBase;
+}
+// L'interruttore ha senso solo dove c'e' qualcosa da riaccendere: stessa condizione, ma senza
+// l'ultimo pezzo — altrimenti accendendolo sparirebbe il comando per rispegnerlo.
+function _mostraRetroToggleVisibile() {
+  return _isMobileViewport() && currentSection === 'figurines' && _itemTypeFilter === 'base';
+}
+function toggleMostraRetroSoloBase() {
+  _mostraRetroSoloBase = !_mostraRetroSoloBase;
+  currentItemPage = 1; // le card cambiano larghezza: la paginazione calcolata prima non vale piu'
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleMostraRetroSoloBase)', e); }
+}
 
 // v5.856 — descrizione della serie richiudibile, solo su telefono.
 function _setupSeriesDescToggle(desc) {
@@ -13986,10 +14045,12 @@ function _figIndex(allFigs) {
 // controllo sulla modalita': la card larga esiste solo in 'destra-piena'.
 // Se un giorno cambia il ramo in renderItems, va cambiato qui: sono due copie della stessa
 // verita', e l'unica difesa e' che questo commento lo dica.
+// v6.020 — del "solo fronte" non e' piu' una copia: chiama _soloFronteMobile(), la stessa
+// funzione che usa renderItems. Restano copie i controlli su modalita' e coppia fronte/retro.
 function _itemHasWidePair(f, allFigs, idx) {
   if (f.section !== 'figurines') return false;
   if (_retroViewMode !== 'destra-piena') return false;
-  if (_isMobileViewport() && _itemTypeFilter === 'base') return false; // _soloFronte
+  if (_soloFronteMobile()) return false;
   const get = id => (idx ? idx.get(id) : allFigs.find(x => x.id === id));
   const isBaseFig = !f.isVariation && !f.isUnofficialVariation && !f.isChange;
   const baseForChange = (f.isChange && f.baseFigurineId) ? get(f.baseFigurineId) : null;
@@ -16138,10 +16199,15 @@ function renderItems() {
   // Specchietto "Change per Tipo di change" (solo sezione Figurine) — v5.809
   try { renderChangeTypeSummaries(); } catch(e) { console.error('renderChangeTypeSummaries', e); }
 
-  // Selettore "Vista retro" — visibile solo nella sezione Figurine, per tutti
+  // Selettore "Vista retro" — visibile solo nella sezione Figurine, per tutti.
+  // v6.020 (Franco) — e SOLO se i retro si vedono davvero. Quando su telefono "Figurine set base"
+  // li nasconde, le cinque voci non producono nessuna immagine diversa: il selettore c'era, si
+  // muoveva e non faceva niente. Peggio, "Fronte e retro sempre grandi" era letto anche fuori dal
+  // ramo delle immagini e cambiava comunque la disposizione della griglia (vedi useFlexForWideMode
+  // e isWideFlexMode, corretti anch'essi). Un comando inerte e uno con un effetto che non c'entra.
   const retroViewSelector = document.getElementById('retro-view-selector');
   if (retroViewSelector) {
-    retroViewSelector.style.display = currentSection === 'figurines' ? 'flex' : 'none';
+    retroViewSelector.style.display = (currentSection === 'figurines' && !_soloFronteMobile()) ? 'flex' : 'none';
     const sel = document.getElementById('retro-view-mode-select');
     if (sel && sel.value !== _retroViewMode) sel.value = _retroViewMode;
   }
@@ -16150,21 +16216,40 @@ function renderItems() {
   // Compare SOLO sotto la soglia mobile, SOLO nella sezione Figurine e SOLO se la serie ha i
   // numeri: in una serie marcata "Non ha numeri" nascondere il nome lascerebbe la card muta.
   // Sul desktop resta display:none, quindi la barra dei controlli e' identica a prima.
+  // v6.020 — nello stesso contenitore vivono ora DUE interruttori, e ognuno ha la sua condizione:
+  // "Mostra nomi" dipende dal flag "Non ha numeri" della serie, "Mostra retro" dal filtro tipo.
+  // Il contenitore si accende se ne serve almeno uno: legarlo alla condizione del primo avrebbe
+  // fatto sparire il secondo nelle serie senza numeri, dove invece serve esattamente come altrove.
   const figLabelSelector = document.getElementById('fig-label-selector');
   if (figLabelSelector) {
-    const showIt = (currentSection === 'figurines') && _isMobileViewport() && _serieHaNumeri();
-    figLabelSelector.style.display = showIt ? 'flex' : 'none';
-    if (showIt) {
+    const inFigurineMobile = (currentSection === 'figurines') && _isMobileViewport();
+    const showNomi  = inFigurineMobile && _serieHaNumeri();
+    const showRetro = _mostraRetroToggleVisibile();
+    figLabelSelector.style.display = (showNomi || showRetro) ? 'flex' : 'none';
+    const gruppo = (html, staccato) =>
+      `<span style="display:inline-flex;align-items:center;gap:0.4rem;${staccato ? 'margin-left:0.7rem;' : ''}">${html}</span>`;
+    let html = '';
+    if (showNomi) {
       const on = (_figLabelMode === 'full');
       const lab = on
         ? (currentLang === 'it' ? 'Nascondi nomi' : 'Hide names')
         : (currentLang === 'it' ? 'Mostra nomi' : 'Show names');
-      figLabelSelector.innerHTML =
+      html += gruppo(
         `<button class="toggle-btn-blue ${on ? 'on' : ''}" onclick="toggleFigLabelMode()" title="${lab}"></button>` +
-        `<span style="font-size:0.82rem;color:var(--text);">${lab}</span>`;
-    } else {
-      figLabelSelector.innerHTML = '';
+        `<span style="font-size:0.82rem;color:var(--text);">${lab}</span>`, false);
     }
+    if (showRetro) {
+      // L'etichetta segue lo stato, come quella accanto: spento "Mostra retro", acceso
+      // "Nascondi retro". Due comandi vicini che si comportano allo stesso modo.
+      const onR = _mostraRetroSoloBase;
+      const labR = onR
+        ? (currentLang === 'it' ? 'Nascondi retro' : 'Hide backs')
+        : (currentLang === 'it' ? 'Mostra retro' : 'Show backs');
+      html += gruppo(
+        `<button class="toggle-btn-blue ${onR ? 'on' : ''}" onclick="toggleMostraRetroSoloBase()" title="${labR}"></button>` +
+        `<span style="font-size:0.82rem;color:var(--text);">${labR}</span>`, showNomi);
+    }
+    figLabelSelector.innerHTML = html;
   }
 
   // v5.978 — indice id -> oggetto costruito UNA VOLTA, fuori dal comparatore. Dentro, ogni
@@ -16271,7 +16356,9 @@ function renderItems() {
   // descriverebbe il render PRECEDENTE.
 
   if (currentSection === 'retros' || currentSection === 'figurines') {
-    const useFlexForWideMode = currentSection === 'figurines' && _retroViewMode === 'destra-piena';
+    // v6.020 — !_soloFronteMobile(): senza retro in griglia nessuna card e' larga, quindi il
+    // passaggio a flex non serviva a niente e cambiava comunque la disposizione delle card.
+    const useFlexForWideMode = currentSection === 'figurines' && _retroViewMode === 'destra-piena' && !_soloFronteMobile();
     if (useFlexForWideMode) {
       grid.style.display = 'flex';
       grid.style.flexWrap = 'wrap';
@@ -16388,7 +16475,7 @@ function renderItems() {
     // ogni card falliva, la griglia restava col segnaposto "nessun risultato" gia' presente in
     // index.html, mentre il conteggio - calcolato prima - diceva giustamente che i risultati
     // c'erano. Le condizioni si ricalcolano qui dai loro ingredienti.
-    const _soloFronte = _isMobileViewport() && currentSection === 'figurines' && _itemTypeFilter === 'base';
+    const _soloFronte = _soloFronteMobile(); // v6.020 — unica fonte, vedi _soloFronteMobile()
     if (!_soloFronte && (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && (f.retroId || _retroBianco)) || (f.isChange && f.baseFigurineId && _effRetroId) || (isBaseFig && (f.retroId || _retroBianco)))) {
       const baseFigDual = isBaseFig ? f : (baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId));
       const retroFigDual = _retroBianco
@@ -16635,7 +16722,9 @@ function renderItems() {
                  (sotto ? `<div style="font-size:0.78rem;color:var(--info);">${esc(sotto)}</div>` : '');
         })()
       : '';
-    const isWideFlexMode = currentSection === 'figurines' && _retroViewMode === 'destra-piena';
+    // v6.020 — stessa aggiunta di useFlexForWideMode: le due devono dire la stessa cosa, una
+    // decide il contenitore e l'altra la larghezza delle card che ci vanno dentro.
+    const isWideFlexMode = currentSection === 'figurines' && _retroViewMode === 'destra-piena' && !_soloFronteMobile();
     const cardSpanStyle = isWideFlexMode
       ? (hasWidePair ? 'cursor:pointer;flex:0 0 350px;' : 'cursor:pointer;flex:0 0 247px;')
       : 'cursor:pointer;';
