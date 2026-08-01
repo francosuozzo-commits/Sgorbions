@@ -1,6 +1,29 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.022 - Il nome di un retro si scrive in UN POSTO SOLO. Segnalato da Franco. Solo app.js.
+//          IL SINTOMO: nella scheda di una figurina, il link al Retro mostrava la categoria
+//          ripetuta - "PERMESSO — PERMESSO DI RIPETERE L'ANNO" - mentre aprendo quel retro il suo
+//          Nome completo era giusto. Due punti che mostrano la stessa cosa e non concordano.
+//          LA CAUSA: CINQUE punti si componevano il nome a mano, con la forma
+//          "Categoria · Sottocategoria — Nome" scritta prima che esistesse computeFullName()
+//          (v5.751). Nessuno di loro leggeva `fullName`, quindi il ricalcolo dei Nomi completi
+//          fatto con la v6.021 non poteva sistemarli - e infatti non li ha sistemati. Tutti e
+//          cinque antepongono la categoria SEMPRE, anche quando il Nome gia' la contiene: e' la
+//          stessa regola che _retroNameStartsWithCategory conosce e che loro ignoravano.
+//          LA CORREZIONE: nuova _retroNomeCompleto(r) = `fullName` salvato, o computeFullName()
+//          se manca. La chiamano tutti e cinque:
+//            (1) link sotto l'immagine del Retro nella scheda di una figurina (~18930)
+//            (2) etichetta dei collegati, es. elenco "Variazioni ufficiali" (~19055)
+//            (3) riga "Retro" nella scheda di una variazione (~18875)
+//            (4) anteprima "✓ ..." dopo aver scelto un retro nella form (~14797)
+//            (5) ripiego di _baseFigurineLinkLabel (~14675) e base di _retroLinkLabel
+//          NON toccati, per scelta: le due tendine di ricerca (categoria su riga grigia separata,
+//          sotto il nome giusto - e' un dato a parte, non un nome), la card della sezione Retro
+//          (categoria su riga propria, v5.765) e lo strumento admin sui duplicati d'import, dove
+//          Categoria+Nome e' proprio la chiave di cui il testo parla.
+//          Il ripiego ora dice la stessa cosa della regola. Un ripiego che inventa una forma sua
+//          e' peggio che non averlo: mente esattamente quando entra in funzione.
 // v6.021 - Il Nome completo dei RETRO usa anche la SOTTOCATEGORIA. Chiesto da Franco.
 //          Modificato index.html (solo i punti di versione) e app.js.
 //          Dove va: subito DOPO la categoria, preceduta da " - ". Ma la sottocategoria non fa mai
@@ -10308,7 +10331,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.021';
+const JS_VERSION = 'v6.022';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -14690,11 +14713,10 @@ function _baseFigurineLinkLabel(f) {
   // Per i RETRO l'etichetta è il NOME COMPLETO (richiesta di Franco: elenco base ordinato/mostrato per
   // Nome completo), con fallback alla vecchia forma "Categoria · Sottocategoria — Nome" se il fullName
   // non è ancora stato calcolato. Per le Figurine: "#numero Nome".
-  if (f.section === 'retros') {
-    if (f.fullName && f.fullName.trim()) return f.fullName;
-    const parts = [f.category, f.subcategory].map(v => (v||'').trim()).filter(Boolean);
-    return (parts.length ? parts.join(' · ') + ' — ' : '') + (f.name || '');
-  }
+  // v6.022 — il ripiego non si riscrive piu' la vecchia forma "Categoria · Sottocategoria — Nome":
+  // chiede a _retroNomeCompleto(), che sa la regola vera. Era questo a produrre
+  // "PREMIO — PREMIO DI MIGLIOR ATTORE" sui 94 retro il cui Nome inizia con la categoria.
+  if (f.section === 'retros') return _retroNomeCompleto(f);
   return (f.number ? '#' + f.number + ' ' : '') + (f.name || '');
 }
 
@@ -14763,6 +14785,25 @@ function clearBaseFigurineLinkIfEmpty() {
   }, 200);
 }
 
+// v6.022 (Franco) — IL NOME DI UN RETRO SI SCRIVE IN UN POSTO SOLO.
+// Prima della v6.022 erano CINQUE i punti che se lo componevano a mano, tutti con la stessa forma
+// "Categoria · Sottocategoria — Nome" scritta prima che computeFullName() esistesse (v5.751), e
+// tutti con lo stesso difetto: antepongono la categoria SEMPRE, anche quando il Nome gia' la
+// contiene. Da qui "PERMESSO — PERMESSO DI RIPETERE L'ANNO", segnalato da Franco.
+// Il ricalcolo dei Nomi completi non poteva sistemarli: non leggevano `fullName` affatto.
+// Regola: chi deve MOSTRARE il nome di un retro chiama questa. Il campo salvato resta la fonte;
+// il ricalcolo al volo e' solo la rete di sicurezza per un record scritto male o nuovissimo — e
+// dice la stessa cosa della regola, che e' il punto: un ripiego che inventa una forma sua e' come
+// non averlo, perche' mente proprio quando serve.
+// Restano fuori, e per scelta: le due tendine di ricerca, la card della sezione Retro e lo
+// strumento admin sui duplicati d'import. La' la categoria non e' parte del nome, e' un dato
+// mostrato a parte (riga propria, colore diverso) oppure e' la chiave di cui il testo parla.
+function _retroNomeCompleto(r) {
+  if (!r) return '';
+  if (r.fullName && r.fullName.trim()) return r.fullName;
+  return computeFullName(r, getData('figurines', []));
+}
+
 let _retroLinkOptions = [];
 // v5.786 — allSeries=true: pesca i Retro da QUALSIASI serie (per i Change di figurina, caso raro in cui
 // il Retro che "fa" il change non appartiene alla serie). Default false: solo la serie corrente (Variazioni).
@@ -14770,7 +14811,7 @@ let _retroLinkAllSeries = false;
 function _retroLinkLabel(r) {
   // Nome completo del retro se disponibile, altrimenti Nome (+ changeType). In modalità tutte-le-serie
   // anteponiamo la serie per distinguere retro omonimi di serie diverse.
-  const base = (r.fullName && r.fullName.trim()) ? r.fullName : _retroNomeLungo(r) + (r.changeType ? ' — ' + r.changeType : '');
+  const base = _retroNomeCompleto(r); // v6.022 — stessa fonte degli altri punti
   if (_retroLinkAllSeries) {
     const s = getData('series', []).find(x => x.id === r.seriesId);
     return (s ? '[' + s.name + '] ' : '') + base;
@@ -14794,7 +14835,7 @@ function populateRetroSelect(selectedId, allSeries) {
     const r = _retroLinkOptions.find(x => x.id === selectedId);
     if (r) {
       search.value = _retroNomeLungo(r) + (r.changeType ? ' — ' + r.changeType : '');
-      if (preview) { const parts = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean); preview.style.display = ''; preview.textContent = '✓ ' + (parts.length ? parts.join(' · ') + ' — ' : '') + _retroNomeLungo(r) + (r.changeType ? ' — ' + r.changeType : ''); }
+      if (preview) { preview.style.display = ''; preview.textContent = '✓ ' + _retroNomeCompleto(r); } // v6.022
     }
   } else {
     search.value = '';
@@ -18872,7 +18913,7 @@ function openFigDetail(figId) {
     const _varRetro = getData('figurines', []).find(x => x.id === f.retroId);
     if (_varRetro) {
       const _vp = [_varRetro.category, _varRetro.subcategory].map(v => (v||'').trim()).filter(Boolean);
-      rowsTop.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Retro' : 'Back'}</span><span class="detail-value"><a href="#" onclick="openFigDetail('${_varRetro.id}');return false;" style="color:var(--accent);text-decoration:underline;">${_vp.length ? _vp.join(' · ') + ' — ' : ''}${esc(_retroNomeLungo(_varRetro))} ↗</a></span></div>`);
+      rowsTop.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Retro' : 'Back'}</span><span class="detail-value"><a href="#" onclick="openFigDetail('${_varRetro.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(_retroNomeCompleto(_varRetro))} ↗</a></span></div>`);
     }
   }
   if ((f.isVariation || f.isUnofficialVariation || f.isChange || f.isPrintError) && f.baseFigurineId) {
@@ -18927,7 +18968,7 @@ function openFigDetail(figId) {
         ? `<img src="${cloudinaryUrl(retroFig.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
         : noPhotoBox;
       const retroCaption = retroFig
-        ? (() => { const parts = [retroFig.category, retroFig.subcategory].map(v => (v||'').trim()).filter(Boolean); return `<div style="font-size:0.72rem;text-align:center;margin-top:4px;"><a href="#" onclick="openFigDetail('${retroFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${parts.length ? parts.join(' · ') + ' — ' : ''}${_retroNomeLungo(retroFig)} ↗</a></div>`; })()
+        ? `<div style="font-size:0.72rem;text-align:center;margin-top:4px;"><a href="#" onclick="openFigDetail('${retroFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(_retroNomeCompleto(retroFig))} ↗</a></div>` /* v6.022 */
         : '';
       photoEl.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
@@ -19052,7 +19093,7 @@ function buildLinkedFiguresTabsHTML(baseId) {
         // ripeterlo. Mostriamo invece il Retro collegato (Categoria + Nome), la vera chiave
         const retroFig = item.retroId ? getData('figurines', []).find(x => x.id === item.retroId) : null;
         label = retroFig
-        ? (() => { const parts = [retroFig.category, retroFig.subcategory].map(v => (v||'').trim()).filter(Boolean); return parts.length ? parts.join(' · ') + ' — ' + _retroNomeLungo(retroFig) : _retroNomeLungo(retroFig); })()
+          ? _retroNomeCompleto(retroFig) /* v6.022 */
           : (currentLang === 'it' ? 'Nessun Retro collegato' : 'No Retro linked');
       }
       html += `<a href="#" onclick="openFigDetail('${item.id}');return false;" style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;border-radius:8px;background:var(--card2);text-decoration:none;color:var(--text);font-size:0.85rem;">
