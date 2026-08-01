@@ -1,6 +1,25 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.021 - Il Nome completo dei RETRO usa anche la SOTTOCATEGORIA. Chiesto da Franco.
+//          Modificato index.html (solo i punti di versione) e app.js.
+//          Dove va: subito DOPO la categoria, preceduta da " - ". Ma la sottocategoria non fa mai
+//          parte del Nome, quindi quando la categoria NON viene scritta - perche' il Nome gia' la
+//          contiene, o perche' e' vuota - la sottocategoria non ha piu' un posto in testa e va in
+//          CODA, dopo il nome. Senza questa seconda regola il caso piu' frequente (41 retro
+//          RICERCATO di Serie 2, il cui Nome inizia per "RICERCATO") perderebbe il colore.
+//            categoria scritta  ->  CATEGORIA - SOTTOCATEGORIA - Nome
+//            categoria omessa   ->  Nome - SOTTOCATEGORIA
+//          Per Change ed errori di stampa la sottocategoria si legge dalla BASE, come gia'
+//          categoria e nome: un Change condivide con la base nome, categoria e sottocategoria
+//          (regola di Franco). Il campo `subcategory` scritto sul record del Change non si guarda.
+//          Misurato prima di scrivere: 172 retro su 1013 hanno una sottocategoria, tutti con
+//          categoria valorizzata, e in nessuno la sottocategoria compare gia' nel nome. Sono
+//          concentrati in Serie 2: fuori di li' il Nome completo non cambia.
+//          Nota sui dati, emersa dalla stessa verifica: 4 Change di Serie 2 hanno `subcategory`
+//          ROSSO mentre la loro base dice BLU (allineati a mano). La categoria invece non diverge
+//          mai; il `name` diverge su 12 record, senza effetto sul Nome completo perche' anche
+//          quello viene dalla base.
 // v6.020 - Pagina Figurine da telefono: nuovo interruttore "Mostra retro", e il selettore
 //          "Modalita' visualizzazione" sparisce quando non serve. Chiesto da Franco.
 //          Modificato index.html (solo i punti di versione) e app.js.
@@ -10289,7 +10308,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.020';
+const JS_VERSION = 'v6.021';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -20288,9 +20307,22 @@ function _retroFullName(fig, allFigs) {
   // Ora sono due campi. Il Nome completo, che è ciò che si VEDE ovunque nel sito, li rimette
   // insieme: a schermo non cambia niente. È il titolo eBay che userà il nome corto.
   const nomeLungo = _retroNomeLungo(base);
-  // Parte iniziale (per un Retro base e' il 100% del Nome completo): "Categoria - Nome",
-  // oppure solo "Nome" se il Nome comincia gia' con la categoria (decisione per singolo retro).
-  const piece = _retroNameStartsWithCategory(base) ? nomeLungo : ((cat ? cat + ' - ' : '') + nomeLungo);
+  // v6.021 (Franco) — LA SOTTOCATEGORIA entra nel Nome completo. Come categoria e nome, si legge
+  // dalla BASE: un Change e un errore di stampa condividono con la base nome, categoria e
+  // sottocategoria (regola di Franco). Sui 4 Change di Serie 2 che avevano un `subcategory`
+  // PROPRIO e diverso da quello della base (ROSSO contro BLU, riconosciuti come errore e
+  // allineati a mano), quel campo qui non si guarda comunque: la base e' la fonte.
+  const sub = (base.subcategory || '').trim();
+  // Dove va: subito DOPO la categoria. Ma la sottocategoria non fa mai parte del Nome, quindi
+  // quando la categoria NON viene scritta (perche' il Nome gia' la contiene, o perche' e' vuota)
+  // la sottocategoria non ha piu' un posto in testa e va in CODA, dopo il nome. Senza questo,
+  // "RICERCATO/BLU/RICERCATO PER ABUSO D'UFFICIO" perderebbe il BLU per strada.
+  //   categoria scritta   ->  CATEGORIA - SOTTOCATEGORIA - Nome
+  //   categoria omessa    ->  Nome - SOTTOCATEGORIA
+  const categoriaOmessa = !cat || _retroNameStartsWithCategory(base);
+  const piece = categoriaOmessa
+    ? nomeLungo + (sub ? ' - ' + sub : '')
+    : cat + ' - ' + (sub ? sub + ' - ' : '') + nomeLungo;
   if (fig.isChange) {
     // v5.755 (Franco): per i Change niente più " - Change"; solo il Tipo di change, in MAIUSCOLO.
     return piece + ' - ' + (fig.changeType || '').toUpperCase();
