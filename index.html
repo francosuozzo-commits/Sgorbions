@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.022"></script>
-<link rel="stylesheet" href="css/style.css?v=6.022">
+<script src="js/email.min.js?v=6.033"></script>
+<link rel="stylesheet" href="css/style.css?v=6.033">
 
 
 <style>
@@ -187,6 +187,49 @@
     grid-template-columns:repeat(5,1fr) !important;
     gap:1rem !important; }
 }
+
+/* v6.027 (Franco) - LA COLONNA DELLA FOTO NELLA SCHEDA DI UN RETRO.
+   Perche' era grande: quella colonna e' larga 740px per la scheda di una FIGURINA, dove ci stanno
+   DUE immagini affiancate - fronte e retro (v5.845: 320->620, "~300px per immagine"; v5.846:
+   620->740 per dare al retro 1.4 volte il fronte, essendo piu' largo che alto). La scheda di un
+   RETRO usa lo stesso contenitore ma ha UNA immagine sola, che quindi si prende tutti i 740px:
+   una misura pensata per due, applicata a una.
+   Di conseguenza l'immagine veniva pure INGRANDITA oltre la sua risoluzione: la si chiede a
+   Cloudinary con w_640 e la si disegnava a 740 (misurato sul sito: naturale 640x467, resa
+   740x543). A 518px - i 740 meno il 30% chiesto da Franco - si sta sotto i 640 nativi, quindi
+   l'immagine e' anche piu' nitida di prima, non solo piu' piccola.
+   Vale solo da 861px in su: sotto, il modale e' gia' a colonna singola e la foto sta in cima a
+   tutta larghezza, che su un telefono e' quello che serve.
+   Sta qui e non in css/style.css perche' e' li' che vive la regola dei 740 con !important: questo
+   selettore ha specificita' maggiore (stesso id + una classe in piu'), quindi vince comunque, e
+   il file grande resta quello che dice la misura generale. */
+@media (min-width:861px) {
+  #fig-detail-modal.detail-solo-foto .modal > div:nth-child(2) {
+    grid-template-columns:1fr 518px !important; }
+  /* v6.028 (Franco) - "restringere la finestra senza toccare font o foto". Il numero non e' a
+     occhio: la finestra si restringe ESATTAMENTE dei 222px che la foto ha lasciato passando da
+     740 a 518 (1320 - 222 = 1098). Cosi' la colonna delle informazioni torna larga quanto era
+     prima della v6.027 - misurato sul sito: 704px con la finestra a 1320, 482px con la finestra a
+     1098, contro i 477px che aveva in origine - e non cambia nulla di come il testo va a capo.
+     Font e foto restano quelli che sono: la foto misura 518x381 con la finestra a 1320 come a
+     940, perche' la sua colonna e' fissa e non elastica. */
+  #fig-detail-modal.detail-solo-foto .modal {
+    max-width:min(1098px, 97vw) !important; }
+
+  /* v6.029 (Franco) - LA FINESTRA NON DEVE BALLARE scorrendo con le frecce.
+     Misurato prima di scegliere il numero: aprendo otto figurine di fila l'altezza faceva
+     483/483/483/483/519/519/570/570. Non erano le foto (colonna alta 240, mai la piu' alta): era
+     QUESTA colonna, che va da 354 a 441px secondo quanti dati ha l'oggetto. Su 42 oggetti di ogni
+     tipo - base, variazioni, change, errori di stampa, retro, descrizioni lunghe - prende cinque
+     soli valori: 282, 353, 388, 390, 441, uguali da admin e da utente.
+     445px e' quindi un pavimento appena sopra il massimo osservato: sotto quella soglia tutte le
+     schede diventano alte uguali e la finestra ha una misura sola. E' un numero MISURATO, non
+     dedotto: se un domani si aggiungono righe alla scheda va rimisurato, altrimenti le schede piu'
+     ricche tornano a sporgere - e a muovere solo loro la finestra.
+     Solo da 861px in su: sul telefono le colonne sono impilate e un pavimento qui sarebbe soltanto
+     spazio vuoto in fondo alla pagina. */
+  #fig-detail-modal #fig-detail-content { min-height:445px; }
+}
 </style>
 </head>
 <body>
@@ -205,7 +248,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.022</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.033</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1427,7 +1470,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.022</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.033</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -2187,7 +2230,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.022"></script>
+<script src="js/app.js?v=6.033"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2211,7 +2254,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.022'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.033'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
