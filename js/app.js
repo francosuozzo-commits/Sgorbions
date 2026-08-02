@@ -1,6 +1,285 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.072 - Quattro cose chieste da Franco. Modificati app.js e index.html.
+//          1. BACO: tornando nell'hub da una sezione il carosello della serie non ricompariva.
+//             Entrando in una sezione lo si nasconde; tornando indietro il contenuto era ancora li'
+//             e la serie la stessa, quindi non si ridisegnava - e nessuno rimetteva il display.
+//             Trattavo "gia' disegnato" e "gia' visibile" come lo stesso stato: sono due.
+//          2. La DESCRIZIONE torna nell'hub, sotto le righe dei contatori. Va DENTRO #detail-meta
+//             con flex-basis 100%, il modo gia' collaudato dalla v5.994: metterla dopo #detail-meta
+//             la rimanderebbe sotto la FOTO, che e' alta - la trappola della v5.932, che si
+//             ripresenta identica ogni volta che si aggiunge qualcosa in quell'angolo.
+//          3. Il clic su una card del carosello, da NON loggato, non apre piu' la scheda: dice che
+//             serve accedere e apre il modale di accesso. Prima era un vicolo cieco - un visitatore
+//             vedeva una scheda che il resto del sito non gli lascia raggiungere. Il controllo sta
+//             nella funzione della card, che e' una sola per entrambi i caroselli.
+//          4. "Inizia a collezionare gli Sgorbions" scende sotto il carosello, accanto a "Esplora
+//             l'Inventario": i due inviti stanno insieme, dopo l'assaggio.
+// v6.071 - Scheda della serie, vista HUB (quella coi cinque box): via la descrizione, al suo posto
+//          un carosello con le figurine BASE della serie in ordine di numero. Chiesto da Franco.
+//          Solo app.js.
+//          Nella home il carosello pesca A CASO perche' deve mostrare varieta'; qui no: si sta
+//          guardando UNA serie, e l'ordine numerico e' quello in cui uno se la ricorda. Niente
+//          limite di 20: sono i pezzi di quella serie, e il caricamento pigro fa scaricare solo le
+//          foto che entrano nello schermo.
+//          Foto piu' piccole (150 invece di 175) e piu' schede in fila (8,5 invece di 6,5): qui e'
+//          un elenco da scorrere, non una vetrina da guardare.
+//          LA DESCRIZIONE non viene distrutta, viene spenta - come si fa gia' dentro una sezione
+//          dalla v5.993: i suoi nodi servono ancora a _setupSeriesDescToggle e a chi un domani la
+//          rimettesse.
+//          RIFATTORIZZATO il blocco dei caroselli: scorrimento, card e movimento automatico ora
+//          sono funzioni comuni ai due. Sono due file di figurine con le stesse regole - stessa
+//          card, stessa velocita', stesse condizioni per fermarsi - e tenerle in due copie avrebbe
+//          voluto dire due comportamenti destinati a divergere alla prima modifica. Il timer pero'
+//          e' uno per carosello: uno solo, condiviso, avrebbe fatto spegnere quello della serie
+//          all'ingresso nella home e viceversa.
+// v6.070 - Home: tolti i due numeroni SOPRA il logo (Lingue del sito, Collezionisti). Chiesto da
+//          Franco, che li rimettera' altrove. Modificati index.html e app.js.
+//          Con loro se ne va la riga "top" della griglia - tolta, non lasciata vuota, se no
+//          continuerebbe a occupare il suo spazio: e' la stessa cosa fatta con la riga "bottom"
+//          nella v6.060. Via anche le regole CSS che la riguardavano.
+//          Le due CHIAMATE che scrivono quei numeri restano dove sono: quando gli elementi
+//          torneranno, in qualunque punto della pagina, si riaccenderanno da sole.
+//          Perche' possano restare, pero', animateCount() ha ora una guardia sull'elemento nullo.
+//          Senza, el.textContent sarebbe fallito DENTRO il setInterval: l'eccezione impedisce di
+//          arrivare al clearInterval, quindi l'errore si ripeterebbe per sempre, molte volte al
+//          secondo. Un elemento in meno nell'HTML non deve poter accendere un ciclo infinito.
+// v6.069 - Scheda della serie: le righe delle categorie (Figurine, Retro, Bustine, Album, Altri
+//          oggetti) piu' vicine fra loro. Chiesto da Franco. Solo app.js.
+//          Il gap passa da 0.7rem a 0.35rem. E' uno solo e vale per tutte e cinque: stringerne
+//          alcune e non altre avrebbe fatto sembrare che le prime e le ultime appartengano a due
+//          elenchi diversi.
+//          Sceso anche il gap DENTRO la riga, che si vede solo quando la riga va a capo su schermi
+//          stretti: lasciandolo a 0.7 una riga spezzata sarebbe risultata piu' distanziata di due
+//          righe intere - il contrario di quello che deve comunicare.
+// v6.068 - Home: le due righe sotto il logo ("Il database non ufficiale..." e "Fatto con 💚...")
+//          salgono verso il logo. Chiesto da Franco. Solo index.html (piu' la versione).
+//          Il margine negativo va sulla PRIMA riga: la seconda ne ha gia' uno suo (-2.2rem) che la
+//          tiene attaccata alla prima, e toccando quello si sarebbe allargato lo spazio FRA le due
+//          invece di alzarle insieme.
+//          -1.4rem e' un numero da occhio, non da misura: se serve si ritocca.
+// v6.067 - Scheda delle serie: le due righe dei conteggi perdono il nome dell'oggetto.
+//          Chiesto da Franco. Solo app.js.
+//            "160 figurine set base"  -> "160 set base"
+//            "368 figurine in totale" -> "368 totali"
+//          La sezione la si sta gia' guardando e il suo nome e' scritto sopra: ripeterlo su ogni
+//          riga allungava la colonna senza aggiungere niente. Con lui cade anche il singolare/
+//          plurale del nome (nm.s / nm.p), che esisteva solo per farlo concordare.
+//          Restano invariate le altre righe - variazioni, Change, errori di stampa - che il nome
+//          dell'oggetto non l'hanno mai avuto.
+// v6.066 - Carosello: tre regolazioni di Franco. Solo app.js.
+//          1. Altro +15% di velocita': 3077 -> 2676 ms. I fattori restano scritti uno per uno
+//             (4000 / 1.3 / 1.15) invece del risultato: cosi' nel codice si legge la storia - quattro
+//             secondi di partenza, poi -30%, poi -15% - e non un numero magico che nessuno sa piu'
+//             da dove venga.
+//          2. Sei schede e mezzo visibili invece di cinque e mezzo. La larghezza della card diventa
+//             una FRAZIONE del contenitore, non piu' 187px fissi: con un valore in pixel il numero
+//             di schede visibili cambierebbe con la larghezza della finestra, e "6 e mezzo" varrebbe
+//             solo sul monitor di chi l'ha misurato. La mezza scheda tagliata sul bordo e' voluta:
+//             e' quella che dice che la fila continua.
+//             CONSEGUENZA da sapere: a parita' di finestra le card si stringono (da ~187 a ~156px),
+//             quindi le foto rendono un po' piu' piccole di quanto le avevamo fatte con la v6.062.
+//             Se si vogliono grandi E in numero di sei e mezzo, va allargato il contenitore.
+//          3. Memoria da 15 a 20 carte.
+// v6.065 - Due cose chieste da Franco. Modificati index.html e app.js.
+//          1. TUTTO SALE dell'altezza della targhetta "SITO WEB IN COSTRUZIONE": la sua riga ora ha
+//             altezza ZERO e la targhetta ci sta sopra (position:absolute). Prima, pur essendo
+//             piccola, occupava comunque la propria riga nel flusso della pagina.
+//             Conseguenza voluta: si sovrappone a cio' che le sta sotto. Va bene - e' alta ~20px,
+//             sta nell'angolo in alto a sinistra dove non c'e' contenuto, e con pointer-events:none
+//             non ruba i clic. Il contenitore esterno conserva l'id: offsetHeight, che app.js usa
+//             per gli scroll, ora vale zero sul desktop, cioe' la verita'.
+//          2. VIA IL TITOLO del carosello: le figurine si spiegano da sole, e una riga di titolo
+//             sopra una fila di immagini e' spazio che non aggiunge niente.
+//             Tolte anche le due voci dal dizionario (home.carousel.title): una chiave che nessuno
+//             usa piu' e' una di quelle "chiavi morte" che il §5 avverte di non lasciare in giro -
+//             chi cerchera' quel testo la trovera' e credera' di aver trovato il punto vivo.
+// v6.064 - L'avviso "SITO WEB IN COSTRUZIONE" non consuma piu' una riga. Chiesto da Franco.
+//          Solo index.html (piu' la versione).
+//          Era una fascia colorata a tutta larghezza, alta ~44px, sotto la navbar e su OGNI pagina:
+//          una riga di schermo pagata ovunque per un messaggio che si legge una volta sola. Ora e'
+//          una targhetta piccola appoggiata a SINISTRA, stesso sfondo e stesso testo.
+//          Non ho tolto il contenitore esterno, che conserva il suo id: app.js ne legge
+//          offsetHeight per calcolare gli scroll (scrollToItemsTop). Togliere il div avrebbe rotto
+//          un calcolo che con un banner non c'entra niente - il tipo di guasto che si scopre dopo,
+//          scorrendo una pagina che finisce nel posto sbagliato.
+//          pointer-events:none sulla riga: e' un'etichetta, non un comando, e non deve rubare i
+//          clic a cio' che le sta sotto.
+//          Per farlo sparire del tutto basta un display:none su quella riga - il testo resta nel
+//          dizionario, tradotto, pronto a tornare.
+// v6.063 - Carosello e numeroni, quattro ritocchi di Franco. Modificati app.js e index.html.
+//          1. Le card hanno QUATTRO righe nell'ordine: Serie, Numero, Nome, Punteggio (a destra).
+//             Ogni riga esiste sempre, anche vuota: una figurina senza numero lascia la riga bianca
+//             e la card resta alta come le altre. Stesso principio della v6.037 sulle card dei
+//             retro - l'allineamento e' una proprieta' del layout, non una fortuna dei dati - e qui
+//             conta il doppio, perche' le card scorrono affiancate e uno sfalsamento si vede subito.
+//             Il punteggio compare solo se maggiore di zero: "0 pt" non e' un'informazione.
+//          2. Il titolo: "Un assaggio della collezione" -> "Un assaggio dall'Inventario", in
+//             italiano e in inglese. E' il nome che il sito usa per se stesso ovunque.
+//          3. La riga del titolo sale (margine negativo sulla sezione).
+//          4. Numeroni un filo piu' piccoli: 2.53rem -> 2.2rem, etichette 0.98 -> 0.88 (circa -12%).
+//             I valori originali sono in css/style.css: qui si sovrascrivono solo quelli DENTRO
+//             l'hero, perche' .stat-num e .stat-label sono usati anche altrove. Sul telefono non si
+//             tocca niente: li' erano gia' 1.6rem.
+// v6.062 - Carosello: sei ritocchi chiesti da Franco. Modificati app.js e index.html.
+//          1. "Esplora l'Inventario" scende SOTTO il carosello. Prima stava fra i pulsanti
+//             dell'hero, cioe' prima di aver fatto vedere qualcosa: chiedeva di entrare a chi non
+//             aveva ancora visto niente. Dopo l'assaggio e' un invito che arriva al momento giusto.
+//          2. Nelle card compare la SERIE, sopra il nome: in una vetrina che pesca a caso da tutte
+//             le serie era il dato che mancava per capire cosa si stia guardando.
+//          3. Nome e numero su due righe separate: prima erano "#12 NOME" su una riga sola, e il
+//             numero rubava l'inizio della riga al nome.
+//          4. Foto +25% (140 -> 175px, card 150 -> 187). Con la foto cresce la richiesta a
+//             Cloudinary, da w_300 a w_400: se no si ingrandisce l'immagine oltre la sua
+//             risoluzione, lo stesso difetto gia' corretto nelle v6.027 e v6.029.
+//          5. Scorrimento +30%: 4000 ms -> 3077 (scritto come 4000/1.3, cosi' il "30%" resta
+//             leggibile nel codice invece di diventare un numero magico).
+//          6. Da 12 a 15 figurine.
+//          Le tre righe di testo hanno altezze FISSE: nomi di lunghezza diversa darebbero card di
+//          altezza diversa, e in una fila che scorre si vedrebbe subito - stesso principio della
+//          v6.037 sulle card dei retro.
+// v6.061 - BACO (Franco): il carosello non compariva. Solo app.js.
+//          Era agganciato al solo showPage('home'), che al PRIMO caricamento non passa mai: la home
+//          e' gia' la pagina attiva, quindi nessuno la "apre". E anche se fosse passata non sarebbe
+//          bastato: in quel momento le figurine non sono ancora arrivate da Firestore e l'elenco dei
+//          candidati e' vuoto, quindi la sezione resta nascosta - come previsto, ma per il motivo
+//          sbagliato. Risultato: il carosello si vedeva solo andando su un'altra pagina e tornando
+//          indietro. Io l'avevo provato cosi', ed e' per questo che mi sembrava a posto.
+//          ORA lo disegna anche renderHomeStats(), che gira quando i dati ci sono davvero - ma SOLO
+//          SE il carosello e' vuoto: quella funzione viene richiamata dopo ogni salvataggio, e
+//          ridisegnare ogni volta rimescolerebbe le figurine sotto gli occhi di chi sta lavorando.
+//          Il rimescolo resta legato all'ingresso nella home, che e' il momento in cui ha senso.
+// v6.060 - I numeroni della home solo SOPRA, a sinistra e a destra: il gruppo di SOTTO sparisce per
+//          fare spazio al carosello. Chiesto da Franco. Solo index.html (piu' la versione).
+//          Nuova disposizione: sopra Lingue e Collezionisti; a sinistra Serie, Figurine, Retro; a
+//          destra Bustine, Album, Altri oggetti. Tre voci per fianco invece di due, e nessun
+//          conteggio perso - quelli che stavano sotto sono scesi nella colonna di destra.
+//          La riga "bottom" e' stata TOLTA dalla griglia (grid-template-areas), non lasciata vuota:
+//          una riga vuota avrebbe continuato a occupare il suo gap sotto il logo, che e' esattamente
+//          lo spazio che si voleva restituire al carosello. Via anche le due regole CSS che la
+//          riguardavano: regole che non colpiscono piu' niente sono la cosa che, fra sei mesi, fa
+//          credere che quel gruppo esista ancora.
+// v6.059 - Il collassatore della testata serie c'e' anche sul DESKTOP, con il default opposto:
+//          chiuso su telefono, APERTO su desktop. Chiesto da Franco. Solo app.js.
+//          Lo stato diventa PER VIEWPORT - due valori, due chiavi in localStorage - invece di uno
+//          solo. Con un valore condiviso la scelta fatta sul telefono si sarebbe portata dietro sul
+//          desktop e viceversa, e sono due abitudini diverse: su un telefono la testata costa mezza
+//          schermata, sul desktop e' informazione che sta li' senza dare fastidio.
+//          La chiave storica resta quella del TELEFONO: chi l'aveva aperta sul telefono se la
+//          ritrova aperta. Il desktop parte con una chiave nuova e quindi col suo default (aperto).
+// v6.058 - Testo della funzione "Allinea item figlio correlati", terza stesura di Franco. Solo
+//          app.js. I due elenchi di campi tornano attaccati - sono una cosa sola, da leggere a
+//          colpo d'occhio - e le due avvertenze si raccolgono sotto un unico "NOTE:", invece di
+//          stare una in mezzo ai campi e una in fondo.
+// v6.057 - Nell'anteprima di "Allinea item figlio correlati" si vede la SEZIONE. Segnalato da
+//          Franco: "non si capisce che tipo di oggetti siano". Solo app.js.
+//          La colonna Tipo diceva "Change", "Errore di stampa", "Variazione" - ma non se fossero di
+//          una FIGURINA o di un RETRO. Non e' un dettaglio estetico: i campi allineati NON sono gli
+//          stessi nei due casi (le figurine solo il Nome, i retro anche Sottonome, Categoria e
+//          Sottocategoria), quindi senza la sezione la riga non si puo' nemmeno valutare.
+//          Aggiunta la colonna, e sopra la tabella il conto diviso per sezione ("Figurina: 3 ·
+//          Retro: 12"): prima di leggere 200 righe si vuole sapere di che cosa si sta parlando.
+//          L'etichetta viene da getSectionLabelSingular(), non da un elenco nuovo: un secondo elenco
+//          di nomi di sezione sarebbe la solita copia destinata a divergere.
+// v6.056 - Riscritto il testo della funzione "Allinea item figlio correlati", parole di Franco.
+//          Solo app.js.
+//          I due elenchi di campi vanno ora a capo, uno per sezione: erano su una riga sola e si
+//          leggevano come un elenco unico, mentre sono due elenchi diversi - le Figurine allineano
+//          il solo Nome, i Retro anche Sottonome, Categoria e Sottocategoria. E la nota finale dice
+//          esplicitamente che c'e' un'anteprima e una conferma: e' la cosa che uno vuole sapere
+//          PRIMA di premere, non dopo.
+// v6.055 - Nuova scheda FUNZIONI nella console admin, con la prima procedura: "Allinea item figlio
+//          correlati". Chiesto da Franco. Modificati app.js e index.html.
+//          LA SEZIONE: raccoglie le procedure di intervento manuale complesso - roba che scrive su
+//          molti record in un colpo solo. Regola della sezione, valida per tutte quelle che
+//          verranno: PRIMA l'anteprima, POI la conferma, e solo dopo la scrittura. Nessuna funzione
+//          qui dentro parte da un clic solo. E' la forma del "Ricalcolo Nomi Completi" (§13), che
+//          aveva gia' dimostrato di funzionare.
+//          LA FUNZIONE: riporta sui figli i campi comandati dalla base - Nome, e nei Retro anche
+//          Sottonome, Categoria e Sottocategoria - ricalcolando il loro Nome completo. Le basi non
+//          si toccano mai. Si sceglie una serie o tutte.
+//          I FIGLI ORA COMPRENDONO LE VARIAZIONI, non solo Change ed errori di stampa: il loro Nome
+//          e' per convenzione quello della base (§12.1) e finora non lo faceva rispettare nessuno.
+//          Misurato: 1049 figli, 5 divergenti, nessuna variazione fra questi - includerle oggi non
+//          cambia niente e domani impedisce che si allontanino in silenzio. Lo stesso elenco lo usa
+//          la propagazione automatica della v6.053: una definizione sola di "figlio".
+//          DETTAGLI CHE CONTANO: anteprima e applicazione usano la STESSA funzione per calcolare il
+//          piano - se ne usassero due, l'anteprima sarebbe una promessa e non una descrizione. La
+//          conferma nomina il numero di record. E alla fine si RICONTA da capo: l'unica prova che il
+//          lavoro sia finito e' che rifacendo il conto non resti piu' niente.
+// v6.054 - Accanto a "Senza foto" c'e' "Con foto", per il solo ADMIN. Chiesto da Franco.
+//          Solo app.js.
+//          Il booleano _noPhotoFilter diventa _fotoFilter con tre stati: null | 'senza' | 'con'.
+//          Due booleani separati avrebbero potuto essere accesi entrambi, e "senza foto E con foto"
+//          e' un elenco vuoto che nessuno ha chiesto: con un valore solo quella combinazione non e'
+//          nemmeno rappresentabile, e non c'e' niente da tenere sincronizzato.
+//          "Con foto" e' da admin: a un utente non serve chiedere di vedere le figurine che una foto
+//          ce l'hanno - sono la normalita'. All'admin serve, per lavorare su cio' che e' gia' fatto.
+//          DI CONTORNO, ma non secondario: da ACCESO l'etichetta di "Senza foto" era SBAGLIATA.
+//          Come si comportava (tabella ricostruita sul codice, non a memoria):
+//            spento -> "Senza foto", interruttore spento, mostra TUTTI;     clic: solo i senza foto
+//            acceso -> "Con foto",  interruttore BLU,     mostra i SENZA;   clic: tutti
+//          Da acceso quella scritta non diceva ne' lo stato ne' l'effetto del clic: nominava una
+//          terza cosa che non esisteva. L'ha trovata Franco provandola - "il cursore prende il nome
+//          di Con foto ed e' blu, ma non mostra i retro con foto" - dopo che io l'avevo spiegata
+//          come "descrive l'azione invece dello stato", spiegazione che regge solo da spento.
+//          Ora ogni interruttore porta il proprio nome, sempre lo stesso, e l'acceso si vede dal
+//          colore: con due filtri affiancati era l'unica forma che non si contraddicesse.
+// v6.053 - I CAMPI COMANDATI DALLA BASE SI PROPAGANO AI COLLEGATI quando cambia la base. Segnalato
+//          da Franco. Solo app.js.
+//          La v6.038 aveva risolto meta' del problema: salvando un Change o un errore di stampa, i
+//          suoi campi vengono riscritti da quelli della base. Ma se a cambiare era LA BASE, i figli
+//          restavano indietro e niente lo segnalava - "aggiornando il sottonome di un retro non si
+//          aggiorna il sottonome dei suoi change".
+//          ORA: dopo un salvataggio riuscito, in ENTRAMBE le form, _propagaAiCollegati() riallinea
+//          i Change e gli errori di stampa di quel record. I campi sono quelli di
+//          _campiEreditatiDaBase(): Nome ovunque, piu' Sottonome/Categoria/Sottocategoria nei Retro.
+//          Le VARIAZIONI non si toccano: hanno un nome proprio e non ereditano niente.
+//          Si scrivono SOLO i figli che divergono davvero: riscrivere tutto ad ogni salvataggio
+//          costerebbe scritture inutili e sporcherebbe la cronologia senza cambiare un dato.
+//          Il costo e' misurato: su 376 record con collegati, il massimo e' 3 figli (254 ne hanno
+//          uno, 118 due, 4 tre). Al piu' tre scritture in piu' per salvataggio.
+//          E LO DICE: il messaggio diventa "... — aggiornati anche 2 collegati" e dura 6 secondi.
+//          Un salvataggio che ne modifica altri in silenzio e' il modo in cui ci si accorge dei
+//          danni tre giorni dopo.
+//          RESTA DA FARE (§12.1): l'eredita' al salvataggio del figlio, nelle due form, assegna i
+//          campi uno per uno invece di leggerli da _campiEreditatiDaBase(). Sono tre punti che
+//          devono dire la stessa cosa e oggi la dicono in tre modi.
+// v6.052 - Form di modifica della scheda: i pulsanti in cima e appiccicati, piu' "Salva e resta".
+//          Chiesto da Franco. Solo app.js.
+//          (1) I PULSANTI. Stavano in fondo al form, dopo il tab Ebay: per salvare si scorreva tutto
+//              ogni volta. Non li ho solo alzati: la barra e' APPICCICATA (position:sticky), quindi
+//              resta visibile mentre si scorre. Alzarli e basta avrebbe risolto solo per i campi in
+//              alto, e "devo sempre scrollare per arrivarci" sarebbe tornato lavorando in fondo.
+//              Una barra sola, non due: due blocchi di pulsanti vogliono dire due elementi con lo
+//              stesso id, un difetto che si manifesta il giorno in cui uno dei due smette di
+//              rispondere e nessuno capisce perche'.
+//          (2) "SALVA E RESTA" salva senza chiudere la scheda: serve a chi sistema piu' campi di
+//              seguito e con un solo Salva doveva riaprire l'oggetto ogni volta. La griglia dietro
+//              si aggiorna comunque.
+//              Durante il salvataggio i due pulsanti si spengono - con la scheda che resta aperta il
+//              secondo clic e' a portata di dito piu' che mai - e si riaccendono in un `finally`,
+//              cioe' su OGNI uscita, comprese le validazioni che escono prima. Riaccenderli a mano
+//              davanti a ogni return e' il modo in cui, alla prossima validazione aggiunta, la
+//              scheda resta coi pulsanti spenti.
+// v6.051 - CAROSELLO nella home + dalla scheda si va alla SERIE. Chiesto da Franco.
+//          Modificati app.js e index.html.
+//          (1) IL CAROSELLO: fino a 12 figurine a caso, con foto, fra l'hero e il resto. Sta FUORI
+//              dal blocco riservato a chi ha fatto login, perche' serve soprattutto a chi arriva
+//              senza account. Scorre da solo ogni 4 secondi e si ferma: col mouse sopra, quando la
+//              scheda del browser non e' in primo piano, quando si esce dalla home, e del tutto se
+//              il sistema dichiara "riduci le animazioni". Le frecce restano sempre.
+//              Miniature w_300 e caricamento pigro: la home la carica anche chi non e' registrato,
+//              e ogni foto e' una richiesta di rete in piu'.
+//              Si mescola una COPIA dell'elenco, non l'elenco: ordinare a caso quello vero avrebbe
+//              cambiato l'ordine ovunque, perche' tutto il sito legge la stessa lista.
+//              La sezione parte nascosta e si accende solo se c'e' materiale: un titolo sopra una
+//              fila vuota e' peggio di nessuna sezione.
+//          (2) LA SERIE, nella scheda di un oggetto, diventa un collegamento che la apre. Era testo
+//              morto: per andarci si tornava indietro a mano. Il modale si chiude prima di aprire la
+//              serie - un modale aperto sopra una pagina cambiata sotto e' il modo piu' veloce per
+//              non capire piu' dove si e'.
 // v6.050 - Nei risultati della RICERCA GLOBALE i retro si mostrano col NOME COMPLETO. Segnalato da
 //          Franco. Solo app.js.
 //          Si mostrava il nome LUNGO (nome + sottonome), senza categoria ne' sottocategoria. Finche'
@@ -10771,7 +11050,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.050';
+const JS_VERSION = 'v6.072';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11734,7 +12013,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to your list','catalog.havenone':'Remove search results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers','catalog.retros':'Retros','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add search results to your list','catalog.havenone':'Remove search results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
@@ -11866,6 +12145,7 @@ const i18n = {
     'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','form.newsletterLabel':'Vuoi ricevere la newsletter? *','form.newsletter.opt.none':'— Seleziona —','form.newsletter.opt.yes':'Sì, voglio riceverla','form.newsletter.opt.no':'No, grazie','form.newsletter.hint':'Rispondere è obbligatorio, ma sei libero di dire di no: la registrazione funziona comunque. Potrai cambiare idea quando vuoi dal tuo profilo.','profile.emailPrefs.title':'Preferenze e-mail','profile.newsletter':'Voglio ricevere la newsletter di figurinesgorbions.it','profile.newsletter.hint':'Ricevi le ultime novità sull\'inventario degli Sgorbions.<br>Puoi attivarla o disattivarla quando vuoi.','newsletterConsent.title':'📧 Vuoi ricevere la newsletter?','newsletterConsent.body':'Non te l\'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell\'Inventario Sgorbions.<br>Nessuna pubblicità!<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.','newsletterConsent.yes':'Sì, iscrivimi','newsletterConsent.no':'No, grazie','form.privacyNotice':'Registrandoti, accetti la nostra <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Informativa sulla Privacy</a>.','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.desc.en':'Descrizione (Inglese)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
+    'admin.funzioni':'Funzioni',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.subname':'Sottonome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
@@ -11977,7 +12257,12 @@ function setLang(lang, byUser = false) {
 let currentUser = LOCAL.get('currentUser') || null;
 let _realAdmin = null; // traccia l'admin originale durante l'impersonificazione (vedi isImpersonating)
 let currentSeriesId = null;
-let _noPhotoFilter = false; // filtro figurine senza foto
+// v6.054 (Franco) - UN VALORE SOLO per i due filtri sulla foto: null | 'senza' | 'con'.
+// Due booleani separati potrebbero essere accesi entrambi, e "senza foto E con foto" e' un elenco
+// vuoto che nessuno ha chiesto: con un valore solo quella combinazione non e' rappresentabile.
+// "Con foto" e' riservato all'admin: a un utente non serve chiedere di vedere le figurine che una
+// foto ce l'hanno - sono la normalita'. All'admin serve, per lavorare sul gia' fatto.
+let _fotoFilter = null;
 // Il filtro sul TIPO di oggetto (set base, variazioni, change...) risponde alla
 // domanda "che cosa e' questo?". Non rispondeva a quella che un collezionista si fa
 // davvero: "cosa mi manca?". Da qui il secondo filtro, che e' una DIMENSIONE
@@ -12169,6 +12454,165 @@ function _aggiornaLogoNavbar() {
     && (!dettaglioSerie || dettaglioSerie.style.display === 'none');
   logo.style.display = (_isMobileViewport() && inHome) ? 'none' : '';
 }
+
+// ============================================================
+//  CAROSELLO DELLA HOME (v6.051, Franco)
+// ============================================================
+// Una vetrina di figurine a caso, fra hero e resto della pagina. Sta fuori dal blocco riservato a
+// chi ha fatto login: serve soprattutto a chi arriva senza account e non sa ancora cosa c'e' dentro.
+// Scelte, e il perche':
+//  - MAX 12 elementi. La home la carica anche chi non e' registrato, e ogni foto e' una richiesta di
+//    rete in piu': si chiedono miniature (w_300) e si lascia al browser il caricamento pigro.
+//  - A CASO ad ogni apertura della home, non "gli ultimi" o "i migliori": non serve nessun campo
+//    nuovo e non c'e' niente da tenere aggiornato a mano.
+//  - Scorre DA SOLO, ma si ferma col mouse sopra e quando la scheda del browser non e' in primo
+//    piano: un carosello che gira in una scheda che nessuno guarda consuma e basta.
+//  - Se il sistema dichiara "riduci le animazioni" (prefers-reduced-motion) NON parte da solo. Le
+//    frecce restano, quindi si puo' comunque guardare tutto.
+//  - Il timer si spegne uscendo dalla home: e' l'unico modo per essere certi che non ne restino due
+//    in giro, che e' come questi caroselli finiscono per accelerare da soli.
+let _caroselloTimer = null;        // quello della HOME
+let _caroselloSerieTimer = null;   // quello della SCHEDA SERIE (v6.071)
+const CAROSELLO_MAX = 20;                                 // v6.066 (Franco): da 15 a 20
+// v6.066: altro +15% sulla velocita'. I fattori restano scritti uno per uno invece del risultato:
+// cosi' si legge la storia (4 secondi di partenza, poi -30%, poi -15%) e non un numero magico.
+const CAROSELLO_PASSO_MS = Math.round(4000 / 1.3 / 1.15); // 4000 -> 3077 -> 2676 ms
+// Larghezza della card come FRAZIONE del contenitore: con un valore in pixel il numero di schede
+// visibili cambierebbe con la finestra, e "6 e mezzo" varrebbe solo sul monitor di chi l'ha
+// misurato. La mezza scheda tagliata sul bordo e' voluta: dice che la fila continua.
+// Formula: N schede occupano N*(card+gap) meno l'ultimo gap, che non c'e'.
+const _caroselloLarghezza = n => 'calc((100% + 0.9rem) / ' + n + ' - 0.9rem)';
+const CAROSELLO_LARGHEZZA = _caroselloLarghezza(6.5);        // home
+const CAROSELLO_LARGHEZZA_SERIE = _caroselloLarghezza(8.5);  // serie: foto piu' piccole (v6.071)
+
+// ---- pezzi comuni ai due caroselli (v6.071) --------------------------------------------------
+// Sono due file di figurine con le stesse regole: stessa card, stesso scorrimento, stessa velocita',
+// stesse condizioni per fermarsi. Cambiano solo COSA mostrano e QUANTO sono grandi. Tenerli in due
+// copie avrebbe voluto dire due comportamenti destinati a divergere alla prima modifica.
+function _caroselloScorriBox(box, dir) {
+  if (!box) return;
+  const primo = box.firstElementChild;
+  const passo = primo ? (primo.getBoundingClientRect().width + 14) : 200;
+  const fine = box.scrollWidth - box.clientWidth - 4;
+  if (dir > 0 && box.scrollLeft >= fine) box.scrollTo({ left: 0 });      // in fondo: si ricomincia
+  else if (dir < 0 && box.scrollLeft <= 4) box.scrollTo({ left: fine }); // all'inizio: si va in coda
+  else box.scrollBy({ left: passo * dir });
+}
+
+// La card: foto, poi Serie, Numero, Nome e Punteggio (a destra), ognuno su una riga di altezza
+// FISSA. Nomi di lunghezza diversa darebbero card di altezza diversa, e in una fila che scorre si
+// vedrebbe subito. Una figurina senza numero lascia la riga bianca invece di far salire le altre.
+function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza) {
+  const etichetta = (f.number ? '#' + f.number + ' ' : '') + (f.name || '');
+  return '<div onclick="_caroselloApri(\'' + f.id + '\',\'' + f.seriesId + '\')" ' +
+    'title="' + esc(etichetta) + '" ' +
+    'style="flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">' +
+    '<img src="' + cloudinaryUrl(f.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" ' +
+      'style="width:100%;height:' + altezzaFoto + 'px;object-fit:contain;border-radius:6px;background:var(--card);">' +
+    '<div style="font-size:0.66rem;color:var(--accent);margin-top:0.4rem;line-height:1.2;height:1.2em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' + esc(nomeSerie.get(f.seriesId) || '&nbsp;') + '</div>' +
+    '<div style="font-size:0.7rem;color:var(--muted);line-height:1.2;height:1.2em;">' + (f.number ? '#' + esc(String(f.number)) : '&nbsp;') + '</div>' +
+    '<div style="font-size:0.74rem;color:var(--text);line-height:1.25;height:2.5em;overflow:hidden;">' + esc(f.name || '') + '</div>' +
+    '<div style="font-size:0.7rem;color:var(--success);line-height:1.2;height:1.2em;text-align:right;">' + (f.score > 0 ? '&#11088; ' + esc(String(f.score)) : '&nbsp;') + '</div>' +
+  '</div>';
+}
+
+// v6.072 (Franco) - il clic su una card. Da NON loggato la scheda non si apre: si dice perche' e si
+// offre la porta d'ingresso. Prima si apriva comunque, e per un visitatore era un vicolo cieco -
+// vedeva una scheda che il sito, per il resto, non gli lascia raggiungere.
+// Il controllo sta QUI e non nei due caroselli: e' una regola sola, e la card e' gia' una sola.
+function _caroselloApri(figId, seriesId) {
+  if (!currentUser) {
+    toast(currentLang === 'it'
+      ? 'Accedi per vedere la scheda della figurina'
+      : 'Sign in to open the sticker details', 'error');
+    try { openAuth('login'); } catch(e) { console.error('openAuth', e); }
+    return;
+  }
+  openFigFromSearch(figId, seriesId, 'figurines');
+}
+
+// Accende il movimento automatico di una fila. `vivo()` dice se ha ancora senso scorrere: se
+// risponde di no il timer si spegne da solo, cosi' non ne restano in giro quando si cambia pagina.
+function _caroselloAvviaBox(box, quale, vivo) {
+  _caroselloSpegni(quale);
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return; // "riduci animazioni"
+  const t = setInterval(() => {
+    if (document.hidden) return;          // scheda del browser in secondo piano
+    if (!vivo()) { _caroselloSpegni(quale); return; }
+    _caroselloScorriBox(box, 1);
+  }, CAROSELLO_PASSO_MS);
+  if (quale === 'home') _caroselloTimer = t; else _caroselloSerieTimer = t;
+}
+function _caroselloSpegni(quale) {
+  if (quale !== 'serie' && _caroselloTimer) { clearInterval(_caroselloTimer); _caroselloTimer = null; }
+  if (quale !== 'home' && _caroselloSerieTimer) { clearInterval(_caroselloSerieTimer); _caroselloSerieTimer = null; }
+}
+function _caroselloStop() { _caroselloSpegni('home'); }
+
+// ---- CAROSELLO DELLA HOME (v6.051) ------------------------------------------------------------
+// Vetrina di figurine A CASO, fuori dal blocco riservato a chi ha fatto login: serve soprattutto a
+// chi arriva senza account. Miniature e caricamento pigro perche' la home la scarica anche lui.
+function renderCarosello() {
+  const sez = document.getElementById('home-carosello-sez');
+  const box = document.getElementById('home-carosello');
+  if (!sez || !box) return;
+  _caroselloSpegni('home');
+  const disponibili = getData('figurines', []).filter(f => (f.section || 'figurines') === 'figurines' && f.img);
+  if (disponibili.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
+  // si mescola una COPIA: ordinare a caso l'elenco vero cambierebbe l'ordine in tutto il sito
+  const mazzo = disponibili.slice();
+  for (let i = mazzo.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [mazzo[i], mazzo[j]] = [mazzo[j], mazzo[i]];
+  }
+  const nomeSerie = new Map(getData('series', []).map(x => [x.id, x.name]));
+  box.innerHTML = mazzo.slice(0, CAROSELLO_MAX).map(f => _caroselloCard(f, nomeSerie, 175, CAROSELLO_LARGHEZZA)).join('');
+  sez.style.display = '';
+  const prec = document.getElementById('carosello-prec');
+  const succ = document.getElementById('carosello-succ');
+  if (prec) prec.onclick = () => _caroselloScorriBox(box, -1);
+  if (succ) succ.onclick = () => _caroselloScorriBox(box, 1);
+  const vivo = () => { const h = document.getElementById('page-home'); return !!h && h.classList.contains('active'); };
+  box.onmouseenter = () => _caroselloSpegni('home');
+  box.onmouseleave = () => _caroselloAvviaBox(box, 'home', vivo);
+  _caroselloAvviaBox(box, 'home', vivo);
+}
+function _caroselloAvvia() { // compatibilita' con i richiami esistenti
+  const box = document.getElementById('home-carosello');
+  const vivo = () => { const h = document.getElementById('page-home'); return !!h && h.classList.contains('active'); };
+  _caroselloAvviaBox(box, 'home', vivo);
+}
+
+// ---- CAROSELLO DELLA SCHEDA SERIE (v6.071, Franco) --------------------------------------------
+// Prende il posto della descrizione nell'HUB (la vista coi cinque box), e solo li'. Mostra le
+// figurine BASE di quella serie IN ORDINE DI NUMERO: qui non si cerca varieta' come nella home, si
+// cerca la serie com'e' fatta, e l'ordine numerico e' l'ordine in cui uno se la ricorda.
+// Foto un po' piu' piccole (150 invece di 175) e piu' schede in fila: e' un elenco da scorrere, non
+// una vetrina da guardare.
+function renderCaroselloSerie() {
+  const sez = document.getElementById('serie-carosello-sez');
+  const box = document.getElementById('serie-carosello');
+  if (!sez || !box) return;
+  _caroselloSpegni('serie');
+  const base = getData('figurines', [])
+    .filter(f => f.seriesId === currentSeriesId && (f.section || 'figurines') === 'figurines'
+      && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError && f.img)
+    .sort((a, b) => (a.number || 0) - (b.number || 0));
+  if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
+  const nomeSerie = new Map(getData('series', []).map(x => [x.id, x.name]));
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, 150, CAROSELLO_LARGHEZZA_SERIE)).join('');
+  sez.style.display = '';
+  const prec = document.getElementById('serie-carosello-prec');
+  const succ = document.getElementById('serie-carosello-succ');
+  if (prec) prec.onclick = () => _caroselloScorriBox(box, -1);
+  if (succ) succ.onclick = () => _caroselloScorriBox(box, 1);
+  // vivo finche' si e' nell'hub: entrando in una sezione il carosello sparisce e il timer con lui
+  const vivo = () => !currentSection && document.getElementById('series-detail')?.style.display !== 'none';
+  box.onmouseenter = () => _caroselloSpegni('serie');
+  box.onmouseleave = () => _caroselloAvviaBox(box, 'serie', vivo);
+  _caroselloAvviaBox(box, 'serie', vivo);
+}
+
 function showPage(page) {
   const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile', 'newsletter', 'wishlist', 'unsubscribe'];
   if (protectedPages.includes(page) && !currentUser) {
@@ -12190,6 +12634,10 @@ function showPage(page) {
   });
   try { _aggiornaLogoNavbar(); } catch(e) { console.error('_aggiornaLogoNavbar', e); }
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  // v6.051 - il carosello si ridisegna (quindi ripesca a caso) entrando nella home, e si ferma
+  // uscendone: un timer lasciato acceso e' il modo in cui questi caroselli iniziano ad accelerare.
+  if (page === 'home') { try { renderCarosello(); } catch(e) { console.error('renderCarosello', e); } }
+  else _caroselloStop();
   if (page === 'catalog') renderCatalog();
   if (page === 'blog') renderBlog();
   if (page === 'profile') {
@@ -14909,6 +15357,12 @@ function posizionaTestataSerie() {
       el.style.flexBasis = '100%'; el.style.width = '100%'; el.style.marginTop = '0.15rem';
       meta.appendChild(el);
     });
+    // v6.071 - dentro una sezione il carosello della serie non c'entra niente: si spegne e si
+    // nasconde. Il timer si ferma da solo grazie alla condizione `vivo`, ma spegnerlo qui e' la
+    // via breve e non dipende dal prossimo giro dell'orologio.
+    const _cs = document.getElementById('serie-carosello-sez');
+    if (_cs) _cs.style.display = 'none';
+    _caroselloSpegni('serie');
     return;
   }
   // hub: gli specchietti tornano in coda al blocco eroe. Sono comunque spenti (le loro
@@ -14918,17 +15372,65 @@ function posizionaTestataSerie() {
     el.style.flexBasis = ''; el.style.width = ''; el.style.marginTop = '';
     heroInner.appendChild(el);
   });
-  // hub: descrizione a tutta larghezza in coda al blocco eroe, con il CSS di nuovo
-  // padrone (via tutti gli stili inline che la v5.932 metteva per la sezione)
+  // v6.071 (Franco) - NELL'HUB LA DESCRIZIONE NON SI MOSTRA PIU': al suo posto va il carosello
+  // delle figurine base della serie. I nodi restano nel blocco eroe, spenti - come gia' si fa
+  // dentro una sezione dalla v5.993 - perche' toglierli dal DOM significherebbe ricostruirli, e
+  // il testo serve ancora a _setupSeriesDescToggle e a chi un domani lo rimettesse.
+  // v6.072 (Franco) - la descrizione TORNA nell'hub, ma sotto le righe dei contatori: va DENTRO
+  // #detail-meta con flex-basis 100%, che e' il modo gia' collaudato dalla v5.994 per gli
+  // specchietti. Metterla semplicemente dopo #detail-meta la rimanderebbe sotto la FOTO, che e'
+  // alta: la trappola in cui era caduta la v5.932, e che si ripresenta identica ogni volta che si
+  // aggiunge qualcosa in quell'angolo.
   if (etichetta.parentNode) etichetta.parentNode.removeChild(etichetta);
-  [desc, toggle].forEach(el => { if (el) { el.style.flexBasis = ''; el.style.width = ''; el.style.gridColumn = ''; el.style.gridRow = ''; el.style.margin = ''; } });
-  desc.style.display = '';
-  heroInner.appendChild(desc);
-  if (toggle) heroInner.appendChild(toggle);
-  // Il "Mostra tutto" non si riaccende a mano: la sua visibilita' dipende dalla lunghezza
-  // del testo e dalla larghezza dello schermo, e la decide _setupSeriesDescToggle.
-  // Rimetterlo visibile qui vorrebbe dire duplicare quella regola, e sbagliarla.
+  [desc, toggle].forEach(el => { if (el) {
+    el.style.gridColumn = ''; el.style.gridRow = ''; el.style.margin = '';
+    el.style.flexBasis = '100%'; el.style.width = '100%';
+    el.style.display = '';
+  }});
+  meta.appendChild(desc);
+  if (toggle) meta.appendChild(toggle);
+  // Il "Mostra tutto" non si riaccende a mano: la sua visibilita' dipende dalla lunghezza del testo
+  // e dalla larghezza dello schermo, e la decide _setupSeriesDescToggle. Rimetterlo visibile qui
+  // vorrebbe dire duplicare quella regola, e sbagliarla.
   _setupSeriesDescToggle(desc.textContent || '');
+  _caroselloSerieMostra(heroInner);
+}
+
+// v6.071 - il contenitore del carosello della serie si crea UNA VOLTA e poi si riusa. Non sta
+// nell'index perche' il suo posto e' in coda al blocco eroe, che questa funzione ricompone di
+// continuo spostando nodi: un elemento scritto nell'HTML finirebbe per essere scavalcato dai
+// traslochi, ed e' lo stesso motivo per cui la descrizione viene ri-appesa qui ogni volta.
+// Si ridisegna solo se e' VUOTO o se e' cambiata la serie: ridisegnarlo ad ogni chiamata (e questa
+// funzione viene chiamata spesso) farebbe ripartire lo scorrimento da capo sotto gli occhi.
+function _caroselloSerieMostra(heroInner) {
+  let sez = document.getElementById('serie-carosello-sez');
+  if (!sez) {
+    sez = document.createElement('div');
+    sez.id = 'serie-carosello-sez';
+    sez.style.cssText = 'display:none;width:100%;position:relative;margin-top:0.6rem;';
+    sez.innerHTML =
+      '<button type="button" id="serie-carosello-prec" aria-label="Precedente" style="position:absolute;left:-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">&#8249;</button>' +
+      '<div id="serie-carosello" style="display:flex;gap:0.9rem;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:0.2rem 0.4rem 0.6rem;"></div>' +
+      '<button type="button" id="serie-carosello-succ" aria-label="Successivo" style="position:absolute;right:-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">&#8250;</button>';
+  }
+  heroInner.appendChild(sez);
+  const box = document.getElementById('serie-carosello');
+  if (!box) return;
+  if (!box.children.length || box.dataset.serie !== String(currentSeriesId)) {
+    box.dataset.serie = String(currentSeriesId);
+    try { renderCaroselloSerie(); } catch(e) { console.error('renderCaroselloSerie', e); }
+    return;
+  }
+  // v6.072 (Franco, baco) - TORNANDO NELL'HUB DA UNA SEZIONE il carosello non ricompariva.
+  // Entrando in una sezione lo si NASCONDE (display:none); tornando indietro il contenuto e' ancora
+  // li' e la serie non e' cambiata, quindi non si ridisegnava - e nessuno rimetteva il display.
+  // "Gia' disegnato" non vuol dire "gia' visibile": sono due stati diversi, e li tenevo per uno.
+  // Qui si riaccende, contenuto compreso il movimento, senza rifare la fila da capo.
+  if (box.children.length) {
+    sez.style.display = '';
+    const vivo = () => !currentSection && document.getElementById('series-detail')?.style.display !== 'none';
+    _caroselloAvviaBox(box, 'serie', vivo);
+  }
 }
 
 // v5.936 — la descrizione, in sezione, vive DENTRO #detail-meta, che però renderSeriesMeta
@@ -15019,7 +15521,10 @@ function renderSeriesMeta(s) {
     if (g.base.length) m.push(colonna(BULLET, g.base,
       (['bustine','albums','extras'].includes(sez2)
         ? (it ? (g.base.length === 1 ? 'versione standard' : 'versioni standard') : (g.base.length === 1 ? 'standard version' : 'standard versions'))
-        : (it ? nm.p + ' set base' : nm.p + ' base set')),
+        // v6.067 (Franco) - via il nome dell'oggetto: "160 set base", non "160 figurine set base".
+        // La sezione la si sta gia' guardando, e il suo nome e' scritto sopra: ripeterlo su ogni
+        // riga allunga la colonna senza dire niente di nuovo.
+        : (it ? 'set base' : 'base set')),
       false, nm.f, 'var(--type-base)'));
     if (g.variation.length) m.push(colonna(BULLET, g.variation,
       it ? (g.variation.length === 1 ? 'variazione ufficiale' : 'variazioni ufficiali')
@@ -15042,8 +15547,9 @@ function renderSeriesMeta(s) {
     // bianco = base, arancione = ufficiale, azzurro = non ufficiale, rosa = Change,
     // salmone = errore di stampa.
     if (g.items.length || alwaysTotal) m.push(colonna(BULLET, g.items,
-      it ? (g.items.length === 1 ? nm.s + ' in totale' : nm.p + ' in totale')
-         : (g.items.length === 1 ? nm.s + ' in total' : nm.p + ' in total'),
+      // v6.067 (Franco) - "368 totali" al posto di "368 figurine in totale": stessa ragione della
+      // riga del set base, e in piu' sparisce anche il "in", che non serviva a niente.
+      it ? 'totali' : 'total',
       true, nm.f, 'var(--accent3)'));
     return m;
   }
@@ -15054,8 +15560,14 @@ function renderSeriesMeta(s) {
     metaEl.classList.add('meta-hub');  // v5.886: su mobile le numeriche dell'hub vanno sotto la foto
     const cats = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
     const _pfx = c => '<div class="hub-cat-name" style="font-weight:700;color:var(--text);min-width:96px;flex-shrink:0;">' + getSectionLabel(c) + '</div>';
-    metaEl.innerHTML = '<div class="hub-wrap" style="display:flex;flex-direction:column;gap:0.7rem;width:100%;">' +
-      cats.map(c => '<div class="hub-cat-row" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;">' + _pfx(c) + sezRows(c, true).join('') + '</div>').join('') +
+    // v6.069 (Franco) - righe piu' vicine fra loro: 0.7rem -> 0.35rem. Il gap e' uno solo e vale
+    // per tutte e cinque le categorie, quindi restano equidistanti - stringerne alcune e non altre
+    // avrebbe fatto sembrare che le prime e le ultime appartengano a due elenchi diversi.
+    // Anche il gap DENTRO la riga scende a 0.35: si vede solo quando la riga va a capo (schermi
+    // stretti), ma se restasse a 0.7 una riga spezzata risulterebbe piu' distanziata di due righe
+    // intere, che e' il contrario di quello che deve comunicare.
+    metaEl.innerHTML = '<div class="hub-wrap" style="display:flex;flex-direction:column;gap:0.35rem;width:100%;">' +
+      cats.map(c => '<div class="hub-cat-row" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.35rem 1.4rem;">' + _pfx(c) + sezRows(c, true).join('') + '</div>').join('') +
       '</div>';
     posizionaTestataSerie();   // v5.936 — dopo il render: qui la descrizione torna in coda al blocco eroe
     try { _applicaChiusuraTestata(); } catch(e) {}   // v6.001
@@ -15144,7 +15656,7 @@ function updateSectionCounts() {
 }
 
 function openSeriesSection(section) {
-  _noPhotoFilter = false;
+  _fotoFilter = null;
   _itemTypeFilter = _tipoIniziale(); // v6.048 - da admin: 'all'
   _retroCategoryFilter = null; // il filtro per categoria dei Retro non sopravvive al cambio sezione/serie
   _retroSubcategoryFilter = null; // idem per la sottocategoria (v5.987)
@@ -15215,11 +15727,27 @@ function openSeriesSection(section) {
 // si scrive nella variabile e localStorage puo' solo CONTRADDIRLO con '0'. Scrivere
 // `=== '1'` avrebbe reso il default "aperta" per chiunque non avesse mai toccato il
 // comando - cioe' per tutti.
-let _testataSerieChiusa = true;
-try { if (localStorage.getItem('sgorbions_testata_chiusa') === '0') _testataSerieChiusa = false; } catch(e) {}
+// v6.059 (Franco) - il collassatore della testata serie c'e' anche sul DESKTOP, ma con il default
+// opposto: chiuso su telefono, APERTO su desktop.
+// Lo stato e' PER VIEWPORT, due valori e due chiavi. Con un valore solo la scelta fatta sul telefono
+// verrebbe portata al desktop e viceversa: sono due abitudini diverse, e su un telefono la testata
+// costa mezza schermata mentre sul desktop e' informazione che sta li' senza dare fastidio.
+// La chiave storica ('sgorbions_testata_chiusa') resta quella del TELEFONO: chi l'aveva aperta sul
+// telefono se la ritrova aperta, e non gli si cambia nulla sotto i piedi.
+let _testataChiusaMobile = true;
+let _testataChiusaDesktop = false;
+try {
+  if (localStorage.getItem('sgorbions_testata_chiusa') === '0') _testataChiusaMobile = false;
+  if (localStorage.getItem('sgorbions_testata_chiusa_desktop') === '1') _testataChiusaDesktop = true;
+} catch(e) {}
+function _testataChiusa() { return _isMobileViewport() ? _testataChiusaMobile : _testataChiusaDesktop; }
 function toggleTestataSerie() {
-  _testataSerieChiusa = !_testataSerieChiusa;
-  try { localStorage.setItem('sgorbions_testata_chiusa', _testataSerieChiusa ? '1' : '0'); } catch(e) {}
+  const mob = _isMobileViewport();
+  if (mob) _testataChiusaMobile = !_testataChiusaMobile; else _testataChiusaDesktop = !_testataChiusaDesktop;
+  try {
+    localStorage.setItem(mob ? 'sgorbions_testata_chiusa' : 'sgorbions_testata_chiusa_desktop',
+      (mob ? _testataChiusaMobile : _testataChiusaDesktop) ? '1' : '0');
+  } catch(e) {}
   // Si ripassa da _mostraTestataSerie e non si ripristina a mano: riaprendo, le visibilita'
   // vanno RIDECISE da chi le sa (descrizione, "Mostra tutto", specchietti). Riscriverle qui
   // sarebbe la stessa regola in due posti, che in questa sessione ha gia' prodotto due bachi.
@@ -15230,10 +15758,11 @@ function _applicaChiusuraTestata() {
   const heroInner = document.querySelector('#series-detail .series-hero-inner');
   if (!btn || !heroInner) return;
   const it = (currentLang === 'it');
-  const disponibile = _isMobileViewport() && !!currentSection;
+  // v6.059 - il comando c'e' in entrambe le larghezze; serve solo di essere dentro una sezione.
+  const disponibile = !!currentSection;
   btn.style.display = disponibile ? '' : 'none';
   heroInner.appendChild(btn); // sempre ultimo: i nodi qui sopra vengono spostati
-  const chiusa = disponibile && _testataSerieChiusa;
+  const chiusa = disponibile && _testataChiusa();
   // v6.004 (Franco) - TESTO nel blu delle azioni, non bottone pieno: apre e chiude, non
   // agisce, e un bottone pieno gli darebbe il peso di un comando che fa qualcosa.
   btn.textContent = chiusa
@@ -16016,11 +16545,13 @@ async function loadAllOwnedFromFirebase() {
   } catch(e) { console.error('loadAllOwned error', e); }
 }
 
-function setNoPhotoFilter(val) {
-  _noPhotoFilter = val;
+// v6.054 - `quale` vale 'senza' o 'con'; ricliccare quello acceso lo spegne. I due si escludono
+// da soli perche' condividono la stessa variabile: non c'e' niente da tenere sincronizzato.
+function setFotoFilter(quale) {
+  _fotoFilter = (_fotoFilter === quale) ? null : quale;
   currentItemPage = 1;
-  try { renderItems(); } catch(e) { console.error('renderItems (setNoPhotoFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setNoPhotoFilter)', e); }
+  try { renderItems(); } catch(e) { console.error('renderItems (setFotoFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setFotoFilter)', e); }
 }
 
 function renderItemTypeFilters() {
@@ -16126,9 +16657,22 @@ function renderItemTypeFilters() {
   if (presente.printError) html += item('printError',
     it ? 'Errori di stampa' : 'Print errors', '');
 
-  // v5.910 — "Senza foto" ora vive nel box "Filtri generici", per TUTTI gli utenti (desktop e mobile).
-  const _senzaFoto = _noPhotoFilter ? (it ? 'Con foto' : 'With photo') : (it ? 'Senza foto' : 'Without photo');
-  html += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_noPhotoFilter ? 'on' : ''}" onclick="setNoPhotoFilter(${!_noPhotoFilter})" title="${_senzaFoto}"></button><span style="font-size:0.82rem;color:var(--text);">${_senzaFoto}</span></div>`;
+  // v5.910 — "Senza foto" vive nel box "Filtri generici", per TUTTI gli utenti (desktop e mobile).
+  // v6.054 (Franco) — accanto c'e' "Con foto", ma solo per l'ADMIN.
+  // Cambia anche l'etichetta di "Senza foto", che da ACCESO era sbagliata. La tabella di come si
+  // comportava (ricostruita sul codice della v6.053, non a memoria):
+  //   spento  -> scritta "Senza foto", interruttore spento, mostra TUTTI;   cliccando: solo i senza foto
+  //   acceso  -> scritta "Con foto",  interruttore BLU,     mostra i SENZA foto; cliccando: tutti
+  // Da acceso quella scritta non diceva ne' lo stato (mostrava i senza foto) ne' l'effetto del clic
+  // (che riporta a TUTTI, non ai "con foto"): nominava una terza cosa, che non esisteva. Segnalato
+  // da Franco, che l'aveva provata: "il cursore prende il nome di Con foto ed e' blu, ma non mostra
+  // i retro con foto".
+  // Ora ogni interruttore porta il proprio nome, sempre lo stesso, e l'acceso si riconosce dal
+  // colore. Con due filtri affiancati era l'unica forma che non si contraddicesse.
+  const _fotoBtn = (quale, etichetta) =>
+    `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_fotoFilter === quale ? 'on' : ''}" onclick="setFotoFilter('${quale}')" title="${etichetta}"></button><span style="font-size:0.82rem;color:var(--text);">${etichetta}</span></div>`;
+  html += _fotoBtn('senza', it ? 'Senza foto' : 'Without photo');
+  if (currentUser?.isAdmin) html += _fotoBtn('con', it ? 'Con foto' : 'With photo');
 
   html += '</div>';
 
@@ -16450,7 +16994,9 @@ function getCurrentlyFilteredItems(opts) {
     // Filtro per Tipo di change (solo Figurine): mostra SOLO i Change di quel tipo (v5.809)
     if (!_skipChangeType && _changeTypeFilter !== null && currentSection === 'figurines'
         && !(f.isChange && ((f.changeType || '').trim()) === _changeTypeFilter)) return false;
-    if (_noPhotoFilter && f.img) return false;
+    // v6.054 - i due versi dello stesso filtro
+    if (_fotoFilter === 'senza' && f.img) return false;
+    if (_fotoFilter === 'con' && !f.img) return false;
     if (_own) {
       const ceLho = _own.includes(f.id);
       if (_ownedFilter === 'owned' && !ceLho) return false;
@@ -17811,6 +18357,8 @@ async function _saveFigurineInner() {
         if (ebayCampiCambiati(_prima, figs[idx])) figs[idx].daPubblicare = true;
         await fsSave('figurines', figs[idx]);
         _cache.figurines = figs;
+        // v6.053 - anche da questa form i collegati seguono la base
+        try { await _propagaAiCollegati(figs[idx]); } catch(e) { console.error('propaga', e); }
       }
     } else {
       const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti, daPubblicare: forSale/* v5.981: nasce marcato Ebay = nasce in coda */ };
@@ -18461,6 +19009,7 @@ function adminTab(tab) {
   if (tab === 'eventi') renderAdminEventi();
   if (tab === 'risorse') renderAdminRisorse();
   if (tab === 'foto') renderAdminFoto();
+  if (tab === 'funzioni') renderAdminFunzioni(); // v6.055
   if (tab === 'errori') renderAdminErrori();
   if (tab === 'email') { renderEmailLog(); refreshEmailCountWidgets(); }
   if (tab === 'settings') { loadReplyToField(); loadEbaySettingsFields(); }
@@ -19489,7 +20038,11 @@ function openFigDetail(figId, elencoNav) {
   let _rowScoreMobile = '';
 
   // Serie (prima informazione, sempre visibile, utile arrivando da una ricerca)
-  (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Serie' : 'Series')}</span><span class="detail-value" style="font-weight:600;">${figSeries?.name || ''}</span></div>`);
+  // v6.051 (Franco) - la Serie diventa un COLLEGAMENTO: dall'oggetto si deve poter andare alla sua
+  // serie. Prima era testo morto, e per arrivarci si tornava indietro a mano. Il modale si chiude
+  // prima di aprire la serie: lasciarlo aperto sopra una pagina cambiata sotto e' il modo piu'
+  // veloce per non capire piu' dove si e'.
+  (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Serie' : 'Series')}</span><span class="detail-value" style="font-weight:600;">${figSeries ? `<a href="#" onclick="closeModal('fig-detail-modal');openSeriesDetail('${figSeries.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(figSeries.name)} \u2197</a>` : ''}</span></div>`);
 
   // v5.841 — la riga "Retro collegato" NON si stampa piu' (ne' su telefono ne' su desktop):
   // sotto la foto del Retro c'e' gia' lo STESSO link (retroCaption, piu' in basso in questa
@@ -20303,18 +20856,33 @@ function switchToEditMode(figId) {
     '</label></div>';
   html += '</div>'; // chiude fe-tab-ebay
 
-  // Pulsanti
-  html += '<div style="margin-top:1rem;display:flex;gap:0.5rem;justify-content:flex-end;">';
-  html += '<button onclick="closeModal(\'fig-detail-modal\')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">' + (currentLang==='it'?'Annulla':'Cancel') + '</button>';
-  html += '<button id="fig-edit-save-btn" data-fig-id="' + f.id + '" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:none;background:var(--action-admin);color:#ffffff;cursor:pointer;font-weight:600;">💾 ' + (currentLang==='it'?'Salva':'Save') + '</button>';
-  html += '</div>';
+  // v6.052 (Franco) - I PULSANTI SALGONO IN CIMA E CI RESTANO.
+  // Stavano in fondo al form, dopo il tab Ebay: per salvare bisognava scorrere tutto ogni volta.
+  // Non li ho solo spostati piu' su: la barra e' APPICCICATA (position:sticky), quindi resta
+  // visibile mentre si scorre. Spostarli e basta avrebbe risolto solo per i campi in alto, e il
+  // problema di Franco - "devo sempre scrollare per arrivarci" - sarebbe tornato lavorando in
+  // fondo alla scheda.
+  // Un blocco solo, non due: duplicare i pulsanti vuol dire duplicare gli id, e due elementi con
+  // lo stesso id sono un difetto che si manifesta il giorno in cui uno dei due smette di rispondere.
+  const barra =
+    '<div style="position:sticky;top:0;z-index:5;display:flex;gap:0.5rem;justify-content:flex-end;align-items:center;background:var(--card);padding:0.6rem 0 0.7rem;margin-bottom:0.2rem;border-bottom:1px solid var(--border);">' +
+    '<button onclick="closeModal(\'fig-detail-modal\')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">' + (currentLang==='it'?'Annulla':'Cancel') + '</button>' +
+    // v6.052 - "Salva e resta": salva e lascia la scheda aperta. Serve a chi sistema piu' campi di
+    // seguito, che con un solo Salva doveva riaprire l'oggetto ogni volta.
+    '<button id="fig-edit-save-stay-btn" data-fig-id="' + f.id + '" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--action-admin);background:transparent;color:var(--action-admin);cursor:pointer;font-weight:600;">💾 ' + (currentLang==='it'?'Salva e resta':'Save and stay') + '</button>' +
+    '<button id="fig-edit-save-btn" data-fig-id="' + f.id + '" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:none;background:var(--action-admin);color:#ffffff;cursor:pointer;font-weight:600;">💾 ' + (currentLang==='it'?'Salva':'Save') + '</button>' +
+    '</div>';
 
-  content.innerHTML = html;
+  content.innerHTML = barra + html;
 
-  // Listener sul pulsante Salva (evita problemi con onclick inline)
+  // Listener sui due pulsanti Salva (evita problemi con onclick inline)
   const saveBtn = document.getElementById('fig-edit-save-btn');
   if (saveBtn) saveBtn.addEventListener('click', function() {
     saveFigFromDetail(saveBtn.getAttribute('data-fig-id'));
+  });
+  const stayBtn = document.getElementById('fig-edit-save-stay-btn'); // v6.052
+  if (stayBtn) stayBtn.addEventListener('click', function() {
+    saveFigFromDetail(stayBtn.getAttribute('data-fig-id'), { resta: true });
   });
 }
 
@@ -20493,202 +21061,285 @@ function toggleFeRetroBianco() {
   }
   if (group) group.style.display = chk?.checked ? 'none' : '';
 }
-async function saveFigFromDetail(figId) {
-  let name = document.getElementById('fe-name')?.value.trim();
-  const existingForCheck = getData('figurines', []).find(x => x.id === figId);
-  // v5.774 — per un Change/Errore di stampa di RETRO il Nome eredita quello del retro base (campo
-  // nascosto). Se il base manca, il controllo apposito piu' sotto blocca; qui si salta "Nome obbligatorio".
-  const _isChgChk = !!document.getElementById('fe-is-change')?.checked;
-  const _isPEChk = !!document.getElementById('fe-is-printerror')?.checked;
-  // v5.779/790 — Nome ereditato dalla base per Change ED Errori di stampa, sia Retro sia figurine.
-  const _nameInherited = (_isChgChk || _isPEChk) &&
-    (existingForCheck?.section === 'retros' || existingForCheck?.section === 'figurines');
-  // v6.038 - i tre campi che, per un Change/errore di stampa di RETRO, comandano dalla base.
-  // Letti qui una volta sola: li usano sia il controllo di chiave duplicata sia `updates`, e
-  // leggerli due volte in due punti e' il modo in cui i due finiscono per non coincidere.
-  let _catEff     = document.getElementById('fe-category')?.value.trim() || '';
-  let _subcatEff  = document.getElementById('fe-subcategory')?.value.trim() || '';
-  let _subnameEff = document.getElementById('fe-subname')?.value.trim() || '';
-  // v6.038 (Franco) - PER UN CHANGE O UN ERRORE DI STAMPA DI RETRO COMANDANO I CAMPI DELLA BASE:
-  // Nome, Sottonome, Categoria e Sottocategoria. Il Nome lo faceva gia' dalla v5.774; gli altri tre
-  // restavano quelli digitati, e potevano allontanarsi dalla base senza che niente lo segnalasse.
-  // Non e' teoria: il 1 agosto 2026 (vedi §13 del documento) erano gia' stati corretti a mano
-  // quattro Change di Serie 2 con la sottocategoria divergente dalla base.
-  // Derivarli qui, al salvataggio, e' l'unico modo per cui il dato NON possa piu' divergere: un
-  // controllo che segnala la divergenza la scopre dopo, questo la rende impossibile.
-  if (_nameInherited) {
-    const _baseId = document.getElementById('fe-base-figurine')?.value || null;
-    const _bR = _baseId ? getData('figurines', []).find(x => x.id === _baseId) : null;
-    if (_bR) {
-      name = _bR.name || '';
-      if (existingForCheck?.section === 'retros') {
-        _subnameEff = _bR.subname || '';
-        _catEff     = _bR.category || '';
-        _subcatEff  = _bR.subcategory || '';
+// v6.052 - opzioni.resta = salva SENZA chiudere la scheda.
+
+// v6.053 (Franco) - I CAMPI COMANDATI DALLA BASE SI PROPAGANO AI COLLEGATI.
+// La v6.038 aveva risolto meta' del problema: quando si salva un Change o un errore di stampa, i
+// suoi campi vengono riscritti da quelli della base. Ma se a cambiare e' LA BASE, i figli restavano
+// com'erano - e nessuno lo diceva. Franco: "aggiornando il sottonome di un retro non si aggiorna il
+// sottonome dei suoi change".
+// L'elenco dei campi sta in una funzione sola: e' lo stesso che le due form usano per l'eredita' al
+// salvataggio, e se un domani se ne aggiunge uno va aggiunto qui.
+function _campiEreditatiDaBase(section) {
+  // Il Nome lo ereditano Change ed errori di stampa in ENTRAMBE le sezioni (v5.774/779/790);
+  // Sottonome, Categoria e Sottocategoria esistono solo per i Retro (v6.038).
+  return section === 'retros' ? ['name', 'subname', 'category', 'subcategory'] : ['name'];
+}
+
+// v6.055 (Franco) - i figli di un oggetto: Change, errori di stampa E VARIAZIONI.
+// Le variazioni erano rimaste fuori dalla v6.053 perche' non ereditano nulla al salvataggio; ma il
+// loro Nome, per convenzione, e' quello della base (vedi §12.1: "Per le Variazioni il Nome coincide
+// sempre con quello della figurina base"). Convenzione che finora non la faceva rispettare nessuno.
+// Sui dati veri: 1049 figli in tutto, 5 divergenti, e NESSUNA variazione fra questi - includerle
+// oggi non cambia niente e domani impedisce che si allontanino in silenzio.
+function _figliCollegati(base, figs) {
+  if (!base || !base.id) return [];
+  return (figs || getData('figurines', [])).filter(f =>
+    f.baseFigurineId === base.id &&
+    (f.isChange || f.isPrintError || f.isVariation || f.isUnofficialVariation));
+}
+
+// I campi in cui un figlio si e' allontanato dalla base. Elenco vuoto = allineato.
+function _divergenzeDaBase(figlio, base) {
+  const t = v => (v || '').trim();
+  return _campiEreditatiDaBase(figlio.section).filter(k => t(figlio[k]) !== t(base[k]));
+}
+
+// Riallinea alla base i suoi figli. Restituisce quanti record ha toccato.
+// Scrive solo i record che divergono davvero - una propagazione che riscrive tutto ad ogni
+// salvataggio costerebbe scritture inutili e sporcherebbe la cronologia senza cambiare un dato.
+async function _propagaAiCollegati(base) {
+  if (!base || !base.id) return 0;
+  const figli = _figliCollegati(base);
+  let toccati = 0;
+  for (const figlio of figli) {
+    const diversi = _divergenzeDaBase(figlio, base);
+    if (!diversi.length) continue;
+    const nuovo = { ...figlio };
+    diversi.forEach(k => { nuovo[k] = base[k] || ''; });
+    try { nuovo.fullName = computeFullName(nuovo, getData('figurines', [])); } catch(e) {}
+    try {
+      await fsSave('figurines', nuovo);
+      const idx = (_cache.figurines || []).findIndex(x => x.id === nuovo.id);
+      if (idx >= 0) _cache.figurines[idx] = nuovo;
+      toccati++;
+    } catch(e) {
+      console.error('_propagaAiCollegati', nuovo.id, e);
+    }
+  }
+  return toccati;
+}
+
+async function saveFigFromDetail(figId, opzioni) {
+  const _resta = !!(opzioni && opzioni.resta);
+  // i due pulsanti si spengono durante il salvataggio: con "Salva e resta" la scheda rimane
+  // aperta, quindi il secondo clic e' a portata di dito piu' che mai
+  const _bottoni = ['fig-edit-save-btn', 'fig-edit-save-stay-btn'].map(id => document.getElementById(id)).filter(Boolean);
+  _bottoni.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
+  const _riaccendi = () => _bottoni.forEach(b => { b.disabled = false; b.style.opacity = ''; });
+  // v6.052 - try/finally: i pulsanti si riaccendono su OGNI uscita, comprese quelle premature
+  // delle validazioni. Riaccenderli a mano davanti a ogni return e' il modo in cui, alla prossima
+  // validazione aggiunta, la scheda resta con i pulsanti spenti e nessuno capisce perche'.
+  try {
+
+    let name = document.getElementById('fe-name')?.value.trim();
+    const existingForCheck = getData('figurines', []).find(x => x.id === figId);
+    // v5.774 — per un Change/Errore di stampa di RETRO il Nome eredita quello del retro base (campo
+    // nascosto). Se il base manca, il controllo apposito piu' sotto blocca; qui si salta "Nome obbligatorio".
+    const _isChgChk = !!document.getElementById('fe-is-change')?.checked;
+    const _isPEChk = !!document.getElementById('fe-is-printerror')?.checked;
+    // v5.779/790 — Nome ereditato dalla base per Change ED Errori di stampa, sia Retro sia figurine.
+    const _nameInherited = (_isChgChk || _isPEChk) &&
+      (existingForCheck?.section === 'retros' || existingForCheck?.section === 'figurines');
+    // v6.038 - i tre campi che, per un Change/errore di stampa di RETRO, comandano dalla base.
+    // Letti qui una volta sola: li usano sia il controllo di chiave duplicata sia `updates`, e
+    // leggerli due volte in due punti e' il modo in cui i due finiscono per non coincidere.
+    let _catEff     = document.getElementById('fe-category')?.value.trim() || '';
+    let _subcatEff  = document.getElementById('fe-subcategory')?.value.trim() || '';
+    let _subnameEff = document.getElementById('fe-subname')?.value.trim() || '';
+    // v6.038 (Franco) - PER UN CHANGE O UN ERRORE DI STAMPA DI RETRO COMANDANO I CAMPI DELLA BASE:
+    // Nome, Sottonome, Categoria e Sottocategoria. Il Nome lo faceva gia' dalla v5.774; gli altri tre
+    // restavano quelli digitati, e potevano allontanarsi dalla base senza che niente lo segnalasse.
+    // Non e' teoria: il 1 agosto 2026 (vedi §13 del documento) erano gia' stati corretti a mano
+    // quattro Change di Serie 2 con la sottocategoria divergente dalla base.
+    // Derivarli qui, al salvataggio, e' l'unico modo per cui il dato NON possa piu' divergere: un
+    // controllo che segnala la divergenza la scopre dopo, questo la rende impossibile.
+    if (_nameInherited) {
+      const _baseId = document.getElementById('fe-base-figurine')?.value || null;
+      const _bR = _baseId ? getData('figurines', []).find(x => x.id === _baseId) : null;
+      if (_bR) {
+        name = _bR.name || '';
+        if (existingForCheck?.section === 'retros') {
+          _subnameEff = _bR.subname || '';
+          _catEff     = _bR.category || '';
+          _subcatEff  = _bR.subcategory || '';
+        }
       }
     }
-  }
-  if (!name && !_nameInherited) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
-  if (existingForCheck?.section === 'retros') {
-    const category = _catEff; // v6.038
-    const changeTypeVal = document.getElementById('fe-retro-change-type')?.value || '';
-    // v6.035 - letta qui e non riusata da `updates`, che si costruisce piu' sotto: nella form A la
-    // stessa cosa e' una const in cima, qui il valore va preso dal campo prima del controllo.
-    const subcategoryVal = _subcatEff; // v6.038
-      // stessa correzione del controllo gemello (v5.717): la chiave comprende il TIPO
-      const tipoNuovo = tipoDiOggetto({
-        isVariation: document.getElementById('fe-is-variation')?.checked || false,
-        isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
-        isChange: document.getElementById('fe-is-change')?.checked || false,
-        isPrintError: document.getElementById('fe-is-printerror')?.checked || false
-      });
-      // v6.035 (Franco) - LA SOTTOCATEGORIA ENTRA NELLA CHIAVE. L'import ce l'ha dalla v5.985,
-      // dopo una segnalazione di Franco su dati veri; queste due form no, e le due chiavi
-      // dicevano cose diverse sullo stesso dato: l'import creava legittimamente due retro che
-      // differiscono solo per la sottocategoria, e poi la form si rifiutava di salvarli.
-      // Misurato prima di toccare: su 1013 retro la chiave vecchia vedeva 12 gruppi in collisione
-      // (24 record); 11 dei 12 sono i "RICERCATO" BLU/ROSSO, cioe' record veri e distinti che
-      // oggi non si possono salvare. Con la sottocategoria ne resta 1: due errori di stampa
-      // "OFFERTA SPECIALE! / ROSA / 174 - SET DA PESCA" identici in tutto - quello e' un doppione
-      // vero, non un difetto della chiave.
-      // Il SOTTONOME resta fuori, perche' fuori e' anche nella chiave dell'import: si allinea a
-      // quella, non si inventa una terza chiave. (Una nota della v5.980 dice che l'import lo
-      // include: nel codice dell'import non c'e' - da verificare a parte.)
-      const dup = getData('figurines', []).find(f =>
-        f.id !== figId &&
-        f.seriesId === existingForCheck.seriesId &&
-        f.section === 'retros' &&
-        (f.name||'').toLowerCase() === name.toLowerCase() &&
-        (f.category||'').toLowerCase() === category.toLowerCase() &&
-        (f.subcategory||'').toLowerCase().trim() === subcategoryVal.toLowerCase().trim() && // v6.035
-        tipoDiOggetto(f) === tipoNuovo &&
-        (tipoNuovo !== 'change' ||
-          (f.changeType||'').toLowerCase().trim() === changeTypeVal.toLowerCase().trim())
-      );
-    if (dup) {
-      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, la stessa Sottocategoria, lo stesso Nome e lo stesso Tipo in questa serie (per i Change conta anche il Tipo di change)' : 'A Retro with the same Category, Subcategory, Name and Type already exists in this series (for Changes the Change type counts too)'), 'error', null, 7000); // v6.047 - il doppio del tempo: e' un messaggio da leggere, non da notare
+    if (!name && !_nameInherited) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
+    if (existingForCheck?.section === 'retros') {
+      const category = _catEff; // v6.038
+      const changeTypeVal = document.getElementById('fe-retro-change-type')?.value || '';
+      // v6.035 - letta qui e non riusata da `updates`, che si costruisce piu' sotto: nella form A la
+      // stessa cosa e' una const in cima, qui il valore va preso dal campo prima del controllo.
+      const subcategoryVal = _subcatEff; // v6.038
+        // stessa correzione del controllo gemello (v5.717): la chiave comprende il TIPO
+        const tipoNuovo = tipoDiOggetto({
+          isVariation: document.getElementById('fe-is-variation')?.checked || false,
+          isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
+          isChange: document.getElementById('fe-is-change')?.checked || false,
+          isPrintError: document.getElementById('fe-is-printerror')?.checked || false
+        });
+        // v6.035 (Franco) - LA SOTTOCATEGORIA ENTRA NELLA CHIAVE. L'import ce l'ha dalla v5.985,
+        // dopo una segnalazione di Franco su dati veri; queste due form no, e le due chiavi
+        // dicevano cose diverse sullo stesso dato: l'import creava legittimamente due retro che
+        // differiscono solo per la sottocategoria, e poi la form si rifiutava di salvarli.
+        // Misurato prima di toccare: su 1013 retro la chiave vecchia vedeva 12 gruppi in collisione
+        // (24 record); 11 dei 12 sono i "RICERCATO" BLU/ROSSO, cioe' record veri e distinti che
+        // oggi non si possono salvare. Con la sottocategoria ne resta 1: due errori di stampa
+        // "OFFERTA SPECIALE! / ROSA / 174 - SET DA PESCA" identici in tutto - quello e' un doppione
+        // vero, non un difetto della chiave.
+        // Il SOTTONOME resta fuori, perche' fuori e' anche nella chiave dell'import: si allinea a
+        // quella, non si inventa una terza chiave. (Una nota della v5.980 dice che l'import lo
+        // include: nel codice dell'import non c'e' - da verificare a parte.)
+        const dup = getData('figurines', []).find(f =>
+          f.id !== figId &&
+          f.seriesId === existingForCheck.seriesId &&
+          f.section === 'retros' &&
+          (f.name||'').toLowerCase() === name.toLowerCase() &&
+          (f.category||'').toLowerCase() === category.toLowerCase() &&
+          (f.subcategory||'').toLowerCase().trim() === subcategoryVal.toLowerCase().trim() && // v6.035
+          tipoDiOggetto(f) === tipoNuovo &&
+          (tipoNuovo !== 'change' ||
+            (f.changeType||'').toLowerCase().trim() === changeTypeVal.toLowerCase().trim())
+        );
+      if (dup) {
+        toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, la stessa Sottocategoria, lo stesso Nome e lo stesso Tipo in questa serie (per i Change conta anche il Tipo di change)' : 'A Retro with the same Category, Subcategory, Name and Type already exists in this series (for Changes the Change type counts too)'), 'error', null, 7000); // v6.047 - il doppio del tempo: e' un messaggio da leggere, non da notare
+        return;
+      }
+    }
+    const updates = {
+      id: figId,
+      name,
+      number: document.getElementById('fe-number')?.value ? +document.getElementById('fe-number').value : null,
+      noNumber: document.getElementById('fe-no-number')?.checked || false,
+      subseries: document.getElementById('fe-subseries')?.value.trim() || '',
+      desc: document.getElementById('fe-desc')?.value.trim() || '',
+      score: +(document.getElementById('fe-score')?.value || 0),
+      size: document.getElementById('fe-size')?.value.trim() || '',
+      category: _catEff, // v6.038
+      subcategory: _subcatEff, // v6.038
+      subname: _subnameEff, // v6.038
+      isVariation: document.getElementById('fe-is-variation')?.checked || false,
+      isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
+      isChange: document.getElementById('fe-is-change')?.checked || false,
+      isPrintError: document.getElementById('fe-is-printerror')?.checked || false,
+      changeType: document.getElementById('fe-retro-change-type')?.value || null,
+      printErrorType: document.getElementById('fe-print-error-type')?.value.trim() || null,
+      forSale: document.getElementById('fe-for-sale')?.checked || false,
+      price: document.getElementById('fe-for-sale')?.checked ? (parseFloat(document.getElementById('fe-price').value) || 0) : null,
+      quantity: document.getElementById('fe-for-sale')?.checked ? (parseInt(document.getElementById('fe-quantity').value) || 1) : null,
+      condition: document.getElementById('fe-for-sale')?.checked ? document.getElementById('fe-condition').value : null,
+    };
+
+    if ([updates.isVariation, updates.isUnofficialVariation, updates.isChange, updates.isPrintError].filter(Boolean).length > 1) {
+      toast(currentLang === 'it' ? 'Variazione ufficiale, non ufficiale, Change ed Errore di stampa sono mutuamente esclusivi: spunta solo una opzione' : 'Official variation, unofficial variation, Change and Print error are mutually exclusive: check only one', 'error');
       return;
     }
-  }
-  const updates = {
-    id: figId,
-    name,
-    number: document.getElementById('fe-number')?.value ? +document.getElementById('fe-number').value : null,
-    noNumber: document.getElementById('fe-no-number')?.checked || false,
-    subseries: document.getElementById('fe-subseries')?.value.trim() || '',
-    desc: document.getElementById('fe-desc')?.value.trim() || '',
-    score: +(document.getElementById('fe-score')?.value || 0),
-    size: document.getElementById('fe-size')?.value.trim() || '',
-    category: _catEff, // v6.038
-    subcategory: _subcatEff, // v6.038
-    subname: _subnameEff, // v6.038
-    isVariation: document.getElementById('fe-is-variation')?.checked || false,
-    isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
-    isChange: document.getElementById('fe-is-change')?.checked || false,
-    isPrintError: document.getElementById('fe-is-printerror')?.checked || false,
-    changeType: document.getElementById('fe-retro-change-type')?.value || null,
-    printErrorType: document.getElementById('fe-print-error-type')?.value.trim() || null,
-    forSale: document.getElementById('fe-for-sale')?.checked || false,
-    price: document.getElementById('fe-for-sale')?.checked ? (parseFloat(document.getElementById('fe-price').value) || 0) : null,
-    quantity: document.getElementById('fe-for-sale')?.checked ? (parseInt(document.getElementById('fe-quantity').value) || 1) : null,
-    condition: document.getElementById('fe-for-sale')?.checked ? document.getElementById('fe-condition').value : null,
-  };
 
-  if ([updates.isVariation, updates.isUnofficialVariation, updates.isChange, updates.isPrintError].filter(Boolean).length > 1) {
-    toast(currentLang === 'it' ? 'Variazione ufficiale, non ufficiale, Change ed Errore di stampa sono mutuamente esclusivi: spunta solo una opzione' : 'Official variation, unofficial variation, Change and Print error are mutually exclusive: check only one', 'error');
-    return;
-  }
+    updates.baseFigurineId = (updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isPrintError)
+      ? (document.getElementById('fe-base-figurine')?.value || null)
+      : null;
 
-  updates.baseFigurineId = (updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isPrintError)
-    ? (document.getElementById('fe-base-figurine')?.value || null)
-    : null;
+    // Un Errore di stampa non ha changeType (dalla v5.711 e' un tipo a se'): azzeriamo un
+    // eventuale valore residuo del select, coerente con l'import.
+    if (updates.isPrintError) updates.changeType = '';
+    // ...e simmetricamente il Tipo di errore di stampa vale solo per gli Errori di stampa.
+    if (!updates.isPrintError) updates.printErrorType = null;
+    // Il Tipo di errore di stampa e' OBBLIGATORIO quando "Errore di stampa" e' selezionato (v5.771)
+    if (updates.isPrintError && !updates.printErrorType) {
+      toast((currentLang === 'it' ? 'Il campo "Tipo di errore di stampa" è obbligatorio quando è selezionato "Errore di stampa"' : 'The "Print error type" field is required when "Print error" is selected'), 'error');
+      return;
+    }
+    // v5.779 — Il Tipo di change e' OBBLIGATORIO per un Change (Retro o figurina)
+    if (updates.isChange && !updates.changeType) {
+      toast((currentLang === 'it' ? 'Il campo "Tipo di change" è obbligatorio per un Change' : 'The "Change type" field is required for a Change'), 'error');
+      return;
+    }
 
-  // Un Errore di stampa non ha changeType (dalla v5.711 e' un tipo a se'): azzeriamo un
-  // eventuale valore residuo del select, coerente con l'import.
-  if (updates.isPrintError) updates.changeType = '';
-  // ...e simmetricamente il Tipo di errore di stampa vale solo per gli Errori di stampa.
-  if (!updates.isPrintError) updates.printErrorType = null;
-  // Il Tipo di errore di stampa e' OBBLIGATORIO quando "Errore di stampa" e' selezionato (v5.771)
-  if (updates.isPrintError && !updates.printErrorType) {
-    toast((currentLang === 'it' ? 'Il campo "Tipo di errore di stampa" è obbligatorio quando è selezionato "Errore di stampa"' : 'The "Print error type" field is required when "Print error" is selected'), 'error');
-    return;
-  }
-  // v5.779 — Il Tipo di change e' OBBLIGATORIO per un Change (Retro o figurina)
-  if (updates.isChange && !updates.changeType) {
-    toast((currentLang === 'it' ? 'Il campo "Tipo di change" è obbligatorio per un Change' : 'The "Change type" field is required for a Change'), 'error');
-    return;
-  }
+    // Per Variazioni/Change/Errore di stampa il Numero eredita quello della figurina base collegata
+    if ((updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isPrintError) && updates.baseFigurineId) {
+      const baseFigForNum = getData('figurines', []).find(x => x.id === updates.baseFigurineId);
+      updates.number = baseFigForNum ? baseFigForNum.number : null;
+    }
 
-  // Per Variazioni/Change/Errore di stampa il Numero eredita quello della figurina base collegata
-  if ((updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isPrintError) && updates.baseFigurineId) {
-    const baseFigForNum = getData('figurines', []).find(x => x.id === updates.baseFigurineId);
-    updates.number = baseFigForNum ? baseFigForNum.number : null;
-  }
+    if ((updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isPrintError) && !updates.baseFigurineId) {
+      const label = existingForCheck?.section === 'retros' ? (currentLang === 'it' ? 'Retro base' : 'Base Retro') : (currentLang === 'it' ? 'Figurina base' : 'Base sticker');
+      toast((currentLang === 'it' ? `Il campo "${label}" è obbligatorio quando è selezionata una Variazione, un Change o un Errore di stampa` : `The "${label}" field is required when a Variation, Change or Print error is selected`), 'error');
+      return;
+    }
+    if (existingForCheck?.section !== 'retros' && (updates.isVariation || updates.isUnofficialVariation) && !document.getElementById('fe-retro')?.value) {
+      toast((currentLang === 'it' ? 'Il campo "Retro associato" è obbligatorio quando è selezionata una Variazione ufficiale o non ufficiale' : 'The "Associated retro" field is required when an official or unofficial Variation is selected'), 'error');
+      return;
+    }
+    // v5.786 — retro anche per i Change (facoltativo). Solo i Retro (section) non hanno il campo.
+    updates.retroId = (existingForCheck?.section !== 'retros')
+      ? (document.getElementById('fe-retro')?.value || null)
+      : null;
+    // v6.007 - come nell'altra form: un retro VERO ha la precedenza sul retro bianco.
+    updates.retroBianco = (existingForCheck?.section !== 'retros')
+      ? (!updates.retroId && !!document.getElementById('fe-retro-bianco')?.checked)
+      : false;
 
-  if ((updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isPrintError) && !updates.baseFigurineId) {
-    const label = existingForCheck?.section === 'retros' ? (currentLang === 'it' ? 'Retro base' : 'Base Retro') : (currentLang === 'it' ? 'Figurina base' : 'Base sticker');
-    toast((currentLang === 'it' ? `Il campo "${label}" è obbligatorio quando è selezionata una Variazione, un Change o un Errore di stampa` : `The "${label}" field is required when a Variation, Change or Print error is selected`), 'error');
-    return;
-  }
-  if (existingForCheck?.section !== 'retros' && (updates.isVariation || updates.isUnofficialVariation) && !document.getElementById('fe-retro')?.value) {
-    toast((currentLang === 'it' ? 'Il campo "Retro associato" è obbligatorio quando è selezionata una Variazione ufficiale o non ufficiale' : 'The "Associated retro" field is required when an official or unofficial Variation is selected'), 'error');
-    return;
-  }
-  // v5.786 — retro anche per i Change (facoltativo). Solo i Retro (section) non hanno il campo.
-  updates.retroId = (existingForCheck?.section !== 'retros')
-    ? (document.getElementById('fe-retro')?.value || null)
-    : null;
-  // v6.007 - come nell'altra form: un retro VERO ha la precedenza sul retro bianco.
-  updates.retroBianco = (existingForCheck?.section !== 'retros')
-    ? (!updates.retroId && !!document.getElementById('fe-retro-bianco')?.checked)
-    : false;
+    // Gestione immagine
+    if (_figEditImgData === '__remove__') {
+      updates.img = '';
+    } else if (_figEditImgData) {
+      try {
+        const res = await fetch(_figEditImgData);
+        const blob = await res.blob();
+        const uploaded = await uploadToCloudinary(blob);
+        if (uploaded) updates.img = uploaded;
+      } catch(e) { console.error('Upload img error', e); }
+    }
+    _figEditImgData = null;
 
-  // Gestione immagine
-  if (_figEditImgData === '__remove__') {
-    updates.img = '';
-  } else if (_figEditImgData) {
+    // Gestione foto Ebay
+    if (editingFeEbayImgFileSave) {
+      try {
+        const uploadedEbay = await uploadToCloudinary(editingFeEbayImgFileSave);
+        if (uploadedEbay) updates.ebayImg = uploadedEbay;
+      } catch(e) { console.error('Upload ebayImg error', e); toast((currentLang === 'it' ? 'Caricamento foto Ebay fallito' : 'Ebay photo upload failed'), 'error'); }
+    }
+    editingFeEbayImgFileSave = null;
+
+    // Mantieni i campi esistenti non modificati
+    const existing = getData('figurines', []).find(x => x.id === figId);
+    const merged = { ...existing, ...updates };
+    // Rimuovi campi null/vuoti solo se non erano popolati
+    if (!merged.number) delete merged.number;
+    if (!merged.subseries) delete merged.subseries;
+    if (!merged.size) delete merged.size;
+    merged.fullName = computeFullName(merged, getData('figurines', []));
+
     try {
-      const res = await fetch(_figEditImgData);
-      const blob = await res.blob();
-      const uploaded = await uploadToCloudinary(blob);
-      if (uploaded) updates.img = uploaded;
-    } catch(e) { console.error('Upload img error', e); }
-  }
-  _figEditImgData = null;
+      await fsSave('figurines', merged);
+    } catch(e) {
+      console.error('saveFigFromDetail', e);
+      toast((currentLang === 'it' ? '❌ Salvataggio fallito: ' + (e?.code || e?.name || 'errore') + ' — riprova' : '❌ Save failed: ' + (e?.code || e?.name || 'error') + ' — please retry'), 'error');
+      return;
+    }
+    if (_cache.figurines) {
+      const idx = _cache.figurines.findIndex(x => x.id === figId);
+      if (idx >= 0) _cache.figurines[idx] = merged;
+    }
+    // v6.053 - i collegati seguono la base
+    let _propagati = 0;
+    try { _propagati = await _propagaAiCollegati(merged); } catch(e) { console.error('propaga', e); }
+    const savedLabel = getSectionLabelSingular(merged.section || 'figurines');
+    // v6.053 - se la modifica ha toccato dei collegati lo si DICE: un salvataggio che ne modifica
+    // altri in silenzio e' il modo in cui ci si accorge dei danni tre giorni dopo.
+    const _extra = _propagati
+      ? (currentLang==='it' ? ` — aggiornati anche ${_propagati} collegat${_propagati===1?'o':'i'}` : ` — ${_propagati} linked item${_propagati===1?'':'s'} updated too`)
+      : '';
+    toast((currentLang==='it'?`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} salvat${savedLabel.endsWith('a')?'a':'o'}!`:`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} saved!`) + _extra, 'success', null, _propagati ? 6000 : 3500);
+    // v6.052 - con "Salva e resta" la scheda NON si chiude: si aggiorna solo la griglia dietro.
+    if (!_resta) closeModal('fig-detail-modal');
+    renderItems();
 
-  // Gestione foto Ebay
-  if (editingFeEbayImgFileSave) {
-    try {
-      const uploadedEbay = await uploadToCloudinary(editingFeEbayImgFileSave);
-      if (uploadedEbay) updates.ebayImg = uploadedEbay;
-    } catch(e) { console.error('Upload ebayImg error', e); toast((currentLang === 'it' ? 'Caricamento foto Ebay fallito' : 'Ebay photo upload failed'), 'error'); }
+  } finally {
+    _riaccendi();
   }
-  editingFeEbayImgFileSave = null;
-
-  // Mantieni i campi esistenti non modificati
-  const existing = getData('figurines', []).find(x => x.id === figId);
-  const merged = { ...existing, ...updates };
-  // Rimuovi campi null/vuoti solo se non erano popolati
-  if (!merged.number) delete merged.number;
-  if (!merged.subseries) delete merged.subseries;
-  if (!merged.size) delete merged.size;
-  merged.fullName = computeFullName(merged, getData('figurines', []));
-
-  try {
-    await fsSave('figurines', merged);
-  } catch(e) {
-    console.error('saveFigFromDetail', e);
-    toast((currentLang === 'it' ? '❌ Salvataggio fallito: ' + (e?.code || e?.name || 'errore') + ' — riprova' : '❌ Save failed: ' + (e?.code || e?.name || 'error') + ' — please retry'), 'error');
-    return;
-  }
-  if (_cache.figurines) {
-    const idx = _cache.figurines.findIndex(x => x.id === figId);
-    if (idx >= 0) _cache.figurines[idx] = merged;
-  }
-  const savedLabel = getSectionLabelSingular(merged.section || 'figurines');
-  toast(currentLang==='it'?`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} salvat${savedLabel.endsWith('a')?'a':'o'}!`:`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} saved!`,'success');
-  closeModal('fig-detail-modal');
-  renderItems();
 }
 
 async function deleteItemFromDetail(itemId) {
@@ -21001,6 +21652,11 @@ async function deleteUser(userId) {
 //  STATS
 // ============================================================
 function animateCount(el, target) {
+  // v6.070 - se l'elemento non c'e' si esce subito. Senza questa riga un numero tolto dalla pagina
+  // farebbe fallire el.textContent DENTRO il setInterval: l'eccezione impedirebbe di arrivare al
+  // clearInterval, quindi l'errore si ripeterebbe per sempre, molte volte al secondo. Un elemento
+  // in meno nell'HTML non deve poter accendere un ciclo infinito.
+  if (!el) return;
   let current = 0;
   const step = Math.ceil(target / 30);
   const interval = setInterval(() => {
@@ -21029,6 +21685,20 @@ function contaLingueSito() {
 }
 
 function renderHomeStats() {
+  // v6.061 (Franco, baco) - IL CAROSELLO NON COMPARIVA AL PRIMO CARICAMENTO.
+  // Era agganciato solo a showPage('home'), che al primo caricamento non passa: la home e' gia' la
+  // pagina attiva, quindi nessuno la "apre". E anche se fosse passata sarebbe stato inutile, perche'
+  // in quel momento le figurine non sono ancora arrivate da Firestore e l'elenco era vuoto.
+  // Si vedeva solo andando su un'altra pagina e tornando indietro - cioe' quasi mai.
+  // Qui invece siamo nel punto in cui i dati CI SONO: renderHomeStats() viene chiamata dopo il
+  // caricamento e ad ogni cambiamento dei dati.
+  // Si disegna SOLO SE E' VUOTO: questa funzione gira anche dopo ogni salvataggio, e ridisegnare
+  // ogni volta rimescolerebbe le figurine sotto gli occhi di chi sta lavorando. Il rimescolo resta
+  // legato all'ingresso nella home, che e' il momento in cui ha senso.
+  try {
+    const _cb = document.getElementById('home-carosello');
+    if (_cb && !_cb.children.length) renderCarosello();
+  } catch(e) { console.error('renderCarosello (da renderHomeStats)', e); }
   const series = getData('series', []);
   const figs = getData('figurines', []);
   const users = getData('public_profiles', []);
@@ -22630,6 +23300,205 @@ async function moveFigurinesToSeries() {
   try { renderMoveFigList(); } catch (e) {}
   try { renderItems(); } catch (e) {}
   try { renderCatalog(); } catch (e) {}
+}
+
+
+// ============================================================
+//  CONSOLE ADMIN — FUNZIONI (v6.055, Franco)
+// ============================================================
+// Procedure di intervento manuale complesso: roba che scrive su molti record in un colpo solo.
+// La regola della sezione, valida per tutte quelle che verranno: PRIMA l'anteprima, POI la conferma,
+// e solo dopo la scrittura. Nessuna funzione qui dentro parte da un clic solo.
+// E' la stessa forma del "Ricalcolo Nomi Completi" del §13, che aveva gia' dimostrato di funzionare:
+// li' il controllo che conta e' "quanti nomi si accorciano?", e lo si puo' fare solo se si vede
+// l'elenco prima di scrivere.
+let _pianoAllinea = null;
+
+function renderAdminFunzioni() {
+  const el = document.getElementById('admin-funzioni-content');
+  if (!el) return;
+  const it = currentLang === 'it';
+  const serie = getData('series', []).slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
+  el.innerHTML =
+    '<div style="max-width:900px;">' +
+      '<h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">&#128295; ' + (it ? 'Funzioni' : 'Functions') + '</h3>' +
+      '<p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.5rem;">' +
+        (it ? 'Procedure di intervento manuale complesso. Ognuna mostra un’anteprima e chiede conferma prima di scrivere.'
+            : 'Complex manual procedures. Each one previews the changes and asks for confirmation before writing.') + '</p>' +
+
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;">' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;">' + (it ? 'Allinea item figlio correlati' : 'Align related child items') + '</h4>' +
+        '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
+          // v6.056 - testo riscritto da Franco. I campi vanno a capo uno per sezione: erano su una
+          // riga sola e si leggevano come un elenco unico, mentre sono due elenchi diversi.
+          // v6.058 - testo di Franco, terza stesura. I due elenchi di campi tornano attaccati (sono
+          // una cosa sola, letta a colpo d'occhio) e le due avvertenze si raccolgono sotto un unico
+          // "NOTE:" invece di stare una in mezzo ai campi e una in fondo.
+          (it
+            ? 'Riporta i campi comandati dalla base sui suoi oggetti collegati — <b>Change</b>, <b>Errori di stampa</b> e <b>Variazioni</b> (ufficiali e non).<br><br>' +
+              '<b>Campi allineati:</b><br>' +
+              'Figurine: Nome.<br>' +
+              'Retro: Nome, Sottonome, Categoria, Sottocategoria;<br><br>' +
+              '<b>NOTE:</b><br>' +
+              'Il <b>Nome completo</b> del figlio viene ricalcolato di conseguenza.<br>' +
+              'Propone una anteprima della modifica e chiede conferma.'
+            : 'Restores the fields governed by the base on its linked items — <b>Changes</b>, <b>Print errors</b> and <b>Variations</b> (official and not).<br><br>' +
+              '<b>Aligned fields:</b><br>' +
+              'Stickers: Name.<br>' +
+              'Retros: Name, Subname, Category, Subcategory;<br><br>' +
+              '<b>NOTES:</b><br>' +
+              'The child’s <b>full name</b> is recomputed accordingly.<br>' +
+              'It previews the change and asks for confirmation.') + '</p>' +
+        '<label class="form-label">' + (it ? 'Serie' : 'Series') + '</label>' +
+        '<select id="allinea-serie" class="form-select" style="margin-bottom:0.75rem;">' +
+          '<option value="">' + (it ? 'Tutte le serie' : 'All series') + '</option>' +
+          serie.map(x => '<option value="' + x.id + '">' + esc(x.name) + '</option>').join('') +
+        '</select>' +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
+          '<button class="btn-primary btn-admin" onclick="anteprimaAllineaFigli()">&#128269; ' + (it ? 'Anteprima' : 'Preview') + '</button>' +
+          '<button class="btn-primary btn-admin" id="allinea-applica-btn" onclick="applicaAllineaFigli()" style="display:none;background:var(--danger);">&#9989; ' + (it ? 'Applica' : 'Apply') + '</button>' +
+        '</div>' +
+        '<div id="allinea-esito" style="margin-top:1rem;"></div>' +
+      '</div>' +
+    '</div>';
+  _pianoAllinea = null;
+}
+
+// Calcola il piano SENZA scrivere niente. E' la funzione che decide anche cosa si scrivera' dopo:
+// l'anteprima e l'applicazione non ricalcolano due volte con due criteri, cosa che renderebbe
+// l'anteprima una promessa e non una descrizione.
+function _calcolaPianoAllinea(seriesId) {
+  const figs = getData('figurines', []);
+  const byId = new Map(figs.map(f => [f.id, f]));
+  const basi = figs.filter(f => !f.isChange && !f.isPrintError && !f.isVariation && !f.isUnofficialVariation
+    && (!seriesId || f.seriesId === seriesId));
+  const piano = [];
+  basi.forEach(base => {
+    _figliCollegati(base, figs).forEach(figlio => {
+      const campi = _divergenzeDaBase(figlio, base);
+      if (!campi.length) return;
+      piano.push({ figlio, base, campi });
+    });
+  });
+  return piano;
+}
+
+// v6.057 - il nome della sezione con l'iniziale maiuscola, per la tabella dell'anteprima.
+// Riusa getSectionLabelSingular() invece di un elenco nuovo: un secondo elenco di nomi di sezione
+// sarebbe la solita copia destinata a divergere.
+function _sezioneEtichetta(section) {
+  const l = getSectionLabelSingular(section || 'figurines');
+  return l.charAt(0).toUpperCase() + l.slice(1);
+}
+
+function _tipoFiglio(f) {
+  const it = currentLang === 'it';
+  if (f.isChange) return 'Change';
+  if (f.isPrintError) return it ? 'Errore di stampa' : 'Print error';
+  if (f.isVariation) return it ? 'Variazione' : 'Variation';
+  return it ? 'Var. non ufficiale' : 'Unofficial var.';
+}
+
+function anteprimaAllineaFigli() {
+  const it = currentLang === 'it';
+  const seriesId = document.getElementById('allinea-serie')?.value || '';
+  const esito = document.getElementById('allinea-esito');
+  const btn = document.getElementById('allinea-applica-btn');
+  if (!esito) return;
+  _pianoAllinea = _calcolaPianoAllinea(seriesId);
+  if (!_pianoAllinea.length) {
+    esito.innerHTML = '<div style="color:var(--success);font-size:0.9rem;">&#9989; ' +
+      (it ? 'Nessun record da allineare: i figli sono gia’ tutti coerenti con la loro base.'
+          : 'Nothing to align: all children already match their base.') + '</div>';
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+  const nomeSerie = new Map(getData('series', []).map(s => [s.id, s.name]));
+  const MAX = 200; // oltre non si legge piu': si dice quanti sono e si applica
+  const righe = _pianoAllinea.slice(0, MAX).map(v =>
+    '<tr>' +
+      '<td style="padding:3px 6px;color:var(--muted);">' + esc(nomeSerie.get(v.figlio.seriesId) || '') + '</td>' +
+      // v6.057 (Franco) - la SEZIONE, che mancava: "Change" da solo non dice se e' il change di una
+      // figurina o di un retro, e i campi allineati non sono gli stessi nei due casi.
+      '<td style="padding:3px 6px;">' + esc(_sezioneEtichetta(v.figlio.section)) + '</td>' +
+      '<td style="padding:3px 6px;">' + esc(_tipoFiglio(v.figlio)) + '</td>' +
+      '<td style="padding:3px 6px;">' + esc(v.figlio.fullName || v.figlio.name || '') + '</td>' +
+      '<td style="padding:3px 6px;color:var(--warn);">' + esc(v.campi.join(', ')) + '</td>' +
+      '<td style="padding:3px 6px;color:var(--danger);">' + esc(v.campi.map(k => (v.figlio[k] || '').trim() || '(vuoto)').join(' | ')) + '</td>' +
+      '<td style="padding:3px 6px;color:var(--success);">' + esc(v.campi.map(k => (v.base[k] || '').trim() || '(vuoto)').join(' | ')) + '</td>' +
+    '</tr>').join('');
+  // v6.057 - il conto diviso per sezione: prima di leggere 200 righe si vuole sapere di che cosa
+  // si sta parlando. "12 record" non dice se sono figurine o retro, e i campi toccati cambiano.
+  const perSezione = {};
+  _pianoAllinea.forEach(v => {
+    const k = _sezioneEtichetta(v.figlio.section);
+    perSezione[k] = (perSezione[k] || 0) + 1;
+  });
+  const riepilogo = Object.keys(perSezione).sort().map(k => k + ': <b>' + perSezione[k] + '</b>').join(' · ');
+  esito.innerHTML =
+    '<div style="font-size:0.9rem;margin-bottom:0.5rem;">' +
+      (it ? '<b>' + _pianoAllinea.length + '</b> record da allineare' : '<b>' + _pianoAllinea.length + '</b> records to align') +
+      (_pianoAllinea.length > MAX ? (it ? ' (ne mostro i primi ' + MAX + ')' : ' (showing the first ' + MAX + ')') : '') +
+      ' — ' + riepilogo +
+    '</div>' +
+    '<div style="max-height:420px;overflow:auto;border:1px solid var(--border);border-radius:8px;">' +
+      '<table style="width:100%;border-collapse:collapse;font-size:0.78rem;">' +
+        '<thead><tr style="position:sticky;top:0;background:var(--card2);">' +
+          '<th style="padding:4px 6px;text-align:left;">' + (it?'Serie':'Series') + '</th>' +
+          '<th style="padding:4px 6px;text-align:left;">' + (it?'Sezione':'Section') + '</th>' + /* v6.057 */
+          '<th style="padding:4px 6px;text-align:left;">' + (it?'Tipo':'Type') + '</th>' +
+          '<th style="padding:4px 6px;text-align:left;">' + (it?'Oggetto':'Item') + '</th>' +
+          '<th style="padding:4px 6px;text-align:left;">' + (it?'Campi':'Fields') + '</th>' +
+          '<th style="padding:4px 6px;text-align:left;">' + (it?'Attuale':'Current') + '</th>' +
+          '<th style="padding:4px 6px;text-align:left;">' + (it?'Nuovo (dalla base)':'New (from base)') + '</th>' +
+        '</tr></thead><tbody>' + righe + '</tbody></table></div>';
+  if (btn) btn.style.display = '';
+}
+
+async function applicaAllineaFigli() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('allinea-esito');
+  const btn = document.getElementById('allinea-applica-btn');
+  if (!_pianoAllinea || !_pianoAllinea.length) {
+    toast(it ? 'Fai prima l’anteprima' : 'Run the preview first', 'error');
+    return;
+  }
+  // La conferma nomina il numero: "sei sicuro?" senza un numero non e' una domanda, e' un ostacolo.
+  if (!confirm(it
+      ? 'Allineo ' + _pianoAllinea.length + ' record ai valori della loro base?\n\nL’operazione scrive sul database e non si annulla.'
+      : 'Align ' + _pianoAllinea.length + ' records to their base values?\n\nThis writes to the database and cannot be undone.')) return;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+  let ok = 0; const errori = [];
+  for (let i = 0; i < _pianoAllinea.length; i++) {
+    const v = _pianoAllinea[i];
+    const nuovo = { ...v.figlio };
+    v.campi.forEach(k => { nuovo[k] = v.base[k] || ''; });
+    try { nuovo.fullName = computeFullName(nuovo, getData('figurines', [])); } catch(e) {}
+    try {
+      await fsSave('figurines', nuovo);
+      const idx = (_cache.figurines || []).findIndex(x => x.id === nuovo.id);
+      if (idx >= 0) _cache.figurines[idx] = nuovo;
+      ok++;
+    } catch(e) {
+      console.error('applicaAllineaFigli', nuovo.id, e);
+      errori.push((nuovo.fullName || nuovo.name || nuovo.id) + ': ' + (e?.code || e?.message || 'errore'));
+    }
+    if (esito && (i % 10 === 0 || i === _pianoAllinea.length - 1)) {
+      esito.innerHTML = '<div style="font-size:0.9rem;">' + (it ? 'Scrittura in corso… ' : 'Writing… ') + (i + 1) + '/' + _pianoAllinea.length + '</div>';
+    }
+    await new Promise(r => setTimeout(r, 120));
+  }
+  if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.display = 'none'; }
+  _pianoAllinea = null;
+  // Si RICONTROLLA da capo invece di fidarsi del conteggio: l'unica prova che il lavoro e' finito
+  // e' che rifacendo il conto non resti piu' niente.
+  const rimasti = _calcolaPianoAllinea(document.getElementById('allinea-serie')?.value || '').length;
+  if (esito) esito.innerHTML =
+    '<div style="font-size:0.9rem;color:' + (errori.length || rimasti ? 'var(--warn)' : 'var(--success)') + ';">' +
+      (it ? 'Scritti ' + ok + ' record. Falliti: ' + errori.length + '. Ricontrollo: ' + rimasti + ' ancora da allineare.'
+          : 'Written ' + ok + ' records. Failed: ' + errori.length + '. Re-check: ' + rimasti + ' still to align.') +
+    '</div>' + (errori.length ? '<pre style="font-size:0.72rem;color:var(--danger);white-space:pre-wrap;">' + esc(errori.join('\n')) + '</pre>' : '');
+  try { renderItems(); } catch(e) {}
 }
 
 function renderAdminFoto() {
