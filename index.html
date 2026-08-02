@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.050"></script>
-<link rel="stylesheet" href="css/style.css?v=6.050">
+<script src="js/email.min.js?v=6.072"></script>
+<link rel="stylesheet" href="css/style.css?v=6.072">
 
 
 <style>
@@ -25,23 +25,25 @@
    Le colonne laterali restano più basse del logo (due voci contro ~440px), perciò la riga di
    mezzo la detta il logo e i fianchi non allungano la pagina. */
 .hero-top { position:relative; display:grid; grid-template-columns:1fr auto 1fr;
-            grid-template-areas:".  top     ."
-                                "sx logo    dx"
-                                ".  bottom  .";
+            grid-template-areas:"sx logo dx";
             align-items:center; justify-items:center;
             gap:0.9rem 1.5rem; width:100%; max-width:1280px; margin:0 auto 1.75rem; }
 .hero-top .hero-logo-img { grid-area:logo; margin-top:0; }
-.hero-stats-top    { grid-area:top; }
 .hero-stats-left   { grid-area:sx; }
 .hero-stats-right  { grid-area:dx; }
-.hero-stats-bottom { grid-area:bottom; }
+
 .hero-stats-side { display:flex; align-items:center; justify-content:center; }
 /* fianchi in colonna, file sopra/sotto in riga: è l'unica differenza fra i quattro gruppi */
 .hero-stats-left, .hero-stats-right   { flex-direction:column; gap:0.7rem; }
-.hero-stats-top,  .hero-stats-bottom  { flex-direction:row;    gap:3rem; }
 .hero-stats-side .stat-item { display:block; text-align:center; }
 .hero-stats-side .stat-num { display:block; text-align:center; line-height:1.1; margin:0; }
 .hero-stats-side .stat-label { display:block; text-align:center; margin:2px 0 0; white-space:nowrap; }
+/* v6.063 (Franco) — numeroni un filo piu' piccoli: 2.53rem -> 2.2rem e 0.98 -> 0.88 (circa -12%).
+   I valori originali stanno in css/style.css; qui si sovrascrivono soltanto quelli DENTRO l'hero
+   (.hero-stats-side), perche' .stat-num e .stat-label sono usati anche altrove e non e' detto che
+   debbano rimpicciolirsi anche li'. Sul telefono non si tocca niente: li' sono gia' 1.6rem. */
+.hero-stats-side .stat-num   { font-size:2.2rem; }
+.hero-stats-side .stat-label { font-size:0.88rem; }
 
 /* v5.948 — TELEFONO: come sul desktop, numeri a SINISTRA e a DESTRA del logo. Per farceli stare
    il logo si stringe (190px invece di 320): in una cornice da 397px restano ~80px per lato ai
@@ -54,17 +56,13 @@
   /* v6.019 — su telefono la disposizione è la STESSA del desktop (scelta di Franco): quattro
      lati, non due colonne. Cambiano solo le misure. Le tre righe restano dichiarate a lettere. */
   .hero-top { grid-template-columns:auto minmax(0,1fr) auto;
-              grid-template-areas:".  top     ."
-                                  "sx logo    dx"
-                                  ".  bottom  .";
+              grid-template-areas:"sx logo dx";
               gap:0.5rem 0.4rem; align-items:center; margin-bottom:1rem; }
   #hero .hero-top .hero-logo-img { grid-area:logo; justify-self:stretch;
               max-width:190px !important; width:100% !important; margin:0 auto !important;
               margin-top:0 !important; }
   .hero-stats-side { max-width:none; margin:0; padding-top:0; }
   .hero-stats-left, .hero-stats-right  { gap:0.45rem; }
-  /* le file sopra/sotto: 3rem fra due voci è un vuoto da desktop, in 397px è metà schermo */
-  .hero-stats-top, .hero-stats-bottom  { gap:1.4rem; }
   .hero-stats-side .stat-item { min-width:0; }
   .hero-stats-side .stat-label { white-space:normal; }   /* "Altri oggetti" può andare a capo */
 }
@@ -248,7 +246,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.050</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.072</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -323,8 +321,24 @@
      L'id resta su QUESTO contenitore: app.js ne legge offsetHeight per calcolare gli scroll
      (scrollToItemsTop), e cosi' l'altezza che misura comprende entrambe le righe. -->
 <div id="construction-banner" style="position:sticky;top:64px;z-index:99;">
-  <div style="background:linear-gradient(90deg,#ff6b1a,#c84bff);color:#fff;text-align:center;padding:0.75rem 1rem;font-family:var(--font-ui);font-size:1.1rem;font-weight:700;letter-spacing:0.5px;">
-    <span data-i18n="banner.wip">🚧   SITO WEB IN COSTRUZIONE   🚧</span>
+  <!-- v6.064 (Franco) — l'avviso non prende piu' una riga tutta sua: era una fascia colorata a
+       tutta larghezza, alta ~44px, sotto la navbar e su OGNI pagina. Ora e' una targhetta piccola
+       appoggiata a SINISTRA, con lo stesso sfondo e lo stesso testo.
+       Il contenitore esterno resta, e resta con il suo id: app.js ne legge offsetHeight per
+       calcolare gli scroll (scrollToItemsTop). Togliendo il div si sarebbe rotto un calcolo che
+       non c'entra niente con un banner.
+       Il testo non e' scritto qui: viene dal dizionario (banner.wip), quindi resta tradotto e
+       basta cambiarlo in un posto solo. Per farlo sparire del tutto: display:none su questa riga. -->
+  <!-- v6.065 (Franco) — la riga della targhetta ha altezza ZERO e la targhetta ci sta sopra
+       (position:absolute): cosi' tutto il resto della pagina sale esattamente di quanto era alta.
+       Prima, pur essendo piccola, occupava comunque la sua riga nel flusso.
+       Conseguenza voluta: la targhetta si SOVRAPPONE a cio' che le sta sotto. Va bene perche' e'
+       alta ~20px, sta nell'angolo in alto a sinistra e li' non c'e' contenuto; e con
+       pointer-events:none non intercetta i clic di quello che copre.
+       Il contenitore esterno resta con il suo id: app.js ne legge offsetHeight per gli scroll, e
+       ora quel valore vale zero sul desktop - cioe' la verita'. -->
+  <div style="position:relative;height:0;pointer-events:none;">
+    <span data-i18n="banner.wip" style="position:absolute;top:0;left:0;background:linear-gradient(90deg,#ff6b1a,#c84bff);color:#fff;padding:0.15rem 0.7rem;border-bottom-right-radius:10px;font-family:var(--font-ui);font-size:0.72rem;font-weight:700;letter-spacing:0.3px;white-space:nowrap;">🚧   SITO WEB IN COSTRUZIONE   🚧</span>
   </div>
   <div id="mobile-version-bar"><span id="nav-app-version-mobile"></span></div>
 </div>
@@ -340,13 +354,15 @@
      ora lavora sulla classe .hero-stats-side (v6.019, vedi app.js) — così spostare una voce da un
      lato all'altro, o aggiungere un quinto gruppo, non richiede più di toccare il JavaScript. -->
 <div class="hero-top">
-  <div class="hero-stats-side hero-stats-top" id="hero-stats-top" style="display:none;">
-    <div class="stat-item"><span class="stat-num" id="stat-langs">0</span><span class="stat-label" data-i18n="hero.statLangs">Lingue del sito</span></div>
-    <div class="stat-item"><span class="stat-num" id="stat-users">0</span><span class="stat-label" data-i18n="hero.stat3">Collectors</span></div>
-  </div>
+  <!-- v6.070 (Franco) — i due numeroni di sopra (Lingue del sito, Collezionisti) sono stati tolti,
+       per ora senza rimetterli altrove. Le due chiamate che li scrivono restano in app.js: quando
+       torneranno, ovunque li si metta, si riaccenderanno da sole. -->
+  <!-- v6.060 (Franco) — i numeroni solo SOPRA, a sinistra e a destra: il gruppo di sotto se n'e'
+       andato per fare spazio al carosello. Tre voci per fianco invece di due. -->
   <div class="hero-stats-side hero-stats-left" id="hero-stats" style="display:none;">
     <div class="stat-item"><span class="stat-num" id="stat-series">0</span><span class="stat-label" data-i18n="hero.stat1">Series</span></div>
     <div class="stat-item"><span class="stat-num" id="stat-figs">0</span><span class="stat-label" data-i18n="hero.stat2">Figurines</span></div>
+    <div class="stat-item"><span class="stat-num" id="stat-retros">0</span><span class="stat-label" data-i18n="hero.stat2b">Retro</span></div>
   </div>
   <!-- v6.019 — via il margin-bottom:1rem del logo. Con i numeroni ai soli fianchi non dava
        fastidio; ora che la riga di mezzo è centrata verticalmente, quel margine fa parte della
@@ -354,25 +370,59 @@
        risultavano 8px più in basso del logo. Lo spazio lo fa il gap della griglia. -->
   <img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:440px;width:100%;margin:0 auto;display:block;">
   <div class="hero-stats-side hero-stats-right" id="hero-stats-right" style="display:none;">
-    <div class="stat-item"><span class="stat-num" id="stat-retros">0</span><span class="stat-label" data-i18n="hero.stat2b">Retro</span></div>
     <div class="stat-item"><span class="stat-num" id="stat-bustine">0</span><span class="stat-label" data-i18n="hero.stat2e">Bustine</span></div>
-  </div>
-  <div class="hero-stats-side hero-stats-bottom" id="hero-stats-bottom" style="display:none;">
     <div class="stat-item"><span class="stat-num" id="stat-albums">0</span><span class="stat-label" data-i18n="hero.stat2c">Album</span></div>
     <div class="stat-item"><span class="stat-num" id="stat-extras">0</span><span class="stat-label" data-i18n="hero.stat2d">Altri oggetti</span></div>
     <!-- v5.940 — "Mia lista / Totale Inventario" tolto dai numeroni della home (Franco).
          Il dato resta nel profilo e nel contatore in navbar; updateOwnedCounter regge l'assenza
-         dell'elemento perché controlla che esista prima di scriverci. -->
+         dell'elemento perché controlla che esista prima di scriverci.
+         v6.060 — il gruppo "hero-stats-bottom" non esiste piu': le sue due voci (Album, Altri
+         oggetti) sono scese qui a destra. Chi cerca quel gruppo nel CSS non lo trova piu'
+         nemmeno li': la riga della griglia e' stata tolta, non lasciata vuota. -->
   </div>
 </div>
-    <p class="hero-desc" data-i18n="hero.desc">Il database non ufficiale dedicato alla leggendaria serie italiana degli anni '90.</p>
+    <!-- v6.068 (Franco) — le due righe salgono verso il logo. Il margine negativo si mette sulla
+         PRIMA: la seconda ne ha gia' uno suo (-2.2rem) che la tiene attaccata alla prima, e
+         toccando quello si sarebbe allargato lo spazio fra le due invece di alzarle insieme. -->
+    <p class="hero-desc" style="margin-top:-1.4rem;" data-i18n="hero.desc">Il database non ufficiale dedicato alla leggendaria serie italiana degli anni '90.</p>
     <p class="hero-desc" style="margin-top:-2.2rem;" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
     <div class="hero-cta">
-      <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Esplora l'Inventario Sgorbions!</button>
-<button class="btn-primary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Inizia a collezionare gli Sgorbions</button>
+      
     </div>
     
+  </section>
+
+  <!-- CAROSELLO (v6.051) — vetrina di figurine a caso. Sta FUORI dal blocco riservato a chi ha
+       fatto login: e' rivolto soprattutto a chi arriva senza account. Parte nascosto e lo accende
+       renderCarosello() solo se ha materiale da mostrare: una sezione vuota con un titolo sopra e'
+       peggio di nessuna sezione. -->
+  <!-- v6.063 (Franco) — la riga del titolo sale: il margine negativo mangia lo spazio che la
+       sezione lascia sotto l'hero. E' un numero da occhio, non da misura: se serve si ritocca. -->
+  <section class="section" id="home-carosello-sez" style="display:none;padding-top:0;margin-top:-2rem;">
+    <div class="section-inner">
+      <!-- v6.065 (Franco) — via il titolo "Un assaggio dall'Inventario": le figurine si spiegano
+           da sole, e una riga di titolo sopra una fila di immagini e' spazio che non aggiunge
+           niente. Tolte anche le due voci dal dizionario: una chiave che nessuno usa piu' e' una
+           di quelle "chiavi morte" che il §5 avverte di non lasciare in giro. -->
+      <div style="position:relative;">
+        <button type="button" id="carosello-prec" aria-label="Precedente"
+          style="position:absolute;left:-6px;top:50%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.4rem;line-height:1;padding:0.5rem 0.6rem;border-radius:999px;cursor:pointer;">&#8249;</button>
+        <div id="home-carosello" style="display:flex;gap:0.9rem;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:0.2rem 0.4rem 0.8rem;"></div>
+        <button type="button" id="carosello-succ" aria-label="Successivo"
+          style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.4rem;line-height:1;padding:0.5rem 0.6rem;border-radius:999px;cursor:pointer;">&#8250;</button>
+      </div>
+      <!-- v6.062 (Franco) — "Esplora l'Inventario" scende QUI, sotto il carosello. Prima stava
+           fra i pulsanti dell'hero, cioe' PRIMA di aver fatto vedere qualcosa: chiedeva di entrare
+           a chi non aveva ancora visto niente. Sotto le figurine e' un invito che arriva dopo
+           l'assaggio, che e' il momento in cui uno ha voglia di entrare. -->
+      <!-- v6.072 (Franco) — anche "Inizia a collezionare" scende qui: i due inviti stanno
+           insieme, dopo l'assaggio. Nell'hero restavano prima di aver fatto vedere qualcosa. -->
+      <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;margin-top:1.2rem;">
+        <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Esplora l'Inventario Sgorbions!</button>
+        <button class="btn-primary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Inizia a collezionare gli Sgorbions</button>
+      </div>
+    </div>
   </section>
 
   <!-- LOGGED IN CONTENT -->
@@ -997,7 +1047,8 @@
           <button class="admin-tab" onclick="adminTab('contacts')" data-i18n="admin.contacts">Messages</button>
           <button class="admin-tab" onclick="adminTab('email')" data-i18n="admin.email.tab">✉️ Comunicazioni</button>
           <button class="admin-tab" onclick="adminTab('settings')" data-i18n="admin.settings.tab">⚙️ Impostazioni</button>
-          <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
+          <button class="admin-tab" onclick="adminTab('funzioni')" data-i18n="admin.funzioni">Funzioni</button>
+        <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
         </div>
         <div id="admin-series" class="admin-section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -1201,6 +1252,12 @@
           </div>
           <div id="admin-users-table"></div>
         </div>
+        <!-- FUNZIONI (v6.055) — procedure di intervento manuale complesso. Ognuna mostra prima
+             un'anteprima e chiede conferma: qui dentro si scrive su molti record in un colpo solo. -->
+        <div id="admin-funzioni" class="admin-section">
+          <div id="admin-funzioni-content"></div>
+        </div>
+
         <div id="admin-foto" class="admin-section">
           <div id="admin-foto-content"></div>
         </div>
@@ -1470,7 +1527,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.050</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.072</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -2231,7 +2288,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.050"></script>
+<script src="js/app.js?v=6.072"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2255,7 +2312,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.050'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.072'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
