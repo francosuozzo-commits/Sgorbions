@@ -1,6 +1,105 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.050 - Nei risultati della RICERCA GLOBALE i retro si mostrano col NOME COMPLETO. Segnalato da
+//          Franco. Solo app.js.
+//          Si mostrava il nome LUNGO (nome + sottonome), senza categoria ne' sottocategoria. Finche'
+//          la ricerca guardava solo il nome era coerente; con la v6.049, che cerca anche per
+//          categoria e sottocategoria, l'elenco ha smesso di spiegare perche' un oggetto fosse li'.
+//          IL CASO DI FRANCO: cercando "privacy" uscivano due risultati con la STESSA identica
+//          etichetta, mentre i loro Nomi completi sono "... - VICINA - ROSSO" e "... - VICINA -
+//          ROSSO - OMAGGIO NERO". Due risultati indistinguibili sono peggio di nessun risultato:
+//          costringono ad aprirli entrambi per sapere quale sia quale.
+//          Il Nome completo e' anche cio' che si legge nella scheda e nella vista tabellare: la
+//          ricerca ora chiama le cose con lo stesso nome del resto del sito.
+//          La scritta "Change: <tipo>" si riduce al marcatore "Change": il tipo sta gia' in fondo al
+//          Nome completo. E l'etichetta passa da esc(), che prima non c'era.
+//          NON toccato: il retro mostrato accanto a una VARIAZIONE (in azzurro) resta col nome
+//          lungo - li' e' un dettaglio di un altro oggetto, non l'identita' della riga.
+// v6.049 - La RICERCA GLOBALE cercava in quattro campi soli. Segnalato da Franco. Solo app.js.
+//          Le ricerche sono DUE e cercavano in campi diversi: quella dentro una sezione ha
+//          categoria, sottocategoria e Nome completo dalla v5.763; quella globale (la lente in alto)
+//          era rimasta a nome, numero, sottoserie e descrizione.
+//          MISURATO sui dati veri: dei 1017 retro con una categoria, 621 NON si trovavano cercando
+//          la loro categoria dalla ricerca globale; e tutti e 148 quelli con un sottonome non si
+//          trovavano cercando il sottonome. Dalla ricerca di sezione si trovavano tutti - il che
+//          spiega perche' il difetto sia rimasto invisibile: dipendeva da quale delle due si usava.
+//          Ora i campi sono gli stessi nelle due, e in ENTRAMBE c'e' `subname` come campo suo: al
+//          sottonome ci si arrivava di riflesso attraverso il Nome completo, ma quello e' un campo
+//          SALVATO che puo' restare indietro (§13). Cercare direttamente non dipende da nessuno.
+// v6.048 - Da ADMIN i filtri di ricerca partono tutti da "tutti". Chiesto da Franco. Solo app.js.
+//          Di tutti i filtri uno solo non partiva da li': il TIPO di oggetto, che nasceva su "set
+//          base" (_itemTypeFilter = 'base'). Gli altri - lista, "Ciò che cerco", senza foto,
+//          categoria, sottocategoria, tipo di change - si azzerano gia' ad ogni cambio sezione.
+//          Per un utente "set base" ha senso: mostra la serie come la si ricorda, senza le varianti.
+//          Per l'admin no: arriva per lavorarci, e un filtro acceso che non ha scelto lui gli
+//          nasconde meta' degli oggetti - in particolare proprio quelli che cerca perche' hanno
+//          qualcosa che non va.
+//          La scelta sta in _tipoIniziale(), non nel valore iniziale della variabile: al momento in
+//          cui il file viene caricato currentUser non esiste ancora, quindi decidere li' avrebbe
+//          dato 'base' sempre. La stessa funzione la usa il RIPIEGO di quando il tipo scelto non ha
+//          oggetti (~15988), che per l'admin ora ripiega su "tutti" invece che su "base".
+//          CONSEGUENZA DA SAPERE: su telefono _soloFronteMobile() mostra il solo fronte quando il
+//          filtro e' "set base" (v5.853). Da admin, non essendo piu' quello il filtro di partenza,
+//          le card partono con fronte+retro. Non e' un effetto separato: e' quel filtro che lo
+//          comanda, e cambiando il filtro cambia anche questo.
+// v6.047 - Il messaggio "Esiste già un Retro con la stessa..." resta a schermo il DOPPIO: 7 secondi
+//          invece di 3,5. Chiesto da Franco. Solo app.js.
+//          Non e' un capriccio: quel messaggio elenca QUATTRO campi piu' una parentesi sul Tipo di
+//          change, e serve a capire dove andare a cercare il doppione. Gli altri toast dicono se una
+//          cosa e' andata o no - si notano e basta; questo va letto. 3,5 secondi bastano ad
+//          accorgersene, non a leggerlo, e chi non fa in tempo non ha modo di rileggerlo.
+//          La durata era gia' un parametro di toast() (il quarto, 3500 di default): nessuna
+//          modifica alla funzione, solo le due chiamate - una per form, come sempre.
+// v6.046 - Le due procedure di CARICAMENTO FOTO rileggono le figurine dal database prima di
+//          costruire l'elenco dei candidati. Solo app.js.
+//          IL CASO (Franco): caricando la foto di un Change, "Nessun oggetto trovato con Nome
+//          completo ..." - ma cercando la stessa stringa nel sito il retro si trovava, ed era vero:
+//          il record c'era, col Nome completo IDENTICO al nome del file.
+//          LA CAUSA: l'elenco dei candidati si costruisce da _cache.figurines, che vive in
+//          sessionStorage, dura 5 minuti ED E' PER SCHEDA del browser. Un oggetto creato in
+//          un'altra scheda non c'e'. Il messaggio pero' accusava il DATO ("nessun oggetto con quel
+//          nome") mentre il problema era la copia locale - e manda a cercare nel posto sbagliato.
+//          Nella stessa serata ha ingannato prima Franco e poi me, che ho risposto "quel Change non
+//          esiste" leggendo a mia volta una copia vecchia. Se un messaggio puo' essere prodotto da
+//          due cause diverse, prima di scriverlo va escluso il caso banale.
+//          LA CORREZIONE: _rileggiFigurine() ricarica le serie da Firestore e ricostruisce l'elenco
+//          piatto, senza toccare la pagina - NON usa loadAllData(), che mostra l'overlay e ridisegna
+//          (e ridisegnare qui vorrebbe dire perdere i file gia' scelti nella form). Una lettura in
+//          piu' all'inizio non si sente: subito dopo partono decine di upload di immagini. Se la
+//          rilettura fallisce si prosegue con l'elenco in memoria, dicendolo nel log.
+// v6.045 - Scheda di un RETRO: una foto verticale non e' piu' grande di una orizzontale. Notato da
+//          Franco. Solo app.js.
+//          LA CAUSA: il riquadro della foto singola aveva solo la larghezza vincolata (width:100%);
+//          l'altezza usciva dalle proporzioni dell'immagine. MISURATO su 40 retro veri: 30
+//          orizzontali (rapporto medio 1,38) e 10 verticali (0,73). A 518px di larghezza le prime
+//          rendono 375px di altezza, le seconde 712 - quasi il doppio, ed e' esattamente quello che
+//          Franco vedeva. Un quarto dei retro e' verticale, quindi non era un caso raro.
+//          LA CORREZIONE: riquadro 518x380 fisso, immagine dentro con object-fit:contain. Le
+//          orizzontali non si muovono (375 su 380 disponibili), le verticali scendono a ~277x380.
+//          PERCHE' STESSA ALTEZZA E NON STESSA AREA: normalizzare l'area avrebbe dato alle verticali
+//          377x516, cioe' piu' ALTE delle orizzontali - e la finestra sarebbe tornata a cambiare
+//          misura scorrendo con le frecce, che e' il difetto tolto con la v6.029. Fra due immagini
+//          della stessa altezza e una finestra che balla, la finestra ferma vale di piu'.
+//          Anche il riquadro "Foto non ancora disponibile" passa a 380: era 280, quindi la scheda
+//          di un retro senza foto era piu' corta di una con foto.
+// v6.044 - Scheda di una FIGURINA: la foto ha la stessa misura anche quando il retro non c'e'.
+//          Chiesto da Franco. Solo app.js.
+//          PRIMA: senza retro la scheda prendeva il ramo "una foto sola" (v6.027), e quella foto si
+//          prendeva tutta la colonna - enorme rispetto alle altre. La stessa figurina cambiava
+//          dimensione per un dato che non la riguarda: e' lo stesso principio della v5.845 ("una
+//          foto non deve cambiare misura per una ragione che non la riguarda") applicato al caso
+//          che allora non era stato considerato.
+//          ORA: nelle figurine i riquadri sono sempre due. Se il retro manca, il suo riquadro resta
+//          VUOTO. Franco: a sito finito tutte le figurine avranno un retro, quindi l'assenza e' uno
+//          stato di passaggio e non merita un layout suo.
+//          Il riquadro vuoto e' diverso da "Foto non disponibile", e la differenza dice qualcosa:
+//          "Foto non disponibile" = il Retro c'e' ma non ha l'immagine; riquadro vuoto = il Retro
+//          non e' collegato. Nel secondo caso non manca una foto, manca un collegamento.
+//          Effetto collaterale gradito: _schedaDueFoto() torna a dire una cosa sola e vera - le due
+//          facce esistono nelle figurine - e non ha piu' bisogno dell'elenco di tutte le figurine
+//          per rispondere. La colonna stretta e la finestra a 1098px (v6.027/028) restano ai RETRO,
+//          che una faccia sola ce l'hanno per davvero.
 // v6.043 - Tre cose, tutte segnalate da Franco. Modificati app.js e index.html.
 //          (1) IL CLONE CHE NON SI SALVAVA: il codice era "invalid-argument", cioe' Firestore che
 //              rifiuta un `undefined`. Un campo assente sul record di partenza (nel caso vero:
@@ -10672,7 +10771,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.043';
+const JS_VERSION = 'v6.050';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -10995,6 +11094,27 @@ function _checkReadQuotaWarning() {
   if (!currentUser?.isAdmin) { btn.style.display = 'none'; return; }
   const pct = getReadCount() / 50000;
   btn.style.display = pct >= 0.9 ? '' : 'none';
+}
+
+// v6.046 (Franco) - RILEGGE LE FIGURINE DA FIRESTORE, senza toccare la pagina.
+// Serve alle due procedure di caricamento foto, che costruiscono l'elenco dei candidati da
+// _cache.figurines. Quella cache vive in sessionStorage e dura 5 minuti, ED E' PER SCHEDA: un
+// oggetto creato in un'altra scheda (o creato prima e ricaricato entro i 5 minuti) semplicemente
+// non c'e'. Il caricamento allora scriveva "Nessun oggetto trovato con Nome completo ..." - un
+// messaggio che accusa il DATO mentre il problema e' la copia locale, e manda a cercare nel posto
+// sbagliato. E' costato tempo a Franco e a me nella stessa serata.
+// Una lettura in piu' all'inizio di un caricamento di foto non si sente: sotto ci sono decine di
+// upload di immagini. Non uso loadAllData() apposta: quella mostra l'overlay e ridisegna, e qui
+// ridisegnare vorrebbe dire perdere i file gia' scelti nella form.
+async function _rileggiFigurine() {
+  if (!db) return false;
+  _invalidateSessionCache();
+  const serie = await fsGetAll('series');
+  if (!serie || !serie.length) return false;
+  _cache.series = serie;
+  _cache.figurines = [];
+  for (const s of _cache.series) for (const item of (s.items || [])) _cache.figurines.push(item);
+  return true;
 }
 
 function _invalidateSessionCache() {
@@ -11867,6 +11987,14 @@ let _noPhotoFilter = false; // filtro figurine senza foto
 let _ownedFilter = 'all'; // 'all' | 'owned' (ce l'ho) | 'missing' (mi manca)
 let _wishlistFilter = false; // v5.908 — filtro "Ciò che cerco": se acceso, mostra solo la wishlist dell'utente
 let _itemTypeFilter = 'base'; // 'base' | 'variation' | 'unofficialVariation' | 'change' | 'all' — sempre uno solo attivo
+// v6.048 (Franco) - da ADMIN si riparte sempre da "tutti". Il valore qui sopra vale solo prima che
+// si entri in una sezione: chi decide davvero e' _tipoIniziale(), chiamata a ogni apertura, perche'
+// al caricamento del file currentUser non esiste ancora.
+// Il perche' della differenza: un utente arriva per guardare la collezione, e "set base" gli mostra
+// la serie come la si ricorda, senza le varianti; un admin arriva per LAVORARCI, e un filtro acceso
+// che non ha scelto lui gli nasconde meta' degli oggetti - compresi quelli che sta cercando perche'
+// hanno qualcosa che non va.
+function _tipoIniziale() { return currentUser?.isAdmin ? 'all' : 'base'; }
 let _ebayFilter = false; // indipendente da _itemTypeFilter: si combina in AND, non è esclusivo con "Solo base"/ecc.
 let _noOfficialVariationFilter = false; // indipendente da _itemTypeFilter come _ebayFilter, ma impone SEMPRE anche "solo base" (non solo AND con il filtro tipo scelto) — mostra solo figurine base senza nessuna Variazione ufficiale collegata
 let _retroViewMode = 'destra-piena'; // 'sotto' | 'destra' | 'dinamico' | 'fronte-grande' | 'destra-piena' — come viene mostrato il Retro rispetto al fronte nella griglia Figurine, visibile a tutti
@@ -14307,7 +14435,16 @@ function renderCatalogSearch(q) {
   const allSeries = getData('series', []).sort((a,b) => (a.order??9999)-(b.order??9999));
   const allFigs = getData('figurines', []);
 
-  // Cerca in serie (nome, descrizione) e in figurine (nome, numero, sottoserie, descrizione)
+  // Cerca in serie (nome, descrizione) e negli oggetti.
+  // v6.049 (Franco) - LE DUE RICERCHE CERCAVANO IN CAMPI DIVERSI. Quella dentro una sezione aveva
+  // categoria, sottocategoria e Nome completo dalla v5.763; questa qui, la ricerca globale, no -
+  // era rimasta ai quattro campi del 2024. Effetto misurato sui dati veri: dei 1017 retro con una
+  // categoria, 621 non si trovavano cercando la loro categoria; e TUTTI e 148 quelli con un
+  // sottonome non si trovavano cercando il sottonome. Da qui la domanda di Franco.
+  // Ora i campi sono gli stessi nelle due ricerche, piu' `subname` in ENTRAMBE: il sottonome
+  // finiva dentro il Nome completo, quindi si trovava di riflesso - ma solo finche' il Nome
+  // completo e' aggiornato, ed e' un campo SALVATO che puo' restare indietro (vedi §13). Cercarlo
+  // anche direttamente non dipende da niente.
   const results = [];
   allSeries.forEach(s => {
     const desc = (currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt)) || '';
@@ -14316,7 +14453,11 @@ function renderCatalogSearch(q) {
       (f.name||'').toLowerCase().includes(q) ||
       String(f.number||'').includes(q) ||
       (f.subseries||'').toLowerCase().includes(q) ||
-      (f.desc||'').toLowerCase().includes(q)
+      (f.desc||'').toLowerCase().includes(q) ||
+      (f.category||'').toLowerCase().includes(q) ||      /* v6.049 */
+      (f.subcategory||'').toLowerCase().includes(q) ||   /* v6.049 */
+      (f.subname||'').toLowerCase().includes(q) ||       /* v6.049 */
+      (f.fullName||'').toLowerCase().includes(q)         /* v6.049 */
     ));
     if (seriesMatch || matchingFigs.length) {
       results.push({ series: s, seriesMatch, figs: matchingFigs });
@@ -14350,6 +14491,19 @@ function renderCatalogSearch(q) {
     const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: currentLang === 'it' ? 'Album' : 'Albums', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Wrappers' };
     const sectionOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
     const figsHTML = r.figs.length
+      // v6.050 (Franco) - NEI RISULTATI I RETRO SI MOSTRANO COL NOME COMPLETO.
+      // Prima si mostrava il nome LUNGO (nome + sottonome), che non contiene categoria e
+      // sottocategoria. Con la v6.049 la ricerca ha iniziato a trovare anche per quei due campi, e
+      // il risultato era un elenco che non spiegava perche' fosse li': cercando "privacy" uscivano
+      // DUE righe con la STESSA identica etichetta - "RICERCATA PER INVASIONE DELLA PRIVACY -
+      // VICINA" - mentre i due oggetti differiscono per sottocategoria e tipo, che il Nome completo
+      // dice ("... - ROSSO" e "... - ROSSO - OMAGGIO NERO").
+      // Due risultati indistinguibili sono peggio di nessun risultato: uno costringe a aprirli
+      // entrambi per capire quale sia quale.
+      // Il Nome completo e' anche cio' che si legge nella scheda e nella colonna della vista
+      // tabellare: la ricerca ora chiama le cose con lo stesso nome del resto del sito.
+      // La scritta "Change: <tipo>" diventa il solo marcatore "Change": il tipo e' gia' in fondo al
+      // Nome completo, e ripeterlo era la stessa parola due volte nella stessa riga.
       ? sectionOrder.map(sec => {
           let inSection = r.figs.filter(f => (f.section || 'figurines') === sec);
           if (sec === 'figurines') {
@@ -14383,7 +14537,7 @@ function renderCatalogSearch(q) {
                 return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
                 ${(() => { const front = isVarOrChange ? (f.img || (baseFig && baseFig.img) || null) : f.img; return front ? `<img src="${cloudinaryUrl(front,'w_32,h_32,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : ''; })()}
                 ${retroFig ? smallImg(retroFig.img, currentLang === 'it' ? 'Retro associato' : 'Associated retro') : ''}
-                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${sec === 'retros' ? _retroNomeLungo(f) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">Change:</span> <span style="color:var(--muted);">'+f.changeType+'</span></span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (retroFig ? ' - <span style="color:var(--info);">' + _retroNomeLungo(retroFig) + '</span>' : '') + '</span>' : ''}</span>
+                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;color:#ffd84d;">Change</span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (retroFig ? ' - <span style="color:var(--info);">' + _retroNomeLungo(retroFig) + '</span>' : '') + '</span>' : ''}</span>
               </span>`;
               }).join('')}
             </div>
@@ -14991,7 +15145,7 @@ function updateSectionCounts() {
 
 function openSeriesSection(section) {
   _noPhotoFilter = false;
-  _itemTypeFilter = 'base';
+  _itemTypeFilter = _tipoIniziale(); // v6.048 - da admin: 'all'
   _retroCategoryFilter = null; // il filtro per categoria dei Retro non sopravvive al cambio sezione/serie
   _retroSubcategoryFilter = null; // idem per la sottocategoria (v5.987)
   _changeTypeFilter = null; // idem per il filtro Tipo di change (sezione Figurine)
@@ -15907,7 +16061,9 @@ function renderItemTypeFilters() {
     change: g.change.length > 0,
     printError: g.printError.length > 0
   };
-  if (!presente[_itemTypeFilter]) _itemTypeFilter = presente.base ? 'base' : 'all';
+  // v6.048 - se il tipo scelto non ha oggetti si ripiega, e anche qui l'admin ripiega su "tutti":
+  // e' il ripiego che non nasconde niente.
+  if (!presente[_itemTypeFilter]) _itemTypeFilter = currentUser?.isAdmin ? 'all' : (presente.base ? 'base' : 'all');
 
   const coloreTipo = {
     base: 'var(--type-base)',
@@ -16331,7 +16487,10 @@ function getCurrentlyFilteredItems(opts) {
     }
     if (_ebayFilter && !f.forSale) return false;
     if (_skipSearch || !searchQ) return true;
-    return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ) || (f.category||'').toLowerCase().includes(searchQ) || (f.subcategory||'').toLowerCase().includes(searchQ) || (f.fullName||'').toLowerCase().includes(searchQ);
+    // v6.049 - `subname` esplicito: ci si arrivava gia' attraverso il Nome completo, ma quello e'
+    // un campo SALVATO che puo' restare indietro rispetto ai dati (§13). Un campo cercato
+    // direttamente non dipende dall'aggiornamento di un altro.
+    return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ) || (f.category||'').toLowerCase().includes(searchQ) || (f.subcategory||'').toLowerCase().includes(searchQ) || (f.subname||'').toLowerCase().includes(searchQ) || (f.fullName||'').toLowerCase().includes(searchQ);
   });
 }
 
@@ -17590,7 +17749,7 @@ async function _saveFigurineInner() {
         (f.changeType||'').toLowerCase().trim() === (changeType||'').toLowerCase().trim())
     );
     if (dup) {
-      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, la stessa Sottocategoria, lo stesso Nome e lo stesso Tipo in questa serie (per i Change conta anche il Tipo di change)' : 'A Retro with the same Category, Subcategory, Name and Type already exists in this series (for Changes the Change type counts too)'), 'error');
+      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, la stessa Sottocategoria, lo stesso Nome e lo stesso Tipo in questa serie (per i Change conta anche il Tipo di change)' : 'A Retro with the same Category, Subcategory, Name and Type already exists in this series (for Changes the Change type counts too)'), 'error', null, 7000); // v6.047 - il doppio del tempo: e' un messaggio da leggere, non da notare
       return;
     }
   }
@@ -19248,13 +19407,17 @@ function switchFigDetailTab(tab) {
 // La stessa funzione la usa ora anche la classe detail-solo-foto (v6.027), che era una COPIA di
 // questa condizione: essendo copia, si era allineata alla versione sbagliata e dava al Change di
 // retro la colonna larga 740 pensata per due immagini.
-function _schedaDueFoto(f, allFigs) {
-  if (!f || f.section !== 'figurines') return false;
-  const figs = allFigs || getData('figurines', []);
-  const isVar = f.isVariation || f.isUnofficialVariation || f.isChange;
-  const base = (isVar && f.baseFigurineId) ? figs.find(x => x.id === f.baseFigurineId) : null;
-  const effRetroId = f.isChange ? (f.retroId || base?.retroId || null) : f.retroId;
-  return !!(effRetroId || (isVar && f.baseFigurineId));
+function _schedaDueFoto(f) {
+  // v6.044 (Franco) - LA MISURA DELLA FOTO NON DIPENDE PIU' DAL FATTO CHE IL RETRO CI SIA.
+  // Prima la scheda di una figurina SENZA retro prendeva il ramo a una foto sola, e quella foto si
+  // prendeva tutta la colonna: la stessa figurina cambiava dimensione a seconda di un dato che non
+  // la riguarda - lo stesso principio della v5.845, "una foto non deve cambiare misura per una
+  // ragione che non la riguarda", applicato al caso che allora non si era considerato.
+  // Franco: tutte le figurine avranno un retro a sito finito, quindi la mancanza e' uno stato di
+  // passaggio, non un caso da assecondare con un layout suo. Se il retro non c'e', il suo box resta
+  // vuoto e la foto del fronte sta dov'e' sempre stata.
+  // Cosi' la condizione torna a dire una cosa sola e vera: le due facce esistono nelle FIGURINE.
+  return !!f && f.section === 'figurines';
 }
 
 function openFigDetail(figId, elencoNav) {
@@ -19272,7 +19435,7 @@ function openFigDetail(figId, elencoNav) {
   // si prendeva tutta la larghezza pensata per due. La classe dice esattamente questo - "qui c'e'
   // una foto sola" - e non "questo e' un retro": e' la condizione che conta, ed e' la stessa che
   // piu' sotto sceglie il ramo a una immagine del box foto.
-  document.getElementById('fig-detail-modal')?.classList.toggle('detail-solo-foto', !_schedaDueFoto(f, allFigs)); // v6.032 - stessa fonte del ramo del box foto
+  document.getElementById('fig-detail-modal')?.classList.toggle('detail-solo-foto', !_schedaDueFoto(f)); // v6.032 - stessa fonte del ramo del box foto
   const owned = getOwned();
   const isOwned = owned.includes(f.id);
   const isAdmin = currentUser?.isAdmin;
@@ -19475,7 +19638,7 @@ function openFigDetail(figId, elencoNav) {
     const isVar = f.isVariation || f.isUnofficialVariation || f.isChange;
     const _detBase = (isVar && f.baseFigurineId) ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
     const _detEffRetroId = f.isChange ? (f.retroId || _detBase?.retroId || null) : f.retroId;
-    if (_schedaDueFoto(f, allFigs)) { // v6.032 - unica fonte, vedi _schedaDueFoto()
+    if (_schedaDueFoto(f)) { // v6.032/044 - unica fonte, vedi _schedaDueFoto()
       // Variazione/Change o figurina base con Retro collegato: mostra Fronte (sx) + Retro (dx) affiancati
       const baseFig = _detBase;
       const frontImg = baseFig ? baseFig.img : f.img;
@@ -19487,9 +19650,16 @@ function openFigDetail(figId, elencoNav) {
       const baseHTML = frontImg
         ? `<img src="${cloudinaryUrl(frontImg, 'w_800,h_800,c_fit,q_auto,f_auto')}" style="width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
         : noPhotoBox;
-      const retroHTML = retroFig?.img
-        ? `<img src="${cloudinaryUrl(retroFig.img, 'w_800,h_800,c_fit,q_auto,f_auto')}" style="width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
-        : noPhotoBox;
+      // v6.044 - due assenze diverse, due riquadri diversi: se il Retro ESISTE ma non ha foto resta
+      // "Foto non disponibile" (manca un'immagine di qualcosa che c'e'); se il Retro non c'e'
+      // proprio, il riquadro e' VUOTO - non c'e' nessuna foto mancante, c'e' un collegamento da
+      // fare. Scrivere "Foto non disponibile" li' direbbe una cosa falsa.
+      const boxVuoto = '<div style="width:100%;height:300px;background:var(--card2);border-radius:8px;"></div>';
+      const retroHTML = retroFig
+        ? (retroFig.img
+            ? `<img src="${cloudinaryUrl(retroFig.img, 'w_800,h_800,c_fit,q_auto,f_auto')}" style="width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+            : noPhotoBox)
+        : boxVuoto;
       // v6.031 (Franco) - come nel tab Variazioni (v6.030): il sottonome su una riga sua, in
       // azzurro, e il link resta sulla prima. Il sottonome non entra nel link, come sulle card:
       // e' un pezzo del nome, non un secondo posto dove cliccare.
@@ -19510,7 +19680,21 @@ function openFigDetail(figId, elencoNav) {
           </div>
         </div>`;
     } else {
-      photoEl.innerHTML = f.img ? `<img src="${cloudinaryUrl(f.img, 'w_640,h_640,c_fit,q_auto,f_auto')}" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">` : '<div style="width:100%;height:280px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non ancora disponibile' : 'Photo not yet available') + '</div>';
+      // v6.045 (Franco) - IL RIQUADRO HA UN'ALTEZZA SUA, non quella che decide l'immagine.
+      // Prima qui c'era solo width:100%: l'altezza usciva dalle proporzioni della foto, quindi una
+      // foto VERTICALE occupava quasi il doppio di una orizzontale. Misurato su 40 retro veri: 30
+      // orizzontali (rapporto 1,38) e 10 verticali (0,73); a 518px di larghezza le prime rendono
+      // 375px di altezza, le seconde 712.
+      // Ora il riquadro e' 518x380 e l'immagine ci sta dentro con object-fit:contain: le
+      // orizzontali restano come sono (375 su 380 disponibili, differenza invisibile), le verticali
+      // scendono a ~277x380. Stessa altezza per tutte, quindi la finestra non cambia misura
+      // scorrendo con le frecce - la proprieta' conquistata con la v6.029, che qui mancava.
+      // NON si e' normalizzata l'AREA (che avrebbe dato alle verticali 377x516, cioe' piu' ALTE
+      // delle orizzontali): sarebbe tornata a far ballare la finestra, che e' il difetto peggiore.
+      const _altezzaFotoRetro = 380;
+      photoEl.innerHTML = f.img
+        ? `<img src="${cloudinaryUrl(f.img, 'w_640,h_640,c_fit,q_auto,f_auto')}" style="width:100%;height:${_altezzaFotoRetro}px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+        : '<div style="width:100%;height:' + _altezzaFotoRetro + 'px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non ancora disponibile' : 'Photo not yet available') + '</div>';
     }
   }
 
@@ -20382,7 +20566,7 @@ async function saveFigFromDetail(figId) {
           (f.changeType||'').toLowerCase().trim() === changeTypeVal.toLowerCase().trim())
       );
     if (dup) {
-      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, la stessa Sottocategoria, lo stesso Nome e lo stesso Tipo in questa serie (per i Change conta anche il Tipo di change)' : 'A Retro with the same Category, Subcategory, Name and Type already exists in this series (for Changes the Change type counts too)'), 'error');
+      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, la stessa Sottocategoria, lo stesso Nome e lo stesso Tipo in questa serie (per i Change conta anche il Tipo di change)' : 'A Retro with the same Category, Subcategory, Name and Type already exists in this series (for Changes the Change type counts too)'), 'error', null, 7000); // v6.047 - il doppio del tempo: e' un messaggio da leggere, non da notare
       return;
     }
   }
@@ -22792,6 +22976,12 @@ async function startAdminFotoUpload() {
   // pescava qualunque oggetto della serie con quel numero — così le foto delle prime figurine
   // finivano sugli ALBUM (che in quella serie avevano numeri 1..6). Ora si considerano SOLO le
   // figurine (section 'figurines'), escludendo album/bustine/retro/altri.
+  // v6.046 - prima di costruire l'elenco, RILEGGE le figurine: la copia locale dura 5 minuti ed e'
+  // per scheda, quindi un oggetto creato altrove non ci sarebbe e il caricamento direbbe "Nessun
+  // oggetto trovato" accusando il dato invece della propria cache.
+  try {
+    if (await _rileggiFigurine()) fotoLog((currentLang==='it'?'Elenco oggetti riletto dal database.':'Item list re-read from the database.'), 'info');
+  } catch(e) { console.warn('_rileggiFigurine', e); fotoLog((currentLang==='it'?'Rilettura non riuscita: uso l\u2019elenco gia\u2019 in memoria.':'Re-read failed: using the list already in memory.'), 'warn'); }
   const allFigs = getData('figurines', []).filter(f => f.seriesId === seriesId && (f.section || 'figurines') === 'figurines');
   fotoLog((currentLang==='it'?'Figurine nella serie:':'Stickers in series:') + ' ' + allFigs.length, 'info');
 
@@ -22932,6 +23122,12 @@ async function startAdminFotoNoNumberUpload() {
   // della Vista tabellare — così l'utente nomina i file esattamente come li vede;
   // se per un record non fosse popolato, lo si ricalcola al volo come ripiego.
   // Le Figurine senza numero restano sul solo Nome (per una base fullName = Nome).
+  // v6.046 - prima di costruire l'elenco, RILEGGE le figurine: la copia locale dura 5 minuti ed e'
+  // per scheda, quindi un oggetto creato altrove non ci sarebbe e il caricamento direbbe "Nessun
+  // oggetto trovato" accusando il dato invece della propria cache.
+  try {
+    if (await _rileggiFigurine()) fotoNnLog((currentLang==='it'?'Elenco oggetti riletto dal database.':'Item list re-read from the database.'), 'info');
+  } catch(e) { console.warn('_rileggiFigurine', e); fotoNnLog((currentLang==='it'?'Rilettura non riuscita: uso l\u2019elenco gia\u2019 in memoria.':'Re-read failed: using the list already in memory.'), 'warn'); }
   const allFigs = getData('figurines', []);
   const candidates = allFigs
     .filter(f => f.seriesId === seriesId && (scope === 'retro' ? f.section === 'retros' : (f.section === 'figurines' && !f.number && !f.isVariation && !f.isUnofficialVariation && !f.isChange)))
