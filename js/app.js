@@ -1,6 +1,64 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.073 - L'INVENTARIO A DUE TAGLI. Modificati index.html e app.js.
+//          Entrando nell'Inventario non si atterra piu' subito sulle serie: c'e' un bivio,
+//          "Sfoglia per: Serie | Prodotti". Il taglio per SERIE e' quello di sempre e non
+//          cambia di una virgola. Quello per PRODOTTI e' il suo trasposto: al primo livello
+//          i tipi di oggetto invece delle serie, e cliccandone uno si apre un hub con la
+//          STESSA impostazione dell'hub di serie - solo che i box sono le serie. Il terzo
+//          livello e' la griglia che esiste gia': la stessa destinazione raggiunta da due
+//          strade, quindi nessuna seconda griglia da mantenere.
+//          Perche' serviva (Franco): esistono oggetti Sgorbions senza serie, e su un sito
+//          organizzato per serie non si sa dove metterli. Su questo asse la domanda "di che
+//          serie e'?" non viene mai posta, quindi il problema non nasce. Oggi quegli oggetti
+//          sono 0: si arriva prima del problema, non dopo.
+//          0-quinquies. La PAGINA di un prodotto (secondo livello) ha il titolo esteso
+//             ("Le Figurine Sgorbions"), la riga "N Serie:" e la scomposizione per tipologia
+//             coi colori del codice della v5.703. La card del primo livello NO: resta sobria
+//             (etichetta della sezione e una riga di riepilogo). Dirle in tutti e due i posti
+//             sarebbe la stessa cosa due volte a un clic di distanza.
+//          0-quater. BACO: l'hub di un prodotto partiva piu' in basso di quello di una serie.
+//             body.appendChild lo metteva in fondo al body, cioe' DOPO il <footer>, che sta al
+//             primo livello: era il footer a spingerlo giu'. Ora si inserisce subito dopo
+//             #series-detail, dove sta il suo gemello. Nessun margine di compensazione: quelli
+//             curano il sintomo e lasciano in giro la causa.
+//          0-ter. BACO del tasto indietro nell'hub di un prodotto: sopra i 1440px restava dentro
+//             il contenitore da 1100px invece di appoggiarsi al bordo. La regola che lo tira
+//             fuori nominava solo #series-detail. ALLARGATA, non ricopiata: sotto i 1440px i due
+//             erano identici, ed e' per questo che si vedeva solo su schermo largo.
+//          0-bis. La card di un prodotto ha un TITOLO suo ("Le Figurine Sgorbions", non
+//             "Figurine"), la riga "N Serie:" e la scomposizione per tipologia COI COLORI del
+//             codice tipologie della v5.703 — puntando le variabili --type-*, non riscrivendo i
+//             valori. Le tipologie a zero non si mostrano, come le serie a zero.
+//          0. Nella colonna delle serie di un prodotto le serie a ZERO non compaiono (Franco):
+//             una riga che dice "qui non c'e' niente" e' una riga in piu' da leggere per non
+//             sapere niente. Nell'hub vale lo stesso, per un motivo diverso: li' un box a zero
+//             aprirebbe una griglia vuota.
+//          1. Il bivio ricorda l'ultima scelta (localStorage). Un bivio identico ad ogni
+//             visita diventa un casello: alla terza volta uno sa gia' dove vuole andare.
+//          2. Il sottotitolo cambia col taglio, e NON scrivendolo a mano: si cambia la CHIAVE
+//             i18n del nodo e si lascia fare ad applyI18n(). Scriverlo a mano avrebbe funzionato
+//             fino al primo cambio di lingua, che riscrive tutto cio' che ha un data-i18n.
+//          3. Nuovo carosello nell'hub di un prodotto: tutti i suoi oggetti BASE. In ordine
+//             CASUALE, tranne le BUSTINE, che vanno per serie e dentro la serie per nome
+//             (Franco): sono poche e hanno un ordine naturale, e li' il caso sarebbe disordine. Il filtro "solo base" non e' un dettaglio: coi campi
+//             che la card mostra, un Change e la sua base sono indistinguibili - li EREDITA
+//             (§13.1) - e sarebbero uscite 175 etichette identiche su 415 card delle 531.
+//             Solo fra i retro base sono 282 card e i doppioni sono ZERO. Misurato, non dedotto.
+//          4. La card del carosello ora sceglie le righe in base alla SEZIONE, in un punto solo:
+//             per un retro Serie / Categoria / Sottocategoria / Nome / Punteggio, perche' un
+//             retro non ha numero (zero su 531) e la riga sarebbe rimasta sempre bianca.
+//          5. I timer dei caroselli sono passati da due variabili sciolte a una MAPPA. La forma
+//             vecchia sceglieva a colpi di "diverso da": col terzo carosello "diverso da serie"
+//             avrebbe spento anche quello nuovo. Una mappa non va ritoccata al quarto.
+//          7. La foto di un prodotto e' LA STESSA che ha nell'hub di una serie, e non e' una
+//             copia: si legge dal DOM il riquadro di #section-selector e si riusa. Retro e
+//             Bustine non stanno in SECTION_IMAGES (uno ha lo sfondo nell'index, l'altra e' un
+//             SVG), quindi ricopiarle avrebbe creato due sorgenti per la stessa immagine.
+//          6. Tornando indietro da una sezione si torna DA DOVE SI ERA ARRIVATI: se si e'
+//             entrati dall'hub di un prodotto si torna li', non all'Inventario. Stessa idea di
+//             _elencoNav della v6.033 - ricordare la provenienza invece di darla per scontata.
 // v6.072 - Quattro cose chieste da Franco. Modificati app.js e index.html.
 //          1. BACO: tornando nell'hub da una sezione il carosello della serie non ricompariva.
 //             Entrando in una sezione lo si nasconde; tornando indietro il contenuto era ancora li'
@@ -11050,7 +11108,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.072';
+const JS_VERSION = 'v6.073';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12030,7 +12088,7 @@ const i18n = {
 'how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
 'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
 'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
-'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.addseries':'+ Add Series',
+'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions products ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Products','catalog.addseries':'+ Add Series',
 'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
 'back':'Inventory','detail.addfig':'+ Add Sticker',
 'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation!',
@@ -12136,7 +12194,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie di Sgorbions mai pubblicate','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati ricerca alla tua lista','catalog.havenone':'Rimuovi risultati ricerca dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti i prodotti Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Prodotti','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati ricerca alla tua lista','catalog.havenone':'Rimuovi risultati ricerca dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -12471,8 +12529,11 @@ function _aggiornaLogoNavbar() {
 //    frecce restano, quindi si puo' comunque guardare tutto.
 //  - Il timer si spegne uscendo dalla home: e' l'unico modo per essere certi che non ne restino due
 //    in giro, che e' come questi caroselli finiscono per accelerare da soli.
-let _caroselloTimer = null;        // quello della HOME
-let _caroselloSerieTimer = null;   // quello della SCHEDA SERIE (v6.071)
+// v6.073 - i timer stanno in una MAPPA, uno per carosello. Fino alla v6.072 erano due variabili
+// sciolte e _caroselloSpegni() sceglieva quale fermare a colpi di "diverso da": con due caroselli
+// funzionava, col terzo no — "diverso da serie" avrebbe spento anche quello nuovo. Una mappa non
+// ha questo problema e non va ritoccata quando se ne aggiunge un quarto.
+const _caroselloTimers = { home: null, serie: null, prodotto: null };
 const CAROSELLO_MAX = 20;                                 // v6.066 (Franco): da 15 a 20
 // v6.066: altro +15% sulla velocita'. I fattori restano scritti uno per uno invece del risultato:
 // cosi' si legge la storia (4 secondi di partenza, poi -30%, poi -15%) e non un numero magico.
@@ -12502,17 +12563,52 @@ function _caroselloScorriBox(box, dir) {
 // La card: foto, poi Serie, Numero, Nome e Punteggio (a destra), ognuno su una riga di altezza
 // FISSA. Nomi di lunghezza diversa darebbero card di altezza diversa, e in una fila che scorre si
 // vedrebbe subito. Una figurina senza numero lascia la riga bianca invece di far salire le altre.
+// v6.073 - QUALI RIGHE mostra la card, e sta scritto in un punto solo perche' e' una regola sola.
+// Le figurine tengono le quattro di sempre (Serie, Numero, Nome, Punteggio). I RETRO no: un retro
+// non ha numero — zero su 531, misurato — quindi quella riga sarebbe rimasta bianca per sempre, e
+// il Nome da solo non basta a distinguerli. Servono Categoria e Sottocategoria, che sono i campi
+// con cui i retro si nominano davvero (§13.1).
+// Le righe hanno altezza FISSA e restano vuote invece di sparire: nomi di lunghezza diversa
+// darebbero card di altezza diversa, e in una fila che scorre si vedrebbe subito.
+function _caroselloRighe(f, nomeSerie) {
+  const serie = esc(nomeSerie.get(f.seriesId) || '');
+  if ((f.section || '') === 'retros') {
+    return [
+      { t: serie,                    col: 'var(--accent)',  dim: '0.66rem', alt: '1.2em' },
+      { t: esc(f.category || ''),    col: 'var(--muted)',   dim: '0.68rem', alt: '1.2em' },
+      { t: esc(f.subcategory || ''), col: 'var(--muted)',   dim: '0.68rem', alt: '1.2em' },
+      { t: esc(f.name || ''),        col: 'var(--text)',    dim: '0.74rem', alt: '2.5em' },
+      { t: f.score > 0 ? '&#11088; ' + esc(String(f.score)) : '', col: 'var(--success)', dim: '0.7rem', alt: '1.2em', dx: 'right' }
+    ];
+  }
+  return [
+    { t: serie,                                       col: 'var(--accent)', dim: '0.66rem', alt: '1.2em' },
+    { t: f.number ? '#' + esc(String(f.number)) : '', col: 'var(--muted)',  dim: '0.7rem',  alt: '1.2em' },
+    { t: esc(f.name || ''),                           col: 'var(--text)',   dim: '0.74rem', alt: '2.5em' },
+    { t: f.score > 0 ? '&#11088; ' + esc(String(f.score)) : '', col: 'var(--success)', dim: '0.7rem', alt: '1.2em', dx: 'right' }
+  ];
+}
+
+// La card: foto, poi le righe di cui sopra. Il titolo del passaggio del mouse usa il NOME COMPLETO
+// per i retro (_retroNomeCompleto, la stessa regola della ricerca dalla v6.049/050): col solo nome
+// due card diverse potevano avere la stessa identica etichetta.
 function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza) {
-  const etichetta = (f.number ? '#' + f.number + ' ' : '') + (f.name || '');
+  const etichetta = ((f.section || '') === 'retros')
+    ? _retroNomeCompleto(f)
+    : (f.number ? '#' + f.number + ' ' : '') + (f.name || '');
+  const righe = _caroselloRighe(f, nomeSerie).map((r, i) =>
+    '<div style="font-size:' + r.dim + ';color:' + r.col + ';line-height:1.25;height:' + r.alt + ';overflow:hidden;' +
+      (i === 0 ? 'margin-top:0.4rem;' : '') +
+      (r.alt === '1.2em' ? 'white-space:nowrap;text-overflow:ellipsis;' : '') +
+      (r.dx ? 'text-align:' + r.dx + ';' : '') +
+    '">' + (r.t || '&nbsp;') + '</div>'
+  ).join('');
   return '<div onclick="_caroselloApri(\'' + f.id + '\',\'' + f.seriesId + '\')" ' +
     'title="' + esc(etichetta) + '" ' +
     'style="flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">' +
     '<img src="' + cloudinaryUrl(f.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" ' +
       'style="width:100%;height:' + altezzaFoto + 'px;object-fit:contain;border-radius:6px;background:var(--card);">' +
-    '<div style="font-size:0.66rem;color:var(--accent);margin-top:0.4rem;line-height:1.2;height:1.2em;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">' + esc(nomeSerie.get(f.seriesId) || '&nbsp;') + '</div>' +
-    '<div style="font-size:0.7rem;color:var(--muted);line-height:1.2;height:1.2em;">' + (f.number ? '#' + esc(String(f.number)) : '&nbsp;') + '</div>' +
-    '<div style="font-size:0.74rem;color:var(--text);line-height:1.25;height:2.5em;overflow:hidden;">' + esc(f.name || '') + '</div>' +
-    '<div style="font-size:0.7rem;color:var(--success);line-height:1.2;height:1.2em;text-align:right;">' + (f.score > 0 ? '&#11088; ' + esc(String(f.score)) : '&nbsp;') + '</div>' +
+    righe +
   '</div>';
 }
 
@@ -12541,11 +12637,10 @@ function _caroselloAvviaBox(box, quale, vivo) {
     if (!vivo()) { _caroselloSpegni(quale); return; }
     _caroselloScorriBox(box, 1);
   }, CAROSELLO_PASSO_MS);
-  if (quale === 'home') _caroselloTimer = t; else _caroselloSerieTimer = t;
+  _caroselloTimers[quale] = t;
 }
 function _caroselloSpegni(quale) {
-  if (quale !== 'serie' && _caroselloTimer) { clearInterval(_caroselloTimer); _caroselloTimer = null; }
-  if (quale !== 'home' && _caroselloSerieTimer) { clearInterval(_caroselloSerieTimer); _caroselloSerieTimer = null; }
+  if (_caroselloTimers[quale]) { clearInterval(_caroselloTimers[quale]); _caroselloTimers[quale] = null; }
 }
 function _caroselloStop() { _caroselloSpegni('home'); }
 
@@ -12613,6 +12708,61 @@ function renderCaroselloSerie() {
   _caroselloAvviaBox(box, 'serie', vivo);
 }
 
+// ---- CAROSELLO DELL'HUB DI UN PRODOTTO (v6.073, Franco) ---------------------------------------
+// Tutti gli oggetti di quel tipo, di TUTTE le serie, in ordine CASUALE. Il caso e' una scelta di
+// Franco e ha un motivo: qui non esiste un ordine naturale da rispettare — nell'hub di una serie
+// c'e' il numero di figurina, i retro un numero non ce l'hanno — e mescolare fa vedere ogni volta
+// un pezzo diverso di un elenco lungo.
+// SOLO GLI OGGETTI BASE, la stessa regola del carosello di serie. Non e' un dettaglio: coi campi
+// che la card mostra, un Change e la sua base sono INDISTINGUIBILI, perche' Nome, Categoria e
+// Sottocategoria il figlio li eredita dalla base (§13.1). Misurato sui retro: con tutti sarebbero
+// 175 etichette identiche su 415 card delle 531; con i soli base sono 282 card e zero doppioni.
+function renderCaroselloProdotto() {
+  const sez = document.getElementById('prodotto-carosello-sez');
+  const box = document.getElementById('prodotto-carosello');
+  if (!sez || !box) return;
+  _caroselloSpegni('prodotto');
+  const base = getData('figurines', [])
+    .filter(f => (f.section || 'figurines') === _prodottoCorrente
+      && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError && f.img);
+  if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
+  const serie = getData('series', []);
+  const nomeSerie = new Map(serie.map(x => [x.id, x.name]));
+  // Si lavora sempre su una COPIA: riordinare l'elenco vero cambierebbe l'ordine in tutto il sito.
+  const mazzo = base.slice();
+  // v6.073 (Franco) — l'ordine dipende dal prodotto, e non e' un capriccio: le BUSTINE sono
+  // poche e hanno un ordine naturale (la serie, e dentro la serie il nome), quindi mescolarle non
+  // mostrerebbe varieta', mostrerebbe disordine. Gli altri sono elenchi lunghi — 282 retro, 1542
+  // figurine — dove il caso fa vedere ogni volta un pezzo diverso di una cosa che non si guarda
+  // mai tutta. La regola sta qui, in un punto solo, e si allunga aggiungendo una riga alla mappa.
+  const ORDINE = {
+    bustine: (a, b) => {
+      const oa = serie.find(s => s.id === a.seriesId)?.order ?? 9999;
+      const ob = serie.find(s => s.id === b.seriesId)?.order ?? 9999;
+      return oa !== ob ? oa - ob : (a.name || '').localeCompare(b.name || '', 'it');
+    }
+  };
+  if (ORDINE[_prodottoCorrente]) {
+    mazzo.sort(ORDINE[_prodottoCorrente]);
+  } else {
+    for (let i = mazzo.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [mazzo[i], mazzo[j]] = [mazzo[j], mazzo[i]];
+    }
+  }
+  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, 150, CAROSELLO_LARGHEZZA_SERIE)).join('');
+  sez.style.display = '';
+  const prec = document.getElementById('prodotto-carosello-prec');
+  const succ = document.getElementById('prodotto-carosello-succ');
+  if (prec) prec.onclick = () => _caroselloScorriBox(box, -1);
+  if (succ) succ.onclick = () => _caroselloScorriBox(box, 1);
+  // vivo finche' l'hub del prodotto e' a schermo: uscendo, il timer si spegne da solo
+  const vivo = () => document.getElementById('prodotto-detail')?.style.display === 'block';
+  box.onmouseenter = () => _caroselloSpegni('prodotto');
+  box.onmouseleave = () => _caroselloAvviaBox(box, 'prodotto', vivo);
+  _caroselloAvviaBox(box, 'prodotto', vivo);
+}
+
 function showPage(page) {
   const protectedPages = ['catalog', 'blog', 'classifica', 'wantlist', 'profile', 'newsletter', 'wishlist', 'unsubscribe'];
   if (protectedPages.includes(page) && !currentUser) {
@@ -12627,6 +12777,12 @@ function showPage(page) {
   }
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('series-detail').style.display = 'none';
+  // v6.073 - anche l'hub di un prodotto: non e' una .page, quindi il giro qui sopra non lo tocca
+  const _pd = document.getElementById('prodotto-detail');
+  if (_pd) _pd.style.display = 'none';
+  _caroselloSpegni('prodotto');
+  _prodottoCorrente = null;
+  _sezioneApertaDaProdotto = null;
   const el = document.getElementById('page-' + page);
   if (el) { el.classList.add('active'); }
   document.querySelectorAll('.nav-links a').forEach(a => {
@@ -14855,6 +15011,286 @@ function toggleSearchClearBtn(inputId) {
   btn.style.display = input.value ? '' : 'none';
 }
 
+// ============================================================
+//  L'INVENTARIO A DUE TAGLI (v6.073, Franco)
+// ============================================================
+// Il taglio per SERIE e' quello di sempre. Quello per PRODOTTI e' il suo trasposto: gli stessi
+// oggetti, ordinati per tipo invece che per serie. Serviva perche' esistono oggetti Sgorbions
+// senza serie, e su un sito organizzato per serie non c'e' un posto dove metterli; su questo asse
+// la domanda "di che serie e'?" non viene mai posta, quindi il problema non nasce.
+const PRODOTTI_INVENTARIO = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
+
+// Un oggetto BASE: non una variazione, non un Change, non un errore di stampa. I contatori del
+// taglio Prodotti contano questi (scelta di Franco). Il numero che ne esce e' la dimensione del
+// set — Serie 1: 160, Serie 2 e 3: 256 — mentre il totale (368, 257, 799) e' un'altra cosa.
+const _eBase = f => !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError;
+const _diTipo = (tutti, sec) => tutti.filter(f => (f.section || 'figurines') === sec);
+
+// L'ultima scelta si ricorda. Un bivio che si ripresenta identico ad ogni visita diventa un
+// casello: alla terza volta uno sa gia' dove vuole andare, e la domanda e' solo un clic in piu'.
+let _taglioInventario = 'serie';
+try { if (localStorage.getItem('sgb_taglio') === 'prodotti') _taglioInventario = 'prodotti'; } catch (e) {}
+
+function impostaTaglioInventario(taglio) {
+  _taglioInventario = (taglio === 'prodotti') ? 'prodotti' : 'serie';
+  try { localStorage.setItem('sgb_taglio', _taglioInventario); } catch (e) {}
+  _aggiornaBivioInventario();
+  renderCatalog();
+}
+
+// Il sottotitolo NON si scrive a mano: applyI18n() riscrive tutto cio' che ha un data-i18n ad ogni
+// avvio e ad ogni cambio lingua, quindi un textContent messo qui sparirebbe da solo alla prima
+// occasione. Si cambia la CHIAVE e si lascia fare a lui — cosi' la frase vale anche in inglese
+// senza una seconda regola da mantenere.
+function _aggiornaBivioInventario() {
+  ['serie', 'prodotti'].forEach(k => {
+    const b = document.getElementById('taglio-' + k);
+    if (b) {
+      const acceso = (k === _taglioInventario);
+      b.style.background = acceso ? 'var(--action)' : 'transparent';
+      b.style.color = acceso ? '#ffffff' : 'var(--muted)';
+    }
+  });
+  const sub = document.getElementById('catalog-sub');
+  if (sub) {
+    const chiave = (_taglioInventario === 'prodotti') ? 'catalog.subProducts' : 'catalog.sub';
+    sub.setAttribute('data-i18n', chiave);
+    sub.textContent = t(chiave);
+  }
+}
+
+// ---- PRIMO LIVELLO DEL TAGLIO PRODOTTI ----
+// Stesso guscio della card di una serie: cambiano il nome e la foto. Anno e punteggio modale non
+// esistono per un prodotto e i due slot restano vuoti, invece di riempirsi con qualcosa di
+// inventato. Sotto, TUTTE le serie in colonna — nello stesso ordine del taglio Serie, comprese
+// quelle a zero: un elenco che cambia lunghezza da una card all'altra non si legge in colonna.
+// v6.073 (Franco) — la foto di un prodotto e' LA STESSA che quel prodotto ha nell'hub di una serie.
+// Non la si ricopia: si legge dal DOM il riquadro immagine della card corrispondente in
+// #section-selector e lo si riusa. Retro e Bustine non stanno in SECTION_IMAGES — il primo ha lo
+// sfondo scritto nell'index, la seconda e' un SVG disegnato a mano — quindi copiarli avrebbe
+// voluto dire due sorgenti per la stessa immagine, destinate a divergere alla prima modifica
+// (e' lo stesso motivo per cui i due caroselli condividono la card, v6.071).
+// #section-selector e' markup statico dell'index: c'e' sempre, anche quando la sua pagina e'
+// nascosta, quindi leggerlo non dipende da dove ci si trova.
+function _fotoProdotto(sec) {
+  const cards = Array.from(document.querySelectorAll('#section-selector .section-choice-card'));
+  const card = cards.find(c => (c.getAttribute('onclick') || '').indexOf("'" + sec + "'") >= 0);
+  const blocco = card && card.firstElementChild;
+  if (blocco) {
+    const c = blocco.cloneNode(true);
+    // Nell'hub il riquadro si da' l'altezza da solo con aspect-ratio; qui deve riempire
+    // .card-img-placeholder, che l'altezza ce l'ha gia'. Due contesti, due modi di misurare.
+    c.style.position = 'absolute'; c.style.top = '0'; c.style.left = '0';
+    c.style.width = '100%'; c.style.height = '100%'; c.style.aspectRatio = 'auto';
+    return c.outerHTML;
+  }
+  // Ripiego, se un domani quel markup cambiasse nome: meglio l'icona di un buco.
+  return SECTION_IMAGES[sec]
+    ? '<img src="' + SECTION_IMAGES[sec] + '" alt="" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">'
+    : SECTION_ICONS[sec];
+}
+
+// v6.073 (Franco) — il titolo della card di un prodotto. Non e' l'etichetta della sezione
+// ("Figurine"): e' il nome della cosa ("Le Figurine Sgorbions"). L'articolo cambia col genere e col
+// numero, quindi si scrive, non si compone: "Le Figurine", "I Retro", "Gli Album". Comporlo da
+// getSectionLabel avrebbe voluto dire una regola grammaticale italiana dentro il codice.
+function _titoloProdotto(sec) {
+  const it = {
+    figurines: 'Le Figurine Sgorbions', retros: 'I Retro Sgorbions', bustine: 'Le Bustine Sgorbions',
+    albums: 'Gli Album Sgorbions',      extras: 'Gli Altri oggetti Sgorbions'
+  };
+  const en = {
+    figurines: 'The Sgorbions Stickers', retros: 'The Sgorbions Retros', bustine: 'The Sgorbions Wrappers',
+    albums: 'The Sgorbions Albums',      extras: 'The Other Sgorbions Items'
+  };
+  return (currentLang === 'it' ? it : en)[sec] || getSectionLabel(sec);
+}
+
+// La scomposizione per tipologia, COI COLORI del codice tipologie (v5.703): base, variazione
+// ufficiale, non ufficiale, change, errore di stampa. I colori non si scrivono qui: si puntano le
+// variabili --type-*, che stanno in un posto solo proprio perche' se un domani il rosa diventa
+// viola cambi una riga e cambia dappertutto.
+// Le tipologie a ZERO non si mostrano, come le serie a zero: un album non ha Change, e dirlo
+// occuperebbe una riga per non dire niente.
+function _contiTipologie(oggetti) {
+  const conta = f => oggetti.filter(f).length;
+  return [
+    { n: conta(_eBase),                     col: 'var(--type-base)',       it: ['base', 'base'],                                     en: ['base', 'base'] },
+    { n: conta(f => f.isVariation),         col: 'var(--type-official)',   it: ['variazione ufficiale', 'variazioni ufficiali'],     en: ['official variation', 'official variations'] },
+    { n: conta(f => f.isUnofficialVariation), col: 'var(--type-unofficial)', it: ['variazione non ufficiale', 'variazioni non ufficiali'], en: ['unofficial variation', 'unofficial variations'] },
+    { n: conta(f => f.isChange),            col: 'var(--type-change)',     it: ['change', 'change'],                                 en: ['change', 'changes'] },
+    { n: conta(f => f.isPrintError),        col: 'var(--type-printerror)', it: ['errore di stampa', 'errori di stampa'],             en: ['print error', 'print errors'] }
+  ].filter(v => v.n > 0);
+}
+const _paroleTipologia = v => (currentLang === 'it' ? v.it : v.en)[v.n === 1 ? 0 : 1];
+
+// Numero + etichetta, ognuno nel colore della sua tipologia. Due DISPOSIZIONI, non due funzioni:
+//  - 'riga'    -> tutte di seguito, separate da ';'. Va nella testata della pagina, che e' larga.
+//  - 'colonna' -> una per riga. Va nei box delle serie, dove in orizzontale non ci starebbero ma
+//                 in verticale lo spazio c'e'.
+// L'etichetta c'e' in tutti e due i casi: il colore da solo va ricordato, la parola no.
+function _righeTipologie(oggetti, modo) {
+  const voci = _contiTipologie(oggetti);
+  if (modo === 'colonna') {
+    return voci.map(v =>
+      '<div style="display:flex;align-items:baseline;gap:0.4rem;color:' + v.col + ';line-height:1.45;">' +
+        '<span style="font-weight:800;font-variant-numeric:tabular-nums;min-width:2.6em;text-align:right;">' + v.n + '</span>' +
+        '<span>' + esc(_paroleTipologia(v)) + '</span>' +
+      '</div>'
+    ).join('');
+  }
+  return voci.map(v =>
+    '<span style="color:' + v.col + ';white-space:nowrap;"><b>' + v.n + '</b> ' + esc(_paroleTipologia(v)) + '</span>'
+  ).join('<span style="color:var(--muted);">; </span>');
+}
+
+function prodottoCardHTML(sec, tutti, serieOrdinate) {
+  const miei = _diTipo(tutti, sec);
+  const basi = miei.filter(_eBase);
+  const serieConRoba = serieOrdinate.filter(s => miei.some(f => f.seriesId === s.id)).length;
+  const desc = currentLang === 'it'
+    ? basi.length + ' base, in ' + serieConRoba + ' serie'
+    : basi.length + ' base, in ' + serieConRoba + (serieConRoba === 1 ? ' series' : ' series');
+  // v6.073 (Franco) — le serie che di quel prodotto non hanno NIENTE non si mostrano affatto.
+  // Uno zero occupa una riga per dire che non c'e' niente da dire: l'elenco cambia lunghezza da
+  // una card all'altra, ma dice solo cose vere.
+  const righe = serieOrdinate.map(s => {
+    const n = basi.filter(f => f.seriesId === s.id).length;
+    if (!n) return '';
+    return '<span style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:4px 10px 4px 4px;border-radius:20px;font-size:0.78rem;font-family:var(--font-ui);' +
+      'background:rgba(181,255,46,0.08);border:1px solid rgba(181,255,46,0.18);color:var(--text);">' +
+      (s.img
+        ? '<img src="' + cloudinaryUrl(s.img, 'w_80,h_80,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:22px;height:22px;object-fit:contain;border-radius:50%;background:var(--bg3);flex:0 0 auto;">'
+        : '<span style="width:22px;height:22px;flex:0 0 auto;"></span>') +
+      '<span style="flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(s.name) + '</span>' +
+      '<span style="font-weight:800;font-variant-numeric:tabular-nums;flex:0 0 auto;">' + n + '</span>' +
+    '</span>';
+  }).join('');
+  const foto = _fotoProdotto(sec);
+  return '<div class="card" onclick="openProdottoDetail(\'' + sec + '\')">' +
+    '<div class="card-img-placeholder">' + foto + '</div>' +
+    '<div class="card-body">' +
+      '<div class="card-title" style="margin-bottom:0.5rem;">' + esc(getSectionLabel(sec)) + '</div>' +
+      '<div class="card-desc">' + esc(desc) + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:0.35rem;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.06);">' + righe + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+function renderCatalogProdotti(grid) {
+  const tutti = getData('figurines', []);
+  const serieOrdinate = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  grid.innerHTML = PRODOTTI_INVENTARIO.map(sec => prodottoCardHTML(sec, tutti, serieOrdinate)).join('');
+}
+
+// ---- SECONDO LIVELLO: L'HUB DI UN PRODOTTO ----
+// Stessa impostazione dell'hub di una serie, con i box delle SERIE al posto dei box dei prodotti.
+// Il contenitore si crea una volta sola e poi si riusa.
+let _prodottoCorrente = null;
+// Da dove si e' arrivati in una sezione: se dall'hub di un prodotto, il tasto indietro torna LI'.
+// Stessa idea di _elencoNav della v6.033 — ricordare la provenienza invece di darla per scontata.
+let _sezioneApertaDaProdotto = null;
+
+function _creaProdottoDetail() {
+  let d = document.getElementById('prodotto-detail');
+  if (d) return d;
+  d = document.createElement('div');
+  d.id = 'prodotto-detail';
+  d.style.cssText = 'display:none;padding-top:64px;min-height:100vh;position:relative;z-index:1;';
+  d.innerHTML =
+    '<div class="series-hero"><div class="series-hero-inner">' +
+      '<button class="back-btn" onclick="closeProdottoDetail()">&#8592; <span data-i18n="back">Inventario</span></button>' +
+      '<h1 class="series-name" id="prodotto-detail-name" style="margin:0.4rem 0 0;"></h1>' +
+      '<div id="prodotto-detail-meta" style="font-size:0.85rem;color:var(--muted);margin:0.3rem 0 0;"></div>' +
+      '<div id="prodotto-carosello-sez" style="display:none;width:100%;position:relative;margin-top:0.6rem;">' +
+        '<button type="button" id="prodotto-carosello-prec" aria-label="Precedente" style="position:absolute;left:-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">&#8249;</button>' +
+        '<div id="prodotto-carosello" style="display:flex;gap:0.9rem;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:0.2rem 0.4rem 0.6rem;"></div>' +
+        '<button type="button" id="prodotto-carosello-succ" aria-label="Successivo" style="position:absolute;right:-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">&#8250;</button>' +
+      '</div>' +
+    '</div></div>' +
+    '<div style="max-width:1100px;margin:0 auto;padding:2rem;">' +
+      '<div class="sec-grid" id="prodotto-serie-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem;"></div>' +
+    '</div>';
+  // v6.073 (Franco) — BACO: l'hub partiva piu' in basso di quello di una serie. Con
+  // body.appendChild finiva IN FONDO al body, cioe' DOPO il <footer>, che sta al primo livello:
+  // il footer restava sopra e lo spingeva giu'. Va messo dove sta il suo gemello, subito dopo
+  // #series-detail, cosi' i due occupano lo stesso posto nel flusso e non c'e' niente da
+  // compensare con margini o padding — che avrebbero curato il sintomo lasciando la causa.
+  const gemello = document.getElementById('series-detail');
+  if (gemello && gemello.parentNode) gemello.parentNode.insertBefore(d, gemello.nextSibling);
+  else document.body.appendChild(d);
+  return d;
+}
+
+function openProdottoDetail(sec) {
+  _prodottoCorrente = sec;
+  _creaProdottoDetail();
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('series-detail').style.display = 'none';
+  document.getElementById('prodotto-detail').style.display = 'block';
+  _caroselloSpegni('home'); _caroselloSpegni('serie');
+
+  const tutti = getData('figurines', []);
+  const miei = _diTipo(tutti, sec);
+  const basi = miei.filter(_eBase);
+  const serieOrdinate = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  // v6.073 (Franco) — la testata dell'hub dice le stesse cose della card da cui ci si e' arrivati,
+  // e le dice con le stesse funzioni: titolo, "N Serie:", scomposizione per tipologia coi colori.
+  // Se fossero due testi diversi, la card e la pagina che apre finirebbero per non combaciare —
+  // ed e' il tipo di divergenza che nessuno nota, perche' le due non si vedono mai insieme.
+  const serieConRoba = serieOrdinate.filter(s => miei.some(f => f.seriesId === s.id)).length;
+  document.getElementById('prodotto-detail-name').textContent = _titoloProdotto(sec);
+  document.getElementById('prodotto-detail-meta').innerHTML =
+    '<div style="margin-bottom:0.15rem;">' + serieConRoba + (currentLang === 'it' ? ' Serie:' : ' Series:') + '</div>' +
+    '<div style="font-size:0.86rem;line-height:1.7;">' + _righeTipologie(miei) + '</div>';
+  const griglia = document.getElementById('prodotto-serie-grid');
+  // Le serie che di quel prodotto non hanno NIENTE non si mostrano: un box che apre una griglia
+  // vuota e' un vicolo cieco. Nella colonna del primo livello invece restano, perche' li' servono
+  // a tenere l'elenco della stessa lunghezza in tutte le card — sono due mestieri diversi.
+  const conRoba = serieOrdinate.filter(s => miei.some(f => f.seriesId === s.id));
+  griglia.innerHTML = conRoba.map(s => {
+    // v6.073 (Franco) - nel box di una serie ci vanno TUTTI i numeri, ognuno nel colore della sua
+    // tipologia, non piu' il solo "N base, M in tutto". Il colore fa da etichetta - e' il mestiere
+    // per cui il codice della v5.703 esiste - e il nome per esteso resta nel passaggio del mouse.
+    const suoi = miei.filter(f => f.seriesId === s.id);
+    const etichetta = _righeTipologie(suoi, 'colonna');
+    return '<div class="section-choice-card" onclick="apriSerieDaProdotto(\'' + s.id + '\')" style="padding:0;overflow:hidden;">' +
+      '<div style="width:100%;aspect-ratio:4/3;background:var(--bg3);overflow:hidden;display:flex;align-items:center;justify-content:center;">' +
+        (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;">' : '<span style="font-size:3rem;">&#127924;</span>') +
+      '</div>' +
+      '<div style="padding:1.25rem 1.5rem;">' +
+        '<div class="section-choice-title">' + esc(s.name) + '</div>' +
+        '<div class="section-choice-count" style="font-size:0.82rem;margin-top:0.2rem;">' + etichetta + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+
+  try { renderCaroselloProdotto(); } catch (e) { console.error('renderCaroselloProdotto', e); }
+  try { _aggiornaLogoNavbar(); } catch (e) {}
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closeProdottoDetail() {
+  _caroselloSpegni('prodotto');
+  const d = document.getElementById('prodotto-detail');
+  if (d) d.style.display = 'none';
+  _prodottoCorrente = null;
+  _sezioneApertaDaProdotto = null;
+  document.getElementById('page-catalog').classList.add('active');
+  renderCatalog();
+}
+
+// Il terzo livello e' la griglia che esiste gia': stessa destinazione, altra strada.
+function apriSerieDaProdotto(seriesId) {
+  const sec = _prodottoCorrente;
+  _caroselloSpegni('prodotto');
+  const d = document.getElementById('prodotto-detail');
+  if (d) d.style.display = 'none';
+  openSeriesDetail(seriesId);
+  openSeriesSection(sec);
+  _sezioneApertaDaProdotto = sec;  // dopo openSeriesSection, che non lo sa
+}
+
 function renderCatalog() {
   const q = (document.getElementById('series-search')?.value || '').trim();
   if (q) { renderCatalogSearch(q); return; }
@@ -14863,6 +15299,8 @@ function renderCatalog() {
   const grid = document.getElementById('catalog-grid');
   if (resultsEl) resultsEl.style.display = 'none';
   if (grid) grid.style.display = '';
+  _aggiornaBivioInventario();
+  if (_taglioInventario === 'prodotti') { if (grid) renderCatalogProdotti(grid); return; }
   let series = getData('series', []);
   series = series.sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
   if (!series.length) {
@@ -15804,9 +16242,13 @@ function closeSeriesDetail() {
   if (grid) grid.style.display = 'grid';
 
   document.getElementById('series-detail').style.display = 'none';
-  document.getElementById('page-catalog').classList.add('active');
+  // v6.073 - se in questa sezione ci si e' arrivati dall'hub di un prodotto, indietro torna LI'.
+  // Rimandare all'Inventario farebbe perdere il punto in cui si stava, e non e' "indietro".
+  const _daProd = _sezioneApertaDaProdotto;
   currentSeriesId = null;
   currentSection = null;
+  if (_daProd) { openProdottoDetail(_daProd); return; }
+  document.getElementById('page-catalog').classList.add('active');
 }
 
 // ============================================================
