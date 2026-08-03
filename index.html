@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.072"></script>
-<link rel="stylesheet" href="css/style.css?v=6.072">
+<script src="js/email.min.js?v=6.073"></script>
+<link rel="stylesheet" href="css/style.css?v=6.073">
 
 
 <style>
@@ -104,14 +104,20 @@
    "← Sezioni" e' figlio di #items-section, che e' display:none finche' non si apre una sezione:
    quando non serve sparisce da solo, senza logica aggiuntiva qui. */
 @media (min-width:1440px) {
-  #series-detail { position:relative; }
+  /* v6.073 — anche l'hub di un prodotto: e' la stessa testata, con lo stesso pulsante.
+     Il baco era che questa regola nominava solo #series-detail, quindi sopra i 1440px il
+     tasto dell'hub restava dentro il contenitore da 1100px invece di appoggiarsi al bordo.
+     Allargata invece che ricopiata: due copie della stessa regola divergono, e in silenzio. */
+  #series-detail, #prodotto-detail { position:relative; }
   #series-detail #items-section { position:relative; }
   #series-detail .series-hero-inner > .back-btn,
+  #prodotto-detail .series-hero-inner > .back-btn,
   #series-detail #items-section .back-btn {
     position:absolute;
     margin-bottom:0; white-space:nowrap;
     font-size:0.9rem; padding:0.35rem 0.8rem; }
-  #series-detail .series-hero-inner > .back-btn { top:calc(64px + 3rem); left:2rem; }
+  #series-detail .series-hero-inner > .back-btn,
+  #prodotto-detail .series-hero-inner > .back-btn { top:calc(64px + 3rem); left:2rem; }
   /* niente `top`: posizione statica, cioe' centrato accanto al nome della sezione */
   #series-detail #items-section .back-btn { left:calc(2rem - (100vw - 1100px)/2); }
 }
@@ -228,6 +234,8 @@
      spazio vuoto in fondo alla pagina. */
   #fig-detail-modal #fig-detail-content { min-height:445px; }
 }
+
+}
 </style>
 </head>
 <body>
@@ -246,7 +254,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.072</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.073</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -479,10 +487,23 @@
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
         <div style="display:flex;align-items:baseline;gap:0.6rem;flex-wrap:wrap;">
           <h1 style="font-family:var(--font-display);font-size:2.2rem;" data-i18n="catalog.title">The Inventory</h1>
-          <p style="color:var(--muted);font-size:0.9rem;" data-i18n="catalog.sub">All Sgorbions series published</p>
+          <p id="catalog-sub" style="color:var(--muted);font-size:0.9rem;" data-i18n="catalog.sub">All Sgorbions series published</p>
         </div>
         <div id="admin-add-series-btn" style="display:none;">
           <button class="btn-primary btn-admin" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
+        </div>
+      </div>
+      <!-- v6.073 (Franco) — IL BIVIO. Entrando nell'Inventario non si atterra piu' subito sulle
+           serie: si sceglie da che lato guardare la stessa roba. Sta QUI, sopra la ricerca, perche'
+           decide COSA si sta cercando: sotto, avrebbe filtrato un elenco gia' scelto.
+           I due pulsanti non hanno una classe propria: lo stato acceso lo mette
+           _aggiornaBivioInventario() dallo stile, cosi' non c'e' una regola CSS in piu' da
+           tenere allineata a una sola pagina. -->
+      <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+        <span style="font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);font-weight:700;" data-i18n="catalog.browseby">Browse by</span>
+        <div style="display:inline-flex;background:var(--bg2);border:1px solid var(--border2);border-radius:999px;padding:4px;gap:4px;">
+          <button type="button" id="taglio-serie" onclick="impostaTaglioInventario('serie')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:#ffffff;background:var(--action);border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byseries">Series</button>
+          <button type="button" id="taglio-prodotti" onclick="impostaTaglioInventario('prodotti')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--muted);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byproducts">Products</button>
         </div>
       </div>
       <div class="search-bar">
@@ -1527,7 +1548,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.072</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.073</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -2288,7 +2309,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.072"></script>
+<script src="js/app.js?v=6.073"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2312,7 +2333,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.072'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.073'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
