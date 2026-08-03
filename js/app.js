@@ -1,6 +1,25 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.074 - LE BUSTINE HANNO DUE FACCE. Modificati index.html e app.js.
+//          Segnalato da Franco: una bustina ha un fronte e un retro, e il sito le dava una foto
+//          sola. Nel frattempo le offriva un campo "Retro collegato" che per una bustina non vuol
+//          dire niente - quel campo punta al retro di una FIGURINA. Non erano due segnalazioni:
+//          era un campo sbagliato al posto di quello giusto.
+//          1. Nuovo campo `imgRetro` sul record. Un secondo campo sullo STESSO oggetto, non un
+//             record collegato: le due facce di una bustina sono la stessa cosa, mentre il fronte
+//             e il retro di una figurina sono due oggetti che si collezionano separatamente. E'
+//             questa differenza che rendeva il campo "Retro collegato" sbagliato per le bustine.
+//          2. Il secondo riquadro foto c'e' in ENTRAMBE le form, e si vede SOLO per le bustine.
+//             Scriverlo in una sola avrebbe ripetuto la storia di `retroBianco` (v6.006/007), che
+//             per una release e' esistito solo nella finestra e non nella scheda.
+//          3. La rimozione sfondo era inchiodata agli id del riquadro unico. Ora prende lo SLOT
+//             come parametro, quindi vale anche sulla seconda foto: parametrizzata, non ricopiata.
+//          4. La scheda mostra due foto anche per le bustine, ma prendendo il retro dal campo
+//             nuovo dello stesso record - non dal retro collegato, che per una bustina non esiste.
+//          5. I campi "Retro collegato" e "Retro bianco" spariscono dalle bustine, in entrambe le
+//             form. La regola era "tutto tranne i retro"; ora e' "solo dove un retro-figurina ha
+//             senso", cioe' figurine e retro.
 // v6.073 - L'INVENTARIO A DUE TAGLI. Modificati index.html e app.js.
 //          Entrando nell'Inventario non si atterra piu' subito sulle serie: c'e' un bivio,
 //          "Sfoglia per: Serie | Prodotti". Il taglio per SERIE e' quello di sempre e non
@@ -11108,7 +11127,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.073';
+const JS_VERSION = 'v6.074';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12451,6 +12470,10 @@ let editingSeriesImg = null;
 let editingFigImg = null;
 let editingFigEbayImg = null;
 let editingFigEbayImgFileSave = null;
+// v6.074 - la SECONDA foto delle bustine (il retro della bustina). Stessa coppia di globali della
+// foto principale: l'URL gia' salvato e il File appena scelto.
+let editingFigImgRetro = null;
+let editingFigImgRetroFileSave = null;
 let _returnToErroriAfterSave = false;
 
 function closeFigModal() {
@@ -16549,7 +16572,11 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
     // v6.008 (Franco) - col Retro bianco il campo "Retro associato" sparisce: sono
     // alternative, e lasciarlo visibile inviterebbe a riempirlo per poi vederlo ignorato.
     const _rb = !!document.getElementById('fig-retro-bianco-input')?.checked;
-    const showRetro = currentSection !== 'retros' && !_rb;
+    // v6.074 (Franco) - "Retro collegato" e "Retro bianco" hanno senso solo dove un retro-figurina
+    // esiste: figurine e retro. Su bustine, album e altri oggetti erano due campi che chiedevano una
+    // cosa senza risposta. La regola era "tutto tranne i retro"; ora dice cosa vale, non cosa esclude.
+    const _sezioneConRetro = (currentSection === 'figurines');
+    const showRetro = _sezioneConRetro && !_rb;
     retroGroup.style.display = showRetro ? '' : 'none';
     if (showRetro) populateRetroSelect(document.getElementById('fig-retro-input')?.value || null, isChg);
     // v6.006 - la spunta "Retro bianco" compare dove compare il retro: e' l'alternativa a
@@ -16557,7 +16584,7 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
     // la spunta resta visibile anche quando nasconde il campo: e' l'unico modo per tornare
     // indietro. Sparisce solo nei Retro, dove non ha senso.
     const rbGroup = document.getElementById('fig-retro-bianco-group');
-    if (rbGroup) rbGroup.style.display = (currentSection !== 'retros') ? '' : 'none';
+    if (rbGroup) rbGroup.style.display = _sezioneConRetro ? '' : 'none';
   }
   // ...E PER LO STESSO IDENTICO MOTIVO, nemmeno le VARIAZIONI (v5.707). Una variazione
   // E' il cambio del DIETRO: un retro, che un dietro non ce l'ha, per definizione non
@@ -16662,8 +16689,16 @@ function openAddItemModal(itemId) {
   document.getElementById('fig-ebay-img-preview').style.display = 'none';
   editingFigEbayImg = null;
   editingFigEbayImgFileSave = null;
+  const _prRetro = document.getElementById('fig-img-retro-preview');
+  if (_prRetro) _prRetro.style.display = 'none';
+  editingFigImgRetro = null;
+  editingFigImgRetroFileSave = null;
   const ebayImgGroup = document.getElementById('fig-ebay-img-group');
   if (ebayImgGroup) ebayImgGroup.style.display = (currentSection === 'figurines' || currentSection === 'retros') ? '' : 'none';
+  // v6.074 - la seconda foto esiste SOLO per le bustine: sono l'unico oggetto le cui due facce
+  // stanno sullo stesso record. Una figurina il retro ce l'ha come oggetto a se'.
+  const imgRetroGroup = document.getElementById('fig-img-retro-group');
+  if (imgRetroGroup) imgRetroGroup.style.display = (currentSection === 'bustine') ? '' : 'none';
   switchFigModalTab('generale');
   if (itemId) {
     const f = getData('figurines', []).find(x => x.id === itemId);
@@ -16702,6 +16737,7 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-ebay-desc-en-input').value = f.ebayDescEn || '';
       if (f.img) { const pr = document.getElementById('fig-img-preview'); pr.src = f.img; pr.style.display = 'block'; editingFigImg = f.img; }
       if (f.ebayImg) { const pr2 = document.getElementById('fig-ebay-img-preview'); pr2.src = f.ebayImg; pr2.style.display = 'block'; editingFigEbayImg = f.ebayImg; }
+      if (f.imgRetro) { const pr3 = document.getElementById('fig-img-retro-preview'); if (pr3) { pr3.src = f.imgRetro; pr3.style.display = 'block'; } editingFigImgRetro = f.imgRetro; }
     }
   } else {
     ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input','fig-category-input','fig-subcategory-input','fig-subname-input'].forEach(id => document.getElementById(id).value = '');
@@ -18462,6 +18498,19 @@ function handleFigImg(e) {
   reader.readAsDataURL(file);
 }
 
+// v6.074 - gemella di handleFigImg per la seconda foto. Come l'altra non carica niente: mette da
+// parte il File e riempie la miniatura. Il caricamento avviene al salvataggio, una volta sola.
+function handleFigImgRetro(e) {
+  const file = e.target.files[0]; if (!file) return;
+  editingFigImgRetroFileSave = file;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const pr = document.getElementById('fig-img-retro-preview');
+    pr.src = ev.target.result; pr.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
 function handleFigEbayImg(e) {
   const file = e.target.files[0]; if (!file) return;
   editingFigEbayImgFileSave = file;
@@ -18779,6 +18828,13 @@ async function _saveFigurineInner() {
     try { ebayImgUrl = await uploadToCloudinary(editingFigEbayImgFileSave); }
     catch(e) { toast((currentLang === 'it' ? 'Caricamento foto Ebay fallito' : 'Ebay photo upload failed'), 'error'); return; }
   }
+  // v6.074 - la seconda foto. Come le altre due: se il caricamento fallisce si esce SENZA salvare,
+  // altrimenti si scriverebbe un record che dice di avere una foto che non e' mai arrivata.
+  let imgRetroUrl = editingFigImgRetro || null;
+  if (editingFigImgRetroFileSave) {
+    try { imgRetroUrl = await uploadToCloudinary(editingFigImgRetroFileSave); }
+    catch(e) { toast((currentLang === 'it' ? 'Caricamento seconda foto fallito' : 'Second photo upload failed'), 'error'); return; }
+  }
   let figs = getData('figurines', []);
   const editId = document.getElementById('edit-fig-id').value;
   try {
@@ -18786,7 +18842,7 @@ async function _saveFigurineInner() {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
         const _prima = figs[idx];   // v5.981 — riferimento all'oggetto PRIMA della sovrascrittura
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || figs[idx].img, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || figs[idx].img, imgRetro: imgRetroUrl || figs[idx].imgRetro || null, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti };
         figs[idx].fullName = computeFullName(figs[idx], figs);
         // v5.981 — la coda: prima quello che dice la spunta (o il valore esistente, se la spunta
         // era nascosta), poi l'automatismo, che puo' solo ALZARLA. Cosi' togliere la spunta a mano
@@ -18803,7 +18859,7 @@ async function _saveFigurineInner() {
         try { await _propagaAiCollegati(figs[idx]); } catch(e) { console.error('propaga', e); }
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection !== 'retros') ? (retroId || null) : null/* v5.786: retro anche per Change */, changeType, printErrorType, img: imgUrl || null, ebayImg: ebayImgUrl || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti, daPubblicare: forSale/* v5.981: nasce marcato Ebay = nasce in coda */ };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || null, imgRetro: imgRetroUrl || null, ebayImg: ebayImgUrl || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti, daPubblicare: forSale/* v5.981: nasce marcato Ebay = nasce in coda */ };
       newF.fullName = computeFullName(newF, figs);
       const saved = await fsSave('figurines', newF);
     }
@@ -20408,11 +20464,16 @@ function _schedaDueFoto(f) {
   // passaggio, non un caso da assecondare con un layout suo. Se il retro non c'e', il suo box resta
   // vuoto e la foto del fronte sta dov'e' sempre stata.
   // Cosi' la condizione torna a dire una cosa sola e vera: le due facce esistono nelle FIGURINE.
-  return !!f && f.section === 'figurines';
+  // v6.074 (Franco) - e nelle BUSTINE, che hanno un fronte e un retro. La differenza non e' nel
+  // fatto che le facce siano due: e' in DOVE sta la seconda. Per una figurina il retro e' un
+  // oggetto a se', collezionabile per conto suo, e si raggiunge col campo "Retro collegato"; per
+  // una bustina e' un'altra foto della stessa cosa, e sta sul suo record in `imgRetro`. E' questa
+  // differenza che rendeva il campo "Retro collegato" senza senso sulle bustine.
+  return !!f && (f.section === 'figurines' || f.section === 'bustine');
 }
 
 function openFigDetail(figId, elencoNav) {
-  _figEditImgData = null; // reset immagine editing precedente
+  _figEditImgData = null; _figEditImgRetroData = null; // reset immagini editing precedenti
   // v6.033 - l'elenco su cui scorrono le frecce arriva da chi apre la scheda. Senza argomento
   // torna null, cioe' si riparte dalla griglia: aprendo una card non resta appiccicato l'elenco
   // dell'ultimo tab visitato.
@@ -20637,7 +20698,11 @@ function openFigDetail(figId, elencoNav) {
       // Variazione/Change o figurina base con Retro collegato: mostra Fronte (sx) + Retro (dx) affiancati
       const baseFig = _detBase;
       const frontImg = baseFig ? baseFig.img : f.img;
-      const retroFig = _detEffRetroId ? getData('figurines', []).find(x => x.id === _detEffRetroId) : null;
+      // v6.074 - due sorgenti diverse per la stessa casella. Per una FIGURINA il retro e' un altro
+      // record, e la caption sotto ci porta. Per una BUSTINA e' un campo del record stesso: non c'e'
+      // niente da collegare e niente dove andare.
+      const _bustina = f.section === 'bustine';
+      const retroFig = (!_bustina && _detEffRetroId) ? getData('figurines', []).find(x => x.id === _detEffRetroId) : null;
       const noPhotoBox = '<div style="width:100%;height:300px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non disponibile' : 'Photo not available') + '</div>';
       // v5.916 — altezza FISSA 200px su entrambe le foto (come il box "foto non disponibile"): così
       // fronte e retro sono sempre alti uguali e l'area foto non cambia dimensione tra una figurina e
@@ -20650,11 +20715,15 @@ function openFigDetail(figId, elencoNav) {
       // proprio, il riquadro e' VUOTO - non c'e' nessuna foto mancante, c'e' un collegamento da
       // fare. Scrivere "Foto non disponibile" li' direbbe una cosa falsa.
       const boxVuoto = '<div style="width:100%;height:300px;background:var(--card2);border-radius:8px;"></div>';
-      const retroHTML = retroFig
-        ? (retroFig.img
-            ? `<img src="${cloudinaryUrl(retroFig.img, 'w_800,h_800,c_fit,q_auto,f_auto')}" style="width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
-            : noPhotoBox)
-        : boxVuoto;
+      const retroHTML = _bustina
+        ? (f.imgRetro
+            ? `<img src="${cloudinaryUrl(f.imgRetro, 'w_800,h_800,c_fit,q_auto,f_auto')}" style="width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+            : boxVuoto)
+        : (retroFig
+            ? (retroFig.img
+                ? `<img src="${cloudinaryUrl(retroFig.img, 'w_800,h_800,c_fit,q_auto,f_auto')}" style="width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+                : noPhotoBox)
+            : boxVuoto);
       // v6.031 (Franco) - come nel tab Variazioni (v6.030): il sottonome su una riga sua, in
       // azzurro, e il link resta sulla prima. Il sottonome non entra nel link, come sulle card:
       // e' un pezzo del nome, non un secondo posto dove cliccare.
@@ -21122,22 +21191,13 @@ function switchToEditMode(figId) {
   const displayNameForTitle = (f.section === 'retros') ? (f.fullName || '') : (f.fullName || f.name);
   if (titleEl) titleEl.textContent = f.number ? ('# ' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle;
 
-  // Foto con pulsante cambio immagine
+  // v6.074 - Foto. Una sola per quasi tutto; DUE per le bustine, che hanno due facce sullo stesso
+  // record. Il riquadro e' costruito da una funzione sola, chiamata una o due volte: due copie di
+  // questo markup sarebbero divergite alla prima modifica, e la seconda non se ne accorgerebbe
+  // nessuno finche' non si guarda proprio quella.
   if (photo) {
-    photo.innerHTML = (f.img
-      ? '<img id="fig-edit-img-preview" src="' + cloudinaryUrl(f.img,'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
-      : '<div id="fig-edit-img-preview" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">Nessuna foto</div>') +
-      '<div style="display:flex;gap:0.4rem;margin-top:0.3rem;">' +
-      '<label style="flex:1;cursor:pointer;text-align:center;">' +
-      '<span style="display:block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;white-space:nowrap;">📷 ' + (currentLang==='it'?'Cambia foto':'Change photo') + '</span>' +
-      '<input type="file" id="fig-edit-img-file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event)">' +
-      '</label>' +
-      (f.img ? '<button onclick="removeFigPhoto()" style="flex:1;font-size:0.72rem;color:var(--danger);border:1px solid rgba(var(--danger-rgb),0.4);background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;white-space:nowrap;">🗑️ ' + (currentLang==='it'?'Rimuovi foto':'Remove photo') + '</button>' : '') +
-      '</div>' +
-      // v5.896 — ripristinato il pulsante "Rimuovi sfondo" (AI locale, ora RMBG-1.4) nella form di
-      // dettaglio: era sparito da questa vista e la funzione restava raggiungibile solo dai caricamenti
-      // massivi. Sempre presente (agisce sulla preview corrente, sia foto esistente che appena caricata).
-      '<button id="fig-edit-remove-bg-btn" onclick="removeBgFromEdit()" style="width:100%;margin-top:0.4rem;font-size:0.72rem;color:var(--accent2);border:1px solid var(--accent2);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">✨ ' + (currentLang==='it'?'Rimuovi sfondo':'Remove background') + '</button>';
+    photo.innerHTML = _slotFotoEdit('fronte', f.img, f)
+      + (_schedaDueFoto(f) && f.section === 'bustine' ? _slotFotoEdit('retro', f.imgRetro, f) : '');
   }
 
   // Build edit form
@@ -21238,8 +21298,11 @@ function switchToEditMode(figId) {
     '<div id="fe-base-figurine-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:220px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>' +
     '</div>';
 
-  // Selettore Retro associato (non applicabile ai Retro stessi) — ricerca in digitazione (247+ retro in alcune serie)
-  if (!isRetrosItem) {
+  // Selettore Retro associato — v6.074 (Franco): solo dove un retro-FIGURINA esiste davvero.
+  // Prima la regola era "tutto tranne i retro", quindi bustine, album e altri oggetti si vedevano
+  // due campi che chiedevano una cosa senza risposta. La stessa correzione sta nella form A, in
+  // toggleBaseFigurineGroup(): sono due punti, e vanno cambiati insieme finche' restano due.
+  if (f.section === 'figurines') {
     // v5.786 — il selettore Retro ora si applica anche ai Change (facoltativo). Per i Change pesca da
     // TUTTE le serie; per gli altri tipi resta la serie dell'oggetto. _feItemSeriesId serve al toggle.
     _feItemSeriesId = f.seriesId;
@@ -21328,7 +21391,43 @@ function switchToEditMode(figId) {
   });
 }
 
+// v6.074 - gli SLOT foto della scheda. 'fronte' c'e' sempre; 'retro' solo per le bustine.
+// Prima gli id erano scritti a mano dentro quattro funzioni diverse (il riquadro, il cambio foto,
+// la rimozione, la rimozione sfondo): con due slot sarebbero diventati otto punti da tenere
+// allineati. Qui ce n'e' uno.
+const _SLOT_FOTO = {
+  fronte: { preview: 'fig-edit-img-preview',      btn: 'fig-edit-remove-bg-btn',       campo: 'img',
+            it: 'Fronte', en: 'Front' },
+  retro:  { preview: 'fig-edit-imgretro-preview', btn: 'fig-edit-remove-bg-retro-btn', campo: 'imgRetro',
+            it: 'Retro',  en: 'Back' }
+};
 let _figEditImgData = null;
+let _figEditImgRetroData = null;
+const _datiSlot   = s => (s === 'retro') ? _figEditImgRetroData : _figEditImgData;
+const _scriviSlot = (s, v) => { if (s === 'retro') _figEditImgRetroData = v; else _figEditImgData = v; };
+
+// Il riquadro di uno slot: anteprima, "Cambia foto", "Rimuovi" (solo se una foto c'e') e
+// "Rimuovi sfondo". Identico per i due slot, tranne gli id e l'intestazione.
+function _slotFotoEdit(slot, url, f) {
+  const s = _SLOT_FOTO[slot];
+  const titolo = (_schedaDueFoto(f) && f.section === 'bustine')
+    ? '<div style="font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? s.it : s.en) + '</div>'
+    : '';
+  const vuoto = currentLang === 'it' ? 'Nessuna foto' : 'No photo';
+  return '<div style="margin-bottom:0.6rem;">' + titolo +
+    (url
+      ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(url, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
+      : '<div id="' + s.preview + '" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + vuoto + '</div>') +
+    '<div style="display:flex;gap:0.4rem;margin-top:0.3rem;">' +
+      '<label style="flex:1;cursor:pointer;text-align:center;">' +
+        '<span style="display:block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;white-space:nowrap;">\u{1F4F7} ' + (currentLang === 'it' ? 'Cambia foto' : 'Change photo') + '</span>' +
+        '<input type="file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event, \'' + slot + '\')">' +
+      '</label>' +
+      (url ? '<button onclick="removeFigPhoto(\'' + slot + '\')" style="flex:1;font-size:0.72rem;color:var(--danger);border:1px solid rgba(var(--danger-rgb),0.4);background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;white-space:nowrap;">\u{1F5D1}\uFE0F ' + (currentLang === 'it' ? 'Rimuovi' : 'Remove') + '</button>' : '') +
+    '</div>' +
+    '<button id="' + s.btn + '" onclick="removeBgFromEdit(\'' + slot + '\')" style="width:100%;margin-top:0.4rem;font-size:0.72rem;color:var(--accent2);border:1px solid var(--accent2);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' +
+  '</div>';
+}
 
 // v5.895 — Rimozione sfondo: modello RMBG-1.4 (q8) via transformers.js, al posto di
 // @imgly/background-removal (isnet). Qualità nettamente migliore sui soggetti chiari a basso
@@ -21372,9 +21471,10 @@ window._removeBackground = async function(blob) {
   }
 };
 
-async function removeBgFromEdit() {
-  const btn = document.getElementById('fig-edit-remove-bg-btn');
-  const preview = document.getElementById('fig-edit-img-preview');
+async function removeBgFromEdit(slot) {
+  slot = slot || 'fronte';
+  const btn = document.getElementById(_SLOT_FOTO[slot].btn);
+  const preview = document.getElementById(_SLOT_FOTO[slot].preview);
 
   if (!preview || !preview.src || preview.src === window.location.href) {
     toast(currentLang === 'it' ? 'Carica prima una foto' : 'Upload a photo first', 'error');
@@ -21437,8 +21537,8 @@ async function removeBgFromEdit() {
     // Converti in base64 e aggiorna la preview
     const reader = new FileReader();
     reader.onload = e => {
-      _figEditImgData = e.target.result;
-      preview.src = _figEditImgData;
+      _scriviSlot(slot, e.target.result);
+      preview.src = _datiSlot(slot);
       if (btn) { btn.disabled = false; btn.textContent = currentLang === 'it' ? '✨ Rimuovi sfondo' : '✨ Remove background'; }
       toast(currentLang === 'it' ? '✅ Sfondo rimosso!' : '✅ Background removed!', 'success');
     };
@@ -21450,16 +21550,17 @@ async function removeBgFromEdit() {
     if (btn) { btn.disabled = false; btn.textContent = currentLang === 'it' ? '✨ Rimuovi sfondo' : '✨ Remove background'; }
   }
 }
-function removeFigPhoto() {
-  if (!confirm(currentLang === 'it' ? 'Rimuovere la foto da questa figurina?' : 'Remove the photo from this sticker?')) return;
-  _figEditImgData = '__remove__'; // segnale speciale per saveFigFromDetail
-  const preview = document.getElementById('fig-edit-img-preview');
+function removeFigPhoto(slot) {
+  slot = slot || 'fronte';
+  if (!confirm(currentLang === 'it' ? 'Rimuovere la foto da questo oggetto?' : 'Remove the photo from this item?')) return;
+  _scriviSlot(slot, '__remove__'); // segnale speciale per saveFigFromDetail
+  const preview = document.getElementById(_SLOT_FOTO[slot].preview);
   if (preview) {
     preview.src = '';
     preview.style.display = 'none';
     // Mostra placeholder
     const placeholder = document.createElement('div');
-    placeholder.id = 'fig-edit-img-preview';
+    placeholder.id = _SLOT_FOTO[slot].preview;
     placeholder.style.cssText = 'width:160px;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;';
     placeholder.textContent = currentLang === 'it' ? 'Nessuna foto' : 'No photo';
     preview.replaceWith(placeholder);
@@ -21467,23 +21568,23 @@ function removeFigPhoto() {
   toast(currentLang === 'it' ? 'Foto rimossa — premi Salva per confermare' : 'Photo removed — press Save to confirm', 'success');
 }
 
-function handleFigEditImg(event) {
+function handleFigEditImg(event, slot) {
+  slot = slot || 'fronte';
   const file = event.target.files[0];
   if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    _figEditImgData = e.target.result;
-    const container = document.getElementById('fig-detail-photo');
-    let preview = document.getElementById('fig-edit-img-preview');
+    _scriviSlot(slot, e.target.result);
+    let preview = document.getElementById(_SLOT_FOTO[slot].preview);
     // Se il preview è un div placeholder, lo sostituiamo con un img
     if (preview && preview.tagName === 'DIV') {
       const img = document.createElement('img');
-      img.id = 'fig-edit-img-preview';
-      img.style.cssText = 'width:160px;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:4px;display:block;margin-bottom:0.5rem;';
+      img.id = _SLOT_FOTO[slot].preview;
+      img.style.cssText = 'width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:4px;display:block;margin-bottom:0.5rem;';
       preview.replaceWith(img);
       preview = img;
     }
-    if (preview) preview.src = _figEditImgData;
+    if (preview) preview.src = _datiSlot(slot);
   };
   reader.readAsDataURL(file);
 }
@@ -21715,26 +21816,31 @@ async function saveFigFromDetail(figId, opzioni) {
       return;
     }
     // v5.786 — retro anche per i Change (facoltativo). Solo i Retro (section) non hanno il campo.
-    updates.retroId = (existingForCheck?.section !== 'retros')
+    updates.retroId = (existingForCheck?.section === 'figurines')
       ? (document.getElementById('fe-retro')?.value || null)
       : null;
     // v6.007 - come nell'altra form: un retro VERO ha la precedenza sul retro bianco.
-    updates.retroBianco = (existingForCheck?.section !== 'retros')
+    updates.retroBianco = (existingForCheck?.section === 'figurines')
       ? (!updates.retroId && !!document.getElementById('fe-retro-bianco')?.checked)
       : false;
 
-    // Gestione immagine
-    if (_figEditImgData === '__remove__') {
-      updates.img = '';
-    } else if (_figEditImgData) {
-      try {
-        const res = await fetch(_figEditImgData);
-        const blob = await res.blob();
-        const uploaded = await uploadToCloudinary(blob);
-        if (uploaded) updates.img = uploaded;
-      } catch(e) { console.error('Upload img error', e); }
+    // Gestione immagini. v6.074 - due slot, un trattamento solo: scrivere due volte lo stesso
+    // blocco significa che fra sei mesi uno dei due avra' una correzione che l'altro non ha.
+    for (const slot of ['fronte', 'retro']) {
+      const dati = _datiSlot(slot);
+      const campo = _SLOT_FOTO[slot].campo;
+      if (dati === '__remove__') {
+        updates[campo] = '';
+      } else if (dati) {
+        try {
+          const res = await fetch(dati);
+          const blob = await res.blob();
+          const uploaded = await uploadToCloudinary(blob);
+          if (uploaded) updates[campo] = uploaded;
+        } catch(e) { console.error('Upload ' + campo + ' error', e); }
+      }
+      _scriviSlot(slot, null);
     }
-    _figEditImgData = null;
 
     // Gestione foto Ebay
     if (editingFeEbayImgFileSave) {
