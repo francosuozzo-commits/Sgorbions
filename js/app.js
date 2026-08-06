@@ -1,6 +1,23 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.075 - LE DUE FACCE DELLA BUSTINA ARRIVANO IN GRIGLIA (§12.2). Modificati index.html e app.js.
+//          Era il lavoro lasciato in sospeso dalla v6.074: la scheda mostrava le due foto, la
+//          griglia una sola. Il blocco a due foto di renderItems() ha una condizione d'ingresso
+//          scritta per le figurine - vuole una base con un `retroId` - e le bustine non ci
+//          entravano mai. Non le mancava un pezzo: quella condizione chiede un ALTRO RECORD, e la
+//          seconda faccia di una bustina e' un campo del record stesso (`imgRetro`).
+//          1. Le bustine hanno un ramo loro, che legge f.img e f.imgRetro.
+//          2. Disposizione UNICA, fronte e retro affiancati. Le cinque di `_retroViewMode`
+//             governano il rapporto fra una figurina e il suo retro, che e' collezionabile per
+//             conto suo e a volte si vuole grande; le due facce di una bustina sono la stessa
+//             cosa vista da due lati, e non c'e' niente da scegliere. Quindi niente selettore
+//             "Vista retro" in questa sezione e niente `hasWidePair`: la card resta larga come
+//             sempre.
+//          3. Il markup delle due foto affiancate ora sta scritto UNA volta sola
+//             (`_coppiaAffiancataHTML`): lo usano la disposizione 'destra' delle figurine e le
+//             bustine. Ricopiarlo sarebbe stato il baco della v6.032 un'altra volta.
+//          Resta invariato il caso della bustina con una foto sola: prende la strada di sempre.
 // v6.074 - LE BUSTINE HANNO DUE FACCE. Modificati index.html e app.js.
 //          Segnalato da Franco: una bustina ha un fronte e un retro, e il sito le dava una foto
 //          sola. Nel frattempo le offriva un campo "Retro collegato" che per una bustina non vuol
@@ -11127,7 +11144,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.074';
+const JS_VERSION = 'v6.075';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -17887,6 +17904,17 @@ function clearChangeTypeFilter() {
   try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (clearChangeTypeFilter)', e); }
 }
 
+// v6.075 — fronte e retro affiancati dentro il riquadro della card. Il markup sta scritto qui una
+// volta sola: lo usano la disposizione 'destra' delle figurine e le bustine (§12.2), che di
+// disposizioni ne hanno una sola. Due copie della stessa regola divergono, e divergono in silenzio
+// — la lezione della v6.032, che correggeva un baco nato da una condizione ricopiata.
+function _coppiaAffiancataHTML(imgFronte, imgRetro) {
+  return `<div style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
+            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(imgFronte)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);"><img src="${cloudinaryUrl(imgRetro)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+          </div>`;
+}
+
 function renderItems() {
   const grid = document.getElementById('items-grid');
   if (!currentSeriesId || !grid || !currentSection) return;
@@ -18188,10 +18216,7 @@ function renderItems() {
       if (baseFigDual?.img && retroFigDual?.img) {
         if (_retroViewMode === 'destra-piena') hasWidePair = true;
         if (_retroViewMode === 'destra') {
-          imgHTML = `<div style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
-            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(baseFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);"><img src="${cloudinaryUrl(retroFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
-          </div>`;
+          imgHTML = _coppiaAffiancataHTML(baseFigDual.img, retroFigDual.img); // v6.075 — markup condiviso con le bustine
         } else if (_retroViewMode === 'dinamico') {
           const dualId = 'dual-' + f.id;
           imgHTML = `<div id="${dualId}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
@@ -18224,6 +18249,19 @@ function renderItems() {
           </div>`;
         }
       }
+    }
+    // v6.075 (Franco) — le BUSTINE nella griglia (§12.2). Dalla v6.074 una bustina ha due facce e la
+    // scheda le mostra entrambe; la griglia no. Il motivo è nella condizione qui sopra, scritta per
+    // le figurine: vuole una base con un `retroId`, cioè un retro che è un ALTRO RECORD. Per una
+    // bustina la seconda faccia non è un oggetto a sé, è un campo del record stesso (`imgRetro`),
+    // quindi quella condizione non poteva comprenderla — non le mancava un pezzo, chiedeva la cosa
+    // sbagliata.
+    // Disposizione UNICA, affiancata: le cinque di `_retroViewMode` governano il rapporto fra una
+    // figurina e il suo retro (che si può volere grande, perché è collezionabile da solo). Qui le
+    // due foto sono la stessa cosa vista da due lati, e non c'è niente da scegliere: perciò né
+    // selettore in questa sezione, né `hasWidePair` — la card resta della larghezza di sempre.
+    if (!imgHTML && currentSection === 'bustine' && f.img && f.imgRetro) {
+      imgHTML = _coppiaAffiancataHTML(f.img, f.imgRetro);
     }
     if (!imgHTML) {
       // v5.872 — quando manca la foto, un placeholder GRIGIO PIENO "FOTO NON DISPONIBILE" che
