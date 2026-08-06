@@ -1,6 +1,34 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.077 - IL NUMERO ESISTE SOLO DOVE SI PUO' SCRIVERE. Modificati index.html e app.js.
+//          Franco: "il numero ha senso solo per le figurine, eccetto quelle nella cui serie e'
+//          attivo il flag Non ha numeri". Le due form gia' facevano cosi' - il campo Numero si
+//          vede solo nelle figurine - ma card, titolo della scheda, riga della scheda e
+//          ordinamento della griglia lo stampavano in tutte le sezioni, pescandolo da un valore
+//          che nessuno poteva correggere.
+//          E infatti si era guastato in silenzio: DUE album numerati 1, DUE "altri oggetti"
+//          numerati 1 (su due che sono), e tre album che mostravano la foto della figurina con lo
+//          stesso numero - roba di un vecchio caricamento massivo di foto. Il numero li' non era
+//          un dato sbagliato: era un dato che non doveva esistere.
+//          La decisione di Franco: fuori dalle figurine quel campo NON e' un numero, e' un
+//          ORDINAMENTO. Resta nella form - lo vede solo admin, e solo in modifica - e non compare
+//          da nessun'altra parte. Cosi' smette di fingersi un dato dell'oggetto e diventa quello
+//          che e' sempre stato in quelle sezioni: la leva per decidere la posizione in griglia.
+//          1. `_haNumero(f)` decide dove il numero e' un'INFORMAZIONE da mostrare: figurine, non i
+//             tipi che lo ereditano, e solo se la serie i numeri li usa (flag `noNumbers`). La
+//             interrogano card, titolo della scheda e riga della scheda.
+//          2. `_mostraCampoNumero(sezione, tipoEreditato)` decide dove il CAMPO si compila. Prima
+//             erano tre condizioni scritte in tre punti, e una - il toggle della scheda - non
+//             guardava nemmeno la sezione: su un retro bastava spuntare e togliere una casella per
+//             far comparire un campo che li' non deve esistere.
+//          3. Nelle sezioni-ordinamento l'etichetta dice "Ordinamento", non "Numero". Nella
+//             finestra le si toglie anche il `data-i18n`, altrimenti applyI18n() la riscrive
+//             "Numero" al primo cambio lingua (la trappola del §5).
+//          4. Griglia: prima l'ordinamento, poi il nome con collazione numerica. Il ripiego sul
+//             nome serve davvero - nessuna delle 11 bustine ha un ordinamento.
+//          La casella "Non ha numero" resta nel DOM anche dove non si mostra: i salvataggi la
+//          leggono, e toglierla avrebbe azzerato il flag in silenzio al primo salvataggio.
 // v6.076 - DUE FACCE PER TUTTI, TRANNE I RETRO. Modificati index.html e app.js.
 //          Regola di Franco, che le due versioni precedenti stavano avvicinando un pezzo per
 //          volta: ogni oggetto ha due facce, tranne i RETRO - che un dietro non ce l'hanno,
@@ -11167,7 +11195,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.076';
+const JS_VERSION = 'v6.077';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12475,6 +12503,56 @@ function setFigLabelMode(mode) {
   try { renderItems(); } catch(e) { console.error('renderItems (setFigLabelMode)', e); }
 }
 function toggleFigLabelMode() { setFigLabelMode(_figLabelMode === 'number' ? 'full' : 'number'); }
+// v6.077 (Franco) - IL NUMERO ESISTE SOLO DOVE SI PUO' SCRIVERE. Le due form lo mostrano nelle sole
+// FIGURINE, e non nei tipi che lo ereditano dalla base: in album, bustine e altri oggetti il campo
+// non c'e' proprio. Card, titolo della scheda e ordinamento lo stampavano lo stesso, pescandolo da
+// un valore che nessuno poteva correggere - e infatti si era guastato in silenzio: due album
+// numerati 1, due "altri oggetti" numerati 1, e tre album con la foto della figurina dello stesso
+// numero, presa da un vecchio caricamento massivo (visto il 6 agosto 2026).
+// La regola e' una: figurine, e solo se la serie i numeri li usa davvero.
+// NB: i numeri restano SCRITTI sui record. Qui si smette solo di leggerli, quindi non si perde
+// niente e tornare indietro e' una riga.
+function _haNumero(f) {
+  if (!f || f.section !== 'figurines' || f.noNumber) return false;
+  const s = getData('series', []).find(x => x.id === f.seriesId);
+  return !(s && s.noNumbers);
+}
+// v6.077 - lo stesso campo, due mestieri. Nelle FIGURINE e' il Numero (e sparisce nei tipi che lo
+// ereditano dalla base); in album, bustine e altri oggetti e' l'ORDINAMENTO, cioe' l'unica leva per
+// decidere in che ordine stanno in griglia. Nei RETRO non c'e': loro un ordine vero ce l'hanno gia'
+// (categoria, sottocategoria, nome), e una leva inerte e' un comando che mente.
+// Tre punti la interrogavano con tre condizioni diverse, e una delle tre (il toggle della scheda)
+// non guardava nemmeno la sezione: bastava spuntare e togliere una casella su un retro per far
+// comparire un campo che li' non deve esserci.
+function _mostraCampoNumero(sezione, tipoEreditato) {
+  if (!sezione || sezione === 'retros') return false;
+  if (sezione === 'figurines') return !tipoEreditato;
+  return true;
+}
+function _numeroEOrdinamento(sezione) {
+  return !!sezione && sezione !== 'figurines' && sezione !== 'retros';
+}
+// v6.077 - l'etichetta del campo nella FINESTRA "Aggiungi/Modifica". Va scritta da JS perche'
+// dipende dalla sezione, e mentre dice "Ordinamento" il `data-i18n` va TOLTO: applyI18n() riscrive
+// tutto cio' che ce l'ha, quindi al primo cambio lingua l'etichetta sarebbe tornata "Numero" da
+// sola - la trappola descritta nel §5 del documento, che costa una release ogni volta.
+// Nella scheda non serve: li' l'etichetta la genera gia' switchToEditMode() a ogni apertura.
+function _etichettaCampoNumero() {
+  const g = document.getElementById('fig-number-group');
+  if (!g) return;
+  const ordina = _numeroEOrdinamento(currentSection);
+  const lab = g.querySelector('label.form-label');
+  if (lab) {
+    if (ordina) { lab.removeAttribute('data-i18n'); lab.textContent = currentLang === 'it' ? 'Ordinamento' : 'Sort order'; }
+    else { lab.setAttribute('data-i18n', 'form.fig.number'); lab.textContent = t('form.fig.number'); }
+  }
+  const inp = document.getElementById('fig-number-input');
+  if (inp) inp.placeholder = ordina ? '1' : '01';
+  // La casella "Non ha numero" su un ordinamento non vuol dire niente, ma resta NEL DOM: il
+  // salvataggio la legge (`fig-no-number-input`), e toglierla avrebbe azzerato il flag in silenzio.
+  const noNum = document.getElementById('fig-no-number-input')?.closest('label');
+  if (noNum) noNum.style.display = ordina ? 'none' : 'flex';
+}
 // La serie ha i numeri? Flag "Non ha numeri" della scheda serie (s.noNumbers).
 function _serieHaNumeri() {
   const s = getData('series', []).find(x => x.id === currentSeriesId);
@@ -16638,7 +16716,8 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
   if (varOff) varOff.style.display = nascondiVar;
   if (varUnoff) varUnoff.style.display = nascondiVar;
   // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
-  if (numberGroup) numberGroup.style.display = (showBase || currentSection === 'retros') ? 'none' : '';
+  // v6.077 - unica fonte per i tre punti che decidevano ognuno per conto suo, vedi _mostraCampoNumero()
+  if (numberGroup) { numberGroup.style.display = _mostraCampoNumero(currentSection, showBase) ? '' : 'none'; _etichettaCampoNumero(); }
   // Tipo di change: per i Change di Retro E per i Change di FIGURINA (v5.779), con le opzioni
   // configurate sulla serie (stessa lista, campo retroChangeTypes).
   const isTypedChange = isChg && (currentSection === 'retros' || currentSection === 'figurines');
@@ -16840,7 +16919,7 @@ function openAddItemModal(itemId) {
                       document.getElementById('fig-is-change-input')?.checked ||
                       document.getElementById('fig-is-printerror-input')?.checked;
   const numberGroup = document.getElementById('fig-number-group');
-  if (numberGroup) numberGroup.style.display = (currentSection === 'figurines' && !isVarOrChg) ? '' : 'none';
+  if (numberGroup) { numberGroup.style.display = _mostraCampoNumero(currentSection, isVarOrChg) ? '' : 'none'; _etichettaCampoNumero(); } // v6.077
   // Sottoserie e Taglia dipendono sia dai flag della serie sia dalla sezione (mai per i Retro)
   const sizeGroup = document.getElementById('fig-size-group');
   if (sizeGroup) sizeGroup.style.display = (hasSizes && !isRetros) ? '' : 'none';
@@ -18062,10 +18141,19 @@ function renderItems() {
       if (subcatCmp !== 0) return subcatCmp;
       return (a.name||'').localeCompare(b.name||'', 'it');
     }
-    if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||'');
-    if (!a.number) return 1;
-    if (!b.number) return -1;
-    return a.number - b.number;
+    // v6.077 (Franco) - album, bustine e altri oggetti: prima il campo Ordinamento, poi il NOME.
+    // Il campo e' lo stesso `number` di sempre, ma qui non e' un dato dell'oggetto - e' solo la
+    // leva con cui Franco decide la posizione, e infatti non si vede da nessuna parte (§_haNumero).
+    // Il nome come secondo criterio non e' un di piu': delle 11 bustine NESSUNA ha un ordinamento,
+    // e senza il ripiego resterebbero nell'ordine in cui capitano di arrivare dal database - che
+    // cambia senza motivo e non e' un ordine.
+    // Collazione NUMERICA sul nome: "L. 500" prima di "L. 1000", che l'alfabetico puro metterebbe
+    // dopo perche' confronta '5' con '1' invece di 500 con 1000.
+    const ordA = a.number, ordB = b.number;
+    if (ordA && ordB && ordA !== ordB) return ordA - ordB;
+    if (ordA && !ordB) return -1;
+    if (!ordA && ordB) return 1;
+    return (a.name || '').localeCompare(b.name || '', 'it', { numeric: true, sensitivity: 'base' });
   });
   updateItemsCountDisplay(allItems);
   const owned = getOwned();
@@ -18350,7 +18438,7 @@ function renderItems() {
     // v5.804 — Franco: la sottoserie NON sostituisce più il numero sulla card. Il numero resta in
     // etichetta (#N) e la sottoserie va su una riga a parte, nello stesso punto/stile in cui i Retro
     // mostrano la loro categoria (vedi subseriesHTML poco sotto).
-    const figLabel = f.number ? `#${f.number}` : '';
+    const figLabel = (_haNumero(f) && f.number) ? `#${f.number}` : ''; // v6.077 - solo dove il numero si puo' scrivere
     const catParts = [f.category, f.subcategory].map(v => (v||'').trim()).filter(Boolean);
     // Prima riga (nome): se la serie NON dichiara che il nome del retro contiene già la
     // categoria, anteponiamo "Categoria - ". Seconda riga: la Categoria (col Sottocategoria
@@ -20599,7 +20687,7 @@ function openFigDetail(figId, elencoNav) {
   // v5.906 — per i RETRO il titolo NON ripiega più sul Nome quando il Nome completo è vuoto: così
   // un Nome completo non salvato si vede vuoto anche nel titolo (richiesto da Franco). Altre sezioni invariate.
   const displayNameForTitle = (f.section === 'retros') ? (f.fullName || '') : (f.fullName || f.name);
-  if (titleEl) titleEl.textContent = f.number ? ('#' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle;
+  if (titleEl) titleEl.textContent = (_haNumero(f) && f.number) ? ('#' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle; // v6.077
   // v5.849 — su telefono il titolo del modale sparisce: ripete Numero e Nome, che sono le prime
   // due righe della scheda. Il testo resta comunque impostato, cosi' se la finestra torna larga
   // (o per i lettori di schermo) c'e'. Nascosto via CSS, vedi .modal-title in sezione mobile.
@@ -20640,7 +20728,7 @@ function openFigDetail(figId, elencoNav) {
   // si nascondono)". Numero e Nome mancavano come righe nella vista (per le figurine comparivano
   // solo nel titolo, v5.764): ora ci sono, quando presenti. Numero: i Retro non sono numerati, quindi
   // per loro la riga resta assente. Nome: tutte le sezioni (prima solo Retro).
-  if (f.number) {
+  if (_haNumero(f) && f.number) { // v6.077 - la riga esiste dove il campo esiste, vedi _haNumero()
     const _rowNumero = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">#${f.number}</span></div>`;
     (_mobileDetail ? rowsTop : rows).push(_rowNumero);
   }
@@ -21168,7 +21256,7 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
     if (_feItemSeriesId) _populateFeRetroOptions(_feItemSeriesId, isChg);
   }
   // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
-  if (numberGroup) numberGroup.style.display = showBase ? 'none' : '';
+  if (numberGroup) numberGroup.style.display = _mostraCampoNumero(_feSezione, showBase) ? '' : 'none'; // v6.077 - stessa fonte delle altre due
   if (changeTypeGroup) changeTypeGroup.style.display = isChg ? '' : 'none';
   const printErrorTypeGroup = document.getElementById('fe-print-error-type-group');
   if (printErrorTypeGroup) printErrorTypeGroup.style.display = isPE ? '' : 'none';
@@ -21185,6 +21273,11 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
 // impostato al momento del render, dice se l'oggetto in modifica è un Retro (per le regole di
 // nascondimento del Nome nel toggle).
 let _feIsRetro = false;
+// v6.077 - la SEZIONE dell'oggetto aperto nella scheda. toggleFeBaseFigurineGroup() decideva la
+// visibilita' del campo Numero senza sapere in che sezione si trovava: su un retro bastava
+// spuntare e togliere una casella per farlo comparire dove non deve esserci. `_feIsRetro` da solo
+// non bastava piu', perche' ora le sezioni si comportano in tre modi e non in due.
+let _feSezione = null;
 let _feBaseFigurineLinkOptions = [];
 function filterFeBaseFigurineLink() {
   const q = document.getElementById('fe-base-figurine-search').value.toLowerCase().trim();
@@ -21315,6 +21408,7 @@ function switchToEditMode(figId) {
 
   const isRetrosItem = f.section === 'retros';
   _feIsRetro = isRetrosItem; // v5.779 — usato da toggleFeBaseFigurineGroup per le regole del Nome
+  _feSezione = f.section;    // v6.077 — idem, per il campo Numero/Ordinamento
 
   // Categoria (solo per i Retro, prima del Nome)
   if (isRetrosItem) {
@@ -21328,7 +21422,21 @@ function switchToEditMode(figId) {
   }
 
   // Numero (i Retro non sono numerati; le Variazioni/Change ereditano quello della figurina base)
-  html += '<div class="detail-row" id="fe-number-group" style="' + ((f.section === 'figurines' && !f.isVariation && !f.isUnofficialVariation && !f.isChange) ? '' : 'display:none;') + '"><span class="detail-label">N.</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="01" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"><label style="display:flex;align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--muted);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
+  // v6.077 (Franco) - lo stesso campo, due mestieri diversi. Nelle FIGURINE e' il Numero, un dato
+  // dell'oggetto che si vede ovunque. Nelle altre sezioni non e' un dato di nessuno: e' la leva con
+  // cui Franco decide in che ordine stanno nella griglia. Quindi li' si chiama "Ordinamento", si
+  // vede solo qui dentro (la scheda in modifica e' gia' solo per admin) e non compare da nessuna
+  // altra parte - card, titolo e riga della scheda lo chiedono a _haNumero(), che dice di no.
+  // Chiamarlo "Numero" anche li' e' esattamente cio' che ha prodotto l'equivoco: due album
+  // numerati 1, due "altri oggetti" numerati 1, e tre foto finite sull'oggetto sbagliato.
+  // Fuori: i RETRO, che un ordinamento vero ce l'hanno gia' (categoria, sottocategoria, nome).
+  const _mostraNumero  = _mostraCampoNumero(f.section, f.isVariation || f.isUnofficialVariation || f.isChange);
+  const _numeroEOrdine = _numeroEOrdinamento(f.section);
+  html += '<div class="detail-row" id="fe-number-group" style="' + (_mostraNumero ? '' : 'display:none;') + '"><span class="detail-label">' + (_numeroEOrdine ? (currentLang==='it'?'Ordinamento':'Sort order') : 'N.') + '</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="' + (_numeroEOrdine ? '1' : '01') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;">' + (_numeroEOrdine ? '<span style="font-size:0.75rem;color:var(--muted);">' + (currentLang==='it'?'decide solo la posizione in griglia; non si vede da nessuna parte':'only sets the position in the grid; not shown anywhere') + '</span>' : '') +
+    // La casella "Non ha numero" resta SEMPRE nel DOM, anche dove non si mostra: il salvataggio la
+    // legge (`fe-no-number`), e se non la trova scrive `false`. Toglierla avrebbe azzerato il flag
+    // in silenzio al primo salvataggio, che e' il modo peggiore di perdere un dato.
+    '<label style="' + (_numeroEOrdine ? 'display:none;' : 'display:flex;') + 'align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--muted);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
 
   // Nome
   // v5.774/779/790 — Nome nascosto per Change ED Errori di stampa, sia Retro sia figurine (eredita
