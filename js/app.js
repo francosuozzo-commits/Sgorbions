@@ -1,6 +1,29 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.076 - DUE FACCE PER TUTTI, TRANNE I RETRO. Modificati index.html e app.js.
+//          Regola di Franco, che le due versioni precedenti stavano avvicinando un pezzo per
+//          volta: ogni oggetto ha due facce, tranne i RETRO - che un dietro non ce l'hanno,
+//          perche' sono loro il dietro di qualcos'altro. Album e altri oggetti, che finora
+//          avevano una foto sola, ne hanno due come le bustine.
+//          Il punto non era aggiungere una sezione all'elenco: era smettere di tenere un elenco.
+//          `_schedaDueFoto()` non enumera piu' le sezioni con due facce (elenco gia' cresciuto
+//          due volte in tre release), nomina l'unica che ne ha una.
+//          Resta la distinzione che conta, ora in una funzione sua (`_secondaFacciaSulRecord`):
+//          per una FIGURINA la seconda faccia e' un altro record (`retroId`), collezionabile per
+//          conto suo; per tutti gli altri e' un'altra foto dello stesso oggetto (`imgRetro`).
+//          Sei punti cambiati, tutti su DOVE si mostra il secondo riquadro: scheda in vista,
+//          scheda in modifica, intestazione degli slot, finestra Aggiungi, griglia. I due
+//          salvataggi non sono stati toccati: scrivevano gia' `imgRetro` senza guardare la
+//          sezione, quindi il dato era pronto prima della form.
+//          Il riquadro del retro resta disegnato anche VUOTO (Franco): e' cosi' che ci si accorge
+//          che la foto manca. Non si nasconde per fare ordine.
+//          NELLA STESSA RELEASE, segnalato da Franco in preview: nei due tab delle VARIAZIONI la
+//          miniatura era il fronte. Ma una variazione e' il cambio del DIETRO, e il fronte ce
+//          l'ha identico alla base e a tutte le sorelle: erano N miniature uguali, cioe' la sola
+//          immagine che li' non distingue niente. Ora e' il retro, come gia' la riga accanto
+//          (v6.030). Gli altri tab non cambiano - un Change differisce nel fronte. Senza retro
+//          non si ripiega sul fronte: retro bianco se e' quello, altrimenti segnaposto.
 // v6.075 - LE DUE FACCE DELLA BUSTINA ARRIVANO IN GRIGLIA (§12.2). Modificati index.html e app.js.
 //          Era il lavoro lasciato in sospeso dalla v6.074: la scheda mostrava le due foto, la
 //          griglia una sola. Il blocco a due foto di renderItems() ha una condizione d'ingresso
@@ -11144,7 +11167,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.075';
+const JS_VERSION = 'v6.076';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16715,7 +16738,7 @@ function openAddItemModal(itemId) {
   // v6.074 - la seconda foto esiste SOLO per le bustine: sono l'unico oggetto le cui due facce
   // stanno sullo stesso record. Una figurina il retro ce l'ha come oggetto a se'.
   const imgRetroGroup = document.getElementById('fig-img-retro-group');
-  if (imgRetroGroup) imgRetroGroup.style.display = (currentSection === 'bustine') ? '' : 'none';
+  if (imgRetroGroup) imgRetroGroup.style.display = _secondaFacciaSulRecord(currentSection) ? '' : 'none';
   switchFigModalTab('generale');
   if (itemId) {
     const f = getData('figurines', []).find(x => x.id === itemId);
@@ -18260,7 +18283,7 @@ function renderItems() {
     // figurina e il suo retro (che si può volere grande, perché è collezionabile da solo). Qui le
     // due foto sono la stessa cosa vista da due lati, e non c'è niente da scegliere: perciò né
     // selettore in questa sezione, né `hasWidePair` — la card resta della larghezza di sempre.
-    if (!imgHTML && currentSection === 'bustine' && f.img && f.imgRetro) {
+    if (!imgHTML && _secondaFacciaSulRecord(currentSection) && f.img && f.imgRetro) {
       imgHTML = _coppiaAffiancataHTML(f.img, f.imgRetro);
     }
     if (!imgHTML) {
@@ -20507,7 +20530,24 @@ function _schedaDueFoto(f) {
   // oggetto a se', collezionabile per conto suo, e si raggiunge col campo "Retro collegato"; per
   // una bustina e' un'altra foto della stessa cosa, e sta sul suo record in `imgRetro`. E' questa
   // differenza che rendeva il campo "Retro collegato" senza senso sulle bustine.
-  return !!f && (f.section === 'figurines' || f.section === 'bustine');
+  // v6.076 (Franco) - la regola vera, che le due versioni precedenti stavano avvicinando un pezzo
+  // per volta: OGNI oggetto ha due facce, tranne i RETRO. Un retro non ha un dietro - lui E' il
+  // dietro di qualcos'altro. Quindi non si elencano piu' le sezioni che ne hanno due (elenco che
+  // e' gia' cresciuto due volte), si nomina l'unica che ne ha una.
+  return !!f && f.section !== 'retros';
+}
+
+// v6.076 - DOVE sta la seconda faccia. E' l'altra meta' di _schedaDueFoto, e le due insieme
+// dicono tutto quello che serve sapere:
+//   figurine -> il retro e' un ALTRO RECORD (campo `retroId`), collezionabile per conto suo;
+//   retro    -> di facce ne ha una sola, e _schedaDueFoto lo esclude gia';
+//   tutto il resto (album, bustine, altri oggetti) -> la seconda faccia e' un'altra foto DELLO
+//   STESSO oggetto, e sta sul record in `imgRetro`.
+// Prende la SEZIONE, non il record, perche' i punti che la interrogano sono di due tipi: alcuni
+// hanno l'oggetto (`f.section`), altri sanno solo dove ci si trova (`currentSection`) - e la
+// griglia e' fra i secondi.
+function _secondaFacciaSulRecord(sezione) {
+  return !!sezione && sezione !== 'retros' && sezione !== 'figurines';
 }
 
 function openFigDetail(figId, elencoNav) {
@@ -20739,7 +20779,7 @@ function openFigDetail(figId, elencoNav) {
       // v6.074 - due sorgenti diverse per la stessa casella. Per una FIGURINA il retro e' un altro
       // record, e la caption sotto ci porta. Per una BUSTINA e' un campo del record stesso: non c'e'
       // niente da collegare e niente dove andare.
-      const _bustina = f.section === 'bustine';
+      const _bustina = _secondaFacciaSulRecord(f.section); // v6.076 - non piu' le sole bustine
       const retroFig = (!_bustina && _detEffRetroId) ? getData('figurines', []).find(x => x.id === _detEffRetroId) : null;
       const noPhotoBox = '<div style="width:100%;height:300px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non disponibile' : 'Photo not available') + '</div>';
       // v5.916 — altezza FISSA 200px su entrambe le foto (come il box "foto non disponibile"): così
@@ -21014,7 +21054,23 @@ function buildLinkedFiguresTabsHTML(baseId) {
         const _sotto = retroFig ? _retroSottonome(retroFig, allFigs) : '';
         if (_sotto) labelExtra = `<div style="font-size:0.78rem;color:var(--info);margin-top:1px;">${esc(_sotto)}</div>`;
       }
-      const _foto = _fotoFigurina(item, allFigs); // v6.024 - foto propria, o della base
+      // v6.076 (Franco) - nei due tab delle VARIAZIONI la miniatura e' il RETRO, non il fronte.
+      // Una variazione e' il cambio del dietro: il fronte ce l'ha identico alla base e a tutte le
+      // sorelle, quindi quella colonna mostrava N miniature uguali - la sola immagine che li'
+      // non distingue niente. La riga accanto nomina gia' il retro dalla v6.030; ora la foto dice
+      // la stessa cosa. Gli altri tab NON cambiano: un Change differisce nel fronte (v5.786), e
+      // nel tab "Figurine che usano questo retro" il retro e' quello della scheda in cui si sta.
+      // Senza retro non si ripiega sul fronte: si mostra il retro bianco se e' quello, altrimenti
+      // il segnaposto. Ripiegare rimetterebbe a schermo l'immagine che non distingue niente, e
+      // stavolta senza dirlo - mentre la riga accanto scrive "Nessun Retro collegato".
+      const _tabVariazioni = (g.key === 'variation' || g.key === 'unofficialVariation');
+      let _foto;
+      if (_tabVariazioni) {
+        const _retroDellaVar = item.retroId ? allFigs.find(x => x.id === item.retroId) : null;
+        _foto = _retroDellaVar ? _retroDellaVar.img : (item.retroBianco ? RETRO_BIANCO_IMG : null);
+      } else {
+        _foto = _fotoFigurina(item, allFigs); // v6.024 - foto propria, o della base
+      }
       html += `<a href="#" onclick="openFigDetail('${item.id}', ${_idsGruppo});return false;" style="display:flex;align-items:center;gap:0.6rem;padding:0.4rem 0.6rem;border-radius:8px;background:var(--card2);text-decoration:none;color:var(--text);font-size:0.85rem;">
         ${_foto ? `<img src="${cloudinaryUrl(_foto,'w_60,h_60,c_fit,q_auto,f_auto')}" style="width:32px;height:32px;object-fit:contain;border-radius:4px;background:var(--card);">` : '<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;">🖼️</span>'}
         <span>${esc(label)}${labelExtra}</span>
@@ -21235,7 +21291,7 @@ function switchToEditMode(figId) {
   // nessuno finche' non si guarda proprio quella.
   if (photo) {
     photo.innerHTML = _slotFotoEdit('fronte', f.img, f)
-      + (_schedaDueFoto(f) && f.section === 'bustine' ? _slotFotoEdit('retro', f.imgRetro, f) : '');
+      + (_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section) ? _slotFotoEdit('retro', f.imgRetro, f) : '');
   }
 
   // Build edit form
@@ -21448,7 +21504,7 @@ const _scriviSlot = (s, v) => { if (s === 'retro') _figEditImgRetroData = v; els
 // "Rimuovi sfondo". Identico per i due slot, tranne gli id e l'intestazione.
 function _slotFotoEdit(slot, url, f) {
   const s = _SLOT_FOTO[slot];
-  const titolo = (_schedaDueFoto(f) && f.section === 'bustine')
+  const titolo = (_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section))
     ? '<div style="font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? s.it : s.en) + '</div>'
     : '';
   const vuoto = currentLang === 'it' ? 'Nessuna foto' : 'No photo';
