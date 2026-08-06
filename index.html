@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.077"></script>
-<link rel="stylesheet" href="css/style.css?v=6.077">
+<script src="js/email.min.js?v=6.079"></script>
+<link rel="stylesheet" href="css/style.css?v=6.079">
 
 
 <style>
@@ -254,7 +254,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.077</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.079</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -312,6 +312,10 @@
     </div>
     <div id="user-nav" style="display:none;">
       <span id="nav-username" style="font-family:var(--font-ui);color:var(--muted);font-size:1.05rem;"></span>
+      <!-- v6.079 (Franco) — pallino rosso SOLO ADMIN: c'è finché la sezione Errori ha qualcosa da
+           segnalare. Cliccandolo si va lì. Lo accende aggiornaPallinoErrori(), che chiede il conto
+           alla stessa funzione che disegna quella pagina — così non possono dire cose diverse. -->
+      <span id="nav-errori-dot" onclick="showPage('admin');" style="display:none;width:9px;height:9px;border-radius:50%;background:var(--danger);cursor:pointer;flex-shrink:0;"></span>
       <span id="nav-owned-counter" style="font-family:var(--font-ui);font-size:0.85rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:2px 10px;border-radius:20px;display:none;"></span>
       <div class="avatar-btn" id="nav-avatar" onclick="showPage('profile')" style="overflow:hidden;padding:0;"></div>
       <button class="btn-logout" onclick="logout()" data-i18n="nav.logout">Logout</button>
@@ -557,8 +561,14 @@
            filtrano sono gli altri due, nei risultati.
            Niente margini negativi qui: servivano a compensare il padding di #items-section, che
            in questa testata non c'e' - lasciarli avrebbe fatto sbordare i riquadri oltre la foto. -->
-      <div id="retro-cat-summary-top" style="display:none;margin-top:1rem;"></div>
-      <div id="change-type-summary-top" style="display:none;margin-top:1rem;"></div>
+      <!-- v6.079 (Franco) — Change ed Errori di stampa AFFIANCATI, e senza un contenitore attorno.
+           Un contenitore qui NON funziona: questi nodi vengono spostati a runtime fra #detail-meta e
+           .series-hero-inner (vedi salvaNodiDaMeta e il blocco delle numeriche), e i traslochi
+           lavorano su un elenco di ID — un wrapper che quell'elenco non conosce si porta via un
+           riquadro e lascia indietro l'altro. Restano quindi fratelli, come gli altri, e stanno
+           affiancati perché sono inline-block: è renderChangeTypeSummaries/renderPrintError… a
+           riaccenderli così. Chi li nasconde continua a scrivere 'none' e non deve sapere altro. -->
+      <div id="specchietti-top" style="display:none;margin-top:1rem;gap:1rem;align-items:flex-start;flex-wrap:wrap;"></div>
       <!-- v6.001 — SOLO TELEFONO e SOLO dentro una delle cinque sezioni: richiude la testata
            della serie (foto, titolo, contatori, specchietti) per arrivare prima alla griglia.
            Nella pagina coi cinque box non compare: li' la testata E' la pagina. Il pulsante non
@@ -670,7 +680,14 @@
          il primo riscontro di cosa ha trovato la ricerca, e leggerli dopo i comandi di massa
          significava passare accanto ai bottoni prima di sapere su quanti oggetti agiscono. -->
     <div id="retro-cat-summary-results" style="display:none;margin-bottom:0.9rem;"></div>
-    <div id="change-type-summary-results" style="display:none;margin-bottom:0.9rem;"></div>
+    <!-- v6.079 (Franco) — Change ed Errori di stampa affiancati, sotto al riquadro delle categorie.
+           Stesso stampo e stesso font degli altri: il pannello è la stessa funzione. Qui i due sono
+           elastici (flex 1 1 320px) perché contengono pillole cliccabili e devono poter respirare;
+           sotto i 660px circa vanno a capo e tornano uno sopra l'altro. -->
+      <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
+        <div id="change-type-summary-results" style="display:none;margin-bottom:0.9rem;flex:1 1 320px;"></div>
+        <div id="print-error-type-summary-results" style="display:none;margin-bottom:0.9rem;flex:1 1 320px;"></div>
+      </div>
     <!-- v5.796 — blocchi admin Classifica/Ebay: qui, SOTTO i risultati di ricerca a cui si applicano, prima della griglia/vista tabellare -->
     <div style="display:flex;flex-wrap:wrap;gap:1.5rem;margin-bottom:1rem;">
       <div>
@@ -1548,7 +1565,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.077</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.079</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1857,6 +1874,15 @@
         <img id="fig-img-retro-preview" class="file-preview" style="margin-top:0;max-height:48px;max-width:48px;border-radius:6px;object-fit:contain;">
       </div>
       <input type="file" id="fig-img-retro-file" accept="image/*" style="display:none;" onchange="handleFigImgRetro(event)">
+    </div>
+    <!-- v6.079 (Franco) — "la foto non ce l'ho e non posso averla". Sta anche qui e non solo nella
+         scheda: un campo aggiunto a una sola delle due form semplicemente non esiste per chi usa
+         l'altra, ed è già costato una release con retroBianco (v6.006/007). -->
+    <div class="form-group" id="fig-foto-non-disponibile-group" style="margin-bottom:0;">
+      <label style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.8rem;color:var(--muted);white-space:nowrap;">
+        <input type="checkbox" id="fig-foto-non-disponibile-input" style="width:14px;height:14px;cursor:pointer;flex-shrink:0;">
+        <span>Foto non disponibile — non ho la foto e non posso averla</span>
+      </label>
     </div>
     </div>
     <div id="fig-tab-ebay" style="display:none;">
@@ -2324,7 +2350,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.077"></script>
+<script src="js/app.js?v=6.079"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2348,7 +2374,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.077'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.079'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
