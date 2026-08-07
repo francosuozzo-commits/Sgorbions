@@ -1,6 +1,86 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.080 - I CAROSELLI SU TELEFONO. Modificati index.html e app.js.
+//          Franco: "le foto sono molto piccole e il box allungato tantissimo in verticale; ridurrei
+//          le colonne da 7 a 5". Le colonne le ho ridotte - su telefono sono 5 in tutti e tre i
+//          caroselli, invece di 6,5 nella home e 8,5 nella serie e nell'hub prodotti.
+//          Ma le colonne da sole non bastavano, e vale la pena scriverlo: l'altezza della foto era
+//          un NUMERO FISSO (175px nella home, 150 altrove) sotto una larghezza che invece e' una
+//          frazione del contenitore. Su un telefono da 390px quella frazione da' card da una
+//          quarantina di pixel, e 175px di altezza sopra 40 di larghezza fanno un rettangolo in
+//          piedi dentro cui `object-fit:contain` rimpicciolisce la figurina per farcela stare.
+//          Allargare la card avrebbe migliorato la foto lasciando il box allungato: la causa era
+//          l'altezza che non guarda la larghezza. Su telefono la foto e' ora QUADRATA rispetto alla
+//          card; sul desktop restano i numeri di sempre.
+//          Le due misure si scelgono al momento del disegno e non piu' in una costante: dipendono
+//          dalla larghezza dello schermo, che quando il file viene caricato non si sa ancora.
+//          Colonne su telefono: provate 5, poi 4, poi 3 - il numero sta in una costante sola,
+//          CAROSELLO_COLONNE_MOBILE, perche' e' di quelli che si guardano e si ricambiano.
+//          VELOCITA': il passo scende da 2676 a 1726 ms per TUTTI i caroselli, desktop compreso.
+//          Era nato come rimedio a un effetto collaterale delle colonne - con 3 schede visibili
+//          invece di sei e mezzo la stessa fila di venti figurine ci metteva piu' del doppio a
+//          scorrere tutta - e provandolo si e' rivelato il ritmo giusto ovunque (Franco).
+//          Tolto anche il cancelletto davanti al numero, nelle due varianti del carosello. Solo li':
+//          card della griglia, titolo della scheda e vista tabellare continuano a mostrarlo.
+//          NELLA STESSA RELEASE, e senza relazione col carosello: nel LOG delle due procedure di
+//          caricamento foto ogni riga viene ora annunciata prima di essere lavorata, con il suo
+//          numero e il totale ("Riga 37/240 — nome.jpg"). Il totale era scritto solo all'avvio, e
+//          con duecento foto per sapere a che punto fosse arrivato bisognava scorrere all'indietro.
+//          L'annuncio sta PRIMA di ogni uscita anticipata - nome non valido, oggetto non trovato,
+//          foto gia' presente - altrimenti le righe saltate non comparirebbero e il conto non
+//          tornerebbe proprio a chi sta leggendo il log per capire cosa e' andato storto.
+//          E ancora, segnalato da Franco: la scheda non diceva CHE TIPO di oggetto stai guardando.
+//          Si nota arrivando dalla RICERCA GLOBALE, che mescola le sezioni: apri un risultato e non
+//          sai se e' una figurina o il suo retro, che possono avere numero e nome quasi identici.
+//          Ora il tipo sta in cima al titolo, in un colore diverso dal bianco del nome, sia in
+//          vista sia in modifica - passando dall'una all'altra il titolo non deve cambiare forma.
+//          Al titolo va tolto il `data-i18n`, altrimenti applyI18n() lo riscrive "Dettaglio
+//          figurina" al primo cambio lingua portandosi via nome ed etichetta: succedeva gia' prima,
+//          ma con l'etichetta in piu' sarebbe stato piu' evidente e piu' fastidioso.
+//          ALTRO NELLA STESSA RELEASE (giornata lunga, tutto chiesto da Franco):
+//          · CONTROLLI SOSPESI PER SERIE. Un campo a piu' valori sul record della serie
+//            (`controlliSospesi`) che spegne singoli controlli della pagina Errori mentre la serie
+//            e' in lavorazione. Le caselle si generano da CONTROLLI_SOSPENDIBILI, quindi un
+//            controllo nuovo non richiede di toccare la form. Restano fuori i controlli
+//            strutturali: un collegamento rotto non e' "lavoro non ancora fatto".
+//            Contropartita non negoziabile: la pagina scrive sempre quali serie sono escluse.
+//          · FIGURINE INVISIBILI. Campo `invisibile`: l'oggetto esiste ma per chi non e' admin non
+//            c'e'. Il filtro sta in getData('figurines'), l'unico punto da cui passano i 120+ posti
+//            che leggono l'elenco - griglia, ricerca, caroselli, contatori, export. Filtrarli uno
+//            per uno voleva dire dimenticarne uno e lasciarlo visibile proprio li'. Nuova scheda
+//            admin "Figurine" con l'elenco, ordinato per serie, sottoserie e numero o nome.
+//          · AGGIORNAMENTO MASSIVO dalla vista tabellare, solo campi a valore chiuso. Chiede se
+//            applicarlo alle righe selezionate o a tutti i risultati filtrati, dice quante righe
+//            tocca e lo ripete nella conferma. Scrive una volta per SERIE, non per oggetto.
+//          · FOTO NON DISPONIBILE (v6.079) e conteggi "Item senza foto" / "Fronte senza retro"
+//            nella pagina Errori, con elenchi apribili per sezione e per serie.
+//          · RIPIEGO SULLA FOTO DELLA BASE rivisto (regola di Franco): vale per le VARIAZIONI
+//            (stesso fronte per definizione) e per gli ERRORI DI STAMPA con un retro proprio (il
+//            difetto sta dietro); NON per i CHANGE, che si distinguono proprio nel fronte - li'
+//            ripiegare mostrava di un change tutto tranno cio' che lo rende un change. Allineati
+//            scheda, griglia (card singole e coppie) e vista tabellare: prima erano tre idee.
+//          · CAROSELLI su telefono: 3 colonne, foto quadrata, passo piu' veloce per tutti, e righe
+//            diverse per tipo di oggetto - le figurine col nome parola per parola (e' un nome di
+//            persona, due parole), i retro con serie, categoria, sottocategoria, nome e punteggio
+//            perche' il loro "nome" e' una frase da nove parole. Sui retro con sottonome piu' corto
+//            del nome si mostra il sottonome (misurato: 45 casi su 728, 36 in RICERCATO).
+//          · HUB PRODOTTI: due colonne su telefono in entrambi i livelli, e le card con le stesse
+//            pillole dell'Inventario. NB: le tre colonne dell'Inventario NON vengono da .grid-3 ma
+//            da una media query sull'ID #catalog-grid, quindi non si ereditano dando la classe.
+//          · NOME CORTO sulla serie, usato solo su telefono e solo nelle card che elencano serie
+//            (sei punti, una funzione sola). Mai nella scheda della serie.
+//          DA SAPERE, trovato strada facendo: il CSS inline dell'index ha le graffe SBILANCIATE
+//          (una in eccesso verso riga 106). Non rompe niente di visibile, ma sposta l'annidamento
+//          reale rispetto a come si legge, e una media query aggiunta in fondo puo' finire dentro
+//          un blocco sbagliato senza dirlo. E' costato mezz'ora oggi. Da raddrizzare a parte.
+//          CORREZIONE DI FRANCO, ed e' quella che risolve davvero: "la causa del box allungato e'
+//          il testo sotto la foto". Vero, e misurabile: quattro righe per le figurine e CINQUE per
+//          i retro (serie, numero o categoria e sottocategoria, nome su DUE righe, punteggio),
+//          ognuna con altezza fissa, fanno ~6em di testo sotto una card larga sessanta pixel -
+//          piu' alto della foto. Su telefono resta UNA riga sola, il nome, con i puntini. Cadono
+//          serie, numero, categoria, sottocategoria e punteggio: li' non si leggono comunque, e la
+//          scheda e' a un tocco. Il nome su una riga e non due, altrimenti torna meta' problema.
 // v6.079 - DATA DI CREAZIONE, e "Ordina per creazione" nella vista tabellare. Modificati
 //          index.html e app.js.
 //          Franco voleva un campo admin con la data di creazione e un pulsante per ordinarci la
@@ -11284,7 +11364,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.079';
+const JS_VERSION = 'v6.080';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11500,10 +11580,29 @@ const LOCAL = {
   set(k,v) { localStorage.setItem('sgorbions_' + k, JSON.stringify(v)); }
 };
 
+// v6.080 (Franco) - FIGURINE INVISIBILI: col campo `invisibile` un oggetto lo vede solo l'admin.
+// Il filtro sta QUI e non nei punti che disegnano, ed e' la decisione che conta: una figurina
+// compare in griglia, nella vista tabellare, nella ricerca globale, in tre caroselli, nei contatori
+// della serie, negli specchietti, nell'hub prodotti, negli export delle mancoliste. Sono oltre
+// centoventi i punti che leggono l'elenco: filtrarli uno per uno significa dimenticarne uno, e
+// l'oggetto resterebbe visibile proprio li'. Da qui invece sparisce ovunque in un colpo solo.
+// L'admin riceve l'elenco intero, sempre: e' lui che deve poterle vedere e rimetterle a posto.
+// Il memo non e' un vezzo: getData('figurines') viene chiamata anche DENTRO dei cicli, e filtrare
+// 3300 oggetti a ogni chiamata renderebbe quadratico del codice che oggi e' lineare. Si riusa il
+// risultato finche' l'array in cache e' lo stesso oggetto - e quando cambia, cambia identita'.
+let _memoVisibili = { src: null, out: null };
+function _figurineVisibili(tutte) {
+  if (currentUser?.isAdmin) return tutte;
+  if (_memoVisibili.src === tutte) return _memoVisibili.out;
+  const out = tutte.filter(f => !f.invisibile);
+  _memoVisibili = { src: tutte, out };
+  return out;
+}
 function getData(k, def) {
   if (k.startsWith('owned_') || k === 'currentUser' || k === 'lang') {
     return LOCAL.get(k) || def;
   }
+  if (k === 'figurines' && Array.isArray(_cache[k])) return _figurineVisibili(_cache[k]);
   return _cache[k] !== undefined ? _cache[k] : def;
 }
 function setData(k, v) {
@@ -12801,7 +12900,14 @@ const _caroselloTimers = { home: null, serie: null, prodotto: null };
 const CAROSELLO_MAX = 20;                                 // v6.066 (Franco): da 15 a 20
 // v6.066: altro +15% sulla velocita'. I fattori restano scritti uno per uno invece del risultato:
 // cosi' si legge la storia (4 secondi di partenza, poi -30%, poi -15%) e non un numero magico.
-const CAROSELLO_PASSO_MS = Math.round(4000 / 1.3 / 1.15); // 4000 -> 3077 -> 2676 ms
+const CAROSELLO_PASSO_MS = Math.round(4000 / 1.3 / 1.15 / 1.55); // 4000 -> 3077 -> 2676 -> 1726 ms
+// v6.080 (Franco) - il ritmo provato su telefono e' piaciuto e vale OVUNQUE: un passo solo per
+// tutti i caroselli, desktop compreso. Era nato come rimedio a un effetto collaterale - con 3
+// schede visibili invece di sei e mezzo la stessa fila di venti figurine ci metteva piu' del doppio
+// a scorrere tutta - e si e' rivelato semplicemente il ritmo giusto.
+// I fattori restano scritti uno per uno invece del risultato: cosi' si legge la storia (4000 di
+// partenza, -30%, -15%, -35%) e non un numero magico che nessuno sa piu' da dove viene.
+function _caroselloPasso() { return CAROSELLO_PASSO_MS; }
 // Larghezza della card come FRAZIONE del contenitore: con un valore in pixel il numero di schede
 // visibili cambierebbe con la finestra, e "6 e mezzo" varrebbe solo sul monitor di chi l'ha
 // misurato. La mezza scheda tagliata sul bordo e' voluta: dice che la fila continua.
@@ -12809,6 +12915,27 @@ const CAROSELLO_PASSO_MS = Math.round(4000 / 1.3 / 1.15); // 4000 -> 3077 -> 267
 const _caroselloLarghezza = n => 'calc((100% + 0.9rem) / ' + n + ' - 0.9rem)';
 const CAROSELLO_LARGHEZZA = _caroselloLarghezza(6.5);        // home
 const CAROSELLO_LARGHEZZA_SERIE = _caroselloLarghezza(8.5);  // serie: foto piu' piccole (v6.071)
+// Quante schede si vedono su TELEFONO. In un posto solo perche' e' un numero che si prova, si
+// guarda e si ricambia: 5 alla prima stesura, poi 4, poi 3 (v6.080).
+const CAROSELLO_COLONNE_MOBILE = 3;
+// Quante serie per riga nell'hub Prodotti su telefono. Un numero da provare, come quello dei
+// caroselli: 3 alla prima stesura, 2 dopo averle viste con le pillole sotto (v6.080).
+// L'Inventario per Serie ne ha 3, ma le sue card sono piu' semplici: qui sotto la copertina ci
+// sono il titolo e le pillole delle tipologie, che in un terzo di schermo si spezzano.
+const HUB_COLONNE_MOBILE = 2;
+// v6.080 (Franco) - SU TELEFONO le schede visibili sono poche, non sei e mezzo o otto e mezzo. Con la
+// larghezza di un telefono quelle frazioni davano card da una quarantina di pixel: foto minuscole.
+// Il numero si sceglie qui e non nelle costanti perche' dipende dalla larghezza dello schermo, che
+// al caricamento del file non si sa ancora - le costanti restano come valore del desktop.
+function _caroselloLarghezzaHome()  { return _isMobileViewport() ? _caroselloLarghezza(CAROSELLO_COLONNE_MOBILE) : CAROSELLO_LARGHEZZA; }
+function _caroselloLarghezzaSerie() { return _isMobileViewport() ? _caroselloLarghezza(CAROSELLO_COLONNE_MOBILE) : CAROSELLO_LARGHEZZA_SERIE; }
+// E l'ALTEZZA DELLA FOTO su telefono smette di essere un numero fisso. Era il vero motivo del "box
+// allungato tantissimo in verticale": 175px di altezza sopra una card larga 60 fanno un rettangolo
+// in piedi, e dentro `object-fit:contain` rimpicciolisce la figurina per farcela stare. Le colonne
+// da sole non lo risolvono - allargano la card, ma l'altezza resta quella. Su telefono la foto e'
+// quindi QUADRATA rispetto alla card; sul desktop restano i numeri di sempre.
+// Vale 0 come "usa il quadrato": _caroselloCard lo legge cosi'.
+function _caroselloAltezzaFoto(px) { return _isMobileViewport() ? 0 : px; }
 
 // ---- pezzi comuni ai due caroselli (v6.071) --------------------------------------------------
 // Sono due file di figurine con le stesse regole: stessa card, stesso scorrimento, stessa velocita',
@@ -12836,6 +12963,70 @@ function _caroselloScorriBox(box, dir) {
 // darebbero card di altezza diversa, e in una fila che scorre si vedrebbe subito.
 function _caroselloRighe(f, nomeSerie) {
   const serie = esc(nomeSerie.get(f.seriesId) || '');
+  // v6.080 (Franco) - SU TELEFONO una riga sola: il nome. Era il testo, non la foto, a fare il "box
+  // allungato tantissimo in verticale": quattro righe per le figurine e CINQUE per i retro, ognuna
+  // con un'altezza fissa, fanno circa 6em di testo sotto una card larga sessanta pixel - piu' alto
+  // della foto stessa.
+  // Cadono serie, numero, categoria, sottocategoria e punteggio: su una card cosi' stretta non si
+  // leggono comunque, e la scheda completa e' a un tocco. Il nome resta su UNA riga con i puntini,
+  // non su due: due righe rimettono meta' del problema.
+  // v6.080 (Franco, seconda passata) - il nome su una riga sola con i puntini non si leggeva: su
+  // una card da ottanta pixel ci sta poco piu' di una parola, quindi "GASTONE BUBBONE" diventava
+  // "GASTON…". Ora ogni PAROLA va a capo per conto suo. I nomi degli Sgorbions sono quasi sempre
+  // due parole, cioe' due righe corte e intere invece di una troncata.
+  // Altezza 'auto', non fissa: le righe qui sono una o tre a seconda del nome, e un'altezza fissa
+  // le taglierebbe di nuovo. Le card restano alte uguali lo stesso, perche' nella fila si stirano
+  // sulla piu' alta.
+  // Ordine su telefono, deciso da Franco: SERIE in prima riga, NUMERO in seconda, poi il nome.
+  // Restano fuori categoria, sottocategoria e punteggio: sono le righe che gonfiavano il box senza
+  // essere leggibili. Il numero si mostra solo dove vuol dire qualcosa (_haNumero, v6.077), quindi
+  // sui retro quella riga non c'e' - loro un numero non ce l'hanno.
+  if (_isMobileViewport()) {
+    const isRetro = (f.section || '') === 'retros';
+    // v6.080 (Franco) - I RETRO SU TELEFONO HANNO LE LORO RIGHE: serie, categoria, sottocategoria,
+    // nome e punteggio. Sono gli stessi campi del desktop, con una differenza sola e voluta: il
+    // NOME va a capo quando finisce lo spazio, senza altezza fissa e senza spezzare le parole.
+    // Perche' non parola per parola come le figurine: il nome di una figurina e' un nome di persona
+    // (due parole), quello di un retro e' una FRASE - fino a nove parole, "RICERCATO PER ENTRATA
+    // CON SCASSO (NELLA BOCCA DI CHIUNQUE)". Spezzarla parola per parola faceva nove righe e la
+    // card diventava piu' alta di prima che ci mettessimo mano. Su una card stretta il testo va
+    // comunque a capo quasi a ogni parola: la regola speciale non serviva, serviva solo togliere
+    // il troncamento a una riga che c'era prima.
+    if (isRetro) {
+      // v6.080 (Franco) - quando il NOME e' piu' lungo del SOTTONOME, in etichetta va il sottonome.
+      // Il caso tipico e' la categoria RICERCATO: il nome e' il capo d'imputazione per esteso
+      // ("RICERCATA PER CRUDELTA' MENTALE E NON") e il sottonome e' chi lo ha commesso
+      // ("INFERMIERA DELLA SCUOLA") - su una card di un carosello serve il secondo.
+      // NON e' "se c'e' il sottonome mostralo": misurato sui dati veri, in OFFERTA SPECIALE
+      // (46 retro) il sottonome e' sempre PIU' LUNGO del nome, e la regola secca avrebbe
+      // sostituito un'etichetta corta con una lunga. Il confronto di lunghezze evita proprio
+      // quello, ed e' il motivo per cui la regola e' scritta cosi' e non nel modo piu' breve.
+      // Riguarda 45 retro base su 728: 36 RICERCATO, 9 sparsi fra le altre categorie. I 609 senza
+      // sottonome non cambiano, e restano lunghi quelli che un sottonome non ce l'hanno.
+      const _nomeR = (f.name || '').trim();
+      const _sottoR = (f.subname || '').trim();
+      const _etichettaR = (_sottoR && _nomeR.length > _sottoR.length) ? _sottoR : _nomeR;
+      return [
+        { t: serie,                    col: 'var(--accent)', dim: '0.62rem', alt: '1.2em' },
+        // v6.080 (Franco) - la CATEGORIA va a capo se non ci sta, invece di essere troncata coi
+        // puntini: su una card da un centinaio di pixel "SGORBIONS HORRIBLE HOROSCOPES" su una
+        // riga sola diventa "SGORBIONS HO…", che non dice piu' di quale categoria si tratti.
+        // Altezza libera come il nome: e' il modo che questa funzione ha per dire "quante righe
+        // servono", e le card restano comunque alte uguali perche' nella fila si stirano.
+        { t: esc(f.category || ''),    col: 'var(--muted)',  dim: '0.64rem', alt: 'auto' },
+        { t: esc(f.subcategory || ''), col: 'var(--muted)',  dim: '0.64rem', alt: '1.2em' },
+        { t: esc(_etichettaR),         col: 'var(--text)',   dim: '0.7rem',  alt: 'auto' },
+        { t: f.score > 0 ? '&#11088; ' + esc(String(f.score)) : '', col: 'var(--success)', dim: '0.66rem', alt: '1.2em', dx: 'right' }
+      ];
+    }
+    // Le figurine restano come deciso prima: serie, numero, e il nome parola per parola - li' sono
+    // due parole e la spezzatura le rende leggibili invece che troncate.
+    const parole = String(f.name || '').trim().split(/\s+/).filter(Boolean).map(esc).join('<br>');
+    const righe = [{ t: serie, col: 'var(--accent)', dim: '0.62rem', alt: '1.2em' }];
+    if (_haNumero(f) && f.number) righe.push({ t: esc(String(f.number)), col: 'var(--muted)', dim: '0.66rem', alt: '1.2em' });
+    righe.push({ t: parole, col: 'var(--text)', dim: '0.72rem', alt: 'auto' });
+    return righe;
+  }
   if ((f.section || '') === 'retros') {
     return [
       { t: serie,                    col: 'var(--accent)',  dim: '0.66rem', alt: '1.2em' },
@@ -12847,7 +13038,7 @@ function _caroselloRighe(f, nomeSerie) {
   }
   return [
     { t: serie,                                       col: 'var(--accent)', dim: '0.66rem', alt: '1.2em' },
-    { t: f.number ? '#' + esc(String(f.number)) : '', col: 'var(--muted)',  dim: '0.7rem',  alt: '1.2em' },
+    { t: f.number ? esc(String(f.number)) : '', col: 'var(--muted)',  dim: '0.7rem',  alt: '1.2em' }, // v6.080 - senza cancelletto
     { t: esc(f.name || ''),                           col: 'var(--text)',   dim: '0.74rem', alt: '2.5em' },
     { t: f.score > 0 ? '&#11088; ' + esc(String(f.score)) : '', col: 'var(--success)', dim: '0.7rem', alt: '1.2em', dx: 'right' }
   ];
@@ -12860,8 +13051,11 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza) {
   const etichetta = ((f.section || '') === 'retros')
     ? _retroNomeCompleto(f)
     : (f.number ? '#' + f.number + ' ' : '') + (f.name || '');
+  // v6.080 - alt 'auto' vuol dire "niente altezza fissa": serve alle righe che possono essere una o
+  // tre (il nome spezzato parola per parola su telefono). Le altre continuano ad avere la loro
+  // misura, che e' cio' che tiene allineate le card fra loro sul desktop.
   const righe = _caroselloRighe(f, nomeSerie).map((r, i) =>
-    '<div style="font-size:' + r.dim + ';color:' + r.col + ';line-height:1.25;height:' + r.alt + ';overflow:hidden;' +
+    '<div style="font-size:' + r.dim + ';color:' + r.col + ';line-height:1.25;' + (r.alt === 'auto' ? '' : 'height:' + r.alt + ';overflow:hidden;') +
       (i === 0 ? 'margin-top:0.4rem;' : '') +
       (r.alt === '1.2em' ? 'white-space:nowrap;text-overflow:ellipsis;' : '') +
       (r.dx ? 'text-align:' + r.dx + ';' : '') +
@@ -12870,8 +13064,10 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza) {
   return '<div onclick="_caroselloApri(\'' + f.id + '\',\'' + f.seriesId + '\')" ' +
     'title="' + esc(etichetta) + '" ' +
     'style="flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">' +
+    // v6.080 - altezzaFoto 0 vuol dire "quadrata rispetto alla card" (telefono): niente altezza
+    // fissa sotto una card stretta, che e' cio' che allungava il box in verticale.
     '<img src="' + cloudinaryUrl(f.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" ' +
-      'style="width:100%;height:' + altezzaFoto + 'px;object-fit:contain;border-radius:6px;background:var(--card);">' +
+      'style="width:100%;' + (altezzaFoto ? 'height:' + altezzaFoto + 'px;' : 'aspect-ratio:1;height:auto;') + 'object-fit:contain;border-radius:6px;background:var(--card);">' +
     righe +
   '</div>';
 }
@@ -12900,7 +13096,7 @@ function _caroselloAvviaBox(box, quale, vivo) {
     if (document.hidden) return;          // scheda del browser in secondo piano
     if (!vivo()) { _caroselloSpegni(quale); return; }
     _caroselloScorriBox(box, 1);
-  }, CAROSELLO_PASSO_MS);
+  }, _caroselloPasso());
   _caroselloTimers[quale] = t;
 }
 function _caroselloSpegni(quale) {
@@ -12924,8 +13120,8 @@ function renderCarosello() {
     const j = Math.floor(Math.random() * (i + 1));
     [mazzo[i], mazzo[j]] = [mazzo[j], mazzo[i]];
   }
-  const nomeSerie = new Map(getData('series', []).map(x => [x.id, x.name]));
-  box.innerHTML = mazzo.slice(0, CAROSELLO_MAX).map(f => _caroselloCard(f, nomeSerie, 175, CAROSELLO_LARGHEZZA)).join('');
+  const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x)])); // v6.080
+  box.innerHTML = mazzo.slice(0, CAROSELLO_MAX).map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(175), _caroselloLarghezzaHome())).join('');
   sez.style.display = '';
   const prec = document.getElementById('carosello-prec');
   const succ = document.getElementById('carosello-succ');
@@ -12958,8 +13154,8 @@ function renderCaroselloSerie() {
       && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError && f.img)
     .sort((a, b) => (a.number || 0) - (b.number || 0));
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
-  const nomeSerie = new Map(getData('series', []).map(x => [x.id, x.name]));
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, 150, CAROSELLO_LARGHEZZA_SERIE)).join('');
+  const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x)])); // v6.080
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(150), _caroselloLarghezzaSerie())).join('');
   sez.style.display = '';
   const prec = document.getElementById('serie-carosello-prec');
   const succ = document.getElementById('serie-carosello-succ');
@@ -12991,7 +13187,7 @@ function renderCaroselloProdotto() {
       && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError && f.img);
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   const serie = getData('series', []);
-  const nomeSerie = new Map(serie.map(x => [x.id, x.name]));
+  const nomeSerie = new Map(serie.map(x => [x.id, _nomeSerieCard(x)])); // v6.080 - terzo carosello
   // Si lavora sempre su una COPIA: riordinare l'elenco vero cambierebbe l'ordine in tutto il sito.
   const mazzo = base.slice();
   // v6.073 (Franco) — l'ordine dipende dal prodotto, e non e' un capriccio: le BUSTINE sono
@@ -13014,7 +13210,7 @@ function renderCaroselloProdotto() {
       [mazzo[i], mazzo[j]] = [mazzo[j], mazzo[i]];
     }
   }
-  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, 150, CAROSELLO_LARGHEZZA_SERIE)).join('');
+  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(150), _caroselloLarghezzaSerie())).join('');
   sez.style.display = '';
   const prec = document.getElementById('prodotto-carosello-prec');
   const succ = document.getElementById('prodotto-carosello-succ');
@@ -15085,6 +15281,8 @@ function openAddSeriesModal(seriesId) {
       const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = s.hasUnofficialVariations || false;
       const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = s.hasChange || false;
       const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = s.noNumbers || false;
+      { const nc = document.getElementById('series-nome-corto-input'); if (nc) nc.value = s.nomeCorto || ''; } // v6.080
+      renderSeriesBypassCheckboxes(s.controlliSospesi); // v6.080
       document.getElementById('series-desc-input').value = s.descIt || s.desc || '';
       const descEnInput = document.getElementById('series-desc-en-input');
       if (descEnInput) descEnInput.value = s.desc || '';
@@ -15132,6 +15330,8 @@ async function saveSeries() {
   const hasUnofficialVariations = document.getElementById('series-has-unofficial-variations-input')?.checked || false;
   const hasChange = document.getElementById('series-has-change-input')?.checked || false;
   const noNumbers = document.getElementById('series-no-numbers-input')?.checked || false;
+  const controlliSospesi = _leggiControlliSospesi(); // v6.080
+  const nomeCorto = (document.getElementById('series-nome-corto-input')?.value || '').trim(); // v6.080
   const countVariations = parseInt(document.getElementById('series-count-variations-input').value) || null;
   const countUnofficialVariations = parseInt(document.getElementById('series-count-unofficial-variations-input').value) || null;
   const countChange = parseInt(document.getElementById('series-count-change-input').value) || null;
@@ -15171,12 +15371,12 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes };
+        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes };
         await fsSave('series', series[idx]);
         _cache.series = series;
       }
     } else {
-      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, noNumbers, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, created: new Date().toISOString() };
+      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -15420,6 +15620,23 @@ const _paroleTipologia = v => (currentLang === 'it' ? v.it : v.en)[v.n === 1 ? 0
 // L'etichetta c'e' in tutti e due i casi: il colore da solo va ricordato, la parola no.
 function _righeTipologie(oggetti, modo) {
   const voci = _contiTipologie(oggetti);
+  // v6.080 (Franco) - modo 'pillole': gli stessi conti, ma nella forma delle card dell'Inventario
+  // - allineate a sinistra, ognuna nella sua cornicetta, che vanno a capo quando lo spazio finisce.
+  // Franco preferisce quella lettura, e riusarla vuol dire che le due griglie delle serie ora si
+  // somigliano invece di essere due dialetti della stessa informazione.
+  // Il COLORE per tipologia resta (v6.073, "il colore fa da etichetta"): sta sul testo dentro la
+  // pillola, non al posto della cornice. Le due cose non erano in conflitto, erano solo separate.
+  if (modo === 'pillole') {
+    // Su TELEFONO la pillola puo' andare a capo: "Variazioni non ufficiali" in due colonne non ci
+    // sta su una riga e veniva troncata. Sul desktop resta `nowrap`, dove lo spazio c'e' e una
+    // pillola spezzata sarebbe solo piu' brutta. Il numero resta comunque attaccato alla prima riga.
+    const _mobPil = _isMobileViewport();
+    return '<div class="card-meta" style="display:flex;flex-wrap:wrap;justify-content:flex-start;gap:0.3rem;margin-top:0.45rem;padding-top:0.45rem;">' +
+      voci.map(v => '<span class="card-badge" style="color:' + v.col + ';'
+        + (_mobPil ? 'white-space:normal;line-height:1.25;text-align:left;' : 'white-space:nowrap;') + '">' +
+        '<b style="font-variant-numeric:tabular-nums;">' + v.n + '</b> ' + esc(_paroleTipologia(v)) + '</span>').join('') +
+      '</div>';
+  }
   if (modo === 'colonna') {
     return voci.map(v =>
       '<div style="display:flex;align-items:baseline;gap:0.4rem;color:' + v.col + ';line-height:1.45;">' +
@@ -15451,7 +15668,7 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
       (s.img
         ? '<img src="' + cloudinaryUrl(s.img, 'w_80,h_80,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:22px;height:22px;object-fit:contain;border-radius:50%;background:var(--bg3);flex:0 0 auto;">'
         : '<span style="width:22px;height:22px;flex:0 0 auto;"></span>') +
-      '<span style="flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(s.name) + '</span>' +
+      '<span style="flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(_nomeSerieCard(s)) + '</span>' +
       '<span style="font-weight:800;font-variant-numeric:tabular-nums;flex:0 0 auto;">' + n + '</span>' +
     '</span>';
   }).join('');
@@ -15467,6 +15684,15 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
 }
 
 function renderCatalogProdotti(grid) {
+  // v6.080 (Franco) - anche il PRIMO livello dell'hub va a due colonne su telefono. Usa la stessa
+  // griglia dell'Inventario (#catalog-grid), che di colonne ne ha tre per via della media query
+  // sull'ID (v5.823/835): le card dei prodotti sono pero' piu' cariche di quelle delle serie -
+  // copertina, titolo e l'elenco delle serie con le miniature - e in un terzo di schermo si
+  // spezzano. Stile inline perche' quella regola sta nel CSS e non si puo' scavalcare da qui
+  // senza toccare un file che le cartelle _upload_ non contengono nemmeno (§5).
+  // Lo pulisce renderCatalog() tornando al taglio per Serie: la griglia e' la stessa, e uno stile
+  // lasciato acceso si porterebbe dietro le due colonne anche dove ne servono tre.
+  if (grid && _isMobileViewport()) grid.style.gridTemplateColumns = 'repeat(' + HUB_COLONNE_MOBILE + ', 1fr)';
   const tutti = getData('figurines', []);
   const serieOrdinate = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
   grid.innerHTML = PRODOTTI_INVENTARIO.map(sec => prodottoCardHTML(sec, tutti, serieOrdinate)).join('');
@@ -15498,7 +15724,14 @@ function _creaProdottoDetail() {
       '</div>' +
     '</div></div>' +
     '<div style="max-width:1100px;margin:0 auto;padding:2rem;">' +
-      '<div class="sec-grid" id="prodotto-serie-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.5rem;"></div>' +
+      // v6.080 (Franco) - la griglia delle serie dell'hub usa la STESSA classe dell'Inventario.
+      // Prima aveva un `grid-template-columns: repeat(auto-fit, minmax(240px,1fr))` scritto a mano:
+      // su un telefono da 390px due colonne da 240 non ci stanno, quindi ne restava UNA - non una
+      // scelta per il telefono, l'aritmetica di quel 240. L'Inventario per Serie invece usa
+      // `grid-3`, che una sua regola per il telefono ce l'ha gia' (tre colonne).
+      // Due griglie che mostrano le stesse serie devono comportarsi allo stesso modo, e il modo
+      // di ottenerlo non e' ritoccare il 240: e' usare la stessa classe.
+      '<div class="grid-3" id="prodotto-serie-grid"></div>' +
     '</div>';
   // v6.073 (Franco) — BACO: l'hub partiva piu' in basso di quello di una serie. Con
   // body.appendChild finiva IN FONDO al body, cioe' DOPO il <footer>, che sta al primo livello:
@@ -15533,6 +15766,19 @@ function openProdottoDetail(sec) {
     '<div style="margin-bottom:0.15rem;">' + serieConRoba + (currentLang === 'it' ? ' Serie:' : ' Series:') + '</div>' +
     '<div style="font-size:0.86rem;line-height:1.7;">' + _righeTipologie(miei) + '</div>';
   const griglia = document.getElementById('prodotto-serie-grid');
+  // v6.080 (Franco) - TRE SERIE PER RIGA ANCHE QUI SU TELEFONO, come nell'Inventario.
+  // Perche' dal JS e non dal CSS: le tre colonne dell'Inventario non vengono da `.grid-3` (che e'
+  // auto-fill minmax(300px,1fr) e su un telefono cade a una colonna sola) ma da una media query
+  // agganciata all'ID #catalog-grid - scritta nella v5.823/835 con la nota "le altre .grid-3 del
+  // sito non cambiano". Dare la stessa classe non bastava, e una media query gemella nell'index
+  // non funziona: il CSS inline di quel file ha le graffe sbilanciate (una in eccesso verso riga
+  // 106), quindi una regola aggiunta in fondo finisce annidata in un blocco che non e' quello che
+  // sembra leggendolo. Uno stile inline non dipende da quella struttura e vince comunque.
+  const _mobHub = _isMobileViewport();
+  if (griglia) {
+    griglia.style.gridTemplateColumns = _mobHub ? 'repeat(' + HUB_COLONNE_MOBILE + ', 1fr)' : '';
+    griglia.style.gap = _mobHub ? '0.45rem' : '';
+  }
   // Le serie che di quel prodotto non hanno NIENTE non si mostrano: un box che apre una griglia
   // vuota e' un vicolo cieco. Nella colonna del primo livello invece restano, perche' li' servono
   // a tenere l'elenco della stessa lunghezza in tutte le card — sono due mestieri diversi.
@@ -15542,14 +15788,14 @@ function openProdottoDetail(sec) {
     // tipologia, non piu' il solo "N base, M in tutto". Il colore fa da etichetta - e' il mestiere
     // per cui il codice della v5.703 esiste - e il nome per esteso resta nel passaggio del mouse.
     const suoi = miei.filter(f => f.seriesId === s.id);
-    const etichetta = _righeTipologie(suoi, 'colonna');
+    const etichetta = _righeTipologie(suoi, 'pillole'); // v6.080 - come le card dell'Inventario
     return '<div class="section-choice-card" onclick="apriSerieDaProdotto(\'' + s.id + '\')" style="padding:0;overflow:hidden;">' +
       '<div style="width:100%;aspect-ratio:4/3;background:var(--bg3);overflow:hidden;display:flex;align-items:center;justify-content:center;">' +
         (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;">' : '<span style="font-size:3rem;">&#127924;</span>') +
       '</div>' +
-      '<div style="padding:1.25rem 1.5rem;">' +
-        '<div class="section-choice-title">' + esc(s.name) + '</div>' +
-        '<div class="section-choice-count" style="font-size:0.82rem;margin-top:0.2rem;">' + etichetta + '</div>' +
+      '<div class="card-body prodotto-serie-testo" style="padding:' + (_mobHub ? '0.5rem 0.5rem 0.6rem' : '1.25rem 1.5rem') + ';text-align:left;">' + // v6.080 - su telefono il riquadro si stringe con la colonna
+        '<div class="card-title" style="margin-bottom:0;' + (_mobHub ? 'font-size:0.88rem;line-height:1.2;' : '') + '">' + esc(_nomeSerieCard(s)) + '</div>' +
+        etichetta +
       '</div>' +
     '</div>';
   }).join('');
@@ -15590,6 +15836,9 @@ function renderCatalog() {
   if (grid) grid.style.display = '';
   _aggiornaBivioInventario();
   if (_taglioInventario === 'prodotti') { if (grid) renderCatalogProdotti(grid); return; }
+  // v6.080 - tornando al taglio per SERIE la griglia riprende le sue colonne: e' lo stesso
+  // elemento, e lo stile inline messo dal taglio Prodotti gli resterebbe addosso.
+  if (grid) grid.style.gridTemplateColumns = '';
   let series = getData('series', []);
   series = series.sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
   if (!series.length) {
@@ -15733,6 +15982,18 @@ function openFigFromSearch(figId, seriesId, section) {
   openFigDetail(figId);
 }
 
+// v6.080 (Franco) - IL NOME DA METTERE SULLE CARD. Su telefono, se la serie ha un "Nome corto",
+// si usa quello: nelle griglie a due o tre colonne il nome per esteso non ci sta e viene troncato,
+// e un nome troncato non identifica niente. Sul desktop e nella SCHEDA della serie resta sempre il
+// nome vero - li' lo spazio c'e', ed e' il posto dove il nome si legge per intero.
+// Una funzione sola: i punti che elencano serie sono cinque, e cinque copie di questo `if`
+// sarebbero cinque occasioni di dimenticarne una.
+function _nomeSerieCard(s) {
+  if (!s) return '';
+  const corto = (s.nomeCorto || '').trim();
+  return (_isMobileViewport() && corto) ? corto : (s.name || '');
+}
+
 function seriesCardHTML(s) {
   const allItems = getData('figurines', []).filter(f => f.seriesId === s.id);
   const retros = allItems.filter(f => f.section === 'retros');
@@ -15756,7 +16017,7 @@ function seriesCardHTML(s) {
     </div>
     <div class="card-body">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
-        <div class="card-title" style="display:flex;align-items:baseline;gap:0.5rem;flex-wrap:wrap;margin-bottom:0;"><span>${s.name}</span>${s.year ? `<span class="card-tag" style="display:inline;margin-bottom:0;">${s.year}</span>` : ''}</div>
+        <div class="card-title" style="display:flex;align-items:baseline;gap:0.5rem;flex-wrap:wrap;margin-bottom:0;"><span>${esc(_nomeSerieCard(s))}</span>${s.year ? `<span class="card-tag" style="display:inline;margin-bottom:0;">${s.year}</span>` : ''}</div>
         ${modeScoreHTML || ''}
       </div>
       <div class="card-desc">${(desc||'').substring(0,90)}${(desc||'').length>90?'…':''}</div>
@@ -16995,6 +17256,7 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-number-input').value = f.number || '';
       document.getElementById('fig-no-number-input').checked = f.noNumber || false;
       { const fnd = document.getElementById('fig-foto-non-disponibile-input'); if (fnd) fnd.checked = !!f.fotoNonDisponibile; } // v6.079
+      { const inv = document.getElementById('fig-invisibile-input'); if (inv) inv.checked = !!f.invisibile; } // v6.080
       document.getElementById('fig-category-input').value = f.category || '';
       document.getElementById('fig-subcategory-input').value = f.subcategory || '';
       document.getElementById('fig-subname-input').value = f.subname || '';
@@ -17033,6 +17295,7 @@ function openAddItemModal(itemId) {
     ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input','fig-category-input','fig-subcategory-input','fig-subname-input'].forEach(id => document.getElementById(id).value = '');
     document.getElementById('fig-no-number-input').checked = false;
     { const fnd0 = document.getElementById('fig-foto-non-disponibile-input'); if (fnd0) fnd0.checked = false; } // v6.079
+    { const inv0 = document.getElementById('fig-invisibile-input'); if (inv0) inv0.checked = false; } // v6.080
     document.getElementById('fig-score-input').value = 0;
     const rbIn0 = document.getElementById('fig-retro-bianco-input'); if (rbIn0) rbIn0.checked = false;
     document.getElementById('fig-is-variation-input').checked = false;
@@ -18692,24 +18955,30 @@ function renderItems() {
     // c'erano. Le condizioni si ricalcolano qui dai loro ingredienti.
     const _soloFronte = _soloFronteMobile(); // v6.020 — unica fonte, vedi _soloFronteMobile()
     if (!_soloFronte && (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && (f.retroId || _retroBianco)) || (f.isChange && f.baseFigurineId && _effRetroId) || (isBaseFig && (f.retroId || _retroBianco)))) {
+      // v6.080 (Franco) - il fronte della COPPIA e' la foto dell'oggetto, non quella della base.
+      // Prima era sempre `baseFigDual.img`: per un change con foto propria la card mostrava il
+      // fronte della base, cioe' l'unica cosa che un change NON condivide con lei. Il ripiego
+      // sulla base resta, ma dentro _fotoFigurina e solo dove il fronte coincide davvero.
+      // baseFigDual resta perche' serve ancora a trovare il RETRO ereditato dai change.
       const baseFigDual = isBaseFig ? f : (baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId));
+      const _fronteCoppia = _fotoFigurina(f, getData('figurines', []));
       const retroFigDual = _retroBianco
         ? { img: RETRO_BIANCO_IMG, name: '' }
         : getData('figurines', []).find(x => x.id === _effRetroId);
-      if (baseFigDual?.img && retroFigDual?.img) {
+      if (_fronteCoppia && retroFigDual?.img) {
         if (_retroViewMode === 'destra-piena') hasWidePair = true;
         if (_retroViewMode === 'destra') {
-          imgHTML = _coppiaAffiancataHTML(baseFigDual.img, retroFigDual.img); // v6.075 — markup condiviso con le bustine
+          imgHTML = _coppiaAffiancataHTML(_fronteCoppia, retroFigDual.img); // v6.075 — markup condiviso con le bustine
         } else if (_retroViewMode === 'dinamico') {
           const dualId = 'dual-' + f.id;
           imgHTML = `<div id="${dualId}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(baseFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
             <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);"><img src="${cloudinaryUrl(retroFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"></div>
           </div>`;
         } else if (_retroViewMode === 'fronte-grande') {
           const dualId2 = 'dualf-' + f.id;
           imgHTML = `<div id="${dualId2}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(baseFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId2}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId2}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"></div>
             <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);"><img src="${cloudinaryUrl(retroFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
           </div>`;
         } else if (_retroViewMode === 'destra-piena') {
@@ -18721,13 +18990,13 @@ function renderItems() {
           // scopre solo al caricamento delle foto
           const dualId5 = 'dualp-' + f.id;
           imgHTML = `<div id="${dualId5}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
-            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(baseFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="_checkBothOrientationForStack('${dualId5}','front',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="_checkBothOrientationForStack('${dualId5}','front',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"></div>
             <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);"><img src="${cloudinaryUrl(retroFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="_checkBothOrientationForStack('${dualId5}','retro',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"></div>
           </div>`;
         } else {
           // 'sotto' (default)
           imgHTML = `<div style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(baseFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
             <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);"><img src="${cloudinaryUrl(retroFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
           </div>`;
         }
@@ -19190,6 +19459,7 @@ async function _saveFigurineInner() {
   const number = document.getElementById('fig-number-input').value;
   const noNumber = document.getElementById('fig-no-number-input')?.checked || false;
   const fotoNonDisponibile = document.getElementById('fig-foto-non-disponibile-input')?.checked || false; // v6.079
+  const invisibile = document.getElementById('fig-invisibile-input')?.checked || false; // v6.080
   let name = document.getElementById('fig-name-input').value.trim();
   const desc = document.getElementById('fig-desc-input').value.trim();
   const score = parseInt(document.getElementById('fig-score-input').value) || 0;
@@ -19364,7 +19634,7 @@ async function _saveFigurineInner() {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
         const _prima = figs[idx];   // v5.981 — riferimento all'oggetto PRIMA della sovrascrittura
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, fotoNonDisponibile, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || figs[idx].img, imgRetro: imgRetroUrl || figs[idx].imgRetro || null, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, fotoNonDisponibile, invisibile, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || figs[idx].img, imgRetro: imgRetroUrl || figs[idx].imgRetro || null, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti };
         figs[idx].fullName = computeFullName(figs[idx], figs);
         // v5.981 — la coda: prima quello che dice la spunta (o il valore esistente, se la spunta
         // era nascosta), poi l'automatismo, che puo' solo ALZARLA. Cosi' togliere la spunta a mano
@@ -19381,7 +19651,7 @@ async function _saveFigurineInner() {
         try { await _propagaAiCollegati(figs[idx]); } catch(e) { console.error('propaga', e); }
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, fotoNonDisponibile, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || null, imgRetro: imgRetroUrl || null, ebayImg: ebayImgUrl || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti, daPubblicare: forSale/* v5.981: nasce marcato Ebay = nasce in coda */ };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, fotoNonDisponibile, invisibile, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || null, imgRetro: imgRetroUrl || null, ebayImg: ebayImgUrl || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti, daPubblicare: forSale/* v5.981: nasce marcato Ebay = nasce in coda */ };
       newF.fullName = computeFullName(newF, figs);
       const saved = await fsSave('figurines', newF);
     }
@@ -20031,10 +20301,65 @@ function adminTab(tab) {
   if (tab === 'foto') renderAdminFoto();
   if (tab === 'funzioni') renderAdminFunzioni(); // v6.055
   if (tab === 'errori') renderAdminErrori();
+  if (tab === 'figurine') renderAdminFigurineInvisibili(); // v6.080
   if (tab === 'email') { renderEmailLog(); refreshEmailCountWidgets(); }
   if (tab === 'settings') { loadReplyToField(); loadEbaySettingsFields(); }
   if (tab === 'punteggi') renderAdminPunteggi();
 }
+// v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
+// Sono l'unica cosa nel sito che esiste ma non si vede, quindi senza un posto dove guardarli si
+// dimenticano - e un oggetto nascosto e dimenticato e' indistinguibile da un oggetto perso.
+// Ordine chiesto da Franco: serie, poi sottoserie, poi numero o nome. Il numero si confronta come
+// numero e non come testo, altrimenti il 10 verrebbe prima del 2.
+// Legge da `_cache.figurines` e NON da getData(): la pagina e' per l'admin, che vede tutto, ma
+// scriverlo esplicito serve a chi legge - qui il filtro delle invisibili sarebbe un controsenso.
+function renderAdminFigurineInvisibili() {
+  const el = document.getElementById('admin-figurine-content');
+  if (!el) return;
+  const it = currentLang === 'it';
+  const tutte = Array.isArray(_cache.figurines) ? _cache.figurines : [];
+  const serie = getData('series', []);
+  const nomeSerie = id => serie.find(s => s.id === id)?.name || (it ? 'Serie sconosciuta' : 'Unknown series');
+  const invisibili = tutte.filter(f => f.invisibile).sort((a, b) =>
+    nomeSerie(a.seriesId).localeCompare(nomeSerie(b.seriesId), 'it', { numeric: true })
+    || (a.subseries || '').localeCompare(b.subseries || '', 'it', { numeric: true })
+    || ((a.number && b.number) ? (a.number - b.number)
+        : (a.number ? -1 : b.number ? 1
+        : String(a.fullName || a.name || '').localeCompare(String(b.fullName || b.name || ''), 'it', { numeric: true }))));
+
+  const testata =
+    '<h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">&#129781; ' + (it ? 'Figurine invisibili' : 'Hidden stickers') + '</h3>' +
+    '<p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;max-width:900px;">' +
+      (it ? 'Oggetti con il campo <b>Invisibile</b> attivo: esistono nel catalogo ma non compaiono a chi non è admin — né in griglia, né nella ricerca, né nei caroselli, né nei contatori. Qui ci sono tutti, per non perderli di vista.'
+          : 'Items with the <b>Hidden</b> flag: they exist in the catalogue but are not shown to non-admins — not in the grid, the search, the carousels or the counters. They are all listed here so they do not get forgotten.') +
+    '</p>';
+
+  if (!invisibili.length) {
+    el.innerHTML = '<div style="max-width:1100px;">' + testata +
+      '<p style="color:var(--muted);">' + (it ? 'Nessun oggetto invisibile.' : 'No hidden items.') + '</p></div>';
+    return;
+  }
+
+  const th = t => '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);white-space:nowrap;">' + t + '</th>';
+  const td = (t, st) => '<td style="padding:6px 10px;' + (st || '') + '">' + t + '</td>';
+  el.innerHTML = '<div style="max-width:1100px;">' + testata +
+    '<div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.6rem;">' + invisibili.length + ' ' + (it ? 'oggetti' : 'items') + '</div>' +
+    '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;"><thead><tr style="background:var(--card2);">' +
+      th(it ? 'Serie' : 'Series') + th(it ? 'Sottoserie' : 'Subseries') + th(it ? 'Sezione' : 'Section') +
+      th('N.') + th(it ? 'Nome' : 'Name') + th('') +
+    '</tr></thead><tbody>' +
+    invisibili.map(f =>
+      '<tr style="border-bottom:1px solid var(--border);">' +
+        td(esc(nomeSerie(f.seriesId)), 'color:var(--muted);white-space:nowrap;') +
+        td(esc(f.subseries || ''), 'color:var(--muted);') +
+        td(esc(getSectionLabelSingular(f.section || 'figurines')), 'color:var(--accent2);white-space:nowrap;') +
+        td(_haNumero(f) && f.number ? esc(String(f.number)) : '', 'white-space:nowrap;') +
+        td(esc((f.fullName && f.fullName.trim()) ? f.fullName : (f.name || '')), '') +
+        td('<button class="tbl-btn tbl-btn-edit" onclick="openFigDetail(\'' + f.id + '\')">' + (it ? 'Apri' : 'Open') + '</button>', 'white-space:nowrap;') +
+      '</tr>').join('') +
+    '</tbody></table></div>';
+}
+
 function renderAdminSeries() {
   const el = document.getElementById('admin-series-table');
   const series = getData('series', []).slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
@@ -21060,7 +21385,22 @@ function openFigDetail(figId, elencoNav) {
   // v5.906 — per i RETRO il titolo NON ripiega più sul Nome quando il Nome completo è vuoto: così
   // un Nome completo non salvato si vede vuoto anche nel titolo (richiesto da Franco). Altre sezioni invariate.
   const displayNameForTitle = (f.section === 'retros') ? (f.fullName || '') : (f.fullName || f.name);
-  if (titleEl) titleEl.textContent = (_haNumero(f) && f.number) ? ('#' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle; // v6.077
+  // v6.080 (Franco) - IL TIPO DI OGGETTO IN CIMA ALLA SCHEDA. Aprendo un risultato della ricerca
+  // globale non c'era modo di sapere se si stava guardando una figurina, un retro, una bustina o
+  // un album: la ricerca mescola le sezioni, e la scheda mostrava solo numero e nome, che fra una
+  // figurina e il suo retro possono somigliarsi moltissimo.
+  // Va nel titolo e non fra le righe: e' la prima cosa da sapere, non un campo fra gli altri. In
+  // un colore diverso dal bianco del nome (richiesta di Franco), cosi' si legge come un'etichetta e
+  // non come parte del nome.
+  // Il `data-i18n` va tolto: applyI18n() riscriverebbe il titolo con "Dettaglio figurina" al primo
+  // cambio lingua, portandosi via nome ed etichetta (la trappola del §5 - qui c'era gia' prima).
+  if (titleEl) {
+    titleEl.removeAttribute('data-i18n');
+    const _tipo = getSectionLabelSingular(f.section || 'figurines');
+    const _nomeTit = (_haNumero(f) && f.number) ? ('#' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle;
+    titleEl.innerHTML = '<span style="color:var(--accent2);font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.1rem;">'
+      + esc(_tipo) + '</span>' + esc(_nomeTit);
+  }
   // v5.849 — su telefono il titolo del modale sparisce: ripete Numero e Nome, che sono le prime
   // due righe della scheda. Il testo resta comunque impostato, cosi' se la finestra torna larga
   // (o per i lettori di schermo) c'e'. Nascosto via CSS, vedi .modal-title in sezione mobile.
@@ -21250,7 +21590,11 @@ function openFigDetail(figId, elencoNav) {
     if (_schedaDueFoto(f)) { // v6.032/044 - unica fonte, vedi _schedaDueFoto()
       // Variazione/Change o figurina base con Retro collegato: mostra Fronte (sx) + Retro (dx) affiancati
       const baseFig = _detBase;
-      const frontImg = baseFig ? baseFig.img : f.img;
+      // v6.080 (Franco) - la foto del fronte e' quella DELL'OGGETTO; la base e' un ripiego, e solo
+      // dove il fronte coincide davvero (vedi _fotoFigurina). Prima diceva `baseFig ? baseFig.img
+      // : f.img`: con una base collegata usava la sua foto ANCHE quando il change ne aveva una
+      // propria, cioe' mostrava di un change tutto tranne cio' che lo rende un change.
+      const frontImg = _fotoFigurina(f, getData('figurines', []));
       // v6.074 - due sorgenti diverse per la stessa casella. Per una FIGURINA il retro e' un altro
       // record, e la caption sotto ci porta. Per una BUSTINA e' un campo del record stesso: non c'e'
       // niente da collegare e niente dove andare.
@@ -21432,7 +21776,19 @@ function _fotoFigurina(f, allFigs) {
   if (!f) return null;
   if (f.img) return f.img;
   // v5.785 - f.section, non currentSection: vale anche fuori dalla griglia (la scheda, i tab).
-  if (f.section === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
+  // v6.080 (Franco) - IL RIPIEGO SULLA FOTO DELLA BASE VALE SOLO DOVE IL FRONTE E' DAVVERO QUELLO
+  // DELLA BASE. La regola, parole sue:
+  //   VARIAZIONI - per definizione hanno lo stesso fronte, si distinguono nel retro. Ripiego giusto.
+  //   CHANGE     - la differenza sta sempre nel loro FRONTE. Ripiegare gli metteva come fronte
+  //                proprio l'immagine che non li rappresenta: era un errore, non una mancanza.
+  //                Dalla v6.024 lo faceva, e nessuno se n'era accorto perche' una foto sbagliata
+  //                si vede solo se sai gia' che dovrebbe essere diversa.
+  //   ERRORI DI STAMPA - possono avere il difetto sul fronte o sul retro. Se hanno un retro LORO,
+  //                il difetto sta li' e il fronte e' quello della base: allora si ripiega. Se non
+  //                ce l'hanno, il difetto e' sul fronte e la foto della base direbbe il contrario.
+  // In pratica: si ripiega quando sappiamo che il fronte coincide, mai "tanto e' meglio di niente".
+  const _frontePariAllaBase = f.isVariation || f.isUnofficialVariation || (f.isPrintError && f.retroId);
+  if (f.section === 'figurines' && _frontePariAllaBase && f.baseFigurineId) {
     const base = (allFigs || getData('figurines', [])).find(x => x.id === f.baseFigurineId);
     if (base && base.img) return base.img;
   }
@@ -21459,13 +21815,15 @@ function _fotoFigurina(f, allFigs) {
 function _dueFacce(f, tutte) {
   const figs = tutte || getData('figurines', []);
   const fronte = _fotoFigurina(f, figs);
-  if (!_schedaDueFoto(f)) return { fronte, retro: null };
-  if (_secondaFacciaSulRecord(f?.section)) return { fronte, retro: f?.imgRetro || null };
-  if (f?.retroBianco && !f?.retroId) return { fronte, retro: RETRO_BIANCO_IMG };
+  // v6.080 - torna anche il RECORD del retro (quando ne esiste uno): una URL non puo' dire se
+  // quel retro dichiara "foto non disponibile", e i controlli della pagina Errori lo chiedono.
+  if (!_schedaDueFoto(f)) return { fronte, retro: null, retroRec: null };
+  if (_secondaFacciaSulRecord(f?.section)) return { fronte, retro: f?.imgRetro || null, retroRec: null };
+  if (f?.retroBianco && !f?.retroId) return { fronte, retro: RETRO_BIANCO_IMG, retroRec: null };
   const base = f?.isChange && f?.baseFigurineId ? figs.find(x => x.id === f.baseFigurineId) : null;
   const idRetro = f?.isChange ? (f.retroId || base?.retroId || null) : (f?.retroId || null);
   const rec = idRetro ? figs.find(x => x.id === idRetro) : null;
-  return { fronte, retro: rec?.img || null };
+  return { fronte, retro: rec?.img || null, retroRec: rec || null };
 }
 
 function _figurineCheUsanoIlRetro(retroId, allFigs) {
@@ -21815,7 +22173,15 @@ function switchToEditMode(figId) {
   // v5.906 — per i RETRO il titolo NON ripiega più sul Nome quando il Nome completo è vuoto: così
   // un Nome completo non salvato si vede vuoto anche nel titolo (richiesto da Franco). Altre sezioni invariate.
   const displayNameForTitle = (f.section === 'retros') ? (f.fullName || '') : (f.fullName || f.name);
-  if (titleEl) titleEl.textContent = f.number ? ('# ' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle;
+  // v6.080 - il tipo in cima anche in MODIFICA, come nella vista: passando da una all'altra il
+  // titolo non deve cambiare forma. Stessa costruzione, un posto solo dove leggerla.
+  if (titleEl) {
+    titleEl.removeAttribute('data-i18n');
+    const _tipoEdit = getSectionLabelSingular(f.section || 'figurines');
+    const _nomeTitEdit = (_haNumero(f) && f.number) ? ('#' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle;
+    titleEl.innerHTML = '<span style="color:var(--accent2);font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.1rem;">'
+      + esc(_tipoEdit) + '</span>' + esc(_nomeTitEdit);
+  }
 
   // v6.074 - Foto. Una sola per quasi tutto; DUE per le bustine, che hanno due facce sullo stesso
   // record. Il riquadro e' costruito da una funzione sola, chiamata una o due volte: due copie di
@@ -21980,6 +22346,16 @@ function switchToEditMode(figId) {
     '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">' +
     '<input type="checkbox" id="fe-foto-non-disponibile" ' + (f.fotoNonDisponibile ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
     '<span style="color:var(--muted);">' + (currentLang==='it'?'non ho la foto e non posso averla' : 'I do not have the photo and cannot get it') + '</span>' +
+    '</label></span></div>';
+
+  // v6.080 (Franco) - INVISIBILE: l'oggetto esiste, ma per chi non e' admin non c'e'. Il filtro sta
+  // in getData(), quindi sparisce da griglia, ricerca, caroselli, contatori ed export insieme.
+  // In rosso e non in grigio: e' l'unico campo di questa form che toglie una cosa dal sito, e va
+  // riconosciuto a colpo d'occhio quando si riapre l'oggetto sei mesi dopo.
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Invisibile':'Hidden') + '</span>' +
+    '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">' +
+    '<input type="checkbox" id="fe-invisibile" ' + (f.invisibile ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
+    '<span style="color:' + (f.invisibile ? 'var(--danger)' : 'var(--muted)') + ';">' + (currentLang==='it'?'la vede solo l’admin' : 'only the admin can see it') + '</span>' +
     '</label></span></div>';
 
   // Descrizione (in fondo, campo più grande)
@@ -22446,6 +22822,7 @@ async function saveFigFromDetail(figId, opzioni) {
       number: document.getElementById('fe-number')?.value ? +document.getElementById('fe-number').value : null,
       noNumber: document.getElementById('fe-no-number')?.checked || false,
       fotoNonDisponibile: document.getElementById('fe-foto-non-disponibile')?.checked || false, // v6.079
+      invisibile: document.getElementById('fe-invisibile')?.checked || false, // v6.080
       subseries: document.getElementById('fe-subseries')?.value.trim() || '',
       desc: document.getElementById('fe-desc')?.value.trim() || '',
       score: +(document.getElementById('fe-score')?.value || 0),
@@ -24204,6 +24581,55 @@ function _toggleElencoSenzaFoto(id) {
 // PRIMA che quella pagina venga aperta. Ricalcolarla in due posti avrebbe voluto dire due idee
 // diverse di "ci sono errori", destinate a divergere: il pallino acceso con la pagina pulita, o
 // peggio il contrario.
+// v6.080 (Franco) - CONTROLLI SOSPENDIBILI PER SERIE. Mentre una serie e' in lavorazione - le foto
+// non ancora caricate, i numeri non ancora messi - i suoi oggetti riempiono la pagina Errori di
+// segnalazioni che non sono errori, e una pagina piena di falsi allarmi si smette di guardarla.
+// Un CAMPO SOLO a piu' valori sul record della serie (`controlliSospesi`), non un flag per
+// controllo: quando se ne aggiunge uno sospendibile basta una voce qui sotto, e la form della serie
+// non si tocca perche' le caselle le genera da questo elenco.
+// Restano FUORI i controlli strutturali - collegamenti Retro rotti e duplicati - e non per
+// dimenticanza: quelli non sono "lavoro non ancora fatto", sono dati incoerenti, e una serie in
+// lavorazione non e' una ragione per convivere con un collegamento che punta al nulla.
+// La contropartita, non negoziabile: la pagina Errori scrive sempre QUANTE e QUALI serie sono
+// escluse da ciascun conteggio. Un controllo spento in silenzio e' peggio di un controllo che
+// segnala il falso, perche' il primo non lo scopri mai.
+const CONTROLLI_SOSPENDIBILI = [
+  { id: 'senzaFoto',   it: 'Item senza foto',            en: 'Items without a photo' },
+  { id: 'senzaRetro',  it: 'Fronte senza retro',         en: 'Front without a back' },
+  { id: 'senzaNumero', it: 'Figurine senza numero',      en: 'Stickers without a number' }
+];
+function _etichettaControllo(id) {
+  const c = CONTROLLI_SOSPENDIBILI.find(x => x.id === id);
+  return c ? (currentLang === 'it' ? c.it : c.en) : id;
+}
+// La serie sospende quel controllo? Legge dal record della serie, che e' l'unico posto dove sta.
+function _controlloSospeso(seriesId, idControllo, seriesList) {
+  const s = (seriesList || getData('series', [])).find(x => x.id === seriesId);
+  return !!(s && Array.isArray(s.controlliSospesi) && s.controlliSospesi.includes(idControllo));
+}
+// I nomi delle serie che sospendono un controllo: servono alla frase "escluse: Serie 1, Serie 4".
+function _serieCheSospendono(idControllo, seriesList) {
+  return (seriesList || getData('series', []))
+    .filter(s => Array.isArray(s.controlliSospesi) && s.controlliSospesi.includes(idControllo))
+    .map(s => s.name || '?');
+}
+// Le caselle nella form della serie si generano dall'elenco qui sopra: una voce in piu' li' e
+// compaiono da sole, senza toccare l'index.
+function renderSeriesBypassCheckboxes(sel) {
+  const box = document.getElementById('series-bypass-group');
+  if (!box) return;
+  const attivi = Array.isArray(sel) ? sel : [];
+  box.innerHTML = CONTROLLI_SOSPENDIBILI.map(c =>
+    '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;">' +
+      '<input type="checkbox" class="series-bypass-chk" value="' + c.id + '"' + (attivi.includes(c.id) ? ' checked' : '') +
+        ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
+      '<span style="color:var(--muted);">' + (currentLang === 'it' ? c.it : c.en) + '</span>' +
+    '</label>').join('');
+}
+function _leggiControlliSospesi() {
+  return [...document.querySelectorAll('.series-bypass-chk')].filter(x => x.checked).map(x => x.value);
+}
+
 function _diagnosiErrori() {
   const seriesList = getData('series', []);
   const allFigs = getData('figurines', []);
@@ -24214,7 +24640,9 @@ function _diagnosiErrori() {
     if (f.number) return false;
     if (f.noNumber) return false;
     const s = seriesList.find(x => x.id === f.seriesId);
-    return !(s?.noNumbers);
+    if (s?.noNumbers) return false;
+    // v6.080 - la serie puo' avere questo controllo sospeso mentre e' in lavorazione
+    return !_controlloSospeso(f.seriesId, 'senzaNumero', seriesList);
   });
 
   // Variazioni/Change il cui retroId non corrisponde a nessuna figurina esistente —
@@ -24287,18 +24715,35 @@ function _diagnosiErrori() {
   // vorrebbe dire un elenco che non arriva mai a zero, cioe' un contatore che non serve piu' a
   // niente. Vale anche per il retro: se la foto dell'oggetto non ce l'abbiamo, non ne abbiamo
   // nemmeno il dietro.
-  let _fotoNonDisp = 0;
+  let _fotoNonDisp = 0, _sospesiFoto = 0, _sospesiRetro = 0, _retroNonDisp = 0;
   allFigs.forEach(f => {
     const sez = f.section || 'figurines';
     if (!_senzaFoto[sez]) return;
     if (f.fotoNonDisponibile) { _fotoNonDisp++; return; }
-    if (!_fotoFigurina(f, allFigs)) _senzaFoto[sez].push(f);
-    else if (_schedaDueFoto(f) && !_dueFacce(f, allFigs).retro) _senzaRetro[sez].push(f);
+    // v6.080 - i due controlli si sospendono per serie, e uno per uno: una serie puo' avere le
+    // foto del fronte e non ancora quelle del retro, e in quel caso ha senso spegnere solo il
+    // secondo. Le serie escluse vengono contate qui perche' la pagina Errori le deve dichiarare.
+    const _soFoto  = _controlloSospeso(f.seriesId, 'senzaFoto', seriesList);
+    const _soRetro = _controlloSospeso(f.seriesId, 'senzaRetro', seriesList);
+    if (!_fotoFigurina(f, allFigs)) { if (_soFoto) _sospesiFoto++; else _senzaFoto[sez].push(f); }
+    else {
+      const _ff = _dueFacce(f, allFigs);
+      // v6.080 (Franco) - se il RETRO collegato dichiara "Foto non disponibile", quella foto non
+      // arrivera' mai: la figurina non e' in attesa di niente e non deve comparire nell'elenco.
+      // Il flag sta sul retro, non su di lei - per questo non basta il controllo qui sopra, che
+      // guarda solo l'oggetto in esame.
+      if (_schedaDueFoto(f) && !_ff.retro) {
+        if (_ff.retroRec?.fotoNonDisponibile) _retroNonDisp++;
+        else if (_soRetro) _sospesiRetro++;
+        else _senzaRetro[sez].push(f);
+      }
+    }
   });
   const _totSenzaFoto  = _SEZ_ORD.reduce((n, s) => n + _senzaFoto[s].length, 0);
   const _totSenzaRetro = _SEZ_ORD.reduce((n, s) => n + _senzaRetro[s].length, 0);
   return { seriesList, allFigs, missingNumber, brokenRetroLinks, duplicateBaseFigGroups,
-           duplicateRetroGroups, _SEZ_ORD, _senzaFoto, _senzaRetro, _totSenzaFoto, _totSenzaRetro, _fotoNonDisp };
+           duplicateRetroGroups, _SEZ_ORD, _senzaFoto, _senzaRetro, _totSenzaFoto, _totSenzaRetro, _fotoNonDisp,
+           _sospesiFoto, _sospesiRetro, _retroNonDisp };
 }
 
 // v6.079 (Franco) - il pallino rosso in navbar, SOLO ADMIN: c'e' finche' la sezione Errori ha
@@ -24333,7 +24778,7 @@ function renderAdminErrori() {
 
   const { seriesList, allFigs, missingNumber, brokenRetroLinks, duplicateBaseFigGroups,
           duplicateRetroGroups, _SEZ_ORD, _senzaFoto, _senzaRetro, _totSenzaFoto, _totSenzaRetro,
-          _fotoNonDisp } = _diagnosiErrori();
+          _fotoNonDisp, _sospesiFoto, _sospesiRetro, _retroNonDisp } = _diagnosiErrori();
 
   // v6.079 (Franco) - un numero da solo non dice a COSA si riferisce, e un contatore su cui non si
   // puo' andare a vedere non serve a lavorarci. Ogni riga si apre e mostra gli oggetti, ognuno un
@@ -24341,6 +24786,19 @@ function renderAdminErrori() {
   // in questa pagina i contatori si comportano tutti allo stesso modo.
   // Elenco tagliato a 200 righe: oltre non e' piu' un elenco da leggere, e costruire migliaia di
   // ancore rallenta l'apertura della pagina per qualcosa che nessuno scorrerebbe fino in fondo.
+  // v6.080 - la frase che dichiara le sospensioni. E' la contropartita del bypass: un controllo
+  // spento in silenzio non lo scopri mai, e fra sei mesi un contatore a zero verrebbe letto come
+  // "tutto a posto". In giallo, non in grigio: non e' una nota a pie' di pagina, e' un avviso.
+  const _avvisoSospensione = (idControllo, quanti) => {
+    const nomi = _serieCheSospendono(idControllo, seriesList);
+    if (!nomi.length) return '';
+    const it = currentLang === 'it';
+    return `<div style="color:var(--warn);font-size:0.8rem;margin-top:0.5rem;">`
+      + (it ? 'Serie dove questo controllo non è applicato: ' : 'Series where this check is not applied: ')
+      + esc(nomi.join(', '))
+      + '</div>';
+  };
+
   const _MAX_ELENCO = 200;
   const _nomeOggetto = f => (f.fullName && f.fullName.trim()) ? f.fullName : (f.name || (currentLang==='it'?'(senza nome)':'(unnamed)'));
   // v6.079 (Franco) - due livelli dentro la sezione: prima la SERIE, dentro la CATEGORIA. Tre clic
@@ -24377,26 +24835,10 @@ function renderAdminErrori() {
     const nomeSerie = id => seriesList.find(x => x.id === id)?.name || (currentLang==='it'?'Serie sconosciuta':'Unknown series');
     return [...perSerie.entries()]
       .sort((a, b) => nomeSerie(a[0]).localeCompare(nomeSerie(b[0]), 'it', { numeric: true }))
-      .map(([sid, diSerie]) => {
-        const idSerie = chiave + '-s' + String(sid).replace(/[^A-Za-z0-9]/g, '');
-        const conCategoria = diSerie.some(f => (f.category || '').trim());
-        let dentro;
-        if (!conCategoria) {
-          dentro = _foglia(diSerie);
-        } else {
-          const perCat = new Map();
-          diSerie.forEach(f => {
-            const c = (f.category || '').trim() || (currentLang==='it'?'(senza categoria)':'(no category)');
-            if (!perCat.has(c)) perCat.set(c, []);
-            perCat.get(c).push(f);
-          });
-          dentro = [...perCat.entries()]
-            .sort((a, b) => a[0].localeCompare(b[0], 'it', { sensitivity: 'base' }))
-            .map(([cat, diCat], i) => _sottoblocco(idSerie + '-c' + i, cat, diCat.length, _foglia(diCat), '0.5rem'))
-            .join('');
-        }
-        return _sottoblocco(idSerie, nomeSerie(sid), diSerie.length, dentro, '0.5rem');
-      }).join('');
+      .map(([sid, diSerie]) => _sottoblocco(
+        chiave + '-s' + String(sid).replace(/[^A-Za-z0-9]/g, ''),
+        nomeSerie(sid), diSerie.length, _foglia(diSerie), '0.5rem'))
+      .join('');
   };
   const _rigaSez = (mappa, chiave) => _SEZ_ORD
     .filter(s => mappa[s].length)
@@ -24436,6 +24878,8 @@ function renderAdminErrori() {
             }).join('')}
         </div>` : ''}
       </div>
+
+      ${_avvisoSospensione('senzaNumero', 0)}
 
       <hr class="divider" style="margin:1.5rem 0;">
 
@@ -24538,15 +24982,20 @@ function renderAdminErrori() {
           <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">📷 ${currentLang==='it'?'Oggetti senza foto':'Items without a photo'}</div>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.2rem;flex:1;min-width:260px;">
-          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">${currentLang==='it'?'Nessuna foto da mostrare':'No photo to show'}</div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">${currentLang==='it'?'Item senza foto':'Items without a photo'}</div>
           ${_rigaSez(_senzaFoto, 'foto')}
+          ${_avvisoSospensione('senzaFoto', _sospesiFoto)}
           <div style="border-top:1px solid var(--border);margin:0.7rem 0 0.5rem;"></div>
           <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">${currentLang==='it'?'Hanno il fronte ma non il retro':'Front only, back missing'} <span style="color:var(--muted);font-weight:400;">· ${_totSenzaRetro}</span></div>
           ${_rigaSez(_senzaRetro, 'retro')}
+          ${_avvisoSospensione('senzaRetro', _sospesiRetro)}
           <div style="font-size:0.78rem;color:var(--muted);margin-top:0.7rem;line-height:1.5;">
             ${currentLang==='it'
               ? 'Esclusi i ' + _fotoNonDisp + ' oggetti marcati "Foto non disponibile". Una variazione che mostra la foto della sua base non è considerata senza foto.'
               : 'Excluding the ' + _fotoNonDisp + ' items marked "Photo unavailable". A variation showing its base photo is not counted as missing.'}
+            ${_retroNonDisp ? (currentLang==='it'
+              ? '<br>Escluse anche ' + _retroNonDisp + ' figurine il cui Retro collegato è marcato "Foto non disponibile": quella foto non arriverà mai.'
+              : '<br>Also excluding ' + _retroNonDisp + ' stickers whose linked Retro is marked "Photo unavailable".') : ''}
           </div>
         </div>
       </div>
@@ -25289,6 +25738,13 @@ async function startAdminFotoUpload() {
     const file = files[i];
     const num = parseInt(file.name.replace(/\.[^.]+$/, ''), 10);
     fotoStatus(file.name + ' (' + (i+1) + '/' + files.length + ')', Math.round((i/files.length)*100));
+    // v6.080 (Franco) - il numero di riga PRIMA di lavorarla. Il totale era scritto solo nella
+    // riga d'avvio, e con duecento foto per sapere a che punto fosse arrivato bisognava
+    // scorrere il log all'indietro. Cosi' invece l'ultima riga in fondo lo dice sempre.
+    // Sta qui, prima di ogni uscita anticipata (nome non valido, oggetto non trovato, gia'
+    // fatta): se stesse dopo, le righe saltate non comparirebbero e il conto non tornerebbe
+    // proprio nei casi in cui uno il log lo sta leggendo per capire cosa e' andato storto.
+    fotoLog('\u25b8 ' + (currentLang==='it' ? 'Riga' : 'Row') + ' ' + (i+1) + '/' + files.length + ' \u2014 ' + file.name, 'info');
 
     if (isNaN(num)) { errRiga('⚠️ Nome non valido: ' + file.name, 'warn');  continue; }
     // v5.816 — la foto del FRONTE va sulla figurina BASE (variazioni/change condividono il numero ma
@@ -25480,6 +25936,13 @@ async function startAdminFotoNoNumberUpload() {
     const file = files[i];
     const name = file.name.replace(/\.[^.]+$/, '').trim();
     fotoNnStatus(file.name + ' (' + (i+1) + '/' + files.length + ')', Math.round((i/files.length)*100));
+    // v6.080 (Franco) - il numero di riga PRIMA di lavorarla. Il totale era scritto solo nella
+    // riga d'avvio, e con duecento foto per sapere a che punto fosse arrivato bisognava
+    // scorrere il log all'indietro. Cosi' invece l'ultima riga in fondo lo dice sempre.
+    // Sta qui, prima di ogni uscita anticipata (nome non valido, oggetto non trovato, gia'
+    // fatta): se stesse dopo, le righe saltate non comparirebbero e il conto non tornerebbe
+    // proprio nei casi in cui uno il log lo sta leggendo per capire cosa e' andato storto.
+    fotoNnLog('\u25b8 ' + (currentLang==='it' ? 'Riga' : 'Row') + ' ' + (i+1) + '/' + files.length + ' \u2014 ' + file.name, 'info');
 
     if (!name) { errRiga('⚠️ Nome file non valido: ' + file.name, 'warn');  continue; }
     const matches = candidates.filter(c => normKey(c.key) === normKey(name));
@@ -25915,6 +26378,37 @@ function renderBulkEditView() {
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
       <button class="btn-danger" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;font-size:0.9rem;padding:0.5rem 1rem;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
       <button onclick="toggleOrdinaPerCreazione()" title="${_ordinaPerCreazione ? (currentLang === 'it' ? 'Torna all\'ordine normale' : 'Back to the normal order') : (currentLang === 'it' ? 'Dal piu’ recente. Gli oggetti senza data leggibile restano in fondo.' : 'Most recent first. Items without a readable date stay at the bottom.')}" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid ${_ordinaPerCreazione ? 'var(--accent)' : 'var(--border)'};background:${_ordinaPerCreazione ? 'rgba(181,255,46,0.10)' : 'transparent'};color:${_ordinaPerCreazione ? 'var(--accent)' : 'var(--muted)'};">🕒 ${currentLang === 'it' ? 'Ordina per creazione' : 'Sort by creation'}</button>
+      <button onclick="toggleAggiornamentoMassivo()" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--border);background:transparent;color:var(--muted);">✏️ ${currentLang === 'it' ? 'Aggiornamento massivo' : 'Bulk update'}</button>
+    </div>
+    <!-- v6.080 (Franco) — il pannello nasce chiuso: e' una procedura che scrive, non un comando da
+         sfiorare. I due ambiti dicono il numero di righe che toccherebbero, e la conferma lo ripete. -->
+    <div id="massivo-pannello" style="display:none;background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.9rem 1rem;margin-bottom:0.9rem;max-width:760px;">
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;align-items:flex-end;">
+        <div>
+          <label class="form-label" style="font-size:0.8rem;">${currentLang === 'it' ? 'Campo' : 'Field'}</label>
+          <select id="massivo-campo" class="form-input" onchange="_massivoAggiornaValori()" style="min-width:230px;">
+            ${CAMPI_MASSIVI.map(c => `<option value="${c.id}">${currentLang === 'it' ? c.it : c.en}</option>`).join('')}
+          </select>
+        </div>
+        <div>
+          <label class="form-label" style="font-size:0.8rem;">${currentLang === 'it' ? 'Valore' : 'Value'}</label>
+          <select id="massivo-valore" class="form-input" style="min-width:130px;"></select>
+        </div>
+        <button class="btn-primary btn-admin" id="massivo-applica-btn" onclick="applicaAggiornamentoMassivo()" style="background:var(--danger);">${currentLang === 'it' ? 'Applica' : 'Apply'}</button>
+      </div>
+      <div style="display:flex;gap:1.2rem;flex-wrap:wrap;margin-top:0.7rem;font-size:0.85rem;">
+        <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+          <input type="radio" name="massivo-ambito" value="sel" checked> ${currentLang === 'it' ? 'Solo le righe selezionate' : 'Only the selected rows'}
+        </label>
+        <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;">
+          <input type="radio" name="massivo-ambito" value="tutti"> ${currentLang === 'it' ? 'Tutti i risultati filtrati' : 'All filtered results'} (${allItems.length})
+        </label>
+      </div>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:0.5rem;line-height:1.5;">
+        ${currentLang === 'it'
+          ? 'Solo campi a valore chiuso: booleani e scelte da elenco. I campi a testo libero non ci sono di proposito — scrivere lo stesso testo su cento oggetti non è un\'operazione che si voglia fare davvero.'
+          : 'Closed-value fields only: booleans and picklists. Free-text fields are deliberately absent.'}
+      </div>
     </div>` : ''}
     <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
       <thead>
@@ -25981,6 +26475,93 @@ function renderBulkEditView() {
         }).join('')}
       </tbody>
     </table>`;
+}
+
+// v6.080 (Franco) - AGGIORNAMENTO MASSIVO di un campo dalla vista tabellare.
+// SOLO CAMPI A VALORE CHIUSO: booleani e scelte da elenco. I campi a testo libero restano fuori
+// per scelta, non per pigrizia - scrivere lo stesso nome o lo stesso numero su cento oggetti non
+// e' un'operazione che qualcuno voglia fare davvero, ed e' invece il modo piu' rapido di rovinare
+// cento record con un incollaggio distratto.
+// Fuori anche `retroBianco`, che pure e' booleano: e' esclusivo col Retro associato (v6.007, un
+// retro vero ha la precedenza), e imporlo in blocco creerebbe record che le due form poi correggono
+// da sole al primo salvataggio - cioe' un dato che cambia senza che nessuno l'abbia toccato.
+// Fuori i tipi (variazione, change, errore di stampa): si escludono a vicenda e trascinano
+// ereditarieta' dalla base. Non sono campi, sono decisioni.
+const CAMPI_MASSIVI = [
+  { id: 'invisibile',         it: 'Invisibile',           en: 'Hidden',            tipo: 'bool' },
+  { id: 'fotoNonDisponibile', it: 'Foto non disponibile', en: 'Photo unavailable', tipo: 'bool' },
+  { id: 'forSale',            it: 'In vendita (eBay)',    en: 'For sale (eBay)',   tipo: 'bool' },
+  { id: 'daPubblicare',       it: 'Da pubblicare (coda eBay)', en: 'To publish (eBay queue)', tipo: 'bool' },
+  { id: 'noNumber',           it: 'Non ha numero',        en: 'Has no number',     tipo: 'bool' },
+  { id: 'condition',          it: 'Condizione',           en: 'Condition',         tipo: 'scelta',
+    opzioni: [{ v: 'new', it: 'Nuovo', en: 'New' }, { v: 'used', it: 'Usato', en: 'Used' }] }
+];
+function toggleAggiornamentoMassivo() {
+  const p = document.getElementById('massivo-pannello');
+  if (!p) return;
+  p.style.display = p.style.display === 'none' ? '' : 'none';
+  if (p.style.display !== 'none') _massivoAggiornaValori();
+}
+// Il selettore dei valori dipende dal campo scelto: un booleano vuole Sì/No, una scelta vuole le
+// sue opzioni. Ricostruirlo qui evita di tenere a schermo un valore che per quel campo non esiste.
+function _massivoAggiornaValori() {
+  const campo = document.getElementById('massivo-campo')?.value;
+  const sel = document.getElementById('massivo-valore');
+  if (!sel) return;
+  const it = currentLang === 'it';
+  const c = CAMPI_MASSIVI.find(x => x.id === campo);
+  if (!c) { sel.innerHTML = ''; return; }
+  sel.innerHTML = (c.tipo === 'bool')
+    ? '<option value="1">' + (it ? 'Sì' : 'Yes') + '</option><option value="0">' + (it ? 'No' : 'No') + '</option>'
+    : c.opzioni.map(o => '<option value="' + o.v + '">' + (it ? o.it : o.en) + '</option>').join('');
+}
+async function applicaAggiornamentoMassivo() {
+  const it = currentLang === 'it';
+  const campo = document.getElementById('massivo-campo')?.value;
+  const c = CAMPI_MASSIVI.find(x => x.id === campo);
+  if (!c) return;
+  const valSel = document.getElementById('massivo-valore')?.value;
+  const valore = (c.tipo === 'bool') ? (valSel === '1') : valSel;
+  const ambito = document.querySelector('input[name="massivo-ambito"]:checked')?.value || 'sel';
+
+  const idsSel = Array.from(document.querySelectorAll('.bulk-select-row:checked')).map(cb => cb.dataset.id);
+  const bersagli = (ambito === 'sel') ? idsSel : getCurrentlyFilteredItems().map(f => f.id);
+  if (!bersagli.length) { toast(it ? 'Nessun oggetto da aggiornare' : 'No items to update', 'error'); return; }
+
+  const etichettaValore = (c.tipo === 'bool') ? (valore ? (it ? 'Sì' : 'Yes') : 'No')
+    : (c.opzioni.find(o => o.v === valore) || {})[it ? 'it' : 'en'];
+  // Prima si dice cosa si sta per fare, e con quanti oggetti: e' la stessa regola della scheda
+  // Funzioni (§14). Un massivo che non dichiara il numero di righe e' il modo piu' rapido di
+  // riscrivere mille record per sbaglio.
+  if (!confirm((it ? 'Impostare ' : 'Set ') + '"' + (it ? c.it : c.en) + '" = "' + etichettaValore + '" '
+      + (it ? 'su ' : 'on ') + bersagli.length + (it ? ' oggetti? L’operazione non è annullabile.' : ' items? This cannot be undone.'))) return;
+
+  const btn = document.getElementById('massivo-applica-btn');
+  if (btn) { btn.disabled = true; btn.textContent = it ? 'Aggiornamento…' : 'Updating…'; }
+
+  // Le figurine vivono DENTRO il documento della loro serie: modificati gli oggetti in memoria,
+  // basta una scrittura per SERIE e si porta dietro tutti i suoi record (stessa ragione della
+  // v5.980). Salvare oggetto per oggetto vorrebbe dire riscrivere lo stesso documento cento volte.
+  const tutte = Array.isArray(_cache.figurines) ? _cache.figurines : [];
+  const perSerie = new Map();
+  let toccati = 0;
+  bersagli.forEach(id => {
+    const rec = tutte.find(f => f.id === id);
+    if (!rec) return;
+    rec[campo] = valore;
+    toccati++;
+    if (!perSerie.has(rec.seriesId)) perSerie.set(rec.seriesId, rec);
+  });
+  let errori = 0;
+  for (const rec of perSerie.values()) {
+    try { await fsSave('figurines', rec); } catch(e) { console.error('applicaAggiornamentoMassivo', e); errori++; }
+  }
+  if (btn) { btn.disabled = false; btn.textContent = it ? 'Applica' : 'Apply'; }
+  toast(errori
+    ? (it ? 'Aggiornati ' + toccati + ' oggetti, ' + errori + ' serie non salvate' : toccati + ' items updated, ' + errori + ' series failed')
+    : (it ? 'Aggiornati ' + toccati + ' oggetti' : toccati + ' items updated'), errori ? 'warn' : 'success');
+  renderBulkEditView();
+  try { renderItems(); } catch(e) {}
 }
 
 function toggleBulkSelectAll(checkbox) {
