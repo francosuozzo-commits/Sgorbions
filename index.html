@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.079"></script>
-<link rel="stylesheet" href="css/style.css?v=6.079">
+<script src="js/email.min.js?v=6.080"></script>
+<link rel="stylesheet" href="css/style.css?v=6.080">
 
 
 <style>
@@ -236,6 +236,7 @@
 }
 
 }
+
 </style>
 </head>
 <body>
@@ -254,7 +255,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.079</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.080</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1078,6 +1079,10 @@
         <div class="admin-tabs">
           <button class="admin-tab active" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
           <button class="admin-tab" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
+          <!-- v6.080 (Franco) — sezione Figurine: l'elenco degli oggetti resi invisibili. Servono
+               tenuti d'occhio: sono l'unica cosa nel sito che esiste ma non si vede, e senza un
+               posto dove guardarli si dimenticano. -->
+          <button class="admin-tab" onclick="adminTab('figurine')">🫥 Figurine</button>
           <button class="admin-tab" onclick="adminTab('foto')" data-i18n="admin.foto">📥 Data import</button>
           <button class="admin-tab" onclick="adminTab('errori')" data-i18n="admin.errori">⚠️ Errori</button>
           <button class="admin-tab" onclick="adminTab('segnalazioni')" data-i18n="admin.segnalazioni">🔔 Segnalazioni</button>
@@ -1298,6 +1303,9 @@
 
         <div id="admin-foto" class="admin-section">
           <div id="admin-foto-content"></div>
+        </div>
+        <div id="admin-figurine" class="admin-section">
+          <div id="admin-figurine-content"></div>
         </div>
         <div id="admin-errori" class="admin-section">
           <div id="admin-errori-content"></div>
@@ -1565,7 +1573,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.079</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.080</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1628,9 +1636,22 @@
       <button class="modal-close" onclick="closeModal('add-series-modal')">✕</button>
     </div>
     <input type="hidden" id="edit-series-id">
+    <!-- v6.080 (Franco) — il NOME CORTO sta accanto al nome lungo, non in fondo alla form: sono
+         due modi di chiamare la stessa cosa e si compilano guardandosi. Si usa SOLO su telefono e
+         SOLO nelle card che elencano le serie, dove il nome per esteso viene troncato; nella scheda
+         della serie resta sempre il nome vero. Se è vuoto non cambia niente da nessuna parte. -->
     <div class="form-group">
-      <label class="form-label" data-i18n="form.series.name">Series Name</label>
-      <input class="form-input" type="text" id="series-name-input" placeholder="e.g. Serie 1 — Primavera">
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+        <div style="flex:1 1 260px;">
+          <label class="form-label" data-i18n="form.series.name">Series Name</label>
+          <input class="form-input" type="text" id="series-name-input" placeholder="e.g. Serie 1 — Primavera">
+        </div>
+        <div style="flex:0 1 190px;">
+          <label class="form-label">Nome corto</label>
+          <input class="form-input" type="text" id="series-nome-corto-input" placeholder="es. S1">
+          <div class="form-hint">Solo per le card su telefono. Vuoto = nome per esteso.</div>
+        </div>
+      </div>
     </div>
     <div class="form-group">
       <label class="form-label" data-i18n="form.series.desc.it">Description (Italian)</label>
@@ -1708,6 +1729,18 @@
         <label class="form-label" data-i18n="form.series.countChange">N. Change</label>
         <input class="form-input" type="number" id="series-count-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;">
       </div>
+    </div>
+
+    <!-- v6.080 (Franco) — CONTROLLI SOSPESI PER QUESTA SERIE. Un campo solo a più valori invece di
+         un flag nuovo per ogni controllo: quando se ne aggiunge uno bypassabile, si aggiunge una
+         voce all'elenco in app.js e questa parte non si tocca.
+         Serve a togliere rumore dalla pagina Errori mentre una serie è ancora in lavorazione (le
+         foto non caricate, i numeri non ancora messi) — non a nascondere problemi: la pagina Errori
+         scrive sempre quante e quali serie sono escluse da ciascun conteggio. -->
+    <div class="form-group">
+      <label class="form-label">Controlli sospesi per questa serie</label>
+      <div id="series-bypass-group" style="display:flex;flex-direction:column;gap:0.4rem;"></div>
+      <div class="form-hint">Solo mentre la serie è in lavorazione. Nella pagina Errori resta scritto che questa serie è esclusa.</div>
     </div>
 
     <div class="form-group">
@@ -1882,6 +1915,16 @@
       <label style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.8rem;color:var(--muted);white-space:nowrap;">
         <input type="checkbox" id="fig-foto-non-disponibile-input" style="width:14px;height:14px;cursor:pointer;flex-shrink:0;">
         <span>Foto non disponibile — non ho la foto e non posso averla</span>
+      </label>
+    </div>
+    <!-- v6.080 (Franco) — INVISIBILE: l'oggetto esiste ma per chi non è admin non c'è. Il filtro
+         vero sta in getData(), così sparisce da griglia, ricerca, caroselli, contatori ed export
+         tutti insieme. Anche qui e non solo nella scheda: un campo aggiunto a una sola delle due
+         form non esiste per chi usa l'altra. -->
+    <div class="form-group" id="fig-invisibile-group" style="margin-bottom:0;">
+      <label style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.8rem;color:var(--danger);white-space:nowrap;">
+        <input type="checkbox" id="fig-invisibile-input" style="width:14px;height:14px;cursor:pointer;flex-shrink:0;">
+        <span>Invisibile — la vede solo l'admin</span>
       </label>
     </div>
     </div>
@@ -2350,7 +2393,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.079"></script>
+<script src="js/app.js?v=6.080"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2374,7 +2417,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.079'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.080'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
