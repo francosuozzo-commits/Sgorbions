@@ -1,6 +1,216 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.091 - NELLA CARD DELLA FIGURINA LA CATEGORIA VIENE PRIMA DEL NOME. Modificato app.js (piu' la
+//          versione in index.html).
+//          Franco: "vorrei prima la categoria e poi il nome. So che per i retro e' invertito, ma li'
+//          al momento lo lascerei cosi': la categoria fa da attributo al retro, qui la vedo piu'
+//          come chiave del retro associato."
+//          Vale la pena scriverlo perche' letto fra sei mesi sembra una svista: la stessa parola ha
+//          due mestieri. Sulla card di un RETRO la categoria e' un attributo dell'oggetto che stai
+//          guardando, e sta fra i suoi dati, dopo il nome. Sulla card di una FIGURINA e' la chiave
+//          con cui riconosci di quale retro si tratta - e una chiave si legge per prima.
+//          Le due card restano quindi diverse di proposito, e questo commento e' l'unica cosa che
+//          impedisce a qualcuno (me compreso) di "correggere" l'incoerenza fra un anno.
+// v6.090 - LA CATEGORIA DEL RETRO ANCHE NELLA CARD DELLA FIGURINA. Modificato app.js (piu' la
+//          versione in index.html).
+//          Franco: "la categoria serve anch'essa a dire di che retro si tratta; e' vero che si vede
+//          dalla foto, ma si vede anche il nome - potremmo metterla, con la solita regola".
+//          La regola e' `_retroNameStartsWithCategory()`: se il Nome del retro comincia gia' con la
+//          sua Categoria, la categoria non si scrive - altrimenti si leggerebbe due volte di fila.
+//          Due dettagli che quella funzione ha e che una riscrittura a mano avrebbe perso: la
+//          TOLLERANZA DI GENERE (v5.907, Franco - si toglie la vocale finale o/a/e di ogni parola da
+//          entrambe le stringhe, cosi' categoria "RICERCATO" combacia con un nome che inizia per
+//          "RICERCATA") e il CONTROLLO DI CONFINE (il carattere dopo la categoria non dev'essere
+//          lettera o numero, altrimenti una categoria combacerebbe con l'inizio di una parola piu'
+//          lunga). Per questo si chiama la funzione e non si riscrive la condizione: era gia' stata
+//          rifatta una volta, quando era un flag di serie (retroNameHasCategory, v5.744-v5.746), e
+//          una seconda copia sarebbe divergente alla prossima correzione.
+//          Colore giallo (COL_CATEGORIA) e posizione dopo il sottonome: gli stessi della card
+//          Retro. Le due sezioni mostrano lo stesso oggetto e devono leggersi allo stesso modo.
+//          La sottocategoria resta fuori: Franco ha chiesto la categoria, e nella card di una
+//          figurina il blocco del retro e' gia' arrivato a tre righe.
+// v6.089 - NELLA CARD IL RETRO VIENE PRIMA DEL TIPO. Modificato app.js (piu' la versione in
+//          index.html).
+//          Franco: "come mai mostri prima CHANGE / ERRORE DI STAMPA e poi il nome del retro? avrei
+//          fatto il contrario, specie considerando che alla sua sinistra c'e' molto probabilmente
+//          la figurina di cui e' change, che ha lo stesso nome di retro".
+//          Il motivo e' piu' forte del gusto: dalla v6.088 il nome del retro c'e' su tutte le card
+//          - base, variazioni, change, errori di stampa - ma col tipo in mezzo cadeva a un'ALTEZZA
+//          DIVERSA a seconda del tipo, perche' l'indicatore c'e' solo su alcune. E dalla v6.088
+//          quelle card stanno anche affiancate, visto che ogni versione si porta dietro i suoi
+//          figli: il confronto e' fra vicini di casa, e due righe che dicono la stessa cosa a due
+//          altezze diverse sono il modo piu' rapido per non accorgersi che dicono la stessa cosa.
+//          Con il retro subito sotto al nome, sta sempre sulla stessa riga; il tipo, che e' una
+//          qualifica e non un dato dell'oggetto, scende sotto.
+//          Uno scambio di due righe nel markup della card, nessun'altra modifica.
+// v6.088 - OGNI VERSIONE SI PORTA DIETRO I SUOI CHANGE. Modificato app.js (piu' la versione in
+//          index.html).
+//          Franco, sul #586: "a parita' di numero, prima ci sono tutte le variazioni e dopo tutti i
+//          change ed errori di stampa; invece i change devono attaccarsi alla loro variazione".
+//          Prima:  base / var. Z / var. LA NUOVA SUPERBUSTA / change della base / change di Z
+//          Ora:    base + suoi change / var. Z + suoi change / var. LA NUOVA SUPERBUSTA
+//          L'elenco tornava a non dire piu' a CHI appartenesse ciascun change - e sono proprio i
+//          record che da soli non si distinguono, visto che Nome, Categoria e Sottocategoria li
+//          ereditano dalla base (§13.1).
+//          IL PUNTO DIFFICILE, e la ragione per cui la modifica non e' di due righe: cosa lega un
+//          change alla "sua" variazione? NON `baseFigurineId`. Quello punta sempre alla figurina
+//          BASE, e non per come sono capitati i dati: e' la form a imporlo, perche'
+//          populateBaseFigurineSelect esclude variazioni e change dalle basi selezionabili. Per il
+//          database i cinque record del #586 sono tutti figli della stessa figurina.
+//          A legarli e' il RETRO - che e' del resto cio' che decide se una figurina e' una
+//          variazione (Franco) - e li lega per NOME, non per id: la variazione punta al retro base,
+//          il suo change punta al retro-change omonimo. E' la stessa coppia di omonimi che il
+//          controllo della v6.084 elenca. Usando il nome, questo ordinamento da' lo stesso
+//          risultato prima e dopo la funzione 3 che corregge i 98 collegamenti: non dipende da
+//          quanto sono puliti i dati.
+//          L'ordine dei CAPIGRUPPO non e' stato toccato: base, poi variazioni per Categoria,
+//          Sottocategoria e Nome del retro. Nell'esempio di Franco Z viene prima di LA NUOVA
+//          SUPERBUSTA, che non e' alfabetico - qui si innestano i figli, non si riordinano i padri.
+//          COSTO: le chiavi si calcolano UNA VOLTA in `_chiaviOrdinamentoFigurine()`, non dentro il
+//          comparatore. Cercare li' il capogruppo di ogni figlio avrebbe voluto dire una scansione
+//          dell'elenco per confronto, cioe' rimettere esattamente la lentezza che la v6.072 aveva
+//          appena tolto da questo sort ("ora 1,4 ms, ordine identico").
+//          Un figlio che non trova il suo capo - retro mancante, o capo escluso da un filtro -
+//          resta attaccato alla base invece di finire in fondo: un elenco filtrato non deve
+//          riordinarsi in modo diverso da quello intero.
+//          NELLA STESSA RELEASE, sempre Franco: "mostriamo sempre il nome del retro sotto al nome
+//          della figurina, ma non per i change - se ci pensi e' sbagliato". Vero: la card lo
+//          escludeva con un `!f.isChange`, ed e' l'informazione che dice QUALE versione stai
+//          guardando - quindi serve di piu' li' che altrove. Gli ERRORI DI STAMPA invece lo
+//          mostravano gia': l'esclusione riguardava i soli change.
+// v6.087 - L'ETICHETTA DEL TIPO NELLA SCHEDA: piu' grande e blu. Modificato app.js (piu' la
+//          versione in index.html).
+//          Franco: "la scritta FIGURINA in alto nella scheda e' troppo piccola e la farei blu -
+//          ovviamente per tutti gli item, non solo le figurine".
+//          Da 0.72rem a 0.95rem, e da `--accent2` (l'arancione #ff6b1a) a `--info` (#4db8ff), il
+//          blu che il sito usa gia' per i badge dei messaggi e per il pulsante "Vista Ebay". Un
+//          colore del sistema, non un valore nuovo scritto a mano: sono gia' stati fatti fuori una
+//          volta (v6.0xx, sei arancioni e tre viola scritti a mano e poi ricondotti alle variabili).
+//          "Per tutti gli item" era gia' vero e resta vero: l'etichetta esce da
+//          getSectionLabelSingular(f.section), quindi dice FIGURINA, RETRO, ALBUM, BUSTINA o il
+//          nome della sezione che sia - non e' mai stata scritta a mano per le figurine.
+//          NELLA STESSA RELEASE, ed e' il motivo per cui la modifica non e' stata di due caratteri:
+//          quel markup era scritto DUE VOLTE - in openFigDetail e in switchToEditMode - sotto un
+//          commento della v6.080 che diceva "stessa costruzione, un posto solo dove leggerla".
+//          Non lo era. Ed erano le due copie che meno potevano permettersi di divergere, visto che
+//          esistono apposta perche' il titolo non cambi forma passando da vista a modifica: cambiare
+//          colore in una sola avrebbe prodotto esattamente il difetto che quel commento voleva
+//          escludere. Ora sono una funzione, `_titoloSchedaHTML()`.
+// v6.086 - IL FILTRO "SENZA FOTO" GUARDA LA FOTO CHE SI VEDE. Modificato app.js (piu' la versione
+//          in index.html).
+//          Franco: "il filtro senza foto lascia visibili molte figurine che una foto ce l'hanno,
+//          nella Serie 3 - e mi aspetto che ragioni solo sul fronte".
+//          Il filtro chiedeva `f.img`, cioe' la foto PROPRIA del record; la griglia accanto disegna
+//          con `_fotoFigurina()`, che ripiega sulla base. Due domande diverse sulla stessa cosa: una
+//          variazione senza foto sua, ma che a schermo la foto ce l'ha eccome, passava per "senza
+//          foto". Il filtro diceva il vero sul database e il falso su cio' che si vede - e chi
+//          guarda vede lo schermo.
+//          La distinzione esisteva gia' ed era gia' stata decisa: la pagina Errori conta i "senza
+//          foto" con `_fotoFigurina()` fin dalla v6.079, apposta perche' "una variazione che mostra
+//          la foto della sua base non e' senza foto". Il filtro della griglia non era mai stato
+//          allineato, e con la v6.083 - i change di retro che ora ereditano il fronte - la
+//          differenza fra i due si sarebbe allargata ancora.
+//          `_fotoFigurina()` restituisce il FRONTE, che e' esattamente cio' che Franco chiede: il
+//          retro ha un controllo suo nella pagina Errori e da questo filtro resta fuori.
+//          Vale per tutti e due i versi: anche "solo CON foto" ora mostra chi una foto la mostra.
+//          COSTO: la funzione si chiama solo a filtro ACCESO. Da spento il ciclo e' identico a
+//          prima e non paga un `find` sulla base per ognuno dei 368 oggetti di una serie ad ogni
+//          ridisegno - la stessa attenzione per cui `getOwned()` sta fuori dal ciclo due righe piu'
+//          in su.
+// v6.085 - RICOLLEGA I CHANGE AL RETRO GIUSTO: funzione 3 della scheda Funzioni. Modificato app.js
+//          (piu' la versione in index.html).
+//          La v6.084 ha contato il guasto, questa lo ripara. Stessa forma delle altre due funzioni
+//          (§14): anteprima con l'elenco riga per riga, conferma che nomina il numero, scrittura,
+//          e ricontrollo da capo - l'unica prova che il lavoro sia finito e' che rifacendo il conto
+//          non resti piu' niente, non il contatore delle scritture riuscite.
+//          UNA COSA SOLA: si scrive esclusivamente `retroId`. Non foto, non nomi, non fullName.
+//          Una funzione di massa con due idee dentro e' impossibile da rileggere fra sei mesi, e
+//          impossibile da annullare quando una delle due si rivela sbagliata.
+//          La regola di riconoscimento e' USCITA da _diagnosiErrori() ed e' diventata
+//          `_changeConRetroErrato()`, che ora serve a due chiamanti: la pagina Errori che elenca e
+//          questa funzione che scrive. Se fossero due copie, il giorno in cui una cambia si
+//          correggerebbero record diversi da quelli che si sono guardati - ed e' il modo in cui una
+//          correzione di massa fa danni senza che nessuno se ne accorga. Stessa lezione di
+//          _dueFacce() e _specchiettoTipiHTML() (v6.079).
+//          Le righe con piu' di un candidato vengono SALTATE, non indovinate: sui dati di oggi sono
+//          zero, ma il giorno che ce ne sara' una la scelta e' di Franco.
+// v6.084 - CHANGE COLLEGATO AL RETRO SBAGLIATO: nuovo controllo nella pagina Errori. Modificato
+//          app.js (piu' la versione in index.html).
+//          Franco, guardando l'elenco degli item senza foto: "#417 ZACCARIA BIRRERIA - MOSCA NERA
+//          e' un change, perche' compare qui?". Perche' il suo `retroId` punta a MARIONETTA *base*,
+//          mentre in catalogo c'e' anche MARIONETTA con changeType "mosca nera", marcato change e
+//          con la foto. Il collegamento e' andato sull'omonimo sbagliato.
+//          MISURATO, non stimato: 98 change su 119 con base e retro. E' lo scenario che il riquadro
+//          "Gruppi di Retro duplicati" di questa stessa pagina dichiara da sempre - stesso Nome
+//          nella stessa serie, l'import per Categoria+Nome puo' agganciare il retro sbagliato - e
+//          che finora nessuno aveva contato.
+//          La foto mancante era il sintomo. Il guasto vero e' che quei 98 change mostrano nella
+//          scheda e in tabella il retro BASE: di un change si vede tutto tranne cio' che lo rende
+//          un change.
+//          Il controllo e' di SOLA LETTURA, come tutto in quella pagina: elenca per serie, ogni
+//          riga apre l'oggetto e dice il retro che c'e' e quello che dovrebbe esserci. Senza i due
+//          nomi affiancati la riga direbbe solo "questo e' sbagliato", che e' la meta' inutile - il
+//          nome e' lo STESSO, a distinguerli e' il tipo di change.
+//          Sospendibile per serie come gli altri (una serie i cui retro-change si stanno ancora
+//          caricando avrebbe l'elenco pieno di righe che si sistemano da sole) e agganciato al
+//          pallino in navbar.
+// v6.083 - IL CHANGE DI RETRO EREDITA IL FRONTE DELLA BASE. Modificato app.js (piu' la versione in
+//          index.html).
+//          Franco, guardando l'elenco "Item senza foto": "fra le figurine senza foto ci sono dei
+//          change che hanno indicata la figurina base - come mai non ne ereditano la foto?".
+//          Perche' la v6.080 aveva tolto il ripiego a TUTTI i change, e la motivazione era giusta
+//          ma valeva per meta' di loro. Un change di figurina e' due cose diverse:
+//            A) change di FRONTE - foto sua, collegato a un retro base. Il fronte e' il punto: se
+//               gli si mette quello della base si mostra di lui tutto tranne cio' che lo rende un
+//               change. Nessun ripiego, ed e' la v6.080 che resta in piedi.
+//            B) change di RETRO - il fronte E' quello della base, il retro e' un change di retro.
+//               Chiedergli una foto dedicata del fronte vuol dire caricare due volte la stessa
+//               immagine sotto due id: spreco nel database (parole di Franco) e una riga che resta
+//               per sempre nell'elenco aspettando una foto che c'e' gia'.
+//          COME SI DISTINGUONO, ed e' il punto in cui la prima stesura era sbagliata: NON da
+//          `f.retroId`, che ce l'hanno entrambi. Per gli errori di stampa quel campo distingue
+//          davvero - o il difetto sta dietro e un retro loro c'e', o sta davanti e non c'e' - e da
+//          li' veniva la tentazione di riusarlo. Per i change la differenza sta all'ALTRO CAPO del
+//          collegamento: nel caso A il retro puntato e' un retro base, nel caso B e' a sua volta un
+//          change. Si guarda quello.
+//          I change di RETRO (sezione Retro) non cambiano: un retro ha una faccia sola, quindi un
+//          change di retro E' un'immagine sua e la foto va fatta. Che compaia nell'elenco e' giusto.
+// v6.082 - L'ELENCO "ITEM SENZA FOTO" SI ORDINA PER COME SI LEGGE. Modificato app.js (piu' la
+//          versione in index.html).
+//          Franco: "l'elenco degli item dentro il collassatore non mi sembra in ordine alfabetico".
+//          Alfabetico lo era. Ma `_foglia()` ordinava per `_nomeOggetto(f)` mentre `_linkOggetto()`
+//          disegna la riga come "#12 NOME": il numero e' la prima cosa che si legge, e scendendo
+//          lungo quella colonna si vedevano 12, 305, 7. Nei Retro il difetto non si notava perche'
+//          _haNumero() e' falso e la riga comincia col nome - ed e' questo che rendeva la cosa
+//          confusa, l'elenco sembrava rotto solo a volte.
+//          Ora l'ordine e' quello della riga: NUMERO, poi NOME COMPLETO. Chi il numero non ce l'ha
+//          va in fondo e resta alfabetico, che li' e' di nuovo cio' che si vede.
+//          Il numero si confronta come stringa con numeric:true e non con Number(): "12a" esiste, e
+//          Number() lo appiattirebbe su 12 o su NaN rimettendo disordine proprio dove lo si toglie.
+//          Non ho toccato _linkOggetto: il numero davanti al nome resta, ed e' giusto che resti -
+//          e' l'unica cosa che serve per ritrovare la figurina nell'album.
+// v6.081 - LA SERIE SI MOSTRA SOLO DOVE DISTINGUE. Modificato app.js (piu' la versione in index.html).
+//          Franco: "nel carosello della scheda serie le card indicano la serie, come nella home; ma
+//          li' e' inutile, siamo dentro a quella serie". Vero, e non era un caso limite: quel
+//          carosello filtra per `f.seriesId === currentSeriesId`, quindi la riga era costante su
+//          TUTTE le card - un'altezza fissa spesa per ripetere il titolo della pagina che le
+//          contiene.
+//          La condizione NON e' "in quale carosello siamo". Sarebbe stato l'elenco di casi che
+//          questo file ha gia' visto crescere due volte (§ v6.076, v6.073): tre caroselli oggi,
+//          e il quarto avrebbe richiesto di ricordarsi di aggiungerlo. La regola guarda invece i
+//          DATI - `_caroselloMostraSerie(elenco)`, cioe' "questo elenco contiene piu' di una
+//          serie?" - ed e' vera nella home, falsa nella scheda serie, e nell'hub prodotto dipende:
+//          se un prodotto avesse oggetti di una serie sola la riga sparirebbe da se', senza che
+//          nessuno debba prevederlo.
+//          Si guarda l'elenco GIA' FILTRATO e, nella home, le sole card che finiscono davvero in
+//          fila (le prime CAROSELLO_MAX): contare le serie su un mazzo di cui se ne mostrano venti
+//          avrebbe risposto su figurine che nessuno vede.
+//          Il parametro ha per default "mostra": se un domani qualcuno chiamasse _caroselloRighe
+//          senza passarlo, si torna al comportamento di prima invece di perdere un'informazione in
+//          silenzio.
+//          Effetto visibile: nel carosello della scheda serie le card sono piu' basse di una riga.
+//          Home e hub prodotto invariati.
 // v6.080 - I CAROSELLI SU TELEFONO. Modificati index.html e app.js.
 //          Franco: "le foto sono molto piccole e il box allungato tantissimo in verticale; ridurrei
 //          le colonne da 7 a 5". Le colonne le ho ridotte - su telefono sono 5 in tutti e tre i
@@ -11364,7 +11574,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.080';
+const JS_VERSION = 'v6.091';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12961,8 +13171,16 @@ function _caroselloScorriBox(box, dir) {
 // con cui i retro si nominano davvero (§13.1).
 // Le righe hanno altezza FISSA e restano vuote invece di sparire: nomi di lunghezza diversa
 // darebbero card di altezza diversa, e in una fila che scorre si vedrebbe subito.
-function _caroselloRighe(f, nomeSerie) {
+function _caroselloRighe(f, nomeSerie, mostraSerie) {
   const serie = esc(nomeSerie.get(f.seriesId) || '');
+  // v6.081 (Franco) - LA SERIE SI MOSTRA SOLO SE DISTINGUE. Nel carosello della scheda serie tutte
+  // le card vengono per forza dalla stessa serie (il filtro e' f.seriesId === currentSeriesId),
+  // quindi quella riga ripeteva il titolo della pagina occupando un'altezza fissa su ogni card.
+  // La decisione NON e' "in quale carosello siamo" ma "quante serie ci sono nell'elenco"
+  // (_caroselloMostraSerie): cosi' vale da se' anche per un hub prodotto che contenga una serie
+  // sola, e un quarto carosello non richiede di aggiungere un caso da nessuna parte.
+  // Default: se il parametro non arriva, la riga si mostra - il comportamento di prima.
+  const rigaSerie = dim => (mostraSerie === false ? [] : [{ t: serie, col: 'var(--accent)', dim, alt: '1.2em' }]);
   // v6.080 (Franco) - SU TELEFONO una riga sola: il nome. Era il testo, non la foto, a fare il "box
   // allungato tantissimo in verticale": quattro righe per le figurine e CINQUE per i retro, ognuna
   // con un'altezza fissa, fanno circa 6em di testo sotto una card larga sessanta pixel - piu' alto
@@ -13007,7 +13225,7 @@ function _caroselloRighe(f, nomeSerie) {
       const _sottoR = (f.subname || '').trim();
       const _etichettaR = (_sottoR && _nomeR.length > _sottoR.length) ? _sottoR : _nomeR;
       return [
-        { t: serie,                    col: 'var(--accent)', dim: '0.62rem', alt: '1.2em' },
+        ...rigaSerie('0.62rem'),
         // v6.080 (Franco) - la CATEGORIA va a capo se non ci sta, invece di essere troncata coi
         // puntini: su una card da un centinaio di pixel "SGORBIONS HORRIBLE HOROSCOPES" su una
         // riga sola diventa "SGORBIONS HO…", che non dice piu' di quale categoria si tratti.
@@ -13022,14 +13240,14 @@ function _caroselloRighe(f, nomeSerie) {
     // Le figurine restano come deciso prima: serie, numero, e il nome parola per parola - li' sono
     // due parole e la spezzatura le rende leggibili invece che troncate.
     const parole = String(f.name || '').trim().split(/\s+/).filter(Boolean).map(esc).join('<br>');
-    const righe = [{ t: serie, col: 'var(--accent)', dim: '0.62rem', alt: '1.2em' }];
+    const righe = rigaSerie('0.62rem');
     if (_haNumero(f) && f.number) righe.push({ t: esc(String(f.number)), col: 'var(--muted)', dim: '0.66rem', alt: '1.2em' });
     righe.push({ t: parole, col: 'var(--text)', dim: '0.72rem', alt: 'auto' });
     return righe;
   }
   if ((f.section || '') === 'retros') {
     return [
-      { t: serie,                    col: 'var(--accent)',  dim: '0.66rem', alt: '1.2em' },
+      ...rigaSerie('0.66rem'),
       { t: esc(f.category || ''),    col: 'var(--muted)',   dim: '0.68rem', alt: '1.2em' },
       { t: esc(f.subcategory || ''), col: 'var(--muted)',   dim: '0.68rem', alt: '1.2em' },
       { t: esc(f.name || ''),        col: 'var(--text)',    dim: '0.74rem', alt: '2.5em' },
@@ -13037,7 +13255,7 @@ function _caroselloRighe(f, nomeSerie) {
     ];
   }
   return [
-    { t: serie,                                       col: 'var(--accent)', dim: '0.66rem', alt: '1.2em' },
+    ...rigaSerie('0.66rem'),
     { t: f.number ? esc(String(f.number)) : '', col: 'var(--muted)',  dim: '0.7rem',  alt: '1.2em' }, // v6.080 - senza cancelletto
     { t: esc(f.name || ''),                           col: 'var(--text)',   dim: '0.74rem', alt: '2.5em' },
     { t: f.score > 0 ? '&#11088; ' + esc(String(f.score)) : '', col: 'var(--success)', dim: '0.7rem', alt: '1.2em', dx: 'right' }
@@ -13047,14 +13265,23 @@ function _caroselloRighe(f, nomeSerie) {
 // La card: foto, poi le righe di cui sopra. Il titolo del passaggio del mouse usa il NOME COMPLETO
 // per i retro (_retroNomeCompleto, la stessa regola della ricerca dalla v6.049/050): col solo nome
 // due card diverse potevano avere la stessa identica etichetta.
-function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza) {
+// v6.081 (Franco) - La regola sta QUI e in nessun altro posto: la riga della serie serve solo se
+// l'elenco ne contiene piu' d'una. Con una sola serie quella riga e' costante su tutte le card,
+// cioe' non distingue niente - e nel carosello di una scheda serie ripete pure il titolo della
+// pagina che la contiene. Si guarda l'elenco gia' filtrato, non il contesto, perche' e' l'elenco
+// a saperlo: chi lo ha costruito puo' cambiare idea sui filtri senza che questa riga se ne accorga.
+function _caroselloMostraSerie(elenco) {
+  return new Set((elenco || []).map(f => f.seriesId)).size > 1;
+}
+
+function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie) {
   const etichetta = ((f.section || '') === 'retros')
     ? _retroNomeCompleto(f)
     : (f.number ? '#' + f.number + ' ' : '') + (f.name || '');
   // v6.080 - alt 'auto' vuol dire "niente altezza fissa": serve alle righe che possono essere una o
   // tre (il nome spezzato parola per parola su telefono). Le altre continuano ad avere la loro
   // misura, che e' cio' che tiene allineate le card fra loro sul desktop.
-  const righe = _caroselloRighe(f, nomeSerie).map((r, i) =>
+  const righe = _caroselloRighe(f, nomeSerie, mostraSerie).map((r, i) =>
     '<div style="font-size:' + r.dim + ';color:' + r.col + ';line-height:1.25;' + (r.alt === 'auto' ? '' : 'height:' + r.alt + ';overflow:hidden;') +
       (i === 0 ? 'margin-top:0.4rem;' : '') +
       (r.alt === '1.2em' ? 'white-space:nowrap;text-overflow:ellipsis;' : '') +
@@ -13121,7 +13348,9 @@ function renderCarosello() {
     [mazzo[i], mazzo[j]] = [mazzo[j], mazzo[i]];
   }
   const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x)])); // v6.080
-  box.innerHTML = mazzo.slice(0, CAROSELLO_MAX).map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(175), _caroselloLarghezzaHome())).join('');
+  const inFila = mazzo.slice(0, CAROSELLO_MAX); // v6.081 - la serie si guarda sulle card che finiscono davvero in fila
+  const mostraSerie = _caroselloMostraSerie(inFila);
+  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(175), _caroselloLarghezzaHome(), mostraSerie)).join('');
   sez.style.display = '';
   const prec = document.getElementById('carosello-prec');
   const succ = document.getElementById('carosello-succ');
@@ -13155,7 +13384,11 @@ function renderCaroselloSerie() {
     .sort((a, b) => (a.number || 0) - (b.number || 0));
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x)])); // v6.080
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(150), _caroselloLarghezzaSerie())).join('');
+  // v6.081 - qui il filtro e' f.seriesId === currentSeriesId, quindi vale sempre false. Si calcola
+  // lo stesso invece di scrivere `false`: se un giorno questo carosello mostrasse anche altro, la
+  // riga della serie ricomparirebbe da sola.
+  const mostraSerie = _caroselloMostraSerie(base);
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(150), _caroselloLarghezzaSerie(), mostraSerie)).join('');
   sez.style.display = '';
   const prec = document.getElementById('serie-carosello-prec');
   const succ = document.getElementById('serie-carosello-succ');
@@ -13210,7 +13443,8 @@ function renderCaroselloProdotto() {
       [mazzo[i], mazzo[j]] = [mazzo[j], mazzo[i]];
     }
   }
-  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(150), _caroselloLarghezzaSerie())).join('');
+  const mostraSerie = _caroselloMostraSerie(mazzo); // v6.081 - qui le serie sono di solito piu' d'una, ma non per forza
+  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(150), _caroselloLarghezzaSerie(), mostraSerie)).join('');
   sez.style.display = '';
   const prec = document.getElementById('prodotto-carosello-prec');
   const succ = document.getElementById('prodotto-carosello-succ');
@@ -18033,8 +18267,20 @@ function getCurrentlyFilteredItems(opts) {
     if (!_skipPrintErrorType && _printErrorTypeFilter !== null
         && !(f.isPrintError && ((f.printErrorType || '').trim()) === _printErrorTypeFilter)) return false;
     // v6.054 - i due versi dello stesso filtro
-    if (_fotoFilter === 'senza' && f.img) return false;
-    if (_fotoFilter === 'con' && !f.img) return false;
+    // v6.086 (Franco) - si chiede `_fotoFigurina()`, non `f.img`. Il filtro guardava la foto
+    // PROPRIA del record mentre la griglia disegna col ripiego sulla base: una variazione senza
+    // foto sua, che a schermo la foto ce l'ha eccome, passava per "senza foto". E' la stessa
+    // distinzione che la pagina Errori applica da sempre ("una variazione che mostra la foto della
+    // sua base non e' considerata senza foto") e che qui non era mai stata allineata.
+    // `_fotoFigurina()` restituisce il FRONTE, che e' cio' che Franco si aspetta da questo filtro:
+    // il retro ha un controllo suo nella pagina Errori e non c'entra.
+    // La si chiama SOLO a filtro acceso: spento, il ciclo resta identico a prima e non paga il
+    // `find` sulla base per ognuno dei 368 oggetti della serie, ad ogni ridisegno.
+    if (_fotoFilter) {
+      const _haFronte = !!_fotoFigurina(f, allFigs);
+      if (_fotoFilter === 'senza' && _haFronte) return false;
+      if (_fotoFilter === 'con' && !_haFronte) return false;
+    }
     if (_own) {
       const ceLho = _own.includes(f.id);
       if (_ownedFilter === 'owned' && !ceLho) return false;
@@ -18725,7 +18971,13 @@ function renderItems() {
   // ordinare le 800 figurine della Serie 3, ad ogni cambio pagina. Ora 1,4 ms, ordine identico.
   const _allFigs = getData('figurines', []);
   const _idx = _figIndex(_allFigs);
-  const allItems = getCurrentlyFilteredItems().sort((a,b) => {
+  const _daOrdinare = getCurrentlyFilteredItems();
+  // v6.088 - le chiavi si calcolano UNA VOLTA, non ad ogni confronto. Il comparatore viene
+  // chiamato n·log n volte: cercare li' dentro il capogruppo di un figlio avrebbe voluto dire una
+  // scansione dell'elenco per confronto, cioe' il difetto che la v6.072 aveva appena tolto da
+  // questo stesso sort ("ora 1,4 ms, ordine identico", due righe piu' su).
+  const _chiaviOrd = _chiaviOrdinamentoFigurine(_daOrdinare, _idx);
+  const allItems = _daOrdinare.sort((a,b) => {
     if (currentSection === 'figurines') {
       const allFigsForSort = _idx;
       // Figurina di riferimento: se stessa se è base, altrimenti la figurina base collegata
@@ -18747,27 +18999,49 @@ function renderItems() {
         if (nameCmp !== 0) return nameCmp;
       }
 
-      // Stesso gruppo (stesso numero, o stesso nome se senza numero): figurina base, poi
-      // variazioni ufficiali, poi non ufficiali, poi Change
-      const typeRank = f => f.isChange ? 3 : f.isUnofficialVariation ? 2 : f.isVariation ? 1 : 0;
-      const rankA = typeRank(a), rankB = typeRank(b);
-      if (rankA !== rankB) return rankA - rankB;
-      if (rankA === 0) {
-        // Figurina base: eventuale sotto-ordinamento per sottoserie se il numero manca
-        return (a.subseries||'').localeCompare(b.subseries||'');
+      // Stesso gruppo (stesso numero, o stesso nome se senza numero).
+      // v6.088 (Franco) - DENTRO IL GRUPPO SI ORDINA A DUE LIVELLI, non piu' a uno.
+      // Prima era piatto: base, poi tutte le variazioni, poi TUTTI i change in fondo. Cosi' un
+      // change finiva lontano dalla versione di cui e' un change, e per il #586 si leggeva
+      //   base / variazione Z / variazione LA NUOVA SUPERBUSTA / change della base / change di Z
+      // cioe' l'elenco non diceva piu' a chi apparteneva ciascun change.
+      // Ora ogni versione si porta dietro i suoi: base + suoi change + suoi errori di stampa,
+      // poi variazione 1 + i suoi, poi variazione 2 + i suoi.
+      //
+      // COSA LEGA UN CHANGE ALLA SUA VERSIONE, ed e' il punto: NON `baseFigurineId`, che punta
+      // sempre alla figurina base - lo impedisce la form stessa, che dall'elenco delle basi
+      // selezionabili esclude variazioni e change (populateBaseFigurineSelect). Per il database
+      // tutti i change del #586 sono figli della stessa base, indistintamente.
+      // Li lega il RETRO, che e' del resto cio' che definisce una variazione (Franco). E li lega
+      // per NOME, non per id: il change punta al retro-change, la variazione al retro base, e i
+      // due sono omonimi - e' la coppia di omonimi del controllo della v6.084. Usare il nome
+      // rende questo ordinamento indipendente dal fatto che i collegamenti siano gia' stati
+      // corretti o no: funziona uguale prima e dopo la funzione 3.
+      //
+      // L'ordine dei CAPIGRUPPO resta quello di prima (base, poi variazioni per Categoria +
+      // Sottocategoria + Nome del retro): non e' alfabetico, ed e' quello che Franco si aspetta
+      // di ritrovare. Qui si innestano i figli, non si riordinano i padri.
+      // Il ripiego non dovrebbe mai servire (la mappa nasce dallo stesso elenco che si ordina), ma
+      // un `undefined` qui dentro romperebbe la griglia intera invece di sbagliare una riga.
+      const _kVuota = { rankCapo: 0, retroCapo: '', catCapo: '', subcatCapo: '', nomeRetroCapo: '', rangoFiglio: 0 };
+      const kA = _chiaviOrd.get(a.id) || _kVuota, kB = _chiaviOrd.get(b.id) || _kVuota;
+      // 1) il capogruppo: base (0), variazione ufficiale (1), non ufficiale (2)
+      if (kA.rankCapo !== kB.rankCapo) return kA.rankCapo - kB.rankCapo;
+      // 2) fra capigruppo diversi, l'ordine di sempre: Categoria, Sottocategoria, Nome del retro
+      //    DEL CAPO - non del figlio, che punta al retro-change omonimo.
+      if (kA.retroCapo !== kB.retroCapo) {
+        const catCmp = kA.catCapo.localeCompare(kB.catCapo, 'it');
+        if (catCmp !== 0) return catCmp;
+        const subcatCmp = kA.subcatCapo.localeCompare(kB.subcatCapo, 'it');
+        if (subcatCmp !== 0) return subcatCmp;
+        const nomeCmp = kA.nomeRetroCapo.localeCompare(kB.nomeRetroCapo, 'it');
+        if (nomeCmp !== 0) return nomeCmp;
       }
-      if (rankA === 3) {
-        // Change: per nome
-        return (a.name||'').localeCompare(b.name||'', 'it');
-      }
-      // Variazioni (ufficiali o non ufficiali): per Retro (Categoria + Nome)
-      const retroA = a.retroId ? allFigsForSort.get(a.retroId) : null;
-      const retroB = b.retroId ? allFigsForSort.get(b.retroId) : null;
-      const catCmp = (retroA?.category||'').localeCompare(retroB?.category||'', 'it');
-      if (catCmp !== 0) return catCmp;
-      const subcatCmp = (retroA?.subcategory||'').localeCompare(retroB?.subcategory||'', 'it');
-      if (subcatCmp !== 0) return subcatCmp;
-      return (retroA?.name||'').localeCompare(retroB?.name||'', 'it');
+      // 3) dentro la stessa versione: prima lei, poi i suoi change, poi i suoi errori di stampa
+      if (kA.rangoFiglio !== kB.rangoFiglio) return kA.rangoFiglio - kB.rangoFiglio;
+      if (kA.rangoFiglio === 0) return (a.subseries||'').localeCompare(b.subseries||'');
+      // 4) fra pari (due change della stessa versione): per nome completo
+      return (a.fullName || a.name || '').localeCompare(b.fullName || b.name || '', 'it', { numeric: true });
     }
     if (currentSection === 'retros') {
       const catCmp = (a.category||'').localeCompare(b.category||'', 'it');
@@ -19189,12 +19463,36 @@ function renderItems() {
   // sottonome in azzurro. Stesso schema della card Retro, cosi' le due sezioni si leggono allo
   // stesso modo. Finche' il sottonome e' vuoto la seconda riga non c'e' e l'aspetto e' quello di
   // sempre.
-  const retroNameHTML = (currentSection === 'figurines' && !f.isChange && f.retroId && !_hideRetroName)
+  // v6.088 (Franco) - via l'esclusione dei CHANGE. "Mostriamo sempre il nome del retro sotto al
+  // nome della figurina, ma non lo facciamo per change ed errori di stampa - se ci pensi e'
+  // sbagliato." Lo e': il retro e' cio' che dice QUALE versione stai guardando, e vale per un
+  // change di una variazione esattamente quanto per la variazione. Ometterlo proprio li' toglieva
+  // l'informazione dove serve di piu', visto che i change sono i record piu' difficili da
+  // distinguere fra loro - Nome, Categoria e Sottocategoria li ereditano dalla base (§13.1).
+  // Nota: gli ERRORI DI STAMPA il retro lo mostravano gia'. L'esclusione era solo per i change.
+  const retroNameHTML = (currentSection === 'figurines' && f.retroId && !_hideRetroName)
       ? (() => {
           const r = getData('figurines', []).find(x => x.id === f.retroId);
           if (!r) return '';
           const sotto = (r.subname || '').trim();
-          return `<div style="font-size:0.78rem;color:var(--muted);">${esc(_retroNomeCorto(r))}</div>` +
+          // v6.090 (Franco) - anche la CATEGORIA del retro, che dice di che retro si tratta quanto
+          // il nome. Con la stessa regola della card Retro: se il Nome comincia gia' con la
+          // categoria non si scrive, altrimenti si leggerebbe due volte di fila
+          // (_retroNameStartsWithCategory - tolleranza di genere e controllo di confine inclusi).
+          // Stesso colore giallo e stessa posizione della card Retro: le due sezioni mostrano lo
+          // stesso oggetto e devono leggersi allo stesso modo. La regola sta in quella funzione e
+          // non qui: e' gia' stata riscritta una volta (v5.744-v5.746, quando era un flag di serie)
+          // e una seconda copia l'avrebbe fatta divergere alla prossima.
+          const cat = (r.category || '').trim();
+          const mostraCat = cat && !_retroNameStartsWithCategory(r);
+          // v6.091 (Franco) - qui la CATEGORIA viene PRIMA del nome, al contrario della card Retro.
+          // Non e' un'incoerenza lasciata per distrazione, e' la stessa parola con due mestieri:
+          // sulla card di un retro la categoria e' un ATTRIBUTO dell'oggetto che stai guardando, e
+          // sta fra i suoi dati; sulla card di una figurina e' la CHIAVE con cui riconosci di quale
+          // retro si tratta, e una chiave si legge per prima. Franco: "li' al momento lo lascerei
+          // com'e'".
+          return (mostraCat ? `<div style="font-size:0.78rem;color:${COL_CATEGORIA};">${esc(cat)}</div>` : '') +
+                 `<div style="font-size:0.78rem;color:var(--muted);">${esc(_retroNomeCorto(r))}</div>` +
                  (sotto ? `<div style="font-size:0.78rem;color:var(--info);">${esc(sotto)}</div>` : '');
         })()
       : '';
@@ -19213,8 +19511,8 @@ function renderItems() {
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
         ${isRetroCard ? _retroRigheHTML : subseriesHTML}
-        ${typeIndicatorHTML}
         ${retroNameHTML}
+        ${typeIndicatorHTML}
         ${descHTML}
         ${sizeHTML}
         <div class="fig-actions">
@@ -21396,10 +21694,7 @@ function openFigDetail(figId, elencoNav) {
   // cambio lingua, portandosi via nome ed etichetta (la trappola del §5 - qui c'era gia' prima).
   if (titleEl) {
     titleEl.removeAttribute('data-i18n');
-    const _tipo = getSectionLabelSingular(f.section || 'figurines');
-    const _nomeTit = (_haNumero(f) && f.number) ? ('#' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle;
-    titleEl.innerHTML = '<span style="color:var(--accent2);font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.1rem;">'
-      + esc(_tipo) + '</span>' + esc(_nomeTit);
+    titleEl.innerHTML = _titoloSchedaHTML(f, displayNameForTitle); // v6.087
   }
   // v5.849 — su telefono il titolo del modale sparisce: ripete Numero e Nome, che sono le prime
   // due righe della scheda. Il testo resta comunque impostato, cosi' se la finestra torna larga
@@ -21772,6 +22067,77 @@ function openFigDetail(figId, elencoNav) {
 // tab dei collegati no, e mostravano il segnaposto 🖼️ proprio sulle righe che una foto ce
 // l'hanno. Due punti che mostrano la stessa cosa e non concordavano: la regola sta qui, e la
 // leggono entrambi.
+// v6.087 (Franco) - IL TITOLO DELLA SCHEDA, in un posto solo.
+// L'etichetta del tipo ("FIGURINA", "RETRO", "BUSTINA"…) nasce nella v6.080 per rispondere a una
+// domanda che la ricerca globale lasciava aperta - cosa sto guardando? - e vale per OGNI sezione,
+// non solo per le figurine: `getSectionLabelSingular()` la ricava da f.section.
+// Franco: "e' troppo piccola, e la farei blu". Da 0.72rem a 0.95rem, e da --accent2 (l'arancione
+// #ff6b1a) a --info (#4db8ff), che e' il blu che il sito usa gia' per i badge e per "Vista Ebay":
+// un colore del sistema, non uno nuovo scritto a mano qui dentro.
+// La funzione esiste perche' questo markup era scritto DUE volte, in openFigDetail e in
+// switchToEditMode, con un commento che sosteneva il contrario. Sono le due che meno di tutte
+// potevano permettersi di divergere: servono a far si' che il titolo non cambi forma passando
+// dalla vista alla modifica.
+// v6.088 (Franco) - LE CHIAVI DI ORDINAMENTO DELLA GRIGLIA FIGURINE, calcolate una volta sola.
+// Restituisce una Map id -> { rankCapo, retroCapo, catCapo, subcatCapo, nomeRetroCapo, rangoFiglio }.
+//
+// Il problema che risolve: un change deve stare attaccato alla VERSIONE di cui e' un change, non in
+// fondo all'elenco insieme a tutti gli altri change. E la versione non si legge da `baseFigurineId`
+// - quello punta sempre alla figurina base, perche' populateBaseFigurineSelect esclude variazioni e
+// change dalle basi selezionabili. Per il database i change del #586 sono tutti figli della stessa
+// figurina, indistintamente.
+// A legarli e' il RETRO, che e' del resto cio' che decide se una figurina e' una variazione. E li
+// lega per NOME e non per id: la variazione punta al retro base, il suo change punta al retro-change
+// omonimo (la coppia di omonimi del controllo v6.084). Col nome, questo ordinamento da' lo stesso
+// risultato prima e dopo la funzione 3 che corregge i collegamenti.
+// Un figlio che non trova il suo capogruppo - il retro non c'e', o il capo e' stato escluso da un
+// filtro - resta attaccato alla base invece di sparire in fondo: un elenco filtrato non deve
+// riordinarsi in modo diverso da quello intero.
+function _chiaviOrdinamentoFigurine(items, idx) {
+  const chiavi = new Map();
+  if (currentSection !== 'figurines') return chiavi;
+  const nomeRetroDi = f => {
+    const r = f.retroId ? idx.get(f.retroId) : null;
+    return (r?.name || '').trim().toUpperCase();
+  };
+  const rangoFiglio = f => f.isChange ? 1 : f.isPrintError ? 2 : 0;
+  const numeroGruppo = f => {
+    if (rangoFiglio(f) === 0 && !f.isVariation && !f.isUnofficialVariation) return f.number ?? null;
+    const b = f.baseFigurineId ? idx.get(f.baseFigurineId) : null;
+    return (b?.number ?? f.number) ?? null;
+  };
+  // I capigruppo (base e variazioni) indicizzati per numero-di-gruppo + nome del retro: e' la
+  // coppia che un figlio sa ricostruire di se stesso.
+  const capiPerChiave = new Map();
+  items.forEach(f => {
+    if (rangoFiglio(f) !== 0) return;
+    capiPerChiave.set(String(numeroGruppo(f)) + ' ' + nomeRetroDi(f), f);
+  });
+  items.forEach(f => {
+    const rango = rangoFiglio(f);
+    const capo = rango === 0
+      ? f
+      : (capiPerChiave.get(String(numeroGruppo(f)) + ' ' + nomeRetroDi(f)) || null);
+    const retroCapo = capo ? idx.get(capo.retroId) : null;
+    chiavi.set(f.id, {
+      rankCapo: capo ? (capo.isUnofficialVariation ? 2 : capo.isVariation ? 1 : 0) : 0,
+      retroCapo: capo ? nomeRetroDi(capo) : '',
+      catCapo: (retroCapo?.category || ''),
+      subcatCapo: (retroCapo?.subcategory || ''),
+      nomeRetroCapo: (retroCapo?.name || ''),
+      rangoFiglio: rango
+    });
+  });
+  return chiavi;
+}
+
+function _titoloSchedaHTML(f, nomeVisualizzato) {
+  const tipo = getSectionLabelSingular(f.section || 'figurines');
+  const nome = (_haNumero(f) && f.number) ? ('#' + f.number + ' - ' + nomeVisualizzato) : nomeVisualizzato;
+  return '<span style="color:var(--info);font-size:0.95rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.15rem;">'
+    + esc(tipo) + '</span>' + esc(nome);
+}
+
 function _fotoFigurina(f, allFigs) {
   if (!f) return null;
   if (f.img) return f.img;
@@ -21787,9 +22153,25 @@ function _fotoFigurina(f, allFigs) {
   //                il difetto sta li' e il fronte e' quello della base: allora si ripiega. Se non
   //                ce l'hanno, il difetto e' sul fronte e la foto della base direbbe il contrario.
   // In pratica: si ripiega quando sappiamo che il fronte coincide, mai "tanto e' meglio di niente".
-  const _frontePariAllaBase = f.isVariation || f.isUnofficialVariation || (f.isPrintError && f.retroId);
+  // v6.083 (Franco) - I CHANGE DI FIGURINA SONO DUE COSE DIVERSE, e solo una delle due ha un fronte
+  // suo. Parole di Franco:
+  //   A) change di FRONTE - la figurina ha una sua foto ed e' collegata a un retro esistente, che
+  //      sara' certamente un retro BASE. Qui il fronte e' il punto: nessun ripiego (v6.080).
+  //   B) change di RETRO  - il fronte e' quello della figurina base; il retro e' il suo, che sara'
+  //      certamente a sua volta un change di retro. Qui chiedere una foto dedicata del fronte vuol
+  //      dire ricaricare l'immagine della base sotto un altro id: uno spreco nel database, e un
+  //      oggetto che resta in eterno nell'elenco "senza foto" aspettando una foto che esiste gia'.
+  // Attenzione al dettaglio che ha fatto sbagliare la prima stesura di questa regola: `f.retroId`
+  // NON distingue i due casi, perche' ce l'hanno tutti e due. Per gli errori di stampa distingue
+  // (o il difetto sta dietro, e allora un retro loro c'e', o sta davanti e non c'e'); per i change
+  // no. Cio' che distingue e' COSA c'e' dall'altro capo del collegamento: se il retro puntato e' a
+  // sua volta un change, siamo nel caso B.
+  const figs = allFigs || getData('figurines', []);
+  const _changeDiRetro = !!(f.isChange && f.retroId && figs.find(x => x.id === f.retroId)?.isChange);
+  const _frontePariAllaBase = f.isVariation || f.isUnofficialVariation
+    || (f.isPrintError && f.retroId) || _changeDiRetro;
   if (f.section === 'figurines' && _frontePariAllaBase && f.baseFigurineId) {
-    const base = (allFigs || getData('figurines', [])).find(x => x.id === f.baseFigurineId);
+    const base = figs.find(x => x.id === f.baseFigurineId);
     if (base && base.img) return base.img;
   }
   return null;
@@ -22174,13 +22556,14 @@ function switchToEditMode(figId) {
   // un Nome completo non salvato si vede vuoto anche nel titolo (richiesto da Franco). Altre sezioni invariate.
   const displayNameForTitle = (f.section === 'retros') ? (f.fullName || '') : (f.fullName || f.name);
   // v6.080 - il tipo in cima anche in MODIFICA, come nella vista: passando da una all'altra il
-  // titolo non deve cambiare forma. Stessa costruzione, un posto solo dove leggerla.
+  // titolo non deve cambiare forma.
+  // v6.087 - e ora e' vero davvero: la costruzione era COPIATA qui, mentre il commento della v6.080
+  // diceva "un posto solo dove leggerla". Due copie divergono, e queste due dovevano restare
+  // identiche per definizione - la loro unica ragione d'essere e' che il titolo non cambi forma
+  // passando da vista a modifica.
   if (titleEl) {
     titleEl.removeAttribute('data-i18n');
-    const _tipoEdit = getSectionLabelSingular(f.section || 'figurines');
-    const _nomeTitEdit = (_haNumero(f) && f.number) ? ('#' + f.number + ' - ' + displayNameForTitle) : displayNameForTitle;
-    titleEl.innerHTML = '<span style="color:var(--accent2);font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.1rem;">'
-      + esc(_tipoEdit) + '</span>' + esc(_nomeTitEdit);
+    titleEl.innerHTML = _titoloSchedaHTML(f, displayNameForTitle);
   }
 
   // v6.074 - Foto. Una sola per quasi tutto; DUE per le bustine, che hanno due facce sullo stesso
@@ -24596,7 +24979,10 @@ function _toggleElencoSenzaFoto(id) {
 const CONTROLLI_SOSPENDIBILI = [
   { id: 'senzaFoto',   it: 'Item senza foto',            en: 'Items without a photo' },
   { id: 'senzaRetro',  it: 'Fronte senza retro',         en: 'Front without a back' },
-  { id: 'senzaNumero', it: 'Figurine senza numero',      en: 'Stickers without a number' }
+  { id: 'senzaNumero', it: 'Figurine senza numero',      en: 'Stickers without a number' },
+  // v6.084 (Franco) - sospendibile come gli altri: una serie in cui i retro-change si stanno
+  // ancora caricando avrebbe l'elenco pieno di righe che si sistemano da sole finendo il lavoro.
+  { id: 'changeRetroErrato', it: 'Change collegato al retro sbagliato', en: 'Change linked to the wrong back' }
 ];
 function _etichettaControllo(id) {
   const c = CONTROLLI_SOSPENDIBILI.find(x => x.id === id);
@@ -24628,6 +25014,40 @@ function renderSeriesBypassCheckboxes(sel) {
 }
 function _leggiControlliSospesi() {
   return [...document.querySelectorAll('.series-bypass-chk')].filter(x => x.checked).map(x => x.value);
+}
+
+// v6.085 (Franco) - LA REGOLA DEL "RETRO SBAGLIATO", IN UN POSTO SOLO.
+// Nata nella v6.084 dentro _diagnosiErrori(); appena e' servita anche alla funzione che corregge,
+// e' uscita di li'. Il motivo non e' l'eleganza: se l'elenco che si legge nella pagina Errori e il
+// piano che si scrive nella scheda Funzioni venissero da due copie della stessa condizione, il
+// giorno in cui una delle due cambia si correggono record diversi da quelli che si sono guardati.
+// E' la stessa lezione di _dueFacce() (v6.079) e di _specchiettoTipiHTML() (v6.079).
+// Un change e' "collegato al retro sbagliato" quando valgono TUTTE E TRE:
+//   1. il retro puntato NON e' un change (se lo e', il collegamento e' gia' quello giusto);
+//   2. esiste un altro retro con lo STESSO NOME che invece e' un change;
+//   3. quel retro ha lo STESSO changeType della figurina.
+// Una condizione sola non basterebbe: i retri omonimi legittimi esistono - e' il motivo per cui il
+// controllo "Gruppi di Retro duplicati" sta in quella pagina da prima di questa - e ci sono change
+// il cui retro giusto e' davvero quello base.
+// `corretto` resta null se i candidati sono piu' d'uno: la riga si segnala, ma non si propone una
+// correzione che sarebbe una scelta fra due, e quella scelta e' di Franco.
+function _changeConRetroErrato(allFigs, seriesId) {
+  const figs = allFigs || getData('figurines', []);
+  const retri = figs.filter(x => (x.section || '') === 'retros');
+  const norm = s => String(s || '').trim().toUpperCase();
+  const out = [];
+  figs.forEach(f => {
+    if (!f.isChange || (f.section || 'figurines') !== 'figurines' || !f.retroId) return;
+    if (seriesId && f.seriesId !== seriesId) return;
+    const r = figs.find(x => x.id === f.retroId);
+    if (!r || r.isChange) return;
+    const gemelli = retri.filter(x => x.id !== r.id && x.isChange
+      && norm(x.name) === norm(r.name)
+      && norm(x.changeType) === norm(f.changeType));
+    if (!gemelli.length) return;
+    out.push({ fig: f, retroAttuale: r, corretto: gemelli.length === 1 ? gemelli[0] : null, quanti: gemelli.length });
+  });
+  return out;
 }
 
 function _diagnosiErrori() {
@@ -24741,9 +25161,42 @@ function _diagnosiErrori() {
   });
   const _totSenzaFoto  = _SEZ_ORD.reduce((n, s) => n + _senzaFoto[s].length, 0);
   const _totSenzaRetro = _SEZ_ORD.reduce((n, s) => n + _senzaRetro[s].length, 0);
+
+  // v6.084 (Franco) - CHANGE COLLEGATO AL RETRO SBAGLIATO.
+  // Trovato il 7 agosto 2026 partendo da una domanda sola: "#417 ZACCARIA BIRRERIA - MOSCA NERA
+  // e' un change, perche' compare fra gli item senza foto?". Perche' il suo retroId punta a
+  // MARIONETTA *base*, mentre in catalogo c'e' anche MARIONETTA con changeType "mosca nera",
+  // marcato change e con la foto. Il collegamento e' andato sull'omonimo sbagliato.
+  // Non e' un caso isolato: misurati 98 change su 119 con base e retro. E' lo scenario che il
+  // riquadro "Gruppi di Retro duplicati" di questa stessa pagina dichiara da tempo - stesso
+  // Nome nella stessa serie, l'import per Categoria+Nome puo' collegarsi al retro sbagliato -
+  // e che finora nessuno aveva contato.
+  // Il danno non e' la foto mancante, che e' il sintomo: quei change mostrano nella scheda e in
+  // tabella il retro BASE, cioe' tutto tranne cio' che li rende change.
+  // Come si riconosce, senza indovinare: il retro puntato NON e' un change, ma esiste un altro
+  // retro con lo STESSO NOME che e' un change e ha lo STESSO changeType della figurina. Le tre
+  // condizioni insieme, perche' una sola non basta: ci sono retri omonimi legittimi (e' il motivo
+  // per cui il controllo sui duplicati esiste), e ci sono change il cui retro giusto e' davvero
+  // quello base.
+  // Se i candidati fossero piu' d'uno la riga si segnala lo stesso ma NON si propone una
+  // correzione: due gemelli vogliono dire che l'ambiguita' e' nei dati e la sceglie Franco.
+  // Sui dati di oggi i casi ambigui sono ZERO, ma scriverlo costa una riga e non averlo scritto
+  // costa una correzione sbagliata il giorno in cui ce ne sara' uno.
+  // v6.085 - la regola sta in _changeConRetroErrato(), fuori di qui: la usano la pagina Errori e la
+  // funzione che corregge. Se ognuna avesse la sua, l'elenco che si guarda e i record che si
+  // scrivono potrebbero non essere gli stessi - ed e' esattamente il modo in cui una correzione di
+  // massa fa danni senza che nessuno se ne accorga.
+  let _sospesiChangeRetro = 0;
+  const _changeRetroErrato = _changeConRetroErrato(allFigs).filter(v => {
+    if (_controlloSospeso(v.fig.seriesId, 'changeRetroErrato', seriesList)) { _sospesiChangeRetro++; return false; }
+    return true;
+  });
+  const _totChangeRetroErrato = _changeRetroErrato.length;
+
   return { seriesList, allFigs, missingNumber, brokenRetroLinks, duplicateBaseFigGroups,
            duplicateRetroGroups, _SEZ_ORD, _senzaFoto, _senzaRetro, _totSenzaFoto, _totSenzaRetro, _fotoNonDisp,
-           _sospesiFoto, _sospesiRetro, _retroNonDisp };
+           _sospesiFoto, _sospesiRetro, _retroNonDisp,
+           _changeRetroErrato, _totChangeRetroErrato, _sospesiChangeRetro };
 }
 
 // v6.079 (Franco) - il pallino rosso in navbar, SOLO ADMIN: c'e' finche' la sezione Errori ha
@@ -24768,7 +25221,8 @@ function _totaleSegnalazioniErrori() {
   try {
     const d = _diagnosiErrori();
     return d.missingNumber.length + d.brokenRetroLinks.length + d.duplicateBaseFigGroups.length
-         + d.duplicateRetroGroups.length + d._totSenzaFoto + d._totSenzaRetro;
+         + d.duplicateRetroGroups.length + d._totSenzaFoto + d._totSenzaRetro
+         + d._totChangeRetroErrato; // v6.084
   } catch(e) { console.error('_totaleSegnalazioniErrori', e); return 0; }
 }
 
@@ -24778,7 +25232,8 @@ function renderAdminErrori() {
 
   const { seriesList, allFigs, missingNumber, brokenRetroLinks, duplicateBaseFigGroups,
           duplicateRetroGroups, _SEZ_ORD, _senzaFoto, _senzaRetro, _totSenzaFoto, _totSenzaRetro,
-          _fotoNonDisp, _sospesiFoto, _sospesiRetro, _retroNonDisp } = _diagnosiErrori();
+          _fotoNonDisp, _sospesiFoto, _sospesiRetro, _retroNonDisp,
+          _changeRetroErrato, _totChangeRetroErrato, _sospesiChangeRetro } = _diagnosiErrori();
 
   // v6.079 (Franco) - un numero da solo non dice a COSA si riferisce, e un contatore su cui non si
   // puo' andare a vedere non serve a lavorarci. Ogni riga si apre e mostra gli oggetti, ognuno un
@@ -24812,9 +25267,29 @@ function renderAdminErrori() {
     const num = _haNumero(f) && f.number ? '#' + f.number + ' ' : '';
     return `<a href="#" onclick="openFigDetail('${f.id}');return false;" style="display:block;padding:0.25rem 0.45rem;border-radius:6px;text-decoration:none;color:var(--text);font-size:0.82rem;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='transparent'">${num}${esc(_nomeOggetto(f))}</a>`;
   };
+  // v6.082 (Franco) - "l'elenco non mi sembra in ordine alfabetico". Lo era, ma si ordinava per il
+  // NOME mentre la riga comincia col NUMERO (_linkOggetto scrive "#12 NOME"): l'occhio scende lungo
+  // la colonna dei numeri, che saltava. Ordinare per una cosa e mostrarne un'altra e' il modo piu'
+  // rapido per far sembrare rotto un elenco che non lo e'.
+  // Ora si ordina per cio' che si legge: prima il numero, poi il nome completo. Chi un numero non
+  // ce l'ha - i retro, gli album - va in fondo e resta alfabetico: la riga li' comincia col nome,
+  // quindi l'ordine e' di nuovo quello che si vede.
+  // Il numero si confronta come STRINGA con numeric:true, non con Number(): "12a" e "12" esistono
+  // e Number() li appiattirebbe entrambi su 12 (o su NaN), rimettendo il disordine dove si stava
+  // togliendo. numeric:true tiene 7 prima di 12 e 12 prima di 12a.
+  const _numOrd = f => (_haNumero(f) && f.number != null && String(f.number).trim() !== '')
+    ? String(f.number).trim() : null;
   const _foglia = (items) => {
-    const ordinati = items.slice().sort((a, b) =>
-      String(_nomeOggetto(a)).localeCompare(String(_nomeOggetto(b)), 'it', { numeric: true }));
+    const ordinati = items.slice().sort((a, b) => {
+      const na = _numOrd(a), nb = _numOrd(b);
+      if (na != null && nb == null) return -1;
+      if (na == null && nb != null) return 1;
+      if (na != null && nb != null) {
+        const d = na.localeCompare(nb, 'it', { numeric: true });
+        if (d) return d;
+      }
+      return String(_nomeOggetto(a)).localeCompare(String(_nomeOggetto(b)), 'it', { numeric: true });
+    });
     const resto = ordinati.length - _MAX_ELENCO;
     return ordinati.slice(0, _MAX_ELENCO).map(_linkOggetto).join('')
       + (resto > 0 ? `<div style="padding:0.35rem 0.45rem;font-size:0.8rem;color:var(--muted);font-style:italic;">${currentLang==='it'?'…e altri '+resto:'…and '+resto+' more'}</div>` : '');
@@ -24847,6 +25322,40 @@ function renderAdminErrori() {
       return _sottoblocco(idEl, getSectionLabel(s), mappa[s].length, _elencoSez(mappa[s], idEl), '0.4rem');
     }).join('')
     || `<div style="font-size:0.85rem;color:var(--muted);">${currentLang==='it'?'nessuno':'none'}</div>`;
+
+  // v6.084 - l'elenco dei change collegati al retro sbagliato. Raggruppato per serie come gli
+  // altri, ma la riga dice una cosa in piu': il retro che c'e' e quello che dovrebbe esserci.
+  // Senza i due nomi affiancati la riga direbbe solo "questo e' sbagliato", che e' la meta' che
+  // non aiuta - il nome e' lo STESSO, e a distinguerli e' il tipo di change.
+  const _elencoChangeRetro = (voci) => {
+    const perSerie = new Map();
+    voci.forEach(v => {
+      const k = v.fig.seriesId || '';
+      if (!perSerie.has(k)) perSerie.set(k, []);
+      perSerie.get(k).push(v);
+    });
+    const nomeSerie = id => seriesList.find(x => x.id === id)?.name || (currentLang==='it'?'Serie sconosciuta':'Unknown series');
+    return [...perSerie.entries()]
+      .sort((a, b) => nomeSerie(a[0]).localeCompare(nomeSerie(b[0]), 'it', { numeric: true }))
+      .map(([sid, dellaSerie]) => {
+        const righe = dellaSerie
+          .slice()
+          .sort((a, b) => String(a.fig.number ?? '').localeCompare(String(b.fig.number ?? ''), 'it', { numeric: true })
+                       || String(_nomeOggetto(a.fig)).localeCompare(String(_nomeOggetto(b.fig)), 'it', { numeric: true }))
+          .map(v => {
+            const num = _haNumero(v.fig) && v.fig.number ? '#' + v.fig.number + ' ' : '';
+            const proposta = v.corretto
+              ? `<span style="color:var(--muted);">${currentLang==='it'?'da':'from'}</span> <span style="color:var(--danger);">${esc(v.retroAttuale.name||'')}</span>`
+                + ` <span style="color:var(--muted);">${currentLang==='it'?'a':'to'}</span> <span style="color:var(--success);">${esc(v.corretto.name||'')} · ${esc(v.corretto.changeType||'')}</span>`
+              : `<span style="color:var(--warning,var(--danger));">${currentLang==='it'?'candidati multipli ('+v.quanti+'): scegliere a mano':'multiple candidates ('+v.quanti+'): choose manually'}</span>`;
+            return `<div style="padding:0.25rem 0.45rem;font-size:0.82rem;line-height:1.4;">`
+              + `<a href="#" onclick="openFigDetail('${v.fig.id}');return false;" style="color:var(--text);text-decoration:none;">${num}${esc(_nomeOggetto(v.fig))}</a>`
+              + `<div style="font-size:0.76rem;padding-left:0.2rem;">${proposta}</div></div>`;
+          }).join('');
+        return _sottoblocco('chgretro-s' + String(sid).replace(/[^A-Za-z0-9]/g, ''),
+          nomeSerie(sid), dellaSerie.length, righe, '0.5rem');
+      }).join('');
+  };
 
   el.innerHTML = `
     <div style="max-width:900px;">
@@ -24997,6 +25506,27 @@ function renderAdminErrori() {
               ? '<br>Escluse anche ' + _retroNonDisp + ' figurine il cui Retro collegato è marcato "Foto non disponibile": quella foto non arriverà mai.'
               : '<br>Also excluding ' + _retroNonDisp + ' stickers whose linked Retro is marked "Photo unavailable".') : ''}
           </div>
+        </div>
+      </div>
+
+      <hr class="divider" style="margin:1.5rem 0;">
+
+      <!-- v6.084 (Franco) - CHANGE COLLEGATO AL RETRO SBAGLIATO. Sola lettura, come tutto il
+           resto di questa pagina: qui si guarda, la correzione sta altrove. -->
+      <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
+          <div style="font-size:2.6rem;font-weight:700;color:${_totChangeRetroErrato ? 'var(--danger)' : 'var(--accent)'};">${_totChangeRetroErrato}</div>
+          <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">🔗 ${currentLang==='it'?'Change col retro sbagliato':'Changes linked to the wrong back'}</div>
+        </div>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.2rem;flex:1;min-width:260px;">
+          <p style="font-size:0.82rem;color:var(--muted);margin:0 0 0.6rem;line-height:1.5;">
+            ${currentLang==='it'
+              ? 'Il retro collegato è un retro <b>base</b>, ma esiste un retro con lo <b>stesso nome</b> marcato come change e con lo <b>stesso tipo</b> della figurina. Sono i casi in cui l\'import per Categoria+Nome si è agganciato all\'omonimo sbagliato (vedi “Gruppi di Retro duplicati” qui sopra). Effetto: nella scheda e in tabella si vede il retro base, cioè tutto tranne ciò che rende quella figurina un change.'
+              : 'The linked back is a <b>base</b> back, but a back with the <b>same name</b> exists, flagged as a change and with the <b>same type</b> as the sticker. These are the cases where Category+Name import latched onto the wrong namesake.'}
+          </p>
+          ${_totChangeRetroErrato ? _elencoChangeRetro(_changeRetroErrato)
+            : `<div style="font-size:0.85rem;color:var(--muted);">${currentLang==='it'?'nessuno':'none'}</div>`}
+          ${_avvisoSospensione('changeRetroErrato', _sospesiChangeRetro)}
         </div>
       </div>
 
@@ -25234,8 +25764,125 @@ function renderAdminFunzioni() {
           '<button class="btn-primary btn-admin" onclick="resetRetroLinksForSeries()" style="background:var(--danger);">&#129529; ' + (it ? 'Azzera collegamenti' : 'Reset links') + '</button>' +
         '</div>' +
       '</div>' +
+
+      // v6.085 (Franco) - FUNZIONE 3. Nasce da "#417 e' un change, perche' compare fra gli item
+      // senza foto?": 98 change su 119 puntavano al retro base invece che al retro-change omonimo.
+      // Stessa forma delle altre due: anteprima, conferma col numero, scrittura, ricontrollo.
+      '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;">' + (it ? '3. Ricollega i Change al Retro giusto' : '3. Relink Changes to the right Retro') + '</h4>' +
+        '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
+          (it ? 'Corregge i <b>Change</b> il cui <b>Retro associato</b> punta al retro <b>base</b> invece che al retro-change omonimo.<br><br>' +
+                'Interviene solo dove il retro giusto è <b>uno solo e certo</b>: stesso nome del retro attuale, marcato come change, e con lo stesso <b>tipo di change</b> della figurina.<br><br>' +
+                '<b>NOTE:</b><br>' +
+                'Sono le stesse righe elencate in <b>Errori → Change col retro sbagliato</b>.<br>' +
+                'Dove i candidati sono più d’uno la riga viene <b>saltata</b>: la scelta è tua.<br>' +
+                'Scrive solo il campo Retro associato; non tocca foto, nomi né altro.'
+              : 'Fixes <b>Changes</b> whose <b>associated Retro</b> points at the <b>base</b> back instead of the namesake change back.<br><br>' +
+                'It only acts where the right back is <b>single and certain</b>: same name as the current one, flagged as a change, and with the same <b>change type</b> as the sticker.<br><br>' +
+                '<b>NOTES:</b><br>' +
+                'These are the same rows listed under <b>Errors → Changes linked to the wrong back</b>.<br>' +
+                'Rows with more than one candidate are <b>skipped</b>.<br>' +
+                'It only writes the associated Retro field.') + '</p>' +
+        '<label class="form-label">' + (it ? 'Serie' : 'Series') + '</label>' +
+        '<select id="fixretro-serie" class="form-select" style="margin-bottom:0.75rem;">' +
+          '<option value="">' + (it ? 'Tutte le serie' : 'All series') + '</option>' +
+          serie.map(x => '<option value="' + x.id + '">' + esc(x.name) + '</option>').join('') +
+        '</select>' +
+        '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">' +
+          '<button class="btn-primary btn-admin" onclick="anteprimaFixRetroChange()">&#128269; ' + (it ? 'Anteprima' : 'Preview') + '</button>' +
+          '<button class="btn-primary btn-admin" id="fixretro-applica-btn" onclick="applicaFixRetroChange()" style="display:none;background:var(--danger);">&#9989; ' + (it ? 'Applica' : 'Apply') + '</button>' +
+        '</div>' +
+        '<div id="fixretro-esito" style="margin-top:1rem;"></div>' +
+      '</div>' +
     '</div>';
   _pianoAllinea = null;
+  _pianoFixRetro = null; // v6.085
+}
+
+// v6.085 - il piano della funzione 3. Non calcola niente di suo: chiede a _changeConRetroErrato()
+// esattamente cio' che la pagina Errori mostra, e tiene solo le righe con un candidato certo.
+let _pianoFixRetro = null;
+function _calcolaPianoFixRetro(seriesId) {
+  return _changeConRetroErrato(getData('figurines', []), seriesId || '').filter(v => v.corretto);
+}
+
+function anteprimaFixRetroChange() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('fixretro-esito');
+  const btn = document.getElementById('fixretro-applica-btn');
+  const sid = document.getElementById('fixretro-serie')?.value || '';
+  const tutte = _changeConRetroErrato(getData('figurines', []), sid);
+  _pianoFixRetro = tutte.filter(v => v.corretto);
+  const ambigui = tutte.length - _pianoFixRetro.length;
+  if (btn) btn.style.display = _pianoFixRetro.length ? '' : 'none';
+  if (!esito) return;
+  if (!tutte.length) {
+    esito.innerHTML = '<div style="font-size:0.9rem;color:var(--success);">' +
+      (it ? 'Nessun Change collegato al retro sbagliato.' : 'No Change linked to the wrong back.') + '</div>';
+    return;
+  }
+  const serieNome = id => getData('series', []).find(x => x.id === id)?.name || '?';
+  esito.innerHTML =
+    '<div style="font-size:0.9rem;margin-bottom:0.6rem;">' +
+      (it ? '<b>' + _pianoFixRetro.length + '</b> da ricollegare' : '<b>' + _pianoFixRetro.length + '</b> to relink') +
+      (ambigui ? (it ? ' · <span style="color:var(--danger);">' + ambigui + ' saltati (candidati multipli)</span>'
+                     : ' · <span style="color:var(--danger);">' + ambigui + ' skipped (multiple candidates)</span>') : '') +
+    '</div>' +
+    '<div style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">' +
+    _pianoFixRetro.map(v => {
+      const num = _haNumero(v.fig) && v.fig.number ? '#' + v.fig.number + ' ' : '';
+      return '<div style="font-size:0.8rem;padding:0.2rem 0;line-height:1.4;">' +
+        '<span style="color:var(--muted);">' + esc(serieNome(v.fig.seriesId)) + '</span> · ' +
+        esc(num + (v.fig.fullName || v.fig.name || '')) +
+        '<br><span style="color:var(--danger);padding-left:0.5rem;">' + esc(v.retroAttuale.name || '') + '</span>' +
+        ' <span style="color:var(--muted);">&rarr;</span> ' +
+        '<span style="color:var(--success);">' + esc(v.corretto.name || '') + ' · ' + esc(v.corretto.changeType || '') + '</span></div>';
+    }).join('') + '</div>';
+}
+
+async function applicaFixRetroChange() {
+  const it = currentLang === 'it';
+  const esito = document.getElementById('fixretro-esito');
+  const btn = document.getElementById('fixretro-applica-btn');
+  if (!_pianoFixRetro || !_pianoFixRetro.length) {
+    toast(it ? 'Fai prima l’anteprima' : 'Run the preview first', 'error');
+    return;
+  }
+  if (!confirm(it
+      ? 'Ricollego ' + _pianoFixRetro.length + ' Change al loro retro-change?\n\nL’operazione scrive sul database e non si annulla.'
+      : 'Relink ' + _pianoFixRetro.length + ' Changes to their change back?\n\nThis writes to the database and cannot be undone.')) return;
+  if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+  let ok = 0; const errori = [];
+  for (let i = 0; i < _pianoFixRetro.length; i++) {
+    const v = _pianoFixRetro[i];
+    // Si scrive SOLO retroId. Il resto del record non si tocca: questa funzione ha una sola idea,
+    // e una funzione di massa che ne avesse due sarebbe impossibile da rileggere fra sei mesi.
+    const nuovo = { ...v.fig, retroId: v.corretto.id };
+    try {
+      await fsSave('figurines', nuovo);
+      const idx = (_cache.figurines || []).findIndex(x => x.id === nuovo.id);
+      if (idx >= 0) _cache.figurines[idx] = nuovo;
+      ok++;
+    } catch(e) {
+      console.error('applicaFixRetroChange', nuovo.id, e);
+      errori.push((nuovo.fullName || nuovo.name || nuovo.id) + ': ' + (e?.code || e?.message || 'errore'));
+    }
+    if (esito && (i % 10 === 0 || i === _pianoFixRetro.length - 1)) {
+      esito.innerHTML = '<div style="font-size:0.9rem;">' + (it ? 'Scrittura in corso… ' : 'Writing… ') + (i + 1) + '/' + _pianoFixRetro.length + '</div>';
+    }
+    await new Promise(r => setTimeout(r, 120));
+  }
+  if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.display = 'none'; }
+  _pianoFixRetro = null;
+  // Si riconta da capo: l'unica prova che il lavoro sia finito e' che non resti piu' niente.
+  const rimasti = _calcolaPianoFixRetro(document.getElementById('fixretro-serie')?.value || '').length;
+  if (esito) esito.innerHTML =
+    '<div style="font-size:0.9rem;color:' + (errori.length || rimasti ? 'var(--warn)' : 'var(--success)') + ';">' +
+      (it ? 'Scritti ' + ok + ' record. Falliti: ' + errori.length + '. Ricontrollo: ' + rimasti + ' ancora da ricollegare.'
+          : 'Written ' + ok + ' records. Failed: ' + errori.length + '. Re-check: ' + rimasti + ' still to relink.') +
+    '</div>' + (errori.length ? '<pre style="font-size:0.72rem;color:var(--danger);white-space:pre-wrap;">' + esc(errori.join('\n')) + '</pre>' : '');
+  try { renderItems(); } catch(e) {}
+  try { aggiornaPallinoErrori(); } catch(e) {}
 }
 
 // Calcola il piano SENZA scrivere niente. E' la funzione che decide anche cosa si scrivera' dopo:
