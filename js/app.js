@@ -1,6 +1,122 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.094 - IN GRIGLIA IL RIQUADRO DEL RETRO SI DISEGNA ANCHE SENZA FOTO. Modificato app.js (piu' la
+//          versione in index.html).
+//          Segnalato da Franco su un Change di BOBBY GUM (#543): il retro era collegato ma senza
+//          foto, e la card mostrava il solo fronte ingrandito - cioe' la stessa identica resa di un
+//          oggetto che il retro NON ce l'ha. Due situazioni diverse rese indistinguibili, e quella
+//          su cui c'e' qualcosa da fare - manca una foto da caricare - diventava invisibile.
+//          La causa era una riga: il blocco a due facce chiedeva `retroFigDual?.img`. Ora chiede
+//          che il retro ESISTA, e dove manca la foto va il segnaposto FOTO NON DISPONIBILE, in
+//          tutti e cinque i modi di visualizzazione (destra, sotto, dinamico, fronte-grande,
+//          destra-piena) piu' la coppia affiancata condivisa con le bustine.
+//          Non e' una regola nuova: e' la stessa che Franco aveva gia' dato per la scheda
+//          (v6.044/045) e per le bustine (v6.076) - "il riquadro resta disegnato anche vuoto, e'
+//          cosi' che ci si accorge che la foto manca". In griglia non era mai arrivata.
+//          Due punti che non si vedono ma rompono se saltati:
+//          · IL SEGNAPOSTO E' SEMPRE ORIZZONTALE (regola di Franco). Alla prima stesura non
+//            dichiarava nessun orientamento, e in 'destra-piena' la card restava affiancata mentre
+//            le sue sorelle - due foto sdraiate - si impilavano: il fronte finiva a meta' larghezza
+//            e disallineato rispetto alle altre versioni della stessa figurina (visto su PEPPINO
+//            SCARTINO #467). Dichiarandolo orizzontale la regola esistente basta da sola: fronte
+//            sdraiato + box sdraiato = impilati, box sotto; fronte in piedi = affiancati. Cade
+//            anche il caso speciale del Change (guardare l'orientamento del retro base): se il box
+//            e' orizzontale per definizione, quell'informazione non serve piu'.
+//            Le proporzioni sono MISURATE, non scelte: 1,38 e' il rapporto dei retro orizzontali
+//            veri (v6.044/045, 30 su 40), cosi' il box occupa lo spazio della foto che manca.
+//          · `_checkBothOrientationForStack` cercava un <img> per dare le misure alle due facce.
+//            Il segnaposto e' un <div>: restava l'unico senza misure e in colonna sarebbe
+//            collassato sull'altezza del testo. Ora all'immagine si lascia l'altezza `auto` (se la
+//            calcola dalle sue proporzioni vere) e al segnaposto la si dice, perche' proporzioni
+//            sue non ne ha.
+//          · aggiornata anche `_itemHasWidePair()`, che e' la SECONDA copia della condizione, usata
+//            dalla paginazione per sapere quali card saranno larghe. Il suo commento avvisava di
+//            farlo; lasciandola indietro, il conteggio per pagina sarebbe stato sbagliato proprio
+//            sulle righe con un retro senza foto.
+//          Il segnaposto forza `position:relative`: .fig-noimg nasce per riempire da sola l'intero
+//          riquadro (caso a foto singola) e vive in css/style.css, fuori dalla cartella _upload_,
+//          quindi le sue regole non si possono leggere da qui.
+//          ESTESO A TUTTO L'INVENTARIO su richiesta di Franco ("va messo su ogni possibile articolo
+//          dell'inventario"): album, bustine e altri oggetti - che hanno due facce sullo STESSO
+//          record - entrano nel blocco a due facce con UNA sola foto, non piu' con entrambe. Per
+//          loro un `imgRetro` vuoto non vuol dire "il retro non esiste", vuol dire "la foto non e'
+//          ancora stata caricata", che e' proprio cio' che il segnaposto deve dire.
+//          `_coppiaAffiancataHTML` e' ora tollerante da entrambi i lati: il caso simmetrico - retro
+//          fotografato e fronte no - finiva nel ramo "nessuna foto" e faceva sparire dalla card
+//          l'unica faccia che c'era.
+//          ⚠️ NON toccata la distinzione della v6.079, che e' di Franco: "Foto non disponibile"
+//          significa che la faccia c'e' e la foto manca; il riquadro VUOTO significa che la faccia
+//          non esiste (una figurina senza retro collegato). Sono due messaggi diversi - uno dice
+//          "c'e' una foto da caricare", l'altro "non c'e' niente da caricare" - e appiattirli
+//          toglierebbe informazione invece di aggiungerne.
+// v6.093 - LA RICERCA NON CHIEDE PIU' L'ACCENTO ESATTO, e via due diciture. Modificato app.js e
+//          index.html.
+//          1) RICERCA SENZA ACCENTI. Segnalato da Franco: PIE-DINO non trovava PIÈ-DINO. Nei nomi
+//          Sgorbions gli accenti sono dappertutto e chi cerca non sa se nel dato la lettera sia
+//          accentata - e non deve saperlo. Nuova `_perRicerca()`: normalizzazione Unicode NFD,
+//          via i segni diacritici, i tre apostrofi (dritto, tipografico, accento grave) ridotti a
+//          uno, minuscolo. La NFD vale per QUALUNQUE accento; una lista di lettere scritta a mano
+//          dimentica sempre la È maiuscola o la ù.
+//          Poi Franco, sullo stesso nome: "sa Dio perche' lo hanno chiamato PIE-DINO, mi piacerebbe
+//          trovarlo anche senza il trattino". Stessa famiglia di problema, simbolo diverso: il
+//          trattino per il confronto e' un carattere come una lettera. Ora spazi e trattini (tutti:
+//          il breve, i due lunghi, la lineetta, il trattino basso) si tolgono da entrambi i lati,
+//          quindi PIEDINO, PIE-DINO, PIE DINO e PIÈ-DINO sono la stessa domanda.
+//          Il prezzo, accettato consapevolmente: senza spazi una sillaba corta puo' incastrarsi a
+//          cavallo di due parole (ADI dentro "PRESA DI"). Capita di rado, e i risultati in piu' si
+//          vedono e si scartano; un nome che non si trova, invece, non si vede.
+//          Caso limite chiuso: cercando SOLI separatori la stringa normalizzata resta vuota, e
+//          `includes('')` e' vero per tutto - la ricerca avrebbe risposto con l'intero catalogo.
+//          Ora si torna al catalogo come a campo vuoto: un testo di soli trattini non e' una domanda.
+//          Applicata in NOVE punti e su ENTRAMBI i lati del confronto: la ricerca del catalogo, la
+//          ricerca dentro la sezione, i quattro menu a tendina dei collegamenti (base e retro, in
+//          tutte e due le form) e i due selettori del paese. Una funzione sola, non nove copie.
+//          ⚠️ NON toccate le chiavi di unicita' del controllo duplicati e dell'import: li' due nomi
+//          che differiscono per un accento sono due nomi diversi, e appiattirli inventerebbe
+//          doppioni. E' lo stesso `toLowerCase()`, ma risponde a un'altra domanda.
+//          Dettaglio: nella ricerca del catalogo il testo cercato resta quello SCRITTO da Franco,
+//          perche' finisce nel messaggio "Nessun risultato per ..."; a confrontare ci pensa una
+//          seconda variabile.
+//          2) VIA DUE DICITURE (Franco): "non ho la foto e non posso averla" accanto a "Foto non
+//          disponibile", e "la vede solo l'admin" accanto a "Invisibile". Quattro punti, perche'
+//          ogni campo esiste due volte - finestra Aggiungi e scheda - piu' le due versioni inglesi.
+//          Il rosso di "Invisibile" non si e' perso: e' passato sull'ETICHETTA, ed e' diventato
+//          VIVO in entrambe le form. Prima nella scheda si decideva al render (spuntare la casella
+//          non lo cambiava fino alla riapertura) e nella finestra era acceso SEMPRE, anche a
+//          casella vuota - cioe' un allarme rosso su un oggetto perfettamente visibile.
+// v6.092 - I SEGNAPOSTO DELLA CARD RETRO SI RISERVANO PER RIGA DI GRIGLIA. Modificato app.js (piu'
+//          la versione in index.html).
+//          Dalla v6.037 la card Retro ha quattro righe fisse - Nome, Sottonome, Categoria,
+//          Sottocategoria - e ognuna esiste sempre, anche vuota. Serviva a non far risalire le
+//          righe sotto: due card affiancate devono mostrare lo stesso dato alla stessa altezza.
+//          Funzionava, ma pagava sempre: spazio vuoto anche dove NESSUNA card li' attorno ha quel
+//          campo.
+//          Franco (8 agosto 2026): riservare la riga solo se serve, e deciderlo riga di griglia per
+//          riga di griglia, campo per campo. Se anche una sola card di quella riga ha il Sottonome,
+//          tutte le card di quella riga riservano la riga del Sottonome; altrimenti nessuna. Idem
+//          per Categoria e Sottocategoria.
+//          PERCHE' "PER RIGA DI GRIGLIA" E NON "PER PAGINA": i 45 retro col Sottonome non sono
+//          sparsi - 36 su 45 stanno in RICERCATO - e la griglia ordina per categoria, quindi
+//          finiscono vicini. Poche righe riservano, tutte le altre no. Con la regola "per pagina"
+//          basterebbe un retro su trenta per far riservare a tutti.
+//          IL PUNTO TECNICO: quali card stiano sulla stessa riga il JS non lo sa al momento di
+//          generare l'HTML - le colonne le decide il CSS in base alla larghezza. Quindi il markup
+//          si limita a DIRE cosa c'e' (data-campo su ogni riga, classe retro-riga-vuota su quelle
+//          vuote) e a decidere ci pensa _allineaRigheRetro() DOPO il render, leggendo gli
+//          offsetTop. Due cose lo rendono meno rischioso di quanto sembri: il raggruppamento non
+//          cambia dopo aver nascosto i segnaposto - l'appartenenza a una riga dipende dalla
+//          LARGHEZZA, non dall'altezza, quindi basta un passaggio e non un ciclo che converge - e
+//          gli offsetTop si leggono tutti in un giro solo, prima di scrivere: un reflow, non
+//          trecento.
+//          IL RESIZE e' il grosso della complessita': allargando la finestra le colonne cambiano e
+//          i gruppi diventano sbagliati, quindi serve un ResizeObserver sulla griglia. Guarda solo
+//          la LARGHEZZA: l'altezza la cambiamo noi nascondendo i segnaposto, e reagire a quella
+//          vorrebbe dire richiamarsi da soli all'infinito.
+//          Prima di misurare si rimettono tutte le righe visibili: senza il reset la seconda
+//          passata misurerebbe un layout gia' ridotto dalla prima, e le decisioni si impilerebbero
+//          invece di rifarsi da capo.
+//          Nelle altre sezioni non c'e' nessuna .retro-riga e la funzione esce subito.
 // v6.091 - NELLA CARD DELLA FIGURINA LA CATEGORIA VIENE PRIMA DEL NOME. Modificato app.js (piu' la
 //          versione in index.html).
 //          Franco: "vorrei prima la categoria e poi il nome. So che per i retro e' invertito, ma li'
@@ -11574,7 +11690,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.091';
+const JS_VERSION = 'v6.094';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -11646,10 +11762,10 @@ function cloudinaryUrl(url, opts = 'w_300,h_300,c_fit,q_auto,f_auto') {
 }
 
 function filterNationalities() {
-  const q = document.getElementById('reg-nationality-search').value.toLowerCase().trim();
+  const q = _perRicerca(document.getElementById('reg-nationality-search').value.trim()); // v6.093 — Perù si trova anche scrivendo Peru
   const dd = document.getElementById('nationality-dropdown');
   if (!q) { dd.style.display = 'none'; return; }
-  const filtered = COUNTRIES.filter(([code, name]) => name.toLowerCase().includes(q));
+  const filtered = COUNTRIES.filter(([code, name]) => _perRicerca(name).includes(q));
   if (!filtered.length) { dd.style.display = 'none'; return; }
   dd.style.display = '';
   dd.innerHTML = filtered.map(([code, name]) =>
@@ -16082,8 +16198,52 @@ function renderCatalog() {
   grid.innerHTML = series.map(s => seriesCardHTML(s)).join('');
 }
 
+// v6.093 (Franco) - LA RICERCA NON DEVE CHIEDERE L'ACCENTO ESATTO.
+// Segnalato da Franco cercando PIE-DINO, che non trovava PIÈ-DINO. Nei nomi Sgorbions gli accenti
+// sono dappertutto (PIÈ-DINO, PUBBLICITÀ PROGRESSO, L'ALFABETO) e chi cerca non sa - e non deve
+// sapere - se nel dato la lettera e' accentata.
+// COME: la normalizzazione Unicode NFD separa la lettera dal segno diacritico, e il segno si butta.
+// Vale per QUALUNQUE accento, mentre una lista di lettere scritta a mano dimentica sempre la È
+// maiuscola o la ù. Stesso trattamento per i tre apostrofi (dritto, tipografico, accento grave):
+// nei dati convivono e a occhio non si distinguono, quindi chi cerca non puo' indovinare quale sia.
+// DOVE: in TUTTI i punti che cercano - le due ricerche, i quattro menu a tendina dei collegamenti,
+// il selettore del paese - e su ENTRAMBI i lati del confronto. Una funzione sola, non nove copie:
+// e' la stessa lezione di _dueFacce() e _changeConRetroErrato().
+// ⚠️ NON va usata per le CHIAVI DI UNICITA' (controllo duplicati, riconoscimento in import): li'
+// due nomi che differiscono per un accento sono due nomi diversi, e confonderli produrrebbe
+// doppioni inventati - cioe' il difetto opposto, su dati veri.
+function _perRicerca(s) {
+  return String(s == null ? '' : s)
+    .normalize('NFD').replace(/\p{M}/gu, '')
+    .replace(/[’‘‛`´']/g, '')
+    .replace(/[\s\-‐-―_]+/g, '')
+    .toLowerCase();
+}
+
+// v6.093 (Franco) - IL ROSSO DI "INVISIBILE" SEGUE LA SPUNTA, nelle due form.
+// Togliendo la scritta "la vede solo l'admin" il rosso restava senza un posto dove stare: e'
+// passato sull'etichetta. Una funzione sola per entrambe le form - sono due punti che devono dire
+// la stessa cosa, ed e' esattamente il doppione del §12.1: scriverlo due volte significa che il
+// giorno che uno cambia, l'altro no, e nessuno se ne accorge.
+// `coloreSpento` cambia perche' i due contesti partono da colori diversi: nella finestra il testo
+// e' grigio spento, nella scheda l'etichetta ha il colore suo del CSS (stringa vuota = lo riprende).
+function _dipingiInvisibile(idInput, idLabel, coloreSpento) {
+  const chk = document.getElementById(idInput);
+  const lab = document.getElementById(idLabel);
+  if (chk && lab) lab.style.color = chk.checked ? 'var(--danger)' : coloreSpento;
+}
+
 function renderCatalogSearch(q) {
-  q = (q || document.getElementById('series-search')?.value || '').trim().toLowerCase();
+  // v6.093 - `q` resta il testo COME L'HA SCRITTO Franco, perche' finisce nel messaggio
+  // "Nessun risultato per ...": mostrargli la versione senza accenti sarebbe rispondere a una
+  // domanda che non ha fatto. A confrontare ci pensa `qn`.
+  q = (q || document.getElementById('series-search')?.value || '').trim();
+  const qn = _perRicerca(q);
+  // v6.093 - se dopo la normalizzazione non resta NIENTE (si e' cercato "-", o dei soli spazi),
+  // `includes('')` sarebbe vero per ogni campo di ogni oggetto: la ricerca risponderebbe con
+  // l'intero catalogo, cioe' il contrario di quello che chiede chi ha scritto qualcosa. Un testo
+  // fatto di soli separatori non e' una domanda: si torna al catalogo, come a campo vuoto.
+  if (!qn) { renderCatalog(); return; }
   const resultsEl = document.getElementById('catalog-search-results');
   const grid = document.getElementById('catalog-grid');
   if (!q) { renderCatalog(); return; }
@@ -16106,16 +16266,16 @@ function renderCatalogSearch(q) {
   const results = [];
   allSeries.forEach(s => {
     const desc = (currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt)) || '';
-    const seriesMatch = s.name.toLowerCase().includes(q) || desc.toLowerCase().includes(q);
+    const seriesMatch = _perRicerca(s.name).includes(qn) || _perRicerca(desc).includes(qn);
     const matchingFigs = allFigs.filter(f => f.seriesId === s.id && (
-      (f.name||'').toLowerCase().includes(q) ||
-      String(f.number||'').includes(q) ||
-      (f.subseries||'').toLowerCase().includes(q) ||
-      (f.desc||'').toLowerCase().includes(q) ||
-      (f.category||'').toLowerCase().includes(q) ||      /* v6.049 */
-      (f.subcategory||'').toLowerCase().includes(q) ||   /* v6.049 */
-      (f.subname||'').toLowerCase().includes(q) ||       /* v6.049 */
-      (f.fullName||'').toLowerCase().includes(q)         /* v6.049 */
+      _perRicerca(f.name).includes(qn) ||
+      String(f.number||'').includes(qn) ||
+      _perRicerca(f.subseries).includes(qn) ||
+      _perRicerca(f.desc).includes(qn) ||
+      _perRicerca(f.category).includes(qn) ||      /* v6.049 */
+      _perRicerca(f.subcategory).includes(qn) ||   /* v6.049 */
+      _perRicerca(f.subname).includes(qn) ||       /* v6.049 */
+      _perRicerca(f.fullName).includes(qn)         /* v6.049 */
     ));
     if (seriesMatch || matchingFigs.length) {
       results.push({ series: s, seriesMatch, figs: matchingFigs });
@@ -16348,7 +16508,11 @@ function _itemHasWidePair(f, allFigs, idx) {
       || (isBaseFig && f.retroId))) return false;
   const baseFigDual = isBaseFig ? f : (baseForChange || get(f.baseFigurineId));
   const retroFigDual = get(effRetroId);
-  return !!(baseFigDual?.img && retroFigDual?.img);
+  // v6.094 - basta che il retro ESISTA, come nel ramo di renderItems: da lì in poi la card è larga
+  // anche se al posto della foto c'è il segnaposto. Lasciando qui `retroFigDual?.img` la
+  // paginazione avrebbe contato come stretta una card che il renderer disegna larga, e il numero
+  // di card per pagina sarebbe stato sbagliato proprio sulle righe con un retro senza foto.
+  return !!(baseFigDual?.img && retroFigDual);
 }
 
 // Geometria REALE della griglia. Nessun numero di colonne assunto: si LEGGE quello che c'e'.
@@ -17096,14 +17260,14 @@ function populateBaseFigurineSelect(excludeId, selectedId) {
 }
 
 function filterBaseFigurineLink() {
-  const q = document.getElementById('fig-base-figurine-search').value.toLowerCase().trim();
+  const q = _perRicerca(document.getElementById('fig-base-figurine-search').value.trim()); // v6.093
   const dd = document.getElementById('fig-base-figurine-dropdown');
   if (!dd) return;
   // v5.785 — la ricerca combacia con ciò che è mostrato (l'etichetta: Nome completo per i Retro,
   // "#numero Nome" per le Figurine) + il numero. Prima cercava su name/category/subcategory, che per i
   // Retro non coincideva col Nome completo mostrato: da qui il "a volte funziona, a volte no".
   const filtered = q
-    ? _baseFigurineLinkOptions.filter(f => _baseFigurineLinkLabel(f).toLowerCase().includes(q) || String(f.number||'').includes(q))
+    ? _baseFigurineLinkOptions.filter(f => _perRicerca(_baseFigurineLinkLabel(f)).includes(q) || String(f.number||'').includes(q))
     : _baseFigurineLinkOptions;
   if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
@@ -17194,13 +17358,13 @@ function populateRetroSelect(selectedId, allSeries) {
 }
 
 function filterRetroLink() {
-  const q = document.getElementById('fig-retro-search').value.toLowerCase().trim();
+  const q = _perRicerca(document.getElementById('fig-retro-search').value.trim()); // v6.093
   const dd = document.getElementById('fig-retro-dropdown');
   if (!dd) return;
   // v5.786 — ricerca sull'etichetta mostrata (che in modalità tutte-le-serie include la serie) +
   // categoria/sottocategoria; nessun limite di 50.
   const filtered = q
-    ? _retroLinkOptions.filter(r => _retroLinkLabel(r).toLowerCase().includes(q) || (r.category||'').toLowerCase().includes(q) || (r.subcategory||'').toLowerCase().includes(q))
+    ? _retroLinkOptions.filter(r => _perRicerca(_retroLinkLabel(r)).includes(q) || _perRicerca(r.category).includes(q) || _perRicerca(r.subcategory).includes(q))
     : _retroLinkOptions;
   if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
@@ -17491,6 +17655,7 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-no-number-input').checked = f.noNumber || false;
       { const fnd = document.getElementById('fig-foto-non-disponibile-input'); if (fnd) fnd.checked = !!f.fotoNonDisponibile; } // v6.079
       { const inv = document.getElementById('fig-invisibile-input'); if (inv) inv.checked = !!f.invisibile; } // v6.080
+      _dipingiInvisibile('fig-invisibile-input','fig-invisibile-label','var(--muted)'); // v6.093 — il colore parte allineato allo stato
       document.getElementById('fig-category-input').value = f.category || '';
       document.getElementById('fig-subcategory-input').value = f.subcategory || '';
       document.getElementById('fig-subname-input').value = f.subname || '';
@@ -17530,6 +17695,7 @@ function openAddItemModal(itemId) {
     document.getElementById('fig-no-number-input').checked = false;
     { const fnd0 = document.getElementById('fig-foto-non-disponibile-input'); if (fnd0) fnd0.checked = false; } // v6.079
     { const inv0 = document.getElementById('fig-invisibile-input'); if (inv0) inv0.checked = false; } // v6.080
+    _dipingiInvisibile('fig-invisibile-input','fig-invisibile-label','var(--muted)'); // v6.093
     document.getElementById('fig-score-input').value = 0;
     const rbIn0 = document.getElementById('fig-retro-bianco-input'); if (rbIn0) rbIn0.checked = false;
     document.getElementById('fig-is-variation-input').checked = false;
@@ -18085,10 +18251,21 @@ function _checkBothOrientationForStack(containerId, which, isVertical, natW, nat
       const refW = _getConfirmedRowSlotWidth(containerId);
       const frontH = refW * (state.front.natH / state.front.natW);
       const retroH = refW * (state.retro.natH / state.retro.natW);
-      const frontImg = c.children[0].querySelector('img');
-      const retroImg = c.children[1].querySelector('img');
-      [frontImg, retroImg].forEach(img => {
-        if (img) { img.style.width = refW + 'px'; img.style.height = 'auto'; img.style.margin = '0 auto'; img.style.display = 'block'; img.style.objectFit = ''; }
+      // v6.094 - una delle due facce puo' essere il SEGNAPOSTO "foto non disponibile", che e' un
+      // <div> e non una <img>: cercando solo l'immagine restava l'unico elemento senza misure, e
+      // in colonna sarebbe collassato sull'altezza del testo. Per l'immagine l'altezza resta
+      // `auto` (se la calcola dalla larghezza e dalle sue proporzioni vere); al segnaposto va
+      // detta, perche' proporzioni sue non ne ha - gli si da' quella gia' calcolata qui sopra.
+      const _facciaEl = div => div.querySelector('img') || div.firstElementChild;
+      [[_facciaEl(c.children[0]), frontH], [_facciaEl(c.children[1]), retroH]].forEach(([el, h]) => {
+        if (!el) return;
+        el.style.width = refW + 'px';
+        el.style.margin = '0 auto';
+        if (el.tagName === 'IMG') {
+          el.style.height = 'auto'; el.style.display = 'block'; el.style.objectFit = '';
+        } else {
+          el.style.height = h + 'px'; el.style.flex = '0 0 auto';
+        }
       });
       const totalH = frontH + retroH + 4; // +4px per il padding verticale (2px sopra e sotto)
       const placeholder = c.closest('.fig-img-placeholder');
@@ -18237,7 +18414,7 @@ async function unmarkFilteredForSale() {
 }
 
 function getCurrentlyFilteredItems(opts) {
-  const searchQ = (document.getElementById('items-search')?.value || '').toLowerCase().trim();
+  const searchQ = _perRicerca((document.getElementById('items-search')?.value || '').trim()); // v6.093 — senza accenti
   const allFigs = getData('figurines', []);
   // getOwned() una volta sola, FUORI dal ciclo: dentro verrebbe richiamata per ogni
   // singolo oggetto della serie (368 volte, e per ogni ridisegno).
@@ -18320,7 +18497,7 @@ function getCurrentlyFilteredItems(opts) {
     // v6.049 - `subname` esplicito: ci si arrivava gia' attraverso il Nome completo, ma quello e'
     // un campo SALVATO che puo' restare indietro rispetto ai dati (§13). Un campo cercato
     // direttamente non dipende dall'aggiornamento di un altro.
-    return (f.name||'').toLowerCase().includes(searchQ) || String(f.number||'').includes(searchQ) || (f.subseries||'').toLowerCase().includes(searchQ) || (f.category||'').toLowerCase().includes(searchQ) || (f.subcategory||'').toLowerCase().includes(searchQ) || (f.subname||'').toLowerCase().includes(searchQ) || (f.fullName||'').toLowerCase().includes(searchQ);
+    return _perRicerca(f.name).includes(searchQ) || String(f.number||'').includes(searchQ) || _perRicerca(f.subseries).includes(searchQ) || _perRicerca(f.category).includes(searchQ) || _perRicerca(f.subcategory).includes(searchQ) || _perRicerca(f.subname).includes(searchQ) || _perRicerca(f.fullName).includes(searchQ);
   });
 }
 
@@ -18885,17 +19062,40 @@ function clearChangeTypeFilter() {
 // volta sola: lo usano la disposizione 'destra' delle figurine e le bustine (§12.2), che di
 // disposizioni ne hanno una sola. Due copie della stessa regola divergono, e divergono in silenzio
 // — la lezione della v6.032, che correggeva un baco nato da una condizione ricopiata.
+// v6.094 (Franco) - LA FACCIA DEL RETRO SI DISEGNA ANCHE QUANDO LA FOTO NON C'E'.
+// Segnalato da Franco su un Change di BOBBY GUM: il retro era collegato ma senza foto, e la card
+// mostrava il solo fronte ingrandito - cioe' esattamente cio' che si vede quando un retro NON
+// esiste. Due situazioni diverse rese identiche a schermo, e quella che conta (manca una foto da
+// caricare) diventava invisibile.
+// E' la stessa regola che Franco aveva gia' dato due volte altrove: nella scheda (v6.044/045, "i
+// riquadri sono sempre due e quello del retro resta vuoto") e sulle bustine (v6.076, "il riquadro
+// del retro resta disegnato anche vuoto: e' cosi' che ci si accorge che la foto manca"). In
+// griglia non era mai arrivata.
+// Il segnaposto forza `position:relative`: la classe .fig-noimg nasce per riempire da sola tutto
+// il riquadro immagine (caso a foto singola) e vive in css/style.css, che non sta nella cartella
+// _upload_. Senza questo vincolo, dentro meta' riquadro potrebbe posizionarsi rispetto al
+// contenitore esterno e coprire anche il fronte.
+function _facciaRetroHTML(imgUrl, onloadAttr) {
+  if (imgUrl) {
+    return `<img src="${cloudinaryUrl(imgUrl)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"${onloadAttr ? ' ' + onloadAttr : ''}>`;
+  }
+  return `<div class="fig-noimg" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.62rem;line-height:1.15;padding:4px;box-sizing:border-box;">${currentLang === 'it' ? 'FOTO NON DISPONIBILE' : 'PHOTO NOT AVAILABLE'}</div>`;
+}
+
+// v6.094 - tollerante su ENTRAMBI i lati. Il caso simmetrico esiste davvero: un oggetto con la
+// foto del retro e non quella del fronte finiva nel ramo "nessuna foto", e la faccia che c'era
+// spariva dalla card - il contrario di quello che serve.
 function _coppiaAffiancataHTML(imgFronte, imgRetro) {
   return `<div style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
-            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(imgFronte)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);"><img src="${cloudinaryUrl(imgRetro)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;">${_facciaRetroHTML(imgFronte)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_facciaRetroHTML(imgRetro)}</div>
           </div>`;
 }
 
 function renderItems() {
   const grid = document.getElementById('items-grid');
   if (!currentSeriesId || !grid || !currentSection) return;
-  const searchQ = (document.getElementById('items-search')?.value || '').toLowerCase().trim();
+  const searchQ = _perRicerca((document.getElementById('items-search')?.value || '').trim()); // v6.093 — senza accenti
   if (searchQ) currentItemPage = 1;
 
   // Render filtri tipo (sezione Figurine o Retro)
@@ -19239,7 +19439,10 @@ function renderItems() {
       const retroFigDual = _retroBianco
         ? { img: RETRO_BIANCO_IMG, name: '' }
         : getData('figurines', []).find(x => x.id === _effRetroId);
-      if (_fronteCoppia && retroFigDual?.img) {
+      // v6.094 - basta che il retro ESISTA: la foto puo' mancare, e in quel caso al suo posto va il
+      // segnaposto. Prima qui si chiedeva `retroFigDual?.img`, e un retro senza foto faceva cadere
+      // la card nel ramo a una foto sola - la stessa resa di un oggetto che il retro non ce l'ha.
+      if (_fronteCoppia && retroFigDual) {
         if (_retroViewMode === 'destra-piena') hasWidePair = true;
         if (_retroViewMode === 'destra') {
           imgHTML = _coppiaAffiancataHTML(_fronteCoppia, retroFigDual.img); // v6.075 — markup condiviso con le bustine
@@ -19247,13 +19450,13 @@ function renderItems() {
           const dualId = 'dual-' + f.id;
           imgHTML = `<div id="${dualId}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
             <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);"><img src="${cloudinaryUrl(retroFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(retroFigDual.img, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`)}</div>
           </div>`;
         } else if (_retroViewMode === 'fronte-grande') {
           const dualId2 = 'dualf-' + f.id;
           imgHTML = `<div id="${dualId2}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
             <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId2}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"></div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);"><img src="${cloudinaryUrl(retroFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(retroFigDual.img)}</div>
           </div>`;
         } else if (_retroViewMode === 'destra-piena') {
           // Fronte+Retro mai rimpiccioliti rispetto alla dimensione "piena" che avrebbero in
@@ -19263,15 +19466,29 @@ function renderItems() {
           // altezza) — la forma della card cambia dinamicamente, dato che l'orientamento si
           // scopre solo al caricamento delle foto
           const dualId5 = 'dualp-' + f.id;
+          // v6.094 (Franco) - IL SEGNAPOSTO E' SEMPRE ORIZZONTALE, e questo basta a dargli un posto.
+          // Prima non dichiarava nessun orientamento, e la card restava affiancata mentre le sue
+          // sorelle - con due foto sdraiate - si impilavano: il fronte finiva a meta' larghezza e
+          // disallineato rispetto alle altre versioni della stessa figurina. Segnalato da Franco su
+          // PEPPINO SCARTINO #467.
+          // Dichiarandolo orizzontale, la regola che gia' esiste fa tutto: fronte sdraiato + box
+          // sdraiato = due orizzontali = impilati, box sotto. Fronte in piedi = affiancati.
+          // Le proporzioni non sono inventate: 1,38 e' il rapporto MISURATO sui retro orizzontali
+          // veri (v6.044/045, 30 retro su 40). Cosi' il box occupa lo spazio che occuperebbe la
+          // foto che manca, invece di uno spazio deciso a caso.
+          // La registrazione avviene SUBITO, mentre si costruisce l'HTML: la funzione accumula e
+          // agisce solo quando ha entrambe le facce, quindi scattera' al carico del fronte, che a
+          // quel punto trovera' il DOM al suo posto.
+          if (!retroFigDual.img) _checkBothOrientationForStack(dualId5, 'retro', false, 138, 100);
           imgHTML = `<div id="${dualId5}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
             <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="_checkBothOrientationForStack('${dualId5}','front',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"></div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);"><img src="${cloudinaryUrl(retroFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="_checkBothOrientationForStack('${dualId5}','retro',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_facciaRetroHTML(retroFigDual.img, `onload="_checkBothOrientationForStack('${dualId5}','retro',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`)}</div>
           </div>`;
         } else {
           // 'sotto' (default)
           imgHTML = `<div style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
             <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);"><img src="${cloudinaryUrl(retroFigDual.img)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(retroFigDual.img)}</div>
           </div>`;
         }
       }
@@ -19286,7 +19503,13 @@ function renderItems() {
     // figurina e il suo retro (che si può volere grande, perché è collezionabile da solo). Qui le
     // due foto sono la stessa cosa vista da due lati, e non c'è niente da scegliere: perciò né
     // selettore in questa sezione, né `hasWidePair` — la card resta della larghezza di sempre.
-    if (!imgHTML && _secondaFacciaSulRecord(currentSection) && f.img && f.imgRetro) {
+    // v6.094 (Franco: "il segnaposto va messo su ogni possibile articolo dell'inventario") - basta
+    // che ci sia UNA delle due facce. Album, bustine e altri oggetti hanno sempre due facce: se
+    // `imgRetro` e' vuoto non e' che il retro non esiste - e' che la sua foto non e' stata ancora
+    // caricata, ed e' esattamente il caso che il segnaposto deve rendere visibile. Prima servivano
+    // entrambe, quindi un oggetto con una foto sola mostrava quella sola, grande, senza nessun
+    // segnale che l'altra mancasse.
+    if (!imgHTML && _secondaFacciaSulRecord(currentSection) && (f.img || f.imgRetro)) {
       imgHTML = _coppiaAffiancataHTML(f.img, f.imgRetro);
     }
     if (!imgHTML) {
@@ -19399,11 +19622,19 @@ function renderItems() {
     // campi sono popolati: e' una proprieta' del layout, non una fortuna dei dati.
     // La Categoria resta NON ripetuta quando il Nome la contiene gia' (scelta di Franco, in linea
     // con la v5.976): li' la riga c'e' ma e' vuota. L'allineamento non dipende piu' da lei.
-    const _rigaCard = (testo, stile) => `<div style="${stile}">${testo || '&nbsp;'}</div>`;
+    // v6.092 (Franco) - LA RIGA SI RISERVA SOLO SE SERVE, e lo si decide RIGA DI GRIGLIA PER RIGA DI
+    // GRIGLIA, CAMPO PER CAMPO. Lo sfalsamento che la v6.037 ha tolto era reale, ma il rimedio
+    // pagava sempre: quattro righe fisse anche dove NESSUNA card intorno ha quel campo.
+    // Qui l'HTML si limita a DIRE cosa c'e': ogni riga porta il nome del suo campo (data-campo) e,
+    // se e' vuota, la classe retro-riga-vuota. Chi decide e' _allineaRigheRetro(), dopo il render -
+    // perche' quali card stiano sulla stessa riga di griglia lo sa solo il CSS, in base alla
+    // larghezza. Il markup non prova a indovinarlo.
+    const _rigaCard = (testo, stile, campo) =>
+      `<div class="retro-riga${testo ? '' : ' retro-riga-vuota'}" data-campo="${campo}" style="${stile}">${testo || '&nbsp;'}</div>`;
     const _retroRigheHTML = !isRetroCard ? '' : (
-        _rigaCard(esc((f.subname || '').trim()), 'font-size:0.82rem;color:var(--info);margin-top:1px;') +
-        _rigaCard(_retroCatNelNome ? '' : esc(_catNuda), 'font-size:0.82rem;color:' + COL_CATEGORIA + ';margin-top:1px;') +
-        _rigaCard(esc(_retroSub), 'font-size:0.78rem;color:' + COL_SOTTOCAT + ';margin-top:1px;')
+        _rigaCard(esc((f.subname || '').trim()), 'font-size:0.82rem;color:var(--info);margin-top:1px;', 'subname') +
+        _rigaCard(_retroCatNelNome ? '' : esc(_catNuda), 'font-size:0.82rem;color:' + COL_CATEGORIA + ';margin-top:1px;', 'categoria') +
+        _rigaCard(esc(_retroSub), 'font-size:0.78rem;color:' + COL_SOTTOCAT + ';margin-top:1px;', 'sottocategoria')
       );
     const figNameInner = isRetroCard
       ? `<span style="color:var(--text);">${esc(f.name || '')}</span>` /* v6.037 - riga 1 = il Nome */
@@ -19542,6 +19773,73 @@ function renderItems() {
     paginationEl.innerHTML = paginationHTML(currentItemPage, totalPages, allItems.length);
     paginationEl.style.marginTop = '1.5rem';
   }
+
+  // v6.092 - i segnaposto della card Retro si decidono qui, a griglia disegnata (vedi la funzione).
+  _allineaRigheRetro();
+  _osservaRigheRetro();
+}
+
+// v6.092 (Franco) - SEGNAPOSTO DELLA CARD RETRO, RIGA DI GRIGLIA PER RIGA DI GRIGLIA.
+// La regola: se anche una sola card di quella riga mostra il Sottonome, tutte le card di quella
+// riga riservano la riga del Sottonome; altrimenti nessuna. Idem per Categoria e Sottocategoria.
+// Perche' "per riga di griglia" e non "per pagina": i 45 retro col Sottonome non sono sparsi - 36
+// su 45 stanno in RICERCATO - e la griglia ordina per categoria, quindi finiscono vicini. Poche
+// righe riservano, tutte le altre no. Con la regola "per pagina" basterebbe un retro su trenta per
+// far riservare tutti.
+// QUALI CARD STIANO SULLA STESSA RIGA il JS non lo sa quando genera l'HTML: le colonne le decide il
+// CSS in base alla larghezza. Quindi si misura DOPO il render, leggendo l'offsetTop.
+// Due cose la rendono meno rischiosa di quanto sembri:
+//  - il raggruppamento NON cambia dopo aver nascosto i segnaposto: l'appartenenza a una riga
+//    dipende dalla LARGHEZZA, non dall'altezza. Basta un passaggio, non un ciclo che converge;
+//  - si legge tutto prima e si scrive tutto dopo: UN reflow, non trecento.
+// Il reset iniziale non e' pignoleria: senza, la seconda passata misurerebbe un layout gia' ridotto
+// dalla prima e le decisioni si impilerebbero invece di rifarsi da capo.
+function _allineaRigheRetro() {
+  const grid = document.getElementById('items-grid');
+  if (!grid) return;
+  const righe = grid.querySelectorAll('.retro-riga');
+  if (!righe.length) return;                       // nelle altre sezioni non c'e' niente da fare
+  righe.forEach(r => { r.style.display = ''; });   // si riparte sempre da tutte riservate
+
+  // LETTURA - tutti gli offsetTop in un giro solo, prima di toccare qualsiasi cosa.
+  const cards = Array.from(grid.querySelectorAll('.fig-card'));
+  const gruppi = new Map();
+  cards.forEach(c => {
+    const y = c.offsetTop;
+    if (!gruppi.has(y)) gruppi.set(y, []);
+    gruppi.get(y).push(c);
+  });
+
+  // SCRITTURA - un campo si riserva solo se almeno una card del gruppo lo mostra davvero.
+  gruppi.forEach(gruppo => {
+    const serve = new Set();
+    const daValutare = [];
+    gruppo.forEach(c => c.querySelectorAll('.retro-riga').forEach(r => {
+      if (r.classList.contains('retro-riga-vuota')) daValutare.push(r);
+      else serve.add(r.dataset.campo);
+    }));
+    daValutare.forEach(r => { if (!serve.has(r.dataset.campo)) r.style.display = 'none'; });
+  });
+}
+
+// v6.092 - allargando la finestra le colonne cambiano, quindi cambiano i gruppi: senza questo,
+// i segnaposto resterebbero quelli decisi alla larghezza precedente.
+// SI GUARDA SOLO LA LARGHEZZA. L'observer vede anche l'altezza, e l'altezza la cambiamo noi
+// nascondendo i segnaposto: reagire a quella significherebbe richiamarsi da soli all'infinito.
+let _roRigheRetro = null;
+let _larghezzaGrigliaRetro = -1;
+function _osservaRigheRetro() {
+  const grid = document.getElementById('items-grid');
+  if (!grid || typeof ResizeObserver === 'undefined') return;
+  _larghezzaGrigliaRetro = Math.round(grid.getBoundingClientRect().width);
+  if (_roRigheRetro) return;                       // uno solo, e resta agganciato alla griglia
+  _roRigheRetro = new ResizeObserver(entries => {
+    const w = Math.round(entries[0].contentRect.width);
+    if (w === _larghezzaGrigliaRetro) return;
+    _larghezzaGrigliaRetro = w;
+    requestAnimationFrame(_allineaRigheRetro);
+  });
+  _roRigheRetro.observe(grid);
 }
 
 function changeItemPage(page) {
@@ -21024,10 +21322,10 @@ function openNationalityModal() {
 }
 
 function filterNationalities2() {
-  const q = document.getElementById('profile-nationality-search').value.toLowerCase().trim();
+  const q = _perRicerca(document.getElementById('profile-nationality-search').value.trim()); // v6.093
   const dd = document.getElementById('nationality-dropdown-2');
   if (!q) { dd.style.display = 'none'; return; }
-  const filtered = COUNTRIES.filter(([code, name]) => name.toLowerCase().includes(q));
+  const filtered = COUNTRIES.filter(([code, name]) => _perRicerca(name).includes(q));
   if (!filtered.length) { dd.style.display = 'none'; return; }
   dd.style.display = '';
   dd.innerHTML = filtered.map(([code, name]) =>
@@ -22457,13 +22755,13 @@ let _feIsRetro = false;
 let _feSezione = null;
 let _feBaseFigurineLinkOptions = [];
 function filterFeBaseFigurineLink() {
-  const q = document.getElementById('fe-base-figurine-search').value.toLowerCase().trim();
+  const q = _perRicerca(document.getElementById('fe-base-figurine-search').value.trim()); // v6.093
   const dd = document.getElementById('fe-base-figurine-dropdown');
   if (!dd) return;
   // v5.785 — come nel selettore modale: ricerca sull'etichetta mostrata (_baseFigurineLinkLabel:
   // Nome completo per i Retro, "#numero Nome" per le Figurine) + numero, e nessun limite di 50.
   const filtered = q
-    ? _feBaseFigurineLinkOptions.filter(f => _baseFigurineLinkLabel(f).toLowerCase().includes(q) || String(f.number||'').includes(q))
+    ? _feBaseFigurineLinkOptions.filter(f => _perRicerca(_baseFigurineLinkLabel(f)).includes(q) || String(f.number||'').includes(q))
     : _feBaseFigurineLinkOptions;
   if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
@@ -22505,11 +22803,11 @@ function _populateFeRetroOptions(seriesId, allSeries) {
       : ((a.category||'').localeCompare(b.category||'', 'it') || (a.subcategory||'').localeCompare(b.subcategory||'', 'it') || (a.name||'').localeCompare(b.name||'', 'it')));
 }
 function filterFeRetroLink() {
-  const q = document.getElementById('fe-retro-search').value.toLowerCase().trim();
+  const q = _perRicerca(document.getElementById('fe-retro-search').value.trim()); // v6.093
   const dd = document.getElementById('fe-retro-dropdown');
   if (!dd) return;
   const filtered = q
-    ? _feRetroLinkOptions.filter(r => _retroLinkLabel(r).toLowerCase().includes(q) || (r.category||'').toLowerCase().includes(q) || (r.subcategory||'').toLowerCase().includes(q))
+    ? _feRetroLinkOptions.filter(r => _perRicerca(_retroLinkLabel(r)).includes(q) || _perRicerca(r.category).includes(q) || _perRicerca(r.subcategory).includes(q))
     : _feRetroLinkOptions;
   if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
@@ -22725,20 +23023,22 @@ function switchToEditMode(figId) {
   // c'e' niente da fare, e un elenco pieno di falsi allarmi si smette di guardarlo.
   // Sta in fondo perche' non descrive l'oggetto ma cio' che sappiamo dell'oggetto - come la data
   // di creazione, ma questa si puo' scrivere.
+  // v6.093 (Franco) - via la spiegazione accanto alla casella: l'etichetta la dice gia'.
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Foto non disponibile':'Photo unavailable') + '</span>' +
     '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">' +
     '<input type="checkbox" id="fe-foto-non-disponibile" ' + (f.fotoNonDisponibile ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
-    '<span style="color:var(--muted);">' + (currentLang==='it'?'non ho la foto e non posso averla' : 'I do not have the photo and cannot get it') + '</span>' +
     '</label></span></div>';
 
   // v6.080 (Franco) - INVISIBILE: l'oggetto esiste, ma per chi non e' admin non c'e'. Il filtro sta
   // in getData(), quindi sparisce da griglia, ricerca, caroselli, contatori ed export insieme.
   // In rosso e non in grigio: e' l'unico campo di questa form che toglie una cosa dal sito, e va
   // riconosciuto a colpo d'occhio quando si riapre l'oggetto sei mesi dopo.
-  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Invisibile':'Hidden') + '</span>' +
+  // v6.093 (Franco) - via la spiegazione. Il rosso non aveva piu' dove stare, e non si e' perso: e'
+  // passato sull'ETICHETTA, che e' l'unica cosa rimasta a schermo. Ora e' anche VIVO - prima il
+  // colore si decideva al render e spuntare la casella non lo cambiava fino alla riapertura.
+  html += '<div class="detail-row"><span class="detail-label" id="fe-invisibile-label"' + (f.invisibile ? ' style="color:var(--danger);"' : '') + '>' + (currentLang==='it'?'Invisibile':'Hidden') + '</span>' +
     '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">' +
-    '<input type="checkbox" id="fe-invisibile" ' + (f.invisibile ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
-    '<span style="color:' + (f.invisibile ? 'var(--danger)' : 'var(--muted)') + ';">' + (currentLang==='it'?'la vede solo l’admin' : 'only the admin can see it') + '</span>' +
+    '<input type="checkbox" id="fe-invisibile" ' + (f.invisibile ? 'checked' : '') + ' onchange="_dipingiInvisibile(\'fe-invisibile\',\'fe-invisibile-label\',\'\')" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
     '</label></span></div>';
 
   // Descrizione (in fondo, campo più grande)
