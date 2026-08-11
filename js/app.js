@@ -1,6 +1,93 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.096 - CAMPO NOTE, LE DUE RICERCHE ALLINEATE, E I TIPI DI CHANGE A SELEZIONE MULTIPLA.
+//          Modificato app.js e index.html.
+//
+//          1) NOTE (Franco). Un campo di testo libero sull'oggetto, SOLO ADMIN, in tutte le
+//          sezioni. Sta nelle DUE form - la finestra Aggiungi/Modifica e la scheda - perche' due
+//          form per lo stesso oggetto devono dire le stesse cose: e' il difetto della v6.074, dove
+//          `retroBianco` per una release e' esistito solo nella finestra, e chi usava l'altra form
+//          salvando lo azzerava senza saperlo.
+//          ⚠️ Il campo non si legge mai a occhi chiusi. Nella finestra il textarea resta NEL DOM
+//          anche per un non-admin (nascosto, non rimosso), quindi leggerlo darebbe stringa vuota e
+//          cancellerebbe una nota scritta dall'admin: per questo il valore si prende solo se chi
+//          salva e' admin, e altrimenti si conserva quello del record. Stessa precauzione della
+//          casella "Non ha numero" della v6.077.
+//          NON entra in `_campiEreditatiDaBase`: una nota e' dell'oggetto, non della sua base -
+//          un Change puo' avere un appunto che alla base non si applica.
+//          NON entra in `ebayCampiCambiati`: scrivere un appunto non e' una cosa che eBay deve
+//          sapere, e alzare `daPubblicare` per una nota metterebbe in coda un annuncio identico.
+//          L'etichetta e' senza `data-i18n` di proposito (tranello della v6.077: applyI18n()
+//          riscrive al primo cambio lingua le etichette che ce l'hanno).
+//
+//          2) LE DUE RICERCHE GUARDANO GLI STESSI CAMPI, e ora perche' li chiedono alla stessa
+//          funzione. La v6.049/050 le aveva gia' allineate campo per campo, e sono tornate a
+//          divergere lo stesso: `desc` stava nella ricerca GLOBALE e non in quella di SEZIONE.
+//          Invisibile, come sempre in questi casi - dalla griglia di una serie una parola della
+//          descrizione non trovava niente, e sembrava che quella parola non ci fosse.
+//          Riallinearle a mano avrebbe solo rimandato la terza volta: ora l'elenco sta in
+//          `_campiRicercaFigurina()` e il campo si aggiunge in un posto solo.
+//          Le Note ci entrano solo per l'admin: renderle cercabili a tutti farebbe comparire un
+//          oggetto fra i risultati per una parola che chi cerca non puo' leggere da nessuna parte.
+//
+//          3) TIPI DI CHANGE ED ERRORI DI STAMPA: PIU' DI UNO INSIEME (Franco). Il caso d'uso:
+//          "voglio vedere quante figurine ho considerato un paio di tipologie di change" - e
+//          servivano due ricerche, senza mai una vista d'insieme da fotografare.
+//          I due filtri passano da stringa a Set; insieme VUOTO = spento, cioe' esattamente quello
+//          che voleva dire `null`, quindi azzeramenti e cambio sezione non cambiano significato.
+//          Il chip ha due zone, come "Aggiungi a filtro" di Excel: l'ETICHETTA fa quello di sempre
+//          (accende questo e spegne gli altri; riclick sull'unico acceso azzera), il "+" a destra
+//          AGGIUNGE senza togliere e su un tipo gia' scelto diventa "−".
+//          La proprieta' che ha deciso la forma: se il "+" non lo premi mai, il comportamento e'
+//          identico a prima. La novita' vive tutta in un gesto nuovo, e non c'e' niente da
+//          reimparare. La prima proposta - interruttori indipendenti - dava piu' combinazioni ma
+//          costringeva a spegnere tutti gli altri per isolarne uno, cioe' spostava il costo sul
+//          gesto piu' frequente.
+//          Il "+" e' VISIBILE e non un ctrl-clic: sul telefono una scorciatoia da tastiera non
+//          esiste, e il sito si usa anche da li'.
+//          ⚠️ NON si estende ai tre filtri sulla FOTO, e non e' una svista. La' i valori sono
+//          predicati che si contraddicono ("senza foto E con foto" non e' vero per nessun oggetto)
+//          ed erano stati schiacciati in un valore solo apposta (v6.054, v6.095). Qui sono valori
+//          diversi dello STESSO campo: sceglierne due vuol dire "l'uno o l'altro", che ha sempre
+//          senso. Estendere il "+" per simmetria rimetterebbe in piedi il difetto che quelle due
+//          release avevano tolto.
+// v6.095 - I TRE FILTRI SULLA FOTO STANNO NEL RIQUADRO ADMIN. Modificato app.js (piu' la versione
+//          in index.html).
+//          Franco: "i filtri Senza foto e Con foto mettili nella sezione Filtri aggiuntivi admin,
+//          aggiungi Con foto non disponibile, per tutte le schede dove ha senso".
+//          ⚠️ RIBALTA LA v5.796, dove Franco aveva chiesto l'OPPOSTO: "Senza foto" fuori dai filtri
+//          admin e visibile a TUTTI. Gliel'ho fatto notare prima di scrivere - da qui in poi per un
+//          utente normale quel filtro sparisce - e ha risposto "ho cambiato idea: mettilo solo per
+//          gli admin". Annotato anche nel codice, cosi' chi legge la v5.796 non conclude che sia
+//          stata dimenticata.
+//          Il terzo filtro chiede "QUESTA CARD MOSTRA IL SEGNAPOSTO?", non "ha il flag?".
+//          La prima stesura guardava il flag `fotoNonDisponibile` sull'oggetto; Franco l'ha
+//          corretta: deve prendere "tutti gli item che espongono quel segnaposto", per qualunque
+//          delle tre ragioni - la foto del fronte che non possiamo avere, quella del retro che non
+//          possiamo avere, o un retro che esiste e la foto non ce l'ha ancora.
+//          Quindi il criterio e' cio' che si VEDE, e per non divergere dalla card la nuova
+//          `_mostraSegnapostoFoto()` si appoggia alle stesse funzioni che la disegnano.
+//          Il flag non entra nel criterio, ed e' corretto: il segnaposto compare quando la foto
+//          manca, flag o no. Il flag serve alla pagina Errori per sapere se c'e' qualcosa da fare.
+//          Ne segue che questo filtro CONTIENE tutti i "Senza foto" (una card senza fronte e' tutta
+//          segnaposto) piu' quelle cui manca la sola faccia del retro: due tagli, uno piu' largo.
+//          ⚠️ Un retro che NON esiste non conta: li' la card non mostra il segnaposto ma il box
+//          vuoto (caso C, §12.7). E' la distinzione della v6.079.
+//          Restano UN SOLO valore, ora a quattro stati (null|senza|con|nonDisp) invece che tre
+//          interruttori indipendenti: "senza foto E con foto" non deve essere rappresentabile, la
+//          stessa ragione della v6.054.
+//          Guardia aggiunta: per un non-admin `_fotoFilter` si AZZERA. Da quando gli interruttori
+//          sono solo-admin, un utente normale non avrebbe piu' modo di spegnerne uno rimasto acceso
+//          - un filtro invisibile che nasconde meta' griglia senza dire perche'. Si azzera nello
+//          stesso punto in cui _itemTypeFilter ripiega quando punta a un tipo inesistente, e gira
+//          dentro renderItems prima che il filtro venga applicato.
+//          Nella stessa release, chiesto da Franco in preview: il campo "Tipi di Retro" della form
+//          della serie passa da rows=3 a rows=8. Un valore per riga, e tre righe costringevano a
+//          scorrere dentro il campo per rileggere un elenco che si compila tutto in una volta.
+//          `resize:vertical` c'era gia' e resta: il default e' piu' alto, il limite non c'e'.
+//          Modificato il solo index.html. Entra qui e non in una v6.096 perche' la v6.095 non era
+//          ancora pubblicata - stessa scelta della v6.076.
 // v6.094 - IN GRIGLIA IL RIQUADRO DEL RETRO SI DISEGNA ANCHE SENZA FOTO. Modificato app.js (piu' la
 //          versione in index.html).
 //          Segnalato da Franco su un Change di BOBBY GUM (#543): il retro era collegato ma senza
@@ -11690,7 +11777,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.094';
+const JS_VERSION = 'v6.096';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12949,6 +13036,8 @@ let currentSeriesId = null;
 // vuoto che nessuno ha chiesto: con un valore solo quella combinazione non e' rappresentabile.
 // "Con foto" e' riservato all'admin: a un utente non serve chiedere di vedere le figurine che una
 // foto ce l'hanno - sono la normalita'. All'admin serve, per lavorare sul gia' fatto.
+// v6.095 - quattro stati: null | 'senza' | 'con' | 'nonDisp'. Tutti e tre gli interruttori sono
+// da ADMIN e vivono nel riquadro "Filtri aggiuntivi admin".
 let _fotoFilter = null;
 // Il filtro sul TIPO di oggetto (set base, variazioni, change...) risponde alla
 // domanda "che cosa e' questo?". Non rispondeva a quella che un collezionista si fa
@@ -13123,13 +13212,24 @@ let _retroSubcategoryFilter = null; // null = off; '' = senza sottocategoria
 let _retroResultSubVals = [];       // coppie {cat, sub} dei sotto-box cliccabili, per l'onclick via indice
 // v5.809 — Specchietti "Change per Tipo di change" (sezione Figurine), gemelli di quelli dei Retro.
 let _changeTypeResultsOpen = false;  // riquadro risultati: chiuso di default
-let _changeTypeFilter = null;        // filtro Tipo di change attivo (null = off); solo sezione Figurine
+// v6.096 (Franco) - DA UNO A PIU' TIPI INSIEME. Era una stringa (un tipo solo, null = spento), ora
+// e' un Set e l'insieme VUOTO vuol dire spento - cioe' esattamente quello che voleva dire `null`,
+// quindi la ✕ e gli azzeramenti continuano a significare la stessa cosa.
+// Il caso d'uso di Franco: "voglio vedere quante figurine ho considerato un paio di tipologie di
+// change" - e oggi servivano due ricerche, senza mai una vista d'insieme da fotografare.
+// ⚠️ NON e' la stessa situazione dei tre filtri sulla FOTO, che nella v6.054 e nella v6.095 sono
+// stati schiacciati in un valore solo apposta. La' i valori sono predicati che si contraddicono
+// ("senza foto E con foto" non puo' essere vero per nessun oggetto, quindi rappresentarlo
+// significa offrire un risultato sempre vuoto). Qui sono VALORI DIVERSI DELLO STESSO CAMPO:
+// sceglierne due vuol dire "l'uno o l'altro", che ha sempre senso. La regola di la' non si applica
+// qui, e applicarla lo stesso sarebbe copiare la forma di una decisione senza il suo motivo.
+let _changeTypeFilter = new Set();   // filtro Tipo di change (insieme vuoto = off)
 let _changeTypeResultVals = [];      // valori Tipo di change dei box cliccabili dei risultati, per l'onclick via indice
 // v6.079 - gli stessi tre, per gli Errori di stampa. Tenuti separati e non riusati: i due filtri
 // devono poter stare accesi indipendentemente, e un tipo di change e un tipo di errore possono
 // benissimo chiamarsi allo stesso modo.
 let _printErrorTypeResultsOpen = false;
-let _printErrorTypeFilter = null;
+let _printErrorTypeFilter = new Set();  // v6.096 - come sopra
 let _printErrorTypeResultVals = [];
 let _previousPage = 'home'; // pagina da cui si è arrivati, usata dal pulsante "← Torna" nel profilo
 let editingSeriesImg = null;
@@ -16220,6 +16320,31 @@ function _perRicerca(s) {
     .toLowerCase();
 }
 
+// v6.096 (Franco) - LE DUE RICERCHE GUARDANO LO STESSO INSIEME DI CAMPI, e ora lo guardano
+// perche' lo chiedono alla stessa funzione, non perche' due elenchi sono stati scritti uguali.
+// La v6.049/050 li aveva gia' allineati una volta, campo per campo. Sono tornati a divergere lo
+// stesso: `desc` era finito nella ricerca GLOBALE e non in quella di SEZIONE, e la differenza non
+// si vedeva da nessuna parte - cercando una parola della descrizione dalla griglia di una serie
+// non si trovava niente, e sembrava che quella parola non ci fosse.
+// Due elenchi copiati restano uguali finche' qualcuno non ne tocca uno: allinearli di nuovo a mano
+// avrebbe solo rimandato la prossima divergenza. Da qui in poi il campo si aggiunge in UN posto.
+// Il NUMERO resta fuori dalla normalizzazione: si confronta grezzo, perche' _perRicerca toglie
+// trattini e spazi e su una cifra non c'e' niente da normalizzare.
+// Le NOTE ci sono solo per l'admin: per chiunque altro il campo non esiste sul sito, e renderlo
+// cercabile lo farebbe esistere - un oggetto comparirebbe fra i risultati per una parola che chi
+// cerca non puo' vedere da nessuna parte.
+function _campiRicercaFigurina(f) {
+  const campi = [f.name, f.subseries, f.desc, f.category, f.subcategory, f.subname, f.fullName];
+  if (currentUser?.isAdmin) campi.push(f.note);
+  return campi;
+}
+
+function _figMatchRicerca(f, qn) {
+  if (!qn) return true;
+  if (String(f.number || '').includes(qn)) return true;
+  return _campiRicercaFigurina(f).some(v => _perRicerca(v).includes(qn));
+}
+
 // v6.093 (Franco) - IL ROSSO DI "INVISIBILE" SEGUE LA SPUNTA, nelle due form.
 // Togliendo la scritta "la vede solo l'admin" il rosso restava senza un posto dove stare: e'
 // passato sull'etichetta. Una funzione sola per entrambe le form - sono due punti che devono dire
@@ -16267,16 +16392,8 @@ function renderCatalogSearch(q) {
   allSeries.forEach(s => {
     const desc = (currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt)) || '';
     const seriesMatch = _perRicerca(s.name).includes(qn) || _perRicerca(desc).includes(qn);
-    const matchingFigs = allFigs.filter(f => f.seriesId === s.id && (
-      _perRicerca(f.name).includes(qn) ||
-      String(f.number||'').includes(qn) ||
-      _perRicerca(f.subseries).includes(qn) ||
-      _perRicerca(f.desc).includes(qn) ||
-      _perRicerca(f.category).includes(qn) ||      /* v6.049 */
-      _perRicerca(f.subcategory).includes(qn) ||   /* v6.049 */
-      _perRicerca(f.subname).includes(qn) ||       /* v6.049 */
-      _perRicerca(f.fullName).includes(qn)         /* v6.049 */
-    ));
+    // v6.096 - l'elenco dei campi sta in _campiRicercaFigurina, condiviso con la ricerca di sezione
+    const matchingFigs = allFigs.filter(f => f.seriesId === s.id && _figMatchRicerca(f, qn));
     if (seriesMatch || matchingFigs.length) {
       results.push({ series: s, seriesMatch, figs: matchingFigs });
     }
@@ -17059,8 +17176,8 @@ function openSeriesSection(section) {
   _itemTypeFilter = _tipoIniziale(); // v6.048 - da admin: 'all'
   _retroCategoryFilter = null; // il filtro per categoria dei Retro non sopravvive al cambio sezione/serie
   _retroSubcategoryFilter = null; // idem per la sottocategoria (v5.987)
-  _changeTypeFilter = null; // idem per il filtro Tipo di change
-  _printErrorTypeFilter = null; // v6.079 - idem per il filtro Tipo di errore di stampa
+  _changeTypeFilter = new Set(); // idem per il filtro Tipo di change (v6.096: insieme vuoto = spento)
+  _printErrorTypeFilter = new Set(); // v6.079 - idem per il filtro Tipo di errore di stampa
   _ownedFilter = 'all'; // si riparte sempre da "tutti": un filtro dimenticato acceso
                         // fra una sezione e l'altra fa sembrare vuota una sezione piena
   _wishlistFilter = false; // v5.908 — anche "Ciò che cerco" riparte spento a ogni sezione
@@ -17647,6 +17764,12 @@ function openAddItemModal(itemId) {
   // stanno sullo stesso record. Una figurina il retro ce l'ha come oggetto a se'.
   const imgRetroGroup = document.getElementById('fig-img-retro-group');
   if (imgRetroGroup) imgRetroGroup.style.display = _secondaFacciaSulRecord(currentSection) ? '' : 'none';
+  // v6.096 - le Note sono solo admin, e non hanno condizioni di sezione: valgono per figurine,
+  // retro, bustine, album e altri oggetti. Un campo che vale ovunque non ha eccezioni da
+  // ricordare - e' la lezione della v6.077, dove il Numero si compilava in una sezione e si
+  // mostrava in tutte.
+  const noteGroup = document.getElementById('fig-note-group');
+  if (noteGroup) noteGroup.style.display = currentUser?.isAdmin ? '' : 'none';
   switchFigModalTab('generale');
   if (itemId) {
     const f = getData('figurines', []).find(x => x.id === itemId);
@@ -17661,6 +17784,7 @@ function openAddItemModal(itemId) {
       document.getElementById('fig-subname-input').value = f.subname || '';
       document.getElementById('fig-name-input').value = f.name;
       document.getElementById('fig-desc-input').value = f.desc || '';
+      { const nt = document.getElementById('fig-note-input'); if (nt) nt.value = f.note || ''; } // v6.096
       document.getElementById('fig-score-input').value = f.score || 0;
       const rbIn = document.getElementById('fig-retro-bianco-input'); if (rbIn) rbIn.checked = !!f.retroBianco;
       document.getElementById('fig-subseries-input').value = f.subseries || '';
@@ -17692,6 +17816,7 @@ function openAddItemModal(itemId) {
     }
   } else {
     ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input','fig-category-input','fig-subcategory-input','fig-subname-input'].forEach(id => document.getElementById(id).value = '');
+    { const nt0 = document.getElementById('fig-note-input'); if (nt0) nt0.value = ''; } // v6.096 - altrimenti la nota dell'oggetto precedente resta nella form del nuovo
     document.getElementById('fig-no-number-input').checked = false;
     { const fnd0 = document.getElementById('fig-foto-non-disponibile-input'); if (fnd0) fnd0.checked = false; } // v6.079
     { const inv0 = document.getElementById('fig-invisibile-input'); if (inv0) inv0.checked = false; } // v6.080
@@ -18101,11 +18226,12 @@ function renderItemTypeFilters() {
   // i retro con foto".
   // Ora ogni interruttore porta il proprio nome, sempre lo stesso, e l'acceso si riconosce dal
   // colore. Con due filtri affiancati era l'unica forma che non si contraddicesse.
-  const _fotoBtn = (quale, etichetta) =>
-    `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_fotoFilter === quale ? 'on' : ''}" onclick="setFotoFilter('${quale}')" title="${etichetta}"></button><span style="font-size:0.82rem;color:var(--text);">${etichetta}</span></div>`;
-  html += _fotoBtn('senza', it ? 'Senza foto' : 'Without photo');
-  if (currentUser?.isAdmin) html += _fotoBtn('con', it ? 'Con foto' : 'With photo');
-
+  // v6.095 (Franco) - I FILTRI FOTO NON STANNO PIU' QUI: sono passati tutti nel riquadro
+  // "Filtri aggiuntivi admin", piu' sotto, insieme a un terzo nuovo.
+  // ⚠️ Questo RIBALTA la v5.796, dove Franco aveva chiesto l'opposto - "Senza foto" fuori dai
+  // filtri admin e visibile a TUTTI. Glielo ho fatto notare il 9 agosto 2026 e ha cambiato idea:
+  // "mettilo solo per gli admin". Scritto qui perche' chi legge la v5.796 non concluda che sia
+  // stata dimenticata.
   html += '</div>';
 
   el.innerHTML = html;
@@ -18125,6 +18251,12 @@ function renderItemTypeFilters() {
     if (!currentUser?.isAdmin) {
       elAdm.style.display = 'none';
       elAdmT.innerHTML = '';
+      // v6.095 - da quando i filtri foto sono solo-admin, un non-admin non ha piu' NESSUN
+      // interruttore per spegnerli: se uno restasse acceso (l'admin che esce, la stessa scheda
+      // riusata) sarebbe un filtro invisibile che nasconde meta' griglia senza dire perche'.
+      // Si azzera qui, che e' lo stesso posto in cui _itemTypeFilter ripiega quando punta a un
+      // tipo che nella sezione non esiste. Gira dentro renderItems, PRIMA del filtro: vale subito.
+      _fotoFilter = null;
     } else {
       const itl = (currentLang === 'it');
       // niente emoji, per la regola posta da Franco: le icone ci sono sempre o mai.
@@ -18151,6 +18283,25 @@ function renderItemTypeFilters() {
           <button class="toggle-btn-blue ${_ebayFilter ? 'on' : ''}" onclick="toggleEbayFilter()" title="Ebay"></button>
           <span style="font-size:0.82rem;color:var(--muted);">Ebay</span>
         </div>`;
+
+      // v6.095 (Franco) - I TRE FILTRI SULLA FOTO, tutti qui e tutti solo per l'admin.
+      // "Senza foto" e "Con foto" arrivano dal box "Filtri generici" (vedi la nota alla v5.796
+      // piu' sopra: Franco ha cambiato idea il 9 agosto 2026). Il terzo e' nuovo.
+      // Restano UN SOLO valore a piu' stati, non tre interruttori indipendenti: "senza foto E con
+      // foto" non deve essere rappresentabile, ed e' la stessa ragione per cui nella v6.054 i primi
+      // due erano nati come un valore a tre stati invece che come due booleani.
+      // ⚠️ "Con foto non disponibile" NON e' un sottoinsieme di "Senza foto" per come sono scritti:
+      // il primo guarda il FLAG sull'oggetto, il secondo guarda se una foto del fronte si vede
+      // (col ripiego sulla base, v6.086). Un oggetto puo' avere il flag e mostrare lo stesso la
+      // foto della base - e in quel caso deve comparire nel filtro del flag e non nell'altro.
+      // Il flag e' quello dell'oggetto in esame, non del suo retro: "il mio retro non avra' mai una
+      // foto" e' un'altra domanda, e ha gia' un posto suo nella pagina Errori.
+      const _fotoBtn = (quale, etichetta) =>
+        `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_fotoFilter === quale ? 'on' : ''}" onclick="setFotoFilter('${quale}')" title="${etichetta}"></button><span style="font-size:0.82rem;color:var(--muted);">${etichetta}</span></div>`;
+      ha += _fotoBtn('senza', itl ? 'Senza foto' : 'Without photo');
+      ha += _fotoBtn('con', itl ? 'Con foto' : 'With photo');
+      ha += _fotoBtn('nonDisp', itl ? 'Con foto non disponibile' : 'Marked photo unavailable');
+
       elAdmT.innerHTML = ha;
       elAdm.style.display = '';
     }
@@ -18438,11 +18589,13 @@ function getCurrentlyFilteredItems(opts) {
     // Filtro per Tipo di change (solo Figurine): mostra SOLO i Change di quel tipo (v5.809)
     // v6.079 - via il vincolo alla sola sezione Figurine: lo specchietto ora c'e' ovunque, e un
     // filtro che si accende ma non filtra sarebbe peggio di un filtro assente.
-    if (!_skipChangeType && _changeTypeFilter !== null
-        && !(f.isChange && ((f.changeType || '').trim()) === _changeTypeFilter)) return false;
+    // v6.096 - piu' tipi insieme: si passa se l'oggetto e' un Change di UNO QUALUNQUE dei tipi
+    // scelti. Insieme vuoto = filtro spento, come il vecchio null.
+    if (!_skipChangeType && _changeTypeFilter.size
+        && !(f.isChange && _changeTypeFilter.has((f.changeType || '').trim()))) return false;
     // v6.079 - stessa cosa per il tipo di errore di stampa
-    if (!_skipPrintErrorType && _printErrorTypeFilter !== null
-        && !(f.isPrintError && ((f.printErrorType || '').trim()) === _printErrorTypeFilter)) return false;
+    if (!_skipPrintErrorType && _printErrorTypeFilter.size
+        && !(f.isPrintError && _printErrorTypeFilter.has((f.printErrorType || '').trim()))) return false;
     // v6.054 - i due versi dello stesso filtro
     // v6.086 (Franco) - si chiede `_fotoFigurina()`, non `f.img`. Il filtro guardava la foto
     // PROPRIA del record mentre la griglia disegna col ripiego sulla base: una variazione senza
@@ -18454,9 +18607,19 @@ function getCurrentlyFilteredItems(opts) {
     // La si chiama SOLO a filtro acceso: spento, il ciclo resta identico a prima e non paga il
     // `find` sulla base per ognuno dei 368 oggetti della serie, ad ogni ridisegno.
     if (_fotoFilter) {
-      const _haFronte = !!_fotoFigurina(f, allFigs);
-      if (_fotoFilter === 'senza' && _haFronte) return false;
-      if (_fotoFilter === 'con' && !_haFronte) return false;
+      // v6.095 - il terzo stato chiede "questa card mostra il segnaposto?", non "ha il flag?".
+      // E' la correzione di Franco alla prima stesura: conta cio' che si vede, da qualunque delle
+      // tre ragioni possibili (vedi _mostraSegnapostoFoto).
+      // Ne segue che questo filtro CONTIENE tutti i "Senza foto" - una card senza fronte e' tutta
+      // segnaposto - piu' quelle a cui manca la sola faccia del retro. I due non sono alternativi
+      // per caso: sono due tagli diversi, uno piu' largo dell'altro.
+      if (_fotoFilter === 'nonDisp') {
+        if (!_mostraSegnapostoFoto(f, allFigs)) return false;
+      } else {
+        const _haFronte = !!_fotoFigurina(f, allFigs);
+        if (_fotoFilter === 'senza' && _haFronte) return false;
+        if (_fotoFilter === 'con' && !_haFronte) return false;
+      }
     }
     if (_own) {
       const ceLho = _own.includes(f.id);
@@ -18497,7 +18660,9 @@ function getCurrentlyFilteredItems(opts) {
     // v6.049 - `subname` esplicito: ci si arrivava gia' attraverso il Nome completo, ma quello e'
     // un campo SALVATO che puo' restare indietro rispetto ai dati (§13). Un campo cercato
     // direttamente non dipende dall'aggiornamento di un altro.
-    return _perRicerca(f.name).includes(searchQ) || String(f.number||'').includes(searchQ) || _perRicerca(f.subseries).includes(searchQ) || _perRicerca(f.category).includes(searchQ) || _perRicerca(f.subcategory).includes(searchQ) || _perRicerca(f.subname).includes(searchQ) || _perRicerca(f.fullName).includes(searchQ);
+    // v6.096 - stessa funzione della ricerca globale: `desc` mancava proprio qui, e le Note per
+    // l'admin entrano in tutte e due insieme perche' l'elenco dei campi e' uno solo.
+    return _figMatchRicerca(f, searchQ);
   });
 }
 
@@ -18785,8 +18950,9 @@ const _CFG_SPECCHIETTO_CHANGE = {
   colore: 'var(--type-change)',
   label: v => _changeTypeLabel(v),
   setter: 'setChangeTypeFilterByIndex',
+  adder: 'addChangeTypeFilterByIndex',   // v6.096 - il "+" del chip
   setVals: vals => { _changeTypeResultVals = vals; },
-  attivo: v => _changeTypeFilter !== null && _changeTypeFilter === v
+  attivo: v => _changeTypeFilter.has(v)
 };
 const _CFG_SPECCHIETTO_ERRSTAMPA = {
   titoloClick: it => it ? 'Clicca qui per filtrare i risultati della ricerca per tipo di errore di stampa'
@@ -18796,8 +18962,9 @@ const _CFG_SPECCHIETTO_ERRSTAMPA = {
   colore: 'var(--type-printerror)',
   label: v => _printErrorTypeLabel(v),
   setter: 'setPrintErrorTypeFilterByIndex',
+  adder: 'addPrintErrorTypeFilterByIndex',   // v6.096
   setVals: vals => { _printErrorTypeResultVals = vals; },
-  attivo: v => _printErrorTypeFilter !== null && _printErrorTypeFilter === v
+  attivo: v => _printErrorTypeFilter.has(v)
 };
 // Guscio: i punti che chiamavano questa funzione non si sono accorti di niente.
 function _changeTypePanelHTML(pairs, open, clickable, toggleFn, perColonna) {
@@ -18868,14 +19035,30 @@ header += `</div>`;
     let chips;
     if (clickable) {
       C.setVals(pairs.map(p => p[0]));
+      // v6.096 (Franco) - IL CHIP HA DUE ZONE, come "Aggiungi a filtro" di Excel.
+      // L'etichetta fa quello di sempre: accende questo tipo e spegne gli altri, e un secondo clic
+      // sull'unico acceso azzera. Il "+" a destra invece AGGIUNGE senza togliere, e su un tipo gia'
+      // scelto diventa "−" per toglierne uno solo lasciando gli altri.
+      // La proprieta' che rende questa forma preferibile agli interruttori indipendenti: se il "+"
+      // non lo premi mai, il comportamento e' identico a prima della v6.096. La novita' vive tutta
+      // in un gesto nuovo, che chi non lo cerca non incontra - e nessuno deve reimparare niente.
+      // Il "+" e' un elemento VISIBILE e non una scorciatoia da tastiera (ctrl-clic): sul telefono
+      // una scorciatoia non esiste, e questo sito si usa anche da li'.
       chips = pairs.map(([ct, n], i) => {
         const active = C.attivo(ct);
         const bg = active ? 'var(--accent)' : 'var(--card2)';
         const fg = active ? 'var(--bg)' : 'var(--text)';
         const nf = active ? 'var(--bg)' : 'var(--accent)';
-        return `<span onclick="${C.setter}(${i})" title="${C.chipTitle(it)}" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;background:${bg};border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.82rem;line-height:1.4;">`
+        const segno = active ? '−' : '+';
+        const titoloPiu = active
+          ? (it ? 'Togli questo tipo, lasciando gli altri selezionati' : 'Remove this type, keep the others')
+          : (it ? 'Aggiungi questo tipo a quelli già selezionati' : 'Add this type to the current selection');
+        return `<span style="display:inline-flex;align-items:center;background:${bg};border:1px solid var(--border);border-radius:999px;font-size:0.82rem;line-height:1.4;overflow:hidden;">`
+          + `<span onclick="${C.setter}(${i})" title="${C.chipTitle(it)}" style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;padding:0.15rem 0.5rem 0.15rem 0.6rem;">`
           + `<span style="color:${fg};">${esc(C.label(ct))}</span>`
-          + `<span style="color:${nf};font-weight:700;">${n}</span></span>`;
+          + `<span style="color:${nf};font-weight:700;">${n}</span></span>`
+          + `<span onclick="event.stopPropagation();${C.adder}(${i})" title="${titoloPiu}" style="cursor:pointer;padding:0.15rem 0.5rem;border-left:1px solid ${active ? 'rgba(0,0,0,0.28)' : 'var(--border)'};color:${fg};font-weight:700;">${segno}</span>`
+          + `</span>`;
       }).join('');
     } else {
       chips = pairs.map(([ct, n]) =>
@@ -18999,10 +19182,24 @@ function toggleChangeTypeResults() {
 function setChangeTypeFilterByIndex(i) {
   const ct = _changeTypeResultVals[i];
   if (ct === undefined) return;
-  _changeTypeFilter = (_changeTypeFilter === ct) ? null : ct; // riclick sulla stessa = azzera
+  // v6.096 - SOSTITUISCE la selezione. Il riclick azzera solo se quel tipo era l'unico acceso:
+  // se ce ne sono altri, il clic sull'etichetta vuol dire "voglio vedere solo questo", che e'
+  // un'intenzione diversa da "ho finito di guardarlo".
+  if (_changeTypeFilter.size === 1 && _changeTypeFilter.has(ct)) _changeTypeFilter = new Set();
+  else _changeTypeFilter = new Set([ct]);
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (setChangeTypeFilter)', e); }
   try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setChangeTypeFilter)', e); }
+}
+
+// v6.096 - AGGIUNGE (o toglie) senza toccare gli altri: e' il "+" / "−" del chip.
+function addChangeTypeFilterByIndex(i) {
+  const ct = _changeTypeResultVals[i];
+  if (ct === undefined) return;
+  if (_changeTypeFilter.has(ct)) _changeTypeFilter.delete(ct); else _changeTypeFilter.add(ct);
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (addChangeTypeFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (addChangeTypeFilter)', e); }
 }
 // v6.079 - gemello di renderChangeTypeSummaries per gli ERRORI DI STAMPA. Stessa forma, stesse due
 // posizioni (in alto nella testata, e sotto i risultati), stesso comportamento: sparisce da solo
@@ -19039,20 +19236,32 @@ function togglePrintErrorTypeResults() {
 function setPrintErrorTypeFilterByIndex(i) {
   const pe = _printErrorTypeResultVals[i];
   if (pe === undefined) return;
-  _printErrorTypeFilter = (_printErrorTypeFilter === pe) ? null : pe; // riclick sullo stesso = azzera
+  // v6.096 - gemello di setChangeTypeFilterByIndex, stesse regole
+  if (_printErrorTypeFilter.size === 1 && _printErrorTypeFilter.has(pe)) _printErrorTypeFilter = new Set();
+  else _printErrorTypeFilter = new Set([pe]);
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (setPrintErrorTypeFilter)', e); }
   try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setPrintErrorTypeFilter)', e); }
 }
+
+// v6.096 - il "+" / "−" degli errori di stampa
+function addPrintErrorTypeFilterByIndex(i) {
+  const pe = _printErrorTypeResultVals[i];
+  if (pe === undefined) return;
+  if (_printErrorTypeFilter.has(pe)) _printErrorTypeFilter.delete(pe); else _printErrorTypeFilter.add(pe);
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (addPrintErrorTypeFilter)', e); }
+  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (addPrintErrorTypeFilter)', e); }
+}
 function clearPrintErrorTypeFilter() {
-  _printErrorTypeFilter = null;
+  _printErrorTypeFilter = new Set(); // v6.096 - insieme vuoto = spento, come il vecchio null
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (clearPrintErrorTypeFilter)', e); }
   try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (clearPrintErrorTypeFilter)', e); }
 }
 
 function clearChangeTypeFilter() {
-  _changeTypeFilter = null;
+  _changeTypeFilter = new Set(); // v6.096
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (clearChangeTypeFilter)', e); }
   try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (clearChangeTypeFilter)', e); }
@@ -20058,6 +20267,14 @@ async function _saveFigurineInner() {
   const invisibile = document.getElementById('fig-invisibile-input')?.checked || false; // v6.080
   let name = document.getElementById('fig-name-input').value.trim();
   const desc = document.getElementById('fig-desc-input').value.trim();
+  // v6.096 - le Note. Il campo esiste nel DOM anche per un non-admin (nascosto, non rimosso):
+  // leggerlo restituisce '' e sovrascriverebbe una nota scritta dall'admin. Per questo il valore
+  // si prende SOLO se chi salva e' admin, e altrimenti si conserva quello gia' sul record - stessa
+  // precauzione della casella "Non ha numero" nella v6.077, che resta nel DOM proprio perche' i
+  // salvataggi la leggono.
+  const noteAdmin = currentUser?.isAdmin
+    ? (document.getElementById('fig-note-input')?.value.trim() || '')
+    : null;
   const score = parseInt(document.getElementById('fig-score-input').value) || 0;
   const subseries = document.getElementById('fig-subseries-input')?.value.trim() || '';
   const size = document.getElementById('fig-size-input')?.value.trim() || '';
@@ -20230,7 +20447,7 @@ async function _saveFigurineInner() {
       const idx = figs.findIndex(x => x.id === editId);
       if (idx >= 0) {
         const _prima = figs[idx];   // v5.981 — riferimento all'oggetto PRIMA della sovrascrittura
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, fotoNonDisponibile, invisibile, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || figs[idx].img, imgRetro: imgRetroUrl || figs[idx].imgRetro || null, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti };
+        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, fotoNonDisponibile, invisibile, name, desc, note: (noteAdmin !== null ? noteAdmin : (figs[idx].note || '')) /* v6.096 */, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || figs[idx].img, imgRetro: imgRetroUrl || figs[idx].imgRetro || null, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti };
         figs[idx].fullName = computeFullName(figs[idx], figs);
         // v5.981 — la coda: prima quello che dice la spunta (o il valore esistente, se la spunta
         // era nascosta), poi l'automatismo, che puo' solo ALZARLA. Cosi' togliere la spunta a mano
@@ -20247,7 +20464,7 @@ async function _saveFigurineInner() {
         try { await _propagaAiCollegati(figs[idx]); } catch(e) { console.error('propaga', e); }
       }
     } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, fotoNonDisponibile, invisibile, name, desc, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || null, imgRetro: imgRetroUrl || null, ebayImg: ebayImgUrl || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti, daPubblicare: forSale/* v5.981: nasce marcato Ebay = nasce in coda */ };
+      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, fotoNonDisponibile, invisibile, name, desc, note: (noteAdmin || '') /* v6.096 */, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || null, imgRetro: imgRetroUrl || null, ebayImg: ebayImgUrl || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti, daPubblicare: forSale/* v5.981: nasce marcato Ebay = nasce in coda */ };
       newF.fullName = computeFullName(newF, figs);
       const saved = await fsSave('figurines', newF);
     }
@@ -22492,6 +22709,27 @@ function _fotoFigurina(f, allFigs) {
 // SEMPRE quello della base, anche se la variazione una foto sua ce l'ha. Non le ho unificate
 // apposta: sceglierne una cambierebbe cio' che si vede oggi in griglia, e non e' una decisione da
 // prendere di straforo dentro una modifica alla tabella.
+// v6.095 (Franco) - QUESTO OGGETTO ESPONE IL SEGNAPOSTO "FOTO NON DISPONIBILE"?
+// La prima stesura del filtro guardava il flag `fotoNonDisponibile` sull'oggetto. Franco l'ha
+// corretta: deve mostrare "tutti gli item che espongono quel segnaposto", da qualunque delle tre
+// ragioni - la foto del fronte che non possiamo avere, quella del retro che non possiamo avere,
+// oppure un retro che esiste e la foto semplicemente non ce l'ha ancora.
+// Quindi il criterio non e' piu' un campo ma CIO' CHE SI VEDE, e per non divergere dalla card si
+// appoggia alle stesse due funzioni che la disegnano (`_dueFacce`, `_schedaDueFoto`).
+// Il flag non compare in questa funzione, ed e' giusto: il segnaposto si mostra quando la foto
+// manca, che il flag ci sia o no. Il flag serve alla pagina Errori a decidere se c'e' qualcosa da
+// fare, che e' un'altra domanda.
+// ⚠️ Un retro che NON esiste non conta: li' la card non mostra il segnaposto (mostrera' il box
+// vuoto del caso C, §12.7). E' la distinzione della v6.079 - "c'e' una foto da caricare" contro
+// "non c'e' niente da caricare" - e vale anche qui.
+function _mostraSegnapostoFoto(f, tutte) {
+  const ff = _dueFacce(f, tutte);
+  if (!ff.fronte) return true;                                  // fronte assente: la card e' tutta segnaposto
+  if (!_schedaDueFoto(f)) return false;                         // i retro hanno una faccia sola
+  if (_secondaFacciaSulRecord(f?.section)) return !ff.retro;    // album/bustine/altri: le due facce esistono sempre
+  return !!ff.retroRec && !ff.retro;                            // figurine: il retro esiste come oggetto ma senza foto
+}
+
 function _dueFacce(f, tutte) {
   const figs = tutte || getData('figurines', []);
   const fronte = _fotoFigurina(f, figs);
@@ -23044,6 +23282,17 @@ function switchToEditMode(figId) {
   // Descrizione (in fondo, campo più grande)
   html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">' + (currentLang==='it'?'Descrizione':'Description') + '</span><span class="detail-value"><textarea id="fe-desc" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + (f.desc||'') + '</textarea></span></div>';
 
+  // v6.096 (Franco) - NOTE, sotto la Descrizione e solo per admin. Questa form la apre gia' solo
+  // l'admin, ma la riga si disegna comunque dietro il controllo: e' l'unico campo del sito che non
+  // deve esistere per nessun altro, e legarlo a chi guarda invece che a chi puo' aprire la
+  // schermata lo rende indipendente da come si arriva qui.
+  // Il campo e' lo stesso `note` della finestra - una sola verita', due form. Scriverlo in una
+  // sola era il difetto della v6.074 con `retroBianco`, esistito per una release solo nella
+  // finestra: chi usava l'altra form non lo vedeva e, salvando, lo azzerava.
+  if (currentUser?.isAdmin) {
+    html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">Note</span><span class="detail-value"><textarea id="fe-note" class="form-textarea" rows="2" placeholder="Appunti di lavoro, li vedi solo tu..." style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + esc(f.note || '') + '</textarea></span></div>';
+  }
+
   // Figurine collegate (variazioni/change di cui questa è la base) — tab
   html += buildLinkedFiguresTabsHTML(f.id);
 
@@ -23508,6 +23757,12 @@ async function saveFigFromDetail(figId, opzioni) {
       invisibile: document.getElementById('fe-invisibile')?.checked || false, // v6.080
       subseries: document.getElementById('fe-subseries')?.value.trim() || '',
       desc: document.getElementById('fe-desc')?.value.trim() || '',
+      // v6.096 - la nota si scrive SOLO da admin. Per chiunque altro il campo non e' nel DOM,
+      // e leggerlo darebbe '' cancellando quello che c'e' scritto: si conserva il valore del
+      // record. E' la stessa precauzione del `note` in saveFigurine.
+      note: currentUser?.isAdmin
+        ? (document.getElementById('fe-note')?.value.trim() || '')
+        : (existingForCheck?.note || ''),
       score: +(document.getElementById('fe-score')?.value || 0),
       size: document.getElementById('fe-size')?.value.trim() || '',
       category: _catEff, // v6.038
