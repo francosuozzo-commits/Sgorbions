@@ -1,6 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.100 - LA GRAFFA DI TROPPO NEL CSS DELL'INDEX. Modificato index.html (piu' la versione).
+//          Nessun cambiamento nell'aspetto del sito: il browser quella graffa la scartava gia'.
+//          Difetto trovato il 6 agosto 2026, corretto l'11. Costava solo in lettura, ed e' il
+//          motivo per cui valeva la pena chiuderlo: in fondo al blocco <style> c'erano DUE `}`
+//          consecutive, e chi le leggeva concludeva che il `@media (min-width:861px)` finisse con
+//          la seconda. Finiva con la prima. Una regola scritta fra le due si sarebbe creduta dentro
+//          il media query e sarebbe invece valsa a ogni larghezza - senza errore e senza segnale.
+//          ⚠️ DUE COSE IMPARATE, e la seconda vale piu' della correzione:
+//          1) il documento diceva "una graffa in eccesso verso riga 106" ed era SBAGLIATO. A riga
+//             106 il CSS e' bilanciato; la graffa stava in fondo, verso riga 238. L'indicazione era
+//             del 6 agosto e non era mai stata verificata: e' stata tramandata per cinque giorni
+//             come se fosse un fatto misurato. Se avessi cercato li' avrei perso tempo a non
+//             trovare niente, che e' il modo tipico in cui un appunto sbagliato costa piu' di un
+//             appunto assente;
+//          2) contarle a mano non serve. Il CSS inline sta nel DOM, quindi dalla console del sito
+//             si legge `document.querySelector('style').textContent`, si tolgono i commenti e si
+//             traccia la profondita' riga per riga: la riga in cui va sotto zero e' quella. Dieci
+//             secondi, e risponde con un numero invece che con un'impressione. La ricetta e' nel
+//             §12.9 del documento.
+//
 // v6.099 - LA COPPIA FRONTE/RETRO DELLA CARD SI DECIDE IN UN POSTO SOLO. Modificato app.js (piu' la
 //          versione nell'index.html). §12.8 - nessun cambiamento voluto nell'aspetto del sito.
 //          La stessa condizione stava scritta DUE volte: in `renderItems`, che disegna la card, e in
@@ -11901,7 +11921,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.099';
+const JS_VERSION = 'v6.100';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
