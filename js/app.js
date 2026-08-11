@@ -1,6 +1,45 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.099 - LA COPPIA FRONTE/RETRO DELLA CARD SI DECIDE IN UN POSTO SOLO. Modificato app.js (piu' la
+//          versione nell'index.html). §12.8 - nessun cambiamento voluto nell'aspetto del sito.
+//          La stessa condizione stava scritta DUE volte: in `renderItems`, che disegna la card, e in
+//          `_itemHasWidePair`, che la ricalcola per sapere quante card stanno in una pagina. Il
+//          commento della v5.978 avvertiva gia' di tenerle allineate, ed e' stato fatto a mano due
+//          volte (v5.978, v6.094); due volte sono tornate a divergere, e con la v6.098 stava per
+//          succedere una terza. **Quel conto e' la diagnosi**: il problema non era la disattenzione,
+//          era la duplicazione. Ora c'e' `_coppiaFronteRetro()` e i due chiamanti la leggono.
+//
+//          LE DUE DIVERGENZE TROVATE, e come sono state risolte. In entrambi i casi **vince il
+//          renderer**, perche' e' quello che si vede: se i due non concordano, a sbagliare e' il
+//          conteggio, non il disegno.
+//          1) IL FRONTE. Il renderer usa `_fotoFigurina(f, allFigs)` dalla v6.080 - la foto
+//             DELL'OGGETTO, con la base come ripiego solo dove il fronte coincide davvero. Il
+//             contatore era rimasto a `baseFigDual?.img`, cioe' sempre quella della base:
+//             divergevano su variazioni e change con foto propria.
+//          2) IL RETRO BIANCO. Il renderer lo tratta come un retro vero dalla v6.006; il contatore
+//             non lo nominava affatto. Una figurina con retro bianco era **larga da disegnare e
+//             stretta da contare**.
+//          Il sintomo era lo stesso per entrambe, ed e' la ragione per cui non erano mai state
+//          notate: le card traboccano dalla pagina o lasciano un buco, ma solo sulle righe che
+//          contengono uno di quei casi - quindi in modo intermittente e mai riproducibile a comando.
+//
+//          Due cose venute dietro all'estrazione, che da sole non si sarebbero fatte:
+//          - **codice morto**. Tolti dal renderer `baseFigForImg`, `isBaseFig`, `_baseForChange`,
+//            `_effRetroId`, `_retroBianco` e `_soloFronte`: erano gli ingredienti della condizione e
+//            sono andati dentro la funzione con lei. Che non servissero ad altro e' anche la prova
+//            che l'estrazione e' completa - se ne fosse rimasto uno in uso li', vorrebbe dire che un
+//            pezzo della decisione era rimasto fuori;
+//          - **una scansione in meno per card**. La funzione prende `_idx`, la Map gia' costruita
+//            per l'ordinamento: prima ogni card cercava base e retro con `.find()` su ~3300 oggetti.
+//            E' l'ottimizzazione della v6.088 applicata al punto che le era sfuggito, e le era
+//            sfuggito proprio perche' la condizione stava in mezzo al renderer invece che in una
+//            funzione con dei parametri.
+//
+//          ⚠️ Non essendoci nessun cambiamento voluto nell'aspetto, in preview si guarda che NON
+//          sia cambiato niente - in particolare la PAGINAZIONE in vista `destra-piena`, che e' il
+//          punto in cui le due copie potevano contraddirsi.
+//
 // v6.098 - IN GRIGLIA IL RIQUADRO DEL RETRO SI DISEGNA ANCHE QUANDO IL RETRO NON E' COLLEGATO.
 //          Modificato app.js (piu' la versione nell'index.html).
 //          §12.7 caso C. La v6.094 aveva chiuso il caso "il retro c'e' ma non ha la foto"
@@ -11862,7 +11901,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.098';
+const JS_VERSION = 'v6.099';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16736,32 +16775,69 @@ function _figIndex(allFigs) {
 // verita', e l'unica difesa e' che questo commento lo dica.
 // v6.020 — del "solo fronte" non e' piu' una copia: chiama _soloFronteMobile(), la stessa
 // funzione che usa renderItems. Restano copie i controlli su modalita' e coppia fronte/retro.
-function _itemHasWidePair(f, allFigs, idx) {
-  if (f.section !== 'figurines') return false;
-  if (_retroViewMode !== 'destra-piena') return false;
-  if (_soloFronteMobile()) return false;
+// v6.099 (§12.8) - LA COPPIA FRONTE/RETRO DI UNA CARD, DECISA IN UN POSTO SOLO.
+// Prima questa condizione stava scritta DUE volte: in `renderItems`, che disegna la card, e qui,
+// che la ricalcola per sapere quante card stanno in una pagina. Il commento della v5.978 avvertiva
+// gia' di tenerle allineate, ed e' stato fatto due volte a mano - v5.978 e v6.094. **Due volte sono
+// tornate a divergere**, e l'11 agosto se n'e' aggiunta una terza col caso C. Quel conto e' la
+// prova che il problema non era la disattenzione: era la duplicazione. Quindi ora la verita' e' una
+// sola e i due chiamanti la leggono.
+//
+// Le due divergenze che c'erano al momento dell'unificazione, e come sono state risolte - **in
+// entrambi i casi vince il RENDERER**, perche' e' quello che si vede: se i due non concordano, e'
+// il conteggio a essere sbagliato, non il disegno.
+//   1. IL FRONTE. Il renderer usa `_fotoFigurina(f, allFigs)` dalla v6.080 - la foto DELL'OGGETTO,
+//      con la base come ripiego solo dove il fronte coincide davvero. Il contatore era rimasto a
+//      `baseFigDual?.img`, cioe' sempre la foto della base. Divergevano su variazioni e change con
+//      foto propria. Ora si usa `_fotoFigurina` per entrambi.
+//   2. IL RETRO BIANCO. Il renderer lo tratta come un retro vero dalla v6.006 (un oggetto finto con
+//      la sola immagine, cosi' le cinque disposizioni non devono sapere che il caso esiste). Il
+//      contatore non lo nominava affatto: una figurina con retro bianco era larga da disegnare e
+//      stretta da contare. Ora il finto record si costruisce qui, una volta, per tutti e due.
+// Il sintomo di entrambe era lo stesso, ed e' la ragione per cui non erano mai state notate: le
+// card traboccano dalla pagina o lasciano un buco, ma solo sulle righe che contengono uno di quei
+// casi - quindi in modo intermittente e mai riproducibile a comando.
+//
+// Nota: si guarda `f.section` e non `currentSection`. In griglia coincidono (gli item sono filtrati
+// per sezione), ma dipendere dall'oggetto invece che da una variabile globale rende la funzione
+// chiamabile da qualunque punto senza doversi chiedere "dove mi trovo?" - ed e' cio' che ha reso
+// possibile fonderle: le due copie partivano proprio da qui, una con `currentSection` e una con
+// `f.section`.
+function _coppiaFronteRetro(f, allFigs, idx) {
+  const vuoto = { mostra: false, larga: false, fronte: null, retroImg: null, retroVuoto: false };
+  if (!f || f.section !== 'figurines') return vuoto;
+  if (_soloFronteMobile()) return vuoto; // v5.853 — su telefono col filtro "set base", solo il fronte
   const get = id => (idx ? idx.get(id) : allFigs.find(x => x.id === id));
   const isBaseFig = !f.isVariation && !f.isUnofficialVariation && !f.isChange;
   const baseForChange = (f.isChange && f.baseFigurineId) ? get(f.baseFigurineId) : null;
   const effRetroId = f.isChange ? (f.retroId || baseForChange?.retroId || null) : f.retroId;
-  // v6.098 - il caso C allarga il ramo del renderer, quindi va allargato anche qui: una figurina
-  // senza retro collegato ora disegna la coppia (fronte + riquadro vuoto), cioe' e' larga. Senza
-  // questa riga la paginazione l'avrebbe contata stretta e il numero di card per pagina sarebbe
-  // stato sbagliato su ogni riga che ne contiene una - lo stesso errore che la v6.094 aveva
-  // corretto per i retro senza foto.
-  const retroBiancoW = !!f.retroBianco && !f.retroId;
-  const retroDaCollegare = !effRetroId && !retroBiancoW && !_serieSenzaRetro(f.seriesId); // v6.098 caso B
-  if (!(((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && f.retroId)
-      || (f.isChange && f.baseFigurineId && effRetroId)
-      || (isBaseFig && f.retroId)
-      || retroDaCollegare)) return false;
-  const baseFigDual = isBaseFig ? f : (baseForChange || get(f.baseFigurineId));
-  const retroFigDual = get(effRetroId);
-  // v6.094 - basta che il retro ESISTA, come nel ramo di renderItems: da lì in poi la card è larga
-  // anche se al posto della foto c'è il segnaposto. Lasciando qui `retroFigDual?.img` la
-  // paginazione avrebbe contato come stretta una card che il renderer disegna larga, e il numero
-  // di card per pagina sarebbe stato sbagliato proprio sulle righe con un retro senza foto.
-  return !!(baseFigDual?.img && (retroFigDual || retroDaCollegare));
+  const retroBianco = !!f.retroBianco && !f.retroId; // v6.006
+  // v6.098 caso C: la figurina che un retro dovrebbe averlo e non e' collegata entra comunque, e al
+  // posto del retro va il riquadro vuoto. Caso B: tranne dove i retro non esistono proprio.
+  const retroDaCollegare = !effRetroId && !retroBianco && !_serieSenzaRetro(f.seriesId);
+  const entra = ((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && (f.retroId || retroBianco))
+    || (f.isChange && f.baseFigurineId && effRetroId)
+    || (isBaseFig && (f.retroId || retroBianco))
+    || retroDaCollegare;
+  if (!entra) return vuoto;
+  const fronte = _fotoFigurina(f, allFigs); // divergenza 1, risolta a favore del renderer
+  if (!fronte) return vuoto;                // senza fronte la card cade nel ramo a foto singola
+  const retroRec = retroBianco ? { img: RETRO_BIANCO_IMG, name: '' } : get(effRetroId); // divergenza 2
+  return {
+    mostra: true,
+    // la card larga esiste SOLO in 'destra-piena': nelle altre quattro disposizioni la coppia si
+    // disegna dentro una card di larghezza normale.
+    larga: _retroViewMode === 'destra-piena',
+    fronte,
+    // v6.094 - basta che il retro ESISTA: se la foto manca, al suo posto va il segnaposto, e la
+    // card resta larga lo stesso.
+    retroImg: retroRec ? retroRec.img : null,
+    retroVuoto: !retroRec, // v6.098 - il terzo stato: la faccia non esiste, non e' una foto mancante
+  };
+}
+
+function _itemHasWidePair(f, allFigs, idx) {
+  return _coppiaFronteRetro(f, allFigs, idx).larga; // v6.099 - non piu' una copia, vedi sopra
 }
 
 // Geometria REALE della griglia. Nessun numero di colonne assunto: si LEGGE quello che c'e'.
@@ -19752,12 +19828,10 @@ function renderItems() {
     const icon = SECTION_ICONS[currentSection];
     // Una Variazione/Change è essenzialmente un collegamento (Figurina base + Retro): se non ha
     // una foto propria, riusiamo quella della figurina base collegata, senza duplicare il dato
-    // v6.024 - la regola sta in _fotoFigurina(). Qui resta baseFigForImg, che serve piu' sotto a
-    // _baseForChange e a baseFigDual: e' il record della base, non la foto.
-    let baseFigForImg = null;
-    if (!f.img && currentSection === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange) && f.baseFigurineId) {
-      baseFigForImg = getData('figurines', []).find(x => x.id === f.baseFigurineId);
-    }
+    // v6.024 - la regola sta in _fotoFigurina().
+    // v6.099 - `baseFigForImg` non c'e' piu': serviva solo a `_baseForChange`, che a sua volta
+    // serviva a calcolare il retro effettivo di un Change - roba che ora sta dentro
+    // `_coppiaFronteRetro()`. Restava un record letto per ogni card e mai piu' guardato.
     const displayImg = _fotoFigurina(f, getData('figurines', []));
     // Per le Variazioni (non Change) e per le figurine base, se sono disponibili sia la foto
     // propria (fronte) sia quella del Retro collegato, le mostriamo impilate verticalmente
@@ -19766,46 +19840,27 @@ function renderItems() {
     let imgHTML;
     let hasWidePair = false;
     let _cardNoPhoto = false;  // v5.873
-    const isBaseFig = currentSection === 'figurines' && !f.isVariation && !f.isUnofficialVariation && !f.isChange;
-    // v5.786 — un Change può avere un proprio Retro; se non ce l'ha, usa quello della figurina base
-    // (così sulla card mostra comunque il retro della base). retro effettivo = proprio || della base.
-    const _baseForChange = (f.isChange && f.baseFigurineId) ? (baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId)) : null;
-    const _effRetroId = f.isChange ? (f.retroId || _baseForChange?.retroId || null) : f.retroId;
-    // v6.006 - il retro bianco si comporta come un retro con la sua foto: un oggetto finto
-    // con la sola immagine. Cosi' i cinque modi di visualizzazione (destra, sotto, dinamico,
-    // fronte-grande, destra-piena) non hanno bisogno di sapere che esiste questo caso.
-    const _retroBianco = !!f.retroBianco && !f.retroId;
-    // v5.853 — su telefono, col filtro "Figurine set base" attivo si mostra SOLO IL FRONTE.
-    // Sono tutte figurine base, quindi affiancare il retro dimezza il fronte senza aggiungere
-    // informazione. Fuori da quel filtro, e sul desktop, la coppia fronte+retro resta.
-    // NB: qui NON si puo' usare _mobileFigCard, che e' dichiarato piu' sotto (con const, quindi
-    // in temporal dead zone: leggerlo prima non da' undefined, lancia). Era il bug della v5.854:
-    // ogni card falliva, la griglia restava col segnaposto "nessun risultato" gia' presente in
-    // index.html, mentre il conteggio - calcolato prima - diceva giustamente che i risultati
-    // c'erano. Le condizioni si ricalcolano qui dai loro ingredienti.
-    const _soloFronte = _soloFronteMobile(); // v6.020 — unica fonte, vedi _soloFronteMobile()
-    // v6.098 (Franco, §12.7 caso C) - LA FIGURINA CHE IL RETRO DOVREBBE AVERLO E NON CE L'HA.
-    // Fino alla v6.097 cadeva nel ramo a foto singola e mostrava il fronte grande, cioe' la stessa
-    // resa di un oggetto a posto: la card non diceva in nessun modo che mancava un collegamento.
-    // Ora entra anche lei nel ramo a due facce, e al posto del retro va il riquadro vuoto.
-    // La condizione e' sulla SEZIONE e non sul tipo: nei retro non vale (un retro non ha un dietro,
-    // v6.076), e album/bustine/altri hanno gia' il ramo loro piu' sotto, che guarda `imgRetro`.
-    // v6.098 caso B - `_serieSenzaRetro` spegne il riquadro dove i retro non esistono proprio: li'
-    // non c'e' nessun collegamento da fare, quindi un riquadro che lo chiede direbbe il falso su
-    // ogni card della serie. E' la ragione per cui B e C sono nella stessa release.
-    const _retroDaCollegare = currentSection === 'figurines' && !_effRetroId && !_retroBianco
-      && !_serieSenzaRetro(f.seriesId);
-    if (!_soloFronte && (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && (f.retroId || _retroBianco)) || (f.isChange && f.baseFigurineId && _effRetroId) || (isBaseFig && (f.retroId || _retroBianco)) || _retroDaCollegare)) {
-      // v6.080 (Franco) - il fronte della COPPIA e' la foto dell'oggetto, non quella della base.
-      // Prima era sempre `baseFigDual.img`: per un change con foto propria la card mostrava il
-      // fronte della base, cioe' l'unica cosa che un change NON condivide con lei. Il ripiego
-      // sulla base resta, ma dentro _fotoFigurina e solo dove il fronte coincide davvero.
-      // baseFigDual resta perche' serve ancora a trovare il RETRO ereditato dai change.
-      const baseFigDual = isBaseFig ? f : (baseFigForImg || getData('figurines', []).find(x => x.id === f.baseFigurineId));
-      const _fronteCoppia = _fotoFigurina(f, getData('figurines', []));
-      const retroFigDual = _retroBianco
-        ? { img: RETRO_BIANCO_IMG, name: '' }
-        : getData('figurines', []).find(x => x.id === _effRetroId);
+    // v6.099 - qui stavano `isBaseFig`, `_baseForChange`, `_effRetroId`, `_retroBianco` e
+    // `_soloFronte`: erano gli INGREDIENTI della condizione, e sono andati dentro la funzione
+    // insieme a lei. Nessuno di loro serviva ad altro in questo punto — il che è anche il modo in
+    // cui si riconosce che l'estrazione è stata completa: se ne fosse rimasto uno in uso qui,
+    // vorrebbe dire che una parte della decisione è rimasta fuori.
+    // Con loro se n'è andato anche il rischio descritto dal commento della v5.854 (`_mobileFigCard`
+    // letto in temporal dead zone): `_soloFronteMobile()` ora si chiama dentro la funzione, dove
+    // quella variabile non esiste proprio.
+    // v6.099 (§12.8) - LA CONDIZIONE NON STA PIU' QUI: la decide `_coppiaFronteRetro()`, che e'
+    // la stessa funzione usata da `_itemHasWidePair` per contare le card di una pagina. Erano due
+    // copie, sono state riallineate a mano due volte e due volte sono tornate a divergere - il
+    // conto e' nel commento della funzione, insieme alle due differenze che c'erano.
+    // Da qui in poi non si ricalcola piu' niente: si legge `_cp`.
+    // Si passa `_idx`, la Map gia' costruita per l'ordinamento poche righe piu' su: prima ogni card
+    // cercava la base e il retro con `.find()` su ~3300 oggetti, ed erano fino a due scansioni per
+    // card. Non e' un'ottimizzazione nuova - e' la stessa della v6.088, applicata al punto che le
+    // era sfuggito perche' la condizione stava scritta in mezzo al renderer invece che in una
+    // funzione con dei parametri.
+    const _cp = _coppiaFronteRetro(f, _allFigs, _idx);
+    if (_cp.mostra) {
+      const _fronteCoppia = _cp.fronte;
       // v6.094 - basta che il retro ESISTA: la foto puo' mancare, e in quel caso al suo posto va il
       // segnaposto. Prima qui si chiedeva `retroFigDual?.img`, e un retro senza foto faceva cadere
       // la card nel ramo a una foto sola - la stessa resa di un oggetto che il retro non ce l'ha.
@@ -19813,10 +19868,14 @@ function renderItems() {
       // e cinque le disposizioni: `_retroImg` la foto, `_retroVuoto` il caso C. Cinque `retroFigDual
       // ? ... : ...` sparsi nei rami sarebbero stati cinque occasioni di dimenticarne uno, e i rami
       // meno usati (dinamico, fronte-grande) se ne sarebbero accorti mesi dopo.
-      const _retroVuoto = !retroFigDual;
-      const _retroImg = retroFigDual ? retroFigDual.img : null;
-      if (_fronteCoppia) {
-        if (_retroViewMode === 'destra-piena') hasWidePair = true;
+      const _retroVuoto = _cp.retroVuoto;
+      const _retroImg = _cp.retroImg;
+      // v6.099 - `larga` la decide la funzione, che e' la stessa che risponde a _itemHasWidePair:
+      // e' proprio questo il valore che le due copie potevano far divergere.
+      hasWidePair = _cp.larga;
+      // v6.099 - qui c'era un `if (_fronteCoppia)`: ora e' garantito dalla funzione, che senza
+      // fronte non torna `mostra`. Il livello di indentazione dei rami resta quello di prima, per
+      // tenere il diff piccolo su un blocco delicato come questo.
         if (_retroViewMode === 'destra') {
           imgHTML = _coppiaAffiancataHTML(_fronteCoppia, _retroImg, _retroVuoto); // v6.075 — markup condiviso con le bustine
         } else if (_retroViewMode === 'dinamico') {
@@ -19866,7 +19925,6 @@ function renderItems() {
             <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(_retroImg, null, _retroVuoto)}</div>
           </div>`;
         }
-      }
     }
     // v6.075 (Franco) — le BUSTINE nella griglia (§12.2). Dalla v6.074 una bustina ha due facce e la
     // scheda le mostra entrambe; la griglia no. Il motivo è nella condizione qui sopra, scritta per
