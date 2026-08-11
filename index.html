@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.094"></script>
-<link rel="stylesheet" href="css/style.css?v=6.094">
+<script src="js/email.min.js?v=6.096"></script>
+<link rel="stylesheet" href="css/style.css?v=6.096">
 
 
 <style>
@@ -255,7 +255,7 @@
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.094</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.096</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1573,7 +1573,7 @@
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.094</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.096</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1745,7 +1745,7 @@
 
     <div class="form-group">
       <label class="form-label" data-i18n="form.series.retroChangeTypes">Tipi di Retro (per i Change di Retro — uno per riga)</label>
-      <textarea class="form-input" id="series-retro-change-types-input" rows="3" style="resize:vertical;font-family:inherit;"></textarea>
+      <textarea class="form-input" id="series-retro-change-types-input" rows="8" style="resize:vertical;font-family:inherit;"></textarea>
       <div class="form-hint" data-i18n="form.series.retroChangeTypesHint">Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.</div>
     </div>
 
@@ -1880,6 +1880,16 @@
     <div class="form-group">
       <label class="form-label" data-i18n="form.fig.desc">Descrizione</label>
       <textarea class="form-textarea" id="fig-desc-input" rows="3" data-i18n-placeholder="form.fig.descPlaceholder" placeholder="Descrivi questa figurina..."></textarea>
+    </div>
+    <!-- v6.096 (Franco) — NOTE, solo admin. Nasce display:none e la accende openAddItemModal()
+         se chi guarda e' admin: cosi' un utente normale non la vede nemmeno per un istante al
+         primo disegno della pagina. L'etichetta NON ha data-i18n di proposito — e' il tranello
+         della v6.077, dove applyI18n() riscriveva al primo cambio lingua un'etichetta che
+         doveva restare com'era. -->
+    <div class="form-group" id="fig-note-group" style="display:none;">
+      <label class="form-label">Note</label>
+      <textarea class="form-textarea" id="fig-note-input" rows="3" placeholder="Appunti di lavoro su questo oggetto..."></textarea>
+      <div class="form-hint">Le vedi solo tu: non compaiono da nessuna parte per gli altri utenti.</div>
     </div>
 
     <div class="form-group">
@@ -2397,7 +2407,7 @@
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.094"></script>
+<script src="js/app.js?v=6.096"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2421,7 +2431,7 @@
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.094'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.096'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
