@@ -1,6 +1,51 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.098 - IN GRIGLIA IL RIQUADRO DEL RETRO SI DISEGNA ANCHE QUANDO IL RETRO NON E' COLLEGATO.
+//          Modificato app.js (piu' la versione nell'index.html).
+//          §12.7 caso C. La v6.094 aveva chiuso il caso "il retro c'e' ma non ha la foto"
+//          (segnaposto FOTO NON DISPONIBILE). Restava il caso opposto: la figurina che un retro
+//          dovrebbe averlo e non e' collegata a nessuno. Cadeva nel ramo a foto singola e mostrava
+//          il fronte grande - la stessa identica resa di un oggetto a posto, quindi la card non
+//          diceva in nessun modo che mancava un collegamento.
+//          Ora la faccia del retro ha TRE stati invece di due, ed e' la distinzione di Franco della
+//          v6.079 portata anche in griglia: foto / "FOTO NON DISPONIBILE" (la faccia c'e', manca la
+//          sua foto) / riquadro VUOTO (la faccia non esiste ancora - non c'e' nessuna foto da
+//          aspettare, c'e' un collegamento da fare).
+//          Il grigio del riquadro vuoto e' `var(--card2)`, lo STESSO che la scheda usa dalla v6.044
+//          per lo stesso caso (scelta di Franco contro il nero pieno): le due viste dicono la stessa
+//          cosa nello stesso modo.
+//          Dettagli che valgono per il futuro:
+//          - i tre stati stanno in `_facciaRetroHTML`, e `_retroImg`/`_retroVuoto` si calcolano UNA
+//            volta prima delle cinque disposizioni. Cinque ternari sparsi nei rami sarebbero stati
+//            cinque occasioni di dimenticarne uno, e i rami meno usati (dinamico, fronte-grande) se
+//            ne sarebbero accorti mesi dopo;
+//          - allargato ANCHE `_itemHasWidePair`, che e' la seconda copia della stessa condizione e
+//            decide la paginazione. Il suo commento dal v5.978 avverte di aggiornarla insieme al
+//            renderer: senza, le card larghe sarebbero state contate strette e il numero di card per
+//            pagina sbagliato su ogni riga che ne contiene una.
+//
+//          §12.7 CASO B, nella stessa release e non per comodita': senza, il riquadro vuoto del
+//          caso C comparirebbe anche nelle serie che i retro non li hanno affatto, cioe' direbbe il
+//          falso su ogni card di quelle serie.
+//          Flag nuovo sulla SERIE, `noRetro`, etichetta "Figurine senza retro", modellato su
+//          `noNumbers` che risolve lo stesso problema per un altro campo: casella nella form della
+//          serie, colonna NO RETRO nella tabella admin, due chiavi i18n.
+//          ⚠️ NON e' la stessa cosa di `_controlloSospeso(..., 'senzaRetro')`, ed e' la distinzione
+//          che regge tutto il caso B: la SOSPENSIONE dice "non adesso, ci sto lavorando", il FLAG
+//          dice "mai". Confonderle vorrebbe dire o spegnere per sempre un controllo che serve, o
+//          riaccendere ogni volta un elenco che non arrivera' mai a zero.
+//          Il flag agisce in UN punto solo - `_schedaDueFoto()` - e da li' si propaga da se' alla
+//          scheda, alla classe `detail-solo-foto`, ai riquadri della form, alla vista tabellare e
+//          al controllo "Fronte senza retro" della pagina Errori, che gia' la chiamano tutti.
+//          Rincorrerli uno per uno avrebbe voluto dire sei condizioni e sei occasioni di
+//          dimenticarne una. Fuori da li' restano i due punti della GRIGLIA, che ha una condizione
+//          sua: il renderer e `_itemHasWidePair`.
+//          Limitato alle FIGURINE di proposito: il flag si chiama "Figurine senza retro", e album,
+//          bustine e altri oggetti della stessa serie le due facce ce le hanno lo stesso - la loro
+//          seconda faccia e' `imgRetro`, un campo del record, che coi retro collezionabili non
+//          c'entra niente.
+//
 // v6.097 - LE FRECCE SCORRONO ANCHE I RISULTATI DELLA RICERCA GLOBALE, e dicono a che punto sei.
 //          Modificato app.js e index.html.
 //
@@ -11817,7 +11862,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.097';
+const JS_VERSION = 'v6.098';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12870,7 +12915,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -12965,7 +13010,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario del sito.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>2) figurine presenti nella tua lista (serie non complete)<br>3) figurine presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -15771,6 +15816,7 @@ function openAddSeriesModal(seriesId) {
       const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = s.hasUnofficialVariations || false;
       const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = s.hasChange || false;
       const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = s.noNumbers || false;
+      const nri = document.getElementById('series-no-retro-input'); if (nri) nri.checked = s.noRetro || false; // v6.098
       { const nc = document.getElementById('series-nome-corto-input'); if (nc) nc.value = s.nomeCorto || ''; } // v6.080
       renderSeriesBypassCheckboxes(s.controlliSospesi); // v6.080
       document.getElementById('series-desc-input').value = s.descIt || s.desc || '';
@@ -15820,6 +15866,7 @@ async function saveSeries() {
   const hasUnofficialVariations = document.getElementById('series-has-unofficial-variations-input')?.checked || false;
   const hasChange = document.getElementById('series-has-change-input')?.checked || false;
   const noNumbers = document.getElementById('series-no-numbers-input')?.checked || false;
+  const noRetro = document.getElementById('series-no-retro-input')?.checked || false; // v6.098 caso B
   const controlliSospesi = _leggiControlliSospesi(); // v6.080
   const nomeCorto = (document.getElementById('series-nome-corto-input')?.value || '').trim(); // v6.080
   const countVariations = parseInt(document.getElementById('series-count-variations-input').value) || null;
@@ -15861,12 +15908,12 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes };
+        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes };
         await fsSave('series', series[idx]);
         _cache.series = series;
       }
     } else {
-      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, created: new Date().toISOString() };
+      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -16697,16 +16744,24 @@ function _itemHasWidePair(f, allFigs, idx) {
   const isBaseFig = !f.isVariation && !f.isUnofficialVariation && !f.isChange;
   const baseForChange = (f.isChange && f.baseFigurineId) ? get(f.baseFigurineId) : null;
   const effRetroId = f.isChange ? (f.retroId || baseForChange?.retroId || null) : f.retroId;
+  // v6.098 - il caso C allarga il ramo del renderer, quindi va allargato anche qui: una figurina
+  // senza retro collegato ora disegna la coppia (fronte + riquadro vuoto), cioe' e' larga. Senza
+  // questa riga la paginazione l'avrebbe contata stretta e il numero di card per pagina sarebbe
+  // stato sbagliato su ogni riga che ne contiene una - lo stesso errore che la v6.094 aveva
+  // corretto per i retro senza foto.
+  const retroBiancoW = !!f.retroBianco && !f.retroId;
+  const retroDaCollegare = !effRetroId && !retroBiancoW && !_serieSenzaRetro(f.seriesId); // v6.098 caso B
   if (!(((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && f.retroId)
       || (f.isChange && f.baseFigurineId && effRetroId)
-      || (isBaseFig && f.retroId))) return false;
+      || (isBaseFig && f.retroId)
+      || retroDaCollegare)) return false;
   const baseFigDual = isBaseFig ? f : (baseForChange || get(f.baseFigurineId));
   const retroFigDual = get(effRetroId);
   // v6.094 - basta che il retro ESISTA, come nel ramo di renderItems: da lì in poi la card è larga
   // anche se al posto della foto c'è il segnaposto. Lasciando qui `retroFigDual?.img` la
   // paginazione avrebbe contato come stretta una card che il renderer disegna larga, e il numero
   // di card per pagina sarebbe stato sbagliato proprio sulle righe con un retro senza foto.
-  return !!(baseFigDual?.img && retroFigDual);
+  return !!(baseFigDual?.img && (retroFigDual || retroDaCollegare));
 }
 
 // Geometria REALE della griglia. Nessun numero di colonne assunto: si LEGGE quello che c'e'.
@@ -19361,9 +19416,22 @@ function clearChangeTypeFilter() {
 // il riquadro immagine (caso a foto singola) e vive in css/style.css, che non sta nella cartella
 // _upload_. Senza questo vincolo, dentro meta' riquadro potrebbe posizionarsi rispetto al
 // contenitore esterno e coprire anche il fronte.
-function _facciaRetroHTML(imgUrl, onloadAttr) {
+// v6.098 (Franco, §12.7 caso C) - LA FACCIA DEL RETRO HA TRE STATI, non due.
+// La distinzione e' di Franco e viene dalla v6.079: "Foto non disponibile" vuol dire che la faccia
+// C'E' e manca la sua foto; il riquadro VUOTO vuol dire che la faccia non esiste ancora - non c'e'
+// nessuna foto da aspettare, c'e' un collegamento da fare. Sono due messaggi diversi, e scrivere
+// "FOTO NON DISPONIBILE" dove il retro non e' collegato direbbe una cosa falsa.
+//   imgUrl        -> la foto
+//   vuoto = true  -> box vuoto: il retro non e' collegato
+//   nessuno dei due -> segnaposto FOTO NON DISPONIBILE (il retro c'e', la foto no)
+// Il grigio e' `var(--card2)`, lo stesso che la SCHEDA usa dalla v6.044 per lo stesso caso: le due
+// viste dicono la stessa cosa nello stesso modo, e chi impara a leggerne una legge anche l'altra.
+function _facciaRetroHTML(imgUrl, onloadAttr, vuoto) {
   if (imgUrl) {
     return `<img src="${cloudinaryUrl(imgUrl)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"${onloadAttr ? ' ' + onloadAttr : ''}>`;
+  }
+  if (vuoto) {
+    return `<div style="width:100%;height:100%;background:var(--card2);"></div>`;
   }
   return `<div class="fig-noimg" style="position:relative;width:100%;height:100%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:0.62rem;line-height:1.15;padding:4px;box-sizing:border-box;">${currentLang === 'it' ? 'FOTO NON DISPONIBILE' : 'PHOTO NOT AVAILABLE'}</div>`;
 }
@@ -19371,10 +19439,12 @@ function _facciaRetroHTML(imgUrl, onloadAttr) {
 // v6.094 - tollerante su ENTRAMBI i lati. Il caso simmetrico esiste davvero: un oggetto con la
 // foto del retro e non quella del fronte finiva nel ramo "nessuna foto", e la faccia che c'era
 // spariva dalla card - il contrario di quello che serve.
-function _coppiaAffiancataHTML(imgFronte, imgRetro) {
+// v6.098 - `retroVuoto` vale SOLO per la faccia di destra: il fronte di una figurina esiste sempre,
+// quindi la sua assenza e' sempre una foto che manca, mai una faccia che non c'e'.
+function _coppiaAffiancataHTML(imgFronte, imgRetro, retroVuoto) {
   return `<div style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
             <div style="flex:1;min-height:0;overflow:hidden;">${_facciaRetroHTML(imgFronte)}</div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_facciaRetroHTML(imgRetro)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_facciaRetroHTML(imgRetro, null, retroVuoto)}</div>
           </div>`;
 }
 
@@ -19714,7 +19784,18 @@ function renderItems() {
     // index.html, mentre il conteggio - calcolato prima - diceva giustamente che i risultati
     // c'erano. Le condizioni si ricalcolano qui dai loro ingredienti.
     const _soloFronte = _soloFronteMobile(); // v6.020 — unica fonte, vedi _soloFronteMobile()
-    if (!_soloFronte && (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && (f.retroId || _retroBianco)) || (f.isChange && f.baseFigurineId && _effRetroId) || (isBaseFig && (f.retroId || _retroBianco)))) {
+    // v6.098 (Franco, §12.7 caso C) - LA FIGURINA CHE IL RETRO DOVREBBE AVERLO E NON CE L'HA.
+    // Fino alla v6.097 cadeva nel ramo a foto singola e mostrava il fronte grande, cioe' la stessa
+    // resa di un oggetto a posto: la card non diceva in nessun modo che mancava un collegamento.
+    // Ora entra anche lei nel ramo a due facce, e al posto del retro va il riquadro vuoto.
+    // La condizione e' sulla SEZIONE e non sul tipo: nei retro non vale (un retro non ha un dietro,
+    // v6.076), e album/bustine/altri hanno gia' il ramo loro piu' sotto, che guarda `imgRetro`.
+    // v6.098 caso B - `_serieSenzaRetro` spegne il riquadro dove i retro non esistono proprio: li'
+    // non c'e' nessun collegamento da fare, quindi un riquadro che lo chiede direbbe il falso su
+    // ogni card della serie. E' la ragione per cui B e C sono nella stessa release.
+    const _retroDaCollegare = currentSection === 'figurines' && !_effRetroId && !_retroBianco
+      && !_serieSenzaRetro(f.seriesId);
+    if (!_soloFronte && (((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && (f.retroId || _retroBianco)) || (f.isChange && f.baseFigurineId && _effRetroId) || (isBaseFig && (f.retroId || _retroBianco)) || _retroDaCollegare)) {
       // v6.080 (Franco) - il fronte della COPPIA e' la foto dell'oggetto, non quella della base.
       // Prima era sempre `baseFigDual.img`: per un change con foto propria la card mostrava il
       // fronte della base, cioe' l'unica cosa che un change NON condivide con lei. Il ripiego
@@ -19728,21 +19809,27 @@ function renderItems() {
       // v6.094 - basta che il retro ESISTA: la foto puo' mancare, e in quel caso al suo posto va il
       // segnaposto. Prima qui si chiedeva `retroFigDual?.img`, e un retro senza foto faceva cadere
       // la card nel ramo a una foto sola - la stessa resa di un oggetto che il retro non ce l'ha.
-      if (_fronteCoppia && retroFigDual) {
+      // v6.098 - le tre facce possibili del riquadro di destra, calcolate UNA volta e usate da tutte
+      // e cinque le disposizioni: `_retroImg` la foto, `_retroVuoto` il caso C. Cinque `retroFigDual
+      // ? ... : ...` sparsi nei rami sarebbero stati cinque occasioni di dimenticarne uno, e i rami
+      // meno usati (dinamico, fronte-grande) se ne sarebbero accorti mesi dopo.
+      const _retroVuoto = !retroFigDual;
+      const _retroImg = retroFigDual ? retroFigDual.img : null;
+      if (_fronteCoppia) {
         if (_retroViewMode === 'destra-piena') hasWidePair = true;
         if (_retroViewMode === 'destra') {
-          imgHTML = _coppiaAffiancataHTML(_fronteCoppia, retroFigDual.img); // v6.075 — markup condiviso con le bustine
+          imgHTML = _coppiaAffiancataHTML(_fronteCoppia, _retroImg, _retroVuoto); // v6.075 — markup condiviso con le bustine
         } else if (_retroViewMode === 'dinamico') {
           const dualId = 'dual-' + f.id;
           imgHTML = `<div id="${dualId}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
             <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(retroFigDual.img, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(_retroImg, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`, _retroVuoto)}</div>
           </div>`;
         } else if (_retroViewMode === 'fronte-grande') {
           const dualId2 = 'dualf-' + f.id;
           imgHTML = `<div id="${dualId2}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
             <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId2}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"></div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(retroFigDual.img)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(_retroImg, null, _retroVuoto)}</div>
           </div>`;
         } else if (_retroViewMode === 'destra-piena') {
           // Fronte+Retro mai rimpiccioliti rispetto alla dimensione "piena" che avrebbero in
@@ -19765,16 +19852,18 @@ function renderItems() {
           // La registrazione avviene SUBITO, mentre si costruisce l'HTML: la funzione accumula e
           // agisce solo quando ha entrambe le facce, quindi scattera' al carico del fronte, che a
           // quel punto trovera' il DOM al suo posto.
-          if (!retroFigDual.img) _checkBothOrientationForStack(dualId5, 'retro', false, 138, 100);
+          // v6.098 - vale per ENTRAMBE le assenze: segnaposto e riquadro vuoto sono due box, e un
+          // box e' orizzontale comunque. La condizione guarda percio' la foto, non il record.
+          if (!_retroImg) _checkBothOrientationForStack(dualId5, 'retro', false, 138, 100);
           imgHTML = `<div id="${dualId5}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
             <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="_checkBothOrientationForStack('${dualId5}','front',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"></div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_facciaRetroHTML(retroFigDual.img, `onload="_checkBothOrientationForStack('${dualId5}','retro',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_facciaRetroHTML(_retroImg, `onload="_checkBothOrientationForStack('${dualId5}','retro',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`, _retroVuoto)}</div>
           </div>`;
         } else {
           // 'sotto' (default)
           imgHTML = `<div style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
             <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(retroFigDual.img)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(_retroImg, null, _retroVuoto)}</div>
           </div>`;
         }
       }
@@ -21257,7 +21346,7 @@ function renderAdminSeries() {
   el.innerHTML = `
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.25rem;">${(currentLang === 'it') ? "Usa le frecce per cambiare l'ordine" : 'Use the arrows to change the order'}</p>
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Per eliminare una serie, cancellare prima tutto il suo contenuto.' : 'To delete a series, first delete all its content.'}</p>
-    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"N. FIG":"N. FIG"}</th><th>DA</th><th>A</th><th>${currentLang==="it"?"NO NUMERI":"NO NUMBERS"}</th><th>${currentLang==="it"?"Sottoserie":"Subseries"}</th><th>${currentLang==="it"?"Var. uff.":"Off. var."}</th><th>${currentLang==="it"?"Var. non uff.":"Unoff. var."}</th><th>Change</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
+    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"N. FIG":"N. FIG"}</th><th>DA</th><th>A</th><th>${currentLang==="it"?"NO NUMERI":"NO NUMBERS"}</th><th>${currentLang==="it"?"NO RETRO":"NO BACKS"}</th><th>${currentLang==="it"?"Sottoserie":"Subseries"}</th><th>${currentLang==="it"?"Var. uff.":"Off. var."}</th><th>${currentLang==="it"?"Var. non uff.":"Unoff. var."}</th><th>Change</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${series.map((s, idx) => {
       const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
       const siNoCell = v => v ? '<span style="color:var(--success);font-weight:600;">SI</span>' : '<span style="color:var(--text);">NO</span>';
@@ -21270,6 +21359,7 @@ function renderAdminSeries() {
         <td>${s.firstNumber ?? ''}</td>
         <td>${s.lastNumber ?? ''}</td>
         <td>${siNoCell(s.noNumbers)}</td>
+        <td>${siNoCell(s.noRetro)}</td><!-- v6.098 -->
         <td>${siNoCell(s.hasSubseries)}</td>
         <td>${siNoCell(s.hasVariations)}</td>
         <td>${siNoCell(s.hasUnofficialVariations)}</td>
@@ -22210,7 +22300,31 @@ function _schedaDueFoto(f) {
   // per volta: OGNI oggetto ha due facce, tranne i RETRO. Un retro non ha un dietro - lui E' il
   // dietro di qualcos'altro. Quindi non si elencano piu' le sezioni che ne hanno due (elenco che
   // e' gia' cresciuto due volte), si nomina l'unica che ne ha una.
-  return !!f && f.section !== 'retros';
+  if (!f || f.section === 'retros') return false;
+  // v6.098 (Franco, §12.7 caso B) - e tranne le FIGURINE di una serie che i retro non li ha.
+  // Passa da qui e non da un controllo suo perche' questa funzione e' gia' l'unica fonte di "questo
+  // oggetto ha due facce?": la scheda, la classe `detail-solo-foto`, i riquadri della form e il
+  // controllo "Fronte senza retro" della pagina Errori la chiamano tutti. Spegnendola qui si
+  // spengono insieme, invece di rincorrerli uno per uno e dimenticarne uno.
+  // Limitato alle FIGURINE di proposito: il flag si chiama "Figurine senza retro", e album, bustine
+  // e altri oggetti della stessa serie le due facce ce le hanno lo stesso (la loro seconda faccia e'
+  // `imgRetro`, un campo del record - non ha niente a che vedere coi retro collezionabili).
+  if (f.section === 'figurines' && _serieSenzaRetro(f.seriesId)) return false;
+  return true;
+}
+
+// v6.098 (Franco, §12.7 caso B) - LA SERIE DICHIARA CHE LE SUE FIGURINE UN RETRO NON CE L'HANNO.
+// Modellata su `noNumbers` ("Non ha numeri"), che risolve lo stesso problema per un altro campo.
+// Non e' la stessa cosa di `_controlloSospeso(..., 'senzaRetro')`, ed e' la distinzione che regge
+// tutto il caso B: la SOSPENSIONE dice "non adesso, ci sto lavorando", il FLAG dice "mai". Una e'
+// temporanea e l'altra e' una proprieta' della serie; confonderle vorrebbe dire o spegnere per
+// sempre un controllo che serve, o riaccendere ogni volta un elenco che non arrivera' mai a zero.
+// Legge dalla cache (`_cache`), quindi si puo' chiamare in un ciclo su tutte le figurine senza
+// pagarne il prezzo: nessun parsing, e il `.find` scorre una decina di serie.
+function _serieSenzaRetro(seriesId) {
+  if (!seriesId) return false;
+  const s = getData('series', []).find(x => x.id === seriesId);
+  return !!(s && s.noRetro);
 }
 
 // v6.076 - DOVE sta la seconda faccia. E' l'altra meta' di _schedaDueFoto, e le due insieme
