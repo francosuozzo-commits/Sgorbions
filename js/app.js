@@ -1,6 +1,68 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.102 - UN CHANGE ORA DICE SE E' FRONTALE O DI RETRO. Modificato app.js e index.html.
+//          §12.10, idea di Franco dell'11 agosto 2026. Nessun cambiamento voluto nell'aspetto del
+//          sito; cambia la form della Serie (una casella in piu') e le due tendine "Tipo di change".
+//
+//          IL PROBLEMA. La serie aveva UNA lista di tipi (`retroChangeTypes`) e da che lato stesse
+//          la differenza si capiva solo LEGGENDO IL NOME del tipo. Non bastava nemmeno leggerlo:
+//          "ciao addizionale" e' un change di retro e la parola "retro" non ce l'ha. E' lo stesso
+//          guasto che la v5.711 aveva gia' corretto sull'errore di stampa - "prima non era un tipo,
+//          era una STRINGA; bastava scriverlo al plurale perche' smettesse di trovarlo, in silenzio".
+//
+//          COSA CAMBIA: si AGGIUNGE `frontChangeTypes` sulla serie. `retroChangeTypes` non si tocca.
+//          Dei 16 tipi misurati l'11 agosto, 14 erano gia' di retro: il campo vecchio conserva il suo
+//          contenuto e il suo nome diventa finalmente vero. I due valori frontali (`M pasticciata` in
+//          Serie 3, `SCRITTA BIANCA` in Serie 2) li sposta Franco a mano dalla form della Serie:
+//          nessuno script di migrazione, nessun record riscritto.
+//          Effetto collaterale che vale piu' della fatica risparmiata: **non si apre nessuna finestra
+//          di rottura**. `changeTypesDiSerie()` continua a esistere e a restituire tutti i tipi
+//          (ora come UNIONE delle due liste), quindi i suoi cinque chiamanti - le due tendine e i tre
+//          punti dell'import - si comportano esattamente come prima. Se codice e dati fossero
+//          arrivati sfasati, nessuna tendina si sarebbe svuotata e nessun import avrebbe rifiutato
+//          niente. La sequenza "prima il codice, poi i dati" smette di essere una precauzione da
+//          ricordare e diventa una proprieta' della modifica.
+//
+//          PERCHE' LA FACCIA NON E' UN CAMPO SUGLI OGGETTI, dopo averlo sostenuto per mezza giornata.
+//          La misura ha deciso: 16 tipi, ognuno su un lato solo, nessuno usato in entrambi i modi.
+//          Un campo per record ripeterebbe cio' che il tipo gia' dice, costerebbe ~15-20 KB sulla
+//          Serie 3 - gia' al 50% del muro di 1 MiB, l'unica cosa aperta che peggiora da sola - e una
+//          migrazione di 419 record. Il rischio dell'indirezione e' reale e gia' successo (`scritta
+//          nera` era usato su un record e non stava in nessuna lista), ma si copre con un controllo.
+//
+//          DOVE SI DICHIARA IL LATO: nella TENDINA, che ora ha due gruppi - "Di retro" e "Frontale".
+//          Scegliendo il tipo si dichiara il lato, senza un campo in piu' e senza poterlo scordare.
+//          Da qui in avanti un record ambiguo come la #417 dell'11 agosto non puo' piu' nascere.
+//          Le opzioni le costruisce UNA funzione sola (`_opzioniTipoChange`) per tutte e due le
+//          form: sono due, e il §12.1 racconta cosa succede quando una impara qualcosa che l'altra
+//          non sa.
+//
+//          ⚠️ DUE RETI CONTRO LA PERDITA DI DATI, e la seconda e' un difetto trovato scrivendo.
+//          1) TERZO GRUPPO "non classificato". Se il tipo che l'oggetto ha ADESSO non sta in nessuna
+//             delle due liste - il caso vero e' `SCRITTA BIANCA` sulla #329 - la tendina non lo
+//             conterrebbe, il select ripiegherebbe sul vuoto e il primo salvataggio cancellerebbe il
+//             tipo. Ora quel valore si mostra, resta selezionato, ed e' etichettato come da sistemare.
+//          2) L'ORDINE DELLE CHIAMATE IN `openAddItemModal`. `toggleBaseFigurineGroup()` ricostruisce
+//             le opzioni PRIMA che il valore dell'oggetto venga assegnato (v5.788), quindi le
+//             costruiva sul valore stantio del select. Con un tipo non classificato l'opzione non
+//             esisteva ancora e `sel.value = ...` falliva **in silenzio** - un <select> non accetta
+//             un valore privo di opzione. La rete numero 1 sarebbe stata inutile proprio nel caso per
+//             cui era stata scritta. Ora le opzioni si ricostruiscono anche li', col valore voluto.
+//             Nota di metodo: non l'ha trovato un test, l'ha trovato rileggere l'ORDINE in cui la
+//             funzione chiama le cose. Un <select> che rifiuta un valore non solleva niente.
+//
+//          UN TIPO IN TUTTE E DUE LE LISTE viene rifiutato al salvataggio della serie, dicendo quali:
+//          non si sceglie una lista al posto di Franco. E' la lezione della v6.101, pagata su "Non ha
+//          numero": davanti a due dati che si contraddicono, un programma non ne sceglie uno.
+//
+//          COSA NON C'E' IN QUESTA RELEASE, ed e' il guadagno vero: il controllo "un change di retro
+//          deve avere un retro-change proprio (o il flag retroBianco)". Serie 2 non ha ancora i
+//          collegamenti figurina-retro - Franco li sta caricando - e si accenderebbe tutta di errori
+//          che non sono errori. Un controllo che grida al lupo viene spento dopo tre volte, e si
+//          porta dietro le segnalazioni vere. Si accende quando Serie 2 e' completa: e' una riga.
+//          `_facciaDelTipo()` esiste gia' ed e' l'unico punto che quel controllo dovra' chiamare.
+//
 // v6.101 - LA SCHEDA IMPARA LE DUE VALIDAZIONI CHE AVEVA SOLO L'ALTRA FORM, E L'EREDITARIETA'
 //          DALLA BASE PASSA DA UN POSTO SOLO. Modificato app.js (piu' la versione nell'index.html).
 //          §12.1, TAPPA 1 - prima meta'. Nessun cambiamento voluto nell'aspetto del sito.
@@ -11995,7 +12057,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.101';
+const JS_VERSION = 'v6.102';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -13048,7 +13110,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'Retro types (for Retro Changes)','form.series.retroChangeTypesHint':'One value per line. Offered as a choice when creating a Change of a Retro in this series.','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'BACK change types (one per line)','form.series.retroChangeTypesHint':'One value per line. The difference is on the BACK: a change of these types has a back of its own, or the "Blank back" flag.','form.series.frontChangeTypes':'FRONT change types (one per line)','form.series.frontChangeTypesHint':'One value per line. The difference is on the FRONT: a change of these types uses the back of its base sticker. The same type cannot be in both lists.','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -13143,7 +13205,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario del sito.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>2) figurine presenti nella tua lista (serie non complete)<br>3) figurine presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di Retro (per i Change di Retro)','form.series.retroChangeTypesHint':'Un valore per riga. Verranno proposti come scelta quando crei un Change di un Retro di questa serie.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -15957,6 +16019,11 @@ function openAddSeriesModal(seriesId) {
       if (descEnInput) descEnInput.value = s.desc || '';
       const rctInput = document.getElementById('series-retro-change-types-input');
       if (rctInput) rctInput.value = (s.retroChangeTypes || []).join('\n');
+      // v6.102 (§12.10) - la seconda lista. `|| []` non e' pro forma: le serie salvate prima della
+      // v6.102 il campo non ce l'hanno affatto, e senza il ripiego qui finirebbe "undefined"
+      // scritto dentro la casella, che al primo salvataggio diventerebbe un tipo di change.
+      const fctInput = document.getElementById('series-front-change-types-input');
+      if (fctInput) fctInput.value = (s.frontChangeTypes || []).join('\n');
 
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
     }
@@ -15967,6 +16034,12 @@ function openAddSeriesModal(seriesId) {
     const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = false;
     const rctInput = document.getElementById('series-retro-change-types-input');
     if (rctInput) rctInput.value = '';
+    // v6.102 (§12.10) - anche la seconda casella va svuotata per una serie NUOVA. La riga sopra
+    // esiste per lo stesso motivo: senza, la serie nuova nascerebbe con i tipi di quella aperta
+    // prima, e nessuno lo direbbe. Aggiungere una casella e dimenticare questo punto e' il modo
+    // in cui il reset resta indietro di un campo per mesi.
+    const fctInput = document.getElementById('series-front-change-types-input');
+    if (fctInput) fctInput.value = '';
   }
   updateSeriesVariationCounts(seriesId || null);
   toggleSeriesCountGroups();
@@ -16025,6 +16098,23 @@ async function saveSeries() {
       : '"Print error" is no longer a change type: it is now an object type of its own. Removed from the list.',
       'info');
   }
+  // v6.102 (§12.10) - la seconda lista: i tipi di change che riguardano il FRONTE.
+  const frontChangeTypes = (document.getElementById('series-front-change-types-input')?.value || '')
+    .split('\n').map(v => v.trim()).filter(Boolean);
+  // Lo stesso tipo in tutte e due le liste e' una contraddizione: non si puo' sapere da che lato
+  // sta un change di quel tipo, che e' esattamente il problema che questa release chiude.
+  // Si BLOCCA e si dice quali sono, invece di scegliere una lista al posto di Franco: davanti a due
+  // dati che si contraddicono un programma non ne sceglie uno, li fa vedere tutti e due (lezione
+  // della v6.101, pagata su "Non ha numero").
+  const _inEntrambe = frontChangeTypes.filter(f =>
+    retroChangeTypes.some(r => r.toLowerCase().trim() === f.toLowerCase().trim()));
+  if (_inEntrambe.length) {
+    toast((currentLang === 'it'
+      ? 'Questi tipi sono in tutte e due le liste, e un change non puo’ essere frontale e di retro insieme: ' + _inEntrambe.join(', ') + '. Lascialo in una sola.'
+      : 'These types are in both lists, and a change cannot be front and back at once: ' + _inEntrambe.join(', ') + '. Keep it in one only.'),
+      'error', null, 7000);
+    return;
+  }
   if (!name || !year) { toast((currentLang === 'it' ? 'Nome e anno sono obbligatori' : 'Name and year are required'), 'error'); return; }
   const fb = document.getElementById('series-save-feedback');
   const btn = document.querySelector('#add-series-modal .btn-primary');
@@ -16041,12 +16131,12 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes };
+        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes, frontChangeTypes /* v6.102 */ };
         await fsSave('series', series[idx]);
         _cache.series = series;
       }
     } else {
-      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, created: new Date().toISOString() };
+      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, frontChangeTypes /* v6.102 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -17097,14 +17187,114 @@ function tipoDiOggetto(f) {
   return 'base';
 }
 
-function changeTypesDiSerie(seriesId) {
+// ============================================================
+//  v6.102 (§12.10) — UN CHANGE E' FRONTALE O DI RETRO, E ORA LO DICE IL DATO
+// ============================================================
+// Franco, 11 agosto 2026: "un change e' tale se e' diverso il fronte oppure il retro", e i due casi
+// vanno distinti perche' oggi non lo sono. Fino alla v6.101 la serie aveva UNA lista di tipi
+// (`retroChangeTypes`) e da quale lato stesse la differenza si capiva solo LEGGENDO IL NOME del
+// tipo. Non bastava nemmeno leggerlo: "ciao addizionale" e' un change di retro e la parola "retro"
+// non ce l'ha. E' lo stesso guasto che la v5.711 aveva gia' corretto sull'errore di stampa —
+// "prima non era un tipo, era una STRINGA… bastava scriverlo al plurale perche' smettesse di
+// trovarlo, in silenzio. Ora e' un flag."
+//
+// COSA CAMBIA E COSA NO. `retroChangeTypes` **non si tocca**: dei 16 valori misurati l'11 agosto,
+// 14 erano gia' di retro, e il nome del campo finalmente dice il vero. Si aggiunge solo
+// `frontChangeTypes`, e ci vanno DUE valori (`M pasticciata` in Serie 3, `SCRITTA BIANCA` in
+// Serie 2). Non e' pigrizia: cosi' nessun campo esistente cambia significato, e se codice e dati
+// arrivassero sfasati non si svuota nessuna tendina e l'import non rifiuta niente. La sequenza
+// "prima il codice, poi i dati" smette di essere una precauzione da ricordare.
+//
+// PERCHE' LA FACCIA NON E' UN CAMPO SULL'OGGETTO. Ci ho pensato al contrario per mezza giornata.
+// La misura ha deciso: 16 tipi in tutto, ognuno su un lato solo, nessuno usato in entrambi i modi.
+// Un campo per ogni record ripeterebbe un'informazione che il tipo ha gia', costerebbe ~15-20 KB
+// sulla Serie 3 — gia' al 50% del muro di 1 MiB, l'unica cosa aperta che peggiora da sola — e una
+// migrazione di 419 record. Il rischio dell'indirezione (un tipo tolto dalla lista lascia i record
+// senza risposta) e' reale ed e' gia' successo: `scritta nera` era usato su un record vero e non
+// stava in nessuna lista. Ma si copre con un controllo, non con un campo.
+//
+// NOTA SU "ORFANO", perche' cambia come lo si legge: `SCRITTA BIANCA` non mancava alla lista per
+// distrazione. Non e' un tipo di retro, e la lista di retro era l'unica che esistesse. Non mancava
+// un valore: mancava la lista giusta.
+function frontChangeTypesDiSerie(seriesId) {
   const s = getData('series', []).find(x => x.id === seriesId);
-  // Ordine ALFABETICO (v5.773): i tipi vengono mostrati ordinati nei dropdown "Tipo di change"
-  // (entrambe le form). La validazione dell'import usa .find(), indipendente dall'ordine.
+  return (s?.frontChangeTypes || [])
+    .filter(t => (t || '').trim())
+    .slice()
+    .sort((a, b) => (a || '').localeCompare((b || ''), 'it', { sensitivity: 'base' }));
+}
+
+function retroChangeTypesDiSerie(seriesId) {
+  const s = getData('series', []).find(x => x.id === seriesId);
+  // L'esclusione di "errore di stampa" resta qui: dalla v5.711 e' un TIPO a se', non un changeType,
+  // e la v5.716 ha chiuso le porte di ritorno perche' la lista e' letta da piu' punti.
   return (s?.retroChangeTypes || [])
     .filter(t => !/^error[ei]\s+di\s+stampa$/i.test((t || '').trim()))
     .slice()
     .sort((a, b) => (a || '').localeCompare((b || ''), 'it', { sensitivity: 'base' }));
+}
+
+// L'UNIONE. Resta il nome storico perche' resta il significato storico: "tutti i tipi di change
+// ammessi in questa serie". I cinque chiamanti che c'erano (le due tendine e i tre punti
+// dell'import) continuano a chiamarla e continuano a comportarsi come prima — se avessi cambiato
+// QUESTA per farle restituire solo i retro, l'import avrebbe cominciato a rifiutare i frontali e
+// nessuno avrebbe collegato le due cose.
+// Ordine ALFABETICO (v5.773): i tipi si mostrano ordinati nelle tendine; l'import usa .find(),
+// indipendente dall'ordine.
+function changeTypesDiSerie(seriesId) {
+  return [...retroChangeTypesDiSerie(seriesId), ...frontChangeTypesDiSerie(seriesId)]
+    .sort((a, b) => (a || '').localeCompare((b || ''), 'it', { sensitivity: 'base' }));
+}
+
+// L'unica che risponde da che lato sta un change. Torna 'retro', 'fronte', oppure null.
+// NULL NON E' "FRONTALE PER DIFETTO", ed e' la scelta piu' importante di questa funzione: un tipo
+// che non sta in nessuna delle due liste e' un dato di cui non sappiamo niente, e farlo passare per
+// frontale sarebbe inventare una risposta. Chi la chiama deve trattare il null come "da guardare".
+// (Il confronto e' case-insensitive e senza spazi ai bordi, come le chiavi di unicita' e l'import:
+// tre punti che confrontano gli stessi valori devono confrontarli allo stesso modo.)
+function _facciaDelTipo(tipo, seriesId) {
+  const t = (tipo || '').trim().toLowerCase();
+  if (!t) return null;
+  if (retroChangeTypesDiSerie(seriesId).some(x => (x || '').trim().toLowerCase() === t)) return 'retro';
+  if (frontChangeTypesDiSerie(seriesId).some(x => (x || '').trim().toLowerCase() === t)) return 'fronte';
+  return null;
+}
+
+// Le OPZIONI della tendina "Tipo di change", per tutte e due le form.
+// Una funzione sola perche' le form sono due (§12.1): il giorno in cui una impara qualcosa che
+// l'altra non sa, il campo esiste per meta' degli utenti e non lo dice nessuno. E' gia' costato
+// tempo con `retroBianco` (v6.006/007).
+//
+// I due GRUPPI sono il cuore della release: scegliendo il tipo si dichiara il lato, senza un campo
+// in piu' da compilare e senza poterlo dimenticare. Da qui in avanti un record ambiguo non nasce.
+//
+// ⚠️ IL TERZO GRUPPO E' UNA RETE, e senza di lui questa release distruggerebbe dei dati.
+// Se il valore che l'oggetto ha ADESSO non sta in nessuna delle due liste — ed e' il caso vero di
+// `SCRITTA BIANCA` sulla #329, che finche' Franco non la mette fra i frontali non sta da nessuna
+// parte — la tendina non lo conterrebbe, il select ripiegherebbe sull'opzione vuota, e il primo
+// salvataggio cancellerebbe il tipo. Silenziosamente. Quindi il valore non classificato si mostra,
+// resta selezionato, e si dichiara per quello che e': qualcosa da sistemare.
+function _opzioniTipoChange(seriesId, selezionato) {
+  const it = currentLang === 'it';
+  const sel = (selezionato || '').trim();
+  const retro  = retroChangeTypesDiSerie(seriesId);
+  const fronte = frontChangeTypesDiSerie(seriesId);
+  // Il confronto e' normalizzato come in `_facciaDelTipo`, e non e' pignoleria: se una delle due
+  // dicesse "classificato" e l'altra non marcasse `selected`, il select ripiegherebbe sul vuoto e
+  // il tipo sparirebbe al salvataggio. Due funzioni che guardano gli stessi valori devono
+  // guardarli allo stesso modo.
+  const _n = v => (v || '').trim().toLowerCase();
+  const opt = t => '<option value="' + esc(t) + '"' + (_n(t) === _n(sel) ? ' selected' : '') + '>' + esc(t) + '</option>';
+  const gruppo = (etichetta, elenco) => elenco.length
+    ? '<optgroup label="' + esc(etichetta) + '">' + elenco.map(opt).join('') + '</optgroup>'
+    : '';
+  let html = '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+    + gruppo(it ? 'Di retro' : 'Back', retro)
+    + gruppo(it ? 'Frontale' : 'Front', fronte);
+  if (sel && !_facciaDelTipo(sel, seriesId)) {
+    html += '<optgroup label="' + (it ? '⚠️ non classificato — va messo in una delle due liste' : '⚠️ unclassified — add it to one of the two lists') + '">' + opt(sel) + '</optgroup>';
+  }
+  return html;
 }
 
 function tipiPresenti(seriesId, section) {
@@ -17971,13 +18161,15 @@ function toggleBaseFigurineGroup(appenaSpuntata) {
   if (changeTypeGroup) {
     changeTypeGroup.style.display = isTypedChange ? '' : 'none';
     if (isTypedChange) {
-      const types = changeTypesDiSerie(currentSeriesId);
       const sel = document.getElementById('fig-retro-change-type-input');
       if (sel) {
-        const current = sel.value;
-        sel.innerHTML = '<option value="">' + (currentLang === 'it' ? '— scegli —' : '— choose —') + '</option>' +
-          types.map(t => `<option value="${t}">${t}</option>`).join('');
-        if (types.includes(current)) sel.value = current;
+        // v6.102 (§12.10) - opzioni a due gruppi, dalla funzione condivisa con l'altra form.
+        // Il valore corrente si passa a lei: se e' un tipo non classificato lo tiene, invece di
+        // farlo cadere sull'opzione vuota e cancellarlo al primo salvataggio.
+        // Nessun `sel.value = ...` dopo: la selezione la porta l'attributo `selected` dentro le
+        // opzioni generate. Riassegnarla a mano aggiungerebbe l'unico modo in cui puo' fallire —
+        // un valore che non combacia carattere per carattere azzera il select, in silenzio.
+        sel.innerHTML = _opzioniTipoChange(currentSeriesId, sel.value);
       }
     }
   }
@@ -18153,7 +18345,17 @@ function openAddItemModal(itemId) {
   // spuntando Change. Ora lo si imposta SEMPRE: al valore della sorgente se c'è, altrimenti vuoto.
   {
     const sel = document.getElementById('fig-retro-change-type-input');
-    if (sel) sel.value = (itemId && existingItem?.changeType) ? existingItem.changeType : '';
+    // v6.102 (§12.10) - LE OPZIONI SI RICOSTRUISCONO QUI, col valore che sta per essere assegnato,
+    // e non basta che le abbia gia' ricostruite `toggleBaseFigurineGroup()` venti righe sopra.
+    // Motivo: quella gira PRIMA di questa riga e vede il valore stantio del select, non quello
+    // dell'oggetto che si sta aprendo. Per un tipo non classificato (il caso vero e' `SCRITTA
+    // BIANCA` sulla #329, che finche' non entra in una delle due liste non sta da nessuna parte)
+    // l'opzione non esisterebbe ancora, e `sel.value = ...` **fallirebbe in silenzio**: un <select>
+    // non accetta un valore privo di opzione corrispondente, resta sul vuoto, e il primo
+    // salvataggio cancella il tipo. Nessun errore, nessun avviso, un dato in meno.
+    // Ricostruirle qui costa una riga e chiude il caso: l'opzione c'e' sempre prima di assegnarla.
+    const voluto = (itemId && existingItem?.changeType) ? existingItem.changeType : '';
+    if (sel) sel.innerHTML = _opzioniTipoChange(currentSeriesId, voluto);
   }
   // Show/hide conditional fields based on series flags
   const _ser = getData('series', []).find(s => s.id === currentSeriesId);
@@ -23559,12 +23761,11 @@ function switchToEditMode(figId) {
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? 'Errore di stampa' : 'Print error') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-printerror" onchange="toggleFeBaseFigurineGroup(\'fe-is-printerror\')" ' + (f.isPrintError?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   if (isRetrosItem || f.section === 'figurines') {
     const showChangeType = !!f.isChange;
-    const retroTypes = changeTypesDiSerie(f.seriesId);
+    // v6.102 (§12.10) - stesse opzioni a due gruppi dell'altra form, dalla stessa funzione.
     html += '<div class="detail-row" id="fe-retro-change-type-group" style="' + (showChangeType ? '' : 'display:none;') + '">' +
       '<span class="detail-label">' + (currentLang==='it'?'Tipo di change':'Change type') + '</span>' +
       '<select class="form-input" id="fe-retro-change-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
-      '<option value="">' + (currentLang==='it'?'— scegli —':'— choose —') + '</option>' +
-      retroTypes.map(t => '<option value="' + esc(t) + '"' + (f.changeType === t ? ' selected' : '') + '>' + esc(t) + '</option>').join('') + /* v6.041 */
+      _opzioniTipoChange(f.seriesId, f.changeType) +
       '</select></div>';
   }
   // Tipo di errore di stampa (testo libero) — TUTTE le sezioni, mostrato quando e' un Errore di
