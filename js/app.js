@@ -1,6 +1,80 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.101 - LA SCHEDA IMPARA LE DUE VALIDAZIONI CHE AVEVA SOLO L'ALTRA FORM, E L'EREDITARIETA'
+//          DALLA BASE PASSA DA UN POSTO SOLO. Modificato app.js (piu' la versione nell'index.html).
+//          §12.1, TAPPA 1 - prima meta'. Nessun cambiamento voluto nell'aspetto del sito.
+//
+//          Contesto: lo stesso oggetto ha DUE form - la finestra "Aggiungi/Modifica" (A, campi
+//          `fig-*`, salva `_saveFigurineInner`) e la scheda (B, campi `fe-*`, salva
+//          `saveFigFromDetail`). La decisione di Franco e' che B diventi l'unica; la tappa 1 e'
+//          renderla completa in modifica. Qui entrano le due validazioni che le mancavano.
+//
+//          ⚠️ PRIMA COSA, ed e' un avvertimento piu' che una modifica: L'INVENTARIO DEL §12.1 ERA
+//          INVECCHIATO. Elencava fra i mancanti anche la "guardia anti doppio-click", che B ha
+//          dalla v6.052 (i due pulsanti spenti dentro un try/finally). L'inventario era dichiarato
+//          fatto sul codice della v6.007 e nessuno l'aveva piu' riletto. Su tre voci controllate,
+//          una era falsa: e' il §9.6 punto 3 applicato a un documento invece che a un test - **il
+//          primo sospettato e' l'asserzione, non il codice**. Le altre due mancavano davvero, e la
+//          differenza fra crederci e verificarlo era una lettura di dieci minuti.
+//
+//          1) NUMERO OBBLIGATORIO (`_numeroRichiesto`). A lo pretende dalla v5.880 per le figurine
+//             che non sono variazioni/change/errori di stampa (quelle il numero lo ereditano dalla
+//             base). B non lo chiedeva: da li' si salvava una figurina senza numero, e il numero e'
+//             il campo su cui la griglia ordina. La sezione si legge da `existingForCheck.section`,
+//             NON da `currentSection`: la scheda si apre anche dalla ricerca globale, dove
+//             `currentSection` e' quella della pagina sotto e non quella dell'oggetto.
+//
+//          1-bis) E QUI E' USCITO UN CONTROLLO CHE NESSUNA DELLE DUE FORM AVEVA. Scrivendo il
+//             punto 1 era venuto il dubbio su cosa farne della casella "Non ha numero": A non la
+//             guarda affatto e pretende il numero lo stesso. Chiesto a Franco invece di sceglierlo
+//             da solo - e la risposta ha aggiunto un caso che non era nell'inventario del §12.1:
+//             «al salvataggio fai presente la incongruenza e non si puo' salvare sin che la
+//             incongruenza rimane». Spunta accesa + numero scritto = contraddizione, e finche' c'e'
+//             non si salva. Entrambe le form la lasciavano passare in silenzio.
+//             Sta in `_messaggioIncongruenzaNumero()`, chiamata da tutte e due.
+//             ⚠️ LA VERSIONE SBAGLIATA CHE E' STATA SCRITTA PRIMA, perche' e' l'errore che conta.
+//             Avevo letto "il numero non ci deve essere" come "cancellalo tu al salvataggio", e
+//             avevo scritto una funzione che lo azzerava in silenzio. Franco: "io non ho chiesto
+//             questo, alla lettera". Le due strade portano allo stesso record - senza numero - e
+//             non sono affatto la stessa cosa: cancellare decide al posto di chi salva e non
+//             glielo dice; bloccare gli mostra i due dati che si contraddicono e lascia scegliere
+//             a lui quale sia quello buono. Solo lui lo sa. E un dato buttato via in silenzio e'
+//             indistinguibile da un dato che non c'e' mai stato.
+//             Regola da tenere: davanti a due dati che si contraddicono, un programma non ne
+//             sceglie uno - li fa vedere tutti e due.
+//             Il controllo guarda il numero SCRITTO NEL CAMPO, non quello che finirebbe sul
+//             record: su una variazione il numero si eredita dalla base, e da questa form non c'e'
+//             modo di toglierlo - segnalare li' sarebbe una porta chiusa senza chiave. Si segnala
+//             solo la contraddizione che chi salva puo' davvero risolvere.
+//
+//          2) UN UPLOAD FALLITO ORA FERMA IL SALVATAGGIO. E' il difetto piu' serio dei due, ed e'
+//             esattamente quello che A ha imparato nella v6.074: *"se il caricamento fallisce si
+//             esce SENZA salvare, altrimenti si scriverebbe un record che dice di avere una foto
+//             che non e' mai arrivata"*. B faceva `console.error` e tirava dritto su fronte e
+//             retro; sulla foto Ebay mostrava perfino il toast di errore **e poi salvava lo
+//             stesso**, che e' il caso peggiore: l'utente vede l'errore, vede "Salvato!" subito
+//             dopo, e conclude che l'errore fosse innocuo. Ora tutti e tre fanno toast + return.
+//             Il `finally` gia' presente riaccende i pulsanti, quindi il return e' sicuro.
+//             ⚠️ RESIDUO NOTO, lasciato scritto per non riscoprirlo: se `uploadToCloudinary`
+//             restituisce un valore falso SENZA sollevare eccezione, entrambe le form tirano
+//             dritto (A con `img: imgUrl || figs[idx].img`, B con `if (uploaded)`). Qui non si
+//             tocca, per non cambiare in una release di allineamento un comportamento che le due
+//             form condividono - ma e' un buco vero, non una scelta.
+//
+//          3) L'EREDITARIETA' DALLA BASE LEGGE `_campiEreditatiDaBase()`. Dalla v6.055 quella
+//             funzione esiste ed e' la fonte per la propagazione automatica e per la funzione
+//             admin del §14; le due form pero' continuavano ad assegnarsi i campi UNO PER UNO,
+//             ricopiando la stessa regola ("nei retro anche subname/category/subcategory, altrove
+//             solo name") in due punti diversi. Erano TRE punti che dovevano dire la stessa cosa e
+//             la dicevano in tre modi. Ora sono uno: entrambe le form ciclano sull'elenco che
+//             restituisce la funzione. Nessun cambiamento di comportamento - l'elenco derivato a
+//             mano e quello della funzione coincidevano - ma da qui in poi un campo aggiunto
+//             all'ereditarieta' entra in un posto e vale ovunque.
+//             Sì, il punto 3 tocca anche A, che la tappa 2 cancellera'. Il motivo e' che finche' A
+//             esiste e salva, una regola scritta a mano li' dentro puo' divergere: toglierla ora
+//             costa tre righe, lasciarla e' un'altra copia viva per tutta la durata della tappa 1.
+//
 // v6.100 - LA GRAFFA DI TROPPO NEL CSS DELL'INDEX. Modificato index.html (piu' la versione).
 //          Nessun cambiamento nell'aspetto del sito: il browser quella graffa la scartava gia'.
 //          Difetto trovato il 6 agosto 2026, corretto l'11. Costava solo in lettura, ed e' il
@@ -11921,7 +11995,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.100';
+const JS_VERSION = 'v6.101';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -20591,16 +20665,22 @@ async function _saveFigurineInner() {
   if (_nomeEreditato && baseFigurineId) {
     const _bR = getData('figurines', []).find(x => x.id === baseFigurineId);
     if (_bR) {
-      name = _bR.name || '';
-      if (isRetrosSection) {
-        subname = _bR.subname || '';
-        category = _bR.category || '';
-        subcategory = _bR.subcategory || '';
-      }
+      // v6.101 (§12.1) - stesso elenco della scheda e della propagazione: `_campiEreditatiDaBase()`.
+      // Questa form la tappa 2 la cancellera'; toglierle la copia a mano costa lo stesso tre righe,
+      // e lasciarcela avrebbe voluto dire tenere viva una terza versione della regola per tutta la
+      // durata della tappa 1 - cioe' esattamente il tempo in cui qualcuno tocchera' l'ereditarieta'.
+      const _scriviCampo = { name: v => { name = v; }, subname: v => { subname = v; },
+                             category: v => { category = v; }, subcategory: v => { subcategory = v; } };
+      _campiEreditatiDaBase(currentSection).forEach(k => {
+        if (_scriviCampo[k]) _scriviCampo[k](_bR[k] || '');
+      });
     }
   }
-  const numberRequired = (currentSection === 'figurines') && !isVarOrChgSection && !isPrintError; // v5.880: il numero ha senso solo per le figurine
+  const numberRequired = (currentSection === 'figurines') && !isVarOrChgSection && !isPrintError && !noNumber; // v5.880: il numero ha senso solo per le figurine; v6.101: e non lo si pretende da chi ha appena dichiarato che non c'e'
   if ((!name && !_nomeEreditato) || (numberRequired && !number)) { toast((currentLang === 'it' ? (numberRequired ? 'Numero e nome sono obbligatori' : 'Il nome è obbligatorio') : (numberRequired ? 'Number and name are required' : 'Name is required')), 'error'); return; }
+  // v6.101 (Franco) - la contraddizione fra la spunta e il campo ferma il salvataggio (§12.1).
+  const _msgNum = _messaggioIncongruenzaNumero(number, noNumber);
+  if (_msgNum) { toast(_msgNum, 'error', null, 7000); return; }
   if (isRetrosSection) {
     const editId = document.getElementById('edit-fig-id').value;
     // LA CHIAVE DI UNICITA' COMPRENDE IL TIPO (v5.717). Prima confrontava solo il
@@ -23897,6 +23977,37 @@ function _campiEreditatiDaBase(section) {
   return section === 'retros' ? ['name', 'subname', 'category', 'subcategory'] : ['name'];
 }
 
+// v6.101 (Franco) - "NON HA NUMERO" SPUNTATO E UN NUMERO SCRITTO SONO IN CONTRADDIZIONE:
+// IL SALVATAGGIO SI FERMA FINCHE' LA CONTRADDIZIONE C'E'.
+// Regola di Franco, 11 agosto 2026: «a me sta bene che al salvataggio fai presente la incongruenza
+// e non si puo' salvare sin che la incongruenza rimane».
+//
+// ⚠️ NOTA DI METODO, e vale piu' della funzione. La prima versione di questo codice CANCELLAVA il
+// numero da sola, in silenzio, ed era una lettura sbagliata di quello che Franco aveva chiesto.
+// Le due strade sembrano equivalenti - in entrambe il record finisce senza numero - e non lo sono
+// per niente: cancellare decide al posto di chi salva e non glielo dice, bloccare gli mostra la
+// contraddizione e gli lascia scegliere quale dei due dati e' quello giusto. Solo lui lo sa. Un
+// dato buttato via in silenzio e' indistinguibile da un dato che non c'e' mai stato.
+// La regola generale, che a questo punto conviene scriversi: davanti a due dati che si
+// contraddicono, un programma non ne sceglie uno - li fa vedere tutti e due.
+//
+// Sta qui, e non dentro le due form, per il motivo di sempre (§12.1): il messaggio deve essere lo
+// stesso da tutte e due, e un messaggio scritto due volte fra sei mesi e' due messaggi diversi.
+// Restituisce il testo da mostrare, o null se non c'e' contraddizione.
+//
+// COSA GUARDA, e perche' guarda proprio quello: il numero SCRITTO NEL CAMPO, non quello che
+// finirebbe sul record. Su una variazione o un change il numero si eredita dalla base, e se la
+// base ce l'ha non c'e' niente che l'utente possa fare da questa form per toglierlo: bloccare li'
+// sarebbe una porta chiusa senza chiave. La contraddizione che si segnala e' quella che chi salva
+// puo' risolvere - togliere il numero, o togliere la spunta.
+function _messaggioIncongruenzaNumero(numeroScritto, noNumber) {
+  const c = (numeroScritto === null || numeroScritto === undefined) ? '' : String(numeroScritto).trim();
+  if (!noNumber || !c) return null;
+  return (currentLang === 'it')
+    ? `Incongruenza: "Non ha numero" è spuntato, ma nel campo Numero c'è ${c}. Togli il numero, oppure togli la spunta.`
+    : `Inconsistent: "Has no number" is checked, but the Number field contains ${c}. Clear the number, or uncheck the box.`;
+}
+
 // v6.055 (Franco) - i figli di un oggetto: Change, errori di stampa E VARIAZIONI.
 // Le variazioni erano rimaste fuori dalla v6.053 perche' non ereditano nulla al salvataggio; ma il
 // loro Nome, per convenzione, e' quello della base (vedi §12.1: "Per le Variazioni il Nome coincide
@@ -23981,15 +24092,44 @@ async function saveFigFromDetail(figId, opzioni) {
       const _baseId = document.getElementById('fe-base-figurine')?.value || null;
       const _bR = _baseId ? getData('figurines', []).find(x => x.id === _baseId) : null;
       if (_bR) {
-        name = _bR.name || '';
-        if (existingForCheck?.section === 'retros') {
-          _subnameEff = _bR.subname || '';
-          _catEff     = _bR.category || '';
-          _subcatEff  = _bR.subcategory || '';
-        }
+        // v6.101 (§12.1) - QUALI campi si ereditano lo dice `_campiEreditatiDaBase()`, la stessa
+        // funzione che leggono la propagazione automatica (`_divergenzeDaBase`) e la funzione
+        // admin del §14. Fino alla v6.100 l'elenco era ricopiato a mano qui e nell'altra form:
+        // tre punti che dovevano dire la stessa cosa e la dicevano in tre modi (§12.1,
+        // aggiornamento del 3 agosto). Nessun cambiamento di comportamento - i due elenchi
+        // coincidevano - ma da qui in poi un campo aggiunto entra in UN posto e vale ovunque.
+        const _scriviCampo = { name: v => { name = v; }, subname: v => { _subnameEff = v; },
+                               category: v => { _catEff = v; }, subcategory: v => { _subcatEff = v; } };
+        _campiEreditatiDaBase(existingForCheck?.section).forEach(k => {
+          if (_scriviCampo[k]) _scriviCampo[k](_bR[k] || '');
+        });
       }
     }
     if (!name && !_nameInherited) { toast(currentLang==='it'?'Il nome è obbligatorio':'Name is required','error'); return; }
+    // v6.101 (§12.1) - NUMERO OBBLIGATORIO, la validazione che finora aveva solo l'altra form
+    // (li' dalla v5.880). Il numero ha senso solo per le FIGURINE, e solo per quelle che non lo
+    // ereditano: variazioni, change ed errori di stampa lo prendono dalla base poco piu' sotto.
+    // La sezione si legge da `existingForCheck`, NON da `currentSection`: la scheda si apre anche
+    // dalla ricerca globale (v6.097), dove `currentSection` e' la pagina rimasta sotto e non
+    // l'oggetto aperto - leggerla da li' avrebbe preteso il numero su un retro, o non l'avrebbe
+    // preteso su una figurina, a seconda di dove ci si trovava. Difetto invisibile in preview,
+    // perche' aprendo la scheda dalla sua griglia le due coincidono sempre.
+    // La casella "Non ha numero" spegne la pretesa: pretendere un numero da chi ha appena
+    // dichiarato che non c'e' sarebbe un controllo che litiga con la casella accanto. Dalla
+    // v6.101 la stessa riga sta anche nell'altra form, dove mancava.
+    const _noNumChk = !!document.getElementById('fe-no-number')?.checked;
+    const _numScritto = document.getElementById('fe-number')?.value;
+    const _numeroRichiesto = (existingForCheck?.section === 'figurines')
+      && !_isVarChk && !_isUnoffChk && !_isChgChk && !_isPEChk
+      && !_noNumChk;
+    if (_numeroRichiesto && !_numScritto) {
+      toast(currentLang === 'it' ? 'Il numero è obbligatorio' : 'Number is required', 'error');
+      return;
+    }
+    // v6.101 (Franco) - e la contraddizione fra la spunta e il campo ferma il salvataggio: stessa
+    // funzione, stesso messaggio dell'altra form.
+    const _msgNum = _messaggioIncongruenzaNumero(_numScritto, _noNumChk);
+    if (_msgNum) { toast(_msgNum, 'error', null, 7000); return; }
     if (existingForCheck?.section === 'retros') {
       const category = _catEff; // v6.038
       const changeTypeVal = document.getElementById('fe-retro-change-type')?.value || '';
@@ -24125,7 +24265,19 @@ async function saveFigFromDetail(figId, opzioni) {
           const blob = await res.blob();
           const uploaded = await uploadToCloudinary(blob);
           if (uploaded) updates[campo] = uploaded;
-        } catch(e) { console.error('Upload ' + campo + ' error', e); }
+        } catch(e) {
+          // v6.101 (§12.1) - SI ESCE SENZA SALVARE. Prima qui c'era solo un console.error e il
+          // salvataggio proseguiva: si scriveva un record che dichiara una foto mai arrivata.
+          // E' la lezione che l'altra form ha imparato nella v6.074, e che questa non aveva.
+          // Il `_scriviSlot(slot, null)` in fondo al ciclo NON viene eseguito, ed e' voluto: la
+          // foto scelta resta in attesa, cosi' il secondo tentativo non riparte da zero.
+          console.error('Upload ' + campo + ' error', e);
+          const _q = (currentLang === 'it' ? _SLOT_FOTO[slot].it : _SLOT_FOTO[slot].en);
+          toast((currentLang === 'it'
+            ? `Caricamento foto ${_q} fallito — non è stato salvato niente`
+            : `${_q} photo upload failed — nothing was saved`), 'error');
+          return;
+        }
       }
       _scriviSlot(slot, null);
     }
@@ -24135,7 +24287,17 @@ async function saveFigFromDetail(figId, opzioni) {
       try {
         const uploadedEbay = await uploadToCloudinary(editingFeEbayImgFileSave);
         if (uploadedEbay) updates.ebayImg = uploadedEbay;
-      } catch(e) { console.error('Upload ebayImg error', e); toast((currentLang === 'it' ? 'Caricamento foto Ebay fallito' : 'Ebay photo upload failed'), 'error'); }
+      } catch(e) {
+        // v6.101 (§12.1) - come i due slot qui sopra: si esce senza salvare. Questo era il caso
+        // PEGGIORE dei tre, perche' il toast di errore c'era gia' e il salvataggio proseguiva lo
+        // stesso: l'utente vedeva l'errore e subito dopo "Salvato!", e ne concludeva - con
+        // ragione, viste le due schermate - che l'errore fosse innocuo.
+        // `editingFeEbayImgFileSave` non si azzera (la riga sta dopo il blocco): la foto scelta
+        // resta li' per un secondo tentativo.
+        console.error('Upload ebayImg error', e);
+        toast((currentLang === 'it' ? 'Caricamento foto Ebay fallito — non è stato salvato niente' : 'Ebay photo upload failed — nothing was saved'), 'error');
+        return;
+      }
     }
     editingFeEbayImgFileSave = null;
 
