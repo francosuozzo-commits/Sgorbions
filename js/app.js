@@ -1,6 +1,46 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.097 - LE FRECCE SCORRONO ANCHE I RISULTATI DELLA RICERCA GLOBALE, e dicono a che punto sei.
+//          Modificato app.js e index.html.
+//
+//          1) LE FRECCE (Franco, chiesto il 9 agosto). Aprendo un risultato della ricerca globale,
+//          per vedere il successivo bisognava chiudere la scheda e cliccare a mano. Il meccanismo
+//          pero' esisteva gia': _elencoNav della v6.033 fa scorrere alle frecce "l'elenco da cui si
+//          e' arrivati" invece dell'ordine della griglia - alla ricerca globale non era mai stato
+//          collegato. Ora openFigFromSearch glielo passa, e le frecce scorrono TUTTI i risultati,
+//          anche attraversando serie diverse.
+//          L'elenco (_elencoRicercaGlobale) si riempie DENTRO il map che disegna le card, non dopo:
+//          l'ordine a schermo nasce da tre annidamenti - serie, poi sezione, poi dentro le figurine
+//          il gruppo base+variazioni+change - e ricalcolarlo altrove sarebbe stata la solita
+//          seconda copia che diverge. Si azzera in cima a renderCatalogSearch, prima dei tre
+//          ritorni anticipati, altrimenti sopravviveva alla ricerca che l'aveva generato.
+//
+//          2) IL CONTESTO SEGUE L'OGGETTO CHE SI APRE. navigateFigDetail allinea currentSeriesId e
+//          currentSection alla figurina che apre. Serve perche' le frecce ora attraversano serie
+//          diverse, e perche' i campi della scheda dipendono dalla sezione (_mostraCampoNumero):
+//          openFigFromSearch faceva gia' questo all'apertura, ora si continua a farlo a ogni passo.
+//          ⚠️ Scelta consapevole di Franco: si allinea SEMPRE, non solo venendo dalla ricerca.
+//          Quindi vale anche per i tab dei collegati - da un retro a un suo Change currentSection
+//          passa da 'retros' a 'figurines'. L'alternativa scartata era allineare solo per la
+//          ricerca globale. Se dopo aver chiuso una scheda aperta da un tab la griglia sotto
+//          risulta cambiata, e' questa riga.
+//
+//          3) IL CONTATORE "3 di 12" fra le due frecce, in tutti e tre gli elenchi (griglia, tab
+//          dei collegati, ricerca globale). Usa gli STESSI due numeri che decidono se le frecce si
+//          accendono - navIdx e la lunghezza dell'elenco - proprio per non poter dire una cosa
+//          diversa da loro. Nascosto con visibility e non display: cosi' lo spazio resta occupato e
+//          le frecce non si spostano sotto il dito quando il contatore non c'e'.
+//          Nell'index lo <span> nasce SENZA data-i18n: la stringa la compone app.js insieme ai
+//          numeri, e applyI18n() la riscriverebbe al primo cambio lingua (§5, lezione della v6.077).
+//
+//          4) ACCORDO SINGOLARE/PLURALE nel riepilogo della ricerca (Franco, visto in preview).
+//          Diceva "1 serie TROVATE · 1 oggetti TROVATI": plurale fisso, quindi sbagliato proprio
+//          nel caso piu' comune, cioe' quando si cerca un nome preciso e il risultato e' uno solo.
+//          Corretti i tre punti: il riepilogo in cima e il conteggio a destra del nome della serie.
+//          `serie` in italiano e' invariabile - a cambiare e' il participio; in inglese `series` e
+//          `found` sono invariabili e l'unica voce da accordare e' `item(s)`.
+//
 // v6.096 - CAMPO NOTE, LE DUE RICERCHE ALLINEATE, E I TIPI DI CHANGE A SELEZIONE MULTIPLA.
 //          Modificato app.js e index.html.
 //
@@ -11777,7 +11817,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.096';
+const JS_VERSION = 'v6.097';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16358,7 +16398,20 @@ function _dipingiInvisibile(idInput, idLabel, coloreSpento) {
   if (chk && lab) lab.style.color = chk.checked ? 'var(--danger)' : coloreSpento;
 }
 
+// v6.097 (Franco) - L'ELENCO SU CUI SCORRONO LE FRECCE DALLA RICERCA GLOBALE.
+// Non e' l'ordine della griglia e non e' l'ordine di `results`: e' l'ordine in cui le card
+// COMPAIONO A SCHERMO, che nasce da tre annidamenti (serie -> sezione -> dentro le figurine il
+// gruppo base+variazioni+change). Per questo si riempie DENTRO il map che disegna le card e non
+// si ricalcola dopo: un secondo calcolo sarebbe una copia della stessa verita', e le due copie
+// divergono alla prima modifica dell'ordinamento - com'e' gia' successo altrove in questo file.
+let _elencoRicercaGlobale = [];
+
 function renderCatalogSearch(q) {
+  // v6.097 - si azzera SUBITO, prima di ogni ritorno anticipato. I due `return` qui sotto (query
+  // vuota, query fatta di soli separatori) e quello del "nessun risultato" lasciavano altrimenti
+  // in giro l'elenco della ricerca precedente, e le frecce avrebbero scorso dei risultati che a
+  // schermo non c'erano piu'.
+  _elencoRicercaGlobale = [];
   // v6.093 - `q` resta il testo COME L'HA SCRITTO Franco, perche' finisce nel messaggio
   // "Nessun risultato per ...": mostrargli la versione senza accenti sarebbe rispondere a una
   // domanda che non ha fatto. A confrontare ci pensa `qn`.
@@ -16406,9 +16459,14 @@ function renderCatalogSearch(q) {
 
   const totalFigs = results.reduce((n, r) => n + r.figs.length, 0);
   const totalSeries = results.filter(r => r.seriesMatch).length;
+  // v6.097 (Franco) - "1 serie TROVATE" e "1 oggetti TROVATI". Il riepilogo era scritto al plurale
+  // fisso, e con un risultato solo - il caso piu' comune quando si cerca un nome preciso - sbagliava
+  // l'accordo due volte nella stessa riga.
+  // `serie` in italiano e' invariabile (1 serie / 2 serie): a cambiare e' il solo participio. In
+  // inglese `series` e `found` sono invariabili, quindi li' l'unica voce da accordare e' `item(s)`.
   const summary = currentLang === 'it'
-    ? `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">${results.length} serie trovate · ${totalFigs} oggetti trovati</p>`
-    : `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">${results.length} series found · ${totalFigs} items found</p>`;
+    ? `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">${results.length} serie ${results.length === 1 ? 'trovata' : 'trovate'} · ${totalFigs} ${totalFigs === 1 ? 'oggetto trovato' : 'oggetti trovati'}</p>`
+    : `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">${results.length} series found · ${totalFigs} ${totalFigs === 1 ? 'item' : 'items'} found</p>`;
 
   resultsEl.innerHTML = summary + results.map(r => {
     const s = r.series;
@@ -16421,7 +16479,7 @@ function renderCatalogSearch(q) {
           <span style="font-family:var(--font-display);font-size:0.95rem;font-weight:600;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
           ${r.seriesMatch ? `<span style="font-size:0.65rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 5px;flex-shrink:0;">${currentLang==='it'?'serie':'series'}</span>` : ''}
         </div>
-        ${r.figs.length ? `<span style="font-size:0.7rem;color:var(--muted);white-space:nowrap;margin-left:0.5rem;flex-shrink:0;">${r.figs.length} ${currentLang==='it'?'trovati':'found'}</span>` : ''}
+        ${r.figs.length ? `<span style="font-size:0.7rem;color:var(--muted);white-space:nowrap;margin-left:0.5rem;flex-shrink:0;">${r.figs.length} ${currentLang==='it'?(r.figs.length===1?'trovato':'trovati'):'found'}</span>` : ''}
       </div>`;
     const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: currentLang === 'it' ? 'Album' : 'Albums', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Wrappers' };
     const sectionOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
@@ -16462,6 +16520,7 @@ function renderCatalogSearch(q) {
             <div style="font-size:0.9rem;color:#ff9d3d;font-weight:600;margin-bottom:0.25rem;">${sectionLabels[sec]}:</div>
             <div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
               ${inSection.map(f => {
+                _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
                 const isVarOrChange = sec === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange);
                 const baseFig = (isVarOrChange && f.baseFigurineId) ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
                 const retroFig = (isVarOrChange && f.retroId) ? getData('figurines', []).find(x => x.id === f.retroId) : null;
@@ -16490,7 +16549,10 @@ function openFigFromSearch(figId, seriesId, section) {
   currentSeriesId = seriesId;
   currentSection = section || 'figurines';
   // Apre direttamente la modal di dettaglio, i risultati rimangono visibili
-  openFigDetail(figId);
+  // v6.097 (Franco) - LE FRECCE SCORRONO TUTTI I RISULTATI, anche passando da una serie all'altra.
+  // Il meccanismo c'era gia' dalla v6.033 (_elencoNav): alla ricerca globale non era mai stato
+  // collegato, e per vedere il risultato successivo bisognava chiudere la scheda e cliccare a mano.
+  openFigDetail(figId, _elencoRicercaGlobale);
 }
 
 // v6.080 (Franco) - IL NOME DA METTERE SULLE CARD. Su telefono, se la serie ha un "Nome corto",
@@ -16583,6 +16645,21 @@ function navigateFigDetail(direction) {
   if (idx === -1) return;
   const newIdx = idx + direction;
   if (newIdx < 0 || newIdx >= ids.length) return;
+  // v6.097 (Franco) - IL CONTESTO SEGUE L'OGGETTO CHE SI APRE.
+  // Serve per la ricerca globale, dove le frecce attraversano serie diverse: senza, chiudendo la
+  // scheda si tornava nel posto sbagliato, e gia' dentro la scheda i campi mostrati dipendono
+  // dalla sezione (vedi _mostraCampoNumero). openFigFromSearch faceva gia' esattamente questo
+  // all'APERTURA; qui si limita a continuare a farlo a ogni passo.
+  // ⚠️ Decisione consapevole di Franco (11 agosto 2026): si allinea SEMPRE, non solo venendo dalla
+  // ricerca. Quindi tocca anche i tab dei collegati - scorrendo da un retro a un suo Change,
+  // `currentSection` passa da 'retros' a 'figurines'. E' scritto qui perche' se un giorno la
+  // griglia sotto cambia da sola dopo aver chiuso una scheda aperta da un tab, questa riga e' il
+  // primo posto dove guardare: l'alternativa scartata era allineare solo per _elencoRicercaGlobale.
+  const _nuovo = getData('figurines', []).find(x => x.id === ids[newIdx]);
+  if (_nuovo) {
+    currentSeriesId = _nuovo.seriesId;
+    currentSection = _nuovo.section || 'figurines';
+  }
   openFigDetail(ids[newIdx], _elencoNav); // v6.033 - restando nello stesso elenco
 }
 const ROWS_PER_PAGE = 7;
@@ -22177,6 +22254,20 @@ function openFigDetail(figId, elencoNav) {
   const navIdx = _navIds.indexOf(figId);
   const prevBtn = document.getElementById('fig-detail-prev-btn');
   const nextBtn = document.getElementById('fig-detail-next-btn');
+  // v6.097 (Franco) - IL CONTATORE "3 di 12" fra le due frecce. Sta qui e non in un ramo suo
+  // perche' i due numeri sono gli stessi che decidono se le frecce si accendono: navIdx e la
+  // lunghezza dell'elenco. Calcolarli una seconda volta altrove avrebbe permesso al contatore di
+  // dire una cosa e alle frecce di farne un'altra.
+  // Vale per TUTTI e tre gli elenchi (griglia, tab dei collegati, ricerca globale): il numero lo
+  // sappiamo comunque, e delle frecce che a volte dicono dove sei e a volte no sono due
+  // comportamenti da tenere a mente invece di uno.
+  const countEl = document.getElementById('fig-detail-nav-count');
+  if (countEl) {
+    countEl.textContent = navIdx === -1 ? '' : `${navIdx + 1} ${currentLang === 'it' ? 'di' : 'of'} ${_navIds.length}`;
+    // visibility e non display: cosi' lo spazio resta occupato e le due frecce non si spostano
+    // quando il contatore non c'e' - un pulsante che si muove sotto il dito e' un click sbagliato.
+    countEl.style.visibility = navIdx === -1 ? 'hidden' : '';
+  }
   if (prevBtn && nextBtn) {
     prevBtn.title = currentLang === 'it' ? 'Precedente' : 'Previous';
     nextBtn.title = currentLang === 'it' ? 'Successivo' : 'Next';
