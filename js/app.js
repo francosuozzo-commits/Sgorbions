@@ -1,6 +1,105 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.103 - IL BLOCCO eBAY ENTRA NELLA SCHEDA: LA TAPPA 1 DEL §12.1 E' CHIUSA. Modificato app.js
+//          (piu' la versione nell'index.html). Nessun cambiamento nell'aspetto del sito fuori dalla
+//          scheda di modifica.
+//
+//          Da qui in avanti si modifica un oggetto SOLO dalla scheda: non le manca piu' niente di
+//          cio' che aveva la finestra. Alla scheda entrano il prezzo in dollari, la scelta degli
+//          account, la coda di pubblicazione, il riquadro di stato e i quattro testi dell'annuncio
+//          coi contatori degli 80 caratteri.
+//
+//          IL PUNTO CHE CONTA NON E' COSA E' ENTRATO, MA COME. Le tre funzioni che disegnano quei
+//          riquadri (`renderEbayAccountScelta`, `leggiEbayAccountScelta`, `renderEbayStatoScheda`)
+//          erano inchiodate agli id `fig-*` della finestra. Riscriverle per la scheda avrebbe
+//          significato fare il doppione **proprio nella release che deve chiuderlo**: due copie
+//          della stessa regola, e il §12.1 racconta per intero cosa succede dopo. Ora prendono un
+//          parametro `pref` col default 'fig', quindi i chiamanti vecchi non cambiano di una virgola
+//          e la scheda le riusa passando 'fe'. Il MARKUP resta doppio ancora per poco: in tappa 2 la
+//          finestra si cancella e con lei la sua meta'.
+//
+//          ⚠️ TRE PUNTI DOVE LA COPIA SUPERFICIALE AVREBBE PRODOTTO DIFETTI SILENZIOSI:
+//          1) L'ORDINE DELLA CODA. `merged.daPubblicare` si calcola DOPO `computeFullName`, mai
+//             prima. `fullName` e' fra i campi che `ebayCampiCambiati` guarda, perche' il titolo
+//             dell'annuncio - se quello manuale e' vuoto - si genera da lui: cambiare il Nome
+//             completo cambia il titolo su eBay senza toccare nessun campo `ebay*`. Calcolandola
+//             prima, il confronto girerebbe sul Nome vecchio e un titolo cambiato non metterebbe
+//             l'oggetto in coda. Nessun errore, nessun segnale, solo un annuncio che resta indietro.
+//          2) LA SPUNTA DELLA CODA VALE null, NON false, quando "Ebay" e' spento. Il controllo e'
+//             nascosto, e leggerlo darebbe false cancellando la coda proprio nel caso in cui serve
+//             di piu': un oggetto tolto da eBay che aspetta di essere RITIRATO (v5.981).
+//          3) `priceUsd` VUOTO RESTA null e non diventa 0 come il prezzo in euro: 0 vuol dire "lo
+//             regalo", null vuol dire "non l'ho ancora deciso", e solo nel secondo caso il programma
+//             si rifiuta di pubblicare su eBay.com. Per lo stesso motivo il campo si riempie con
+//             `?? ''` e non con `|| ''`, altrimenti un prezzo di 0 sparirebbe riaprendo la scheda.
+//
+//          Dettaglio minore ma della stessa famiglia: i blocchi "testi" e "coda" partono col display
+//          gia' giusto secondo `f.forSale`, invece di partire nascosti e aspettare il toggle. Quel
+//          toggle lo chiama `aggiornaRiquadriEbayScheda`, che gira dentro una promessa: se
+//          `getEbaySettings()` fallisse, su un oggetto in vendita quei campi non comparirebbero mai.
+//          Dipendere da una promessa per mostrare un campo che si sa gia' se va mostrato e' una
+//          dipendenza gratis.
+//
+//          ⚠️ E POI FRANCO HA CHIESTO UNA COSA CHE HA SCOPERTO UN TERZO ELENCO. Guardando il tab
+//          Ebay in SOLA LETTURA: "il prezzo in dollari non lo vedo, devo premere Modifica". Vero, e
+//          non era un difetto di questa release: quella vista mostrava UNA riga (prezzo €, quantita',
+//          condizione) piu' la foto, e le mancavano `priceUsd` dalla v5.981, i quattro testi
+//          dell'annuncio dalla v5.931, la coda, gli account e lo stato.
+//          Il punto che vale la pena tenere: il §12.1 dice che le form sono DUE, e per questo lo si
+//          e' sempre trattato come un problema a due teste. I posti dove gli stessi campi si
+//          elencano sono TRE — finestra, scheda in modifica, scheda in lettura — e il terzo era
+//          rimasto indietro per mesi senza che nessuno se ne accorgesse, perche' guardando quella
+//          scheda non si vede cosa MANCA: si vede un oggetto piu' povero di com'e' davvero, e sembra
+//          coerente. L'unico modo per accorgersene era premere Modifica e confrontare.
+//          Ora il tab mostra tutto. Il riquadro di STATO si riusa tale e quale (nasce di sola
+//          lettura per costruzione); gli ACCOUNT no, e non per pigrizia: `renderEbayAccountScelta`
+//          disegna caselle da spuntare, e in una vista di lettura una casella che si spunta e non
+//          salva niente e' peggio di un campo assente. Li' gli account si scrivono, non si scelgono
+//          - e se l'oggetto non ha una preferenza propria, si dice che quello mostrato e' il
+//          predefinito, invece di lasciar credere a una scelta fatta a mano su quel record.
+//
+//          PICCOLO DIFETTO CHIUSO STRADA FACENDO (Franco, provando): dal tab Ebay della vista in
+//          lettura, premendo "Modifica" si finiva sul tab Generale e bisognava ricliccare Ebay ogni
+//          volta. Ora si resta dov'e' si era. Lo stato si legge DAL DOM della vista un attimo prima
+//          che `content.innerHTML` la cancelli, invece di tenerlo in una variabile: una variabile
+//          andrebbe azzerata all'apertura di un altro oggetto, e prima o poi qualcuno se ne
+//          dimenticherebbe facendo aprire la scheda di una figurina sul tab di quella di prima.
+//          Nessuno stato da mantenere, nessuno stato da sbagliare.
+//
+//          DUE COSE FUORI TEMA, infilate qui su richiesta di Franco invece che in una release loro:
+//
+//          A) LA RICERCA GLOBALE MOSTRAVA MENO DI QUELLO CHE SAPEVA. Segnalato: "gli errori di
+//             stampa delle figurine non mostrano il Tipo di errore di stampa". Vero, e il buco era
+//             piu' largo della segnalazione: `isVarOrChange` non comprendeva `isPrintError`, quindi
+//             gli errori di stampa non avevano NESSUNA etichetta e sembravano figurine normali.
+//             E soprattutto: per le figurine i risultati mostrano `f.name`, che per un Change e' il
+//             nome EREDITATO DALLA BASE (§13.1) - quindi due Change della stessa base ma di tipo
+//             diverso risultavano IDENTICI, stesso nome e stesso numero (ereditato anche quello).
+//             ⚠️ Il tipo era stato tolto di proposito, con la nota "e' gia' in fondo al Nome
+//             completo, ripeterlo era la stessa parola due volte". Quella nota e' VERA per i retro,
+//             che qui mostrano `_retroNomeCompleto(f)`, e FALSA per le figurine, che mostrano
+//             `f.name`. Una giustificazione buona per un ramo, applicata a tutti e due. Nessuno se
+//             n'era accorto perche' guardando un elenco non si vede cio' che manca: si vede un
+//             risultato plausibile.
+//             Le VARIAZIONI restano senza tipo, e non per dimenticanza: il loro suffisso e' il nome
+//             del retro, che la riga sotto aggiunge gia'. Aggiungerlo qui lo stamperebbe due volte -
+//             cioe' esattamente il difetto che la nota originale voleva evitare. La nota aveva
+//             ragione su un caso su tre.
+//             E per le VARIAZIONI Franco ha chiesto la sequenza completa - N.; Nome; Categoria
+//             retro; Sottocategoria retro; Nome retro. Qui si chiamava `_retroNomeLungo()`, che da'
+//             solo nome + sottonome: due variazioni collegate a retro omonimi di categorie diverse
+//             erano indistinguibili. Basta `_retroNomeCompleto()`, che quella sequenza la costruisce
+//             gia' con la regola delle categorie di sempre. Un identificatore cambiato invece di una
+//             regola riscritta: era la quinta volta che poteva nascere in copia, e non e' nata.
+//
+//          B) I due pulsanti "Inventario" e "Sezioni" in bianco (index.html). Regola inline, fuori
+//             dalla media query che li posiziona: quella vale sopra una certa larghezza, il colore
+//             deve valere ovunque. Dentro, sarebbe sparito proprio sul telefono.
+//
+//          RESTA LA TAPPA 2: "Aggiungi" apre la scheda vuota e la finestra si cancella. Li' sparisce
+//          il doppione del markup, e con lui i punti che aprono la finestra elencati nel §12.1.
+//
 // v6.102 - UN CHANGE ORA DICE SE E' FRONTALE O DI RETRO. Modificato app.js e index.html.
 //          §12.10, idea di Franco dell'11 agosto 2026. Nessun cambiamento voluto nell'aspetto del
 //          sito; cambia la form della Serie (una casella in piu') e le due tendine "Tipo di change".
@@ -10973,9 +11072,14 @@ let _ebayAccountsBozza = [];   // copia di lavoro mentre si modifica il pannello
 // v5.981 — Le spunte "su quali account" dentro la scheda dell'oggetto.
 // Nessuna spunta = quello predefinito, e la riga del predefinito lo dice a chiare lettere invece
 // di lasciarlo indovinare da una casella vuota.
-function renderEbayAccountScelta(f, s) {
-  const box = document.getElementById('fig-ebay-account-lista');
-  const gruppo = document.getElementById('fig-ebay-account-group');
+// v6.103 (§12.1) — il PREFISSO degli id. Le due form usano due vocabolari (`fig-*` la finestra,
+// `fe-*` la scheda) e questa funzione era inchiodata al primo. Portare il blocco eBay nella scheda
+// riscrivendola sarebbe stato fare il doppione proprio nella release che deve chiuderlo.
+// Il default 'fig' esiste perche' i chiamanti vecchi non cambiano di una virgola: se domani si
+// scoprisse un difetto qui, si corregge una volta e vale per tutte e due le form.
+function renderEbayAccountScelta(f, s, pref = 'fig') {
+  const box = document.getElementById(pref + '-ebay-account-lista');
+  const gruppo = document.getElementById(pref + '-ebay-account-group');
   if (!box || !gruppo) return;
   const it = (currentLang === 'it');
   const conti = ebayAccounts(s);
@@ -11006,17 +11110,55 @@ function renderEbayAccountScelta(f, s) {
 // impostazioni, che si leggono da Firestore. openAddItemModal() e' sincrona ed e' chiamata da mezzo
 // sito: renderla async per due riquadri sarebbe un cambiamento grosso per un guadagno nullo. Si
 // disegnano quindi appena le impostazioni arrivano — di solito subito, perche' sono in cache.
-function aggiornaRiquadriEbayScheda(f) {
+// v6.103 (§12.1) — i due riquadri che servono le impostazioni nella vista in SOLA LETTURA.
+// Non riusa `aggiornaRiquadriEbayScheda` per una ragione precisa: quella disegna la SCELTA degli
+// account, cioe' delle caselle da spuntare, e in una vista di lettura una casella spuntabile che
+// non salva niente e' peggio di un campo assente. Qui gli account si scrivono, non si scelgono.
+// Lo STATO invece e' lo stesso identico riquadro delle due form — nasce di sola lettura per
+// costruzione ("lo scrive il programma, non si modifica da qui"), quindi si riusa com'e'.
+function riempiEbayVistaLettura(f) {
   getEbaySettings()
-    .then(s => { renderEbayAccountScelta(f, s); renderEbayStatoScheda(f, s); toggleForSaleFields(); })
+    .then(s => {
+      const box = document.getElementById('figdetail-ebay-account');
+      if (box) {
+        const conti = ebayAccounts(s);
+        const nomi = ebayAccountsDiOggetto(f, s)
+          .map(id => conti.find(a => a.id === id)?.etichetta || id);
+        const proprio = Array.isArray(f?.ebayAccounts) && f.ebayAccounts.filter(Boolean).length;
+        box.innerHTML = nomi.length
+          ? '<div class="detail-row"><span class="detail-label">👥 ' + (currentLang === 'it' ? 'Account' : 'Accounts') + '</span><span class="detail-value">' +
+            esc(nomi.join(', ')) +
+            // Se l'oggetto non ha una preferenza propria, il nome che si vede e' quello del
+            // predefinito: dirlo evita di credere che sia una scelta fatta a mano su questo record.
+            (proprio ? '' : ' <span style="color:var(--muted);font-style:italic;">(' + (currentLang === 'it' ? 'predefinito' : 'default') + ')</span>') +
+            '</span></div>'
+          : '';
+      }
+      renderEbayStatoScheda(f, s, 'figdetail');
+      const stato = document.getElementById('figdetail-ebay-stato');
+      if (stato) stato.style.display = (stato.dataset.vuoto !== '1' && stato.innerHTML) ? '' : 'none';
+    })
+    .catch(e => console.error('riquadri eBay della vista in lettura', e));
+}
+
+function aggiornaRiquadriEbayScheda(f, pref = 'fig') {
+  getEbaySettings()
+    .then(s => {
+      renderEbayAccountScelta(f, s, pref);
+      renderEbayStatoScheda(f, s, pref);
+      // v6.103 - i due toggle restano distinti perche' distinti sono i due markup; quello che NON
+      // si duplica e' cio' che c'e' dentro i riquadri. In tappa 2, quando la finestra si cancella,
+      // qui resta un ramo solo.
+      (pref === 'fe' ? toggleFeForSaleFields : toggleForSaleFields)();
+    })
     .catch(e => console.error('riquadri eBay della scheda', e));
 }
 
 // Il valore da salvare. Se le spunte coincidono esattamente col solo predefinito si salva null e
 // non l'elenco: cosi' cambiare in futuro quale account e' il predefinito continua a valere per
 // tutti gli oggetti che non hanno espresso una preferenza, che e' il senso di "predefinito".
-function leggiEbayAccountScelta(s) {
-  const box = document.getElementById('fig-ebay-account-lista');
+function leggiEbayAccountScelta(s, pref = 'fig') {
+  const box = document.getElementById(pref + '-ebay-account-lista');
   if (!box) return null;
   const scelti = Array.from(box.querySelectorAll('input[data-ebay-account]'))
     .filter(i => i.checked).map(i => i.getAttribute('data-ebay-account'));
@@ -12057,7 +12199,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.102';
+const JS_VERSION = 'v6.103';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16732,11 +16874,18 @@ function renderCatalogSearch(q) {
   // v6.097 (Franco) - "1 serie TROVATE" e "1 oggetti TROVATI". Il riepilogo era scritto al plurale
   // fisso, e con un risultato solo - il caso piu' comune quando si cerca un nome preciso - sbagliava
   // l'accordo due volte nella stessa riga.
-  // `serie` in italiano e' invariabile (1 serie / 2 serie): a cambiare e' il solo participio. In
-  // inglese `series` e `found` sono invariabili, quindi li' l'unica voce da accordare e' `item(s)`.
+  // v6.103 (Franco) - UNA FRASE SOLA invece di due conteggi separati da un punto: "Trovati 6 oggetti
+  // in 1 serie". Prima erano due misure affiancate e toccava a chi legge metterle in relazione;
+  // adesso la relazione e' scritta - gli oggetti sono il risultato, le serie sono dove stanno.
+  // Gli accordi restano due, e sono gli stessi di prima spostati di posto:
+  //   · il PARTICIPIO passa in testa e si accorda con gli OGGETTI, non piu' con le serie
+  //     (Trovato 1 oggetto / Trovati 6 oggetti);
+  //   · `serie` in italiano e' invariabile (1 serie / 2 serie), quindi in coda non c'e' niente da
+  //     accordare - ed e' il motivo per cui la frase regge senza un terzo caso.
+  // In inglese `series` e `found` sono invariabili: l'unica voce che si accorda resta `item(s)`.
   const summary = currentLang === 'it'
-    ? `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">${results.length} serie ${results.length === 1 ? 'trovata' : 'trovate'} · ${totalFigs} ${totalFigs === 1 ? 'oggetto trovato' : 'oggetti trovati'}</p>`
-    : `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">${results.length} series found · ${totalFigs} ${totalFigs === 1 ? 'item' : 'items'} found</p>`;
+    ? `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">Trovat${totalFigs === 1 ? 'o' : 'i'} ${totalFigs} ${totalFigs === 1 ? 'oggetto' : 'oggetti'} in ${results.length} serie</p>`
+    : `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">Found ${totalFigs} ${totalFigs === 1 ? 'item' : 'items'} in ${results.length} series</p>`;
 
   resultsEl.innerHTML = summary + results.map(r => {
     const s = r.series;
@@ -16769,41 +16918,132 @@ function renderCatalogSearch(q) {
       // Nome completo, e ripeterlo era la stessa parola due volte nella stessa riga.
       ? sectionOrder.map(sec => {
           let inSection = r.figs.filter(f => (f.section || 'figurines') === sec);
+          // v6.103 (Franco) - I RISULTATI DELLA STESSA FIGURINA STANNO INSIEME.
+          // Prima le pillole erano un elenco piatto che andava a capo dove capitava: cercando
+          // "cerino" i due #537 CE-RINO finivano su due righe diverse, e sembravano due cose
+          // scollegate invece che la stessa figurina vista da due angoli.
+          //
+          // IL COLLANTE E' IL NUMERO, non la figurina base — e la scelta e' di Franco, con una
+          // ragione che il codice da solo non poteva sapere: "a seconda della ricerca fatta potrebbe
+          // non esserci la figurina base ma solo sue variazioni-change-errori stampa". Raggruppare
+          // sulla base voleva dire dipendere da un record che i risultati possono non contenere.
+          // Il numero c'e' sempre, e per una variazione E' quello della base (lo eredita al
+          // salvataggio), quindi lega senza bisogno che la base sia li'.
+          // Dove il numero non c'e' (serie senza numeri, `noNumber`) il collante e' il nome, che in
+          // quel caso e' l'unica cosa che quegli oggetti condividono.
+          //
+          // Questo sostituisce il vecchio `groupNumber`, che il numero della base andava a cercarlo
+          // con una find() su ~3300 oggetti per ogni confronto dell'ordinamento.
+          const chiaveGruppo = f => String((f.number ?? '') !== '' ? f.number : (f.name || ''));
           if (sec === 'figurines') {
-            const allFigs = getData('figurines', []);
-            const priority = f => f.isVariation ? 1 : f.isUnofficialVariation ? 2 : f.isChange ? 3 : 0;
-            const groupNumber = f => {
-              if (f.baseFigurineId) {
-                const base = allFigs.find(x => x.id === f.baseFigurineId);
-                if (base) return base.number ?? base.name;
-              }
-              return f.number ?? f.name;
-            };
+            // v6.103 - gli errori di stampa avevano priorita' 0, cioe' si ordinavano come se fossero
+            // la figurina BASE e finivano davanti alle variazioni della stessa. Ora chiudono la fila.
+            const priority = f => f.isVariation ? 1 : f.isUnofficialVariation ? 2 : f.isChange ? 3 : f.isPrintError ? 4 : 0;
             inSection = [...inSection].sort((a, b) => {
-              const g = String(groupNumber(a)).localeCompare(String(groupNumber(b)), undefined, { numeric: true });
+              const g = chiaveGruppo(a).localeCompare(chiaveGruppo(b), undefined, { numeric: true });
               if (g !== 0) return g;
               return priority(a) - priority(b);
             });
           }
           if (!inSection.length) return '';
+          // I gruppi, nell'ordine appena stabilito. Le altre sezioni restano UN gruppo solo, cioe'
+          // esattamente com'erano: raggruppare i Retro per numero non vorrebbe dire niente, e
+          // spezzarli in gruppi da uno cambierebbe le spaziature senza motivo.
+          const gruppi = [];
+          if (sec !== 'figurines') {
+            gruppi.push({ k: '*', items: inSection });
+          } else {
+            inSection.forEach(f => {
+              const k = chiaveGruppo(f);
+              const ultimo = gruppi[gruppi.length - 1];
+              if (ultimo && ultimo.k === k) ultimo.items.push(f); else gruppi.push({ k, items: [f] });
+            });
+          }
+          // Due contenitori annidati, e il trucco sta tutto li': il gruppo e' un elemento SOLO per
+          // chi va a capo fuori, quindi resta intero finche' ci sta. Se non ci sta, va a capo al suo
+          // interno - che e' quello che Franco ha chiesto ("ovviamente se non c'e' spazio si va a
+          // capo") e che una riga forzata con `flex-wrap:nowrap` avrebbe impedito, mandando le
+          // pillole fuori dallo schermo.
+          // Lo stacco fra gruppi e' piu' largo di quello dentro un gruppo (0.7 contro 0.3): e' cosi'
+          // che si vede DOVE finisce una figurina e ne comincia un'altra, senza cornici ne' righelli.
           return `<div style="margin-bottom:0.4rem;">
             <div style="font-size:0.9rem;color:#ff9d3d;font-weight:600;margin-bottom:0.25rem;">${sectionLabels[sec]}:</div>
-            <div style="display:flex;flex-wrap:wrap;gap:0.3rem;">
-              ${inSection.map(f => {
+            <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
+              ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
-                const isVarOrChange = sec === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange);
+                // v6.103 (Franco) - GLI ERRORI DI STAMPA ENTRANO NEL CONTO. Prima restavano fuori e
+                // nei risultati sembravano figurine normali: nessuna etichetta, nessun tipo. Erano
+                // l'unico dei quattro tipi a non comparire.
+                // ⚠️ EFFETTO COLLATERALE VOLUTO, ma da sapere: questa variabile decide anche il
+                // ripiego della FOTO (riga piu' sotto). Da ora un errore di stampa senza foto propria
+                // mostra quella della sua base, come gia' fanno variazioni e change; prima non
+                // mostrava niente. E' coerente con gli altri tre tipi e meglio di un buco, ma resta
+                // un ripiego: se un errore di stampa e' visibile nel fronte, la foto della base non
+                // lo fa vedere. Se dà fastidio, e' una condizione da separare, non da togliere.
+                const isVarOrChange = sec === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange || f.isPrintError);
                 const baseFig = (isVarOrChange && f.baseFigurineId) ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
-                const retroFig = (isVarOrChange && f.retroId) ? getData('figurines', []).find(x => x.id === f.retroId) : null;
+                // v6.103 (Franco) - LA MINIATURA DEL RETRO VALE ANCHE PER LE FIGURINE BASE.
+                // La condizione chiedeva `isVarOrChange`, quindi una figurina base col suo retro
+                // collegato non lo mostrava: nei risultati aveva una foto sola mentre le sue
+                // variazioni ne avevano due, e sembrava che il retro ce l'avessero solo loro.
+                // NOTA: la miniatura si mostra sempre, il NOME del retro no - quello resta dentro il
+                // ramo `isVarOrChange` piu' sotto. Per una variazione il retro e' cio' che la
+                // distingue dalle sorelle e va scritto; per una base e' solo il suo dietro, e
+                // ripeterne il nome accanto a quello della figurina allungherebbe ogni pillola
+                // senza distinguere niente.
+                const retroFig = f.retroId ? getData('figurines', []).find(x => x.id === f.retroId) : null;
                 const varLabel = f.isVariation ? (currentLang === 'it' ? 'Variazione ufficiale' : 'Official variation')
                   : f.isUnofficialVariation ? (currentLang === 'it' ? 'Variazione non ufficiale' : 'Unofficial variation')
-                  : f.isChange ? (currentLang === 'it' ? 'Change' : 'Change') : '';
-                const smallImg = (url, title) => url ? `<img src="${cloudinaryUrl(url,'w_32,h_32,c_fit,q_auto,f_auto')}" title="${title}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);border:1px solid var(--border);">` : '';
+                  : f.isChange ? (currentLang === 'it' ? 'Change' : 'Change')
+                  : f.isPrintError ? (currentLang === 'it' ? 'Errore di stampa' : 'Print error') : '';
+                // v6.103 (Franco) - IL TIPO TORNA NEI RISULTATI, per i soli Change ed errori di stampa.
+                // Era stato tolto con la nota "il tipo e' gia' in fondo al Nome completo, ripeterlo
+                // era la stessa parola due volte". Vero per i RETRO, che qui mostrano
+                // `_retroNomeCompleto(f)`; falso per le FIGURINE, che mostrano `f.name` — e per un
+                // Change il `name` e' quello EREDITATO DALLA BASE (§13.1). Conseguenza: due Change
+                // della stessa base ma di tipo diverso risultavano identici, stesso nome e stesso
+                // numero (ereditato anche quello). Una giustificazione buona per un ramo applicata a
+                // tutti e due, e invisibile perche' guardando un elenco non si vede cio' che manca.
+                // Le VARIAZIONI restano fuori di proposito: il loro suffisso e' il nome del retro, e
+                // la riga piu' sotto lo aggiunge gia' per conto suo. Metterlo qui lo stamperebbe due
+                // volte — che e' poi il difetto vero denunciato dalla nota originale.
+                const tipoLabel = f.isChange ? (f.changeType || '')
+                  : f.isPrintError ? (f.printErrorType || '') : '';
+                // v6.103 (Franco) - IL RETRO DI UNA VARIAZIONE SI SCRIVE PER INTERO: sequenza
+                // N.; Nome; Categoria retro; Sottocategoria retro; Nome retro.
+                // Qui si chiamava `_retroNomeLungo()`, che da' solo *nome + sottonome*: categoria e
+                // sottocategoria non comparivano, e due variazioni collegate a retro omonimi di
+                // categorie diverse erano indistinguibili.
+                // La funzione giusta esisteva gia' ed e' `_retroNomeCompleto()`, che porta dentro la
+                // regola delle categorie di sempre - "CATEGORIA - SOTTOCATEGORIA - Nome", oppure
+                // "Nome - SOTTOCATEGORIA" quando il Nome comincia gia' per la categoria
+                // (`_retroNameStartsWithCategory`, tolleranza di genere inclusa: RICERCATO combacia
+                // con RICERCATA). Un identificatore cambiato invece di una regola riscritta: era la
+                // quinta volta che quella regola poteva nascere in copia, e non e' nata.
+                // E' anche la stessa funzione che questa riga usa gia' per la sezione Retro, quindi
+                // ora i due rami dei risultati chiamano il nome allo stesso modo.
+                // v6.103 (Franco) - MINIATURE AL DOPPIO: 22px -> 44px, "troppo piccole".
+                // Raddoppia anche cio' che si CHIEDE a Cloudinary (32 -> 64): lasciare w_32 avrebbe
+                // fatto ingrandire al browser un'immagine da 32px, cioe' la stessa foto sgranata ma
+                // piu' grande. E 64 non e' un lusso: su uno schermo a densita' doppia 44 CSS-pixel
+                // sono 88 fisici, quindi anche cosi' si sta chiedendo il minimo, non il massimo.
+                //
+                // ⚠️ E LE DUE MINIATURE DIVENTANO UNA FUNZIONE SOLA. Qui c'erano gli stessi identici
+                // numeri scritti due volte - in `smallImg` e, venti caratteri piu' in la', nell'IIFE
+                // del fronte - che differivano per due dettagli: il `title` e il bordo. Ridimensionarne
+                // una e non l'altra era il difetto piu' facile del mondo da introdurre oggi, e
+                // nessuno se ne sarebbe accorto finche' non fossero finite affiancate. Ora il bordo
+                // e' un parametro e la misura sta in un posto solo.
+                const _MINI = 44;
+                const smallImg = (url, title, bordo = true) => url
+                  ? `<img src="${cloudinaryUrl(url,'w_64,h_64,c_fit,q_auto,f_auto')}"${title ? ` title="${esc(title)}"` : ''} style="width:${_MINI}px;height:${_MINI}px;object-fit:contain;border-radius:4px;background:var(--card);${bordo ? 'border:1px solid var(--border);' : ''}">`
+                  : '';
                 return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
-                ${(() => { const front = isVarOrChange ? (f.img || (baseFig && baseFig.img) || null) : f.img; return front ? `<img src="${cloudinaryUrl(front,'w_32,h_32,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : ''; })()}
+                ${(() => { const front = isVarOrChange ? (f.img || (baseFig && baseFig.img) || null) : f.img; return smallImg(front, '', false); })()}
                 ${retroFig ? smallImg(retroFig.img, currentLang === 'it' ? 'Retro associato' : 'Associated retro') : ''}
-                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;color:#ffd84d;">Change</span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (retroFig ? ' - <span style="color:var(--info);">' + _retroNomeLungo(retroFig) + '</span>' : '') + '</span>' : ''}</span>
+                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;color:#ffd84d;">Change</span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (tipoLabel ? ' <span style="color:#ffd84d;">' + esc(tipoLabel) + '</span>' : '') + (retroFig ? ' - <span style="color:var(--info);">' + esc(_retroNomeCompleto(retroFig)) + '</span>' : '') + '</span>' : ''}</span>
               </span>`;
-              }).join('')}
+              }).join('') + '</div>').join('')}
             </div>
           </div>`;
         }).join('') : '';
@@ -20673,8 +20913,8 @@ function ebayAccountConStato(f) { return Object.keys(f?.ebay || {}); }
 // Esito della pubblicazione, in sola lettura, dentro la scheda dell'oggetto.
 // Non c'è nessun comando qui: la colonna Stato della Vista Ebay serve a guardare l'insieme,
 // questo riquadro a leggere il dettaglio di uno — SKU, numero dell'annuncio, errore, data.
-function renderEbayStatoScheda(f, s) {
-  const box = document.getElementById('fig-ebay-stato');
+function renderEbayStatoScheda(f, s, pref = 'fig') {
+  const box = document.getElementById(pref + '-ebay-stato');
   if (!box) return;
   const it = (currentLang === 'it');
   // Un oggetto nuovo non ha ancora un id, e quindi non ha ancora uno SKU: non è un errore, è che
@@ -23112,6 +23352,41 @@ function openFigDetail(figId, elencoNav) {
     const conditionLabel = f.condition === 'used' ? (currentLang === 'it' ? 'Usato' : 'Used') : (currentLang === 'it' ? 'Nuovo' : 'New');
     const ebayRows = [];
     ebayRows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Ebay' : 'For sale'}</span><span class="detail-value">${f.forSale ? `<span style="color:var(--success);">✓ €${(f.price||0).toFixed(2)} · ${currentLang === 'it' ? 'Q.tà' : 'Qty'} ${f.quantity||1} · ${conditionLabel}</span>` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'no' : 'no') + '</span>'}</span></div>`);
+    // v6.103 (§12.1, segnalato da Franco) - QUESTA VISTA ERA IL TERZO ELENCO DEGLI STESSI CAMPI, e
+    // nessuno lo contava: il §12.1 parla di DUE form, ma i campi eBay si scrivono in tre posti - la
+    // finestra, la scheda in modifica e QUI. Ed era rimasto indietro da parecchio, in silenzio:
+    // mancavano `priceUsd` (v5.981), i quattro testi dell'annuncio (v5.931), la coda, gli account e
+    // lo stato. Chi guardava questa scheda vedeva un oggetto piu' povero di com'era davvero, e
+    // l'unico modo per accorgersene era premere Modifica - che e' esattamente quello che ha fatto
+    // Franco. Il tab e' admin-only e solo desktop, quindi qui si puo' mostrare tutto.
+    if (f.forSale) {
+      const _v = (etichetta, valore) => ebayRows.push('<div class="detail-row"><span class="detail-label">' + etichetta + '</span><span class="detail-value">' + valore + '</span></div>');
+      const _muto = t => '<span style="color:var(--muted);font-style:italic;">' + t + '</span>';
+      // Il prezzo in dollari vuoto NON e' zero: e' "non deciso", e finche' resta cosi' il programma
+      // non pubblica su eBay.com. Dirlo a parole invece di mostrare un trattino: un campo vuoto non
+      // spiega da solo che sta bloccando qualcosa.
+      _v(currentLang === 'it' ? 'Prezzo ($)' : 'Price ($)',
+        (f.priceUsd ?? null) === null
+          ? _muto(currentLang === 'it' ? 'non deciso — eBay.com non si pubblica' : 'not set — eBay.com will not be published')
+          : '$' + Number(f.priceUsd).toFixed(2));
+      _v(currentLang === 'it' ? '📤 In coda' : '📤 Queued',
+        f.daPubblicare
+          ? '<span style="color:var(--success);">' + (currentLang === 'it' ? 'sì' : 'yes') + '</span>'
+          : _muto(currentLang === 'it' ? 'no' : 'no'));
+      // I titoli: il vuoto e' legittimo e vuol dire "lo genera il Nome completo". Scriverlo evita di
+      // andarlo a cercare nella form per scoprire che non manca niente.
+      const _testo = (etichetta, v) => _v(etichetta, v
+        ? esc(v)
+        : _muto(currentLang === 'it' ? 'vuoto — generato dal Nome completo' : 'empty — generated from the full name'));
+      _testo(currentLang === 'it' ? 'Titolo 🇮🇹' : 'Title 🇮🇹', f.ebayTitleIt);
+      _testo(currentLang === 'it' ? 'Titolo 🇬🇧' : 'Title 🇬🇧', f.ebayTitleEn);
+      if (f.ebayDescIt) _v(currentLang === 'it' ? 'Descrizione 🇮🇹' : 'Description 🇮🇹', esc(f.ebayDescIt));
+      if (f.ebayDescEn) _v(currentLang === 'it' ? 'Descrizione 🇬🇧' : 'Description 🇬🇧', esc(f.ebayDescEn));
+      // Account e stato hanno bisogno delle impostazioni, che si leggono in modo asincrono: si
+      // lasciano due contenitori vuoti e li riempie `riempiEbayVistaLettura()` appena arrivano.
+      ebayRows.push('<div id="figdetail-ebay-account"></div>');
+      ebayRows.push('<div id="figdetail-ebay-stato" style="margin-top:0.5rem;"></div>');
+    }
     if (f.section === 'figurines' || f.section === 'retros') {
       ebayRows.push(`<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">📷 ${currentLang === 'it' ? 'Foto Ebay' : 'Ebay photo'}</span><span class="detail-value">${f.ebayImg ? `<img src="${cloudinaryUrl(f.ebayImg,'w_200,h_200,c_fit,q_auto,f_auto')}" style="max-width:140px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">` : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'nessuna foto' : 'no photo') + '</span>'}</span></div>`);
     }
@@ -23123,6 +23398,8 @@ function openFigDetail(figId, elencoNav) {
       '<div id="figdetail-tab-generale">' + rows.join('') + '</div>' +
       '<div id="figdetail-tab-ebay" style="display:none;">' + ebayRows.join('') + '</div>' +
       _codaAzioniDetail(bottomButtons);
+    // v6.103 - dopo l'innerHTML, altrimenti i due contenitori non esistono ancora.
+    if (f.forSale) riempiEbayVistaLettura(f);
   } else {
     document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + rows.join('') + _codaAzioniDetail(bottomButtons);
   }
@@ -23497,8 +23774,28 @@ function handleFeEbayImg(e) {
 }
 
 function toggleFeForSaleFields() {
-  const checked = document.getElementById('fe-for-sale').checked;
-  document.getElementById('fe-for-sale-fields').style.display = checked ? 'grid' : 'none';
+  const el = document.getElementById('fe-for-sale');
+  if (!el) return;   // v6.103 - la scheda in sola lettura non ha la spunta
+  const checked = el.checked;
+  const mostra = (id, valore) => { const n = document.getElementById(id); if (n) n.style.display = valore; };
+  mostra('fe-for-sale-fields', checked ? 'grid' : 'none');
+  // v6.103 (§12.1) - gli stessi quattro blocchi che la finestra accende in `toggleForSaleFields`,
+  // e con le stesse due eccezioni, che NON sono dettagli di stile:
+  //   · lo STATO si mostra solo se ha qualcosa da dire. Su un oggetto senza id non esiste ancora
+  //     uno SKU, quindi il riquadro resta vuoto e non deve occupare spazio;
+  //   · la SCELTA ACCOUNT solo se c'e' davvero una scelta da fare. Con un account configurato la
+  //     domanda "su quale?" ha una risposta sola, e un elenco di una voce e' solo ingombro.
+  // Il segnale in entrambi i casi e' `dataset.vuoto`, che lo scrivono i due renderer: e' loro che
+  // sanno se c'era qualcosa da disegnare, e chiederlo di nuovo qui vorrebbe dire rifare il conto
+  // in un secondo punto - cioe' il modo in cui i due finiscono per non concordare.
+  mostra('fe-ebay-testi', checked ? '' : 'none');
+  mostra('fe-ebay-coda', checked ? '' : 'none');
+  const stato = document.getElementById('fe-ebay-stato');
+  if (stato) stato.style.display = (checked && stato.dataset.vuoto !== '1' && stato.innerHTML) ? '' : 'none';
+  const acc = document.getElementById('fe-ebay-account-group');
+  if (acc) acc.style.display = (checked && acc.dataset.vuoto !== '1') ? '' : 'none';
+  contaCaratteriEbayTitolo('fe-ebay-title-it', 'fe-ebay-title-it-count');
+  contaCaratteriEbayTitolo('fe-ebay-title-en', 'fe-ebay-title-en-count');
 }
 
 function toggleFeBaseFigurineGroup(appenaSpuntata) {
@@ -23647,6 +23944,18 @@ function switchToEditMode(figId) {
   const f = getData('figurines', []).find(x => x.id === figId);
   if (!f) return;
   editingFeEbayImgFileSave = null;
+  // v6.103 (Franco) - SI RESTA SUL TAB DOVE SI ERA. Premendo "Modifica" dal tab Ebay della vista in
+  // lettura ci si ritrovava sul tab Generale, e bisognava ricliccare Ebay ogni volta: il tab della
+  // modifica nasce sempre su "generale" perche' e' l'HTML appena generato.
+  // Lo stato si legge DAL DOM della vista, un attimo prima che `content.innerHTML` la cancelli,
+  // invece di tenerlo in una variabile: una variabile andrebbe azzerata quando si apre un altro
+  // oggetto, e prima o poi qualcuno se ne dimenticherebbe facendo aprire la scheda di una figurina
+  // sul tab di quella guardata prima. Qui non c'e' stato da mantenere, quindi non c'e' stato da
+  // sbagliare.
+  // Il confronto e' `!== 'none'` e non `=== ''`: il div nasce con `display:none` inline e
+  // `switchFigDetailTab` lo rimette a stringa vuota, quindi i valori "acceso" sono due.
+  const _tabDaRiaprire = (document.getElementById('figdetail-tab-ebay')?.style.display ?? 'none') !== 'none'
+    ? 'ebay' : 'generale';
   const figSeries = getData('series', []).find(s => s.id === f.seriesId);
   const content = document.getElementById('fig-detail-content');
   const photo = document.getElementById('fig-detail-photo');
@@ -23868,13 +24177,61 @@ function switchToEditMode(figId) {
     '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;font-weight:600;margin-bottom:' + (f.forSale ? '0.6rem' : '0') + ';">' +
     '<input type="checkbox" id="fe-for-sale" onchange="toggleFeForSaleFields()" ' + (f.forSale ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
     '<span>🏷️ ' + (currentLang==='it'?'Ebay':'For sale on Ebay') + '</span></label>' +
-    '<div id="fe-for-sale-fields" style="display:' + (f.forSale ? 'grid' : 'none') + ';grid-template-columns:1fr 1fr 1fr;gap:0.6rem;">' +
+    // v6.103 (§12.1) - quattro celle, non piu' tre: entra il prezzo in dollari. `auto-fit` invece
+    // delle colonne fisse perche' la scheda e' piu' stretta della finestra e su telefono quattro
+    // colonne rigide diventerebbero illeggibili.
+    '<div id="fe-for-sale-fields" style="display:' + (f.forSale ? 'grid' : 'none') + ';grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:0.6rem;">' +
     '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Prezzo (€)':'Price (€)') + '</label><input class="form-input" type="number" id="fe-price" value="' + (f.price||'') + '" min="0" step="0.01" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
+    // v6.103 - priceUsd. Il vuoto resta VUOTO e non diventa 0: 0 vuol dire "lo regalo", vuoto vuol
+    // dire "non l'ho ancora deciso", e solo nel secondo caso il programma si rifiuta di pubblicare
+    // su eBay.com (v5.981). Per questo qui c'e' `?? ''` e non `|| ''`: con `||` un prezzo di 0
+    // sparirebbe dal campo, e riaprendo la scheda sembrerebbe non essere mai stato deciso.
+    '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Prezzo ($)':'Price ($)') + '</label><input class="form-input" type="number" id="fe-price-usd" value="' + (f.priceUsd ?? '') + '" min="0" step="0.01" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
     '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Quantità':'Quantity') + '</label><input class="form-input" type="number" id="fe-quantity" value="' + (f.quantity||1) + '" min="1" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
     '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Condizione':'Condition') + '</label><select class="form-input" id="fe-condition" style="padding:0.3rem 0.5rem;font-size:0.85rem;">' +
     '<option value="new"' + (f.condition!=='used'?' selected':'') + '>' + (currentLang==='it'?'Nuovo':'New') + '</option>' +
     '<option value="used"' + (f.condition==='used'?' selected':'') + '>' + (currentLang==='it'?'Usato':'Used') + '</option>' +
-    '</select></div></div></div>';
+    '</select></div></div>' +
+    // v6.103 - su quali account. Lo riempie renderEbayAccountScelta(f, s, 'fe'), la stessa che
+    // riempie quello della finestra: gli id cambiano solo per il prefisso.
+    '<div id="fe-ebay-account-group" style="display:none;margin-top:0.75rem;">' +
+      '<label class="detail-label" style="display:block;margin-bottom:0.3rem;">👥 ' + (currentLang==='it'?'Su quali account':'On which accounts') + '</label>' +
+      '<div id="fe-ebay-account-lista"></div>' +
+    '</div>' +
+    // v6.103 - la coda. Il sito la alza da solo quando cambia qualcosa che eBay deve sapere; qui si
+    // vede e si puo' forzare. Chi pubblica davvero e' il programma sul PC, non il sito.
+    // Lo stato iniziale segue `f.forSale` come i testi, e non parte nascosto: se `getEbaySettings()`
+    // fallisse, il toggle che lo accende non girerebbe mai e la coda resterebbe invisibile su un
+    // oggetto in vendita. Dipendere da una promessa per mostrare un campo che si sa gia' se va
+    // mostrato e' una dipendenza gratis.
+    '<div id="fe-ebay-coda" style="display:' + (f.forSale ? 'block' : 'none') + ';margin-top:0.75rem;">' +
+      '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;font-weight:600;">' +
+      '<input type="checkbox" id="fe-da-pubblicare" ' + (f.daPubblicare ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
+      '<span>📤 ' + (currentLang==='it'?'In coda per eBay':'Queued for eBay') + '</span></label>' +
+      '<div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem;">' + (currentLang==='it'
+        ? 'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto.'
+        : 'Raised automatically when price, quantity, condition, title, description or photo change.') + '</div>' +
+    '</div>' +
+    // v6.103 - esito della pubblicazione, SOLA LETTURA: questi campi li scrive il programma sul PC.
+    // Lo riempie renderEbayStatoScheda(f, s, 'fe').
+    '<div id="fe-ebay-stato" style="display:none;margin-top:0.75rem;"></div>' +
+    // v6.103 - titoli e descrizioni. Il titolo lasciato vuoto NON e' un titolo mancante: la Vista
+    // Ebay ci mette quello generato dal Nome completo, ed e' per questo che il segnaposto lo dice.
+    '<div id="fe-ebay-testi" style="display:' + (f.forSale ? 'block' : 'none') + ';margin-top:0.75rem;">' +
+      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' +
+        (currentLang==='it'?'Titolo annuncio':'Listing title') + ' 🇮🇹 IT <span id="fe-ebay-title-it-count" style="font-size:0.7rem;"></span></label>' +
+        '<input class="form-input" type="text" id="fe-ebay-title-it" value="' + esc(f.ebayTitleIt || '') + '" oninput="contaCaratteriEbayTitolo(\'fe-ebay-title-it\',\'fe-ebay-title-it-count\')" placeholder="' + (currentLang==='it'?'vuoto = titolo generato dal Nome completo':'empty = title generated from the full name') + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
+      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' +
+        (currentLang==='it'?'Titolo annuncio':'Listing title') + ' 🇬🇧 EN <span id="fe-ebay-title-en-count" style="font-size:0.7rem;"></span></label>' +
+        '<input class="form-input" type="text" id="fe-ebay-title-en" value="' + esc(f.ebayTitleEn || '') + '" oninput="contaCaratteriEbayTitolo(\'fe-ebay-title-en\',\'fe-ebay-title-en-count\')" placeholder="' + (currentLang==='it'?'vuoto = titolo generato dal Nome completo':'empty = title generated from the full name') + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
+      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' +
+        (currentLang==='it'?'Descrizione annuncio':'Listing description') + ' 🇮🇹 IT</label>' +
+        '<textarea class="form-input" id="fe-ebay-desc-it" rows="3" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(f.ebayDescIt || '') + '</textarea></div>' +
+      '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' +
+        (currentLang==='it'?'Descrizione annuncio':'Listing description') + ' 🇬🇧 EN</label>' +
+        '<textarea class="form-input" id="fe-ebay-desc-en" rows="3" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(f.ebayDescEn || '') + '</textarea></div>' +
+    '</div>' +
+    '</div>';
   html += '<div style="margin-bottom:0.75rem;' + ((f.section === 'figurines' || f.section === 'retros') ? '' : 'display:none;') + '">' +
     '<label class="detail-label" style="display:block;margin-bottom:0.4rem;">📷 ' + (currentLang==='it'?'Foto per Ebay':'Ebay photo') + '</label>' +
     '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang==='it'?'Foto dedicata da usare per l\'annuncio Ebay, indipendente da quella del catalogo':'Dedicated photo for the Ebay listing, separate from the catalog one') + '</div>' +
@@ -23915,6 +24272,17 @@ function switchToEditMode(figId) {
   if (stayBtn) stayBtn.addEventListener('click', function() {
     saveFigFromDetail(stayBtn.getAttribute('data-fig-id'), { resta: true });
   });
+
+  // v6.103 (§12.1) - i due riquadri eBay che hanno bisogno delle impostazioni (scelta account e
+  // stato della pubblicazione) si riempiono DOPO che l'HTML e' nel DOM: prima gli id non esistono
+  // ancora e i due renderer uscirebbero subito senza dire niente.
+  // La stessa funzione della finestra, col prefisso 'fe'. Dentro chiama anche il toggle giusto,
+  // che e' quello che poi decide se i riquadri si vedono o restano nascosti.
+  aggiornaRiquadriEbayScheda(f, 'fe');
+
+  // v6.103 - e si riapre il tab su cui si era. Va DOPO l'innerHTML, come tutto il resto: prima i
+  // due div non esistono e `switchFeTab` non troverebbe niente da accendere.
+  if (_tabDaRiaprire === 'ebay') switchFeTab('ebay');
 }
 
 // v6.074 - gli SLOT foto della scheda. 'fronte' c'e' sempre; 'retro' solo per le bustine.
@@ -24372,6 +24740,22 @@ async function saveFigFromDetail(figId, opzioni) {
         return;
       }
     }
+    // v6.103 (§12.1) - la spunta "Ebay" letta UNA volta. Tutti i campi eBay ne dipendono, e a
+    // spunta spenta si salva null invece del valore rimasto nei campi: gli input restano nel DOM
+    // anche quando il blocco e' nascosto, e leggerli comunque significherebbe conservare un
+    // prezzo su un oggetto che dichiara di non essere in vendita.
+    const _feVendita = !!document.getElementById('fe-for-sale')?.checked;
+    const _feTestoEbay = id => _feVendita ? ((document.getElementById(id)?.value || '').trim() || null) : null;
+    // v6.103 - le impostazioni eBay servono a `leggiEbayAccountScelta` per sapere qual e' l'account
+    // predefinito. Sono in cache dopo la prima lettura, quindi qui l'await non costa quasi niente.
+    const _impostazioniEbay = await getEbaySettings();
+    // v6.103 - LA SPUNTA DELLA CODA SI LEGGE SOLO CON "Ebay" ACCESO, e null vuol dire "non
+    // toccarla". A spunta Ebay spenta il controllo e' nascosto e leggerlo darebbe false,
+    // cancellando la coda proprio nel caso in cui serve di piu': un oggetto tolto da eBay che
+    // aspetta di essere RITIRATO (v5.981).
+    const _daPubblicareSpunta = _feVendita
+      ? (document.getElementById('fe-da-pubblicare')?.checked || false)
+      : null;
     const updates = {
       id: figId,
       name,
@@ -24402,6 +24786,24 @@ async function saveFigFromDetail(figId, opzioni) {
       price: document.getElementById('fe-for-sale')?.checked ? (parseFloat(document.getElementById('fe-price').value) || 0) : null,
       quantity: document.getElementById('fe-for-sale')?.checked ? (parseInt(document.getElementById('fe-quantity').value) || 1) : null,
       condition: document.getElementById('fe-for-sale')?.checked ? document.getElementById('fe-condition').value : null,
+      // v6.103 (§12.1) - priceUsd. Il vuoto resta null, NON diventa 0 come il prezzo in euro, e qui
+      // la differenza conta: 0 significa "lo regalo", null significa "non l'ho ancora deciso", e
+      // solo nel secondo caso il programma deve rifiutarsi di pubblicare su eBay.com (v5.981).
+      priceUsd: (() => {
+        if (!_feVendita) return null;
+        const v = parseFloat(document.getElementById('fe-price-usd')?.value);
+        return Number.isFinite(v) ? v : null;
+      })(),
+      // v6.103 - i testi dell'annuncio. Il vuoto diventa null e non stringa vuota: e' cosi' che il
+      // resto del sito distingue "non l'ho scritto" (→ titolo generato dal Nome completo) da
+      // "l'ho scritto io" (v5.931).
+      ebayTitleIt: _feTestoEbay('fe-ebay-title-it'),
+      ebayTitleEn: _feTestoEbay('fe-ebay-title-en'),
+      ebayDescIt:  _feTestoEbay('fe-ebay-desc-it'),
+      ebayDescEn:  _feTestoEbay('fe-ebay-desc-en'),
+      // v6.103 - su quali account. null = "quello predefinito", che e' il caso normale: e' cio' che
+      // permette alle migliaia di figurine gia' marcate Ebay di restare come sono.
+      ebayAccounts: _feVendita ? leggiEbayAccountScelta(_impostazioniEbay, 'fe') : null,
     };
 
     if ([updates.isVariation, updates.isUnofficialVariation, updates.isChange, updates.isPrintError].filter(Boolean).length > 1) {
@@ -24510,6 +24912,22 @@ async function saveFigFromDetail(figId, opzioni) {
     if (!merged.subseries) delete merged.subseries;
     if (!merged.size) delete merged.size;
     merged.fullName = computeFullName(merged, getData('figurines', []));
+
+    // v6.103 (§12.1) - LA CODA DI PUBBLICAZIONE, la stessa regola dell'altra form (v5.981).
+    // Prima quello che dice la spunta — o il valore che c'era, se la spunta era nascosta perche'
+    // "Ebay" e' spento — e poi l'automatismo, che puo' solo ALZARLA. Cosi' toglierla a mano vale
+    // finche' non cambia davvero qualcosa che eBay deve sapere.
+    //
+    // ⚠️ L'ORDINE NON E' NEGOZIABILE: questo blocco va DOPO `computeFullName`, mai prima.
+    // `fullName` e' fra i campi che `ebayCampiCambiati` guarda — perche' il titolo dell'annuncio,
+    // se quello manuale e' vuoto, si genera da lui: cambiare il Nome completo cambia il titolo su
+    // eBay senza toccare nessun campo `ebay*`. Calcolando la coda prima, il confronto girerebbe sul
+    // Nome vecchio e un titolo cambiato non metterebbe l'oggetto in coda. Nessun errore, nessun
+    // segnale: solo un annuncio che resta indietro, e non se ne accorge nessuno.
+    merged.daPubblicare = (_daPubblicareSpunta === null)
+      ? (existing?.daPubblicare || false)
+      : _daPubblicareSpunta;
+    if (ebayCampiCambiati(existing, merged)) merged.daPubblicare = true;
 
     try {
       await fsSave('figurines', merged);
