@@ -1,6 +1,205 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.108 - I DATI DEMO NON COMPAIONO PIU' AL POSTO DI QUELLI VERI. Modificato app.js e index.html
+//          (solo la versione).
+//
+//          IL FATTO, segnalato da Franco: "sta capitando sempre piu' spesso che la preview non
+//          carichi i dati del sito ma quelli della sandbox; spesso anche doppio un CTRL+SHIFT+R".
+//          I "dati della sandbox" erano i DATI DEMO scritti dentro questo file - Serie 1 —
+//          Primavera, Vittorio Mortorio, Pamela Candela - caricati da `loadDemoData()` in TRE punti,
+//          tutti e tre in silenzio.
+//
+//          PERCHE' IL RICARICAMENTO NON SERVIVA: non c'era niente in cache da buttare. Ricaricare
+//          rifaceva lo stesso tentativo, che falliva di nuovo. Chi vedeva il sintomo concludeva "e'
+//          la cache" perche' e' il rimedio che funziona per l'ALTRO guasto, quello delle versioni
+//          disallineate - e li' non c'entrava niente.
+//
+//          IL DIFETTO NON ERA IL RIPIEGO, ERA CHE FOSSE MUTO. `loadDemoData()` e' nato per un caso
+//          che oggi non esiste piu': un sito SENZA database, con tre serie finte per far vedere
+//          com'e' fatto. `FIREBASE_CONFIG` sta dentro l'app e non manca mai, quindi da tempo quel
+//          ripiego non scattava piu' per "Firebase non c'e'": scattava su un GUASTO PASSEGGERO e
+//          sostituiva dati finti a dati veri dicendolo solo a un `console.warn` che nessuno guarda.
+//          Il ripiego era sopravvissuto al motivo per cui era stato scritto.
+//
+//          ADESSO il sito si ferma e scrive LA CAUSA VERA (`e.message`), in un pannello che copre e
+//          con un pulsante Riprova. La causa si mostra com'e', non tradotta in "qualcosa e' andato
+//          storto": e' l'unica cosa che distingue un timeout da un permesso negato da una risposta
+//          vuota. Un pannello e non una fascetta perche' proseguire col catalogo vuoto racconterebbe
+//          un'altra bugia - che di oggetti non ce ne sono.
+//
+//          E I DUE GUASTI ORA SI DISTINGUONO, mentre prima finivano tutti e due nei demo:
+//            · la lettura non arriva in fondo -> il messaggio dell'eccezione. Qui ci finisce anche
+//              il TIMEOUT DI 4 SECONDI del `Promise.race` in `loadAllData`, che e' il sospettato
+//              principale: misurato il 12 agosto con `diagnostica-dati-demo.js` la lettura delle
+//              serie prende 740 ms (18% dei 4000), ma A CALDO - il guasto succede a freddo, e le
+//              serie pesano 1,38 MB e crescono. Se il pannello dira' `timeout`, e' quello;
+//            · Firestore risponde ma senza serie -> "Firestore ha risposto, ma senza nessuna serie".
+//              E' un guasto diverso e adesso lo dice.
+//
+//          `loadDemoData()` resta nel file ma non la chiama piu' nessuno: se ne va col codice morto
+//          della finestra, nella release che fara' quella pulizia. Non e' una dimenticanza.
+// ------------------------------------------------------------
+// v6.107 - I TRE SPECCHIETTI DEI RISULTATI DICONO ANCHE CHE RAGGRUPPANO (Franco). Modificato
+//          app.js e index.html (solo la versione). Solo testo, nessun comportamento cambiato.
+//          Da "Clicca qui per filtrare i risultati della ricerca per X" a "Clicca per raggruppare e
+//          filtrare i risultati per X", su tutti e tre - categoria dei Retro, tipo di change, tipo
+//          di errore di stampa - e in entrambe le lingue.
+//          Il raggruppamento c'era gia' e la scritta non lo nominava: diceva meno di quello che il
+//          riquadro sa fare, ed e' anche il motivo per cui i chip a due zone della v6.096 (etichetta
+//          = solo questo, "+" = anche questo) restavano difficili da indovinare.
+//          Le due frasi dei tipi vivono in `_CFG_SPECCHIETTO_CHANGE` e `_CFG_SPECCHIETTO_ERRSTAMPA`,
+//          quella della categoria nel suo renderer: sono tre punti perche' il TESTO e' cio' che
+//          distingue i tre riquadri - il disegno, quello, sta gia' scritto una volta sola in
+//          `_specchiettoTipiHTML` (v6.079).
+// ------------------------------------------------------------
+// v6.106 - QUATTRO COSE CHIESTE DA FRANCO, di cui una era un'anomalia vera. Modificato app.js e
+//          index.html (solo la versione).
+//
+//          1) L'ANOMALIA: "passo alla vista tabellare, tocco un filtro qualsiasi, e la tabella
+//          sparisce a favore della griglia; il pulsante pero' continua a dire Griglia".
+//          La causa non era in nessun filtro: la visibilita' delle due viste stava scritta in DUE
+//          posti che non si parlavano. `toggleBulkEditView` nascondeva la griglia; `renderItems` -
+//          che ogni filtro chiama - la rimetteva visibile in tre punti senza chiedersi quale vista
+//          fosse attiva. Il pulsante diceva il vero: `bulkEditActive` era rimasto acceso, ed era la
+//          griglia a non doverci essere.
+//          Non e' stato aggiunto un controllo ai filtri. Ce n'erano gia' DICIOTTO che si portavano
+//          dietro `if (bulkEditActive) renderBulkEditView()`, uno per filtro, e nessuno dei diciotto
+//          rimetteva a posto la griglia: il difetto non stava in una riga sbagliata, stava nella
+//          regola copiata invece che scritta una volta. Le diciotto sono state TOLTE, e adesso lo fa
+//          `renderItems` in fondo, per tutti, con `_applicaVistaCorrente()`. Un filtro nuovo non ha
+//          piu' niente da ricordarsi.
+//          Nel ramo "griglia" `_applicaVistaCorrente` NON tocca `grid.style.display`: l'ha appena
+//          impostato `renderItems`, che e' l'unica a sapere se quella sezione va a `flex` o a
+//          `grid`. Il vecchio `toggleBulkEditView` ci scriveva `'grid'` a mano - valore sbagliato
+//          nelle sezioni disegnate a `flex`, e non si vedeva solo perche' il ridisegno successivo
+//          lo correggeva.
+//
+//          2) LE MINIATURE DELLA VISTA TABELLARE seguono la forma della foto. Erano 38x38 con
+//          `c_fill` + `object-fit:cover`, cioe' DUE ritagli in fila - Cloudinary tagliava in un
+//          quadrato e il browser ritagliava di nuovo. Un retro verticale e uno orizzontale
+//          arrivavano identici. Ora l'altezza e' fissa (tiene allineate le righe) e la larghezza
+//          segue la proporzione, con un tetto perche' una foto molto larga non spinga fuori le
+//          colonne. Il segnaposto senza foto resta quadrato: li' non c'e' una proporzione da
+//          rispettare.
+//
+//          3) AGGIORNAMENTO MASSIVO: CATEGORIA e SOTTOCATEGORIA, a testo libero (scelta di Franco).
+//          Sono le prime due voci che scavalcano la regola "solo valori chiusi" scritta accanto a
+//          CAMPI_MASSIVI. Tre precauzioni, tutte per cose che qui possono andare storte e con le
+//          voci precedenti non potevano:
+//            · si vedono SOLO nella sezione Retro (`soloSezione`) - altrove quei campi non esistono;
+//            · si SALTANO i Change e gli errori di stampa (`nonSuDerivati`): li' Categoria e
+//              Sottocategoria le riscrive la base al salvataggio (v6.038), quindi scriverle darebbe
+//              un valore che il primo salvataggio disfa. Il conto nel messaggio finale sara' minore
+//              di quello annunciato nella conferma, ed e' l'unico modo in cui la cosa si vede;
+//            · si RICALCOLA il Nome completo (`nelNomeCompleto`): quei due campi lo compongono, e
+//              senza ricalcolo il record resterebbe col nome vecchio - che e' cio' che la scheda
+//              mostra nel titolo e cio' su cui cerca la ricerca globale (v6.049/050). Nessuna delle
+//              voci precedenti entrava nel nome, ed e' per questo che il ricalcolo non c'era.
+//          Il campo ha un `datalist` coi valori gia' in uso: non restringe la scelta, ma evita di
+//          creare "OLO " con lo spazio in fondo accanto a "OLO". Il testo si ripulisce ai bordi.
+//          ⚠️ RESTA FUORI, ed e' bene saperlo: i Change e gli errori di stampa collegati a un retro
+//          di cui si e' cambiata la categoria continuano a mostrare quella vecchia finche' non li si
+//          risalva. Per rimetterli in riga c'e' gia' la funzione admin "Allinea item figlio
+//          correlati" (§14 del documento), che e' nata per questo.
+//
+//          4) VIA DUE TESTI DI AIUTO dall'interfaccia: il segnaposto dentro il campo Note e la frase
+//          accanto alla casella "Retro bianco".
+// ------------------------------------------------------------
+// v6.105 - LA FINESTRA "Aggiungi/Modifica" NON LA APRE PIU' NESSUNO. Modificato app.js e index.html
+//          (solo la versione). Da questa release ogni oggetto si crea, si modifica e si clona da un
+//          posto solo: la scheda.
+//
+//          I SETTE PUNTI, ripuntati uno per uno (erano SEI nell'elenco del §12.1 - il settimo, la
+//          matita della tabella di modifica in blocco, mancava; sta oltre un byte nullo di questo
+//          file, che fa fermare ripgrep trattandolo come binario):
+//            1. `+ Aggiungi` (index.html)      -> openNuovoItem      [gia' nella v6.104]
+//            2. matita sulla card della griglia -> apriModificaItem
+//            3. matita nella Vista Ebay         -> apriModificaItem
+//            4. Clona                           -> bozza copiata dalla sorgente
+//            5. tabella admin "Figurine"        -> apriModificaItem
+//            6. "Correggi" dalla pagina Errori  -> apriModificaItem
+//            7. matita nella modifica in blocco -> apriModificaItem
+//          Il punto 5 assegnava anche `currentSeriesId` dentro l'onclick: serviva alla finestra, che
+//          la serie la leggeva da li'. La scheda la prende dal record, quindi non c'e' piu' uno
+//          stato globale da preparare prima di chiamare.
+//
+//          IL CLONE non e' piu' "apri l'originale in modifica e poi svuota l'id". Era un record vero
+//          travestito da nuovo, con quattro correzioni a mano subito dopo per disfare cio' che
+//          l'apertura in modifica aveva appena impostato. Adesso e' `{ ...src, id: '' }`, e le due
+//          regole gia' pagate valgono da sole: la sorgente resta selezionabile come base (v5.789)
+//          perche' l'elenco esclude `x.id !== f.id` e l'id della bozza e' vuoto; il "Tipo di change"
+//          residuo (v5.788) non si ripresenta perche' la scheda rigenera l'HTML invece di riusare
+//          lo stesso DOM.
+//          UNA COSA NUOVA, che con la finestra non poteva succedere: lo spread copia TUTTO, quindi
+//          anche `ebay` - `listingId` e `offerId` di annunci VERI. Un oggetto nuovo che se li porta
+//          appresso direbbe di essere gia' pubblicato, e il programma di pubblicazione andrebbe ad
+//          aggiornare l'annuncio di un ALTRO oggetto. Azzerato, insieme a foto/foto Ebay/retro
+//          (v5.792) e al Nome completo, che si ricalcola.
+//
+//          IL RITORNO ALLA PAGINA ERRORI se ne occupa ora il salvataggio della scheda, e anche
+//          l'eliminazione: prima lo faceva il salvataggio della finestra, che non viene piu'
+//          chiamato. Piu' un reset in apertura (gemello di quello che la finestra aveva dalla
+//          v5.525) per il caso che il salvataggio non copre - si arriva da "Correggi", si chiude con
+//          Annulla, e il flag resterebbe acceso facendo saltare alla pagina Errori un salvataggio
+//          fatto mezz'ora dopo da tutt'altra parte.
+//
+//          ⚠️ IL CODICE DELLA FINESTRA E' ANCORA QUI, E NON E' UNA DIMENTICANZA. `openAddItemModal`,
+//          `openAddFigModal`, `saveFigurine`/`_saveFigurineInner`, `deleteFigurineFromModal`,
+//          `closeFigModal`, `switchFigModalTab` e il markup di `#add-fig-modal` non sono raggiungibili
+//          da nessun punto dell'interfaccia, ma esistono. Cancellarli e' una release a se' (v6.106):
+//          le loro funzioni di appoggio vanno controllate UNA PER UNA per vedere chi altro le chiama
+//          - l'import e la modifica in blocco ne usano alcune - e togliere per sbaglio qualcosa di
+//          condiviso e' esattamente il genere di guasto che non si vede il giorno in cui lo si fa.
+//          Intanto il doppione e' gia' neutralizzato: due form che nessuno puo' piu' far divergere,
+//          perche' a una non ci si arriva.
+// ------------------------------------------------------------
+// v6.104 - "+ AGGIUNGI" APRE LA SCHEDA VUOTA: comincia la TAPPA 2 del §12.1. Modificato app.js e
+//          index.html (il pulsante, piu' i sei punti della versione). La finestra
+//          "Aggiungi/Modifica" NON e' stata cancellata: la aprono ancora i sei punti di modifica,
+//          e il confronto fianco a fianco fra le due form e' il motivo per cui questa release si
+//          ferma qui invece di chiudere la tappa intera.
+//
+//          COSA CAMBIA DAVVERO: la scheda ha sempre saputo modificare un record che esiste, e
+//          `switchToEditMode` / `saveFigFromDetail` cominciavano entrambe cercandolo per id. Ora
+//          quel record puo' essere una BOZZA in memoria (`_bozzaNuovoItem`): id vuoto, serie e
+//          sezione prese da dove si e' premuto, piu' i valori di default dell'altra form
+//          (score 0, quantity 1, condition, e la coda che si alza se nasce marcato Ebay).
+//          Le due funzioni chiedono a `_recordInModifica(figId)`, che e' l'unico punto in cui si
+//          decide quale record si sta trattando.
+//
+//          PERCHE' NON UN `if (nuovo)`. Dentro `saveFigFromDetail` ci sono NOVE righe che leggono
+//          `existingForCheck?.section`: Nome ereditato, campi ereditati dalla base, Numero
+//          obbligatorio, ramo dei retro con la chiave di unicita', Note, etichetta del selettore
+//          base, controllo del retro sulle variazioni, `retroId`, `retroBianco`. Con un id vuoto
+//          la ricerca per id tornava `undefined` e tutte e nove **si spegnevano senza dirlo**:
+//          nessun errore, nessun toast, salvataggio a buon fine. Cioe' le validazioni della v6.101
+//          sarebbero valse solo in modifica, e proprio in creazione - dove un dato sbagliato NASCE
+//          invece di essere corretto - no. Passando un record invece di un id, quelle nove righe
+//          non sono state toccate: erano gia' scritte giuste.
+//          Nove `if` sarebbero stati la nona copia della stessa condizione, e le copie divergono in
+//          silenzio (v6.032).
+//
+//          TRE DETTAGLI CHE SEMBRANO MINUTI E NON LO SONO:
+//          · `id: ''`, non `null` e non `undefined`. I due pulsanti Salva portano l'id in
+//            `data-fig-id`: con `null` l'attributo diventa la stringa "null", che e' VERA, e si
+//            tornerebbe a cercare un record inesistente - cioe' il difetto che la bozza chiude.
+//            Con `undefined` scatterebbe la sanificazione della v6.043, che lo toglie scrivendo un
+//            avviso in console ad ogni creazione. `''` e' falso, e `_saveFigurineItem` prende da
+//            solo il ramo "nuovo" e ci scrive dentro l'id vero.
+//          · dopo una creazione con "Salva e resta" la form si RIDISEGNA con l'id vero. Senza,
+//            i pulsanti resterebbero sull'id vuoto e il secondo Salva creerebbe un SECONDO record
+//            invece di aggiornare il primo, con lo stesso toast di successo.
+//          · `ebayCampiCambiati` riceve `null` in creazione, non la bozza: e' dal primo argomento
+//            assente che riconosce l'oggetto nuovo ("in coda se nasce marcato Ebay", v5.981). Con
+//            la bozza avrebbe preso il ramo del confronto, e un oggetto marcato Ebay coi campi
+//            ancora vuoti non sarebbe finito in coda.
+//
+//          NOTA PER LA v6.105: i punti che aprono la finestra sono SETTE, non sei come diceva il
+//          §12.1 - il settimo e' la matita della tabella di modifica in blocco. Sta oltre un byte
+//          nullo di questo file, che fa fermare ripgrep trattandolo come binario: un `grep` che
+//          sembra completo puo' non esserlo.
+// ------------------------------------------------------------
 // v6.103 - IL BLOCCO eBAY ENTRA NELLA SCHEDA: LA TAPPA 1 DEL §12.1 E' CHIUSA. Modificato app.js
 //          (piu' la versione nell'index.html). Nessun cambiamento nell'aspetto del sito fuori dalla
 //          scheda di modifica.
@@ -12199,7 +12398,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.103';
+const JS_VERSION = 'v6.108';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -13101,12 +13300,17 @@ async function loadAllData() {
       _cache.users.push(adminUser);
     }
   } catch(e) {
-    console.warn('Firebase non disponibile, carico dati demo:', e.message);
-    loadDemoData();
+    // v6.108 - qui ci finisce anche il TIMEOUT DI 4 SECONDI del `Promise.race` qui sopra, che e' il
+    // sospettato principale dell'Indagine 3: le serie pesano 1,38 MB e crescono. Se il messaggio
+    // che compare a schermo dice `timeout`, e' quello - e il numero da cambiare e' quello.
+    _guastoCaricamentoDati(e.message || e);
+    return;
   }
   showLoadingOverlay(false);
-  // Extra check: if still no data, load demo
-  if (!_cache.series.length) loadDemoData();
+  // v6.108 - Firestore ha risposto, e ha risposto SENZA SERIE. Non e' lo stesso guasto di sopra ed
+  // e' bene che non dica la stessa cosa: li' la lettura non e' arrivata in fondo, qui e' arrivata e
+  // non conteneva niente. Prima entrambi i casi finivano nei dati demo, indistinguibili.
+  if (!_cache.series.length) { _guastoCaricamentoDati('Firestore ha risposto, ma senza nessuna serie'); return; }
 
   // Se l'utente ha una sessione già salvata (login automatico), aggiorna
   // lastLogin: senza questo, chi resta loggato senza rifare login esplicito
@@ -13135,6 +13339,54 @@ function showLoadingOverlay(show) {
     document.body.appendChild(ov);
   }
   ov.style.display = show ? 'flex' : 'none';
+}
+
+// v6.108 (Franco) - IL CARICAMENTO E' FALLITO, E LO SI DICE.
+//
+// Al posto di `loadDemoData()`. Il ripiego ai dati demo era nato per un caso che oggi non esiste
+// piu': un sito SENZA database, che mostrava tre serie finte per far vedere com'e' fatto.
+// `FIREBASE_CONFIG` e' scritto dentro l'app e non manca mai, quindi da tempo quel ripiego non
+// scattava piu' per "Firebase non c'e'": scattava su un GUASTO PASSEGGERO - una lettura lenta, la
+// rete che fa i capricci - e sostituiva dati finti a dati veri **senza dirlo**, con un `console.warn`
+// che nessuno guarda.
+// Il costo lo ha pagato Franco piu' volte: "la preview carica i dati della sandbox, e ricaricare non
+// serve". Non serviva perche' non c'era niente in cache da buttare - si rifaceva lo stesso tentativo.
+// E cercare la causa richiedeva di avere la console aperta al momento giusto.
+//
+// Adesso il sito si ferma e scrive **la causa vera**. Un pannello che copre, non una fascetta:
+// proseguire con il catalogo vuoto racconterebbe un'altra bugia, cioe' che di oggetti non ce ne
+// sono. Meglio una schermata che dice "i dati non sono arrivati" di un sito che sembra a posto e non
+// lo e'.
+function _guastoCaricamentoDati(causa) {
+  console.error('[Sgorbions] caricamento dati fallito:', causa);
+  showLoadingOverlay(false);
+  const it = (typeof currentLang === 'undefined' || currentLang === 'it');
+  let ov = document.getElementById('sg-guasto-dati');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'sg-guasto-dati';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(14,10,26,0.96);z-index:9999;display:flex;'
+      + 'flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:1.5rem;text-align:center;';
+    document.body.appendChild(ov);
+  }
+  // La causa si mostra COM'E', senza tradurla in "qualcosa e' andato storto": e' l'unica cosa che
+  // distingue un timeout da un permesso negato da una risposta vuota, ed e' quella che serve per
+  // capire. Va in <code> perche' e' un messaggio tecnico e si deve poter copiare.
+  ov.innerHTML =
+      '<div style="font-family:var(--font-display);font-size:1.8rem;color:var(--accent);">SGORBIONS</div>'
+    + '<div style="font-family:var(--font-ui);color:var(--text);font-size:1.05rem;max-width:34rem;">'
+    + (it ? 'I dati del catalogo non sono arrivati.' : 'The catalogue data did not load.') + '</div>'
+    + '<div style="font-family:var(--font-ui);color:var(--muted);font-size:0.85rem;max-width:34rem;line-height:1.5;">'
+    + (it ? 'Il sito non mostra niente al posto loro: quello che vedresti non sarebbe la tua collezione.'
+          : 'Nothing is shown in their place: what you would see would not be your collection.')
+    + '</div>'
+    + '<code style="font-family:ui-monospace,monospace;font-size:0.8rem;color:var(--warn);background:var(--card2);'
+    + 'border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;max-width:34rem;word-break:break-word;">'
+    + String(causa || (it ? 'causa non riportata' : 'cause not reported')) + '</code>'
+    + '<button onclick="location.reload()" style="font-family:var(--font-ui);font-size:0.9rem;font-weight:600;'
+    + 'padding:0.55rem 1.4rem;border-radius:8px;border:none;background:var(--accent);color:var(--bg);cursor:pointer;">'
+    + (it ? 'Riprova' : 'Retry') + '</button>';
+  ov.style.display = 'flex';
 }
 
 // ============================================================
@@ -15512,7 +15764,7 @@ function ebayApriBtn(id) {
   const ic = (comando, simbolo, titolo) => `<span onclick="event.stopPropagation();${comando}" title="${titolo}"
     style="cursor:pointer;color:var(--action-admin);font-size:0.95rem;padding:0 3px;">${simbolo}</span>`;
   return `<span style="white-space:nowrap;">`
-    + ic(`openAddItemModal('${id}')`, '✎', it ? 'Modifica: apre la form dell\'oggetto' : 'Edit: open the item form')
+    + ic(`apriModificaItem('${id}')`, '✎', it ? 'Modifica: apre la scheda dell\'oggetto' : 'Edit: open the item card')   // v6.105
     + ic(`openFigDetail('${id}')`, '↗', it ? 'Scheda: apre il dettaglio dell\'oggetto' : 'Card: open the item detail')
     + `</span>`;
 }
@@ -18680,24 +18932,33 @@ function cloneFigurine(itemId) {
   const src = getData('figurines', []).find(x => x.id === itemId);
   if (!src) { toast((currentLang === 'it' ? 'Oggetto non trovato' : 'Item not found'), 'error'); return; }
   closeModal('fig-detail-modal');            // se il clone parte dalla scheda di dettaglio, la chiude
-  openAddItemModal(itemId);                  // popola tutti i campi (e l'immagine) dalla sorgente
-  document.getElementById('edit-fig-id').value = '';  // NUOVO record: al salvataggio crea, non aggiorna
-  // v5.789 — openAddItemModal(itemId) aveva escluso la sorgente dal selettore "Figurina base" (una
-  // figurina non è base di sé stessa in MODIFICA). Ma nel Clona il record è una COPIA: la figurina di
-  // partenza dev'essere selezionabile come base (tipico: clono una base per farne un suo Change).
-  // Ripopolo il selettore base SENZA escludere nulla, preservando l'eventuale base già copiata.
-  populateBaseFigurineSelect(null, document.getElementById('fig-base-figurine-input')?.value || null);
-  // v5.792 — il Clona NON copia i campi del singolo PEZZO FISICO: Foto, Foto Ebay e Retro. Il nuovo
-  // oggetto avrà la sua foto e il suo retro. (Franco: "possibile che cloni anche il retro?" + la foto
-  // veniva duplicata nell'anteprima di ricerca perché il change aveva una foto propria = quella base.)
-  editingFigImg = null; editingFigImgFileSave = null;
-  editingFigEbayImg = null; editingFigEbayImgFileSave = null;
-  const _clImgPrev = document.getElementById('fig-img-preview'); if (_clImgPrev) _clImgPrev.style.display = 'none';
-  const _clEbayPrev = document.getElementById('fig-ebay-img-preview'); if (_clEbayPrev) _clEbayPrev.style.display = 'none';
-  populateRetroSelect(null, document.getElementById('fig-is-change-input')?.checked || false);
-  const labelSingular = getSectionLabelSingular(src.section || currentSection);
-  const t = document.getElementById('fig-modal-title');
-  if (t) t.textContent = (currentLang === 'it' ? 'Clona ' : 'Clone ') + labelSingular;
+  // v6.105 (§12.1, tappa 2) - IL CLONE E' UNA BOZZA COPIATA DALLA SORGENTE.
+  // Prima era: apri la finestra sull'originale, poi svuota `edit-fig-id` perche' il salvataggio
+  // crei invece di aggiornare. Cioe' un record vero travestito da nuovo, con quattro correzioni a
+  // mano subito dopo per disfare cio' che l'apertura in MODIFICA aveva appena impostato. Adesso
+  // l'oggetto nasce nuovo: `{ ...src, id: '' }`, e non c'e' niente da disfare.
+  const b = { ...src, id: '' };
+  // v5.792 - il clone NON copia i campi del singolo PEZZO FISICO: foto, foto Ebay e retro. Il nuovo
+  // oggetto avra' la sua foto e il suo retro. (Franco: "possibile che cloni anche il retro?")
+  b.img = null; b.imgRetro = null; b.ebayImg = null; b.retroId = null;
+  // v6.105 - e non copia nemmeno l'ESITO della pubblicazione. Non era un caso da gestire prima,
+  // perche' la finestra ripopolava i campi uno per uno e questi non li toccava; con lo spread ci
+  // finirebbero dentro tutti. `ebay` contiene `listingId` e `offerId` di annunci VERI: un oggetto
+  // nuovo che se li porta appresso direbbe di essere gia' pubblicato, e il programma di
+  // pubblicazione (ebay-integrazione.md §5) andrebbe ad aggiornare l'annuncio di un ALTRO oggetto.
+  b.ebay = null;
+  // Il Nome completo si ricalcola al salvataggio (`computeFullName`): copiarlo vorrebbe dire
+  // portarsi dietro il nome della sorgente finche' non si salva.
+  b.fullName = '';
+  // v5.789 - la sorgente dev'essere selezionabile come "Figurina base" (tipico: clono una base per
+  // farne un suo Change). Nella finestra serviva una riga apposta, perche' l'apertura in modifica
+  // l'aveva esclusa. Qui l'elenco esclude `x.id !== f.id` e l'id della bozza e' vuoto: non esclude
+  // niente, quindi la regola vale da sola. Segnato perche' e' un baco gia' trovato una volta, e
+  // adesso non c'e' piu' una riga che lo ricordi.
+  // v5.788 - il "Tipo di change" residuo nel select: era un difetto della FINESTRA, che riusava lo
+  // stesso DOM fra un'apertura e l'altra. La scheda rigenera l'HTML ogni volta, quindi non si
+  // ripresenta - e per lo stesso motivo non serve piu' la riga di reset.
+  _apriSchedaSuBozza(b);
   toast((currentLang === 'it' ? '📋 Copia pronta: cambia Numero/Nome e salva' : '📋 Copy ready: change Number/Name and save'), 'success');
 }
 
@@ -18719,7 +18980,6 @@ async function toggleOwned(figId) {
   await saveOwnedToFirebase(currentUser.id, owned);
   renderItems(); renderProfile();
   refreshSeriesMeta();   // i contatori in alto seguono la lista (v5.709)
-  if (bulkEditActive) renderBulkEditView();
 }
 
 async function saveOwnedToFirebase(userId, owned) {
@@ -18852,7 +19112,6 @@ function setFotoFilter(quale) {
   _fotoFilter = (_fotoFilter === quale) ? null : quale;
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (setFotoFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setFotoFilter)', e); }
 }
 
 function renderItemTypeFilters() {
@@ -19189,14 +19448,12 @@ function toggleNoOfficialVariationFilter() {
   _noOfficialVariationFilter = !_noOfficialVariationFilter;
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleNoOfficialVariationFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleNoOfficialVariationFilter)', e); }
 }
 
 function toggleEbayFilter() {
   _ebayFilter = !_ebayFilter;
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleEbayFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleEbayFilter)', e); }
 }
 
 function toggleOwnedFilter(key) {
@@ -19210,7 +19467,6 @@ function toggleOwnedFilter(key) {
   _ownedFilter = (_ownedFilter === key) ? 'all' : key;
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleOwnedFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleOwnedFilter)', e); }
 }
 
 // v5.908 — filtro "Ciò che cerco": interruttore semplice on/off, come i filtri di possesso.
@@ -19218,14 +19474,12 @@ function toggleWishlistFilter() {
   _wishlistFilter = !_wishlistFilter;
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleWishlistFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleWishlistFilter)', e); }
 }
 
 function toggleItemTypeFilter(type) {
   _itemTypeFilter = type; // comportamento radio puro: sempre uno solo attivo
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleItemTypeFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (toggleItemTypeFilter)', e); }
 }
 
 // Calcola gli oggetti attualmente visibili per la serie/sezione corrente,
@@ -19270,7 +19524,6 @@ async function _applyBulkFigurineUpdate(updateFn, confirmMsg, successMsg, skipCo
   });
   _cache.figurines = figs;
   renderItems();
-  if (bulkEditActive) renderBulkEditView();
   toast(successMsg(items.length), 'success');
   return true;
 }
@@ -19457,8 +19710,8 @@ function _retroCatPanelHTML(pairs, open, clickable, toggleFn, perColonna) {
   // Titolo diverso per i due riquadri: quello dei risultati (cliccabile) FILTRA, quello in alto
   // (statico, solo Retro base) è un semplice conteggio.
   const title = clickable
-    ? (it ? 'Clicca qui per filtrare i risultati della ricerca per categoria'
-          : 'Click here to filter the search results by category')
+    ? (it ? 'Clicca per raggruppare e filtrare i risultati per categoria'
+          : 'Click to group and filter the results by category')
     : (it ? 'Clicca qui per vedere i retro conteggiati per categoria'
           : 'Click here to see the retros counted by category');
   // v5.994 (Franco) - il riquadro IN ALTO non si chiude piu': sta nella testata della
@@ -19618,7 +19871,6 @@ function setRetroCategoryFilterByIndex(i) {
   _retroCategoryFilter = (_retroCategoryFilter === cat) ? null : cat; // riclick sulla stessa = azzera
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (setRetroCategoryFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setRetroCategoryFilter)', e); }
 }
 // v5.987 - Un sotto-box seleziona la COPPIA (categoria, sottocategoria): la stessa
 // sottocategoria puo' esistere sotto categorie diverse. Riclick sullo stesso sotto-box
@@ -19634,14 +19886,12 @@ function setRetroSubcategoryFilterByIndex(i) {
   }
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (setRetroSubcategoryFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setRetroSubcategoryFilter)', e); }
 }
 function clearRetroCategoryFilter() {
   _retroCategoryFilter = null;
   _retroSubcategoryFilter = null;
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (clearRetroCategoryFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (clearRetroCategoryFilter)', e); }
 }
 
 // v5.809 — Specchietti "Change per Tipo di change" nella sezione Figurine. Stesso schema dei "Retro
@@ -19687,8 +19937,8 @@ function _printErrorTypeLabel(pe) {
 // valore vuoto, e i tre agganci del filtro. Il disegno - intestazione, totale, colonne da cinque,
 // pillole cliccabili - e' lo stesso, e resta scritto una volta sola.
 const _CFG_SPECCHIETTO_CHANGE = {
-  titoloClick: it => it ? 'Clicca qui per filtrare i risultati della ricerca per tipo di change'
-                        : 'Click here to filter the search results by change type',
+  titoloClick: it => it ? 'Clicca per raggruppare e filtrare i risultati per tipo di change'
+                        : 'Click to group and filter the results by change type',
   titoloFisso: it => it ? 'Change per tipo' : 'Changes by type',
   chipTitle:   it => it ? 'Filtra per questo tipo di change' : 'Filter by this change type',
   colore: 'var(--type-change)',
@@ -19699,8 +19949,8 @@ const _CFG_SPECCHIETTO_CHANGE = {
   attivo: v => _changeTypeFilter.has(v)
 };
 const _CFG_SPECCHIETTO_ERRSTAMPA = {
-  titoloClick: it => it ? 'Clicca qui per filtrare i risultati della ricerca per tipo di errore di stampa'
-                        : 'Click here to filter the search results by print error type',
+  titoloClick: it => it ? 'Clicca per raggruppare e filtrare i risultati per tipo di errore di stampa'
+                        : 'Click to group and filter the results by print error type',
   titoloFisso: it => it ? 'Errori di stampa per tipo' : 'Print errors by type',
   chipTitle:   it => it ? 'Filtra per questo tipo di errore di stampa' : 'Filter by this print error type',
   colore: 'var(--type-printerror)',
@@ -19933,7 +20183,6 @@ function setChangeTypeFilterByIndex(i) {
   else _changeTypeFilter = new Set([ct]);
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (setChangeTypeFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setChangeTypeFilter)', e); }
 }
 
 // v6.096 - AGGIUNGE (o toglie) senza toccare gli altri: e' il "+" / "−" del chip.
@@ -19943,7 +20192,6 @@ function addChangeTypeFilterByIndex(i) {
   if (_changeTypeFilter.has(ct)) _changeTypeFilter.delete(ct); else _changeTypeFilter.add(ct);
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (addChangeTypeFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (addChangeTypeFilter)', e); }
 }
 // v6.079 - gemello di renderChangeTypeSummaries per gli ERRORI DI STAMPA. Stessa forma, stesse due
 // posizioni (in alto nella testata, e sotto i risultati), stesso comportamento: sparisce da solo
@@ -19985,7 +20233,6 @@ function setPrintErrorTypeFilterByIndex(i) {
   else _printErrorTypeFilter = new Set([pe]);
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (setPrintErrorTypeFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (setPrintErrorTypeFilter)', e); }
 }
 
 // v6.096 - il "+" / "−" degli errori di stampa
@@ -19995,20 +20242,17 @@ function addPrintErrorTypeFilterByIndex(i) {
   if (_printErrorTypeFilter.has(pe)) _printErrorTypeFilter.delete(pe); else _printErrorTypeFilter.add(pe);
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (addPrintErrorTypeFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (addPrintErrorTypeFilter)', e); }
 }
 function clearPrintErrorTypeFilter() {
   _printErrorTypeFilter = new Set(); // v6.096 - insieme vuoto = spento, come il vecchio null
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (clearPrintErrorTypeFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (clearPrintErrorTypeFilter)', e); }
 }
 
 function clearChangeTypeFilter() {
   _changeTypeFilter = new Set(); // v6.096
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (clearChangeTypeFilter)', e); }
-  try { if (bulkEditActive) renderBulkEditView(); } catch(e) { console.error('renderBulkEditView (clearChangeTypeFilter)', e); }
 }
 
 // v6.075 — fronte e retro affiancati dentro il riquadro della card. Il markup sta scritto qui una
@@ -20531,7 +20775,7 @@ function renderItems() {
         typeBadgeHTML = `<div class="fig-owned-badge ${cls}">${esc(r1)}${r2 ? '<br>' + esc(r2) : ''}</div>`;
       }
     }
-    const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="event.stopPropagation();openAddItemModal('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="event.stopPropagation();cloneFigurine('${f.id}')">&#10697;</button></div>` : '';
+    const adminBtns = currentUser?.isAdmin ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="event.stopPropagation();apriModificaItem('${f.id}')">&#9998;</button><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="event.stopPropagation();cloneFigurine('${f.id}')">&#10697;</button></div>` : '';
     const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="${currentLang === 'it' ? 'Segnala qualcosa all\'amministratore per questa figurina' : 'Report something to the administrator about this sticker'}" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
     const descHTML = f.desc ? `<div class="fig-desc" style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
     // v5.980 (Franco) — il punteggio sta SEMPRE in fondo alla card, in riga con "Mia lista".
@@ -20746,6 +20990,57 @@ function renderItems() {
   // v6.092 - i segnaposto della card Retro si decidono qui, a griglia disegnata (vedi la funzione).
   _allineaRigheRetro();
   _osservaRigheRetro();
+
+  // v6.106 (Franco, anomalia) - QUAL E' LA VISTA ATTIVA LO SI DECIDE QUI, IN FONDO E UNA VOLTA SOLA.
+  // Vedi `_applicaVistaCorrente`. `renderItems` piu' sopra rimette la griglia visibile in tre punti,
+  // e lo fa a ragione: e' lei che sa se dev'essere `flex` o `grid` e con quante colonne. Quello che
+  // non sapeva e' se la griglia vada MOSTRATA, e finiva per riaccenderla anche con la tabella
+  // aperta. Il ripristino sta dopo il disegno, non dentro: cosi' non c'e' un quarto punto che
+  // decide la disposizione.
+  if (bulkEditActive) renderBulkEditView();
+  _applicaVistaCorrente();
+}
+
+// v6.106 (Franco, anomalia) - "passo alla vista tabellare, tocco un filtro qualsiasi, e la tabella
+// sparisce a favore della griglia; il pulsante pero' continua a dire Griglia, come se la tabella
+// fosse ancora attiva".
+//
+// LA CAUSA non era in nessun filtro: era che la visibilita' delle due viste stava scritta in DUE
+// posti che non si parlavano. `toggleBulkEditView` nascondeva la griglia con `display:none`;
+// `renderItems` - che ogni filtro chiama - la rimetteva visibile senza chiedersi quale vista fosse
+// attiva. Il pulsante diceva la verita': `bulkEditActive` era rimasto acceso, ed era la griglia a
+// non doverci essere.
+//
+// PERCHE' NON BASTAVA AGGIUNGERE IL CONTROLLO AI FILTRI: ce n'erano gia' DICIOTTO che si portavano
+// dietro `if (bulkEditActive) renderBulkEditView()`, uno per filtro. Diciotto copie della stessa
+// condizione, e nessuna delle diciotto rimetteva la griglia a posto - il difetto non stava in una
+// riga sbagliata, stava nel fatto che la regola fosse copiata invece che scritta una volta. Le
+// diciotto sono state tolte: adesso lo fa `renderItems` per tutti, e un filtro nuovo non ha niente
+// da ricordarsi. E' la stessa correzione della v6.076 e del §12.4 - togliere l'elenco dei casi
+// invece di allungarlo.
+//
+// Nel ramo "griglia" NON si tocca `grid.style.display`: l'ha appena impostato `renderItems`, che e'
+// l'unica a sapere se quella sezione vuole `flex` o `grid`. Qui si spegne e basta.
+function _applicaVistaCorrente() {
+  const grid = document.getElementById('items-grid');
+  const pagination = document.getElementById('items-pagination');
+  const paginationTop = document.getElementById('items-pagination-top');
+  const bulkView = document.getElementById('bulk-edit-view');
+  const btn = document.getElementById('bulk-edit-toggle-btn');
+  if (bulkEditActive) {
+    if (grid) grid.style.display = 'none';
+    if (pagination) pagination.style.display = 'none';
+    if (paginationTop) paginationTop.style.display = 'none';
+    if (bulkView) bulkView.style.display = '';
+    if (btn) btn.textContent = currentLang === 'it' ? '🔲 Vista griglia' : '🔲 Grid view';
+  } else {
+    if (pagination) pagination.style.display = '';
+    if (paginationTop) paginationTop.style.display = '';
+    // `innerHTML = ''` e non solo `display:none`: la tabella e' grossa, e tenerla nel DOM spenta
+    // significa che ogni ridisegno della griglia trascina anche lei.
+    if (bulkView) { bulkView.style.display = 'none'; bulkView.innerHTML = ''; }
+    if (btn) btn.textContent = currentLang === 'it' ? '📋 Vista tabellare' : '📋 Table view';
+  }
 }
 
 // v6.092 (Franco) - SEGNAPOSTO DELLA CARD RETRO, RIGA DI GRIGLIA PER RIGA DI GRIGLIA.
@@ -22062,7 +22357,10 @@ function renderAdminFigs() {
     ${figs.map(f => {
       const s = series.find(x => x.id === f.seriesId);
       return `<tr><td>${f.number}</td><td>${f.name}</td><td>${s?s.name:'-'}</td><td>
-        <button class="tbl-btn tbl-btn-edit" onclick="currentSeriesId='${f.seriesId}';openAddFigModal('${f.id}')">${currentLang === 'it' ? 'Modifica' : 'Edit'}</button>
+        <!-- v6.105 - via anche l'assegnazione di currentSeriesId da fuori: serviva alla finestra,
+             che leggeva la serie da li'. La scheda la prende dal record (f.seriesId), quindi non c'e'
+             piu' uno stato globale da preparare prima di chiamare. -->
+        <button class="tbl-btn tbl-btn-edit" onclick="apriModificaItem('${f.id}')">${currentLang === 'it' ? 'Modifica' : 'Edit'}</button>
         <button class="tbl-btn tbl-btn-del" onclick="deleteFigurine('${f.id}')" title="${currentLang === 'it' ? 'Elimina questa figurina' : 'Delete this sticker'}">🗑️</button>
       </td></tr>`;
     }).join('')}</tbody></table>`;
@@ -22827,7 +23125,6 @@ async function toggleWishlist(figId) {
   });
   saveWishlist(); // fire-and-forget, non blocchiamo il thread UI
   if (document.getElementById('page-wishlist')?.classList.contains('active')) renderWishlist();
-  if (bulkEditActive) renderBulkEditView();
 }
 
 function updateMsgBadge() {
@@ -22942,6 +23239,18 @@ function _secondaFacciaSulRecord(sezione) {
 
 function openFigDetail(figId, elencoNav) {
   _figEditImgData = null; _figEditImgRetroData = null; // reset immagini editing precedenti
+  // v6.104 - si apre un oggetto vero: se una bozza era rimasta in sospeso (creazione annullata) qui
+  // finisce. Non e' raggiungibile per altre strade - `_recordInModifica` la restituisce solo con un
+  // id vuoto, e l'id vuoto lo produce solo `openNuovoItem` - ma tenere in giro un record a meta'
+  // costa una riga in meno di quanto costi scoprire un giorno da dove veniva.
+  _bozzaCorrente = null;
+  // v6.105 - reset di sicurezza del ritorno alla pagina Errori, gemello di quello che aveva
+  // `openAddItemModal` dalla v5.525. Serve al caso che il salvataggio non copre: si arriva da
+  // "Correggi", si chiude la scheda con Annulla, e il flag resterebbe acceso a tempo indeterminato
+  // - per poi far saltare alla pagina Errori un salvataggio fatto mezz'ora dopo da tutt'altra parte.
+  // Sta QUI e non dopo, perche' `switchToSeriesFromErrori` accende il flag DOPO aver aperto la
+  // scheda: spegnerlo in apertura non gli toglie niente.
+  _returnToErroriAfterSave = false;
   // v6.033 - l'elenco su cui scorrono le frecce arriva da chi apre la scheda. Senza argomento
   // torna null, cioe' si riparte dalla griglia: aprendo una card non resta appiccicato l'elenco
   // dell'ultimo tab visitato.
@@ -23940,8 +24249,123 @@ function clearFeRetroLinkIfEmpty() {
   }, 200);
 }
 
+// v6.104 (§12.1, tappa 2) - IL RECORD DI BOZZA, e perche' non e' un ramo "nuovo".
+//
+// La scheda ha sempre saputo fare una cosa sola: modificare un record che esiste. Le due funzioni
+// che la reggono cominciano entrambe cercandolo per id, e da quella ricerca dipendono NOVE decisioni
+// dentro `saveFigFromDetail`: il Nome ereditato, i campi ereditati dalla base, il Numero
+// obbligatorio, il ramo dei retro con la chiave di unicita', le Note, l'etichetta del selettore
+// base, il controllo del retro sulle variazioni, `retroId` e `retroBianco`. Tutte scritte
+// `existingForCheck?.section`.
+//
+// Il punto da capire prima di toccare: con un id vuoto quella ricerca torna `undefined`, e tutte e
+// nove NON danno errore - si spengono. Nessun messaggio, nessun toast, salvataggio a buon fine.
+// Cioe' le validazioni scritte ieri nella v6.101 varrebbero solo in modifica, e proprio nella
+// CREAZIONE - dove un dato sbagliato nasce, invece di essere corretto - no. E' lo stesso stampo del
+// `currentSection` letto al posto di `existingForCheck.section` (v6.101): un difetto che in preview
+// non si vede, perche' chi prova la modifica non lo incontra mai.
+//
+// Quindi niente `if (nuovo)` in nove punti - sarebbe la nona copia della stessa condizione, e le
+// copie divergono in silenzio (v6.032). Si passa un RECORD, come sempre: solo che questo non e'
+// ancora su Firestore. Le nove righe non si accorgono di niente ed erano gia' scritte giuste.
+//
+// `id: ''` e non `null` e non `undefined`, e sono tre scelte diverse con tre conseguenze:
+//  · i due pulsanti Salva portano l'id in un attributo del DOM (`data-fig-id`). Con `null` diventa
+//    la STRINGA "null", che e' vera: si tornerebbe a cercare un record inesistente, cioe' esattamente
+//    il difetto che questa bozza esiste per chiudere;
+//  · con `undefined` scatterebbe la sanificazione della v6.043, che lo toglierebbe scrivendo un
+//    avviso in console ad ogni creazione - rumore su una cosa che non e' un guasto;
+//  · `''` e' falso, quindi `_saveFigurineItem` prende da solo il ramo "nuovo" e ci scrive dentro
+//    l'id vero. Nessun percorso di salvataggio in piu' da mantenere.
+let _bozzaCorrente = null;
+
+function _bozzaNuovoItem(sezione, seriesId) {
+  // I valori nascono come nell'altra form (§12.1: "valori di default del nuovo oggetto"), e sono
+  // elencati per esteso invece di lasciarli mancanti: un campo assente e uno vuoto si comportano
+  // diversamente in `{ ...existing, ...updates }`, e la differenza si vedrebbe solo sul record
+  // salvato.
+  return {
+    id: '', seriesId, section: sezione || 'figurines',
+    number: null, noNumber: false, fotoNonDisponibile: false, invisibile: false,
+    name: '', fullName: '', desc: '', note: '', score: 0,
+    subseries: '', size: '', category: '', subcategory: '', subname: '',
+    isVariation: false, isUnofficialVariation: false, isChange: false, isPrintError: false,
+    baseFigurineId: null, retroId: null, retroBianco: false,
+    changeType: '', printErrorType: null,
+    img: null, imgRetro: null, ebayImg: null,
+    forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new',
+    ebayTitleIt: null, ebayTitleEn: null, ebayDescIt: null, ebayDescEn: null,
+    ebayAccounts: null, daPubblicare: false
+  };
+}
+
+// L'unico punto in cui la scheda decide QUALE record sta trattando. Un id c'e' -> quello vero; non
+// c'e' -> la bozza. Sta in una funzione sola perche' i due chiamanti devono per forza dire la stessa
+// cosa: se `switchToEditMode` disegnasse la bozza e `saveFigFromDetail` cercasse il record vero, la
+// form si compilerebbe e il salvataggio scriverebbe altro.
+function _recordInModifica(figId) {
+  if (!figId) return _bozzaCorrente;
+  return getData('figurines', []).find(x => x.id === figId) || null;
+}
+
+// v6.104 (§12.1, tappa 2) - "+ Aggiungi" apre LA SCHEDA, vuota, gia' in modifica.
+// Non passa da `openFigDetail`: quella disegna la vista in lettura di un oggetto che esiste - foto,
+// frecce, tab dei collegati - e di un oggetto che non esiste ancora non c'e' niente da leggere.
+// Serie e sezione si prendono da dove si e' premuto, ed e' l'unico momento in cui `currentSection`
+// e' la fonte giusta: qui la pagina sotto E' il posto in cui l'oggetto sta per nascere. (Nel
+// salvataggio invece no, e la v6.101 lo ha gia' pagato una volta.)
+function openNuovoItem() {
+  if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
+  if (!currentSeriesId) {
+    // Senza serie non si puo' creare: `_saveFigurineItem` cerca il documento della serie e senza
+    // quello solleva. Meglio dirlo qui, con la form ancora chiusa, che dopo aver compilato tutto.
+    toast((currentLang === 'it' ? 'Apri prima una serie' : 'Open a series first'), 'error');
+    return;
+  }
+  _apriSchedaSuBozza(_bozzaNuovoItem(currentSection, currentSeriesId));
+}
+
+// v6.105 - aprire la scheda su una bozza lo fanno in due: "+ Aggiungi" con una bozza vuota e
+// "Clona" con una bozza copiata. Il modo di aprirla e' lo stesso, quindi sta scritto una volta:
+// due copie sarebbero divergite alla prima modifica, ed e' la lezione che questo file ripete da
+// dodici release (v6.032, v6.074, v6.087).
+function _apriSchedaSuBozza(bozza) {
+  _bozzaCorrente = bozza;
+  _returnToErroriAfterSave = false;   // v6.105 - come in `openFigDetail`, vedi li' il perche'
+  _figEditImgData = null; _figEditImgRetroData = null;
+  _elencoNav = null;
+  _currentDetailFigId = '';
+  const modal = document.getElementById('fig-detail-modal');
+  if (!modal) return false;
+  modal.classList.toggle('detail-solo-foto', !_schedaDueFoto(bozza));
+  // Le frecce e il contatore restano nascosti: un oggetto che non esiste non sta in nessun elenco,
+  // e `visibility` (non `display`) e' la stessa scelta della v6.097 - lo spazio resta occupato.
+  ['fig-detail-prev-btn', 'fig-detail-next-btn', 'fig-detail-nav-count'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.style.visibility = 'hidden';
+  });
+  const cont = document.getElementById('fig-detail-content'); if (cont) cont.innerHTML = '';
+  const ph = document.getElementById('fig-detail-photo'); if (ph) ph.innerHTML = '';
+  modal.classList.remove('hidden');
+  switchToEditMode('');
+  return true;
+}
+
+// v6.105 (§12.1, tappa 2) - LA MATITA APRE LA SCHEDA, GIA' IN MODIFICA.
+// E' l'unica porta verso la modifica di un oggetto, e la usano tutti e cinque i punti che prima
+// aprivano la finestra. Le due chiamate sono le stesse che il sito fa gia' quando dentro la scheda
+// si preme "Modifica": nessun terzo percorso da mantenere.
+function apriModificaItem(itemId) {
+  if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
+  const f = getData('figurines', []).find(x => x.id === itemId);
+  // Il controllo c'e' perche' la finestra ce l'aveva: `openAddItemModal` su un id sconosciuto
+  // apriva una form vuota che al salvataggio avrebbe CREATO un record. Meglio dirlo.
+  if (!f) { toast((currentLang === 'it' ? 'Oggetto non trovato' : 'Item not found'), 'error'); return; }
+  openFigDetail(itemId);
+  switchToEditMode(itemId);
+}
+
 function switchToEditMode(figId) {
-  const f = getData('figurines', []).find(x => x.id === figId);
+  const f = _recordInModifica(figId);   // v6.104 - un record vero, oppure la bozza
   if (!f) return;
   editingFeEbayImgFileSave = null;
   // v6.103 (Franco) - SI RESTA SUL TAB DOVE SI ERA. Premendo "Modifica" dal tab Ebay della vista in
@@ -23971,9 +24395,15 @@ function switchToEditMode(figId) {
   // diceva "un posto solo dove leggerla". Due copie divergono, e queste due dovevano restare
   // identiche per definizione - la loro unica ragione d'essere e' che il titolo non cambi forma
   // passando da vista a modifica.
+  // v6.104 - su una BOZZA il titolo direbbe il tipo e poi il vuoto, perche' nome e Nome completo non
+  // ci sono ancora. Dice "Aggiungi <oggetto>", come faceva la finestra: e' l'unica riga della scheda
+  // che deve sapere se il record e' nuovo, e sta qui invece che dentro `_titoloSchedaHTML` perche'
+  // quella la usa anche la vista in lettura, dove una bozza non arriva mai.
   if (titleEl) {
     titleEl.removeAttribute('data-i18n');
-    titleEl.innerHTML = _titoloSchedaHTML(f, displayNameForTitle);
+    titleEl.innerHTML = f.id
+      ? _titoloSchedaHTML(f, displayNameForTitle)
+      : esc((currentLang === 'it' ? 'Aggiungi ' : 'Add ') + getSectionLabelSingular(f.section || 'figurines'));
   }
 
   // v6.074 - Foto. Una sola per quasi tutto; DUE per le bustine, che hanno due facce sullo stesso
@@ -24124,8 +24554,7 @@ function switchToEditMode(figId) {
     html += '<div class="detail-row" id="fe-retro-bianco-row"' + (f.retroId ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Retro bianco':'Blank back') + '</span>' +
       '<span class="detail-value"><label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;">' +
       '<input type="checkbox" id="fe-retro-bianco" onchange="toggleFeRetroBianco()" ' + (f.retroBianco ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
-      '<span style="color:var(--muted);">' + (currentLang==='it'?'la figurina non ha un vero retro':'this sticker has no real back') + '</span>' +
-      '</label></span></div>';
+      '</label></span></div>';   // v6.106 (Franco) - via la spiegazione accanto alla casella
   }
 
   // v6.079 (Franco) - "LA FOTO NON CE L'HO". Non e' un difetto da correggere: e' un fatto
@@ -24163,7 +24592,8 @@ function switchToEditMode(figId) {
   // sola era il difetto della v6.074 con `retroBianco`, esistito per una release solo nella
   // finestra: chi usava l'altra form non lo vedeva e, salvando, lo azzerava.
   if (currentUser?.isAdmin) {
-    html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">Note</span><span class="detail-value"><textarea id="fe-note" class="form-textarea" rows="2" placeholder="Appunti di lavoro, li vedi solo tu..." style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + esc(f.note || '') + '</textarea></span></div>';
+    // v6.106 (Franco) - via il testo di aiuto dentro il campo
+    html += '<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">Note</span><span class="detail-value"><textarea id="fe-note" class="form-textarea" rows="2" style="padding:0.3rem 0.5rem;font-size:0.9rem;resize:vertical;border:none;background:transparent;">' + esc(f.note || '') + '</textarea></span></div>';
   }
 
   // Figurine collegate (variazioni/change di cui questa è la base) — tab
@@ -24634,7 +25064,12 @@ async function saveFigFromDetail(figId, opzioni) {
   try {
 
     let name = document.getElementById('fe-name')?.value.trim();
-    const existingForCheck = getData('figurines', []).find(x => x.id === figId);
+    // v6.104 (§12.1) - la stessa fonte che ha disegnato la form. Da qui in giu' NOVE righe leggono
+    // `existingForCheck?.section`: con la ricerca per id, su un record nuovo tornavano tutte
+    // `undefined` e si spegnevano insieme, senza dirlo. Ora la sezione c'e' anche in creazione, e
+    // quelle nove righe non sono state toccate - erano gia' giuste.
+    const existingForCheck = _recordInModifica(figId);
+    const _creazione = !figId;   // v6.104
     // v5.774 — per un Change/Errore di stampa di RETRO il Nome eredita quello del retro base (campo
     // nascosto). Se il base manca, il controllo apposito piu' sotto blocca; qui si salta "Nome obbligatorio".
     const _isChgChk = !!document.getElementById('fe-is-change')?.checked;
@@ -24905,7 +25340,7 @@ async function saveFigFromDetail(figId, opzioni) {
     editingFeEbayImgFileSave = null;
 
     // Mantieni i campi esistenti non modificati
-    const existing = getData('figurines', []).find(x => x.id === figId);
+    const existing = _recordInModifica(figId);   // v6.104 - record vero o bozza, come sopra
     const merged = { ...existing, ...updates };
     // Rimuovi campi null/vuoti solo se non erano popolati
     if (!merged.number) delete merged.number;
@@ -24927,7 +25362,13 @@ async function saveFigFromDetail(figId, opzioni) {
     merged.daPubblicare = (_daPubblicareSpunta === null)
       ? (existing?.daPubblicare || false)
       : _daPubblicareSpunta;
-    if (ebayCampiCambiati(existing, merged)) merged.daPubblicare = true;
+    // v6.104 - IN CREAZIONE SI PASSA `null`, non la bozza. `ebayCampiCambiati` riconosce l'oggetto
+    // nuovo proprio dal primo argomento assente ("in coda se nasce marcato Ebay", v5.981): con la
+    // bozza al suo posto prenderebbe il ramo del CONFRONTO, e un oggetto che nasce marcato Ebay ma
+    // con tutti i campi eBay ancora vuoti non risulterebbe cambiato rispetto a lei - quindi non
+    // finirebbe in coda. Sarebbe una differenza silenziosa fra le due form proprio sul campo che
+    // decide se un annuncio viene pubblicato o no.
+    if (ebayCampiCambiati(_creazione ? null : existing, merged)) merged.daPubblicare = true;
 
     try {
       await fsSave('figurines', merged);
@@ -24950,8 +25391,34 @@ async function saveFigFromDetail(figId, opzioni) {
       ? (currentLang==='it' ? ` — aggiornati anche ${_propagati} collegat${_propagati===1?'o':'i'}` : ` — ${_propagati} linked item${_propagati===1?'':'s'} updated too`)
       : '';
     toast((currentLang==='it'?`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} salvat${savedLabel.endsWith('a')?'a':'o'}!`:`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} saved!`) + _extra, 'success', null, _propagati ? 6000 : 3500);
+    // v6.104 (§12.1) - CREAZIONE: tre cose che la modifica non ha bisogno di fare.
+    // La terza e' quella che conta. Con "Salva e resta" la scheda rimane aperta, e i due pulsanti
+    // portano l'id in `data-fig-id`: se restassero sull'id vuoto della bozza, il secondo Salva
+    // creerebbe un SECONDO record invece di aggiornare quello appena nato - e lo farebbe in
+    // silenzio, con lo stesso toast di successo. Ridisegnare la form con l'id vero riaggancia i
+    // pulsanti al record: da li' in poi e' una modifica come tutte le altre.
+    if (_creazione) {
+      _bozzaCorrente = null;              // ha finito il suo mestiere
+      _currentDetailFigId = merged.id;    // `_saveFigurineItem` ci ha scritto dentro l'id vero
+      // I due contatori li aggiorna anche l'altra form quando crea: un oggetto in piu' cambia i
+      // totali della home e quelli delle sezioni, che `renderItems()` da solo non tocca.
+      try { renderHomeStats(); updateSectionCounts(); } catch(e) { console.error('conteggi (creazione)', e); }
+      if (_resta) { try { switchToEditMode(merged.id); } catch(e) { console.error('riaggancio dopo creazione', e); } }
+    }
     // v6.052 - con "Salva e resta" la scheda NON si chiude: si aggiorna solo la griglia dietro.
     if (!_resta) closeModal('fig-detail-modal');
+    // v6.105 (§12.1, tappa 2) - IL RITORNO ALLA PAGINA ERRORI. Chi arriva da "Correggi"
+    // (`switchToSeriesFromErrori`) ha lasciato una pagina aperta e si aspetta di ritrovarla: prima
+    // se ne occupava il salvataggio della finestra, che da questa release non viene piu' chiamato.
+    // Senza questa riga il flag sarebbe rimasto acceso, e la pagina Errori si sarebbe riaperta al
+    // primo salvataggio successivo fatto da tutt'altra parte - un difetto che si vede lontano da
+    // dove nasce, cioe' il piu' difficile da collegare alla sua causa.
+    // Solo se la scheda si chiude: con "Salva e resta" si sta ancora lavorando su quell'oggetto.
+    if (_returnToErroriAfterSave && !_resta) {
+      _returnToErroriAfterSave = false;
+      showPage('profile');
+      adminTab('errori');
+    }
     renderItems();
 
   } finally {
@@ -24970,6 +25437,14 @@ async function deleteItemFromDetail(itemId) {
   }
   _cache.figurines = (_cache.figurines || []).filter(x => x.id !== itemId);
   closeModal('fig-detail-modal');
+  // v6.105 - anche l'eliminazione riporta alla pagina Errori se e' da li' che si e' arrivati: lo
+  // faceva `deleteFigurineFromModal` della finestra, e cancellare un oggetto e' un modo legittimo
+  // di "correggere" una segnalazione.
+  if (_returnToErroriAfterSave) {
+    _returnToErroriAfterSave = false;
+    showPage('profile');
+    adminTab('errori');
+  }
   renderItems();
   toast(currentLang === 'it' ? 'Eliminata! 🗑️' : 'Deleted! 🗑️', 'success');
 }
@@ -26563,7 +27038,9 @@ function switchToSeriesFromErrori(seriesId, figId) {
   if (!series || !fig) return;
   openSeriesDetail(seriesId);
   openSeriesSection(fig.section || 'figurines');
-  setTimeout(() => { openAddItemModal(figId); _returnToErroriAfterSave = true; }, 300);
+  // v6.105 - stessa attesa di prima: `openSeriesSection` sopra ridisegna la pagina, e la scheda va
+  // aperta quando quella e' pronta. Cambia solo cosa si apre.
+  setTimeout(() => { apriModificaItem(figId); _returnToErroriAfterSave = true; }, 300);
 }
 
 // v6.079 - apre e chiude l'elenco di una riga del contatore "senza foto". Niente ridisegno
@@ -28569,27 +29046,17 @@ function mostraPunteggioGuadagnato(aggiunti, totale) {
 // ============================================================
 let bulkEditActive = false;
 
+// v6.106 - il pulsante cambia lo stato e basta; a mettere a posto lo schermo pensa chi lo sa fare.
+// Tornando alla griglia si passa da `renderItems`, che la ridisegna e le da' la disposizione giusta:
+// prima qui c'era `grid.style.display = 'grid'` scritto a mano, che nelle sezioni disegnate a `flex`
+// era pure il valore sbagliato - non si vedeva solo perche' il ridisegno successivo lo correggeva.
 function toggleBulkEditView() {
   bulkEditActive = !bulkEditActive;
-  const grid = document.getElementById('items-grid');
-  const pagination = document.getElementById('items-pagination');
-  const paginationTop = document.getElementById('items-pagination-top');
-  const bulkView = document.getElementById('bulk-edit-view');
-  const btn = document.getElementById('bulk-edit-toggle-btn');
-
   if (bulkEditActive) {
-    if (grid) grid.style.display = 'none';
-    if (pagination) pagination.style.display = 'none';
-    if (paginationTop) paginationTop.style.display = 'none';
-    if (bulkView) bulkView.style.display = '';
-    if (btn) btn.textContent = currentLang === 'it' ? '🔲 Vista griglia' : '🔲 Grid view';
     renderBulkEditView();
+    _applicaVistaCorrente();
   } else {
-    if (grid) grid.style.display = 'grid';
-    if (pagination) pagination.style.display = '';
-    if (paginationTop) paginationTop.style.display = '';
-    if (bulkView) { bulkView.style.display = 'none'; bulkView.innerHTML = ''; }
-    if (btn) btn.textContent = currentLang === 'it' ? '📋 Vista tabellare' : '📋 Table view';
+    renderItems();   // finisce chiamando _applicaVistaCorrente()
   }
 }
 
@@ -28632,12 +29099,25 @@ function renderBulkEditView() {
   // cosa da "manca la seconda faccia" - mentre il retro assente e' un riquadro e basta.
   // Nella sezione Retro la seconda miniatura non c'e' proprio: una faccia sola, e la tabella mostra
   // una sezione per volta, quindi nessuna riga resta disallineata rispetto alle altre.
-  const _boxMini = 'display:inline-block;width:38px;height:38px;border-radius:5px;background:var(--card2);border:1px solid var(--border2);vertical-align:middle;';
+  // v6.106 (Franco) - LE MINIATURE SEGUONO LA FORMA DELLA FOTO. Erano 38x38 con `c_fill` +
+  // `object-fit:cover`, cioe' due ritagli in fila: Cloudinary tagliava l'immagine in un quadrato e
+  // il browser ritagliava di nuovo. Un retro verticale e uno orizzontale arrivavano identici, e la
+  // colonna delle foto non diceva piu' niente su cosa ci fosse dentro.
+  // Adesso l'ALTEZZA e' fissa - e' lei a tenere allineate le righe della tabella - e la larghezza
+  // segue la proporzione, entro un tetto perche' una foto molto larga non spinga fuori le colonne.
+  // `c_fit` invece di `c_fill`: Cloudinary rimpicciolisce dentro il riquadro senza tagliare.
+  // Misurato sui retro (§ v6.044/045): 1,38 gli orizzontali, 0,73 i verticali - le due forme sono
+  // davvero diverse, non e' una differenza teorica.
+  const _ALT_MINI = 38;
+  const _boxMini = `display:inline-block;height:${_ALT_MINI}px;border-radius:5px;background:var(--card2);border:1px solid var(--border2);vertical-align:middle;`;
+  // Il segnaposto resta QUADRATO: senza foto non c'e' una proporzione da rispettare, e una casella
+  // di larghezza variabile sarebbe solo rumore in colonna.
+  const _boxMiniVuoto = _boxMini + `width:${_ALT_MINI}px;`;
   const _miniaturaTabella = (url, conIcona) => url
-    ? `<img src="${cloudinaryUrl(url, 'w_76,h_76,c_fill,q_auto,f_auto')}" alt="" loading="lazy" style="${_boxMini}object-fit:cover;">`
+    ? `<img src="${cloudinaryUrl(url, 'w_152,h_76,c_fit,q_auto,f_auto')}" alt="" loading="lazy" style="${_boxMini}width:auto;max-width:76px;object-fit:contain;">`
     : (conIcona
-        ? `<span style="${_boxMini}text-align:center;line-height:38px;color:var(--muted);font-size:0.95rem;">${currentSection === 'retros' ? '📇' : '🃏'}</span>`
-        : `<span style="${_boxMini}"></span>`);
+        ? `<span style="${_boxMiniVuoto}text-align:center;line-height:${_ALT_MINI}px;color:var(--muted);font-size:0.95rem;">${currentSection === 'retros' ? '📇' : '🃏'}</span>`
+        : `<span style="${_boxMiniVuoto}"></span>`);
 
   bulkView.innerHTML = `
     ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
@@ -28653,12 +29133,19 @@ function renderBulkEditView() {
         <div>
           <label class="form-label" style="font-size:0.8rem;">${currentLang === 'it' ? 'Campo' : 'Field'}</label>
           <select id="massivo-campo" class="form-input" onchange="_massivoAggiornaValori()" style="min-width:230px;">
-            ${CAMPI_MASSIVI.map(c => `<option value="${c.id}">${currentLang === 'it' ? c.it : c.en}</option>`).join('')}
+            ${_campiMassiviDisponibili().map(c => `<option value="${c.id}">${currentLang === 'it' ? c.it : c.en}</option>`).join('')}
           </select>
         </div>
         <div>
           <label class="form-label" style="font-size:0.8rem;">${currentLang === 'it' ? 'Valore' : 'Value'}</label>
-          <select id="massivo-valore" class="form-input" style="min-width:130px;"></select>
+          <!-- v6.106 - un contenitore invece di un select fisso: col testo libero il controllo
+               cambia natura, e un select non si trasforma in un input riscrivendone il contenuto.
+               L'id massivo-valore resta sull'elemento vero, quale che sia, cosi'
+               applicaAggiornamentoMassivo continua a leggerlo allo stesso modo.
+               NIENTE BACKTICK QUI DENTRO: questo commento vive dentro un template literal, e un
+               backtick lo chiuderebbe a meta' - e' proprio l'errore che ha fatto fallire il primo
+               node --check di questa release. -->
+          <span id="massivo-valore-box"></span>
         </div>
         <button class="btn-primary btn-admin" id="massivo-applica-btn" onclick="applicaAggiornamentoMassivo()" style="background:var(--danger);">${currentLang === 'it' ? 'Applica' : 'Apply'}</button>
       </div>
@@ -28672,8 +29159,8 @@ function renderBulkEditView() {
       </div>
       <div style="font-size:0.78rem;color:var(--muted);margin-top:0.5rem;line-height:1.5;">
         ${currentLang === 'it'
-          ? 'Solo campi a valore chiuso: booleani e scelte da elenco. I campi a testo libero non ci sono di proposito — scrivere lo stesso testo su cento oggetti non è un\'operazione che si voglia fare davvero.'
-          : 'Closed-value fields only: booleans and picklists. Free-text fields are deliberately absent.'}
+          ? 'Booleani, scelte da elenco e — sui Retro — Categoria e Sottocategoria. Su Change ed errori di stampa queste due non si scrivono: le eredita la base.'
+          : 'Booleans, picklists and — on Retros — Category and Subcategory. On Changes and print errors those two are not written: they are inherited from the base.'}
       </div>
     </div>` : ''}
     <table style="width:100%;border-collapse:collapse;font-size:0.82rem;">
@@ -28709,7 +29196,7 @@ function renderBulkEditView() {
             const _ff = _dueFacce(f, _tutteLeFig);
             return _miniaturaTabella(_ff.fronte, true) + (_schedaDueFoto(f) ? ' ' + _miniaturaTabella(_ff.retro, false) : '');
           })()}</td>
-          ${isAdmin ? `<td style="padding:4px;white-space:nowrap;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="openAddItemModal('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
+          ${isAdmin ? `<td style="padding:4px;white-space:nowrap;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="apriModificaItem('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
           ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
           ${currentSection === 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
           ${currentSection !== 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? '#'+f.number : '')) : ''}
@@ -28760,8 +29247,28 @@ const CAMPI_MASSIVI = [
   { id: 'daPubblicare',       it: 'Da pubblicare (coda eBay)', en: 'To publish (eBay queue)', tipo: 'bool' },
   { id: 'noNumber',           it: 'Non ha numero',        en: 'Has no number',     tipo: 'bool' },
   { id: 'condition',          it: 'Condizione',           en: 'Condition',         tipo: 'scelta',
-    opzioni: [{ v: 'new', it: 'Nuovo', en: 'New' }, { v: 'used', it: 'Usato', en: 'Used' }] }
+    opzioni: [{ v: 'new', it: 'Nuovo', en: 'New' }, { v: 'used', it: 'Usato', en: 'Used' }] },
+  // v6.106 (Franco) - CATEGORIA e SOTTOCATEGORIA, a TESTO LIBERO. Sono le prime due voci che
+  // scavalcano la regola scritta qui sopra, e lo fanno perche' l'ha chiesto Franco: sui retro
+  // riassegnare una categoria a molti record in un colpo e' un lavoro vero, non un incollaggio
+  // distratto.
+  // `soloSezione`: esistono solo per i Retro (v5.980, v6.038), quindi nelle altre sezioni il menu
+  // non le mostra affatto - meglio di una voce che c'e' e non fa niente.
+  // `nonSuDerivati`: su un Change o un errore di stampa questi campi NON sono dati propri, li
+  // riscrive la base al salvataggio (v6.038). Scriverli li' darebbe un valore che il primo
+  // salvataggio disfa: quei record si saltano.
+  // `nelNomeCompleto`: sono due dei pezzi con cui `computeFullName` costruisce il Nome completo di
+  // un retro. Cambiarle senza ricalcolarlo lascerebbe il record col nome vecchio - e il Nome
+  // completo non e' una decorazione: e' cio' che la scheda mostra nel titolo e cio' su cui la
+  // ricerca globale cerca (v6.049/050). Nessuna delle voci precedenti aveva questo problema, ed e'
+  // il motivo per cui il ricalcolo non c'era.
+  { id: 'category',    it: 'Categoria',      en: 'Category',    tipo: 'testo', soloSezione: 'retros', nonSuDerivati: true, nelNomeCompleto: true },
+  { id: 'subcategory', it: 'Sottocategoria', en: 'Subcategory', tipo: 'testo', soloSezione: 'retros', nonSuDerivati: true, nelNomeCompleto: true }
 ];
+// Le voci valide QUI E ORA: una voce che non si applica alla sezione aperta non si mostra.
+function _campiMassiviDisponibili() {
+  return CAMPI_MASSIVI.filter(c => !c.soloSezione || c.soloSezione === currentSection);
+}
 function toggleAggiornamentoMassivo() {
   const p = document.getElementById('massivo-pannello');
   if (!p) return;
@@ -28772,14 +29279,37 @@ function toggleAggiornamentoMassivo() {
 // sue opzioni. Ricostruirlo qui evita di tenere a schermo un valore che per quel campo non esiste.
 function _massivoAggiornaValori() {
   const campo = document.getElementById('massivo-campo')?.value;
-  const sel = document.getElementById('massivo-valore');
-  if (!sel) return;
+  const box = document.getElementById('massivo-valore-box');
+  if (!box) return;
   const it = currentLang === 'it';
   const c = CAMPI_MASSIVI.find(x => x.id === campo);
-  if (!c) { sel.innerHTML = ''; return; }
-  sel.innerHTML = (c.tipo === 'bool')
-    ? '<option value="1">' + (it ? 'Sì' : 'Yes') + '</option><option value="0">' + (it ? 'No' : 'No') + '</option>'
-    : c.opzioni.map(o => '<option value="' + o.v + '">' + (it ? o.it : o.en) + '</option>').join('');
+  if (!c) { box.innerHTML = ''; return; }
+  if (c.tipo === 'testo') {
+    box.innerHTML = '<input type="text" id="massivo-valore" class="form-input" autocomplete="off" '
+      + 'list="massivo-valori-noti" style="min-width:180px;">'
+      // I valori gia' in uso NON restringono la scelta - si puo' scrivere quello che si vuole - ma
+      // stanno li' da suggerimento: e' il modo piu' rapido di non introdurre "OLO " con lo spazio
+      // in fondo accanto a "OLO".
+      + '<datalist id="massivo-valori-noti">'
+      + _valoriInUso(campo).map(v => '<option value="' + esc(v) + '"></option>').join('')
+      + '</datalist>';
+    return;
+  }
+  box.innerHTML = '<select id="massivo-valore" class="form-input" style="min-width:130px;">'
+    + ((c.tipo === 'bool')
+        ? '<option value="1">' + (it ? 'Sì' : 'Yes') + '</option><option value="0">' + (it ? 'No' : 'No') + '</option>'
+        : c.opzioni.map(o => '<option value="' + o.v + '">' + (it ? o.it : o.en) + '</option>').join(''))
+    + '</select>';
+}
+// I valori che quel campo ha gia' nella sezione aperta, in ordine e senza doppioni.
+function _valoriInUso(campo) {
+  const visti = new Set();
+  getData('figurines', []).forEach(f => {
+    if (f.seriesId !== currentSeriesId || f.section !== currentSection) return;
+    const v = (f[campo] || '').trim();
+    if (v) visti.add(v);
+  });
+  return [...visti].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
 }
 async function applicaAggiornamentoMassivo() {
   const it = currentLang === 'it';
@@ -28787,7 +29317,11 @@ async function applicaAggiornamentoMassivo() {
   const c = CAMPI_MASSIVI.find(x => x.id === campo);
   if (!c) return;
   const valSel = document.getElementById('massivo-valore')?.value;
-  const valore = (c.tipo === 'bool') ? (valSel === '1') : valSel;
+  // v6.106 - il testo si ripulisce ai bordi: uno spazio in fondo crea una categoria nuova che a
+  // schermo e' identica a quella che c'era gia'.
+  const valore = (c.tipo === 'bool') ? (valSel === '1')
+    : (c.tipo === 'testo') ? (valSel || '').trim()
+    : valSel;
   const ambito = document.querySelector('input[name="massivo-ambito"]:checked')?.value || 'sel';
 
   const idsSel = Array.from(document.querySelectorAll('.bulk-select-row:checked')).map(cb => cb.dataset.id);
@@ -28795,6 +29329,9 @@ async function applicaAggiornamentoMassivo() {
   if (!bersagli.length) { toast(it ? 'Nessun oggetto da aggiornare' : 'No items to update', 'error'); return; }
 
   const etichettaValore = (c.tipo === 'bool') ? (valore ? (it ? 'Sì' : 'Yes') : 'No')
+    // v6.106 - un testo vuoto si dice a parole: fra le virgolette della conferma non si vedrebbe,
+    // e svuotare un campo su cento record e' proprio l'operazione da non fare per sbaglio.
+    : (c.tipo === 'testo') ? (valore || (it ? '(vuoto)' : '(empty)'))
     : (c.opzioni.find(o => o.v === valore) || {})[it ? 'it' : 'en'];
   // Prima si dice cosa si sta per fare, e con quanti oggetti: e' la stessa regola della scheda
   // Funzioni (§14). Un massivo che non dichiara il numero di righe e' il modo piu' rapido di
@@ -28814,7 +29351,11 @@ async function applicaAggiornamentoMassivo() {
   bersagli.forEach(id => {
     const rec = tutte.find(f => f.id === id);
     if (!rec) return;
+    // v6.106 - Categoria e Sottocategoria di un Change o di un errore di stampa le riscrive la base
+    // al salvataggio (v6.038): scriverle qui darebbe un valore che il primo salvataggio disfa.
+    if (c.nonSuDerivati && (rec.isChange || rec.isPrintError)) return;
     rec[campo] = valore;
+    if (c.nelNomeCompleto) rec.fullName = computeFullName(rec, tutte);   // v6.106, vedi CAMPI_MASSIVI
     toccati++;
     if (!perSerie.has(rec.seriesId)) perSerie.set(rec.seriesId, rec);
   });
@@ -29936,11 +30477,9 @@ if (appVerMobEl) appVerMobEl.textContent = JS_VERSION;
 const cssVerEl = document.getElementById('nav-css-version');
 if (cssVerEl) cssVerEl.textContent = CSS_VERSION;
 initFirebase().catch(e => {
-  console.warn('Firebase non disponibile, uso dati demo:', e.message);
-  loadDemoData();
-  showLoadingOverlay(false);
-  renderAll();
-  updateNavUser();
+  // v6.108 - niente piu' dati demo, e niente `renderAll()` su un catalogo vuoto: disegnare la
+  // pagina senza dati la fa sembrare una collezione che non c'e'.
+  _guastoCaricamentoDati(e.message || e);
 });
 
 // keyboard close modals
