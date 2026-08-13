@@ -1,6 +1,288 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.116 - UNA SCRITTURA SOLA PER LA BASE E I SUOI COLLEGATI (Indagine 1, chiusa il 13 agosto).
+//          Modificato app.js e index.html (solo la versione).
+//
+//          MISURATO PRIMA DI TOCCARE NIENTE, con `diagnostica-lentezza-v2.js` sul sito vero:
+//            · Serie 3, salva senza cambiare niente ......  5218 ms   1 riscrittura da 520 KB
+//            · Serie 3, crea una nuova ...................   357 ms   nessuna (arrayUnion)
+//            · Serie 3, base con 3 collegati ............. 16468 ms   4 riscritture, ~2 MB
+//            · I mitici (173 KB), senza cambiare niente ..   940 ms   1 riscrittura da 173 KB
+//          Il 98% dell'attesa se ne andava a riscrivere documenti serie. Nel caso peggiore, 12744
+//          dei 16468 ms erano la sola propagazione ai collegati.
+//
+//          IL PERCHE'. Le figurine vivono dentro il documento della loro serie, e Firestore non sa
+//          sostituire un elemento di un array: per cambiarne una si rispedisce tutto il documento.
+//          Fin qui era noto. Quello che NON era scritto da nessuna parte e' che le riscritture sono
+//          N+1: dopo la base, `_propagaAiCollegati` ne faceva una per ogni figlio divergente, in
+//          fila, awaitate una alla volta. E i figli stanno nello STESSO documento della base -
+//          quindi erano quattro viaggi da 521 KB per cambiare quattro elementi dello stesso array.
+//
+//          COSA CAMBIA: si applicano in memoria la base e tutti i collegati, poi parte UNA
+//          scrittura. Il caso da 16,5 s dovrebbe tornare intorno ai 4. Nessuna migrazione, nessun
+//          campo nuovo, stesso stato finale sul database.
+//          `_propagaAiCollegati` sparisce, spezzata in due: `_collegatiDaAggiornare` (calcola, non
+//          scrive) e `_salvaFigurineInBlocco` (scrive). Separarle e' cio' che permette di fonderle.
+//
+//          ⚠️ UN COMPORTAMENTO CAMBIA, e va detto: prima un figlio poteva fallire da solo, veniva
+//          scritto in console e il salvataggio diceva comunque "salvato" - la base andava avanti e
+//          i suoi figli restavano indietro, in silenzio. Ora o si scrive tutto o non si scrive
+//          niente, e il fallimento si vede. E' l'unico modo onesto di avere una scrittura sola, ma
+//          e' un cambiamento vero, non una rifinitura.
+//
+//          ⚠️ IL DISFARE, che e' la parte che poteva andare male. La v6.042 ha chiuso un difetto
+//          preciso: un oggetto entrava in `series.items` prima della scrittura, e se questa falliva
+//          restava li' avvelenando ogni modifica successiva di quella serie. La regola era "chi
+//          fallisce fallisce da solo". Con una scrittura sola cambia forma: se fallisce, vanno
+//          rimessi com'erano TUTTI i record toccati, base compresa, in ordine inverso perche' gli
+//          indici restino quelli. Provato a secco su record finti prima di consegnare: errore
+//          rilanciato e non ingoiato, `series.items` identico byte per byte a com'era, `counts`
+//          rimessi, e la cache piatta NON sporcata (si aggiorna solo a scrittura riuscita).
+//
+//          UN ELEMENTO SOLO PASSA DALLA STRADA DI SEMPRE, `_saveFigurineItem`. Il raggruppamento
+//          serve dove ci sono piu' scritture da fondere; con una sola cambierebbe il percorso di
+//          OGNI salvataggio del sito per nessun guadagno, e si perderebbe `arrayUnion` - che sulla
+//          creazione vale 357 ms contro 5218.
+//
+//          NON RISOLVE IL MURO DI 1 MiB: Serie 3 e' a 521 KB, il 51%. Questo compra tempo.
+//          E resta fuori un lavoro gemello, non fatto qui perche' e' un'altra release:
+//          l'aggiornamento massivo e le procedure di import chiamano `fsSave('figurines', ...)`
+//          dentro un ciclo, cioe' hanno esattamente lo stesso difetto su numeri piu' grandi.
+// ------------------------------------------------------------
+// v6.115 - VIA IL CARATTERE # ACCANTO AL NUMERO DELLE FIGURINE (Franco, 11 agosto: "non da' un
+//          contributo effettivo"). Modificato app.js e index.html (solo la versione).
+//
+//          24 punti, tutti di VISUALIZZAZIONE: etichetta della card in griglia, titolo e riga della
+//          scheda, vista tabellare, risultati della ricerca globale, chip degli specchietti,
+//          tabelle della console admin, liste Wishlist e Wantlist. `computeFullName` il cancelletto
+//          non l'ha mai messo, quindi il ritorno indietro e' una riga e non serve nessuna migrazione.
+//
+//          ⚠️ IL VENTICINQUESIMO PUNTO E' STATO TOLTO DALLA RELEASE, ed e' la cosa piu' utile di
+//          questa voce. Era in `ebayTitleCorpo()`: non e' visualizzazione, e' la composizione del
+//          TITOLO EBAY, che finisce scritto su Firestore in `ebayTitleIt`/`ebayTitleEn` e da li' su
+//          un annuncio vero. I titoli gia' scritti - rifiniti a mano da Franco dove gli 80 caratteri
+//          tagliavano male - il # ce l'hanno; quelli ricomposti da oggi non l'avrebbero. Due formati
+//          sugli annunci, e la differenza non si vede dal sito. In piu' liberava un carattere degli
+//          80, cioe' cambiava di straforo il punto in cui scatta il troncamento.
+//          E' una decisione commerciale, non una ripulitura: resta com'era finche' Franco non dice
+//          altro. La misura dell'11 agosto contava 27 punti perche' questo lo contava dentro.
+//
+//          UN SOLO PUNTO DEI 24 FINISCE COMUNQUE SU FIRESTORE, e non e' lo stesso caso:
+//          `submitWishlist` scrive la lista in `contact_messages` come TESTO di un messaggio. E'
+//          un'istantanea spedita una volta, che nessuno ricompone e da cui nessuno rilegge il
+//          numero: i messaggi vecchi terranno il #, i nuovi no, e finisce li'.
+//
+//          NON CON UN SOSTITUISCI-TUTTO, e non e' prudenza generica: nel file ci sono 396 `#` e
+//          solo 24 erano questi. Gli altri sono 213 colori esadecimali, i selettori
+//          `querySelector('#...')`, gli `href="#"`, le entita' HTML (`&#9998;`) e il frammento
+//          `#unsubscribe`. Ogni punto e' stato sostituito con la sua stringa intera pretendendo UNA
+//          occorrenza sulla riga attesa: alla prima assertion fallita non si scriveva niente.
+//          Verifica: 24 righe di codice diverse dalla v6.114 piu' quella di JS_VERSION, stesso
+//          numero di righe totali, `node --check` passato, e per ognuna delle 24 e' stata guardata
+//          la funzione che la contiene per sapere se il risultato si vede o si scrive - che e'
+//          esattamente il controllo che ha fatto emergere il titolo eBay.
+//
+//          TRE GRUPPI LASCIATI STARE, perche' li' il # non e' un'etichetta di troppo:
+//          - le OTTO righe di log delle procedure foto ("Rimozione sfondo #214..."): non e' testo
+//            di pagina, e' un registro di lavorazione dove il # separa il numero dal resto;
+//          - le CINQUE intestazioni di colonna `<th>#</th>` (vista tabellare, Vista Ebay, tabella
+//            dati): li' il # non sta ACCANTO a un numero, e' il NOME della colonna. Toglierlo
+//            lascerebbe una colonna senza intestazione, non una piu' pulita;
+//          - i DUE che non sono numeri di figurina: `#${position}` in classifica e
+//            `#${msgs.length - i}` sul contatore dei messaggi.
+//          Solo l'ultimo gruppo era gia' nella misura dell'11 agosto. Gli altri due sono emersi
+//          cercando largo il 13 agosto, e sono una decisione di Franco, non una deduzione: la
+//          misura vecchia non li nominava affatto, quindi "25 punti" combaciava per caso con una
+//          domanda che nessuno aveva ancora posto.
+// ------------------------------------------------------------
+// v6.114 - BACO (Franco): "il campo Note si vede solo se premo Modifica; l'admin dovrebbe vederlo
+//          sempre, se popolato". Modificato app.js e index.html (solo la versione).
+//          La riga ora compare anche nella VISTA in lettura della scheda, subito dopo la
+//          Descrizione - cioe' dove sta nella form (ultimo campo del tab Generale): vista e modifica
+//          devono coincidere, regola di Franco della v5.782.
+//
+//          PERCHE' ERA UN BACO E NON UNA MANCANZA: per leggere una nota bisognava entrare in
+//          MODIFICA, cioe' passare in scrittura per fare una cosa che e' di sola lettura. E chi apre
+//          la form per guardare la chiude col rischio di aver toccato qualcosa. Un dato che si puo'
+//          leggere solo dal posto in cui lo si puo' rompere e' collocato male.
+//          Il campo era nato nella v6.096 dentro la form, e la vista non e' mai stata aggiornata:
+//          e' passato inosservato per diciotto release perche' chi ha scritto la nota sa che c'e'.
+//
+//          Due condizioni, diverse fra loro: `isAdmin` perche' e' un appunto di lavoro e nessun altro
+//          deve leggerlo; `.trim()` sul contenuto perche' in vista una riga "Note" vuota e' rumore -
+//          li' non c'e' niente da compilare, a differenza della form.
+//          `white-space:pre-wrap` perche' il campo e' un textarea: senza, tre righe di appunti
+//          diventano un paragrafo solo. E `esc()`, che nella riga gemella della Descrizione non c'e'
+//          (`${f.desc}` crudo): la nota e' testo scritto a mano e finisce dentro l'HTML della scheda.
+//          ⚠️ La Descrizione ha lo stesso problema e NON e' stata toccata qui: e' un difetto suo, piu'
+//          vecchio, e va corretto in una release che lo dichiari invece che di straforo in questa.
+// ------------------------------------------------------------
+// v6.113 - NUOVO FILTRO ADMIN "Con note" (Franco), subito dopo "Con foto non disponibile".
+//          Modificato app.js e index.html (solo la versione).
+//
+//          E' UN INTERRUTTORE A SE', non un quarto stato di `_fotoFilter`. I tre della foto sono tre
+//          risposte alla STESSA domanda - "che foto ha questo oggetto?" - e per questo si escludono a
+//          vicenda: "senza foto E con foto" non dev'essere rappresentabile (v6.054). Le note sono
+//          un'altra domanda, e "con note E senza foto" e' una richiesta sensata, anzi probabilmente
+//          e' proprio quella che si vuole fare. Infilarlo in `_fotoFilter` l'avrebbe resa impossibile.
+//
+//          Sta nel riquadro admin perche' il campo Note e' solo-admin dalla v6.096. E come i filtri
+//          foto si AZZERA quando chi guarda non e' admin: e' la lezione della v6.095 - da quando quei
+//          filtri sono solo-admin, un non-admin non ha piu' nessun interruttore per spegnerli, e uno
+//          rimasto acceso sarebbe un filtro invisibile che nasconde meta' griglia senza dire perche'.
+//          Si azzera anche al cambio sezione, come i suoi vicini.
+//
+//          `trim()` sul contenuto e non solo `f.note`: una nota svuotata a mano lascia spesso una
+//          stringa di spazi, e senza quello comparirebbe fra gli oggetti "con note" un record in cui
+//          non c'e' scritto niente.
+//
+//          Nota di metodo, ed e' l'interesse composto della v6.106: `toggleNoteFilter` chiama solo
+//          `renderItems()`. Non gli serve sapere che esiste una vista tabellare, ne' ricordarsi di
+//          ridisegnarla - quella regola sta scritta in un posto solo, in fondo a `renderItems`.
+//          Prima della v6.106 questo filtro sarebbe nato con la diciannovesima copia di
+//          `if (bulkEditActive) renderBulkEditView()`, oppure senza, e sarebbe stato il prossimo a
+//          non funzionare in vista tabellare.
+// ------------------------------------------------------------
+// v6.112 - VIA GLI ULTIMI 14 ORFANI, quelli che con la finestra non c'entravano. Modificato app.js e
+//          index.html (solo la versione). −354 righe.
+//
+//          Erano emersi dallo "sbucciamento" della v6.110 e li' erano stati messi da parte apposta:
+//          una release, una cosa. Prima di cancellarli sono stati seguiti UNO PER UNO fino a trovare
+//          o il successore vivo o la prova che l'interfaccia non c'e' piu' - perche' "nessuno la
+//          chiama" non vuol dire "obsoleta", puo' voler dire "si e' scollegata e non se n'e' accorto
+//          nessuno", e quelle vanno riattaccate, non cancellate.
+//          Esito: nessuna delle 14 era una funzionalita' persa.
+//            · alias e involucri ridondanti: `renderFigurines` (-> renderItems), `_caroselloAvvia`
+//              (-> _caroselloAvviaBox), `loadEmailCounter` (-> refreshEmailCountWidgets),
+//              `editItemFromDetail`, `_importHasChanges`, `_etichettaControllo`, `nationalityFlag`.
+//              I primi tre avevano il commento "tenuta per compatibilita'/perche' richiamata
+//              altrove": non lo erano piu', e nessuno se n'era accorto;
+//            · `sendNewsletterEmail` -> sostituita da `sendNewsletterFromAdmin`, agganciata a un
+//              pulsante vero;
+//            · `initSeriesDragSort` -> era il riordino A TRASCINAMENTO delle serie. Il riordino NON
+//              e' perso: `saveSeriesOrder` e' viva e la chiamano `moveSeriesUp`/`moveSeriesDown`,
+//              cioe' le frecce. Si e' persa solo quella modalita';
+//            · `openViewUserModal` -> il modale che apriva non esiste piu' nel markup: era gia' stata
+//              tolta l'interfaccia e lei era rimasta;
+//            · `generateTempPassword` -> avanzo del vecchio reset con password temporanea, oggi il
+//              reset passa da Firebase;
+//            · `startImportVar` + `varImportLog` + `varImportStatus` -> il vecchio import delle
+//              VARIAZIONI, confermato da Franco: "lo abbiamo integrato nel piu' generico import
+//              figurine". Gli import di retro e figurine sono vivi e agganciati da `renderAdminFoto`.
+//
+//          COSA VUOL DIRE "non ha piu' un punto d'ingresso", visto che e' la domanda che ha aperto
+//          il caso: non e' un pulsante scollegato da riattaccare. Gli id su cui `startImportVar`
+//          lavorava (`import-var-series-select` e compagnia) non esistono piu' da nessuna parte, e
+//          la prima riga faceva `getElementById(...).value` senza `?.`. Chiamandola a mano dalla
+//          console sarebbe morta subito: era inutilizzabile, non solo irraggiungibile.
+//
+//          Aggiornati anche DUE COMMENTI che rimandavano a `startImportVar` per spiegare come si
+//          raccolgono gli scarti: un rimando a una funzione cancellata invecchia peggio del codice,
+//          perche' manda a cercare qualcosa che non c'e'.
+// ------------------------------------------------------------
+// v6.111 - UN FIGLIO EREDITA ANCHE "NON HA NUMERO", non solo il numero. Modificato app.js e
+//          index.html (solo la versione). Una riga, piu' il perche'.
+//          Franco: "non appena un item viene collegato a un altro e indicato come Change, quel campo
+//          deve assumere lo stesso valore dell'item collegato; un change eredita quella
+//          caratteristica". Vale per tutti e quattro i tipi che ereditano il numero - variazione
+//          ufficiale, non ufficiale, change, errore di stampa - perche' la condizione e' la stessa
+//          riga che gia' ereditava il numero.
+//
+//          COSA CHIUDE: la contraddizione che la v6.101 sapeva SEGNALARE ma solo quando la scrivevi
+//          a mano. `_messaggioIncongruenzaNumero` guarda il campo, non il record; su un figlio il
+//          campo Numero e' nascosto, quindi risulta vuoto, quindi nessuna contraddizione - e subito
+//          dopo il salvataggio gli assegnava il numero della base accanto a un `noNumber: true`
+//          rimasto sul record. La stessa contraddizione che la form blocca, ci arrivava da sola per
+//          un'altra strada. Ora e' IMPOSSIBILE invece che segnalata: e' la mossa della v6.038.
+//
+//          NASCONDERE LA CASELLA NON SAREBBE BASTATO, ed e' la parte che vale la pena ricordare: e'
+//          gia' nascosta (sta dentro `fe-number-group`, che per questi oggetti e' `display:none`).
+//          Il valore non arrivava dall'interfaccia, arrivava DAL RECORD - un flag messo quando
+//          l'oggetto non era ancora un figlio se lo teneva, e il salvataggio lo riscriveva. E
+//          toglierla dal DOM avrebbe riaperto il buco chiuso dalla v6.077: non trovandola, il
+//          salvataggio scrive `false` e azzera il flag in silenzio.
+//
+//          PERCHE' EREDITARE E NON AZZERARE: `noNumber` e' letto DA SOLO, senza guardare il numero,
+//          in due punti - `_haNumero()` e il controllo "Figurine senza numero" della pagina Errori.
+//          Forzandolo a `false`, una variazione la cui base non ha numero sarebbe comparsa in
+//          quell'elenco come figurina senza numero: un falso allarme in una pagina che vale solo
+//          finche' non si riempie di falsi allarmi.
+//
+//          ⚠️ RESTA APERTO, ed e' un buco che ESISTEVA GIA' per il numero: se cambia la BASE, i figli
+//          non seguono finche' non li si risalva. `_campiEreditatiDaBase()` elenca Nome, Sottonome,
+//          Categoria e Sottocategoria - il numero non c'e' mai stato, e ora nemmeno `noNumber`.
+//          Metterceli farebbe propagare anche loro (v6.053) e li rimetterebbe in riga con la funzione
+//          admin "Allinea item figlio correlati" (§14): e' una decisione che tocca i DATI, quindi va
+//          presa da Franco e non infilata qui dentro.
+//
+//          ✅ CONTROLLATO SUI DATI VERI il 12 agosto 2026, da Franco in console:
+//            getData('figurines',[]).filter(f => f.noNumber && f.number).length  ->  0
+//          Quindi questa release e' PURAMENTE PREVENTIVA: non c'e' nessun record da riparare, e non
+//          serve nessuno script sui dati. Vale la pena averlo misurato invece di dedurlo - la
+//          contraddizione era possibile da mesi, e "possibile" non vuol dire "successa".
+// ------------------------------------------------------------
+// v6.110 - LA FINESTRA "Aggiungi/Modifica" NON ESISTE PIU'. Chiude il §12.11 e, con lui, il §12.1:
+//          da qui in poi un oggetto si crea, si modifica e si clona da un posto solo.
+//          Tolte 23 funzioni e 785 righe da app.js, piu' 263 righe (21 KB) di markup da index.html.
+//
+//          IL GUADAGNO NON E' LO SPAZIO, sono gli id. Nell'index restavano DUE insiemi di campi per
+//          lo stesso oggetto - i `fig-*` della finestra e i `fig-detail-*`/`fe-*` della scheda - e
+//          chi cercava `fig-name-input` per capire dove si scrive il nome trovava quello che nessuno
+//          compilava piu', senza niente che glielo dicesse. Ora nell'index i `fig-*` sono NOVE, tutti
+//          della scheda.
+//          Se ne va con loro la frase di aiuto del "Retro bianco" (`form.fig.retroBiancoHint`), che
+//          Franco aveva chiesto di togliere nella v6.106 e che era sopravvissuta solo perche' quel
+//          markup non lo apriva piu' nessuno.
+//
+//          COME E' STATO FATTO, perche' il metodo conta piu' dell'elenco. Il primo tentativo e' stato
+//          uno "sbucciamento" automatico: togli le funzioni note come morte, ricalcola i riferimenti,
+//          togli i nuovi orfani, ripeti. Ha proposto 32 funzioni e 987 righe - e ci sono cascate
+//          dentro `_caroselloAvvia`, `renderFigurines`, `initSeriesDragSort`, il vecchio import delle
+//          variazioni. Sono morte davvero, ma per ragioni LORO: `_caroselloAvvia` e' stato soppiantato
+//          da `_caroselloAvviaBox`, `renderFigurines` da `renderItems`. Il criterio non trovava gli
+//          orfani DELLA FINESTRA, trovava tutti gli orfani del file.
+//          Quindi: lista CHIUSA, verificata a mano, 23 nomi. Il resto e' segnato nel §12.11 come
+//          lavoro suo - una release, una cosa.
+//
+//          ⚠️ LA TRAPPOLA DA NON DIMENTICARE: `saveFigurine` e' una sottostringa di
+//          `_saveFigurineItem`, che e' la funzione che scrive OGNI figurina su Firestore. Un
+//          cerca-e-cancella su quel nome la colpisce. Stesso stampo dell'errore del §3 sul bump con
+//          sostituisci-tutto: le ricerche devono avere confini di parola veri.
+//
+//          RESTANO INTATTE tre funzioni che sembravano della finestra e sono condivise con la scheda:
+//          `_dipingiInvisibile`, `contaCaratteriEbayTitolo` e `toggleForSaleFields` - quest'ultima
+//          scelta da un ternario (`pref === 'fe' ? toggleFeForSaleFields : toggleForSaleFields`).
+//
+//          `node --check` qui NON basta e non va scambiato per una prova: una funzione cancellata di
+//          troppo e' sintatticamente ineccepibile. La prova e' la preview - se app.js non parsa non
+//          viene eseguito affatto, quindi si guarda comparire `Firebase ready` - e poi i sette punti
+//          del §12.1 esercitati uno per uno.
+// ------------------------------------------------------------
+// v6.109 - IL PANNELLO DI GUASTO HA DUE SCHERMATE, E IL TESTO LO HA DETTATO FRANCO. Modificato
+//          app.js e index.html (solo la versione). Rifinitura della v6.108, che era andata live
+//          com'era.
+//            ADMIN  -> la sola causa vera, piu' RIPROVA. Niente prosa.
+//            UTENTE -> "SITO MOMENTANEAMENTE NON DISPONIBILE." piu' RIPROVA, senza causa.
+//
+//          E' nata da una domanda di Franco su codice GIA' LIVE: "quel messaggio chi lo vedrebbe,
+//          solo l'admin o chiunque?". Chiunque - nei tre punti che chiamano `_guastoCaricamentoDati`
+//          non c'era nessun controllo. Vale la pena scrivere che NESSUNA delle prove fatte l'avrebbe
+//          scoperto, perche' erano tutte fatte da admin: una schermata che cambia con chi guarda va
+//          provata da entrambe le parti, o non e' stata provata.
+//
+//          DUE COSE DELLA PRIMA STESURA CHE ERANO SBAGLIATE, ed entrambe le ho scritte io senza
+//          chiedere:
+//          · "i dati del CATALOGO non sono arrivati" - qui non c'e' nessun catalogo, c'e' un
+//            INVENTARIO, che e' il nome della sezione. Le parole del sito si copiano dal sito;
+//          · "RIPROVARE PIU' TARDI" - con un guasto spesso passeggero manderebbe via qualcuno che
+//            con un click sarebbe entrato. A invitare all'azione basta il pulsante.
+//          Regola che ne esce: il testo che legge l'utente non si inventa, si chiede.
+//
+//          Si puo' distinguere admin da utente perche' `currentUser` viene da localStorage e non da
+//          Firebase: c'e' anche nel momento in cui Firebase non risponde. Era l'unico dubbio tecnico.
+//          Per l'utente la causa NON si perde: resta nella `console.error`.
+// ------------------------------------------------------------
 // v6.108 - I DATI DEMO NON COMPAIONO PIU' AL POSTO DI QUELLI VERI. Modificato app.js e index.html
 //          (solo la versione).
 //
@@ -12379,26 +12661,13 @@ async function sendNewsletterFromAdmin() {
   renderNewsletterLog('newsletter-email-log');
 }
 
-async function sendNewsletterEmail(subject, messaggio) {
-  // Filtro sul consenso: chi non l'ha dato (o non ha ancora risposto al
-  // prompt) non riceve la newsletter, mai.
-  const users = getData('users', []).filter(u => !u.isAdmin && u.email && hasNewsletterConsent(u));
-  // BCC dinamico: legge l'email dell'admin dal database ad ogni invio,
-  // così riflette sempre quella attuale (modificabile dal Profilo).
-  const adminUser = getData('users', []).find(u => u.isAdmin);
-  const bcc = adminUser?.email || null;
-  for (const user of users) {
-    await sendEmail(user.email, user.username, subject, messaggio, { bcc, source: 'newsletter', lang: userLangFor(user), userId: user.id });
-  }
-  toast((currentLang === 'it' ? 'Newsletter inviata a ' : 'Newsletter sent to ') + users.length + (currentLang === 'it' ? ' utenti!' : ' users!'), 'success');
-}
 
 // Firebase SDK (via CDN)
 let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.108';
+const JS_VERSION = 'v6.116';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -12494,52 +12763,7 @@ function selectNationality(code, name) {
   preview.innerHTML = `<img src="${flagUrl(code)}" style="width:24px;height:16px;object-fit:cover;border-radius:2px;"> ${name}`;
 }
 
-function nationalityFlag(code, name) {
-  if (!code) return '';
-  return `<img src="${flagUrl(code)}" title="${name||''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;margin-left:4px;">`;
-}
 
-function loadDemoData() {
-  _cache.series = [
-    { id: 's1', name: 'Serie 1 — Primavera', year: 1990, count: 30, desc: 'La prima serie di Sgorbions, con i personaggi più iconici.', order: 0, img: null },
-    { id: 's2', name: 'Serie 2 — Estate', year: 1991, count: 25, desc: 'La seconda serie con nuovi personaggi grotteschi.', order: 1, img: null },
-    { id: 's3', name: 'Serie 3 — Autunno', year: 1992, count: 20, desc: 'Terza serie con edizione limitata.', order: 2, img: null },
-  ];
-  _cache.figurines = [
-    { id: 'f1', seriesId: 's1', section: 'figurines', number: 1, name: 'Vittorio Mortorio', desc: 'Il più famoso degli Sgorbions', score: 10 },
-    { id: 'f2', seriesId: 's1', section: 'figurines', number: 2, name: 'Pamela Candela', desc: 'La principessa del moccio', score: 8 },
-    { id: 'f3', seriesId: 's1', section: 'figurines', number: 3, name: 'Sgorbio Maximus', desc: 'Il re degli Sgorbions', score: 15 },
-    { id: 'f4', seriesId: 's1', section: 'albums', number: 1, name: 'Album Serie 1', desc: 'Album ufficiale della prima serie', score: 20 },
-    { id: 'f5', seriesId: 's2', section: 'figurines', number: 1, name: 'Slimeo', desc: 'Il principe del fango', score: 12 },
-    { id: 'f6', seriesId: 's2', section: 'figurines', number: 2, name: 'Bavaglina', desc: 'La bavaglina vivente', score: 7 },
-  ];
-  _cache.posts = [
-    { id: 'p1', type: 'question', title: 'Dove trovo la figurina #3?', body: 'Cerco da anni Sgorbio Maximus, qualcuno sa dove trovarla?', author: 'collezionista99', authorId: 'u1', date: new Date().toISOString(), comments: [
-      { id: 'c1', author: 'admin', authorId: 'admin', isAdmin: true, text: 'Prova nei mercatini vintage!', date: new Date().toISOString() }
-    ]},
-    { id: 'p2', type: 'news', title: 'Trovato lotto raro al mercatino!', body: 'Ho trovato un lotto completo della Serie 1 in ottime condizioni.', author: 'sgorbionista', authorId: 'u2', date: new Date().toISOString(), comments: [] },
-  ];
-  _cache.users = [
-    { id: 'admin', username: 'admin', email: 'admin@sgorbions.it', isAdmin: true, joined: new Date().toISOString() },
-    { id: 'u1', username: 'collezionista99', email: 'test1@example.com', isAdmin: false, joined: new Date().toISOString(), nationalityCode: 'it', nationalityName: 'Italia' },
-    { id: 'u2', username: 'sgorbionista', email: 'test2@example.com', isAdmin: false, joined: new Date().toISOString(), nationalityCode: 'fr', nationalityName: 'Francia' },
-    { id: 'u3', username: 'slimecollector', email: 'test3@example.com', isAdmin: false, joined: new Date().toISOString(), nationalityCode: 'de', nationalityName: 'Germania' },
-    { id: 'u4', username: 'sgorbio_fan', email: 'test4@example.com', isAdmin: false, joined: new Date().toISOString(), nationalityCode: 'es', nationalityName: 'Spagna' },
-    { id: 'u5', username: 'moccio_king', email: 'test5@example.com', isAdmin: false, joined: new Date().toISOString(), nationalityCode: 'gb', nationalityName: 'Regno Unito' },
-  ];
-  // Simulate owned items for demo users (stored in localStorage)
-  const demoOwned = {
-    'u1': ['f1','f2','f3','f4'],   // collezionista99: 10+8+15+20 = 53 pt
-    'u2': ['f1','f3','f5'],        // sgorbionista: 10+15+12 = 37 pt
-    'u3': ['f2','f4','f6'],        // slimecollector: 8+20+7 = 35 pt
-    'u4': ['f1','f6'],             // sgorbio_fan: 10+7 = 17 pt
-    'u5': ['f5'],                  // moccio_king: 12 pt
-  };
-  Object.entries(demoOwned).forEach(([uid, ids]) => {
-    localStorage.setItem('sgorbions_owned_' + uid, JSON.stringify(ids));
-  });
-  console.log('Demo data loaded');
-}
 
 async function initFirebase() {
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
@@ -13369,23 +13593,47 @@ function _guastoCaricamentoDati(causa) {
       + 'flex-direction:column;align-items:center;justify-content:center;gap:1rem;padding:1.5rem;text-align:center;';
     document.body.appendChild(ov);
   }
-  // La causa si mostra COM'E', senza tradurla in "qualcosa e' andato storto": e' l'unica cosa che
-  // distingue un timeout da un permesso negato da una risposta vuota, ed e' quella che serve per
-  // capire. Va in <code> perche' e' un messaggio tecnico e si deve poter copiare.
-  ov.innerHTML =
-      '<div style="font-family:var(--font-display);font-size:1.8rem;color:var(--accent);">SGORBIONS</div>'
-    + '<div style="font-family:var(--font-ui);color:var(--text);font-size:1.05rem;max-width:34rem;">'
-    + (it ? 'I dati del catalogo non sono arrivati.' : 'The catalogue data did not load.') + '</div>'
-    + '<div style="font-family:var(--font-ui);color:var(--muted);font-size:0.85rem;max-width:34rem;line-height:1.5;">'
-    + (it ? 'Il sito non mostra niente al posto loro: quello che vedresti non sarebbe la tua collezione.'
-          : 'Nothing is shown in their place: what you would see would not be your collection.')
-    + '</div>'
-    + '<code style="font-family:ui-monospace,monospace;font-size:0.8rem;color:var(--warn);background:var(--card2);'
-    + 'border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;max-width:34rem;word-break:break-word;">'
-    + String(causa || (it ? 'causa non riportata' : 'cause not reported')) + '</code>'
-    + '<button onclick="location.reload()" style="font-family:var(--font-ui);font-size:0.9rem;font-weight:600;'
-    + 'padding:0.55rem 1.4rem;border-radius:8px;border:none;background:var(--accent);color:var(--bg);cursor:pointer;">'
-    + (it ? 'Riprova' : 'Retry') + '</button>';
+  // v6.109 (Franco) - DUE SCHERMATE, E IL TESTO LO HA DECISO FRANCO.
+  //
+  //   ADMIN   -> la sola causa vera, piu' RIPROVA. Niente prosa: a chi puo' farci qualcosa serve la
+  //              stringa, il resto e' rumore.
+  //   UTENTE  -> "SITO MOMENTANEAMENTE NON DISPONIBILE." piu' RIPROVA. La causa NON si mostra: non
+  //              la scriviamo noi, arriva dall'SDK di Firebase, e a un visitatore direbbe cose come
+  //              `Missing or insufficient permissions` - per lui rumore, e intanto un pezzo di come
+  //              e' fatto il sito dentro. Resta comunque nella `console.error` qui sopra.
+  //
+  // Il "RIPROVARE PIU' TARDI" della prima stesura e' stato tolto (Franco: "per lo user tieni solo il
+  // pulsante RIPROVA"): con un guasto che spesso e' passeggero, "piu' tardi" manderebbe via qualcuno
+  // che con un click sarebbe entrato. A invitare all'azione basta il pulsante, che dice gia' cosa
+  // fare e lo fa subito.
+  //
+  // Nota di lessico, ed era un errore: la prima stesura diceva "i dati del CATALOGO". Qui dentro non
+  // c'e' nessun catalogo, c'e' un INVENTARIO - e' il nome della sezione. Le parole del sito si
+  // copiano dal sito, non si inventano.
+  //
+  // `currentUser` c'e' anche durante il guasto perche' viene da localStorage e non da Firebase: e'
+  // l'unico motivo per cui questa distinzione si puo' fare proprio nel momento in cui Firebase non
+  // risponde.
+  const admin = !!currentUser?.isAdmin;
+  const pulsante = '<button onclick="location.reload()" style="font-family:var(--font-ui);font-size:0.9rem;'
+    + 'font-weight:600;padding:0.55rem 1.4rem;border-radius:8px;border:none;background:var(--accent);'
+    + 'color:var(--bg);cursor:pointer;">' + (it ? 'RIPROVA' : 'RETRY') + '</button>';
+  ov.innerHTML = admin
+    ? '<code style="font-family:ui-monospace,monospace;font-size:0.9rem;color:var(--warn);background:var(--card2);'
+      + 'border:1px solid var(--border);border-radius:8px;padding:0.7rem 1rem;max-width:40rem;word-break:break-word;">'
+      + String(causa || (it ? 'causa non riportata' : 'cause not reported')) + '</code>'
+      + pulsante
+    // Il marchio resta all'utente e non all'admin: su una pagina pubblica dice che il guasto e' del
+    // sito e non del browser, cioe' fa sembrare la schermata voluta invece che rotta.
+    // v6.110 (Franco) - il nome per esteso, com'e' scritto nella barra degli indirizzi: chi arriva
+    // qui deve riconoscere il sito che stava cercando, e "SGORBIONS" da solo non e' quello che ha
+    // digitato. La misura e' a `clamp` e non fissa perche' la scritta e' lunga il doppio della
+    // precedente: a 1.8rem su un telefono stretto sarebbe uscita dallo schermo.
+    : '<div style="font-family:var(--font-display);font-size:clamp(1rem,5.5vw,1.6rem);color:var(--accent);'
+      + 'max-width:100%;word-break:break-word;">FIGURINESGORBIONS.IT</div>'
+      + '<div style="font-family:var(--font-ui);color:var(--text);font-size:1rem;letter-spacing:0.03em;max-width:34rem;">'
+      + (it ? 'SITO MOMENTANEAMENTE NON DISPONIBILE.' : 'THE SITE IS TEMPORARILY UNAVAILABLE.') + '</div>'
+      + pulsante;
   ov.style.display = 'flex';
 }
 
@@ -13713,6 +13961,7 @@ let currentSeriesId = null;
 // v6.095 - quattro stati: null | 'senza' | 'con' | 'nonDisp'. Tutti e tre gli interruttori sono
 // da ADMIN e vivono nel riquadro "Filtri aggiuntivi admin".
 let _fotoFilter = null;
+let _noteFilter = false;   // v6.113 - "Con note", solo admin
 // Il filtro sul TIPO di oggetto (set base, variazioni, change...) risponde alla
 // domanda "che cosa e' questo?". Non rispondeva a quella che un collezionista si fa
 // davvero: "cosa mi manca?". Da qui il secondo filtro, che e' una DIMENSIONE
@@ -13842,22 +14091,6 @@ function _numeroEOrdinamento(sezione) {
 // tutto cio' che ce l'ha, quindi al primo cambio lingua l'etichetta sarebbe tornata "Numero" da
 // sola - la trappola descritta nel §5 del documento, che costa una release ogni volta.
 // Nella scheda non serve: li' l'etichetta la genera gia' switchToEditMode() a ogni apertura.
-function _etichettaCampoNumero() {
-  const g = document.getElementById('fig-number-group');
-  if (!g) return;
-  const ordina = _numeroEOrdinamento(currentSection);
-  const lab = g.querySelector('label.form-label');
-  if (lab) {
-    if (ordina) { lab.removeAttribute('data-i18n'); lab.textContent = currentLang === 'it' ? 'Ordinamento' : 'Sort order'; }
-    else { lab.setAttribute('data-i18n', 'form.fig.number'); lab.textContent = t('form.fig.number'); }
-  }
-  const inp = document.getElementById('fig-number-input');
-  if (inp) inp.placeholder = ordina ? '1' : '01';
-  // La casella "Non ha numero" su un ordinamento non vuol dire niente, ma resta NEL DOM: il
-  // salvataggio la legge (`fig-no-number-input`), e toglierla avrebbe azzerato il flag in silenzio.
-  const noNum = document.getElementById('fig-no-number-input')?.closest('label');
-  if (noNum) noNum.style.display = ordina ? 'none' : 'flex';
-}
 // La serie ha i numeri? Flag "Non ha numeri" della scheda serie (s.noNumbers).
 function _serieHaNumeri() {
   const s = getData('series', []).find(x => x.id === currentSeriesId);
@@ -13916,25 +14149,7 @@ let editingFigImgRetro = null;
 let editingFigImgRetroFileSave = null;
 let _returnToErroriAfterSave = false;
 
-function closeFigModal() {
-  closeModal('add-fig-modal');
-  if (_returnToErroriAfterSave) {
-    _returnToErroriAfterSave = false;
-    showPage('profile');
-    adminTab('errori');
-  }
-}
 
-function switchFigModalTab(tab) {
-  const genDiv = document.getElementById('fig-tab-generale');
-  const ebayDiv = document.getElementById('fig-tab-ebay');
-  const genBtn = document.getElementById('fig-tab-btn-generale');
-  const ebayBtn = document.getElementById('fig-tab-btn-ebay');
-  if (genDiv) genDiv.style.display = tab === 'generale' ? '' : 'none';
-  if (ebayDiv) ebayDiv.style.display = tab === 'ebay' ? '' : 'none';
-  if (genBtn) { genBtn.style.borderBottomColor = tab === 'generale' ? 'var(--accent)' : 'transparent'; genBtn.style.color = tab === 'generale' ? 'var(--accent)' : 'var(--muted)'; }
-  if (ebayBtn) { ebayBtn.style.borderBottomColor = tab === 'ebay' ? 'var(--accent)' : 'transparent'; ebayBtn.style.color = tab === 'ebay' ? 'var(--accent)' : 'var(--muted)'; }
-}
 
 
 // Admin seeding is handled in loadAllData() after Firebase is ready
@@ -14167,7 +14382,7 @@ function _caroselloMostraSerie(elenco) {
 function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie) {
   const etichetta = ((f.section || '') === 'retros')
     ? _retroNomeCompleto(f)
-    : (f.number ? '#' + f.number + ' ' : '') + (f.name || '');
+    : (f.number ? f.number + ' ' : '') + (f.name || '');
   // v6.080 - alt 'auto' vuol dire "niente altezza fissa": serve alle righe che possono essere una o
   // tre (il nome spezzato parola per parola su telefono). Le altre continuano ad avere la loro
   // misura, che e' cio' che tiene allineate le card fra loro sul desktop.
@@ -14249,11 +14464,6 @@ function renderCarosello() {
   const vivo = () => { const h = document.getElementById('page-home'); return !!h && h.classList.contains('active'); };
   box.onmouseenter = () => _caroselloSpegni('home');
   box.onmouseleave = () => _caroselloAvviaBox(box, 'home', vivo);
-  _caroselloAvviaBox(box, 'home', vivo);
-}
-function _caroselloAvvia() { // compatibilita' con i richiami esistenti
-  const box = document.getElementById('home-carosello');
-  const vivo = () => { const h = document.getElementById('page-home'); return !!h && h.classList.contains('active'); };
   _caroselloAvviaBox(box, 'home', vivo);
 }
 
@@ -15139,12 +15349,6 @@ function openResetModal() {
   document.getElementById('reset-pwd-modal').classList.remove('hidden');
 }
 
-function generateTempPassword() {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
-  let pwd = '';
-  for (let i = 0; i < 8; i++) pwd += chars[Math.floor(Math.random() * chars.length)];
-  return pwd;
-}
 
 // Conta le richieste di reset password, mese per mese — stesso schema del
 // contatore e-mail EmailJS. È un conteggio NOSTRO, non quello reale di
@@ -17293,7 +17497,7 @@ function renderCatalogSearch(q) {
                 return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
                 ${(() => { const front = isVarOrChange ? (f.img || (baseFig && baseFig.img) || null) : f.img; return smallImg(front, '', false); })()}
                 ${retroFig ? smallImg(retroFig.img, currentLang === 'it' ? 'Retro associato' : 'Associated retro') : ''}
-                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">#'+f.number+'</span> ' : ''}${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;color:#ffd84d;">Change</span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (tipoLabel ? ' <span style="color:#ffd84d;">' + esc(tipoLabel) + '</span>' : '') + (retroFig ? ' - <span style="color:var(--info);">' + esc(_retroNomeCompleto(retroFig)) + '</span>' : '') + '</span>' : ''}</span>
+                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">'+f.number+'</span> ' : ''}${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;color:#ffd84d;">Change</span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (tipoLabel ? ' <span style="color:#ffd84d;">' + esc(tipoLabel) + '</span>' : '') + (retroFig ? ' - <span style="color:var(--info);">' + esc(_retroNomeCompleto(retroFig)) + '</span>' : '') + '</span>' : ''}</span>
               </span>`;
               }).join('') + '</div>').join('')}
             </div>
@@ -18157,6 +18361,7 @@ function updateSectionCounts() {
 
 function openSeriesSection(section) {
   _fotoFilter = null;
+  _noteFilter = false;   // v6.113 - come i filtri foto: non sopravvive al cambio sezione
   _itemTypeFilter = _tipoIniziale(); // v6.048 - da admin: 'all'
   _retroCategoryFilter = null; // il filtro per categoria dei Retro non sopravvive al cambio sezione/serie
   _retroSubcategoryFilter = null; // idem per la sottocategoria (v5.987)
@@ -18331,7 +18536,7 @@ function _baseFigurineLinkLabel(f) {
   // chiede a _retroNomeCompleto(), che sa la regola vera. Era questo a produrre
   // "PREMIO — PREMIO DI MIGLIOR ATTORE" sui 94 retro il cui Nome inizia con la categoria.
   if (f.section === 'retros') return _retroNomeCompleto(f);
-  return (f.number ? '#' + f.number + ' ' : '') + (f.name || '');
+  return (f.number ? f.number + ' ' : '') + (f.name || '');
 }
 
 // v5.785 — ordinamento condiviso delle opzioni "base": Retro per NOME COMPLETO, Figurine per Numero.
@@ -18342,62 +18547,9 @@ function _baseFigurineLinkSort(a, b) {
   return (a.number || 0) - (b.number || 0);
 }
 
-function populateBaseFigurineSelect(excludeId, selectedId) {
-  const hidden = document.getElementById('fig-base-figurine-input');
-  const search = document.getElementById('fig-base-figurine-search');
-  if (!hidden || !search) return;
-  _baseFigurineLinkOptions = getData('figurines', [])
-    .filter(f => f.seriesId === currentSeriesId && f.section === currentSection && f.id !== excludeId && !f.isVariation && !f.isUnofficialVariation && !f.isChange)
-    .sort(_baseFigurineLinkSort); // v5.785 — Retro per Nome completo, Figurine per Numero
-  hidden.value = selectedId || '';
-  const dd = document.getElementById('fig-base-figurine-dropdown');
-  if (dd) dd.style.display = 'none';
-  if (selectedId) {
-    const b = _baseFigurineLinkOptions.find(x => x.id === selectedId);
-    search.value = b ? _baseFigurineLinkLabel(b) : '';
-  } else {
-    search.value = '';
-  }
-}
 
-function filterBaseFigurineLink() {
-  const q = _perRicerca(document.getElementById('fig-base-figurine-search').value.trim()); // v6.093
-  const dd = document.getElementById('fig-base-figurine-dropdown');
-  if (!dd) return;
-  // v5.785 — la ricerca combacia con ciò che è mostrato (l'etichetta: Nome completo per i Retro,
-  // "#numero Nome" per le Figurine) + il numero. Prima cercava su name/category/subcategory, che per i
-  // Retro non coincideva col Nome completo mostrato: da qui il "a volte funziona, a volte no".
-  const filtered = q
-    ? _baseFigurineLinkOptions.filter(f => _perRicerca(_baseFigurineLinkLabel(f)).includes(q) || String(f.number||'').includes(q))
-    : _baseFigurineLinkOptions;
-  if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
-  dd.style.display = '';
-  // v5.785 — niente più limite di 50 (la barra "si esauriva subito" con ~256 basi): mostra tutte le
-  // opzioni filtrate; il dropdown resta scrollabile.
-  dd.innerHTML = filtered.map(f => {
-    return `<div onclick="selectBaseFigurineLink('${f.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <div style="font-size:0.9rem;">${esc(_baseFigurineLinkLabel(f))}</div>
-    </div>`;
-  }).join('');
-}
 
-function selectBaseFigurineLink(id) {
-  const f = _baseFigurineLinkOptions.find(x => x.id === id);
-  if (!f) return;
-  document.getElementById('fig-base-figurine-input').value = id;
-  document.getElementById('fig-base-figurine-search').value = _baseFigurineLinkLabel(f);
-  document.getElementById('fig-base-figurine-dropdown').style.display = 'none';
-}
 
-function clearBaseFigurineLinkIfEmpty() {
-  setTimeout(() => {
-    const dd = document.getElementById('fig-base-figurine-dropdown');
-    if (dd) dd.style.display = 'none';
-    const search = document.getElementById('fig-base-figurine-search');
-    const hidden = document.getElementById('fig-base-figurine-input');
-    if (search && hidden && !search.value.trim()) hidden.value = '';
-  }, 200);
-}
 
 // v6.022 (Franco) — IL NOME DI UN RETRO SI SCRIVE IN UN POSTO SOLO.
 // Prima della v6.022 erano CINQUE i punti che se lo componevano a mano, tutti con la stessa forma
@@ -18432,73 +18584,9 @@ function _retroLinkLabel(r) {
   }
   return base;
 }
-function populateRetroSelect(selectedId, allSeries) {
-  _retroLinkAllSeries = !!allSeries;
-  // v5.791 — (revert v5.787) in modalità Change (allSeries) mostriamo TUTTI i retro, non solo i base.
-  _retroLinkOptions = getData('figurines', [])
-    .filter(f => f.section === 'retros' && (allSeries || f.seriesId === currentSeriesId))
-    .sort((a,b) => (allSeries ? _retroLinkLabel(a).localeCompare(_retroLinkLabel(b), 'it', {sensitivity:'base'}) : ((a.category||'').localeCompare(b.category||'', 'it') || (a.subcategory||'').localeCompare(b.subcategory||'', 'it') || (a.name||'').localeCompare(b.name||'', 'it'))));
-  const hidden = document.getElementById('fig-retro-input');
-  const search = document.getElementById('fig-retro-search');
-  const preview = document.getElementById('fig-retro-selected-preview');
-  if (!hidden || !search) return;
-  hidden.value = selectedId || '';
-  const dd = document.getElementById('fig-retro-dropdown');
-  if (dd) dd.style.display = 'none';
-  if (selectedId) {
-    const r = _retroLinkOptions.find(x => x.id === selectedId);
-    if (r) {
-      search.value = _retroNomeLungo(r) + (r.changeType ? ' — ' + r.changeType : '');
-      if (preview) { preview.style.display = ''; preview.textContent = '✓ ' + _retroNomeCompleto(r); } // v6.022
-    }
-  } else {
-    search.value = '';
-    if (preview) preview.style.display = 'none';
-  }
-  _aggiornaVisibilitaRetroBianco('fig'); // v6.078 - all'apertura della finestra, non solo al clic
-}
 
-function filterRetroLink() {
-  const q = _perRicerca(document.getElementById('fig-retro-search').value.trim()); // v6.093
-  const dd = document.getElementById('fig-retro-dropdown');
-  if (!dd) return;
-  // v5.786 — ricerca sull'etichetta mostrata (che in modalità tutte-le-serie include la serie) +
-  // categoria/sottocategoria; nessun limite di 50.
-  const filtered = q
-    ? _retroLinkOptions.filter(r => _perRicerca(_retroLinkLabel(r)).includes(q) || _perRicerca(r.category).includes(q) || _perRicerca(r.subcategory).includes(q))
-    : _retroLinkOptions;
-  if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
-  dd.style.display = '';
-  dd.innerHTML = filtered.map(r => {
-    const sub = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean).join(' · ');
-    return `<div onclick="selectRetroLink('${r.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <div style="font-size:0.9rem;">${esc(_retroLinkLabel(r))}</div>
-      ${sub ? `<div style="font-size:0.75rem;color:var(--muted);">${sub}</div>` : ''}
-    </div>`;
-  }).join('');
-}
 
-function selectRetroLink(id) {
-  const r = _retroLinkOptions.find(x => x.id === id);
-  if (!r) return;
-  document.getElementById('fig-retro-input').value = id;
-  document.getElementById('fig-retro-search').value = _retroLinkLabel(r);
-  document.getElementById('fig-retro-dropdown').style.display = 'none';
-  const preview = document.getElementById('fig-retro-selected-preview');
-  if (preview) { preview.style.display = ''; preview.textContent = '✓ ' + _retroLinkLabel(r); }
-  _aggiornaVisibilitaRetroBianco('fig'); // v6.078
-}
 
-function clearRetroLinkIfEmpty() {
-  setTimeout(() => {
-    const dd = document.getElementById('fig-retro-dropdown');
-    if (dd) dd.style.display = 'none';
-    const search = document.getElementById('fig-retro-search');
-    const hidden = document.getElementById('fig-retro-input');
-    if (search && hidden && !search.value.trim()) hidden.value = '';
-    _aggiornaVisibilitaRetroBianco('fig'); // v6.078 - svuotato il retro, la spunta torna disponibile
-  }, 200);
-}
 
 // I QUATTRO TIPI SI ESCLUDONO A VICENDA (v5.711). Prima le tre caselle erano
 // INDIPENDENTI, e il sito risolveva i conflitti PER PRECEDENZA (isVariation vinceva su
@@ -18561,124 +18649,13 @@ function _baseFigurineLabelText() {
 // v6.008 (Franco) - spuntando "Retro bianco" il Retro associato non solo sparisce: si
 // SVUOTA. Nasconderlo e basta lascerebbe un collegamento vivo che non si vede piu' - e al
 // salvataggio vincerebbe lui, perche' il retro vero ha la precedenza sul bianco.
-function toggleRetroBianco() {
-  if (document.getElementById('fig-retro-bianco-input')?.checked) {
-    const hidden = document.getElementById('fig-retro-input');
-    const search = document.getElementById('fig-retro-search');
-    const prev = document.getElementById('fig-retro-selected-preview');
-    if (hidden) hidden.value = '';
-    if (search) search.value = '';
-    if (prev) { prev.style.display = 'none'; prev.innerHTML = ''; }
-    const dd = document.getElementById('fig-retro-dropdown');
-    if (dd) dd.style.display = 'none';
-  }
-  try { toggleBaseFigurineGroup(); } catch(e) { console.error('toggleRetroBianco', e); }
-}
 // v6.038 (Franco) - Categoria, Sottocategoria e Sottonome esistono solo per i RETRO, e per un
 // Change o un errore di stampa li scrive la BASE al salvataggio: li' non si mostrano, come il Nome
 // dalla v5.774. Un campo che verra' sovrascritto e' un invito a perdere tempo.
 // Sta in una funzione sola perche' la visibilita' va aggiornata in DUE momenti - all'apertura della
 // finestra e a ogni clic sulle caselle del tipo - e due copie della stessa regola divergono al
 // primo che si dimentica (e' successo con la classe della v6.027, corretta nella v6.032).
-function _visibilitaCampiRetro() {
-  const isRetros = currentSection === 'retros';
-  const daBase = isRetros && (
-    document.getElementById('fig-is-change-input')?.checked ||
-    document.getElementById('fig-is-printerror-input')?.checked);
-  const mostra = isRetros && !daBase;
-  [['fig-category-group'], ['fig-subcategory-group'], ['fig-subname-group']].forEach(([id]) => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = mostra ? '' : 'none';
-  });
-}
 
-function toggleBaseFigurineGroup(appenaSpuntata) {
-  if (appenaSpuntata) _esclusivitaTipi(appenaSpuntata);
-  const group = document.getElementById('fig-base-figurine-group');
-  const retroGroup = document.getElementById('fig-retro-group');
-  const numberGroup = document.getElementById('fig-number-group');
-  const changeTypeGroup = document.getElementById('fig-retro-change-type-group');
-  if (!group) return;
-  const isVar = document.getElementById('fig-is-variation-input')?.checked;
-  const isUnoff = document.getElementById('fig-is-unofficial-variation-input')?.checked;
-  const isChg = document.getElementById('fig-is-change-input')?.checked;
-  const isPE = document.getElementById('fig-is-printerror-input')?.checked;
-  try { _visibilitaCampiRetro(); } catch(e) { console.error('_visibilitaCampiRetro', e); } // v6.038
-  // un errore di stampa, come le variazioni e i Change, e' collegato a un oggetto base
-  const showBase = isVar || isUnoff || isChg || isPE;
-  group.style.display = showBase ? '' : 'none';
-  const _blt = document.getElementById('fig-base-figurine-label-text');
-  if (_blt) _blt.textContent = _baseFigurineLabelText();
-  const _bht = document.getElementById('fig-base-figurine-hint'); // v6.043
-  if (_bht) _bht.textContent = _baseFigurineHintText();
-  // Il campo Retro associato non si applica mai ai Retro stessi (un retro non ha un retro)
-  // v5.786 — il campo Retro ora si mostra ANCHE per i Change (facoltativo): un Change può avere un
-  // proprio Retro (il retro che "fa" il change). Per i Change il selettore pesca da TUTTE le serie;
-  // per le Variazioni resta la serie corrente. Ripopolo al toggle preservando la selezione corrente.
-  if (retroGroup) {
-    // v6.008 (Franco) - col Retro bianco il campo "Retro associato" sparisce: sono
-    // alternative, e lasciarlo visibile inviterebbe a riempirlo per poi vederlo ignorato.
-    const _rb = !!document.getElementById('fig-retro-bianco-input')?.checked;
-    // v6.074 (Franco) - "Retro collegato" e "Retro bianco" hanno senso solo dove un retro-figurina
-    // esiste: figurine e retro. Su bustine, album e altri oggetti erano due campi che chiedevano una
-    // cosa senza risposta. La regola era "tutto tranne i retro"; ora dice cosa vale, non cosa esclude.
-    const _sezioneConRetro = (currentSection === 'figurines');
-    const showRetro = _sezioneConRetro && !_rb;
-    retroGroup.style.display = showRetro ? '' : 'none';
-    if (showRetro) populateRetroSelect(document.getElementById('fig-retro-input')?.value || null, isChg);
-    // v6.006 - la spunta "Retro bianco" compare dove compare il retro: e' l'alternativa a
-    // collegarne uno, non un campo a se'.
-    // la spunta resta visibile anche quando nasconde il campo: e' l'unico modo per tornare
-    // indietro. Sparisce solo nei Retro, dove non ha senso.
-    const rbGroup = document.getElementById('fig-retro-bianco-group');
-    if (rbGroup) rbGroup.style.display = _sezioneConRetro ? '' : 'none';
-  }
-  // ...E PER LO STESSO IDENTICO MOTIVO, nemmeno le VARIAZIONI (v5.707). Una variazione
-  // E' il cambio del DIETRO: un retro, che un dietro non ce l'ha, per definizione non
-  // puo' variare. Il codice lo sapeva gia' ("un retro non ha un retro", riga sopra) ma
-  // non ne aveva tratto questa conseguenza: le due caselle restavano cliccabili nei
-  // Retro, e saveItem le leggeva. Bastava una spunta distratta per creare un dato che
-  // il dominio non ammette.
-  const varOff = document.getElementById('fig-var-official-label');
-  const varUnoff = document.getElementById('fig-var-unofficial-label');
-  const nascondiVar = (currentSection === 'retros') ? 'none' : '';
-  if (varOff) varOff.style.display = nascondiVar;
-  if (varUnoff) varUnoff.style.display = nascondiVar;
-  // Il Numero si nasconde per Variazioni/Change: eredita quello della figurina base collegata
-  // v6.077 - unica fonte per i tre punti che decidevano ognuno per conto suo, vedi _mostraCampoNumero()
-  if (numberGroup) { numberGroup.style.display = _mostraCampoNumero(currentSection, showBase) ? '' : 'none'; _etichettaCampoNumero(); }
-  // Tipo di change: per i Change di Retro E per i Change di FIGURINA (v5.779), con le opzioni
-  // configurate sulla serie (stessa lista, campo retroChangeTypes).
-  const isTypedChange = isChg && (currentSection === 'retros' || currentSection === 'figurines');
-  if (changeTypeGroup) {
-    changeTypeGroup.style.display = isTypedChange ? '' : 'none';
-    if (isTypedChange) {
-      const sel = document.getElementById('fig-retro-change-type-input');
-      if (sel) {
-        // v6.102 (§12.10) - opzioni a due gruppi, dalla funzione condivisa con l'altra form.
-        // Il valore corrente si passa a lei: se e' un tipo non classificato lo tiene, invece di
-        // farlo cadere sull'opzione vuota e cancellarlo al primo salvataggio.
-        // Nessun `sel.value = ...` dopo: la selezione la porta l'attributo `selected` dentro le
-        // opzioni generate. Riassegnarla a mano aggiungerebbe l'unico modo in cui puo' fallire —
-        // un valore che non combacia carattere per carattere azzera il select, in silenzio.
-        sel.innerHTML = _opzioniTipoChange(currentSeriesId, sel.value);
-      }
-    }
-  }
-  // Tipo di errore di stampa (testo libero): in TUTTE le sezioni, quando e' un Errore di stampa
-  // (isPE). Occupa la stessa posizione del "Tipo di change", con cui e' mutuamente esclusivo.
-  const printErrorTypeGroup = document.getElementById('fig-print-error-type-group');
-  if (printErrorTypeGroup) printErrorTypeGroup.style.display = isPE ? '' : 'none';
-  // v5.774 — per un Change o Errore di stampa di RETRO il Nome non ha valore proprio (eredita
-  // quello del retro base): nascondiamo il campo. Al salvataggio il Nome viene comunque derivato.
-  // v5.779 — idem per un Change di FIGURINA: eredita il Nome dalla figurina base, campo nascosto.
-  const nameGroup = document.getElementById('fig-name-group');
-  // v5.790 — Nome nascosto per Change ED Errori di stampa, sia Retro sia figurine (in tutti eredita
-  // dalla base). Prima le figurine Errore di stampa mostravano ancora il Nome proprio.
-  // v6.078 - e per le VARIAZIONI, che il Nome lo ereditano come gli altri tre. Unica fonte.
-  const _nomeNascosto = _nomeVieneDallaBase(currentSection, isChg, isPE, isVar, isUnoff);
-  if (nameGroup) nameGroup.style.display = _nomeNascosto ? 'none' : '';
-}
 
 function toggleForSaleFields() {
   const checked = document.getElementById('fig-for-sale-input').checked;
@@ -18716,212 +18693,9 @@ function contaCaratteriEbayTitolo(idInput, idSpan) {
   el.style.borderColor = oltre ? 'var(--danger, #e5484d)' : '';
 }
 
-function openAddItemModal(itemId) {
-  if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
-  _returnToErroriAfterSave = false;
-  document.getElementById('edit-fig-id').value = itemId || '';
-  let existingItem = null;
-  if (itemId) {
-    existingItem = getData('figurines', []).find(x => x.id === itemId);
-    if (existingItem) { currentSeriesId = existingItem.seriesId; currentSection = existingItem.section || currentSection; }
-  }
-  const label = getSectionLabel(currentSection) || (currentLang === 'it' ? 'Oggetto' : 'Item');
-  const labelSingular = getSectionLabelSingular(currentSection);
-  document.getElementById('fig-modal-title').textContent = (itemId && existingItem)
-    ? (existingItem.number ? '# ' + existingItem.number + ' - ' + existingItem.name : existingItem.name)
-    : (currentLang === 'it' ? 'Aggiungi ' : 'Add ') + labelSingular;
-  const saveBtn = document.querySelector('#add-fig-modal button[onclick="saveFigurine()"]');
-  if (saveBtn) { saveBtn.removeAttribute('data-i18n'); saveBtn.textContent = (currentLang === 'it' ? 'Salva ' : 'Save ') + labelSingular; }
-  const seriesNameEl = document.getElementById('fig-modal-series-name');
-  if (seriesNameEl) { const s = getData('series', []).find(x => x.id === currentSeriesId); seriesNameEl.textContent = s ? s.name : ''; }
-  document.getElementById('fig-img-preview').style.display = 'none';
-  editingFigImg = null;
-  editingFigImgFileSave = null;
-  document.getElementById('fig-ebay-img-preview').style.display = 'none';
-  editingFigEbayImg = null;
-  editingFigEbayImgFileSave = null;
-  const _prRetro = document.getElementById('fig-img-retro-preview');
-  if (_prRetro) _prRetro.style.display = 'none';
-  editingFigImgRetro = null;
-  editingFigImgRetroFileSave = null;
-  const ebayImgGroup = document.getElementById('fig-ebay-img-group');
-  if (ebayImgGroup) ebayImgGroup.style.display = (currentSection === 'figurines' || currentSection === 'retros') ? '' : 'none';
-  // v6.074 - la seconda foto esiste SOLO per le bustine: sono l'unico oggetto le cui due facce
-  // stanno sullo stesso record. Una figurina il retro ce l'ha come oggetto a se'.
-  const imgRetroGroup = document.getElementById('fig-img-retro-group');
-  if (imgRetroGroup) imgRetroGroup.style.display = _secondaFacciaSulRecord(currentSection) ? '' : 'none';
-  // v6.096 - le Note sono solo admin, e non hanno condizioni di sezione: valgono per figurine,
-  // retro, bustine, album e altri oggetti. Un campo che vale ovunque non ha eccezioni da
-  // ricordare - e' la lezione della v6.077, dove il Numero si compilava in una sezione e si
-  // mostrava in tutte.
-  const noteGroup = document.getElementById('fig-note-group');
-  if (noteGroup) noteGroup.style.display = currentUser?.isAdmin ? '' : 'none';
-  switchFigModalTab('generale');
-  if (itemId) {
-    const f = getData('figurines', []).find(x => x.id === itemId);
-    if (f) {
-      document.getElementById('fig-number-input').value = f.number || '';
-      document.getElementById('fig-no-number-input').checked = f.noNumber || false;
-      { const fnd = document.getElementById('fig-foto-non-disponibile-input'); if (fnd) fnd.checked = !!f.fotoNonDisponibile; } // v6.079
-      { const inv = document.getElementById('fig-invisibile-input'); if (inv) inv.checked = !!f.invisibile; } // v6.080
-      _dipingiInvisibile('fig-invisibile-input','fig-invisibile-label','var(--muted)'); // v6.093 — il colore parte allineato allo stato
-      document.getElementById('fig-category-input').value = f.category || '';
-      document.getElementById('fig-subcategory-input').value = f.subcategory || '';
-      document.getElementById('fig-subname-input').value = f.subname || '';
-      document.getElementById('fig-name-input').value = f.name;
-      document.getElementById('fig-desc-input').value = f.desc || '';
-      { const nt = document.getElementById('fig-note-input'); if (nt) nt.value = f.note || ''; } // v6.096
-      document.getElementById('fig-score-input').value = f.score || 0;
-      const rbIn = document.getElementById('fig-retro-bianco-input'); if (rbIn) rbIn.checked = !!f.retroBianco;
-      document.getElementById('fig-subseries-input').value = f.subseries || '';
-      document.getElementById('fig-size-input').value = f.size || '';
-      document.getElementById('fig-is-variation-input').checked = f.isVariation || false;
-      document.getElementById('fig-is-unofficial-variation-input').checked = f.isUnofficialVariation || false;
-      document.getElementById('fig-is-change-input').checked = f.isChange || false;
-      // in modifica la checkbox "Errore di stampa" NON veniva ricaricata (v5.767): senza di lei il
-      // gruppo "Tipo di errore di stampa" (e il selettore base) non comparivano aprendo un errore.
-      document.getElementById('fig-is-printerror-input').checked = f.isPrintError || false;
-      document.getElementById('fig-print-error-type-input').value = f.printErrorType || '';
-      populateBaseFigurineSelect(itemId, f.baseFigurineId);
-      populateRetroSelect(f.retroId || null, !!f.isChange); // v5.786 — Change: retro da tutte le serie
-      document.getElementById('fig-for-sale-input').checked = f.forSale || false;
-      document.getElementById('fig-price-input').value = f.price || '';
-      document.getElementById('fig-price-usd-input').value = f.priceUsd || '';   // v5.981
-      document.getElementById('fig-da-pubblicare-input').checked = f.daPubblicare || false;  // v5.981
-      aggiornaRiquadriEbayScheda(f);                                                         // v5.981
-      document.getElementById('fig-quantity-input').value = f.quantity || 1;
-      document.getElementById('fig-condition-input').value = f.condition || 'new';
-      // v5.931 — testi dell'annuncio (vuoti = si usa il titolo generato dal Nome completo)
-      document.getElementById('fig-ebay-title-it-input').value = f.ebayTitleIt || '';
-      document.getElementById('fig-ebay-title-en-input').value = f.ebayTitleEn || '';
-      document.getElementById('fig-ebay-desc-it-input').value = f.ebayDescIt || '';
-      document.getElementById('fig-ebay-desc-en-input').value = f.ebayDescEn || '';
-      if (f.img) { const pr = document.getElementById('fig-img-preview'); pr.src = f.img; pr.style.display = 'block'; editingFigImg = f.img; }
-      if (f.ebayImg) { const pr2 = document.getElementById('fig-ebay-img-preview'); pr2.src = f.ebayImg; pr2.style.display = 'block'; editingFigEbayImg = f.ebayImg; }
-      if (f.imgRetro) { const pr3 = document.getElementById('fig-img-retro-preview'); if (pr3) { pr3.src = f.imgRetro; pr3.style.display = 'block'; } editingFigImgRetro = f.imgRetro; }
-    }
-  } else {
-    ['fig-number-input','fig-name-input','fig-desc-input','fig-subseries-input','fig-size-input','fig-category-input','fig-subcategory-input','fig-subname-input'].forEach(id => document.getElementById(id).value = '');
-    { const nt0 = document.getElementById('fig-note-input'); if (nt0) nt0.value = ''; } // v6.096 - altrimenti la nota dell'oggetto precedente resta nella form del nuovo
-    document.getElementById('fig-no-number-input').checked = false;
-    { const fnd0 = document.getElementById('fig-foto-non-disponibile-input'); if (fnd0) fnd0.checked = false; } // v6.079
-    { const inv0 = document.getElementById('fig-invisibile-input'); if (inv0) inv0.checked = false; } // v6.080
-    _dipingiInvisibile('fig-invisibile-input','fig-invisibile-label','var(--muted)'); // v6.093
-    document.getElementById('fig-score-input').value = 0;
-    const rbIn0 = document.getElementById('fig-retro-bianco-input'); if (rbIn0) rbIn0.checked = false;
-    document.getElementById('fig-is-variation-input').checked = false;
-    document.getElementById('fig-is-unofficial-variation-input').checked = false;
-    document.getElementById('fig-is-change-input').checked = false;
-    document.getElementById('fig-is-printerror-input').checked = false;
-    populateBaseFigurineSelect(null, null);
-    populateRetroSelect(null);
-    document.getElementById('fig-for-sale-input').checked = false;
-    document.getElementById('fig-price-input').value = '';
-    document.getElementById('fig-price-usd-input').value = '';                 // v5.981
-    document.getElementById('fig-da-pubblicare-input').checked = false;        // v5.981
-    aggiornaRiquadriEbayScheda(null);                                         // v5.981
-    document.getElementById('fig-quantity-input').value = 1;
-    document.getElementById('fig-condition-input').value = 'new';
-    ['fig-ebay-title-it-input','fig-ebay-title-en-input','fig-ebay-desc-it-input','fig-ebay-desc-en-input']
-      .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    const rctSel = document.getElementById('fig-retro-change-type-input');
-    if (rctSel) rctSel.value = '';
-    const petInput = document.getElementById('fig-print-error-type-input');
-    if (petInput) petInput.value = '';
-  }
-  toggleForSaleFields();
-  toggleBaseFigurineGroup();
-  // v5.788 — reset ESPLICITO del "Tipo di change". La modale riusa lo stesso DOM tra un'apertura e
-  // l'altra, quindi il select conservava il valore precedente: clonando una figurina base (changeType
-  // vuoto) restava il valore di una modifica precedente, che toggleBaseFigurineGroup poi "ripristinava"
-  // spuntando Change. Ora lo si imposta SEMPRE: al valore della sorgente se c'è, altrimenti vuoto.
-  {
-    const sel = document.getElementById('fig-retro-change-type-input');
-    // v6.102 (§12.10) - LE OPZIONI SI RICOSTRUISCONO QUI, col valore che sta per essere assegnato,
-    // e non basta che le abbia gia' ricostruite `toggleBaseFigurineGroup()` venti righe sopra.
-    // Motivo: quella gira PRIMA di questa riga e vede il valore stantio del select, non quello
-    // dell'oggetto che si sta aprendo. Per un tipo non classificato (il caso vero e' `SCRITTA
-    // BIANCA` sulla #329, che finche' non entra in una delle due liste non sta da nessuna parte)
-    // l'opzione non esisterebbe ancora, e `sel.value = ...` **fallirebbe in silenzio**: un <select>
-    // non accetta un valore privo di opzione corrispondente, resta sul vuoto, e il primo
-    // salvataggio cancella il tipo. Nessun errore, nessun avviso, un dato in meno.
-    // Ricostruirle qui costa una riga e chiude il caso: l'opzione c'e' sempre prima di assegnarla.
-    const voluto = (itemId && existingItem?.changeType) ? existingItem.changeType : '';
-    if (sel) sel.innerHTML = _opzioniTipoChange(currentSeriesId, voluto);
-  }
-  // Show/hide conditional fields based on series flags
-  const _ser = getData('series', []).find(s => s.id === currentSeriesId);
-  const hasSizes = _ser?.hasSizes || false;
-  const hasSubseries = _ser?.hasSubseries || false;
-  // Aggiorna le colonne della griglia in base alla visibilità della Sottoserie
-  const figGrid = document.getElementById('fig-modal-grid');
-  if (figGrid) {
-    figGrid.style.gridTemplateColumns = hasSubseries
-      ? '80px minmax(0,70px) 1fr'
-      : '80px 1fr';
-  }
-  const delBtn = document.getElementById('fig-modal-delete-btn');
-  if (delBtn) delBtn.style.display = itemId ? '' : 'none';
 
-  // Per la sezione Retro, nasconde i campi non rilevanti (numero, flag variazione)
-  // Il Punteggio resta visibile anche per i Retro; la Categoria è esclusiva dei Retro
-  const isRetros = currentSection === 'retros';
-  // v5.749 — La visibilità di "Figurina/Retro base" è governata SOLO da toggleBaseFigurineGroup()
-  // (chiamato sopra): si mostra solo con un tipo spuntato. La vecchia forEach qui la
-  // riforzava sempre visibile per le figurine, anche senza alcuna variazione spuntata.
-  // Il Numero si nasconde per i Retro, e anche per Variazioni/Change (eredita quello della figurina base)
-  const isVarOrChg = document.getElementById('fig-is-variation-input')?.checked ||
-                      document.getElementById('fig-is-unofficial-variation-input')?.checked ||
-                      document.getElementById('fig-is-change-input')?.checked ||
-                      document.getElementById('fig-is-printerror-input')?.checked;
-  const numberGroup = document.getElementById('fig-number-group');
-  if (numberGroup) { numberGroup.style.display = _mostraCampoNumero(currentSection, isVarOrChg) ? '' : 'none'; _etichettaCampoNumero(); } // v6.077
-  // Sottoserie e Taglia dipendono sia dai flag della serie sia dalla sezione (mai per i Retro)
-  const sizeGroup = document.getElementById('fig-size-group');
-  if (sizeGroup) sizeGroup.style.display = (hasSizes && !isRetros) ? '' : 'none';
-  const subseriesGroup = document.getElementById('fig-subseries-group');
-  if (subseriesGroup) subseriesGroup.style.display = (hasSubseries && !isRetros) ? '' : 'none';
-  // v5.980 — Sottonome: solo per i Retro, come Categoria e Sottocategoria.
-  // v6.038 - le tre visibilita' stanno in _visibilitaCampiRetro(), che tiene conto anche del tipo.
-  _visibilitaCampiRetro();
-  // Per i Retro, in griglia restano Categoria, Sottocategoria e Nome
-  if (figGrid && isRetros) {
-    figGrid.style.gridTemplateColumns = 'minmax(0,140px) minmax(0,140px) 1fr';
-  }
-  // Per i Retro, il blocco flag resta visibile ma solo con la checkbox Change
-  // (Variazione ufficiale/non ufficiale non si applicano ai Retro)
-  const flagsBlock = document.querySelector('#add-fig-modal [data-flags-block]');
-  if (flagsBlock) flagsBlock.style.display = 'grid';
-  const varOfficialLabel = document.getElementById('fig-var-official-label');
-  const varUnofficialLabel = document.getElementById('fig-var-unofficial-label');
-  if (varOfficialLabel) varOfficialLabel.style.display = isRetros ? 'none' : '';
-  if (varUnofficialLabel) varUnofficialLabel.style.display = isRetros ? 'none' : '';
-  const baseLabelText = document.getElementById('fig-base-figurine-label-text');
-  if (baseLabelText) baseLabelText.textContent = _baseFigurineLabelText();
-
-  document.getElementById('add-fig-modal').classList.remove('hidden');
-}
-
-async function deleteFigurineFromModal() {
-  const itemId = document.getElementById('edit-fig-id').value;
-  if (!itemId) return;
-  if (!confirm(currentLang === 'it' ? 'Eliminare questo oggetto?' : 'Delete this item?')) return;
-  await fsDelete('figurines', itemId);
-  _cache.figurines = _cache.figurines.filter(x => x.id !== itemId);
-  closeModal('add-fig-modal');
-  if (_returnToErroriAfterSave) {
-    _returnToErroriAfterSave = false;
-    showPage('profile');
-    adminTab('errori');
-  } else {
-    renderItems(); renderHomeStats(); updateSectionCounts();
-  }
-  toast(currentLang === 'it' ? 'Eliminato' : 'Deleted', 'success');
-}
 
 // keep openAddFigModal as alias for admin panel
-function openAddFigModal(figId) { openAddItemModal(figId); }
-
 // v5.781 — CLONA un oggetto: apre la modale "Aggiungi" precompilata con TUTTI i campi dell'oggetto
 // di partenza, ma come record NUOVO. Riusa openAddItemModal(itemId) (che popola ogni campo, immagine
 // compresa) e poi SVUOTA edit-fig-id: così saveFigurine CREA invece di aggiornare — nessun record
@@ -19114,6 +18888,14 @@ function setFotoFilter(quale) {
   try { renderItems(); } catch(e) { console.error('renderItems (setFotoFilter)', e); }
 }
 
+// v6.113 (Franco) - il filtro "Con note". `currentItemPage = 1` come il gemello qui sopra: restare
+// a pagina 7 di un elenco che si e' appena accorciato a due pagine mostra il vuoto.
+function toggleNoteFilter() {
+  _noteFilter = !_noteFilter;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleNoteFilter)', e); }
+}
+
 function renderItemTypeFilters() {
   const el = document.getElementById('items-filter-toggles');
   if (!el) return;
@@ -19260,6 +19042,7 @@ function renderItemTypeFilters() {
       // Si azzera qui, che e' lo stesso posto in cui _itemTypeFilter ripiega quando punta a un
       // tipo che nella sezione non esiste. Gira dentro renderItems, PRIMA del filtro: vale subito.
       _fotoFilter = null;
+      _noteFilter = false;   // v6.113 - stessa ragione: un non-admin non ha come spegnerlo
     } else {
       const itl = (currentLang === 'it');
       // niente emoji, per la regola posta da Franco: le icone ci sono sempre o mai.
@@ -19304,6 +19087,15 @@ function renderItemTypeFilters() {
       ha += _fotoBtn('senza', itl ? 'Senza foto' : 'Without photo');
       ha += _fotoBtn('con', itl ? 'Con foto' : 'With photo');
       ha += _fotoBtn('nonDisp', itl ? 'Con foto non disponibile' : 'Marked photo unavailable');
+      // v6.113 (Franco) - "Con note", subito dopo i tre della foto.
+      // Interruttore A SE' e non un quarto stato di `_fotoFilter`: quelli sono tre risposte alla
+      // STESSA domanda ("che foto ha?") e per questo si escludono a vicenda; le note sono un'altra
+      // domanda, e "con note E senza foto" e' una richiesta sensata - anzi, probabilmente e' proprio
+      // quella che si vuole fare. Infilarlo in `_fotoFilter` l'avrebbe resa impossibile.
+      // Il campo Note e' solo-admin dalla v6.096, quindi il filtro sta nel riquadro admin: e' l'unico
+      // posto da cui si puo' spegnere, ed e' anche la ragione per cui va azzerato quando chi guarda
+      // non e' admin (vedi sopra, lezione della v6.095).
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_noteFilter ? 'on' : ''}" onclick="toggleNoteFilter()" title="${itl ? 'Con note' : 'With notes'}"></button><span style="font-size:0.82rem;color:var(--muted);">${itl ? 'Con note' : 'With notes'}</span></div>`;
 
       elAdmT.innerHTML = ha;
       elAdm.style.display = '';
@@ -19618,6 +19410,11 @@ function getCurrentlyFilteredItems(opts) {
         if (_fotoFilter === 'con' && !_haFronte) return false;
       }
     }
+    // v6.113 (Franco) - "Con note". Il `trim()` non e' pignoleria: una nota svuotata a mano lascia
+    // spesso una stringa di spazi, e senza quello comparirebbe fra gli oggetti "con note" un record
+    // in cui non c'e' scritto niente. Il campo lo scrive solo l'admin (v6.096), quindi l'oggetto qui
+    // e' sempre quello giusto - non c'e' il ripiego sulla base che complica il filtro delle foto.
+    if (_noteFilter && !String(f.note || '').trim()) return false;
     if (_own) {
       const ceLho = _own.includes(f.id);
       if (_ownedFilter === 'owned' && !ceLho) return false;
@@ -20789,7 +20586,7 @@ function renderItems() {
     // v5.804 — Franco: la sottoserie NON sostituisce più il numero sulla card. Il numero resta in
     // etichetta (#N) e la sottoserie va su una riga a parte, nello stesso punto/stile in cui i Retro
     // mostrano la loro categoria (vedi subseriesHTML poco sotto).
-    const figLabel = (_haNumero(f) && f.number) ? `#${f.number}` : ''; // v6.077 - solo dove il numero si puo' scrivere
+    const figLabel = (_haNumero(f) && f.number) ? `${f.number}` : ''; // v6.077 - solo dove il numero si puo' scrivere
     const catParts = [f.category, f.subcategory].map(v => (v||'').trim()).filter(Boolean);
     // Prima riga (nome): se la serie NON dichiara che il nome del retro contiene già la
     // categoria, anteponiamo "Categoria - ". Seconda riga: la Categoria (col Sottocategoria
@@ -21134,43 +20931,11 @@ function changeItemPage(page) {
 }
 
 // renderFigurines kept as alias for admin panel compatibility
-function renderFigurines() { if (currentSection) renderItems(); }
-
 let editingFigImgFileSave = null;
-function handleFigImg(e) {
-  const file = e.target.files[0]; if (!file) return;
-  editingFigImgFileSave = file;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const pr = document.getElementById('fig-img-preview');
-    pr.src = ev.target.result; pr.style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-}
 
 // v6.074 - gemella di handleFigImg per la seconda foto. Come l'altra non carica niente: mette da
 // parte il File e riempie la miniatura. Il caricamento avviene al salvataggio, una volta sola.
-function handleFigImgRetro(e) {
-  const file = e.target.files[0]; if (!file) return;
-  editingFigImgRetroFileSave = file;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const pr = document.getElementById('fig-img-retro-preview');
-    pr.src = ev.target.result; pr.style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-}
 
-function handleFigEbayImg(e) {
-  const file = e.target.files[0]; if (!file) return;
-  editingFigEbayImgFileSave = file;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    const pr = document.getElementById('fig-ebay-img-preview');
-    pr.src = ev.target.result; pr.style.display = 'block';
-  };
-  reader.readAsDataURL(file);
-}
 
 // ============================================================
 //  v5.981 — SKU eBAY
@@ -21303,255 +21068,6 @@ function ebayCampiCambiati(prima, dopo) {
 }
 
 let _savingFigurine = false;
-async function saveFigurine() {
-  if (_savingFigurine) return; // evita duplicati da doppio click o click ripetuto durante il salvataggio
-  _savingFigurine = true;
-  const btn = document.querySelector('#add-fig-modal button[onclick="saveFigurine()"]');
-  if (btn) btn.disabled = true;
-  try {
-    await _saveFigurineInner();
-  } finally {
-    _savingFigurine = false;
-    if (btn) btn.disabled = false;
-  }
-}
-async function _saveFigurineInner() {
-  const number = document.getElementById('fig-number-input').value;
-  const noNumber = document.getElementById('fig-no-number-input')?.checked || false;
-  const fotoNonDisponibile = document.getElementById('fig-foto-non-disponibile-input')?.checked || false; // v6.079
-  const invisibile = document.getElementById('fig-invisibile-input')?.checked || false; // v6.080
-  let name = document.getElementById('fig-name-input').value.trim();
-  const desc = document.getElementById('fig-desc-input').value.trim();
-  // v6.096 - le Note. Il campo esiste nel DOM anche per un non-admin (nascosto, non rimosso):
-  // leggerlo restituisce '' e sovrascriverebbe una nota scritta dall'admin. Per questo il valore
-  // si prende SOLO se chi salva e' admin, e altrimenti si conserva quello gia' sul record - stessa
-  // precauzione della casella "Non ha numero" nella v6.077, che resta nel DOM proprio perche' i
-  // salvataggi la leggono.
-  const noteAdmin = currentUser?.isAdmin
-    ? (document.getElementById('fig-note-input')?.value.trim() || '')
-    : null;
-  const score = parseInt(document.getElementById('fig-score-input').value) || 0;
-  const subseries = document.getElementById('fig-subseries-input')?.value.trim() || '';
-  const size = document.getElementById('fig-size-input')?.value.trim() || '';
-  let category = document.getElementById('fig-category-input')?.value.trim() || ''; // v6.038: puo' essere derivato dalla base
-  let subcategory = document.getElementById('fig-subcategory-input')?.value.trim() || ''; // v6.038
-  // v5.980 — Sottonome, solo per i Retro: la seconda parte del nome, quella scritta altrove nel
-  // disegno. Fuori dai Retro resta vuoto anche se la casella fosse rimasta piena.
-  let subname = (currentSection === 'retros') ? (document.getElementById('fig-subname-input')?.value.trim() || '') : ''; // v6.038
-  // NEI RETRO I FLAG DI VARIAZIONE SONO SEMPRE FALSI, comunque sia la casella.
-  // Nasconderla non basta: se e' rimasta spuntata da una modifica precedente, il suo
-  // valore verrebbe letto lo stesso. Qui la regola diventa un fatto.
-  const _retroNoVar = (currentSection === 'retros');
-  const isVariation = _retroNoVar ? false : (document.getElementById('fig-is-variation-input')?.checked || false);
-  const isUnofficialVariation = _retroNoVar ? false : (document.getElementById('fig-is-unofficial-variation-input')?.checked || false);
-  // ERRORE DI STAMPA (v5.711): quinto tipo, valido in TUTTE E QUATTRO le sezioni.
-  // Prima non era un tipo, era una STRINGA: il filtro cercava changeType === "errore
-  // di stampa". Bastava scriverlo al plurale in una serie perche' smettesse di
-  // trovarlo, in silenzio. Ora e' un flag, e non puo' piu' sbagliarsi.
-  const isPrintError = document.getElementById('fig-is-printerror-input')?.checked || false;
-  const isChange = document.getElementById('fig-is-change-input')?.checked || false;
-  const baseFigurineId = document.getElementById('fig-base-figurine-input')?.value || null;
-  const retroId = document.getElementById('fig-retro-input')?.value || null;
-  // v6.006 - collegare un retro VERO ha la precedenza: le due cose insieme direbbero che la
-  // figurina ha un retro e insieme che non ce l'ha, e non c'e' modo di scegliere dopo.
-  const retroBianco = !retroId && !!document.getElementById('fig-retro-bianco-input')?.checked;
-  const forSale = document.getElementById('fig-for-sale-input')?.checked || false;
-  const price = forSale ? (parseFloat(document.getElementById('fig-price-input').value) || 0) : null;
-  // v5.981 — priceUsd: il vuoto resta null, NON diventa 0 come il prezzo in euro. Qui la
-  // differenza conta: 0 significa "lo regalo", null significa "non l'ho ancora deciso", e solo
-  // nel secondo caso il programma deve rifiutarsi di pubblicare su eBay.com.
-  const _pUsd = forSale ? parseFloat(document.getElementById('fig-price-usd-input')?.value) : NaN;
-  const priceUsd = Number.isFinite(_pUsd) ? _pUsd : null;
-  // v5.981 — la spunta della coda si legge SOLO con forSale acceso: a spunta Ebay spenta il
-  // controllo e' nascosto e leggerebbe false, cancellando la coda proprio nel caso in cui serve
-  // di piu' — un oggetto tolto da eBay che aspetta di essere RITIRATO. null = non toccarlo.
-  const daPubblicareSpunta = forSale
-    ? (document.getElementById('fig-da-pubblicare-input')?.checked || false)
-    : null;
-  // v5.981 — su quali account. null = "quello predefinito", che è il caso normale.
-  const _impostazioniEbay = await getEbaySettings();
-  const ebayAccountsScelti = forSale ? leggiEbayAccountScelta(_impostazioniEbay) : null;
-  const quantity = forSale ? (parseInt(document.getElementById('fig-quantity-input').value) || 1) : null;
-  const condition = forSale ? document.getElementById('fig-condition-input').value : null;
-  // v5.931 — testi dell'annuncio. Il vuoto diventa null, non stringa vuota: e' il modo in cui
-  // il resto del sito distingue "non lo ho scritto" (→ titolo generato) da "l'ho scritto io".
-  const _txt = id => (document.getElementById(id)?.value || '').trim() || null;
-  const ebayTitleIt = forSale ? _txt('fig-ebay-title-it-input') : null;
-  const ebayTitleEn = forSale ? _txt('fig-ebay-title-en-input') : null;
-  const ebayDescIt  = forSale ? _txt('fig-ebay-desc-it-input')  : null;
-  const ebayDescEn  = forSale ? _txt('fig-ebay-desc-en-input')  : null;
-  const isRetrosSection = currentSection === 'retros';
-  // v5.779 — changeType per i Change di Retro E per i Change di figurina (stessa lista di serie)
-  const changeType = (isChange && (isRetrosSection || currentSection === 'figurines')) ? (document.getElementById('fig-retro-change-type-input')?.value || null) : null;
-  // Tipo di errore di stampa (testo libero, tutte le sezioni): valorizzato solo per gli Errori di
-  // stampa. Mutuamente esclusivo col Tipo di change (isPrintError e isChange non coesistono).
-  const printErrorType = isPrintError ? (document.getElementById('fig-print-error-type-input')?.value.trim() || null) : null;
-  const isVarOrChgSection = isVariation || isUnofficialVariation || isChange;
-  // v5.774 — per un Change o Errore di stampa di RETRO il Nome eredita quello del retro base
-  // (il campo e' nascosto nella form). Se il base non e' ancora selezionato ci pensa il controllo
-  // "Retro base obbligatorio" piu' sotto, quindi qui saltiamo il "Nome obbligatorio".
-  // v5.779/790 — il Nome eredita dalla base per Change ED Errori di stampa, sia Retro sia figurine.
-  const _nomeEreditato = _nomeVieneDallaBase(currentSection, isChange, isPrintError, isVariation, isUnofficialVariation); // v6.078 - variazioni incluse
-  // v6.038 (Franco) - PER UN CHANGE O UN ERRORE DI STAMPA DI RETRO COMANDANO I CAMPI DELLA BASE:
-  // Nome, Sottonome, Categoria e Sottocategoria. Il Nome lo faceva gia' dalla v5.774; gli altri tre
-  // restavano quelli digitati, e potevano allontanarsi dalla base senza che niente lo segnalasse.
-  // Non e' teoria: il 1 agosto 2026 (vedi §13 del documento) erano gia' stati corretti a mano
-  // quattro Change di Serie 2 con la sottocategoria divergente dalla base.
-  // Derivarli qui, al salvataggio, e' l'unico modo per cui il dato NON possa piu' divergere: un
-  // controllo che segnala la divergenza la scopre dopo, questo la rende impossibile.
-  if (_nomeEreditato && baseFigurineId) {
-    const _bR = getData('figurines', []).find(x => x.id === baseFigurineId);
-    if (_bR) {
-      // v6.101 (§12.1) - stesso elenco della scheda e della propagazione: `_campiEreditatiDaBase()`.
-      // Questa form la tappa 2 la cancellera'; toglierle la copia a mano costa lo stesso tre righe,
-      // e lasciarcela avrebbe voluto dire tenere viva una terza versione della regola per tutta la
-      // durata della tappa 1 - cioe' esattamente il tempo in cui qualcuno tocchera' l'ereditarieta'.
-      const _scriviCampo = { name: v => { name = v; }, subname: v => { subname = v; },
-                             category: v => { category = v; }, subcategory: v => { subcategory = v; } };
-      _campiEreditatiDaBase(currentSection).forEach(k => {
-        if (_scriviCampo[k]) _scriviCampo[k](_bR[k] || '');
-      });
-    }
-  }
-  const numberRequired = (currentSection === 'figurines') && !isVarOrChgSection && !isPrintError && !noNumber; // v5.880: il numero ha senso solo per le figurine; v6.101: e non lo si pretende da chi ha appena dichiarato che non c'e'
-  if ((!name && !_nomeEreditato) || (numberRequired && !number)) { toast((currentLang === 'it' ? (numberRequired ? 'Numero e nome sono obbligatori' : 'Il nome è obbligatorio') : (numberRequired ? 'Number and name are required' : 'Name is required')), 'error'); return; }
-  // v6.101 (Franco) - la contraddizione fra la spunta e il campo ferma il salvataggio (§12.1).
-  const _msgNum = _messaggioIncongruenzaNumero(number, noNumber);
-  if (_msgNum) { toast(_msgNum, 'error', null, 7000); return; }
-  if (isRetrosSection) {
-    const editId = document.getElementById('edit-fig-id').value;
-    // LA CHIAVE DI UNICITA' COMPRENDE IL TIPO (v5.717). Prima confrontava solo il
-    // changeType — e allora un retro BASE e un ERRORE DI STAMPA, che hanno ENTRAMBI
-    // changeType vuoto, sembravano lo stesso oggetto. Convertire un Change in errore di
-    // stampa risultava IMPOSSIBILE: il controllo trovava il retro base omonimo e
-    // bloccava. Il changeType funzionava da discriminante finche' i tipi di retro erano
-    // due; col quinto non regge piu'.
-    const tipoNuovo = tipoDiOggetto({ isVariation, isUnofficialVariation, isChange, isPrintError });
-    // v6.035 (Franco) - LA SOTTOCATEGORIA ENTRA NELLA CHIAVE. L'import ce l'ha dalla v5.985,
-    // dopo una segnalazione di Franco su dati veri; queste due form no, e le due chiavi
-    // dicevano cose diverse sullo stesso dato: l'import creava legittimamente due retro che
-    // differiscono solo per la sottocategoria, e poi la form si rifiutava di salvarli.
-    // Misurato prima di toccare: su 1013 retro la chiave vecchia vedeva 12 gruppi in collisione
-    // (24 record); 11 dei 12 sono i "RICERCATO" BLU/ROSSO, cioe' record veri e distinti che
-    // oggi non si possono salvare. Con la sottocategoria ne resta 1: due errori di stampa
-    // "OFFERTA SPECIALE! / ROSA / 174 - SET DA PESCA" identici in tutto - quello e' un doppione
-    // vero, non un difetto della chiave.
-    // Il SOTTONOME resta fuori, perche' fuori e' anche nella chiave dell'import: si allinea a
-    // quella, non si inventa una terza chiave. (Una nota della v5.980 dice che l'import lo
-    // include: nel codice dell'import non c'e' - da verificare a parte.)
-    const dup = getData('figurines', []).find(f =>
-      f.id !== editId &&
-      f.seriesId === currentSeriesId &&
-      f.section === 'retros' &&
-      (f.name||'').toLowerCase() === name.toLowerCase() &&
-      (f.category||'').toLowerCase() === category.toLowerCase() &&
-      (f.subcategory||'').toLowerCase().trim() === (subcategory||'').toLowerCase().trim() && // v6.035
-      tipoDiOggetto(f) === tipoNuovo &&
-      // il changeType distingue due CHANGE fra loro; per gli altri tipi non esiste
-      (tipoNuovo !== 'change' ||
-        (f.changeType||'').toLowerCase().trim() === (changeType||'').toLowerCase().trim())
-    );
-    if (dup) {
-      toast((currentLang === 'it' ? 'Esiste già un Retro con la stessa Categoria, la stessa Sottocategoria, lo stesso Nome e lo stesso Tipo in questa serie (per i Change conta anche il Tipo di change)' : 'A Retro with the same Category, Subcategory, Name and Type already exists in this series (for Changes the Change type counts too)'), 'error', null, 7000); // v6.047 - il doppio del tempo: e' un messaggio da leggere, non da notare
-      return;
-    }
-  }
-  if ([isVariation, isUnofficialVariation, isChange].filter(Boolean).length > 1) {
-    toast((currentLang === 'it' ? 'Variazione ufficiale, non ufficiale e Change sono mutuamente esclusivi: spunta solo una opzione' : 'Official variation, unofficial variation and Change are mutually exclusive: check only one'), 'error');
-    return;
-  }
-  if ((isVariation || isUnofficialVariation || isChange || isPrintError) && !baseFigurineId) {
-    const label = isRetrosSection ? (currentLang === 'it' ? 'Retro base' : 'Base Retro') : (currentLang === 'it' ? 'Figurina base' : 'Base sticker');
-    toast((currentLang === 'it' ? `Il campo "${label}" è obbligatorio quando è selezionata una Variazione, un Change o un Errore di stampa` : `The "${label}" field is required when a Variation, Change or Print error is selected`), 'error');
-    return;
-  }
-  if (!isRetrosSection && (isVariation || isUnofficialVariation) && !retroId) {
-    toast((currentLang === 'it' ? 'Il campo "Retro associato" è obbligatorio quando è selezionata una Variazione ufficiale o non ufficiale' : 'The "Associated retro" field is required when an official or unofficial Variation is selected'), 'error');
-    return;
-  }
-  if (isChange && (isRetrosSection || currentSection === 'figurines') && !changeType) {
-    toast((currentLang === 'it' ? 'Il campo "Tipo di change" è obbligatorio per un Change' : 'The "Change type" field is required for a Change'), 'error');
-    return;
-  }
-  if (isPrintError && !printErrorType) {
-    toast((currentLang === 'it' ? 'Il campo "Tipo di errore di stampa" è obbligatorio quando è selezionato "Errore di stampa"' : 'The "Print error type" field is required when "Print error" is selected'), 'error');
-    return;
-  }
-  toast((currentLang === 'it' ? 'Salvataggio...' : 'Saving...'), 'success');
-  // Per Variazioni/Change il Numero eredita quello della figurina base collegata
-  let finalNumber = number ? +number : null;
-  if ((isVarOrChgSection || isPrintError) && baseFigurineId) {
-    const baseFigForNum = getData('figurines', []).find(x => x.id === baseFigurineId);
-    finalNumber = baseFigForNum ? baseFigForNum.number : null;
-  }
-  let imgUrl = editingFigImg || null;
-  if (editingFigImgFileSave) {
-    try { imgUrl = await uploadToCloudinary(editingFigImgFileSave); }
-    catch(e) { toast((currentLang === 'it' ? 'Caricamento immagine fallito' : 'Image upload failed'), 'error'); return; }
-  }
-  let ebayImgUrl = editingFigEbayImg || null;
-  if (editingFigEbayImgFileSave) {
-    try { ebayImgUrl = await uploadToCloudinary(editingFigEbayImgFileSave); }
-    catch(e) { toast((currentLang === 'it' ? 'Caricamento foto Ebay fallito' : 'Ebay photo upload failed'), 'error'); return; }
-  }
-  // v6.074 - la seconda foto. Come le altre due: se il caricamento fallisce si esce SENZA salvare,
-  // altrimenti si scriverebbe un record che dice di avere una foto che non e' mai arrivata.
-  let imgRetroUrl = editingFigImgRetro || null;
-  if (editingFigImgRetroFileSave) {
-    try { imgRetroUrl = await uploadToCloudinary(editingFigImgRetroFileSave); }
-    catch(e) { toast((currentLang === 'it' ? 'Caricamento seconda foto fallito' : 'Second photo upload failed'), 'error'); return; }
-  }
-  let figs = getData('figurines', []);
-  const editId = document.getElementById('edit-fig-id').value;
-  try {
-    if (editId) {
-      const idx = figs.findIndex(x => x.id === editId);
-      if (idx >= 0) {
-        const _prima = figs[idx];   // v5.981 — riferimento all'oggetto PRIMA della sovrascrittura
-        figs[idx] = { ...figs[idx], number: finalNumber, noNumber, fotoNonDisponibile, invisibile, name, desc, note: (noteAdmin !== null ? noteAdmin : (figs[idx].note || '')) /* v6.096 */, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || figs[idx].img, imgRetro: imgRetroUrl || figs[idx].imgRetro || null, ebayImg: ebayImgUrl || figs[idx].ebayImg || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti };
-        figs[idx].fullName = computeFullName(figs[idx], figs);
-        // v5.981 — la coda: prima quello che dice la spunta (o il valore esistente, se la spunta
-        // era nascosta), poi l'automatismo, che puo' solo ALZARLA. Cosi' togliere la spunta a mano
-        // vale finche' non cambia davvero qualcosa che eBay deve sapere.
-        // Il confronto va DOPO computeFullName, altrimenti il titolo generato cambierebbe senza
-        // che nessuno metta l'oggetto in coda.
-        figs[idx].daPubblicare = (daPubblicareSpunta === null)
-          ? (_prima.daPubblicare || false)
-          : daPubblicareSpunta;
-        if (ebayCampiCambiati(_prima, figs[idx])) figs[idx].daPubblicare = true;
-        await fsSave('figurines', figs[idx]);
-        _cache.figurines = figs;
-        // v6.053 - anche da questa form i collegati seguono la base
-        try { await _propagaAiCollegati(figs[idx]); } catch(e) { console.error('propaga', e); }
-      }
-    } else {
-      const newF = { seriesId: currentSeriesId, section: currentSection || 'figurines', number: finalNumber, noNumber, fotoNonDisponibile, invisibile, name, desc, note: (noteAdmin || '') /* v6.096 */, score, subseries, size, category, subcategory, subname, isVariation, isUnofficialVariation, isChange, isPrintError, baseFigurineId: (isVariation || isUnofficialVariation || isChange || isPrintError) ? (baseFigurineId || null) : null, retroBianco, retroId: (currentSection === 'figurines') ? (retroId || null) : null/* v5.786: retro anche per Change; v6.074: solo le figurine hanno un retro collegato */, changeType, printErrorType, img: imgUrl || null, imgRetro: imgRetroUrl || null, ebayImg: ebayImgUrl || null, forSale, price, priceUsd, quantity, condition, ebayTitleIt, ebayTitleEn, ebayDescIt, ebayDescEn, ebayAccounts: ebayAccountsScelti, daPubblicare: forSale/* v5.981: nasce marcato Ebay = nasce in coda */ };
-      newF.fullName = computeFullName(newF, figs);
-      const saved = await fsSave('figurines', newF);
-    }
-  } catch(e) {
-    console.error('saveFigurine', e);
-    toast((currentLang === 'it' ? '❌ Salvataggio fallito: ' + (e?.code || e?.name || 'errore') + ' — riprova' : '❌ Save failed: ' + (e?.code || e?.name || 'error') + ' — please retry'), 'error');
-    return;
-  }
-  editingFigImgFileSave = null;
-  editingFigEbayImgFileSave = null;
-  closeModal('add-fig-modal');
-  if (_returnToErroriAfterSave) {
-    _returnToErroriAfterSave = false;
-    showPage('profile');
-    adminTab('errori');
-  } else {
-    renderItems(); renderHomeStats(); updateSectionCounts();
-  }
-  // v5.926 — se la form è stata aperta dalla Vista Ebay (✎), quella resta aperta sotto: va
-  // ridisegnata, altrimenti mostrerebbe ancora il prezzo o la foto di prima.
-  const ebayModal = document.getElementById('series-ebay-modal');
-  if (ebayModal && !ebayModal.classList.contains('hidden')) {
-    try { renderEbayViewTable(); } catch (e) { console.error('renderEbayViewTable (dopo salvataggio)', e); }
-  }
-  toast((currentLang === 'it' ? 'Salvato! 🧟' : 'Saved! 🧟'), 'success');
-}
 
 async function deleteFigurine(id) {
   if (!confirm('Eliminare questo oggetto?')) return;
@@ -22145,7 +21661,7 @@ function renderMyCollection(ownedFigs) {
       </div>
       <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(figs.length/allSeriesFigs.length*100)}%"></div></div>
       <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.75rem;">
-        ${figs.sort((a,b)=>a.number-b.number).map(f=>`<span style="background:rgba(181,255,46,0.08);border:1px solid rgba(181,255,46,0.2);color:var(--accent);font-size:0.78rem;padding:2px 8px;border-radius:12px;">#${String(f.number).padStart(2,'0')} ${f.name}</span>`).join('')}
+        ${figs.sort((a,b)=>a.number-b.number).map(f=>`<span style="background:rgba(181,255,46,0.08);border:1px solid rgba(181,255,46,0.2);color:var(--accent);font-size:0.78rem;padding:2px 8px;border-radius:12px;">${String(f.number).padStart(2,'0')} ${f.name}</span>`).join('')}
       </div>
     </div>`;
   }).join('');
@@ -22287,54 +21803,6 @@ async function moveSeriesDown(idx) {
   renderAdminSeries();
 }
 
-function initSeriesDragSort() {
-  const tbody = document.querySelector('#sortable-series-table tbody');
-  if (!tbody) return;
-  let dragSrc = null;
-
-  tbody.querySelectorAll('tr').forEach(row => {
-    row.setAttribute('draggable', 'true');
-
-    row.addEventListener('dragstart', function(e) {
-      dragSrc = this;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', this.dataset.id);
-      setTimeout(() => this.style.opacity = '0.4', 0);
-    });
-
-    row.addEventListener('dragend', function() {
-      this.style.opacity = '1';
-      tbody.querySelectorAll('tr').forEach(r => r.style.borderTop = '');
-    });
-
-    row.addEventListener('dragover', function(e) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      tbody.querySelectorAll('tr').forEach(r => r.style.borderTop = '');
-      if (this !== dragSrc) this.style.borderTop = '2px solid var(--accent)';
-      return false;
-    });
-
-    row.addEventListener('dragleave', function() {
-      this.style.borderTop = '';
-    });
-
-    row.addEventListener('drop', function(e) {
-      e.stopPropagation();
-      e.preventDefault();
-      this.style.borderTop = '';
-      if (dragSrc === this) return false;
-      const allRows = [...tbody.querySelectorAll('tr')];
-      const fromIdx = allRows.indexOf(dragSrc);
-      const toIdx = allRows.indexOf(this);
-      if (fromIdx < toIdx) tbody.insertBefore(dragSrc, this.nextSibling);
-      else tbody.insertBefore(dragSrc, this);
-      const newOrder = [...tbody.querySelectorAll('tr')].map(r => r.dataset.id);
-      saveSeriesOrder(newOrder);
-      return false;
-    });
-  });
-}
 
 async function saveSeriesOrder(newOrder) {
   let series = getData('series', []);
@@ -23366,7 +22834,7 @@ function openFigDetail(figId, elencoNav) {
   // solo nel titolo, v5.764): ora ci sono, quando presenti. Numero: i Retro non sono numerati, quindi
   // per loro la riga resta assente. Nome: tutte le sezioni (prima solo Retro).
   if (_haNumero(f) && f.number) { // v6.077 - la riga esiste dove il campo esiste, vedi _haNumero()
-    const _rowNumero = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">#${f.number}</span></div>`;
+    const _rowNumero = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Numero' : 'Number')}</span><span class="detail-value">${f.number}</span></div>`;
     (_mobileDetail ? rowsTop : rows).push(_rowNumero);
   }
   // Categoria (sempre visibile per i Retro), Sottocategoria (solo se popolata).
@@ -23485,13 +22953,28 @@ function openFigDetail(figId, elencoNav) {
         : (f.section === 'retros'
             ? (currentLang === 'it' ? 'Change di' : 'Change of')
             : (currentLang === 'it' ? 'Variazione di' : 'Variation of'));
-      rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--muted);">${relationLabel}: <a href="#" onclick="openFigDetail('${baseFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${baseFig.number ? '#' + baseFig.number + ' ' : ''}${baseFig.name}</a></span></div>`);
+      rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--muted);">${relationLabel}: <a href="#" onclick="openFigDetail('${baseFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${baseFig.number ? baseFig.number + ' ' : ''}${baseFig.name}</a></span></div>`);
     }
   }
 
   // Descrizione
   if (f.desc) {
     rows.push(`<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">${currentLang === 'it' ? 'Descrizione' : 'Description'}</span><span class="detail-value" style="font-size:0.88rem;line-height:1.5;">${f.desc}</span></div>`);
+  }
+
+  // v6.114 (Franco, baco) - LE NOTE SI VEDONO ANCHE IN LETTURA. Fino alla v6.113 il campo esisteva
+  // solo nella form: per leggere una nota bisognava premere Modifica, cioe' entrare in scrittura per
+  // guardare - e chi entra in scrittura per sbaglio salva per sbaglio.
+  // Sta SUBITO DOPO la Descrizione perche' e' li' che sta nella form (ultimo campo del tab
+  // Generale): vista e modifica devono coincidere, regola di Franco della v5.782.
+  // Due condizioni, e sono diverse fra loro: `isAdmin` perche' la nota e' un appunto di lavoro e
+  // nessun altro deve leggerla; `.trim()` perche' una riga "Note" vuota in mezzo alla scheda e'
+  // rumore - qui, a differenza della form, non c'e' niente da compilare.
+  // `esc()` sul contenuto: e' testo scritto a mano, e finisce dentro l'HTML della scheda.
+  // `pre-wrap` perche' e' un blocco di appunti su piu' righe (il campo e' un textarea): senza,
+  // tre righe di nota diventerebbero un paragrafo solo, che e' il modo di renderle illeggibili.
+  if (currentUser?.isAdmin && String(f.note || '').trim()) {
+    rows.push(`<div class="detail-row" style="align-items:flex-start;"><span class="detail-label">Note</span><span class="detail-value" style="font-size:0.88rem;line-height:1.5;white-space:pre-wrap;">${esc(f.note)}</span></div>`);
   }
 
   // Taglia (only for series with hasSizes)
@@ -23799,7 +23282,7 @@ function _chiaviOrdinamentoFigurine(items, idx) {
 
 function _titoloSchedaHTML(f, nomeVisualizzato) {
   const tipo = getSectionLabelSingular(f.section || 'figurines');
-  const nome = (_haNumero(f) && f.number) ? ('#' + f.number + ' - ' + nomeVisualizzato) : nomeVisualizzato;
+  const nome = (_haNumero(f) && f.number) ? (f.number + ' - ' + nomeVisualizzato) : nomeVisualizzato;
   return '<span style="color:var(--info);font-size:0.95rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.15rem;">'
     + esc(tipo) + '</span>' + esc(nome);
 }
@@ -23979,7 +23462,7 @@ function buildLinkedFiguresTabsHTML(baseId) {
         const nome = _isVar
           ? (item.name || item.fullName || '')
           : ((item.fullName && item.fullName.trim()) ? item.fullName : computeFullName(item, allFigs));
-        const num = (!item.noNumber && item.number) ? '#' + item.number + ' \u2014 ' : '';
+        const num = (!item.noNumber && item.number) ? item.number + ' \u2014 ' : '';
         label = num + (nome || item.name || '');
         // Il "(dalla base)" non e' un dettaglio estetico: dice che quella riga viene da un dato che
         // sul record NON c'e', e che quindi cambia da sola se si cambia il retro della base.
@@ -24047,9 +23530,6 @@ function switchLinkedFigTab(key) {
   });
 }
 
-function editItemFromDetail(itemId) {
-  switchToEditMode(itemId);
-}
 
 let editingFeEbayImgFileSave = null;
 
@@ -25026,29 +24506,111 @@ function _divergenzeDaBase(figlio, base) {
   return _campiEreditatiDaBase(figlio.section).filter(k => t(figlio[k]) !== t(base[k]));
 }
 
-// Riallinea alla base i suoi figli. Restituisce quanti record ha toccato.
-// Scrive solo i record che divergono davvero - una propagazione che riscrive tutto ad ogni
+// v6.116 - I FIGLI DA RIALLINEARE, CALCOLATI SENZA SCRIVERE NIENTE.
+// Prima era `_propagaAiCollegati`, che calcolava e scriveva insieme, una scrittura per figlio.
+// Separare le due cose e' cio' che permette di fonderle in una sola (vedi sotto).
+// Si toccano solo i record che divergono davvero: una propagazione che riscrive tutto ad ogni
 // salvataggio costerebbe scritture inutili e sporcherebbe la cronologia senza cambiare un dato.
-async function _propagaAiCollegati(base) {
-  if (!base || !base.id) return 0;
-  const figli = _figliCollegati(base);
-  let toccati = 0;
-  for (const figlio of figli) {
+//
+// ⚠️ L'ELENCO CON LA BASE NUOVA GIA' DENTRO non e' un dettaglio. Il `fullName` di un figlio si
+// costruisce anche dalla base, quindi con la copia vecchia in elenco uscirebbe il nome di prima.
+// Fino alla v6.115 tornava per un motivo che non era scritto da nessuna parte: la cache piatta
+// veniva aggiornata FRA la scrittura della base e la propagazione. Ora la scrittura e' una sola e
+// viene dopo, quindi la sostituzione si fa qui, su una copia, senza sporcare la cache prima di
+// aver scritto - che e' la ragione per cui il disfare, sotto, puo' essere completo.
+function _collegatiDaAggiornare(base) {
+  if (!base || !base.id) return [];
+  const conBaseNuova = (getData('figurines', []) || []).map(f => f.id === base.id ? base : f);
+  const out = [];
+  for (const figlio of _figliCollegati(base, conBaseNuova)) {
     const diversi = _divergenzeDaBase(figlio, base);
     if (!diversi.length) continue;
     const nuovo = { ...figlio };
     diversi.forEach(k => { nuovo[k] = base[k] || ''; });
-    try { nuovo.fullName = computeFullName(nuovo, getData('figurines', [])); } catch(e) {}
+    try { nuovo.fullName = computeFullName(nuovo, conBaseNuova); } catch(e) {}
+    out.push(nuovo);
+  }
+  return out;
+}
+
+// v6.116 - PIU' FIGURINE, UNA SOLA RISCRITTURA.
+// MISURATO il 13 agosto: salvare una base di Serie 3 con tre collegati costava 16468 ms, di cui
+// 12744 nella sola propagazione. Quattro riscritture INTERE dello stesso documento (521 KB l'una,
+// circa 2 MB in tutto) per cambiare quattro elementi di un array che stanno tutti li' dentro.
+// Le figurine vivono dentro il documento della loro serie, e i collegati stanno nella stessa serie
+// della base: non c'era nessun motivo per cui fossero quattro viaggi invece di uno.
+// Il 98% dell'attesa di un salvataggio se ne andava in queste riscritture.
+//
+// UN SOLO ELEMENTO -> STRADA DI SEMPRE. Il raggruppamento serve dove ci sono piu' scritture da
+// fondere; con una sola non fonderebbe niente e cambierebbe il percorso di OGNI salvataggio del
+// sito per nessun guadagno - compreso `arrayUnion`, che sulla creazione vale 357 ms contro 5218.
+//
+// ⚠️ IL DISFARE E' LA PARTE DELICATA, ed e' il motivo per cui questa funzione e' piu' lunga di
+// quanto sembri necessario. La v6.042 ha chiuso un difetto preciso: un oggetto entrava in
+// `series.items` PRIMA della scrittura, e se la scrittura falliva restava li', avvelenando ogni
+// modifica successiva di quella serie fino al ricaricamento della pagina. La regola che ne usci'
+// era "chi fallisce fallisce da solo". Con una scrittura sola quella regola cambia forma: se
+// fallisce, falliscono TUTTI insieme, quindi vanno rimessi com'erano tutti i record toccati - non
+// l'ultimo, non solo la base. Farlo a meta' ricrea in grande il difetto che la v6.042 chiuse in
+// piccolo. Si disfa in ordine INVERSO, cosi' gli indici restano quelli di prima.
+async function _salvaFigurineInBlocco(items) {
+  const lista = (items || []).filter(Boolean);
+  if (!lista.length) return [];
+  if (lista.length === 1) return [await _saveFigurineItem(lista[0])];
+
+  // v6.043 - via gli undefined, ma detti ad alta voce. Stessa regola di _saveFigurineItem:
+  // Firestore rifiuta l'INTERO documento per un solo campo undefined.
+  const puliti = lista.map(it => {
+    const r = _sanificaPerFirestore(it);
+    if (r.rimossi.length) {
+      console.warn('[v6.043] campi undefined tolti prima di scrivere (' + (it && it.id || 'nuovo') + '):', r.rimossi.join(', '));
+      return r.valore;
+    }
+    return it;
+  });
+
+  const seriesList = getData('series', []);
+  const perSerie = new Map();
+  puliti.forEach(it => {
+    const s = seriesList.find(x => x.id === it.seriesId);
+    if (!s) throw new Error('Serie non trovata per la figurina: ' + it.seriesId);
+    if (!perSerie.has(s.id)) perSerie.set(s.id, { series: s, gruppo: [] });
+    perSerie.get(s.id).gruppo.push(it);
+  });
+
+  const scritte = [];
+  for (const { series, gruppo } of perSerie.values()) {
+    series.items = series.items || [];
+    const prima = gruppo.map(it => {
+      if (!it.id) it.id = _generateFigurineId();
+      const i = series.items.findIndex(x => x.id === it.id);
+      return { it, i, precedente: i < 0 ? null : series.items[i] };
+    });
+    const primaCounts = series.counts ? { ...series.counts } : series.counts;
+    prima.forEach(({ it, i }) => { if (i < 0) series.items.push(it); else series.items[i] = it; });
+    _recomputeSeriesCounts(series);
+    _invalidateSessionCache();
     try {
-      await fsSave('figurines', nuovo);
-      const idx = (_cache.figurines || []).findIndex(x => x.id === nuovo.id);
-      if (idx >= 0) _cache.figurines[idx] = nuovo;
-      toccati++;
+      await fsSave('series', series);
+      scritte.push(...gruppo);
     } catch(e) {
-      console.error('_propagaAiCollegati', nuovo.id, e);
+      [...prima].reverse().forEach(({ it, i, precedente }) => {
+        if (i < 0) { const k = series.items.indexOf(it); if (k >= 0) series.items.splice(k, 1); }
+        else series.items[i] = precedente;
+      });
+      series.counts = primaCounts;
+      throw e;
     }
   }
-  return toccati;
+
+  // La cache piatta si aggiorna SOLO a scrittura riuscita: se si aggiornasse prima, un errore
+  // lascerebbe in memoria dei dati che sul database non ci sono, e nessuno lo direbbe.
+  _cache.figurines = _cache.figurines || [];
+  scritte.forEach(it => {
+    const k = _cache.figurines.findIndex(x => x.id === it.id);
+    if (k >= 0) _cache.figurines[k] = it; else _cache.figurines.push(it);
+  });
+  return scritte;
 }
 
 async function saveFigFromDetail(figId, opzioni) {
@@ -25267,9 +24829,29 @@ async function saveFigFromDetail(figId, opzioni) {
     }
 
     // Per Variazioni/Change/Errore di stampa il Numero eredita quello della figurina base collegata
+    // v6.111 (Franco) - E CON LUI "NON HA NUMERO", che ne e' l'altra meta'.
+    // Parole di Franco: "non appena un item viene collegato a un altro e indicato come Change, quel
+    // campo deve assumere lo stesso valore dell'item collegato; un change eredita quella
+    // caratteristica". Sono due meta' della stessa affermazione - *come e' numerato quest'oggetto* -
+    // ed e' proprio l'averne ereditata una sola che permetteva loro di contraddirsi:
+    // `noNumber: true` scritto sul figlio, e un attimo dopo `number` preso dalla base.
+    // La casella nella scheda per questi oggetti e' gia' nascosta, ma NON bastava nasconderla: il
+    // valore non arrivava dall'interfaccia, arrivava dal record - un flag messo quando l'oggetto non
+    // era ancora un figlio se lo teneva, e il salvataggio lo riscriveva. Adesso non e' piu' una cosa
+    // che si decide qui: si legge dalla base, come il numero.
+    //
+    // PERCHE' EREDITARLA E NON AZZERARLA. Forzare `false` sembrava piu' semplice - "il campo non si
+    // applica, quindi niente" - ma `noNumber` viene letto DA SOLO in due punti, senza guardare il
+    // numero: `_haNumero()` (decide se il numero si mostra) e il controllo "Figurine senza numero"
+    // della pagina Errori. Con `false` forzato, una variazione la cui base non ha numero finirebbe
+    // in quell'elenco come figurina senza numero: un falso allarme su un oggetto che legittimamente
+    // non ce l'ha, in una pagina che vale solo finche' non si riempie di falsi allarmi.
+    //
+    // Base non trovata -> `null`/`false`, cioe' la stessa coppia che scriveva gia' il numero da solo.
     if ((updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isPrintError) && updates.baseFigurineId) {
       const baseFigForNum = getData('figurines', []).find(x => x.id === updates.baseFigurineId);
-      updates.number = baseFigForNum ? baseFigForNum.number : null;
+      updates.number   = baseFigForNum ? baseFigForNum.number : null;
+      updates.noNumber = baseFigForNum ? !!baseFigForNum.noNumber : false;
     }
 
     if ((updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isPrintError) && !updates.baseFigurineId) {
@@ -25370,8 +24952,11 @@ async function saveFigFromDetail(figId, opzioni) {
     // decide se un annuncio viene pubblicato o no.
     if (ebayCampiCambiati(_creazione ? null : existing, merged)) merged.daPubblicare = true;
 
+    // v6.116 - LA BASE E I SUOI COLLEGATI IN UNA SCRITTURA SOLA (vedi _salvaFigurineInBlocco).
+    // I collegati si calcolano PRIMA di scrivere, sulla base nuova, e viaggiano con lei.
+    const _collegati = _collegatiDaAggiornare(merged);
     try {
-      await fsSave('figurines', merged);
+      await _salvaFigurineInBlocco([merged, ..._collegati]);
     } catch(e) {
       console.error('saveFigFromDetail', e);
       toast((currentLang === 'it' ? '❌ Salvataggio fallito: ' + (e?.code || e?.name || 'errore') + ' — riprova' : '❌ Save failed: ' + (e?.code || e?.name || 'error') + ' — please retry'), 'error');
@@ -25382,8 +24967,11 @@ async function saveFigFromDetail(figId, opzioni) {
       if (idx >= 0) _cache.figurines[idx] = merged;
     }
     // v6.053 - i collegati seguono la base
-    let _propagati = 0;
-    try { _propagati = await _propagaAiCollegati(merged); } catch(e) { console.error('propaga', e); }
+    // v6.116 - o si scrive tutto o non si scrive niente: se la scrittura fallisce si esce sopra,
+    // quindi arrivati qui i collegati sono scritti tutti. Prima un figlio poteva fallire da solo e
+    // il salvataggio diceva comunque "salvato": la base andava avanti e i suoi figli restavano
+    // indietro, in silenzio. Contarli ora e' esatto, prima era una stima ottimista.
+    let _propagati = _collegati.length;
     const savedLabel = getSectionLabelSingular(merged.section || 'figurines');
     // v6.053 - se la modifica ha toccato dei collegati lo si DICE: un salvataggio che ne modifica
     // altri in silenzio e' il modo in cui ci si accorge dei danni tre giorni dopo.
@@ -25536,7 +25124,7 @@ function renderAdminSegnalazioni() {
     <td style="white-space:nowrap;font-size:0.78rem;">${new Date(s.date).toLocaleDateString('it-IT')}</td>
     <td style="display:flex;align-items:center;gap:6px;">${esc(s.username || '—')}${u?.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${esc(u.nationalityName || '')}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''}</td>
     <td style="font-size:0.8rem;color:var(--muted);">${u?.email ? esc(u.email) : '—'}</td>
-    <td style="font-size:0.82rem;">${esc(s.serieName || '')}<br><span style="color:var(--muted);">${s.figNumber ? '#'+esc(String(s.figNumber))+' ' : ''}${esc(s.figName || '')}</span></td>
+    <td style="font-size:0.82rem;">${esc(s.serieName || '')}<br><span style="color:var(--muted);">${s.figNumber ? esc(String(s.figNumber))+' ' : ''}${esc(s.figName || '')}</span></td>
     <td style="white-space:pre-wrap;">${esc(s.commento || '')}</td>
     <td style="display:flex;gap:0.4rem;"><button class="tbl-btn tbl-btn-edit" onclick="markSegnalazioneRead('${s.id}')">${s.read ? '✓' : (currentLang === 'it' ? 'Segna come letta' : 'Mark as read')}</button><button class="tbl-btn tbl-btn-del" onclick="deleteSegnalazione('${s.id}')" title="${(currentLang === 'it') ? 'Elimina questa segnalazione' : 'Delete this report'}">🗑️</button></td>
   </tr>`; }).join('')}
@@ -25571,34 +25159,6 @@ async function markAllSegnalazioniRead() {
   toast((currentLang === 'it' ? 'Tutte le segnalazioni segnate come lette' : 'All reports marked as read'), 'success');
 }
 
-function openViewUserModal(userId) {
-  const user = getData('users', []).find(u => u.id === userId);
-  if (!user) return;
-  const joined = user.joined ? new Date(user.joined).toLocaleDateString('it-IT') : '—';
-  const lastLogin = user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(user.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : 'mai';
-  const role = user.isAdmin ? 'Admin' : 'Collezionista';
-  const flag = user.nationalityCode ? `<img src="${flagUrl(user.nationalityCode)}" style="width:20px;height:14px;object-fit:cover;border-radius:2px;vertical-align:middle;margin-left:4px;">` : '';
-
-  const modal = document.createElement('div');
-  modal.className = 'modal-overlay';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:9999;';
-  modal.innerHTML = `
-    <div class="modal" style="max-width:600px;width:95%;">
-      <div class="modal-header">
-        <h2 class="modal-title">👤 ${user.username}</h2>
-        <button class="modal-close" onclick="this.closest('.modal-overlay').remove()">✕</button>
-      </div>
-      <div style="display:grid;gap:0.75rem;">
-        <div class="detail-row"><span class="detail-label">${(currentLang === 'it') ? 'Nome utente' : 'Nickname'}</span><span class="detail-value">${user.username} ${flag}</span></div>
-        <div class="detail-row"><span class="detail-label">E-mail</span><span class="detail-value">${user.email}</span></div>
-        <div class="detail-row"><span class="detail-label">Tipologia</span><span class="detail-value">${role}</span></div>
-        <div class="detail-row"><span class="detail-label">Iscritto dal</span><span class="detail-value">${joined}</span></div>
-        <div class="detail-row"><span class="detail-label">Ultima login</span><span class="detail-value">${lastLogin}</span></div>
-      </div>
-    </div>`;
-  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
-  document.body.appendChild(modal);
-}
 
 async function deleteUserFromModal() {
   const userId = document.getElementById('edit-user-id').value;
@@ -26056,247 +25616,9 @@ function _importDiff(oldRec, newRec, fields) {
 function _importDiffTxt(diff) {
   return diff.length ? ' [modificati: ' + diff.join('; ') + ']' : '';
 }
-function _importHasChanges(oldRec, newRec, fields) {
-  return _importDiff(oldRec, newRec, fields).length > 0;
-}
 
-function varImportLog(msg, type) {
-  const el = document.getElementById('import-var-log');
-  if (!el) return;
-  el.style.display = 'block';
-  const color = type==='ok'?'var(--success)':type==='err'?'var(--danger)':type==='warn'?'var(--warn)':type==='update'?'var(--info)':'var(--muted)';
-  el.innerHTML += '<div style="color:'+color+';margin-bottom:2px;">'+msg+'</div>';
-  el.scrollTop = el.scrollHeight;
-}
 
-function varImportStatus(msg, pct) {
-  const bar = document.getElementById('import-var-progress');
-  const status = document.getElementById('import-var-status');
-  if (bar) bar.value = pct;
-  if (status) status.textContent = msg;
-}
 
-async function startImportVar() {
-  const seriesId = document.getElementById('import-var-series-select').value;
-  if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series','error'); return; }
-  const sectionType = 'figurines';
-  const fileInput = document.getElementById('import-var-file');
-  if (!fileInput.files.length) { toast(currentLang==='it'?'Seleziona un file XLS':'Select an XLS file','error'); return; }
-
-  await loadXLSX(); // SheetJS, da js/xlsx.full.min.js
-
-  const file = fileInput.files[0];
-  const buf = await file.arrayBuffer();
-  const wb = XLSX.read(buf, { type: 'array' });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
-
-  if (!rows.length) { toast(currentLang==='it'?'File vuoto o formato non valido':'Empty file or invalid format','error'); return; }
-
-  // Controlla colonna Serie: ogni riga deve corrispondere al nome della serie selezionata
-  const selEl = document.getElementById('import-var-series-select');
-  const seriesName = selEl?.selectedOptions[0]?.dataset.name || '';
-  const getSeriesCol = (row) => { const v = Object.entries(row).find(([k]) => k.trim().toLowerCase() === 'serie'); return v ? String(v[1]).trim() : ''; };
-  const mismatchRows = rows.filter(row => {
-    const s = getSeriesCol(row);
-    return s && s.toLowerCase() !== seriesName.toLowerCase();
-  });
-  if (mismatchRows.length > 0) {
-    const sample = getSeriesCol(mismatchRows[0]);
-    toast((currentLang==='it'
-      ? '❌ Il file contiene righe con Serie "' + sample + '" che non corrisponde a "' + seriesName + '". Caricamento bloccato.'
-      : '❌ File contains rows with Serie "' + sample + '" that does not match "' + seriesName + '". Import blocked.'), 'error');
-    return;
-  }
-
-  document.getElementById('import-var-progress-wrap').style.display = 'block';
-  document.getElementById('import-var-log').innerHTML = '';
-  document.getElementById('import-var-log').style.display = 'block';
-  const _startBtn = document.getElementById('import-var-start-btn'); if (_startBtn) _startBtn.disabled = true;
-
-  varImportLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'info');
-
-  const allFigs = getData('figurines', []).filter(f => f.seriesId === seriesId && f.section === sectionType);
-  varImportLog((currentLang==='it'?'Oggetti nella sezione:':'Items in section:') + ' ' + allFigs.length, 'info');
-
-  let inserted = 0, updated = 0, unchanged = 0, skip = 0, errors = 0;
-
-  // Le righe scartate vengono anche RACCOLTE, non solo scritte a video: durante
-  // l'importazione scorrono via in mezzo all'avanzamento, e su un file lungo si
-  // perdono. Alla fine, dopo i totali, vengono ripetute tutte insieme.
-  const erroriRighe = [];
-  const errRiga = (msg, lvl) => { varImportLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
-
-  for (let i = 0; i < rows.length; i++) {
-    const row = rows[i];
-    // Legge le colonne (case-insensitive, gestisce spazi)
-    const getCol = (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return String(v[1]).trim(); } return ''; };
-    const numStr = getCol('Numero Figurina','numero figurina','numero','number');
-    const nome   = getCol('Nome','name','nome');
-    const tipo   = getCol('Tipo','type','tipo');
-    const tipoChange = getCol('Tipo di change','tipo di change','change type','changetype');
-    // Colonna di SOLO SMISTAMENTO (come nei Retro): "x" (o qualunque valore non-negativo)
-    // = errore di stampa. Non è un campo su Firebase.
-    const erroreStampaCol = getCol('Errore di stampa','errore di stampa','print error','printerror','print_error','errore stampa','misprint');
-    const nomeErroreStampa = getCol('Nome errore di stampa','nome errore di stampa','tipo di errore di stampa','print error type','printerrortype');
-    const retroCategoria = getCol('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria','Retro (Categoria)','retro (categoria)');
-    const retroNome = getCol('Retro - Nome','Retro-Nome','retro nome','retro-nome','Retro (Nome)','retro (nome)');
-    const _peVal = (erroreStampaCol || '').toString().trim().toLowerCase();
-    const isErroreStampa = _peVal !== '' && !['no','n','false','falso','0'].includes(_peVal);
-
-    varImportStatus((currentLang==='it'?'Riga ':'Row ') + (i+1) + '/' + rows.length, Math.round((i/rows.length)*100));
-
-    if (!numStr) {
-      errRiga('⚠️ Riga ' + (i+1) + ': Numero figurina mancante (obbligatorio)', 'warn');
-       continue;
-    }
-
-    // La figurina base si cerca per Numero tra le SOLE basi (esclude variazioni/change, che
-    // condividono il Numero). v5.799 — se nella serie ci sono più basi con lo stesso Numero, si
-    // disambigua col Nome: per Variazioni e Change il Nome della riga coincide col Nome della
-    // base, quindi identifica quella giusta. Se dopo la disambiguazione resta più di una base,
-    // si scarta la riga per non collegare la variazione/change alla base sbagliata.
-    // v5.800 — base CERTA: baseFigurineId vuoto E nessun flag speciale (regge la variazione orfana).
-    let _baseCands = allFigs.filter(f => Number(f.number) === Number(numStr) && !f.baseFigurineId && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError);
-    if (_baseCands.length > 1 && nome) {
-      const _exact = _baseCands.filter(f => (f.name||'').toLowerCase() === nome.toLowerCase());
-      if (_exact.length) _baseCands = _exact;
-    }
-    if (_baseCands.length > 1) {
-      errRiga('⚠️ Riga ' + (i+1) + ': ci sono ' + _baseCands.length + ' figurine base #' + numStr + (nome ? ' e nessuna col Nome "' + nome + '"' : ', e la riga non indica un Nome per distinguerle') + ' — riga scartata per non collegarla alla base sbagliata', 'warn');
-       continue;
-    }
-    const baseFig = _baseCands[0] || null;
-    if (!baseFig) {
-      errRiga('⚠️ Riga ' + (i+1) + ': nessuna figurina base #' + numStr + ' trovata nella serie', 'warn');
-       continue;
-    }
-
-    // v5.806 — tre casi mutuamente esclusivi, come nell'import dei Retro:
-    //  (1) ERRORE DI STAMPA: colonna "Errore di stampa" = x (+ "Nome errore di stampa" = printErrorType);
-    //  (2) CHANGE: colonna "Tipo di change" valorizzata (obbligatoria, validata sui tipi della serie);
-    //  (3) VARIAZIONE: colonna "Tipo" = Ufficiale / Non ufficiale (il Retro è obbligatorio).
-    // Nome di Variazioni, Change ed Errori di stampa = SEMPRE il Nome della figurina base.
-    const existingFigs = getData('figurines', []);
-    let duplicate = null, figData = null, rowType = '', keyInfo = '';
-    const baseCommon = {
-      seriesId, section: sectionType, number: baseFig.number, name: baseFig.name,
-      desc: '', score: 0, subseries: '', size: '',
-      isVariation: false, isUnofficialVariation: false, isChange: false, isPrintError: false,
-      baseFigurineId: baseFig.id, changeType: null, printErrorType: null, retroId: null, img: null
-    };
-
-    if (isErroreStampa) {
-      if (tipo || tipoChange) {
-        errRiga('❌ Riga ' + (i+1) + ': "Errore di stampa" è mutuamente esclusivo con "Tipo" e "Tipo di change" — riga scartata', 'warn');
-         continue;
-      }
-      const printErrorType = nomeErroreStampa || null;
-      duplicate = existingFigs.find(f =>
-        f.seriesId === seriesId && f.section === 'figurines' && f.isPrintError &&
-        f.baseFigurineId === baseFig.id &&
-        (f.printErrorType||'').toLowerCase().trim() === (printErrorType||'').toLowerCase().trim()
-      );
-      figData = { ...baseCommon, isPrintError: true, printErrorType };
-      rowType = (currentLang==='it' ? 'Errore di stampa' : 'Print error');
-      keyInfo = nomeErroreStampa ? ' [Errore di stampa: ' + nomeErroreStampa + ']' : ' [Errore di stampa]';
-    } else if (tipoChange) {
-      const allowedTypes = changeTypesDiSerie(seriesId);
-      const matchedType = allowedTypes.find(t => t.toLowerCase().trim() === tipoChange.toLowerCase().trim());
-      if (!matchedType) {
-        errRiga('❌ Riga ' + (i+1) + ': "Tipo di change" = "' + tipoChange + '" non corrisponde a nessuno dei tipi configurati per questa serie (' + (allowedTypes.join(', ') || 'nessuno configurato') + ')', 'err');
-         continue;
-      }
-      duplicate = existingFigs.find(f =>
-        f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isChange &&
-        (f.changeType||'').toLowerCase().trim() === matchedType.toLowerCase().trim()
-      );
-      figData = { ...baseCommon, isChange: true, changeType: matchedType };
-      rowType = 'Change';
-      keyInfo = ' [Tipo di change: ' + matchedType + ']';
-    } else {
-      if (!tipo) {
-        errRiga('⚠️ Riga ' + (i+1) + ': manca il Tipo. Indica "Ufficiale"/"Non ufficiale" (Variazione), oppure "Tipo di change" (Change), oppure "Errore di stampa" = x', 'warn');
-         continue;
-      }
-      const tipoLow = tipo.toLowerCase().trim();
-      const isVariation = tipoLow === 'ufficiale' || tipoLow === 'official';
-      const isUnofficialVariation = tipoLow === 'non ufficiale' || tipoLow === 'unofficial';
-      if (!isVariation && !isUnofficialVariation) {
-        errRiga('⚠️ Riga ' + (i+1) + ': Tipo non riconosciuto "' + tipo + '" (usa Ufficiale / Non ufficiale; per i Change usa la colonna "Tipo di change", per gli errori "Errore di stampa" = x)', 'warn');
-         continue;
-      }
-      if (!retroCategoria || !retroNome) {
-        errRiga('⚠️ Riga ' + (i+1) + ': Retro (Categoria)/Retro (Nome) mancanti (obbligatori per una Variazione)', 'warn');
-         continue;
-      }
-      const retroMatch = existingFigs.find(f =>
-        f.seriesId === seriesId && f.section === 'retros' &&
-        (f.category||'').toLowerCase() === retroCategoria.toLowerCase() &&
-        (f.name||'').toLowerCase() === retroNome.toLowerCase()
-      );
-      if (!retroMatch) {
-        errRiga('⚠️ Riga ' + (i+1) + ': Retro "' + retroCategoria + ' / ' + retroNome + '" non trovato — riga scartata', 'warn');
-         continue;
-      }
-      duplicate = existingFigs.find(f =>
-        f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.retroId === retroMatch.id &&
-        (f.isVariation || f.isUnofficialVariation)
-      );
-      figData = { ...baseCommon, isVariation, isUnofficialVariation, retroId: retroMatch.id };
-      rowType = tipo;
-      keyInfo = ' [Retro: ' + retroCategoria + ' / ' + retroNome + ']';
-    }
-
-    // Sicurezza: la riconciliazione non deve MAI agganciare una figurina base.
-    if (duplicate && !duplicate.isVariation && !duplicate.isUnofficialVariation && !duplicate.isChange && !duplicate.isPrintError) {
-      errRiga('❌ Riga ' + (i+1) + ': la riconciliazione ha trovato "' + duplicate.name + '" che è una figurina base — riga scartata per sicurezza, nessuna modifica effettuata', 'err');
-       continue;
-    }
-
-    const finalName = baseFig.name; // Variazioni, Change ed Errori di stampa ereditano il Nome della base
-
-    try {
-      if (duplicate) {
-        const updatedRec = { ...duplicate, ...figData, img: duplicate.img, id: duplicate.id };
-        updatedRec.fullName = computeFullName(updatedRec, existingFigs);
-        const _diff = _importDiff(duplicate, updatedRec, ['name', 'isVariation', 'isUnofficialVariation', 'isChange', 'isPrintError', 'baseFigurineId', 'retroId', 'changeType', 'printErrorType']);
-        const changed = _diff.length > 0;
-        if (changed) {
-          await fsSave('figurines', updatedRec);
-          const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
-          if (idx >= 0) _cache.figurines[idx] = updatedRec;
-          varImportLog('🔄 Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — sovrascritta (' + rowType + ')' + _importDiffTxt(_diff), 'update');
-          updated++;
-        } else {
-          varImportLog('⏭️ Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — già presente, nessuna modifica', 'info');
-          unchanged++;
-        }
-      } else {
-        figData.fullName = computeFullName(figData, existingFigs);
-        const saved = await fsSave('figurines', figData);
-        varImportLog('✅ Riga ' + (i+1) + ': "' + finalName + '" (#' + numStr + ')' + keyInfo + ' — aggiunta (' + rowType + ')', 'ok');
-        inserted++;
-      }
-    } catch(e) {
-      errRiga('❌ Riga ' + (i+1) + ': ' + e.message, 'err');
-      
-    }
-  }
-
-  varImportStatus('✅ Fine: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + errors + ' errori', 100);
-  varImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + unchanged + ' invariate · ' + errors + ' errori ---', errors===0?'ok':'warn');
-
-  if (erroriRighe.length) {
-    varImportLog('', 'info');
-    varImportLog('--- ' + (currentLang === 'it'
-      ? 'RIGHE NON IMPORTATE (' + erroriRighe.length + ') ---'
-      : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'warn');
-    erroriRighe.forEach(msg => varImportLog(msg, 'warn'));
-  }
-  const _endBtn = document.getElementById('import-var-start-btn'); if (_endBtn) _endBtn.disabled = false;
-  renderItems();
-}
 
 // ── Importazione Retro da XLS ──────────────────────────────────────────
 function retroImportLog(msg, type) {
@@ -27080,10 +26402,6 @@ const CONTROLLI_SOSPENDIBILI = [
   // ancora caricando avrebbe l'elenco pieno di righe che si sistemano da sole finendo il lavoro.
   { id: 'changeRetroErrato', it: 'Change collegato al retro sbagliato', en: 'Change linked to the wrong back' }
 ];
-function _etichettaControllo(id) {
-  const c = CONTROLLI_SOSPENDIBILI.find(x => x.id === id);
-  return c ? (currentLang === 'it' ? c.it : c.en) : id;
-}
 // La serie sospende quel controllo? Legge dal record della serie, che e' l'unico posto dove sta.
 function _controlloSospeso(seriesId, idControllo, seriesList) {
   const s = (seriesList || getData('series', [])).find(x => x.id === seriesId);
@@ -27360,7 +26678,7 @@ function renderAdminErrori() {
   // Il taglio a 200 righe vale per gruppo-foglia, non per l'intero elenco: cosi' un gruppo grosso
   // non mangia le righe dei gruppi che vengono dopo.
   const _linkOggetto = f => {
-    const num = _haNumero(f) && f.number ? '#' + f.number + ' ' : '';
+    const num = _haNumero(f) && f.number ? f.number + ' ' : '';
     return `<a href="#" onclick="openFigDetail('${f.id}');return false;" style="display:block;padding:0.25rem 0.45rem;border-radius:6px;text-decoration:none;color:var(--text);font-size:0.82rem;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='transparent'">${num}${esc(_nomeOggetto(f))}</a>`;
   };
   // v6.082 (Franco) - "l'elenco non mi sembra in ordine alfabetico". Lo era, ma si ordinava per il
@@ -27439,7 +26757,7 @@ function renderAdminErrori() {
           .sort((a, b) => String(a.fig.number ?? '').localeCompare(String(b.fig.number ?? ''), 'it', { numeric: true })
                        || String(_nomeOggetto(a.fig)).localeCompare(String(_nomeOggetto(b.fig)), 'it', { numeric: true }))
           .map(v => {
-            const num = _haNumero(v.fig) && v.fig.number ? '#' + v.fig.number + ' ' : '';
+            const num = _haNumero(v.fig) && v.fig.number ? v.fig.number + ' ' : '';
             const proposta = v.corretto
               ? `<span style="color:var(--muted);">${currentLang==='it'?'da':'from'}</span> <span style="color:var(--danger);">${esc(v.retroAttuale.name||'')}</span>`
                 + ` <span style="color:var(--muted);">${currentLang==='it'?'a':'to'}</span> <span style="color:var(--success);">${esc(v.corretto.name||'')} · ${esc(v.corretto.changeType||'')}</span>`
@@ -27513,7 +26831,7 @@ function renderAdminErrori() {
                   : `<button class="tbl-btn tbl-btn-edit" onclick="switchToSeriesFromErrori('${f.seriesId}','${f.id}')">✏️ ${currentLang==='it'?'Correggi':'Fix'}</button>`;
                 return `<tr>
                   <td style="padding:6px 10px;">${sName}</td>
-                  <td style="padding:6px 10px;">${f.number ? '#' + f.number + ' ' : ''}${f.name}</td>
+                  <td style="padding:6px 10px;">${f.number ? f.number + ' ' : ''}${f.name}</td>
                   <td style="padding:6px 10px;color:var(--muted);">${typeLabel}</td>
                   <td style="padding:6px 10px;">${actionBtn}</td>
                 </tr>`;
@@ -27538,7 +26856,7 @@ function renderAdminErrori() {
             ${duplicateBaseFigGroups.map(g => {
               const sName = seriesList.find(x => x.id === g[0].seriesId)?.name || (currentLang==='it'?'Serie sconosciuta':'Unknown series');
               return `<div style="background:var(--card2);border-radius:8px;padding:0.6rem 0.85rem;margin-bottom:0.6rem;">
-                <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.3rem;">${sName} — ${g[0].number ? '#' + g[0].number : g[0].name}</div>
+                <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.3rem;">${sName} — ${g[0].number ? g[0].number : g[0].name}</div>
                 ${g.map(f => `<div style="display:flex;align-items:center;gap:0.5rem;padding:3px 0;font-size:0.8rem;">
                   ${f.img ? `<img src="${cloudinaryUrl(f.img,'w_28,h_28,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : `<span style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.65rem;">${currentLang==='it'?'no foto':'no photo'}</span>`}
                   <a href="#" onclick="openFigDetail('${f.id}');return false;" style="color:var(--accent);text-decoration:underline;">${f.name} ↗</a>
@@ -27664,7 +26982,7 @@ function renderMoveFigList() {
     figs.map(f => {
       const rid = f.retroId || '';
       const rlbl = rid ? ((it ? ' · retro: ' : ' · retro: ') + esc(retroLabel(rid))) : (it ? ' · nessun retro' : ' · no retro');
-      const numStr = (f.number != null && f.number !== '') ? ('#' + f.number + ' ') : '';
+      const numStr = (f.number != null && f.number !== '') ? (f.number + ' ') : '';
       const thumb = f.img
         ? `<img src="${f.img}" alt="" loading="lazy" style="width:36px;height:36px;object-fit:cover;border-radius:5px;flex-shrink:0;background:var(--card2);border:1px solid var(--border2);">`
         : `<span style="width:36px;height:36px;border-radius:5px;flex-shrink:0;background:var(--card2);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.9rem;">🃏</span>`;
@@ -27732,7 +27050,7 @@ async function moveFigurinesToSeries() {
   const dstBaseNums = new Set(dstS.items
     .filter(x => x.section === 'figurines' && !x.baseFigurineId && !x.isVariation && !x.isUnofficialVariation && !x.isChange && !x.isPrintError && x.number != null && x.number !== '')
     .map(x => String(x.number)));
-  const collisions = movingFigs.filter(f => f.number != null && f.number !== '' && dstBaseNums.has(String(f.number))).map(f => '#' + f.number + ' ' + (f.name || ''));
+  const collisions = movingFigs.filter(f => f.number != null && f.number !== '' && dstBaseNums.has(String(f.number))).map(f => f.number + ' ' + (f.name || ''));
 
   let msg = (it
     ? `Spostare ${movingFigs.length} figurine e ${allMovingRetros.length} retro da "${srcS.name}" a "${dstS.name}"?`
@@ -27926,7 +27244,7 @@ function anteprimaFixRetroChange() {
     '</div>' +
     '<div style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">' +
     _pianoFixRetro.map(v => {
-      const num = _haNumero(v.fig) && v.fig.number ? '#' + v.fig.number + ' ' : '';
+      const num = _haNumero(v.fig) && v.fig.number ? v.fig.number + ' ' : '';
       return '<div style="font-size:0.8rem;padding:0.2rem 0;line-height:1.4;">' +
         '<span style="color:var(--muted);">' + esc(serieNome(v.fig.seriesId)) + '</span> · ' +
         esc(num + (v.fig.fullName || v.fig.name || '')) +
@@ -28473,7 +27791,7 @@ async function startAdminFotoUpload() {
 
   let ok = 0, skip = 0, errors = 0;
 
-  // Vedi startImportVar: gli scarti si raccolgono, per poterli ripetere in fondo.
+  // Come negli import (startImportFig): gli scarti si raccolgono, per poterli ripetere in fondo.
   const erroriRighe = [];
   const errRiga = (msg, lvl) => { fotoLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
 
@@ -28629,7 +27947,7 @@ async function startAdminFotoNoNumberUpload() {
 
   let ok = 0, skip = 0, errors = 0;
 
-  // Vedi startImportVar: gli scarti si raccolgono, per poterli ripetere in fondo.
+  // Come negli import (startImportFig): gli scarti si raccolgono, per poterli ripetere in fondo.
   const erroriRighe = [];
   const errRiga = (msg, lvl) => { fotoNnLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
 
@@ -28907,9 +28225,6 @@ async function incrementEmailCounter(count) {
 // refreshEmailCountWidgets(), che legge lo stesso documento e aggiorna i widget
 // realmente presenti in pagina. Mantenuta come funzione perché richiamata
 // altrove: rimuoverla avrebbe richiesto di rincorrerne i chiamanti.
-async function loadEmailCounter() {
-  await refreshEmailCountWidgets();
-}
 
 
 // ============================================================
@@ -29199,7 +28514,7 @@ function renderBulkEditView() {
           ${isAdmin ? `<td style="padding:4px;white-space:nowrap;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="apriModificaItem('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
           ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
           ${currentSection === 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
-          ${currentSection !== 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? '#'+f.number : '')) : ''}
+          ${currentSection !== 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? f.number : '')) : ''}
           ${currentSection === 'figurines' ? (() => {
             const typeLabel = f.isVariation ? (currentLang === 'it' ? 'Variazione ufficiale' : 'Official variation')
               : f.isUnofficialVariation ? (currentLang === 'it' ? 'Variazione non ufficiale' : 'Unofficial variation')
@@ -29760,7 +29075,7 @@ function renderWishlist() {
   el.innerHTML = seriesSorted.map(s => {
     const figs = bySeries[s.id].sort((a,b) => (a.number||0)-(b.number||0));
     const chipHtml = f => `<span style="background:rgba(var(--danger-rgb),0.08);border:1px solid rgba(var(--danger-rgb),0.25);color:var(--text);font-size:0.72rem;padding:2px 8px;border-radius:10px;display:inline-flex;align-items:center;gap:4px;">
-      ${f.number ? '#'+f.number+' ' : ''}${f.name}
+      ${f.number ? f.number+' ' : ''}${f.name}
       <button onclick="toggleWishlist('${f.id}')" style="background:none;border:none;color:var(--danger);cursor:pointer;padding:0;font-size:0.9rem;line-height:1;" title="${currentLang === 'it' ? 'Rimuovi' : 'Remove'}">×</button>
     </span>`;
     // Prima si raggruppa per tipo di oggetto (Figurine/Retro/Album/Altri
@@ -29978,7 +29293,7 @@ async function submitWishlist() {
     const s = series.find(x => x.id === f.seriesId);
     const sName = s?.name || f.seriesId;
     if (!bySeries[sName]) bySeries[sName] = [];
-    bySeries[sName].push((f.number ? '#'+f.number+' ' : '') + f.name);
+    bySeries[sName].push((f.number ? f.number+' ' : '') + f.name);
   });
   const listText = Object.entries(bySeries).map(([s, figs]) => s + ': ' + figs.join(', ')).join('\n');
   const commentSection = userComment ? '\n\n--- Commento utente ---\n' + userComment : '';
@@ -30186,9 +29501,9 @@ function renderWantlist() {
             });
             const subChips = subItems.map(f => {
               let label = '';
-              if (mode === 'numbers') label = f.number ? '#' + f.number : f.name;
+              if (mode === 'numbers') label = f.number ? f.number : f.name;
               else if (mode === 'names') label = f.name;
-              else label = (f.number ? '#' + f.number + ' ' : '') + f.name;
+              else label = (f.number ? f.number + ' ' : '') + f.name;
               return `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:0.64rem;padding:1px 5px;border-radius:8px;">${label}</span>`;
             }).join('');
             return `<div style="margin-bottom:0.3rem;"><span style="font-size:0.72rem;font-weight:700;color:var(--accent3);margin-right:0.4rem;">(${(currentLang === 'it') ? 'Sottoserie' : 'Subseries'}: ${sub}):</span><span style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">${subChips}</span></div>`;
@@ -30196,9 +29511,9 @@ function renderWantlist() {
         } else {
           const chips = sorted.map(f => {
             let label = '';
-            if (mode === 'numbers') label = f.number ? '#' + f.number : f.name;
+            if (mode === 'numbers') label = f.number ? f.number : f.name;
             else if (mode === 'names') label = f.name;
-            else label = (f.number ? '#' + f.number + ' ' : '') + f.name;
+            else label = (f.number ? f.number + ' ' : '') + f.name;
             return `<span style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);color:var(--text);font-size:0.64rem;padding:1px 5px;border-radius:8px;">${label}</span>`;
           }).join('');
           chipsHtml = `<div style="display:flex;flex-wrap:wrap;gap:0.3rem;">${chips}</div>`;
