@@ -1,6 +1,552 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.136 - LE SERIE IN ORDINE ALFABETICO nella scheda Funzioni (Franco). Modificato app.js e
+//          index.html (solo la versione). Una riga, e vale per tutti e quattro i selettori della
+//          scheda, non solo per quello del ricalcolo: sono lo stesso elenco.
+//          Erano ordinate per `order`, cioe' l'ordine con cui le serie si presentano nel sito. E'
+//          giusto in vetrina e sbagliato in una tendina, dove si cerca una serie per NOME.
+//          Collazione numerica, che qui serve davvero: senza, "Serie 10" verrebbe prima di
+//          "Serie 2". Stesso motivo per cui la griglia la usa dalla v6.077.
+// ------------------------------------------------------------
+// v6.135 - IL "RICALCOLA I NOMI COMPLETI" PASSA NELLA SCHEDA FUNZIONI (Franco). Modificato app.js
+//          e index.html (solo la versione). Spostamento, non riscrittura: gli id restano identici
+//          (`recompute-fullnames-*`), quindi `previewRecomputeFullNames()` e
+//          `applyRecomputeFullNames()` non cambiano di una riga.
+//
+//          Stava dentro `renderAdminFoto`, il pannello degli IMPORT e delle procedure FOTO, come
+//          blocco richiudibile in mezzo a import figurine, import retro, caricamento foto, sposta
+//          figurine e tre elenchi di errori. Era l'unico blocco di quel pannello che non c'entrava
+//          col pannello.
+//          Il §14 definisce la scheda Funzioni come "procedure di intervento manuale complesso" con
+//          la regola "prima l'anteprima, poi la conferma, poi la scrittura": il ricalcolo e'
+//          esattamente quello, e l'anteprima ce l'ha gia'. Ora e' la voce 4, accanto ad "Allinea
+//          item figlio correlati", "Azzera collegamenti Retro" e "Ricollega i Change al Retro
+//          giusto".
+//
+//          📌 E dalla v6.131 conta piu' di prima: non e' piu' manutenzione occasionale, e' il passo
+//          che rende EFFETTIVA la nuova composizione del Nome completo. Il testo della voce ora lo
+//          dice — "il Nome completo e' un campo memorizzato, quindi finche' non si ricalcola la
+//          stessa serie contiene due forme diverse" — perche' chi arriva fra sei mesi non ha modo di
+//          saperlo dal nome del pulsante.
+// ------------------------------------------------------------
+// v6.134 - I RAGGRUPPAMENTI SI SCIOLGONO QUANDO IL LORO SELETTORE SI SPEGNE (Franco).
+//          Modificato app.js e index.html (solo la versione).
+//
+//          IL BACO, con le parole di Franco: acceso "Change", scelto un tipo ("mosca nera"), poi
+//          acceso "Errori di stampa" -> nessun risultato. `_changeTypeFilter` restava pieno, e il
+//          filtro pretende `f.isChange && _changeTypeFilter.has(...)`: un errore di stampa non e' un
+//          change, quindi non passa nessuno. Il filtro faceva il suo mestiere — a essere rimasto
+//          indietro era uno stato che nessuno spegneva. La soluzione l'ha data Franco insieme al
+//          sintomo: "il raggruppamento deve essere sciolto quando il selettore di riferimento e'
+//          disattivo".
+//
+//          ⚠️ E' LA FAMIGLIA DEI FILTRI INVISIBILI, gia' incontrata nella v6.095: un filtro acceso
+//          che non si vede nasconde la griglia senza dire perche', e chi guarda conclude che i dati
+//          non ci sono. La differenza fra un difetto e un dato mancante, dall'esterno, e' nessuna.
+//
+//          CHIUSO ANCHE IL SECONDO MODO DI CASCARCI, che non era stato segnalato: con il selettore
+//          su "tutti" si potevano accendere ENTRAMBI i raggruppamenti, e siccome si combinano in AND
+//          — nessun oggetto e' insieme change ed errore di stampa — il risultato tornava vuoto.
+//          Ora accenderne uno spegne l'altro. Non e' una limitazione: quella combinazione non era
+//          esprimibile, restituiva zero per costruzione.
+// ------------------------------------------------------------
+// v6.133 - LA FIGURINA DI PARTENZA SI SCEGLIE SOLO NELLO STESSO GRUPPO (Franco). Modificato
+//          app.js e index.html (solo la versione).
+//
+//          LA DOMANDA DI FRANCO: "come mai permettiamo di scegliere qualsiasi figurina della serie e
+//          non solo quelle con lo stesso numero?". La risposta non e' la pulizia dell'elenco.
+//          Il numero di un figlio NON si scrive: si EREDITA dalla figurina di partenza, al
+//          salvataggio — `updates.number = baseFigForNum.number`. Quindi scegliere dall'elenco una
+//          figurina con un altro numero RINUMERA il record, e lo fa in silenzio. E' esattamente il
+//          §12.0: "un oggetto che perde il numero senza che nessuno l'abbia toccato". Su una tendina
+//          da mille voci un clic scivolato non si vede.
+//          Ora si vedono solo la figurina con quel numero e le sue variazioni. Dove il numero non
+//          c'e' (serie `noNumbers`, oggetti con `noNumber`) si usa il NOME; se non c'e' nemmeno
+//          quello — record appena nato — si mostra tutto, perche' non c'e' niente su cui
+//          restringere e un elenco vuoto sarebbe peggio di uno lungo.
+//          La validazione rifiuta la stessa cosa, e lo dice col numero dell'oggetto scartato:
+//          la tendina impedisce lo scivolone, la validazione copre chi scrive a mano.
+//
+//          ⚠️ BUG MIO, TROVATO CERCANDO QUESTO: dalla vista tabellare il numero non veniva ereditato
+//          affatto. La v6.130 impostava `baseFigurineId` e ricalcolava il Nome completo, ma non
+//          toccava `number` ne' `noNumber` — mentre la scheda lo fa da sempre. Due strade che
+//          scrivono lo stesso campo e si comportavano diversamente: dalla tabella il numero restava
+//          quello della figurina di partenza VECCHIA. Corretto.
+//
+//          IL <datalist> DIVENTA UNO PER GRUPPO. Quello condiviso della v6.120 andava finche' i
+//          candidati erano gli stessi per ogni riga; ora dipendono dal numero della riga, e un
+//          elenco unico non si restringe per riga. Il totale delle voci non cambia — sono le stesse
+//          figurine, divise — quindi non costa di piu', e ogni riga ne vede tre invece di mille.
+// ------------------------------------------------------------
+// v6.132 - UNA REGOLA SOLA: nessuna distinzione fra variazioni e figurine base nel Nome completo
+//          (Franco). Modificato app.js e index.html (solo la versione).
+//
+//          La v6.130 distingueva: da una VARIAZIONE prendeva il Nome completo, da una BASE il nome
+//          nudo. Al tempo aveva una ragione — le basi il retro nel nome non ce l'avevano — ma con la
+//          v6.131 e' diventata un'incoerenza che si vede a occhio: la base si chiamava
+//          "ADAM BOMB - RICERCATO - ROSSO - PER PISOLINI - POLTRONE" e il suo change
+//          "ADAM BOMB - MOSCA NERA", senza il retro che la base ora porta.
+//          Franco: "da oggi non facciamo distinzione tra variazioni e fig base, quando trattiamo il
+//          full name". Quindi il ramo doppio sparisce: si prende sempre il Nome completo della
+//          figurina di partenza, chiunque essa sia.
+//
+//          📌 VOCABOLARIO, e non e' pedanteria. La funzione si chiamava `_nomeDelGenitore`: fuori.
+//          Si dice FIGURINA DI PARTENZA — termine coniato oggi con la v6.120, quando il campo ha
+//          smesso di poter puntare solo a una base. "Base" adesso direbbe il falso e "genitore" e'
+//          una parola che in questo progetto non e' mai esistita: l'avevo introdotta io scrivendo,
+//          ed e' il modo in cui un vocabolario si sfilaccia — una parola comoda alla volta.
+//          Il campo su Firestore resta `baseFigurineId`: rinominarlo vorrebbe dire riscrivere ogni
+//          documento serie per un guadagno di sola lettura.
+//
+//          Aggiunto un tetto di 4 salti alla ricorsione: una figurina di partenza puo' averne una a
+//          sua volta, e dalla vista tabellare l'id si imposta a mano — due record che si puntano a
+//          vicenda sono possibili, e la validazione impedisce l'auto-riferimento, non il ciclo di
+//          due. Stessa difesa gia' messa in `_fotoFigurina` nella v6.129.
+// ------------------------------------------------------------
+// v6.131 - IL NOME COMPLETO PORTA IL NOME DEL RETRO ANCHE SULLE BASI, e con un ordine solo
+//          (Franco). Modificato app.js e index.html (solo la versione).
+//          ⚠️ CAMBIA LA COMPOSIZIONE DI UN CAMPO MEMORIZZATO: va seguito dal "Ricalcola Nomi
+//          completi" (funzione admin, per serie, con anteprima), altrimenti il cambio vale solo per
+//          i record che vengono risalvati, e la stessa serie finisce con due forme diverse dentro.
+//
+//          (1) LE BASI. Il ramo finale tornava il solo `fig.name`: una base si chiamava "ADAM BOMB"
+//          mentre ogni suo figlio portava il retro nel nome. Ora anche la base dice qual e' il suo
+//          dietro. Chi non ha `retroId` resta il solo nome.
+//
+//          (2) LE VARIAZIONI usavano `_retroNomeLungo`, cioe' il solo `nome - sottonome` del retro:
+//          niente categoria ne' sottocategoria. Con le basi promosse alla forma piena, una
+//          variazione avrebbe avuto MENO informazione della figurina da cui discende. Ora entrambe
+//          passano da `_retroFullName`.
+//          Nota tecnica: `_retroFullName` e non `_retroNomeCompleto`, che preferisce il `fullName`
+//          MEMORIZZATO del retro. Comporre il nome di un record dal valore salvato di un altro
+//          propagherebbe la forma vecchia proprio durante il ricalcolo generale.
+//
+//          (3) UN ORDINE SOLO. La sottocategoria stava in TESTA quando la categoria c'era e in CODA
+//          quando veniva omessa (perche' il nome la conteneva gia'):
+//              con categoria :  CATEGORIA - sottocat - nome - sottonome
+//              senza         :  nome - sottonome - SOTTOCATEGORIA
+//          Due ordini per la stessa informazione, scelti da una condizione che riguarda un altro
+//          campo. Finche' di qui passavano i soli retro si notava poco; ora ci passano anche basi e
+//          variazioni. Deciso da Franco: sempre `[categoria -] [sottocategoria -] nome - sottonome`.
+//
+//          📌 CHIARITO, perche' era una convinzione sbagliata di Franco e mia: il SOTTONOME fa parte
+//          del Nome completo, per decisione esplicita della v5.980 — "Il Nome completo, che e' cio'
+//          che si VEDE ovunque nel sito, li rimette insieme: e' il titolo eBay che usera' il nome
+//          corto". E' il motivo per cui esiste la gemella `_retroNomeCompletoSenzaSottonome`.
+//          E i campi sono QUATTRO, non tre: categoria, sottocategoria, nome, sottonome. "Tripletta"
+//          e' stata detta da Franco e ripetuta da me senza contarli.
+//
+//          ⚠️ RAGGIO D'AZIONE LARGO: `fullName` e' letto da 29 funzioni, fra cui `ebayTitleCorpo` —
+//          il Nome completo e' il CORPO del titolo eBay. I titoli scritti a mano restano; quelli
+//          generati si allungano, e il tetto e' 80 caratteri, quindi piu' titoli finiranno sotto la
+//          forbice. Da guardare quando si tornera' sull'integrazione.
+// ------------------------------------------------------------
+// v6.130 - IL NOME COMPLETO SEGUE LA FIGURINA DI PARTENZA (Franco). Modificato app.js e
+//          index.html (solo la versione). Secondo buco della stessa famiglia della v6.129.
+//
+//          IL SINTOMO: cambiando la Figurina di partenza, il Nome completo non si aggiorna.
+//
+//          DUE CAUSE SOVRAPPOSTE, e la prima e' una mia scelta.
+//          (1) La v6.120 impediva APPOSTA il ricalcolo in vista tabellare, per non sovrascrivere il
+//          valore memorizzato: poteva essere l'unica traccia di quale fosse il genitore vero, cioe'
+//          la prova che serviva alla ricognizione dei ~110 record. La ragione e' scaduta appena
+//          Franco ha cominciato a scegliere il genitore A MANO: l'informazione la fornisce lui.
+//          (2) Ma togliere il blocco non sarebbe bastato, ed e' l'errore che avevo appena scritto
+//          nella v6.129 fra i punti "che reggono": `computeFullName` prendeva dal genitore il nome
+//          NUDO (`base.name`). Non si rompe — una variazione ha lo stesso nome nudo della base —
+//          ma proprio per questo il Nome completo di un change agganciato alla variazione A e di
+//          uno agganciato alla base sarebbero IDENTICI. "Non si rompe" e "fa la cosa giusta" sono
+//          due cose diverse, e nella v6.129 avevo controllato solo la prima.
+//
+//          IL RIMEDIO: da una VARIAZIONE si prende il Nome COMPLETO (che contiene gia' il suo
+//          retro), da una base il nome. Ne esce "ADAM BOMB - RICERCATO ... - POLTRONE - MOSCA NERA".
+//          📌 Che e' ESATTAMENTE la forma che Franco aveva descritto stamattina come regola di
+//          abbinamento per i 110: "lo stesso full name al netto del valore del campo Tipo di
+//          change". Non stava descrivendo una coincidenza dei dati: stava descrivendo come il nome
+//          va composto. Il che spiega anche perche' quella regola sembrava promettente.
+//
+//          RAGGIO D'AZIONE STRETTO: per tutti i figli che puntano a una base — cioe' tutti quelli
+//          esistenti oggi — il Nome completo non cambia di un carattere. Cambia solo per quelli che
+//          verranno ricollegati a una variazione, che e' il lavoro in corso.
+// ------------------------------------------------------------
+// v6.129 - IL FRONTE DI UN CHANGE COLLEGATO A UNA VARIAZIONE (Franco). Modificato app.js e
+//          index.html (solo la versione). BUCO aperto dalla v6.120, trovato provando.
+//
+//          IL SINTOMO: ricollegando un change a una variazione, il change smette di mostrare la
+//          foto del fronte.
+//
+//          LA CAUSA, e vale la pena distinguerla da un baco: il codice era GIUSTO finche' la cosa
+//          che ora permettiamo era impossibile. `_fotoFigurina` ripiegava sulla foto del genitore
+//          leggendo `base.img` — un anello solo — e andava, perche' dall'altro capo di
+//          `baseFigurineId` c'era per forza una BASE, e la base una foto ce l'ha. Dalla v6.120 li'
+//          puo' esserci una VARIAZIONE, che di solito una foto propria NON ce l'ha: ha lo stesso
+//          fronte della base e si appoggia a lei, per questa identica regola. Catena
+//          change -> variazione -> base, e il ripiego mollava al primo anello.
+//
+//          IL RIMEDIO: si richiama `_fotoFigurina` sul genitore invece di leggergli dentro `.img`.
+//          La variazione sa gia' ripiegare sulla propria base, quindi la catena si risolve da se',
+//          ed e' la sola forma che non va riscritta se un giorno gli anelli diventano tre.
+//          Con un tetto di 4 salti, che non e' teorico: `baseFigurineId` ora si imposta a mano dalla
+//          vista tabellare, quindi due record che si puntano a vicenda sono possibili — e senza
+//          tetto sarebbe una ricorsione infinita che blocca la pagina invece di mostrare una foto
+//          in meno. La validazione impedisce di puntare a se stessi, non a un ciclo di due.
+//
+//          📌 QUESTO E' IL PRIMO DI UNA FAMIGLIA, e conviene aspettarsene altri: ogni punto del
+//          codice che legge una proprieta' DI `baseFigurineId` dando per scontato che sia una base
+//          puo' avere lo stesso buco. Quelli gia' guardati e che stanno in piedi: `computeFullName`
+//          (usa `base.name`, e una variazione ha lo stesso nome della base), il comparatore della
+//          griglia (usa il numero, idem), `numeroGruppo`. Da guardare ancora: l'ereditarieta' dei
+//          campi (§13.1) e la funzione 3.
+// ------------------------------------------------------------
+// v6.128 - L'ETICHETTA DEL RETRO CHIEDE LA REGOLA A CHI CE L'HA (Franco). Modificato app.js e
+//          index.html (solo la versione). Tre righe.
+//
+//          Franco, guardando la tendina: "hai presente quel sistema adottato per evitare di ripetere
+//          del testo, le regolette per accorciare il nome mostrato dei retro? potremmo adottarlo
+//          anche qui?". Si': ed e' peggio di cosi', perche' non era una funzione da aggiungere — era
+//          una funzione che c'era gia' e che la v6.120 ha scavalcato riscrivendo la regola a mano.
+//
+//          La v6.120 componeva la coda con `[categoria, sottocategoria, nome].join(' - ')`. E'
+//          IDENTICA alla forma che la v6.022 aveva tolto da un altro punto per lo stesso motivo:
+//          produce "PREMIO - PREMIO DI MIGLIOR ATTORE" sui 94 retro il cui Nome comincia gia' con la
+//          categoria. Cioe' un difetto corretto cento release fa e' rientrato da una porta nuova.
+//          La regola sta in `_retroFullName`:
+//              categoriaOmessa = !cat || _retroNameStartsWithCategory(base)
+//          piu' il sottonome (nome lungo/corto, v5.980) e il suffisso del tipo per change ed errori
+//          di stampa. Ora si chiama `_retroNomeCompleto()` e basta.
+//
+//          📌 La lezione: quando si scrive una formattazione, la domanda da farsi non e' "come si
+//          compone questa stringa" ma "qualcuno la compone gia'?". Una regola riscritta a mano non
+//          e' una copia che invecchia: nasce gia' vecchia di tutte le correzioni che l'originale ha
+//          ricevuto nel frattempo. Qui erano cento release di correzioni.
+//
+//          NELLA STESSA RELEASE, perche' e' lo stesso campo: la colonna "Figurina di partenza" della
+//          vista tabellare era larga 260px fissi e tagliava (Franco: "lo spazio c'e'"). Ora la CELLA
+//          dichiara `min-width:420px` e l'input la riempie con `width:100%`, invece di avere una
+//          misura sua. Cosi' la colonna prende lo spazio che la tabella le puo' dare e cresce con
+//          esso: una larghezza fissa avrebbe ricominciato a tagliare al primo retro con un nome piu'
+//          lungo, e saremmo tornati qui a scegliere un altro numero.
+// ------------------------------------------------------------
+// v6.127 - DALLA VISTA TABELLARE SI PUO' APRIRE LA SCHEDA IN SOLA LETTURA (Franco).
+//          Modificato app.js e index.html (solo la versione). Un pulsante.
+//
+//          Nella vista tabellare le chiamate a `openFigDetail` erano ZERO: l'unico ingresso era la
+//          matita, che porta dritti in MODIFICA. Nella griglia il clic sulla card apre la scheda in
+//          lettura; in tabella quel gesto non era mai stato collegato, e nessun commento diceva che
+//          fosse voluto — sembra semplicemente una cosa non fatta.
+//
+//          PERCHE' UN PULSANTE E NON IL CLIC SULLA RIGA, che sarebbe stato il gesto gemello della
+//          griglia: da admin quasi tutte le celle sono CASELLE DI TESTO, quindi cliccarci dentro
+//          deve mettere il cursore, non aprire una scheda. Un bersaglio suo e' l'unica forma che
+//          non litiga con la modifica in linea.
+//          Sta PRIMA della matita, non dopo: si guarda e poi si modifica, e il pulsante meno
+//          pericoloso viene per primo. (👁 apre, ✏️ modifica, ⧉ clona.)
+//          Scartato il clic sulla miniatura: non c'e' su ogni riga, e in Serie 3 le figurine senza
+//          foto sono parecchie — un comando che c'e' solo a volte si impara peggio di uno che non
+//          c'e' mai.
+// ------------------------------------------------------------
+// v6.126 - ANCHE IN VISTA TABELLARE IL CLIC SELEZIONA TUTTO (Franco). Modificato app.js e
+//          index.html (solo la versione). Una riga.
+//
+//          La v6.124 aveva messo `this.select()` sul campo della SCHEDA e si era fermata li'. Ma i
+//          campi che fanno quel mestiere sono DUE - la scheda e la colonna "Figurina di partenza"
+//          della vista tabellare - e sono due punti di codice diversi, quindi correggerne uno non
+//          corregge l'altro. Franco se n'e' accorto subito: "sono ancora costretto a premere Fine".
+//          Aggiunto anche il `title`, cosi' il valore intero si legge passandoci sopra: la casella
+//          e' larga 260px e le etichette ora contengono numero, nome e retro.
+//
+//          📌 La lezione, che in questo file torna spesso: quando una correzione riguarda un
+//          COMPORTAMENTO e non un pezzo di testo, prima di dirla fatta si cercano TUTTI i posti che
+//          hanno quel comportamento, invece di correggere quello che si ha davanti.
+//          E qui la lezione si e' applicata da sola: contando i campi con ricerca a digitazione ne
+//          sono saltati fuori TRE, non due — c'era anche quello del "Retro associato" in modifica
+//          (`filterFeRetroLink`), che nessuno aveva ancora provato. Corretto anche quello, prima
+//          che Franco ci sbattesse fra cinque minuti. Il conto si fa una volta e copre anche i casi
+//          che non sono ancora stati segnalati; correggere a segnalazione ne copre uno per giro.
+// ------------------------------------------------------------
+// v6.125 - "FRONTE"/"RETRO" IN BIANCO, E VIA LA RIGA "RETRO ASSOCIATO" (Franco).
+//          Modificato app.js e index.html (solo la versione). Solo visualizzazione.
+//
+//          (1) Le due scritte sopra le foto passano da `var(--muted)` a bianco, in sola lettura e
+//          in modifica (`_slotFotoEdit`, che le scrive per entrambi gli slot da un punto solo).
+//
+//          (2) VIA LA RIGA "RETRO ASSOCIATO". Franco: "forse non serve, e' replicato sotto alla
+//          foto del retro". Verificato: e' la stessa identica cosa - stessa funzione
+//          (`_retroNomeCompletoSenzaSottonome`), stesso sottonome in azzurro sotto - due volte nella
+//          stessa schermata.
+//          ⚠️ E LA DECISIONE ERA GIA' STATA PRESA, nella v5.841, con queste parole: la riga "Retro
+//          collegato" non si stampa piu' perche' "era lo stesso collegamento due volte nella stessa
+//          schermata". Poi e' rientrata sotto un altro nome, per il solo desktop. Un doppione tolto
+//          puo' tornare se chi lo riaggiunge non sa che era stato tolto apposta: e' il caso in cui
+//          il commento vale piu' del codice, e stavolta il commento c'era e ha funzionato.
+//          Non si perde niente: la didascalia sotto la foto compare ogni volta che il retro ESISTE,
+//          anche quando non ha foto, perche' dipende dal record e non dall'immagine.
+//          Resta il caso GUASTO (`retroId` che punta a un record inesistente), che ha una riga sua
+//          ed e' l'unico posto in cui quel problema si vede.
+// ------------------------------------------------------------
+// v6.124 - AL CLIC SI SELEZIONA TUTTO, e niente valori a capo (Franco). Modificato app.js e
+//          index.html (solo la versione).
+//
+//          (1) IL RIMEDIO VERO ALLA CASELLA TRONCATA, ed e' arrivato dalla descrizione che Franco
+//          ha fatto del suo giro, non dalla misura del layout. Il problema non era LEGGERE il testo:
+//          era doverlo CANCELLARE per cercarne un altro. Il campo arriva pieno del valore corrente,
+//          e per svuotarlo bisogna raggiungerne la fine — che non si vede, perche' e' troncata —
+//          quindi si va alla cieca col tasto Fine quando si vorrebbe usare il mouse.
+//          Con `this.select()` sul focus, un clic seleziona tutto e la prima lettera digitata lo
+//          sostituisce. Sparisce il giro, e senza dipendere da quanto e' larga la casella.
+//          Vale la pena notare da dove e' uscita la soluzione: da come Franco usa la cosa, dopo tre
+//          release passate a misurare pixel. La domanda "perche' ti serve leggerlo fino in fondo?"
+//          arrivava prima di tutte le misure e non e' stata fatta.
+//
+//          (2) NIENTE A CAPO. La v6.123 aveva messo `overflow-wrap:anywhere` sul valore: iniziativa
+//          non richiesta. Franco aveva chiesto di spezzare ETICHETTA e VALORE su due righe, non di
+//          far andare a capo il valore. Ora e' `white-space:nowrap` con il valore intero nel `title`,
+//          sia in sola lettura sia in modifica.
+//          Stessa cosa tolta da "Retro associato", che torna com'era.
+//
+//          📌 Chiarito, perche' era una convinzione sbagliata di entrambi: il filtro della tendina
+//          NON e' "inizia per", e' `includes` — cerca la stringa ovunque dentro l'etichetta. Resta
+//          vero che il campo va svuotato, perche' il testo che c'e' e' l'etichetta INTERA e come
+//          query non trova altro che se stessa.
+// ------------------------------------------------------------
+// v6.123 - L'ETICHETTA SOPRA E IL VALORE SOTTO (Franco). Modificato app.js e index.html (solo la
+//          versione). Vale per tutti e tre: "Change di", "Errore di stampa di", "Variazione di".
+//
+//          E' la soluzione che scioglie il nodo invece di aggirarlo, e le tre release precedenti
+//          giravano attorno alla domanda sbagliata. Ci si chiedeva "come faccio stare una riga lunga
+//          in uno spazio stretto" - allargando la tendina (v6.121), poi mettendo `nowrap` con lo
+//          scorrimento (v6.122) - quando la domanda era "perche' deve stare in quello spazio".
+//          Su una riga tutta sua il valore ha l'intera larghezza della colonna e cresce verso il
+//          BASSO, dove non c'e' niente da colpire. Cadono `nowrap`, lo scorrimento orizzontale e la
+//          troncatura: il testo puo' andare a capo, perche' adesso andare a capo non costa niente.
+//
+//          LE MISURE CHE HANNO CHIUSO LA QUESTIONE, prese sulla pagina vera invece che dedotte:
+//          il bordo destro della riga cadeva a 943px e la foto cominciava a 975 — il testo veniva
+//          tagliato 32px PRIMA della foto, quindi a limitarlo non era la foto ma la colonna, e tre
+//          release erano state scritte per proteggere una collisione che non avveniva.
+//          E la riga non stava nemmeno "sotto la foto" come si era concluso: riga a 520, fondo della
+//          foto a 527. Le stava accanto per sette pixel. Anche quella conclusione era sbagliata.
+//
+//          Tolto anche il `nowrap` + scorrimento da "Retro associato" (v6.122): stesso ripiego per
+//          lo stesso problema mal posto, e uno scorrimento orizzontale dentro una riga di scheda si
+//          trova solo per caso. Torna a capo normale.
+//          In modifica, il campo mostra il valore intero nel `title`: un input di una riga tronca
+//          comunque, e almeno passandoci sopra si legge tutto.
+//
+//          📌 Da ricordare, perche' e' costato quattro release: `.detail-row` e `.detail-value`
+//          stanno in `css/style.css`, che NON e' nella cartella `_upload_`. Le loro larghezze non si
+//          possono leggere dal codice che si sta modificando — o si misurano sulla pagina, o si
+//          indovina. Qui si e' indovinato tre volte prima di misurare una.
+// ------------------------------------------------------------
+// v6.122 - LE DUE RIGHE LUNGHE DELLA SCHEDA NON VANNO PIU' A CAPO (Franco, in prova).
+//          Modificato app.js e index.html (solo la versione). "Figurina/Retro di partenza" (per
+//          variazioni, change ed errori di stampa) e "Retro associato": `white-space:nowrap`.
+//          Con `overflow-x:auto` come rete, per il caso in cui un'etichetta ecceda anche la
+//          larghezza piena: si scorre invece di sfondare.
+//
+//          ⚠️ QUESTA VOCE E' STATA RISCRITTA PRIMA DI PUBBLICARE, e vale la pena dire perche'.
+//          La prima stesura raccontava un compromesso: diceva che `nowrap` da solo avrebbe fatto
+//          finire il testo "sopra o sotto la foto — cioe' esattamente la regola che Franco voleva
+//          non rompere", e presentava lo scorrimento come il prezzo da pagare.
+//          Erano DUE errori sovrapposti.
+//          Il primo: Franco non voleva proteggere quella regola. Le sue parole erano "possiamo
+//          SUPERARE questa regola". Gli e' stata attribuita l'intenzione opposta, per giunta fra
+//          virgolette, e ci si e' progettato attorno — e' il vizio del §9.5 dell'altro documento,
+//          riformulare l'altro e poi ragionare sulla propria riformulazione.
+//          Il secondo, che e' peggio: il vincolo non esisteva affatto. Franco, subito dopo: quei
+//          campi "non possono andare a sbattere contro la foto, perche' ne stanno gia' sempre al di
+//          sotto". Quindi non c'era niente da superare e niente da proteggere, e il compromesso
+//          risolveva un problema inventato.
+//          Il codice resta quello - `nowrap` fa la cosa giusta comunque - ma la spiegazione no:
+//          una motivazione sbagliata sopravvive alla riga che descrive, e il prossimo che legge
+//          eredita il vincolo immaginario.
+//
+//          📌 Nota tecnica emersa cercando: `.detail-row` e `.detail-value` NON sono definite
+//          nell'index (zero occorrenze nel CSS inline). Stanno in `css/style.css`, che NON fa parte
+//          della cartella `_upload_` — dentro ci sono solo `index.html` e `js/app.js`. Quindi le
+//          loro regole non si possono leggere da qui, e per sapere quanto e' larga davvero una
+//          riga bisogna guardare il sito, non il codice che si sta modificando.
+// ------------------------------------------------------------
+// v6.121 - LA TENDINA NON VA A CAPO, E IN SOLA LETTURA SI VEDE IL RETRO (Franco, in prova).
+//          Modificato app.js e index.html (solo la versione). Due rifiniture della v6.120, e la
+//          seconda corregge un mio ragionamento sbagliato.
+//
+//          (1) LE VOCI DELLA TENDINA. Da quando l'etichetta porta anche il retro le voci sono
+//          lunghe, e la tendina aveva `left:0;right:0`, cioe' era incastrata nella larghezza della
+//          casella: andavano a capo su due o tre righe, illeggibili proprio dove servono a
+//          distinguere una base dalla sua variazione. Ora `width:max-content` con un tetto, e le
+//          voci `white-space:nowrap`.
+//          La preoccupazione di Franco - "c'e' una regola non scritta che impone di non andare col
+//          testo sotto alla foto" - qui non si applica: la tendina e' `position:absolute`, galleggia
+//          sopra il contenuto e non sposta niente. Valeva la pena verificarlo invece di allargare e
+//          sperare.
+//
+//          (2) LA VISTA IN SOLA LETTURA mostrava il solo nome. La v6.120 usava il Nome completo sul
+//          presupposto che contenesse gia' il retro: e' vero per una VARIAZIONE
+//          (`nome - nomeLungoDelRetro`) ed e' FALSO per una base, il cui Nome completo e' il solo
+//          nome. Siccome oggi i figli puntano quasi tutti a basi, il retro non si vedeva mai: il
+//          presupposto era sbagliato esattamente nel caso normale, e regge solo nel caso raro.
+//          Ora si usa `_baseFigurineLinkLabel`, la stessa funzione che scrive le voci della tendina,
+//          cosi' cio' che si legge nella scheda e cio' che si sarebbe scelto nell'elenco sono la
+//          stessa riga. Una fonte sola per due posti: se un giorno cambia la forma dell'etichetta,
+//          cambia in tutti e due.
+// ------------------------------------------------------------
+// v6.120 - "FIGURINA DI PARTENZA": un change puo' essere il change di una VARIAZIONE (Franco).
+//          Modificato app.js e index.html (solo la versione). Quattro cose che vanno insieme.
+//
+//          (1) VIA IL VINCOLO. `_feBaseFigurineLinkOptions` escludeva variazioni e change
+//          dall'elenco selezionabile, quindi la form IMPONEVA di indicare una figurina base anche
+//          quando il genitore vero era un'altra. Non era un vincolo del modello dati -
+//          `baseFigurineId` e' un id come un altro - era una riga di filtro. Ora restano fuori solo
+//          change ed errori di stampa: un change non e' il change di un change.
+//
+//          (2) IL CAMPO CAMBIA NOME, ovunque: "Figurina base" -> "FIGURINA DI PARTENZA" (parole di
+//          Franco). La parola "base" descriveva il vincolo appena tolto. Un nome solo per tutti e
+//          tre i tipi: tre formulazioni per lo stesso ruolo sono tre cose da tenere allineate, e la
+//          vista tabellare ne avrebbe comunque richiesta una generica.
+//
+//          (3) IL RETRO NELL'ETICHETTA della tendina (categoria - sottocategoria - nome), ed e' una
+//          PRECONDIZIONE di (1), non una rifinitura: una variazione ha lo stesso numero e lo stesso
+//          nome della sua base, quindi senza il dietro l'elenco mostrerebbe due o tre voci identiche
+//          proprio nel momento in cui se ne deve scegliere una. Per questo (1) e (3) stanno nella
+//          stessa release: non deve esistere un momento in cui la tendina e' ambigua.
+//
+//          (4) COLONNA "Figurina di partenza" NELLA VISTA TABELLARE, admin, modificabile.
+//          Sostituisce le due colonne della v6.119 ("ID" e "Base ID"), che erano una strada
+//          sbagliata: mostravano id di venti caratteri e chiedevano di copiarli da una riga
+//          all'altra, senza mai far vedere cosa si stava collegando. La colonna "ID" esisteva solo
+//          per rattoppare quella scelta - una colonna aggiunta per sorreggere un errore, invece di
+//          rifare la scelta. Ora e' un campo a digitazione con le stesse etichette leggibili della
+//          scheda.
+//          UN SOLO <datalist> PER TUTTA LA TABELLA: la vista mostra una sola serie e una sola
+//          sezione, quindi i candidati sono gli stessi per ogni riga. Un controllo per riga avrebbe
+//          voluto dire N elenchi identici e N stati da tenere allineati; cosi' la ricerca la fa il
+//          browser e non c'e' niente da mantenere.
+//
+//          (5) LA VISTA IN SOLA LETTURA mostra UNA sola stringa cliccabile, col Nome completo della
+//          figurina puntata. La v6.118 l'aveva spezzata in due pezzi di due colori per distinguere
+//          una base dalla sua variazione: risposta giusta alla domanda sbagliata, perche' il Nome
+//          completo di una variazione contiene GIA' il retro.
+//
+//          ⚠️ COSA NON FA. Il NOME COMPLETO non viene ricalcolato quando si cambia la figurina di
+//          partenza, ed e' deliberato: `computeFullName` costruisce "nomeDellaBase - TIPO", e base e
+//          variazione hanno lo stesso nome, quindi il ricalcolo non aggiungerebbe niente ma
+//          sovrascriverebbe un valore memorizzato (§13) che potrebbe essere l'unica traccia di quale
+//          fosse il vero genitore - cioe' proprio il dato su cui si sta lavorando.
+//          L'ORDINAMENTO continua a dedurre il capogruppo dal retro, quindi un figlio ricollegato a
+//          una variazione non si sposta ancora in griglia. E i CAMPI EREDITATI si riallineano con la
+//          funzione admin del §14.1.
+// ------------------------------------------------------------
+// v6.119 - COLONNE "ID" E "BASE ID" NELLA VISTA TABELLARE (Franco), solo admin.
+//          Modificato app.js e index.html (solo la versione).
+//
+//          A COSA SERVE: ricollegare a mano ~110 change ed errori di stampa alla VARIAZIONE di cui
+//          sono figli, invece che alla base. Oggi la form non lo permette — `_feBaseFigurineLinkOptions`
+//          esclude le variazioni dall'elenco selezionabile — e quella riga di filtro e' il vincolo
+//          da togliere (lavoro a parte). La colonna scavalca il vincolo senza toccarlo.
+//
+//          DUE COLONNE, NON UNA, e la prima non e' un di piu': nessuna colonna mostrava l'id di una
+//          riga, quindi "Base ID" da sola sarebbe stata una casella da riempire senza una sorgente
+//          da cui copiare. Ora si copia l'ID della variazione e lo si incolla nel Base ID del suo
+//          change. L'id e' `user-select:all`, quindi un clic lo seleziona tutto.
+//
+//          SOTTO LA CASELLA C'E' SCRITTO DOVE PUNTA — tipo, numero, nome e RETRO. Il retro e' la
+//          parte che conta: una base e una sua variazione hanno stesso numero e stesso nome, quindi
+//          senza il dietro non si distinguono, ed e' proprio fra quelle due che si sta scegliendo.
+//
+//          ⚠️ LA VALIDAZIONE E' LA META' IMPORTANTE DELLA RELEASE. `saveBulkCell` scriveva qualunque
+//          testo si digitasse: va bene per un nome, non per un RIFERIMENTO. Un testo storto si legge
+//          e si corregge; un id storto non si vede — e un `baseFigurineId` che non punta a niente fa
+//          perdere al record il numero che eredita dalla base (§12.0) e lo manda in fondo alla
+//          griglia, senza dire niente. Su un centinaio di incolla a mano e' questione di tempo.
+//          Ora si controlla che l'id ESISTA, sia della STESSA SERIE, della STESSA SEZIONE e non sia
+//          se stesso: le stesse garanzie che da' la form, meno l'esclusione delle variazioni, che e'
+//          la sola cosa che si vuole poter fare. Se non passa, il valore di prima torna al suo posto
+//          e il motivo si legge in un messaggio: scrivere e poi dirlo sarebbe peggio di non scrivere.
+//
+//          ⚠️ COSA QUESTA RELEASE **NON** FA, e va saputo prima di usare la colonna:
+//          - i CAMPI EREDITATI dalla base (§13.1) non vengono ricalcolati cambiando il puntatore.
+//            Dopo aver ricollegato, si lancia la funzione admin "Allinea item figlio correlati"
+//            (§14.1), che esiste apposta e ha gia' la sua anteprima;
+//          - l'ORDINAMENTO continua a dedurre il capogruppo dal retro, quindi finche' non viene
+//            cambiato anche quello, un figlio ricollegato alla variazione non si sposta in griglia;
+//          - la FORM continua a non permettere la stessa scelta. Le tre cose vanno insieme, e
+//            questa e' la prima: senza dati corretti le altre due non hanno niente da mostrare.
+// ------------------------------------------------------------
+// v6.118 - L'ETICHETTA DEL COLLEGAMENTO DICE COSA E' L'OGGETTO, E MOSTRA IL RETRO (Franco).
+//          Modificato app.js e index.html (solo la versione). Solo visualizzazione: nessun dato
+//          scritto, nessuna regola cambiata.
+//
+//          (1) "VARIAZIONE DI" SU UN CHANGE. Segnalato da Franco, che lo aveva letto come un nome
+//          vecchio rimasto li'. Non lo era: la condizione era `f.section === 'retros'`, cioe'
+//          chiedeva DOVE SEI invece di CHE COSA SEI. Un change nella sezione retro diceva bene
+//          ("Change di"); lo stesso change fra le figurine cadeva nel ramo finale e diceva
+//          "Variazione di". Ora si guarda `isPrintError` / `isChange` / `isUnofficialVariation`.
+//          Le due domande coincidono finche' ogni tipo vive in una sezione sua, e smettono di
+//          coincidere appena non e' piu' vero: e' il genere di condizione che invecchia in
+//          silenzio, perche' finche' regge nessuno la rilegge.
+//
+//          (2) IL RETRO NEL COLLEGAMENTO. La riga diceva "214 ADAM BOMB" e basta. Una base e una
+//          sua variazione hanno lo STESSO numero e lo STESSO nome, quindi quella riga non dice a
+//          quale delle due punta. A distinguerle e' il retro (una variazione E' il suo dietro).
+//          Oggi il campo puo' puntare solo a una base, quindi l'ambiguita' non si presenta ancora:
+//          questa meta' della release e' scritta per il passo dopo, in cui un change potra' puntare
+//          alla variazione di cui e' change. Chi non ha retro lo dice ("senza retro") invece di
+//          lasciare la riga muta - un'assenza taciuta si confonde con un dato non caricato.
+//
+//          Aggiunto anche `esc()` sul nome della base, che qui usciva crudo.
+//
+//          ⚠️ NON FA parte di questa release, ed e' il lavoro vero che ne discende: oggi la form
+//          IMPONE che un change punti a una figurina BASE — `_feBaseFigurineLinkOptions` esclude
+//          variazioni e change dall'elenco selezionabile. Ma un change PUO' essere il change di una
+//          variazione (Franco), e lo stesso vale per gli errori di stampa. Non e' un vincolo del
+//          modello dati - `baseFigurineId` e' un id come un altro - e' una riga di filtro nella
+//          form. Toglierla cambia il significato del campo per i figli e va guardato tutto cio' che
+//          lo legge dando per scontato che sia una base (ereditarieta' dei campi, propagazione,
+//          funzione 3, §12.5, ordinamento), piu' una migrazione di ~110 record.
+// ------------------------------------------------------------
+// v6.117 - LE PROCEDURE DI MASSA SCRIVONO UNA VOLTA PER SERIE, non una per record.
+//          Modificato app.js e index.html (solo la versione). E' il gemello della v6.116, sugli
+//          stessi presupposti e con lo stesso rimedio, applicato dove i numeri sono piu' grandi.
+//
+//          IL CASO CHE GIUSTIFICA LA RELEASE: `saveBulkScore` assegna un punteggio a tutti gli
+//          oggetti visibili, uno alla volta. Su Serie 3 senza filtri sono 1055 oggetti, cioe' 1055
+//          riscritture INTERE del documento della serie: 521 KB l'una, mezzo giga spedito, e a 3,7
+//          secondi per scrittura piu' di un'ORA. Adesso e' una scrittura, quattro secondi.
+//
+//          SEI PROCEDURE CONVERTITE, tutte con la stessa forma "calcola N record, scrivili uno alla
+//          volta": `saveBulkScore`, `ebayApplicaTitoli`, `applyRecomputeFullNames`,
+//          `migratePrintErrors`, `applicaFixRetroChange`, `applicaAllineaFigli`.
+//          Nelle ultime due sparisce anche la pausa di 120 ms per record, che serviva a non
+//          martellare Firestore con N scritture di fila: con una sola non ha piu' senso. Sui 98
+//          record dell'8 agosto erano 12 secondi di sole pause, sopra alle 98 riscritture.
+//
+//          ⚠️ DUE COSE **NON** TOCCATE, e vale la pena dire perche':
+//          - `applicaAggiornamentoMassivo` **non aveva il difetto**. Sembrava averlo (una `fsSave`
+//            dentro un `for`), ma quel ciclo scorre le SERIE, non gli oggetti: modifica tutto in
+//            memoria e scrive una volta per serie dalla v5.980. Il CHANGELOG della v6.116 e il
+//            documento dicevano il contrario — era una deduzione da un `grep`, senza leggere su
+//            cosa ciclasse. Corretto.
+//          - GLI IMPORT (`startImportFig`, `startImportRetro`) restano com'erano, e non per
+//            pigrizia: ogni riga dipende dallo stato costruito dalle righe precedenti (una base
+//            creata alla riga 3 puo' essere referenziata alla riga 10), e il registro riga-per-riga
+//            e' la funzione principale, non un ornamento. Raggrupparli cambierebbe l'import, non
+//            la sua velocita'.
+//
+//          ⚠️ CAMBIA LA GRANULARITA' DEGLI ERRORI, come nella v6.116: prima ogni record poteva
+//          fallire per conto suo e le procedure elencavano quali; ora o si scrive tutta la serie o
+//          niente, e l'errore e' uno solo. E' il prezzo della scrittura unica, ed e' anche piu'
+//          onesto: N record scritti a meta' erano N modi di restare in uno stato intermedio.
+//          Il conteggio "scritti N record" ora e' esatto invece di ottimista.
+//
+//          PROVATO A SECCO prima di consegnare, perche' `node --check` qui non basta e questa
+//          release lo ha dimostrato: la prima stesura passava il controllo di sintassi con tre
+//          `daScrivere` mai dichiarati e un `it2` inventato, cioe' tre `ReferenceError` al primo
+//          click. E' la lezione della v6.035, ripresa pari pari. Verificato poi su record finti:
+//          cinque record della stessa serie producono UNA scrittura, e un record solo continua a
+//          passare da `_saveFigurineItem` (quindi `arrayUnion` sulla creazione resta).
+// ------------------------------------------------------------
 // v6.116 - UNA SCRITTURA SOLA PER LA BASE E I SUOI COLLEGATI (Indagine 1, chiusa il 13 agosto).
 //          Modificato app.js e index.html (solo la versione).
 //
@@ -46,9 +592,12 @@
 //          creazione vale 357 ms contro 5218.
 //
 //          NON RISOLVE IL MURO DI 1 MiB: Serie 3 e' a 521 KB, il 51%. Questo compra tempo.
-//          E resta fuori un lavoro gemello, non fatto qui perche' e' un'altra release:
-//          l'aggiornamento massivo e le procedure di import chiamano `fsSave('figurines', ...)`
-//          dentro un ciclo, cioe' hanno esattamente lo stesso difetto su numeri piu' grandi.
+//          E resta fuori un lavoro gemello, non fatto qui perche' e' un'altra release: diverse
+//          procedure di massa chiamano `fsSave('figurines', ...)` dentro un ciclo sugli OGGETTI.
+//          ⚠️ CORRETTO nella v6.117: qui sopra c'era scritto che fra queste c'e' "l'aggiornamento
+//          massivo", e NON e' vero - `applicaAggiornamentoMassivo` scrive una volta per serie dalla
+//          v5.980. Era una deduzione da un `grep` che mostrava una `fsSave` dentro un `for`, senza
+//          guardare su cosa ciclasse: quel ciclo scorre le serie.
 // ------------------------------------------------------------
 // v6.115 - VIA IL CARATTERE # ACCANTO AL NUMERO DELLE FIGURINE (Franco, 11 agosto: "non da' un
 //          contributo effettivo"). Modificato app.js e index.html (solo la versione).
@@ -12667,7 +13216,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.116';
+const JS_VERSION = 'v6.136';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -13310,17 +13859,20 @@ async function applyRecomputeFullNames() {
   const { daAgg } = _recomputePending;
   let fatti = 0, falliti = 0;
   const aggiornati = [];
-  for (const { f, nuovo } of daAgg) {
-    try {
-      const rec = { ...f, fullName: nuovo };
-      await fsSave('figurines', rec);
-      const idx = figs.findIndex(x => x.id === f.id);
+  // v6.117 - UNA SCRITTURA PER SERIE, non una per record (vedi `_salvaFigurineInBlocco`).
+  // Prima ogni giro riscriveva l'INTERO documento della serie: su Serie 3 sono 521 KB a record.
+  const daScrivere = daAgg.map(({ f, nuovo }) => ({ ...f, fullName: nuovo }));
+  show(it ? 'Scrittura in corso…' : 'Writing…');
+  try {
+    await _salvaFigurineInBlocco(daScrivere);
+    daScrivere.forEach((rec, k) => {
+      const idx = figs.findIndex(x => x.id === rec.id);
       if (idx >= 0) figs[idx] = rec;
-      aggiornati.push({ vecchio: f.fullName || '', nuovo: nuovo || '' });
-      fatti++;
-    } catch (e) { console.error('applyRecomputeFullNames', f.id, e); falliti++; }
-    show((it ? 'Aggiornati ' : 'Updated ') + fatti + ' / ' + daAgg.length + (falliti ? (' — ' + falliti + (it ? ' FALLITI' : ' FAILED')) : ''));
-  }
+      aggiornati.push({ vecchio: daAgg[k].f.fullName || '', nuovo: daAgg[k].nuovo || '' });
+    });
+    fatti = daScrivere.length;
+  } catch (e) { console.error('applyRecomputeFullNames', e); falliti = daScrivere.length; }
+  show((it ? 'Aggiornati ' : 'Updated ') + fatti + ' / ' + daAgg.length + (falliti ? (' — ' + falliti + (it ? ' FALLITI' : ' FAILED')) : ''));
   _cache.figurines = figs;
   _recomputePending = null;
   const listaHTML = aggiornati.map(({ vecchio, nuovo }) =>
@@ -13359,19 +13911,23 @@ async function migratePrintErrors() {
 
   if (btn) btn.disabled = true;
   let fatti = 0, falliti = 0;
+  const daScrivere = [];
   for (const f of daMigrare) {
-    try {
-      const nuovo = { ...f, isPrintError: true, isChange: false, changeType: '' };
-      await fsSave('figurines', nuovo);
-      const idx = figs.findIndex(x => x.id === f.id);
-      if (idx >= 0) figs[idx] = nuovo;
-      fatti++;
-    } catch (e) {
-      console.error('migratePrintErrors', f.id, e);
-      falliti++;
-    }
-    mostra(`Convertiti ${fatti} / ${daMigrare.length}` + (falliti ? ` — ${falliti} FALLITI` : ''));
+    const nuovo = { ...f, isPrintError: true, isChange: false, changeType: '' };
+    daScrivere.push(nuovo);
   }
+  // v6.117 - una scrittura per SERIE. La migrazione avvisava "sono N SCRITTURE su Firestore":
+  // ora sono N record in poche scritture, una per ogni serie toccata.
+  mostra('Conversione in corso…');
+  try {
+    await _salvaFigurineInBlocco(daScrivere);
+    daScrivere.forEach(nuovo => {
+      const idx = figs.findIndex(x => x.id === nuovo.id);
+      if (idx >= 0) figs[idx] = nuovo;
+    });
+    fatti = daScrivere.length;
+  } catch (e) { console.error('migratePrintErrors', e); falliti = daScrivere.length; }
+  mostra(`Convertiti ${fatti} / ${daMigrare.length}` + (falliti ? ` — ${falliti} FALLITI` : ''));
 
   // un fallimento silenzioso qui lascerebbe meta' dei dati nel vecchio modello e meta'
   // nel nuovo, senza che nessuno lo sappia: la peggiore delle due verita' (v5.682).
@@ -16115,8 +16671,15 @@ async function ebayApplicaTitoli() {
     // v5.979 — i due mercati non hanno più lo stesso titolo: l'inglese passa dal glossario.
     f.ebayTitleIt = ebayTitle(f, 'it');   // già tagliati a 80
     f.ebayTitleEn = ebayTitle(f, 'com');
-    await fsSave('figurines', f);
-    salvati++;
+  }
+  // v6.117 - una scrittura per SERIE invece di una per oggetto.
+  try {
+    await _salvaFigurineInBlocco(scelti);
+    salvati = scelti.length;
+  } catch (e) {
+    console.error('ebayApplicaTitoli', e);
+    toast(it ? 'Scrittura fallita: ' + (e?.code || e?.message || 'errore') : 'Write failed: ' + (e?.code || e?.message || 'error'), 'error');
+    return;
   }
   _cache.figurines = figs;
   _ebaySelected.clear();
@@ -18536,7 +19099,23 @@ function _baseFigurineLinkLabel(f) {
   // chiede a _retroNomeCompleto(), che sa la regola vera. Era questo a produrre
   // "PREMIO — PREMIO DI MIGLIOR ATTORE" sui 94 retro il cui Nome inizia con la categoria.
   if (f.section === 'retros') return _retroNomeCompleto(f);
-  return (f.number ? f.number + ' ' : '') + (f.name || '');
+  // v6.120 (Franco) - IL RETRO NELL'ETICHETTA, e senza non si puo' scegliere. Da questa release
+  // l'elenco contiene anche le VARIAZIONI, e una variazione ha lo STESSO numero e lo STESSO nome
+  // della sua base: "214 ADAM BOMB" comparirebbe due o tre volte identico, proprio nel momento in
+  // cui si deve sceglierne una. A distinguerle e' il dietro — categoria, sottocategoria, nome.
+  // v6.128 (Franco) - LO CHIEDE A CHI SA LA REGOLA, invece di riscriverla.
+  // La v6.120 costruiva qui la coda a mano: `[categoria, sottocategoria, nome].join(' - ')`. E'
+  // esattamente la forma ingenua che la v6.022 aveva gia' tolto da un altro punto, perche' produce
+  // "PREMIO - PREMIO DI MIGLIOR ATTORE" sui 94 retro il cui Nome comincia con la categoria.
+  // La regola vera vive in `_retroFullName`: `categoriaOmessa = !cat || _retroNameStartsWithCategory(base)`,
+  // piu' il sottonome, piu' il suffisso del tipo per change ed errori di stampa. Riscriverla a mano
+  // significa tenerne allineate due copie, e quella copiata non invecchia insieme all'originale:
+  // qui infatti era gia' nata vecchia di cento release.
+  const _r = f.retroId ? (getData('figurines', []) || []).find(x => x.id === f.retroId) : null;
+  const _coda = _r
+    ? ' · ' + _retroNomeCompleto(_r)
+    : (currentLang === 'it' ? ' · senza retro' : ' · no back');
+  return (f.number ? f.number + ' ' : '') + (f.name || '') + _coda;
 }
 
 // v5.785 — ordinamento condiviso delle opzioni "base": Retro per NOME COMPLETO, Figurine per Numero.
@@ -18564,6 +19143,41 @@ function _baseFigurineLinkSort(a, b) {
 // Restano fuori, e per scelta: le due tendine di ricerca, la card della sezione Retro e lo
 // strumento admin sui duplicati d'import. La' la categoria non e' parte del nome, e' un dato
 // mostrato a parte (riga propria, colore diverso) oppure e' la chiave di cui il testo parla.
+// v6.120 - L'ETICHETTA DELLA FIGURINA DI PARTENZA, nella stessa identica forma con cui compare
+// nella tendina. Deve coincidere carattere per carattere con le voci del <datalist>: e' quella
+// stringa che l'utente sceglie, ed e' da quella che si risale all'id. Se le due forme divergessero,
+// il campo mostrerebbe un valore che non e' selezionabile e ogni modifica verrebbe rifiutata.
+// (Sostituisce `_etichettaBase` della v6.119, nata per la colonna "Base ID" che non esiste piu'.)
+function _etichettaPartenza(f) {
+  if (!f || !f.baseFigurineId) return '';
+  const b = (getData('figurines', []) || []).find(x => x.id === f.baseFigurineId);
+  return b ? _baseFigurineLinkLabel(b) : (currentLang === 'it' ? '⚠️ id non trovato' : '⚠️ id not found');
+}
+
+// v6.119 - LE STESSE GARANZIE DELLA FORM, MENO IL VINCOLO CHE SI VUOLE TOGLIERE.
+// La form costruisce l'elenco delle basi selezionabili con
+//   x.seriesId === f.seriesId && x.section === f.section && x.id !== f.id
+//   && !x.isVariation && !x.isUnofficialVariation && !x.isChange
+// Qui si tengono le prime tre condizioni - che sono invarianti veri - e si lascia cadere l'ultima,
+// che e' una scelta d'interfaccia: un change PUO' essere il change di una variazione (Franco).
+// Torna null se va bene, altrimenti il messaggio da mostrare.
+function _validaBaseId(rec, id, figs) {
+  const it = currentLang === 'it';
+  if (!id) return null; // vuoto = scollegato, ed e' ammesso
+  if (id === rec.id) return it ? 'Un oggetto non puo\' essere base di se stesso.' : 'An item cannot be its own base.';
+  const b = figs.find(x => x.id === id);
+  if (!b) return it ? 'Nessun oggetto con id ' + id + ' — controlla di aver incollato tutto.'
+                    : 'No item with id ' + id + ' — check you pasted the whole thing.';
+  if (b.seriesId !== rec.seriesId) return it ? 'Quell\'oggetto e\' di un\'altra serie.' : 'That item belongs to another series.';
+  if ((b.section || 'figurines') !== (rec.section || 'figurines')) return it ? 'Quell\'oggetto e\' di un\'altra sezione.' : 'That item belongs to another section.';
+  // v6.133 - stesso gruppo: il numero di un figlio si eredita dalla figurina di partenza, quindi
+  // sceglierne una di un altro numero rinumererebbe il record senza dirlo.
+  if (!_stessoGruppoDi(rec, b)) return it
+    ? 'Quell\'oggetto ha un altro numero (' + (b.number ?? '—') + '): sceglierlo rinumererebbe questo record.'
+    : 'That item has a different number (' + (b.number ?? '—') + '): choosing it would renumber this record.';
+  return null;
+}
+
 function _retroNomeCompleto(r) {
   if (!r) return '';
   if (r.fullName && r.fullName.trim()) return r.fullName;
@@ -19268,8 +19882,27 @@ function toggleWishlistFilter() {
   try { renderItems(); } catch(e) { console.error('renderItems (toggleWishlistFilter)', e); }
 }
 
+// v6.134 (Franco) - I RAGGRUPPAMENTI SI SCIOLGONO QUANDO IL LORO SELETTORE SI SPEGNE.
+// Il baco, con le sue parole: acceso "Change", scelto un tipo di change ("mosca nera"), poi acceso
+// "Errori di stampa" -> nessun risultato. Perche' `_changeTypeFilter` restava pieno, e il filtro
+// pretende `f.isChange && _changeTypeFilter.has(...)`: un errore di stampa non e' un change, quindi
+// non passa nessuno. Il filtro faceva il suo mestiere; a essere rimasto indietro era uno stato che
+// nessuno aveva spento.
+// E' la famiglia dei filtri invisibili gia' vista nella v6.095: un filtro acceso che non si vede
+// nasconde la griglia senza dire perche', e chi guarda conclude che i dati non ci sono.
+//
+// UN SOLO RAGGRUPPAMENTO PER VOLTA, che chiude anche il secondo modo di cascarci: con il selettore
+// su "tutti" si potevano accendere entrambi, e siccome si combinano in AND — nessun oggetto e'
+// insieme change ed errore di stampa — il risultato era di nuovo vuoto. Non e' una limitazione:
+// quella combinazione non era esprimibile, restituiva zero per costruzione.
+function _sciogliRaggruppamentiEstranei(tipo) {
+  if (tipo !== 'change'     && tipo !== 'all') _changeTypeFilter = new Set();
+  if (tipo !== 'printError' && tipo !== 'all') _printErrorTypeFilter = new Set();
+}
+
 function toggleItemTypeFilter(type) {
   _itemTypeFilter = type; // comportamento radio puro: sempre uno solo attivo
+  _sciogliRaggruppamentiEstranei(type); // v6.134
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleItemTypeFilter)', e); }
 }
@@ -19977,7 +20610,7 @@ function setChangeTypeFilterByIndex(i) {
   // se ce ne sono altri, il clic sull'etichetta vuol dire "voglio vedere solo questo", che e'
   // un'intenzione diversa da "ho finito di guardarlo".
   if (_changeTypeFilter.size === 1 && _changeTypeFilter.has(ct)) _changeTypeFilter = new Set();
-  else _changeTypeFilter = new Set([ct]);
+  else { _changeTypeFilter = new Set([ct]); _printErrorTypeFilter = new Set(); } // v6.134 - uno per volta
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (setChangeTypeFilter)', e); }
 }
@@ -19986,7 +20619,8 @@ function setChangeTypeFilterByIndex(i) {
 function addChangeTypeFilterByIndex(i) {
   const ct = _changeTypeResultVals[i];
   if (ct === undefined) return;
-  if (_changeTypeFilter.has(ct)) _changeTypeFilter.delete(ct); else _changeTypeFilter.add(ct);
+  if (_changeTypeFilter.has(ct)) _changeTypeFilter.delete(ct);
+  else { _changeTypeFilter.add(ct); _printErrorTypeFilter = new Set(); } // v6.134 - uno per volta
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (addChangeTypeFilter)', e); }
 }
@@ -20027,7 +20661,7 @@ function setPrintErrorTypeFilterByIndex(i) {
   if (pe === undefined) return;
   // v6.096 - gemello di setChangeTypeFilterByIndex, stesse regole
   if (_printErrorTypeFilter.size === 1 && _printErrorTypeFilter.has(pe)) _printErrorTypeFilter = new Set();
-  else _printErrorTypeFilter = new Set([pe]);
+  else { _printErrorTypeFilter = new Set([pe]); _changeTypeFilter = new Set(); } // v6.134 - uno per volta
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (setPrintErrorTypeFilter)', e); }
 }
@@ -20036,7 +20670,8 @@ function setPrintErrorTypeFilterByIndex(i) {
 function addPrintErrorTypeFilterByIndex(i) {
   const pe = _printErrorTypeResultVals[i];
   if (pe === undefined) return;
-  if (_printErrorTypeFilter.has(pe)) _printErrorTypeFilter.delete(pe); else _printErrorTypeFilter.add(pe);
+  if (_printErrorTypeFilter.has(pe)) _printErrorTypeFilter.delete(pe);
+  else { _printErrorTypeFilter.add(pe); _changeTypeFilter = new Set(); } // v6.134 - uno per volta
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (addPrintErrorTypeFilter)', e); }
 }
@@ -22932,28 +23567,76 @@ function openFigDetail(figId, elencoNav) {
   // Sparisce quindi anche la vecchia riga di telefono per le sole variazioni: era nata per rimediare
   // a una didascalia che si perdeva nel layout a due colonne, problema che su telefono non esiste.
   // Col "Retro bianco" la riga non compare da se': li' `retroId` e' vuoto per costruzione (v6.007).
-  if (!_mobileDetail && f.section === 'figurines' && f.retroId) {
-    const _allF = getData('figurines', []);
-    const _retroAss = _allF.find(x => x.id === f.retroId);
-    if (_retroAss) {
-      // v6.031 - il sottonome su riga propria, in azzurro: stesso schema del tab Variazioni, della
-      // didascalia sotto la foto e delle card. Su telefono serve piu' che altrove, perche' li' il
-      // Nome completo intero andrebbe a capo da solo, spezzato a caso.
-      const _sottoAss = _retroSottonome(_retroAss, _allF);
-      rows.push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Retro associato' : 'Associated retro'}</span><span class="detail-value">${esc(_retroNomeCompletoSenzaSottonome(_retroAss, _allF))}${_sottoAss ? `<div style="font-size:0.78rem;color:var(--info);margin-top:1px;">${esc(_sottoAss)}</div>` : ''}</span></div>`);
-    }
-  }
+  // v6.125 (Franco) - VIA LA RIGA "RETRO ASSOCIATO": e' lo STESSO link della didascalia sotto la
+  // foto del retro, nella stessa schermata. Stessa funzione (`_retroNomeCompletoSenzaSottonome`),
+  // stesso sottonome in azzurro sotto: due volte la stessa riga.
+  // ⚠️ QUESTA DECISIONE ERA GIA' STATA PRESA UNA VOLTA, nella v5.841, e con queste parole: la riga
+  // "Retro collegato" non si stampa piu' perche' "era lo stesso collegamento due volte nella stessa
+  // schermata". Poi e' rientrata sotto un altro nome. Vale la pena saperlo: un doppione tolto puo'
+  // tornare, se chi lo riaggiunge non sa che era stato tolto apposta — ed e' proprio il caso in cui
+  // il commento serve piu' del codice.
+  // Non si perde niente: la didascalia compare ogni volta che il retro ESISTE, anche quando non ha
+  // foto, perche' dipende dal record e non dall'immagine (v5.841).
+  // Resta invece il caso GUASTO qui sopra - `retroId` che punta a un record inesistente - che ha una
+  // riga sua ed e' l'unico posto in cui quel problema si vede.
   if ((f.isVariation || f.isUnofficialVariation || f.isChange || f.isPrintError) && f.baseFigurineId) {
     const baseFig = getData('figurines', []).find(x => x.id === f.baseFigurineId);
     if (baseFig) {
       // v5.769 — per un Errore di stampa il collegamento dice "Errore di stampa di" (prima il
       // ramo mancava e per gli errori di stampa il link alla base non compariva affatto).
+      // v6.118 (Franco) - L'ETICHETTA GUARDAVA LA SEZIONE, NON L'OGGETTO. La condizione era
+      // `f.section === 'retros'`, quindi diceva "Change di" ai soli change dei RETRO; lo stesso
+      // change fra le FIGURINE cadeva nel ramo finale e si sentiva chiamare "Variazione di", che
+      // non c'entra niente con quello che e'. Franco lo aveva letto come un nome vecchio rimasto
+      // li' ("un retaggio delle variazioni"): non lo era, era una condizione che chiedeva DOVE SEI
+      // invece di CHE COSA SEI. Le due domande coincidono finche' ogni tipo vive in una sezione
+      // sua, e smettono di coincidere appena non e' piu' vero.
       const relationLabel = f.isPrintError
         ? (currentLang === 'it' ? 'Errore di stampa di' : 'Print error of')
-        : (f.section === 'retros'
-            ? (currentLang === 'it' ? 'Change di' : 'Change of')
-            : (currentLang === 'it' ? 'Variazione di' : 'Variation of'));
-      rows.push(`<div class="detail-row" style="border-bottom:none;"><span class="detail-value" style="font-style:italic;color:var(--muted);">${relationLabel}: <a href="#" onclick="openFigDetail('${baseFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${baseFig.number ? baseFig.number + ' ' : ''}${baseFig.name}</a></span></div>`);
+        : f.isChange
+          ? (currentLang === 'it' ? 'Change di' : 'Change of')
+          : f.isUnofficialVariation
+            ? (currentLang === 'it' ? 'Variazione non ufficiale di' : 'Unofficial variation of')
+            : (currentLang === 'it' ? 'Variazione di' : 'Variation of');
+      // v6.118 (Franco) - IL RETRO DELLA FIGURINA PUNTATA, e non e' un ornamento: una base e una
+      // sua variazione hanno lo STESSO numero e lo STESSO nome, quindi "214 ADAM BOMB" da solo non
+      // dice a quale delle due si punta. A distinguerle e' il retro - una variazione E' il suo
+      // dietro (regola di Franco). Oggi il campo puo' puntare solo a una base e l'ambiguita' non si
+      // presenta; diventa indispensabile appena un change potra' puntare a una variazione.
+      // v6.120 (Franco) - UNA SOLA STRINGA CLICCABILE, col NOME COMPLETO della figurina puntata.
+      // La v6.118 aveva spezzato la riga in due pezzi di due colori — il nome cliccabile e il retro
+      // attaccato dopo — per distinguere una base dalla sua variazione. Era la risposta giusta alla
+      // domanda sbagliata: il Nome completo di una variazione CONTIENE GIA' il retro
+      // (`nome - nomeLungoDelRetro`), mentre quello di una base e' il solo nome. Si distinguono da
+      // soli, e due pezzi per dire una cosa sola si leggono peggio di uno.
+      // v6.121 (Franco) - LA STESSA STRINGA DELLA TENDINA, retro compreso.
+      // La v6.120 usava il Nome completo, sul presupposto che contenesse gia' il retro: vero per una
+      // VARIAZIONE (`nome - nomeLungoDelRetro`), FALSO per una base, il cui Nome completo e' il solo
+      // nome. E siccome oggi i figli puntano quasi tutti a basi, in pratica il retro non si vedeva
+      // mai — cioe' il presupposto era sbagliato proprio nel caso normale.
+      // `_baseFigurineLinkLabel` e' la stessa funzione che scrive le voci della tendina: cosi' quello
+      // che leggi nella scheda e quello che avresti scelto nell'elenco sono la stessa riga.
+      const _nomePuntata = _baseFigurineLinkLabel(baseFig);
+      // v6.122 (Franco) - NON VA A CAPO, per tutti e tre i tipi (variazione, change, errore di
+      // stampa). ⚠️ E il motivo per cui la tendina poteva allargarsi QUI NON VALE: quella e'
+      // `position:absolute` e galleggia sopra il contenuto, questa riga sta nel flusso. Un
+      // `nowrap` da solo la farebbe uscire dal riquadro e finire sopra o sotto la foto — cioe'
+      // proprio la cosa che Franco non voleva. Con `overflow-x:auto` la riga tiene la sua
+      // larghezza e scorre: il testo resta su una riga sola e il layout non si muove.
+      // Prezzo, che e' bene sia scritto: per leggere la coda di un'etichetta lunga si trascina.
+      // v6.123 (Franco) - ETICHETTA SOPRA, VALORE SOTTO. E' la soluzione che scioglie il nodo delle
+      // ultime tre release invece di aggirarlo: su una riga tutta sua il valore ha l'intera
+      // larghezza della colonna e cresce verso il BASSO, dove non c'e' niente da colpire.
+      // Cade cosi' tutto il resto: niente `nowrap`, niente scorrimento orizzontale, niente
+      // troncature. Il testo puo' andare a capo perche' adesso andare a capo non costa niente.
+      //
+      // Le tre versioni precedenti giravano attorno al problema sbagliato — "come faccio stare una
+      // riga lunga in uno spazio stretto" — quando la domanda era "perche' deve stare in quello
+      // spazio". La misura che l'ha reso evidente: il bordo destro della riga cadeva a 943px e la
+      // foto cominciava a 975, quindi il testo veniva tagliato 32px PRIMA della foto: a limitarlo
+      // non era la foto, era la colonna. E la riga non stava nemmeno sotto la foto come si era
+      // creduto (riga a 520, fondo della foto a 527): le stava accanto per sette pixel.
+      rows.push(`<div class="detail-row" style="border-bottom:none;flex-direction:column;align-items:flex-start;gap:2px;"><span class="detail-label" style="font-style:italic;">${relationLabel}</span><a href="#" onclick="openFigDetail('${baseFig.id}');return false;" title="${esc(_nomePuntata)}" style="color:var(--accent);text-decoration:underline;white-space:nowrap;">${esc(_nomePuntata)}</a></div>`);
     }
   }
 
@@ -23038,11 +23721,11 @@ function openFigDetail(figId, elencoNav) {
       photoEl.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
           <div>
-            <div style="font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:4px;">${currentLang === 'it' ? 'Fronte' : 'Front'}</div>
+            <div style="font-size:0.7rem;color:#fff;text-align:center;margin-bottom:4px;">${currentLang === 'it' ? 'Fronte' : 'Front'}</div>
             ${baseHTML}
           </div>
           <div>
-            <div style="font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:4px;">${currentLang === 'it' ? 'Retro' : 'Back'}</div>
+            <div style="font-size:0.7rem;color:#fff;text-align:center;margin-bottom:4px;">${currentLang === 'it' ? 'Retro' : 'Back'}</div>
             ${retroHTML}
             ${retroCaption}
           </div>
@@ -23287,7 +23970,7 @@ function _titoloSchedaHTML(f, nomeVisualizzato) {
     + esc(tipo) + '</span>' + esc(nome);
 }
 
-function _fotoFigurina(f, allFigs) {
+function _fotoFigurina(f, allFigs, _salti) {
   if (!f) return null;
   if (f.img) return f.img;
   // v5.785 - f.section, non currentSection: vale anche fuori dalla griglia (la scheda, i tab).
@@ -23321,7 +24004,24 @@ function _fotoFigurina(f, allFigs) {
     || (f.isPrintError && f.retroId) || _changeDiRetro;
   if (f.section === 'figurines' && _frontePariAllaBase && f.baseFigurineId) {
     const base = figs.find(x => x.id === f.baseFigurineId);
-    if (base && base.img) return base.img;
+    // v6.129 (Franco) - SI RISALE LA CATENA, non un anello solo.
+    // Qui c'era `if (base && base.img) return base.img`, e andava benissimo finche' dall'altro capo
+    // di `baseFigurineId` c'era per forza una BASE: la base una foto ce l'ha. Dalla v6.120 li' puo'
+    // esserci una VARIAZIONE, che una foto propria di solito NON ce l'ha - perche' ha lo stesso
+    // fronte della base e si appoggia a lei, per questa stessa regola. Catena
+    // change -> variazione -> base, e il ripiego mollava al primo anello: il change restava senza
+    // fronte. Non era un baco del vecchio codice, era un BUCO aperto dal togliere il vincolo.
+    // Ora si richiede la stessa domanda al genitore invece di frugargli dentro: la sua
+    // `_fotoFigurina` sa gia' ripiegare sulla PROPRIA base, quindi la catena si risolve da se' -
+    // ed e' anche l'unica forma che non va aggiornata se un giorno gli anelli diventano tre.
+    // Il tetto ai salti non e' teorico: `baseFigurineId` si puo' impostare a mano dalla vista
+    // tabellare, quindi due record che si puntano a vicenda sono possibili, e senza tetto sarebbe
+    // una ricorsione infinita che blocca la pagina invece di mostrare una foto in meno.
+    const salti = _salti || 0;
+    if (base && salti < 4) {
+      const img = _fotoFigurina(base, figs, salti + 1);
+      if (img) return img;
+    }
   }
   return null;
 }
@@ -23656,7 +24356,7 @@ function filterFeBaseFigurineLink() {
   dd.style.display = '';
   dd.innerHTML = filtered.map(f => {
     return `<div onclick="selectFeBaseFigurineLink('${f.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
-      <div style="font-size:0.9rem;">${esc(_baseFigurineLinkLabel(f))}</div>
+      <div style="font-size:0.9rem;white-space:nowrap;">${esc(_baseFigurineLinkLabel(f))}</div>
     </div>`;
   }).join('');
 }
@@ -23995,16 +24695,43 @@ function switchToEditMode(figId) {
 
   // Figurina/Retro base — ricerca in digitazione (stesso pattern del Retro associato)
   _feBaseFigurineLinkOptions = getData('figurines', [])
-    .filter(x => x.seriesId === f.seriesId && x.section === f.section && x.id !== f.id && !x.isVariation && !x.isUnofficialVariation && !x.isChange)
+    // v6.120 (Franco) - VIA L'ESCLUSIONE DELLE VARIAZIONI: un change puo' essere il change di una
+    // variazione. Restano fuori change ed errori di stampa: un change non e' il change di un change.
+    // v6.133 (Franco) - E SOLO LO STESSO NUMERO. Non e' pulizia dell'elenco, e' una difesa: il
+    // numero di un figlio non si scrive, si EREDITA dalla figurina di partenza al salvataggio
+    // (`updates.number = baseFigForNum.number`). Quindi scegliere dall'elenco una figurina con un
+    // altro numero RINUMERA il record, in silenzio — ed e' il §12.0, "un oggetto che perde il numero
+    // senza che nessuno l'abbia toccato". Su una tendina da mille voci un clic scivolato non si
+    // vede; su una da tre si', e comunque non puo' fare quel danno.
+    // Dove il numero non c'e' si usa il NOME, che e' l'altro modo in cui un gruppo si riconosce; se
+    // non c'e' nemmeno quello (record appena nato) si mostra tutto, perche' non c'e' niente su cui
+    // restringere e un elenco vuoto sarebbe peggio di uno lungo.
+    .filter(x => x.seriesId === f.seriesId && x.section === f.section && x.id !== f.id && !x.isChange && !x.isPrintError
+                 && _stessoGruppoDi(f, x))
     .sort(_baseFigurineLinkSort); // v5.785 — Retro per Nome completo, Figurine per Numero
   const selectedBaseFig = f.baseFigurineId ? _feBaseFigurineLinkOptions.find(x => x.id === f.baseFigurineId) : null;
   const showBaseGroup = f.isVariation || f.isUnofficialVariation || f.isChange || f.isPrintError;
-  const baseLabel = isRetrosItem ? (currentLang==='it'?'Retro base':'Base Retro') : (currentLang==='it'?'Figurina base':'Base sticker');
+  // v6.120 (Franco) - "FIGURINA DI PARTENZA", e la parola "base" sparisce perche' ha smesso di
+  // essere vera: da questa release il campo puo' puntare anche a una VARIAZIONE, quindi chiamarlo
+  // "Figurina base" descriveva un vincolo che non c'e' piu'. Un nome solo per tutti e tre i tipi
+  // (variazione, change, errore di stampa): tre formulazioni per dire lo stesso ruolo sono tre cose
+  // da tenere allineate, e la vista tabellare ne avrebbe comunque richiesta una generica.
+  const baseLabel = isRetrosItem
+    ? (currentLang==='it' ? 'Retro di partenza' : 'Source back')
+    : (currentLang==='it' ? 'Figurina di partenza' : 'Source sticker');
   html += '<div class="detail-row" id="fe-base-figurine-group" style="' + (showBaseGroup ? '' : 'display:none;') + 'flex-direction:column;align-items:stretch;position:relative;">' +
     '<span class="detail-label">' + baseLabel + '</span>' +
-    '<input class="form-input" type="text" id="fe-base-figurine-search" placeholder="' + (currentLang==='it'?'Cerca per numero o nome...':'Search by number or name...') + '" autocomplete="off" value="' + (selectedBaseFig ? esc(_baseFigurineLinkLabel(selectedBaseFig)) : '') + '" oninput="filterFeBaseFigurineLink()" onfocus="filterFeBaseFigurineLink()" onblur="clearFeBaseFigurineLinkIfEmpty()" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
+    '<input class="form-input" type="text" id="fe-base-figurine-search" placeholder="' + (currentLang==='it'?'Cerca per numero o nome...':'Search by number or name...') + '" autocomplete="off" value="' + (selectedBaseFig ? esc(_baseFigurineLinkLabel(selectedBaseFig)) : '') + '" oninput="filterFeBaseFigurineLink()" onfocus="this.select();filterFeBaseFigurineLink()" onblur="clearFeBaseFigurineLinkIfEmpty()" title="' + (selectedBaseFig ? esc(_baseFigurineLinkLabel(selectedBaseFig)) : '') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
     '<input type="hidden" id="fe-base-figurine" value="' + (f.baseFigurineId || '') + '">' +
-    '<div id="fe-base-figurine-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:220px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>' +
+    // v6.121 (Franco) - LA TENDINA PUO' ESSERE PIU' LARGA DEL CAMPO. Da quando l'etichetta porta
+    // anche il retro (v6.120) le voci sono lunghe, e con `right:0` erano incastrate nella larghezza
+    // della casella: andavano a capo su due o tre righe e diventavano illeggibili proprio dove
+    // servono a distinguere una base dalla sua variazione.
+    // `right:auto` + `width:max-content` la fa larga quanto la voce piu' lunga; `max-width` le
+    // impedisce di uscire dallo schermo, e allora scorre in orizzontale.
+    // NON tocca la regola di non mandare il testo sotto la foto: la tendina e' `position:absolute`,
+    // quindi galleggia sopra il contenuto e non sposta nulla di quello che c'e' sotto.
+    '<div id="fe-base-figurine-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:auto;min-width:100%;width:max-content;max-width:min(90vw,900px);background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:220px;overflow-y:auto;overflow-x:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>' +
     '</div>';
 
   // Selettore Retro associato — v6.074 (Franco): solo dove un retro-FIGURINA esiste davvero.
@@ -24021,7 +24748,7 @@ function switchToEditMode(figId) {
     const showRetroGroup = !f.retroBianco;
     html += '<div class="detail-row" id="fe-retro-group" style="' + (showRetroGroup ? '' : 'display:none;') + 'flex-direction:column;align-items:stretch;position:relative;">' +
       '<span class="detail-label">' + (currentLang==='it'?'Retro associato':'Associated retro') + '</span>' +
-      '<input class="form-input" type="text" id="fe-retro-search" placeholder="' + (currentLang==='it'?'Cerca per nome, categoria o sottocategoria...':'Search by name, category or subcategory...') + '" autocomplete="off" value="' + (selectedRetro ? esc(_retroLinkLabel(selectedRetro)) : '') + '" oninput="filterFeRetroLink()" onfocus="filterFeRetroLink()" onblur="clearFeRetroLinkIfEmpty()" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
+      '<input class="form-input" type="text" id="fe-retro-search" placeholder="' + (currentLang==='it'?'Cerca per nome, categoria o sottocategoria...':'Search by name, category or subcategory...') + '" autocomplete="off" value="' + (selectedRetro ? esc(_retroLinkLabel(selectedRetro)) : '') + '" oninput="filterFeRetroLink()" onfocus="this.select();filterFeRetroLink()" onblur="clearFeRetroLinkIfEmpty()" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
       '<input type="hidden" id="fe-retro" value="' + (f.retroId || '') + '">' +
     '<div id="fe-retro-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:220px;overflow-y:auto;margin-top:2px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>' +
     '</div>';
@@ -24215,7 +24942,7 @@ const _scriviSlot = (s, v) => { if (s === 'retro') _figEditImgRetroData = v; els
 function _slotFotoEdit(slot, url, f) {
   const s = _SLOT_FOTO[slot];
   const titolo = (_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section))
-    ? '<div style="font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? s.it : s.en) + '</div>'
+    ? '<div style="font-size:0.7rem;color:#fff;text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? s.it : s.en) + '</div>'
     : '';
   const vuoto = currentLang === 'it' ? 'Nessuna foto' : 'No photo';
   return '<div style="margin-bottom:0.6rem;">' + titolo +
@@ -25442,7 +26169,44 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 // - figurina base: solo il nome
 // - variazione (ufficiale/non ufficiale): nome + " - " + nome del Retro collegato
 // - change: nome della figurina base + " - " + nome proprio del change
-function computeFullName(fig, allFigs) {
+// v6.132 (Franco) - IL PEZZO INIZIALE DEL NOME DI UN FIGLIO: il Nome completo della sua FIGURINA
+// DI PARTENZA, chiunque essa sia.
+// La v6.130 faceva una distinzione: dalla variazione prendeva il Nome completo, dalla base il nome
+// nudo. Aveva una ragione al tempo — le basi il retro nel nome non ce l'avevano — e con la v6.131
+// e' diventata un'incoerenza visibile: la base si chiamava "ADAM BOMB - RICERCATO - ROSSO - ..."
+// mentre il suo change si chiamava "ADAM BOMB - MOSCA NERA", senza il retro.
+// Decisione di Franco: "da oggi non facciamo distinzione tra variazioni e figurine base quando
+// trattiamo il full name". Quindi niente due rami: si prende sempre il Nome completo.
+//
+// Nota sul vocabolario, che qui non e' pedanteria: si dice FIGURINA DI PARTENZA, non "base" e non
+// "genitore". "Base" descriveva il vincolo tolto nella v6.120 (si poteva puntare solo a una base) e
+// oggi direbbe il falso; "genitore" e' una parola che non appartiene a questo progetto. Il campo su
+// Firestore si chiama ancora `baseFigurineId` e resta com'e': rinominarlo vorrebbe dire riscrivere
+// ogni documento serie, per un guadagno di sola lettura.
+//
+// IL TETTO AI SALTI: una figurina di partenza puo' a sua volta averne una (una variazione ha la sua
+// base), e dalla vista tabellare l'id si imposta a mano, quindi due record che si puntano a vicenda
+// sono possibili. Senza tetto sarebbe una ricorsione infinita: stessa difesa di `_fotoFigurina`.
+// v6.133 (Franco) - DUE OGGETTI SONO DELLO STESSO GRUPPO? E' la domanda che decide chi puo' essere
+// la figurina di partenza di chi. Il numero viene prima perche' e' l'identificatore vero; il nome e'
+// il ripiego per le serie che i numeri non li usano (`noNumbers`) e per gli oggetti con `noNumber`.
+// Se il figlio non ha ne' numero ne' nome — un record appena creato — non c'e' niente su cui
+// restringere e si lascia passare tutto: un elenco vuoto sarebbe peggio di uno lungo.
+function _stessoGruppoDi(figlio, candidato) {
+  const n = figlio.number;
+  if (n !== null && n !== undefined && n !== '') return String(candidato.number) === String(n);
+  const nome = (figlio.name || '').trim().toUpperCase();
+  if (nome) return (candidato.name || '').trim().toUpperCase() === nome;
+  return true;
+}
+
+function _nomeFigurinaDiPartenza(partenza, fig, allFigs, _salti) {
+  if (!partenza) return fig.name || '';
+  if ((_salti || 0) >= 4) return partenza.name || '';
+  return computeFullName(partenza, allFigs, (_salti || 0) + 1);
+}
+
+function computeFullName(fig, allFigs, _salti) {
   if (!fig) return '';
   // RETRO (v5.751): pezzo iniziale dal RETRO BASE (Categoria - Nome, o solo Nome se la serie
   // dichiara che il nome contiene già la categoria), poi il suffisso del tipo. Ramo a sé.
@@ -25450,14 +26214,20 @@ function computeFullName(fig, allFigs) {
   if (fig.isVariation || fig.isUnofficialVariation) {
     const retro = fig.retroId ? allFigs.find(x => x.id === fig.retroId) : null;
     // v5.980 — nome LUNGO del retro: qui si sta costruendo ciò che si vede, non il titolo eBay.
-    return retro ? (fig.name || '') + ' - ' + _retroNomeLungo(retro) : (fig.name || '');
+    // v6.131 (Franco) - LA FORMA PIENA, come le basi. Qui c'era `_retroNomeLungo`, cioe' il solo
+    // `nome - sottonome`: niente categoria, niente sottocategoria. Con le basi promosse, una
+    // variazione avrebbe avuto MENO informazione della figurina da cui discende.
+    // `_retroFullName` e non `_retroNomeCompleto`: il secondo preferisce il `fullName` MEMORIZZATO
+    // del retro, e comporre il nome di un record dal valore salvato di un altro propagherebbe la
+    // forma vecchia proprio durante il ricalcolo generale.
+    return retro ? (fig.name || '') + ' - ' + _retroFullName(retro, allFigs) : (fig.name || '');
   }
   if (fig.isChange) {
     // v5.779 — Change di FIGURINA: come il Change di Retro, non ha nome proprio (il Nome eredita
     // quello della base) e il Nome completo è "NomeBase - TIPO" (Tipo di change in MAIUSCOLO).
     // Senza changeType (dato vecchio) resta il solo NomeBase, niente trattino penzolante.
     const base = fig.baseFigurineId ? allFigs.find(x => x.id === fig.baseFigurineId) : null;
-    const baseName = base ? (base.name || '') : (fig.name || '');
+    const baseName = _nomeFigurinaDiPartenza(base, fig, allFigs, _salti);
     return fig.changeType ? baseName + ' - ' + fig.changeType.toUpperCase() : baseName;
   }
   if (fig.isPrintError) {
@@ -25466,11 +26236,18 @@ function computeFullName(fig, allFigs) {
     // Nome completo: "NomeBase - Tipo errore di stampa", SENZA maiuscolo (come i Retro; il maiuscolo è
     // solo per il changeType). Senza tipo (dato vecchio) resta il solo NomeBase.
     const base = fig.baseFigurineId ? allFigs.find(x => x.id === fig.baseFigurineId) : null;
-    const baseName = base ? (base.name || '') : (fig.name || '');
+    const baseName = _nomeFigurinaDiPartenza(base, fig, allFigs, _salti);
     const tipoPE = (fig.printErrorType || '').trim();
     return tipoPE ? baseName + ' - ' + tipoPE : baseName;
   }
-  return fig.name || '';
+  // v6.131 (Franco) - ANCHE LE FIGURINE BASE PORTANO IL NOME DEL RETRO nel Nome completo.
+  // Prima questo ramo tornava il solo `fig.name`: una base si chiamava "ADAM BOMB" mentre ogni suo
+  // figlio portava il retro nel nome. Ora anche la base dice qual e' il suo dietro.
+  // Chi non ha `retroId` resta il solo nome, senza trattino penzolante.
+  const _retroBase = fig.retroId ? allFigs.find(x => x.id === fig.retroId) : null;
+  return _retroBase
+    ? (fig.name || '') + ' - ' + _retroFullName(_retroBase, allFigs)
+    : (fig.name || '');
 }
 
 // v5.751 — Nome completo dei RETRO (Franco): "prima dico DI COSA parlo (il retro base), poi
@@ -25577,9 +26354,10 @@ function _retroFullName(fig, allFigs, senzaSottonome) {
   //   categoria scritta   ->  CATEGORIA - SOTTOCATEGORIA - Nome
   //   categoria omessa    ->  Nome - SOTTOCATEGORIA
   const categoriaOmessa = !cat || _retroNameStartsWithCategory(base);
-  const piece = categoriaOmessa
-    ? nomeLungo + (sub ? ' - ' + sub : '')
-    : cat + ' - ' + (sub ? sub + ' - ' : '') + nomeLungo;
+  // v6.131 (Franco) - UN ORDINE SOLO. Fino alla v6.130 la sottocategoria stava in TESTA quando la
+  // categoria c'era e in CODA quando veniva omessa perche' il nome la conteneva gia'. Ora l'ordine
+  // e' sempre lo stesso e la categoria omessa semplicemente non compare.
+  const piece = [categoriaOmessa ? '' : cat, sub, nomeLungo].filter(Boolean).join(' - ');
   if (fig.isChange) {
     // v5.755 (Franco): per i Change niente più " - Change"; solo il Tipo di change, in MAIUSCOLO.
     return piece + ' - ' + (fig.changeType || '').toUpperCase();
@@ -27107,7 +27885,14 @@ function renderAdminFunzioni() {
   const el = document.getElementById('admin-funzioni-content');
   if (!el) return;
   const it = currentLang === 'it';
-  const serie = getData('series', []).slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
+  // v6.136 (Franco) - ELENCO SERIE IN ORDINE ALFABETICO nella scheda Funzioni, tutti e quattro i
+  // selettori. Erano ordinati per `order`, cioe' l'ordine con cui le serie compaiono nel sito: ha
+  // senso in vetrina, non in una tendina da cui si cerca una serie per nome.
+  // Collazione NUMERICA: senza, "Serie 10" verrebbe prima di "Serie 2" perche' confronta '1' con
+  // '2' invece di 10 con 2 — lo stesso motivo per cui la griglia usa `numeric:true` sul nome
+  // (v6.077, le bustine "L. 500" e "L. 1000").
+  const serie = getData('series', []).slice()
+    .sort((a,b) => (a.name || '').localeCompare(b.name || '', 'it', { numeric: true }));
   el.innerHTML =
     '<div style="max-width:900px;">' +
       '<h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">&#128295; ' + (it ? 'Funzioni' : 'Functions') + '</h3>' +
@@ -27208,6 +27993,29 @@ function renderAdminFunzioni() {
         '</div>' +
         '<div id="fixretro-esito" style="margin-top:1rem;"></div>' +
       '</div>' +
+      // v6.135 (Franco) - QUARTA FUNZIONE: il "Ricalcola i Nomi completi", che stava fra gli IMPORT.
+      // Non e' un import ne' una procedura foto: e' un intervento manuale sui dati con anteprima,
+      // conferma e scrittura — cioe' la definizione della sezione Funzioni (§14). Era l'unico
+      // blocco di quel pannello che non c'entrava col pannello.
+      // E dalla v6.131 conta piu' di prima: non e' manutenzione occasionale, e' il passo che rende
+      // effettiva la nuova composizione del Nome completo su una serie. Un attrezzo cosi', sepolto
+      // fra gli import, si trova solo per caso.
+      // Gli id restano identici (`recompute-fullnames-*`), quindi `previewRecomputeFullNames()` e
+      // `applyRecomputeFullNames()` non cambiano di una riga.
+      '<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;">' + (it ? '4. Ricalcola i Nomi completi' : '4. Recompute full names') + '</h4>' +
+        '<p style="font-size:0.85rem;color:var(--muted);margin:0 0 0.75rem;">' +
+          (it ? 'Rigenera il <b>Nome completo</b> di figurine e retro di <b>una serie</b> secondo le regole attuali. Prima mostra l\'<b>anteprima</b> (valore attuale → nuovo) dei soli record che cambierebbero.<br><b>Serve dopo ogni modifica alle regole di composizione</b>: il Nome completo e\' un campo memorizzato, quindi finche\' non si ricalcola la stessa serie contiene due forme diverse.'
+              : 'Regenerate the <b>full name</b> of stickers and retros of <b>one series</b> per current rules. It first <b>previews</b> (current → new) only the records that would change.<br><b>Needed after any change to the composition rules</b>: the full name is a stored field, so until it is recomputed the same series holds two different forms.') +
+        '</p>' +
+        '<label class="form-label">' + (it ? 'Serie' : 'Series') + '</label>' +
+        '<select id="recompute-fullnames-series-select" class="form-select" style="margin-bottom:0.75rem;">' +
+          '<option value="">-- ' + (it ? 'Seleziona una serie' : 'Select a series') + ' --</option>' +
+          serie.map(x => '<option value="' + x.id + '" data-name="' + esc(x.name) + '">' + esc(x.name) + '</option>').join('') +
+        '</select>' +
+        '<button class="btn-primary btn-admin" onclick="previewRecomputeFullNames()" id="recompute-fullnames-btn">&#128269; ' + (it ? 'Conta e mostra anteprima' : 'Count and preview') + '</button>' +
+        '<div id="recompute-fullnames-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-top:1rem;"></div>' +
+      '</div>' +
     '</div>';
   _pianoAllinea = null;
   _pianoFixRetro = null; // v6.085
@@ -27267,24 +28075,23 @@ async function applicaFixRetroChange() {
       : 'Relink ' + _pianoFixRetro.length + ' Changes to their change back?\n\nThis writes to the database and cannot be undone.')) return;
   if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
   let ok = 0; const errori = [];
+  const daScrivere = [];
   for (let i = 0; i < _pianoFixRetro.length; i++) {
     const v = _pianoFixRetro[i];
     // Si scrive SOLO retroId. Il resto del record non si tocca: questa funzione ha una sola idea,
     // e una funzione di massa che ne avesse due sarebbe impossibile da rileggere fra sei mesi.
-    const nuovo = { ...v.fig, retroId: v.corretto.id };
-    try {
-      await fsSave('figurines', nuovo);
-      const idx = (_cache.figurines || []).findIndex(x => x.id === nuovo.id);
-      if (idx >= 0) _cache.figurines[idx] = nuovo;
-      ok++;
-    } catch(e) {
-      console.error('applicaFixRetroChange', nuovo.id, e);
-      errori.push((nuovo.fullName || nuovo.name || nuovo.id) + ': ' + (e?.code || e?.message || 'errore'));
-    }
-    if (esito && (i % 10 === 0 || i === _pianoFixRetro.length - 1)) {
-      esito.innerHTML = '<div style="font-size:0.9rem;">' + (it ? 'Scrittura in corso… ' : 'Writing… ') + (i + 1) + '/' + _pianoFixRetro.length + '</div>';
-    }
-    await new Promise(r => setTimeout(r, 120));
+    daScrivere.push({ ...v.fig, retroId: v.corretto.id });
+  }
+  // v6.117 - una scrittura per SERIE invece di una per record, e via la pausa di 120 ms che
+  // serviva a non martellare Firestore con N scritture di fila: con una sola non serve piu'.
+  // Su 98 record (l'8 agosto) erano 98 riscritture da 521 KB piu' 12 secondi di sole pause.
+  if (esito) esito.innerHTML = '<div style="font-size:0.9rem;">' + (it ? 'Scrittura in corso… ' : 'Writing… ') + daScrivere.length + '</div>';
+  try {
+    await _salvaFigurineInBlocco(daScrivere);
+    ok = daScrivere.length;
+  } catch(e) {
+    console.error('applicaFixRetroChange', e);
+    errori.push(it ? 'scrittura fallita: ' + (e?.code || e?.message || 'errore') : 'write failed: ' + (e?.code || e?.message || 'error'));
   }
   if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.display = 'none'; }
   _pianoFixRetro = null;
@@ -27404,24 +28211,22 @@ async function applicaAllineaFigli() {
       : 'Align ' + _pianoAllinea.length + ' records to their base values?\n\nThis writes to the database and cannot be undone.')) return;
   if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
   let ok = 0; const errori = [];
+  const daScrivere = [];
   for (let i = 0; i < _pianoAllinea.length; i++) {
     const v = _pianoAllinea[i];
     const nuovo = { ...v.figlio };
     v.campi.forEach(k => { nuovo[k] = v.base[k] || ''; });
     try { nuovo.fullName = computeFullName(nuovo, getData('figurines', [])); } catch(e) {}
-    try {
-      await fsSave('figurines', nuovo);
-      const idx = (_cache.figurines || []).findIndex(x => x.id === nuovo.id);
-      if (idx >= 0) _cache.figurines[idx] = nuovo;
-      ok++;
-    } catch(e) {
-      console.error('applicaAllineaFigli', nuovo.id, e);
-      errori.push((nuovo.fullName || nuovo.name || nuovo.id) + ': ' + (e?.code || e?.message || 'errore'));
-    }
-    if (esito && (i % 10 === 0 || i === _pianoAllinea.length - 1)) {
-      esito.innerHTML = '<div style="font-size:0.9rem;">' + (it ? 'Scrittura in corso… ' : 'Writing… ') + (i + 1) + '/' + _pianoAllinea.length + '</div>';
-    }
-    await new Promise(r => setTimeout(r, 120));
+    daScrivere.push(nuovo);
+  }
+  // v6.117 - una scrittura per SERIE invece di una per record, e via la pausa di 120 ms.
+  if (esito) esito.innerHTML = '<div style="font-size:0.9rem;">' + (it ? 'Scrittura in corso… ' : 'Writing… ') + daScrivere.length + '</div>';
+  try {
+    await _salvaFigurineInBlocco(daScrivere);
+    ok = daScrivere.length;
+  } catch(e) {
+    console.error('applicaAllineaFigli', e);
+    errori.push(it ? 'scrittura fallita: ' + (e?.code || e?.message || 'errore') : 'write failed: ' + (e?.code || e?.message || 'error'));
   }
   if (btn) { btn.disabled = false; btn.style.opacity = ''; btn.style.display = 'none'; }
   _pianoAllinea = null;
@@ -27444,26 +28249,8 @@ function renderAdminFoto() {
 
   el.innerHTML = `
     <div style="max-width:900px;">
-      <h3 onclick="toggleImportSection('recompute')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-recompute-chevron">▶</span> 🔤 ${currentLang==='it'?'Ricalcola i Nomi completi':'Recompute full names'}</h3>
-      <div id="import-recompute-section-content" style="display:none;">
-      <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
-        ${currentLang==='it'
-          ? 'Rigenera il <b>Nome completo</b> di figurine e retro di <b>una serie</b> secondo le regole attuali. Prima ti mostra una <b>anteprima</b> (valore attuale → nuovo) dei record che cambierebbero, poi con <b>Applica</b> li scrive (ogni record = una scrittura su Firestore). Riscrive solo quelli che cambiano davvero.'
-          : 'Regenerate the <b>full name</b> of stickers and retros of <b>one series</b> per current rules. First it <b>previews</b> (current → new) the records that would change, then <b>Apply</b> writes them (each = one Firestore write). Only actually-changed records are rewritten.'}
-      </p>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">
-        <label class="form-label">${currentLang==='it'?'Serie':'Series'}</label>
-        <select id="recompute-fullnames-series-select" class="form-select" style="margin-bottom:0.75rem;">
-          <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
-          ${series.map(s => `<option value="${s.id}" data-name="${esc(s.name)}">${esc(s.name)}</option>`).join('')}
-        </select>
-        <button class="btn-primary btn-admin" onclick="previewRecomputeFullNames()" id="recompute-fullnames-btn">🔍 ${currentLang==='it'?'Conta e mostra anteprima':'Count & preview'}</button>
-      </div>
-      <div id="recompute-fullnames-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-bottom:1rem;"></div>
-      </div>
-
-      <hr class="divider" style="margin:2rem 0;">
-
+      <!-- v6.135 - il "Ricalcola i Nomi completi" e' stato spostato nella scheda FUNZIONI (§14):
+           e' una procedura di intervento sui dati con anteprima, non un import ne' una procedura foto. -->
       <h3 onclick="toggleImportSection('fig')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-fig-chevron">▶</span> 🃏 ${currentLang==='it'?'Caricamento massivo figurine':'Bulk import of stickers'}</h3>
       <div id="import-fig-section-content" style="display:none;">
       <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
@@ -28383,8 +29170,41 @@ function renderBulkEditView() {
   bulkView.style.marginLeft = '50%';
   bulkView.style.marginRight = '0';
   bulkView.style.transform = 'translateX(-50%)';
+
   const isAdmin = !!currentUser?.isAdmin;
   const owned = getOwned();
+  // v6.120 - UN SOLO <datalist> PER TUTTA LA TABELLA, e non e' un risparmio: la vista tabellare
+  // mostra una sola serie e una sola sezione, quindi i candidati sono gli STESSI per ogni riga.
+  // Un controllo a digitazione per riga avrebbe voluto dire N elenchi identici e N stati da
+  // tenere allineati; cosi' la ricerca la fa il browser e non c'e' niente da mantenere.
+  // Restano fuori change ed errori di stampa: un change non e' il change di un change.
+  // v6.133 - UN ELENCO PER NUMERO, non piu' uno solo per tutta la tabella. Il <datalist> condiviso
+  // della v6.120 andava finche' i candidati erano gli stessi per ogni riga; da questa release
+  // l'elenco dipende dal NUMERO della riga (vedi `_stessoGruppoDi`), e un elenco unico non si puo'
+  // restringere per riga. Se ne emette uno per gruppo: il totale delle voci non cambia — sono le
+  // stesse figurine, divise — quindi non costa piu' del precedente, e ogni riga vede tre voci
+  // invece di mille.
+  const _candidatiPartenza = !isAdmin ? [] : getData('figurines', [])
+    .filter(x => x.seriesId === currentSeriesId && (x.section || 'figurines') === currentSection
+                 && !x.isChange && !x.isPrintError)
+    .sort(_baseFigurineLinkSort);
+  // chiave del gruppo: il numero se c'e', altrimenti il nome. Chi non ha ne' l'uno ne' l'altro
+  // finisce nell'elenco completo, perche' non c'e' niente su cui restringere.
+  const _chiaveGruppo = f => {
+    const n = f?.number;
+    if (n !== null && n !== undefined && n !== '') return 'n:' + String(n);
+    const nome = (f?.name || '').trim().toUpperCase();
+    return nome ? 'm:' + nome : '';
+  };
+  const _gruppiPartenza = new Map();
+  _candidatiPartenza.forEach(c => {
+    const k = _chiaveGruppo(c);
+    if (!k) return;
+    if (!_gruppiPartenza.has(k)) _gruppiPartenza.set(k, []);
+    _gruppiPartenza.get(k).push(c);
+  });
+  const _idGruppo = new Map([..._gruppiPartenza.keys()].map((k, i) => [k, 'dl-part-' + i]));
+  const _idListaPartenza = f => _idGruppo.get(_chiaveGruppo(f)) || 'dl-part-tutti';
   const currentSeries = getData('series', []).find(s => s.id === currentSeriesId);
   const currentSeriesHasSizes = currentSeries?.hasSizes || false;
   const currentSeriesHasSubseries = currentSeries?.hasSubseries || false;
@@ -28434,7 +29254,12 @@ function renderBulkEditView() {
         ? `<span style="${_boxMiniVuoto}text-align:center;line-height:${_ALT_MINI}px;color:var(--muted);font-size:0.95rem;">${currentSection === 'retros' ? '📇' : '🃏'}</span>`
         : `<span style="${_boxMiniVuoto}"></span>`);
 
-  bulkView.innerHTML = `
+  // v6.120 - il <datalist> esce UNA volta, prima della tabella: lo condividono tutte le righe.
+  const _opz = arr => arr.map(c => '<option value="' + esc(_baseFigurineLinkLabel(c)) + '"></option>').join('');
+  const _datalist = !isAdmin ? '' :
+    [..._gruppiPartenza.entries()].map(([k, arr]) => '<datalist id="' + _idGruppo.get(k) + '">' + _opz(arr) + '</datalist>').join('')
+    + '<datalist id="dl-part-tutti">' + _opz(_candidatiPartenza) + '</datalist>';
+  bulkView.innerHTML = _datalist + `
     ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
       <button class="btn-danger" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;font-size:0.9rem;padding:0.5rem 1rem;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
@@ -28493,6 +29318,7 @@ function renderBulkEditView() {
           ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Sottonome' : 'Subname'}</th>` : ''}
           ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</th>` : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
+          ${isAdmin ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);min-width:420px;">${currentLang === 'it' ? 'Figurina di partenza' : 'Source sticker'}</th>` : ''}
           ${currentSeriesHasSizes ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
           ${_ordinaPerCreazione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);white-space:nowrap;">${currentLang === 'it' ? 'Data creazione' : 'Created on'}</th>` : ''}
           ${!isAdmin ? `
@@ -28511,7 +29337,7 @@ function renderBulkEditView() {
             const _ff = _dueFacce(f, _tutteLeFig);
             return _miniaturaTabella(_ff.fronte, true) + (_schedaDueFoto(f) ? ' ' + _miniaturaTabella(_ff.retro, false) : '');
           })()}</td>
-          ${isAdmin ? `<td style="padding:4px;white-space:nowrap;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="apriModificaItem('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
+          ${isAdmin ? `<td style="padding:4px;white-space:nowrap;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Apri la scheda' : 'Open the card'}" onclick="openFigDetail('${f.id}')">&#128065;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="apriModificaItem('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
           ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
           ${currentSection === 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
           ${currentSection !== 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? f.number : '')) : ''}
@@ -28534,6 +29360,7 @@ function renderBulkEditView() {
           ${currentSection === 'retros' ? (isAdmin ? `<td style="padding:4px;"><input data-field="subname" data-id="${f.id}" value="${(f.subname||'').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? 'seconda parte del nome' : 'second part of the name'}" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.subname, 200)) : ''}
           ${currentSection === 'retros' ? (isAdmin ? `<td style="padding:4px;"><input data-field="changeType" data-id="${f.id}" value="${f.changeType||''}" style="width:140px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.changeType, 140)) : ''}
           ${isAdmin ? `<td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0)}
+          ${isAdmin ? `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>` : ''}
           ${currentSeriesHasSizes ? (isAdmin ? '<td style="padding:4px;"><input data-field="size" data-id="'+f.id+'" value="'+(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.size)) : ''}
           ${_ordinaPerCreazione ? `<td style="padding:4px 8px;color:${_dataCreazione(f) ? 'var(--text)' : 'var(--muted)'};white-space:nowrap;font-size:0.78rem;${_dataCreazione(f) ? '' : 'font-style:italic;'}">${esc(_dataCreazioneTesto(f))}</td>` : ''}
           ${!isAdmin ? `
@@ -28732,7 +29559,61 @@ async function saveBulkCell(input) {
   const figs = getData('figurines', []);
   const idx = figs.findIndex(f => f.id === figId);
   if (idx < 0) return;
-  figs[idx][field] = value;
+
+  // v6.119 - `baseFigurineId` e' l'UNICO campo di questa tabella che non e' un testo ma un
+  // RIFERIMENTO, e va trattato diversamente: un testo storto si legge e si corregge, un id storto
+  // non si vede. Un `baseFigurineId` che non punta a niente fa perdere al record il numero che
+  // eredita dalla base (§12.0) e lo manda in fondo alla griglia, in silenzio. Su un centinaio di
+  // incolla a mano, un carattere perso e' questione di tempo.
+  // Si rifiuta e si rimette il valore di prima: scrivere e poi dirlo sarebbe peggio di non scrivere.
+  if (field === '_figPartenza') {
+    const it2 = currentLang === 'it';
+    const rec = figs[idx];
+    const rifiuta = (msg) => {
+      input.value = _etichettaPartenza(rec);   // si rimette quello di prima, non si lascia a meta'
+      input.style.borderColor = 'var(--danger)';
+      setTimeout(() => { input.style.borderColor = 'var(--border)'; }, 2500);
+      toast('⚠️ ' + msg, 'error', null, 6000);
+    };
+    let nuovoId = '';
+    if (value) {
+      // Dall'etichetta scelta si risale all'id. Il confronto e' sulla stringa INTERA: il datalist
+      // propone esattamente queste, quindi chi sceglie dall'elenco combacia sempre; chi scrive a
+      // mano qualcosa di diverso viene rifiutato invece di essere interpretato.
+      const cand = figs.filter(x => x.seriesId === rec.seriesId
+        && (x.section || 'figurines') === (rec.section || 'figurines')
+        && !x.isChange && !x.isPrintError
+        && _baseFigurineLinkLabel(x) === value);
+      if (cand.length === 0) return rifiuta(it2 ? 'Nessuna figurina con questa etichetta. Scegli una voce dall\'elenco.' : 'No sticker with that label. Pick one from the list.');
+      if (cand.length > 1)  return rifiuta(it2 ? 'Due figurine hanno la stessa etichetta: non si puo\' scegliere da qui.' : 'Two stickers share that label: cannot choose from here.');
+      nuovoId = cand[0].id;
+    }
+    const errore = _validaBaseId(rec, nuovoId, figs);
+    if (errore) return rifiuta(errore);
+    rec.baseFigurineId = nuovoId || null;
+    // v6.130 (Franco) - IL NOME COMPLETO SI RICALCOLA, e la v6.120 lo impediva di proposito.
+    // Quella scelta aveva una ragione: il valore memorizzato poteva essere l'unica traccia di quale
+    // fosse il genitore vero, cioe' la prova che serviva alla ricognizione dei ~110 record, e
+    // ricalcolare l'avrebbe cancellata prima di raccoglierla.
+    // La ragione e' SCADUTA nel momento in cui Franco sceglie il genitore a mano: l'informazione la
+    // fornisce lui, non c'e' piu' niente da dedurre, e un Nome completo fermo al genitore vecchio e'
+    // solo un dato sbagliato in bella vista.
+    // v6.133 - SI EREDITANO ANCHE NUMERO E `noNumber`, come fa la scheda in `saveFigFromDetail`.
+    // La v6.130 li aveva dimenticati: due strade che scrivono lo stesso campo si comportavano
+    // diversamente, e dalla tabella il numero restava quello della figurina di partenza VECCHIA.
+    const _part = nuovoId ? figs.find(x => x.id === nuovoId) : null;
+    rec.number   = _part ? _part.number : null;
+    rec.noNumber = _part ? !!_part.noNumber : false;
+    rec.fullName = computeFullName(rec, figs);
+    // ⚠️ IL NOME COMPLETO NON SI RICALCOLA QUI, ed e' deliberato. `computeFullName` per un figlio
+    // costruisce "nomeDellaBase - TIPO", e base e variazione hanno lo STESSO nome: ricalcolare non
+    // cambierebbe niente di utile, ma SOVRASCRIVEREBBE il valore memorizzato — che e' un dato
+    // storico (§13) e potrebbe essere l'unica traccia di quale variazione fosse il vero genitore.
+    // Cioe' proprio l'informazione su cui si sta lavorando. Se serve riallineare i campi ereditati,
+    // c'e' la funzione admin "Allinea item figlio correlati" (§14.1), che ha la sua anteprima.
+  } else {
+    figs[idx][field] = value;
+  }
   if (field === 'name' && figs[idx].section === 'figurines') {
     figs[idx].fullName = computeFullName(figs[idx], figs);
   }
@@ -28776,11 +29657,20 @@ async function saveBulkScore() {
   if (btn) btn.disabled = true;
   if (fb) { fb.style.display = ''; fb.textContent = (currentLang === 'it' ? '⏳ Salvataggio in corso...' : '⏳ Saving...') + ' 0 / ' + items.length; }
   let saved = 0;
-  for (const item of items) {
-    item.score = score;
-    await fsSave('figurines', item);
-    saved++;
-    if (fb) fb.textContent = (currentLang === 'it' ? '⏳ Salvataggio in corso...' : '⏳ Saving...') + ' ' + saved + ' / ' + items.length;
+  // v6.117 - IL CASO PEGGIORE DI TUTTI, ed e' il motivo per cui questa release esiste.
+  // Su Serie 3 senza filtri sono 1055 oggetti: prima erano 1055 riscritture INTERE del documento
+  // (521 KB l'una, cioe' mezzo giga spedito e, a 3,7 s per scrittura, piu' di un'ora). Ora una
+  // scrittura per serie.
+  for (const item of items) item.score = score;
+  if (fb) fb.textContent = (currentLang === 'it' ? '⏳ Salvataggio in corso...' : '⏳ Saving...') + ' ' + items.length;
+  try {
+    await _salvaFigurineInBlocco(items);
+    saved = items.length;
+  } catch (e) {
+    console.error('saveBulkScore', e);
+    if (fb) fb.textContent = (currentLang === 'it' ? '❌ Salvataggio fallito: ' : '❌ Save failed: ') + (e?.code || e?.message || 'errore');
+    if (btn) btn.disabled = false;
+    return;
   }
   const updatedIds = new Set(items.map(f => f.id));
   _cache.figurines = getData('figurines', []).map(f => {
