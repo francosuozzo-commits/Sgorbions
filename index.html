@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.108"></script>
-<link rel="stylesheet" href="css/style.css?v=6.108">
+<script src="js/email.min.js?v=6.116"></script>
+<link rel="stylesheet" href="css/style.css?v=6.116">
 
 
 <style>
@@ -274,7 +274,7 @@ button.back-btn { color:#ffffff; }
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.108</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.116</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -652,10 +652,9 @@ button.back-btn { color:#ffffff; }
       </div>
       <div id="admin-add-item-btn" style="display:none;">
         <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
-          <!-- v6.104 (§12.1, tappa 2) — "+ Aggiungi" apre LA SCHEDA vuota, non piu' la finestra.
-               E' il primo dei sette punti che aprono `openAddItemModal`, ed e' l'unico che CREA: gli
-               altri sei modificano e restano dov'erano fino alla prossima release, cosi' le due form
-               si confrontano fianco a fianco e la strada vecchia c'e' ancora se qualcosa non torna. -->
+          <!-- v6.104/105 (§12.1, tappa 2) — "+ Aggiungi" apre LA SCHEDA vuota. E' l'unico dei sette
+               punti che CREA; gli altri sei modificano e passano tutti da apriModificaItem().
+               v6.110 — la finestra non esiste piu': cancellata da qui e da app.js. -->
           <button class="btn-primary btn-admin" onclick="openNuovoItem()" id="admin-add-label" data-i18n="catalog.add">+ Aggiungi</button>
         </div>
       </div>
@@ -1596,7 +1595,7 @@ button.back-btn { color:#ffffff; }
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.108</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.116</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1808,269 +1807,8 @@ button.back-btn { color:#ffffff; }
      documento, e questo (riga ~1330) finiva DIETRO la Vista Ebay (riga ~1557). La matita in
      tabella apriva la form senza che si vedesse niente. È il modale più "profondo": ci si
      arriva sempre da un altro, quindi deve stare sopra. -->
-<div class="modal-overlay hidden" id="add-fig-modal" style="z-index:2100;">
-  <div class="modal modal-wide">
-    <div class="modal-header">
-      <h2 class="modal-title" id="fig-modal-title" data-i18n="modal.fig.title">Add Figurine</h2>
-      <button class="modal-close" onclick="closeFigModal()">✕</button>
-    </div>
-    <input type="hidden" id="edit-fig-id">
-    <div id="fig-modal-series-indicator" style="margin-bottom:1rem;font-size:0.85rem;color:var(--muted);">
-      <span data-i18n="form.fig.series">Serie</span>: <strong id="fig-modal-series-name" style="color:var(--text);"></strong>
-    </div>
-    <div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin-bottom:1.25rem;">
-      <button type="button" id="fig-tab-btn-generale" onclick="switchFigModalTab('generale')" style="padding:0.5rem 1rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.9rem;cursor:pointer;">📋 Generale</button>
-      <button type="button" id="fig-tab-btn-ebay" onclick="switchFigModalTab('ebay')" style="padding:0.5rem 1rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.9rem;cursor:pointer;">🏷️ Ebay</button>
-    </div>
-    <div id="fig-tab-generale">
-    <div id="fig-modal-grid" style="display:grid;grid-template-columns:80px minmax(0,70px);gap:1rem;align-items:end;">
-      <div class="form-group" id="fig-category-group" style="margin-bottom:0;display:none;">
-        <label class="form-label" data-i18n="form.fig.category">Categoria</label>
-        <input class="form-input" type="text" id="fig-category-input" placeholder="es. Scritta bianca">
-      </div>
-      <!-- v6.036: il Sottonome e' sceso sotto il Nome, di cui e' la seconda parte -->
-      <div class="form-group" id="fig-subcategory-group" style="margin-bottom:0;display:none;">
-        <label class="form-label" data-i18n="form.fig.subcategory">Sottocategoria</label>
-        <input class="form-input" type="text" id="fig-subcategory-input" placeholder="es. Bordo dorato">
-      </div>
-      <div class="form-group" id="fig-number-group" style="margin-bottom:0;">
-        <label class="form-label" data-i18n="form.fig.number">Numero</label>
-        <input class="form-input" type="number" id="fig-number-input" placeholder="01" min="1">
-        <label style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.72rem;color:var(--muted);margin-top:4px;white-space:nowrap;">
-          <input type="checkbox" id="fig-no-number-input" style="width:14px;height:14px;cursor:pointer;flex-shrink:0;">
-          <span data-i18n="form.fig.noNumber">Non ha numero</span>
-        </label>
-      </div>
-      <div class="form-group" id="fig-subseries-group" style="margin-bottom:0;">
-        <label class="form-label" data-i18n="form.fig.subseries">Sottoserie</label>
-        <input class="form-input" type="text" id="fig-subseries-input" placeholder="es. OLO">
-      </div>
-    </div>
-    <div class="form-group" id="fig-name-group">
-      <label class="form-label" data-i18n="form.fig.name">Name</label>
-      <input class="form-input" type="text" id="fig-name-input" placeholder="Sgorbio Maximus">
-    </div>
-    <div class="form-group" id="fig-subname-group" style="display:none;">
-      <label class="form-label" data-i18n="form.fig.subname">Sottonome</label>
-      <input class="form-input" type="text" id="fig-subname-input" placeholder="es. CANE DOMESTICO">
-    </div>
-    <div class="form-group" id="fig-size-group" style="max-width:200px;">
-      <label class="form-label" data-i18n="form.fig.size">Taglia</label>
-      <input class="form-input" type="text" id="fig-size-input" placeholder="es. S, M, L, XL">
-    </div>
-    <div data-flags-block style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:1rem;margin-bottom:0.75rem;align-items:start;">
-      <label id="fig-var-official-label" style="display:flex;align-items:flex-start;gap:0.5rem;cursor:pointer;font-size:0.88rem;line-height:1.3;" class="form-label">
-        <input type="checkbox" id="fig-is-variation-input" onchange="toggleBaseFigurineGroup('fig-is-variation-input')" style="width:16px;height:16px;flex-shrink:0;margin-top:1px;cursor:pointer;flex-shrink:0;">
-        <span data-i18n="form.fig.isVariation">Variazione ufficiale</span>
-      </label>
-      <label id="fig-var-unofficial-label" style="display:flex;align-items:flex-start;gap:0.5rem;cursor:pointer;font-size:0.88rem;line-height:1.3;" class="form-label">
-        <input type="checkbox" id="fig-is-unofficial-variation-input" onchange="toggleBaseFigurineGroup('fig-is-unofficial-variation-input')" style="width:16px;height:16px;flex-shrink:0;margin-top:1px;cursor:pointer;flex-shrink:0;">
-        <span data-i18n="form.fig.isUnofficialVariation">Variazione non ufficiale</span>
-      </label>
-      <label style="display:flex;align-items:flex-start;gap:0.5rem;cursor:pointer;font-size:0.88rem;line-height:1.3;" class="form-label">
-        <input type="checkbox" id="fig-is-change-input" onchange="toggleBaseFigurineGroup('fig-is-change-input')" style="width:16px;height:16px;flex-shrink:0;margin-top:1px;cursor:pointer;flex-shrink:0;">
-        <span data-i18n="form.fig.isChange">Change</span>
-      </label>
-        <label id="fig-printerror-label" class="form-label" style="display:flex;align-items:flex-start;gap:0.5rem;cursor:pointer;font-size:0.88rem;line-height:1.3;">
-          <input type="checkbox" id="fig-is-printerror-input" onchange="toggleBaseFigurineGroup('fig-is-printerror-input')" style="width:16px;height:16px;flex-shrink:0;margin-top:1px;">
-          <span data-i18n="form.fig.isPrintError">Errore di stampa</span>
-        </label>
-    </div>
-    <div class="form-group" id="fig-retro-change-type-group" style="display:none;">
-      <label class="form-label" data-i18n="form.fig.retroChangeType">Tipo di change</label>
-      <select class="form-input" id="fig-retro-change-type-input"></select>
-      <div class="form-hint" data-i18n="form.fig.retroChangeTypeHint">L'elenco si configura nella scheda della serie</div>
-    </div>
-    <div class="form-group" id="fig-print-error-type-group" style="display:none;">
-      <label class="form-label" data-i18n="form.fig.printErrorType">Tipo di errore di stampa</label>
-      <input class="form-input" type="text" id="fig-print-error-type-input">
-    </div>
-    <div class="form-group" id="fig-base-figurine-group" style="display:none;position:relative;">
-      <label class="form-label"><span id="fig-base-figurine-label-text">Figurina base (di cui questa è una variante)</span></label>
-      <input class="form-input" type="text" id="fig-base-figurine-search" placeholder="Cerca per numero o nome..." autocomplete="off" oninput="filterBaseFigurineLink()" onfocus="filterBaseFigurineLink()" onblur="clearBaseFigurineLinkIfEmpty()">
-      <input type="hidden" id="fig-base-figurine-input">
-      <div id="fig-base-figurine-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:260px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
-      <div class="form-hint" id="fig-base-figurine-hint">Indica la figurina originale di cui questa è una variazione</div>
-    </div>
-    <div class="form-group" id="fig-retro-group" style="display:none;position:relative;">
-      <label class="form-label" data-i18n="form.fig.retro">Retro associato</label>
-      <input class="form-input" type="text" id="fig-retro-search" placeholder="Cerca per nome, categoria o sottocategoria..." autocomplete="off" oninput="filterRetroLink()" onfocus="filterRetroLink()" onblur="clearRetroLinkIfEmpty()">
-      <input type="hidden" id="fig-retro-input">
-      <div id="fig-retro-dropdown" style="display:none;position:absolute;z-index:20;top:100%;left:0;right:0;background:var(--card);border:1px solid var(--border);border-radius:var(--radius);max-height:260px;overflow-y:auto;margin-top:4px;box-shadow:0 8px 24px rgba(0,0,0,0.4);"></div>
-      <div id="fig-retro-selected-preview" style="display:none;margin-top:6px;font-size:0.85rem;color:var(--accent);"></div>
-      <div class="form-hint" data-i18n="form.fig.retroHint">Indica il Retro che rappresenta il retro di questa variazione</div>
-    </div>
-    <!-- v6.006 — RETRO BIANCO. Tre stati diversi, che restano diversi:
-         (1) questa spunta = la figurina NON HA un vero retro, il suo dietro e' bianco;
-         (2) nessun retro collegato = non l'ho ancora censito (temporaneo);
-         (3) retro collegato ma senza foto = censito, foto da fare (temporaneo).
-         I casi 2 e 3 spariranno col censimento, il caso 1 no: e' un dato della figurina. -->
-    <div class="form-group" id="fig-retro-bianco-group" style="display:none;">
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-        <input type="checkbox" id="fig-retro-bianco-input" onchange="toggleRetroBianco()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-        <span data-i18n="form.fig.retroBianco">Retro bianco (la figurina non ha un vero retro)</span>
-      </label>
-      <div class="form-hint" data-i18n="form.fig.retroBiancoHint">Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.</div>
-    </div>
-    <div class="form-group" id="fig-score-group" style="max-width:160px;">
-      <label class="form-label" data-i18n="form.fig.score">Punteggio</label>
-      <input class="form-input" type="number" id="fig-score-input" placeholder="0" min="0">
-    </div>
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.fig.desc">Descrizione</label>
-      <textarea class="form-textarea" id="fig-desc-input" rows="3" data-i18n-placeholder="form.fig.descPlaceholder" placeholder="Descrivi questa figurina..."></textarea>
-    </div>
-    <!-- v6.096 (Franco) — NOTE, solo admin. Nasce display:none e la accende openAddItemModal()
-         se chi guarda e' admin: cosi' un utente normale non la vede nemmeno per un istante al
-         primo disegno della pagina. L'etichetta NON ha data-i18n di proposito — e' il tranello
-         della v6.077, dove applyI18n() riscriveva al primo cambio lingua un'etichetta che
-         doveva restare com'era. -->
-    <div class="form-group" id="fig-note-group" style="display:none;">
-      <label class="form-label">Note</label>
-      <textarea class="form-textarea" id="fig-note-input" rows="3" placeholder="Appunti di lavoro su questo oggetto..."></textarea>
-      <div class="form-hint">Le vedi solo tu: non compaiono da nessuna parte per gli altri utenti.</div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.fig.image">Image</label>
-      <div style="display:flex;align-items:center;gap:0.75rem;">
-        <div class="file-drop" onclick="document.getElementById('fig-img-file').click()" style="padding:0.5rem 1rem;display:flex;align-items:center;gap:0.5rem;flex:1;">
-          <span style="font-size:1.2rem;">🧟</span>
-          <span class="file-drop-text"><strong data-i18n="form.click">Click to upload</strong></span>
-        </div>
-        <img id="fig-img-preview" class="file-preview" style="margin-top:0;max-height:48px;max-width:48px;border-radius:6px;object-fit:contain;">
-      </div>
-      <input type="file" id="fig-img-file" accept="image/*" style="display:none;" onchange="handleFigImg(event)">
-    </div>
-    <!-- v6.074 (Franco) — LA SECONDA FOTO, e si vede SOLO per le bustine: openAddItemModal()
-         accende questo gruppo quando la sezione e' 'bustine'. Una bustina ha due facce che stanno
-         sullo stesso oggetto; una figurina invece il retro ce l'ha come oggetto a se', collezionabile
-         per conto suo — ed e' per questo che a lei serve il campo "Retro collegato" e alla bustina no. -->
-    <div class="form-group" id="fig-img-retro-group" style="display:none;">
-      <label class="form-label">Foto retro</label>
-      <div style="display:flex;align-items:center;gap:0.75rem;">
-        <div class="file-drop" onclick="document.getElementById('fig-img-retro-file').click()" style="padding:0.5rem 1rem;display:flex;align-items:center;gap:0.5rem;flex:1;">
-          <span style="font-size:1.2rem;">🔁</span>
-          <span class="file-drop-text"><strong data-i18n="form.click">Click to upload</strong></span>
-        </div>
-        <img id="fig-img-retro-preview" class="file-preview" style="margin-top:0;max-height:48px;max-width:48px;border-radius:6px;object-fit:contain;">
-      </div>
-      <input type="file" id="fig-img-retro-file" accept="image/*" style="display:none;" onchange="handleFigImgRetro(event)">
-    </div>
-    <!-- v6.079 (Franco) — "la foto non ce l'ho e non posso averla". Sta anche qui e non solo nella
-         scheda: un campo aggiunto a una sola delle due form semplicemente non esiste per chi usa
-         l'altra, ed è già costato una release con retroBianco (v6.006/007). -->
-    <div class="form-group" id="fig-foto-non-disponibile-group" style="margin-bottom:0;">
-      <label style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.8rem;color:var(--muted);white-space:nowrap;">
-        <input type="checkbox" id="fig-foto-non-disponibile-input" style="width:14px;height:14px;cursor:pointer;flex-shrink:0;">
-        <span>Foto non disponibile</span><!-- v6.093 — la spiegazione tolta (Franco) -->
-
-      </label>
-    </div>
-    <!-- v6.080 (Franco) — INVISIBILE: l'oggetto esiste ma per chi non è admin non c'è. Il filtro
-         vero sta in getData(), così sparisce da griglia, ricerca, caroselli, contatori ed export
-         tutti insieme. Anche qui e non solo nella scheda: un campo aggiunto a una sola delle due
-         form non esiste per chi usa l'altra. -->
-    <div class="form-group" id="fig-invisibile-group" style="margin-bottom:0;">
-      <!-- v6.093 — la spiegazione tolta (Franco). Il rosso non e' piu' fisso: segue la spunta, come
-           nella scheda, cosi' l'unico campo che toglie una cosa dal sito si riconosce a colpo
-           d'occhio SOLO quando e' davvero attivo. -->
-      <label id="fig-invisibile-label" style="display:flex;align-items:center;gap:0.35rem;cursor:pointer;font-size:0.8rem;color:var(--muted);white-space:nowrap;">
-        <input type="checkbox" id="fig-invisibile-input" onchange="_dipingiInvisibile('fig-invisibile-input','fig-invisibile-label','var(--muted)')" style="width:14px;height:14px;cursor:pointer;flex-shrink:0;">
-        <span>Invisibile</span>
-      </label>
-    </div>
-    </div>
-    <div id="fig-tab-ebay" style="display:none;">
-    <div style="background:var(--card2);border-radius:10px;padding:0.85rem 1rem;margin-bottom:1.25rem;">
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;font-weight:600;margin-bottom:0.75rem;">
-        <input type="checkbox" id="fig-for-sale-input" onchange="toggleForSaleFields()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-        <span data-i18n="form.fig.forSale">🏷️ Ebay</span>
-      </label>
-      <div id="fig-for-sale-fields" style="display:none;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:1rem;">
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label" data-i18n="form.fig.price">Prezzo (€)</label>
-          <input class="form-input" type="number" id="fig-price-input" placeholder="0.00" min="0" step="0.01">
-        </div>
-        <!-- v5.981 — Prezzo in dollari per eBay.com. Campo a mano, deciso da Franco: nessuna
-             conversione automatica. Vuoto = eBay.com non si pubblica (lo dirà il programma). -->
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label" data-i18n="form.fig.priceUsd">Prezzo ($)</label>
-          <input class="form-input" type="number" id="fig-price-usd-input" placeholder="0.00" min="0" step="0.01">
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label" data-i18n="form.fig.quantity">Quantità</label>
-          <input class="form-input" type="number" id="fig-quantity-input" placeholder="1" min="1" value="1">
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label" data-i18n="form.fig.condition">Condizione</label>
-          <select class="form-input" id="fig-condition-input">
-            <option value="new" data-i18n="form.fig.conditionNew">Nuovo</option>
-            <option value="used" data-i18n="form.fig.conditionUsed">Usato</option>
-          </select>
-        </div>
-      </div>
-      <!-- v5.981 — Su quali account venditore va messo in vendita questo oggetto. Nessuna spunta
-           significa "quello predefinito", che è il caso normale: così le migliaia di figurine già
-           marcate Ebay non vanno toccate una per una per dire una cosa che si sa già. -->
-      <div id="fig-ebay-account-group" style="display:none;margin-top:1rem;">
-        <label class="form-label" style="display:block;margin-bottom:0.35rem;">👥 Su quali account</label>
-        <div id="fig-ebay-account-lista"></div>
-      </div>
-      <!-- v5.981 — Coda di pubblicazione. Il sito alza questa spunta da solo quando cambia
-           qualcosa che eBay deve sapere; qui si vede e si può forzare a mano. Chi pubblica
-           davvero è il programma sul PC, non il sito. -->
-      <div id="fig-ebay-coda" style="display:none;margin-top:1rem;">
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.9rem;font-weight:600;">
-          <input type="checkbox" id="fig-da-pubblicare-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-          <span data-i18n="form.fig.daPubblicare">📤 In coda per eBay</span>
-        </label>
-        <div class="form-hint" style="margin-top:0.35rem;" data-i18n="form.fig.daPubblicareHint">Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l'annuncio viene creato o aggiornato.</div>
-      </div>
-      <!-- v5.981 — Esito della pubblicazione sui due mercati. SOLA LETTURA: questi campi li
-           scrive il programma sul PC. Se il sito potesse scriverli direbbe cose che su eBay non
-           sono vere. Lo riempie renderEbayStatoScheda(). -->
-      <div id="fig-ebay-stato" style="display:none;margin-top:1rem;"></div>
-      <!-- v5.931 — Titolo e Descrizione dell'annuncio, IT ed EN. Il titolo lasciato vuoto NON è
-           un titolo mancante: la Vista Ebay ci mette quello generato dal Nome completo. -->
-      <div id="fig-ebay-testi" style="display:none;margin-top:1rem;">
-        <div class="form-group" style="margin-bottom:0.9rem;">
-          <label class="form-label">Titolo annuncio 🇮🇹 IT <span id="fig-ebay-title-it-count" style="font-weight:400;color:var(--muted);font-size:0.75rem;"></span></label>
-          <input class="form-input" type="text" id="fig-ebay-title-it-input" oninput="contaCaratteriEbayTitolo('fig-ebay-title-it-input','fig-ebay-title-it-count')" placeholder="vuoto = titolo generato dal Nome completo">
-        </div>
-        <div class="form-group" style="margin-bottom:0.9rem;">
-          <label class="form-label">Titolo annuncio 🇬🇧 EN <span id="fig-ebay-title-en-count" style="font-weight:400;color:var(--muted);font-size:0.75rem;"></span></label>
-          <input class="form-input" type="text" id="fig-ebay-title-en-input" oninput="contaCaratteriEbayTitolo('fig-ebay-title-en-input','fig-ebay-title-en-count')" placeholder="empty = title generated from the full name">
-        </div>
-        <div class="form-group" style="margin-bottom:0.9rem;">
-          <label class="form-label">Descrizione annuncio 🇮🇹 IT</label>
-          <textarea class="form-input" id="fig-ebay-desc-it-input" rows="4" placeholder="Testo dell'annuncio in italiano"></textarea>
-        </div>
-        <div class="form-group" style="margin-bottom:0;">
-          <label class="form-label">Descrizione annuncio 🇬🇧 EN</label>
-          <textarea class="form-input" id="fig-ebay-desc-en-input" rows="4" placeholder="Listing text in English"></textarea>
-        </div>
-      </div>
-    </div>
-    <div class="form-group" id="fig-ebay-img-group">
-      <label class="form-label">📷 Foto per Ebay</label>
-      <div class="form-hint" style="margin-bottom:0.5rem;">Foto dedicata da usare per l'annuncio Ebay, indipendente da quella del catalogo</div>
-      <div style="display:flex;align-items:center;gap:0.75rem;">
-        <div class="file-drop" onclick="document.getElementById('fig-ebay-img-file').click()" style="padding:0.5rem 1rem;display:flex;align-items:center;gap:0.5rem;flex:1;">
-          <span style="font-size:1.2rem;">📷</span>
-          <span class="file-drop-text"><strong data-i18n="form.click">Click to upload</strong></span>
-        </div>
-        <img id="fig-ebay-img-preview" class="file-preview" style="margin-top:0;max-height:48px;max-width:48px;border-radius:6px;object-fit:contain;display:none;">
-      </div>
-      <input type="file" id="fig-ebay-img-file" accept="image/*" style="display:none;" onchange="handleFigEbayImg(event)">
-    </div>
-    </div>
-    <div style="display:flex;gap:0.5rem;">
-      <button class="btn-primary btn-admin" style="flex:1;" onclick="saveFigurine()" data-i18n="modal.fig.save">Save Figurine</button>
-      <button class="btn-danger-ghost" id="fig-modal-delete-btn" style="display:none;font-size:0.85rem;padding:0.6rem 1rem;cursor:pointer;" onclick="deleteFigurineFromModal()">🗑️</button>
-    </div>
-  </div>
-</div>
+<!-- v6.110 — qui stava #add-fig-modal, la finestra "Aggiungi/Modifica" (263 righe).
+     Non la apriva piu' nessuno dalla v6.105: la scheda e' l'unica form (§12.1). -->
 
 <!-- POST MODAL -->
 <div class="modal-overlay hidden" id="post-modal">
@@ -2449,7 +2187,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.108"></script>
+<script src="js/app.js?v=6.116"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2473,7 +2211,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.108'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.116'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
