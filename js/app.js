@@ -1,6 +1,45 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.143 - LA PROPAGAZIONE PADRE-FIGLIO CHIUSA DA TUTTE E DUE LE PARTI (Franco). Modificato app.js
+//          e index.html (solo la versione). Due pezzi, e il secondo e' saltato fuori rispondendo a
+//          una domanda di Franco: "tutti i campi propagati da un padre sono read only sui figli?
+//          anche da vista tabellare?".
+//
+//          A. LA DISCESA, ORA IN UN POSTO SOLO. `_collegatiDaAggiornare` — la propagazione che parte
+//          da sola ad ogni salvataggio — prendeva i figli DIRETTI, un livello. Salvando la base si
+//          aggiornava la variazione ma non i figli della variazione. Stesso difetto chiuso dalla
+//          v6.142 nella funzione 1, ma qui SENZA RETE: scrive senza anteprima.
+//          ⚠️ La discesa non e' stata riscritta: e' stata ESTRATTA in `_discendenzaDaAggiornare` e
+//          la usano tutte e due. Scriverne una seconda copia sarebbe stato fabbricare il difetto
+//          che questa release chiude — in questo file "due punti che mostrano la stessa cosa e non
+//          concordano" e' il racconto di quattro release diverse.
+//          Ne discende che `applicaAllineaFigli` non RICALCOLA piu' il record da scrivere: usa
+//          quello che l'anteprima ha gia' mostrato (§14, punto 1). E `_figliCollegati` e' sparita —
+//          non la chiamava piu' nessuno; resta la sua meta' utile, `_eFiglioCollegato`.
+//
+//          B. LA VISTA TABELLARE LASCIAVA SCRIVERE CAMPI EREDITATI. Sui retro, un admin poteva
+//          modificare Nome, Sottonome e Categoria ANCHE su un change o un errore di stampa, e
+//          `saveBulkCell` scriveva il valore cosi' com'era: nessuna riderivazione, nessun controllo.
+//          Da li' si poteva far divergere un figlio dal padre in silenzio.
+//          ⚠️ E' ESATTAMENTE la forma del baco che la v6.133 ha chiuso sul NUMERO — "due strade che
+//          scrivono lo stesso campo si comportavano diversamente" — e allora si era corretta una
+//          strada sola. Tre campi erano rimasti indietro per dieci release.
+//          Ora la cella e' di sola lettura (come la scheda, dove il campo e' nascosto dalla v6.038),
+//          E il rifiuto sta anche nel punto in cui si SCRIVE: la cella disegnata prima che il record
+//          cambiasse tipo non e' un'ipotesi teorica, e un controllo accanto alla scrittura e' l'unico
+//          che non si puo' scavalcare. Regola unica per tutti e due i punti:
+//          `_campoComandatoDalGenitore(f, campo)`.
+//
+//          PROVATA AL BANCO, con le funzioni ESTRATTE dal file e non riscritte: la cascata su tre
+//          livelli dal salvataggio, "dati allineati -> zero scritture in piu'", il ciclo che non
+//          pianta, l'anteprima che porta gia' il record che verra' scritto, e gli otto casi della
+//          regola sui campi (compresi quelli che devono restare modificabili: `changeType` su un
+//          change, `category` su una figurina).
+//          ⚠️ Sui dati veri l'esito atteso e' ancora "non cambia niente" — zero divergenti,
+//          misurati il 14 agosto. Vale la stessa avvertenza della v6.142: non e' provabile in
+//          positivo li', e per questo la prova sta al banco.
+// ------------------------------------------------------------
 // v6.142 - LA FUNZIONE 1 SCENDE FINCHE' CI SONO FIGLI (Franco). Modificato app.js e index.html
 //          (solo la versione). E' il §13.1, e non era il difetto che il documento si aspettava.
 //
@@ -13407,7 +13446,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.142';
+const JS_VERSION = 'v6.143';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -25524,11 +25563,24 @@ function _messaggioIncongruenzaNumero(numeroScritto, noNumber) {
 // sempre con quello della figurina base"). Convenzione che finora non la faceva rispettare nessuno.
 // Sui dati veri: 1049 figli in tutto, 5 divergenti, e NESSUNA variazione fra questi - includerle
 // oggi non cambia niente e domani impedisce che si allontanino in silenzio.
-function _figliCollegati(base, figs) {
-  if (!base || !base.id) return [];
-  return (figs || getData('figurines', [])).filter(f =>
-    f.baseFigurineId === base.id &&
-    (f.isChange || f.isPrintError || f.isVariation || f.isUnofficialVariation));
+// v6.143 - QUI STAVA `_figliCollegati(base, figs)`, i figli DIRETTI di un oggetto. Non la chiama
+// piu' nessuno: da questa release si scende tutto l'albero, e chi scende ha bisogno dei figli di
+// OGNI nodo, non di quelli di uno. Cio' che serviva ancora era la sua meta' utile — la definizione
+// di "chi e' un figlio" — ed e' qui sotto, in una riga, dove la leggono tutti e due i punti.
+function _eFiglioCollegato(f) {
+  return !!(f && (f.isChange || f.isPrintError || f.isVariation || f.isUnofficialVariation));
+}
+
+// v6.143 (Franco) - QUESTO CAMPO, SU QUESTO RECORD, LO COMANDA IL GENITORE?
+// Una domanda sola per tutti i punti che mostrano o scrivono un campo ereditato. Nasce perche' la
+// scheda e la VISTA TABELLARE non erano d'accordo: nella scheda i campi comandati dalla base sono
+// nascosti dalla v6.038 ("un campo che al salvataggio viene sovrascritto dalla base non si mostra
+// modificabile"), in tabella erano rimasti caselle scrivibili anche su un change.
+// ⚠️ E' la stessa forma del baco chiuso dalla v6.133 sul NUMERO — "due strade che scrivono lo
+// stesso campo si comportavano diversamente" — e allora si era corretta una strada sola.
+function _campoComandatoDalGenitore(f, campo) {
+  if (!_eFiglioCollegato(f)) return false;
+  return _campiEreditatiDaBase(f.section).includes(campo);
 }
 
 // I campi in cui un figlio si e' allontanato dalla base. Elenco vuoto = allineato.
@@ -25549,19 +25601,71 @@ function _divergenzeDaBase(figlio, base) {
 // veniva aggiornata FRA la scrittura della base e la propagazione. Ora la scrittura e' una sola e
 // viene dopo, quindi la sostituzione si fa qui, su una copia, senza sporcare la cache prima di
 // aver scritto - che e' la ragione per cui il disfare, sotto, puo' essere completo.
-function _collegatiDaAggiornare(base) {
-  if (!base || !base.id) return [];
-  const conBaseNuova = (getData('figurines', []) || []).map(f => f.id === base.id ? base : f);
-  const out = [];
-  for (const figlio of _figliCollegati(base, conBaseNuova)) {
-    const diversi = _divergenzeDaBase(figlio, base);
-    if (!diversi.length) continue;
-    const nuovo = { ...figlio };
-    diversi.forEach(k => { nuovo[k] = base[k] || ''; });
-    try { nuovo.fullName = computeFullName(nuovo, conBaseNuova); } catch(e) {}
-    out.push(nuovo);
+// v6.143 (Franco) - LA DISCESA DELL'ALBERO, IN UN POSTO SOLO.
+//
+// La v6.142 l'aveva scritta dentro `_calcolaPianoAllinea` (la funzione 1). Scriverne una seconda
+// qui sarebbe stato creare due copie della stessa regola destinate a divergere — cioe' il difetto
+// che questa release chiude. In questo file e' gia' successo quattro volte, e ogni volta il
+// racconto e' lo stesso: "due punti che mostrano la stessa cosa e non concordano".
+//
+// COSA TORNA: l'elenco dei discendenti da aggiornare, a QUALUNQUE profondita', ognuno allineato al
+// suo GENITORE DIRETTO gia' corretto. La radice non entra nell'elenco: e' gia' in mano a chi chiama.
+//   { figlio, genitore, campi, nuovo }
+// `figlio` e' il record com'e' oggi (serve all'anteprima), `nuovo` e' come diventa (serve alla
+// scrittura). Sono la stessa cosa calcolata una volta, non due — §14: se anteprima e applicazione
+// calcolassero il piano con due strade, quello che si legge e quello che si scrive potrebbero
+// divergere.
+//
+// ⚠️ IL NOME COMPLETO SI CALCOLA SU UNA COPIA DI LAVORO aggiornata mentre si scende: leggendo
+// l'elenco originale, un nipote userebbe il genitore ANCORA VECCHIO — quello che si sta correggendo
+// un giro prima. E' la stessa ragione della `conBaseNuova` che questa funzione aveva gia'.
+//
+// ⚠️ GUARDIA SUI CICLI: sui dati veri sono zero (misurati il 14 agosto), e proprio per questo va
+// scritta adesso — senza, il sintomo di un ciclo sarebbe una pagina che si pianta senza errore.
+function _discendenzaDaAggiornare(radice, figs) {
+  if (!radice || !radice.id) return [];
+  const tutte = (figs || getData('figurines', []) || []).map(f => f.id === radice.id ? radice : f);
+  const perGenitore = new Map();
+  for (const f of tutte) {
+    if (!f.baseFigurineId) continue;
+    if (!_eFiglioCollegato(f)) continue;
+    if (!perGenitore.has(f.baseFigurineId)) perGenitore.set(f.baseFigurineId, []);
+    perGenitore.get(f.baseFigurineId).push(f);
   }
+  const lavoro = tutte.slice();
+  const posDi = new Map(lavoro.map((f, i) => [f.id, i]));
+  const out = [];
+  const visti = new Set();
+  const scendi = (genitore) => {
+    for (const figlio of (perGenitore.get(genitore.id) || [])) {
+      if (visti.has(figlio.id)) continue;
+      visti.add(figlio.id);
+      const campi = _divergenzeDaBase(figlio, genitore);
+      let corrente = figlio;
+      if (campi.length) {
+        corrente = { ...figlio };
+        campi.forEach(k => { corrente[k] = genitore[k] || ''; });
+        try { corrente.fullName = computeFullName(corrente, lavoro); } catch(e) {}
+        const _p = posDi.get(corrente.id);
+        if (_p !== undefined) lavoro[_p] = corrente;
+        out.push({ figlio, genitore, campi, nuovo: corrente });
+      }
+      scendi(corrente);
+    }
+  };
+  scendi(radice);
   return out;
+}
+
+// v6.143 - ORA SCENDE ANCHE QUESTA. Prendeva i figli DIRETTI del record salvato, un livello solo:
+// salvando la BASE si aggiornava la variazione ma NON i figli della variazione, nella stessa
+// scrittura. Stesso difetto chiuso dalla v6.142 nella funzione 1, ma qui senza rete — questa parte
+// da sola ad ogni salvataggio e non mostra nessuna anteprima.
+// ⚠️ Allargando l'insieme si allarga anche cio' che va disfatto se la scrittura fallisce. Regge
+// perche' dalla v6.116 la scrittura e' UNA sola e per serie: o si scrive tutto o niente. Era gia'
+// il patto di quella release, e non cambia — cambia quanti record ci stanno dentro.
+function _collegatiDaAggiornare(base) {
+  return _discendenzaDaAggiornare(base).map(x => x.nuovo);
 }
 
 // v6.116 - PIU' FIGURINE, UNA SOLA RISCRITTURA.
@@ -28453,41 +28557,20 @@ async function applicaFixRetroChange() {
 // non e' un dettaglio estetico: `applicaAllineaFigli` ci conta per ricalcolare i Nomi completi
 // sugli antenati gia' aggiornati.
 function _calcolaPianoAllinea(seriesId) {
+  // v6.143 - LA DISCESA NON STA PIU' QUI: e' `_discendenzaDaAggiornare`, e la usa anche la
+  // propagazione automatica al salvataggio. Prima erano due regole in due posti, ed e' la forma
+  // con cui in questo file sono nati quattro difetti.
+  // Restano qui le due cose che sono DI QUESTA funzione: da dove si parte (le basi vere della
+  // serie scelta) e la forma della riga per l'anteprima.
   const figs = getData('figurines', []);
   const basi = figs.filter(f => !f.isChange && !f.isPrintError && !f.isVariation && !f.isUnofficialVariation
     && (!seriesId || f.seriesId === seriesId));
   const piano = [];
-
-  // i figli indicizzati per genitore, una volta sola: senza, ogni discesa rifarebbe una scansione
-  // di tutte le figurine, e su Serie 3 sono un migliaio per ogni base.
-  const perGenitore = new Map();
-  figs.forEach(f => {
-    if (!f.baseFigurineId) return;
-    if (!(f.isChange || f.isPrintError || f.isVariation || f.isUnofficialVariation)) return;
-    if (!perGenitore.has(f.baseFigurineId)) perGenitore.set(f.baseFigurineId, []);
-    perGenitore.get(f.baseFigurineId).push(f);
-  });
-
-  // ⚠️ GUARDIA SUI CICLI. Un record che fosse antenato di se stesso farebbe girare la discesa per
-  // sempre e bloccherebbe la pagina. Sui dati veri del 14 agosto i cicli sono ZERO, quindi questa
-  // riga oggi non serve a niente - ed e' esattamente il motivo per cui va scritta adesso: se un
-  // domani ne comparisse uno, il sintomo sarebbe una scheda admin che si pianta senza un errore.
-  const visti = new Set();
-  const scendi = (genitore) => {
-    for (const figlio of (perGenitore.get(genitore.id) || [])) {
-      if (visti.has(figlio.id)) continue;
-      visti.add(figlio.id);
-      const campi = _divergenzeDaBase(figlio, genitore);
-      let corrente = figlio;
-      if (campi.length) {
-        corrente = { ...figlio };
-        campi.forEach(k => { corrente[k] = genitore[k] || ''; });
-        piano.push({ figlio, base: genitore, campi });
-      }
-      scendi(corrente);
+  for (const base of basi) {
+    for (const x of _discendenzaDaAggiornare(base, figs)) {
+      piano.push({ figlio: x.figlio, base: x.genitore, campi: x.campi, nuovo: x.nuovo });
     }
-  };
-  basi.forEach(scendi);
+  }
   return piano;
 }
 
@@ -28578,24 +28661,12 @@ async function applicaAllineaFigli() {
   if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
   let ok = 0; const errori = [];
   const daScrivere = [];
-  // v6.142 - IL NOME COMPLETO SI CALCOLA SUGLI ANTENATI GIA' CORRETTI, non su quelli salvati.
-  // `computeFullName` di un figlio risale alla sua figurina di partenza: con l'elenco letto dal
-  // database, un nipote userebbe la variazione ANCORA VECCHIA - quella che due righe piu' su
-  // stiamo correggendo - e nascerebbe con un Nome completo sbagliato nella stessa passata che
-  // doveva sistemarlo. Si tiene quindi una copia di lavoro, aggiornata mentre si scende.
-  // Regge perche' il piano e' ordinato dall'alto (vedi `_calcolaPianoAllinea`): quando tocca a un
-  // record, i suoi antenati sono gia' passati.
-  const _figsLavoro = getData('figurines', []).slice();
-  const _posDi = new Map(_figsLavoro.map((f, i) => [f.id, i]));
-  for (let i = 0; i < _pianoAllinea.length; i++) {
-    const v = _pianoAllinea[i];
-    const nuovo = { ...v.figlio };
-    v.campi.forEach(k => { nuovo[k] = v.base[k] || ''; });
-    try { nuovo.fullName = computeFullName(nuovo, _figsLavoro); } catch(e) {}
-    const _p = _posDi.get(nuovo.id);
-    if (_p !== undefined) _figsLavoro[_p] = nuovo;
-    daScrivere.push(nuovo);
-  }
+  // v6.143 - SI SCRIVE ESATTAMENTE QUELLO CHE L'ANTEPRIMA HA MOSTRATO. Il record gia' corretto
+  // (`nuovo`) lo produce `_discendenzaDaAggiornare`, che e' la stessa funzione che ha costruito il
+  // piano: prima qui si RIFACEVA il calcolo, e due calcoli della stessa cosa sono due cose che
+  // possono divergere (§14, punto 1). Cade con esso anche la copia di lavoro, che ora vive dentro
+  // la discesa - dove serve, perche' e' li' che un nipote ha bisogno del genitore gia' aggiornato.
+  for (const v of _pianoAllinea) daScrivere.push(v.nuovo);
   // v6.117 - una scrittura per SERIE invece di una per record, e via la pausa di 120 ms.
   if (esito) esito.innerHTML = '<div style="font-size:0.9rem;">' + (it ? 'Scrittura in corso… ' : 'Writing… ') + daScrivere.length + '</div>';
   try {
@@ -29716,7 +29787,7 @@ function renderBulkEditView() {
           })()}</td>
           ${isAdmin ? `<td style="padding:4px;white-space:nowrap;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Apri la scheda' : 'Open the card'}" onclick="openFigDetail('${f.id}')">&#128065;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="apriModificaItem('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
           ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
-          ${currentSection === 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
+          ${currentSection === 'retros' ? (isAdmin && !_campoComandatoDalGenitore(f, 'category') ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
           ${currentSection !== 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? f.number : '')) : ''}
           ${currentSection === 'figurines' ? (() => {
             const typeLabel = f.isVariation ? (currentLang === 'it' ? 'Variazione ufficiale' : 'Official variation')
@@ -29730,11 +29801,13 @@ function renderBulkEditView() {
               const fullName = f.fullName || computeFullName(f, getData('figurines', []));
               return readCell(fullName, 300);
             }
-            return isAdmin
+            // v6.143 - su un FIGLIO il Nome lo comanda il genitore: cella di sola lettura, come
+            // nella scheda, dove il campo e' nascosto dalla v6.038.
+            return (isAdmin && !_campoComandatoDalGenitore(f, 'name'))
               ? `<td style="padding:4px;width:99%;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:280px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`
               : readCell(f.name, 300);
           })()}
-          ${currentSection === 'retros' ? (isAdmin ? `<td style="padding:4px;"><input data-field="subname" data-id="${f.id}" value="${(f.subname||'').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? 'seconda parte del nome' : 'second part of the name'}" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.subname, 200)) : ''}
+          ${currentSection === 'retros' ? (isAdmin && !_campoComandatoDalGenitore(f, 'subname') ? `<td style="padding:4px;"><input data-field="subname" data-id="${f.id}" value="${(f.subname||'').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? 'seconda parte del nome' : 'second part of the name'}" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.subname, 200)) : ''}
           ${currentSection === 'retros' ? (isAdmin ? `<td style="padding:4px;"><input data-field="changeType" data-id="${f.id}" value="${f.changeType||''}" style="width:140px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.changeType, 140)) : ''}
           ${isAdmin ? `<td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0)}
           ${isAdmin ? `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>` : ''}
@@ -29989,6 +30062,23 @@ async function saveBulkCell(input) {
     // Cioe' proprio l'informazione su cui si sta lavorando. Se serve riallineare i campi ereditati,
     // c'e' la funzione admin "Allinea item figlio correlati" (§14.1), che ha la sua anteprima.
   } else {
+    // v6.143 - UN CAMPO COMANDATO DAL GENITORE NON SI SCRIVE DA QUI, e il rifiuto sta nel punto in
+    // cui si scrive, non solo in quello in cui si disegna. La cella ora e' di sola lettura, quindi
+    // per la strada normale questo non scatta mai: serve perche' `saveBulkCell` e' pubblica e la
+    // tabella puo' essere stata disegnata prima che il record cambiasse tipo. Un controllo che
+    // vive accanto alla scrittura e' l'unico che non si puo' scavalcare.
+    // Si rifiuta e si rimette il valore di prima, come fa il ramo `_figPartenza`: scrivere e poi
+    // dirlo sarebbe peggio di non scrivere.
+    if (_campoComandatoDalGenitore(figs[idx], field)) {
+      const it3 = currentLang === 'it';
+      input.value = figs[idx][field] || '';
+      input.style.borderColor = 'var(--danger)';
+      setTimeout(() => { input.style.borderColor = 'var(--border)'; }, 2500);
+      toast('⚠️ ' + (it3
+        ? 'Questo campo lo comanda la figurina di partenza: si cambia da lì, non da qui.'
+        : 'This field is controlled by the source sticker: change it there, not here.'), 'error', null, 6000);
+      return;
+    }
     figs[idx][field] = value;
   }
   if (field === 'name' && figs[idx].section === 'figurines') {
