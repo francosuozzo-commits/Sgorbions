@@ -1,6 +1,197 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.142 - LA FUNZIONE 1 SCENDE FINCHE' CI SONO FIGLI (Franco). Modificato app.js e index.html
+//          (solo la versione). E' il §13.1, e non era il difetto che il documento si aspettava.
+//
+//          IL DIFETTO: "Allinea item figlio correlati" partiva dalle basi vere e guardava i soli
+//          figli DIRETTI. Fino alla v6.120 bastava - `baseFigurineId` poteva puntare solo a una
+//          base, quindi l'albero era profondo uno e i nipoti non esistevano. Da quando un change
+//          puo' pendere da una VARIAZIONE, i figli di una variazione non entravano nel piano: la
+//          funzione rispondeva "nessuna divergenza" su un insieme che non aveva guardato.
+//          ⚠️ Non sbagliava il conto: non lo faceva. Famiglia del `CONTROLLI_SOSPENDIBILI` e dei
+//          dati demo muti - un controllo spento in silenzio non lo scopri mai.
+//
+//          MISURATO PRIMA DI SCRIVERE (`ricognizione-nipoti.js`, in root, sola lettura):
+//          36 nipoti, tutti su Serie 3, ZERO divergenti, zero fullName stantii, profondita' 2,
+//          nessun ciclo. Numero riscontrato da Franco. Quindi NON c'era danno da riparare: questa
+//          release non ripara, IMPEDISCE. Il momento in cui il buco avrebbe morso e' preciso -
+//          rinominare una base di Serie 3 con sotto una variazione con dei change: la variazione
+//          prende il nome nuovo, i suoi figli no, e da li' divergono senza che nessuno lo dica.
+//
+//          IL RIMEDIO: si scende, e ogni record si allinea al GENITORE DIRETTO gia' corretto.
+//          Non alla base del genitore: sarebbe di nuovo l'assunzione che la v6.120 ha tolto, e
+//          per giunta oggi darebbe lo stesso valore (§12.1: il Nome di una variazione e' quello
+//          della sua base), quindi si pagherebbe una regola sbagliata senza nemmeno guadagnarci.
+//          Con la discesa `applicaAllineaFigli` calcola i Nomi completi su una copia di lavoro
+//          aggiornata: se leggesse il database, un nipote userebbe la variazione ancora vecchia -
+//          quella che stiamo correggendo tre righe sopra.
+//
+//          ⚠️ LA VERIFICA, e va detta com'e' perche' non e' quella che sembra. Con ZERO divergenti,
+//          sui dati veri il rimedio NON e' provabile in positivo: dopo, l'anteprima deve dire
+//          "niente da allineare", cioe' esattamente quello che diceva prima. Un esito identico non
+//          distingue un rimedio che funziona da uno mai entrato in funzione, e fabbricare una
+//          divergenza sui dati veri non si fa (stessa scelta del §12.11 sul collegamento rotto).
+//          Quindi la prova sta al banco, su record finti, con le funzioni ESTRATTE dal file e non
+//          riscritte: sei casi, e quello che conta e' la CASCATA - base rinominata, la variazione
+//          prende il nome nuovo e il nipote lo prende dalla variazione GIA' CORRETTA. Piu' il
+//          caso "tutto allineato", dove il piano deve restare vuoto, e la catena circolare, che
+//          non deve piantare la pagina.
+//          Sui dati veri resta da chiedere una cosa sola: che il piano resti vuoto.
+// ------------------------------------------------------------
+// v6.141 - I SOTTO-SELETTORI VANNO SOTTO IL LORO PADRE, IMPILATI (Franco). Modificato app.js e
+//          index.html (solo la versione). Due difetti della v6.140, e li ha trovati tutti e due
+//          Franco guardando la preview.
+//
+//          1. STAVANO SOTTO LA FILA, NON SOTTO IL SELETTORE. La v6.140 li attaccava dopo la
+//             chiusura del contenitore dei filtri: comparivano sotto TUTTA la fila, e da li' non
+//             si capiva di chi fossero. Con le sue parole: "si fa estremamente fatica a capire che
+//             siano sottofiltri di Change". Ora `item()` puo' portarsi dietro una colonna, e i due
+//             pulsanti stanno IMPILATI e rientrati sotto il pulsante che precisano.
+//             Di conseguenza la fila si allinea in alto (`align-items:flex-start`): con una voce
+//             diventata colonna, il centraggio avrebbe spinto in mezzo tutte le altre.
+//
+//          2. SUGLI ERRORI DI STAMPA SEMBRAVANO NON ESSERCI. "Ti sei dimenticato di fare lo stesso
+//             lavoro anche per le figurine errore di stampa" — il lavoro c'era dalla v6.140, ma la
+//             v6.140 disegnava i due pulsanti SOLO se esistevano entrambi i gruppi, e fra gli
+//             errori di stampa nessuno discende da una variazione. Gruppo vuoto -> niente pulsanti
+//             -> funzione indistinguibile da una funzione mai scritta.
+//             ⚠️ LA REGOLA ERA SBAGLIATA, e valeva la pena capire perche' invece di toglierla e
+//             basta: era copiata da "Variazioni (ufficiali e non ufficiali)", dove con un tipo solo
+//             il filtro unione sarebbe un DOPPIONE reale. Qui i due pulsanti sono una PARTIZIONE:
+//             un gruppo a zero e' un'informazione, e nasconderlo nasconde la domanda invece della
+//             risposta. Ora compaiono sempre, finche' il loro padre e' acceso.
+//             Sono caduti con lei `_figlioParenti`, `_tutteFigs` e `_idxFigs`, che esistevano solo
+//             per quel conto: un calcolo che sopravvive alla domanda che lo giustificava e' lo
+//             stesso difetto della v6.139.
+//
+//          📌 IL 14 AGOSTO E' STATO CONFERMATO CHE I NIPOTI SONO 36, non ~110: Franco ha riscontrato
+//          la misura ("cmq mi torna: sono 36"). Il "~110" del documento era il perimetro dei
+//          CANDIDATI, mai misurato, non dei record da cambiare.
+// ------------------------------------------------------------
+// v6.140 - DA CHI DISCENDE UN CHANGE: due sotto-selettori sotto "Change" e sotto "Errori di
+//          stampa" (Franco). Modificato app.js e index.html (solo la versione).
+//
+//          COSA FA: con il selettore Change acceso compare, nella riga sotto e in piccolo, la
+//          coppia "di figurina base" / "di variazione". Stessa cosa sotto Errori di stampa.
+//          Un secondo clic su quello acceso torna a "tutti", come i chip della v6.096.
+//
+//          PERCHE' ADESSO, ed e' la ragione per cui vale piu' di un filtro: fino alla v6.120 la
+//          domanda non esisteva: `baseFigurineId` poteva puntare solo a una BASE, quindi ogni
+//          change discendeva da una base e i due gruppi erano uno solo. Da quando puo' puntare a
+//          una variazione, i due gruppi sono due — e finora non c'era modo di vederli separati da
+//          nessuna parte del sito. La ricognizione del 14 agosto ne ha contati 36 su Serie 3.
+//
+//          I RECORD CHE NON STANNO IN NESSUNO DEI DUE, e non e' una dimenticanza: quelli senza
+//          `baseFigurineId`, quelli il cui id non punta a niente, e quelli il cui genitore e' a
+//          sua volta un change o un errore di stampa. `_tipoFigurinaDiPartenza` torna `null` e
+//          restano fuori da entrambi i sotto-filtri, mentre con i sotto-filtri spenti si vedono
+//          come prima. Farli ricadere in uno dei due per comodita' avrebbe prodotto un conto
+//          sbagliato che nessuno avrebbe potuto vedere.
+//
+//          SI MOSTRANO SOLO SE ESISTONO ENTRAMBI I GRUPPI — stessa regola con cui si decide se
+//          disegnare "Variazioni (ufficiali e non ufficiali)": con un gruppo solo i due pulsanti
+//          direbbero la stessa cosa del selettore sopra. E la condizione guarda i gruppi PRIMA
+//          del sotto-filtro, se no accendendone uno l'altro sparirebbe e non si tornerebbe piu'
+//          indietro.
+//
+//          SI SPENGONO COL LORO PADRE (`_sciogliRaggruppamentiEstranei`), e qui NON c'e'
+//          l'eccezione per 'all' che hanno i raggruppamenti per tipo: i sotto-selettori si vedono
+//          solo con il loro selettore acceso, quindi su "Tutte" resterebbero accesi e INVISIBILI.
+//          E' la famiglia delle v6.095 e v6.134 — un filtro acceso che non si vede svuota la
+//          griglia e chi guarda conclude che i dati non ci sono.
+//
+//          ⚠️ UN REFERENCE ERROR TROVATO PRIMA DI PUBBLICARE, e vale la pena scriverlo perche' e'
+//          la terza volta. La prima stesura usava `allFigs` dentro `renderItemTypeFilters`, dove
+//          non e' dichiarata: `node --check` passava PULITO e sarebbe esploso al primo disegno dei
+//          filtri. Trovato col controllo scritto apposta — per ogni variabile usata, esiste una
+//          dichiarazione nel corpo di QUELLA funzione? — non rileggendo. Identico alla v6.117.
+// ------------------------------------------------------------
+// v6.139 - LA TENDINA SERIE DELLA FUNZIONE 4 NON SI DISORDINA PIU' (Franco). Modificato app.js e
+//          index.html (solo la versione). Una cancellazione di nove righe.
+//
+//          IL SINTOMO, e la sua forma e' meta' della diagnosi: "a volte le serie sono in ordine
+//          alfabetico, a volte no". Non "non lo sono": A VOLTE. Un difetto che si presenta e
+//          sparisce non e' una regola sbagliata, e' due regole che si contendono lo stesso posto.
+//
+//          LA CAUSA: DUE riempitori per la stessa tendina. `renderAdminFunzioni` la costruisce in
+//          ordine ALFABETICO (v6.136, collazione numerica). Ma `renderAdminRisorse` conteneva
+//          ancora il riempitore del v5.773, che ordina per `order` — l'ordine di vetrina. E' un
+//          residuo della v6.135, che ha spostato la procedura da Risorse a Funzioni portandosi
+//          dietro il markup e non il codice che lo riempiva. Cercando il `select` per id su tutto
+//          il documento, e non venendo le schede admin mai smontate, lo trovava lo stesso.
+//
+//          PERCHE' A VOLTE SI' E A VOLTE NO: `renderAdminRisorse` e' `async` e prima di toccare la
+//          tendina fa DUE letture su Firestore (`refreshEmailCountWidgets`,
+//          `refreshPwdResetCountWidget`). Chi apre Risorse e poi passa a Funzioni vede la tendina
+//          costruita alfabetica SUBITO, e poi sovrascritta quando le due letture tornano. E' una
+//          corsa fra la rete e la mano sul mouse: per questo sembrava casuale.
+//
+//          FAMIGLIA: e' l'orfano della v6.112 e il `'add-fig-modal'` ancora dentro NO_CLICK_CLOSE —
+//          codice che parla di un posto da cui la cosa se n'e' andata. Quelli erano innocui perche'
+//          nominavano un morto; questo no, perche' il suo bersaglio e' vivo e sta altrove.
+// ------------------------------------------------------------
+// v6.138 - LA SOTTOCATEGORIA NON PASSA PIU' DAVANTI ALLA CATEGORIA (Franco). Modificato app.js e
+//          index.html (solo la versione). Una riga di codice diventata tre.
+//
+//          IL SINTOMO: il "Ricalcola i Nomi completi" su Serie 2 proponeva 45 retro in questa forma
+//            "RICERCATA PER ABUSO DI POTERE MATERNO - MAMMA - ROSSO"
+//              -> "ROSSO - RICERCATA PER ABUSO DI POTERE MATERNO - MAMMA"
+//          cioe' la sottocategoria (ROSSO) davanti alla categoria (RICERCATO).
+//
+//          LA CAUSA, ed e' una parola: `categoriaOmessa`. La v6.131 ha unificato in un ordine solo
+//          due casi che non sono lo stesso caso -- la categoria puo' non essere scritta perche' NON
+//          C'E', oppure perche' IL NOME LA CONTIENE GIA' (`_retroNameStartsWithCategory`, con la
+//          tolleranza di genere della v5.907: categoria RICERCATO, Nome "RICERCATA PER..."). Nel
+//          primo caso il posto in testa e' libero; nel secondo e' occupato dal Nome stesso, e
+//          metterci la sottocategoria la manda davanti a una categoria che c'e' eccome.
+//          Fino alla v6.130 il secondo caso mandava la sottocategoria in CODA -- la regola della
+//          v6.021, e la forma con cui quei 45 nomi erano nati. La v6.131 l'ha tolta senza accorgersi
+//          che stava togliendo un caso, non una ridondanza.
+//
+//          IL RIMEDIO: `catNelNome = !!cat && _retroNameStartsWithCategory(base)`. Se la categoria
+//          e' nel Nome -> "Nome - SOTTOCATEGORIA" (com'era). Altrimenti -> "CATEGORIA - SOTTOCATEGORIA
+//          - Nome" (come la v6.131). I due casi tornano due.
+//
+//          COME E' STATO TROVATO, e vale piu' del rimedio: Franco ha guardato l'ANTEPRIMA prima di
+//          applicarla. Il Nome completo e' un campo MEMORIZZATO: "Applica le 45 modifiche" avrebbe
+//          scritto la forma sbagliata su 45 record, e da li' in poi il difetto non sarebbe piu'
+//          sembrato un difetto -- sarebbe stato il dato. L'anteprima davanti non e' una cautela, e'
+//          la sola finestra in cui questo errore e' ancora reversibile.
+//
+//          NOTA: la v6.131/132 era gia' scritta in `procedura-deploy.md` come PRIMO SOSPETTO se
+//          qualcosa non fosse tornato ("cambiano il nome di *tutto*", venti release senza una prova
+//          formale). Il sospetto era giusto e il posto era quello.
+// ------------------------------------------------------------
+// v6.137 - L'ERRORE DI STAMPA SENZA RETRO NON E' PIU' PRIMO IN GRIGLIA (Franco). Modificato
+//          app.js e index.html (solo la versione). Tre righe di codice.
+//
+//          E' IL SINTOMO CHE HA APERTO LA GIORNATA, ed era rimasto indietro: diagnosticato,
+//          spiegato, il rimedio proposto — e poi la conversazione e' andata sulla "figurina di
+//          partenza" e questo pezzo non e' mai stato scritto. Se n'e' accorto Franco a fine
+//          giornata: "ti sei dimenticato questo pezzetto?". Si'.
+//
+//          LA CAUSA: il capogruppo si cerca con una chiave "numero + nome del RETRO". Un errore di
+//          stampa sul FRONTE un retro non ce l'ha per costruzione (§12.10: se il difetto sta dietro
+//          ha un retro suo, se sta davanti no). Chiave che non combacia -> `capo` null -> tutte le
+//          chiavi nascono VUOTE -> e nel comparatore il confronto sulle categorie viene PRIMA di
+//          `rangoFiglio`, quindi la stringa vuota vince e l'oggetto va in testa. La riga che dice
+//          "prima la base, poi i suoi change, poi i suoi errori di stampa" non veniva mai raggiunta.
+//          Stessa forma dell'Indagine 2 e del buco della v6.129: un record che non ritrova il suo
+//          riferimento finisce con le chiavi vuote, e il vuoto ordina agli estremi.
+//
+//          IL RIMEDIO: se la chiave del retro non trova niente, si guarda `baseFigurineId`.
+//          📌 E' in sostanza quello che Franco proponeva dall'inizio, quando chiedeva perche' il
+//          capogruppo non fosse semplicemente la figurina di partenza: "non dedurre il gruppo,
+//          guardalo". La deduzione compensava un vincolo del modello — `baseFigurineId` poteva
+//          puntare solo a una base, quindi non diceva a quale versione appartenesse un figlio — e
+//          quel vincolo e' stato tolto stamattina con la v6.120. Nessuno era tornato a chiedersi se
+//          la deduzione servisse ancora: e' il genere di impalcatura che resta su dopo che l'edificio
+//          e' finito.
+//
+//          NOTA TECNICA, costata un tentativo: il separatore della chiave e' un byte NUL (`'\x00'`),
+//          non uno spazio — ed e' anche il motivo per cui `grep` considera `app.js` un file binario.
+// ------------------------------------------------------------
 // v6.136 - LE SERIE IN ORDINE ALFABETICO nella scheda Funzioni (Franco). Modificato app.js e
 //          index.html (solo la versione). Una riga, e vale per tutti e quattro i selettori della
 //          scheda, non solo per quello del ricalcolo: sono lo stesso elenco.
@@ -13216,7 +13407,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.136';
+const JS_VERSION = 'v6.142';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -14535,6 +14726,12 @@ let _itemTypeFilter = 'base'; // 'base' | 'variation' | 'unofficialVariation' | 
 // che non ha scelto lui gli nasconde meta' degli oggetti - compresi quelli che sta cercando perche'
 // hanno qualcosa che non va.
 function _tipoIniziale() { return currentUser?.isAdmin ? 'all' : 'base'; }
+// v6.140 (Franco) - DA CHI DISCENDE un change o un errore di stampa: dalla figurina BASE o da una
+// VARIAZIONE. Sono sotto-filtri del rispettivo selettore, non filtri a se': valgono solo mentre
+// quel selettore e' acceso, e si spengono con lui (vedi `_sciogliRaggruppamentiEstranei`).
+// '' = tutti | 'base' = discende da una base | 'variation' = discende da una variazione.
+let _changeParentFilter = '';
+let _printErrorParentFilter = '';
 let _ebayFilter = false; // indipendente da _itemTypeFilter: si combina in AND, non è esclusivo con "Solo base"/ecc.
 let _noOfficialVariationFilter = false; // indipendente da _itemTypeFilter come _ebayFilter, ma impone SEMPRE anche "solo base" (non solo AND con il filtro tipo scelto) — mostra solo figurine base senza nessuna Variazione ufficiale collegata
 let _retroViewMode = 'destra-piena'; // 'sotto' | 'destra' | 'dinamico' | 'fronte-grande' | 'destra-piena' — come viene mostrato il Retro rispetto al fronte nella griglia Figurine, visibile a tutti
@@ -19107,7 +19304,8 @@ function _baseFigurineLinkLabel(f) {
   // La v6.120 costruiva qui la coda a mano: `[categoria, sottocategoria, nome].join(' - ')`. E'
   // esattamente la forma ingenua che la v6.022 aveva gia' tolto da un altro punto, perche' produce
   // "PREMIO - PREMIO DI MIGLIOR ATTORE" sui 94 retro il cui Nome comincia con la categoria.
-  // La regola vera vive in `_retroFullName`: `categoriaOmessa = !cat || _retroNameStartsWithCategory(base)`,
+  // La regola vera vive in `_retroFullName`: `catNelNome = !!cat && _retroNameStartsWithCategory(base)`
+  // (era `categoriaOmessa` fino alla v6.137 — vedi la v6.138, che ha separato "assente" da "gia' nel Nome"),
   // piu' il sottonome, piu' il suffisso del tipo per change ed errori di stampa. Riscriverla a mano
   // significa tenerne allineate due copie, e quella copiata non invecchia insieme all'originale:
   // qui infatti era gia' nata vecchia di cento release.
@@ -19559,13 +19757,55 @@ function renderItemTypeFilters() {
     change: 'var(--type-change)',
     printError: 'var(--type-printerror)'
   };
-  const item = (key, label, icon, bold, labelHTML) => {
+  // v6.141 (Franco) - `sottoHTML`: quello che va IMPILATO SOTTO questo selettore, dentro la sua
+  // stessa colonna. La v6.140 lo attaccava dopo `</div>`, cioe' sotto TUTTA la fila dei filtri, e
+  // da li' non si capiva a chi appartenesse: "si fa estremamente fatica a capire che siano
+  // sottofiltri di Change". Un elemento che precisa un altro deve stargli sotto, non sotto il
+  // gruppo che li contiene tutti e due.
+  const item = (key, label, icon, bold, labelHTML, sottoHTML) => {
     const col = coloreTipo[key] || 'var(--text)';
-    return `
+    const riga = `
     <div style="display:flex;align-items:center;gap:0.4rem;">
       <button class="toggle-btn-blue ${_itemTypeFilter === key ? 'on' : ''}" onclick="toggleItemTypeFilter('${key}')" title="${label}"></button>
       <span style="font-size:0.82rem;color:${col};${bold ? 'font-weight:600;' : ''}">${icon ? icon + ' ' : ''}${labelHTML || label}</span>
     </div>`;
+    if (!sottoHTML) return riga;
+    return `<div style="display:flex;flex-direction:column;gap:0.3rem;">${riga}${sottoHTML}</div>`;
+  };
+
+  // v6.140/141 - i due sotto-selettori "da chi discende", IMPILATI e rientrati sotto il loro
+  // padre. Compaiono solo mentre quel padre e' acceso: fuori di li' non avrebbero un soggetto.
+  //
+  // ⚠️ SI MOSTRANO SEMPRE, mentre il loro padre e' acceso — anche se uno dei due gruppi e' vuoto.
+  // La v6.140 li mostrava solo se esistevano ENTRAMBI i gruppi, regola presa da "Variazioni
+  // (ufficiali e non ufficiali)". E' stata sbagliata, e l'ha dimostrato Franco in dieci minuti:
+  // "ti sei dimenticato di fare lo stesso lavoro anche per le figurine errore di stampa". Il
+  // lavoro c'era; era il gruppo "di variazione" degli errori di stampa a essere vuoto, quindi i
+  // due pulsanti non comparivano mai.
+  // La differenza col caso da cui la regola veniva: li' il doppione era REALE (un solo tipo di
+  // variazione -> il filtro unione dice la stessa cosa del filtro singolo). Qui i due pulsanti
+  // sono una PARTIZIONE, e mostrarne uno solo, o nessuno, nasconde la domanda invece della
+  // risposta. Un gruppo a zero e' un'informazione; un selettore che non compare e' indistinguibile
+  // da una funzione mai scritta.
+  // v6.141 - `_figlioParenti`, `_tutteFigs` e `_idxFigs` sono stati TOLTI insieme alla regola che
+  // li chiedeva: contavano quanti figli discendessero da una base e quanti da una variazione, e
+  // servivano solo a decidere se disegnare i due pulsanti. Ora si disegnano sempre, quindi quel
+  // conto non lo guarda piu' nessuno. Un calcolo che sopravvive alla domanda che lo giustificava
+  // e' la stessa cosa del riempitore della v6.139: codice che lavora per un motivo che non c'e'.
+  const _et = it ? { base: 'di figurina base', variation: 'di variazione' }
+                 : { base: 'of base sticker', variation: 'of variation' };
+  const _sottoSelettori = (attivo, valore, onclick) => {
+    if (!attivo) return '';
+    const bottone = (v) => `
+      <div style="display:flex;align-items:center;gap:0.3rem;">
+        <button class="toggle-btn-blue ${valore === v ? 'on' : ''}" style="transform:scale(0.72);transform-origin:left center;"
+                onclick="${onclick}('${v}')" title="${_et[v]}"></button>
+        <span style="font-size:0.72rem;color:var(--muted);">${_et[v]}</span>
+      </div>`;
+    // IMPILATI, non affiancati: sono due alternative della stessa domanda, e in colonna sotto il
+    // loro padre si legge da dove dipendono. Il rientro e' quello del pulsante sopra.
+    return '<div style="display:flex;flex-direction:column;gap:0.2rem;padding-left:1.5rem;">' +
+           bottone('base') + bottone('variation') + '</div>';
   };
 
   // il nome dell'oggetto cambia con la sezione: "figurine set base", "retro set base",
@@ -19579,7 +19819,10 @@ function renderItemTypeFilters() {
   // fila e una colonna a due centimetri di distanza, senza che nulla lo giustifichi.
   // flex-wrap: con sette filtri (Figurine) va a capo da solo; con tre (Retro) sta su
   // una riga sola. Il gap verticale serve proprio per quando va a capo.
-  let html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center;">';
+  // v6.141 - `align-items` da `center` a `flex-start`: con una voce che ora e' una COLONNA (Change
+  // e i suoi due sotto-selettori), il centraggio verticale spingerebbe in mezzo tutte le altre,
+  // che sono alte una riga. Allineate in alto restano dov'erano e la colonna cresce verso il basso.
+  let html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:flex-start;">';
 
   // v5.902 — genere corretto: retro/album/altri oggetti (maschile) → "Tutti"; figurine/bustine (femminile) → "Tutte".
   html += item('all', it ? (['retros','albums','extras'].includes(currentSection) ? 'Tutti' : 'Tutte') : 'All', '', false);
@@ -19608,10 +19851,12 @@ function renderItemTypeFilters() {
       '', false, it ? etIt : etEn);
   }
 
-  if (presente.change) html += item('change', it ? 'Change' : 'Change', '');
+  if (presente.change) html += item('change', it ? 'Change' : 'Change', '', false, null,
+    _sottoSelettori(_itemTypeFilter === 'change', _changeParentFilter, 'toggleChangeParentFilter'));
 
   if (presente.printError) html += item('printError',
-    it ? 'Errori di stampa' : 'Print errors', '');
+    it ? 'Errori di stampa' : 'Print errors', '', false, null,
+    _sottoSelettori(_itemTypeFilter === 'printError', _printErrorParentFilter, 'togglePrintErrorParentFilter'));
 
   // v5.910 — "Senza foto" vive nel box "Filtri generici", per TUTTI gli utenti (desktop e mobile).
   // v6.054 (Franco) — accanto c'e' "Con foto", ma solo per l'ADMIN.
@@ -19898,6 +20143,46 @@ function toggleWishlistFilter() {
 function _sciogliRaggruppamentiEstranei(tipo) {
   if (tipo !== 'change'     && tipo !== 'all') _changeTypeFilter = new Set();
   if (tipo !== 'printError' && tipo !== 'all') _printErrorTypeFilter = new Set();
+  // v6.140 - e i due sotto-filtri della figurina di partenza si spengono con il loro selettore.
+  // Qui NON c'e' l'eccezione per 'all' che hanno i raggruppamenti: i sotto-selettori si vedono
+  // solo con il loro padre acceso, quindi su 'all' resterebbero accesi e INVISIBILI - la famiglia
+  // dei filtri invisibili delle v6.095 e v6.134, dove la griglia si svuota e non lo dice nessuno.
+  if (tipo !== 'change')     _changeParentFilter = '';
+  if (tipo !== 'printError') _printErrorParentFilter = '';
+}
+
+// v6.140 - IL TIPO DELLA FIGURINA DI PARTENZA, scritto una volta sola perche' lo chiedono sia il
+// setaccio sia i selettori (che devono sapere se i due gruppi esistono entrambi).
+// Torna 'base', 'variation', oppure NULL quando la domanda non ha risposta: niente
+// `baseFigurineId`, id che non punta a niente, o genitore che e' a sua volta un change/errore di
+// stampa. Quei record non stanno in nessuno dei due gruppi, ed e' voluto: un terzo caso mascherato
+// da uno dei due sarebbe un conto sbagliato che nessuno vedrebbe. Con tutti e due i sotto-filtri
+// spenti continuano a comparire, come prima.
+// `idx` e' una Map id->record, facoltativa: chi deve chiamare questa funzione centinaia di volte
+// di fila (i contatori dei due gruppi) la costruisce una volta invece di fare una `find` lineare
+// su tutte le figurine ad ogni giro.
+function _tipoFigurinaDiPartenza(f, figs, idx) {
+  if (!f || !f.baseFigurineId) return null;
+  const g = idx ? idx.get(f.baseFigurineId)
+                : (figs || getData('figurines', [])).find(x => x.id === f.baseFigurineId);
+  if (!g) return null;
+  if (g.isVariation || g.isUnofficialVariation) return 'variation';
+  if (g.isChange || g.isPrintError) return null;
+  return 'base';
+}
+
+// v6.140 - i due sotto-selettori. Stesso comportamento dei chip dello specchietto (v6.096): un
+// secondo clic su quello acceso lo spegne, cioe' torna a "tutti". Senza, l'unico modo di tornare
+// indietro sarebbe passare da un altro selettore e rientrare.
+function toggleChangeParentFilter(v) {
+  _changeParentFilter = (_changeParentFilter === v) ? '' : v;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleChangeParentFilter)', e); }
+}
+function togglePrintErrorParentFilter(v) {
+  _printErrorParentFilter = (_printErrorParentFilter === v) ? '' : v;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (togglePrintErrorParentFilter)', e); }
 }
 
 function toggleItemTypeFilter(type) {
@@ -20076,6 +20361,13 @@ function getCurrentlyFilteredItems(opts) {
         // smettesse di trovarli — in silenzio, senza modo di accorgersene.
         (_itemTypeFilter === 'printError' && f.isPrintError);
       if (!matchesType) return false;
+      // v6.140 - il sotto-filtro sulla figurina di partenza. Sta DENTRO il ramo del tipo perche'
+      // e' una domanda che ha senso solo li': "da chi discende questo change?" non si puo' porre
+      // a una base. Con il sotto-filtro spento ('') non tocca niente.
+      if (_itemTypeFilter === 'change' && _changeParentFilter
+          && _tipoFigurinaDiPartenza(f, allFigs) !== _changeParentFilter) return false;
+      if (_itemTypeFilter === 'printError' && _printErrorParentFilter
+          && _tipoFigurinaDiPartenza(f, allFigs) !== _printErrorParentFilter) return false;
     }
     if (currentSection === 'figurines' && _noOfficialVariationFilter) {
       if (f.isVariation || f.isUnofficialVariation || f.isChange) return false; // impone sempre "solo base", a prescindere dal filtro tipo
@@ -22956,15 +23248,12 @@ async function renderAdminRisorse() {
   await refreshEmailCountWidgets();
   await refreshPwdResetCountWidget();
 
-  // Selettore serie del "Ricalcola i Nomi completi" — stesso stile dei select degli import (v5.773)
-  const rcSel = document.getElementById('recompute-fullnames-series-select');
-  if (rcSel) {
-    const rcSeries = getData('series', []).slice().sort((a, b) => (a.order || 0) - (b.order || 0) || (a.name || '').localeCompare(b.name || '', 'it'));
-    const cur = rcSel.value;
-    rcSel.innerHTML = '<option value="">-- ' + (currentLang === 'it' ? 'Seleziona una serie' : 'Select a series') + ' --</option>' +
-      rcSeries.map(s => `<option value="${s.id}" data-name="${esc(s.name)}">${esc(s.name)}</option>`).join('');
-    if (cur) rcSel.value = cur;
-  }
+  // v6.139 - QUI STAVA IL RIEMPITORE DELLA TENDINA del "Ricalcola i Nomi completi" (v5.773).
+  // La v6.135 ha spostato quella procedura nella scheda FUNZIONI, ma questo blocco e' rimasto:
+  // cercava il `select` con `getElementById` su TUTTO il documento, e le schede admin non vengono
+  // smontate (cambiano solo classe), quindi lo trovava lo stesso e lo RISCRIVEVA in ordine di
+  // `order` — l'ordine di vetrina — sopra quello alfabetico della v6.136.
+  // Ora la tendina la riempie solo `renderAdminFunzioni`, che e' la scheda in cui vive.
 
   // Firebase doc count
   try {
@@ -23947,9 +24236,24 @@ function _chiaviOrdinamentoFigurine(items, idx) {
   });
   items.forEach(f => {
     const rango = rangoFiglio(f);
+    // v6.137 (Franco) - SE LA CHIAVE NON TROVA NIENTE, SI GUARDA LA FIGURINA DI PARTENZA.
+    // Il sintomo che ha aperto la giornata: a parita' di numero, l'errore di stampa senza foto
+    // compariva PRIMO, prima della sua base. La causa: la chiave del capogruppo e' "numero +
+    // nome del RETRO", e un errore di stampa sul FRONTE un retro non ce l'ha per costruzione
+    // (§12.10). Chiave che non combacia -> `capo` null -> tutte le chiavi nascono VUOTE -> e il
+    // vuoto ordina per primo, perche' nel comparatore il confronto sulle categorie viene PRIMA
+    // di `rangoFiglio`. La riga che dice "gli errori di stampa vanno in fondo" non veniva mai
+    // raggiunta.
+    // Il retro era un SOSTITUTO del collegamento vero: serviva perche' `baseFigurineId` puntava
+    // sempre alla base e non sapeva dire A QUALE VERSIONE appartenesse un figlio. Dalla v6.120
+    // punta alla versione giusta, quindi il sostituto non serve piu' dove il collegamento c'e'.
+    // La chiave del retro resta la prima strada (funziona anche sui ~110 non ancora
+    // ricollegati); il collegamento esplicito fa da ripiego.
     const capo = rango === 0
       ? f
-      : (capiPerChiave.get(String(numeroGruppo(f)) + ' ' + nomeRetroDi(f)) || null);
+      : (capiPerChiave.get(String(numeroGruppo(f)) + ' ' + nomeRetroDi(f))
+         || (f.baseFigurineId ? idx.get(f.baseFigurineId) : null)
+         || null);
     const retroCapo = capo ? idx.get(capo.retroId) : null;
     chiavi.set(f.id, {
       rankCapo: capo ? (capo.isUnofficialVariation ? 2 : capo.isVariation ? 1 : 0) : 0,
@@ -26353,11 +26657,24 @@ function _retroFullName(fig, allFigs, senzaSottonome) {
   // "RICERCATO/BLU/RICERCATO PER ABUSO D'UFFICIO" perderebbe il BLU per strada.
   //   categoria scritta   ->  CATEGORIA - SOTTOCATEGORIA - Nome
   //   categoria omessa    ->  Nome - SOTTOCATEGORIA
-  const categoriaOmessa = !cat || _retroNameStartsWithCategory(base);
-  // v6.131 (Franco) - UN ORDINE SOLO. Fino alla v6.130 la sottocategoria stava in TESTA quando la
-  // categoria c'era e in CODA quando veniva omessa perche' il nome la conteneva gia'. Ora l'ordine
-  // e' sempre lo stesso e la categoria omessa semplicemente non compare.
-  const piece = [categoriaOmessa ? '' : cat, sub, nomeLungo].filter(Boolean).join(' - ');
+  // v6.138 (Franco) - "OMESSA" E "ASSENTE" NON SONO LA STESSA COSA, e la v6.131 le aveva unite.
+  // La categoria non viene scritta per DUE ragioni diverse:
+  //   a) non c'e'                      -> la sua posizione in testa e' libera;
+  //   b) il Nome la contiene GIA'      -> la posizione in testa e' OCCUPATA, dal Nome stesso.
+  // Nel caso (b) mettere la sottocategoria in testa la manda DAVANTI alla categoria, che sta
+  // dentro il Nome: su Serie 2 il ricalcolo proponeva 45 righe come
+  //   "RICERCATA PER ABUSO DI POTERE MATERNO - MAMMA - ROSSO"
+  //     -> "ROSSO - RICERCATA PER ABUSO DI POTERE MATERNO - MAMMA"
+  // cioe' ROSSO prima di RICERCATA. La categoria e' `RICERCATO` e combacia con `RICERCATA` per la
+  // tolleranza di genere della v5.907, quindi non viene scritta - ma c'e', ed e' la prima parola.
+  // Nel caso (b) la sottocategoria torna quindi in CODA, che e' la regola della v6.021 e la forma
+  // con cui quei nomi erano nati (fino alla v6.130). Il caso (a) resta come l'ha messo la v6.131.
+  // Trovato da Franco guardando l'anteprima PRIMA di applicarla: il ricalcolo e' un campo
+  // memorizzato, e applicarlo avrebbe scritto la forma sbagliata su 45 record.
+  const catNelNome = !!cat && _retroNameStartsWithCategory(base);
+  const piece = catNelNome
+    ? [nomeLungo, sub].filter(Boolean).join(' - ')
+    : [cat, sub, nomeLungo].filter(Boolean).join(' - ');
   if (fig.isChange) {
     // v5.755 (Franco): per i Change niente più " - Change"; solo il Tipo di change, in MAIUSCOLO.
     return piece + ' - ' + (fig.changeType || '').toUpperCase();
@@ -28109,19 +28426,68 @@ async function applicaFixRetroChange() {
 // Calcola il piano SENZA scrivere niente. E' la funzione che decide anche cosa si scrivera' dopo:
 // l'anteprima e l'applicazione non ricalcolano due volte con due criteri, cosa che renderebbe
 // l'anteprima una promessa e non una descrizione.
+// v6.142 (Franco) - SI SCENDE FINCHE' CI SONO FIGLI, invece di fermarsi al primo livello.
+//
+// IL PRESUPPOSTO CHE ERA CADUTO: fino alla v6.120 `baseFigurineId` poteva puntare solo a una BASE,
+// quindi l'albero era profondo UNO e "i figli diretti di ogni base" era l'insieme di tutti i figli.
+// Dalla v6.120 un change puo' pendere da una VARIAZIONE, e una variazione non e' fra le basi: i
+// suoi figli non entravano nel piano, e la funzione diceva "nessuna divergenza" su un insieme che
+// non aveva guardato. Misurati il 14 agosto: 36, tutti su Serie 3, oggi tutti allineati.
+// ⚠️ E' la famiglia del `CONTROLLI_SOSPENDIBILI` e dei dati demo muti: un controllo spento in
+// silenzio e' peggio di uno che segnala il falso, perche' il primo non lo scopri mai. Il difetto
+// non era che sbagliasse: era che non guardasse.
+//
+// DAL GENITORE DIRETTO, NON DALLA BASE. Le due strade oggi darebbero lo stesso valore (il Nome di
+// una variazione e' per convenzione quello della sua base, §12.1), ma "se il genitore e' una
+// variazione, guarda la sua base" sarebbe di nuovo l'assunzione che la v6.120 ha tolto - codice
+// che, arrivato a un `baseFigurineId`, decide che quello vero sta un anello piu' su. E il genitore
+// diretto si autocorregge: la base sistema la variazione, la variazione sistemata sistema il
+// nipote, tutto in una passata sola.
+//
+// SI SCENDE COL GENITORE GIA' CORRETTO (`corrente`), non con quello letto dal database: passando
+// giu' la copia vecchia, i nipoti verrebbero allineati a un valore che stiamo per cambiare, e
+// servirebbe una seconda passata per accorgersene. E' la stessa ragione della `conBaseNuova` di
+// `_collegatiDaAggiornare`.
+//
+// L'ORDINE DEL PIANO E' TOP-DOWN per costruzione (un genitore entra sempre prima dei suoi figli), e
+// non e' un dettaglio estetico: `applicaAllineaFigli` ci conta per ricalcolare i Nomi completi
+// sugli antenati gia' aggiornati.
 function _calcolaPianoAllinea(seriesId) {
   const figs = getData('figurines', []);
-  const byId = new Map(figs.map(f => [f.id, f]));
   const basi = figs.filter(f => !f.isChange && !f.isPrintError && !f.isVariation && !f.isUnofficialVariation
     && (!seriesId || f.seriesId === seriesId));
   const piano = [];
-  basi.forEach(base => {
-    _figliCollegati(base, figs).forEach(figlio => {
-      const campi = _divergenzeDaBase(figlio, base);
-      if (!campi.length) return;
-      piano.push({ figlio, base, campi });
-    });
+
+  // i figli indicizzati per genitore, una volta sola: senza, ogni discesa rifarebbe una scansione
+  // di tutte le figurine, e su Serie 3 sono un migliaio per ogni base.
+  const perGenitore = new Map();
+  figs.forEach(f => {
+    if (!f.baseFigurineId) return;
+    if (!(f.isChange || f.isPrintError || f.isVariation || f.isUnofficialVariation)) return;
+    if (!perGenitore.has(f.baseFigurineId)) perGenitore.set(f.baseFigurineId, []);
+    perGenitore.get(f.baseFigurineId).push(f);
   });
+
+  // ⚠️ GUARDIA SUI CICLI. Un record che fosse antenato di se stesso farebbe girare la discesa per
+  // sempre e bloccherebbe la pagina. Sui dati veri del 14 agosto i cicli sono ZERO, quindi questa
+  // riga oggi non serve a niente - ed e' esattamente il motivo per cui va scritta adesso: se un
+  // domani ne comparisse uno, il sintomo sarebbe una scheda admin che si pianta senza un errore.
+  const visti = new Set();
+  const scendi = (genitore) => {
+    for (const figlio of (perGenitore.get(genitore.id) || [])) {
+      if (visti.has(figlio.id)) continue;
+      visti.add(figlio.id);
+      const campi = _divergenzeDaBase(figlio, genitore);
+      let corrente = figlio;
+      if (campi.length) {
+        corrente = { ...figlio };
+        campi.forEach(k => { corrente[k] = genitore[k] || ''; });
+        piano.push({ figlio, base: genitore, campi });
+      }
+      scendi(corrente);
+    }
+  };
+  basi.forEach(scendi);
   return piano;
 }
 
@@ -28212,11 +28578,22 @@ async function applicaAllineaFigli() {
   if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
   let ok = 0; const errori = [];
   const daScrivere = [];
+  // v6.142 - IL NOME COMPLETO SI CALCOLA SUGLI ANTENATI GIA' CORRETTI, non su quelli salvati.
+  // `computeFullName` di un figlio risale alla sua figurina di partenza: con l'elenco letto dal
+  // database, un nipote userebbe la variazione ANCORA VECCHIA - quella che due righe piu' su
+  // stiamo correggendo - e nascerebbe con un Nome completo sbagliato nella stessa passata che
+  // doveva sistemarlo. Si tiene quindi una copia di lavoro, aggiornata mentre si scende.
+  // Regge perche' il piano e' ordinato dall'alto (vedi `_calcolaPianoAllinea`): quando tocca a un
+  // record, i suoi antenati sono gia' passati.
+  const _figsLavoro = getData('figurines', []).slice();
+  const _posDi = new Map(_figsLavoro.map((f, i) => [f.id, i]));
   for (let i = 0; i < _pianoAllinea.length; i++) {
     const v = _pianoAllinea[i];
     const nuovo = { ...v.figlio };
     v.campi.forEach(k => { nuovo[k] = v.base[k] || ''; });
-    try { nuovo.fullName = computeFullName(nuovo, getData('figurines', [])); } catch(e) {}
+    try { nuovo.fullName = computeFullName(nuovo, _figsLavoro); } catch(e) {}
+    const _p = _posDi.get(nuovo.id);
+    if (_p !== undefined) _figsLavoro[_p] = nuovo;
     daScrivere.push(nuovo);
   }
   // v6.117 - una scrittura per SERIE invece di una per record, e via la pausa di 120 ms.
