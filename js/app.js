@@ -1,6 +1,455 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.159 - LE FOTO DEI BOX PRODOTTO GRANDI COME QUELLE DELLE SERIE, e la Sottocategoria in vista
+//          tabellare (Franco). Modificato app.js e index.html (solo la versione).
+//
+//          1. LE FOTO. Non era il contenitore a essere diverso — e' lo stesso
+//             `.card-img-placeholder` — ma COME la foto ci sta dentro: le card delle serie usano
+//             `object-fit:contain` con `padding:8px` (la foto si vede tutta, un po' piu' piccola),
+//             quelle dei prodotti usavano `cover`, che riempie e taglia facendola sembrare piu'
+//             grande. Ora sono la stessa cosa.
+//             Applicato a TUTTI E TRE i rami di `_fotoProdotto` — foto scelta dall'admin, clone del
+//             box della sezione, ripiego su `SECTION_IMAGES` — piu' la card di un tipo. Farne uno
+//             solo avrebbe prodotto box di due misure a seconda di come quella foto e' arrivata,
+//             che e' peggio del difetto di partenza perche' sembra casuale.
+//
+//          2. LA SOTTOCATEGORIA in vista tabellare, coi suggerimenti presi dai valori gia' usati
+//             IN QUEL TIPO, come la Categoria. Aggiunta subito dopo di lei: due campi gemelli in
+//             cui uno solo si puo' compilare in tabella si notano al primo giro.
+//
+//          🧪 Controllo scritto per questa release e riutilizzabile: **intestazioni e celle
+//          condizionate a `_cExtra` devono essere in pari numero**. In una tabella costruita a
+//          stringhe, una colonna aggiunta in un posto solo non da' nessun errore — sposta tutti i
+//          dati di una casella e li fa leggere sotto l'intestazione sbagliata. Qui erano 2 e 2.
+// ------------------------------------------------------------
+// v6.158 - SOTTOCATEGORIA SUI PRODOTTI EXTRA SERIE, e la card li mostra NOME / CATEGORIA /
+//          SOTTOCATEGORIA (Franco). Modificato app.js e index.html (solo la versione).
+//
+//          1. 🔴 UNA VARIABILE MORTA, E UNA RELEASE CHE NON AVEVA FATTO NIENTE. `categoryHTML`
+//             veniva calcolata e non letta da nessuno dalla v6.037, quando la card e' passata alle
+//             righe fisse. Nella v6.157 ci ho scritto dentro credendo di mettere la categoria sulla
+//             card: quella modifica non e' mai comparsa, e il CHANGELOG della v6.157 la racconta
+//             come fatta (corretto li').
+//             ⚠️ E' la SECONDA volta in due release che un CHANGELOG dice il falso — la prima fu la
+//             v6.152 (una sostituzione che non aveva trovato il bersaglio). Le due cause sono
+//             diverse ma la forma e' la stessa: **ho verificato che il codice fosse cambiato, non
+//             che il cambiamento avesse un effetto.**
+//             Prima di modificare un pezzo di markup: `grep` del nome. Se torna una riga sola —
+//             la dichiarazione — quella riga e' morta.
+//
+//          2. LE TRE RIGHE DELLA CARD nell'ordine chiesto: Nome, Categoria, Sottocategoria. Usano
+//             `_rigaCard`, lo stesso stampo dei retro, che tiene la riga anche vuota: e' cio' che
+//             fa restare allineate due card affiancate (v6.037). Senza, due cartoncini di cui uno
+//             solo ha la sottocategoria si sfalserebbero.
+//             Stessi colori dei retro (`COL_CATEGORIA`, `COL_SOTTOCAT`): la categoria e' la stessa
+//             cosa e deve avere lo stesso codice colore ovunque.
+//
+//          3. IL CAMPO SOTTOCATEGORIA nella form e nella vista in lettura, con i suggerimenti presi
+//             dai valori gia' usati IN QUEL TIPO, come la Categoria della v6.150. Aggiunti insieme
+//             perche' due campi gemelli di cui uno solo propone i valori si notano subito — e'
+//             successo con gli errori di stampa nella v6.141.
+// ------------------------------------------------------------
+// v6.157 - IL TOTALE SOTTO L'ELENCO, LA CATEGORIA SULLA CARD, E LO SPECCHIETTO PER CATEGORIA ANCHE
+//          NEI BOX (Franco). Modificato app.js e index.html (solo la versione).
+//
+//          1. IL TOTALE VA SOTTO L'ELENCO. Sopra era una premessa; sotto e' la riga che tira le
+//             somme, che e' il mestiere che ha.
+//             ⚠️ La v6.156 l'aveva solo ripulito e lasciato dov'era: avevo letto "mettila sola"
+//             dove c'era scritto "mettila sotto". Quando una richiesta si puo' leggere in due modi
+//             e uno dei due non cambia niente di visibile, quasi sempre e' l'altro.
+//
+//          2. LA CATEGORIA SULLA CARD di un prodotto extra serie, sotto al nome.
+//             🔴 CORREZIONE SCRITTA NELLA v6.158: **questo punto non ha fatto niente.** Avevo
+//             modificato `categoryHTML`, una variabile che dalla v6.037 NON LA LEGGE PIU' NESSUNO —
+//             la card era stata rifatta a righe fisse e quel calcolo era rimasto orfano. Nessun
+//             errore, nessun avviso: una variabile calcolata e mai letta non da' segnale.
+//             Fatto per davvero nella v6.158, con lo stesso stampo delle righe dei retro.
+//             📌 Prima di modificare un pezzo di markup va guardato CHI LO USA, non solo che
+//             esista: un `grep` del nome, e se torna una riga sola quella riga e' morta.
+//
+//          3. LO SPECCHIETTO "PER CATEGORIA" nei risultati di ricerca vale anche dentro un box di
+//             tipo prodotto, con i chip cliccabili come per i retro. Tre pezzi, e saltarne uno solo
+//             avrebbe prodotto un comando a meta':
+//               - il pannello si disegna (`renderRetroCategorySummaries`);
+//               - il FILTRO si applica davvero (`getCurrentlyFilteredItems`) — un chip che si
+//                 accende e non filtra e' peggio che non averlo;
+//               - il TITOLO dice il nome del tipo invece di "Retro base per categoria", perche' un
+//                 titolo che nomina un'altra cosa fa dubitare dei numeri che ha sotto.
+//             📌 La variabile che decide si chiama ancora `isRetro`, ed e' rimasta cosi' apposta:
+//             rinominarla avrebbe toccato un blocco che non c'entrava con questa release. Quello
+//             che e' cambiato non e' il nome ma la DOMANDA: non "sono nei retro?" ma "questi
+//             oggetti hanno una categoria e la usano per raggrupparsi?".
+// ------------------------------------------------------------
+// v6.156 - UN SOLO TASTO INDIETRO, e la testata dell'hub dice una cosa sola (Franco). Modificato
+//          app.js e index.html (solo la versione).
+//
+//          1. 🔴 DUE TASTI "INVENTARIO" nella pagina di un Cartoncino, ed e' un difetto che ho
+//             introdotto io con la v6.153: li' ho RINOMINATO il tasto della sezione in "Inventario"
+//             senza accorgermi che la testata della SERIE ne ha gia' uno, con la stessa identica
+//             parola. Due pulsanti uguali a due centimetri che portano in due posti diversi.
+//             ⚠️ L'errore di metodo: ho cambiato un'etichetta guardando il pezzo che stavo
+//             toccando, non la SCHERMATA in cui quel pezzo si vede. E' la stessa cecita' della
+//             v6.147 e della v6.154 — "quali sono tutti i posti in cui questa cosa compare?" — ma
+//             stavolta il posto era lo stesso, a tre righe di distanza.
+//             Rimedio: dentro un box il piano della serie non si attraversa, quindi il suo tasto
+//             indietro non ha un "indietro" da offrire e si nasconde. Torna visibile aprendo una
+//             serie qualunque, che e' l'unico modo di passarci davvero.
+//
+//          2. VIA IL NUMERO DELLE SERIE dalla card del prodotto e dalla testata dell'hub: sotto
+//             c'e' gia' un box (o una riga) per ogni serie, quindi dirne il conto era ripetere in
+//             cifre una cosa che si legge per esteso due centimetri piu' giu'.
+//             Fatto in TUTTI E DUE i punti nella stessa passata: lasciarlo in uno solo avrebbe
+//             prodotto due schermate che raccontano la stessa cosa in due modi.
+//             Con la scritta e' sparito anche il conto che la calcolava, in tutti e due i posti.
+//
+//          3. MENO SPAZIO fra il titolo del box e le numeriche: erano separati da un'aria che li
+//             faceva sembrare due blocchi, e sono la stessa informazione.
+// ------------------------------------------------------------
+// v6.155 - L'ORDINAMENTO DI UN TIPO LO DECIDE CHI LO CREA, piu' due rifiniture e una correzione a
+//          un CHANGELOG che diceva il falso (Franco). Modificato app.js e index.html.
+//
+//          1. CAMPO "ORDINAMENTO DEGLI OGGETTI" sul tipo di prodotto. Sintassi: nomi separati da
+//             virgola nell'ordine in cui contano, `-` davanti per invertire. `categoria, nome`.
+//             I nomi ammessi sono i campi che un prodotto extra serie ha DAVVERO — `ordinamento`
+//             (il campo Numero, che la scheda chiama gia' cosi'), `nome`, `categoria`, `taglia`,
+//             `punteggio`, `creazione` — non un elenco inventato accanto.
+//             ⚠️ UN NOME SCONOSCIUTO FERMA IL SALVATAGGIO e viene nominato. Ignorarlo darebbe un
+//             ordinamento diverso da quello scritto senza che niente lo dica, ed e' la famiglia dei
+//             controlli spenti in silenzio chiusa tre volte in questi due giorni.
+//             La sintassi sta SOTTO il campo: un campo con una sintassi propria e nessuna
+//             spiegazione accanto e' un campo che si compila a tentativi.
+//             Vale per la griglia E per la vista tabellare, dalla stessa funzione: due viste degli
+//             stessi oggetti che si ordinano diversamente sarebbero due verita' sulla stessa cosa.
+//             I valori vuoti vanno in fondo in ENTRAMBI i versi — un campo non compilato non e' "il
+//             piu' piccolo", e' assente, e in decrescente finirebbe in testa dicendo una cosa falsa.
+//
+//          2. VIA LA COLONNA "N." dalla vista tabellare quando sono tutti prodotti extra serie
+//             (Franco: "non ha senso, ma e' pubblicato"), e Categoria piu' larga.
+//
+//          3. 🔴 CORREZIONE A UN CHANGELOG CHE DICEVA IL FALSO. La v6.152 raccontava che
+//             l'intestazione "N." diventava "Ordinamento": NON ERA VERO — la sostituzione non aveva
+//             trovato il bersaglio e la riga era rimasta com'era, ma io l'avevo scritta come fatta.
+//             Se n'e' accorto Franco guardando il sito.
+//             📌 LA REGOLA, e vale per ogni modifica fatta con uno script: **una sostituzione che
+//             non trova nulla non e' un errore, e' un silenzio.** L'assert sul numero di occorrenze
+//             prima di scrivere non basta se poi si usa un `replace` senza ricontrollare che il
+//             testo sia davvero cambiato. Il CHANGELOG e' una fonte: se mente, mente con la stessa
+//             sicurezza con cui dice il vero.
+// ------------------------------------------------------------
+// v6.154 - LA GRIGLIA NON MOSTRA PIU' IL RETRO DOVE NON C'E' (Franco: "la griglia dei cartoncini
+//          mostra le due foto, e il campo relativo non l'ho mai settato a true"). Modificato
+//          app.js e index.html (solo la versione). Una condizione.
+//
+//          LE DUE FACCE SONO DUE DOMANDE, non una, e il file lo sa dalla v6.076:
+//            `_schedaDueFoto(f)`           -> questo oggetto ha due facce?
+//            `_secondaFacciaSulRecord(..)` -> e se le ha, DOVE sta la seconda?
+//          La scheda in lettura le usa insieme (`if (_schedaDueFoto(f))` a monte), il riquadro
+//          della form pure, il titolo pure. **La card della griglia consultava solo la seconda**:
+//          per un prodotto extra serie rispondeva "sul record" senza che nessuno avesse chiesto se
+//          il retro esistesse, e con `haRetro` spento la card mostrava lo stesso il segnaposto.
+//
+//          ⚠️ Non era una copia divergente: era **meta' della regola**. E' la terza volta in poche
+//          release (v6.147 il titolo in creazione, v6.152 la colonna della tabella): una regola
+//          giusta applicata in un posto e non nell'altro. La ricerca che le trova non e' "dove sta
+//          questa funzione" ma **"quali sono tutti gli stati / le viste in cui questo oggetto si
+//          mostra?"** — qui erano griglia, scheda in lettura, form e titolo.
+//          Controllati tutti i punti che chiamano `_secondaFacciaSulRecord`: gli altri quattro sono
+//          gia' a valle di `_schedaDueFoto`, quindi era l'unico scoperto.
+// ------------------------------------------------------------
+// v6.153 - DENTRO UN BOX, "INDIETRO" TORNA ALL'INVENTARIO (Franco: "come mai dalla form Cartoncini
+//          vedo il tasto Sezioni? se lo premo finisco nella serie Extra serie"). Modificato app.js
+//          e index.html (solo la versione).
+//
+//          LE SEZIONI DI "EXTRA SERIE" SONO UN PIANO CHE NON SI E' MAI ATTRAVERSATO. Chi entra da
+//          un box ci arriva per un'altra strada, e mandarlo li' non e' tornare indietro: e'
+//          portarlo in un posto nuovo, per giunta uno che gli mostra il CONTENITORE invece del suo
+//          box. Il tasto indietro deve dire dove si torna, e tornarci.
+//
+//          E' la stessa idea del `_sezioneApertaDaProdotto` della v6.073 — "ricordare la
+//          provenienza invece di darla per scontata" — che pero' copriva solo l'arrivo dall'hub di
+//          un PRODOTTO. I box dei tipi sono nati dopo e non erano stati collegati: un meccanismo
+//          giusto che non e' stato esteso al caso nuovo, che e' la stessa forma di quasi tutti i
+//          difetti chiusi in questi due giorni.
+//
+//          L'ETICHETTA CAMBIA CON LA DESTINAZIONE ("Inventario" invece di "Sezioni"), e con essa
+//          il `data-i18n`: un testo scritto a mano su un elemento tradotto tornerebbe "Sezioni"
+//          al primo cambio di lingua, e sarebbe un pulsante che mente in una lingua sola.
+//          Tornando, il taglio dell'Inventario si rimette su "Prodotti": e' da li' che si veniva.
+// ------------------------------------------------------------
+// v6.152 - 🔴 LA v6.151 AVEVA ROTTO IL TASTO "VISTA TABELLARE" IN TUTTO IL SITO. Piu' la colonna
+//          "Figurina di partenza" tolta dai prodotti extra serie (Franco). Modificato app.js e
+//          index.html (solo la versione).
+//
+//          IL GUASTO, e va scritto per esteso perche' la lezione e' nuova. La v6.151 metteva
+//          `const _cExtra = allItems.some(...)` SOPRA la riga che dichiara `allItems`. Su `const`
+//          non e' un dettaglio di stile: e' una **temporal dead zone**, cioe' un ReferenceError al
+//          primo click. Il tasto non funzionava piu' da nessuna parte — figurine, retro, tutto —
+//          e la preview era gia' stata consegnata.
+//          ⚠️ `node --check` non poteva vederlo, ed e' la TERZA volta in due giorni sulla stessa
+//          famiglia: la v6.117 (variabili mai dichiarate), la v6.140 (`allFigs` in una funzione
+//          dove non esiste) e questa. Le prime due erano "non dichiarata"; questa era **dichiarata
+//          dopo**. Il controllo che le prende e' lo stesso, con una parola in piu':
+//          **per ogni variabile usata, la dichiarazione esiste E VIENE PRIMA?**
+//          Passato su 13 funzioni e 253 dichiarazioni: nessun altro caso.
+//          📌 Il controllo sbaglia in eccesso in tre modi prevedibili — commenti, stringhe, chiavi
+//          di oggetto e parametri di arrow function — e va bene cosi': un controllo che sbaglia in
+//          eccesso si scopre in dieci secondi, uno che sbaglia in difetto non si scopre mai.
+//
+//          LA COLONNA "FIGURINA DI PARTENZA" era gated dal solo `isAdmin`, quindi compariva anche
+//          sui Cartoncini, che non discendono da niente (la v6.146 aveva tolto le quattro caselle
+//          dalla scheda proprio per questo, e la tabella era rimasta indietro: la stessa asimmetria
+//          fra scheda e tabella gia' chiusa dalla v6.133 e dalla v6.143).
+//          Sparisce solo se sono TUTTI extra serie; con righe miste la colonna resta e le celle
+//          degli extra serie restano vuote — toglierla in presenza di righe normali nasconderebbe
+//          un dato vero.
+//          ⚠️ CORREZIONE SCRITTA IL GIORNO STESSO: qui c'era "l'intestazione N. diventa Ordinamento
+//          quando la tabella e' tutta di prodotti extra serie". **NON ERA VERO.** La sostituzione
+//          non aveva trovato il bersaglio e la riga era rimasta com'era; io l'avevo raccontata come
+//          fatta perche' non ho verificato l'esito del `replace`. Se ne e' accorto Franco ("il
+//          campo N. nei cartoncini non ha senso, ma e' pubblicato"). Nella v6.155 quella colonna
+//          non viene piu' mostrata affatto.
+//          📌 La regola che ne esce, e vale per tutte le modifiche fatte con uno script: **una
+//          sostituzione che non trova nulla non e' un errore, e' un silenzio.** Ogni `replace` va
+//          seguito da un controllo che il testo sia davvero cambiato — come si fa gia' con
+//          l'assert sul numero di occorrenze prima di scrivere.
+// ------------------------------------------------------------
+// v6.151 - TAGLIA E CATEGORIA IN VISTA TABELLARE, ed ELIMINA GRIGIATO (Franco). Modificato app.js
+//          e index.html (solo la versione).
+//
+//          1. LE DUE COLONNE. Erano legate una ai RETRO (Categoria) e l'altra al flag `hasSizes`
+//             della serie (Taglia), quindi su Extra serie non comparivano. Ora si aprono anche
+//             quando fra gli oggetti visibili c'e' almeno un prodotto extra serie: la domanda non
+//             e' "in che sezione sono" ma "questi oggetti quel campo ce l'hanno?".
+//             La Categoria porta con se' i suggerimenti, UNO PER TIPO: in tabella le righe possono
+//             appartenere a tipi diversi (Extra serie aperta senza filtro), e un elenco unico
+//             proporrebbe a un Cartoncino le categorie dei Poster.
+//
+//          2. ⚠️ I TRE VALORI DELLA TAGLIA ORA STANNO IN UN POSTO SOLO (`TAGLIE_EXTRA_SERIE` +
+//             `_selectTagliaHTML`). La v6.148 li aveva scritti nella scheda; riscriverli in tabella
+//             avrebbe prodotto due elenchi destinati a divergere — che in questo file e' il
+//             racconto della v6.133 e della v6.143, cioe' i due difetti chiusi oggi.
+//             La difesa sul valore fuori elenco (diventa un'opzione sua, marcata) viaggia con la
+//             funzione, quindi vale in tutti e due i punti senza essere scritta due volte.
+//
+//          3. ELIMINA GRIGIATO finche' il tipo contiene prodotti. La v6.149 lasciava premere e
+//             spiegava nella conferma che gli oggetti sarebbero rimasti senza box: **una
+//             spiegazione dopo il clic e' un avviso, un pulsante spento e' una regola**. La regola
+//             c'e', quindi si dice prima. Il motivo sta nel `title` — un pulsante spento senza
+//             spiegazione e' un vicolo cieco — e il rifiuto e' ripetuto nel punto in cui si
+//             SCRIVE, perche' il pulsante puo' essere stato disegnato prima che qualcuno
+//             aggiungesse un oggetto (stessa forma della v6.143/B).
+// ------------------------------------------------------------
+// v6.150 - LA CATEGORIA DI UN PRODOTTO EXTRA SERIE PROPONE I VALORI GIA' USATI (Franco).
+//          Modificato app.js e index.html (solo la versione). Un `<datalist>`.
+//
+//          NON e' un elenco chiuso: resta testo libero con suggerimenti, quindi un valore nuovo si
+//          scrive e basta. E' la stessa distinzione applicata ai tipi di prodotto il 14 agosto —
+//          il campo e' un'ETICHETTA, non un comportamento, quindi non si guadagna niente a
+//          chiuderlo e si perde la possibilita' di aggiungerne uno senza una release. E' anche lo
+//          stesso meccanismo che la v6.133 usa per la figurina di partenza.
+//
+//          I suggerimenti vengono dal MEDESIMO tipo di prodotto, non da tutti: proporre a un
+//          Cartoncino le categorie dei Poster sarebbe un elenco che cresce e non aiuta.
+//
+//          📌 In questa conversazione Franco ha anche segnalato che mancava il tasto CLONA sui
+//          prodotti extra serie, e poco dopo: "scusa ho visto ora che c'e'". Non e' stato scritto
+//          niente. Vale la pena registrarlo perche' e' la terza volta in due giorni che un lavoro
+//          risultava da fare ed era gia' nel codice (§12.1, F-ter, il campo Nome della v6.038):
+//          **prima di scrivere, guardare.** Qui e' costato un grep.
+// ------------------------------------------------------------
+// v6.149 - IL RETRO E' UNA PROPRIETA' DEL TIPO, e i tipi si modificano (Franco). Modificato app.js
+//          e index.html.
+//
+//          1. `haRetro` SUL TIPO DI PRODOTTO. La v6.148 aveva deciso "i prodotti extra serie non
+//             hanno retro" per tutti: era vero per i Cartoncini e non e' una regola. Franco:
+//             "mancherebbe un campo - stile serie - che dice se quel tipo di prodotto ha il retro".
+//             ⚠️ POLARITA' OPPOSTA a `noRetro` delle serie, ed e' deliberato: li' il flag e'
+//             l'eccezione su un insieme che il retro normalmente ce l'ha, qui il caso normale e'
+//             non averlo. Spento di default -> i tipi gia' creati restano come sono, senza
+//             migrazione e senza che nessuno debba ripassarli.
+//             La riga vive in `_schedaDueFoto`, che e' gia' l'unica fonte di "questo oggetto ha due
+//             facce?" — la leggono scheda, `detail-solo-foto`, i riquadri della form e il controllo
+//             "Fronte senza retro" della pagina Errori.
+//
+//          2. LA FORM DEL TIPO CREA **E** MODIFICA, piu' l'eliminazione. Nasce da un vicolo cieco
+//             che avevo creato io: la v6.148 ha consegnato il campo "nome al singolare" mentre
+//             "Cartoncini" esisteva gia' e non c'era modo di riaprirlo. **Un campo irraggiungibile
+//             e' peggio di un campo che manca**: sembra che si possa fare, e non si puo'.
+//             Una form sola per le due cose (`tipo-prodotto-id` vuoto = crea): una gemella sarebbe
+//             la copia che il §12.1 ha passato otto release a smontare.
+//             ⚠️ Il controllo sugli omonimi ora SALTA SE STESSO, se no salvare un tipo senza
+//             cambiargli nome verrebbe rifiutato per omonimia con se' stesso.
+//             ⚠️ In modifica si riscrive `{ ...tipo, campi }` e non un oggetto nuovo: un campo
+//             aggiunto in futuro non deve sparire per mano di un salvataggio scritto oggi.
+//
+//          3. L'ELIMINAZIONE NOMINA QUANTI OGGETTI restano dentro (§14, punto 2: "sei sicuro?"
+//             senza un numero non e' una domanda, e' un ostacolo), e **non cancella gli oggetti**:
+//             restano in "Extra serie" e si raggiungono dalla serie. Cancellare dei dati per aver
+//             tolto la scatola che li mostrava sarebbe un'altra operazione, non questa.
+//
+//          Sulla card di un tipo ci sono ora DUE comandi: la matita della FOTO (v6.145, a destra) e
+//          l'ingranaggio del NOME (a sinistra). Due mestieri diversi distinti dalla posizione, che
+//          costa meno di un menu.
+// ------------------------------------------------------------
+// v6.148 - LA SCHEDA DI UN PRODOTTO EXTRA SERIE DICE SOLO CIO' CHE LO RIGUARDA (Franco).
+//          Modificato app.js e index.html. Cinque richieste della stessa conversazione.
+//
+//          1. NOME AL SINGOLARE. Il box si chiama "Cartoncini", la scheda di UNO deve dire
+//             "Aggiungi cartoncino". Nuovo campo nel tipo di prodotto: il singolare lo SCRIVE
+//             Franco, non lo ricava il codice — sarebbe una regola di grammatica italiana dentro
+//             il codice, che la v6.073 ha gia' rifiutato di scrivere. Vuoto -> si usa il plurale.
+//          2. CATEGORIA anche qui (era solo per i retro). La SOTTOcategoria no: e' stata chiesta
+//             la categoria, e un campo in piu' "gia' che ci siamo" e' un campo che nessuno riempie.
+//          3. TAGLIA a tendina: A4, A5, Altro. Il campo salvato resta `size`, lo stesso delle serie
+//             con le taglie: un secondo campo con lo stesso significato sarebbe la solita copia.
+//             ⚠️ Un valore fuori dai tre (dato vecchio) diventa un'opzione sua, selezionata e
+//             marcata: un `<select>` a cui assegni un valore che non ha fra le opzioni resta VUOTO
+//             e il salvataggio dopo scrive quel vuoto — il guasto trovato scrivendo la v6.102.
+//          4. UNA FACCIA SOLA ("i cartoncini hanno solo fronte"). La riga sta in `_schedaDueFoto`,
+//             che e' gia' l'unica fonte di "questo oggetto ha due facce?": la leggono la scheda, la
+//             classe `detail-solo-foto`, i riquadri della form e il controllo "Fronte senza retro"
+//             della pagina Errori. Spegnendola li' si spengono tutti insieme.
+//          5. LA RIGA "SERIE" NON SI MOSTRA. E' sempre "Extra serie": una riga che dice sempre la
+//             stessa cosa non informa, occupa spazio e insegna a saltare le righe.
+//
+//          ⚠️ OGNI PUNTO E' STATO FATTO IN DUE POSTI, la form E la vista in lettura, che hanno gate
+//          separati. Farne uno solo avrebbe prodotto una scheda che cambia campi passando da lettura
+//          a modifica — ed e' esattamente l'errore che la v6.147 ha appena corretto sul titolo, un
+//          messaggio prima in questa stessa conversazione.
+// ------------------------------------------------------------
+// v6.147 - ANCHE IL TITOLO IN CREAZIONE DICE IL TIPO DI PRODOTTO (Franco: "io leggo ancora
+//          'Aggiungi oggetto'"). Modificato app.js e index.html (solo la versione). Una riga.
+//
+//          ⚠️ LA v6.146 AVEVA CAMBIATO UN TITOLO SOLO. `_titoloSchedaHTML` serve la scheda in
+//          lettura e in modifica; la CREAZIONE ha un ramo suo, scritto nella v6.104 apposta (su una
+//          bozza nome e Nome completo non ci sono ancora, quindi il titolo direbbe il tipo e poi il
+//          vuoto). Quel ramo componeva il titolo da `getSectionLabelSingular` ed era rimasto
+//          indietro: due punti che scrivono lo stesso titolo e non concordano.
+//          E' il difetto che questo file ha registrato piu' volte di ogni altro — la v6.087 lo
+//          chiuse proprio fra vista e modifica di QUESTO titolo, e oggi si e' ripresentato fra
+//          modifica e creazione. Ora leggono tutti e due `_titoloTipoScheda`.
+//
+//          📌 LA LEZIONE, ed e' pratica: quando si cambia un testo che compare in piu' stati dello
+//          stesso oggetto, non basta cercare la funzione che lo compone — vanno cercati gli STATI.
+//          Qui erano tre (lettura, modifica, creazione) e la ricerca ne aveva trovati due.
+//
+//          NOTA SUL NOME: il titolo dice il nome del tipo cosi' com'e' scritto, quindi "Aggiungi
+//          Cartoncini" e non "Aggiungi cartoncino". Derivare il singolare dal plurale vorrebbe dire
+//          una regola di grammatica italiana dentro il codice, ed e' precisamente cio' che la
+//          v6.073 ha rifiutato di fare per i titoli dei prodotti ("l'articolo cambia col genere e
+//          col numero, quindi si scrive, non si compone"). Se serve il singolare, e' un secondo
+//          campo nella form del tipo — deciso da Franco, non indovinato qui.
+// ------------------------------------------------------------
+// v6.146 - LA SCHEDA DI UN PRODOTTO EXTRA SERIE NON PARLA DI VARIAZIONI (Franco). Modificato
+//          app.js e index.html (solo la versione).
+//
+//          VIA QUATTRO CASELLE: Variazione ufficiale, Variazione non ufficiale, Change, Errore di
+//          stampa. Descrivono il rapporto di un oggetto con la figurina da cui discende, e un
+//          prodotto extra serie non discende da niente. Non e' solo rumore: una spuntata per
+//          sbaglio lo farebbe sparire dietro un filtro di tipo, e nessuno saprebbe perche'.
+//
+//          IL TITOLO DICE IL TIPO DI PRODOTTO, non "Altro oggetto". Per questi oggetti la sezione
+//          `extras` e' un dettaglio di COME sono immagazzinati, non la cosa che si sta guardando:
+//          chi apre un Cartoncino deve leggere CARTONCINI.
+//
+//          IL RICONOSCIMENTO e' il campo `tipoProdotto` (`_eProdottoExtraSerie`), quindi vale sia
+//          creando sia riaprendo, e non dipende da dove si e' passati per arrivarci.
+//
+//          ⚠️ Se il tipo fosse stato cancellato, il titolo torna alla sezione invece di restare
+//          vuoto: un id orfano non deve produrre una scheda senza nome. Provato al banco insieme
+//          agli altri cinque casi.
+//
+//          NON SERVE NASCONDERE ANCHE "Figurina di partenza": quel gruppo si vede solo quando una
+//          delle quattro caselle e' spuntata, e senza caselle `showBase` resta falso. Le guardie
+//          erano gia' giuste — `if (!group) return` e le letture con `?.` — quindi togliere gli
+//          elementi non rompe `toggleFeBaseFigurineGroup`. Verificato leggendola, non dedotto.
+// ------------------------------------------------------------
+// v6.145 - LE FOTO DEI BOX LE CAMBIA L'ADMIN, con una matitina sul box (Franco). Modificato
+//          app.js e index.html (solo la versione).
+//
+//          COM'ERA, e spiega perche' la richiesta vale piu' di una comodita': le foto dei box
+//          stavano DENTRO IL CODICE. `SECTION_IMAGES` e' ~276 KB di base64 (Figurine, Album, Altri
+//          oggetti); Retro e Bustine hanno la loro nel markup dell'index; e `_fotoProdotto()` non
+//          aveva una foto propria — CLONAVA IL DOM del box della sezione. Cambiarne una voleva dire
+//          una release, e quelle immagini viaggiano dentro un file da 2,4 MB che il browser
+//          riscarica ad ogni versione.
+//
+//          ORA: `settings/immagini_box`, una voce per box -> URL Cloudinary, la stessa strada di
+//          tutte le altre foto del sito. Le chiavi sono quelle che il sito gia' usa (le cinque
+//          sezioni, e l'id di un tipo di prodotto): nessun elenco nuovo da tenere allineato.
+//          Chi non ha una voce continua a usare la foto di oggi: nessuna migrazione, e finche' non
+//          si tocca niente non cambia niente.
+//
+//          ⚠️ `SECTION_IMAGES` RESTA, ed e' deliberato: e' il ripiego. Si potra' cancellare —
+//          recuperando i 276 KB — solo quando tutti e cinque avranno una foto scelta, e sara' una
+//          release a se' con una misura davanti. Toglierla adesso lascerebbe cinque buchi in attesa
+//          che qualcuno li riempia.
+//
+//          DOVE STA LA MATITA: sulle card dei cinque prodotti, sulle card dei tipi, e sui box
+//          sezione dentro l'hub di una serie. Quelle ultime hanno il markup nell'index e non si
+//          generano in JS, quindi foto e matita si applicano al DOM gia' disegnato — in
+//          `_applicaFotoSezioni`, che ha preso il posto del ciclo che sapeva solo di
+//          `SECTION_IMAGES`: due regole per la stessa foto sarebbero divergite alla prima modifica.
+//          `event.stopPropagation()` sulla matita non e' un dettaglio: sta DENTRO una card che ha
+//          il suo `onclick`, e senza, cambiare la foto aprirebbe anche il box.
+//
+//          SI SCRIVE PRIMA SU FIRESTORE E POI SI AGGIORNA LA CACHE. Se la scrittura fallisce, la
+//          foto nuova non deve restare a schermo dando l'impressione di essere salvata: e' la
+//          regola della v6.101 (wi-fi staccato, cambio foto, salva -> si rifiuta e lo dice).
+//
+//          🧪 PROVATA AL BANCO con le funzioni estratte dal file: la matita compare solo all'admin,
+//          porta lo `stopPropagation`, la foto scelta vince e quella mai scelta torna al ripiego,
+//          e il nome di un tipo finisce scappato nell'HTML.
+//          ⚠️ Un KO del banco era un FALSO POSITIVO: la `esc` finta del banco copriva meno caratteri
+//          di quella vera. Un test double piu' debole dell'originale produce un fallimento che non
+//          vuol dire niente — e si riconosce solo andando a leggere l'originale.
+// ------------------------------------------------------------
+// v6.144 - I TIPI DI PRODOTTO SENZA SERIE, tappa 1 (Franco). Modificato app.js e index.html.
+//
+//          LA DOMANDA: "come posso censire oggetti (figurine, retro, album...) che non hanno una
+//          serie di riferimento, ma si applicano al concetto Sgorbions in generale?". Il primo si
+//          chiama "Cartoncini".
+//
+//          ⚠️ LA DECISIONE CHE REGGE TUTTO IL RESTO, e vale piu' del codice: un box aggiunto
+//          dall'admin e' un CONTENITORE, non una SEZIONE. `section` sembra un'etichetta ed e' un
+//          COMPORTAMENTO — `_campiEreditatiDaBase`, il ramo retro di `computeFullName`,
+//          Categoria/Sottocategoria mostrate solo ai retro, `_mostraCampoNumero`, l'aspect eBay
+//          `Tipo` mappato dalla sezione, etichette e filtri. Una SESTA sezione cadrebbe in ogni
+//          `else` di quei punti senza che nessuno l'abbia scelto: EREDITEREBBE PER SILENZIO. E' la
+//          forma esatta dei difetti chiusi dalle v6.129, v6.133 e v6.142.
+//          Quindi i cinque di `PRODOTTI_INVENTARIO` restano CODICE, i tipi nuovi sono DATO.
+//
+//          COM'E' FATTO. Un documento solo, `settings/tipi_prodotto`, con `{ id, nome, ordine }`.
+//          Gli oggetti di un tipo sono item NORMALI nella serie "Extra serie", sezione `extras`
+//          (Franco: "si comportano come gli Altri oggetti"), piu' un campo `tipoProdotto`. Da li'
+//          arriva gratis tutto: scheda, vista tabellare, filtri, ricerca globale, punteggio,
+//          wishlist, blocco eBay, Nome completo, propagazione padre-figlio della v6.143.
+//
+//          NON C'E' UNA FORM NUOVA PER I PRODOTTI, e non e' un risparmio: la scheda e' l'unica form
+//          del sito dal §12.1, e una seconda form gemella e' precisamente cio' che quel paragrafo ha
+//          passato otto release a smontare. Il pulsante nuovo crea il BOX (due campi); quello che ci
+//          finisce dentro si crea dalla scheda di sempre, gia' impostata.
+//
+//          IL PULSANTE segue il TAGLIO, non l'utente: nel taglio Serie "+ Aggiungi serie", nel
+//          taglio Prodotti "+ Aggiungi tipo di prodotto". Stessa posizione, mai insieme. Sta in
+//          `_aggiornaBivioInventario` e non in `updateNavUser`, se no sarebbero due punti che
+//          accendono lo stesso pulsante con due regole diverse — il difetto della v6.139.
+//
+//          IL FILTRO `_tipoProdottoCorrente` si azzera dentro `openSeriesDetail`, cioe' nel punto in
+//          cui si entra in QUALUNQUE griglia di oggetti, e chi entra in un box lo riaccende subito
+//          dopo. Prima si spegne tutto, poi si accende quello che serve: e' l'unico ordine in cui un
+//          filtro non puo' restare acceso e invisibile (v6.095, v6.134, v6.140).
+//
+//          📌 TENUTO A MENTE E NON COSTRUITO (Franco): questi prodotti potrebbero un domani essere
+//          messi in relazione con gli ALBUM. Non c'e' nessun campo che lo prepari, ed e' voluto — un
+//          campo "per quando servira'" e' un campo che nessuno riempie e che intanto racconta una
+//          decisione mai presa.
+//
+//          RESTA FUORI DA QUESTA TAPPA: la foto del box, l'ordinamento a mano dei box, la modifica e
+//          la cancellazione di un tipo, e nascondere "Extra serie" dal taglio Serie (Franco: "per
+//          ora lasciamo la serie li'").
+// ------------------------------------------------------------
 // v6.143 - LA PROPAGAZIONE PADRE-FIGLIO CHIUSA DA TUTTE E DUE LE PARTI (Franco). Modificato app.js
 //          e index.html (solo la versione). Due pezzi, e il secondo e' saltato fuori rispondendo a
 //          una domanda di Franco: "tutti i campi propagati da un padre sono read only sui figli?
@@ -13446,7 +13895,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.143';
+const JS_VERSION = 'v6.159';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16441,7 +16890,11 @@ function cmpPerCreazione(sezione) {
 }
 
 function cmpVistaTabellare(sezione) {
+  // v6.155 - stesso ordinamento della griglia dentro un box di tipo: due viste degli stessi oggetti
+  // che si ordinano diversamente sarebbero due verita' sulla stessa cosa.
+  const _cmpTipo = _tipoProdottoCorrente ? _comparatoreTipo(_tipoProdottoCorrente) : null;
   return (a, b) => {
+    if (_cmpTipo) return _cmpTipo(a, b);
     if (sezione === 'retros') {
       const catCmp = (a.category||'').localeCompare(b.category||'', 'it');
       if (catCmp !== 0) return catCmp;
@@ -17703,6 +18156,16 @@ function _aggiornaBivioInventario() {
     sub.setAttribute('data-i18n', chiave);
     sub.textContent = t(chiave);
   }
+  // v6.144 - IL PULSANTE CHE AGGIUNGE SEGUE IL TAGLIO. Nel taglio Serie si aggiunge una serie, nel
+  // taglio Prodotti un tipo di prodotto: stessa posizione, mai insieme. Sta qui e non in
+  // `updateNavUser` perche' e' il TAGLIO a deciderlo, e il taglio cambia senza che l'utente cambi:
+  // lasciarlo la' avrebbe voluto dire due punti che accendono lo stesso pulsante con due regole
+  // diverse, ed e' il difetto chiuso ieri con la v6.139.
+  const _admin = !!currentUser?.isAdmin;
+  const _bSerie = document.getElementById('admin-add-series-btn');
+  const _bTipo = document.getElementById('admin-add-tipo-prodotto-btn');
+  if (_bSerie) _bSerie.style.display = (_admin && _taglioInventario !== 'prodotti') ? '' : 'none';
+  if (_bTipo)  _bTipo.style.display  = (_admin && _taglioInventario === 'prodotti') ? '' : 'none';
 }
 
 // ---- PRIMO LIVELLO DEL TAGLIO PRODOTTI ----
@@ -17719,6 +18182,17 @@ function _aggiornaBivioInventario() {
 // #section-selector e' markup statico dell'index: c'e' sempre, anche quando la sua pagina e'
 // nascosta, quindi leggerlo non dipende da dove ci si trova.
 function _fotoProdotto(sec) {
+  // v6.145 - se l'admin ha scelto una foto per questo box, e' quella e non si clona niente: il
+  // clone del DOM esisteva per non tenere due copie della stessa immagine, ma con una foto propria
+  // le copie sono gia' una sola. In piu' non dipende piu' dal fatto che il selettore delle sezioni
+  // sia in pagina, che era il punto fragile di questa funzione.
+  // v6.159 (Franco) - stessa misura delle foto dei box SERIE. Non e' il contenitore a essere
+  // diverso — e' lo stesso `.card-img-placeholder` — ma come la foto ci sta dentro: le serie usano
+  // `contain` con un padding (la foto si vede tutta, un po' piu' piccola), i prodotti usavano
+  // `cover`, che riempie e taglia facendola sembrare piu' grande. Ora sono la stessa cosa.
+  const _url = _fotoBoxUrl(sec);
+  if (_url) return '<img src="' + cloudinaryUrl(_url, 'w_400,h_400,c_fit,q_auto,f_auto') +
+    '" alt="" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;padding:8px;">';
   const cards = Array.from(document.querySelectorAll('#section-selector .section-choice-card'));
   const card = cards.find(c => (c.getAttribute('onclick') || '').indexOf("'" + sec + "'") >= 0);
   const blocco = card && card.firstElementChild;
@@ -17728,11 +18202,15 @@ function _fotoProdotto(sec) {
     // .card-img-placeholder, che l'altezza ce l'ha gia'. Due contesti, due modi di misurare.
     c.style.position = 'absolute'; c.style.top = '0'; c.style.left = '0';
     c.style.width = '100%'; c.style.height = '100%'; c.style.aspectRatio = 'auto';
+    // v6.159 - anche la foto clonata si comporta come quella di una serie: la card della sezione la
+    // mostra a pieno riquadro, qui deve stare nella stessa misura delle altre card dell'Inventario.
+    const _im = c.querySelector('img');
+    if (_im) { _im.style.objectFit = 'contain'; _im.style.padding = '8px'; }
     return c.outerHTML;
   }
   // Ripiego, se un domani quel markup cambiasse nome: meglio l'icona di un buco.
   return SECTION_IMAGES[sec]
-    ? '<img src="' + SECTION_IMAGES[sec] + '" alt="" style="width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;">'
+    ? '<img src="' + SECTION_IMAGES[sec] + '" alt="" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;padding:8px;">'
     : SECTION_ICONS[sec];
 }
 
@@ -17810,10 +18288,11 @@ function _righeTipologie(oggetti, modo) {
 function prodottoCardHTML(sec, tutti, serieOrdinate) {
   const miei = _diTipo(tutti, sec);
   const basi = miei.filter(_eBase);
-  const serieConRoba = serieOrdinate.filter(s => miei.some(f => f.seriesId === s.id)).length;
-  const desc = currentLang === 'it'
-    ? basi.length + ' base, in ' + serieConRoba + ' serie'
-    : basi.length + ' base, in ' + serieConRoba + (serieConRoba === 1 ? ' series' : ' series');
+  // v6.156 - `serieConRoba` e' sparita con la scritta che la usava: un conto calcolato per una riga che non c'e' piu'.
+  // v6.156 (Franco) - resta il solo riepilogo: il numero delle serie se ne va. Sotto c'e' gia'
+  // l'elenco delle serie con i loro numeri, quindi dirne il conto qui era ripetere in cifre una
+  // cosa che si legge per esteso due righe piu' sotto.
+  const desc = basi.length + ' base';
   // v6.073 (Franco) — le serie che di quel prodotto non hanno NIENTE non si mostrano affatto.
   // Uno zero occupa una riga per dire che non c'e' niente da dire: l'elenco cambia lunghezza da
   // una card all'altra, ma dice solo cose vere.
@@ -17830,12 +18309,17 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
     '</span>';
   }).join('');
   const foto = _fotoProdotto(sec);
-  return '<div class="card" onclick="openProdottoDetail(\'' + sec + '\')">' +
+  return '<div class="card" style="position:relative;" onclick="openProdottoDetail(\'' + sec + '\')">' +
+    _matitaBox(sec) +   // v6.145
     '<div class="card-img-placeholder">' + foto + '</div>' +
     '<div class="card-body">' +
+      // v6.157 (Franco) - IL TOTALE VA SOTTO L'ELENCO, non sopra. Sopra era una premessa; sotto
+      // e' la riga che tira le somme, che e' il mestiere che ha. La v6.156 l'aveva solo ripulito
+      // dal conto delle serie e lasciato dov'era: avevo letto "mettila sola" dove c'era scritto
+      // "mettila sotto".
       '<div class="card-title" style="margin-bottom:0.5rem;">' + esc(getSectionLabel(sec)) + '</div>' +
-      '<div class="card-desc">' + esc(desc) + '</div>' +
-      '<div style="display:flex;flex-direction:column;gap:0.35rem;margin-top:1rem;padding-top:1rem;border-top:1px solid rgba(255,255,255,0.06);">' + righe + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:0.35rem;padding-top:0.2rem;">' + righe + '</div>' +
+      '<div class="card-desc" style="margin-top:0.45rem;padding-top:0.45rem;border-top:1px solid rgba(255,255,255,0.06);">' + esc(desc) + '</div>' +
     '</div>' +
   '</div>';
 }
@@ -17852,7 +18336,422 @@ function renderCatalogProdotti(grid) {
   if (grid && _isMobileViewport()) grid.style.gridTemplateColumns = 'repeat(' + HUB_COLONNE_MOBILE + ', 1fr)';
   const tutti = getData('figurines', []);
   const serieOrdinate = getData('series', []).slice().sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
-  grid.innerHTML = PRODOTTI_INVENTARIO.map(sec => prodottoCardHTML(sec, tutti, serieOrdinate)).join('');
+  // v6.144 - i cinque di sempre, poi i tipi censiti dall'admin. In coda e non mescolati: i primi
+  // cinque sono TAGLI sugli item delle serie, questi sono CONTENITORI di oggetti senza serie, e
+  // ordinarli insieme farebbe sembrare che siano la stessa cosa.
+  grid.innerHTML = PRODOTTI_INVENTARIO.map(sec => prodottoCardHTML(sec, tutti, serieOrdinate)).join('')
+    + _tipiProdotto().map(t => tipoProdottoCardHTML(t, tutti)).join('');
+}
+
+// ============================================================
+//  v6.144 (Franco) - I TIPI DI PRODOTTO SENZA SERIE
+// ============================================================
+// LA DOMANDA DI FRANCO: come si censiscono oggetti Sgorbions che NON hanno una serie di
+// riferimento, ma valgono per il concetto in generale? Il primo si chiama "Cartoncini".
+//
+// ⚠️ LA DECISIONE CHE REGGE TUTTO IL RESTO: un tipo aggiunto dall'admin e' un CONTENITORE, non una
+// SEZIONE. `section` sembra un'etichetta ed e' un COMPORTAMENTO, scritto in una dozzina di punti —
+// `_campiEreditatiDaBase` (quattro campi per i retro, uno per tutti gli altri), il ramo dedicato di
+// `computeFullName`, Categoria/Sottocategoria mostrate solo ai retro, `_mostraCampoNumero`,
+// l'aspect eBay `Tipo` mappato dalla sezione, le etichette, i filtri.
+// Una SESTA sezione cadrebbe in ogni `else` di quei punti senza che nessuno l'abbia deciso:
+// erediterebbe per silenzio comportamenti scritti per altri cinque. E' la stessa forma dei difetti
+// chiusi dalle v6.129/133/142 — codice che da' per scontato un presupposto che non vale piu'.
+// Quindi: i cinque di `PRODOTTI_INVENTARIO` restano codice, i tipi nuovi sono DATO.
+//
+// COME SONO FATTI: gli oggetti di un tipo sono item NORMALI, nella serie "Extra serie", sezione
+// `extras` (decisione di Franco: "si comportano come gli Altri oggetti"), piu' un campo
+// `tipoProdotto` che dice a quale box appartengono. Da li' viene gratis tutto — la scheda, la vista
+// tabellare, i filtri, la ricerca globale, il punteggio, la wishlist, il blocco eBay, il Nome
+// completo, la propagazione padre-figlio della v6.143.
+//
+// 📌 TENUTO A MENTE E NON COSTRUITO (Franco, 14 agosto): questi prodotti potrebbero un domani
+// essere messi in relazione con gli ALBUM. Non c'e' niente nel codice che lo prepari, ed e' voluto:
+// un campo aggiunto "per quando servira'" e' un campo che nessuno riempie e che intanto racconta
+// una decisione mai presa.
+// ============================================================
+//  v6.145 (Franco) - LE FOTO DEI BOX LE CAMBIA L'ADMIN
+// ============================================================
+// Franco: "rendimi autonomo nel cambiare la foto di tutti i box del sito".
+//
+// COM'ERA, e spiega perche' la richiesta vale piu' di una comodita': le foto dei box stanno DENTRO
+// IL CODICE. `SECTION_IMAGES` e' una costante di ~276 KB di base64 con tre immagini (Figurine,
+// Album, Altri oggetti); Retro e Bustine hanno la loro nel markup dell'index; e `_fotoProdotto()`
+// non ha una foto propria — CLONA IL DOM del box della sezione per riusarne l'immagine. Cambiarne
+// una voleva dire una release, e quelle immagini viaggiano dentro un file da 2,4 MB che il browser
+// riscarica ad ogni versione.
+//
+// COM'E' ORA: un documento solo, `settings/immagini_box`, con una voce per box -> l'URL Cloudinary,
+// cioe' la stessa strada di TUTTE le altre foto del sito. Chi non ha una voce continua a usare la
+// foto di oggi: nessuna migrazione, e finche' non si tocca niente non cambia niente.
+//
+// ⚠️ `SECTION_IMAGES` NON viene tolta ora, ed e' deliberato: e' il ripiego. Si potra' cancellare —
+// recuperando i 276 KB — solo quando tutti e cinque i box avranno una foto scelta da Franco, e
+// sara' una release a se' con una misura davanti (quanto pesa `app.js` prima e dopo). Toglierla
+// adesso vorrebbe dire lasciare cinque buchi in attesa che qualcuno li riempia.
+//
+// LE CHIAVI sono quelle che il sito gia' usa: le cinque sezioni (`figurines`, `retros`, `bustine`,
+// `albums`, `extras`) e l'id di un tipo di prodotto (`tp_...`). Non un elenco nuovo da tenere
+// allineato a mano.
+async function getImmaginiBox() {
+  if (_cache.immaginiBox !== undefined) return _cache.immaginiBox;
+  try {
+    const docs = await fsGetAll('settings');
+    const found = docs.find(d => d.id === 'immagini_box');
+    _cache.immaginiBox = (found && typeof found.box === 'object' && found.box) ? found.box : {};
+  } catch (e) { _cache.immaginiBox = {}; }
+  return _cache.immaginiBox;
+}
+
+// Lettura sincrona per chi disegna, con la stessa regola di `_tipiProdotto`: se la cache non c'e'
+// ancora la carica e poi ridisegna, invece di far aspettare la prima pittura.
+function _immaginiBox() {
+  if (_cache.immaginiBox === undefined) {
+    getImmaginiBox().then(() => { try { _ridisegnaBox(); } catch (e) {} });
+    return {};
+  }
+  return _cache.immaginiBox;
+}
+function _fotoBoxUrl(chiave) { return _immaginiBox()[chiave] || ''; }
+
+// Ridisegna i punti in cui una foto di box si vede. Sono due e stanno in due pagine diverse, quindi
+// si chiamano tutti e due e ognuno si arrangia se non e' in pagina: cercare di indovinare dove ci
+// si trova vorrebbe dire una terza regola da tenere allineata alle prime due.
+function _ridisegnaBox() {
+  try { _applicaFotoSezioni(); } catch (e) {}
+  try { renderCatalog(); } catch (e) {}
+}
+
+// La matitina. `stopPropagation` non e' un dettaglio: la matita sta DENTRO la card, e la card ha il
+// suo `onclick` che porta da un'altra parte — senza, cambiare la foto aprirebbe anche il box.
+function _matitaBox(chiave) {
+  if (!currentUser?.isAdmin) return '';
+  return '<button type="button" title="Cambia la foto di questo box" ' +
+    'onclick="event.stopPropagation();cambiaFotoBox(\'' + chiave + '\')" ' +
+    'style="position:absolute;top:6px;right:6px;z-index:3;border:none;border-radius:999px;' +
+    'width:30px;height:30px;line-height:1;cursor:pointer;font-size:0.95rem;' +
+    'background:rgba(0,0,0,0.6);color:#fff;">&#9998;</button>';
+}
+
+let _boxFotoInCorso = null;
+
+// Una sola `<input type=file>` per tutte le matite: crearne una per box vorrebbe dire N elementi
+// nascosti che fanno la stessa cosa, e la prima modifica li farebbe divergere.
+function cambiaFotoBox(chiave) {
+  if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
+  _boxFotoInCorso = chiave;
+  let inp = document.getElementById('box-foto-input');
+  if (!inp) {
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.id = 'box-foto-input';
+    inp.style.display = 'none';
+    inp.addEventListener('change', _caricaFotoBox);
+    document.body.appendChild(inp);
+  }
+  inp.value = '';   // se no riscegliendo LO STESSO file l'evento `change` non parte
+  inp.click();
+}
+
+async function _caricaFotoBox(ev) {
+  const it = currentLang === 'it';
+  const file = ev.target.files && ev.target.files[0];
+  const chiave = _boxFotoInCorso;
+  if (!file || !chiave) return;
+  toast(it ? 'Carico la foto…' : 'Uploading…', 'info');
+  let url;
+  try {
+    url = await uploadToCloudinary(file);
+  } catch (e) {
+    console.error('_caricaFotoBox/upload', e);
+    toast(it ? '❌ Caricamento fallito — riprova' : '❌ Upload failed — retry', 'error');
+    return;
+  }
+  // Si scrive PRIMA su Firestore e solo dopo si aggiorna la cache: se la scrittura fallisce, la
+  // foto nuova non deve restare a schermo dando l'impressione di essere salvata. E' la stessa
+  // regola della v6.101 sul salvataggio con la rete staccata.
+  const box = { ..._immaginiBox(), [chiave]: url };
+  try {
+    await fsSave('settings', { id: 'immagini_box', box });
+  } catch (e) {
+    console.error('_caricaFotoBox/salva', e);
+    toast(it ? '❌ Salvataggio fallito: la foto non è stata cambiata' : '❌ Save failed: photo unchanged', 'error');
+    return;
+  }
+  _cache.immaginiBox = box;
+  _boxFotoInCorso = null;
+  _ridisegnaBox();
+  toast(it ? '✅ Foto del box aggiornata' : '✅ Box photo updated', 'success');
+}
+
+// Le foto dei box SEZIONE, dentro l'hub di una serie. Il markup di quelle card sta nell'index e non
+// si genera qui, quindi la foto e la matita si applicano al DOM gia' disegnato.
+function _applicaFotoSezioni() {
+  const sel = document.getElementById('section-selector');
+  if (!sel) return;
+  ['figurines', 'retros', 'albums', 'extras', 'bustine'].forEach(sec => {
+    const img = document.getElementById('sec-img-' + sec);
+    const url = _fotoBoxUrl(sec);
+    if (img && url) img.src = cloudinaryUrl(url, 'w_600,h_600,c_fit,q_auto,f_auto');
+    else if (img && SECTION_IMAGES[sec]) img.src = SECTION_IMAGES[sec];
+    // la matita: una sola per card, e si rimette solo se non c'e' gia'
+    const card = Array.from(sel.querySelectorAll('.section-choice-card'))
+      .find(c => (c.getAttribute('onclick') || '').indexOf("'" + sec + "'") >= 0);
+    if (!card) return;
+    const vecchia = card.querySelector('[data-matita-box]');
+    if (vecchia) vecchia.remove();
+    if (!currentUser?.isAdmin) return;
+    if (getComputedStyle(card).position === 'static') card.style.position = 'relative';
+    const holder = document.createElement('div');
+    holder.setAttribute('data-matita-box', sec);
+    holder.innerHTML = _matitaBox(sec);
+    const b = holder.firstElementChild;
+    if (b) card.appendChild(b);
+  });
+}
+
+const NOME_SERIE_SENZA_SERIE = 'Extra serie';
+
+// La serie che fa da contenitore. Si cerca per NOME e non per id: l'id non e' scritto da nessuna
+// parte e inchiodarlo qui vorrebbe dire avere una costante che nessuno puo' verificare leggendola.
+function _serieSenzaSerie() {
+  const n = NOME_SERIE_SENZA_SERIE.trim().toLowerCase();
+  return (getData('series', []) || []).find(s => (s.name || '').trim().toLowerCase() === n) || null;
+}
+
+// I tipi vivono in UN documento solo, `settings/tipi_prodotto`: sono pochi e cambiano di rado.
+// Una collezione a se' costerebbe una lettura in piu' ad ogni avvio per lo stesso risultato.
+async function getTipiProdotto() {
+  if (_cache.tipiProdotto !== undefined) return _cache.tipiProdotto;
+  try {
+    const docs = await fsGetAll('settings');
+    const found = docs.find(d => d.id === 'tipi_prodotto');
+    _cache.tipiProdotto = Array.isArray(found?.tipi) ? found.tipi : [];
+  } catch (e) { _cache.tipiProdotto = []; }
+  return _cache.tipiProdotto;
+}
+
+// Lettura sincrona per chi disegna. Se la cache non c'e' ancora torna un elenco vuoto E se la
+// carica, poi ridisegna: cosi' il primo giro mostra i cinque di sempre invece di aspettare la rete,
+// e i box compaiono da soli un istante dopo. Un elenco vuoto perche' "non e' ancora arrivato" e uno
+// vuoto perche' "non ce ne sono" si distinguono solo qui, ed e' per questo che il caricamento parte
+// da questa funzione e non da chi la chiama.
+function _tipiProdotto() {
+  if (_cache.tipiProdotto === undefined) {
+    getTipiProdotto().then(() => { try { renderCatalog(); } catch (e) {} });
+    return [];
+  }
+  return _cache.tipiProdotto.slice().sort((a, b) =>
+    (a.ordine ?? 9999) - (b.ordine ?? 9999) ||
+    (a.nome || '').localeCompare(b.nome || '', 'it', { numeric: true }));
+}
+
+async function _salvaTipiProdotto(tipi) {
+  _cache.tipiProdotto = tipi;
+  await fsSave('settings', { id: 'tipi_prodotto', tipi });
+}
+
+// Il box di un tipo nel primo livello dell'hub. Stessa forma delle card dei cinque prodotti, meno
+// l'elenco delle serie: un tipo senza serie non ha righe da mostrare li' dentro, e un riquadro
+// vuoto sotto una linea di separazione direbbe che manca qualcosa.
+function tipoProdottoCardHTML(t, tutti) {
+  const suoi = tutti.filter(f => (f.tipoProdotto || '') === t.id);
+  const quanti = suoi.filter(_eBase).length;
+  const desc = currentLang === 'it'
+    ? (quanti === 1 ? '1 oggetto' : quanti + ' oggetti')
+    : (quanti === 1 ? '1 item' : quanti + ' items');
+  const _url = _fotoBoxUrl(t.id);   // v6.145
+  const _foto = _url
+    ? '<img src="' + cloudinaryUrl(_url, 'w_400,h_400,c_fit,q_auto,f_auto') +
+      '" alt="" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;padding:8px;">'
+    : '<span style="font-size:3rem;">&#128230;</span>';
+  // v6.149 - due matite: quella della FOTO (v6.145, a destra) e quella del NOME, spostata a
+  // sinistra. Due mestieri diversi sullo stesso box, e distinguerli per posizione costa meno di
+  // un menu.
+  const _matitaNome = currentUser?.isAdmin
+    ? '<button type="button" title="Modifica questo tipo di prodotto" ' +
+      'onclick="event.stopPropagation();openAddTipoProdottoModal(\'' + t.id + '\')" ' +
+      'style="position:absolute;top:6px;right:42px;z-index:3;border:none;border-radius:999px;' +
+      'width:30px;height:30px;line-height:1;cursor:pointer;font-size:0.9rem;' +
+      'background:rgba(0,0,0,0.6);color:#fff;">&#9881;</button>'
+    : '';
+  return '<div class="card" style="position:relative;" onclick="openTipoProdotto(\'' + t.id + '\')">' +
+    _matitaBox(t.id) + _matitaNome +
+    '<div class="card-img-placeholder">' + _foto + '</div>' +
+    '<div class="card-body">' +
+      '<div class="card-title" style="margin-bottom:0.5rem;">' + esc(t.nome || '') + '</div>' +
+      '<div class="card-desc">' + esc(desc) + '</div>' +
+    '</div>' +
+  '</div>';
+}
+
+// Quale tipo si sta guardando. Vive accanto a `currentSeriesId`/`currentSection` perche' e' la
+// stessa cosa: dice cosa c'e' nella griglia. Torna a null uscendo, come tutti gli altri filtri —
+// un filtro acceso che non si vede svuota la griglia senza dire perche' (v6.095, v6.134, v6.140).
+let _tipoProdottoCorrente = null;
+
+// Entrando in un box non ci sono i box delle SERIE: ce n'e' una sola, e sarebbe un passaggio a
+// vuoto. Si va dritti alla vista degli oggetti, che e' quella di sempre — quindi arrivano gratis
+// ricerca, filtri, vista tabellare e il "+ Aggiungi".
+function openTipoProdotto(id) {
+  // `tipo` e non `t`: `t()` e' la funzione delle traduzioni, e ombreggiarla dentro una funzione
+  // significa che la prima riga tradotta che qualcuno aggiungera' qui dentro non funzionera', con
+  // un errore che parla di tutt'altro.
+  const tipo = _tipiProdotto().find(x => x.id === id);
+  if (!tipo) return;
+  const serie = _serieSenzaSerie();
+  if (!serie) {
+    // Senza il contenitore non si puo' entrare, e va detto con il nome esatto che manca: un
+    // "errore" generico qui manderebbe a cercare nel posto sbagliato.
+    toast((currentLang === 'it'
+      ? 'Manca la serie "' + NOME_SERIE_SENZA_SERIE + '", che fa da contenitore a questi prodotti.'
+      : 'The "' + NOME_SERIE_SENZA_SERIE + '" series is missing; it holds these products.'), 'error', null, 7000);
+    return;
+  }
+  const d = document.getElementById('prodotto-detail');
+  if (d) d.style.display = 'none';
+  openSeriesDetail(serie.id);
+  _tipoProdottoCorrente = id;   // DOPO: `openSeriesDetail` azzera, e deve azzerare
+  openSeriesSection('extras');  // e questa ridisegna la griglia, quindi il filtro e' gia' acceso
+  const titolo = document.getElementById('items-section-title');
+  if (titolo) titolo.textContent = tipo.nome || titolo.textContent;
+}
+
+// ---- LA FORM DEL TIPO: due campi, e non e' una form di prodotti ----
+// Il PRODOTTO si crea dalla scheda, che dal §12.1 e' l'unica form del sito. Qui si crea il BOX che
+// lo conterra': sono due mestieri diversi, e tenerli separati e' cio' che evita di scrivere una
+// seconda scheda gemella — la cosa che il §12.1 ha passato otto release a smontare.
+// v6.149 (Franco) - LA STESSA FORM CREA E MODIFICA. Con `id` vuoto crea, con un id riapre quel tipo
+// e salva sopra. Una seconda form gemella per la modifica sarebbe la cosa che il §12.1 ha passato
+// otto release a smontare — e qui costerebbe ancora meno accorgersene, visto che i campi sono
+// quattro.
+// Nasce perche' la v6.148 ha consegnato un campo (il singolare) che non si poteva raggiungere: il
+// tipo esisteva gia' e non c'era modo di riaprirlo. Un campo irraggiungibile e' peggio di un campo
+// che manca — sembra che si possa fare, e non si puo'.
+function openAddTipoProdottoModal(idDaModificare) {
+  if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
+  const it = currentLang === 'it';
+  const t = idDaModificare ? _tipiProdotto().find(x => x.id === idDaModificare) : null;
+  const g = id => document.getElementById(id);
+  if (g('tipo-prodotto-id')) g('tipo-prodotto-id').value = t ? t.id : '';
+  if (g('tipo-prodotto-nome')) g('tipo-prodotto-nome').value = t ? (t.nome || '') : '';
+  if (g('tipo-prodotto-singolare')) g('tipo-prodotto-singolare').value = t ? (t.singolare || '') : '';
+  if (g('tipo-prodotto-ordine')) g('tipo-prodotto-ordine').value = t ? String(t.ordine ?? 0) : String((_tipiProdotto().length + 1) * 10);
+  if (g('tipo-prodotto-haretro')) g('tipo-prodotto-haretro').checked = !!(t && t.haRetro);
+  if (g('tipo-prodotto-ordina')) g('tipo-prodotto-ordina').value = t ? (t.ordina || '') : '';   // v6.155
+  const tit = g('tipo-prodotto-modal-title');
+  if (tit) tit.textContent = t ? (it ? 'Modifica tipo di prodotto' : 'Edit product type')
+                               : (it ? 'Aggiungi tipo di prodotto' : 'Add product type');
+  // v6.151 (Franco) - ELIMINA GRIGIATO finche' quel tipo ha dei prodotti dentro. La v6.149 lo
+  // lasciava premibile e spiegava nella conferma che gli oggetti sarebbero rimasti orfani di box:
+  // una spiegazione dopo il clic e' un avviso, un pulsante spento e' una regola. E qui la regola
+  // c'e' — un box con roba dentro non si butta — quindi tanto vale dirla prima.
+  // Il motivo sta nel `title`, se no un pulsante spento e' un vicolo cieco senza spiegazione: chi
+  // ci passa sopra legge quanti oggetti lo trattengono e sa cosa deve fare per poterlo premere.
+  const del = g('tipo-prodotto-elimina');
+  if (del) {
+    const _dentro = t ? (getData('figurines', []) || []).filter(x => (x.tipoProdotto || '') === t.id).length : 0;
+    del.style.display = t ? '' : 'none';
+    del.disabled = _dentro > 0;
+    del.style.opacity = _dentro > 0 ? '0.45' : '';
+    del.style.cursor = _dentro > 0 ? 'not-allowed' : '';
+    del.title = _dentro > 0
+      ? (it ? 'Non si può eliminare: contiene ' + _dentro + (_dentro === 1 ? ' oggetto.' : ' oggetti.') +
+              ' Spostali o cancellali prima.'
+            : 'Cannot delete: it holds ' + _dentro + ' item(s).')
+      : (it ? 'Elimina questo tipo di prodotto' : 'Delete this product type');
+  }
+  document.getElementById('add-tipo-prodotto-modal')?.classList.remove('hidden');
+  setTimeout(() => g('tipo-prodotto-nome')?.focus(), 50);
+}
+
+// v6.149 - la cancellazione NOMINA QUANTI OGGETTI restano dentro. "Sei sicuro?" senza un numero non
+// e' una domanda, e' un ostacolo (§14, punto 2). E gli oggetti NON si cancellano: restano in Extra
+// serie, raggiungibili dalla serie, invece di sparire insieme al box che li mostrava.
+async function eliminaTipoProdotto() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const id = (document.getElementById('tipo-prodotto-id')?.value || '').trim();
+  if (!id) return;
+  const t = _tipiProdotto().find(x => x.id === id);
+  if (!t) return;
+  const dentro = (getData('figurines', []) || []).filter(f => (f.tipoProdotto || '') === id).length;
+  // v6.151 - il rifiuto sta anche QUI, dove si scrive, e non solo sul pulsante: il pulsante puo'
+  // essere stato disegnato prima che qualcuno aggiungesse un oggetto, e un controllo accanto alla
+  // scrittura e' l'unico che non si puo' scavalcare. Stessa forma della v6.143/B.
+  if (dentro > 0) {
+    toast((it ? 'Non si può eliminare "' + (t.nome || '') + '": contiene ' + dentro +
+                (dentro === 1 ? ' oggetto.' : ' oggetti.')
+              : 'Cannot delete "' + (t.nome || '') + '": it holds ' + dentro + ' item(s).'), 'error', null, 6000);
+    return;
+  }
+  const msg = it
+    ? 'Elimino il tipo di prodotto "' + (t.nome || '') + '"?\n\nNon contiene nessun oggetto.'
+    : 'Delete product type "' + (t.nome || '') + '"?\n\nIt holds no items.';
+  if (!confirm(msg)) return;
+  try {
+    await _salvaTipiProdotto(_tipiProdotto().filter(x => x.id !== id));
+  } catch (e) {
+    console.error('eliminaTipoProdotto', e);
+    toast(it ? '❌ Eliminazione fallita' : '❌ Delete failed', 'error');
+    return;
+  }
+  closeModal('add-tipo-prodotto-modal');
+  toast(it ? '✅ Tipo di prodotto eliminato' : '✅ Product type deleted', 'success');
+  try { renderCatalog(); } catch (e) {}
+}
+
+async function salvaTipoProdotto() {
+  if (!currentUser?.isAdmin) return;
+  const it = currentLang === 'it';
+  const nome = (document.getElementById('tipo-prodotto-nome')?.value || '').trim();
+  const singolare = (document.getElementById('tipo-prodotto-singolare')?.value || '').trim();
+  const ordineTxt = (document.getElementById('tipo-prodotto-ordine')?.value || '').trim();
+  const ordina = (document.getElementById('tipo-prodotto-ordina')?.value || '').trim();   // v6.155
+  if (!nome) { toast(it ? 'Il nome è obbligatorio' : 'Name is required', 'error'); return; }
+  // v6.155 - UN NOME STORTO FERMA IL SALVATAGGIO e viene nominato. Ignorarlo produrrebbe un
+  // ordinamento diverso da quello scritto, senza che niente lo dica: la stessa famiglia dei filtri
+  // invisibili e dei controlli spenti in silenzio chiusa tre volte in questi due giorni.
+  const _ord = _passiOrdinamento(ordina);
+  if (_ord.sconosciuti.length) {
+    toast((it ? 'Ordinamento: non conosco ' + _ord.sconosciuti.map(x => '"' + x + '"').join(', ') +
+                '. Ammessi: ' + Object.keys(CAMPI_ORDINAMENTO_TIPO).join(', ') + '.'
+              : 'Sort order: unknown ' + _ord.sconosciuti.join(', ')), 'error', null, 9000);
+    return;
+  }
+  const idEsistente = (document.getElementById('tipo-prodotto-id')?.value || '').trim();   // v6.149
+  const haRetro = !!document.getElementById('tipo-prodotto-haretro')?.checked;             // v6.149
+  const tipi = (_cache.tipiProdotto || []).slice();
+  // Due box con lo stesso nome non si distinguono a colpo d'occhio, ed e' esattamente l'incidente
+  // dei due `index.html` in coda al deploy: davanti a due omonimi non si sceglie.
+  // v6.149 - in modifica il confronto SALTA SE STESSO, se no rinominare un tipo lasciandogli il
+  // nome che ha gia' verrebbe rifiutato per omonimia con se' stesso.
+  if (tipi.some(x => x.id !== idEsistente && (x.nome || '').trim().toLowerCase() === nome.toLowerCase())) {
+    toast(it ? 'Esiste già un tipo di prodotto con questo nome.' : 'A product type with that name already exists.', 'error');
+    return;
+  }
+  if (idEsistente) {
+    const k = tipi.findIndex(x => x.id === idEsistente);
+    if (k < 0) { toast(it ? 'Quel tipo di prodotto non esiste più.' : 'That product type no longer exists.', 'error'); return; }
+    // Si riscrive il record intero a partire da quello che c'e': cosi' un campo aggiunto in futuro
+    // non viene perso da un salvataggio scritto oggi.
+    tipi[k] = { ...tipi[k], nome, singolare, haRetro, ordina, ordine: parseInt(ordineTxt) || 0 };
+  } else {
+    // L'id si genera e non si scrive: e' un riferimento, e un riferimento battuto a mano e' un id
+    // storto che non si vede (la lezione della v6.119 sul `baseFigurineId`).
+    const id = 'tp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+    tipi.push({ id, nome, singolare, haRetro, ordina, ordine: parseInt(ordineTxt) || 0 });
+  }
+  try {
+    await _salvaTipiProdotto(tipi);
+  } catch (e) {
+    console.error('salvaTipoProdotto', e);
+    toast(it ? '❌ Salvataggio fallito: ' + (e?.code || e?.message || 'errore') : '❌ Save failed', 'error');
+    return;
+  }
+  closeModal('add-tipo-prodotto-modal');
+  toast(it ? (idEsistente ? '✅ Tipo di prodotto aggiornato' : '✅ Tipo di prodotto creato')
+           : (idEsistente ? '✅ Product type updated' : '✅ Product type created'), 'success');
+  try { renderCatalog(); } catch (e) {}
 }
 
 // ---- SECONDO LIVELLO: L'HUB DI UN PRODOTTO ----
@@ -17873,7 +18772,9 @@ function _creaProdottoDetail() {
     '<div class="series-hero"><div class="series-hero-inner">' +
       '<button class="back-btn" onclick="closeProdottoDetail()">&#8592; <span data-i18n="back">Inventario</span></button>' +
       '<h1 class="series-name" id="prodotto-detail-name" style="margin:0.4rem 0 0;"></h1>' +
-      '<div id="prodotto-detail-meta" style="font-size:0.85rem;color:var(--muted);margin:0.3rem 0 0;"></div>' +
+      // v6.156 - meno aria fra il titolo e le numeriche: erano due blocchi separati da uno spazio
+      // che li faceva sembrare due cose, e sono la stessa.
+      '<div id="prodotto-detail-meta" style="font-size:0.85rem;color:var(--muted);margin:0.1rem 0 0;"></div>' +
       '<div id="prodotto-carosello-sez" style="display:none;width:100%;position:relative;margin-top:0.6rem;">' +
         '<button type="button" id="prodotto-carosello-prec" aria-label="Precedente" style="position:absolute;left:-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">&#8249;</button>' +
         '<div id="prodotto-carosello" style="display:flex;gap:0.9rem;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:0.2rem 0.4rem 0.6rem;"></div>' +
@@ -17917,10 +18818,12 @@ function openProdottoDetail(sec) {
   // e le dice con le stesse funzioni: titolo, "N Serie:", scomposizione per tipologia coi colori.
   // Se fossero due testi diversi, la card e la pagina che apre finirebbero per non combaciare —
   // ed e' il tipo di divergenza che nessuno nota, perche' le due non si vedono mai insieme.
-  const serieConRoba = serieOrdinate.filter(s => miei.some(f => f.seriesId === s.id)).length;
+  // v6.156 - anche qui `serieConRoba` se n'e' andata con la riga che la usava.
   document.getElementById('prodotto-detail-name').textContent = _titoloProdotto(sec);
+  // v6.156 (Franco) - resta il solo riepilogo. Il conto delle serie se ne va da qui come dalla
+  // card: sotto c'e' gia' un box per ogni serie, quindi dirne il numero era ripetere in cifre una
+  // cosa che si legge per esteso due centimetri piu' giu'.
   document.getElementById('prodotto-detail-meta').innerHTML =
-    '<div style="margin-bottom:0.15rem;">' + serieConRoba + (currentLang === 'it' ? ' Serie:' : ' Series:') + '</div>' +
     '<div style="font-size:0.86rem;line-height:1.7;">' + _righeTipologie(miei) + '</div>';
   const griglia = document.getElementById('prodotto-serie-grid');
   // v6.080 (Franco) - TRE SERIE PER RIGA ANCHE QUI SU TELEFONO, come nell'Inventario.
@@ -19102,6 +20005,15 @@ function refreshSeriesMeta() {
 function openSeriesDetail(seriesId) {
   currentSeriesId = seriesId;
   currentSection = null;
+  // v6.144 - aprendo una serie si esce da qualunque box di tipo prodotto. L'azzeramento sta QUI e
+  // non in chi va via: aprire una serie e' l'unico modo di arrivare a una griglia di oggetti, ed e'
+  // il punto in cui un filtro rimasto acceso comincerebbe a nascondere roba senza dirlo — la
+  // famiglia delle v6.095, v6.134 e v6.140. Chi entra in un box lo riaccende SUBITO DOPO, che e'
+  // l'ordine giusto: prima si spegne tutto, poi si accende quello che serve.
+  _tipoProdottoCorrente = null;
+  // v6.156 - il tasto indietro della serie torna visibile: chi apre una serie ci passa davvero.
+  const _bs = document.querySelector('#series-detail > .series-hero .back-btn');
+  if (_bs) _bs.style.display = '';
   const s = getData('series', []).find(x => x.id === seriesId);
   if (!s) return;
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -19130,11 +20042,10 @@ function openSeriesDetail(seriesId) {
   document.getElementById('items-section').style.display = 'none';
   _mostraTestataSerie(); // hub: descrizione SI, specchietti NO
   try { _aggiornaLogoNavbar(); } catch(e) {}   // v6.011 - aprendo una serie il logo torna
-  // set section images
-  ['figurines','retros','albums','extras','bustine'].forEach(sec => {
-    const img = document.getElementById('sec-img-' + sec);
-    if (img && SECTION_IMAGES[sec]) img.src = SECTION_IMAGES[sec];
-  });
+  // v6.145 - le foto (e le matite) dei box sezione stanno in una funzione sola: qui c'era la
+  // meta' che sapeva solo di `SECTION_IMAGES`, e una seconda regola scritta altrove sarebbe stata
+  // la solita copia destinata a divergere.
+  _applicaFotoSezioni();
   // update counts
   updateSectionCounts();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -19188,6 +20099,26 @@ function openSeriesSection(section) {
   document.getElementById('items-section').style.display = '';
   _mostraTestataSerie(); // sezione: descrizione NO, specchietti SI
   document.getElementById('items-section-title').textContent = getSectionLabel(section);
+  // v6.153 - l'etichetta del tasto indietro dice DOVE si torna, non un posto fisso. Dentro un box
+  // si torna all'Inventario; altrove alle Sezioni della serie, come sempre.
+  // v6.156 (Franco) - UN SOLO TASTO INDIETRO. La v6.153 aveva rinominato quello della sezione in
+  // "Inventario" senza accorgersi che la testata della SERIE ne ha gia' uno, con la stessa parola:
+  // due pulsanti identici a due centimetri, che portano in due posti diversi. Dentro un box il
+  // piano della serie non si attraversa, quindi il suo pulsante non ha un "indietro" da offrire:
+  // si nasconde, e resta quello della sezione.
+  const _btnSerie = document.querySelector('#series-detail > .series-hero .back-btn');
+  if (_btnSerie) _btnSerie.style.display = _tipoProdottoCorrente ? 'none' : '';
+  const _btnIndietro = document.querySelector('#items-section .back-btn span');
+  if (_btnIndietro) {
+    const _it = currentLang === 'it';
+    if (_tipoProdottoCorrente) {
+      _btnIndietro.removeAttribute('data-i18n');
+      _btnIndietro.textContent = _it ? 'Inventario' : 'Inventory';
+    } else {
+      _btnIndietro.setAttribute('data-i18n', 'catalog.sections');
+      _btnIndietro.textContent = _it ? 'Sezioni' : 'Sections';
+    }
+  }
   document.getElementById('admin-add-item-btn').style.display = currentUser?.isAdmin ? '' : 'none';
   const ebayBtnWrap = document.getElementById('admin-ebay-btn-wrap');
   if (ebayBtnWrap) ebayBtnWrap.style.display = currentUser?.isAdmin ? 'flex' : 'none';
@@ -19294,6 +20225,24 @@ function _mostraTestataSerie() {
   try { _applicaChiusuraTestata(); } catch(e) { console.error('_mostraTestataSerie/chiusura', e); }
 }
 function closeItemsSection() {
+  // v6.153 (Franco) - DENTRO UN BOX DI TIPO PRODOTTO, "indietro" torna all'INVENTARIO, non alle
+  // sezioni. Le sezioni di "Extra serie" sono un piano che non si e' mai attraversato: chi e'
+  // entrato da un box non ci e' passato, e mandarlo li' non e' tornare indietro, e' portarlo in un
+  // posto nuovo — per giunta uno che gli mostra il contenitore invece del suo box.
+  // Stessa idea del `_sezioneApertaDaProdotto` della v6.073: ricordare la provenienza invece di
+  // darla per scontata.
+  if (_tipoProdottoCorrente) {
+    _tipoProdottoCorrente = null;
+    currentSection = null;
+    currentSeriesId = null;
+    document.getElementById('items-section').style.display = 'none';
+    document.getElementById('series-detail').style.display = 'none';
+    document.getElementById('page-catalog').classList.add('active');
+    try { _taglioInventario = 'prodotti'; localStorage.setItem('sgb_taglio', 'prodotti'); } catch (e) {}
+    try { renderCatalog(); } catch (e) {}
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
   document.getElementById('items-section').style.display = 'none';
   document.getElementById('section-selector').style.display = '';
   currentSection = null;
@@ -20327,7 +21276,10 @@ function getCurrentlyFilteredItems(opts) {
   return allFigs.filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
     // Filtro per categoria (solo Retro), attivato cliccando un box nello specchietto risultati (v5.762)
-    if (!_skipCat && _retroCategoryFilter !== null && currentSection === 'retros'
+    // v6.157 - il filtro per categoria vale nei retro E dentro un box di tipo prodotto. Accendere
+    // un chip che poi non filtra sarebbe peggio che non averlo: un comando che non fa niente.
+    if (!_skipCat && _retroCategoryFilter !== null
+        && (currentSection === 'retros' || _tipoProdottoCorrente)
         && ((f.category || '').trim()) !== _retroCategoryFilter) return false;
     // Filtro per sottocategoria (solo Retro), dai sotto-box dello specchietto risultati (v5.987)
     if (!_skipSub && _retroSubcategoryFilter !== null && currentSection === 'retros'
@@ -20387,6 +21339,11 @@ function getCurrentlyFilteredItems(opts) {
     // e' il cambio del dietro, e un retro un dietro non ce l'ha) — ma non serve
     // scriverla qui: la form gia' impedisce di crearne (v5.707), quindi il filtro non
     // trovera' nulla da solo.
+    // v6.144 - dentro il box di un tipo di prodotto si vedono i SUOI oggetti. Il filtro sta qui,
+    // nel setaccio condiviso, cosi' lo rispettano insieme griglia, vista tabellare e le procedure
+    // che lavorano "sui visibili" - se stesse solo nella griglia, un aggiornamento massivo lanciato
+    // da dentro un box toccherebbe anche gli oggetti degli altri.
+    if (_tipoProdottoCorrente && (f.tipoProdotto || '') !== _tipoProdottoCorrente) return false;
     if (_itemTypeFilter !== 'all') {
       const matchesType =
         (_itemTypeFilter === 'base' && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError) ||
@@ -20487,7 +21444,12 @@ function _retroCatPanelHTML(pairs, open, clickable, toggleFn, perColonna) {
   // gli hanno passato un toggle (la testata su telefono): la regola sta qui e non nei chiamanti.
   const collassabile = clickable || !!toggleFn;
   if (!collassabile) open = true;
-  const titoloTxt = clickable ? title : (it ? 'Retro base per categoria' : 'Base retros by category');
+  // v6.157 - dentro un box il pannello non parla di "retro base": dice il nome del tipo. Un titolo
+  // che nomina un'altra cosa fa dubitare dei numeri che ha sotto.
+  const _tipoQui = _tipoProdottoCorrente ? _tipiProdotto().find(x => x.id === _tipoProdottoCorrente) : null;
+  const titoloTxt = _tipoQui
+    ? ((_tipoQui.nome || '') + (it ? ' per categoria' : ' by category'))
+    : (clickable ? title : (it ? 'Retro base per categoria' : 'Base retros by category'));
   // v6.002 - il numero del totale in BIANCO come tutti gli altri contatori dello
   // specchietto; resta muted il solo punto medio, che e' un separatore e non un dato.
   const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">\u00b7 </span>`
@@ -20591,7 +21553,12 @@ header += `</div>`;
 function renderRetroCategorySummaries() {
   const topEl = null; // v6.079 - la testata la fa renderSpecchiettiTop(), insieme agli altri due
   const resEl = document.getElementById('retro-cat-summary-results');
-  const isRetro = currentSection === 'retros' && !!currentSeriesId;
+  // v6.157 (Franco) - lo specchietto per categoria vale anche dentro un box di TIPO PRODOTTO: la
+  // categoria e' il dato con cui quegli oggetti si raggruppano, e "come per gli altri prodotti"
+  // vuol dire poterli contare e filtrare allo stesso modo.
+  // Il nome della variabile resta storico; quello che decide e' la domanda, non la sezione:
+  // questi oggetti hanno una categoria e la usano per raggrupparsi?
+  const isRetro = (currentSection === 'retros' || !!_tipoProdottoCorrente) && !!currentSeriesId;
 
   if (topEl) {
     if (!isRetro) { topEl.style.display = 'none'; topEl.innerHTML = ''; }
@@ -21152,7 +22119,12 @@ function renderItems() {
   // scansione dell'elenco per confronto, cioe' il difetto che la v6.072 aveva appena tolto da
   // questo stesso sort ("ora 1,4 ms, ordine identico", due righe piu' su).
   const _chiaviOrd = _chiaviOrdinamentoFigurine(_daOrdinare, _idx);
+  // v6.155 - dentro il box di un tipo comanda l'ordinamento scritto sul tipo, se c'e'. Sta in cima
+  // perche' e' una scelta esplicita di chi ha creato il box: le regole per sezione sono il
+  // comportamento predefinito, questa e' una decisione presa.
+  const _cmpTipo = _tipoProdottoCorrente ? _comparatoreTipo(_tipoProdottoCorrente) : null;
   const allItems = _daOrdinare.sort((a,b) => {
+    if (_cmpTipo) return _cmpTipo(a, b);
     if (currentSection === 'figurines') {
       const allFigsForSort = _idx;
       // Figurina di riferimento: se stessa se è base, altrimenti la figurina base collegata
@@ -21485,7 +22457,17 @@ function renderItems() {
     // caricata, ed e' esattamente il caso che il segnaposto deve rendere visibile. Prima servivano
     // entrambe, quindi un oggetto con una foto sola mostrava quella sola, grande, senza nessun
     // segnale che l'altra mancasse.
-    if (!imgHTML && _secondaFacciaSulRecord(currentSection) && (f.img || f.imgRetro)) {
+    // v6.154 (Franco: "la griglia dei cartoncini mostra le due foto, e il campo non l'ho mai messo
+    // a true") - QUI C'ERA META' DELLA REGOLA. Le due facce sono due domande, non una:
+    //   `_schedaDueFoto(f)`          -> questo oggetto ha due facce?
+    //   `_secondaFacciaSulRecord(..)` -> e se le ha, DOVE sta la seconda?
+    // Il resto del file le usa sempre insieme (la scheda, il riquadro della form, il titolo); la
+    // card della griglia consultava solo la seconda, e per un prodotto extra serie rispondeva
+    // "sul record" senza che nessuno avesse chiesto se il retro esistesse. Con `haRetro` spento la
+    // card mostrava lo stesso il segnaposto del retro.
+    // ⚠️ E' la stessa forma della v6.152 e della v6.147: una regola giusta applicata in un posto e
+    // non nell'altro. Qui non era nemmeno una copia divergente — era una meta' sola.
+    if (!imgHTML && _schedaDueFoto(f) && _secondaFacciaSulRecord(currentSection) && (f.img || f.imgRetro)) {
       imgHTML = _coppiaAffiancataHTML(f.img, f.imgRetro);
     }
     if (!imgHTML) {
@@ -21558,7 +22540,18 @@ function renderItems() {
     // categoria, anteponiamo "Categoria - ". Seconda riga: la Categoria (col Sottocategoria
     // se presente) come sempre.
     const catPrefix = (currentSection === 'retros' && !_retroNameStartsWithCategory(f) && (f.category||'').trim()) ? esc(f.category.trim()) + ' - ' : '';
-    const categoryHTML = (currentSection === 'retros' && catParts.length) ? `<div style="font-size:0.78rem;color:var(--muted);">${catParts.join(' · ')}</div>` : '';
+    // v6.157 (Franco) - "nella card dei cartoncini metti la categoria sotto al nome". La riga della
+  // categoria esisteva solo per i RETRO; per un prodotto extra serie la categoria e' il dato con
+  // cui si raggruppa, quindi sulla card conta quanto il nome. `catParts` porta anche la
+  // sottocategoria, che per questi e' sempre vuota: non serve un secondo ramo.
+  // 🔴 v6.158 - QUI C'ERA `categoryHTML`, E NON LA USAVA NESSUNO. La card e' stata rifatta tempo fa
+  // (v6.037: righe fisse, una per campo) e quella variabile e' rimasta indietro senza che niente lo
+  // segnalasse. Ci ho pure scritto dentro nella v6.157, credendo di mettere la categoria sulla card
+  // dei prodotti extra serie: quella modifica NON HA MAI FATTO NIENTE, e il CHANGELOG della v6.157
+  // la racconta come fatta. Corretto li'.
+  // 📌 La lezione: una variabile calcolata e mai letta non da' nessun segnale — non un errore, non
+  // un avviso, niente. Prima di modificare un pezzo di markup va guardato CHI LO USA, non solo che
+  // esista: `grep` del nome, e se torna una riga sola quella riga e' morta.
     // v5.804 — riga Sottoserie per le Figurine, nello stesso punto/stile della categoria dei Retro.
     const subseriesHTML = (currentSection === 'figurines' && f.subseries) ? `<div style="font-size:0.78rem;color:var(--muted);">${esc(f.subseries)}</div>` : '';
     // v5.765 — Card Retro: PRIMA riga = Categoria (con Sottocategoria se presente), SECONDA riga
@@ -21607,7 +22600,17 @@ function renderItems() {
     // larghezza. Il markup non prova a indovinarlo.
     const _rigaCard = (testo, stile, campo) =>
       `<div class="retro-riga${testo ? '' : ' retro-riga-vuota'}" data-campo="${campo}" style="${stile}">${testo || '&nbsp;'}</div>`;
-    const _retroRigheHTML = !isRetroCard ? '' : (
+    // v6.158 (Franco) - LE RIGHE DI UN PRODOTTO EXTRA SERIE: NOME, CATEGORIA, SOTTOCATEGORIA, una
+  // per riga e in quest'ordine. Usa lo stesso `_rigaCard` dei retro, che tiene la riga anche quando
+  // il campo e' vuoto: e' cio' che fa restare allineate due card affiancate (v6.037). Senza, due
+  // cartoncini di cui uno ha la sottocategoria si sfalserebbero.
+  // I colori sono gli stessi dei retro (`COL_CATEGORIA`, `COL_SOTTOCAT`): la categoria e' la stessa
+  // cosa e deve avere lo stesso codice colore ovunque.
+  const _extraRigheHTML = !_eProdottoExtraSerie(f) ? '' : (
+    _rigaCard(esc((f.category || '').trim()), 'font-size:0.82rem;color:' + COL_CATEGORIA + ';margin-top:1px;', 'categoria') +
+    _rigaCard(esc((f.subcategory || '').trim()), 'font-size:0.78rem;color:' + COL_SOTTOCAT + ';margin-top:1px;', 'sottocategoria')
+  );
+  const _retroRigheHTML = !isRetroCard ? '' : (
         _rigaCard(esc((f.subname || '').trim()), 'font-size:0.82rem;color:var(--info);margin-top:1px;', 'subname') +
         _rigaCard(_retroCatNelNome ? '' : esc(_catNuda), 'font-size:0.82rem;color:' + COL_CATEGORIA + ';margin-top:1px;', 'categoria') +
         _rigaCard(esc(_retroSub), 'font-size:0.78rem;color:' + COL_SOTTOCAT + ';margin-top:1px;', 'sottocategoria')
@@ -21717,7 +22720,7 @@ function renderItems() {
       </div>
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
-        ${isRetroCard ? _retroRigheHTML : subseriesHTML}
+        ${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : subseriesHTML)}
         ${retroNameHTML}
         ${typeIndicatorHTML}
         ${descHTML}
@@ -23629,6 +24632,18 @@ function _schedaDueFoto(f) {
   // dietro di qualcos'altro. Quindi non si elencano piu' le sezioni che ne hanno due (elenco che
   // e' gia' cresciuto due volte), si nomina l'unica che ne ha una.
   if (!f || f.section === 'retros') return false;
+  // v6.148 (Franco: "i cartoncini hanno solo fronte") - e tranne i PRODOTTI EXTRA SERIE. Sta qui e
+  // non in un controllo suo per la ragione scritta due righe piu' sotto: questa e' gia' l'unica
+  // fonte di "questo oggetto ha due facce?", e la leggono la scheda, la classe `detail-solo-foto`,
+  // i riquadri della form e il controllo "Fronte senza retro" della pagina Errori. Spegnendola qui
+  // si spengono tutti insieme, che e' il solo modo perche' non si contraddicano.
+  // v6.149 (Franco) - non e' una proprieta' dei prodotti extra serie in blocco, e' una proprieta'
+  // del TIPO: "mancherebbe un campo - stile serie - che dice se quel tipo di prodotto ha il retro".
+  // La v6.148 l'aveva deciso per tutti, che era vero per i Cartoncini e non e' una regola.
+  // ⚠️ POLARITA' OPPOSTA a quella delle serie (`noRetro`), ed e' voluto: li' il flag e' l'eccezione
+  // su un insieme che il retro normalmente ce l'ha; qui il caso normale e' non averlo. Un
+  // `haRetro` spento di default lascia i tipi gia' creati esattamente come sono, senza migrazione.
+  if (_eProdottoExtraSerie(f)) return _tipoHaRetro(f.tipoProdotto);
   // v6.098 (Franco, §12.7 caso B) - e tranne le FIGURINE di una serie che i retro non li ha.
   // Passa da qui e non da un controllo suo perche' questa funzione e' gia' l'unica fonte di "questo
   // oggetto ha due facce?": la scheda, la classe `detail-solo-foto`, i riquadri della form e il
@@ -23779,6 +24794,9 @@ function openFigDetail(figId, elencoNav) {
   // serie. Prima era testo morto, e per arrivarci si tornava indietro a mano. Il modale si chiude
   // prima di aprire la serie: lasciarlo aperto sopra una pagina cambiata sotto e' il modo piu'
   // veloce per non capire piu' dove si e'.
+  // v6.148 - stessa ragione nella vista in lettura: se sparisce dalla form e resta qui, le due
+  // facce della stessa scheda dicono cose diverse.
+  if (!_eProdottoExtraSerie(f))
   (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Serie' : 'Series')}</span><span class="detail-value" style="font-weight:600;">${figSeries ? `<a href="#" onclick="closeModal('fig-detail-modal');openSeriesDetail('${figSeries.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(figSeries.name)} \u2197</a>` : ''}</span></div>`);
 
   // v5.841 — la riga "Retro collegato" NON si stampa piu' (ne' su telefono ne' su desktop):
@@ -23806,9 +24824,15 @@ function openFigDetail(figId, elencoNav) {
   // poi COSA mostro — e tenere la Categoria sotto la foto spezzava quel nome in due meta' ai due
   // lati dell'immagine, che sul telefono sono due schermate diverse. Sul desktop, dove le righe
   // sono gia' consecutive, non cambia niente.
-  if (f.section === 'retros') {
+  // v6.148 - la Categoria si vede anche sui prodotti extra serie, come nella form. La
+  // Sottocategoria resta ai soli retro, sempre come nella form: i due lati della stessa scheda
+  // devono mostrare gli stessi campi, se no passare da lettura a modifica fa comparire o sparire
+  // righe senza motivo.
+  if (f.section === 'retros' || _eProdottoExtraSerie(f)) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Categoria' : 'Category')}</span><span class="detail-value">${f.category ? esc(f.category) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
-    if (f.subcategory) {
+    // v6.158 - la Sottocategoria si vede anche sui prodotti extra serie, come nella form. Le due
+    // meta' della scheda devono mostrare gli stessi campi: e' la lezione gia' pagata due volte oggi.
+    if (f.subcategory && (f.section === 'retros' || _eProdottoExtraSerie(f))) {
       (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottocategoria' : 'Subcategory')}</span><span class="detail-value">${esc(f.subcategory)}</span></div>`);
     }
   }
@@ -23989,7 +25013,8 @@ function openFigDetail(figId, elencoNav) {
   }
 
   // Taglia (only for series with hasSizes)
-  if (figSeries?.hasSizes || (isAdmin && figSeries?.hasSizes)) {
+  // v6.148 - e sempre sui prodotti extra serie, dove la Taglia e' una delle tre scelte della form.
+  if (figSeries?.hasSizes || _eProdottoExtraSerie(f)) {
     if (f.size || isAdmin) {
       rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Taglia' : 'Size')}</span><span class="detail-value">${f.size || '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
     }
@@ -24306,8 +25331,124 @@ function _chiaviOrdinamentoFigurine(items, idx) {
   return chiavi;
 }
 
+// v6.146 (Franco) - UN PRODOTTO EXTRA SERIE NON HA VARIAZIONI, CHANGE NE' ERRORI DI STAMPA.
+// Quelle quattro caselle descrivono il rapporto di un oggetto con la figurina da cui discende, e un
+// prodotto extra serie non discende da niente: mostrarle vuol dire offrire quattro scelte che non
+// significano nulla, e una spuntata per sbaglio lo farebbe sparire dietro un filtro di tipo.
+// Il riconoscimento e' il campo `tipoProdotto`, e vale sia creando sia riaprendo: se un oggetto sta
+// in un box, quelle caselle non lo riguardano.
+function _eProdottoExtraSerie(f) {
+  return !!(f && f.tipoProdotto);
+}
+
+// v6.146 - IL TITOLO DELLA SCHEDA DICE IL TIPO DI PRODOTTO, non "Altri oggetti". Per un prodotto
+// extra serie la sezione (`extras`) e' un dettaglio di come e' immagazzinato, non la cosa che si
+// sta guardando: chi apre la scheda di un Cartoncino vuole leggere CARTONCINI.
+// Il nome del tipo si legge dall'elenco dei tipi; se quel tipo non esistesse piu' si torna alla
+// sezione invece di mostrare un titolo vuoto — un id orfano non deve produrre una scheda senza nome.
+// v6.149 - il tipo di prodotto prevede il retro? Spento se il tipo non c'e' piu': un id orfano non
+// deve far comparire un riquadro foto che nessuno sa riempire.
+// v6.151 - I TRE VALORI DELLA TAGLIA, IN UN POSTO SOLO. La v6.148 li aveva scritti nella scheda;
+// riscriverli in vista tabellare avrebbe prodotto due elenchi destinati a divergere — e in questo
+// file "due strade che scrivono lo stesso campo si comportavano diversamente" e' il racconto della
+// v6.133 e della v6.143.
+const TAGLIE_EXTRA_SERIE = ['A4', 'A5', 'Altro'];
+
+// Il `<select>` della Taglia, uno per la scheda e uno per la tabella, dalla stessa funzione.
+// ⚠️ Un valore che non sta fra i tre (dato vecchio, o i tre cambiati dopo) diventa un'opzione SUA,
+// selezionata e marcata: un `<select>` a cui assegni un valore che non ha fra le opzioni resta
+// VUOTO, e il salvataggio successivo scrive quel vuoto. E' il guasto trovato scrivendo la v6.102.
+function _selectTagliaHTML(valore, id, onchange, stile) {
+  const v = (valore || '').trim();
+  const fuori = v && !TAGLIE_EXTRA_SERIE.some(o => o.toLowerCase() === v.toLowerCase());
+  return '<select id="' + id + '" data-field="size" class="form-input"' +
+    (onchange ? ' onchange="' + onchange + '"' : '') +
+    ' style="' + (stile || 'padding:0.3rem 0.5rem;font-size:0.9rem;') + '">' +
+    '<option value=""' + (v ? '' : ' selected') + '>&mdash;</option>' +
+    TAGLIE_EXTRA_SERIE.map(o => '<option value="' + o + '"' +
+      (v.toLowerCase() === o.toLowerCase() ? ' selected' : '') + '>' + o + '</option>').join('') +
+    (fuori ? '<option value="' + esc(v) + '" selected>' + esc(v) + ' \u26a0\ufe0f</option>' : '') +
+    '</select>';
+}
+
+// v6.155 (Franco) - L'ORDINAMENTO DI UN TIPO DI PRODOTTO, deciso da chi lo crea.
+//
+// SINTASSI, ed e' scritta anche sotto il campo nella form: nomi separati da virgola, il `-` davanti
+// inverte. Esempi:  `categoria, nome`  |  `-punteggio, nome`
+//
+// I NOMI AMMESSI sono i campi che un prodotto extra serie ha DAVVERO: non un elenco inventato qui,
+// ma quello che si vede nella sua scheda. `ordinamento` e' il campo Numero, che per queste sezioni
+// la scheda chiama gia' cosi' (`_numeroEOrdinamento`).
+const CAMPI_ORDINAMENTO_TIPO = {
+  ordinamento: { etichetta: 'Ordinamento', num: true,  val: f => (f.number ?? null) },
+  nome:        { etichetta: 'Nome',        num: false, val: f => (f.name || '') },
+  categoria:   { etichetta: 'Categoria',   num: false, val: f => (f.category || '') },
+  taglia:      { etichetta: 'Taglia',      num: false, val: f => (f.size || '') },
+  punteggio:   { etichetta: 'Punteggio',   num: true,  val: f => (f.score ?? 0) },
+  creazione:   { etichetta: 'Creazione',   num: true,  val: f => (_dataCreazione(f) || 0) }
+};
+
+// Spezza la stringa in passi. Torna anche gli SCONOSCIUTI, invece di scartarli: chi salva deve
+// poterli nominare. Un nome storto ignorato in silenzio produrrebbe un ordinamento che non e'
+// quello scritto, e nessuno saprebbe perche' — la famiglia dei controlli spenti in silenzio.
+function _passiOrdinamento(testo) {
+  const passi = [], sconosciuti = [];
+  String(testo || '').split(',').map(x => x.trim()).filter(Boolean).forEach(tok => {
+    const desc = tok.startsWith('-');
+    const nome = (desc ? tok.slice(1) : tok).trim().toLowerCase();
+    if (CAMPI_ORDINAMENTO_TIPO[nome]) passi.push({ nome, desc });
+    else sconosciuti.push(tok);
+  });
+  return { passi, sconosciuti };
+}
+
+// Il comparatore di un tipo, oppure null se quel tipo non ha un ordinamento suo (e allora vale
+// quello di sempre). I valori vuoti vanno IN FONDO in entrambi i versi: un campo non compilato non
+// e' "il piu' piccolo", e' assente — metterlo in testa in decrescente direbbe una cosa falsa.
+function _comparatoreTipo(idTipo) {
+  const t = idTipo ? _tipiProdotto().find(x => x.id === idTipo) : null;
+  const { passi } = _passiOrdinamento(t && t.ordina);
+  if (!passi.length) return null;
+  return (a, b) => {
+    for (const { nome, desc } of passi) {
+      const c = CAMPI_ORDINAMENTO_TIPO[nome];
+      const va = c.val(a), vb = c.val(b);
+      const va0 = (va === null || va === undefined || va === '');
+      const vb0 = (vb === null || vb === undefined || vb === '');
+      if (va0 && vb0) continue;
+      if (va0) return 1;
+      if (vb0) return -1;
+      const r = c.num ? (Number(va) - Number(vb))
+                      : String(va).localeCompare(String(vb), 'it', { numeric: true });
+      if (r) return desc ? -r : r;
+    }
+    return 0;
+  };
+}
+
+function _tipoHaRetro(idTipo) {
+  if (!idTipo) return false;
+  const t = _tipiProdotto().find(x => x.id === idTipo);
+  return !!(t && t.haRetro);
+}
+
+function _titoloTipoScheda(f) {
+  if (_eProdottoExtraSerie(f)) {
+    const t = _tipiProdotto().find(x => x.id === f.tipoProdotto);
+    // v6.148 (Franco: "perche' usi il plurale? aggiungi cartoncino") - il titolo di UNA scheda
+    // parla di UN oggetto, quindi vuole il singolare, esattamente come `getSectionLabelSingular`
+    // dice "Figurina" e non "Figurine". Il nome del box invece resta al plurale: sono due parole
+    // per due mestieri, e il codice non ricava l'una dall'altra — sarebbe una regola di grammatica
+    // italiana dentro il codice, che la v6.073 ha gia' rifiutato di scrivere.
+    // Chi non ha il singolare (i tipi creati prima di questa release) ripiega sul nome: sbagliato
+    // di numero, ma leggibile — meglio di un titolo vuoto.
+    if (t) return t.singolare || t.nome || '';
+  }
+  return getSectionLabelSingular(f.section || 'figurines');
+}
+
 function _titoloSchedaHTML(f, nomeVisualizzato) {
-  const tipo = getSectionLabelSingular(f.section || 'figurines');
+  const tipo = _titoloTipoScheda(f);
   const nome = (_haNumero(f) && f.number) ? (f.number + ' - ' + nomeVisualizzato) : nomeVisualizzato;
   return '<span style="color:var(--info);font-size:0.95rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.15rem;">'
     + esc(tipo) + '</span>' + esc(nome);
@@ -24818,7 +25959,10 @@ function _bozzaNuovoItem(sezione, seriesId) {
     img: null, imgRetro: null, ebayImg: null,
     forSale: false, price: null, priceUsd: null, quantity: 1, condition: 'new',
     ebayTitleIt: null, ebayTitleEn: null, ebayDescIt: null, ebayDescEn: null,
-    ebayAccounts: null, daPubblicare: false
+    ebayAccounts: null, daPubblicare: false,
+    // v6.144 - il box da cui si sta creando. Fuori da un box e' null, e resta null: cosi' un
+    // oggetto creato dalla serie normale non finisce dentro un contenitore per sbaglio.
+    tipoProdotto: _tipoProdottoCorrente || null
   };
 }
 
@@ -24926,7 +26070,12 @@ function switchToEditMode(figId) {
     titleEl.removeAttribute('data-i18n');
     titleEl.innerHTML = f.id
       ? _titoloSchedaHTML(f, displayNameForTitle)
-      : esc((currentLang === 'it' ? 'Aggiungi ' : 'Add ') + getSectionLabelSingular(f.section || 'figurines'));
+      // v6.147 - anche QUI il tipo di prodotto, non la sezione. La v6.146 aveva cambiato solo
+      // `_titoloSchedaHTML`, che serve la scheda in lettura/modifica: la creazione ha un ramo suo,
+      // scritto nella v6.104, ed era rimasto indietro. Due punti che scrivono lo stesso titolo e
+      // non concordano — il difetto che questo file ha registrato piu' volte di ogni altro.
+      // Ora leggono tutti e due `_titoloTipoScheda`.
+      : esc((currentLang === 'it' ? 'Aggiungi ' : 'Add ') + _titoloTipoScheda(f));
   }
 
   // v6.074 - Foto. Una sola per quasi tutto; DUE per le bustine, che hanno due facce sullo stesso
@@ -24945,6 +26094,9 @@ function switchToEditMode(figId) {
   // Nome, Sottonome, Categoria e Sottocategoria di un Change/errore di stampa.
   const _feNameHidden = _nomeVieneDallaBase(f.section, f.isChange, f.isPrintError, f.isVariation, f.isUnofficialVariation); // v6.078
   const _feCampiDaBase = (f.isChange || f.isPrintError) && f.section === 'retros'; // v6.038
+  // v6.148 - dichiarata QUI e non piu' accanto alle caselle del tipo: da questa release la usano
+  // anche Categoria e Taglia, che nella form vengono prima. Una sola dichiarazione, in cima.
+  const _extraSerie = _eProdottoExtraSerie(f);
 
   // v5.784 — i tab PRIMA, poi (dentro il tab Generale) il campo Serie: così la posizione coincide
   // con la vista di visualizzazione, dove Serie sta SOTTO i tab. Prima qui stava sopra i tab.
@@ -24955,6 +26107,10 @@ function switchToEditMode(figId) {
   html += '<div id="fe-tab-generale">';
 
   // Serie (prima informazione del tab Generale, sempre visibile, non modificabile qui)
+  // v6.148 (Franco) - per un prodotto extra serie la Serie non si mostra: e' sempre la stessa,
+  // e' un dettaglio di come sta immagazzinato, e una riga che dice sempre la stessa cosa non
+  // informa - occupa spazio e insegna a saltare le righe.
+  if (!_extraSerie)
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Serie':'Series') + '</span><span class="detail-value" style="font-weight:600;">' + (figSeries?.name||'') + '</span></div>';
 
   const isRetrosItem = f.section === 'retros';
@@ -24962,9 +26118,29 @@ function switchToEditMode(figId) {
   _feSezione = f.section;    // v6.077 — idem, per il campo Numero/Ordinamento
 
   // Categoria (solo per i Retro, prima del Nome)
-  if (isRetrosItem) {
-    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category" value="' + esc((f.category||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
-    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory" value="' + esc((f.subcategory||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+  // v6.148 (Franco: "per i cartoncini mi serve la categoria") - la Categoria vale anche per i
+  // prodotti extra serie. La SOTTOcategoria no: e' stata chiesta la categoria, e un campo in
+  // piu' "gia' che ci siamo" e' un campo che nessuno riempie. Si aggiunge in una riga se serve.
+  if (isRetrosItem || _extraSerie) {
+  // v6.150 (Franco) - LA CATEGORIA DI UN PRODOTTO EXTRA SERIE PROPONE I VALORI GIA' USATI in quel
+  // tipo. Non un elenco chiuso: resta testo libero con suggerimenti, cosi' un valore nuovo si
+  // scrive e basta. E' la stessa scelta fatta il 14 agosto per i tipi di prodotto (etichetta o
+  // comportamento?) e lo stesso meccanismo del `<datalist>` che la v6.133 usa per la figurina di
+  // partenza.
+  // I suggerimenti vengono dal MEDESIMO tipo, non da tutti: proporre a un Cartoncino le categorie
+  // dei Poster sarebbe un elenco che cresce e non aiuta.
+    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category"' + (_extraSerie ? ' list="fe-cat-list"' : '') + ' value="' + esc((f.category||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+  if (_extraSerie) {
+    const _cats = [...new Set((getData('figurines', []) || [])
+      .filter(x => (x.tipoProdotto || '') === (f.tipoProdotto || '') && (x.category || '').trim())
+      .map(x => x.category.trim()))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
+    html += '<datalist id="fe-cat-list">' + _cats.map(c => '<option value="' + esc(c) + '"></option>').join('') + '</datalist>';
+    const _subs = [...new Set((getData('figurines', []) || [])
+      .filter(x => (x.tipoProdotto || '') === (f.tipoProdotto || '') && (x.subcategory || '').trim())
+      .map(x => x.subcategory.trim()))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
+    html += '<datalist id="fe-subcat-list">' + _subs.map(c => '<option value="' + esc(c) + '"></option>').join('') + '</datalist>';
+  }
+    if (isRetrosItem || _extraSerie) html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory"' + (_extraSerie ? ' list="fe-subcat-list"' : '') + ' value="' + esc((f.subcategory||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   }
 
   // Sottoserie (solo se la serie ha hasSubseries)
@@ -25005,22 +26181,31 @@ function switchToEditMode(figId) {
   // Punteggio
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Punteggio':'Score') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
 
-  // Taglia (solo se la serie ha taglie)
-  if (figSeries?.hasSizes) {
+  if (_extraSerie) {
+    // v6.151 - il markup del select viene da `_selectTagliaHTML`, lo stesso che usa la vista
+    // tabellare: erano due elenchi, ora e' uno.
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span>' +
+      '<span class="detail-value">' + _selectTagliaHTML(f.size, 'fe-size', '') + '</span></div>';
+  } else if (figSeries?.hasSizes) {
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-size" value="' + esc((f.size||'')) + '" placeholder="S/M/L/XL" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;border:none;background:transparent;"></span></div>';
   }
 
+  // v6.146 (Franco) - le quattro caselle del TIPO non si mostrano su un prodotto extra serie:
+  // descrivono il rapporto con una figurina di partenza, e li' non c'e' niente da cui discendere.
+  // Nella bozza restano `false`, quindi non si crea nessun dato a meta'.
   // Flag Variazione ufficiale / non ufficiale (solo Figurine/Album/Altro) e Change (anche Retro)
-  if (!isRetrosItem) {
+  if (!isRetrosItem && !_extraSerie) {
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione ufficiale':'Official variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-variation\')" ' + (f.isVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Variazione non ufficiale':'Unofficial variation') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-unofficial-variation\')" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
-  html += '<div class="detail-row"><span class="detail-label">Change</span><span class="detail-value"><input type="checkbox" id="fe-is-change" onchange="toggleFeBaseFigurineGroup(\'fe-is-change\')" ' + (f.isChange?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
-  // ERRORE DI STAMPA (v5.714): la quinta casella, in TUTTE E QUATTRO le sezioni, come
-  // Change. Franco: "deve esserci in tutte e 4 le form di modifica". Nella v5.711
-  // l'avevo messa SOLO nella maschera "aggiungi oggetto" (#add-fig-modal), senza
-  // accorgermi che la maschera di MODIFICA e' un'altra funzione, con i propri id 'fe-'.
-  html += '<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? 'Errore di stampa' : 'Print error') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-printerror" onchange="toggleFeBaseFigurineGroup(\'fe-is-printerror\')" ' + (f.isPrintError?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+  if (!_extraSerie) {   // v6.146 - Change ed Errore di stampa: stessa ragione
+    html += '<div class="detail-row"><span class="detail-label">Change</span><span class="detail-value"><input type="checkbox" id="fe-is-change" onchange="toggleFeBaseFigurineGroup(\'fe-is-change\')" ' + (f.isChange?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+    // ERRORE DI STAMPA (v5.714): la quinta casella, in TUTTE E QUATTRO le sezioni, come
+    // Change. Franco: "deve esserci in tutte e 4 le form di modifica". Nella v5.711
+    // l'avevo messa SOLO nella maschera "aggiungi oggetto" (#add-fig-modal), senza
+    // accorgermi che la maschera di MODIFICA e' un'altra funzione, con i propri id 'fe-'.
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang === 'it' ? 'Errore di stampa' : 'Print error') + '</span><span class="detail-value"><input type="checkbox" id="fe-is-printerror" onchange="toggleFeBaseFigurineGroup(\'fe-is-printerror\')" ' + (f.isPrintError?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+  }
   if (isRetrosItem || f.section === 'figurines') {
     const showChangeType = !!f.isChange;
     // v6.102 (§12.10) - stesse opzioni a due gruppi dell'altra form, dalla stessa funzione.
@@ -29661,6 +30846,55 @@ function renderBulkEditView() {
   // senza duplicare le regole: una sola funzione, due chiamanti.
   // v6.079 - l'ordinamento per data di creazione, quando acceso, ha la precedenza (vedi il pulsante)
   const allItems = getCurrentlyFilteredItems().sort(_ordinaPerCreazione ? cmpPerCreazione(currentSection) : cmpVistaTabellare(currentSection));
+  // ⚠️ v6.152 - QUESTO BLOCCO STAVA SOPRA `allItems`, e su `const` questo non e' un dettaglio di
+  // stile: e' una temporal dead zone, cioe' un ReferenceError al primo click. Ha rotto il tasto
+  // "Vista tabellare" IN TUTTO IL SITO per una release intera, e `node --check` non poteva
+  // vederlo — la stessa cecita' della v6.117 e della v6.140, che erano variabili MAI dichiarate;
+  // questa era dichiarata, ma dopo. Il controllo che le trova e' lo stesso: per ogni variabile
+  // usata, la dichiarazione esiste *e viene prima*?
+  // v6.151 (Franco: "nella vista tabellare mi serve la taglia... e la categoria") - le due colonne
+  // erano legate una ai RETRO e l'altra al flag `hasSizes` della serie, quindi su Extra serie non
+  // comparivano. Si aprono anche quando fra gli oggetti visibili c'e' almeno un prodotto extra
+  // serie: la domanda non e' "in che sezione sono" ma "questi oggetti quei campi ce l'hanno?".
+  const _cExtra = allItems.some(_eProdottoExtraSerie);
+  // v6.152 (Franco) - "come mai ci sono campi che hanno senso solo per le figurine? vedo il campo
+  // Figurina di partenza". Quella colonna era gated dal solo `isAdmin`, quindi compariva ovunque.
+  // Un prodotto extra serie non discende da niente: la v6.146 ha tolto le quattro caselle del tipo
+  // dalla scheda proprio per questo, e la tabella era rimasta indietro — la stessa asimmetria fra
+  // scheda e tabella gia' chiusa dalla v6.133 (numero) e dalla v6.143 (campi ereditati).
+  // La colonna sparisce solo se sono TUTTI extra serie; con righe miste resta, e le celle degli
+  // extra serie restano vuote. Toglierla in presenza di righe normali nasconderebbe un dato vero.
+  const _cSoloExtra = allItems.length > 0 && allItems.every(_eProdottoExtraSerie);
+  // I suggerimenti della Categoria, uno per TIPO: in una tabella le righe possono appartenere a
+  // tipi diversi (Extra serie aperta senza filtro), e un elenco unico proporrebbe a un Cartoncino
+  // le categorie dei Poster. Si emettono una volta e le righe puntano al proprio.
+  const _catPerTipo = {};
+  if (_cExtra) {
+    allItems.filter(_eProdottoExtraSerie).forEach(f => {
+      const k = f.tipoProdotto;
+      if (!_catPerTipo[k]) _catPerTipo[k] = new Set();
+      if ((f.category || '').trim()) _catPerTipo[k].add(f.category.trim());
+    });
+  }
+  const _datalistCat = Object.keys(_catPerTipo).map(k =>
+    '<datalist id="bulk-cat-' + k + '">' +
+    [..._catPerTipo[k]].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }))
+      .map(c => '<option value="' + esc(c) + '"></option>').join('') +
+    '</datalist>').join('');
+  // v6.159 - e i suggerimenti della SOTTOcategoria, con la stessa regola: per tipo, non globali.
+  const _subPerTipo = {};
+  if (_cExtra) {
+    allItems.filter(_eProdottoExtraSerie).forEach(f => {
+      const k = f.tipoProdotto;
+      if (!_subPerTipo[k]) _subPerTipo[k] = new Set();
+      if ((f.subcategory || '').trim()) _subPerTipo[k].add(f.subcategory.trim());
+    });
+  }
+  const _datalistSub = Object.keys(_subPerTipo).map(k =>
+    '<datalist id="bulk-sub-' + k + '">' +
+    [..._subPerTipo[k]].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }))
+      .map(c => '<option value="' + esc(c) + '"></option>').join('') +
+    '</datalist>').join('');
   updateItemsCountDisplay(allItems);
 
   if (!allItems.length) { bulkView.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali.' : 'No items found with the current filters.'}</p>`; return; }
@@ -29759,15 +30993,17 @@ function renderBulkEditView() {
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);width:${currentSection === 'retros' ? 48 : 92}px;">${(currentLang === 'it') ? 'Foto' : 'Photo'}</th>
           ${isAdmin ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>` : ''}
           ${currentSeriesHasSubseries ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottoserie</th>' : ''}
+          ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Categoria</th>' : ''}
+          ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottocategoria</th>' : ''}
           ${currentSection === 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Categoria</th><th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottocategoria</th>' : ''}
-          ${currentSection !== 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>' : ''}
+          ${(currentSection !== 'retros' && !_cSoloExtra) ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>' : ''}
           ${currentSection === 'figurines' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Tipo' : 'Type'}</th>` : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentSection === 'figurines' ? (currentLang === 'it' ? 'Nome Completo' : 'Full Name') : 'Nome'}</th>
           ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Sottonome' : 'Subname'}</th>` : ''}
           ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</th>` : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
-          ${isAdmin ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);min-width:420px;">${currentLang === 'it' ? 'Figurina di partenza' : 'Source sticker'}</th>` : ''}
-          ${currentSeriesHasSizes ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
+          ${(isAdmin && !_cSoloExtra) ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);min-width:420px;">${currentLang === 'it' ? 'Figurina di partenza' : 'Source sticker'}</th>` : ''}
+          ${(currentSeriesHasSizes || _cExtra) ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
           ${_ordinaPerCreazione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);white-space:nowrap;">${currentLang === 'it' ? 'Data creazione' : 'Created on'}</th>` : ''}
           ${!isAdmin ? `
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Mia lista' : 'My list'}</th>
@@ -29787,8 +31023,14 @@ function renderBulkEditView() {
           })()}</td>
           ${isAdmin ? `<td style="padding:4px;white-space:nowrap;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Apri la scheda' : 'Open the card'}" onclick="openFigDetail('${f.id}')">&#128065;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="apriModificaItem('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
           ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
+          ${_cExtra ? (_eProdottoExtraSerie(f) && isAdmin
+            ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" list="bulk-cat-'+f.tipoProdotto+'" value="'+esc(f.category||'')+'" style="width:230px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
+            : '<td style="padding:4px;font-size:0.8rem;color:var(--muted);">'+esc(f.category||'')+'</td>') : ''}
+          ${_cExtra ? (_eProdottoExtraSerie(f) && isAdmin
+            ? '<td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" list="bulk-sub-'+f.tipoProdotto+'" value="'+esc(f.subcategory||'')+'" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
+            : '<td style="padding:4px;font-size:0.8rem;color:var(--muted);">'+esc(f.subcategory||'')+'</td>') : ''}
           ${currentSection === 'retros' ? (isAdmin && !_campoComandatoDalGenitore(f, 'category') ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
-          ${currentSection !== 'retros' ? (isAdmin ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? f.number : '')) : ''}
+          ${(currentSection !== 'retros' && !_cSoloExtra) ? (isAdmin ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? f.number : '')) : ''}
           ${currentSection === 'figurines' ? (() => {
             const typeLabel = f.isVariation ? (currentLang === 'it' ? 'Variazione ufficiale' : 'Official variation')
               : f.isUnofficialVariation ? (currentLang === 'it' ? 'Variazione non ufficiale' : 'Unofficial variation')
@@ -29810,8 +31052,13 @@ function renderBulkEditView() {
           ${currentSection === 'retros' ? (isAdmin && !_campoComandatoDalGenitore(f, 'subname') ? `<td style="padding:4px;"><input data-field="subname" data-id="${f.id}" value="${(f.subname||'').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? 'seconda parte del nome' : 'second part of the name'}" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.subname, 200)) : ''}
           ${currentSection === 'retros' ? (isAdmin ? `<td style="padding:4px;"><input data-field="changeType" data-id="${f.id}" value="${f.changeType||''}" style="width:140px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.changeType, 140)) : ''}
           ${isAdmin ? `<td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0)}
-          ${isAdmin ? `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>` : ''}
-          ${currentSeriesHasSizes ? (isAdmin ? '<td style="padding:4px;"><input data-field="size" data-id="'+f.id+'" value="'+(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.size)) : ''}
+          ${(isAdmin && !_cSoloExtra) ? (_eProdottoExtraSerie(f) ? '<td></td>' :  `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>`) : ''}
+          ${(currentSeriesHasSizes || _cExtra) ? (isAdmin
+            ? '<td style="padding:4px;">' + (_eProdottoExtraSerie(f)
+                ? _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;')
+                : '<input data-field="size" data-id="'+f.id+'" value="'+esc(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)">')
+              + '</td>'
+            : readCell(f.size)) : ''}
           ${_ordinaPerCreazione ? `<td style="padding:4px 8px;color:${_dataCreazione(f) ? 'var(--text)' : 'var(--muted)'};white-space:nowrap;font-size:0.78rem;${_dataCreazione(f) ? '' : 'font-style:italic;'}">${esc(_dataCreazioneTesto(f))}</td>` : ''}
           ${!isAdmin ? `
           <td style="padding:4px;text-align:center;"><button class="owned-btn ${isOwned?'on':''}" title="${isOwned ? (currentLang==='it'?'\u00c8 nella tua lista':'In your list') : (currentLang==='it'?'Aggiungi alla tua lista':'Add to your list')}" onclick="toggleOwned('${f.id}')">\u2713</button></td>
