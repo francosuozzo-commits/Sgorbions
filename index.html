@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.143"></script>
-<link rel="stylesheet" href="css/style.css?v=6.143">
+<script src="js/email.min.js?v=6.159"></script>
+<link rel="stylesheet" href="css/style.css?v=6.159">
 
 
 <style>
@@ -274,7 +274,7 @@ button.back-btn { color:#ffffff; }
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.143</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.159</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -515,6 +515,14 @@ button.back-btn { color:#ffffff; }
         </div>
         <div id="admin-add-series-btn" style="display:none;">
           <button class="btn-primary btn-admin" onclick="openAddSeriesModal()" data-i18n="catalog.addseries">+ Add Series</button>
+        </div>
+        <!-- v6.144 (Franco) - stesso posto del pulsante delle serie, ma acceso SOLO nel taglio
+             "Prodotti". Due pulsanti nella stessa posizione e mai insieme: il taglio dice gia' cosa
+             si sta guardando, quindi il pulsante che aggiunge deve parlare di quello.
+             ⚠️ Da qui si crea il TIPO (il box), non il prodotto: il prodotto si crea dalla scheda,
+             che dal §12.1 e' l'unica form del sito. -->
+        <div id="admin-add-tipo-prodotto-btn" style="display:none;">
+          <button class="btn-primary btn-admin" onclick="openAddTipoProdottoModal()">+ Aggiungi tipo di prodotto</button>
         </div>
       </div>
       <!-- v6.073 (Franco) — IL BIVIO. Entrando nell'Inventario non si atterra piu' subito sulle
@@ -1595,7 +1603,7 @@ button.back-btn { color:#ffffff; }
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.143</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.159</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1651,6 +1659,71 @@ button.back-btn { color:#ffffff; }
 </div>
 
 <!-- ADD SERIES MODAL -->
+<!-- v6.144 (Franco) - LA FORM DEL TIPO DI PRODOTTO: due campi, ed e' voluto che siano due.
+     Qui si crea il BOX; quello che ci finisce dentro si crea dalla scheda. La foto del box arriva
+     in una tappa successiva - un campo in piu' oggi sarebbe un campo che nessuno riempie. -->
+<div class="modal-overlay hidden" id="add-tipo-prodotto-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" id="tipo-prodotto-modal-title">Aggiungi tipo di prodotto</h2>
+      <button class="modal-close" onclick="closeModal('add-tipo-prodotto-modal')">&#10005;</button>
+    </div>
+    <!-- v6.149 - vuoto = si crea, valorizzato = si modifica quel tipo. La stessa form fa le due
+         cose: una gemella per la modifica sarebbe la copia che il §12.1 ha passato otto release a
+         smontare. -->
+    <input type="hidden" id="tipo-prodotto-id">
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input class="form-input" type="text" id="tipo-prodotto-nome" placeholder="es. Cartoncini">
+    </div>
+    <div class="form-group">
+      <!-- v6.148 (Franco) - il nome del BOX e' al plurale ("Cartoncini"), il titolo di UNA scheda
+           vuole il singolare ("Aggiungi cartoncino"). Sono due parole per due mestieri, e il codice
+           non ricava l'una dall'altra: sarebbe una regola di grammatica italiana dentro il codice,
+           che la v6.073 ha gia' rifiutato di scrivere. Vuoto = si usa il plurale. -->
+      <label class="form-label">Nome al singolare</label>
+      <input class="form-input" type="text" id="tipo-prodotto-singolare" placeholder="es. cartoncino">
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem;">Serve al titolo della scheda: &quot;Aggiungi cartoncino&quot;. Se lo lasci vuoto si usa il nome qui sopra.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Ordine</label>
+      <input class="form-input" type="number" id="tipo-prodotto-ordine" placeholder="10">
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem;">Numero piu' basso = box piu' a sinistra. A parita' di numero conta il nome.</div>
+    </div>
+    <!-- v6.149 (Franco) - il tipo di prodotto prevede il retro? Spento di default, al contrario
+         del flag delle serie: li' e' l'eccezione su un insieme che il retro ce l'ha, qui il caso
+         normale e' non averlo. Comanda il riquadro della seconda foto nella scheda. -->
+    <!-- v6.155 (Franco) - i campi con cui ordinare gli oggetti di questo tipo. La sintassi sta
+         SOTTO il campo, non in un manuale: un campo con una sintassi propria e nessuna spiegazione
+         accanto e' un campo che si compila a tentativi. Un nome sconosciuto FERMA il salvataggio e
+         viene nominato, invece di essere ignorato in silenzio. -->
+    <div class="form-group">
+      <label class="form-label">Ordinamento degli oggetti</label>
+      <input class="form-input" type="text" id="tipo-prodotto-ordina" placeholder="es. categoria, nome">
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:0.35rem;line-height:1.5;">
+        Nomi separati da <b>virgola</b>, nell'ordine in cui contano. Il segno <b>&minus;</b> davanti inverte.<br>
+        Ammessi: <code>ordinamento</code>, <code>nome</code>, <code>categoria</code>, <code>taglia</code>, <code>punteggio</code>, <code>creazione</code>.<br>
+        Esempi: <code>categoria, nome</code> &nbsp;&middot;&nbsp; <code>-punteggio, nome</code><br>
+        Vuoto = l'ordinamento predefinito. I valori non compilati vanno sempre in fondo.
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+        <input type="checkbox" id="tipo-prodotto-haretro">
+        <span>Questo tipo di prodotto ha il retro</span>
+      </label>
+      <div style="font-size:0.78rem;color:var(--muted);margin-top:0.3rem;">Spento, la scheda mostra un riquadro foto solo (il fronte).</div>
+    </div>
+    <div style="display:flex;gap:0.6rem;justify-content:space-between;align-items:center;margin-top:1rem;">
+      <button class="btn-danger" id="tipo-prodotto-elimina" style="display:none;" onclick="eliminaTipoProdotto()">Elimina</button>
+      <div style="display:flex;gap:0.6rem;margin-left:auto;">
+        <button class="btn-secondary" onclick="closeModal('add-tipo-prodotto-modal')">Annulla</button>
+        <button class="btn-primary" onclick="salvaTipoProdotto()">Salva</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="add-series-modal">
   <div class="modal modal-wide">
     <div class="modal-header">
@@ -2187,7 +2260,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.143"></script>
+<script src="js/app.js?v=6.159"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2211,7 +2284,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.143'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.159'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
