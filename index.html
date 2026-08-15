@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.169"></script>
-<link rel="stylesheet" href="css/style.css?v=6.169">
+<script src="js/email.min.js?v=6.181"></script>
+<link rel="stylesheet" href="css/style.css?v=6.181">
 
 
 <style>
@@ -274,7 +274,7 @@ button.back-btn { color:#ffffff; }
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.169</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.181</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -537,6 +537,20 @@ button.back-btn { color:#ffffff; }
           <button type="button" id="taglio-serie" onclick="impostaTaglioInventario('serie')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:#ffffff;background:var(--action);border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byseries">Series</button>
           <button type="button" id="taglio-prodotti" onclick="impostaTaglioInventario('prodotti')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--muted);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byproducts">Products</button>
         </div>
+        <!-- v6.174 (Franco) - IL RIEPILOGO DELLE SERIE, per tutti e non solo per l'admin.
+             `margin-left:auto` lo spinge in fondo a destra della riga senza aggiungere contenitori.
+             ⚠️ Si vede SOLO nel taglio Serie, e la regola sta in `_aggiornaBivioInventario` insieme
+             a quelle degli altri due pulsanti: il commento di quella funzione dice perche' - due
+             punti che accendono lo stesso pulsante con due regole diverse sono il difetto chiuso
+             dalla v6.139. -->
+        <!-- v6.175 (Franco: "il color code del bottone non rispetta lo standard per i bottoni
+             utente") - ORA USA `.btn-primary`, che E' lo standard utente: `var(--action)` e testo
+             bianco. L'arancio `.btn-admin` si aggiunge sopra SOLO per i comandi da admin, e questo
+             non lo e'. Prima me l'ero disegnato a mano con accento e bordo: non era ne' l'uno ne'
+             l'altro, ed e' lo stesso errore della v6.164 - lo stile si COPIA, non si riscrive
+             "simile". Dalla classe si prende il COLORE; restano in linea solo taglia e raggio, per
+             stare nella riga insieme alle due pillole. -->
+        <button type="button" id="btn-info-tutte-serie" class="btn-primary" onclick="apriInfoTutteLeSerie()" style="margin-left:auto;font-size:0.85rem;padding:0.5rem 1.2rem;border-radius:999px;letter-spacing:0.3px;" data-i18n="catalog.allSeriesInfo">Mostra informazioni di tutte le serie</button>
       </div>
       <div class="search-bar">
         <div class="search-input-wrap">
@@ -1376,6 +1390,22 @@ button.back-btn { color:#ffffff; }
         </div>
         <div id="admin-settings" class="admin-section">
           <div style="max-width:950px;">
+            <!-- v6.173 (Franco) - IMPOSTAZIONI GENERALI SITO, primo riquadro: il generale prima del
+                 particolare. Ci arriva il tetto di attesa del caricamento, che fino alla v6.172 era
+                 un 4000 nudo dentro app.js — senza nome, senza un posto dove cambiarlo e senza
+                 traccia di rispetto a cosa fosse tarato. -->
+            <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+              <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;" data-i18n="admin.generali.title">🌐 Impostazioni generali sito</h4>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" data-i18n="admin.generali.timeoutLabel">Attesa massima per il caricamento dei dati (secondi)</label>
+                <div style="display:flex;gap:0.5rem;align-items:flex-start;">
+                  <input class="form-input" type="number" id="impostazioni-timeout-input" min="3" max="120" step="1" placeholder="20" style="width:110px;">
+                  <button class="btn-primary btn-admin" style="white-space:nowrap;padding:0.6rem 1rem;" onclick="saveImpostazioniGenerali()" data-i18n="admin.save">Salva</button>
+                </div>
+                <div class="form-hint" data-i18n="admin.generali.timeoutHint">Oltre questo tempo il sito smette di aspettare i dati e mostra il pannello di guasto. Da 3 a 120 secondi. Con una connessione lenta un valore basso fa comparire «SITO MOMENTANEAMENTE NON DISPONIBILE» anche quando i dati stavano arrivando.</div>
+                <div id="impostazioni-generali-feedback" style="display:none;margin-top:0.6rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;"></div>
+              </div>
+            </div>
             <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
               <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;" data-i18n="newsletter.settingsTitle">⚙️ Impostazioni Email</h4>
 
@@ -1612,7 +1642,7 @@ button.back-btn { color:#ffffff; }
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.169</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.181</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1753,6 +1783,28 @@ button.back-btn { color:#ffffff; }
   </div>
 </div>
 
+<!-- v6.174 (Franco) — RIEPILOGO DI TUTTE LE SERIE, e non e' un pannello da admin: lo vede chiunque.
+     Nove colonne su telefono non ci stanno, quindi il contenitore scorre in orizzontale invece di
+     comprimere le colonne fino a renderle illeggibili. -->
+<div class="modal-overlay hidden" id="info-serie-modal">
+  <!-- v6.175 (Franco: "puoi allargare la finestra?") - LA LARGHEZZA STA IN LINEA, E IL MOTIVO E' UN
+       DIFETTO DEL CSS: `.modal-wide` ha `max-width: 660px` mentre `.modal` ne ha **662**, cioe' la
+       finestra "larga" e' due pixel piu' STRETTA di quella normale. Non allarga niente, e non e'
+       solo un problema di questa finestra: vale per tutte quelle che usano quella classe.
+       Qui si mette in linea (§5: il CSS si fa inline nell'index) invece di correggere `style.css`,
+       che e' un file a parte e cambia di rado. ⚠️ Ma il difetto resta li' per le altre finestre:
+       va sistemato in una release che tocchi il CSS, e allora questa riga in linea si toglie. -->
+  <div class="modal modal-wide" style="max-width:min(1500px, 96vw);">
+    <div class="modal-header">
+      <h2 class="modal-title" data-i18n="catalog.allSeriesInfoTitle">Le serie Sgorbions censite</h2>
+      <button class="modal-close" onclick="closeModal('info-serie-modal')">✕</button>
+    </div>
+    <!-- `overflow-x:auto` resta come RETE per gli schermi stretti, dove nessuna larghezza basta:
+         su desktop, con la finestra allargata, non entra in funzione. -->
+    <div id="info-serie-contenuto" style="overflow-x:auto;"></div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="add-series-modal">
   <div class="modal modal-wide">
     <div class="modal-header">
@@ -1760,6 +1812,15 @@ button.back-btn { color:#ffffff; }
       <button class="modal-close" onclick="closeModal('add-series-modal')">✕</button>
     </div>
     <input type="hidden" id="edit-series-id">
+    <!-- v6.171 (Franco) - IL SALVA SALE IN CIMA. La form della serie e' lunga - nome, anno, numeri,
+         otto spunte coi loro conteggi, la tabella delle colonne della griglia, i tipi di change,
+         i controlli sospesi, la foto - e il pulsante stava in fondo: per salvare un anno corretto
+         in due secondi bisognava scorrere tutto. Il feedback lo segue, se no la conferma comparirebbe
+         dove il pulsante non e' piu'. -->
+    <div style="margin-bottom:0.9rem;">
+      <button class="btn-primary btn-admin" style="width:100%;" onclick="saveSeries()" data-i18n="modal.series.save">Salva serie</button>
+      <div id="series-save-feedback" style="display:none;margin-top:0.75rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
+    </div>
     <!-- v6.080 (Franco) — il NOME CORTO sta accanto al nome lungo, non in fondo alla form: sono
          due modi di chiamare la stessa cosa e si compilano guardandosi. Si usa SOLO su telefono e
          SOLO nelle card che elencano le serie, dove il nome per esteso viene troncato; nella scheda
@@ -1831,19 +1892,55 @@ button.back-btn { color:#ffffff; }
           <span data-i18n="form.series.noRetro">Figurine senza retro</span>
         </label>
       </div>
+      <!-- v6.170 (Franco) - OGNI SPUNTA SI PORTA IL SUO NUMERO SOTTO. Prima le tre spunte stavano
+           qui e i tre conteggi in fondo alla finestra, separati da tutta la tabella delle colonne
+           della griglia: accendere una casella faceva comparire un campo dove non stavi guardando,
+           e se il campo cadeva sotto il bordo sembrava che il clic non avesse fatto niente.
+           E i change sono diventati DUE coppie - di figurina e di retro - perche' un contatore
+           solo, filtrato sulle figurine, scriveva "N. Change = 0" su Serie 1, che di change ne ha
+           144 (tutti di retro). Non mentiva: rispondeva a una domanda diversa da quella che
+           l'etichetta faceva credere. -->
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
           <input type="checkbox" id="series-has-variations-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
           <span data-i18n="form.series.hasVariations">Ha variazioni ufficiali</span>
         </label>
+        <div class="form-group" id="series-count-variations-group" style="display:none;margin:-0.15rem 0 0.15rem 1.6rem;">
+          <label class="form-label" style="font-size:0.78rem;" data-i18n="form.series.countVariations">N. variazioni ufficiali</label>
+          <input class="form-input" type="number" id="series-count-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:100px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: le figurine marcate «variazione ufficiale»">
+        </div>
+
         <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
           <input type="checkbox" id="series-has-unofficial-variations-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
           <span data-i18n="form.series.hasUnofficialVariations">Ha variazioni non ufficiali</span>
         </label>
+        <div class="form-group" id="series-count-unofficial-variations-group" style="display:none;margin:-0.15rem 0 0.15rem 1.6rem;">
+          <label class="form-label" style="font-size:0.78rem;" data-i18n="form.series.countUnofficialVariations">N. variazioni non ufficiali</label>
+          <input class="form-input" type="number" id="series-count-unofficial-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:100px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: le figurine marcate «variazione non ufficiale»">
+        </div>
+
         <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
           <input type="checkbox" id="series-has-change-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-          <span data-i18n="form.series.hasChange">Ha Change</span>
+          <span data-i18n="form.series.hasChange">Ha change di figurine</span>
         </label>
+        <div class="form-group" id="series-count-change-group" style="display:none;margin:-0.15rem 0 0.15rem 1.6rem;">
+          <label class="form-label" style="font-size:0.78rem;" data-i18n="form.series.countChange">N. change di figurine</label>
+          <input class="form-input" type="number" id="series-count-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:100px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i change che stanno nella sezione Figurine">
+        </div>
+
+        <!-- v6.170 - la coppia NUOVA. `hasRetroChange` non esiste sui documenti gia' salvati:
+             nasce spento ovunque, e va acceso a mano dove serve (Serie 1, 2 e 3, misurate il 15
+             agosto). `hasChange` invece NON cambia significato - i dati dicono che si comportava
+             gia' come "di figurine": acceso su Serie 2 e 3, che ne hanno, spento su Serie 1, che
+             non ne ha. Nessuna migrazione. -->
+        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+          <input type="checkbox" id="series-has-retro-change-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+          <span data-i18n="form.series.hasRetroChange">Ha change di retro</span>
+        </label>
+        <div class="form-group" id="series-count-retro-change-group" style="display:none;margin:-0.15rem 0 0.15rem 1.6rem;">
+          <label class="form-label" style="font-size:0.78rem;" data-i18n="form.series.countRetroChange">N. change di retro</label>
+          <input class="form-input" type="number" id="series-count-retro-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:100px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i change che stanno nella sezione Retro">
+        </div>
       </div>
         <!-- v6.163 (Franco) - QUANTE COLONNE HA LA GRIGLIA, due numeri PER SEZIONE. I valori di
          partenza non sono inventati: sono quelli che il sito gia' usava — 7 e 4 da `.grid-6` nel
@@ -1867,20 +1964,9 @@ button.back-btn { color:#ffffff; }
 
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;">
-      <div class="form-group" id="series-count-variations-group" style="display:none;">
-        <label class="form-label" data-i18n="form.series.countVariations">N. variazioni ufficiali</label>
-        <input class="form-input" type="number" id="series-count-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;">
-      </div>
-      <div class="form-group" id="series-count-unofficial-variations-group" style="display:none;">
-        <label class="form-label" data-i18n="form.series.countUnofficialVariations">N. variazioni non ufficiali</label>
-        <input class="form-input" type="number" id="series-count-unofficial-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;">
-      </div>
-      <div class="form-group" id="series-count-change-group" style="display:none;">
-        <label class="form-label" data-i18n="form.series.countChange">N. Change</label>
-        <input class="form-input" type="number" id="series-count-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;">
-      </div>
-    </div>
+    <!-- v6.170 - qui stava il blocco dei tre conteggi (griglia 1fr 1fr 1fr). Ogni numero e' andato
+         sotto la sua spunta, nella colonna di destra qui sopra: erano separati da tutta la tabella
+         delle colonne della griglia. -->
 
     <!-- v6.080 (Franco) — CONTROLLI SOSPESI PER QUESTA SERIE. Un campo solo a più valori invece di
          un flag nuovo per ogni controllo: quando se ne aggiunge uno bypassabile, si aggiunge una
@@ -1919,8 +2005,26 @@ button.back-btn { color:#ffffff; }
       <input type="file" id="series-img-file" accept="image/*" style="display:none;" onchange="handleSeriesImg(event)">
       <img id="series-img-preview" class="file-preview">
     </div>
-    <button class="btn-primary btn-admin" style="width:100%;" onclick="saveSeries()" data-i18n="modal.series.save">Salva serie</button>
-    <div id="series-save-feedback" style="display:none;margin-top:0.75rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
+    <!-- v6.171 (Franco) - ELIMINA SERIE, arrivato qui dalla vista tabellare, dove occupava una
+         colonna per un'operazione rarissima.
+         ⚠️ STA IN FONDO DI PROPOSITO, lontano dal Salva che ora e' in cima: cancellare una serie
+         cancella tutto il suo contenuto, e un comando distruttivo accanto a quello che si preme
+         venti volte al giorno e' un errore che aspetta solo la fretta. Cancellare e' raro (parole
+         di Franco), quindi scorrere fino in fondo e' il prezzo giusto.
+         ⚠️ E qui e' GRIGIATO, non nascosto. In tabella non veniva proprio disegnato quando la serie
+         aveva dei prodotti: da fuori sembra la stessa cosa, ma un pulsante assente non dice PERCHE'
+         non si puo' fare, e chi lo cerca conclude che il sito non sappia cancellare le serie. -->
+    <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--border);">
+      <!-- v6.175 - usa `.btn-danger`, che ESISTE gia' nel CSS (v5.723) e porta con se' anche
+           `:disabled { opacity:0.5; cursor:not-allowed }` — cioe' esattamente quello che nella
+           v6.171 mi ero riscritto a mano in linea. Stesso errore del pulsante del riepilogo: si
+           copia lo stile che c'e', non se ne disegna uno simile. -->
+      <button id="series-delete-btn" class="btn-danger" onclick="deleteSeries(document.getElementById('edit-series-id').value)"
+              style="font-size:0.88rem;padding:0.5rem 1.1rem;border-radius:8px;">
+        🗑️ <span data-i18n="modal.series.delete">Elimina serie</span>
+      </button>
+      <div id="series-delete-hint" style="font-size:0.78rem;color:var(--muted);margin-top:0.4rem;"></div>
+    </div>
   </div>
 </div>
 
@@ -2309,7 +2413,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.169"></script>
+<script src="js/app.js?v=6.181"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2333,7 +2437,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.169'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.181'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
