@@ -1,6 +1,263 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.169 - 🔴 TRE FLAG DELLA SERIE VENIVANO AZZERATI AD OGNI SALVATAGGIO, e la colonna delle
+//          colonne dei Retro (Franco). Modificato app.js e index.html.
+//
+//          IL SINTOMO, come l'ha visto Franco: "HA SOTTOSERIE non mostra SI per Sgorbions Holidays,
+//          che ha il campo a TRUE". E nella form la casella era davvero accesa.
+//
+//          LA CAUSA: in `openAddSeriesModal` **quattro flag su sette venivano ripristinati e tre
+//          no** — `hasSubseries`, `hasSizes`, `hasVariations`. Una casella non ripristinata mostra
+//          l'ULTIMO valore che aveva, non quello del record; e il salvataggio la legge e scrive
+//          quello. Quindi la form mentiva a chi la guardava, e ogni salvataggio di una serie —
+//          anche solo per cambiare il nome — azzerava quei tre flag in silenzio.
+//
+//          MISURATO SUI DATI VERI prima di correggere, ed e' la parte che rende la diagnosi certa:
+//            hasSubseries=true -> 0 serie   ma 3 hanno oggetti con la sottoserie
+//            hasSizes=true     -> 0 serie   ma 1 ha oggetti con la taglia
+//            hasVariations=true-> 0 serie   ma Serie 1 ha variazioni vere
+//            i quattro ripristinati invece sopravvivono: hasChange 1, noNumbers 4
+//          La differenza fra i tre azzerati ovunque e i quattro no e' la prova.
+//
+//          ⚠️ IL DANNO E' GIA' NEI DATI e questa release non lo ripara: i valori persi vanno
+//          rimessi a mano. Da qui in avanti non si perdono piu'.
+//          📌 E' lo stesso guasto che il codice descrive gia' in due punti senza che nessuno lo
+//          avesse collegato a questa form: la nota di `fe-no-number` ("la casella resta SEMPRE nel
+//          DOM: il salvataggio la legge, e se non la trova scrive false") e la v6.038 ("un campo che
+//          al salvataggio viene sovrascritto non si mostra modificabile"). La forma e' identica —
+//          cambia solo che qui la casella c'era, e a mancare era il ripristino.
+//
+//          COLONNE RETRO D/M: la colonna gemella nella tabella. Su una serie senza retro la cella
+//          resta VUOTA — un numero per una griglia che non si aprira' mai fa cercare una cosa che
+//          non c'e' — e nella form la riga "Retro" si nasconde, seguendo la spunta in tempo reale.
+//          ⚠️ Si nasconde, NON si toglie dal DOM: gli input conservano il valore, quindi
+//          riaccendendo la spunta i numeri tornano quelli di prima. Toglierli avrebbe fatto scrivere
+//          il default al primo salvataggio — cioe' lo stesso difetto che questa release chiude.
+// ------------------------------------------------------------
+// v6.168 - INTESTAZIONI SU DUE RIGHE nella tabella delle serie, e le due colonne delle colonne
+//          diventano una (Franco). Modificato app.js e index.html (solo la versione).
+//
+//          "N. FIGURINE", "HA NUMERI", "HA RETRO", "SOTTO SERIE", "VAR UFF", "VAR NON UFF": tutte
+//          spezzate in due righe. Una tabella con quattordici colonne si allarga per colpa delle
+//          INTESTAZIONI, non dei dati — sotto ci sono un "SI" o un numero — quindi accorciare
+//          l'intestazione e' l'unico modo di stringerla senza togliere informazione.
+//
+//          COL DESK + COL MOB -> una colonna sola, "COLONNE FIG D/M", coi due numeri separati da
+//          "/" (7/4). Desktop e mobile sono due facce dello stesso dato, e due colonne per leggerli
+//          allargavano la tabella per dire una cosa sola.
+//          ⚠️ Il "D/M" nell'intestazione non e' decorazione: senza, 7/4 e 4/7 si confondono, e chi
+//          legge non ha modo di sapere quale dei due viene prima.
+//
+//          🧪 Ricontrollate intestazioni e celle affiancate dopo aver TOLTO una colonna: 14 e 14,
+//          nello stesso ordine. E' il controllo che serve di piu' proprio quando si rimuove — un
+//          `<td>` di troppo rimasto indietro sposta tutta la riga di una casella, e la tabella
+//          continua a sembrare giusta.
+// ------------------------------------------------------------
+// v6.167 - LA FORM DEL TIPO DI PRODOTTO SI ASCIUGA (Franco). Modificato app.js e index.html.
+//
+//          1. VIA IL CAMPO "ORDINE": non lo usava nessuno. ⚠️ E con lui e' uscito il criterio che
+//             lo leggeva: i box ora si ordinano per NOME. Lasciarlo nel confronto avrebbe fatto
+//             decidere la posizione dei box a un numero che nessuno puo' piu' vedere ne' cambiare —
+//             il caso peggiore, perche' l'effetto resta e la causa diventa invisibile. E' lo stesso
+//             ragionamento della v6.139 e della v6.141: un calcolo che sopravvive alla domanda che
+//             lo giustificava.
+//             Il campo resta sui record gia' salvati (si riscrive `{ ...tipo, campi }`): non si
+//             cancellano dati per aver tolto una casella.
+//
+//          2. L'ORDINAMENTO DEGLI OGGETTI DIVENTA OBBLIGATORIO. Prima "vuoto" voleva dire
+//             "l'ordinamento di sempre", cioe' uno stato in piu' che significava qualcosa: chi
+//             creava un tipo poteva lasciarlo in bianco senza accorgersi di aver deciso.
+//             Il messaggio di rifiuto ELENCA i nomi ammessi: un campo obbligatorio che non spiega
+//             cosa vuole e' un ostacolo, non una regola.
+//
+//          3. Dall'aiuto sotto il campo sono sparite le righe "Esempi" e "Vuoto = …": la prima
+//             ripeteva la sintassi gia' spiegata sopra, la seconda descriveva uno stato che dal
+//             punto 2 non esiste piu'. Un aiuto che nomina un caso impossibile fa dubitare del
+//             resto di quello che dice.
+// ------------------------------------------------------------
+// v6.166 - LA TABELLA DELLE SERIE DICE SOLO CIO' CHE C'E' (Franco). Modificato app.js e index.html
+//          (solo la versione).
+//
+//          1. SOLO "SI", MAI "NO". Con sei colonne di SI/NO la tabella era una parete di parole in
+//             cui i pochi SI non si trovavano; il vuoto dice "no" da se'. E' la stessa idea del
+//             carattere `#` tolto nella v6.115: un segno che non aggiunge niente toglie leggibilita'
+//             a quelli che aggiungono.
+//
+//          2. DUE COLONNE DA NEGATIVE A POSITIVE: "NO NUMERI" -> "HA NUMERI", "NO RETRO" ->
+//             "HA RETRO". ⚠️ I flag sul record si chiamano ancora `noNumbers` e `noRetro`, quindi il
+//             valore va NEGATO nella cella. E' il punto piu' facile da sbagliare di tutta la
+//             release — un campo che si chiama "no..." letto sotto un'intestazione che dice "ha..."
+//             — ed e' scritto nel codice accanto alla riga, non solo qui.
+//             I nomi dei campi non sono stati cambiati: rinominarli vorrebbe dire riscrivere ogni
+//             documento serie per un guadagno di sola lettura (stessa scelta della v6.132 su
+//             `baseFigurineId`).
+//
+//          3. "VAR UFF" e "VAR NON UFF" su due righe, per non allargare la tabella.
+//
+//          4. DUE COLONNE NUOVE: le colonne della griglia (desktop e mobile) delle FIGURINE, che
+//             sono quelle che si guardano piu' spesso. Si mostra il valore vero — quello della serie
+//             se c'e', altrimenti il default — e non un trattino: una tabella che scrive "-" dove
+//             c'e' un comportamento preciso costringe ad aprire la scheda per sapere qual e'.
+//
+//          🧪 Verificato che intestazioni e celle siano in pari numero e nello stesso ordine,
+//          elencandole affiancate: 15 e 15. In una tabella costruita a stringhe una colonna in piu'
+//          da una parte sola non da' nessun errore — sposta i dati sotto l'intestazione sbagliata,
+//          e la tabella continua a sembrare giusta.
+//          📌 Un `node --check` preso al primo giro: un apice inverso dentro un commento HTML che
+//          sta DENTRO un template literal lo chiude. I commenti dentro i template non possono
+//          citare il codice col backtick.
+// ------------------------------------------------------------
+// v6.165 - IL PULSANTE TORNA DOV'ERA, con lo stile di "Modifica serie" (Franco). Modificato app.js
+//          e index.html (solo la versione).
+//
+//          🔴 LA v6.164 L'AVEVA FATTO SPARIRE. Franco aveva chiesto "stesso colore, stesso font,
+//          stesso posto", e io ho eseguito tutte e tre le cose senza verificare che il terzo posto
+//          esistesse. Non esisteva, per due motivi che si sommano:
+//            - dentro una sezione la testata della serie si puo' CHIUDERE (v6.059), e chiudendola
+//              sparisce `.series-title-area`, cioe' il contenitore in cui l'avevo messo;
+//            - "Modifica serie" non si e' MAI visto dentro una sezione: vive sull'hub della serie,
+//              un piano che nel percorso di un tipo di prodotto non si attraversa mai.
+//          ⚠️ E' la quarta volta oggi che dichiaro fatta una cosa senza guardarne l'effetto — dopo
+//          la temporal dead zone (v6.151), il `replace` a vuoto (v6.152) e la variabile morta
+//          (v6.157). Le prime tre erano cecita' sul codice; questa e' cecita' sulla SCHERMATA:
+//          avevo verificato di aver spostato il pulsante, non che si vedesse.
+//
+//          LA REGOLA, chiarita da Franco: **"la coerenza e' solo nel look and feel del tasto"**. Che
+//          "Modifica serie" stia nell'hub e "Modifica tipo di prodotto" no e' fisiologico — sono due
+//          percorsi diversi. A dover coincidere e' l'ASPETTO, perche' e' quello che dice al lettore
+//          "questi due comandi sono la stessa cosa".
+//          Quindi il pulsante torna accanto al titolo della sezione (che in un box e' il nome del
+//          tipo) e la sua stringa di stile e' **copiata** da `detail-edit-series-btn`, meno il
+//          `display:none` che decide il JS. Copiata, non riscritta "simile": due stringhe uguali si
+//          confrontano a occhio, due simili no.
+// ------------------------------------------------------------
+// v6.164 - COERENZA ESTETICA: "Modifica tipo di prodotto" dov'e' e com'e' "Modifica serie", e il
+//          pulsante Aggiungi dice il nome del prodotto (Franco). Modificato app.js e index.html.
+//
+//          ⚠️ LA REGOLA GENERALE, detta da Franco e che vale piu' di questa release: **il sito ha
+//          una sua logica estetica, e non e' un dettaglio.** Due comandi che fanno lo stesso
+//          mestiere devono stare nello stesso posto e avere lo stesso aspetto; se si presentano in
+//          due modi, insegnano a chi guarda che l'aspetto non vuol dire niente — e da quel momento
+//          nessun colore e nessuna posizione comunica piu' niente.
+//
+//          1. Il pulsante e' passato dalla testata della SEZIONE (dove l'aveva messo la v6.161, con
+//             un corpo e un colore suoi) alla testata della SERIE, accanto a "Modifica serie",
+//             **con lo stile copiato carattere per carattere** invece che riscritto "simile": se un
+//             domani quella riga cambia, questa si vede subito che e' rimasta indietro.
+//             I due si escludono — dentro un box si modifica il TIPO, fuori la SERIE — come i due
+//             "Aggiungi" del taglio Inventario, che sono nello stesso posto e mai insieme.
+//             E si chiama "Modifica tipo di prodotto", non "Modifica tipo": il nome per esteso.
+//
+//          3. ⚠️ E i comandi della testata ora hanno UNA regola sola (`_aggiornaComandiTestata`).
+//             Erano due: `openSeriesDetail` accendeva "Modifica serie" guardando solo `isAdmin`, e
+//             `openSeriesSection` lo spegneva dentro un box. Il risultato era giusto **per
+//             compensazione** — uno accendeva, l'altro correggeva — che e' la forma del difetto
+//             chiuso con la v6.139. Trovato scrivendo questa release, non provandola: due `grep`
+//             sullo stesso id che tornano due punti diversi sono gia' la diagnosi.
+//
+//          2. "+ AGGIUNGI CARTONCINO". Le altre sezioni dicono il nome da sempre ("+ Aggiungi
+//             figurina", "+ Aggiungi retro") e i box erano rimasti col generico "+ Aggiungi" — la
+//             stessa incoerenza del titolo della scheda, gia' corretta con la v6.147. Usa il
+//             SINGOLARE del tipo, cioe' il campo scritto apposta nella v6.148: e' la seconda volta
+//             che quel campo serve, e conferma che chiederlo era giusto.
+// ------------------------------------------------------------
+// v6.163 - LE COLONNE SONO DUE NUMERI **PER SEZIONE**, obbligatori, con i valori di oggi come
+//          partenza (Franco). Modificato app.js e index.html.
+//
+//          ⚠️ LA v6.162 AVEVA SBAGLIATO LA FORMA: due campi per SERIE. Non poteva funzionare, e la
+//          prova era gia' nel codice — `app.js` forzava `repeat(5, 1fr)` **solo per i Retro**,
+//          perche' le loro card sono larghe 1.6 contro 1. Una serie ha figurine e retro insieme:
+//          con un numero solo, o si perdeva quel 5 o restava cablato. L'ha visto Franco leggendo
+//          la spiegazione — "questo significa che servono piu' campi" — e ha ragione.
+//
+//          I VALORI DI PARTENZA NON SONO INVENTATI, sono stati LETTI il 14 agosto:
+//            `.grid-6` nel CSS            -> 7 (desktop, tutte le sezioni)
+//            `.grid-6` sotto gli 860px    -> 4
+//            `app.js`, solo Retro         -> 5
+//          Da cui `COLONNE_DEFAULT`: retro 5/4, tutte le altre 7/4. ⚠️ Il CSS sta in
+//          `css/style.css`, che le cartelle `_upload_` non contengono: e' stato letto dal SITO,
+//          non dedotto dal nome della classe `.grid-6` (che avrebbe fatto scrivere 6).
+//
+//          OBBLIGATORI, quindi non esiste piu' "vuoto = come oggi": la form si apre gia' compilata
+//          — col valore della serie se c'e', altrimenti col default — e un campo svuotato a mano
+//          torna al default al salvataggio. "Vuoto" sarebbe stato uno stato in piu' che significa
+//          la stessa cosa di un valore, e due modi di dire la stessa cosa divergono sempre.
+//
+//          IL 5 DEI RETRO E' USCITO DAL CODICE: la riga `currentSection === 'retros' ? 'repeat(5,
+//          1fr)'` non c'e' piu', perche' quel numero ora e' il valore di partenza del suo campo.
+//          E' il senso della richiesta — quei numeri dovevano finire in configurazione, non
+//          spostarsi in un posto piu' nascosto.
+//
+//          Nel TIPO di prodotto i campi restano due: li' la sezione e' una sola (`extras`), e il
+//          default e' il suo.
+// ------------------------------------------------------------
+// v6.162 - LE COLONNE DELLA GRIGLIA IN CONFIGURAZIONE (Franco). Modificato app.js e index.html.
+//          Due numeri, desktop e mobile, sulla SERIE e sul TIPO di prodotto.
+//
+//          ⚠️ SI PUO' FARE SENZA TOCCARE LA PAGINAZIONE, e il motivo e' una scelta di due settimane
+//          fa: dalla v6.099 `_gridGeometry()` **legge** il valore calcolato di
+//          `grid-template-columns` invece di stimarlo — "questa volta si misura", dopo che due
+//          tentativi avevano sostituito una stima con un'altra. Quindi basta scrivere il numero
+//          come stile e tutto il resto (quante card in una pagina, dove si spezza) si adegua da
+//          solo. Se le colonne fossero ancora un numero assunto, questa release ne avrebbe chieste
+//          due tenute allineate a mano.
+//
+//          DOVE E COME:
+//          - vuoto = come oggi. Nessuna migrazione, le serie non toccate restano identiche;
+//          - il numero si scrive con `!important`, perche' sotto gli 860px il CSS forza quattro
+//            colonne con `!important` (v5.821). Chi mette un numero comanda anche li' — ed e' per
+//            questo che i campi sono due: su mobile si tiene basso, e lo dice l'aiuto sotto;
+//          - **si toglie sempre prima di riscriverlo**: un `!important` lasciato acceso da un giro
+//            precedente vincerebbe anche dove non deve piu';
+//          - **non in modalita' FLEX** ('destra-piena'): li' le colonne non esistono, e uno stile
+//            che non ha effetto fa credere il contrario a chi legge il DOM;
+//          - il TIPO vince sulla SERIE dentro un box, ma **solo se compilato**: un tipo che non dice
+//            niente eredita la serie che lo contiene invece di riportare tutto al CSS;
+//          - 1..12: zero colonne non e' una griglia.
+//
+//          📌 Nella form della serie i due campi si AZZERANO all'apertura, sempre. La form si riusa
+//          fra creazione e modifica, e senza quell'azzeramento creando una serie subito dopo averne
+//          modificata un'altra si sarebbero ereditate le sue colonne — un valore comparso dal nulla,
+//          che e' il tipo di dato che nessuno pensa a controllare.
+// ------------------------------------------------------------
+// v6.161 - "MODIFICA TIPO" DENTRO IL BOX, come le serie hanno "Modifica serie" (Franco).
+//          Modificato app.js e index.html.
+//
+//          Prima l'ingranaggio stava SOLO sulla card dell'hub: entrato in un box, per cambiare il
+//          nome o l'ordinamento bisognava uscire, trovare la card e rientrare. Il comando che
+//          modifica una cosa deve stare accanto alla cosa — e li' il titolo della sezione E' il
+//          nome del tipo. Stile ricalcato su `detail-edit-series-btn`: stesso mestiere, stessa
+//          forma, cosi' non sembra un comando di un'altra famiglia.
+//
+//          ⚠️ E dopo il salvataggio il TITOLO segue il nome nuovo, e la griglia si ridisegna perche'
+//          l'ordinamento del tipo puo' essere cambiato. Senza, rinominare un tipo lasciava a schermo
+//          il nome vecchio fino al giro dopo — e chi l'ha appena cambiato conclude che non si e'
+//          salvato. E' lo stesso difetto della v6.139 vista da un'altra parte: una schermata che
+//          racconta uno stato che non e' piu' quello.
+// ------------------------------------------------------------
+// v6.160 - LA TAGLIA E' UNA PROPRIETA' DEL TIPO, e la Sottocategoria entra fra i campi di
+//          ordinamento (Franco). Modificato app.js e index.html.
+//
+//          1. SPUNTA "questo tipo di prodotto ha la taglia", spenta di default. Fino alla v6.159 la
+//             tendina A4/A5/Altro compariva su TUTTI i prodotti extra serie perche' era legata a
+//             `_eProdottoExtraSerie`: era vero per i Cartoncini e non e' una regola.
+//             ⚠️ E' la stessa correzione fatta per il retro con la v6.149 — e vale la pena notare
+//             che ho ripetuto l'errore a due release di distanza: una cosa vera del PRIMO caso
+//             scambiata per una regola di tutti i casi. Il campanello e' quando una proprieta' vale
+//             "per tutti quelli che ho visto finora", e finora e' uno.
+//             La domanda vive in `_mostraTaglia(f, serie)`, che risponde per i prodotti extra serie
+//             (lo dice il tipo) e per gli altri (lo dice il flag della serie): la leggono la scheda,
+//             la vista in lettura e la colonna della tabella. Tre risposte scritte a mano
+//             divergerebbero al primo ritocco — v6.133, v6.143, v6.154.
+//             In tabella la colonna si apre se ALMENO UNA riga visibile la prevede, e le celle delle
+//             righe che non la prevedono restano vuote: con tipi diversi nella stessa tabella non si
+//             puo' decidere per tutti.
+//
+//          2. `sottocategoria` fra i nomi ammessi nell'ordinamento di un tipo. Una riga, piu' il
+//             testo della sintassi sotto il campo — che va aggiornato nella stessa passata, se no
+//             il campo accetta un nome che l'aiuto non nomina.
+// ------------------------------------------------------------
 // v6.159 - LE FOTO DEI BOX PRODOTTO GRANDI COME QUELLE DELLE SERIE, e la Sottocategoria in vista
 //          tabellare (Franco). Modificato app.js e index.html (solo la versione).
 //
@@ -13895,7 +14152,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.159';
+const JS_VERSION = 'v6.169';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -17843,6 +18100,18 @@ function renderEbayOversizeTable() {
 function openAddSeriesModal(seriesId) {
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
   document.getElementById('edit-series-id').value = seriesId || '';
+  // v6.162 - la form si riusa fra creazione e modifica: i due campi si azzerano sempre, e in
+  // modifica vengono riempiti sotto. Senza, creando una serie dopo averne modificata un'altra si
+  // ereditavano le sue colonne senza che nessuno l'avesse chiesto.
+  // v6.163 - in CREAZIONE i campi partono dai default, non vuoti: sono obbligatori, e una serie
+  // nuova deve nascere con la disposizione di sempre invece che con dieci caselle da riempire.
+  Object.keys(COLONNE_DEFAULT).forEach(sez => {
+    const cd = document.getElementById('series-col-' + sez + '-d');
+    const cm = document.getElementById('series-col-' + sez + '-m');
+    if (cd) cd.value = COLONNE_DEFAULT[sez].d;
+    if (cm) cm.value = COLONNE_DEFAULT[sez].m;
+  });
+  _aggiornaRigaColonneRetro();   // v6.169 - anche in creazione
   document.getElementById('series-modal-title').textContent = seriesId ? t('modal.series.edit') : t('modal.series.title');
   document.getElementById('series-img-preview').style.display = 'none';
   editingSeriesImg = null;
@@ -17862,6 +18131,36 @@ function openAddSeriesModal(seriesId) {
       const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = s.hasChange || false;
       const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = s.noNumbers || false;
       const nri = document.getElementById('series-no-retro-input'); if (nri) nri.checked = s.noRetro || false; // v6.098
+    // 🔴 v6.169 (Franco, sul sintomo: "HA SOTTOSERIE non mostra SI per Sgorbions Holidays, che ha il
+    // campo a TRUE") - QUESTE TRE RIGHE MANCAVANO. Quattro flag su sette venivano ripristinati
+    // riaprendo una serie, tre no: `hasSubseries`, `hasSizes`, `hasVariations`. Una casella non
+    // ripristinata si apre SPENTA, e il salvataggio la legge e scrive `false`.
+    // ⚠️ Quindi ogni volta che si apriva una serie e la si salvava — anche solo per cambiare il
+    // nome — quei tre flag venivano azzerati in silenzio. Non e' un'ipotesi: misurato sui dati veri
+    // il 14 agosto, `hasSubseries`, `hasSizes` e `hasVariations` erano false su TUTTE E 13 le serie,
+    // mentre i dati dicono il contrario — tre serie hanno oggetti con la sottoserie, una ha le
+    // taglie, Serie 1 ha variazioni vere. I quattro flag ripristinati invece sopravvivono
+    // (`hasChange` 1, `noNumbers` 4): la controprova sta nella differenza.
+    // 📌 E' esattamente il guasto che il codice descrive altrove e che qui nessuno aveva collegato:
+    // "un campo che al salvataggio viene sovrascritto non si mostra modificabile" (v6.038), e la
+    // nota di `fe-no-number` — "la casella resta SEMPRE nel DOM: il salvataggio la legge, e se non
+    // la trova scrive false. Toglierla avrebbe azzerato il flag in silenzio al primo salvataggio".
+    // Qui la casella c'era: a mancare era il ripristino, che produce lo stesso effetto.
+    const hsub = document.getElementById('series-has-subseries-input'); if (hsub) hsub.checked = s.hasSubseries || false;
+    const hsiz = document.getElementById('series-has-sizes-input');     if (hsiz) hsiz.checked = s.hasSizes || false;
+    const hvar = document.getElementById('series-has-variations-input'); if (hvar) hvar.checked = s.hasVariations || false;
+    _aggiornaRigaColonneRetro();   // v6.169
+    // v6.162 - le colonne della griglia. `?? ''` e non `|| ''`: uno zero salvato per errore deve
+    // ricomparire nel campo, se no si corregge un dato che non si vede.
+    // v6.163 - precompilati: se la serie ha un valore suo si mostra quello, se no il default, che e'
+    // il numero che il sito usa oggi. Un campo obbligatorio non si apre mai vuoto.
+    Object.keys(COLONNE_DEFAULT).forEach(sez => {
+      const cfg = (s.colonne && s.colonne[sez]) || {};
+      const cd = document.getElementById('series-col-' + sez + '-d');
+      const cm = document.getElementById('series-col-' + sez + '-m');
+      if (cd) cd.value = _colClamp(cfg.d) || COLONNE_DEFAULT[sez].d;
+      if (cm) cm.value = _colClamp(cfg.m) || COLONNE_DEFAULT[sez].m;
+    });
       { const nc = document.getElementById('series-nome-corto-input'); if (nc) nc.value = s.nomeCorto || ''; } // v6.080
       renderSeriesBypassCheckboxes(s.controlliSospesi); // v6.080
       document.getElementById('series-desc-input').value = s.descIt || s.desc || '';
@@ -17917,6 +18216,17 @@ async function saveSeries() {
   const name = document.getElementById('series-name-input').value.trim();
   const year = document.getElementById('series-year-input').value;
   const hasSizes = document.getElementById('series-has-sizes-input').checked;
+  // v6.162 - le colonne della griglia. Vuoto -> `null`, che e' "non deciso": zero direbbe "nessuna
+  // colonna", ed e' un'altra cosa.
+  // v6.163 - dieci campi (cinque sezioni x due) in un oggetto solo. Dove il campo e' vuoto o storto
+  // si rimette il DEFAULT invece di `null`: i campi sono obbligatori, e "vuoto" non e' uno stato
+  // ammesso — se lo fosse, la griglia tornerebbe al CSS senza che nessuno l'abbia chiesto.
+  const colonne = {};
+  Object.keys(COLONNE_DEFAULT).forEach(sez => {
+    const d = _colClamp(document.getElementById('series-col-' + sez + '-d')?.value);
+    const m = _colClamp(document.getElementById('series-col-' + sez + '-m')?.value);
+    colonne[sez] = { d: d || COLONNE_DEFAULT[sez].d, m: m || COLONNE_DEFAULT[sez].m };
+  });
   const hasSubseries = document.getElementById('series-has-subseries-input').checked;
   const hasVariations = document.getElementById('series-has-variations-input')?.checked || false;
   const hasUnofficialVariations = document.getElementById('series-has-unofficial-variations-input')?.checked || false;
@@ -17981,12 +18291,12 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes, frontChangeTypes /* v6.102 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes, frontChangeTypes /* v6.102 */ };
         await fsSave('series', series[idx]);
         _cache.series = series;
       }
     } else {
-      const newS = { name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, frontChangeTypes /* v6.102 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, frontChangeTypes /* v6.102 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -18540,8 +18850,11 @@ function _tipiProdotto() {
     getTipiProdotto().then(() => { try { renderCatalog(); } catch (e) {} });
     return [];
   }
+  // v6.167 - i box si ordinano per NOME. Il campo "Ordine" e' stato tolto perche' non lo usava
+  // nessuno, e con esso il criterio che lo leggeva: lasciarlo nel confronto avrebbe fatto decidere
+  // la posizione dei box a un numero che nessuno puo' piu' vedere ne' cambiare — il caso peggiore,
+  // perche' l'effetto resta e la causa diventa invisibile.
   return _cache.tipiProdotto.slice().sort((a, b) =>
-    (a.ordine ?? 9999) - (b.ordine ?? 9999) ||
     (a.nome || '').localeCompare(b.nome || '', 'it', { numeric: true }));
 }
 
@@ -18635,9 +18948,12 @@ function openAddTipoProdottoModal(idDaModificare) {
   if (g('tipo-prodotto-id')) g('tipo-prodotto-id').value = t ? t.id : '';
   if (g('tipo-prodotto-nome')) g('tipo-prodotto-nome').value = t ? (t.nome || '') : '';
   if (g('tipo-prodotto-singolare')) g('tipo-prodotto-singolare').value = t ? (t.singolare || '') : '';
-  if (g('tipo-prodotto-ordine')) g('tipo-prodotto-ordine').value = t ? String(t.ordine ?? 0) : String((_tipiProdotto().length + 1) * 10);
+
   if (g('tipo-prodotto-haretro')) g('tipo-prodotto-haretro').checked = !!(t && t.haRetro);
   if (g('tipo-prodotto-ordina')) g('tipo-prodotto-ordina').value = t ? (t.ordina || '') : '';   // v6.155
+  if (g('tipo-prodotto-hataglia')) g('tipo-prodotto-hataglia').checked = !!(t && t.haTaglia);  // v6.160
+  if (g('tipo-prodotto-colonne-desktop')) g('tipo-prodotto-colonne-desktop').value = (t && _colClamp(t.colonneDesktop)) || COLONNE_DEFAULT.extras.d;  // v6.163
+  if (g('tipo-prodotto-colonne-mobile'))  g('tipo-prodotto-colonne-mobile').value  = (t && _colClamp(t.colonneMobile))  || COLONNE_DEFAULT.extras.m;  // v6.163
   const tit = g('tipo-prodotto-modal-title');
   if (tit) tit.textContent = t ? (it ? 'Modifica tipo di prodotto' : 'Edit product type')
                                : (it ? 'Aggiungi tipo di prodotto' : 'Add product type');
@@ -18705,13 +19021,24 @@ async function salvaTipoProdotto() {
   const it = currentLang === 'it';
   const nome = (document.getElementById('tipo-prodotto-nome')?.value || '').trim();
   const singolare = (document.getElementById('tipo-prodotto-singolare')?.value || '').trim();
-  const ordineTxt = (document.getElementById('tipo-prodotto-ordine')?.value || '').trim();
+  // v6.167 - il campo "Ordine" non c'e' piu': non lo usava nessuno (Franco). I box si ordinano per
+  // NOME, che e' l'unico criterio rimasto e non ha bisogno di essere scritto da qualcuno.
   const ordina = (document.getElementById('tipo-prodotto-ordina')?.value || '').trim();   // v6.155
   if (!nome) { toast(it ? 'Il nome è obbligatorio' : 'Name is required', 'error'); return; }
   // v6.155 - UN NOME STORTO FERMA IL SALVATAGGIO e viene nominato. Ignorarlo produrrebbe un
   // ordinamento diverso da quello scritto, senza che niente lo dica: la stessa famiglia dei filtri
   // invisibili e dei controlli spenti in silenzio chiusa tre volte in questi due giorni.
   const _ord = _passiOrdinamento(ordina);
+  // v6.167 (Franco) - OBBLIGATORIO. Prima vuoto voleva dire "l'ordinamento di sempre", cioe' uno
+  // stato in piu' che significava qualcosa: chi creava un tipo poteva lasciarlo in bianco senza
+  // accorgersi di aver deciso. Ora si dichiara, e il messaggio dice con cosa si compila — un campo
+  // obbligatorio che non spiega cosa vuole e' un ostacolo, non una regola.
+  if (!_ord.passi.length) {
+    toast((it ? 'L\u2019ordinamento degli oggetti è obbligatorio. Ammessi: '
+                + Object.keys(CAMPI_ORDINAMENTO_TIPO).join(', ') + '.'
+              : 'The sort order is required.'), 'error', null, 9000);
+    return;
+  }
   if (_ord.sconosciuti.length) {
     toast((it ? 'Ordinamento: non conosco ' + _ord.sconosciuti.map(x => '"' + x + '"').join(', ') +
                 '. Ammessi: ' + Object.keys(CAMPI_ORDINAMENTO_TIPO).join(', ') + '.'
@@ -18720,6 +19047,11 @@ async function salvaTipoProdotto() {
   }
   const idEsistente = (document.getElementById('tipo-prodotto-id')?.value || '').trim();   // v6.149
   const haRetro = !!document.getElementById('tipo-prodotto-haretro')?.checked;             // v6.149
+  const haTaglia = !!document.getElementById('tipo-prodotto-hataglia')?.checked;           // v6.160
+  // v6.163 - obbligatori anche qui: vuoto -> il default della sezione `extras`, che e' quella in cui
+  // questi oggetti vivono.
+  const colonneDesktop = _colClamp(document.getElementById('tipo-prodotto-colonne-desktop')?.value) || COLONNE_DEFAULT.extras.d;
+  const colonneMobile  = _colClamp(document.getElementById('tipo-prodotto-colonne-mobile')?.value)  || COLONNE_DEFAULT.extras.m;
   const tipi = (_cache.tipiProdotto || []).slice();
   // Due box con lo stesso nome non si distinguono a colpo d'occhio, ed e' esattamente l'incidente
   // dei due `index.html` in coda al deploy: davanti a due omonimi non si sceglie.
@@ -18734,12 +19066,12 @@ async function salvaTipoProdotto() {
     if (k < 0) { toast(it ? 'Quel tipo di prodotto non esiste più.' : 'That product type no longer exists.', 'error'); return; }
     // Si riscrive il record intero a partire da quello che c'e': cosi' un campo aggiunto in futuro
     // non viene perso da un salvataggio scritto oggi.
-    tipi[k] = { ...tipi[k], nome, singolare, haRetro, ordina, ordine: parseInt(ordineTxt) || 0 };
+    tipi[k] = { ...tipi[k], nome, singolare, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile };
   } else {
     // L'id si genera e non si scrive: e' un riferimento, e un riferimento battuto a mano e' un id
     // storto che non si vede (la lezione della v6.119 sul `baseFigurineId`).
     const id = 'tp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    tipi.push({ id, nome, singolare, haRetro, ordina, ordine: parseInt(ordineTxt) || 0 });
+    tipi.push({ id, nome, singolare, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile });
   }
   try {
     await _salvaTipiProdotto(tipi);
@@ -18749,6 +19081,15 @@ async function salvaTipoProdotto() {
     return;
   }
   closeModal('add-tipo-prodotto-modal');
+  // v6.161 - se si stava guardando QUEL box, il titolo della sezione segue il nome nuovo. Senza,
+  // rinominare un tipo lasciava a schermo il nome vecchio fino al giro dopo — e chi l'ha appena
+  // cambiato conclude che non si e' salvato.
+  if (idEsistente && _tipoProdottoCorrente === idEsistente) {
+    const _t = _tipiProdotto().find(x => x.id === idEsistente);
+    const _titolo = document.getElementById('items-section-title');
+    if (_t && _titolo) _titolo.textContent = _t.nome || _titolo.textContent;
+    try { renderItems(); } catch (e) {}   // l'ordinamento del tipo puo' essere cambiato
+  }
   toast(it ? (idEsistente ? '✅ Tipo di prodotto aggiornato' : '✅ Tipo di prodotto creato')
            : (idEsistente ? '✅ Product type updated' : '✅ Product type created'), 'success');
   try { renderCatalog(); } catch (e) {}
@@ -20028,10 +20369,7 @@ function openSeriesDetail(seriesId) {
   // e' davvero lungo (oltre ~140 caratteri): sotto quella soglia le tre righe bastano e un
   // comando che non fa niente e' peggio che non averlo. Sul desktop nulla cambia.
   _setupSeriesDescToggle(desc || '');
-  const editSeriesBtn = document.getElementById('detail-edit-series-btn');
-  if (editSeriesBtn) editSeriesBtn.style.display = currentUser?.isAdmin ? '' : 'none';
-  const ebaySeriesBtn = document.getElementById('detail-ebay-series-btn');
-  if (ebaySeriesBtn) ebaySeriesBtn.style.display = currentUser?.isAdmin ? '' : 'none';
+  _aggiornaComandiTestata();   // v6.164 - la regola sta li', non piu' qui
 
   // Campi meta nella hero
   renderSeriesMeta(s);
@@ -20108,6 +20446,11 @@ function openSeriesSection(section) {
   // si nasconde, e resta quello della sezione.
   const _btnSerie = document.querySelector('#series-detail > .series-hero .back-btn');
   if (_btnSerie) _btnSerie.style.display = _tipoProdottoCorrente ? 'none' : '';
+  // v6.161 - "Modifica tipo" si vede solo dentro un box e solo all'admin. Sta accanto al titolo,
+  // che li' e' il nome del tipo: il comando che modifica una cosa deve stare accanto alla cosa.
+  // v6.164 - i due comandi si escludono: dentro un box si modifica il TIPO, fuori la SERIE. Stesso
+  // posto, stesso aspetto, mai insieme — come i due pulsanti "Aggiungi" del taglio Inventario.
+  _aggiornaComandiTestata();   // v6.164
   const _btnIndietro = document.querySelector('#items-section .back-btn span');
   if (_btnIndietro) {
     const _it = currentLang === 'it';
@@ -20135,7 +20478,14 @@ function openSeriesSection(section) {
   // Rename add button based on section
   const addBtn = document.querySelector('#admin-add-item-btn .btn-primary');
   const addLabels = { figurines: currentLang === 'it' ? '+ Aggiungi figurina' : '+ Add sticker', retros: currentLang === 'it' ? '+ Aggiungi retro' : '+ Add retro', albums: currentLang === 'it' ? '+ Aggiungi album' : '+ Add album', extras: currentLang === 'it' ? '+ Aggiungi' : '+ Add' };
-  if (addBtn) addBtn.textContent = addLabels[section] || (currentLang === 'it' ? '+ Aggiungi' : '+ Add');
+  // v6.164 (Franco) - dentro un box il pulsante dice il NOME del prodotto: "+ Aggiungi cartoncino".
+  // Le altre sezioni lo fanno da sempre ("+ Aggiungi figurina", "+ Aggiungi retro") e i box erano
+  // rimasti col generico "+ Aggiungi" — la stessa incoerenza del titolo della scheda, corretta con
+  // la v6.147. Si usa il SINGOLARE del tipo, che e' il campo scritto apposta nella v6.148.
+  const _tipoQuiAdd = _tipoProdottoCorrente ? _tipiProdotto().find(x => x.id === _tipoProdottoCorrente) : null;
+  if (addBtn) addBtn.textContent = _tipoQuiAdd
+    ? ((currentLang === 'it' ? '+ Aggiungi ' : '+ Add ') + (_tipoQuiAdd.singolare || _tipoQuiAdd.nome || ''))
+    : (addLabels[section] || (currentLang === 'it' ? '+ Aggiungi' : '+ Add'));
   renderItems();
   // Show WIP banner if less than 50% of stickers have photos
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -22253,6 +22603,10 @@ function renderItems() {
   // assunto e nessuno le leggeva), al primo render e ad ogni cambio di modalita' la misura
   // descriverebbe il render PRECEDENTE.
 
+  // v6.162 - si toglie sempre PRIMA: il numero configurato si scrive con `!important` (per battere
+  // la regola del CSS che sotto gli 860px forza quattro colonne), e un `!important` lasciato acceso
+  // da un giro precedente vincerebbe anche dove non deve piu'.
+  grid.style.removeProperty('grid-template-columns');
   if (currentSection === 'retros' || currentSection === 'figurines') {
     // v6.020 — !_soloFronteMobile(): senza retro in griglia nessuna card e' larga, quindi il
     // passaggio a flex non serviva a niente e cambiava comunque la disposizione delle card.
@@ -22264,7 +22618,10 @@ function renderItems() {
     } else {
       grid.style.display = '';
       grid.style.flexWrap = '';
-      grid.style.gridTemplateColumns = currentSection === 'retros' ? 'repeat(5, 1fr)' : '';
+      // v6.163 - qui c'era `currentSection === 'retros' ? 'repeat(5, 1fr)' : ''`. Quel 5 ora e' il
+      // valore di partenza del campo dei Retro, quindi non serve piu' cablato: lo scrive
+      // `_colonneGriglia` insieme a tutti gli altri, poche righe piu' sotto.
+      grid.style.gridTemplateColumns = '';
     }
     grid.style.width = 'min(1800px, 96vw)';
     grid.style.maxWidth = '1800px';
@@ -22280,6 +22637,15 @@ function renderItems() {
     grid.style.marginLeft = '';
     grid.style.marginRight = '';
     grid.style.transform = '';
+  }
+  // v6.162 - e alla fine, se c'e' un numero configurato, comanda lui. Non in modalita' FLEX
+  // ('destra-piena'): li' le colonne non esistono, le card si dispongono da se' secondo la
+  // larghezza, e scrivere `grid-template-columns` non farebbe niente — meglio non scriverlo che
+  // lasciare uno stile che non ha effetto e fa credere il contrario a chi legge il DOM.
+  // v6.163 - il numero c'e' sempre (default o configurato), tranne in modalita' FLEX dove le
+  // colonne non esistono.
+  if (grid.style.display !== 'flex') {
+    grid.style.setProperty('grid-template-columns', 'repeat(' + _colonneGriglia(currentSection) + ', 1fr)', 'important');
   }
 
   // Pagination — i confini NON sono piu' multipli del tetto: li decide buildItemPages(), che non
@@ -23726,10 +24092,14 @@ function renderAdminSeries() {
   el.innerHTML = `
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.25rem;">${(currentLang === 'it') ? "Usa le frecce per cambiare l'ordine" : 'Use the arrows to change the order'}</p>
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Per eliminare una serie, cancellare prima tutto il suo contenuto.' : 'To delete a series, first delete all its content.'}</p>
-    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th>${currentLang==="it"?"N. FIG":"N. FIG"}</th><th>DA</th><th>A</th><th>${currentLang==="it"?"NO NUMERI":"NO NUMBERS"}</th><th>${currentLang==="it"?"NO RETRO":"NO BACKS"}</th><th>${currentLang==="it"?"Sottoserie":"Subseries"}</th><th>${currentLang==="it"?"Var. uff.":"Off. var."}</th><th>${currentLang==="it"?"Var. non uff.":"Unoff. var."}</th><th>Change</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
+    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th style="line-height:1.15;">${currentLang==="it"?"N.<br>FIGURINE":"N.<br>STICKERS"}</th><th>DA</th><th>A</th><th style="line-height:1.15;">${currentLang==="it"?"HA<br>NUMERI":"HAS<br>NUMBERS"}</th><th style="line-height:1.15;">${currentLang==="it"?"HA<br>RETRO":"HAS<br>BACKS"}</th><th style="line-height:1.15;">${currentLang==="it"?"SOTTO<br>SERIE":"SUB<br>SERIES"}</th><th style="line-height:1.15;">${currentLang==="it"?"VAR<br>UFF":"OFF<br>VAR"}</th><th style="line-height:1.15;">${currentLang==="it"?"VAR<br>NON UFF":"UNOFF<br>VAR"}</th><th>Change</th><th style="line-height:1.15;">${currentLang==="it"?"COLONNE<br>FIG D/M":"COLUMNS<br>FIG D/M"}</th><th style="line-height:1.15;">${currentLang==="it"?"COLONNE<br>RETRO D/M":"COLUMNS<br>BACK D/M"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${series.map((s, idx) => {
       const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
-      const siNoCell = v => v ? '<span style="color:var(--success);font-weight:600;">SI</span>' : '<span style="color:var(--text);">NO</span>';
+      // v6.166 (Franco) - SOLO "SI", e il vuoto dice "no" da se'. Con undici colonne di SI/NO la
+      // tabella era una parete di parole in cui i pochi SI non si trovavano: togliendo i NO, cio'
+      // che resta scritto e' esattamente cio' che c'e'. Stessa idea del `#` tolto nella v6.115 —
+      // un segno che non aggiunge niente toglie leggibilita' a quelli che aggiungono.
+      const siNoCell = v => v ? '<span style="color:var(--success);font-weight:600;">SI</span>' : '';
       return `<tr>
         <td style="white-space:nowrap;">
           <button class="tbl-btn tbl-btn-edit" onclick="moveSeriesUp(${idx})" ${idx===0?'disabled style="opacity:0.3;"':''}>▲</button>
@@ -23738,12 +24108,32 @@ function renderAdminSeries() {
         <td>${s.name}</td><td>${s.year}</td><td>${figs}</td>
         <td>${s.firstNumber ?? ''}</td>
         <td>${s.lastNumber ?? ''}</td>
-        <td>${siNoCell(s.noNumbers)}</td>
-        <td>${siNoCell(s.noRetro)}</td><!-- v6.098 -->
+        <!-- v6.166 - le due colonne erano NEGATIVE (noNumbers, noRetro) e ora sono positive: la
+             colonna dice "HA numeri", quindi il valore va NEGATO qui. E' il punto in cui e' piu'
+             facile sbagliare di tutta la release - un flag che si chiama no... letto sotto
+             un'intestazione che dice ha... - ed e' per questo che sta scritto.
+             NOTA: niente apici inversi in questo commento, sta DENTRO un template literal e li' un
+             backtick lo chiude. Preso da node --check al primo giro. -->
+        <td>${siNoCell(!s.noNumbers)}</td>
+        <td>${siNoCell(!s.noRetro)}</td><!-- v6.098 -->
         <td>${siNoCell(s.hasSubseries)}</td>
         <td>${siNoCell(s.hasVariations)}</td>
         <td>${siNoCell(s.hasUnofficialVariations)}</td>
         <td>${siNoCell(s.hasChange)}</td>
+        <!-- v6.166 (Franco) - le colonne della griglia delle FIGURINE, che sono quelle
+             che si guardano piu' spesso. Si mostra il valore vero: quello della serie se c'e',
+             altrimenti il default - lo stesso numero che il sito usa, non un trattino. Una tabella
+             che scrive "-" dove c'e' un comportamento preciso costringe ad aprire la scheda per
+             sapere qual e'. -->
+        <!-- v6.168 (Franco) - i due numeri in UNA colonna, separati da "/": desktop e mobile sono
+             due facce dello stesso dato, e due colonne per leggerli allargavano la tabella per
+             dire una cosa sola. Il "D/M" nell'intestazione dice l'ordine, se no 7/4 e 4/7 si
+             confondono. -->
+        <td style="text-align:center;white-space:nowrap;">${(((s.colonne||{}).figurines||{}).d || COLONNE_DEFAULT.figurines.d) + '/' + (((s.colonne||{}).figurines||{}).m || COLONNE_DEFAULT.figurines.m)}</td>
+        <!-- v6.169 (Franco) - le colonne dei RETRO. Su una serie che i retro non li ha la cella
+             resta VUOTA: scriverci 5/4 direbbe un numero per una griglia che non si aprira' mai, e
+             chi legge la tabella si chiederebbe dove la trova. -->
+        <td style="text-align:center;white-space:nowrap;">${s.noRetro ? '' : ((((s.colonne||{}).retros||{}).d || COLONNE_DEFAULT.retros.d) + '/' + (((s.colonne||{}).retros||{}).m || COLONNE_DEFAULT.retros.m))}</td>
         <td>
         <button class="tbl-btn tbl-btn-edit" onclick="openAddSeriesModal('${s.id}')">${currentLang === 'it' ? 'Modifica' : 'Edit'}</button>
         ${(() => {
@@ -25014,7 +25404,7 @@ function openFigDetail(figId, elencoNav) {
 
   // Taglia (only for series with hasSizes)
   // v6.148 - e sempre sui prodotti extra serie, dove la Taglia e' una delle tre scelte della form.
-  if (figSeries?.hasSizes || _eProdottoExtraSerie(f)) {
+  if (_mostraTaglia(f, figSeries)) {   // v6.160 - una domanda sola per tutti e tre i punti
     if (f.size || isAdmin) {
       rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Taglia' : 'Size')}</span><span class="detail-value">${f.size || '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostata' : 'not set') + '</span>'}</span></div>`);
     }
@@ -25383,6 +25773,7 @@ const CAMPI_ORDINAMENTO_TIPO = {
   ordinamento: { etichetta: 'Ordinamento', num: true,  val: f => (f.number ?? null) },
   nome:        { etichetta: 'Nome',        num: false, val: f => (f.name || '') },
   categoria:   { etichetta: 'Categoria',   num: false, val: f => (f.category || '') },
+  sottocategoria: { etichetta: 'Sottocategoria', num: false, val: f => (f.subcategory || '') },   // v6.160
   taglia:      { etichetta: 'Taglia',      num: false, val: f => (f.size || '') },
   punteggio:   { etichetta: 'Punteggio',   num: true,  val: f => (f.score ?? 0) },
   creazione:   { etichetta: 'Creazione',   num: true,  val: f => (_dataCreazione(f) || 0) }
@@ -25424,6 +25815,104 @@ function _comparatoreTipo(idTipo) {
     }
     return 0;
   };
+}
+
+// v6.160 (Franco) - LA TAGLIA E' UNA PROPRIETA' DEL TIPO, come lo e' `hasSizes` per una serie.
+// Fino alla v6.159 compariva su TUTTI i prodotti extra serie perche' l'avevo legata a
+// `_eProdottoExtraSerie`: era vero per i Cartoncini e non e' una regola — la stessa correzione gia'
+// fatta per il retro con la v6.149. Spento di default: i tipi gia' creati non cambiano.
+// v6.162 (Franco) - QUANTE COLONNE HA LA GRIGLIA, deciso in configurazione invece che dal CSS.
+// Due numeri, desktop e mobile, sulla SERIE e sul TIPO di prodotto. Vuoto = come oggi, quindi le
+// serie che nessuno tocca restano identiche e non c'e' nessuna migrazione.
+//
+// ⚠️ PERCHE' SI PUO' FARE SENZA TOCCARE LA PAGINAZIONE: dalla v6.099 `_gridGeometry()` **legge** il
+// valore calcolato di `grid-template-columns` invece di stimarlo ("questa volta si misura"). Quindi
+// basta scrivere il numero come stile e tutto il resto — quante card stanno in una pagina, dove si
+// spezza — si adegua da solo. Se le colonne fossero ancora un numero assunto, questa release ne
+// avrebbe richieste due allineate a mano.
+//
+// Il TIPO vince sulla SERIE quando si e' dentro un box, ma solo se il suo campo e' compilato: un
+// tipo che non dice niente eredita la serie che lo contiene, invece di riportare tutto al CSS.
+// Il numero e' limitato fra 1 e 12: zero colonne non e' una griglia, e oltre la dozzina le card
+// diventano illeggibili prima ancora di essere strette.
+// v6.163 (Franco) - I NUMERI CHE ERANO CABLATI, ORA SCRITTI IN UN POSTO SOLO E MODIFICABILI.
+// Non sono stati inventati: **letti** dal CSS vero e da `app.js` il 14 agosto.
+//   `.grid-6`                       -> repeat(7, 1fr)   (desktop, tutte le sezioni)
+//   `.grid-6` sotto gli 860px       -> repeat(4, 1fr)
+//   `app.js`, solo per i RETRO      -> repeat(5, 1fr)   (le loro card sono larghe 1.6 contro 1)
+// Quel 5 e' il motivo per cui i campi sono DUE PER SEZIONE e non due per serie: una serie ha
+// figurine e retro insieme, e un numero solo non poteva riprodurre quello che il sito gia' faceva.
+// Se n'e' accorto Franco leggendo la spiegazione — "questo significa che servono piu' campi".
+const COLONNE_DEFAULT = {
+  figurines: { d: 7, m: 4 },
+  retros:    { d: 5, m: 4 },
+  bustine:   { d: 7, m: 4 },
+  albums:    { d: 7, m: 4 },
+  extras:    { d: 7, m: 4 }
+};
+const _colClamp = v => { const n = parseInt(v); return Number.isFinite(n) && n > 0 ? Math.min(12, n) : null; };
+
+// Quante colonne per QUESTA sezione, adesso. Non torna mai null: i campi sono obbligatori, e dove
+// non c'e' ancora niente vale il default — che e' esattamente il comportamento di prima.
+// Dentro un box di tipo prodotto comanda il tipo: li' la sezione e' una sola.
+// v6.164 - I COMANDI DELLA TESTATA, decisi in un posto solo. Erano due: `openSeriesDetail` accendeva
+// "Modifica serie" guardando solo `isAdmin`, e `openSeriesSection` lo spegneva dentro un box. Il
+// risultato era giusto ma per compensazione — il primo lo accendeva, il secondo lo correggeva — ed
+// e' esattamente la forma del difetto chiuso con la v6.139 (due punti che accendono lo stesso
+// pulsante con due regole diverse). Ora la regola e' una: dentro un box si modifica il TIPO, fuori
+// la SERIE, e i due non si vedono mai insieme.
+function _aggiornaComandiTestata() {
+  const adm = !!currentUser?.isAdmin;
+  const inBox = !!_tipoProdottoCorrente;
+  const b1 = document.getElementById('detail-edit-series-btn');
+  const b2 = document.getElementById('detail-edit-tipo-btn');
+  const b3 = document.getElementById('detail-ebay-series-btn');
+  if (b1) b1.style.display = (adm && !inBox) ? '' : 'none';
+  if (b2) b2.style.display = (adm && inBox) ? '' : 'none';
+  // l'Ebay della serie segue la serie: dentro un box non c'e' una serie di cui parlare
+  if (b3) b3.style.display = (adm && !inBox) ? '' : 'none';
+}
+
+// v6.169 (Franco) - la riga "Retro" della tabellina delle colonne sparisce se la serie dichiara di
+// non avere retro: sono due numeri per una griglia che non si aprira' mai.
+// ⚠️ Si NASCONDE, non si toglie dal DOM: gli `<input>` restano e conservano il loro valore, quindi
+// spegnendo e riaccendendo la spunta i numeri tornano quelli di prima. Toglierli avrebbe fatto
+// scrivere il default al primo salvataggio — che e' precisamente il guasto chiuso in questa stessa
+// release sui tre flag non ripristinati.
+function _aggiornaRigaColonneRetro() {
+  const senza = !!document.getElementById('series-no-retro-input')?.checked;
+  const inp = document.getElementById('series-col-retros-d');
+  const riga = inp ? inp.closest('tr') : null;
+  if (riga) riga.style.display = senza ? 'none' : '';
+}
+
+function _colonneGriglia(sezione) {
+  const mob = _isMobileViewport();
+  const chiave = mob ? 'm' : 'd';
+  if (_tipoProdottoCorrente) {
+    const t = _tipiProdotto().find(x => x.id === _tipoProdottoCorrente);
+    const v = t ? _colClamp(mob ? t.colonneMobile : t.colonneDesktop) : null;
+    if (v) return v;
+  }
+  const sez = sezione || 'figurines';
+  const serie = getData('series', []).find(x => x.id === currentSeriesId);
+  const dalla = serie && serie.colonne && serie.colonne[sez] ? _colClamp(serie.colonne[sez][chiave]) : null;
+  if (dalla) return dalla;
+  return (COLONNE_DEFAULT[sez] || COLONNE_DEFAULT.figurines)[chiave];
+}
+
+function _tipoHaTaglia(idTipo) {
+  if (!idTipo) return false;
+  const t = _tipiProdotto().find(x => x.id === idTipo);
+  return !!(t && t.haTaglia);
+}
+
+// v6.160 - la domanda "questo oggetto ha la taglia?" in un posto solo: la fanno la scheda, la vista
+// in lettura e la colonna della tabella, e tre risposte scritte a mano divergerebbero al primo
+// ritocco — e' il racconto della v6.133, della v6.143 e della v6.154.
+function _mostraTaglia(f, figSeries) {
+  if (_eProdottoExtraSerie(f)) return _tipoHaTaglia(f.tipoProdotto);
+  return !!(figSeries && figSeries.hasSizes);
 }
 
 function _tipoHaRetro(idTipo) {
@@ -26181,12 +26670,12 @@ function switchToEditMode(figId) {
   // Punteggio
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Punteggio':'Score') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
 
-  if (_extraSerie) {
+  if (_extraSerie && _tipoHaTaglia(f.tipoProdotto)) {   // v6.160 - solo se il TIPO la prevede
     // v6.151 - il markup del select viene da `_selectTagliaHTML`, lo stesso che usa la vista
     // tabellare: erano due elenchi, ora e' uno.
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span>' +
       '<span class="detail-value">' + _selectTagliaHTML(f.size, 'fe-size', '') + '</span></div>';
-  } else if (figSeries?.hasSizes) {
+  } else if (!_extraSerie && figSeries?.hasSizes) {
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-size" value="' + esc((f.size||'')) + '" placeholder="S/M/L/XL" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;border:none;background:transparent;"></span></div>';
   }
 
@@ -30865,6 +31354,10 @@ function renderBulkEditView() {
   // La colonna sparisce solo se sono TUTTI extra serie; con righe miste resta, e le celle degli
   // extra serie restano vuote. Toglierla in presenza di righe normali nasconderebbe un dato vero.
   const _cSoloExtra = allItems.length > 0 && allItems.every(_eProdottoExtraSerie);
+  // v6.160 - la colonna Taglia si apre se qualcuno degli oggetti visibili la prevede DAVVERO: per i
+  // prodotti extra serie lo dice il TIPO, per gli altri il flag della serie. Prima bastava essere
+  // extra serie, e la colonna compariva anche sui tipi che la taglia non ce l'hanno.
+  const _cTaglia = currentSeriesHasSizes || allItems.some(f => _eProdottoExtraSerie(f) && _tipoHaTaglia(f.tipoProdotto));
   // I suggerimenti della Categoria, uno per TIPO: in una tabella le righe possono appartenere a
   // tipi diversi (Extra serie aperta senza filtro), e un elenco unico proporrebbe a un Cartoncino
   // le categorie dei Poster. Si emettono una volta e le righe puntano al proprio.
@@ -31003,7 +31496,7 @@ function renderBulkEditView() {
           ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</th>` : ''}
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
           ${(isAdmin && !_cSoloExtra) ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);min-width:420px;">${currentLang === 'it' ? 'Figurina di partenza' : 'Source sticker'}</th>` : ''}
-          ${(currentSeriesHasSizes || _cExtra) ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
+          ${_cTaglia ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
           ${_ordinaPerCreazione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);white-space:nowrap;">${currentLang === 'it' ? 'Data creazione' : 'Created on'}</th>` : ''}
           ${!isAdmin ? `
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Mia lista' : 'My list'}</th>
@@ -31053,8 +31546,8 @@ function renderBulkEditView() {
           ${currentSection === 'retros' ? (isAdmin ? `<td style="padding:4px;"><input data-field="changeType" data-id="${f.id}" value="${f.changeType||''}" style="width:140px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.changeType, 140)) : ''}
           ${isAdmin ? `<td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0)}
           ${(isAdmin && !_cSoloExtra) ? (_eProdottoExtraSerie(f) ? '<td></td>' :  `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>`) : ''}
-          ${(currentSeriesHasSizes || _cExtra) ? (isAdmin
-            ? '<td style="padding:4px;">' + (_eProdottoExtraSerie(f)
+          ${_cTaglia ? (isAdmin
+            ? '<td style="padding:4px;">' + (!_mostraTaglia(f, currentSeries) ? '' : _eProdottoExtraSerie(f)
                 ? _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;')
                 : '<input data-field="size" data-id="'+f.id+'" value="'+esc(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)">')
               + '</td>'
