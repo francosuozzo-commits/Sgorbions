@@ -1,6 +1,39 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.182 - 🔴 SU TELEFONO LA VERSIONE ERA DIETRO LA FASCIA ARANCIONE, e il riepilogo si asciuga
+//          ancora (Franco). Modificato app.js e index.html.
+//
+//          1. 🔴 LA VERSIONE NON SI TROVAVA, ED ERA COPERTA. Franco: "nel mobile nella navbar non
+//             vedo la versione" -> "sotto la fascia arancione o DIETRO?". Dietro.
+//             ⚠️ E il caso merita di essere raccontato, perche' NESSUNA DELLE DUE RELEASE COINVOLTE
+//             AVEVA SBAGLIATO:
+//               · la v5.954 mette la versione in una riga sua sotto il banner, centrata;
+//               · la v6.065 da' al contenitore della targhetta `height:0` perche' la pagina salga,
+//                 e mette agli atti la conseguenza — "la targhetta si SOVRAPPONE a cio' che le sta
+//                 sotto. Va bene perche' e' alta ~20px, sta nell'angolo in alto a sinistra e LI'
+//                 NON C'E' CONTENUTO".
+//             Quel "li' non c'e' contenuto" era vero sul desktop e falso su telefono, dove nove
+//             release prima ce n'era gia' uno. E' l'INCONTRO fra le due a non essere stato
+//             guardato: ciascuna, letta da sola, resta giusta.
+//             📌 LA LEZIONE, ed e' generale: **un'assunzione scritta in un commento invecchia come
+//             il codice, ma nessuno la rilegge quando cambia il mondo attorno.** Quella frase e'
+//             rimasta vera per settimane e poi ha smesso, senza che niente segnalasse il momento.
+//             Rimedio scelto da Franco: la versione va a DESTRA. La targhetta e' ancorata a
+//             sinistra, quindi le due non si incontrano piu' — e non c'e' nessun numero da tarare
+//             sull'altezza della targhetta, che e' il motivo per cui si e' scartato il margine.
+//
+//          2. LE INTESTAZIONI DI TELEFONO SCENDONO DAL TUTTO-MAIUSCOLO: "N. figurine", "Change
+//             figurine", "Change retro". A parita' di larghezza il minuscolo si legge prima — le
+//             maiuscole hanno tutte lo stesso ingombro verticale e tolgono alla parola il profilo da
+//             cui la si riconosce senza compitarla. Le spezzature restano dov'erano.
+//
+//          3. "NON UFF" VA SU DUE RIGHE, E IL NUMERO SI CENTRA FRA LE DUE. Non e' una rifinitura:
+//             col numero appoggiato alla prima riga, "NON / UFF: 12" fa sembrare il 12 riferito
+//             alla sola parola "UFF", cioe' all'etichetta sbagliata — che qui e' pure il suo
+//             contrario. `align-items:center` regge qualunque numero di righe, quindi vale anche se
+//             un domani un'etichetta ne prendesse tre.
+// ------------------------------------------------------------
 // v6.181 - SU TELEFONO LA COLONNA VAR VA A SINISTRA (Franco). Solo app.js.
 //
 //          Dalla v6.180 quella cella contiene due righe etichettate ("UFF: n", "NON UFF: m"):
@@ -14700,7 +14733,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.181';
+const JS_VERSION = 'v6.182';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -19262,8 +19295,12 @@ function apriInfoTutteLeSerie() {
     // righe etichettate. Stessa idea della v6.179 su DA/A: due colonne strette che portano un numero
     // ciascuna occupano piu' larghezza delle due righe che le sostituiscono, e su telefono la
     // larghezza e' l'unica risorsa scarsa. Il riepilogo passa da sette colonne a sei.
-    ? (it ? ['', 'ANNO', 'N.<br>FIGURINE', 'VAR', 'CHANGE<br>FIGURINE', 'CHANGE<br>RETRO']
-          : ['', 'YEAR', 'N.<br>STICKERS', 'VAR', 'STICKER<br>CHANGE', 'BACK<br>CHANGE'])
+    // v6.182 (Franco) - le intestazioni di telefono scendono dal tutto-maiuscolo a "N. figurine",
+    // "Change figurine", "Change retro". A parita' di larghezza il minuscolo si legge prima: le
+    // maiuscole hanno tutte lo stesso ingombro verticale e tolgono alla parola il profilo da cui la
+    // si riconosce senza compitarla. Le spezzature restano dov'erano.
+    ? (it ? ['', 'ANNO', 'N.<br>figurine', 'VAR', 'Change<br>figurine', 'Change<br>retro']
+          : ['', 'YEAR', 'N.<br>stickers', 'VAR', 'Sticker<br>Change', 'Back<br>Change'])
     // v6.177 (Franco) - via il prefisso "N." / "NUMERO": la colonna dice gia' di essere un conteggio
     // perche' sotto ci sono dei numeri, e cinque prefissi uguali allungano le intestazioni senza
     // aggiungere niente. Stessa idea del "SI" tolto nella v6.166 e del `#` tolto nella v6.115.
@@ -19324,10 +19361,17 @@ function apriInfoTutteLeSerie() {
     // che Franco ha confermato per l'intervallo ("no dati -> non mostrare nulla"), la stessa del
     // vuoto-vale-zero della v6.166. Scrivere "UFF: 0 / NON UFF: 0" riempirebbe di zeri proprio la
     // colonna che si sta stringendo.
+    // v6.182 (Franco) - "NON UFF" va su due righe, e il numero si CENTRA VERTICALMENTE rispetto alle
+    // due. Non e' una rifinitura: con il numero appoggiato alla prima riga, "NON / UFF: 12" fa
+    // sembrare il 12 riferito alla sola parola "UFF" — cioe' all'etichetta sbagliata, che qui e'
+    // pure il suo contrario. `align-items:center` lo tiene in mezzo a qualunque numero di righe,
+    // quindi vale anche se un domani un'etichetta ne prendesse tre.
     const _rigaVar = (etichetta, n) => n
-      ? `<div style="font-size:0.75rem;line-height:1.3;white-space:nowrap;"><span style="color:var(--muted);">${etichetta}:</span> ${n}</div>`
+      ? `<div style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;line-height:1.15;margin:0.1rem 0;">`
+        + `<span style="color:var(--muted);">${etichetta}:</span><span>${n}</span></div>`
       : '';
-    const _var = _rigaVar(it ? 'UFF' : 'OFF', c.variazioni) + _rigaVar(it ? 'NON UFF' : 'UNOFF', c.nonUfficiali);
+    const _var = _rigaVar(it ? 'UFF' : 'OFF', c.variazioni)
+               + _rigaVar(it ? 'NON<br>UFF' : 'UNOFF', c.nonUfficiali);
     const celle = mobile
       ? [primaCella, s.year ?? '', (c.base || '') + _intervallo,
          _var, c.changeFigurine || '', c.changeRetro || '']
