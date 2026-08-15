@@ -1,6 +1,473 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.181 - SU TELEFONO LA COLONNA VAR VA A SINISTRA (Franco). Solo app.js.
+//
+//          Dalla v6.180 quella cella contiene due righe etichettate ("UFF: n", "NON UFF: m"):
+//          centrate, le etichette non si incolonnano ne' fra loro ne' fra una riga e l'altra della
+//          tabella, e l'occhio non ha un bordo da cui ripartire. E' la stessa ragione per cui il
+//          NOME resta a sinistra sul desktop.
+//          📌 La regola di allineamento ha ora DUE indici, uno per variante, perche' le due varianti
+//          hanno colonne diverse: sul telefono il nome non ha una colonna sua e VAR e' la quarta.
+//          Un indice solo avrebbe allineato la colonna sbagliata su una delle due.
+// ------------------------------------------------------------
+// v6.180 - SU TELEFONO LE DUE COLONNE DELLE VARIAZIONI DIVENTANO UNA (Franco). Solo app.js.
+//
+//          "VAR UFF" e "VAR NON UFF" si fondono in **VAR**, con dentro due righe etichettate:
+//            UFF: n
+//            NON UFF: m
+//          E' la stessa mossa della v6.179 su DA/A, ed e' la terza volta che paga: due colonne
+//          strette che portano un numero ciascuna occupano piu' larghezza delle due righe che le
+//          sostituiscono. Su telefono la larghezza e' l'unica risorsa scarsa, e le intestazioni
+//          costano piu' dei dati (v6.168). Il riepilogo passa da sette colonne a sei — dalle nove
+//          di partenza, un terzo in meno.
+//
+//          ⚠️ LE RIGHE CON ZERO NON SI SCRIVONO, e con entrambi a zero la cella resta vuota. E' la
+//          regola che Franco ha appena confermato per l'intervallo ("no dati -> non mostrare
+//          nulla") ed e' la stessa del vuoto-vale-zero della v6.166: scrivere "UFF: 0 / NON UFF: 0"
+//          riempirebbe di zeri proprio la colonna che si sta stringendo.
+//
+//          📌 Il desktop non cambia: li' le due colonne restano separate, perche' li' lo spazio c'e'
+//          e due numeri affiancati si confrontano meglio di due righe.
+// ------------------------------------------------------------
+// v6.179 - SU TELEFONO L'INTERVALLO ENTRA SOTTO IL CONTEGGIO, e via una nota che non era stata
+//          chiesta (Franco). Modificato solo app.js.
+//
+//          1. LE COLONNE "DA" E "A" SPARISCONO dal riepilogo su telefono: il loro contenuto va
+//             sotto il numero delle figurine, nella forma  60 / (1/160). Due colonne strette che
+//             portavano un numero ciascuna diventano due righe di una colonna sola, e la tabella
+//             passa da nove colonne a sette. Sul desktop restano separate: li' lo spazio c'e'.
+//             📌 La parentesi compare solo se ci sono TUTTI E DUE i numeri — assunzione confermata
+//             da Franco ("no dati -> non mostrare nulla"). Una serie senza numerazione mostra il
+//             conteggio nudo: "(1/)" o "(/160)" darebbero l'idea di un dato rotto invece che
+//             assente.
+//
+//          2. 🔴 TOLTA UNA NOTA CHE AVEVO MESSO SOTTO LA TABELLA SENZA CHE NESSUNO ME LA CHIEDESSE.
+//             Spiegava che le celle vuote valgono zero e che "FIGURINE" conta il set base senza
+//             variazioni, change ed errori di stampa.
+//             Franco: **"non dimenticarti che questa tabella e' per gli UTENTI -> non mettere
+//             contenuti senza chiedermi prima"**.
+//             ⚠️ Ed e' una critica di sostanza, non di forma. Quella nota spiegava a un visitatore
+//             le convenzioni INTERNE del catalogo — set base, change, errori di stampa — cioe'
+//             raccontava come e' costruito il sito invece di cosa contiene. E' esattamente il
+//             criterio con cui, in questa stessa tabella, erano gia' state tenute fuori le colonne
+//             dei flag e delle colonne della griglia: l'avevo scritto io due release fa e poi
+//             violato tre righe piu' sotto.
+//             📌 REGOLA, da qui in avanti: nessun testo rivolto agli utenti si aggiunge senza che
+//             lo abbia approvato Franco. Le parole del sito sono sue — vale come la nota della
+//             v6.109 sul lessico ("le parole del sito si copiano dal sito, non si inventano"),
+//             ma un passo prima: prima ancora di come si scrive una frase, viene SE scriverla.
+// ------------------------------------------------------------
+// v6.178 - LE INTESTAZIONI DEL RIEPILOGO VANNO A CAPO DOVE DICE FRANCO (desktop). Solo app.js.
+//
+//          Sei intestazioni su due righe, col punto di rottura SCRITTO (`<br>`) e non lasciato
+//          all'a-capo automatico. ⚠️ Non e' un dettaglio estetico: l'automatico spezza dove capita
+//          a seconda della larghezza che la colonna si ritrova, quindi "VARIAZIONI NON UFFICIALI"
+//          poteva uscire "VARIAZIONI / NON UFFICIALI" su uno schermo e "VARIAZIONI NON / UFFICIALI"
+//          su un altro — due letture diverse della stessa tabella, senza che nessuno l'abbia
+//          scelto. Scritto, si spezza sempre allo stesso punto.
+//
+//          📌 E "PRIMA FIG." / "ULTIMA FIG." diventano "PRIMA FIGURINA" / "ULTIMA FIGURINA": su due
+//          righe c'e' posto per la parola intera. Un'abbreviazione a cui e' venuto meno il vincolo
+//          che la giustificava e' solo una parola tagliata — la stessa correzione della v6.175,
+//          applicata a due colonne che erano rimaste indietro.
+//
+//          📌 Il mobile NON cambia: li' le intestazioni brevi restano giuste, perche' li' lo spazio
+//          manca davvero.
+// ------------------------------------------------------------
+// v6.177 - IL RIEPILOGO SI ASCIUGA SU TELEFONO, e fuori le serie senza figurine (Franco).
+//          Modificato app.js e index.html.
+//
+//          1. FUORI LE SERIE CON ZERO FIGURINE. Nasce da "Extra serie", che non e' una serie ma il
+//             contenitore dei prodotti extra serie (v6.144): ha 8 Cartoncini e zero figurine, e in
+//             un riepilogo delle serie non ci deve stare. Oggi escono anche Kakkones, Weird Ball e
+//             I Mitici Sgorbions - Stamps.
+//             ⚠️ SI E' SCELTO IL CRITERIO, NON IL CASO — e la prima stesura sbagliava.
+//             Avevo proposto (e cominciato a scrivere) un flag "serie fittizia". Franco: **"non
+//             voglio un flag per un solo caso"**, ed e' la stessa regola della v6.160 — una
+//             proprieta' che vale "per tutti quelli visti finora", e finora e' uno. Il flag e'
+//             stato tolto per intero, nessun campo nuovo sui dati.
+//             Il criterio scelto si legge dalla tabella stessa: sparisce cio' che avrebbe la prima
+//             colonna numerica vuota. Ed e' meglio anche del nome cablato, che avrebbe smesso di
+//             funzionare **in silenzio** al primo rinomina della serie.
+//
+//          2. SU TELEFONO IL NOME STA SOTTO LA FOTO, in una colonna sola: due colonne strette per
+//             due cose che si leggono insieme sprecavano la larghezza che serve ai numeri.
+//             Ed e' il nome CORTO, preso da `_nomeSerieCard` — la funzione che dalla v6.080 sceglie
+//             da se' fra corto e lungo secondo lo schermo. Riscrivere qui quel controllo avrebbe
+//             fatto la sesta copia di una regola che quel commento chiede di tenere in un posto solo.
+//
+//          3. SU TELEFONO LE INTESTAZIONI SONO QUELLE DELLA TABELLA ADMIN (ANNO, N. FIGURINE, DA, A,
+//             VAR UFF, ...), che sono brevi proprio perche' nate dove lo spazio manca. E' l'opposto
+//             dell'errore della v6.174, dove avevo copiato quelle etichette sul desktop, cioe' dove
+//             quel vincolo non c'era: la stessa abbreviazione e' giusta o sbagliata a seconda dello
+//             spazio, e adesso ciascuna sta dove serve.
+//             Anche il pulsante si accorcia in "Mostra info tutte le serie". Si cambia l'ATTRIBUTO
+//             `data-i18n` e poi il testo, come fa `_aggiornaBivioInventario` per `catalog.sub`:
+//             scrivere solo il testo lo farebbe riallungare al primo `applyI18n()`.
+//
+//          4. VIA IL PREFISSO "N." / "NUMERO" dalle intestazioni per esteso: la colonna dice gia' di
+//             essere un conteggio perche' sotto ci sono dei numeri. Stessa idea del "SI" tolto nella
+//             v6.166 e del `#` tolto nella v6.115.
+//             📌 Due delle cinque righe mandate da Franco dicevano "VARIAZIONI UFFICIALI" al posto
+//             di "NON UFFICIALI" e "CHANGE DI FIGURINA" al posto di "DI RETRO". Sono stati
+//             riconosciuti come refusi e CONFERMATI da lui prima di scriverli: alla lettera
+//             avrebbero prodotto due coppie di colonne omonime, cioe' il difetto che la v6.174
+//             aveva appena tolto alla colonna "Change" della console admin.
+//
+//          🧪 Intestazioni e celle restano costruite da array paralleli: 10 voci su desktop, 9 su
+//          telefono (il nome non ha una colonna sua), e le celle seguono la stessa condizione.
+// ------------------------------------------------------------
+// v6.176 - 🔴 «FIRESTORE HA RISPOSTO, MA SENZA NESSUNA SERIE» DICEVA IL FALSO, e il sito si
+//          arrendeva al primo tentativo (Franco). Modificato solo app.js.
+//
+//          IL FATTO, del 15 agosto: la preview si ferma sul pannello di guasto. In console, due
+//          righe sopra il nostro messaggio, c'era la spiegazione vera, scritta dall'SDK:
+//            "Could not reach Cloud Firestore backend. Backend didn't respond within 10 seconds.
+//             ... The client will operate in offline mode until it is able to connect."
+//          Cioe' Firestore NON aveva risposto: aveva risposto la sua CACHE LOCALE, vuota. `getDocs`
+//          con il client offline **risolve** con quello che ha, invece di rifiutare.
+//
+//          1. IL MESSAGGIO ERA FALSO E MANDAVA A CERCARE DALLA PARTE SBAGLIATA. "Ha risposto, ma
+//             senza nessuna serie" descrive un database vuoto — un problema di DATI — mentre il
+//             problema era di RETE. Ora la lettura iniziale passa da `getDocsFromServer`, che
+//             offline RIFIUTA: se si arriva a quel testo, il server ha risposto davvero e la
+//             collezione e' davvero vuota. Il messaggio puo' dire quel che dice, ed e' vero.
+//
+//          2. IL SITO PROVAVA UNA VOLTA SOLA. Franco, con le sue parole: "premendo ancora RIPROVA,
+//             ha caricato anche la preview". Se il rimedio e' ripetere il tentativo, ripeterlo e'
+//             compito del sito: un visitatore alla prima schermata di guasto se ne va, e non ha
+//             nessun motivo di sospettare che al terzo colpo passerebbe.
+//             Tre tentativi, con pause CRESCENTI (0,8s poi 1,6s) e non fisse: un server che non
+//             risponde perche' e' carico peggiora se lo si martella a intervallo costante.
+//
+//          3. ⚠️ E QUI VA SCRITTO UN ERRORE MIO, perche' e' la parte che vale.
+//             Stamattina, sullo stesso sintomo, avevo dato la colpa al tetto di 4 secondi e ho
+//             fatto la v6.173 per alzarlo a 20. **Quel tetto su questo guasto non poteva scattare
+//             e non scattera' mai**: il `Promise.race` intercetta una promessa che non arriva mai,
+//             non una che arriva con dentro il vuoto. Avevo verificato che il numero fosse
+//             cambiato, non che il cambiamento avesse effetto su cio' che stava succedendo — la
+//             lezione della v6.157, ripetuta su un altro terreno.
+//             La v6.173 resta buona per quello che fa davvero (togliere un numero muto dal codice e
+//             renderlo configurabile), ma NON e' la cura di questo sintomo, e chi rilegge quel
+//             CHANGELOG deve saperlo.
+//             📌 Il conto che lo dimostra, e che era gia' nei dati: la preview della v6.169 ha
+//             caricato in ~7 secondi CON il tetto a 4. Non e' una contraddizione — vuol dire che la
+//             lettura delle serie e' durata meno di 4 secondi e il resto sono i 5 MB del file piu'
+//             l'SDK da gstatic. La maggior parte dell'attesa non e' mai stata Firestore.
+//
+//          📌 NON toccato: `_rileggiFigurine` continua a usare `getDocs`. E' una RILETTURA, non il
+//          caricamento iniziale, e se torna vuota restituisce `false` senza dichiarare guasti:
+//          li' tollerare la cache e' giusto. Cambiarla "per coerenza" avrebbe fatto fallire una
+//          funzione che oggi degrada bene.
+// ------------------------------------------------------------
+// v6.175 - LE CINQUE CORREZIONI AL RIEPILOGO (Franco). Modificato app.js e index.html.
+//
+//          1. IL PULSANTE USA `.btn-primary`, che E' lo standard utente (`var(--action)`, testo
+//             bianco); l'arancio `.btn-admin` si aggiunge sopra solo per i comandi da admin, e
+//             questo non lo e'. Me l'ero disegnato a mano con accento e bordo: non era ne' l'uno
+//             ne' l'altro. ⚠️ E' lo stesso errore della v6.164, corretto allora da Franco con una
+//             regola che vale ancora: **lo stile si COPIA, non si riscrive "simile"**. Dalla classe
+//             si prende il colore; in linea restano solo taglia e raggio, per stare nella riga.
+//
+//          2. STESSA COSA PER IL CESTINO DELLA v6.171: esiste `.btn-danger` (v5.723), e porta con
+//             se' anche `:disabled { opacity:0.5; cursor:not-allowed }` — cioe' esattamente quello
+//             che mi ero riscritto a mano quattro release fa. Tolte anche le due righe JS che
+//             mettevano opacita' e cursore: erano IN LINEA, quindi avrebbero pure vinto sulla
+//             regola del CSS, tenendo in vita una seconda verita' sullo stesso aspetto.
+//
+//          3. I NOMI DELLE COLONNE SONO QUELLI CHE HA SCRITTO FRANCO, alla lettera. Nella v6.174
+//             avevo ripreso quelli della tabella admin — ma la' sono abbreviati **perche' c'e' poco
+//             spazio**, e in una finestra larga quell'abbreviazione non ha nessuna ragione di
+//             essere. Copiare un'etichetta senza il vincolo che l'aveva prodotta e' copiare la
+//             conseguenza e lasciare indietro la causa.
+//             📌 Unico scostamento, dichiarato: "ULTIMA GIF." era un refuso per "ULTIMA FIG.".
+//
+//          4. MINIATURA DELLA FOTO DELLA SERIE come prima colonna, senza intestazione: un titolo
+//             sopra una foto direbbe una cosa che si vede da se'. Se la foto manca la cella resta
+//             vuota — un segnaposto grigio direbbe "manca qualcosa" a un visitatore che non puo'
+//             farci niente.
+//
+//          5. LA FINESTRA SI ALLARGA, e qui c'e' un difetto del CSS da sapere:
+//             ⚠️ **`.modal-wide` ha `max-width: 660px` mentre `.modal` ne ha 662.** La finestra
+//             "larga" del sito e' due pixel piu' STRETTA di quella normale, cioe' quella classe non
+//             allarga niente — e vale per TUTTE le finestre che la usano, non solo per questa.
+//             Qui la larghezza si mette in linea (§5: il CSS si fa inline nell'index) invece di
+//             toccare `style.css`, che e' un file a parte e si carica di rado. Il difetto pero'
+//             resta li' per le altre finestre: va sistemato in una release che tocchi il CSS, e
+//             allora questa riga in linea si toglie.
+//             `overflow-x:auto` resta come RETE per gli schermi stretti, dove nessuna larghezza
+//             basta; su desktop non entra piu' in funzione.
+//
+//          6. VALORI CENTRATI SOTTO IL NOME DELLA COLONNA, qui e nella tabella admin. Si centra la
+//             TABELLA e si riporta a sinistra il solo Nome: una regola sola invece di una ripetuta
+//             su sedici colonne, e la diciassettesima nascera' gia' centrata.
+//             Il Nome resta a sinistra perche' una colonna di nomi di lunghezza diversa, centrata,
+//             non ha piu' un bordo da cui l'occhio riparte a ogni riga. Se lo si vuole centrato
+//             anche lui e' una riga sola, ed e' segnata nel codice.
+// ------------------------------------------------------------
+// v6.174 - IL RIEPILOGO DELLE SERIE ANCHE PER GLI UTENTI, e le due colonne dei change si dicono
+//          (Franco). Modificato app.js e index.html.
+//
+//          1. NUOVO PULSANTE "Mostra informazioni di tutte le serie", in fondo a destra della riga
+//             "Sfoglia per", e si vede SOLO nel taglio Serie. Apre un riepilogo con nove colonne:
+//             Nome, Anno, N. figurine, Prima fig., Ultima fig., N. variazioni ufficiali, N.
+//             variazioni non ufficiali, N. change di figurina, N. change di retro.
+//             ⚠️ NON e' un pannello da admin: lo vede chiunque, e nella condizione non c'e'
+//             `isAdmin` di proposito. E' un riepilogo del catalogo, non uno strumento.
+//             📌 La regola di visibilita' sta in `_aggiornaBivioInventario` insieme a quelle degli
+//             altri due pulsanti della riga, e non altrove: il commento di quella funzione dice
+//             perche' — due punti che accendono lo stesso pulsante con due regole diverse sono il
+//             difetto chiuso dalla v6.139.
+//
+//             E' un SOTTOINSIEME della tabella admin, non una tabella nuova: stessi numeri, stessa
+//             `_conteggiSerie`. Restano fuori le colonne che descrivono come e' fatto il sito
+//             (colonne della griglia, flag, azioni): a un visitatore direbbero come e' costruito il
+//             catalogo, non cosa contiene.
+//             🧪 Intestazioni e celle si costruiscono dallo STESSO array di nove voci, quindi non
+//             possono disallinearsi. E' il controllo che nella v6.166 e nella v6.168 e' servito di
+//             piu': in una tabella fatta di stringhe una colonna in piu' da una parte sola non da'
+//             nessun errore — sposta i dati sotto l'intestazione sbagliata, e la tabella continua a
+//             sembrare giusta.
+//             📌 Le serie SENZA prodotti compaiono lo stesso, a celle vuote: sono censite, e un
+//             elenco che le nasconde farebbe credere che non esistano. Se un domani non le si
+//             vuole, e' una riga di filtro — ma sia una scelta, non un effetto.
+//             📌 Nove colonne su telefono non ci stanno: il contenitore scorre in orizzontale
+//             invece di comprimerle fino a renderle illeggibili.
+//
+//          2. NELLA TABELLA ADMIN, "Change" DIVENTA "CHANGE FIGURINE" e nasce "CHANGE RETRO".
+//             ⚠️ La v6.170 aveva lasciato fuori i change di retro di proposito ("per ora non
+//             mettiamolo nella vista tabellare"): Franco ha cambiato idea, e la cosa e' scritta
+//             anche accanto al codice — chi rilegge quella nota deve sapere che non vale piu'.
+//             E l'intestazione ora dice QUALE dei due e': "Change" da solo non lo diceva, ed e'
+//             esattamente il motivo per cui su Serie 1 quella cella sembrava sbagliata — zero
+//             change di figurina, mentre la serie ne ha 144 di retro.
+//             🧪 Intestazioni e celle ricontate dopo l'aggiunta: 16 e 16.
+// ------------------------------------------------------------
+// v6.173 - IMPOSTAZIONI GENERALI SITO, e il tetto di attesa esce dal codice (Franco). Modificato
+//          app.js e index.html.
+//
+//          LA DOMANDA DI FRANCO, ed e' quella che ha fatto trovare il difetto: "a quanto sta il
+//          timeout per l'apertura del sito?" — poi "dove sta quel numero, nel codice o in
+//          configurazione?".
+//          Stava nel codice, e nella forma peggiore possibile: un **4000 nudo**, scritto in linea
+//          dentro il `Promise.race` di `loadAllData`. Nessuna costante, nessun nome, nessun
+//          documento in `settings/`. Chi lo trovava vedeva "4000" e non aveva modo di sapere se
+//          erano quattro secondi misurati o tirati a indovinare — e quando e' stato chiesto, la
+//          risposta non c'era. Un numero senza nome non dice cosa misura; senza taratura scritta
+//          accanto, non dice rispetto a cosa era giusto.
+//
+//          IL VALORE DI PARTENZA PASSA DA 4 A 20 SECONDI, e il perche' e' scritto accanto alla
+//          costante insieme al peso su cui e' tarato: al 15 agosto 2026 le serie pesano ~1,4 MB
+//          (Serie 3 da sola 521 KB). Quattro secondi volevano dire tenere quasi 3 Mbit/s COSTANTI
+//          senza un intoppo, piu' la latenza di Firestore.
+//          ⚠️ E il numero era fisso mentre i dati crescevano: stessa forma del muro di 1 MiB, una
+//          soglia ferma e dei dati che le vanno incontro. Per questo la taratura sta scritta col
+//          suo peso e la sua data — se un domani la riga dice ancora 1,4 MB e i dati sono il
+//          doppio, si vede subito che e' scaduta invece di trovare un altro numero muto.
+//
+//          📌 PERCHE' LO VEDEVA SOLO SULLE PREVIEW. Il tetto scatta unicamente a cache di sessione
+//          fredda. Navigando il sito la cache e' calda quasi sempre; ma OGNI PREVIEW E' UN FILE
+//          NUOVO — cache vuota, caricamento completo, 1,4 MB con quattro secondi di tetto. Aprire
+//          preview a ripetizione e' l'unico modo di usare il sito che imbocca sempre il percorso
+//          peggiore. Non era sfortuna.
+//
+//          ⚠️ IL VALORE SI LEGGE DA `localStorage`, NON DA FIRESTORE, e non e' pigrizia: leggerlo
+//          dalla rete costerebbe un viaggio PRIMA del caricamento, cioe' aggiungerebbe latenza per
+//          configurare un parametro che esiste per difendersi dalla latenza. Quindi all'avvio si
+//          usa il valore messo da parte in locale (zero rete) e lo si aggiorna DOPO un caricamento
+//          riuscito, per il giro successivo.
+//          Il prezzo, ed e' l'unica cosa che sorprende chi lo usa: **una modifica ha effetto dal
+//          caricamento successivo**, non subito. Sul browser dove la salvi e' immediata al prossimo
+//          ricaricamento, perche' nello stesso gesto si scrive anche in locale.
+//
+//          📌 IL `Promise.race` NON ANNULLA NIENTE, e questa release non lo cambia: allo scadere, la
+//          richiesta vera continua per conto suo e il risultato viene buttato. Cioe' spesso i dati
+//          arrivavano un attimo dopo che avevamo deciso di non aspettarli piu'. Alzare il tetto
+//          rende la cosa molto meno probabile, ma un ritentativo vero resta da scrivere.
+//
+//          📌 All'admin il campo e' in SECONDI, non in millisecondi: i millisecondi qui non servono
+//          a nessuno. Il valore rifiutato dice l'intervallo ammesso (v6.167: un campo che rifiuta
+//          deve dire cosa vuole, se no e' un ostacolo e non una regola).
+// ------------------------------------------------------------
+// v6.172 - 🔴 SCRIVERE UNA SERIE RISPEDIVA TUTTE LE SUE FIGURINE (Franco). Modificato solo app.js.
+//
+//          IL SINTOMO, come l'ha detto Franco: "il salvataggio di un record di serie e' molto
+//          lento".
+//
+//          LA CAUSA: le figurine vivono DENTRO il documento della loro serie, e la cache se le
+//          tiene li' (`_cache.series[i].items`). Quindi `{ ...serie, campiNuovi }` si porta dietro
+//          gli oggetti, e `fsSave` li spedisce: per cambiare il NOME di una serie partivano
+//          521 KB su Serie 3. E' il meccanismo dell'Indagine 1 — che pero' aveva misurato il
+//          salvataggio di una FIGURINA. Questo e' il salvataggio della SERIE, e non era mai stato
+//          guardato: stava dietro un "tanto si fa di rado" che nessuno aveva verificato.
+//
+//          ✅ CONFERMATO COL CRITERIO SCRITTO PRIMA DELLA MISURA, non dopo: "se e' questo, il tempo
+//          scala col peso del documento — Serie 3 (521 KB) secondi, I mitici Sgorbions (172 KB) tre
+//          volte meno, una serie vuota istantanea". Franco: "il tempo scala col peso, confermo".
+//          Se non avesse scalato, l'imputato erano i quattro ridisegni dopo il salvataggio.
+//
+//          IL RIMEDIO: `_serieSenzaItems`, e il payload perde `items`.
+//          ⚠️ E' SICURO PER UNA RAGIONE PRECISA: `fsSave` scrive con `setDoc(..., {merge:true})`, e
+//          merge lascia intatti i campi che non nomini. Se un domani quella riga diventasse un
+//          `setDoc` secco, questa funzione cancellerebbe l'inventario di una serie con un clic. Il
+//          legame fra le due e' scritto sopra `_serieSenzaItems`, non lasciato all'intuito.
+//
+//          2. 🔴 E LE FRECCE ▲▼ ERANO PEGGIO DEL SALVATAGGIO. `saveSeriesOrder` aveva DUE difetti
+//             in cinque righe: scriveva TUTTE le serie anche quando il loro `order` non cambiava
+//             (muoverne una ne sposta due, le altre undici restavano dov'erano e venivano riscritte
+//             lo stesso), e ogni scrittura portava il documento intero. Insieme: **~1,4 MB in
+//             tredici viaggi awaitati uno alla volta, per cambiare due numeri**.
+//             Ora si scrivono solo le serie il cui posto e' cambiato, e senza `items`.
+//             E' la forma della v6.116/v6.117 — N scritture dove ne bastano poche — su un percorso
+//             che quelle release non avevano guardato, perche' non passa da `_propagaAiCollegati`.
+//
+//          📌 IL NUMERO CHE DIMOSTRA IL RIMEDIO NON E' IL TEMPO. Per il riordino e' il CONTEGGIO
+//          delle scritture (13 -> 2), che e' deterministico e non dipende dalla rete; per il
+//          salvataggio sono i BYTE spediti (521 KB -> poche centinaia). I millisecondi no: la
+//          v6.116 ha gia' misurato 1691-8467 ms per lo stesso identico documento da 521 KB, cinque
+//          volte di scarto. Da un campione solo non si estrapola un "quanto piu' veloce".
+//          Il riordino stampa in console quante scritture ha fatto, cosi' il conto si legge invece
+//          di stimarlo.
+//
+//          📌 RICOGNIZIONE PRIMA DI TOCCARE: sedici punti scrivono una serie. TREDICI cambiano
+//          davvero gli oggetti (`_saveFigurineItem`, `_deleteFigurineItem`, import, procedure di
+//          massa, `moveFigurinesToSeries`) e li' il documento intero ci vuole — toccarli avrebbe
+//          perso dati. I soli di livello serie sono i due di questa release. Un quattordicesimo,
+//          `migratePrintErrors`, tocca solo `retroChangeTypes`: e' una migrazione una tantum,
+//          lasciata com'era invece che cambiata "gia' che c'ero".
+//
+//          ⚠️ RESTA IN PIEDI IL MURO DI 1 MiB. Questa release non sposta di un byte la dimensione
+//          dei documenti: Serie 3 e' sempre a 521 KB, il 51%. Toglie viaggi, non peso.
+// ------------------------------------------------------------
+// v6.171 - IL SALVA IN CIMA, IL CESTINO NELLA SCHEDA (Franco). Modificato app.js e index.html.
+//
+//          1. "Salva serie" era in fondo a una form lunghissima — nome, anno, numeri, otto spunte
+//             coi loro conteggi, la tabella delle colonne della griglia, i tipi di change, i
+//             controlli sospesi, la foto. Per correggere un anno bisognava scorrere tutto. Ora e'
+//             in cima, col suo riquadro di conferma appresso: il feedback segue il pulsante, se no
+//             la conferma comparirebbe dove il pulsante non e' piu'.
+//
+//          2. IL CESTINO ESCE DALLA VISTA TABELLARE ed entra nella scheda. Cancellare una serie e'
+//             rarissimo (Franco), e teneva un comando distruttivo in ogni riga di una tabella che
+//             si usa per leggere.
+//             ⚠️ NELLA SCHEDA STA IN FONDO, lontano dal Salva che ora e' in cima. Metterli vicini
+//             avrebbe accostato l'operazione che si fa venti volte al giorno a quella che cancella
+//             una serie e tutto il suo contenuto. Scorrere fino in fondo e' il prezzo giusto per un
+//             comando raro e irreversibile.
+//
+//          3. GRIGIATO, NON ASSENTE — ed e' la differenza che vale la release. In tabella il
+//             cestino semplicemente NON VENIVA DISEGNATO se la serie aveva prodotti: da fuori
+//             somiglia a "disabilitato", ma un pulsante che non c'e' non dice PERCHE' non si puo'
+//             fare, e chi lo cerca conclude che il sito non sappia cancellare le serie. Ora c'e',
+//             spento, con sotto la ragione e il numero di prodotti che lo bloccano.
+//             Con la form IN CREAZIONE (aperta da "Aggiungi serie", quindi senza id: il documento
+//             non esiste ancora) sparisce del tutto — non c'e' niente da cancellare, e un comando
+//             disabilitato per una cosa che non esiste fa cercare la condizione che lo accende.
+//             Non vuol dire "serie creata di recente": appena salvi, riaprendola il cestino c'e' ed
+//             e' acceso, perche' la serie e' vuota.
+//
+//          4. 🔴 E IL CONTROLLO E' FINITO DENTRO `deleteSeries`, dove prima non c'era affatto.
+//             La funzione cancellava serie e contenuto dopo un solo `confirm`: l'UNICA difesa era
+//             che il pulsante non venisse disegnato. Spostandolo e grigiandolo, quella difesa
+//             sarebbe diventata un attributo `disabled` — la cosa piu' facile da perdere in un
+//             ritocco al markup, e per giunta invisibile finche' qualcuno non cancella una serie
+//             piena. Il controllo va dove sta il danno, non dove sta il clic: stessa scelta della
+//             v6.143 (la rete in `saveBulkCell` per chiamate che oggi non esistono).
+//             La domanda "quanti prodotti ha" sta in una funzione sola (`_prodottiDellaSerie`),
+//             letta dal pulsante e dal controllo: due copie avrebbero potuto divergere proprio nel
+//             caso in cui la divergenza cancella dei dati.
+//
+//          📌 "Prodotto" vuol dire figurina, retro, album, bustina o altro oggetto: stanno tutti
+//          nella collezione `figurines`, distinti dal campo `section`. Il conteggio NON va filtrato
+//          per sezione — un filtro direbbe "si puo' cancellare" a una serie che ha ancora i retro.
+// ------------------------------------------------------------
+// v6.170 - I CHANGE SONO DUE CONTEGGI, NON UNO; e i quattro numeri della serie arrivano in
+//          tabella (Franco). Modificato app.js e index.html.
+//
+//          1. 🔴 "N. Change" SU SERIE 1 DICEVA 0, E QUELLA SERIE DI CHANGE NE HA 144.
+//             Il contatore filtrava `section === 'figurines'`, e i 144 di Serie 1 stanno tutti nei
+//             RETRO. Non mentiva: rispondeva a una domanda diversa da quella che l'etichetta
+//             faceva credere — l'equivoco dei "146 Change" gia' annotato nel codice, visto
+//             dall'altra parte. Misurato il 15 agosto, e i change stanno in TUTTE E DUE le sezioni:
+//               Serie 1 ->   0 di figurina, 144 di retro
+//               Serie 2 ->   1 di figurina,  51 di retro
+//               Serie 3 -> 115 di figurina, 107 di retro
+//             Quindi due coppie spunta+numero: "Ha change di figurine" e "Ha change di retro".
+//
+//          ⚠️ `hasChange` NON CAMBIA SIGNIFICATO, E NON E' UNA SCELTA A OCCHIO: i dati dicono che
+//             si comportava gia' come "di figurine" — acceso su Serie 2 (1) e Serie 3 (115),
+//             spento su Serie 1 (0). Su tutte e tre combacia. Quindi il campo vecchio tiene i suoi
+//             dati e prende l'etichetta nuova, e `hasRetroChange` nasce nuovo e spento ovunque:
+//             nessuna migrazione, nessun documento riscritto.
+//             Se la mappatura fosse stata l'opposta, rinominare avrebbe fatto dichiarare a due
+//             serie una cosa che non hanno — cioe' avremmo prodotto noi, con una rinomina, la
+//             stessa forma di guasto che la v6.169 ha appena chiuso.
+//             📌 `hasRetroChange` va acceso a mano su Serie 1, 2 e 3. Nasce spento anche dove i
+//             change di retro ci sono: un campo nuovo non puo' indovinare il passato.
+//
+//          2. 🔴 LA CASELLA NUOVA E' RIPRISTINATA IN `openAddSeriesModal`, ed e' la riga piu'
+//             importante della release. Senza, si apre sempre spenta, il salvataggio la legge e
+//             scrive `false`: cioe' il guasto della v6.169 ricreato da capo su un campo nato oggi,
+//             due release dopo. Otto flag, otto ripristini — si contano, non si ricordano.
+//
+//          3. OGNI NUMERO SOTTO LA SUA SPUNTA. Le tre spunte stavano nella colonna di destra e i
+//             tre conteggi in fondo alla finestra, separati da tutta la tabella delle colonne
+//             della griglia: accendere una casella faceva comparire un campo dove non stavi
+//             guardando, e se cadeva sotto il bordo sembrava che il clic non avesse fatto niente.
+//
+//          4. LA TABELLA ADMIN DICE I NUMERI, NON I FLAG. VAR UFF, VAR NON UFF e Change mostravano
+//             "SI" leggendo il flag, cioe' cosa la serie DICHIARA; ora dicono quanti oggetti CI
+//             SONO. Lo zero resta vuoto (v6.166: una parete di zeri nasconde i numeri veri come la
+//             parete di NO nascondeva i SI).
+//             ⚠️ Change conta i change DI FIGURINA: su Serie 1 la cella e' VUOTA pur avendone 144,
+//             perche' sono tutti di retro. Il conteggio dei retro resta fuori dalla tabella per
+//             scelta di Franco.
+//
+//          5. ⚠️ N. FIGURINE CAMBIA SIGNIFICATO, ed e' la cosa da guardare per prima in preview.
+//             Contava TUTTO cio' che stava nella serie — retro, variazioni, change compresi — e ora
+//             conta le sole FIGURINE BASE. Serie 3 scende da 1055 a poco piu' di 500.
+//             Non e' un numero nuovo: e' quello che la SCHEDA della stessa serie mostrava gia'.
+//             Fino a ieri lo stesso nome diceva due numeri diversi a seconda di dove lo leggevi.
+//
+//          6. I CINQUE CONTEGGI IN UN POSTO SOLO (`_conteggiSerie`), letti da scheda e tabella.
+//             Estratti, non ricopiati: il commento che stava li' diceva gia' "Tre punti, una sola
+//             definizione: non possono piu' divergere", e aggiungere un lettore per copia avrebbe
+//             smentito quella frase nella release che la cita. Stessa scelta della v6.143.
+//             Dentro, un cambio: la sezione mancante ora vale 'figurines' come nel resto del file,
+//             mentre prima il confronto era secco.
+//             ✅ MISURATO il 15 agosto su Serie 3: record senza `section` = **0**, e le due forme
+//             danno lo stesso numero (256 e 256). Quindi oggi il cambio e' INERTE: non sposta
+//             nessun conteggio, e allinea la funzione al resto del file per il giorno in cui un
+//             record senza sezione dovesse comparire.
+//             ⚠️ La misura e' su Serie 3, non su tutte e 13. Dice che li' non ce ne sono, non che
+//             non ce ne siano altrove: se un domani un conteggio non torna su un'altra serie, e'
+//             il primo posto dove guardare, e la misura si rifa' in cinque secondi.
+//
+//          7. 🔴 E IL DIFETTO CHE HA FATTO NASCERE IL PUNTO 5, trovato da Franco: la tabella diceva
+//             336 figurine base per Serie 3, la ricerca col selettore "set base" ne dice 256.
+//             Il contatore escludeva variazioni ufficiali, non ufficiali e change — NON gli errori
+//             di stampa, che su Serie 3 sono 79. (336 - 79 - 1 figurina cancellata da Franco
+//             mentre guardavamo = 256.)
+//             ⚠️ E il commento sopra quel codice DICHIARAVA "la STESSA definizione del filtro
+//             «Solo figurine set base»". Era falso: quel filtro esclude QUATTRO contrassegni, il
+//             contatore ne escludeva tre, e le due sono divergenti almeno dalla v5.711 — quando
+//             `isPrintError` ha smesso di essere un sottotipo di Change ed e' diventato un tipo a
+//             se'. Chi scrisse i tre non aveva un quarto da escludere; nessuno e' tornato a
+//             riguardare la frase.
+//             LA LEZIONE, che vale piu' del flag mancante: **un'equivalenza AFFERMATA in un
+//             commento non e' un'equivalenza**. Sopravvive finche' qualcuno non aggiunge un caso, e
+//             quando smette di essere vera il commento continua a dire che lo e'. Ora la si
+//             OTTIENE, condividendo `_eBase` invece di riscriverne una copia.
+//             📌 Il difetto era nella SCHEDA da mesi, e nessuno l'aveva visto perche' quel numero
+//             non era mai stato messo accanto a un altro che rispondesse alla stessa domanda.
+//             Portarlo in tabella l'ha reso confrontabile, e il confronto l'ha trovato in un
+//             minuto: e' un argomento a favore di mostrare due volte lo stesso dato, non contro.
+//
+//          📌 NON toccato di proposito: il conteggio che governa il cestino della serie resta
+//          "tutti gli oggetti". Agganciarlo alle sole basi avrebbe permesso di cancellare una
+//          serie che ha ancora i retro dentro.
+// ------------------------------------------------------------
 // v6.169 - 🔴 TRE FLAG DELLA SERIE VENIVANO AZZERATI AD OGNI SALVATAGGIO, e la colonna delle
 //          colonne dei Retro (Franco). Modificato app.js e index.html.
 //
@@ -12959,6 +13426,87 @@ function initEmailJS() {
   }
 }
 
+// ============================================================
+// v6.173 (Franco) — IMPOSTAZIONI GENERALI SITO: il tetto di attesa del caricamento.
+// ------------------------------------------------------------
+// Fino alla v6.172 era un `4000` NUDO, scritto in linea dentro il `Promise.race` di `loadAllData`:
+// nessun nome, nessun posto dove cambiarlo, e nessuna traccia di rispetto a cosa fosse tarato. Chi
+// lo trovava vedeva "4000" e non aveva modo di sapere se erano quattro secondi misurati o tirati a
+// indovinare — e infatti, quando Franco l'ha chiesto, la risposta non c'era.
+//
+// 📌 IL VALORE DI PARTENZA E' TARATO SU UN PESO, e il peso va scritto accanto al numero: al 15
+// agosto 2026 le serie pesano ~1,4 MB (Serie 3 da sola 521 KB). Quattro secondi volevano dire
+// tenere quasi 3 Mbit/s costanti senza un intoppo, piu' la latenza di Firestore. Venti danno aria
+// a una connessione mediocre restando sotto la soglia in cui uno pensa che il sito sia morto.
+// ⚠️ Quel numero e' fisso, il peso dei dati no: se un domani questa riga dice ancora 1,4 MB mentre
+// i dati sono il doppio, la taratura e' scaduta. E' la stessa forma del muro di 1 MiB — una soglia
+// ferma e dei dati che le vanno incontro.
+//
+// ⚠️ PERCHE' IL VALORE SI LEGGE DA `localStorage` E NON DA FIRESTORE, all'avvio.
+// Leggerlo da Firestore costerebbe un viaggio in rete PRIMA del caricamento — cioe' aggiungeremmo
+// latenza per configurare un parametro che esiste per difendersi dalla latenza. Quindi: all'avvio
+// si usa il valore messo da parte in locale (istantaneo, zero rete), e lo si aggiorna DOPO un
+// caricamento riuscito, per la volta successiva.
+// Prezzo, e va detto perche' e' l'unica cosa che sorprende: **una modifica entra in vigore al
+// caricamento dopo**, non subito. Sul browser in cui la salvi l'effetto e' immediato al prossimo
+// ricaricamento (la salviamo anche in locale nello stesso gesto); sugli altri dispositivi serve un
+// giro in piu'.
+// ============================================================
+const TIMEOUT_CARICAMENTO_DEFAULT_MS = 20000;   // tarato su ~1,4 MB di serie, 15 agosto 2026
+const TIMEOUT_CARICAMENTO_MIN_MS = 3000;
+const TIMEOUT_CARICAMENTO_MAX_MS = 120000;
+
+function _timeoutCaricamentoMs() {
+  const v = parseInt(LOCAL.get('timeoutCaricamentoMs'));
+  return (v >= TIMEOUT_CARICAMENTO_MIN_MS && v <= TIMEOUT_CARICAMENTO_MAX_MS) ? v : TIMEOUT_CARICAMENTO_DEFAULT_MS;
+}
+
+// Chiamata DOPO un caricamento riuscito: non blocca niente e non ha un tetto, perche' se fallisce
+// l'unica conseguenza e' che la prossima volta si usa il valore di prima.
+async function _aggiornaTimeoutDaConfigurazione() {
+  try {
+    const docs = await fsGetAll('settings');
+    const g = docs.find(d => d.id === 'generali');
+    const v = parseInt(g?.timeoutCaricamentoMs);
+    if (v >= TIMEOUT_CARICAMENTO_MIN_MS && v <= TIMEOUT_CARICAMENTO_MAX_MS) LOCAL.set('timeoutCaricamentoMs', v);
+  } catch(e) { /* silenzio voluto: e' una rifinitura per il giro dopo, non un'operazione dell'utente */ }
+}
+
+async function loadImpostazioniGeneraliFields() {
+  const input = document.getElementById('impostazioni-timeout-input');
+  if (!input) return;
+  let v = TIMEOUT_CARICAMENTO_DEFAULT_MS;
+  try {
+    const docs = await fsGetAll('settings');
+    const g = docs.find(d => d.id === 'generali');
+    const n = parseInt(g?.timeoutCaricamentoMs);
+    if (n >= TIMEOUT_CARICAMENTO_MIN_MS && n <= TIMEOUT_CARICAMENTO_MAX_MS) v = n;
+  } catch(e) {}
+  input.value = Math.round(v / 1000);   // all'admin si mostrano SECONDI: i millisecondi qui non servono a nessuno
+}
+
+async function saveImpostazioniGenerali() {
+  const input = document.getElementById('impostazioni-timeout-input');
+  const fb = document.getElementById('impostazioni-generali-feedback');
+  const it = currentLang === 'it';
+  const sec = parseInt(input?.value);
+  const ms = sec * 1000;
+  // v6.167: un campo che rifiuta un valore deve DIRE cosa vuole, se no e' un ostacolo e non una regola.
+  if (!(ms >= TIMEOUT_CARICAMENTO_MIN_MS && ms <= TIMEOUT_CARICAMENTO_MAX_MS)) {
+    toast(it ? `Valore ammesso: da ${TIMEOUT_CARICAMENTO_MIN_MS/1000} a ${TIMEOUT_CARICAMENTO_MAX_MS/1000} secondi`
+             : `Allowed range: ${TIMEOUT_CARICAMENTO_MIN_MS/1000} to ${TIMEOUT_CARICAMENTO_MAX_MS/1000} seconds`, 'error');
+    return;
+  }
+  try {
+    await fsSave('settings', { id: 'generali', timeoutCaricamentoMs: ms });
+    LOCAL.set('timeoutCaricamentoMs', ms);   // cosi' su QUESTO browser vale gia' dal prossimo ricaricamento
+    if (fb) { fb.style.display = 'block'; fb.textContent = it ? '✅ Salvato. Ha effetto dal prossimo caricamento della pagina.' : '✅ Saved. It takes effect on the next page load.'; setTimeout(() => { fb.style.display = 'none'; }, 4000); }
+  } catch(e) {
+    console.error('saveImpostazioniGenerali', e);
+    toast(it ? '❌ Salvataggio fallito, riprova' : '❌ Save failed, please retry', 'error');
+  }
+}
+
 // ── Impostazioni email (reply-to configurabile da admin) ──────────────
 async function getEmailReplyTo() {
   if (_cache.emailReplyTo !== undefined) return _cache.emailReplyTo;
@@ -14152,7 +14700,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.169';
+const JS_VERSION = 'v6.181';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -14252,12 +14800,14 @@ function selectNationality(code, name) {
 
 async function initFirebase() {
   const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-  const { getFirestore, collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove, increment } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+  // v6.176 - `getDocsFromServer` in piu': e' la differenza fra "non ho i dati" e "il database e'
+  // vuoto". Vedi `fsGetAllDalServer`.
+  const { getFirestore, collection, doc, getDocs, getDocsFromServer, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove, increment } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
   const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, onAuthStateChanged, EmailAuthProvider, reauthenticateWithCredential, deleteUser: fbDeleteAuthUser, reauthenticateWithPopup, updatePassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
   fbApp = initializeApp(FIREBASE_CONFIG);
   db = getFirestore(fbApp);
   fbAuth = getAuth(fbApp);
-  window._fb = { collection, doc, getDocs, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove, increment };
+  window._fb = { collection, doc, getDocs, getDocsFromServer, getDoc, setDoc, addDoc, deleteDoc, updateDoc, onSnapshot, query, orderBy, where, deleteField, arrayUnion, arrayRemove, increment };
   window._fbAuth = { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail, EmailAuthProvider, reauthenticateWithCredential, fbDeleteAuthUser, reauthenticateWithPopup, updatePassword };
   console.log('Firebase ready');
 
@@ -14359,6 +14909,62 @@ function setData(k, v) {
 // ============================================================
 //  FIRESTORE HELPERS
 // ============================================================
+// ============================================================
+// v6.176 (Franco) — «Firestore ha risposto, ma senza nessuna serie» DICEVA IL FALSO.
+// ------------------------------------------------------------
+// Il 15 agosto la preview si e' fermata su quel messaggio, e in console c'era la spiegazione vera,
+// scritta dall'SDK due righe sopra:
+//   "Could not reach Cloud Firestore backend. Backend didn't respond within 10 seconds. ...
+//    The client will operate in offline mode until it is able to successfully connect."
+// Cioe': Firestore NON aveva risposto. Aveva risposto la sua CACHE LOCALE, che era vuota. E
+// `getDocs`, quando il client e' offline, **risolve** con quello che ha invece di rifiutare.
+//
+// ⚠️ DA QUI DISCENDONO TRE COSE, e la terza e' un errore mio da segnare.
+//  1. Il nostro messaggio descriveva un database vuoto — un problema di DATI — mentre il problema
+//     era di RETE. Indirizzava dalla parte sbagliata chiunque lo leggesse.
+//  2. Il `Promise.race` di `loadAllData` non poteva intercettare niente: intercetta una promessa
+//     che non arriva mai, non una che arriva con dentro il vuoto.
+//  3. Per questo la v6.173 (tetto da 4 a 20 secondi) NON risolveva questo guasto, e io l'avevo
+//     presentata come se lo facesse. Ho verificato che il numero fosse cambiato, non che il
+//     cambiamento avesse un effetto su cio' che stava succedendo: e' la lezione della v6.157,
+//     ripetuta su un altro terreno. La v6.173 resta valida per cio' che fa davvero — togliere un
+//     numero muto dal codice — ma non e' la cura di questo sintomo.
+//
+// `getDocsFromServer` RIFIUTA quando il server non si raggiunge, invece di consegnare la cache.
+// Cosi' l'offline torna a essere un errore, e un errore si puo' ritentare.
+// ============================================================
+async function fsGetAllDalServer(collName) {
+  if (!db) return [];
+  const { collection, getDocsFromServer } = window._fb;
+  const snap = await getDocsFromServer(collection(db, collName));   // niente try: il rifiuto DEVE uscire
+  const docs = snap.docs.map(d => ({ ...d.data(), id: d.id }));
+  _trackReads(docs.length);
+  return docs;
+}
+
+// Ritenta prima di arrendersi, perche' e' quello che Franco stava facendo A MANO col pulsante
+// RIPROVA: "premendo ancora RIPROVA, ha caricato anche la preview". Se il rimedio e' ripetere il
+// tentativo, ripeterlo e' compito del sito — un visitatore alla prima schermata di guasto se ne va.
+// ⚠️ Le pause crescono (0,8s poi 1,6s) invece di essere fisse: un server che non risponde perche' e'
+// carico peggiora se lo si martella a intervallo costante.
+async function _leggiSerieRitentando() {
+  const TENTATIVI = 3;
+  let ultimo;
+  for (let i = 1; i <= TENTATIVI; i++) {
+    try {
+      return await Promise.race([
+        fsGetAllDalServer('series'),
+        new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), _timeoutCaricamentoMs()))
+      ]);
+    } catch (e) {
+      ultimo = e;
+      console.warn('[Sgorbions] lettura serie, tentativo ' + i + ' di ' + TENTATIVI + ' fallito:', e?.message || e);
+      if (i < TENTATIVI) await new Promise(r => setTimeout(r, 800 * i));
+    }
+  }
+  throw ultimo;
+}
+
 async function fsGetAll(collName) {
   if (!db) return [];
   try {
@@ -14497,6 +15103,35 @@ async function _syncPublicProfile(user) {
   } catch(e) {
     console.warn('public_profiles sync failed:', e.message);
   }
+}
+
+// ============================================================
+// v6.172 (Franco: "il salvataggio di un record di serie è molto lento") — SCRIVERE UNA SERIE NON
+// VUOL DIRE RISPEDIRE LE SUE FIGURINE.
+// ------------------------------------------------------------
+// Le figurine vivono DENTRO il documento della loro serie, e la cache se le tiene li'
+// (`_cache.series[i].items`). Quindi ogni `{ ...serie, campoNuovo }` si porta dietro gli oggetti, e
+// `fsSave` li spedisce tutti: per cambiare il nome di una serie partivano 521 KB su Serie 3.
+// E' lo stesso meccanismo dell'Indagine 1 — che pero' aveva misurato il salvataggio di una
+// FIGURINA. Questo e' il salvataggio della SERIE, e non era mai stato guardato: stava dietro un
+// "tanto si fa di rado" che nessuno aveva verificato.
+//
+// ⚠️ OMETTERE `items` E' SICURO, e il motivo e' preciso: `fsSave` scrive con
+// `setDoc(ref, item, { merge: true })`, e merge lascia intatti i campi che NON nomini. Gli oggetti
+// restano quelli che ci sono sul server. Se un giorno quella scrittura diventasse un `setDoc`
+// secco o un `updateDoc` con sostituzione, questa funzione cancellerebbe l'inventario di una serie
+// con un clic — quindi il legame fra le due cose va tenuto in mente: e' scritto qui apposta.
+//
+// 📌 DOVE SI USA, e dove NO. Su sedici punti che scrivono una serie, TREDICI cambiano davvero gli
+// oggetti — `_saveFigurineItem`, `_deleteFigurineItem`, gli import, le procedure di massa,
+// `moveFigurinesToSeries` — e li' il documento intero ci vuole. I soli di livello serie sono
+// `saveSeries` e `saveSeriesOrder`, ed e' su quei due che si applica.
+// (Un terzo, `migratePrintErrors`, tocca solo `retroChangeTypes`: e' una migrazione una tantum,
+// lasciata com'era di proposito invece che toccata "gia' che c'ero".)
+// ============================================================
+function _serieSenzaItems(s) {
+  const { items, ...resto } = s;
+  return resto;
 }
 
 async function fsSave(collName, item) {
@@ -14979,10 +15614,9 @@ async function loadAllData() {
       if (currentUser?.isAdmin) await _loadAdminOnlyData();
     } else {
       // Prima volta o cache scaduta: carica tutto
-      _cache.series = await Promise.race([
-        fsGetAll('series'),
-        new Promise((_,reject) => setTimeout(() => reject(new Error('timeout')), 4000))
-      ]);
+      // v6.176 - si legge DAL SERVER e si ritenta tre volte. Il tetto della v6.173 e' dentro
+      // `_leggiSerieRitentando`, e vale per ogni tentativo.
+      _cache.series = await _leggiSerieRitentando();
       // Le figurine vivono dentro il documento della loro serie (campo
       // "items"): le "spacchettiamo" qui in un unico array piatto, così
       // tutto il resto del codice continua a usare _cache.figurines
@@ -15016,17 +15650,31 @@ async function loadAllData() {
       _cache.users.push(adminUser);
     }
   } catch(e) {
-    // v6.108 - qui ci finisce anche il TIMEOUT DI 4 SECONDI del `Promise.race` qui sopra, che e' il
-    // sospettato principale dell'Indagine 3: le serie pesano 1,38 MB e crescono. Se il messaggio
-    // che compare a schermo dice `timeout`, e' quello - e il numero da cambiare e' quello.
+    // v6.108 - qui ci finisce anche il TIMEOUT del `Promise.race` qui sopra, che e' il sospettato
+    // principale dell'Indagine 3: le serie pesano ~1,4 MB e crescono. Se il messaggio che compare a
+    // schermo dice `timeout`, e' quello.
+    // v6.173 - e ora il numero da cambiare NON si cambia piu' qui: sta in Impostazioni -> Impostazioni
+    // generali sito. Il valore di partenza e la sua taratura stanno accanto a
+    // TIMEOUT_CARICAMENTO_DEFAULT_MS.
     _guastoCaricamentoDati(e.message || e);
     return;
   }
   showLoadingOverlay(false);
+  // v6.173 - si aggiorna il tetto per il PROSSIMO caricamento, adesso che i dati ci sono. Senza
+  // `await` di proposito: e' una rifinitura per il giro dopo, non deve rallentare questo.
+  _aggiornaTimeoutDaConfigurazione();
   // v6.108 - Firestore ha risposto, e ha risposto SENZA SERIE. Non e' lo stesso guasto di sopra ed
   // e' bene che non dica la stessa cosa: li' la lettura non e' arrivata in fondo, qui e' arrivata e
   // non conteneva niente. Prima entrambi i casi finivano nei dati demo, indistinguibili.
-  if (!_cache.series.length) { _guastoCaricamentoDati('Firestore ha risposto, ma senza nessuna serie'); return; }
+  // 🔴 v6.176 - IL TESTO E' CAMBIATO PERCHE' QUELLO DI PRIMA DICEVA IL FALSO.
+  // Diceva "Firestore ha risposto, ma senza nessuna serie" anche quando Firestore NON aveva
+  // risposto affatto: con `getDocs` un client offline riceve la cache locale vuota, e la promessa
+  // si RISOLVE. Il messaggio descriveva un database vuoto — un problema di dati — mentre il
+  // problema era di rete, e mandava a cercare dalla parte sbagliata.
+  // Ora la lettura passa da `getDocsFromServer` (vedi `fsGetAllDalServer`), che offline RIFIUTA:
+  // se si arriva fin qui, il server ha risposto sul serio e la collezione e' davvero vuota.
+  // Il testo puo' quindi dire quel che dice, ed e' vero.
+  if (!_cache.series.length) { _guastoCaricamentoDati('Il server ha risposto, e la collezione delle serie e\' vuota'); return; }
 
   // Se l'utente ha una sessione già salvata (login automatico), aggiorna
   // lastLogin: senza questo, chi resta loggato senza rifare login esplicito
@@ -15188,7 +15836,7 @@ const i18n = {
 'modal.scoreBoost.title':'Congratulations!','modal.scoreBoost.ok':'Great!','modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go!','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
-'admin.email.fix':'E-mails remaining (as on EmailJS):','admin.email.fix.hint':'Enter the number you read on the EmailJS dashboard, i.e. how many e-mails you have left. The panel above still shows the ones already sent.','admin.save':'Save','newsletter.settingsTitle':'⚙️ Email Settings','newsletter.replyToLabel':'Reply-To address','newsletter.replyToHint':'When you reply to a message, the email will go to this address',
+'admin.email.fix':'E-mails remaining (as on EmailJS):','admin.email.fix.hint':'Enter the number you read on the EmailJS dashboard, i.e. how many e-mails you have left. The panel above still shows the ones already sent.','admin.save':'Save','admin.generali.title':'🌐 General site settings','admin.generali.timeoutLabel':'Maximum wait for data loading (seconds)','admin.generali.timeoutHint':'Past this time the site stops waiting for data and shows the fault panel. From 3 to 120 seconds. On a slow connection a low value shows «SITE TEMPORARILY UNAVAILABLE» even when the data was on its way.','newsletter.settingsTitle':'⚙️ Email Settings','newsletter.replyToLabel':'Reply-To address','newsletter.replyToHint':'When you reply to a message, the email will go to this address',
 'admin.firebase.plan':'Free plan (Spark): 1 GB storage, 50,000 reads/day, 20,000 writes/day.',
 'admin.firebase.docs':'total documents',
 'admin.cloudinary.plan':'Free plan: 25 credits/month (storage + transformations + bandwidth).',
@@ -15218,7 +15866,7 @@ const i18n = {
 'how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
 'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
 'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
-'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions products ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Products','catalog.addseries':'+ Add Series',
+'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions products ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Products','catalog.allSeriesInfo':'Show information on all series','catalog.allSeriesInfoShort':'All series info','catalog.allSeriesInfoTitle':'The Sgorbions series on record','catalog.addseries':'+ Add Series',
 'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
 'back':'Inventory','detail.addfig':'+ Add Sticker',
 'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation!',
@@ -15240,11 +15888,11 @@ const i18n = {
 'modal.bulkscore.title':'⭐ Score Selected','modal.bulkscore.desc':'Assign the same score to all currently visible items (those not hidden by any active filters). You can edit individual scores later.',
 'modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to visible',
 'modal.figdetail.title':'Sticker detail','modal.segnala.send':'Send comment','modal.segnala.title':'🚩 Report an issue','modal.segnala.desc':'Describe the issue you found with this sticker. The report will only be visible to the administrator.','modal.segnala.comment':'Comment','modal.segnala.placeholder':'Describe the issue...',
-'modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series',
+'modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','modal.series.delete':'Delete series',
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Stickers with different sizes','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of Change','form.series.retroChangeTypes':'BACK change types (one per line)','form.series.retroChangeTypesHint':'One value per line. The difference is on the BACK: a change of these types has a back of its own, or the "Blank back" flag.','form.series.frontChangeTypes':'FRONT change types (one per line)','form.series.frontChangeTypesHint':'One value per line. The difference is on the FRONT: a change of these types uses the back of its base sticker. The same type cannot be in both lists.','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has sticker Change','form.series.hasRetroChange':'Has back Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of sticker Change','form.series.countRetroChange':'No. of back Change','form.series.retroChangeTypes':'BACK change types (one per line)','form.series.retroChangeTypesHint':'One value per line. The difference is on the BACK: a change of these types has a back of its own, or the "Blank back" flag.','form.series.frontChangeTypes':'FRONT change types (one per line)','form.series.frontChangeTypesHint':'One value per line. The difference is on the FRONT: a change of these types uses the back of its base sticker. The same type cannot be in both lists.','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -15282,7 +15930,7 @@ const i18n = {
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'E-mail inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 e-mail/mese (si azzera il 1° di ogni mese).',
-'admin.email.fix':'E-mail rimanenti (come su EmailJS):','admin.email.fix.hint':'Inserisci il numero che leggi sul pannello EmailJS, cioè quante e-mail ti restano. Il riquadro qui sopra continua invece a mostrare quelle già inviate.','admin.save':'Salva','newsletter.settingsTitle':'⚙️ Impostazioni E-mail','newsletter.replyToLabel':'Indirizzo per le risposte (Reply-To)','newsletter.replyToHint':'Quando rispondi a un messaggio, l\'e-mail arriverà a questo indirizzo',
+'admin.email.fix':'E-mail rimanenti (come su EmailJS):','admin.email.fix.hint':'Inserisci il numero che leggi sul pannello EmailJS, cioè quante e-mail ti restano. Il riquadro qui sopra continua invece a mostrare quelle già inviate.','admin.save':'Salva','admin.generali.title':'🌐 Impostazioni generali sito','admin.generali.timeoutLabel':'Attesa massima per il caricamento dei dati (secondi)','admin.generali.timeoutHint':'Oltre questo tempo il sito smette di aspettare i dati e mostra il pannello di guasto. Da 3 a 120 secondi. Con una connessione lenta un valore basso fa comparire «SITO MOMENTANEAMENTE NON DISPONIBILE» anche quando i dati stavano arrivando.','newsletter.settingsTitle':'⚙️ Impostazioni E-mail','newsletter.replyToLabel':'Indirizzo per le risposte (Reply-To)','newsletter.replyToHint':'Quando rispondi a un messaggio, l\'e-mail arriverà a questo indirizzo',
 'admin.firebase.plan':'Piano gratuito (Spark): 1 GB storage, 50.000 letture/giorno, 20.000 scritture/giorno.',
 'admin.firebase.docs':'documenti totali',
 'admin.cloudinary.plan':'Piano gratuito: 25 crediti/mese (storage + trasformazioni + banda).',
@@ -15324,7 +15972,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti i prodotti Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Prodotti','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati ricerca alla tua lista','catalog.havenone':'Rimuovi risultati ricerca dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti i prodotti Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Prodotti','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati ricerca alla tua lista','catalog.havenone':'Rimuovi risultati ricerca dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -15339,7 +15987,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'In questa pagina trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario del sito.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) oggetti non presenti nella tua lista (figurine, retro, album, altro...)<br>2) figurine presenti nella tua lista (serie non complete)<br>3) figurine presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Ti piacerebbe costruire in pochi click liste di figurine Sgorbions, sulla base di una tua lista personale costruita sfogliando il nostro Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha Change','form.series.noNumbers':'Non ha numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. Change','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Non ha numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -17064,30 +17712,80 @@ function updateSeriesVariationCounts(seriesId) {
   // definizione del filtro "Solo figurine set base" e del badge 📦 della pagina
   // serie: nessun contrassegno fra Variazione, Variazione non ufficiale e Change.
   // Tre punti, una sola definizione: non possono piu' divergere.
-  const nBase  = figs.filter(f => f.section === 'figurines' && !f.isVariation && !f.isUnofficialVariation && !f.isChange).length;
-  const nVar   = figs.filter(f => f.section === 'figurines' && f.isVariation).length;
-  const nUnoff = figs.filter(f => f.section === 'figurines' && f.isUnofficialVariation).length;
-  const nChg   = figs.filter(f => f.section === 'figurines' && f.isChange).length;
+  const c = _conteggiSerie(figs);
   const elBase = document.getElementById('series-count-input');
   const elVar = document.getElementById('series-count-variations-input');
   const elUnoff = document.getElementById('series-count-unofficial-variations-input');
   const elChg = document.getElementById('series-count-change-input');
-  if (elBase) elBase.value = nBase;
-  if (elVar) elVar.value = nVar;
-  if (elUnoff) elUnoff.value = nUnoff;
-  if (elChg) elChg.value = nChg;
+  const elChgRetro = document.getElementById('series-count-retro-change-input');   // v6.170
+  if (elBase) elBase.value = c.base;
+  if (elVar) elVar.value = c.variazioni;
+  if (elUnoff) elUnoff.value = c.nonUfficiali;
+  if (elChg) elChg.value = c.changeFigurine;
+  if (elChgRetro) elChgRetro.value = c.changeRetro;
+}
+
+// ============================================================
+// v6.170 (Franco) — I CINQUE CONTEGGI DI UNA SERIE, IN UN POSTO SOLO.
+// ------------------------------------------------------------
+// Li leggono DUE punti: la scheda della serie (`updateSeriesVariationCounts`) e la tabella admin
+// (`renderAdminSeries`). Estratti invece che ricopiati, per la stessa ragione della v6.143: due
+// copie della stessa regola divergono al primo ritocco, e il commento che stava qui sopra prima
+// diceva gia' "Tre punti, una sola definizione: non possono piu' divergere". Aggiungere un terzo
+// lettore ricopiando avrebbe smentito quella frase nella release che la cita.
+//
+// ⚠️ CHANGE DI FIGURINA E CHANGE DI RETRO SONO DUE CONTEGGI, NON UNO. Misurato il 15 agosto:
+//   Serie 1 -> 0 di figurina, 144 di retro     (per questo la scheda scriveva "N. Change = 0")
+//   Serie 2 -> 1 di figurina, 51 di retro
+//   Serie 3 -> 115 di figurina, 107 di retro
+// Un contatore solo filtrato sulle figurine non mentiva: rispondeva a una domanda diversa da
+// quella che l'etichetta faceva credere. E' l'equivoco dei "146 Change" gia' annotato qui sopra.
+//
+// ⚠️ LA SEZIONE MANCANTE VALE 'figurines', come ovunque nel resto del file (vedi
+// `openSeriesEbayModal`, che usa gia' `(f.section || 'figurines')`). Fino alla v6.169 QUESTA
+// funzione usava il confronto secco `f.section === 'figurines'`, quindi un record senza `section`
+// restava fuori da tutti e quattro i conteggi. Se in preview i numeri della scheda risultano
+// diversi da prima, e' questo: vuol dire che dei record senza `section` esistono, e che finora
+// erano invisibili ai contatori. Va guardato, non dato per scontato in nessuna delle due
+// direzioni.
+// ============================================================
+function _conteggiSerie(items) {
+  const sez = f => (f.section || 'figurines');
+  const fig = f => sez(f) === 'figurines';
+  return {
+    // 🔴 v6.170 - GLI ERRORI DI STAMPA MANCAVANO DALL'ESCLUSIONE, e il conto era gonfio.
+    // Trovato da Franco: la tabella diceva 336 per Serie 3, la ricerca col selettore "set base" ne
+    // dice 256, e Serie 3 ha 79 errori di stampa fra le figurine.
+    // Il commento di `updateSeriesVariationCounts` dichiarava "la STESSA definizione del filtro
+    // «Solo figurine set base»" — ed era FALSO: quel filtro esclude QUATTRO contrassegni
+    // (`_itemTypeFilter === 'base'`), il contatore ne escludeva tre. Le due definizioni erano
+    // divergenti almeno dalla v5.711, quando `isPrintError` ha smesso di essere un sottotipo di
+    // Change ed e' diventato un tipo a se': chi aveva scritto i tre non aveva un quarto da
+    // escludere, e nessuno e' tornato a riguardarlo.
+    // ⚠️ La lezione non e' "mancava un flag": e' che il commento AFFERMAVA l'equivalenza invece di
+    // ottenerla. Ora la ottiene, usando `_eBase` — la definizione canonica, gia' letta da quattro
+    // punti. Un'equivalenza dichiarata a parole non regge a una release; una condivisa si'.
+    base:           items.filter(f => fig(f) && _eBase(f)).length,
+    variazioni:     items.filter(f => fig(f) && f.isVariation).length,
+    nonUfficiali:   items.filter(f => fig(f) && f.isUnofficialVariation).length,
+    changeFigurine: items.filter(f => fig(f) && f.isChange).length,
+    changeRetro:    items.filter(f => sez(f) === 'retros' && f.isChange).length
+  };
 }
 
 function toggleSeriesCountGroups() {
   const hasVar = document.getElementById('series-has-variations-input')?.checked;
   const hasUnoff = document.getElementById('series-has-unofficial-variations-input')?.checked;
   const hasChg = document.getElementById('series-has-change-input')?.checked;
+  const hasChgRetro = document.getElementById('series-has-retro-change-input')?.checked;   // v6.170
   const gVar = document.getElementById('series-count-variations-group');
   const gUnoff = document.getElementById('series-count-unofficial-variations-group');
   const gChg = document.getElementById('series-count-change-group');
+  const gChgRetro = document.getElementById('series-count-retro-change-group');            // v6.170
   if (gVar) gVar.style.display = hasVar ? '' : 'none';
   if (gUnoff) gUnoff.style.display = hasUnoff ? '' : 'none';
   if (gChg) gChg.style.display = hasChg ? '' : 'none';
+  if (gChgRetro) gChgRetro.style.display = hasChgRetro ? '' : 'none';
 }
 
 // Mostra, per la serie attualmente aperta, quanti oggetti di ciascuna
@@ -18129,6 +18827,11 @@ function openAddSeriesModal(seriesId) {
       document.getElementById('series-album-count-input').value = s.albumCount || '';
       const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = s.hasUnofficialVariations || false;
       const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = s.hasChange || false;
+      // 🔴 v6.170 — LA CASELLA NUOVA VA RIPRISTINATA QUI, e questa riga e' la piu' importante della
+      // release. E' il flag aggiunto oggi: se il ripristino manca, si apre sempre spenta, il
+      // salvataggio la legge e scrive `false` — cioe' si ricrea da capo, su un campo nuovo, il
+      // guasto che la v6.169 ha appena chiuso. Otto flag, otto ripristini: si contano.
+      const hcri = document.getElementById('series-has-retro-change-input'); if (hcri) hcri.checked = s.hasRetroChange || false;
       const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = s.noNumbers || false;
       const nri = document.getElementById('series-no-retro-input'); if (nri) nri.checked = s.noRetro || false; // v6.098
     // 🔴 v6.169 (Franco, sul sintomo: "HA SOTTOSERIE non mostra SI per Sgorbions Holidays, che ha il
@@ -18192,6 +18895,7 @@ function openAddSeriesModal(seriesId) {
   }
   updateSeriesVariationCounts(seriesId || null);
   toggleSeriesCountGroups();
+  _aggiornaPulsanteEliminaSerie(seriesId || null);   // v6.171
   // Flag visibili solo per admin (ora dentro label in griglia 2 colonne)
   const hasSizesGroup = document.getElementById('series-has-sizes-input')?.closest('.form-group');
   if (hasSizesGroup) hasSizesGroup.style.display = currentUser?.isAdmin ? '' : 'none';
@@ -18231,6 +18935,7 @@ async function saveSeries() {
   const hasVariations = document.getElementById('series-has-variations-input')?.checked || false;
   const hasUnofficialVariations = document.getElementById('series-has-unofficial-variations-input')?.checked || false;
   const hasChange = document.getElementById('series-has-change-input')?.checked || false;
+  const hasRetroChange = document.getElementById('series-has-retro-change-input')?.checked || false;   // v6.170
   const noNumbers = document.getElementById('series-no-numbers-input')?.checked || false;
   const noRetro = document.getElementById('series-no-retro-input')?.checked || false; // v6.098 caso B
   const controlliSospesi = _leggiControlliSospesi(); // v6.080
@@ -18238,6 +18943,7 @@ async function saveSeries() {
   const countVariations = parseInt(document.getElementById('series-count-variations-input').value) || null;
   const countUnofficialVariations = parseInt(document.getElementById('series-count-unofficial-variations-input').value) || null;
   const countChange = parseInt(document.getElementById('series-count-change-input').value) || null;
+  const countRetroChange = parseInt(document.getElementById('series-count-retro-change-input')?.value) || null;   // v6.170
   const count = document.getElementById('series-count-input').value;
   const firstNumber = parseInt(document.getElementById('series-first-number-input').value) || null;
   const lastNumber = parseInt(document.getElementById('series-last-number-input').value) || null;
@@ -18291,12 +18997,15 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, retroChangeTypes, frontChangeTypes /* v6.102 */ };
-        await fsSave('series', series[idx]);
-        _cache.series = series;
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, retroChangeTypes, frontChangeTypes /* v6.102 */ };
+        // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
+        // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
+        // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
+        await fsSave('series', _serieSenzaItems(series[idx]));
+        _cache.series = series;   // la CACHE tiene gli items: si strippa solo cio' che parte
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, retroChangeTypes, frontChangeTypes /* v6.102 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, nomeCorto, controlliSospesi, noNumbers, noRetro, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, retroChangeTypes, frontChangeTypes /* v6.102 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -18316,7 +19025,63 @@ async function saveSeries() {
   }, 1000);
   renderCatalog(); renderHomeSeries(); renderHomeStats(); renderAdminSeries();
 }
+// ============================================================
+// v6.171 (Franco) — IL PULSANTE ELIMINA DELLA SCHEDA SERIE.
+// ------------------------------------------------------------
+// Grigiato finche' la serie ha almeno un prodotto collegato. "Prodotto" e' qualunque cosa stia
+// nella collezione `figurines`: figurine, retro, album, bustine e altri oggetti stanno tutti li',
+// distinti dal campo `section`. Quindi il conteggio copre gia' tutti e cinque i tipi, e NON va
+// filtrato per sezione — un filtro qui direbbe "si puo' cancellare" a una serie che ha ancora i
+// retro dentro.
+// ⚠️ CON LA FORM IN CREAZIONE il pulsante sparisce del tutto invece di grigiarsi: il documento su
+// Firestore non esiste ancora, non c'e' niente da cancellare, e un comando disabilitato per una
+// cosa che non esiste fa cercare la condizione che lo accende.
+// 📌 "In creazione" vuol dire `seriesId` assente — la form aperta da "Aggiungi serie" — e NON
+// "serie creata di recente". La distinzione non e' pedanteria: la prima stesura di questo commento
+// diceva "serie NUOVA", e Franco ha chiesto cosa intendessi. Una parola che regge due letture, in
+// un commento, resta li' per anni e la lettura sbagliata sembra sensata quanto quella giusta.
+// ============================================================
+function _aggiornaPulsanteEliminaSerie(seriesId) {
+  const btn = document.getElementById('series-delete-btn');
+  const hint = document.getElementById('series-delete-hint');
+  const box = btn && btn.parentElement;
+  if (!btn || !box) return;
+  const it = currentLang === 'it';
+  if (!seriesId) { box.style.display = 'none'; return; }
+  box.style.display = '';
+  const n = _prodottiDellaSerie(seriesId);
+  // v6.175 - basta `disabled`: l'aspetto da spento lo mette `.btn-danger:disabled` nel CSS
+  // (opacita' e cursore). Le due righe che lo facevano a mano sono state tolte — erano in linea,
+  // quindi avrebbero pure VINTO sulla regola del CSS, tenendo in vita una seconda verita' sullo
+  // stesso aspetto.
+  btn.disabled = n > 0;
+  if (hint) hint.textContent = n > 0
+    ? (it ? `Non si può eliminare: la serie ha ancora ${n} prodotti collegati (figurine, retro, album, bustine, altri oggetti). Svuotala prima.`
+          : `Cannot delete: the series still has ${n} linked products. Empty it first.`)
+    : (it ? 'La serie è vuota: si può eliminare.' : 'The series is empty: it can be deleted.');
+}
+
+// La stessa domanda in un posto solo, letta dal pulsante E dal controllo dentro `deleteSeries`.
+function _prodottiDellaSerie(seriesId) {
+  return (_cache.figurines || getData('figurines', [])).filter(f => f.seriesId === seriesId).length;
+}
+
 async function deleteSeries(id) {
+  // 🔴 v6.171 — IL CONTROLLO STA QUI, non solo sul pulsante. Fino alla v6.170 l'unica difesa era
+  // che in tabella il cestino NON VENISSE DISEGNATO quando la serie aveva dei prodotti: la
+  // funzione, se chiamata, cancellava serie e contenuto senza guardare niente.
+  // Spostando il comando nella scheda e grigiandolo, la difesa sarebbe diventata un attributo
+  // `disabled` — cioe' la cosa piu' facile da perdere in un ritocco al markup. Il controllo va
+  // dove sta il danno, non dove sta il clic: e' la scelta della v6.143 (la rete in `saveBulkCell`
+  // per chiamate che oggi non esistono).
+  if (!id) return;
+  const n = _prodottiDellaSerie(id);
+  if (n > 0) {
+    toast(currentLang === 'it'
+      ? `❌ La serie ha ancora ${n} prodotti collegati: svuotala prima di eliminarla`
+      : `❌ The series still has ${n} linked products: empty it first`, 'error');
+    return;
+  }
   if (!confirm('Delete this series and all its figurines?')) return;
   try {
     // Cancellare il documento della serie cancella già tutte le sue
@@ -18447,6 +19212,154 @@ function impostaTaglioInventario(taglio) {
   renderCatalog();
 }
 
+// ============================================================
+// v6.174 (Franco) — IL RIEPILOGO DI TUTTE LE SERIE, per gli utenti.
+// ------------------------------------------------------------
+// E' un SOTTOINSIEME della vista tabellare admin, non una tabella nuova: gli stessi numeri, presi
+// dalla stessa `_conteggiSerie`. Se un domani cambia la definizione di "figurina base", cambia in
+// tutti e tre i posti insieme — scheda, tabella admin e questa.
+// ⚠️ Qui NON compaiono le colonne che descrivono come e' fatto il sito (colonne della griglia,
+// flag, azioni): a un visitatore direbbero come e' costruito il catalogo, non cosa contiene.
+// ⚠️ E le serie senza prodotti CI SONO lo stesso, con le celle vuote: sono censite, e un elenco che
+// le nasconde farebbe credere che non esistano. Se non le vuoi, e' una riga di filtro.
+// ============================================================
+function apriInfoTutteLeSerie() {
+  const el = document.getElementById('info-serie-contenuto');
+  if (!el) return;
+  const it = currentLang === 'it';
+  // v6.177 - su telefono la tabella si asciuga: la foto si porta il nome sotto (una colonna invece
+  // di due), il nome e' quello CORTO e le intestazioni sono quelle della tabella admin, che sono
+  // brevi proprio perche' nate dove lo spazio manca. Sul desktop resta tutto per esteso.
+  const mobile = _isMobileViewport();
+  const figs = getData('figurines', []);
+  // v6.177 (Franco) - FUORI LE SERIE SENZA FIGURINE, cioe' quelle con N. FIGURINE a zero. Nasce da
+  // "Extra serie", che non e' una serie ma il contenitore dei prodotti extra serie (v6.144): ha 8
+  // Cartoncini e zero figurine, e in un riepilogo delle serie non ci deve stare.
+  // ⚠️ SI E' SCELTO IL CRITERIO, NON IL CASO. Un flag "serie fittizia" sarebbe stato un campo nuovo
+  // per una sola serie accesa (Franco: "non voglio un flag per un solo caso"), e cablare il nome
+  // avrebbe smesso di funzionare in silenzio al primo rinomina. Cosi' invece la regola si legge
+  // dalla tabella stessa: sparisce cio' che avrebbe la prima colonna numerica vuota.
+  // 📌 Il conteggio e' `base` di `_conteggiSerie`, quindi le sole figurine del set base — senza
+  // variazioni, change ed errori di stampa. Oggi escono: Extra serie, Kakkones, Weird Ball,
+  // I Mitici Sgorbions - Stamps.
+  const series = getData('series', [])
+    .filter(s => _conteggiSerie(figs.filter(f => f.seriesId === s.id)).base > 0)
+    .sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+
+  // v6.175 (Franco) - I NOMI DELLE COLONNE SONO QUELLI CHE HA SCRITTO LUI, alla lettera. Nella
+  // v6.174 avevo ripreso quelli della tabella admin, che sono abbreviati — ma la' lo sono perche'
+  // c'e' poco spazio, e in una finestra larga quell'abbreviazione non ha nessuna ragione di essere.
+  // Copiare un'etichetta senza il vincolo che l'aveva prodotta e' copiare la conseguenza e lasciare
+  // indietro la causa.
+  // 📌 Unico scostamento, e va detto: Franco aveva scritto "ULTIMA GIF." — refuso per "FIG.".
+  // La prima colonna non ha intestazione: e' la miniatura, e un titolo sopra una foto direbbe una
+  // cosa che si vede da se'.
+  const intestazioni = mobile
+    // v6.179 (Franco) - SU TELEFONO "DA" E "A" SPARISCONO: il loro contenuto entra sotto il conteggio
+    // delle figurine, nella forma  60 / (1/160). Due colonne strette che portavano un numero
+    // ciascuna diventano due righe di una colonna sola, e la tabella perde due colonne su nove.
+    // v6.180 (Franco) - le due colonne delle variazioni diventano UNA, chiamata VAR, con dentro due
+    // righe etichettate. Stessa idea della v6.179 su DA/A: due colonne strette che portano un numero
+    // ciascuna occupano piu' larghezza delle due righe che le sostituiscono, e su telefono la
+    // larghezza e' l'unica risorsa scarsa. Il riepilogo passa da sette colonne a sei.
+    ? (it ? ['', 'ANNO', 'N.<br>FIGURINE', 'VAR', 'CHANGE<br>FIGURINE', 'CHANGE<br>RETRO']
+          : ['', 'YEAR', 'N.<br>STICKERS', 'VAR', 'STICKER<br>CHANGE', 'BACK<br>CHANGE'])
+    // v6.177 (Franco) - via il prefisso "N." / "NUMERO": la colonna dice gia' di essere un conteggio
+    // perche' sotto ci sono dei numeri, e cinque prefissi uguali allungano le intestazioni senza
+    // aggiungere niente. Stessa idea del "SI" tolto nella v6.166 e del `#` tolto nella v6.115.
+    // 📌 Due delle cinque righe che Franco ha mandato dicevano "VARIAZIONI UFFICIALI" al posto di
+    // "NON UFFICIALI" e "CHANGE DI FIGURINA" al posto di "DI RETRO": refusi confermati da lui, non
+    // applicati alla lettera. Alla lettera avrebbero prodotto due coppie di colonne OMONIME - cioe'
+    // il difetto che la v6.174 aveva appena tolto alla colonna "Change" della console admin.
+    // v6.178 (Franco) - le intestazioni lunghe vanno a capo dove lo dice lui, con un `<br>` scritto
+    // e non lasciato all'a-capo automatico. La differenza non e' estetica: l'a-capo automatico
+    // spezza dove capita a seconda della larghezza della colonna, quindi "VARIAZIONI NON UFFICIALI"
+    // poteva diventare "VARIAZIONI / NON UFFICIALI" su uno schermo e "VARIAZIONI NON / UFFICIALI"
+    // su un altro. Scritto, si spezza sempre allo stesso punto.
+    // 📌 Le abbreviazioni "PRIMA FIG." / "ULTIMA FIG." spariscono: su due righe c'e' posto per la
+    // parola intera, e un'abbreviazione senza il vincolo che la giustificava e' solo una parola
+    // tagliata (e' la stessa correzione della v6.175, applicata a due colonne rimaste indietro).
+    : (it ? ['', 'NOME', 'ANNO', 'FIGURINE', 'PRIMA<br>FIGURINA', 'ULTIMA<br>FIGURINA', 'VARIAZIONI<br>UFFICIALI', 'VARIAZIONI NON<br>UFFICIALI', 'CHANGE<br>DI FIGURINA', 'CHANGE<br>DI RETRO']
+          : ['', 'NAME', 'YEAR', 'STICKERS', 'FIRST<br>STICKER', 'LAST<br>STICKER', 'OFFICIAL<br>VARIATIONS', 'UNOFFICIAL<br>VARIATIONS', 'STICKER<br>CHANGE', 'BACK<br>CHANGE']);
+
+  // Tutto centrato tranne una colonna per variante, e per lo stesso motivo: quando una cella
+  // contiene TESTO di lunghezza diversa riga per riga, centrarla toglie il bordo da cui l'occhio
+  // riparte.
+  //   desktop -> il NOME (indice 1).
+  //   mobile  -> la colonna VAR (indice 3), che dalla v6.181 contiene due righe etichettate
+  //              "UFF: n" e "NON UFF: m": centrate, le due etichette non si incolonnano fra loro
+  //              ne' fra una riga e l'altra della tabella.
+  // ⚠️ Gli indici sono DUE perche' le due varianti hanno colonne diverse: sul mobile il nome non ha
+  // una colonna sua (sta sotto la foto) e VAR e' la quarta. Un indice solo avrebbe allineato la
+  // colonna sbagliata su una delle due.
+  const aSinistra = i => mobile ? i === 3 : i === 1;
+
+  const righe = series.map(s => {
+    const c = _conteggiSerie(figs.filter(f => f.seriesId === s.id));
+    // v6.175 - la miniatura della foto della serie. Se la foto non c'e' la cella resta vuota: un
+    // segnaposto grigio direbbe "manca qualcosa" a un visitatore che non puo' farci niente.
+    const miniatura = s.img
+      ? `<img src="${s.img}" alt="" loading="lazy" style="width:44px;height:44px;object-fit:cover;border-radius:8px;display:block;margin:0 auto;">`
+      : '';
+    // v6.177 (Franco) - SU TELEFONO IL NOME STA SOTTO LA FOTO, non in una colonna sua: due colonne
+    // strette per due cose che si leggono insieme sprecavano la larghezza che serve ai numeri.
+    // ⚠️ Ed e' il nome CORTO, preso da `_nomeSerieCard` - la funzione che esiste dalla v6.080
+    // apposta e che sceglie da se' fra corto e lungo secondo lo schermo. Riscrivere qui quel `if`
+    // avrebbe fatto la sesta copia di una regola che quel commento dice di tenere in un posto solo.
+    const primaCella = mobile
+      ? miniatura + `<div style="font-size:0.75rem;line-height:1.2;margin-top:0.25rem;">${_nomeSerieCard(s)}</div>`
+      : miniatura;
+    // Lo zero resta vuoto, come nella tabella admin (v6.166): una parete di zeri nasconde i numeri
+    // veri esattamente come la parete di NO nascondeva i SI. Nome e anno no: quelli ci sono sempre.
+    // v6.179 (Franco) - su telefono il primo e l'ultimo numero entrano SOTTO il conteggio, nella
+    // forma  60 / (1/160), e le colonne DA e A spariscono.
+    // ⚠️ La parentesi compare solo se ci sono TUTTI E DUE i numeri. Una serie senza numerazione
+    // (`noNumbers`) o con un estremo solo mostra il conteggio nudo: scrivere "(1/)" o "(/160)"
+    // darebbe l'idea di un dato rotto invece che di un dato assente.
+    const _intervallo = (s.firstNumber != null && s.lastNumber != null)
+      ? `<div style="font-size:0.72rem;color:var(--muted);line-height:1.25;">(${s.firstNumber}/${s.lastNumber})</div>`
+      : '';
+    // v6.180 (Franco) - la colonna VAR di telefono: due righe etichettate invece di due colonne.
+    // ⚠️ Le righe con zero NON si scrivono, e la cella con entrambi a zero resta vuota: e' la regola
+    // che Franco ha confermato per l'intervallo ("no dati -> non mostrare nulla"), la stessa del
+    // vuoto-vale-zero della v6.166. Scrivere "UFF: 0 / NON UFF: 0" riempirebbe di zeri proprio la
+    // colonna che si sta stringendo.
+    const _rigaVar = (etichetta, n) => n
+      ? `<div style="font-size:0.75rem;line-height:1.3;white-space:nowrap;"><span style="color:var(--muted);">${etichetta}:</span> ${n}</div>`
+      : '';
+    const _var = _rigaVar(it ? 'UFF' : 'OFF', c.variazioni) + _rigaVar(it ? 'NON UFF' : 'UNOFF', c.nonUfficiali);
+    const celle = mobile
+      ? [primaCella, s.year ?? '', (c.base || '') + _intervallo,
+         _var, c.changeFigurine || '', c.changeRetro || '']
+      : [primaCella, s.name || '', s.year ?? '', c.base || '', s.firstNumber ?? '', s.lastNumber ?? '',
+         c.variazioni || '', c.nonUfficiali || '', c.changeFigurine || '', c.changeRetro || ''];
+    return '<tr>' + celle.map((v, i) =>
+      `<td style="padding:0.4rem 0.7rem;font-size:0.85rem;text-align:${aSinistra(i) ? 'left' : 'center'};">${v}</td>`
+    ).join('') + '</tr>';
+  }).join('');
+
+  // 🧪 Intestazioni e celle si costruiscono dallo STESSO array di dieci voci e con la STESSA
+  // funzione di allineamento: non possono disallinearsi ne' in numero ne' in incolonnamento. E' il
+  // controllo che nella v6.166 e nella v6.168 e' servito di piu' — in una tabella fatta di stringhe
+  // una colonna in piu' da una parte sola non da' nessun errore, sposta i dati sotto l'intestazione
+  // sbagliata e la tabella continua a sembrare giusta.
+  el.innerHTML = `<table class="data-table compact" style="width:100%;"><thead><tr>${
+    intestazioni.map((h, i) => `<th style="line-height:1.2;vertical-align:bottom;white-space:normal;text-align:${aSinistra(i) ? 'left' : 'center'};">${h}</th>`).join('')
+  }</tr></thead><tbody>${righe}</tbody></table>`;
+  // 🔴 v6.179 - QUI SOTTO C'ERA UNA NOTA CHE NON MI ERA STATA CHIESTA, e l'ho tolta.
+  // Diceva "Le celle vuote valgono zero. «FIGURINE» conta le figurine del set base, senza
+  // variazioni, change ed errori di stampa. Le serie senza figurine non compaiono."
+  // Franco: **"non dimenticarti che questa tabella e' per gli UTENTI -> non mettere contenuti senza
+  // chiedermi prima"**. Ed e' una regola di sostanza, non di forma: quella nota spiegava a un
+  // visitatore le convenzioni INTERNE del catalogo — set base, change, errori di stampa — cioe'
+  // come e' costruito il sito invece di cosa contiene. E' lo stesso criterio con cui, in questa
+  // stessa tabella, sono state tenute fuori le colonne dei flag e delle colonne della griglia.
+  // 📌 Da qui in avanti: nessun testo rivolto agli utenti si aggiunge senza che lo abbia approvato
+  // Franco. Non e' un dettaglio di stile — le parole del sito sono sue.
+
+  document.getElementById('info-serie-modal').classList.remove('hidden');
+}
+
 // Il sottotitolo NON si scrive a mano: applyI18n() riscrive tutto cio' che ha un data-i18n ad ogni
 // avvio e ad ogni cambio lingua, quindi un textContent messo qui sparirebbe da solo alla prima
 // occasione. Si cambia la CHIAVE e si lascia fare a lui — cosi' la frase vale anche in inglese
@@ -18476,6 +19389,18 @@ function _aggiornaBivioInventario() {
   const _bTipo = document.getElementById('admin-add-tipo-prodotto-btn');
   if (_bSerie) _bSerie.style.display = (_admin && _taglioInventario !== 'prodotti') ? '' : 'none';
   if (_bTipo)  _bTipo.style.display  = (_admin && _taglioInventario === 'prodotti') ? '' : 'none';
+  // v6.174 - il riepilogo delle serie: solo nel taglio Serie, ma per CHIUNQUE. Non c'e' `_admin`
+  // nella condizione, e non e' una dimenticanza: e' un riepilogo del catalogo, non uno strumento.
+  const _bInfo = document.getElementById('btn-info-tutte-serie');
+  if (_bInfo) {
+    _bInfo.style.display = (_taglioInventario !== 'prodotti') ? '' : 'none';
+    // v6.177 (Franco) - su telefono l'etichetta si accorcia. Si cambia l'ATTRIBUTO `data-i18n` e poi
+    // il testo, come fa questa stessa funzione due righe sopra per `catalog.sub`: scrivere solo il
+    // testo lo farebbe riallungare al primo `applyI18n()`, che rilegge l'attributo.
+    const chiave = _isMobileViewport() ? 'catalog.allSeriesInfoShort' : 'catalog.allSeriesInfo';
+    _bInfo.setAttribute('data-i18n', chiave);
+    _bInfo.textContent = t(chiave);
+  }
 }
 
 // ---- PRIMO LIVELLO DEL TAGLIO PRODOTTI ----
@@ -24028,7 +24953,7 @@ function adminTab(tab) {
   if (tab === 'errori') renderAdminErrori();
   if (tab === 'figurine') renderAdminFigurineInvisibili(); // v6.080
   if (tab === 'email') { renderEmailLog(); refreshEmailCountWidgets(); }
-  if (tab === 'settings') { loadReplyToField(); loadEbaySettingsFields(); }
+  if (tab === 'settings') { loadImpostazioniGeneraliFields(); loadReplyToField(); loadEbaySettingsFields(); }   // v6.173
   if (tab === 'punteggi') renderAdminPunteggi();
 }
 // v6.080 (Franco) - LA SEZIONE FIGURINE della console: l'elenco degli oggetti resi INVISIBILI.
@@ -24092,9 +25017,22 @@ function renderAdminSeries() {
   el.innerHTML = `
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.25rem;">${(currentLang === 'it') ? "Usa le frecce per cambiare l'ordine" : 'Use the arrows to change the order'}</p>
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Per eliminare una serie, cancellare prima tutto il suo contenuto.' : 'To delete a series, first delete all its content.'}</p>
-    <table class="data-table compact"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th style="line-height:1.15;">${currentLang==="it"?"N.<br>FIGURINE":"N.<br>STICKERS"}</th><th>DA</th><th>A</th><th style="line-height:1.15;">${currentLang==="it"?"HA<br>NUMERI":"HAS<br>NUMBERS"}</th><th style="line-height:1.15;">${currentLang==="it"?"HA<br>RETRO":"HAS<br>BACKS"}</th><th style="line-height:1.15;">${currentLang==="it"?"SOTTO<br>SERIE":"SUB<br>SERIES"}</th><th style="line-height:1.15;">${currentLang==="it"?"VAR<br>UFF":"OFF<br>VAR"}</th><th style="line-height:1.15;">${currentLang==="it"?"VAR<br>NON UFF":"UNOFF<br>VAR"}</th><th>Change</th><th style="line-height:1.15;">${currentLang==="it"?"COLONNE<br>FIG D/M":"COLUMNS<br>FIG D/M"}</th><th style="line-height:1.15;">${currentLang==="it"?"COLONNE<br>RETRO D/M":"COLUMNS<br>BACK D/M"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
+    <!-- v6.175 (Franco) - VALORI CENTRATI SOTTO IL NOME DELLA COLONNA. Si centra la TABELLA e si
+         riporta a sinistra il solo Nome: cosi' l'allineamento e' una regola sola invece di una
+         ripetuta su sedici colonne, e aggiungendone una diciassettesima nasce gia' centrata.
+         Il Nome resta a sinistra perche' una colonna di nomi di lunghezza diversa, centrata, non ha
+         piu' un bordo da cui l'occhio riparte a ogni riga. -->
+    <table class="data-table compact" style="text-align:center;"><thead><tr><th>${currentLang==='it'?'Ordine':'Order'}</th><th style="text-align:left;">${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Anno":"Year"}</th><th style="line-height:1.15;">${currentLang==="it"?"N.<br>FIGURINE":"N.<br>STICKERS"}</th><th>DA</th><th>A</th><th style="line-height:1.15;">${currentLang==="it"?"HA<br>NUMERI":"HAS<br>NUMBERS"}</th><th style="line-height:1.15;">${currentLang==="it"?"HA<br>RETRO":"HAS<br>BACKS"}</th><th style="line-height:1.15;">${currentLang==="it"?"SOTTO<br>SERIE":"SUB<br>SERIES"}</th><th style="line-height:1.15;">${currentLang==="it"?"VAR<br>UFF":"OFF<br>VAR"}</th><th style="line-height:1.15;">${currentLang==="it"?"VAR<br>NON UFF":"UNOFF<br>VAR"}</th><th style="line-height:1.15;">${currentLang==="it"?"CHANGE<br>FIGURINE":"STICKER<br>CHANGE"}</th><th style="line-height:1.15;">${currentLang==="it"?"CHANGE<br>RETRO":"BACK<br>CHANGE"}</th><th style="line-height:1.15;">${currentLang==="it"?"COLONNE<br>FIG D/M":"COLUMNS<br>FIG D/M"}</th><th style="line-height:1.15;">${currentLang==="it"?"COLONNE<br>RETRO D/M":"COLUMNS<br>BACK D/M"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${series.map((s, idx) => {
-      const figs = getData('figurines',[]).filter(f=>f.seriesId===s.id).length;
+      // v6.170 (Franco) - I QUATTRO NUMERI VENGONO DALLA STESSA DEFINIZIONE DELLA SCHEDA.
+      // ⚠️ N. FIGURINE CAMBIA SIGNIFICATO: contava TUTTO quello che stava nella serie — retro,
+      // variazioni, change compresi — e ora conta le sole FIGURINE BASE. Per Serie 3 scende da
+      // 1055 a poco piu' di 500. Non e' un numero nuovo: e' quello che la SCHEDA della stessa
+      // serie mostrava gia', col titolo "le figurine senza alcun contrassegno". Fino a ieri lo
+      // stesso nome diceva due numeri diversi a seconda di dove lo leggevi, e questa release
+      // toglie la contraddizione dalla parte sbagliata delle due.
+      const _items = getData('figurines',[]).filter(f=>f.seriesId===s.id);
+      const c = _conteggiSerie(_items);
       // v6.166 (Franco) - SOLO "SI", e il vuoto dice "no" da se'. Con undici colonne di SI/NO la
       // tabella era una parete di parole in cui i pochi SI non si trovavano: togliendo i NO, cio'
       // che resta scritto e' esattamente cio' che c'e'. Stessa idea del `#` tolto nella v6.115 —
@@ -24105,7 +25043,7 @@ function renderAdminSeries() {
           <button class="tbl-btn tbl-btn-edit" onclick="moveSeriesUp(${idx})" ${idx===0?'disabled style="opacity:0.3;"':''}>▲</button>
           <button class="tbl-btn tbl-btn-edit" onclick="moveSeriesDown(${idx})" ${idx===series.length-1?'disabled style="opacity:0.3;"':''}>▼</button>
         </td>
-        <td>${s.name}</td><td>${s.year}</td><td>${figs}</td>
+        <td style="text-align:left;">${s.name}</td><td>${s.year}</td><td>${c.base}</td>
         <td>${s.firstNumber ?? ''}</td>
         <td>${s.lastNumber ?? ''}</td>
         <!-- v6.166 - le due colonne erano NEGATIVE (noNumbers, noRetro) e ora sono positive: la
@@ -24117,9 +25055,24 @@ function renderAdminSeries() {
         <td>${siNoCell(!s.noNumbers)}</td>
         <td>${siNoCell(!s.noRetro)}</td><!-- v6.098 -->
         <td>${siNoCell(s.hasSubseries)}</td>
-        <td>${siNoCell(s.hasVariations)}</td>
-        <td>${siNoCell(s.hasUnofficialVariations)}</td>
-        <td>${siNoCell(s.hasChange)}</td>
+        <!-- v6.170 (Franco) - QUI STAVA IL FLAG, ORA C'E' IL CONTENUTO. Le tre colonne dicevano
+             "SI" leggendo i flag della serie, cioe' cosa la serie DICHIARA; ora dicono quanti
+             oggetti CI SONO. Lo zero resta vuoto, come vuole la v6.166: una parete di zeri
+             nasconderebbe i numeri veri esattamente come la parete di NO nascondeva i SI.
+             ⚠️ La colonna Change conta i change DI FIGURINA, non quelli di retro - che sono un
+             conteggio a se' dalla v6.170 e per ora restano fuori dalla tabella (scelta di Franco).
+             Su Serie 1 la cella sara' quindi VUOTA pur avendo 144 change: sono tutti di retro.
+             NOTA: niente apici inversi in questo commento - sta DENTRO un template literal, e li'
+             un backtick lo chiude. Preso da node --check al primo giro, come nella v6.166. -->
+        <td>${c.variazioni || ''}</td>
+        <td>${c.nonUfficiali || ''}</td>
+        <td>${c.changeFigurine || ''}</td>
+        <!-- v6.174 (Franco) - la colonna dei change di RETRO. La v6.170 li aveva lasciati fuori di
+             proposito ("per ora non mettiamolo nella vista tabellare"); Franco ha cambiato idea, ed
+             e' scritto qui perche' chi legge quella nota non la creda ancora valida.
+             Le due colonne ora dicono quale sia quale: "Change" da solo non lo diceva, ed e' il
+             motivo per cui su Serie 1 la cella sembrava sbagliata (0 di figurina, 144 di retro). -->
+        <td>${c.changeRetro || ''}</td>
         <!-- v6.166 (Franco) - le colonne della griglia delle FIGURINE, che sono quelle
              che si guardano piu' spesso. Si mostra il valore vero: quello della serie se c'e',
              altrimenti il default - lo stesso numero che il sito usa, non un trattino. Una tabella
@@ -24136,12 +25089,11 @@ function renderAdminSeries() {
         <td style="text-align:center;white-space:nowrap;">${s.noRetro ? '' : ((((s.colonne||{}).retros||{}).d || COLONNE_DEFAULT.retros.d) + '/' + (((s.colonne||{}).retros||{}).m || COLONNE_DEFAULT.retros.m))}</td>
         <td>
         <button class="tbl-btn tbl-btn-edit" onclick="openAddSeriesModal('${s.id}')">${currentLang === 'it' ? 'Modifica' : 'Edit'}</button>
-        ${(() => {
-          const figCount = (_cache.figurines || getData('figurines',[])).filter(f => f.seriesId === s.id).length;
-          return figCount === 0
-            ? `<button class="tbl-btn tbl-btn-del" onclick="deleteSeries('${s.id}')" title="${currentLang === 'it' ? 'Elimina questa serie' : 'Delete this series'}">🗑️</button>`
-            : '';
-        })()}
+        <!-- v6.171 (Franco) - QUI STAVA IL CESTINO, ed e' andato nella scheda della serie.
+             Cancellare una serie e' un'operazione rarissima, e teneva un comando distruttivo in
+             ogni riga di una tabella che si usa per leggere.
+             Nella scheda e' GRIGIATO quando la serie ha prodotti, invece che assente come era qui:
+             un pulsante che non viene disegnato non dice perche' non si puo' fare. -->
       </td></tr>`;
     }).join('')}</tbody></table>`;
 }
@@ -24166,11 +25118,22 @@ async function moveSeriesDown(idx) {
 async function saveSeriesOrder(newOrder) {
   let series = getData('series', []);
   const ordered = newOrder.map(id => series.find(s => s.id === id)).filter(Boolean);
-  // save order index to each series
+  // 🔴 v6.172 - DUE DIFETTI IN CINQUE RIGHE, e insieme facevano di una freccia l'operazione piu'
+  // cara del sito.
+  //  (a) si scrivevano TUTTE le serie, anche quelle il cui `order` non cambiava: muovere una serie
+  //      in su ne sposta DUE, le altre undici restano dove sono e venivano riscritte lo stesso;
+  //  (b) ogni scrittura portava il documento intero, `items` compresi (vedi `_serieSenzaItems`).
+  // Insieme: ~1,4 MB in tredici viaggi awaitati uno alla volta, per cambiare due numeri.
+  // E' la stessa forma della v6.116/v6.117 — N scritture dove ne bastano poche — su un percorso
+  // che quelle release non avevano guardato perche' non passa da `_propagaAiCollegati`.
+  let _scritte = 0;
   for (let i = 0; i < ordered.length; i++) {
+    if (ordered[i].order === i) continue;   // gia' al posto giusto: non c'e' niente da scrivere
     ordered[i].order = i;
-    await fsSave('series', ordered[i]);
+    await fsSave('series', _serieSenzaItems(ordered[i]));
+    _scritte++;
   }
+  console.log('[v6.172] riordino serie: ' + _scritte + ' scritture su ' + ordered.length + ' serie');
   _cache.series = ordered;
   renderCatalog(); renderHomeSeries();
   toast((currentLang === 'it' ? 'Ordine salvato! ✅' : 'Order saved! ✅'), 'success');
