@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.216"></script>
-<link rel="stylesheet" href="css/style.css?v=6.216">
+<script src="js/email.min.js?v=6.231"></script>
+<link rel="stylesheet" href="css/style.css?v=6.231">
 
 
 <style>
@@ -286,6 +286,40 @@ button.back-btn { color:#ffffff; }
      spazio vuoto in fondo alla pagina. */
   #fig-detail-modal #fig-detail-content { min-height:445px; }
 }
+/* 🆕 v6.218 (Franco: "nella admin console, i nomi del tab, possiamo metterli in bianco?") — I TAB
+   DELLA CONSOLE ADMIN SPENTI ERANO `--muted` (#8b7aaa), cioe' viola slavato su fondo scuro: undici
+   pulsanti che si leggevano peggio dell'unico acceso. Ora `--text` (#f0eaff), il bianco della
+   pagina.
+   📌 Il tab acceso NON perde niente: si distingue per il FONDO arancio e il grassetto, non per il
+   colore del testo, che era gia' bianco. Cioe' la differenza fra acceso e spento resta - smette
+   solo di essere anche una differenza di leggibilita'. */
+.admin-tab { color: var(--text); }
+
+/* 🆕 v6.218 (Franco) — LE RIGHE DELLE SPUNTE DEL TAB "ARTICOLI NON BASE": la spunta a sinistra, il
+   suo conteggio spinto a destra, il numero ultimo a destra.
+   ⚠️ Sta QUI e non inline, ed e' obbligatorio: `toggleSeriesCountGroups` accende il riquadro con
+   `style.display = ''`, che vuol dire "torna a quello che dice il CSS". Un `display:flex` scritto
+   inline verrebbe cancellato da quella riga alla prima spunta, e il riquadro tornerebbe a
+   impilarsi sotto - senza errori, e solo dopo un clic. */
+/* 🆕 v6.225 (Franco: "le colonne della tabella non hanno la etichetta centrata, è giustificata a
+   sx") — LE INTESTAZIONI DELLA TABELLA SERIE. La tabella dichiara `text-align:center` in linea, e
+   le CELLE lo prendono per ereditarietà; le intestazioni no, perché `.data-table th` ha una regola
+   sua che dice `text-align:left`, e una regola batte sempre un valore ereditato. Da fuori sembrava
+   una dimenticanza in un punto solo, ed era il CSS di tutte le tabelle del sito.
+   📌 Per questo la correzione è qui e non nel markup: cambiare `.data-table th` avrebbe spostato le
+   intestazioni di OGNI tabella. Questa regola nomina il contenitore, quindi vale per una sola.
+   La colonna Nome resta a sinistra da sé: ha lo stile in linea, che batte questa regola. */
+#admin-series-table .data-table th { text-align: center; }
+
+/* 🆕 v6.219 (Franco) — i titoletti del tab "Articoli non base": Variazioni, Change, Errori di
+   stampa. */
+#add-series-modal .series-sottotitolo {
+  font-size:0.95rem; color:var(--text); font-weight:700;
+  margin:1.1rem 0 0.5rem; padding-bottom:0.25rem; border-bottom:1px solid var(--border);
+}
+#add-series-modal .series-flag-riga { display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; }
+#add-series-modal .series-conteggio { display:flex; align-items:center; gap:0.4rem; margin:0 0 0 auto; }
+
 /* v6.100 — QUI C'ERA UNA GRAFFA DI CHIUSURA IN PIU', e non chiudeva niente.
    Difetto trovato il 6 agosto 2026 e corretto l'11. Il browser la scartava, quindi non si e' mai
    visto nulla: il costo era tutto in lettura. Chi guardava questo punto vedeva DUE `}` e concludeva
@@ -315,7 +349,7 @@ button.back-btn { color:#ffffff; }
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.216</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.231</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -674,6 +708,24 @@ button.back-btn { color:#ffffff; }
         <div style="padding:1.25rem 1.5rem;">
           <div class="section-choice-title" data-i18n="catalog.stickers">Figurine con velina</div>
           <div class="section-choice-count" id="count-figurines" data-i18n-loading="catalog.loading">caricamento...</div>
+        </div>
+      </div>
+      <!-- 🆕 v6.224 (Franco) — LA SETTIMA SEZIONE: le CARTE. Sta qui, subito dopo le figurine,
+           perché nel descrittore ha `pos: 1` a pari merito con loro: *"una serie ha le card o ha
+           le figurine"*.
+           ⚠️ QUESTA CARD È SCRITTA A MANO, e non è una svista di oggi: le sei dell'hub lo sono
+           tutte. Il descrittore genera dieci elenchi ma NON questo markup — è la stessa asimmetria
+           che nella v6.215 aveva lasciato "Figurine da attaccare" senza la sua riga nella tabella
+           delle colonne, e che qui va tenuta a mente: aggiungere un articolo costa una voce nel
+           descrittore **più questo blocco**.
+           Senza background inline, come la sesta: il segnaposto glielo mette `_applicaFotoSezioni`
+           da `SECTION_IMAGES.carte`, che è lo stesso oggetto delle figurine. -->
+      <div class="section-choice-card" onclick="openSeriesSection('carte')" style="padding:0;overflow:hidden;">
+        <div style="width:100%;aspect-ratio:4/3;background:var(--bg3);overflow:hidden;background-repeat:no-repeat;background-position:center;background-size:cover;">
+        </div>
+        <div style="padding:1.25rem 1.5rem;">
+          <div class="section-choice-title" data-i18n="catalog.cards">Carte</div>
+          <div class="section-choice-count" id="count-carte" data-i18n-loading="catalog.loading">caricamento...</div>
         </div>
       </div>
       <div class="section-choice-card" onclick="openSeriesSection('albums')" style="padding:0;overflow:hidden;">
@@ -1190,6 +1242,9 @@ button.back-btn { color:#ffffff; }
         <div class="admin-tabs">
           <button class="admin-tab active" onclick="adminTab('users')" data-i18n="admin.users">Users</button>
           <button class="admin-tab" onclick="adminTab('series')" data-i18n="admin.series">Series</button>
+          <!-- v6.221 — "accanto a Serie", come chiesto: le due cose che descrivono la struttura
+               del catalogo stanno vicine. -->
+          <button class="admin-tab" onclick="adminTab('tipoarticolo')">🧩 Tipo di articolo</button>
           <!-- v6.080 (Franco) — sezione Figurine: l'elenco degli oggetti resi invisibili. Servono
                tenuti d'occhio: sono l'unica cosa nel sito che esiste ma non si vede, e senza un
                posto dove guardarli si dimenticano. -->
@@ -1203,6 +1258,17 @@ button.back-btn { color:#ffffff; }
           <button class="admin-tab" onclick="adminTab('settings')" data-i18n="admin.settings.tab">⚙️ Impostazioni</button>
           <button class="admin-tab" onclick="adminTab('funzioni')" data-i18n="admin.funzioni">Funzioni</button>
         <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
+        </div>
+        <!-- 🆕 v6.221 (Franco: "devi creare la tabella del tipo di articolo") — LA SEZIONE
+             "TIPO DI ARTICOLO", il punto 7 delle decisioni e il passo 1 della scaletta.
+             📌 NON È DOCUMENTAZIONE: È LA TABELLA STAMPATA. Una pagina scritta a mano comincia a
+             mentire il giorno dopo — è successo a `procedura-deploy.md` con "le etichette in un
+             posto solo: due righe", che erano 72 stringhe. Qui le righe e le COLONNE si ricavano
+             da `ARTICOLI`: un articolo nuovo compare da sé, e un campo nuovo del descrittore si
+             porta dietro la sua colonna senza che nessuno debba ricordarsene. -->
+        <div id="admin-tipoarticolo" class="admin-section">
+          <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🧩 Tipo di articolo</h3>
+          <div id="admin-tipo-articolo-tabella"></div>
         </div>
         <div id="admin-series" class="admin-section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -1712,7 +1778,7 @@ button.back-btn { color:#ffffff; }
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.216</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.231</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1875,7 +1941,16 @@ button.back-btn { color:#ffffff; }
   </div>
 </div>
 
-<div class="modal-overlay hidden" id="add-series-modal">
+<!-- 🔴 v6.218 (Franco: "qdo cambi tab non deve muoversi la form; si deve accorciare e basta senza
+     spostarsi in basso") — `align-items:flex-start` INVECE DEL CENTRO. La causa non era nei tab:
+     `.modal-overlay` centra verticalmente, quindi ogni volta che il contenuto cambia altezza la
+     finestra si RICENTRA, e la testa — titolo, Salva, i tab stessi — scivola su o giù. Con i tab
+     succede a ogni clic, cioè spesso.
+     `padding-top:4vh` tiene il distacco dal bordo che prima dava il centraggio.
+     📌 La coppia è COPIATA dalla scheda oggetto (`fig-detail-modal`), che ha esattamente questa
+     riga per esattamente questa ragione: si copia lo stile che c'è, non se ne scrive uno simile
+     (lezione v6.164). -->
+<div class="modal-overlay hidden" id="add-series-modal" style="align-items:flex-start;padding-top:4vh;">
   <div class="modal modal-wide">
     <div class="modal-header">
       <h2 class="modal-title" id="series-modal-title" data-i18n="modal.series.title">Add New Series</h2>
@@ -1891,34 +1966,81 @@ button.back-btn { color:#ffffff; }
       <button class="btn-primary btn-admin" style="width:100%;" onclick="saveSeries()" data-i18n="modal.series.save">Salva serie</button>
       <div id="series-save-feedback" style="display:none;margin-top:0.75rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
     </div>
-    <!-- v6.080 (Franco) — il NOME CORTO sta accanto al nome lungo, non in fondo alla form: sono
-         due modi di chiamare la stessa cosa e si compilano guardandosi. Si usa SOLO su telefono e
-         SOLO nelle card che elencano le serie, dove il nome per esteso viene troncato; nella scheda
-         della serie resta sempre il nome vero.
+    <!-- 🆕 v6.217 (Franco: "la form della serie sta diventando un lenzuolo infinito; cosa ne pensi
+         se mettiamo dei tab?") — QUATTRO TAB. Il raggruppamento è di Franco: avevo proposto cinque
+         tab, lui ha unito i primi due ("metterei Contenuto assieme a Serie; 4 tab").
+         Lo stile dei pulsanti è COPIATO da `fe-tab-btn-generale` della scheda oggetto (v6.103), non
+         riscritto somigliante: due stringhe uguali si confrontano a occhio, due simili no (v6.164).
+         🔴 I TAB NASCONDONO (`display:none`), NON RIMUOVONO DAL DOM, e non è una preferenza di
+         stile: `saveSeries` legge TUTTI i campi a ogni salvataggio, anche quelli dei tab che non
+         stai guardando. Se un tab togliesse i suoi campi dal DOM, salvando dal tab Serie si
+         azzererebbe in silenzio tutto ciò che sta negli altri tre — la stessa famiglia del guasto
+         della v6.169, che azzerò tre flag su tutte e tredici le serie.
+         ⚠️ E i pannelli NON portano la classe `form-group`: `openAddSeriesModal` fa
+         `closest('.form-group')` su due caselle per nasconderle ai non-admin, e oggi non trova
+         niente. Un pannello con quella classe diventerebbe la cosa che trova, e il tab intero
+         sparirebbe. -->
+    <div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin:0.75rem 0 1rem;flex-wrap:wrap;">
+      <button type="button" class="series-tab-btn" data-tab="serie" onclick="switchSeriesTab('serie')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Serie</button>
+      <button type="button" class="series-tab-btn" data-tab="descrizioni" onclick="switchSeriesTab('descrizioni')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.85rem;cursor:pointer;">📝 Descrizioni</button>
+      <button type="button" class="series-tab-btn" data-tab="nonbase" onclick="switchSeriesTab('nonbase')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.85rem;cursor:pointer;">🔀 Articoli non base</button>
+      <button type="button" class="series-tab-btn" data-tab="visualizzazione" onclick="switchSeriesTab('visualizzazione')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.85rem;cursor:pointer;">🗂️ Visualizzazione</button>
+      <button type="button" class="series-tab-btn" data-tab="avanzate" onclick="switchSeriesTab('avanzate')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.85rem;cursor:pointer;">⚙️ Avanzate</button>
+    </div>
+
+    <div class="series-tab-panel" data-tab="serie">
+    <!-- v6.080 (Franco) — il NOME BREVE sta insieme al nome lungo, non in fondo alla form: sono
+         due modi di chiamare la stessa cosa e si compilano guardandosi. (v6.220: non piu' accanto
+         ma SOTTO — questa riga diceva "accanto", ed e' stata cambiata nella stessa passata in cui
+         il campo si e' spostato. Un commento che descrive una disposizione che non c'e' piu' e' il
+         modo in cui questo progetto si fa perdere del tempo da solo.)
+         Si usa SOLO su telefono e SOLO nelle card che elencano le serie, dove il nome per esteso
+         viene troncato; nella scheda della serie resta sempre il nome vero.
          v6.188 — ed è OBBLIGATORIO: fino alla v6.187 il vuoto era ammesso, e questo commento lo
          diceva. Il controllo sta in `saveSeries`, quindi vale anche in modifica: una serie nata
          senza non si salva più finché non gliene si dà uno. -->
+    <!-- 🆕 v6.220 (Franco) — I DUE NOMI IMPILATI, LA FOTO DI FIANCO. Il Nome breve va SOTTO il
+         Nome, non accanto: sono due modi di chiamare la stessa cosa e si leggono uno sotto
+         l'altro. Lo spazio che si libera a destra lo prende la copertina, che stava in fondo al
+         tab e adesso si vede insieme al nome della serie che descrive.
+         v6.220 - "Nome corto" -> "Nome breve" (Franco). ⚠️ Il campo su Firestore resta
+         `nomeCorto`: rinominarlo sarebbe una migrazione su tutte le serie per cambiare una
+         parola che si legge. Cambiate le due scritte VISIBILI - questa e il messaggio di
+         `saveSeries` - e nient'altro. -->
     <div class="form-group">
-      <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+      <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="flex:1 1 260px;">
-          <label class="form-label" data-i18n="form.series.name">Series Name</label>
-          <input class="form-input" type="text" id="series-name-input" placeholder="e.g. Serie 1 — Primavera">
+          <div style="margin-bottom:0.6rem;">
+            <label class="form-label" data-i18n="form.series.name">Series Name</label>
+            <input class="form-input" type="text" id="series-name-input" placeholder="e.g. Serie 1 — Primavera">
+          </div>
+          <div>
+            <label class="form-label">Nome breve</label>
+            <input class="form-input" type="text" id="series-nome-corto-input" placeholder="es. S1">
+            <div class="form-hint">Obbligatorio. Si usa sulle card su telefono, dove il nome per esteso non ci sta.</div>
+          </div>
         </div>
-        <div style="flex:0 1 190px;">
-          <label class="form-label">Nome corto</label>
-          <input class="form-input" type="text" id="series-nome-corto-input" placeholder="es. S1">
-          <div class="form-hint">Obbligatorio. Si usa sulle card su telefono, dove il nome per esteso non ci sta.</div>
+        <!-- LA COPERTINA, arrivata qui dal fondo del tab. I due pulsanti sono `display:block` e
+             larghi uguali: la label del caricamento era `inline-block`, cioe' larga quanto il suo
+             testo, mentre "Rimuovi sfondo" era gia' al 100%. Due pulsanti impilati di larghezza
+             diversa sembrano due cose di importanza diversa, e non lo sono. -->
+        <div style="flex:0 0 200px;">
+          <label class="form-label" data-i18n="form.series.cover">Cover Image</label>
+          <img id="series-img-preview" class="file-preview" style="margin-top:0;">
+          <label style="display:block;cursor:pointer;margin-top:0.4rem;">
+            <span style="display:block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;white-space:nowrap;text-align:center;">&#128247; <span data-i18n="form.click">Clicca per caricare</span></span>
+            <input type="file" id="series-img-file" accept="image/*" style="display:none;" onchange="handleSeriesImg(event)">
+          </label>
+          <!-- v6.189 (Franco) — "Rimuovi sfondo" anche qui. La stringa di stile e' COPIATA da
+               `fig-edit-remove-bg-btn` nella scheda oggetto, non riscritta somigliante: due
+               stringhe uguali si confrontano a occhio, due simili no (lezione v6.164). -->
+          <button id="series-remove-bg-btn" type="button" onclick="removeBgFromSeries()" style="width:100%;margin-top:0.4rem;font-size:0.72rem;color:var(--accent2);border:1px solid var(--accent2);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">&#10024; Rimuovi sfondo</button>
         </div>
       </div>
     </div>
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.series.desc.it">Description (Italian)</label>
-      <textarea class="form-textarea" id="series-desc-input" data-i18n-placeholder="form.series.descPlaceholder" placeholder="Descrivi questa serie..." style="min-height:70px;"></textarea>
-    </div>
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.series.desc.en">Description (English)</label>
-      <textarea class="form-textarea" id="series-desc-en-input" data-i18n-placeholder="form.series.descEnPlaceholder" placeholder="Describe this series..." style="min-height:70px;"></textarea>
-    </div>
+    <!-- v6.218 (Franco) — le due DESCRIZIONI sono andate in un tab loro: "non cambieranno mai e
+         sono poco interessanti". Erano i due campi più alti del primo tab, e stavano fra il nome e
+         l'anno, cioè fra le due cose che invece si guardano sempre. -->
     <div style="display:grid;grid-template-columns:0.7fr 1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.5rem;">
       <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.year">Year</label>
@@ -1943,37 +2065,80 @@ button.back-btn { color:#ffffff; }
         <input class="form-input" type="number" id="series-album-count-input" placeholder="0" min="0">
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;margin-bottom:0.75rem;">
-      <div style="display:flex;flex-direction:column;gap:0.5rem;">
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label" id="series-has-subseries-group">
-          <input type="checkbox" id="series-has-subseries-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-          <span data-i18n="form.series.hasSubseries">Ha sottoserie</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-          <input type="checkbox" id="series-has-sizes-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-          <span data-i18n="form.series.hasSizes">Figurine con taglie differenti</span>
-        </label>
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-          <input type="checkbox" id="series-no-numbers-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-          <span data-i18n="form.series.noNumbers">Non ha numeri</span>
-        </label>
+    <!-- 🆕 v6.219 (Franco) — DUE COLONNE: a SINISTRA gli articoli che la serie non ha, uno per
+         riga; a DESTRA le quattro spunte della serie.
+         📌 La v6.217 aveva tolto una griglia a due colonne da questo punto - ma quella affiancava
+         le spunte della serie a quelle delle variazioni, che ora stanno in un altro tab. Questa
+         affianca due cose che sono rimaste tutte e due qui: non e' un ritorno indietro.
+         ⚠️ Il contenitore NON porta la classe `form-group`: `openAddSeriesModal` fa
+         `closest('.form-group')` su `series-has-sizes-input` per nasconderla ai non-admin, e oggi
+         non trova niente. Dandogliela, si porterebbe via mezza scheda. -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 1.5rem;margin-bottom:0.75rem;align-items:start;">
+        <!-- SINISTRA -->
         <!-- 🆕 v6.216 (Franco) — GLI ARTICOLI CHE QUESTA SERIE NON HA. Sostituisce le due caselle
              singole "Figurine senza retro" (v6.098) e "Senza album" (v6.194): erano due modi di dire
              la stessa cosa su due articoli diversi. Le caselle le genera `_caselleArticoliSerie()`
-             dal descrittore, quindi ci sono tutti e sei gli articoli e un settimo comparirebbe da sé. -->
-        <div style="grid-column:1 / -1;">
-          <div class="form-label" style="font-size:0.88rem;margin-bottom:0.3rem;">Articoli che questa serie non ha</div>
-          <div id="series-articoli-nascosti" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.3rem 1rem;"></div>
+             dal descrittore, quindi ci sono tutti e sei gli articoli e un settimo comparirebbe da sé.
+             v6.219 - in colonna: erano a `repeat(auto-fill,minmax(150px,1fr))`, cioe' due o tre per
+             riga secondo la larghezza. Il numero di caselle per riga cambiava con la finestra, e
+             quindi cambiava anche quali stavano vicine. -->
+        <div>
+          <!-- v6.229 (Franco) — il titolo del campo in BIANCO. `.form-label` e' `--muted` per tutto
+               il sito; qui l'eccezione e' scritta in linea, come si fa in questa finestra, e non
+               con una regola nuova nel CSS: la regola esiste gia' due volte (`#add-fig-modal` e le
+               procedure di caricamento) e la terza avrebbe cominciato a essere un elenco. -->
+          <div class="form-label" style="font-size:0.88rem;margin-bottom:0.3rem;color:var(--text);">Articoli che questa serie non ha</div>
+          <div id="series-articoli-nascosti" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
           <div class="form-hint" style="margin-top:0.3rem;">Il box sparisce dall'hub della serie. Nasconde la porta, non la stanza: gli oggetti restano nei dati.</div>
         </div>
-        <!-- v6.204 (Franco) — QUESTA serie fa da contenitore agli articoli senza serie. Prima il
-             contenitore si riconosceva dal NOME ("Extra serie"), e rinominarlo rompeva il click sui
-             box dei tipi. Il nome resta come ripiego finché nessuno spunta questa casella. -->
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-          <input type="checkbox" id="series-contenitore-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-          <span>Serie contenitore (articoli senza serie)</span>
-        </label>
+        <!-- DESTRA -->
+        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label" id="series-has-subseries-group">
+            <input type="checkbox" id="series-has-subseries-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span data-i18n="form.series.hasSubseries">Ha sottoserie</span>
+          </label>
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-sizes-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span data-i18n="form.series.hasSizes">Figurine con taglie differenti</span>
+          </label>
+          <!-- v6.219 (Franco) — "Non ha numeri" -> "Senza numeri". ⚠️ Il testo qui e' solo il
+               ripiego: quello che si legge lo mette `data-i18n`, quindi la stringa e' stata
+               cambiata ANCHE nella tabella delle traduzioni in app.js. Cambiando solo qui, la
+               scritta vecchia sarebbe tornata al primo cambio di lingua (§5 di procedura-deploy:
+               "ci si perde una release, ogni volta"). -->
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-no-numbers-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span data-i18n="form.series.noNumbers">Senza numeri</span>
+          </label>
+          <!-- v6.204 (Franco) — QUESTA serie fa da contenitore agli articoli senza serie. Prima il
+               contenitore si riconosceva dal NOME ("Extra serie"), e rinominarlo rompeva il click sui
+               box dei tipi. Il nome resta come ripiego finché nessuno spunta questa casella. -->
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-contenitore-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span>Serie contenitore (articoli senza serie)</span>
+          </label>
+        </div>
       </div>
+
+    <!-- v6.220 — DI QUI LA COPERTINA E' SALITA accanto ai due nomi, in cima al tab. Era arrivata
+         qui nella v6.217 dal fondo della form, e nella v6.219 aveva perso il riquadro finto di
+         trascinamento: ridotta a due pulsanti, non aveva piu' bisogno di una riga tutta sua. -->
+    </div><!-- chiude il tab Serie -->
+
+    <!-- v6.218 — IL TAB DESCRIZIONI. I due campi sono gli stessi, spostati e non riscritti: stessi
+         id, stesse chiavi di traduzione. `saveSeries` li legge per id e non sa in che tab siano. -->
+    <div class="series-tab-panel" data-tab="descrizioni" style="display:none;">
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.series.desc.it">Description (Italian)</label>
+      <textarea class="form-textarea" id="series-desc-input" data-i18n-placeholder="form.series.descPlaceholder" placeholder="Descrivi questa serie..." style="min-height:70px;"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.series.desc.en">Description (English)</label>
+      <textarea class="form-textarea" id="series-desc-en-input" data-i18n-placeholder="form.series.descEnPlaceholder" placeholder="Describe this series..." style="min-height:70px;"></textarea>
+    </div>
+    </div><!-- chiude il tab Descrizioni -->
+
+    <div class="series-tab-panel" data-tab="nonbase" style="display:none;">
       <!-- v6.170 (Franco) - OGNI SPUNTA SI PORTA IL SUO NUMERO SOTTO. Prima le tre spunte stavano
            qui e i tre conteggi in fondo alla finestra, separati da tutta la tabella delle colonne
            della griglia: accendere una casella faceva comparire un campo dove non stavi guardando,
@@ -1982,32 +2147,52 @@ button.back-btn { color:#ffffff; }
            solo, filtrato sulle figurine, scriveva "N. Change = 0" su Serie 1, che di change ne ha
            144 (tutti di retro). Non mentiva: rispondeva a una domanda diversa da quella che
            l'etichetta faceva credere. -->
+      <!-- 🆕 v6.218 (Franco) — IL CONTEGGIO STA SULLA STESSA RIGA DELLA SUA SPUNTA, spinto a
+           destra, e il numero e' l'ultima cosa a destra. Prima stava SOTTO, rientrato di 1,6rem:
+           accendere una casella allungava l'elenco e spingeva in basso le tre spunte seguenti.
+           ⚠️ Il layout della riga sta nel CSS (`.series-flag-riga`, `.series-conteggio`) e NON
+           inline, e non e' una preferenza: `toggleSeriesCountGroups` accende il riquadro con
+           `style.display = ''`, cioe' "torna a quello che dice il CSS". Scrivendo `display:flex`
+           inline, quella riga lo cancellerebbe e il riquadro tornerebbe a impilarsi. -->
+      <div class="series-sottotitolo" style="margin-top:0;">Variazioni</div>
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-          <input type="checkbox" id="series-has-variations-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-          <span data-i18n="form.series.hasVariations">Ha variazioni ufficiali</span>
-        </label>
-        <div class="form-group" id="series-count-variations-group" style="display:none;margin:-0.15rem 0 0.15rem 1.6rem;">
-          <label class="form-label" style="font-size:0.78rem;" data-i18n="form.series.countVariations">N. variazioni ufficiali</label>
-          <input class="form-input" type="number" id="series-count-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:100px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: le figurine marcate «variazione ufficiale»">
+        <div class="series-flag-riga">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-variations-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span data-i18n="form.series.hasVariations">Ha variazioni ufficiali</span>
+          </label>
+          <div class="form-group series-conteggio" id="series-count-variations-group" style="display:none;">
+            <label class="form-label" style="font-size:0.78rem;margin:0;" data-i18n="form.series.countVariations">N. variazioni ufficiali</label>
+            <input class="form-input" type="number" id="series-count-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: le figurine marcate «variazione ufficiale»">
+          </div>
         </div>
 
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-          <input type="checkbox" id="series-has-unofficial-variations-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-          <span data-i18n="form.series.hasUnofficialVariations">Ha variazioni non ufficiali</span>
-        </label>
-        <div class="form-group" id="series-count-unofficial-variations-group" style="display:none;margin:-0.15rem 0 0.15rem 1.6rem;">
-          <label class="form-label" style="font-size:0.78rem;" data-i18n="form.series.countUnofficialVariations">N. variazioni non ufficiali</label>
-          <input class="form-input" type="number" id="series-count-unofficial-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:100px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: le figurine marcate «variazione non ufficiale»">
+        <div class="series-flag-riga">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-unofficial-variations-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span data-i18n="form.series.hasUnofficialVariations">Ha variazioni non ufficiali</span>
+          </label>
+          <div class="form-group series-conteggio" id="series-count-unofficial-variations-group" style="display:none;">
+            <label class="form-label" style="font-size:0.78rem;margin:0;" data-i18n="form.series.countUnofficialVariations">N. variazioni non ufficiali</label>
+            <input class="form-input" type="number" id="series-count-unofficial-variations-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: le figurine marcate «variazione non ufficiale»">
+          </div>
         </div>
 
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-          <input type="checkbox" id="series-has-change-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-          <span data-i18n="form.series.hasChange">Ha change di figurine</span>
-        </label>
-        <div class="form-group" id="series-count-change-group" style="display:none;margin:-0.15rem 0 0.15rem 1.6rem;">
-          <label class="form-label" style="font-size:0.78rem;" data-i18n="form.series.countChange">N. change di figurine</label>
-          <input class="form-input" type="number" id="series-count-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:100px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i change che stanno nella sezione Figurine">
+      </div>
+
+      <!-- 🆕 v6.219 (Franco) — I TITOLETTI. Il tab elencava sei controlli di fila senza dire che
+           parlano di tre cose diverse. -->
+      <div class="series-sottotitolo">Change</div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;">
+        <div class="series-flag-riga">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-change-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span data-i18n="form.series.hasChange">Ha change di figurine</span>
+          </label>
+          <div class="form-group series-conteggio" id="series-count-change-group" style="display:none;">
+            <label class="form-label" style="font-size:0.78rem;margin:0;" data-i18n="form.series.countChange">N. change di figurine</label>
+            <input class="form-input" type="number" id="series-count-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i change che stanno nella sezione Figurine">
+          </div>
         </div>
 
         <!-- v6.170 - la coppia NUOVA. `hasRetroChange` non esiste sui documenti gia' salvati:
@@ -2015,22 +2200,75 @@ button.back-btn { color:#ffffff; }
              agosto). `hasChange` invece NON cambia significato - i dati dicono che si comportava
              gia' come "di figurine": acceso su Serie 2 e 3, che ne hanno, spento su Serie 1, che
              non ne ha. Nessuna migrazione. -->
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-          <input type="checkbox" id="series-has-retro-change-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-          <span data-i18n="form.series.hasRetroChange">Ha change di retro</span>
-        </label>
-        <div class="form-group" id="series-count-retro-change-group" style="display:none;margin:-0.15rem 0 0.15rem 1.6rem;">
-          <label class="form-label" style="font-size:0.78rem;" data-i18n="form.series.countRetroChange">N. change di retro</label>
-          <input class="form-input" type="number" id="series-count-retro-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:100px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i change che stanno nella sezione Retro">
+        <div class="series-flag-riga">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-retro-change-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span data-i18n="form.series.hasRetroChange">Ha change di retro</span>
+          </label>
+          <div class="form-group series-conteggio" id="series-count-retro-change-group" style="display:none;">
+            <label class="form-label" style="font-size:0.78rem;margin:0;" data-i18n="form.series.countRetroChange">N. change di retro</label>
+            <input class="form-input" type="number" id="series-count-retro-change-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i change che stanno nella sezione Retro">
+          </div>
         </div>
       </div>
+
+    <!-- v6.217 — I DUE ELENCHI DEI TIPI DI CHANGE arrivano qui dal fondo della form: sono
+         variazioni, e nel raggruppamento di Franco stanno in questo tab. Il markup e' lo stesso,
+         spostato di posto e non riscritto. -->
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.series.retroChangeTypes">Tipi di change DI RETRO (uno per riga)</label>
+      <textarea class="form-input" id="series-retro-change-types-input" rows="8" style="resize:vertical;font-family:inherit;"></textarea>
+      <div class="form-hint" data-i18n="form.series.retroChangeTypesHint">Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».</div>
+    </div>
+
+    <!-- v6.102 (§12.10) — la seconda lista. Il campo `frontChangeTypes` e' NUOVO: `retroChangeTypes`
+         qui sopra non e' stato toccato, perche' 14 dei 16 tipi esistenti erano gia' di retro e il
+         suo nome finalmente dice il vero. -->
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.series.frontChangeTypes">Tipi di change FRONTALI (uno per riga)</label>
+      <textarea class="form-input" id="series-front-change-types-input" rows="4" style="resize:vertical;font-family:inherit;"></textarea>
+      <div class="form-hint" data-i18n="form.series.frontChangeTypesHint">Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.</div>
+    </div>
+
+      <!-- 🆕 v6.219 (Franco) — GLI ERRORI DI STAMPA ENTRANO NELLA FORM. Il titoletto era chiesto,
+           ma sotto non c'era niente: `hasPrintError`, `countPrintError` e `printErrorTypes` non
+           esistevano da nessuna parte. Franco ha scelto la coppia spunta+numero come le altre.
+           🔴 IL FLAG NUOVO VA ANCHE RIPRISTINATO all'apertura (`_ripristinaFlagSerie`): senza, si
+           aprirebbe sempre spento, il salvataggio lo leggerebbe e scriverebbe `false` — cioe' si
+           ricreerebbe su un campo nuovo il guasto della v6.169. Nove flag, nove ripristini.
+           📌 E il conteggio NON dichiara una sezione, al contrario degli altri cinque. Gli altri
+           possono farlo perche' si sa dove vive il loro contrassegno; degli errori di stampa
+           sappiamo solo che ce ne sono fra le FIGURINE (79 su Serie 3, misurati nella v6.170) e
+           non e' mai stato misurato se ce ne siano fra i RETRO. Contarli ovunque non puo' essere
+           piu' stretto dell'etichetta — che e' esattamente l'errore della v6.170, dove
+           "N. Change = 0" rispondeva a una domanda diversa da quella che l'etichetta faceva
+           credere. Se un giorno si misura e stanno in due sezioni, la strada e' la coppia doppia
+           dei change. -->
+      <div class="series-sottotitolo">Errori di stampa</div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;">
+        <div class="series-flag-riga">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-print-error-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span>Ha errori di stampa</span>
+          </label>
+          <div class="form-group series-conteggio" id="series-count-print-error-group" style="display:none;">
+            <label class="form-label" style="font-size:0.78rem;margin:0;">N. errori di stampa</label>
+            <input class="form-input" type="number" id="series-count-print-error-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: gli oggetti marcati «errore di stampa», in QUALUNQUE sezione">
+          </div>
+        </div>
+      </div>
+    </div><!-- chiude il tab Articoli non base -->
+
+    <div class="series-tab-panel" data-tab="visualizzazione" style="display:none;">
         <!-- v6.163 (Franco) - QUANTE COLONNE HA LA GRIGLIA, due numeri PER SEZIONE. I valori di
          partenza non sono inventati: sono quelli che il sito gia' usava — 7 e 4 da `.grid-6` nel
          CSS, e 5 per i Retro da una riga di `app.js` scritta apposta (le loro card sono larghe
          1.6 contro 1). E' quel 5 la ragione per cui i campi sono per sezione e non per serie:
          una serie ha figurine e retro insieme, e un numero solo non li poteva descrivere. -->
     <div class="form-group">
-      <label class="form-label">Colonne della griglia</label>
+      <!-- v6.218 (Franco) — l'etichetta dice DOVE si vedono quelle colonne: sono quelle dei box
+           nell'hub della serie, non della griglia in generale. -->
+      <label class="form-label">Colonne griglia hub Serie</label>
       <!-- \uD83D\uDD34 v6.215 (Franco: "la tabella Colonne della griglia la vedo come era prima") — QUI
            C'ERANO CINQUE RIGHE SCRITTE A MANO, e gli articoli sono SEI dalla v6.195.
            La riga di "Figurine da attaccare" non c'era mai stata: il ciclo che riempie i campi fa
@@ -2043,8 +2281,14 @@ button.back-btn { color:#ffffff; }
       <div id="series-colonne-tabella"></div>
       <div style="font-size:0.78rem;color:var(--muted);margin-top:0.35rem;">Da 1 a 12. Sono i numeri di partenza, prima che l'utente ridimensioni la finestra, e valgono anche sugli schermi stretti: su mobile tienili bassi.</div>
     </div>
+    </div><!-- chiude il tab Visualizzazione -->
 
-    </div>
+    <!-- v6.217 — QUI FINIVA LA GRIGLIA A DUE COLONNE, e il suo `</div>` e' stato tolto insieme a
+         lei: la griglia non c'e' piu' (vedi il commento in cima al tab Serie). Un tag di chiusura
+         orfano non da' errore, sposta soltanto tutto quello che viene dopo dentro il tab
+         sbagliato. -->
+
+    <div class="series-tab-panel" data-tab="avanzate" style="display:none;">
 
     <!-- v6.170 - qui stava il blocco dei tre conteggi (griglia 1fr 1fr 1fr). Ogni numero e' andato
          sotto la sua spunta, nella colonna di destra qui sopra: erano separati da tutta la tabella
@@ -2062,35 +2306,9 @@ button.back-btn { color:#ffffff; }
       <div class="form-hint">Solo mentre la serie è in lavorazione. Nella pagina Errori resta scritto che questa serie è esclusa.</div>
     </div>
 
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.series.retroChangeTypes">Tipi di change DI RETRO (uno per riga)</label>
-      <textarea class="form-input" id="series-retro-change-types-input" rows="8" style="resize:vertical;font-family:inherit;"></textarea>
-      <div class="form-hint" data-i18n="form.series.retroChangeTypesHint">Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».</div>
-    </div>
-
-    <!-- v6.102 (§12.10) — la seconda lista. Il campo `frontChangeTypes` e' NUOVO: `retroChangeTypes`
-         qui sopra non e' stato toccato, perche' 14 dei 16 tipi esistenti erano gia' di retro e il
-         suo nome finalmente dice il vero. -->
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.series.frontChangeTypes">Tipi di change FRONTALI (uno per riga)</label>
-      <textarea class="form-input" id="series-front-change-types-input" rows="4" style="resize:vertical;font-family:inherit;"></textarea>
-      <div class="form-hint" data-i18n="form.series.frontChangeTypesHint">Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.</div>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label" data-i18n="form.series.cover">Cover Image</label>
-      <div class="file-drop" onclick="document.getElementById('series-img-file').click()" id="series-drop">
-        <div class="file-drop-icon">📸</div>
-        <div class="file-drop-text"><strong data-i18n="form.click">Click to upload</strong> <span data-i18n="form.drag">or drag and drop</span></div>
-        <div class="file-drop-text">PNG, JPG, WEBP</div>
-      </div>
-      <input type="file" id="series-img-file" accept="image/*" style="display:none;" onchange="handleSeriesImg(event)">
-      <img id="series-img-preview" class="file-preview">
-      <!-- v6.189 (Franco) — "Rimuovi sfondo" anche qui. La stringa di stile e' COPIATA da
-           `fig-edit-remove-bg-btn` nella scheda oggetto, non riscritta somigliante: due stringhe
-           uguali si confrontano a occhio, due simili no (lezione v6.164). -->
-      <button id="series-remove-bg-btn" type="button" onclick="removeBgFromSeries()" style="width:100%;margin-top:0.4rem;font-size:0.72rem;color:var(--accent2);border:1px solid var(--accent2);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">&#10024; Rimuovi sfondo</button>
-    </div>
+    <!-- v6.217 — di qui sono partiti i due elenchi dei tipi di change (tab Variazioni) e la foto di
+         copertina (tab Serie). L'Elimina serie invece resta, ed e' in casa sua: e' la cosa piu'
+         avanzata che questa finestra sappia fare. -->
     <!-- v6.171 (Franco) - ELIMINA SERIE, arrivato qui dalla vista tabellare, dove occupava una
          colonna per un'operazione rarissima.
          ⚠️ STA IN FONDO DI PROPOSITO, lontano dal Salva che ora e' in cima: cancellare una serie
@@ -2111,6 +2329,7 @@ button.back-btn { color:#ffffff; }
       </button>
       <div id="series-delete-hint" style="font-size:0.78rem;color:var(--muted);margin-top:0.4rem;"></div>
     </div>
+    </div><!-- chiude il tab Avanzate -->
   </div>
 </div>
 
@@ -2518,7 +2737,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.216"></script>
+<script src="js/app.js?v=6.231"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2542,7 +2761,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.216'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.231'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
