@@ -1,6 +1,89 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.203 - \uD83C\uDD95 RISATE SPARISCE DALLA SOTTOCATEGORIA NEL NOME COMPLETO DEI RETRO (Franco).
+//          Solo app.js.
+//
+//          Se la sottocategoria contiene la parola RISATE, quella parola esce dal suo pezzo e il
+//          `!` va in fondo:
+//            SGORBIONS RISATE - RISATE! VERDE - ACHILLE RACCATTAPALLE, CICCA CICCA BUM E ROMEO TROFEO
+//            SGORBIONS RISATE - VERDE!        - ACHILLE RACCATTAPALLE, CICCA CICCA BUM E ROMEO TROFEO
+//          \u26A0\uFE0F Tocca la COMPOSIZIONE, non il dato: `subcategory` resta `RISATE! VERDE`. E la
+//          categoria non si tocca, anche quando contiene la stessa parola.
+//
+//          \uD83D\uDD34 LA MISURA HA SMENTITO LA DESCRIZIONE. La regola era stata descritta come "se la
+//          sottocategoria contiene la parola RISATE!" - col punto esclamativo. I dati dicono che le
+//          grafie sono DUE: `RISATE ROSSO` 21, `RISATE VERDE` 19, `RISATE! ROSSO` 9,
+//          `RISATE! VERDE` 9. Scrivendo la regola come descritta, **40 record su 58 non sarebbero
+//          stati toccati** e il difetto sarebbe comparso solo su una parte, senza un criterio
+//          visibile. \uD83D\uDCCC E' la stessa lezione dei "~110 che erano 36": una descrizione, per
+//          quanto in buona fede, non e' una misura - e questa e' costata dieci secondi di console.
+//          \uD83D\uDCCC Effetto non chiesto ma buono: il Nome completo diventa uguale per tutti e 58 anche
+//          se il campo sotto continua a dire la stessa cosa in due modi.
+//
+//          \uD83D\uDCCC LA TRASFORMAZIONE STA SU `sub`, IN UN PUNTO SOLO, e non nei rami di `piece`: cosi'
+//          vale sia quando la categoria e' scritta sia quando e' omessa (la distinzione che la
+//          v6.138 aveva pagato con 45 retro), e di conseguenza per change ed errori di stampa, che
+//          da `piece` derivano. Nei rami sarebbero state due copie da tenere allineate.
+//
+//          \uD83D\uDD34 IL COLLAUDO E' UN NUMERO DECISO PRIMA, e questa e' la parte da non saltare.
+//          Dopo la pubblicazione, l'anteprima di *Ricalcola i Nomi completi* deve proporre
+//          **esattamente 58 righe**:
+//            58        -> la regola fa cio' che e' stato misurato: si applica;
+//            piu' di 58 -> si muove anche altro: NON si applica finche' non si capisce cosa;
+//            meno di 58 -> non prende tutti i casi, verosimilmente una delle due grafie.
+//          Guardare un'anteprima senza sapere cosa aspettarsi e' misurare senza un'ipotesi: e'
+//          quello che ha salvato i 45 retro della v6.138, ma li' il numero si scopri' guardando.
+//
+//          \u26A0\uFE0F PERCHE' I 58 VANNO RICALCOLATI, E NON RIMANDATI (deciso da Franco). Il Nome
+//          completo si ricalcola a OGNI SALVATAGGIO del record e si propaga ai figli (v6.143).
+//          Quindi le due forme non convivono ferme: ogni volta che si tocca uno di quei 58, o la sua
+//          base, quel record passa da solo alla forma nuova. Non e' una convivenza, e' una deriva
+//          lenta e invisibile - fra un mese una parte sarebbe in una forma e una parte nell'altra,
+//          senza un criterio che spieghi quali.
+// ------------------------------------------------------------
+// v6.202 - "PRODOTTO" DIVENTA "ARTICOLO" NEI TESTI (Franco: *"questo sito censisce, non vende"*).
+//          app.js e index.html.
+//
+//          \uD83D\uDCCC IL NUMERO ERA SBAGLIATO, E DI MOLTO. La prima misura diceva "109 testi": contava
+//          ogni stringa che CONTENESSE la parola, comprese `'tipo-prodotto-nome'` e simili, che
+//          sono **id**. Contando solo i testi veri sono **30**: 13 italiani, 12 inglesi e 5
+//          nell'index. Il conto giusto si ottiene guardando la parola con i confini
+//          (`(?<![\\w-])prodott[oi](?![\\w-])`) e solo dentro le stringhe: senza quei confini,
+//          "prodotto" dentro "tipo-prodotto-d" viene contato come se fosse una frase.
+//
+//          \u26A0\uFE0F E DICIANNOVE OCCORRENZE NUDE NON SI TOCCANO, perche' sono VALORI e non testo:
+//          `_taglioInventario === 'prodotti'`, `_caroselloSpegni('prodotto')`, e soprattutto
+//          `localStorage.setItem('sgb_taglio', 'prodotti')` - cambiarla invaliderebbe la preferenza
+//          Serie/Articoli salvata nel browser di **ogni utente**, che al giro dopo si ritroverebbe
+//          la vista cambiata senza spiegazione.
+//          \uD83D\uDCCC Stessa regola per il campo Firestore `tipoProdotto` (23 punti), per il documento
+//          `settings/tipi_prodotto` e per i ~150 nomi nel codice (`_tipoProdottoCorrente`,
+//          `prodottoCardHTML`, gli id `tipo-prodotto-*`). Confermato da Franco. E' la decisione gia'
+//          presa per `forSale` in `ebay-integrazione.md`: **si cambia cio' che si LEGGE, non cio'
+//          che si CHIAMA.**
+//
+//          \uD83D\uDD34 DUE FRASI SU TRENTA NON SI SISTEMANO SCAMBIANDO LA PAROLA, e sono in due lingue
+//          diverse:
+//            IT  "Tutti **i** prodotti"      -> "Tutti **gli** articoli"   (articolo inizia per vocale)
+//            EN  "**A** product type ..."    -> "**An** item type ..."
+//          Un sostituisci-tutto le avrebbe lasciate storte tutte e due, e nessuna delle due da'
+//          errore: si leggono male e basta. E' lo stesso inciampo che il glossario eBay descrive nel
+//          §5 di `ebay-integrazione.md` ("espressioni piu' lunghe per prime", "solo parole intere"):
+//          una sostituzione di vocabolario non e' mai solo di vocabolario.
+//
+//          \uD83D\uDCCC L'inglese di "articolo" e' **item**, e non e' una scelta nuova: il sito lo usa gia'
+//          ("Other Items", "items"). Cosi' le due lingue dicono la stessa cosa con la stessa parola.
+//
+//          \u2705 Controllato che i cinque testi dell'index NON abbiano `data-i18n`: se ce l'avessero,
+//          cambiare l'HTML non sarebbe bastato - `applyI18n()` li riscriverebbe al primo cambio
+//          lingua, ed e' la trappola che il \u00a75 del documento dice costare "una release, ogni volta".
+//
+//          \uD83D\uDCCC Due dei cinque testi dell'index sono i pulsanti *Aggiungi* e *Modifica tipo di
+//          prodotto*, che la prossima release toglie (l'accesso passa alla console). Cambiati lo
+//          stesso: lasciarli sbagliati per una release perche' "tanto spariscono" e' come non
+//          correggere un refuso in una pagina che forse si ristampa.
+// ------------------------------------------------------------
 // v6.201 - LA PAROLA "CATALOGO" SPARISCE DAI TESTI: si dice INVENTARIO (Franco). Solo app.js.
 //
 //          Otto stringhe che l'utente legge: due nel blocco eBay dei titoli, una nel riquadro degli
@@ -15481,7 +15564,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.201';
+const JS_VERSION = 'v6.203';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -16701,7 +16784,7 @@ const i18n = {
 'how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
 'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
 'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
-'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions products ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Products','catalog.allSeriesInfo':'Show information on all series','catalog.allSeriesInfoShort':'All series info','catalog.allSeriesInfoTitle':'The Sgorbions series on record','catalog.addseries':'+ Add Series',
+'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Items','catalog.allSeriesInfo':'Show information on all series','catalog.allSeriesInfoShort':'All series info','catalog.allSeriesInfoTitle':'The Sgorbions series on record','catalog.addseries':'+ Add Series',
 'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
 'back':'Inventory','detail.addfig':'+ Add Sticker',
 'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation!',
@@ -16807,7 +16890,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti i prodotti Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Prodotti','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine con velina','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati ricerca alla tua lista','catalog.havenone':'Rimuovi risultati ricerca dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine con velina','catalog.retros':'Retro','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati ricerca alla tua lista','catalog.havenone':'Rimuovi risultati ricerca dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
@@ -20846,7 +20929,7 @@ function tipoProdottoCardHTML(t, tutti) {
   // sinistra. Due mestieri diversi sullo stesso box, e distinguerli per posizione costa meno di
   // un menu.
   const _matitaNome = currentUser?.isAdmin
-    ? '<button type="button" title="Modifica questo tipo di prodotto" ' +
+    ? '<button type="button" title="Modifica questo tipo di articolo" ' +
       'onclick="event.stopPropagation();openAddTipoProdottoModal(\'' + t.id + '\')" ' +
       'style="position:absolute;top:6px;right:42px;z-index:3;border:none;border-radius:999px;' +
       'width:30px;height:30px;line-height:1;cursor:pointer;font-size:0.9rem;' +
@@ -20881,8 +20964,8 @@ function openTipoProdotto(id) {
     // Senza il contenitore non si puo' entrare, e va detto con il nome esatto che manca: un
     // "errore" generico qui manderebbe a cercare nel posto sbagliato.
     toast((currentLang === 'it'
-      ? 'Manca la serie "' + NOME_SERIE_SENZA_SERIE + '", che fa da contenitore a questi prodotti.'
-      : 'The "' + NOME_SERIE_SENZA_SERIE + '" series is missing; it holds these products.'), 'error', null, 7000);
+      ? 'Manca la serie "' + NOME_SERIE_SENZA_SERIE + '", che fa da contenitore a questi articoli.'
+      : 'The "' + NOME_SERIE_SENZA_SERIE + '" series is missing; it holds these items.'), 'error', null, 7000);
     return;
   }
   const d = document.getElementById('prodotto-detail');
@@ -20920,8 +21003,8 @@ function openAddTipoProdottoModal(idDaModificare) {
   if (g('tipo-prodotto-colonne-desktop')) g('tipo-prodotto-colonne-desktop').value = (t && _colClamp(t.colonneDesktop)) || COLONNE_DEFAULT.extras.d;  // v6.163
   if (g('tipo-prodotto-colonne-mobile'))  g('tipo-prodotto-colonne-mobile').value  = (t && _colClamp(t.colonneMobile))  || COLONNE_DEFAULT.extras.m;  // v6.163
   const tit = g('tipo-prodotto-modal-title');
-  if (tit) tit.textContent = t ? (it ? 'Modifica tipo di prodotto' : 'Edit product type')
-                               : (it ? 'Aggiungi tipo di prodotto' : 'Add product type');
+  if (tit) tit.textContent = t ? (it ? 'Modifica tipo di articolo' : 'Edit item type')
+                               : (it ? 'Aggiungi tipo di articolo' : 'Add item type');
   // v6.151 (Franco) - ELIMINA GRIGIATO finche' quel tipo ha dei prodotti dentro. La v6.149 lo
   // lasciava premibile e spiegava nella conferma che gli oggetti sarebbero rimasti orfani di box:
   // una spiegazione dopo il clic e' un avviso, un pulsante spento e' una regola. E qui la regola
@@ -20939,7 +21022,7 @@ function openAddTipoProdottoModal(idDaModificare) {
       ? (it ? 'Non si può eliminare: contiene ' + _dentro + (_dentro === 1 ? ' oggetto.' : ' oggetti.') +
               ' Spostali o cancellali prima.'
             : 'Cannot delete: it holds ' + _dentro + ' item(s).')
-      : (it ? 'Elimina questo tipo di prodotto' : 'Delete this product type');
+      : (it ? 'Elimina questo tipo di articolo' : 'Delete this item type');
   }
   document.getElementById('add-tipo-prodotto-modal')?.classList.remove('hidden');
   setTimeout(() => g('tipo-prodotto-nome')?.focus(), 50);
@@ -20966,8 +21049,8 @@ async function eliminaTipoProdotto() {
     return;
   }
   const msg = it
-    ? 'Elimino il tipo di prodotto "' + (t.nome || '') + '"?\n\nNon contiene nessun oggetto.'
-    : 'Delete product type "' + (t.nome || '') + '"?\n\nIt holds no items.';
+    ? 'Elimino il tipo di articolo "' + (t.nome || '') + '"?\n\nNon contiene nessun oggetto.'
+    : 'Delete item type "' + (t.nome || '') + '"?\n\nIt holds no items.';
   if (!confirm(msg)) return;
   try {
     await _salvaTipiProdotto(_tipiProdotto().filter(x => x.id !== id));
@@ -20977,7 +21060,7 @@ async function eliminaTipoProdotto() {
     return;
   }
   closeModal('add-tipo-prodotto-modal');
-  toast(it ? '✅ Tipo di prodotto eliminato' : '✅ Product type deleted', 'success');
+  toast(it ? '✅ Tipo di articolo eliminato' : '✅ Item type deleted', 'success');
   try { renderCatalog(); } catch (e) {}
 }
 
@@ -21023,12 +21106,12 @@ async function salvaTipoProdotto() {
   // v6.149 - in modifica il confronto SALTA SE STESSO, se no rinominare un tipo lasciandogli il
   // nome che ha gia' verrebbe rifiutato per omonimia con se' stesso.
   if (tipi.some(x => x.id !== idEsistente && (x.nome || '').trim().toLowerCase() === nome.toLowerCase())) {
-    toast(it ? 'Esiste già un tipo di prodotto con questo nome.' : 'A product type with that name already exists.', 'error');
+    toast(it ? 'Esiste già un tipo di articolo con questo nome.' : 'An item type with that name already exists.', 'error');
     return;
   }
   if (idEsistente) {
     const k = tipi.findIndex(x => x.id === idEsistente);
-    if (k < 0) { toast(it ? 'Quel tipo di prodotto non esiste più.' : 'That product type no longer exists.', 'error'); return; }
+    if (k < 0) { toast(it ? 'Quel tipo di articolo non esiste più.' : 'That item type no longer exists.', 'error'); return; }
     // Si riscrive il record intero a partire da quello che c'e': cosi' un campo aggiunto in futuro
     // non viene perso da un salvataggio scritto oggi.
     tipi[k] = { ...tipi[k], nome, singolare, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile };
@@ -21055,8 +21138,8 @@ async function salvaTipoProdotto() {
     if (_t && _titolo) _titolo.textContent = _t.nome || _titolo.textContent;
     try { renderItems(); } catch (e) {}   // l'ordinamento del tipo puo' essere cambiato
   }
-  toast(it ? (idEsistente ? '✅ Tipo di prodotto aggiornato' : '✅ Tipo di prodotto creato')
-           : (idEsistente ? '✅ Product type updated' : '✅ Product type created'), 'success');
+  toast(it ? (idEsistente ? '✅ Tipo di articolo aggiornato' : '✅ Tipo di articolo creato')
+           : (idEsistente ? '✅ Item type updated' : '✅ Item type created'), 'success');
   try { renderCatalog(); } catch (e) {}
 }
 
@@ -30686,6 +30769,41 @@ function _retroNomeCompletoSenzaSottonome(fig, allFigs) {
   return _retroFullName(fig, figs, true);
 }
 
+// ============================================================
+// v6.203 (Franco) - RISATE SPARISCE DALLA SOTTOCATEGORIA, E IL "!" VA IN FONDO.
+// ------------------------------------------------------------
+//   SGORBIONS RISATE - RISATE! VERDE - ACHILLE RACCATTAPALLE, CICCA CICCA BUM E ROMEO TROFEO
+//   SGORBIONS RISATE - VERDE!        - ACHILLE RACCATTAPALLE, CICCA CICCA BUM E ROMEO TROFEO
+//
+// \u26A0\uFE0F TOCCA SOLO LA COMPOSIZIONE DEL NOME COMPLETO. Il campo `subcategory` sul record resta
+// `RISATE! VERDE`: questa funzione non scrive niente. E la CATEGORIA non si tocca, anche quando
+// contiene la stessa parola - `SGORBIONS RISATE` resta intero.
+//
+// \uD83D\uDD34 LA MISURA HA SMENTITO LA DESCRIZIONE, ed e' il pezzo piu' utile della release.
+// La regola era stata descritta come "se la sottocategoria contiene la parola RISATE!", col punto
+// esclamativo. I dati veri dicono che le grafie sono DUE:
+//     RISATE ROSSO  21     RISATE VERDE  19     RISATE! ROSSO  9     RISATE! VERDE  9
+// Cercando `RISATE!` come descritto, **40 record su 58 non sarebbero stati toccati**, e il difetto
+// sarebbe comparso solo su una parte senza un criterio visibile. Si cerca la parola INTERA, con o
+// senza `!`. Da cui, per giunta, un effetto non chiesto ma buono: il Nome completo diventa uguale
+// per tutti e 58 anche se il campo sotto continua a dire la stessa cosa in due modi.
+//
+// Le tre scelte di dettaglio, che i dati non decidevano:
+//   1. parola intera con o senza `!` (sopra);
+//   2. il `!` finale si mette UNA volta sola: se cio' che resta finisce gia' con `!`, non se ne
+//      aggiunge un secondo;
+//   3. se dopo la rimozione NON RESTA NIENTE (sottocategoria uguale a "RISATE!" e basta), si
+//      lascia il valore com'era. Un pezzo di nome ridotto a un solo `!` sarebbe peggio del
+//      problema che stiamo togliendo.
+function _sottocategoriaPerNome(valore) {
+  const sub = (valore || '').trim();
+  if (!sub) return '';
+  const senza = sub.replace(/(^|\s)RISATE!?(?=\s|$)/gi, '$1').replace(/\s+/g, ' ').trim();
+  if (senza === sub) return sub;   // non c'era: niente da fare
+  if (!senza) return sub;          // era solo "RISATE!": si lascia com'era (scelta 3)
+  return senza.endsWith('!') ? senza : senza + '!';
+}
+
 function _retroFullName(fig, allFigs, senzaSottonome) {
   const base = _retroBaseDelNome(fig, allFigs);
   const cat = (base.category || '').trim();
@@ -30702,7 +30820,11 @@ function _retroFullName(fig, allFigs, senzaSottonome) {
   // sottocategoria (regola di Franco). Sui 4 Change di Serie 2 che avevano un `subcategory`
   // PROPRIO e diverso da quello della base (ROSSO contro BLU, riconosciuti come errore e
   // allineati a mano), quel campo qui non si guarda comunque: la base e' la fonte.
-  const sub = (base.subcategory || '').trim();
+  // v6.203 - la trasformazione sta QUI, su `sub`, e non piu' in basso: cosi' vale per tutti e
+  // due i rami di `piece` (categoria scritta o omessa - la distinzione della v6.138) e, di
+  // conseguenza, per change ed errori di stampa, che da `piece` derivano. Metterla nei rami
+  // avrebbe voluto dire due copie da tenere allineate.
+  const sub = _sottocategoriaPerNome(base.subcategory);
   // Dove va: subito DOPO la categoria. Ma la sottocategoria non fa mai parte del Nome, quindi
   // quando la categoria NON viene scritta (perche' il Nome gia' la contiene, o perche' e' vuota)
   // la sottocategoria non ha piu' un posto in testa e va in CODA, dopo il nome. Senza questo,
