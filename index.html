@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.182"></script>
-<link rel="stylesheet" href="css/style.css?v=6.182">
+<script src="js/email.min.js?v=6.185"></script>
+<link rel="stylesheet" href="css/style.css?v=6.185">
 
 
 <style>
@@ -44,6 +44,32 @@
    debbano rimpicciolirsi anche li'. Sul telefono non si tocca niente: li' sono gia' 1.6rem. */
 .hero-stats-side .stat-num   { font-size:2.2rem; }
 .hero-stats-side .stat-label { font-size:0.88rem; }
+
+/* v6.183 (Franco: "nel mobile i numeroni verdi della homepage sono sin troppo grandi").
+   🔴 NON ERANO "GRANDI": ERANO PIU' GRANDI DI QUANTO QUALCUNO AVESSE DECISO, dalla v6.063.
+   In css/style.css la regola per telefono dice `.stat-num { font-size:1.6rem }` — UNA classe,
+   specificita' (0,1,0). Le due righe qui sopra, aggiunte dalla v6.063 per rimpicciolire i numeroni
+   del DESKTOP, usano DUE classi (0,2,0) e non stanno dentro nessuna media query: quindi vincevano
+   anche sul telefono, dove nessuno voleva che arrivassero. Risultato: 2,2rem invece di 1,6 (+37%)
+   e le etichette 0,88 invece di 0,75.
+   ⚠️ E il commento della v6.063 dichiara il contrario — "Sul telefono non si tocca niente: li' sono
+   gia' 1.6rem". Era vero mentre lo scriveva e falso un istante dopo, per colpa delle righe che
+   stava aggiungendo. Una media query dimenticata non da' nessun errore: cambia una pagina che
+   nessuno stava guardando.
+   Franco ha scelto 1,4rem, cioe' un filo SOTTO il valore previsto: la stessa proporzione (-12%)
+   con cui la v6.063 aveva ridotto quelli del desktop. */
+@media (max-width:860px) {
+  .hero-stats-side .stat-num   { font-size:1.4rem; }
+  .hero-stats-side .stat-label { font-size:0.7rem; }
+}
+
+/* v6.068 - le due righe sotto il logo salgono verso di lui. Il margine stava IN LINEA sul <p>;
+   v6.183 lo porta qui perche' su telefono serve il segno opposto (Franco: "la frase inizia
+   attaccata agli ultimi numeroni verdi"). Sul desktop il valore e' quello di sempre. */
+#hero-desc-main { margin-top:-1.4rem; }
+@media (max-width:860px) {
+  #hero-desc-main { margin-top:0.9rem; }
+}
 
 /* v5.948 — TELEFONO: come sul desktop, numeri a SINISTRA e a DESTRA del logo. Per farceli stare
    il logo si stringe (190px invece di 320): in una cornice da 397px restano ~80px per lato ai
@@ -289,7 +315,7 @@ button.back-btn { color:#ffffff; }
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.182</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.185</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -431,7 +457,11 @@ button.back-btn { color:#ffffff; }
     <!-- v6.068 (Franco) — le due righe salgono verso il logo. Il margine negativo si mette sulla
          PRIMA: la seconda ne ha gia' uno suo (-2.2rem) che la tiene attaccata alla prima, e
          toccando quello si sarebbe allargato lo spazio fra le due invece di alzarle insieme. -->
-    <p class="hero-desc" style="margin-top:-1.4rem;" data-i18n="hero.desc">Il database non ufficiale dedicato alla leggendaria serie italiana degli anni '90.</p>
+    <!-- v6.183 (Franco) - il margine negativo NON sta piu' in linea ma nel CSS qui sopra
+         (#hero-desc-main), perche' su telefono va cambiato di segno: uno stile in linea si puo'
+         scavalcare solo con `!important`, e un `!important` messo per aggirare una riga che
+         controlliamo noi e' una toppa, non una regola. -->
+    <p class="hero-desc" id="hero-desc-main" data-i18n="hero.desc">Il database non ufficiale dedicato alla leggendaria serie italiana degli anni '90.</p>
     <p class="hero-desc" style="margin-top:-2.2rem;" data-i18n="hero.tagline">Fatto con 💚 da collezionisti, per collezionisti.</p>
     <div id="hero-welcome-msg" style="display:none;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.25);color:var(--accent);padding:0.75rem 1.5rem;border-radius:12px;font-family:var(--font-ui);font-size:1.1rem;margin-bottom:1.25rem;text-align:center;"></div>
     <div class="hero-cta">
@@ -1657,7 +1687,7 @@ button.back-btn { color:#ffffff; }
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.182</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.185</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -2428,7 +2458,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.182"></script>
+<script src="js/app.js?v=6.185"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2452,7 +2482,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.182'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.185'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
