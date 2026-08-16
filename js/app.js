@@ -1,6 +1,155 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.185 - LA v6.184 AVEVA CENTRATO LA CELLA, NON IL NUMERO; e le larghezze di Nome e Retro erano
+//          invertite (Franco). Solo app.js.
+//
+//          1. 🔴 **N. E PUNTEGGIO NON ERANO CENTRATI, E LO ERANO PER META'.** La v6.184 aveva messo
+//             `text-align:center` sul `<td>`: dentro c'e' una casella larga 60px, quindi si
+//             centrava la CASELLA e le cifre restavano appoggiate a sinistra dentro di lei.
+//             Aggiunto `text-align:center` anche all'input.
+//             ⚠️ **E la meta' invisibile**: da NON-admin quelle due celle non sono caselle, passano
+//             da `readCell`, che aveva `text-align:left` **cablato dentro**. Quindi la v6.184 non le
+//             toccava nemmeno, e guardando da admin non si poteva accorgersene.
+//             `readCell` prende ora un terzo parametro `align`, e il `left` cablato E' STATO TOLTO
+//             — non sostituito da un valore predefinito 'left', che sarebbe stato lo stesso difetto
+//             con un nome piu' bello (Franco: "togli il text-align:left scritto dentro"). Ora la
+//             funzione non impone nessun allineamento: senza `align` la cella prende quello della
+//             tabella. Oggi non cambia niente di cio' che si vede; il giorno che la tabella
+//             decidesse altrimenti, la decisione arriverebbe fin qui invece di essere scavalcata.
+//             📌 La lezione: **un valore predefinito nascosto dentro una funzione di comodo non si
+//             vede da chi la chiama.** Centrare "la colonna" sembrava una cosa sola ed erano tre —
+//             il td, l'input, e un ramo che non passa da nessuno dei due.
+//
+//          2. 🔴 **LE LARGHEZZE DI NOME E RETRO ERANO INVERTITE.** Al Nome erano rimasti
+//             `width:99%` e `min-width:280px`, ereditati dal ramo dei Retro — dove quel campo E' il
+//             piu' lungo. Nelle Figurine e' il contrario: un nome e' "ADAM BOMB", un Nome completo
+//             di retro e' "RICERCATA PER ABUSO DI POTERE MATERNO - MAMMA - ROSSO". Il Nome si
+//             prendeva lo spazio che serviva al Retro.
+//             ⚠️ **Copiare un ramo di codice si porta dietro anche le sue MISURE**, e le misure sono
+//             tarate su dati che altrove sono diversi. E' la stessa forma dell'errore della v6.174,
+//             dove avevo copiato sul desktop le etichette brevi della console admin: si copia la
+//             conseguenza e si lascia indietro la causa. Due volte in due giorni, sulla stessa
+//             tabella.
+//             Ora lo spazio che avanza lo prende il RETRO; il Nome ha un minimo di 150px nelle
+//             Figurine e resta a 280 nelle altre sezioni, dove il vincolo di partenza vale ancora.
+// ------------------------------------------------------------
+// v6.184 - LA VISTA TABELLARE DELLE FIGURINE: colonne riordinate, il Nome torna modificabile, e
+//          "Errore di stampa" smette di chiamarsi Base (Franco). Solo app.js.
+//
+//          1. 🔴 **IL NOME NON SI POTEVA MODIFICARE, E IL NOME COMPLETO SI'** — cioe' l'esatto
+//             contrario. Nelle Figurine la colonna mostrava `fullName` in sola lettura e il campo
+//             `name` non compariva da nessuna parte: da una VISTA DI MODIFICA non si poteva
+//             correggere il campo da cui il Nome completo nasce.
+//             Ora c'e' il **Nome**, modificabile, con la regola che le altre sezioni avevano gia':
+//             in sola lettura sui figli, dove il Nome lo comanda il genitore (v6.143 — un campo che
+//             al salvataggio viene sovrascritto non si mostra modificabile). Il Nome completo esce
+//             dalla tabella: e' un valore calcolato, e si legge nella scheda.
+//
+//          2. NUOVA COLONNA **RETRO**, col Nome completo del retro associato. Nessuna logica nuova:
+//             la sa gia' `_dueFacce`, che segue la regola detta da Franco — un change di RETRO ha un
+//             `retroId` suo e vince quello, un change di FRONTE non ce l'ha e prende quello della
+//             base.
+//             📌 Nota di lettura, perche' mi ci sono impigliato: quel `|| base?.retroId` dentro
+//             `_dueFacce` SEMBRA un ripiego e non lo e' — e' la regola. A renderla esatta e' la
+//             v6.102, dove un change ha cominciato a dichiarare se e' frontale o di retro. Letto
+//             senza quella release sembra un'approssimazione, e infatti avevo aperto un dubbio che
+//             non stava in piedi.
+//
+//          3. 🔴 **"ERRORE DI STAMPA" ENTRA FRA I TIPI.** La catena guardava TRE contrassegni, e un
+//             errore di stampa finiva nell'ultimo `else`: veniva etichettato **Base**. Su Serie 3
+//             sono **79 record**.
+//             ⚠️ E' LO STESSO DIFETTO che il 16 agosto faceva contare 336 figurine base invece di
+//             256, corretto nella v6.175 agganciando il conteggio a `_eBase`. **Due sintomi della
+//             stessa causa**: la v5.711 ha reso `isPrintError` un tipo a se', e il codice scritto
+//             prima ha continuato a contarne tre. L'ha collegato Franco, non io.
+//             📌 Il controllo sta DOPO `isChange`: se un record vecchio portasse entrambi i
+//             contrassegni, la precedenza resta quella di prima e a spostarsi sono solo i record
+//             che sono SOLTANTO errori di stampa.
+//             ⚠️ **RESTA UN TERZO POSTO CON LA STESSA CATENA A TRE**: `renderAdminErrori` (~riga
+//             30817). Non e' stato toccato perche' non e' quello che Franco stava guardando, ma il
+//             difetto e' lo stesso e li' un errore di stampa si legge ancora "Base". Da chiudere.
+//
+//          4. **FIGURINA DI PARTENZA NON MODIFICABILE SULLE BASI.** Una base non parte da nessuna
+//             figurina, e un campo scrivibile che non ha senso invita a scriverci.
+//             📌 Si usa `_eBase`, che esclude anche gli errori di stampa — i quali una figurina di
+//             partenza CE L'HANNO. E' il motivo per cui il punto 3 andava fatto insieme a questo:
+//             senza, le righe etichettate "Base" si sarebbero comportate in due modi diversi e chi
+//             guarda non avrebbe avuto modo di capire perche'.
+//
+//          5. ORDINE E ALLINEAMENTI: N. | Nome | Retro | Tipo, con Modifica, N. e Punteggio centrate
+//             — in TUTTE le sezioni, non solo nelle Figurine (scelta di Franco): la stessa colonna
+//             non puo' allinearsi in due modi a seconda di dove la si guarda.
+// ------------------------------------------------------------
+// v6.183 - 🔴 LA v6.182 NON SI VEDEVA: `text-transform:uppercase`. Piu' la home su telefono
+//          (Franco). Modificato app.js e index.html.
+//
+//          1. 🔴 **IL MINUSCOLO DELLA v6.182 NON ARRIVAVA A SCHERMO.** Le intestazioni di telefono
+//             erano state portate a "N. figurine", "Change figurine", "Change retro" — e restavano
+//             MAIUSCOLE, perche' `.data-table th` in `css/style.css` ha `text-transform: uppercase`.
+//             Il testo era cambiato davvero; a non cambiare era cio' che si legge.
+//             ⚠️ **E' il difetto della v6.157 per la QUARTA volta in due giorni**: verificare che il
+//             codice sia cambiato non e' verificare che il cambiamento abbia un effetto. Il
+//             controllo che avevo fatto — stampare l'array delle intestazioni — non poteva
+//             accorgersene per costruzione: guardava la sorgente, e il colpevole stava nel foglio
+//             di stile. L'ha trovato Franco guardando il sito, come le tre volte precedenti.
+//             📌 La regola che ne esce, e vale oltre questo caso: **quando si cambia un TESTO, il
+//             controllo non e' "la stringa e' cambiata" ma "com'e' reso".** Fra la stringa e
+//             l'occhio ci sono il CSS e l'i18n, e tutti e due sanno riscriverla.
+//             Rimediato con `text-transform:none` sui `<th>` di quella tabella, per entrambe le
+//             varianti: le due liste portano gia' le maiuscole dove servono, quindi da qui in
+//             avanti cio' che e' scritto e' cio' che si legge.
+//
+//          2. 🔴 **I NUMERONI DELLA HOME ERANO PIU' GRANDI DEL PREVISTO SU TELEFONO, DALLA v6.063.**
+//             In `style.css` la regola per telefono e' `.stat-num { font-size:1.6rem }` — UNA
+//             classe, (0,1,0). La v6.063, per rimpicciolire quelli del desktop, ha aggiunto
+//             nell'index `.hero-stats-side .stat-num { 2.2rem }` — DUE classi, (0,2,0), e **fuori
+//             da ogni media query**: quindi vinceva anche sul telefono. 2,2 invece di 1,6 (+37%),
+//             etichette 0,88 invece di 0,75.
+//             ⚠️ E il commento di quella release dichiara l'opposto: "Sul telefono non si tocca
+//             niente: li' sono gia' 1.6rem". Era vero mentre lo scriveva e falso un istante dopo,
+//             per colpa delle righe che stava aggiungendo. **Una media query dimenticata non da'
+//             nessun errore: cambia una pagina che nessuno sta guardando.**
+//             Franco ha scelto **1,4rem**, un filo sotto il valore previsto — la stessa proporzione
+//             (-12%) con cui la v6.063 aveva ridotto quelli del desktop.
+//
+//          3. SU TELEFONO LA FRASE SOTTO IL LOGO SI ACCORCIA: "Il database non ufficiale della
+//             leggendaria serie italiana anni '90.". Si cambia la CHIAVE `data-i18n`, non il testo:
+//             un `textContent` scritto a mano lo cancellerebbe il primo `applyI18n()`, e
+//             succederebbe al primo cambio di lingua — lontano da qui.
+//
+//          4. E LA FRASE NON E' PIU' ATTACCATA AI NUMERONI. Il margine negativo della v6.068 stava
+//             IN LINEA sul `<p>`: su telefono serve il segno opposto, e uno stile in linea si
+//             scavalca solo con `!important`. Il margine e' passato nel CSS (`#hero-desc-main`),
+//             col valore di sempre sul desktop e positivo sotto gli 860px. Un `!important` messo
+//             per aggirare una riga che controlliamo noi sarebbe stato una toppa, non una regola.
+//
+//          5. NELLA HOME IL LOGO SPARISCE DALLA NAVBAR ANCHE SUL DESKTOP (Franco). Solo app.js.
+//
+//          Il comportamento c'era gia' dalla v6.011, sul solo telefono: e' caduta la condizione
+//          `_isMobileViewport()`. Una riga.
+//
+//          📌 SI E' POTUTO FARE IN UNA RIGA PER UNA SCELTA DELLA v6.011: lo stato non era un
+//          parametro passato da chi naviga, ma si LEGGE dal DOM — quale pagina e' attiva e se la
+//          scheda serie e' aperta. Se fosse stato un parametro, estendere al desktop avrebbe voluto
+//          dire ritrovare ogni punto di navigazione e ricordarsi di aggiornarlo. La stessa forma
+//          della v6.164 (`_aggiornaComandiTestata`) e della v6.143 (`_discendenzaDaAggiornare`):
+//          una domanda in un posto solo si estende, una risposta copiata in N punti si insegue.
+//
+//          ⚠️ LA REGOLA NON CAMBIA, CAMBIA LA RAGIONE — e le due non coincidevano.
+//          La v6.011 dava come motivo lo spazio verticale, "la risorsa scarsa" su telefono: un
+//          argomento che sul desktop NON regge, perche' li' lo spazio c'e'. Il motivo che vale su
+//          entrambi e' l'altro, ed era gia' scritto nella prima riga di quel commento — **la stessa
+//          immagine due volte nella stessa schermata**. Sul desktop non si guadagna spazio, si
+//          toglie una ripetizione.
+//          Se non si fosse guardata la differenza, il commento avrebbe continuato a giustificare
+//          con lo spazio una regola che sul desktop vale per un altro motivo: cioe' la prossima
+//          persona avrebbe letto una spiegazione falsa scritta con la stessa sicurezza di una vera.
+//
+//          📌 Il codice si SEMPLIFICA crescendo: una condizione in meno, e cade la dipendenza dalla
+//          larghezza della finestra. Il richiamo su `resize` resta per gli altri usi, non piu' per
+//          questo.
+// ------------------------------------------------------------
 // v6.182 - 🔴 SU TELEFONO LA VERSIONE ERA DIETRO LA FASCIA ARANCIONE, e il riepilogo si asciuga
 //          ancora (Franco). Modificato app.js e index.html.
 //
@@ -14733,7 +14882,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.182';
+const JS_VERSION = 'v6.185';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -15887,7 +16036,7 @@ const i18n = {
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
 'hero.challenge':'Challenge others','hero.challengeDesc':'Who has the biggest list? You can also choose to appear anonymously.',
-'hero.desc':'The unofficial database dedicated to the legendary Italian sticker series of the \'90s.',
+'hero.desc':'The unofficial database dedicated to the legendary Italian sticker series of the \'90s.','hero.descShort':'The unofficial database of the legendary Italian \'90s series.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
 'hero.cta1':'Explore the Sgorbions Inventory!','hero.cta2':'Start collecting Sgorbions',
 'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat2e':'Wrappers','hero.stat3':'Collectors','hero.statLangs':'Site languages',
@@ -15995,7 +16144,7 @@ const i18n = {
 
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','nav.mialista':'Mia lista',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
-    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.',
+    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.','hero.descShort':'Il database non ufficiale della leggendaria serie italiana anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri oggetti','hero.stat2e':'Bustine','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
@@ -16352,14 +16501,41 @@ function showAdminTab(tab) {
   adminTab(tab);
 }
 
-// v6.011 (Franco) - SOLO TELEFONO: nella home il logo sparisce dalla navbar, perche' lo
-// stesso logo e' gia' grande in mezzo alla pagina. Due volte la stessa immagine a un palmo
-// di distanza, su uno schermo dove lo spazio verticale e' la risorsa scarsa.
-// Fuori dalla home il logo resta: li' e' l'unico posto in cui compare, ed e' anche il modo
-// per tornare indietro.
-// Lo stato non si passa come parametro ma si LEGGE dal DOM (quale pagina e' attiva, e se
-// la scheda serie e' aperta): chi apre una serie non passa da showPage, e un parametro
-// avrebbe richiesto di ricordarsene in ogni punto di navigazione.
+// v6.011 (Franco) - nella home il logo sparisce dalla navbar, perche' lo stesso logo e' gia' grande
+// in mezzo alla pagina: due volte la stessa immagine a un palmo di distanza.
+// Fuori dalla home il logo resta: li' e' l'unico posto in cui compare, ed e' anche il modo per
+// tornare indietro.
+// Lo stato non si passa come parametro ma si LEGGE dal DOM (quale pagina e' attiva, e se la scheda
+// serie e' aperta): chi apre una serie non passa da showPage, e un parametro avrebbe richiesto di
+// ricordarsene in ogni punto di navigazione.
+//
+// v6.183 (Franco) - VALE ANCHE SUL DESKTOP: e' caduta la condizione `_isMobileViewport()`.
+// ⚠️ La regola non cambia, cambia la RAGIONE per cui vale, e le due non coincidevano.
+// Sul telefono il motivo scritto nella v6.011 era lo spazio verticale, "la risorsa scarsa" — un
+// argomento che sul desktop non regge, perche' li' lo spazio c'e'. Il motivo che vale su entrambi
+// e' l'altro, ed era gia' nella prima riga: **la stessa immagine due volte nella stessa schermata**.
+// Toglierla dalla navbar in home non fa guadagnare spazio sul desktop, toglie una ripetizione.
+// 📌 Ed e' un pezzo di codice che si SEMPLIFICA crescendo: una condizione in meno, e sparisce
+// anche la dipendenza dalla larghezza della finestra — quindi il richiamo al `resize` (in fondo al
+// file) resta per gli altri, non piu' per questo.
+// v6.183 (Franco) — SU TELEFONO LA FRASE SOTTO IL LOGO E' PIU' CORTA.
+// "Il database non ufficiale dedicato alla leggendaria serie italiana degli anni '90." diventa
+// "Il database non ufficiale della leggendaria serie italiana anni '90.".
+// ⚠️ NON si scrive il testo, si cambia la CHIAVE `data-i18n` (e poi il testo). E' la stessa strada
+// di `_aggiornaBivioInventario` per `catalog.sub` e del pulsante del riepilogo nella v6.177: un
+// `textContent` scritto a mano verrebbe cancellato dal primo `applyI18n()`, che rilegge
+// l'attributo — e succederebbe al primo cambio di lingua, cioe' lontano da qui.
+// Si riaggancia al `resize` insieme al logo: ruotare il telefono o cambiare preset nel banco prova
+// deve aggiornarla, se no resta giusta solo per la larghezza che c'era al caricamento (v6.012).
+function _aggiornaFraseHome() {
+  const p = document.getElementById('hero-desc-main');
+  if (!p) return;
+  const chiave = _isMobileViewport() ? 'hero.descShort' : 'hero.desc';
+  if (p.getAttribute('data-i18n') === chiave) return;   // niente da fare: evita di riscrivere a ogni pixel di resize
+  p.setAttribute('data-i18n', chiave);
+  p.textContent = t(chiave);
+}
+
 function _aggiornaLogoNavbar() {
   const logo = document.querySelector('#navbar .nav-logo');
   if (!logo) return;
@@ -16367,7 +16543,7 @@ function _aggiornaLogoNavbar() {
   const dettaglioSerie = document.getElementById('series-detail');
   const inHome = !!attiva && attiva.id === 'page-home'
     && (!dettaglioSerie || dettaglioSerie.style.display === 'none');
-  logo.style.display = (_isMobileViewport() && inHome) ? 'none' : '';
+  logo.style.display = inHome ? 'none' : '';
 }
 
 // ============================================================
@@ -19388,7 +19564,20 @@ function apriInfoTutteLeSerie() {
   // una colonna in piu' da una parte sola non da' nessun errore, sposta i dati sotto l'intestazione
   // sbagliata e la tabella continua a sembrare giusta.
   el.innerHTML = `<table class="data-table compact" style="width:100%;"><thead><tr>${
-    intestazioni.map((h, i) => `<th style="line-height:1.2;vertical-align:bottom;white-space:normal;text-align:${aSinistra(i) ? 'left' : 'center'};">${h}</th>`).join('')
+    // 🔴 v6.183 - `text-transform:none` E' LA RIGA CHE MANCAVA ALLA v6.182.
+    // Quella release aveva portato le intestazioni di telefono in minuscolo — "N. figurine",
+    // "Change figurine" — e a schermo restavano MAIUSCOLE, perche' `.data-table th` in style.css
+    // ha `text-transform: uppercase`. Il testo era cambiato davvero; a non cambiare era cio' che si
+    // vedeva.
+    // ⚠️ Ed e' il difetto della v6.157 per la quarta volta in due giorni: **avevo verificato che il
+    // codice fosse cambiato, non che il cambiamento avesse un effetto**. Il controllo che avevo
+    // fatto — stampare l'array delle intestazioni — non poteva accorgersene per costruzione:
+    // guardava la sorgente, e il colpevole stava nel foglio di stile. L'ha trovato Franco guardando
+    // il sito, come le tre volte precedenti.
+    // Si mette `none` per TUTTE e due le varianti, non solo per il telefono: le due liste portano
+    // gia' le maiuscole dove le vogliamo, quindi da qui in avanti **cio' che e' scritto e' cio' che
+    // si legge**, senza una trasformazione invisibile in mezzo.
+    intestazioni.map((h, i) => `<th style="line-height:1.2;vertical-align:bottom;white-space:normal;text-transform:none;text-align:${aSinistra(i) ? 'left' : 'center'};">${h}</th>`).join('')
   }</tr></thead><tbody>${righe}</tbody></table>`;
   // 🔴 v6.179 - QUI SOTTO C'ERA UNA NOTA CHE NON MI ERA STATA CHIESTA, e l'ho tolta.
   // Diceva "Le celle vuote valgono zero. «FIGURINE» conta le figurine del set base, senza
@@ -32400,7 +32589,16 @@ function renderBulkEditView() {
   if (!allItems.length) { bulkView.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali.' : 'No items found with the current filters.'}</p>`; return; }
 
   // Cella di sola lettura per l'utente non-admin (niente input editabile)
-  const readCell = (val, width) => `<td style="padding:4px 8px;color:var(--text);text-align:left;${width ? 'min-width:'+width+'px;' : ''}">${val ?? ''}</td>`;
+  // v6.185 - terzo parametro `align`, e soprattutto VIA IL `text-align:left` CABLATO.
+  // Da non-admin le celle di N. e Punteggio passano di qui, e quel `left` scritto dentro le teneva
+  // a sinistra: centrare il `<td>` nella v6.184 non le toccava nemmeno, e guardando da admin non si
+  // poteva vedere.
+  // ⚠️ Non e' stato sostituito da un valore predefinito 'left', che sarebbe stato lo stesso difetto
+  // con un nome piu' bello: ora la funzione **non impone nessun allineamento**. Senza `align` la
+  // cella prende quello della tabella — che per un `<td>` e' comunque sinistra, quindi non cambia
+  // niente di cio' che si vede oggi, ma il giorno che la tabella decidesse altrimenti la decisione
+  // arriverebbe fin qui invece di essere scavalcata in silenzio.
+  const readCell = (val, width, align) => `<td style="padding:4px 8px;color:var(--text);${align ? 'text-align:'+align+';' : ''}${width ? 'min-width:'+width+'px;' : ''}">${val ?? ''}</td>`;
 
   // v6.079 (Franco) - la miniatura della tabella ora passa da _fotoFigurina(), come la griglia:
   // una variazione o un change senza foto propria mostra quella della BASE invece del segnaposto.
@@ -32491,17 +32689,21 @@ function renderBulkEditView() {
           ${isAdmin ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>' : ''}
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);width:36px;">#</th>
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);width:${currentSection === 'retros' ? 48 : 92}px;">${(currentLang === 'it') ? 'Foto' : 'Photo'}</th>
-          ${isAdmin ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>` : ''}
+          ${isAdmin ? `<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>` : ''}
           ${currentSeriesHasSubseries ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottoserie</th>' : ''}
           ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Categoria</th>' : ''}
           ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottocategoria</th>' : ''}
           ${currentSection === 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Categoria</th><th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottocategoria</th>' : ''}
-          ${(currentSection !== 'retros' && !_cSoloExtra) ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>' : ''}
-          ${currentSection === 'figurines' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Tipo' : 'Type'}</th>` : ''}
-          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentSection === 'figurines' ? (currentLang === 'it' ? 'Nome Completo' : 'Full Name') : 'Nome'}</th>
+          ${(currentSection !== 'retros' && !_cSoloExtra) ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>' : ''}
+          <!-- v6.184 (Franco) - nelle Figurine qui c'era "Nome Completo" in sola lettura, e il Nome
+               non c'era affatto. Ora c'e' il NOME, modificabile come nelle altre sezioni, e il Nome
+               completo esce dalla tabella: e' un valore calcolato, e questa e' una vista di modifica. -->
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Nome' : 'Name'}</th>
+          ${currentSection === 'figurines' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Retro</th>` : ''}
           ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Sottonome' : 'Subname'}</th>` : ''}
           ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Tipo di change' : 'Change type'}</th>` : ''}
-          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
+          ${currentSection === 'figurines' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Tipo' : 'Type'}</th>` : ''}
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
           ${(isAdmin && !_cSoloExtra) ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);min-width:420px;">${currentLang === 'it' ? 'Figurina di partenza' : 'Source sticker'}</th>` : ''}
           ${_cTaglia ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
           ${_ordinaPerCreazione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);white-space:nowrap;">${currentLang === 'it' ? 'Data creazione' : 'Created on'}</th>` : ''}
@@ -32521,7 +32723,7 @@ function renderBulkEditView() {
             const _ff = _dueFacce(f, _tutteLeFig);
             return _miniaturaTabella(_ff.fronte, true) + (_schedaDueFoto(f) ? ' ' + _miniaturaTabella(_ff.retro, false) : '');
           })()}</td>
-          ${isAdmin ? `<td style="padding:4px;white-space:nowrap;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Apri la scheda' : 'Open the card'}" onclick="openFigDetail('${f.id}')">&#128065;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="apriModificaItem('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
+          ${isAdmin ? `<td style="padding:4px;white-space:nowrap;text-align:center;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Apri la scheda' : 'Open the card'}" onclick="openFigDetail('${f.id}')">&#128065;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="apriModificaItem('${f.id}')">&#9998;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button></td>` : ''}
           ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
           ${_cExtra ? (_eProdottoExtraSerie(f) && isAdmin
             ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" list="bulk-cat-'+f.tipoProdotto+'" value="'+esc(f.category||'')+'" style="width:230px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
@@ -32530,29 +32732,60 @@ function renderBulkEditView() {
             ? '<td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" list="bulk-sub-'+f.tipoProdotto+'" value="'+esc(f.subcategory||'')+'" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
             : '<td style="padding:4px;font-size:0.8rem;color:var(--muted);">'+esc(f.subcategory||'')+'</td>') : ''}
           ${currentSection === 'retros' ? (isAdmin && !_campoComandatoDalGenitore(f, 'category') ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
-          ${(currentSection !== 'retros' && !_cSoloExtra) ? (isAdmin ? '<td style="padding:4px;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? f.number : '')) : ''}
-          ${currentSection === 'figurines' ? (() => {
-            const typeLabel = f.isVariation ? (currentLang === 'it' ? 'Variazione ufficiale' : 'Official variation')
-              : f.isUnofficialVariation ? (currentLang === 'it' ? 'Variazione non ufficiale' : 'Unofficial variation')
-              : f.isChange ? 'Change'
-              : (currentLang === 'it' ? 'Base' : 'Base');
-            return readCell(typeLabel, 160);
-          })() : ''}
+          ${(currentSection !== 'retros' && !_cSoloExtra) ? (isAdmin ? '<td style="padding:4px;text-align:center;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? f.number : '', null, 'center')) : ''}
           ${(() => {
-            if (currentSection === 'figurines') {
-              const fullName = f.fullName || computeFullName(f, getData('figurines', []));
-              return readCell(fullName, 300);
-            }
+            // v6.184 (Franco) - IL NOME, e non piu' il Nome completo. Nelle Figurine questa cella
+            // mostrava `fullName` in sola lettura e il Nome non c'era da nessuna parte: da qui non
+            // si poteva correggere un nome, che e' il campo da cui il Nome completo NASCE.
+            // Ora la regola e' una sola per tutte le sezioni, cioe' quella che le altre avevano gia'.
             // v6.143 - su un FIGLIO il Nome lo comanda il genitore: cella di sola lettura, come
             // nella scheda, dove il campo e' nascosto dalla v6.038.
             return (isAdmin && !_campoComandatoDalGenitore(f, 'name'))
-              ? `<td style="padding:4px;width:99%;"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:280px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`
+              ? `<td style="padding:4px;${currentSection === 'figurines' ? '' : 'width:99%;'}"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:${currentSection === 'figurines' ? 150 : 280}px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`
               : readCell(f.name, 300);
           })()}
+          ${currentSection === 'figurines' ? (() => {
+            // v6.184 (Franco) - IL RETRO ASSOCIATO, col suo Nome completo. Non c'e' logica nuova:
+            // `_dueFacce` sa gia' quale retro il sito associa a questa figurina, e segue la regola
+            // che Franco ha ripetuto — un change di RETRO ha un `retroId` suo e vince quello, un
+            // change di FRONTE non ce l'ha e prende quello della base.
+            // ⚠️ Quel `|| base?.retroId` dentro `_dueFacce` si legge come un ripiego e NON lo e': e'
+            // la regola, e a renderla esatta e' la v6.102, dove un change ha cominciato a dichiarare
+            // se e' frontale o di retro. Letto senza quella release sembra un'approssimazione.
+            // v6.185 (Franco) - LE LARGHEZZE ERANO INVERTITE. Al Nome erano rimasti `width:99%` e
+            // `min-width:280px`, ereditati dal ramo dei Retro — dove quel campo E' il piu' lungo.
+            // Nelle Figurine e' il contrario: un nome e' "ADAM BOMB", un Nome completo di retro e'
+            // "RICERCATA PER ABUSO DI POTERE MATERNO - MAMMA - ROSSO".
+            // ⚠️ Copiare un ramo di codice si porta dietro anche le sue MISURE, e le misure sono
+            // tarate su dati che altrove sono diversi. E' la stessa forma dell'errore della v6.174,
+            // dove avevo copiato sul desktop le etichette brevi della console admin: si copia la
+            // conseguenza e si lascia indietro la causa.
+            // Qui lo spazio che avanza lo prende il RETRO (`width:99%`), non il Nome.
+            const rec = _dueFacce(f, _tutteLeFig).retroRec;
+            return `<td style="padding:4px 8px;color:var(--text);width:99%;min-width:320px;">${rec ? (rec.fullName || computeFullName(rec, _tutteLeFig)) : ''}</td>`;
+          })() : ''}
           ${currentSection === 'retros' ? (isAdmin && !_campoComandatoDalGenitore(f, 'subname') ? `<td style="padding:4px;"><input data-field="subname" data-id="${f.id}" value="${(f.subname||'').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? 'seconda parte del nome' : 'second part of the name'}" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.subname, 200)) : ''}
           ${currentSection === 'retros' ? (isAdmin ? `<td style="padding:4px;"><input data-field="changeType" data-id="${f.id}" value="${f.changeType||''}" style="width:140px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.changeType, 140)) : ''}
-          ${isAdmin ? `<td style="padding:4px;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0)}
-          ${(isAdmin && !_cSoloExtra) ? (_eProdottoExtraSerie(f) ? '<td></td>' :  `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>`) : ''}
+          ${currentSection === 'figurines' ? (() => {
+            // 🔴 v6.184 (Franco) - "Errore di stampa" ENTRA fra i tipi. Prima la catena guardava
+            // TRE contrassegni e un errore di stampa finiva nell'ultimo `else`, cioe' veniva
+            // etichettato **Base** — che non e'. Su Serie 3 sono 79 record.
+            // ⚠️ E' lo STESSO difetto che il 16 agosto faceva contare 336 figurine base invece di
+            // 256 (corretto nella v6.175 agganciando il conteggio a `_eBase`): due sintomi della
+            // stessa causa, cioe' la v5.711 che ha reso `isPrintError` un tipo a se' mentre il
+            // codice scritto prima ha continuato a contarne tre. Franco ha collegato le due cose.
+            // 📌 Il controllo va DOPO `isChange` di proposito: se un record vecchio portasse
+            // entrambi i contrassegni, l'ordine di precedenza resta quello di prima e a spostarsi
+            // sono solo i record che sono SOLTANTO errori di stampa — quelli che vogliamo spostare.
+            const typeLabel = f.isVariation ? (currentLang === 'it' ? 'Variazione ufficiale' : 'Official variation')
+              : f.isUnofficialVariation ? (currentLang === 'it' ? 'Variazione non ufficiale' : 'Unofficial variation')
+              : f.isChange ? 'Change'
+              : f.isPrintError ? (currentLang === 'it' ? 'Errore di stampa' : 'Print error')
+              : 'Base';
+            return readCell(typeLabel, 160);
+          })() : ''}
+          ${isAdmin ? `<td style="padding:4px;text-align:center;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0, null, 'center')}
+          ${(isAdmin && !_cSoloExtra) ? (_eProdottoExtraSerie(f) ? '<td></td>' : _eBase(f) ? readCell('', 420) :  `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>`) : ''}
           ${_cTaglia ? (isAdmin
             ? '<td style="padding:4px;">' + (!_mostraTaglia(f, currentSeries) ? '' : _eProdottoExtraSerie(f)
                 ? _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;')
@@ -33945,6 +34178,8 @@ async function toggleWishlistFromDetail(figId) {
 // dello schermo, quindi ruotare il telefono o cambiare preset nel banco prova deve
 // aggiornarla. Senza, restava giusta solo per la larghezza che c'era al caricamento.
 try { _aggiornaLogoNavbar(); } catch (e) { console.error('_aggiornaLogoNavbar (avvio)', e); }
+try { _aggiornaFraseHome(); } catch (e) { console.error('_aggiornaFraseHome (avvio)', e); }   // v6.183
 window.addEventListener('resize', function () {
   try { _aggiornaLogoNavbar(); } catch (e) {}
+  try { _aggiornaFraseHome(); } catch (e) {}   // v6.183
 });
