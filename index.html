@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.213"></script>
-<link rel="stylesheet" href="css/style.css?v=6.213">
+<script src="js/email.min.js?v=6.216"></script>
+<link rel="stylesheet" href="css/style.css?v=6.216">
 
 
 <style>
@@ -315,7 +315,7 @@ button.back-btn { color:#ffffff; }
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.213</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.216</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1712,7 +1712,7 @@ button.back-btn { color:#ffffff; }
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.213</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.216</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1957,19 +1957,15 @@ button.back-btn { color:#ffffff; }
           <input type="checkbox" id="series-no-numbers-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
           <span data-i18n="form.series.noNumbers">Non ha numeri</span>
         </label>
-        <!-- v6.098 (Franco, §12.7 caso B) — dice che in questa serie le figurine un retro non ce
-             l'hanno proprio. Diverso dal sospendere il controllo "Fronte senza retro": quello dice
-             "non adesso", questo dice "mai". -->
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-          <input type="checkbox" id="series-no-retro-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;" onchange="_aggiornaRigaColonneRetro()">
-          <span data-i18n="form.series.noRetro">Figurine senza retro</span>
-        </label>
-        <!-- v6.194 (Franco) — "ci sono serie senza album". Nasconde il box Album nell'hub di
-             questa serie. Nasconde la porta, non la stanza: eventuali album restano nei dati. -->
-        <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-          <input type="checkbox" id="series-no-albums-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-          <span>Senza album</span>
-        </label>
+        <!-- 🆕 v6.216 (Franco) — GLI ARTICOLI CHE QUESTA SERIE NON HA. Sostituisce le due caselle
+             singole "Figurine senza retro" (v6.098) e "Senza album" (v6.194): erano due modi di dire
+             la stessa cosa su due articoli diversi. Le caselle le genera `_caselleArticoliSerie()`
+             dal descrittore, quindi ci sono tutti e sei gli articoli e un settimo comparirebbe da sé. -->
+        <div style="grid-column:1 / -1;">
+          <div class="form-label" style="font-size:0.88rem;margin-bottom:0.3rem;">Articoli che questa serie non ha</div>
+          <div id="series-articoli-nascosti" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.3rem 1rem;"></div>
+          <div class="form-hint" style="margin-top:0.3rem;">Il box sparisce dall'hub della serie. Nasconde la porta, non la stanza: gli oggetti restano nei dati.</div>
+        </div>
         <!-- v6.204 (Franco) — QUESTA serie fa da contenitore agli articoli senza serie. Prima il
              contenitore si riconosceva dal NOME ("Extra serie"), e rinominarlo rompeva il click sui
              box dei tipi. Il nome resta come ripiego finché nessuno spunta questa casella. -->
@@ -2035,16 +2031,16 @@ button.back-btn { color:#ffffff; }
          una serie ha figurine e retro insieme, e un numero solo non li poteva descrivere. -->
     <div class="form-group">
       <label class="form-label">Colonne della griglia</label>
-      <table style="border-collapse:collapse;margin-top:0.2rem;">
-        <tr><td></td>
-          <td style="padding:0 6px;font-size:0.76rem;color:var(--muted);">desktop</td>
-          <td style="padding:0 6px;font-size:0.76rem;color:var(--muted);">mobile</td></tr>
-        <tr><td style="padding:3px 8px 3px 0;font-size:0.84rem;color:var(--text);white-space:nowrap;">Figurine</td><td style="padding:3px 6px;"><input class="form-input" type="number" min="1" max="12" id="series-col-figurines-d" value="7" style="width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;"></td><td style="padding:3px 6px;"><input class="form-input" type="number" min="1" max="12" id="series-col-figurines-m" value="4" style="width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;"></td></tr>
-        <tr><td style="padding:3px 8px 3px 0;font-size:0.84rem;color:var(--text);white-space:nowrap;">Retro</td><td style="padding:3px 6px;"><input class="form-input" type="number" min="1" max="12" id="series-col-retros-d" value="5" style="width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;"></td><td style="padding:3px 6px;"><input class="form-input" type="number" min="1" max="12" id="series-col-retros-m" value="4" style="width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;"></td></tr>
-        <tr><td style="padding:3px 8px 3px 0;font-size:0.84rem;color:var(--text);white-space:nowrap;">Bustine</td><td style="padding:3px 6px;"><input class="form-input" type="number" min="1" max="12" id="series-col-bustine-d" value="7" style="width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;"></td><td style="padding:3px 6px;"><input class="form-input" type="number" min="1" max="12" id="series-col-bustine-m" value="4" style="width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;"></td></tr>
-        <tr><td style="padding:3px 8px 3px 0;font-size:0.84rem;color:var(--text);white-space:nowrap;">Album</td><td style="padding:3px 6px;"><input class="form-input" type="number" min="1" max="12" id="series-col-albums-d" value="7" style="width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;"></td><td style="padding:3px 6px;"><input class="form-input" type="number" min="1" max="12" id="series-col-albums-m" value="4" style="width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;"></td></tr>
-        <tr><td style="padding:3px 8px 3px 0;font-size:0.84rem;color:var(--text);white-space:nowrap;">Altri oggetti</td><td style="padding:3px 6px;"><input class="form-input" type="number" min="1" max="12" id="series-col-extras-d" value="7" style="width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;"></td><td style="padding:3px 6px;"><input class="form-input" type="number" min="1" max="12" id="series-col-extras-m" value="4" style="width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;"></td></tr>
-      </table>
+      <!-- \uD83D\uDD34 v6.215 (Franco: "la tabella Colonne della griglia la vedo come era prima") — QUI
+           C'ERANO CINQUE RIGHE SCRITTE A MANO, e gli articoli sono SEI dalla v6.195.
+           La riga di "Figurine da attaccare" non c'era mai stata: il ciclo che riempie i campi fa
+           getElementById e, non trovandolo, salta in silenzio. Quindi quella sezione non aveva
+           nessuna configurazione delle colonne, e al salvataggio prendeva sempre il valore di
+           partenza perché il campo da leggere non esisteva.
+           Adesso la tabella la genera `_tabellaColonneSerie()` dal descrittore ARTICOLI: le righe
+           sono quante sono gli articoli, nel loro ordine, e un settimo articolo comparirebbe qui
+           senza che nessuno debba ricordarsene. -->
+      <div id="series-colonne-tabella"></div>
       <div style="font-size:0.78rem;color:var(--muted);margin-top:0.35rem;">Da 1 a 12. Sono i numeri di partenza, prima che l'utente ridimensioni la finestra, e valgono anche sugli schermi stretti: su mobile tienili bassi.</div>
     </div>
 
@@ -2522,7 +2518,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.213"></script>
+<script src="js/app.js?v=6.216"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2546,7 +2542,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.213'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.216'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
