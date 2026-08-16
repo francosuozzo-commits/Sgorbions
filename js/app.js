@@ -1,6 +1,271 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.213 - SU TELEFONO LE ETICHETTE DI SPECIALI TORNANO SU DUE RIGHE (Franco). Solo app.js.
+//
+//          La v6.210 aveva messo `white-space:nowrap` su richiesta - *"non mi aspetto nessun a capo
+//          nelle etichette"* - e allora la colonna SPECIALI era una delle TRE di telefono. La v6.211
+//          ne ha aggiunta una quarta (RETRO), e la larghezza che resta a SPECIALI non basta piu' per
+//          tenere "CHANGE RETRO" su una riga. Non e' un ripensamento: e' cambiato il contorno.
+//
+//          \uD83D\uDCCC L'A CAPO E' SCRITTO, NON LASCIATO ALL'AUTOMATICO, ed e' la regola della v6.178:
+//          *"l'a-capo automatico spezza dove capita a seconda della larghezza della colonna"* - la
+//          stessa etichetta si romperebbe in un punto su un telefono e in un altro su quello
+//          accanto. Scritta, si spezza sempre allo stesso posto.
+//
+//          \uD83D\uDCCC E IL PUNTO SCELTO NON E' CASUALE: la prima riga dice la FAMIGLIA (VAR, CHANGE), la
+//          seconda QUALE (UFF, NON UFF, FIG, RETRO). Le cinque righe si leggono cosi' in colonna -
+//          VAR / VAR / CHANGE / RETRO / CHANGE - e la seconda parola distingue dentro la famiglia.
+//
+//          \u26A0\uFE0F "NON UFF" resta INTERO sulla seconda riga. Spezzarlo in "VAR NON" + "UFF" avrebbe
+//          fatto leggere "UFF" - cioe' il suo CONTRARIO - come l'etichetta del numero. E' lo stesso
+//          rischio che la v6.182 aveva visto e risolto centrando il numero verticalmente; qui si
+//          evita a monte invece di rimediarlo dopo.
+//
+//          \u26A0\uFE0F Resta `min-width:0` sull'etichetta: serve a permetterle di STRINGERSI invece di
+//          allargare la cella oltre la colonna. Senza, una cella puo' mangiarsi le altre senza dare
+//          nessun errore.
+// ------------------------------------------------------------
+// v6.212 - NELLA TABELLA SERIE DELLA CONSOLE, "HA RETRO" MOSTRA IL NUMERO invece di SI (Franco).
+//          Sono i retro BASE, la stessa definizione della v6.211. Solo app.js.
+//
+//          \uD83D\uDD34 NON E' LA STESSA COSA DETTA MEGLIO: E' UN'ALTRA COSA. Il SI veniva da `!s.noRetro`,
+//          cioe' da un FLAG - una dichiarazione dell'admin. Il numero viene dagli oggetti che ci sono
+//          davvero. `ricognizione-flag-serie.js` lo dice con parole sue: *"il flag e' un'INTENZIONE,
+//          gli oggetti sono una CONSEGUENZA"*.
+//          \uD83D\uDCCC E le due cose possono non combaciare - che e' il PREGIO di questa release, non il
+//          suo prezzo. Prima la contraddizione era invisibile; da ora si vede nei due versi:
+//            - serie che DICHIARA di avere retro e non ne ha ancora  -> cella vuota, non SI;
+//            - serie con `noRetro` acceso che pero' dei retro ce li ha -> il numero compare.
+//          Il secondo caso e' esattamente la forma del guasto della v6.169, dove tre flag azzerati in
+//          silenzio sono rimasti invisibili finche' qualcuno non ha CONTATO gli oggetti.
+//
+//          \u26A0\uFE0F Lo zero resta VUOTO, come gli altri numeri della tabella: regola della v6.166 -
+//          *"una parete di zeri nasconde i numeri veri, come la parete di NO nascondeva i SI"*.
+//
+//          \uD83D\uDCCC L'intestazione resta "HA RETRO": Franco non ha chiesto di cambiarla, e in un'altra
+//          tabella aveva chiesto esplicitamente di non toccare il nome della colonna mentre se ne
+//          cambiava il contenuto. \u26A0\uFE0F Va pero' detto che ora quel titolo fa una domanda si/no sopra
+//          una colonna che risponde con una quantita': se un giorno da' fastidio, il nome giusto e'
+//          "N. RETRO", come "N. FIGURINE" qualche colonna piu' in la'.
+//
+//          \u2705 `_conteggiSerie` era gia' calcolata in questa funzione: la modifica e' una cella, non
+//          un conto in piu'. Terzo punto che si serve da quella funzione senza ricopiarne la regola.
+//
+//          \uD83D\uDCCC E una nota di metodo: il commento messo accanto alla cella e' stato scritto due
+//          volte. La prima conteneva dei backtick, e quel commento vive DENTRO un template literal:
+//          i backtick lo chiudevano, rompendo il file. L'ha preso `node --check` in un secondo - ed
+//          e' la stessa trappola gia' descritta a parole dentro `apriInfoTutteLeSerie`, che pero' era
+//          scritta in un'altra funzione e non l'ha impedita.
+// ------------------------------------------------------------
+// v6.211 - \uD83C\uDD95 COLONNA N. RETRO nel riepilogo serie, e l'indice dell'allineamento SMETTE di
+//          essere scritto a mano. Solo app.js.
+//
+//          \uD83D\uDCCC NON SERVIVA NE' UN CAMPO SULLA SERIE NE' UNA PROCEDURA. Franco aveva ipotizzato
+//          *"una colonna alla Serie col valore in read only, come per altri contatori simili"*. Ma
+//          in questa tabella **nessun numero e' un campo salvato**: `_conteggiSerie` li calcola
+//          tutti dagli oggetti a ogni disegno. Il conto dei retro e' una riga in piu' li' dentro, e
+//          da quella riga arriva da solo nei tre punti che leggono quella funzione - riepilogo
+//          utenti, tabella admin, scheda della serie.
+//          \u2705 E' il guadagno della v6.170, che aveva ESTRATTO quei conteggi invece di ricopiarli:
+//          *"aggiungere un terzo lettore ricopiando avrebbe smentito quella frase nella release che
+//          la cita"*. Oggi aggiungere un CONTEGGIO costa una riga per lo stesso motivo.
+//
+//          \u26A0\uFE0F SONO I RETRO **BASE**, senza change ne' errori di stampa. Contarli tutti avrebbe
+//          prodotto un numero che contiene dentro di se' i CHANGE RETRO gia' mostrati nella colonna
+//          accanto: due numeri sulla stessa riga di cui uno comprende l'altro, **nessuno dei due
+//          sbagliato**, e il modo piu' rapido di far dubitare di entrambi. E' lo stesso criterio con
+//          cui `base` esclude variazioni e change fra le figurine.
+//
+//          \uD83D\uDD34 E L'INDICE DI `aSinistra` NON E' PIU' UN NUMERO SCRITTO. Era letterale ed e'
+//          scalato DUE volte in due release: 3 -> 2 quando la v6.210 ha tolto ANNO, e sarebbe
+//          scalato ancora adesso. La v6.209 l'aveva scritto come avvertimento, la v6.210 l'ha dovuto
+//          correggere: **due volte bastano per smettere di ricordarselo**. Ora la colonna da
+//          allineare a sinistra si trova per CONTENUTO - quella che porta testo, cioe' SPECIALI su
+//          telefono e NOME su desktop - cercandola nell'array delle intestazioni.
+//          \uD83D\uDCCC Sbagliarlo non dava nessun errore: allineava a sinistra una colonna di numeri e
+//          lasciava centrata quella di testo, e la tabella continuava a sembrare giusta. E' la
+//          stessa forma dei difetti muti di questi due giorni, e la contromisura e' quella che ha
+//          gia' funzionato due volte - **si calcola invece di ricordarselo**, come l'arretrato delle
+//          cartelle e come l'ordine delle dichiarazioni con `controllo-tdz.py`.
+//
+//          \uD83D\uDCCC La colonna c'e' su TUTTI E DUE. Su DESKTOP sta subito PRIMA di "CHANGE DI RETRO",
+//          cosi' i due numeri dei retro si leggono affiancati. Su TELEFONO sta fra il conteggio delle
+//          figurine e SPECIALI, ed e' una COLONNA e non una riga dentro SPECIALI: la regola
+//          della v6.209 - due colonne strette costano piu' delle righe che le sostituiscono - vale
+//          per numeri che si leggono INSIEME, le variazioni fra loro e i change fra loro. Il conto
+//          dei retro invece si guarda accanto a quello delle figurine: sono le due quantita' che
+//          descrivono la serie. Dentro SPECIALI sarebbe stato sepolto fra i contrassegni.
+//
+//          \u2705 E AGGIUNGERLA NON HA RICHIESTO DI TOCCARE NESSUN INDICE: `aSinistra` ora cerca la
+//          colonna per contenuto. E' il primo caso in cui quella modifica si ripaga, nella release
+//          stessa in cui e' stata fatta.
+// ------------------------------------------------------------
+// v6.210 - RIEPILOGO SERIE SU TELEFONO: numeri a destra, etichette senza a capo, l'anno sotto la
+//          foto (Franco). Da QUATTRO colonne a TRE. Solo app.js, solo il ramo telefono.
+//
+//          1. **I NUMERI DELLA COLONNA SPECIALI SI INCOLONNANO A DESTRA** (`space-between` invece
+//             del solo `gap`). Con il gap ogni numero partiva dove finiva la sua etichetta, e
+//             siccome le quattro etichette sono lunghe diverse i quattro numeri stavano su quattro
+//             ascisse diverse - cioe' **proprio i valori che si e' venuti a confrontare**. Aggiunto
+//             `tabular-nums`, cosi' anche le cifre hanno tutte la stessa larghezza.
+//
+//          2. **VIA LA COLONNA ANNO**: l'anno scende sotto la foto, accanto al nome, senza
+//             etichetta - quattro cifre fra il 1985 e il 2010 si riconoscono da sole, e "ANNO: 1991"
+//             spende una parola per dire cio' che il numero dice gia'. In grigio e piu' piccolo del
+//             nome, perche' e' un dato secondario e a parita' di peso glielo contenderebbe.
+//             \uD83D\uDCCC E' la terza colonna che sparisce cosi': il NOME era finito sotto la foto con la
+//             v6.177 per la stessa ragione. La prima cella non e' piu' "la miniatura", e' l'IDENTITA'
+//             della serie - foto, nome, anno - e le altre due portano solo numeri.
+//
+//          3. **NIENTE A CAPO NELLE ETICHETTE** (`white-space:nowrap`). Dalla v6.209 le etichette
+//             sono per esteso, e un a capo dentro "CHANGE RETRO" spezzerebbe la riga lasciando il
+//             numero appeso. E' anche cio' che rende definitivo il `<br>` tolto dalla v6.209: qui
+//             non si spezza per scelta **e** non si spezza per caso.
+//
+//          \uD83D\uDD34 L'INDICE DI `aSinistra` E' PASSATO DA 3 A 2, e va segnalato: togliendo ANNO la
+//          colonna SPECIALI scala di un posto. La v6.209 aveva scritto esattamente questo
+//          avvertimento - *"e' scritto a mano ed e' l'unico punto di questa tabella che non si
+//          ricava dagli array"* - e una release dopo e' servito.
+//          \uD83D\uDCCC Sbagliarlo non avrebbe dato **nessun errore**: avrebbe allineato a sinistra una
+//          colonna di numeri e lasciato centrata quella di testo, e la tabella avrebbe continuato a
+//          sembrare giusta. E' la stessa famiglia dei difetti muti di questa notte, ed e' il motivo
+//          per cui quell'avvertimento era stato scritto invece che pensato.
+//
+//          \u26A0\uFE0F `min-width:0` sull'etichetta: senza, una riga `nowrap` puo' allargare la cella
+//          oltre la colonna invece di lasciar decidere alla tabella. Non da' errore: si vede solo
+//          che una colonna si mangia le altre.
+// ------------------------------------------------------------
+// v6.209 - \uD83C\uDD95 SU TELEFONO LE QUATTRO COLONNE DEGLI "SPECIALI" DIVENTANO UNA (Franco).
+//          Il riepilogo serie passa da SEI colonne a QUATTRO. Solo app.js, solo il ramo telefono.
+//
+//          Variazioni ufficiali, non ufficiali, change di figurina e change di retro portavano un
+//          numero ciascuna. Ora stanno in una cella sola, su quattro righe etichettate:
+//              VAR UFF: n      OFFICIAL VAR: n
+//              VAR NON UFF: m  UNOFFICIAL VAR: m
+//              CHANGE FIG: x   STICKER CHANGES: x
+//              CHANGE RETRO: y BACK CHANGES: y
+//
+//          \uD83D\uDCCC E' LA TERZA VOLTA CHE QUESTA TABELLA FA LA STESSA MOSSA, ed e' la piu' ampia: la
+//          v6.179 aveva fuso DA e A dentro il conteggio delle figurine, la v6.180 le due variazioni
+//          in VAR. Il guadagno e' sempre lo stesso, e a questo punto e' una regola:
+//          **su telefono due colonne strette che portano un numero ciascuna occupano piu' larghezza
+//          delle due righe che le sostituiscono.** Ogni colonna paga l'intestazione, i due margini e
+//          il bordo; una riga in piu' dentro una cella paga solo la propria altezza - e l'altezza,
+//          in verticale, non e' una risorsa scarsa.
+//
+//          \u2705 LE QUATTRO RIGHE NASCONO DA `_rigaVar`, la funzione della v6.180, non da uno stampo
+//          nuovo. Cosi' arriva gratis la regola che tiene corta la cella: **la riga con zero non si
+//          scrive**. Una serie che ha solo change di retro mostra UNA riga, non quattro di cui tre a
+//          zero - ed e' la stessa idea del vuoto-vale-zero della v6.166 e della parete di NO.
+//
+//          \u26A0\uFE0F Via il `<br>` dentro "NON UFF" che la v6.182 aveva messo. Serviva a spezzare
+//          un'etichetta dentro una colonna larga tre caratteri; qui la colonna e' una sola e larga, e
+//          un a-capo forzato dove il testo ci sta comodo spezza senza motivo. \uD83D\uDCCC La *ragione* della
+//          v6.182 invece resta e non si tocca: il numero centrato verticalmente rispetto alle righe
+//          dell'etichetta, perche' appoggiato in alto sembrerebbe riferito alla prima parola soltanto.
+//          `align-items:center` regge qualunque numero di righe, comprese quelle che l'a-capo
+//          automatico produrra' su uno schermo molto stretto.
+//
+//          \u26A0\uFE0F `aSinistra` non cambia: la colonna da allineare a sinistra e' ancora la quarta
+//          (indice 3), perche' SPECIALI prende il posto che era di VAR. Se un domani si toccasse
+//          l'ordine delle colonne, quell'indice va guardato - e' scritto a mano ed e' l'unico punto
+//          di questa tabella che non si ricava dagli array.
+//
+//          \u26A0\uFE0F "SPECIALS" e' una scelta mia: Franco ha dato le quattro etichette inglesi ma non
+//          il nome della colonna. Da confermare.
+// ------------------------------------------------------------
+// v6.208 - IL RIEPILOGO SERIE SU TELEFONO: "N. FIG", celle piu' strette, griglia visibile (Franco).
+//          Solo app.js. \u26A0\uFE0F Su desktop non cambia niente.
+//
+//          1. **"N.<br>FIG"** al posto di "N.<br>figurine". \u26A0\uFE0F Va contro la v6.182, che aveva
+//             portato queste intestazioni al minuscolo perche' *"a parita' di larghezza il minuscolo
+//             si legge prima: le maiuscole hanno tutte lo stesso ingombro verticale e tolgono alla
+//             parola il profilo da cui la si riconosce senza compitarla"*. Quell'argomento vale per
+//             le parole INTERE, e infatti `Change figurine` resta com'e'. Non vale per una SIGLA:
+//             `FIG` non e' una parola da riconoscere a colpo d'occhio, e' un'abbreviazione, e le
+//             maiuscole la fanno leggere come tale invece che come una parola troncata. E la mette
+//             in riga con `VAR`, maiuscola dalla v6.180.
+//             \uD83D\uDCCC L'inglese NON diventa FIG: li' significherebbe "figura". Resta `stickers`.
+//
+//          2. **Meno spazio fra le colonne**: da 0,7rem a 0,3rem per lato. In una tabella a sei
+//             colonne quel margine si paga **dieci volte** - due lati per cinque confini - ed e'
+//             larghezza sottratta ai numeri, che sono l'unica cosa che si e' venuti a leggere.
+//
+//          3. **La griglia si vede.** `.data-table td` porta solo un `border-bottom` a opacita'
+//             **0.04**: praticamente invisibile. Bastava su una tabella larga con poche colonne. Con
+//             sei colonne strette, e con celle che dentro hanno DUE righe (la VAR della v6.180 e il
+//             conteggio col suo `(1/160)` sotto, v6.179), senza griglia non si capisce piu' quale
+//             numero appartenga a quale colonna.
+//             \uD83D\uDCCC I bordi qui non sono decorazione: sono cio' che tiene insieme la lettura quando
+//             le celle diventano piccole. E le due cose sono figlie della stessa causa - le v6.179 e
+//             v6.180 hanno compresso due coppie di colonne in due colonne a due righe, guadagnando
+//             larghezza e togliendo alla tabella l'allineamento che la rendeva leggibile senza righe.
+//
+//          \u26A0\uFE0F Le INTESTAZIONI prendono lo stesso trattamento delle celle: se no la griglia
+//          comincerebbe dalla seconda riga e la prima sembrerebbe staccata dalla tabella.
+// ------------------------------------------------------------
+// v6.207 - NELLA TABELLA SERIE DELLA CONSOLE, LA COLONNA NOME MOSTRA IL NOME CORTO (Franco).
+//          L'intestazione resta "Nome" - richiesta esplicita. Solo app.js.
+//
+//          \uD83D\uDCCC PASSA DA `_nomeSerieCard(s, true)`, la stessa funzione delle card, e non da un
+//          `if` scritto qui. E' il terzo punto che chiede il nome corto (card su telefono, elenco a
+//          due colonne della v6.206, e ora questa tabella): tre `if` copiati sarebbero tre posti
+//          dove il giorno che la regola cambia se ne aggiorna uno e mezzo. La v6.080 lo aveva gia'
+//          scritto sopra quella funzione - *"cinque copie di questo `if` sarebbero cinque occasioni
+//          di dimenticarne una"*.
+//          \uD83D\uDCCC E cosi' il ripiego arriva gratis: una serie SENZA nome corto continua a mostrare
+//          quello lungo, invece di una cella vuota. Scrivendo `s.nomeCorto` a mano ci si sarebbe
+//          dovuti ricordare del caso - e le serie senza nome corto esistono (erano tre, misurate
+//          dopo la v6.188).
+//
+//          \uD83D\uDCCC IL NOME LUNGO NON SI PERDE: va nel `title` della cella, cioe' compare passandoci
+//          sopra. Una tabella che accorcia un dato senza lasciare da nessuna parte il modo di
+//          leggerlo per intero costringe ad aprire la scheda per una cosa che si voleva solo
+//          guardare.
+//          \u26A0\uFE0F E l'occasione ha chiuso una cosa che era li' da prima: quella cella scriveva
+//          `${s.name}` **senza `esc()`**, in una tabella dove tutte le altre lo usano. Un nome di
+//          serie con dentro `<` o `&` sarebbe finito nell'HTML cosi' com'era. Non e' mai successo
+//          perche' nessuno chiama una serie "A & B", ma era una porta aperta in una pagina admin.
+// ------------------------------------------------------------
+// v6.206 - \uD83C\uDD95 L'ELENCO DELLE SERIE DENTRO IL BOX VA SU DUE COLONNE, COL NOME CORTO (Franco).
+//          Solo app.js.
+//
+//          \uD83D\uDCCC LE DUE COSE SONO UNA MODIFICA SOLA, non due, e il conto lo dice. Con il nome
+//          LUNGO una riga misura ~240px (foto 22px + "I Mitici Sgorbions - Stamps" a 0,78rem +
+//          conteggio); due colonne ne vogliono ~490, e la card ne ha ~320 - un terzo della griglia
+//          del catalogo meno il padding. Sarebbero finite a puntini quasi tutte le serie, e una
+//          colonna di nomi troncati e' peggio di una lista lunga. Col nome CORTO la riga sta in
+//          ~120px e due colonne entrano comode.
+//          \uD83D\uDCCC E il nome corto non e' stato inventato per questo: esiste dalla v6.080 e serviva
+//          alle card su TELEFONO, dove il nome per esteso veniva troncato. Due colonne su desktop
+//          creano la stessa identica stretta, quindi si riusa la stessa soluzione invece di
+//          scriverne un'altra.
+//
+//          \uD83D\uDCCC LA DECISIONE SU QUANTE COLONNE LA PRENDE LO SPAZIO, non noi:
+//          `repeat(auto-fill, minmax(130px, 1fr))`. Dove ci stanno due colonne ne fa due, dove non
+//          ci stanno ne fa una - compreso il telefono, dove la card e' larga ~110px. Nessun "se
+//          desktop" scritto a mano: sarebbe un numero da indovinare e da rincorrere ad ogni
+//          cambio di larghezza. La richiesta era "solo sul desktop", e cosi' e' vera per
+//          costruzione invece che per una condizione da mantenere.
+//
+//          \u26A0\uFE0F `_nomeSerieCard` PRENDE UN PARAMETRO, non nasce una gemella. Il commento della
+//          v6.080 su quella funzione dice: *"cinque copie di questo `if` sarebbero cinque occasioni
+//          di dimenticarne una"* - e due funzioni gemelle sono la stessa cosa. `sempreCorto` non
+//          significa "preferisci il corto": significa *"qui lo spazio e' quello del telefono anche
+//          se siamo su un desktop"*. La condizione vera resta una - lo spazio - e chi chiama la
+//          conosce meglio della funzione.
+//
+//          \u26A0\uFE0F Via `width:100%` dalla riga: dentro una griglia la larghezza la da' la colonna, e
+//          un 100% cablato la scavalcherebbe. Aggiunto `min-width:0`, senza il quale il testo lungo
+//          allargherebbe la colonna invece di andare a puntini - il difetto piu' comune delle
+//          griglie CSS, e non da' errore: si vede solo che le colonne si sbilanciano.
+//
+//          \u26A0\uFE0F DUE SERIE NON CI GUADAGNANO NIENTE, ed e' noto: `Serie 1` e `Kakkones` hanno il
+//          nome corto IDENTICO al lungo. Erano gia' emerse misurando i nomi corti dopo la v6.188 -
+//          obbligatorio non vuol dire corto. Se in due colonne danno fastidio, si accorciano dalla
+//          scheda della serie: e' un dato, non codice.
+// ------------------------------------------------------------
 // v6.205 - \uD83D\uDD04 LE SERIE NELLA SCHEDA FUNZIONI TORNANO NELL'ORDINE DELL'INVENTARIO (Franco), e
 //          questo RIBALTA la v6.136. Solo app.js.
 //
@@ -15626,7 +15891,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.205';
+const JS_VERSION = 'v6.213';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -18776,7 +19041,16 @@ function _conteggiSerie(items) {
     variazioni:     items.filter(f => fig(f) && f.isVariation).length,
     nonUfficiali:   items.filter(f => fig(f) && f.isUnofficialVariation).length,
     changeFigurine: items.filter(f => fig(f) && f.isChange).length,
-    changeRetro:    items.filter(f => sez(f) === 'retros' && f.isChange).length
+    changeRetro:    items.filter(f => sez(f) === 'retros' && f.isChange).length,
+    // v6.211 (Franco) - i RETRO della serie. \u26A0\uFE0F Sono i retro BASE, cioe' `_eBase`: senza change
+    // ne' errori di stampa. Contarli TUTTI avrebbe fatto un numero che contiene dentro di se' i
+    // CHANGE RETRO gia' mostrati nella colonna accanto - due numeri di cui uno comprende l'altro,
+    // sulla stessa riga, e nessuno dei due sbagliato: e' il modo piu' rapido di far dubitare di
+    // entrambi. E' lo stesso criterio con cui `base` esclude variazioni e change fra le figurine.
+    // \uD83D\uDCCC Non serviva ne' un campo sulla serie ne' una procedura di ricalcolo: qui i numeri si
+    // calcolano dagli oggetti a ogni disegno, e da questa riga arrivano da soli in tutti i punti che
+    // leggono `_conteggiSerie` - il riepilogo utenti, la tabella admin e la scheda della serie.
+    retro:          items.filter(f => sez(f) === 'retros' && _eBase(f)).length
   };
 }
 
@@ -20360,8 +20634,38 @@ function apriInfoTutteLeSerie() {
     // "Change figurine", "Change retro". A parita' di larghezza il minuscolo si legge prima: le
     // maiuscole hanno tutte lo stesso ingombro verticale e tolgono alla parola il profilo da cui la
     // si riconosce senza compitarla. Le spezzature restano dov'erano.
-    ? (it ? ['', 'ANNO', 'N.<br>figurine', 'VAR', 'Change<br>figurine', 'Change<br>retro']
-          : ['', 'YEAR', 'N.<br>stickers', 'VAR', 'Sticker<br>Change', 'Back<br>Change'])
+    // v6.208 (Franco) - "N. FIG", con FIG a capo. \u26A0\uFE0F Va contro la v6.182, che su telefono
+    // aveva portato queste intestazioni al minuscolo perche' *"a parita' di larghezza il minuscolo
+    // si legge prima"*. Vale ancora per le parole INTERE - `Change figurine` resta com'e' - ma non
+    // per una sigla: `FIG` non e' una parola da riconoscere a colpo d'occhio, e' un'abbreviazione,
+    // e le maiuscole la fanno leggere come tale invece che come un troncamento. E' anche cio' che
+    // la mette in riga con `VAR`, che era gia' maiuscola dalla v6.180.
+    // \uD83D\uDCCC L'inglese NON diventa FIG: li' vuol dire "figura", non "figurina". Resta `stickers`.
+    // \uD83C\uDD95 v6.209 (Franco) - QUATTRO COLONNE DIVENTANO UNA, chiamata SPECIALI. Le due variazioni
+    // e i due change portavano un numero ciascuno; ora stanno in una cella sola su quattro righe
+    // etichettate. Il riepilogo passa da SEI colonne a QUATTRO.
+    // \uD83D\uDCCC E' la terza volta che questa tabella fa la stessa mossa, ed e' la piu' ampia: la v6.179
+    // aveva fuso DA e A dentro il conteggio, la v6.180 le due variazioni in VAR. Ogni volta il
+    // guadagno e' lo stesso e vale la pena scriverlo come regola: **su telefono due colonne strette
+    // che portano un numero ciascuna occupano piu' larghezza delle due righe che le sostituiscono**,
+    // perche' ogni colonna paga l'intestazione, i due margini e il bordo, mentre una riga in piu'
+    // dentro una cella paga solo la sua altezza - e l'altezza, in verticale, non e' scarsa.
+    // \u26A0\uFE0F L'inglese SPECIALS e' una scelta mia: Franco ha dato le quattro etichette inglesi ma
+    // non il nome della colonna. Da confermare.
+    // v6.210 (Franco) - VIA LA COLONNA ANNO: l'anno scende sotto la foto, accanto al nome, e senza
+    // etichetta - quattro cifre fra il 1985 e il 2010 si riconoscono da sole, e "ANNO: 1991" spende
+    // una parola per dire una cosa che il numero dice da se'.
+    // \uD83D\uDCCC Terza colonna che sparisce cosi': il NOME era gia' finito sotto la foto con la v6.177,
+    // per la stessa ragione. La prima cella non e' piu' "la miniatura": e' l'identita' della serie -
+    // foto, nome, anno - e le altre tre colonne portano solo numeri.
+    // v6.211 (Franco) - la colonna RETRO anche su telefono, fra il conteggio delle figurine e
+    // SPECIALI. \u26A0\uFE0F E' una COLONNA e non una riga dentro SPECIALI: la regola della v6.209 dice
+    // che due colonne strette costano piu' delle due righe che le sostituiscono, ma vale per numeri
+    // che si LEGGONO INSIEME - le variazioni fra loro, i change fra loro. Il conto dei retro invece
+    // sta accanto a quello delle figurine: sono le due quantita' che descrivono la serie, e si
+    // guardano affiancate. Metterlo dentro SPECIALI l'avrebbe sepolto fra i contrassegni.
+    ? (it ? ['', 'N.<br>FIG', 'RETRO', 'SPECIALI']
+          : ['', 'N.<br>stickers', 'BACKS', 'SPECIALS'])
     // v6.177 (Franco) - via il prefisso "N." / "NUMERO": la colonna dice gia' di essere un conteggio
     // perche' sotto ci sono dei numeri, e cinque prefissi uguali allungano le intestazioni senza
     // aggiungere niente. Stessa idea del "SI" tolto nella v6.166 e del `#` tolto nella v6.115.
@@ -20377,8 +20681,10 @@ function apriInfoTutteLeSerie() {
     // 📌 Le abbreviazioni "PRIMA FIG." / "ULTIMA FIG." spariscono: su due righe c'e' posto per la
     // parola intera, e un'abbreviazione senza il vincolo che la giustificava e' solo una parola
     // tagliata (e' la stessa correzione della v6.175, applicata a due colonne rimaste indietro).
-    : (it ? ['', 'NOME', 'ANNO', 'FIGURINE', 'PRIMA<br>FIGURINA', 'ULTIMA<br>FIGURINA', 'VARIAZIONI<br>UFFICIALI', 'VARIAZIONI NON<br>UFFICIALI', 'CHANGE<br>DI FIGURINA', 'CHANGE<br>DI RETRO']
-          : ['', 'NAME', 'YEAR', 'STICKERS', 'FIRST<br>STICKER', 'LAST<br>STICKER', 'OFFICIAL<br>VARIATIONS', 'UNOFFICIAL<br>VARIATIONS', 'STICKER<br>CHANGE', 'BACK<br>CHANGE']);
+    // v6.211 - la colonna RETRO anche su desktop: e' un dato della serie, e mostrarlo su telefono
+    // e non sullo schermo largo sarebbe l'unico caso in cui il telefono dice di piu'.
+    : (it ? ['', 'NOME', 'ANNO', 'FIGURINE', 'PRIMA<br>FIGURINA', 'ULTIMA<br>FIGURINA', 'VARIAZIONI<br>UFFICIALI', 'VARIAZIONI NON<br>UFFICIALI', 'CHANGE<br>DI FIGURINA', 'RETRO', 'CHANGE<br>DI RETRO']
+          : ['', 'NAME', 'YEAR', 'STICKERS', 'FIRST<br>STICKER', 'LAST<br>STICKER', 'OFFICIAL<br>VARIATIONS', 'UNOFFICIAL<br>VARIATIONS', 'STICKER<br>CHANGE', 'BACKS', 'BACK<br>CHANGE']);
 
   // Tutto centrato tranne una colonna per variante, e per lo stesso motivo: quando una cella
   // contiene TESTO di lunghezza diversa riga per riga, centrarla toglie il bordo da cui l'occhio
@@ -20390,7 +20696,23 @@ function apriInfoTutteLeSerie() {
   // ⚠️ Gli indici sono DUE perche' le due varianti hanno colonne diverse: sul mobile il nome non ha
   // una colonna sua (sta sotto la foto) e VAR e' la quarta. Un indice solo avrebbe allineato la
   // colonna sbagliata su una delle due.
-  const aSinistra = i => mobile ? i === 3 : i === 1;
+  // \uD83D\uDD34 v6.210 - L'INDICE DI TELEFONO PASSA DA 3 A 2, perche' togliendo ANNO la colonna
+  // SPECIALI scala di un posto. La v6.209 aveva scritto proprio questo avvertimento - *"e' scritto
+  // a mano ed e' l'unico punto di questa tabella che non si ricava dagli array"* - e una release
+  // dopo e' servito. \uD83D\uDCCC Sbagliarlo non da' nessun errore: allinea a sinistra una colonna di
+  // numeri e lascia centrata quella di testo, e la tabella continua a sembrare giusta.
+  // \uD83D\uDD34 v6.211 - L'INDICE NON SI SCRIVE PIU' A MANO, SI RICAVA. Era un numero letterale, ed e'
+  // scalato DUE volte in due release: 3 -> 2 quando la v6.210 ha tolto la colonna ANNO, e sarebbe
+  // scalato di nuovo adesso aggiungendo N. RETRO. La v6.209 l'aveva scritto come avvertimento e la
+  // v6.210 l'ha dovuto correggere: due volte e' abbastanza per smettere di ricordarselo.
+  // \uD83D\uDCCC Sbagliarlo non da' NESSUN errore - allinea a sinistra una colonna di numeri e lascia
+  // centrata quella di testo, e la tabella continua a sembrare giusta. E' la stessa forma dei
+  // difetti muti chiusi in questi due giorni, e la contromisura e' la stessa: si CALCOLA invece di
+  // ricordarselo, esattamente come l'arretrato delle cartelle e l'ordine delle dichiarazioni.
+  // La colonna da allineare a sinistra e' quella che contiene TESTO: su telefono SPECIALI, su
+  // desktop il NOME. Si trovano per contenuto, non per posizione.
+  const _iSinistra = intestazioni.findIndex(h => mobile ? /SPECIAL/i.test(h) : /^(NOME|NAME)$/i.test(h));
+  const aSinistra = i => i === _iSinistra;
 
   const righe = series.map(s => {
     const c = _conteggiSerie(figs.filter(f => f.seriesId === s.id));
@@ -20404,8 +20726,11 @@ function apriInfoTutteLeSerie() {
     // ⚠️ Ed e' il nome CORTO, preso da `_nomeSerieCard` - la funzione che esiste dalla v6.080
     // apposta e che sceglie da se' fra corto e lungo secondo lo schermo. Riscrivere qui quel `if`
     // avrebbe fatto la sesta copia di una regola che quel commento dice di tenere in un posto solo.
+    // v6.210 - e sotto il nome l'ANNO, in grigio e piu' piccolo: e' un dato secondario, e messo
+    // con lo stesso peso del nome se lo contenderebbe.
     const primaCella = mobile
       ? miniatura + `<div style="font-size:0.75rem;line-height:1.2;margin-top:0.25rem;">${_nomeSerieCard(s)}</div>`
+                  + (s.year ? `<div style="font-size:0.7rem;line-height:1.1;color:var(--muted);">${s.year}</div>` : '')
       : miniatura;
     // Lo zero resta vuoto, come nella tabella admin (v6.166): una parete di zeri nasconde i numeri
     // veri esattamente come la parete di NO nascondeva i SI. Nome e anno no: quelli ci sono sempre.
@@ -20427,19 +20752,67 @@ function apriInfoTutteLeSerie() {
     // sembrare il 12 riferito alla sola parola "UFF" — cioe' all'etichetta sbagliata, che qui e'
     // pure il suo contrario. `align-items:center` lo tiene in mezzo a qualunque numero di righe,
     // quindi vale anche se un domani un'etichetta ne prendesse tre.
+    // v6.210 (Franco) - IL NUMERO SEMPRE A DESTRA e l'etichetta SENZA a capo.
+    // \uD83D\uDCCC `space-between` invece che il solo `gap`: cosi' i numeri delle quattro righe si
+    // incolonnano sul bordo destro della cella. Con il `gap` ogni numero partiva dove finiva la sua
+    // etichetta, e siccome le etichette sono lunghe diverse i quattro numeri stavano su quattro
+    // ascisse diverse - cioe' proprio i valori che si e' venuti a confrontare.
+    // \uD83D\uDCCC `white-space:nowrap` sull'etichetta: dalla v6.209 le etichette sono per esteso, e un
+    // a capo dentro "CHANGE RETRO" spezzerebbe la riga in due lasciando il numero appeso. E' anche
+    // cio' che rende inutile il `<br>` scritto a mano che la v6.209 aveva tolto: qui non si spezza
+    // per scelta e non si spezza per caso.
+    // \u26A0\uFE0F `min-width:0` sull'etichetta: senza, una riga `nowrap` puo' allargare la cella oltre
+    // la colonna invece di lasciar decidere alla tabella - il difetto piu' comune del flex, e non
+    // da' errore: si vede solo che una colonna si mangia le altre.
     const _rigaVar = (etichetta, n) => n
-      ? `<div style="display:flex;align-items:center;gap:0.3rem;font-size:0.75rem;line-height:1.15;margin:0.1rem 0;">`
-        + `<span style="color:var(--muted);">${etichetta}:</span><span>${n}</span></div>`
+      ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;font-size:0.75rem;line-height:1.15;margin:0.1rem 0;">`
+        // v6.213 (Franco) - via `nowrap`: le etichette tornano su due righe. Resta `min-width:0`,
+        // che serve a permettere all'etichetta di STRINGERSI invece di allargare la cella.
+        + `<span style="color:var(--muted);min-width:0;">${etichetta}:</span>`
+        + `<span style="font-variant-numeric:tabular-nums;">${n}</span></div>`
       : '';
-    const _var = _rigaVar(it ? 'UFF' : 'OFF', c.variazioni)
-               + _rigaVar(it ? 'NON<br>UFF' : 'UNOFF', c.nonUfficiali);
+    // v6.209 (Franco) - le QUATTRO righe della colonna SPECIALI, con le etichette che ha scritto
+    // lui. Nascono da `_rigaVar`, la stessa della v6.180: la regola "riga con zero non si scrive"
+    // arriva gratis, ed e' quella che tiene la cella corta - una serie con solo change di retro
+    // mostra UNA riga, non quattro di cui tre a zero.
+    // \u26A0\uFE0F Via il `<br>` dentro "NON UFF" che la v6.182 aveva messo: serviva a spezzare
+    // un'etichetta in una colonna larga tre caratteri. Qui la colonna e' una sola e larga, e un a
+    // capo forzato dentro una riga che ci sta comoda spezzerebbe dove non serve. La ragione della
+    // v6.182 - il numero centrato verticalmente su piu' righe - resta valida e non si tocca:
+    // `align-items:center` regge qualunque numero di righe, comprese quelle che l'a-capo automatico
+    // dovesse produrre su uno schermo stretto.
+    // v6.213 (Franco) - le etichette tornano su DUE RIGHE, e l'a capo e' SCRITTO, non lasciato
+    // all'automatico. E' la regola della v6.178: *"l'a-capo automatico spezza dove capita a seconda
+    // della larghezza della colonna"* - la stessa etichetta si romperebbe in un punto su un telefono
+    // e in un altro su quello accanto. Scritto, si spezza sempre allo stesso posto.
+    // \uD83D\uDCCC E il punto scelto non e' a meta' parola: la prima riga dice la FAMIGLIA (VAR, CHANGE),
+    // la seconda QUALE (UFF, NON UFF, FIG, RETRO). Cosi' le cinque righe si leggono in colonna -
+    // VAR/VAR/CHANGE/RETRO/CHANGE - e la seconda parola distingue dentro la famiglia.
+    // \u26A0\uFE0F "NON UFF" resta INTERO sulla seconda riga: spezzarlo in "VAR NON" + "UFF" farebbe
+    // leggere "UFF" - cioe' il suo contrario - come l'etichetta del numero. E' il rischio che la
+    // v6.182 aveva gia' visto e risolto centrando il numero; qui si evita a monte.
+    const _speciali = _rigaVar(it ? 'VAR<br>UFF'      : 'OFFICIAL<br>VAR',    c.variazioni)
+                    + _rigaVar(it ? 'VAR<br>NON UFF'  : 'UNOFFICIAL<br>VAR',  c.nonUfficiali)
+                    + _rigaVar(it ? 'CHANGE<br>FIG'   : 'STICKER<br>CHANGES', c.changeFigurine)
+                    + _rigaVar(it ? 'CHANGE<br>RETRO' : 'BACK<br>CHANGES',    c.changeRetro);
     const celle = mobile
-      ? [primaCella, s.year ?? '', (c.base || '') + _intervallo,
-         _var, c.changeFigurine || '', c.changeRetro || '']
+      ? [primaCella, (c.base || '') + _intervallo, c.retro || '', _speciali]
+      // v6.211 - `c.retro` sta PRIMA di `c.changeRetro` (Franco): i due numeri dei retro si leggono
+      // affiancati, come le due colonne dei change lo erano gia'.
       : [primaCella, s.name || '', s.year ?? '', c.base || '', s.firstNumber ?? '', s.lastNumber ?? '',
-         c.variazioni || '', c.nonUfficiali || '', c.changeFigurine || '', c.changeRetro || ''];
+         c.variazioni || '', c.nonUfficiali || '', c.changeFigurine || '', c.retro || '', c.changeRetro || ''];
     return '<tr>' + celle.map((v, i) =>
-      `<td style="padding:0.4rem 0.7rem;font-size:0.85rem;text-align:${aSinistra(i) ? 'left' : 'center'};">${v}</td>`
+      // v6.208 (Franco) - su TELEFONO: celle piu' strette e griglia visibile.
+      // \uD83D\uDCCC Lo spazio orizzontale scende da 0,7rem a 0,3rem per lato. In una tabella a sei
+      // colonne quel margine si paga **dieci volte** (due lati per cinque confini), ed e'
+      // larghezza sottratta ai numeri, che sono l'unica cosa che si e' venuti a leggere.
+      // \uD83D\uDCCC E i bordi: `.data-table td` ha solo un `border-bottom` a opacita' 0.04, cioe'
+      // quasi invisibile. Bastava su una tabella larga con poche colonne; con sei colonne strette
+      // e celle che dentro hanno due righe (VAR, e il conteggio col suo (1/160) sotto) senza una
+      // griglia non si capisce piu' quale numero appartiene a quale colonna. Il bordo pieno non
+      // e' decorazione: e' cio' che tiene insieme la lettura quando le celle diventano piccole.
+      // \u26A0\uFE0F Su DESKTOP non cambia niente: li' lo spazio non manca e la riga sottile basta.
+      `<td style="padding:${mobile ? '0.3rem 0.3rem' : '0.4rem 0.7rem'};font-size:0.85rem;${mobile ? 'border:1px solid rgba(255,255,255,0.16);' : ''}text-align:${aSinistra(i) ? 'left' : 'center'};">${v}</td>`
     ).join('') + '</tr>';
   }).join('');
 
@@ -20462,7 +20835,9 @@ function apriInfoTutteLeSerie() {
     // Si mette `none` per TUTTE e due le varianti, non solo per il telefono: le due liste portano
     // gia' le maiuscole dove le vogliamo, quindi da qui in avanti **cio' che e' scritto e' cio' che
     // si legge**, senza una trasformazione invisibile in mezzo.
-    intestazioni.map((h, i) => `<th style="line-height:1.2;vertical-align:bottom;white-space:normal;text-transform:none;text-align:${aSinistra(i) ? 'left' : 'center'};">${h}</th>`).join('')
+    // v6.208 - le intestazioni prendono lo stesso trattamento delle celle, se no la griglia
+    // comincerebbe dalla seconda riga e la prima sembrerebbe staccata dalla tabella.
+    intestazioni.map((h, i) => `<th style="line-height:1.2;vertical-align:bottom;white-space:normal;text-transform:none;${mobile ? 'padding:0.3rem 0.3rem;border:1px solid rgba(255,255,255,0.16);' : ''}text-align:${aSinistra(i) ? 'left' : 'center'};">${h}</th>`).join('')
   }</tr></thead><tbody>${righe}</tbody></table>`;
   // 🔴 v6.179 - QUI SOTTO C'ERA UNA NOTA CHE NON MI ERA STATA CHIESTA, e l'ho tolta.
   // Diceva "Le celle vuote valgono zero. «FIGURINE» conta le figurine del set base, senza
@@ -20652,12 +21027,16 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
   const righe = serieOrdinate.map(s => {
     const n = basi.filter(f => f.seriesId === s.id).length;
     if (!n) return '';
-    return '<span style="display:flex;align-items:center;gap:0.5rem;width:100%;padding:4px 10px 4px 4px;border-radius:20px;font-size:0.78rem;font-family:var(--font-ui);' +
+    // v6.206 - via `width:100%`: dentro una griglia la larghezza la da' la colonna, e un 100%
+    // cablato la scavalcherebbe.
+    return '<span style="display:flex;align-items:center;gap:0.5rem;min-width:0;padding:4px 10px 4px 4px;border-radius:20px;font-size:0.78rem;font-family:var(--font-ui);' +
       'background:rgba(181,255,46,0.08);border:1px solid rgba(181,255,46,0.18);color:var(--text);">' +
       (s.img
         ? '<img src="' + cloudinaryUrl(s.img, 'w_80,h_80,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:22px;height:22px;object-fit:contain;border-radius:50%;background:var(--bg3);flex:0 0 auto;">'
         : '<span style="width:22px;height:22px;flex:0 0 auto;"></span>') +
-      '<span style="flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(_nomeSerieCard(s)) + '</span>' +
+      // v6.206 - NOME CORTO anche su desktop: in due colonne lo spazio e' quello del telefono,
+      // ed e' esattamente il problema per cui il nome corto e' stato creato (v6.080).
+      '<span style="flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(_nomeSerieCard(s, true)) + '</span>' +
       '<span style="font-weight:800;font-variant-numeric:tabular-nums;flex:0 0 auto;">' + n + '</span>' +
     '</span>';
   }).join('');
@@ -20671,7 +21050,16 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
       // dal conto delle serie e lasciato dov'era: avevo letto "mettila sola" dove c'era scritto
       // "mettila sotto".
       '<div class="card-title" style="margin-bottom:0.5rem;">' + esc(getSectionLabel(sec)) + '</div>' +
-      '<div style="display:flex;flex-direction:column;gap:0.35rem;padding-top:0.2rem;">' + righe + '</div>' +
+      // \uD83C\uDD95 v6.206 (Franco) - L'ELENCO SU DUE COLONNE, e la decisione la prende lo SPAZIO.
+      // `auto-fill` con un minimo di 130px: dove ci stanno due colonne ne fa due, dove non ci
+      // stanno ne fa una. Non c'e' nessun "se desktop" scritto da noi - che sarebbe un numero da
+      // indovinare e da rincorrere ad ogni cambio di larghezza della card.
+      // \uD83D\uDCCC Il conto che ha deciso il 130: con il nome CORTO una riga e' foto 22px + nome
+      // (~8 caratteri a 0,78rem) + conteggio, cioe' ~120px. Col nome LUNGO servivano ~240px, e in
+      // una card larga ~320px due colonne non ci stavano: quasi tutte le serie sarebbero finite a
+      // puntini. E' per questo che le due cose - due colonne e nome corto - sono una sola
+      // modifica e non due.
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.35rem;padding-top:0.2rem;">' + righe + '</div>' +
       '<div class="card-desc" style="margin-top:0.45rem;padding-top:0.45rem;border-top:1px solid rgba(255,255,255,0.06);">' + esc(desc) + '</div>' +
     '</div>' +
   '</div>';
@@ -21709,10 +22097,18 @@ function openFigFromSearch(figId, seriesId, section) {
 // nome vero - li' lo spazio c'e', ed e' il posto dove il nome si legge per intero.
 // Una funzione sola: i punti che elencano serie sono cinque, e cinque copie di questo `if`
 // sarebbero cinque occasioni di dimenticarne una.
-function _nomeSerieCard(s) {
+// v6.206 - il secondo parametro. La regola NON si duplica: chi ha bisogno del nome corto anche
+// su desktop lo CHIEDE a questa funzione, che resta l'unico posto dove sta scritto cos'e' il nome
+// da mettere su una card. Il commento della v6.080 qui sopra dice il motivo: *"cinque copie di
+// questo `if` sarebbero cinque occasioni di dimenticarne una"* - e cinque copie sono la stessa cosa
+// di due funzioni gemelle.
+// \uD83D\uDCCC `sempreCorto` non e' "preferisci il corto": e' "qui lo spazio e' quello del telefono anche
+// se siamo su un desktop". La condizione vera resta una sola - lo spazio - e chi chiama la conosce
+// meglio di questa funzione.
+function _nomeSerieCard(s, sempreCorto) {
   if (!s) return '';
   const corto = (s.nomeCorto || '').trim();
-  return (_isMobileViewport() && corto) ? corto : (s.name || '');
+  return ((sempreCorto || _isMobileViewport()) && corto) ? corto : (s.name || '');
 }
 
 function seriesCardHTML(s) {
@@ -26306,7 +26702,7 @@ function renderAdminSeries() {
           <button class="tbl-btn tbl-btn-edit" onclick="moveSeriesUp(${idx})" ${idx===0?'disabled style="opacity:0.3;"':''}>▲</button>
           <button class="tbl-btn tbl-btn-edit" onclick="moveSeriesDown(${idx})" ${idx===series.length-1?'disabled style="opacity:0.3;"':''}>▼</button>
         </td>
-        <td style="text-align:left;">${s.name}</td><td>${s.year}</td><td>${c.base}</td>
+        <td style="text-align:left;" title="${esc(s.name)}">${esc(_nomeSerieCard(s, true))}</td><td>${s.year}</td><td>${c.base}</td>
         <td>${s.firstNumber ?? ''}</td>
         <td>${s.lastNumber ?? ''}</td>
         <!-- v6.166 - le due colonne erano NEGATIVE (noNumbers, noRetro) e ora sono positive: la
@@ -26316,7 +26712,20 @@ function renderAdminSeries() {
              NOTA: niente apici inversi in questo commento, sta DENTRO un template literal e li' un
              backtick lo chiude. Preso da node --check al primo giro. -->
         <td>${siNoCell(!s.noNumbers)}</td>
-        <td>${siNoCell(!s.noRetro)}</td><!-- v6.098 -->
+        <!-- v6.212 (Franco) - QUI C'ERA UN SI, ORA C'E' IL NUMERO DEI RETRO BASE. E non e' la
+             stessa cosa detta meglio: e' un'ALTRA COSA. Il SI veniva dal FLAG noRetro, cioe' da
+             una dichiarazione dell'admin, un'intenzione. Il numero viene dagli oggetti che ci
+             sono davvero.
+             ricognizione-flag-serie.js lo dice con parole sue: il flag e' un'INTENZIONE, gli
+             oggetti sono una CONSEGUENZA. Da qui in avanti questa colonna mostra la conseguenza,
+             e le due cose possono non combaciare - il che e' il pregio, non il difetto: una serie
+             che DICHIARA di avere retro e non ne ha ancora si vede (cella vuota invece di SI), e
+             una che li ha pur avendo noRetro acceso si vede pure. Prima quella contraddizione era
+             invisibile, ed e' la forma del guasto della v6.169.
+             Lo zero resta VUOTO come gli altri numeri: regola della v6.166.
+             NIENTE BACKTICK IN QUESTO COMMENTO: vive dentro un template literal e lo chiuderebbero
+             (preso da node --check mentre si scriveva questa release). -->
+        <td>${c.retro || ''}</td><!-- v6.098, v6.212 -->
         <td>${siNoCell(s.hasSubseries)}</td>
         <!-- v6.170 (Franco) - QUI STAVA IL FLAG, ORA C'E' IL CONTENUTO. Le tre colonne dicevano
              "SI" leggendo i flag della serie, cioe' cosa la serie DICHIARA; ora dicono quanti
