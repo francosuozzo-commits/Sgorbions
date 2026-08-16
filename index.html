@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.185"></script>
-<link rel="stylesheet" href="css/style.css?v=6.185">
+<script src="js/email.min.js?v=6.190"></script>
+<link rel="stylesheet" href="css/style.css?v=6.190">
 
 
 <style>
@@ -315,7 +315,7 @@ button.back-btn { color:#ffffff; }
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.185</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.190</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1687,7 +1687,7 @@ button.back-btn { color:#ffffff; }
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.185</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.190</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -1869,7 +1869,10 @@ button.back-btn { color:#ffffff; }
     <!-- v6.080 (Franco) — il NOME CORTO sta accanto al nome lungo, non in fondo alla form: sono
          due modi di chiamare la stessa cosa e si compilano guardandosi. Si usa SOLO su telefono e
          SOLO nelle card che elencano le serie, dove il nome per esteso viene troncato; nella scheda
-         della serie resta sempre il nome vero. Se è vuoto non cambia niente da nessuna parte. -->
+         della serie resta sempre il nome vero.
+         v6.188 — ed è OBBLIGATORIO: fino alla v6.187 il vuoto era ammesso, e questo commento lo
+         diceva. Il controllo sta in `saveSeries`, quindi vale anche in modifica: una serie nata
+         senza non si salva più finché non gliene si dà uno. -->
     <div class="form-group">
       <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
         <div style="flex:1 1 260px;">
@@ -1879,7 +1882,7 @@ button.back-btn { color:#ffffff; }
         <div style="flex:0 1 190px;">
           <label class="form-label">Nome corto</label>
           <input class="form-input" type="text" id="series-nome-corto-input" placeholder="es. S1">
-          <div class="form-hint">Solo per le card su telefono. Vuoto = nome per esteso.</div>
+          <div class="form-hint">Obbligatorio. Si usa sulle card su telefono, dove il nome per esteso non ci sta.</div>
         </div>
       </div>
     </div>
@@ -1894,7 +1897,7 @@ button.back-btn { color:#ffffff; }
     <div style="display:grid;grid-template-columns:0.7fr 1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.5rem;">
       <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.year">Year</label>
-        <input class="form-input" type="number" id="series-year-input" placeholder="1991" min="1985" max="2010">
+        <input class="form-input" type="number" id="series-year-input" min="1985" max="2010">
       </div>
       <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.count">N. di Figurine</label>
@@ -1902,11 +1905,11 @@ button.back-btn { color:#ffffff; }
       </div>
       <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.firstNumber" title="Lascia vuoto se non numerata">N. prima figurina</label>
-        <input class="form-input" type="number" id="series-first-number-input" placeholder="1" min="1">
+        <input class="form-input" type="number" id="series-first-number-input" min="1">
       </div>
       <div class="form-group" style="margin-bottom:0;">
         <label class="form-label" data-i18n="form.series.lastNumber" title="Lascia vuoto se non numerata">N. ultima figurina</label>
-        <input class="form-input" type="number" id="series-last-number-input" placeholder="256" min="1">
+        <input class="form-input" type="number" id="series-last-number-input" min="1">
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0.75rem;margin-bottom:0.5rem;">
@@ -2049,6 +2052,10 @@ button.back-btn { color:#ffffff; }
       </div>
       <input type="file" id="series-img-file" accept="image/*" style="display:none;" onchange="handleSeriesImg(event)">
       <img id="series-img-preview" class="file-preview">
+      <!-- v6.189 (Franco) — "Rimuovi sfondo" anche qui. La stringa di stile e' COPIATA da
+           `fig-edit-remove-bg-btn` nella scheda oggetto, non riscritta somigliante: due stringhe
+           uguali si confrontano a occhio, due simili no (lezione v6.164). -->
+      <button id="series-remove-bg-btn" type="button" onclick="removeBgFromSeries()" style="width:100%;margin-top:0.4rem;font-size:0.72rem;color:var(--accent2);border:1px solid var(--accent2);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">&#10024; Rimuovi sfondo</button>
     </div>
     <!-- v6.171 (Franco) - ELIMINA SERIE, arrivato qui dalla vista tabellare, dove occupava una
          colonna per un'operazione rarissima.
@@ -2458,7 +2465,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.185"></script>
+<script src="js/app.js?v=6.190"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2482,7 +2489,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.185'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.190'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
