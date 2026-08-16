@@ -1,6 +1,68 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.205 - \uD83D\uDD04 LE SERIE NELLA SCHEDA FUNZIONI TORNANO NELL'ORDINE DELL'INVENTARIO (Franco), e
+//          questo RIBALTA la v6.136. Solo app.js.
+//
+//          Sintomo: "Ricalcola i Nomi completi" proponeva le serie in ordine alfabetico, mentre le
+//          procedure di import le propongono nell'ordine in cui compaiono nell'Inventario.
+//
+//          \uD83D\uDCCC LA v6.136 NON ERA UNA SVISTA, e per questo la si ribalta invece di "correggerla".
+//          Aveva reso la tendina alfabetica con una ragione scritta: *"l'ordine con cui le serie
+//          compaiono nel sito ha senso in vetrina, non in una tendina da cui si cerca una serie per
+//          nome"*. E' un buon argomento. Ne vince un altro: **due pannelli admin che elencano le
+//          stesse serie in due ordini diversi non fanno sbagliare, fanno dubitare di tutti e due.**
+//          Chi ha in testa la posizione di una serie la ritrova dov'e' abituato, in tutte le schede.
+//
+//          \u26A0\uFE0F Vale per TUTTI E QUATTRO i selettori della scheda, perche' l'array e' uno solo.
+//          E' piu' di quanto chiesto - Franco parlava della sola funzione di ricalcolo - ma lasciare
+//          gli altri tre alfabetici avrebbe messo DENTRO la stessa scheda la discordanza che questa
+//          release toglie fra due schede.
+//
+//          \uD83D\uDCCC Il nome resta come secondo criterio a parita' di `order`, con la collazione
+//          numerica: senza, "Serie 10" verrebbe prima di "Serie 2".
+//
+//          \uD83D\uDCCC E vale la pena ricordare che quella tendina ha gia' avuto un guasto suo: fino alla
+//          v6.139 la riempivano in DUE (`renderAdminFunzioni` e un residuo in `renderAdminRisorse`),
+//          e si disordinava "a volte si a volte no" - una corsa fra la rete e la mano sul mouse.
+//          Oggi il riempitore e' uno, ed e' il motivo per cui questa release e' una riga.
+// ------------------------------------------------------------
+// v6.204 - \uD83D\uDD34 IL CLICK SUI CARTONCINI SI ERA ROTTO PERCHE' LA SERIE CONTENITORE SI CERCAVA PER
+//          NOME (Franco). app.js e index.html.
+//
+//          Sintomo: rinominando la serie che fa da contenitore agli articoli senza serie, il box
+//          dei Cartoncini smetteva di aprirsi - e il messaggio d'errore diceva *'Manca la serie
+//          "Extra serie"'*, cioe' mandava a cercare una serie che c'era, e si chiamava soltanto in
+//          un altro modo.
+//
+//          \uD83D\uDCCC LA CAUSA ERA UNA SCELTA DICHIARATA, e l'obiezione dentro era pure giusta. Il
+//          commento diceva: *"si cerca per NOME e non per id: l'id non e' scritto da nessuna parte e
+//          inchiodarlo qui vorrebbe dire avere una costante che nessuno puo' verificare leggendola"*.
+//          Vero sull'id. Ma la conclusione no: **il rimedio a un identificatore illeggibile non e' il
+//          nome**, perche' il nome e' precisamente la cosa che qualcuno puo' cambiare - e l'ha
+//          cambiata. Un identificatore non deve essere una cosa che si legge e si modifica.
+//          E' la stessa ragione per cui `tipoProdotto` e `forSale` restano come sono su Firestore
+//          mentre le etichette sopra cambiano: **il dato non si chiama come cio' che si legge.**
+//
+//          Ora la serie porta un flag, `serieContenitore`, ed e' la **decima** spunta della scheda
+//          serie. \u2705 Una riga in `_ripristinaFlagSerie` (v6.186) e vale per tutti e due i rami della
+//          form: prima della v6.186 sarebbero state due righe in due punti, e la seconda si sarebbe
+//          dimenticata - com'e' successo a `hasRetroChange` nella v6.170.
+//
+//          \u26A0\uFE0F IL NOME RESTA COME RIPIEGO, e non e' pigrizia: finche' nessuno ha spuntato il
+//          flag, il sito continua a funzionare come prima. Chi aggiorna non deve trovarsi i
+//          Cartoncini rotti in attesa di una spunta che non sa di dover mettere. Quando il flag c'e',
+//          comanda lui - e da quel momento la serie si puo' chiamare come si vuole.
+//          \uD83D\uDCCC Quindi la migrazione non e' un'operazione: e' un ordine di precedenza.
+//
+//          \u26A0\uFE0F Due serie col flag sono una contraddizione: si prende la prima e si scrive un
+//          `console.warn` coi nomi di tutte. Sceglierne una in silenzio davanti a due dati che si
+//          contraddicono e' esattamente cio' che la v6.101 aveva deciso di non fare piu'.
+//
+//          \uD83D\uDCCC E il messaggio d'errore non nomina piu' una serie: dice cosa manca e come si
+//          mette. Quello vecchio prometteva di "dire il nome esatto che manca" per non mandare a
+//          cercare nel posto sbagliato, e faceva proprio quello.
+// ------------------------------------------------------------
 // v6.203 - \uD83C\uDD95 RISATE SPARISCE DALLA SOTTOCATEGORIA NEL NOME COMPLETO DEI RETRO (Franco).
 //          Solo app.js.
 //
@@ -15564,7 +15626,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.203';
+const JS_VERSION = 'v6.205';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -19763,6 +19825,7 @@ function _ripristinaFlagSerie(s) {
   spunta('series-no-numbers-input',                s && s.noNumbers);
   spunta('series-no-retro-input',                  s && s.noRetro);          // v6.098
   spunta('series-no-albums-input',                 s && s.noAlbums);         // v6.194
+  spunta('series-contenitore-input',               s && s.serieContenitore); // v6.204
   spunta('series-has-subseries-input',             s && s.hasSubseries);     // v6.169
   spunta('series-has-sizes-input',                 s && s.hasSizes);         // v6.169
   spunta('series-has-variations-input',            s && s.hasVariations);    // v6.169
@@ -19930,6 +19993,7 @@ async function saveSeries() {
   const noNumbers = document.getElementById('series-no-numbers-input')?.checked || false;
   const noRetro = document.getElementById('series-no-retro-input')?.checked || false; // v6.098 caso B
   const noAlbums = document.getElementById('series-no-albums-input')?.checked || false; // v6.194
+  const serieContenitore = document.getElementById('series-contenitore-input')?.checked || false; // v6.204
   const controlliSospesi = _leggiControlliSospesi(); // v6.080
   const nomeCorto = (document.getElementById('series-nome-corto-input')?.value || '').trim(); // v6.080
   const countVariations = parseInt(document.getElementById('series-count-variations-input').value) || null;
@@ -20020,7 +20084,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, nomeCorto, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, retroChangeTypes, frontChangeTypes /* v6.102 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, nomeCorto, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, retroChangeTypes, frontChangeTypes /* v6.102 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -20028,7 +20092,7 @@ async function saveSeries() {
         _cache.series = series;   // la CACHE tiene gli items: si strippa solo cio' che parte
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, nomeCorto, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, retroChangeTypes, frontChangeTypes /* v6.102 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, nomeCorto, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, retroChangeTypes, frontChangeTypes /* v6.102 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -20869,11 +20933,34 @@ function _applicaFotoSezioni() {
 
 const NOME_SERIE_SENZA_SERIE = 'Extra serie';
 
-// La serie che fa da contenitore. Si cerca per NOME e non per id: l'id non e' scritto da nessuna
-// parte e inchiodarlo qui vorrebbe dire avere una costante che nessuno puo' verificare leggendola.
+// \uD83D\uDD34 v6.204 (Franco: "il click sul box dei Cartoncini si e' rotto... a causa della rinomina
+// che io avevo fatto della categoria fittizia") - LA SERIE CONTENITORE SI RICONOSCE DA UN FLAG.
+//
+// Qui c'era scritto: *"Si cerca per NOME e non per id: l'id non e' scritto da nessuna parte e
+// inchiodarlo qui vorrebbe dire avere una costante che nessuno puo' verificare leggendola."*
+// L'obiezione all'id era giusta; la conclusione no. Il rimedio a un identificatore illeggibile non
+// e' il NOME - il nome e' precisamente la cosa che un utente puo' cambiare, e infatti l'ha
+// cambiata, e i Cartoncini sono diventati irraggiungibili. **Un identificatore non deve essere una
+// cosa che si legge e si modifica.**
+// \uD83D\uDCCC E' la stessa decisione che questa notte ha tenuto `tipoProdotto` e `forSale` come sono su
+// Firestore: il dato non si chiama come l'etichetta che gli sta sopra.
+//
+// \u26A0\uFE0F IL NOME RESTA COME RIPIEGO, e non e' pigrizia: finche' nessuno ha spuntato il flag su
+// nessuna serie, il sito deve continuare a funzionare esattamente come prima. Chi aggiorna non deve
+// trovare i Cartoncini rotti in attesa di una spunta che non sa di dover mettere. Quando il flag
+// c'e', comanda lui e la serie si puo' chiamare come si vuole.
 function _serieSenzaSerie() {
+  const tutte = getData('series', []) || [];
+  const conFlag = tutte.filter(s => s.serieContenitore);
+  if (conFlag.length > 1) {
+    // Due contenitori sono una contraddizione: si prende il primo e LO SI DICE, invece di
+    // sceglierne uno in silenzio (lezione della v6.101 sui due dati che si contraddicono).
+    console.warn('v6.204: piu\' di una serie ha il flag "serie contenitore":',
+                 conFlag.map(s => s.name), '- uso la prima.');
+  }
+  if (conFlag.length) return conFlag[0];
   const n = NOME_SERIE_SENZA_SERIE.trim().toLowerCase();
-  return (getData('series', []) || []).find(s => (s.name || '').trim().toLowerCase() === n) || null;
+  return tutte.find(s => (s.name || '').trim().toLowerCase() === n) || null;
 }
 
 // I tipi vivono in UN documento solo, `settings/tipi_prodotto`: sono pochi e cambiano di rado.
@@ -20963,9 +21050,13 @@ function openTipoProdotto(id) {
   if (!serie) {
     // Senza il contenitore non si puo' entrare, e va detto con il nome esatto che manca: un
     // "errore" generico qui manderebbe a cercare nel posto sbagliato.
+    // v6.204 - il messaggio non nomina piu' UNA serie che potrebbe chiamarsi in mille modi: dice
+    // cosa manca e come si mette. Prima diceva 'Manca la serie "Extra serie"' anche quando la serie
+    // c'era e si chiamava soltanto in un altro modo - cioe' mandava a cercare esattamente nel posto
+    // sbagliato, che e' il difetto che quel messaggio diceva di voler evitare.
     toast((currentLang === 'it'
-      ? 'Manca la serie "' + NOME_SERIE_SENZA_SERIE + '", che fa da contenitore a questi articoli.'
-      : 'The "' + NOME_SERIE_SENZA_SERIE + '" series is missing; it holds these items.'), 'error', null, 7000);
+      ? 'Nessuna serie e\' marcata come contenitore degli articoli senza serie. Aprine una dalla console e spunta "Serie contenitore".'
+      : 'No series is marked as the container for items without a series. Open one from the console and tick "Container series".'), 'error', null, 9000);
     return;
   }
   const d = document.getElementById('prodotto-detail');
@@ -32382,8 +32473,19 @@ function renderAdminFunzioni() {
   // Collazione NUMERICA: senza, "Serie 10" verrebbe prima di "Serie 2" perche' confronta '1' con
   // '2' invece di 10 con 2 — lo stesso motivo per cui la griglia usa `numeric:true` sul nome
   // (v6.077, le bustine "L. 500" e "L. 1000").
+  // \uD83D\uDD04 v6.205 (Franco) - L'ELENCO TORNA NELL'ORDINE DELL'INVENTARIO, e questo RIBALTA la
+  // v6.136 qui sopra, che non era una svista: aveva reso la tendina alfabetica con una motivazione
+  // sua. L'argomento che vince e' di COERENZA - le procedure di import (`renderAdminFoto`) elencano
+  // le serie per `order`, e due pannelli admin che mostrano le stesse serie in due ordini diversi
+  // non fanno sbagliare, fanno **dubitare di tutti e due**.
+  // \u26A0\uFE0F Vale per TUTTI E QUATTRO i selettori della scheda: l'array e' uno solo. E' piu' di
+  // quanto chiesto (Franco parlava del solo "Ricalcola i Nomi completi"), ma lasciare gli altri tre
+  // alfabetici avrebbe messo DENTRO la stessa scheda la discordanza che si sta togliendo fra due.
+  // \uD83D\uDCCC Il nome resta come SECONDO criterio, a parita' di `order`, e li' la collazione
+  // numerica serve ancora: senza, "Serie 10" verrebbe prima di "Serie 2".
   const serie = getData('series', []).slice()
-    .sort((a,b) => (a.name || '').localeCompare(b.name || '', 'it', { numeric: true }));
+    .sort((a,b) => ((a.order ?? 9999) - (b.order ?? 9999))
+                || (a.name || '').localeCompare(b.name || '', 'it', { numeric: true }));
   el.innerHTML =
     '<div style="max-width:900px;">' +
       '<h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">&#128295; ' + (it ? 'Funzioni' : 'Functions') + '</h3>' +
