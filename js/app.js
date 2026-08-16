@@ -1,6 +1,179 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.190 - IL SALVATAGGIO LENTO ORA LO DICE (Franco: "le form di modifica non terminano mai, cosi
+//          io dopo un po' chiudo la form con la x e riaprendo aveva salvato"). Solo app.js.
+//
+//          COSA SUCCEDEVA, accertato leggendo il codice e non a memoria:
+//          1. `getData('series', [])` torna `_cache.series` PER RIFERIMENTO;
+//          2. `series[idx] = {...}` cambia i dati della pagina, e sta PRIMA dell'`await`;
+//          3. `await fsSave(...)` -> `setDoc`, che risolve SOLO quando il server conferma. Con la
+//             rete lenta non rifiuta: Firestore riprova all'infinito, e la promessa resta appesa;
+//          4. tutto cio' che viene dopo l'await non gira: la scritta resta su "Salvataggio in
+//             corso", il pulsante resta spento, la finestra non si chiude;
+//          5. si chiude con la X, si riapre, e si vedono i valori nuovi -> quelli del punto 2.
+//
+//          🔴 QUINDI "AVEVA SALVATO" NON VOLEVA DIRE CHE IL SERVER AVESSE RICEVUTO. Erano due casi
+//          indistinguibili dalla form: la scrittura arrivata piano, e la scrittura ancora in coda
+//          con la pagina che mostra la propria modifica locale. Si distinguono in un modo solo:
+//          `Ctrl+Shift+R`, perche' dalla v6.176 la lettura iniziale e' `getDocsFromServer`, che la
+//          cache la rifiuta. E' la v6.176 girata dall'altra parte - li' la LETTURA era troppo
+//          indulgente, qui la SCRITTURA e' troppo severa per l'interfaccia che le sta sopra.
+//
+//          🔴 IL RISCHIO VERO, che nessuna riga di questa release toglie: `getFirestore(fbApp)`
+//          senza configurazione usa la cache SOLO IN MEMORIA. Chiudere il browser (o ricaricare)
+//          mentre una scrittura e' in coda LA PERDE, in silenzio. Il rimedio alla radice e' la
+//          persistenza su IndexedDB, che e' una decisione a se' e non e' stata presa qui.
+//
+//          COSA FA QUESTA RELEASE, e non di piu': dopo 8 secondi il messaggio cambia e dice le tre
+//          cose utili - la modifica e' in coda, la finestra si puo' chiudere, il browser NO.
+//          Vale per le due form che salvano: la serie (nel suo riquadro) e la scheda oggetto (un
+//          toast da 15 s, perche' li' non c'e' nessun riquadro e con la rete lenta si vedevano
+//          solo due pulsanti grigi).
+//
+//          ⚠️ NON E' UN TETTO D'ATTESA: non annulla e non accelera niente, cambia un testo. Dire
+//          "salvataggio fallito" allo scadere di un timer sarebbe stato PEGGIO del silenzio -
+//          una scrittura che poi arriva verrebbe raccontata come persa. Lezione gia' scritta nel
+//          CHANGELOG della v6.108: il `Promise.race` non annulla niente.
+//
+//          🔴 E IL PULSANTE RESTA SPENTO, di proposito, contro l'istinto. Riaccenderlo sembra
+//          gentile ed e' un guasto: su una serie NUOVA si passa da `addDoc`, quindi un secondo
+//          clic mentre il primo e' in coda crea un DOPPIONE. Il pulsante e' lo stesso in creazione
+//          e in modifica, quindi non si puo' riaccendere "solo dove e' innocuo".
+//
+//          📌 UN GUASTO CHIUSO PASSANDO DI LI', e non c'entra con la rete: in `saveSeries` il
+//          `return` dopo un errore di caricamento immagine NON riaccendeva niente. Il pulsante era
+//          gia' stato spento due righe sopra, quindi dopo quell'errore restavano "Salvataggio in
+//          corso" e il tasto Salva spento PER SEMPRE, e l'unico modo di uscirne era chiudere la
+//          finestra. E' un'uscita anticipata che non rimette a posto cio' che l'ingresso ha
+//          toccato - esattamente la ragione per cui la v6.052 aveva messo un `finally` nell'altra
+//          form. Ora tutte le uscite passano da `_fineAttesa()`.
+// ------------------------------------------------------------
+// v6.189 - \u2728 "RIMUOVI SFONDO" ANCHE SULLA FOTO DELLA SERIE (Franco). app.js e index.html.
+//
+//          \uD83D\uDCCC LA FUNZIONE NON E' STATA RICOPIATA, E' STATA ESTRATTA. Dentro
+//          `removeBgFromEdit` non c'era solo "chiama il modello": c'era l'attesa della libreria
+//          (30 tentativi da un secondo), la scelta del modello `isnet`, e il RITAGLIO della
+//          trasparenza residua - un doppio ciclo su tutti i pixel che nessuno riguarda da mesi.
+//          Due copie di quel blocco sarebbero divergute al primo ritocco, in silenzio e su una
+//          cosa che si vede solo a immagine gia' salvata. Ora il centro sta in
+//          `_togliSfondoDaBlob(blob, onPct)` - blob dentro, PNG ritagliato fuori - e i due bottoni
+//          portano solo i propri capi: da dove arriva l'immagine e dove finisce.
+//          Stessa forma di `_discendenzaDaAggiornare` (v6.143), `_conteggiSerie` (v6.170) e
+//          `_ripristinaFlagSerie` (v6.186).
+//
+//          \u26A0\uFE0F I DUE CAPI NON SONO LA STESSA COSA, ed e' l'unico punto delicato. Negli slot
+//          della figurina il risultato e' una stringa base64 in `_figEditImgData`; la SERIE invece
+//          si salva con `uploadToCloudinary(editingSeriesImgFile)`, che vuole un File. Quindi il
+//          PNG ritagliato diventa `new File([...], 'serie-sfondo-rimosso.png')` e si mette li'.
+//          `editingSeriesImg` (l'URL di quella vecchia) NON si tocca: scriverci il base64
+//          significherebbe, il giorno che l'upload fallisce, salvare un'immagine intera dentro un
+//          campo di testo su Firestore - e il muro di 1 MiB per documento e' gia' al 51% su Serie 3.
+//
+//          \uD83D\uDD34 E UNA PERDITA TROVATA STRADA FACENDO, che questa release fa mordere di piu'.
+//          `openAddSeriesModal` azzerava `editingSeriesImg` e NON `editingSeriesImgFile`. Quindi:
+//          apri una serie, scegli una foto, non salvare, passa a un'altra serie -> quel file e'
+//          ancora in canna, e `saveSeries` lo guarda PRIMA dell'URL. La foto finiva sulla serie
+//          sbagliata in silenzio. E' la stessa forma della v6.186 - due variabili che descrivono la
+//          stessa cosa, una azzerata e l'altra no - e sta nella stessa funzione. Azzerate entrambe,
+//          piu' il campo file (che se no mostra il nome di prima) e il bottone.
+//
+//          \uD83D\uDCCC Un guasto chiuso passando: se il modello non lasciava NESSUN pixel opaco, il
+//          ritaglio calcolava una tela di larghezza negativa e `drawImage` produceva un'immagine
+//          vuota. Ora in quel caso si torna l'immagine non ritagliata e si lascia decidere a chi
+//          guarda. Valeva gia' per le figurine, da sempre.
+//
+//          Il bottone e' sempre visibile e, senza foto, dice "Carica prima una foto" - identico a
+//          quello della scheda oggetto. Non si accende e spegne: sarebbero stati tre punti da
+//          tenere allineati (apertura, scelta della foto, fine elaborazione), cioe' tre occasioni
+//          di dimenticarne uno, per un bottone che intanto lo dice da se'.
+// ------------------------------------------------------------
+// v6.188 - IL NOME CORTO DIVENTA OBBLIGATORIO (Franco: "ho creato una serie dimenticandomi di
+//          mettere il nome corto e la ha creata"). app.js e index.html.
+//
+//          📌 NON E' LA CHIUSURA DI UN BUCO: E' IL CAMBIO DI UNA REGOLA. Fino alla v6.187 il
+//          vuoto era uno stato ammesso, e il sito lo DICHIARAVA in due punti - il suggerimento
+//          sotto la casella ("Vuoto = nome per esteso") e il commento della v6.080 nell'index ("Se
+//          e' vuoto non cambia niente da nessuna parte"). Il codice non aveva sbagliato: faceva
+//          quello che c'era scritto. Percio' le tre cose sono cambiate NELLA STESSA PASSATA -
+//          controllo, suggerimento e commento. Un vincolo nuovo con accanto la vecchia frase che
+//          lo smentisce lascia due verita' in giro, ed e' il difetto che questo progetto ha gia'
+//          pagato piu' volte (la nota della v6.065 rimasta vera sul desktop e falsa su telefono).
+//
+//          🔴 LA CONSEGUENZA DA CONOSCERE PRIMA, NON DA SCOPRIRE: il controllo e' in
+//          `saveSeries`, che e' una sola per creazione e modifica. Quindi una serie NATA SENZA
+//          nome corto non si salva piu' - nemmeno per cambiarle il nome, l'anno o una spunta -
+//          finche' non gliene si da' uno. E' voluto: un vincolo che vale solo sulle serie nuove
+//          lascia quelle vecchie fuori per sempre, e allora non e' un vincolo, e' un'abitudine.
+//          Ma il momento in cui morde e' il PRIMO salvataggio di ogni serie vecchia, e conviene
+//          sapere quante sono prima e non trovarsele una per volta: `ricognizione-nome-corto.js`
+//          in root le conta in dieci secondi, in sola lettura.
+//
+//          📌 IL RIPIEGO IN `_nomeSerieCard` RESTA (`corto ? corto : s.name`). Non e' una
+//          svista ne' codice morto: i record gia' su Firestore il nome corto non ce l'hanno, e la
+//          card si disegna prima che qualcuno abbia riaperto quella serie. **Una regola sulla form
+//          non e' una garanzia sul dato** - toglierlo darebbe per scritto cio' che si e' soltanto
+//          reso obbligatorio, e le card delle serie vecchie resterebbero senza nome su telefono.
+// ------------------------------------------------------------
+// v6.187 - VIA I TRE SUGGERIMENTI CHE SI LEGGONO COME VALORI, nella form della serie (Franco).
+//          Solo index.html (qui cambia la sola versione).
+//
+//          `placeholder` su Anno (`1991`), N. prima figurina (`1`) e N. ultima figurina (`256`).
+//          Tolti tutti e tre.
+//
+//          📌 Il criterio, che vale oltre questi tre campi: un segnaposto e' innocuo quando
+//          si annuncia come esempio, dannoso quando e' un VALORE PLAUSIBILE PER QUEL CAMPO. `256`
+//          e' il numero vero dell'ultima figurina di Serie 3, `1991` e' un anno vero: in grigio
+//          dentro una casella vuota non si distinguono da un dato inserito, e la casella e' vuota
+//          proprio nel momento in cui si sta creando una serie nuova - cioe' quando nessuno ha un
+//          valore atteso con cui accorgersene.
+//          Restano invece `e.g. Serie 1 \u2014 Primavera` sul Nome e `es. S1` sul Nome corto: si
+//          annunciano come esempi, e nessuno li scambia per un dato.
+//          E' la stessa famiglia della v6.115 (via il `#` accanto al numero) e della v6.186: roba
+//          che si vede, che nessuno aveva mai guardato due volte, e che intanto raccontava una cosa
+//          per un'altra.
+//
+//          📌 Non toccati, e la scelta e' consapevole: il `0` su N. album e su N. figurine.
+//          Il secondo e' in sola lettura dalla v6.170 (lo calcola l'Inventario), quindi li' un
+//          segnaposto non puo' essere scambiato per qualcosa che si sta scrivendo. Il primo si
+//          decide se e quando da' fastidio: non e' stato chiesto, e togliere per simmetria una cosa
+//          che nessuno ha segnalato e' un altro modo di decidere al posto di Franco.
+// ------------------------------------------------------------
+// v6.186 - 🔴 LO STESSO GUASTO DELLA v6.169, NEL RAMO GEMELLO: creando una serie nuova, cinque
+//          caselle su otto restavano quelle dell'ultima serie aperta. Solo app.js.
+//
+//          `openAddSeriesModal` riusa la stessa form per MODIFICA e CREAZIONE. La v6.169 e la
+//          v6.170 avevano sistemato il ramo modifica - otto flag, otto ripristini - ma il conto e'
+//          stato fatto su UN ramo solo. Il ramo creazione azzerava `hasUnofficialVariations`,
+//          `hasChange` e `noNumbers`, e lasciava intatti `hasRetroChange`, `noRetro`,
+//          `hasSubseries`, `hasSizes`, `hasVariations`, il campo di testo `nomeCorto` e le spunte
+//          dei controlli sospesi.
+//          `saveSeries` e' una sola e li legge tutti. Quindi: apri Serie 1, chiudi, premi
+//          "Aggiungi serie" -> la serie nuova NASCE con i flag di Serie 1, e nessuno lo dice.
+//          ⚠️ Non azzera dati esistenti come faceva la v6.169: ne crea di sbagliati. Meno grave,
+//          ugualmente muto - e su una serie appena nata nessuno ha un valore atteso con cui
+//          accorgersene.
+//
+//          📌 IL RIMEDIO NON E' "AGGIUNGERE LE CINQUE RIGHE MANCANTI". Sarebbero stati due
+//          elenchi da tenere allineati a mano, cioe' lo stesso difetto rimandato alla prossima
+//          casella che qualcuno aggiungera'. Il ripristino e' stato ESTRATTO in
+//          `_ripristinaFlagSerie(s)`, che i due rami chiamano - con la serie, o con `null`.
+//          E' la forma della v6.143 (`_discendenzaDaAggiornare`), ed e' anche quello che la v6.162
+//          aveva gia' fatto, nella stessa funzione, per i campi delle colonne: il suo commento
+//          descrive parola per parola questo difetto - "creando una serie dopo averne modificata
+//          un'altra si ereditavano le sue colonne senza che nessuno l'avesse chiesto" - e la
+//          lezione non era stata applicata alle caselle a fianco.
+//          Da qui in avanti una casella nuova sulla serie si aggiunge in UN posto.
+//
+//          📌 Due dettagli che non sono di forma:
+//          - `_ripristinaFlagSerie` si chiama FUORI dal `if (s)`, cosi' una serie non trovata non
+//            lascia in giro le caselle di quella di prima;
+//          - `_aggiornaRigaColonneRetro()` sta DENTRO la funzione, dopo le spunte: dipende da
+//            `noRetro`, e nel ramo creazione veniva chiamata prima che qualcuno lo azzerasse.
+//
+//          Trovato leggendo il codice mentre si preparava la prova del giro salva-e-riapri sulle
+//          otto spunte (che invece passa: verificata da Franco il 16 agosto).
+// ------------------------------------------------------------
 // v6.185 - LA v6.184 AVEVA CENTRATO LA CELLA, NON IL NUMERO; e le larghezze di Nome e Retro erano
 //          invertite (Franco). Solo app.js.
 //
@@ -14882,7 +15055,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.185';
+const JS_VERSION = 'v6.190';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -15314,6 +15487,60 @@ async function _syncPublicProfile(user) {
 function _serieSenzaItems(s) {
   const { items, ...resto } = s;
   return resto;
+}
+
+// ============================================================
+// v6.190 (Franco: "le form di modifica non terminano mai... chiudo con la x e aveva salvato")
+// L'AVVISO DI SCRITTURA LENTA, IN UN POSTO SOLO.
+// ------------------------------------------------------------
+// COSA SUCCEDE, perche' il rimedio si capisce solo sapendolo. `setDoc` risolve **solo quando il
+// server conferma**. Con la rete lenta non rifiuta: Firestore riprova all'infinito. Quindi
+// l'`await` resta appeso e tutto cio' che viene dopo non gira mai - la scritta resta su
+// "Salvataggio in corso", i pulsanti restano spenti, la finestra non si chiude da se'.
+// Intanto pero' la pagina i dati nuovi ce li ha gia': `getData('series')` torna `_cache.series`
+// PER RIFERIMENTO, e la riga che scrive `series[idx] = {...}` sta PRIMA dell'await. Ecco perche'
+// riaprendo "aveva salvato": si sta guardando la propria modifica locale, che NON dimostra che il
+// server l'abbia ricevuta. Per saperlo serve un `Ctrl+Shift+R` (dalla v6.176 la lettura iniziale
+// e' `getDocsFromServer`, che la cache la rifiuta).
+//
+// ⚠️ QUESTA RELEASE NON RENDE IL SALVATAGGIO PIU' VELOCE E NON LO ANNULLA. Non e' un tetto
+// d'attesa: e' solo un TESTO che cambia dopo un po'. La scrittura continua per conto suo. Dire
+// "salvataggio fallito" allo scadere di un timer sarebbe stato peggio del silenzio di adesso -
+// una scrittura che poi arriva verrebbe raccontata come persa, e la prossima volta il messaggio
+// non lo crederebbe piu' nessuno. E' la lezione gia' scritta nel CHANGELOG della v6.108: il
+// `Promise.race` non annulla niente.
+//
+// 🔴 E IL PULSANTE RESTA SPENTO, di proposito. La prima stesura lo riaccendeva - sembra gentile ed
+// e' un guasto: su una serie NUOVA il salvataggio passa da `addDoc`, quindi un secondo clic mentre
+// il primo e' ancora in coda crea un DOPPIONE. Su una modifica sarebbe innocuo (`setDoc` con
+// `merge` sullo stesso id), ma il pulsante e' lo stesso nei due casi. Meglio un pulsante fermo con
+// scritto cosa sta succedendo che uno vivo che puo' duplicare.
+//
+// 📌 Il numero sta in una costante e NON nelle Impostazioni generali sito, dove la v6.173 ha
+// portato il tetto di attesa della LETTURA. Non e' un'incoerenza: quello decide se il sito si
+// arrende, e sbagliarlo cambia il comportamento; questo decide solo dopo quanti secondi compare
+// una frase, e sbagliarlo non costa niente. Una manopola in piu' in un pannello e' una cosa in
+// piu' da capire per chi ci passa.
+const MS_SCRITTURA_LENTA = 8000;
+
+// Arma l'avviso e torna la funzione per DISARMARLO. Chi la chiama deve chiamare il disarmo su
+// ogni uscita - riuscita, fallita o anticipata: e' lo stesso motivo per cui `saveFigFromDetail`
+// riaccende i pulsanti in un `finally` dalla v6.052.
+function _avvisaScritturaLenta(mostra) {
+  const id = setTimeout(() => {
+    try { mostra(); }
+    catch (e) { console.error('avviso scrittura lenta', e); }   // un avviso che rompe il salvataggio sarebbe il colmo
+  }, MS_SCRITTURA_LENTA);
+  return () => clearTimeout(id);
+}
+
+// Il testo, in un posto solo perche' lo dicono due form. Le tre cose che deve dire, in ordine di
+// utilita': la modifica non e' persa; puoi chiudere la finestra; NON chiudere il browser - che e'
+// l'unica azione che la perde davvero, visto che la cache di Firestore qui e' solo in memoria.
+function _TESTO_SCRITTURA_LENTA() {
+  return currentLang === 'it'
+    ? '\u23F3 Ci sta mettendo pi\u00F9 del solito \u2014 la rete \u00E8 lenta. La modifica \u00E8 IN CODA e parte da s\u00E9: puoi chiudere questa finestra con la X, ma NON chiudere il browser finch\u00E9 non \u00E8 andata.'
+    : '\u23F3 Taking longer than usual \u2014 slow network. The change is QUEUED and will go through on its own: you can close this window, but do NOT close the browser yet.';
 }
 
 async function fsSave(collName, item) {
@@ -19004,6 +19231,38 @@ function renderEbayOversizeTable() {
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
+// v6.186 (🔴) - IL RIPRISTINO DEI CAMPI DELLA SERIE, IN UN POSTO SOLO.
+// `openAddSeriesModal` ha due rami che riusano la STESSA form, e fino alla v6.185 solo uno dei due
+// rimetteva a posto le caselle. Il ramo MODIFICA ne ripristinava otto su otto (v6.169 + v6.170);
+// il ramo CREAZIONE ne azzerava TRE - `hasUnofficialVariations`, `hasChange`, `noNumbers` - e
+// lasciava le altre cinque con il valore dell'ultima serie aperta. Piu' `nomeCorto` (un campo di
+// testo che restava pieno) e i controlli sospesi, riempiti solo dal ramo modifica.
+// `saveSeries` e' una sola e legge tutto: quindi aprire una serie e poi premere "Aggiungi serie"
+// faceva NASCERE la serie nuova con i flag di quella prima, in silenzio.
+// E' la stessa forma del guasto della v6.169, nel ramo gemello. Non azzera dati esistenti - li
+// crea sbagliati - ma e' altrettanto muto.
+// 📌 Il rimedio non e' "aggiungere le cinque righe mancanti nell'else": sarebbero DUE elenchi da
+// tenere allineati a mano, cioe' il difetto stesso rimandato alla prossima casella. La v6.162
+// aveva gia' risolto identicamente per i campi delle colonne (azzeramento fuori dai due rami), e
+// la v6.143 aveva gia' insegnato la forma: si ESTRAE, non si duplica.
+// Da qui in avanti una casella nuova sulla serie si aggiunge in UN posto, e i due rami la ereditano.
+function _ripristinaFlagSerie(s) {
+  const spunta = (id, v) => { const el = document.getElementById(id); if (el) el.checked = !!v; };
+  spunta('series-has-unofficial-variations-input', s && s.hasUnofficialVariations);
+  spunta('series-has-change-input',                s && s.hasChange);
+  spunta('series-has-retro-change-input',          s && s.hasRetroChange);   // v6.170
+  spunta('series-no-numbers-input',                s && s.noNumbers);
+  spunta('series-no-retro-input',                  s && s.noRetro);          // v6.098
+  spunta('series-has-subseries-input',             s && s.hasSubseries);     // v6.169
+  spunta('series-has-sizes-input',                 s && s.hasSizes);         // v6.169
+  spunta('series-has-variations-input',            s && s.hasVariations);    // v6.169
+  const nc = document.getElementById('series-nome-corto-input');
+  if (nc) nc.value = (s && s.nomeCorto) || '';                               // v6.080
+  renderSeriesBypassCheckboxes(s && s.controlliSospesi);                     // v6.080
+  // Dipende da `noRetro`, quindi va DOPO le spunte e non prima: e' il motivo per cui sta qui
+  // dentro invece che nei due rami.
+  _aggiornaRigaColonneRetro();
+}
 function openAddSeriesModal(seriesId) {
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
   document.getElementById('edit-series-id').value = seriesId || '';
@@ -19022,8 +19281,25 @@ function openAddSeriesModal(seriesId) {
   document.getElementById('series-modal-title').textContent = seriesId ? t('modal.series.edit') : t('modal.series.title');
   document.getElementById('series-img-preview').style.display = 'none';
   editingSeriesImg = null;
+  // \uD83D\uDD34 v6.189 - QUESTA RIGA MANCAVA, ed era la gemella dimenticata della riga sopra.
+  // `editingSeriesImg` (l'URL di quella salvata) veniva azzerata, `editingSeriesImgFile` (il file
+  // scelto e non ancora caricato) no. Quindi: apri una serie, scegli una foto nuova, NON salvare,
+  // apri un'altra serie o creane una -> quel file e' ancora in canna, e `saveSeries` lo guarda per
+  // primo. La foto finiva sulla serie sbagliata, senza che niente lo dicesse.
+  // Stessa famiglia della v6.186, e la stessa forma: due variabili che descrivono la stessa cosa,
+  // una azzerata e l'altra no. Con la v6.189 morde di piu', perche' ora da qui puo' uscire anche
+  // un PNG appena elaborato.
+  // Anche il campo file si svuota: se no continua a mostrare il nome del file di prima, e a un
+  // `<input type=file>` non si puo' assegnare un valore diverso da ''.
+  editingSeriesImgFile = null;
+  { const f = document.getElementById('series-img-file'); if (f) f.value = ''; }
+  { const b = document.getElementById('series-remove-bg-btn');
+    if (b) { b.disabled = false; b.textContent = _ETICHETTA_SFONDO(); } }
   if (seriesId) {
     const s = getData('series', []).find(x => x.id === seriesId);
+    // v6.186 - FUORI dal `if (s)`: se la serie non si trovasse, le caselle resterebbero quelle di
+    // prima, che e' lo stesso difetto un gradino piu' in la'.
+    _ripristinaFlagSerie(s || null);
     if (s) {
       document.getElementById('series-name-input').value = s.name;
       document.getElementById('series-year-input').value = s.year;
@@ -19034,15 +19310,13 @@ function openAddSeriesModal(seriesId) {
       document.getElementById('series-first-number-input').value = s.firstNumber || '';
       document.getElementById('series-last-number-input').value = s.lastNumber || '';
       document.getElementById('series-album-count-input').value = s.albumCount || '';
-      const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = s.hasUnofficialVariations || false;
-      const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = s.hasChange || false;
+      // v6.186 - le otto spunte, `nomeCorto` e i controlli sospesi sono passati in
+      //          `_ripristinaFlagSerie`, chiamata qui sopra per tutti e due i rami.
       // 🔴 v6.170 — LA CASELLA NUOVA VA RIPRISTINATA QUI, e questa riga e' la piu' importante della
       // release. E' il flag aggiunto oggi: se il ripristino manca, si apre sempre spenta, il
       // salvataggio la legge e scrive `false` — cioe' si ricrea da capo, su un campo nuovo, il
       // guasto che la v6.169 ha appena chiuso. Otto flag, otto ripristini: si contano.
-      const hcri = document.getElementById('series-has-retro-change-input'); if (hcri) hcri.checked = s.hasRetroChange || false;
-      const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = s.noNumbers || false;
-      const nri = document.getElementById('series-no-retro-input'); if (nri) nri.checked = s.noRetro || false; // v6.098
+
     // 🔴 v6.169 (Franco, sul sintomo: "HA SOTTOSERIE non mostra SI per Sgorbions Holidays, che ha il
     // campo a TRUE") - QUESTE TRE RIGHE MANCAVANO. Quattro flag su sette venivano ripristinati
     // riaprendo una serie, tre no: `hasSubseries`, `hasSizes`, `hasVariations`. Una casella non
@@ -19058,10 +19332,7 @@ function openAddSeriesModal(seriesId) {
     // nota di `fe-no-number` — "la casella resta SEMPRE nel DOM: il salvataggio la legge, e se non
     // la trova scrive false. Toglierla avrebbe azzerato il flag in silenzio al primo salvataggio".
     // Qui la casella c'era: a mancare era il ripristino, che produce lo stesso effetto.
-    const hsub = document.getElementById('series-has-subseries-input'); if (hsub) hsub.checked = s.hasSubseries || false;
-    const hsiz = document.getElementById('series-has-sizes-input');     if (hsiz) hsiz.checked = s.hasSizes || false;
-    const hvar = document.getElementById('series-has-variations-input'); if (hvar) hvar.checked = s.hasVariations || false;
-    _aggiornaRigaColonneRetro();   // v6.169
+
     // v6.162 - le colonne della griglia. `?? ''` e non `|| ''`: uno zero salvato per errore deve
     // ricomparire nel campo, se no si corregge un dato che non si vede.
     // v6.163 - precompilati: se la serie ha un valore suo si mostra quello, se no il default, che e'
@@ -19073,8 +19344,7 @@ function openAddSeriesModal(seriesId) {
       if (cd) cd.value = _colClamp(cfg.d) || COLONNE_DEFAULT[sez].d;
       if (cm) cm.value = _colClamp(cfg.m) || COLONNE_DEFAULT[sez].m;
     });
-      { const nc = document.getElementById('series-nome-corto-input'); if (nc) nc.value = s.nomeCorto || ''; } // v6.080
-      renderSeriesBypassCheckboxes(s.controlliSospesi); // v6.080
+
       document.getElementById('series-desc-input').value = s.descIt || s.desc || '';
       const descEnInput = document.getElementById('series-desc-en-input');
       if (descEnInput) descEnInput.value = s.desc || '';
@@ -19090,9 +19360,11 @@ function openAddSeriesModal(seriesId) {
     }
   } else {
     ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-album-count-input','series-desc-input','series-desc-en-input'].forEach(id => document.getElementById(id).value = '');
-    const huvi = document.getElementById('series-has-unofficial-variations-input'); if (huvi) huvi.checked = false;
-    const hci = document.getElementById('series-has-change-input'); if (hci) hci.checked = false;
-    const nni = document.getElementById('series-no-numbers-input'); if (nni) nni.checked = false;
+    // 🔴 v6.186 - QUI STAVA IL BUCO: si azzeravano TRE caselle su otto, e le altre cinque
+    //             (`hasRetroChange`, `noRetro`, `hasSubseries`, `hasSizes`, `hasVariations`) piu'
+    //             `nomeCorto` e i controlli sospesi restavano quelli dell'ultima serie aperta.
+    //             `null` vuol dire "nessuna serie": azzera tutto, in un posto solo.
+    _ripristinaFlagSerie(null);
     const rctInput = document.getElementById('series-retro-change-types-input');
     if (rctInput) rctInput.value = '';
     // v6.102 (§12.10) - anche la seconda casella va svuotata per una serie NUOVA. La riga sopra
@@ -19190,15 +19462,46 @@ async function saveSeries() {
       'error', null, 7000);
     return;
   }
-  if (!name || !year) { toast((currentLang === 'it' ? 'Nome e anno sono obbligatori' : 'Name and year are required'), 'error'); return; }
+  // v6.188 (Franco: "ho creato una serie dimenticandomi di mettere il nome corto e la ha creata")
+  // - il NOME CORTO entra fra gli obbligatori. Fino alla v6.187 il vuoto era uno stato ammesso e
+  // documentato ("Vuoto = nome per esteso"), quindi questa release non chiude un buco: CAMBIA UNA
+  // REGOLA, e il campo che la diceva - il suggerimento sotto la casella - e' stato cambiato
+  // insieme, nella stessa passata. Un vincolo nuovo con accanto la vecchia frase che lo smentisce
+  // e' peggio di nessuno dei due.
+  // ⚠️ VALE ANCHE IN MODIFICA, ed e' una conseguenza da conoscere e non da scoprire: una serie
+  // nata senza nome corto non si salva piu' - nemmeno per cambiarle il nome - finche' non gliene
+  // si da' uno. E' voluto: se valesse solo in creazione, quelle vecchie resterebbero senza per
+  // sempre e il vincolo sarebbe vero solo per meta' dei dati.
+  // 📌 Il ripiego in `_nomeSerieCard` (`corto ? corto : s.name`) RESTA, e non e' una svista: i
+  // record gia' su Firestore il nome corto non ce l'hanno ancora, e la card si disegna prima che
+  // qualcuno abbia riaperto quella serie. Una regola sulla form non e' una garanzia sul dato -
+  // scambiare le due cose e' come dare per scritto cio' che si e' solo reso obbligatorio.
+  if (!name || !year || !nomeCorto) {
+    toast((currentLang === 'it' ? 'Nome, nome corto e anno sono obbligatori' : 'Name, short name and year are required'), 'error');
+    return;
+  }
   const fb = document.getElementById('series-save-feedback');
   const btn = document.querySelector('#add-series-modal .btn-primary');
   if (fb) { fb.style.display = ''; fb.textContent = (currentLang === 'it' ? '⏳ Salvataggio in corso...' : '⏳ Saving...'); }
   if (btn) btn.disabled = true;
+  // v6.190 - armato PRIMA del caricamento immagine, che sulla rete lenta e' il pezzo piu' lungo.
+  const _stopAvviso = _avvisaScritturaLenta(() => { if (fb) fb.textContent = _TESTO_SCRITTURA_LENTA(); });
+  // Rimette la form nello stato di riposo. Serve su ogni uscita che NON e' la riuscita.
+  const _fineAttesa = () => {
+    _stopAvviso();
+    if (btn) btn.disabled = false;
+    if (fb) { fb.style.display = 'none'; fb.textContent = ''; }
+  };
   let imgUrl = editingSeriesImg || null;
   if (editingSeriesImgFile) {
     try { imgUrl = await uploadToCloudinary(editingSeriesImgFile); }
-    catch(e) { toast((currentLang === 'it' ? 'Errore nel caricamento immagine' : 'Image upload error'), 'error'); return; }
+    // 🔴 v6.190 - QUESTO `return` LASCIAVA LA FORM MORTA. Il pulsante era gia' stato spento due
+    // righe sopra e qui non lo riaccendeva nessuno: dopo un errore di caricamento immagine
+    // restavano "Salvataggio in corso" e il tasto Salva spento, per sempre, e l'unico modo di
+    // uscirne era chiudere la finestra. Non e' un difetto di questa release: e' un'uscita
+    // anticipata che non rimetteva a posto quello che l'ingresso aveva toccato - la ragione per
+    // cui la v6.052 aveva messo un `finally` nell'altra form.
+    catch(e) { _fineAttesa(); toast((currentLang === 'it' ? 'Errore nel caricamento immagine' : 'Image upload error'), 'error'); return; }
   }
   let series = getData('series', []);
   const editId = document.getElementById('edit-series-id').value;
@@ -19220,11 +19523,11 @@ async function saveSeries() {
     }
   } catch(e) {
     console.error('saveSeries', e);
-    if (fb) { fb.style.display = 'none'; fb.textContent = ''; }
-    if (btn) btn.disabled = false;
+    _fineAttesa();   // v6.190
     toast((currentLang === 'it' ? '❌ Salvataggio fallito: ' + (e?.code || e?.name || 'errore') + ' — riprova' : '❌ Save failed: ' + (e?.code || e?.name || 'error') + ' — please retry'), 'error');
     return;
   }
+  _stopAvviso();   // v6.190 - riuscito: l'avviso non deve comparire un istante dopo il "salvata!"
   editingSeriesImgFile = null;
   if (fb) { fb.textContent = (currentLang === 'it' ? '✅ Serie salvata!' : '✅ Series saved!'); }
   if (btn) btn.disabled = false;
@@ -28215,6 +28518,89 @@ window._removeBackground = async function(blob) {
   }
 };
 
+// ============================================================
+// v6.189 (Franco) - LA RIMOZIONE DELLO SFONDO, IN UN POSTO SOLO.
+// ------------------------------------------------------------
+// Serviva il bottone anche sulla foto della SERIE. Ricopiare `removeBgFromEdit` cambiandogli i
+// due capi sarebbe stato il modo piu' rapido e il peggiore: dentro c'e' l'attesa della libreria,
+// il modello, e soprattutto il RITAGLIO della trasparenza residua - un blocco che nessuno
+// riguarda piu' e che, in due copie, il giorno che si tocca diverge senza dirlo. E' la ragione
+// per cui esistono `_discendenzaDaAggiornare` (v6.143), `_conteggiSerie` (v6.170) e
+// `_ripristinaFlagSerie` (v6.186).
+// Quindi il centro - blob dentro, PNG ritagliato fuori - sta qui, e i due bottoni portano solo i
+// propri capi: DA DOVE arriva l'immagine e DOVE finisce.
+// `onPct` e' come la funzione parla a chi l'ha chiamata senza sapere che aspetto abbia il suo
+// bottone: riceve la percentuale, oppure la fase 'libreria' quando sta ancora scaricando il
+// modello (la prima volta sono decine di MB, e un bottone fermo sul 0% sembra piantato).
+async function _togliSfondoDaBlob(blob, onPct) {
+  let removeBackground = window._removeBackground;
+  if (!removeBackground) {
+    if (onPct) onPct(null, 'libreria');
+    // Fino a 30 secondi. Se scade si lancia un errore RICONOSCIBILE invece di un toast: chi
+    // chiama ha un bottone da rimettere a posto, e sa lui come si chiama.
+    for (let i = 0; i < 30; i++) {
+      await new Promise(r => setTimeout(r, 1000));
+      if (window._removeBackground) { removeBackground = window._removeBackground; break; }
+    }
+    if (!removeBackground) throw new Error('_LIBRERIA_NON_DISPONIBILE_');
+  }
+  const resultBlob = await removeBackground(blob, {
+    model: 'isnet', // v5.793 - modello PIENO (meglio sui soggetti chiari a basso contrasto, es. retro bianchi)
+    progress: (key, current, total) => { if (onPct && total) onPct(Math.round((current / total) * 100)); }
+  });
+  // Ritaglio della trasparenza residua: si cercano i pixel con alpha > 10 e si taglia li' intorno,
+  // con 4px di margine.
+  const cropCanvas = document.createElement('canvas');
+  const cropImg = new Image();
+  const tmpUrl = URL.createObjectURL(resultBlob);
+  await new Promise(res => { cropImg.onload = res; cropImg.src = tmpUrl; });
+  URL.revokeObjectURL(tmpUrl);
+  cropCanvas.width = cropImg.naturalWidth; cropCanvas.height = cropImg.naturalHeight;
+  const cropCtx = cropCanvas.getContext('2d');
+  cropCtx.drawImage(cropImg, 0, 0);
+  const pd = cropCtx.getImageData(0, 0, cropCanvas.width, cropCanvas.height).data;
+  let mnX = cropCanvas.width, mnY = cropCanvas.height, mxX = 0, mxY = 0;
+  for (let y = 0; y < cropCanvas.height; y++) for (let x = 0; x < cropCanvas.width; x++) {
+    if (pd[(y * cropCanvas.width + x) * 4 + 3] > 10) { if (x < mnX) mnX=x; if (x > mxX) mxX=x; if (y < mnY) mnY=y; if (y > mxY) mxY=y; }
+  }
+  // Se non e' rimasto NIENTE di opaco, mxX/mxY restano a 0: ritagliare con quei numeri darebbe una
+  // tela di larghezza negativa. Si torna l'immagine intera e si lascia decidere a chi guarda.
+  if (mxX < mnX || mxY < mnY) return resultBlob;
+  const pad = 4, cw = mxX-mnX+1+pad*2, ch = mxY-mnY+1+pad*2;
+  const finalCanvas = document.createElement('canvas');
+  finalCanvas.width = cw; finalCanvas.height = ch;
+  finalCanvas.getContext('2d').drawImage(cropCanvas, Math.max(0,mnX-pad), Math.max(0,mnY-pad), cw, ch, 0, 0, cw, ch);
+  return await new Promise(res => finalCanvas.toBlob(res, 'image/png'));
+}
+
+// L'etichetta a riposo del bottone, in un posto solo: comparivano quattro volte in
+// `removeBgFromEdit`, e quattro copie di una scritta sono quattro occasioni di scriverne tre.
+// \u26A0\uFE0F `function` e NON `const ... = () =>`, e la differenza non e' di gusto: questa funzione la
+// chiama anche `openAddSeriesModal`, che sta ~12.000 righe PIU' SU. Con un `const` funzionerebbe
+// lo stesso - quella riga gira quando si apre il modal, a file gia' valutato - ma dipenderebbe da
+// QUANDO viene chiamata invece che da COME e' scritta, e basterebbe che un domani qualcuno la
+// usasse durante il caricamento per avere un ReferenceError che `node --check` non vede. E' la
+// famiglia che qui ha gia' morso tre volte (v6.117, v6.140, v6.151). Una `function` si issa: la
+// domanda "viene prima?" non si pone piu'.
+function _ETICHETTA_SFONDO() { return currentLang === 'it' ? '\u2728 Rimuovi sfondo' : '\u2728 Remove background'; }
+
+// Cosa scrivere sul bottone mentre lavora. Ridotta a una funzione perche' la usano tutti e due.
+function _bottoneSfondoAvanzamento(btn, pct, fase) {
+  if (!btn) return;
+  if (fase === 'libreria') { btn.textContent = currentLang === 'it' ? '\u23F3 Caricamento libreria...' : '\u23F3 Loading library...'; return; }
+  btn.textContent = '\u23F3 ' + pct + '%';
+}
+
+function _erroreSfondo(e, btn) {
+  if (e && e.message === '_LIBRERIA_NON_DISPONIBILE_') {
+    toast(currentLang === 'it' ? '\u274C Libreria non disponibile, ricarica la pagina' : '\u274C Library unavailable, reload the page', 'error');
+  } else {
+    console.error('removeBg error', e);
+    toast(currentLang === 'it' ? '\u274C Errore nella rimozione sfondo' : '\u274C Error removing background', 'error');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = _ETICHETTA_SFONDO(); }
+}
+
 async function removeBgFromEdit(slot) {
   slot = slot || 'fronte';
   const btn = document.getElementById(_SLOT_FOTO[slot].btn);
@@ -28224,75 +28610,52 @@ async function removeBgFromEdit(slot) {
     toast(currentLang === 'it' ? 'Carica prima una foto' : 'Upload a photo first', 'error');
     return;
   }
-
-  // Stato loading
-  if (btn) { btn.disabled = true; btn.textContent = currentLang === 'it' ? '⏳ Elaborazione...' : '⏳ Processing...'; }
-
+  if (btn) { btn.disabled = true; btn.textContent = currentLang === 'it' ? '\u23F3 Elaborazione...' : '\u23F3 Processing...'; }
   try {
-    let removeBackground = window._removeBackground;
-    if (!removeBackground) {
-      if (btn) btn.textContent = currentLang === 'it' ? '⏳ Caricamento libreria...' : '⏳ Loading library...';
-      // Aspetta fino a 30 secondi che la libreria si carichi
-      for (let i = 0; i < 30; i++) {
-        await new Promise(r => setTimeout(r, 1000));
-        if (window._removeBackground) { removeBackground = window._removeBackground; break; }
-      }
-      if (!removeBackground) {
-        toast(currentLang === 'it' ? '❌ Libreria non disponibile, ricarica la pagina' : '❌ Library unavailable, reload the page', 'error');
-        if (btn) { btn.disabled = false; btn.textContent = currentLang === 'it' ? '✨ Rimuovi sfondo' : '✨ Remove background'; }
-        return;
-      }
-    }
-
-    // Ottieni il blob dalla src corrente
-    const srcRes = await fetch(preview.src);
-    const blob = await srcRes.blob();
-
-    // Rimuovi sfondo
-    const resultBlob = await removeBackground(blob, {
-      model: 'isnet', // v5.793 — modello PIENO (qualità migliore su soggetti chiari a basso contrasto, es. retro bianchi) invece del default isnet_fp16
-      progress: (key, current, total) => {
-        if (btn) btn.textContent = currentLang === 'it'
-          ? '⏳ ' + Math.round((current/total)*100) + '%'
-          : '⏳ ' + Math.round((current/total)*100) + '%';
-      }
-    });
-
-    // Crop automatico per rimuovere trasparenza residua
-    const cropCanvas = document.createElement('canvas');
-    const cropImg = new Image();
-    const tmpUrl = URL.createObjectURL(resultBlob);
-    await new Promise(res => { cropImg.onload = res; cropImg.src = tmpUrl; });
-    URL.revokeObjectURL(tmpUrl);
-    cropCanvas.width = cropImg.naturalWidth; cropCanvas.height = cropImg.naturalHeight;
-    const cropCtx = cropCanvas.getContext('2d');
-    cropCtx.drawImage(cropImg, 0, 0);
-    const pd = cropCtx.getImageData(0, 0, cropCanvas.width, cropCanvas.height).data;
-    let mnX = cropCanvas.width, mnY = cropCanvas.height, mxX = 0, mxY = 0;
-    for (let y = 0; y < cropCanvas.height; y++) for (let x = 0; x < cropCanvas.width; x++) {
-      if (pd[(y * cropCanvas.width + x) * 4 + 3] > 10) { if (x < mnX) mnX=x; if (x > mxX) mxX=x; if (y < mnY) mnY=y; if (y > mxY) mxY=y; }
-    }
-    const pad = 4, cw = mxX-mnX+1+pad*2, ch = mxY-mnY+1+pad*2;
-    const finalCanvas = document.createElement('canvas');
-    finalCanvas.width = cw; finalCanvas.height = ch;
-    finalCanvas.getContext('2d').drawImage(cropCanvas, Math.max(0,mnX-pad), Math.max(0,mnY-pad), cw, ch, 0, 0, cw, ch);
-    const croppedBlob = await new Promise(res => finalCanvas.toBlob(res, 'image/png'));
-
-    // Converti in base64 e aggiorna la preview
+    const blob = await (await fetch(preview.src)).blob();
+    const croppedBlob = await _togliSfondoDaBlob(blob, (pct, fase) => _bottoneSfondoAvanzamento(btn, pct, fase));
     const reader = new FileReader();
     reader.onload = e => {
       _scriviSlot(slot, e.target.result);
       preview.src = _datiSlot(slot);
-      if (btn) { btn.disabled = false; btn.textContent = currentLang === 'it' ? '✨ Rimuovi sfondo' : '✨ Remove background'; }
-      toast(currentLang === 'it' ? '✅ Sfondo rimosso!' : '✅ Background removed!', 'success');
+      if (btn) { btn.disabled = false; btn.textContent = _ETICHETTA_SFONDO(); }
+      toast(currentLang === 'it' ? '\u2705 Sfondo rimosso!' : '\u2705 Background removed!', 'success');
     };
     reader.readAsDataURL(croppedBlob);
+  } catch(e) { _erroreSfondo(e, btn); }
+}
 
-  } catch(e) {
-    console.error('removeBg error', e);
-    toast(currentLang === 'it' ? '❌ Errore nella rimozione sfondo' : '❌ Error removing background', 'error');
-    if (btn) { btn.disabled = false; btn.textContent = currentLang === 'it' ? '✨ Rimuovi sfondo' : '✨ Remove background'; }
+// v6.189 - lo stesso bottone sulla COPERTINA DELLA SERIE.
+// \u26A0\uFE0F Qui il risultato non e' una stringa base64 come negli slot della figurina: la serie si salva
+// con `uploadToCloudinary(editingSeriesImgFile)`, che vuole un FILE. Percio' il PNG ritagliato
+// diventa un `File` e si mette in `editingSeriesImgFile` - che e' anche il campo che `saveSeries`
+// guarda per PRIMO (`if (editingSeriesImgFile)` vince su `editingSeriesImg`), quindi da qui in poi
+// e' questa l'immagine che verra' caricata.
+// \uD83D\uDCCC `editingSeriesImg` NON si tocca: e' l'URL Cloudinary di quella vecchia, e serve ancora se
+// il salvataggio non arriva mai. Scriverci dentro il base64 dell'anteprima significherebbe, il
+// giorno che l'upload fallisce, salvare su Firestore un'immagine intera dentro un campo di testo.
+async function removeBgFromSeries() {
+  const btn = document.getElementById('series-remove-bg-btn');
+  const preview = document.getElementById('series-img-preview');
+
+  if (!preview || !preview.src || preview.src === window.location.href || preview.style.display === 'none') {
+    toast(currentLang === 'it' ? 'Carica prima una foto' : 'Upload a photo first', 'error');
+    return;
   }
+  if (btn) { btn.disabled = true; btn.textContent = currentLang === 'it' ? '\u23F3 Elaborazione...' : '\u23F3 Processing...'; }
+  try {
+    const blob = await (await fetch(preview.src)).blob();
+    const croppedBlob = await _togliSfondoDaBlob(blob, (pct, fase) => _bottoneSfondoAvanzamento(btn, pct, fase));
+    editingSeriesImgFile = new File([croppedBlob], 'serie-sfondo-rimosso.png', { type: 'image/png' });
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      if (btn) { btn.disabled = false; btn.textContent = _ETICHETTA_SFONDO(); }
+      toast(currentLang === 'it' ? '\u2705 Sfondo rimosso! Salva la serie per applicarlo.' : '\u2705 Background removed! Save the series to apply it.', 'success');
+    };
+    reader.readAsDataURL(croppedBlob);
+  } catch(e) { _erroreSfondo(e, btn); }
 }
 function removeFigPhoto(slot) {
   slot = slot || 'fronte';
@@ -28625,6 +28988,11 @@ async function saveFigFromDetail(figId, opzioni) {
   const _bottoni = ['fig-edit-save-btn', 'fig-edit-save-stay-btn'].map(id => document.getElementById(id)).filter(Boolean);
   _bottoni.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
   const _riaccendi = () => _bottoni.forEach(b => { b.disabled = false; b.style.opacity = ''; });
+  // v6.190 - qui la scheda era ancora piu' muta della form serie: non c'e' nessun riquadro di
+  // avanzamento, quindi con la rete lenta si vedevano solo due pulsanti grigi e nient'altro.
+  // L'avviso e' un toast lungo (15 s): non c'e' un posto fisso dove scriverlo, e un toast breve
+  // sparirebbe prima che qualcuno alzi gli occhi.
+  const _stopAvviso = _avvisaScritturaLenta(() => toast(_TESTO_SCRITTURA_LENTA(), 'info', null, 15000));
   // v6.052 - try/finally: i pulsanti si riaccendono su OGNI uscita, comprese quelle premature
   // delle validazioni. Riaccenderli a mano davanti a ogni return e' il modo in cui, alla prossima
   // validazione aggiunta, la scheda resta con i pulsanti spenti e nessuno capisce perche'.
@@ -29015,6 +29383,7 @@ async function saveFigFromDetail(figId, opzioni) {
     renderItems();
 
   } finally {
+    _stopAvviso();   // v6.190 - nel `finally` insieme ai pulsanti: stessa ragione della v6.052
     _riaccendi();
   }
 }
