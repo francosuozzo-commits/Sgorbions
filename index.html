@@ -4,11 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.231"></script>
-<link rel="stylesheet" href="css/style.css?v=6.231">
+<script src="js/email.min.js?v=6.264"></script>
+<link rel="stylesheet" href="css/style.css?v=6.264">
 
 
 <style>
+/* 🆕 v6.234 — IL COLORE DELLA VERSIONE OMAGGIO, scelto da Franco fra tre candidati.
+   Le altre quattro tinte dei tipi (--type-official, --type-unofficial, --type-change,
+   --type-printerror) vivono in `css/style.css`, che nelle cartelle `_upload_` non c'e' piu' dalla
+   v5.878: le modifiche di stile si fanno inline qui (procedura §5). Questo blocco arriva DOPO il
+   <link> del foglio, quindi la variabile si aggiunge senza toccare il file sul repo.
+   ⚠️ Serviva gia' adesso e non alla v6.235: la tabella delle Versioni in console colora le
+   intestazioni con `v.colore`, e senza la variabile il verde non avrebbe avuto dove attaccarsi —
+   la riga sarebbe rimasta muta, senza dare errore.
+   📌 `.fig-badge-free` c'e' gia' anche se il badge non puo' ancora comparire: nasce accanto alla
+   sua variabile, non in un'altra release, cosi' non resta una classe da ricordarsi. */
+:root { --type-free: #9be89b; }
+.fig-badge-free { background: var(--type-free); }
+
 /* HOME — numeroni ATTORNO al logo su quattro lati (v6.019, chiesto da Franco).
    Fino alla v6.018 erano due sole colonne ai lati, in posizione ASSOLUTA: sinistra le cose del
    sito (3), destra l'Inventario (5). Ora sono due per lato — sopra Lingue e Collezionisti, a
@@ -349,7 +362,7 @@ button.back-btn { color:#ffffff; }
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.231</span>
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.264</span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1269,6 +1282,14 @@ button.back-btn { color:#ffffff; }
         <div id="admin-tipoarticolo" class="admin-section">
           <h3 style="font-family:var(--font-ui);margin-bottom:0.5rem;">🧩 Tipo di articolo</h3>
           <div id="admin-tipo-articolo-tabella"></div>
+          <!-- 🆕 v6.233 — le cinque Versioni possibili per articolo. A differenza della
+               tabella qui sopra, questa si MODIFICA: le spunte si salvano su Firestore.
+               Righe e colonne si ricavano da `PRODOTTI_INVENTARIO` e `VERSIONI_ARTICOLO`. -->
+          <div id="admin-versioni-articolo"></div>
+          <!-- 🆕 v6.234 — da chi può nascere ogni versione. SOLA LETTURA: descrive com'è
+               fatto il modello, non cosa contiene questa collezione. È il descrittore
+               stampato, come la prima tabella. -->
+          <div id="admin-partenze-versione"></div>
         </div>
         <div id="admin-series" class="admin-section">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
@@ -1778,7 +1799,7 @@ button.back-btn { color:#ffffff; }
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.231</div>
+      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.264</div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -2154,7 +2175,14 @@ button.back-btn { color:#ffffff; }
            inline, e non e' una preferenza: `toggleSeriesCountGroups` accende il riquadro con
            `style.display = ''`, cioe' "torna a quello che dice il CSS". Scrivendo `display:flex`
            inline, quella riga lo cancellerebbe e il riquadro tornerebbe a impilarsi. -->
-      <div class="series-sottotitolo" style="margin-top:0;">Variazioni</div>
+      <!-- 🆕 v6.245 (Franco) — IL COLORE STA SUL SOTTOTITOLO, non sulle etichette dei flag: marca
+           la SEZIONE, e i campi dentro restano neutri. La v6.243 aveva fatto il contrario.
+           📌 E "Variazioni" porta le due tinte dentro le parentesi — che era il problema per
+           cui non l'avevo colorata: un sottotitolo che copre DUE versioni non puo' avere un
+           colore solo, ma puo' averne due se nomina le due cose. È lo stesso modo in cui il
+           filtro "Variazioni (ufficiali e non ufficiali)" della ricerca risolve la stessa
+           ambiguità dalla v5.870. -->
+      <div class="series-sottotitolo" style="margin-top:0;">Variazioni (<span style="color:var(--type-official);">ufficiali</span> / <span style="color:var(--type-unofficial);">non ufficiali</span>)</div>
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <div class="series-flag-riga">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
@@ -2182,7 +2210,7 @@ button.back-btn { color:#ffffff; }
 
       <!-- 🆕 v6.219 (Franco) — I TITOLETTI. Il tab elencava sei controlli di fila senza dire che
            parlano di tre cose diverse. -->
-      <div class="series-sottotitolo">Change</div>
+      <div class="series-sottotitolo" style="color:var(--type-change);">Change</div>
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <div class="series-flag-riga">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
@@ -2244,7 +2272,62 @@ button.back-btn { color:#ffffff; }
            "N. Change = 0" rispondeva a una domanda diversa da quella che l'etichetta faceva
            credere. Se un giorno si misura e stanno in due sezioni, la strada e' la coppia doppia
            dei change. -->
-      <div class="series-sottotitolo">Errori di stampa</div>
+      <!-- 🆕 v6.235 (Franco) — LE VERSIONI OMAGGIO. Sta PRIMA degli errori di stampa: è l'ordine
+           dichiarato in `VERSIONI_ARTICOLO` e quello dell'ordinamento dentro il numero. Un blocco
+           che nella form sta in un posto e nell'elenco in un altro sarebbe una terza verità sullo
+           stesso ordine.
+           ⚠️ Il conteggio NON filtra per sezione, come quello degli errori di stampa e per la
+           stessa ragione: le versioni omaggio esistono fra le figurine E fra i retro (Franco), e
+           un filtro su `figurines` scriverebbe "0" a una serie che ne ha. -->
+      <!-- v6.240 (Franco) — "Omaggio", non "Versioni omaggio": vedi il CHANGELOG. -->
+      <div class="series-sottotitolo" style="color:var(--type-free);">Omaggio</div>
+
+      <!-- 🆕 v6.248 (Franco) — LA SEZIONE OMAGGIO E' A SPECCHIO DEI CHANGE: due flag, due conteggi,
+           due elenchi di tipologie. La v6.235 ne aveva fatto UNO solo, e la v6.246 aveva sdoppiato
+           le tipologie senza sdoppiare il resto — meta' del lavoro, che e' peggio di niente perche'
+           sembra finito.
+           📌 E le due meta' sono SEPARATE e ORDINATE: prima le Figurine, poi i Retro, ciascuna con
+           la sua mini-intestazione. Prima i sei campi stavano in fila senza dire a cosa
+           appartenessero, e "DI RETRO" / "FRONTALI" in fondo all'etichetta si legge per ultimo. -->
+      <div style="font-size:0.8rem;color:var(--muted);font-weight:700;letter-spacing:0.04em;margin:0.9rem 0 0.4rem;">FIGURINE</div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;">
+        <div class="series-flag-riga">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-free-version-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span>Ha omaggio di figurine</span>
+          </label>
+          <div class="form-group series-conteggio" id="series-count-free-version-group" style="display:none;">
+            <label class="form-label" style="font-size:0.78rem;margin:0;">N. omaggi di figurine</label>
+            <input class="form-input" type="number" id="series-count-free-version-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: le FIGURINE marcate «omaggio»">
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:0.6rem;">
+        <label class="form-label">Tipologie di omaggio FRONTALI (una per riga)</label>
+        <textarea class="form-input" id="series-front-free-version-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
+        <div class="form-hint">Un valore per riga. Sono le tipologie che la tendina «Tipo di omaggio» offre sulle FIGURINE di questa serie.</div>
+      </div>
+
+      <div style="font-size:0.8rem;color:var(--muted);font-weight:700;letter-spacing:0.04em;margin:1rem 0 0.4rem;">RETRO</div>
+      <div style="display:flex;flex-direction:column;gap:0.5rem;">
+        <div class="series-flag-riga">
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-retro-free-version-input" onchange="toggleSeriesCountGroups()" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span>Ha omaggio di retro</span>
+          </label>
+          <div class="form-group series-conteggio" id="series-count-retro-free-version-group" style="display:none;">
+            <label class="form-label" style="font-size:0.78rem;margin:0;">N. omaggi di retro</label>
+            <input class="form-input" type="number" id="series-count-retro-free-version-input" placeholder="0" min="0" readonly style="opacity:0.7;cursor:not-allowed;width:70px;padding:0.25rem 0.4rem;font-size:0.85rem;" title="Calcolato dall'Inventario: i RETRO marcati «omaggio»">
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:0.6rem;">
+        <label class="form-label">Tipologie di omaggio DI RETRO (una per riga)</label>
+        <textarea class="form-input" id="series-retro-free-version-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
+        <div class="form-hint">Un valore per riga. Sono le tipologie che la tendina «Tipo di omaggio» offre sui RETRO di questa serie.</div>
+      </div>
+
+      <div class="series-sottotitolo" style="color:var(--type-printerror);">Errori di stampa</div>
       <div style="display:flex;flex-direction:column;gap:0.5rem;">
         <div class="series-flag-riga">
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
@@ -2737,7 +2820,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.231"></script>
+<script src="js/app.js?v=6.264"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2761,7 +2844,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.231'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.264'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
