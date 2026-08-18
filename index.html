@@ -179,6 +179,15 @@
    !important: serve solo quando non si sa cosa si sta scavalcando. */
 button.back-btn { color:#ffffff; }
 
+/* 🆕 v6.304 — L'ARANCIONE DEI COMANDI ADMIN, SENZA LA SPARIZIONE.
+   `.btn-admin` fa due cose insieme: colora di arancione E porta `display:none !important` per chi
+   non è admin. Quando serve solo la prima — un tasto che sta già dentro un flusso riservato, e che
+   nascosto lascerebbe una finestra senza conferma — si usa questa.
+   I valori sono le STESSE variabili di `.btn-admin`, non un arancione che gli somiglia: il giorno
+   che quel colore cambia, cambiano insieme. */
+.btn-azione-admin { background: var(--action-admin); color: #ffffff; }
+.btn-azione-admin:hover { background: var(--action-admin-hover); box-shadow: 0 8px 30px rgba(var(--action-admin-rgb),0.4); }
+
 /* v5.953 — TELEFONO: il Logout passa nel panino, come ULTIMA voce (Franco).
    Il pulsante della navbar (#user-nav .btn-logout) e la voce di menu (#nav-logout-link) sono
    due elementi distinti, ognuno con il suo posto: non si puo' spostare un nodo da un
@@ -2734,7 +2743,7 @@ button.back-btn { color:#ffffff; }
     <img id="foto-scelta-preview" alt="" style="width:100%;max-height:320px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.75rem;">
     <button id="foto-scelta-bg-btn" type="button" onclick="fotoSceltaTogliSfondo()" style="width:100%;margin-bottom:0.75rem;font-size:0.72rem;color:var(--accent2);border:1px solid var(--accent2);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">&#10024; Rimuovi sfondo</button>
     <div style="display:flex;gap:0.6rem;">
-      <button class="btn-primary btn-admin" style="flex:1;" onclick="fotoSceltaConferma()">Usa questa foto</button>
+      <button class="btn-primary btn-azione-admin" style="flex:1;" onclick="fotoSceltaConferma()">Usa questa foto</button>
       <button class="btn-secondary" style="flex:1;" onclick="fotoSceltaAnnulla()">Annulla</button>
     </div>
   </div>
@@ -2842,7 +2851,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.303"></script>
+<script src="js/app.js?v=6.304"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2866,7 +2875,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.303'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.304'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
