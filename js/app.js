@@ -1,6 +1,37 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.313 - 🔴 QUATTRO PUNTI DEL CODICE RISPONDEVANO ALLA STESSA DOMANDA - "questi due retro
+//          sono lo stesso oggetto?" - E DAVANO QUATTRO RISPOSTE DIVERSE.
+//              · il salvataggio (v6.035/v6.255) : serie|nome|categoria|SOTTOcategoria|versione|tipo
+//              · l'import, tre rami (v5.985)    : la stessa, ma riscritta tre volte
+//              · il controllo #4 della pagina Errori : serie|versione|tipo|categoria|nome+SOTTONOME
+//          Franco: "il controllo 4 non e' sensibile alla sottocategoria". Vero — ma la chiave
+//          giusta ESISTEVA GIA', in un altro punto, da otto release.
+//
+//          📌 E LA PROVA CHE LA DERIVA E' IL PROBLEMA, NON LA SINGOLA RIGA: la v6.312, ieri, ha
+//          messo il TIPO nella chiave del controllo #4 — cioe' ha rifatto a mano la correzione che
+//          la v6.255 aveva gia' fatto sulla chiave del salvataggio. Due volte lo stesso lavoro, in
+//          due posti, a otto release di distanza, perche' nessuno dei due sapeva dell'altro.
+//
+//          🆕 `_chiaveIdentitaRetro(r)`, una funzione sola. La usano il controllo #4 e il
+//          salvataggio. ⚠️ L'IMPORT NO, ANCORA: i suoi tre rami cambiano cosa viene SCRITTO nei dati,
+//          non cosa viene mostrato, e vanno in una release loro per poterla revocare da sola. Sono
+//          gia' censiti in `arretrato-omaggio.md` (famiglia F) e uno dei tre ha per giunta una
+//          TERNA (`!isChange && !isPrintError`), quindi oggi prende un retro OMAGGIO per una base.
+//
+//          ⬜ COSA CAMBIA PER CHI GUARDA IL RIQUADRO #4:
+//              · entra la SOTTOCATEGORIA -> i "RICERCATO" BLU/ROSSO non sono piu' doppioni. Era la
+//                misura scritta nella v6.035: 12 gruppi in collisione, 11 dei quali di questo tipo.
+//              · esce il SOTTONOME -> due retro che differiscono SOLO per il sottonome tornano a
+//                essere segnalati. Sembra un passo indietro e non lo e': il riquadro esiste per
+//                dire "fra questi l'import si agganciera' a caso", e l'import il sottonome non lo
+//                guarda. Decisione di Franco, 19 agosto, messo davanti proprio a questa conseguenza.
+//
+//          📌 IL SALVATAGGIO NON CAMBIA COMPORTAMENTO, ed e' voluto: la sua chiave era gia'
+//          quella giusta, scritta a mano. Sostituirla con la funzione e' un cambio a somma zero —
+//          ed e' esattamente cio' che lo rende la verifica migliore che la funzione sia giusta.
+//
 // v6.312 - 🔴 LA v6.311 SI ERA FERMATA UN GRADINO PRIMA. Aveva messo la VERSIONE nella chiave
 //          del controllo #4, e questo bastava a non confondere piu' un retro base col suo omaggio.
 //          Non bastava a distinguere DUE OMAGGI DELLO STESSO RETRO: uno NERO e uno ROSSO hanno la
@@ -18472,7 +18503,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.312';
+const JS_VERSION = 'v6.313';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -24263,6 +24294,40 @@ const _FUNZIONI_OPZIONI_TIPO = {
 };
 // Il campo della tipologia di un oggetto, o null se la sua versione non ne ha una.
 const _campoTipoDi = f => (_versioneDiChiave(_chiaveTipo(f))?.campoTipo) || null;
+// 🆕 v6.313 - QUANDO DUE RETRO SONO LO STESSO OGGETTO. Una domanda sola, una risposta sola.
+// Fino a ieri se la ponevano quattro punti diversi (le due form, i tre rami dell'import, il
+// controllo #4 della pagina Errori) e ognuno se la scriveva a modo suo. Il risultato prevedibile:
+// la v6.255 corregge la chiave del salvataggio, la v6.312 rifa' la stessa correzione sulla chiave
+// del controllo #4, e nel mezzo passano otto release in cui le due dicono cose diverse.
+//
+// 📌 COSA C'E' DENTRO, e perche':
+//   · SERIE          - due serie diverse non si confrontano mai.
+//   · VERSIONE       - un retro base e il suo omaggio non sono lo stesso oggetto (v6.311).
+//   · TIPO           - due omaggi dello stesso retro, NERO e ROSSO, nemmeno (v6.255/v6.312).
+//                     Il campo lo dice `_campoTipoDi`, letto da `VERSIONI_ARTICOLO`: cosi' vale
+//                     anche per la sesta versione, il giorno che arriva, senza toccare questa riga.
+//   · CATEGORIA e SOTTOCATEGORIA - la sottocategoria entro' nella chiave del salvataggio con la
+//                     v6.035, su dati veri: senza, i "RICERCATO" BLU/ROSSO non si potevano salvare.
+//   · NOME           - senza sottonome.
+//
+// ⚠️ IL SOTTONOME RESTA FUORI, ed e' una scelta, non una dimenticanza: fuori e' anche dalla chiave
+// dell'import (v5.985), e questa funzione serve proprio a non inventare l'ennesima chiave diversa.
+// Chi guarda i doppioni vuole sapere su quali record l'import puo' sbagliare bersaglio, e l'import
+// il sottonome non lo legge.
+function _chiaveIdentitaRetro(r) {
+  if (!r) return '';
+  const _n = v => String(v == null ? '' : v).toLowerCase().trim();
+  const _cT = _campoTipoDi(r);
+  return [
+    r.seriesId || '',
+    _chiaveTipo(r),
+    _cT ? _n(r[_cT]) : '',
+    _n(r.category),
+    _n(r.subcategory),
+    _n(r.name)
+  ].join('|');
+}
+
 // Tutti i campi-tipologia esistenti: serve a chi deve sapere "questo campo e' una tipologia?"
 // senza riscrivere l'elenco (per esempio il ricalcolo del Nome completo in `saveBulkCell`).
 const _CAMPI_TIPOLOGIA = VERSIONI_ARTICOLO.map(v => v.campoTipo).filter(Boolean);
@@ -34995,29 +35060,27 @@ async function saveFigFromDetail(figId, opzioni) {
         // Il SOTTONOME resta fuori, perche' fuori e' anche nella chiave dell'import: si allinea a
         // quella, non si inventa una terza chiave. (Una nota della v5.980 dice che l'import lo
         // include: nel codice dell'import non c'e' - da verificare a parte.)
+        // 🔴 v6.313 - ERA LA CHIAVE GIUSTA, MA SCRITTA QUI. Sei condizioni a mano, e a due passi
+        // di codice il controllo #4 della pagina Errori ne scriveva altre sei, diverse. Ora la
+        // domanda si fa in un posto solo: `_chiaveIdentitaRetro`.
+        // 📌 IL COMPORTAMENTO NON CAMBIA - la funzione contiene esattamente cio' che c'era qui:
+        // serie, versione, tipo (v6.255), categoria, sottocategoria (v6.035), nome senza sottonome.
+        // Un cambio a somma zero e' la verifica migliore che la funzione sia giusta: se qualcosa si
+        // muove, e' la funzione a essere sbagliata, non questo punto.
+        const _vNuova = _versioneDiChiave(tipoNuovo);
+        const _candidato = {
+          seriesId: existingForCheck.seriesId,
+          name, category, subcategory: subcategoryVal
+        };
+        if (_vNuova) {
+          _candidato[_vNuova.campo] = true;
+          if (_vNuova.campoTipo) _candidato[_vNuova.campoTipo] = _tipologiaNuova;
+        }
+        const _chiaveCandidato = _chiaveIdentitaRetro(_candidato);
         const dup = getData('figurines', []).find(f =>
           f.id !== figId &&
-          f.seriesId === existingForCheck.seriesId &&
           f.section === 'retros' &&
-          (f.name||'').toLowerCase() === name.toLowerCase() &&
-          (f.category||'').toLowerCase() === category.toLowerCase() &&
-          (f.subcategory||'').toLowerCase().trim() === subcategoryVal.toLowerCase().trim() && // v6.035
-          tipoDiOggetto(f) === tipoNuovo &&
-          // 🔴 v6.255 (Franco: "questo controllo sta scattando quando non serve mentre salvo un
-          // retro omaggio") — LA CHIAVE INCLUDE LA TIPOLOGIA, QUALUNQUE SIA.
-          // Prima diceva: *se e' un change, conta anche il changeType*. Scritto quando il change
-          // era l'unico tipo ad avere una tipologia. Da allora ne sono arrivate altre due, e la
-          // riga e' rimasta al 2024: due omaggi dello stesso retro con TIPOLOGIE DIVERSE
-          // risultavano lo stesso oggetto, e il secondo non si poteva salvare.
-          // 📌 Ora il campo da confrontare lo dice la versione (`_campoTipoDi`), quindi vale per
-          // change, omaggio ed errore di stampa senza nominarli — e per la sesta versione, il
-          // giorno che arriva, senza toccare questa riga.
-          // ⚠️ CAMBIA ANCHE PER GLI ERRORI DI STAMPA, e non era stato chiesto: anche li' il
-          // `printErrorType` non entrava nella chiave, quindi due errori di stampa dello stesso
-          // retro con tipi diversi si bloccavano a vicenda. E' lo stesso difetto, e la correzione
-          // e' PIU' PERMISSIVA — sblocca record legittimi, non ne crea di sbagliati. Se Franco
-          // preferisce lasciarli come prima, e' una riga.
-          _stessaTipologia(f, tipoNuovo, _tipologiaNuova)
+          _chiaveIdentitaRetro(f) === _chiaveCandidato
         );
       if (dup) {
         // 🆕 v6.255 (Franco: "vedi se anche il testo va adattato") — SI', E DICEVA UNA COSA
@@ -37081,22 +37144,17 @@ function _diagnosiErrori() {
     // La chiave non guardava la VERSIONE: un retro base e il suo omaggio hanno la stessa categoria e
     // lo stesso nome — e' cosi' che si riconoscono — quindi finivano nello stesso gruppo e il
     // controllo li chiamava doppioni. Lo stesso vale per change ed errori di stampa.
-    // ⚠️ v6.312: questo ragionamento era giusto ma si fermava alla VERSIONE. Vedi sotto.
+    // ⚠️ v6.312/v6.313: il ragionamento regge, ma la chiave non si costruisce piu' qui.
     // 📌 Qui la versione entra nella CHIAVE invece di filtrare, ed e' la differenza col controllo
     // #3: quello si chiama "Figurine BASE duplicate" e le sole base gli bastano; questo si chiama
     // "Retro duplicati" e basta, quindi deve continuare a trovare anche due omaggi identici — solo
     // senza confondere un omaggio con la sua base.
-    // 🔴 v6.312 - LA VERSIONE NON BASTA, CI VUOLE ANCHE IL SUO TIPO. Due omaggi dello stesso
-    // retro, uno NERO e uno ROSSO, hanno serie, categoria, nome e versione identici: sono due
-    // oggetti diversi che la chiave della v6.311 non sapeva separare. Lo stesso per due change con
-    // `changeType` diverso, e per due errori di stampa.
-    // 📌 `_campoTipoDi` dice QUALE campo e' il tipo di questa versione, leggendolo da
-    // `VERSIONI_ARTICOLO`. Scriverlo a mano avrebbe voluto dire tre condizioni da ricordare il
-    // giorno che nasce una quarta versione con un tipo.
-    const _cTipo = _campoTipoDi(r);
-    const _valTipo = _cTipo ? String(r[_cTipo] || '').toLowerCase().trim() : '';
-    const key = r.seriesId + '|' + (_chiaveTipo(r) || 'base') + '|' + _valTipo + '|'
-      + (r.category||'').toLowerCase().trim() + '|' + _retroNomeLungo(r).toLowerCase();
+    // 🔴 v6.313 - LA CHIAVE NON SI SCRIVE PIU' QUI. La v6.311 aveva aggiunto la versione, la
+    // v6.312 il tipo — e la v6.312 stava rifacendo a mano cio' che la v6.255 aveva gia' fatto sulla
+    // chiave del SALVATAGGIO, che nel frattempo aveva anche la sottocategoria (v6.035) e che questa
+    // non ha mai avuto. Franco: "il controllo 4 non e' sensibile alla sottocategoria".
+    // 📌 Finche' restano due chiavi separate, torneranno a divergere: e' gia' successo due volte.
+    const key = _chiaveIdentitaRetro(r);
     if (!retroGroups[key]) retroGroups[key] = [];
     retroGroups[key].push(r);
   });
