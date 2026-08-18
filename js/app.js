@@ -1,6 +1,75 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.311 - 🔴 I CONTROLLI #3 E #4 DELLA PAGINA ERRORI DICEVANO IL FALSO, per lo stesso motivo in
+//          due forme diverse: non sapevano delle VERSIONI.
+//              #3 "Figurine base duplicate"  — escludeva una TERNA (variazioni e change) e non
+//                 errori di stampa ne' omaggi. Ma un errore di stampa ha lo stesso NUMERO della sua
+//                 base: ogni coppia base+errore era un "doppione". Ecco perche' la Serie 3, che di
+//                 errori di stampa ne ha tanti, compariva tante volte.
+//              #4 "Retro duplicati"          — la chiave era `serie|categoria|nome`, e un retro
+//                 omaggio ha categoria e nome della sua base. Segnalato da Franco.
+//
+//          📌 DUE RIMEDI DIVERSI, E LA DIFFERENZA STA NEL NOME DEL CONTROLLO. Il #3 dice "base",
+//          quindi gli bastano le base: `_eBase(f)`, che deriva dall'elenco e le conosce tutte e
+//          cinque. Il #4 dice solo "Retro", quindi deve continuare a trovare due omaggi identici: li'
+//          la versione entra nella CHIAVE, non nel filtro.
+//          ⚠️ Un controllo che dice il falso e' peggio di un controllo che manca: la pagina Errori si
+//          apre per fidarsi di quei numeri, e chi ci trova dentro coppie legittime smette di
+//          guardarla. Erano due dei punti censiti in `arretrato-omaggio.md` (famiglie A2 e C).
+//
+//          📌 RESTA APERTO il caso della serie 2018, che Franco vede segnalata dal #3 pur avendo
+//          solo due bustine: se erano base + errore di stampa, questa release lo chiude; se no, la
+//          causa e' un'altra e la dira' `ricognizione-controllo3.js`, che stampa tutti gli oggetti
+//          di quella serie con la loro sezione e la loro versione.
+//
+// v6.310 - VIA L'ID ACCANTO A OGNI OGGETTO NELLA PAGINA ERRORI (Franco: "di questa info non me ne
+//          faccio nulla"). Solo app.js piu' la versione.
+//          📌 Erano DUE punti, tutti e due nei gruppi duplicati (#3 e #4): un `<span>` in monospazio
+//          col codice Firestore, accanto al nome. Serviva a riconoscere due record identici a
+//          occhio; ma quei record hanno gia' un link che li apre, ed e' quello il modo di
+//          distinguerli — un id non si confronta a mente.
+//          ⚠️ NON sono spariti tutti gli id: quelli dentro gli `onclick` restano, e sono sette. Li'
+//          l'id non si legge, si USA — apre la scheda, cancella il doppione, corregge il
+//          collegamento. E' la differenza fra un dato mostrato e un dato usato, che in una riga di
+//          HTML si somigliano molto.
+//
+// v6.309 - OGNI CONTROLLO DELLA PAGINA ERRORI HA UN NUMERO (Franco: "ogni score deve avere un
+//          numero oltre che un nome; magari metti #1 prima del nome"). Solo app.js.
+//              #1 Figurine senza numero          #5 Item senza foto
+//              #2 Collegamenti Retro rotti       #6 Hanno il fronte ma non il retro
+//              #3 Gruppi di Figurine base dupl.  #7 Change col retro sbagliato
+//              #4 Gruppi di Retro duplicati
+//
+//          🔴 I NUMERI SONO SCRITTI A MANO, E NON E' PIGRIZIA: un contatore che li assegnasse
+//          mentre la pagina si disegna li farebbe SLITTARE. Il quinto e il sesto stanno nello stesso
+//          riquadro, e alcuni elenchi compaiono solo quando c'e' qualcosa da mostrare: il giorno che
+//          un controllo non ha niente da dire, tutti quelli dopo cambierebbero numero — e "guarda il
+//          #4" vorrebbe dire due cose diverse in due giorni diversi.
+//          📌 Un numero serve a NOMINARE una cosa, non a contarla: deve stare fermo. Il prezzo e'
+//          che aggiungerne uno in mezzo vuol dire rinumerare a mano, ed e' il prezzo giusto.
+//          ⚠️ Sono SETTE, non sei: il riquadro delle foto mancanti ne contiene due — "senza foto" e
+//          "fronte sì, retro no" — sotto un unico conteggio.
+//
+// v6.308 - LA PAGINA ERRORI SI LEGGE: IL GRIGIO DIVENTA BIANCO (Franco: "scrivi tutto in bianco").
+//          Solo app.js piu' la versione. Venticinque `var(--muted)` diventati `var(--text)`.
+//
+//          ⚠️ NON PROPRIO TUTTO: sei colori restano, e non per distrazione. Sono gli unici che
+//          DICONO qualcosa invece di decorare:
+//              `var(--danger)` / `var(--accent)`  il numerone dei retro rotti — rosso se ce ne sono,
+//                                                 verde se sono zero. E' il segnale della pagina.
+//              `var(--warn)`                      gli avvisi
+//              `var(--success)`                   il "tutto a posto"
+//          Portarli in bianco avrebbe reso una pagina di diagnostica leggibile e muta: si legge
+//          meglio e non si vede piu' se c'e' qualcosa che non va.
+//          📌 Se anche quelli devono sparire e' una riga, ma va deciso sapendo che si perde il
+//          colpo d'occhio, non solo un colore.
+//
+//          📌 IL GRIGIO NON ERA UNA SCELTA DI QUESTA PAGINA: `var(--muted)` e' il colore del testo
+//          secondario in tutto il sito, e qui era finito addosso a tutto — intestazioni di tabella,
+//          nomi di serie, note. In una pagina che si apre solo per leggere dei difetti, il testo
+//          secondario non esiste: e' tutto quello per cui si e' aperta la pagina.
+//
 // v6.307 - IL TITOLO DELL'EXPORT 2 SI ACCORCIA (Franco):
 //              "EXPORT 2: ARTICOLI PRESENTI NELLA TUA LISTA (SERIE NON COMPLETE)"
 //              "EXPORT 2: ARTICOLI NELLA TUA LISTA (SERIE INCOMPLETE)"
@@ -18374,7 +18443,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.307';
+const JS_VERSION = 'v6.311';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -36949,7 +37018,16 @@ function _diagnosiErrori() {
   // probabile fallimento del riconoscimento duplicati durante un import (che si aspettava
   // di aggiornare un record esistente, ma ne ha creato uno nuovo)
   const baseFigGroups = {};
-  allFigs.filter(f => f.section === 'figurines' && !f.isVariation && !f.isUnofficialVariation && !f.isChange).forEach(f => {
+  // 🔴 v6.311 - QUI C'ERA UNA TERNA, e il controllo diceva il falso. Escludeva variazioni,
+  // variazioni non ufficiali e change, ma NON gli errori di stampa ne' gli omaggi: e un errore di
+  // stampa ha lo STESSO NUMERO della sua base — e' la sua ragione d'essere. Quindi ogni coppia
+  // base + errore di stampa finiva in un "gruppo di due" e veniva chiamata doppione.
+  // Adesso si chiede `_eBase`, che deriva da `VERSIONI_ARTICOLO` e le conosce tutte e cinque: il
+  // controllo si chiama "Figurine BASE duplicate" e da oggi guarda le sole base.
+  // 📌 Conseguenza voluta: due OMAGGI identici non li segnala piu' questo controllo. Non e' una
+  // perdita nascosta — questo riquadro parla di base, e un controllo che dice una cosa e ne guarda
+  // un'altra e' peggio di un controllo che manca.
+  allFigs.filter(f => f.section === 'figurines' && _eBase(f)).forEach(f => {
     const key = f.seriesId + '|' + (f.number ? 'n:' + f.number : 'name:' + (f.name||'').toLowerCase().trim());
     if (!baseFigGroups[key]) baseFigGroups[key] = [];
     baseFigGroups[key].push(f);
@@ -36970,7 +37048,16 @@ function _diagnosiErrori() {
   // da quello che si vede sfogliando normalmente la sezione Retro (es. senza foto)
   const retroGroups = {};
   allFigs.filter(f => f.section === 'retros').forEach(r => {
-    const key = r.seriesId + '|' + (r.category||'').toLowerCase().trim() + '|' + _retroNomeLungo(r).toLowerCase();
+    // 🔴 v6.311 (Franco: "il controllo n.4 e' andato in confusione a causa dei retro omaggio").
+    // La chiave non guardava la VERSIONE: un retro base e il suo omaggio hanno la stessa categoria e
+    // lo stesso nome — e' cosi' che si riconoscono — quindi finivano nello stesso gruppo e il
+    // controllo li chiamava doppioni. Lo stesso vale per change ed errori di stampa.
+    // 📌 Qui la versione entra nella CHIAVE invece di filtrare, ed e' la differenza col controllo
+    // #3: quello si chiama "Figurine BASE duplicate" e le sole base gli bastano; questo si chiama
+    // "Retro duplicati" e basta, quindi deve continuare a trovare anche due omaggi identici — solo
+    // senza confondere un omaggio con la sua base.
+    const key = r.seriesId + '|' + (_chiaveTipo(r) || 'base') + '|'
+      + (r.category||'').toLowerCase().trim() + '|' + _retroNomeLungo(r).toLowerCase();
     if (!retroGroups[key]) retroGroups[key] = [];
     retroGroups[key].push(r);
   });
@@ -37155,11 +37242,11 @@ function renderAdminErrori() {
     });
     const resto = ordinati.length - _MAX_ELENCO;
     return ordinati.slice(0, _MAX_ELENCO).map(_linkOggetto).join('')
-      + (resto > 0 ? `<div style="padding:0.35rem 0.45rem;font-size:0.8rem;color:var(--muted);font-style:italic;">${currentLang==='it'?'…e altri '+resto:'…and '+resto+' more'}</div>` : '');
+      + (resto > 0 ? `<div style="padding:0.35rem 0.45rem;font-size:0.8rem;color:var(--text);font-style:italic;">${currentLang==='it'?'…e altri '+resto:'…and '+resto+' more'}</div>` : '');
   };
   const _sottoblocco = (idEl, etichetta, n, contenuto, rientro) => `<div>`
     + `<div onclick="_toggleElencoSenzaFoto('${idEl}')" style="cursor:pointer;user-select:none;display:flex;justify-content:space-between;align-items:center;gap:1rem;font-size:0.82rem;padding:0.15rem 0;">`
-    +   `<span style="color:var(--muted);"><span id="${idEl}-tri" style="color:var(--accent);">▶</span> ${esc(etichetta)}</span>`
+    +   `<span style="color:var(--text);"><span id="${idEl}-tri" style="color:var(--accent);">▶</span> ${esc(etichetta)}</span>`
     +   `<span style="color:var(--text);font-weight:700;">${n}</span></div>`
     + `<div id="${idEl}" style="display:none;max-height:260px;overflow-y:auto;margin:0.1rem 0 0.35rem;padding-left:${rientro};border-left:2px solid var(--border);">${contenuto}</div>`
     + `</div>`;
@@ -37184,7 +37271,7 @@ function renderAdminErrori() {
       const idEl = 'senzafoto-' + chiave + '-' + s;
       return _sottoblocco(idEl, getSectionLabel(s), mappa[s].length, _elencoSez(mappa[s], idEl), '0.4rem');
     }).join('')
-    || `<div style="font-size:0.85rem;color:var(--muted);">${currentLang==='it'?'nessuno':'none'}</div>`;
+    || `<div style="font-size:0.85rem;color:var(--text);">${currentLang==='it'?'nessuno':'none'}</div>`;
 
   // v6.084 - l'elenco dei change collegati al retro sbagliato. Raggruppato per serie come gli
   // altri, ma la riga dice una cosa in piu': il retro che c'e' e quello che dovrebbe esserci.
@@ -37208,8 +37295,8 @@ function renderAdminErrori() {
           .map(v => {
             const num = _haNumero(v.fig) && v.fig.number ? v.fig.number + ' ' : '';
             const proposta = v.corretto
-              ? `<span style="color:var(--muted);">${currentLang==='it'?'da':'from'}</span> <span style="color:var(--danger);">${esc(v.retroAttuale.name||'')}</span>`
-                + ` <span style="color:var(--muted);">${currentLang==='it'?'a':'to'}</span> <span style="color:var(--success);">${esc(v.corretto.name||'')} · ${esc(v.corretto.changeType||'')}</span>`
+              ? `<span style="color:var(--text);">${currentLang==='it'?'da':'from'}</span> <span style="color:var(--danger);">${esc(v.retroAttuale.name||'')}</span>`
+                + ` <span style="color:var(--text);">${currentLang==='it'?'a':'to'}</span> <span style="color:var(--success);">${esc(v.corretto.name||'')} · ${esc(v.corretto.changeType||'')}</span>`
               : `<span style="color:var(--warning,var(--danger));">${currentLang==='it'?'candidati multipli ('+v.quanti+'): scegliere a mano':'multiple candidates ('+v.quanti+'): choose manually'}</span>`;
             return `<div style="padding:0.25rem 0.45rem;font-size:0.82rem;line-height:1.4;">`
               + `<a href="#" onclick="openFigDetail('${v.fig.id}');return false;" style="color:var(--text);text-decoration:none;">${num}${esc(_nomeOggetto(v.fig))}</a>`
@@ -37223,7 +37310,7 @@ function renderAdminErrori() {
   el.innerHTML = `
     <div style="max-width:900px;">
       <h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">⚠️ ${currentLang==='it'?'Errori':'Errors'}</h3>
-      <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;">
+      <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
           ? 'Contatori per individuare possibili incoerenze nei dati. Una serie marcata "Non ha numeri" (nella form di modifica serie) viene esclusa da questo conteggio; lo stesso vale per una singola figurina marcata "Non ha numero" (nella form di modifica figurina), utile per le eccezioni all\'interno di una serie altrimenti numerata.'
           : 'Counters to spot possible data inconsistencies. A series marked "Does not have numbers" (in the series edit form) is excluded from this count; the same applies to a single sticker marked "Does not have a number" (in the sticker edit form), useful for exceptions within an otherwise numbered series.'}
@@ -37231,7 +37318,7 @@ function renderAdminErrori() {
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
           <div style="font-size:2.6rem;font-weight:700;color:${missingNumber.length ? 'var(--danger)' : 'var(--accent)'};">${missingNumber.length}</div>
-          <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">${currentLang==='it'?'Figurine senza numero':'Stickers without a number'}</div>
+          <div style="font-size:0.85rem;color:var(--text);margin-top:0.25rem;">#1 ${currentLang==='it'?'Figurine senza numero':'Stickers without a number'}</div>
         </div>
         ${missingNumber.length ? `
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;flex:1;min-width:280px;max-height:340px;overflow-y:auto;">
@@ -37245,7 +37332,7 @@ function renderAdminErrori() {
             .map(f => {
               const sName = seriesList.find(x => x.id === f.seriesId)?.name || (currentLang==='it'?'Serie sconosciuta':'Unknown series');
               return `<a href="#" onclick="openFigDetail('${f.id}');return false;" style="display:block;padding:0.4rem 0.5rem;border-radius:8px;text-decoration:none;color:var(--text);font-size:0.85rem;" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''">
-                <span style="color:var(--muted);">${sName}</span> — ${f.name}
+                <span style="color:var(--text);">${sName}</span> — ${f.name}
               </a>`;
             }).join('')}
         </div>` : ''}
@@ -37258,14 +37345,14 @@ function renderAdminErrori() {
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
           <div style="font-size:2.6rem;font-weight:700;color:${brokenRetroLinks.length ? 'var(--danger)' : 'var(--accent)'};">${brokenRetroLinks.length}</div>
-          <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">🔗 ${currentLang==='it'?'Collegamenti Retro rotti':'Broken Retro links'}</div>
+          <div style="font-size:0.85rem;color:var(--text);margin-top:0.25rem;">#2 🔗 ${currentLang==='it'?'Collegamenti Retro rotti':'Broken Retro links'}</div>
         </div>
         ${brokenRetroLinks.length ? `
         <div style="flex:1;min-width:280px;">
           <h4 onclick="toggleImportSection('brokenretro')" style="font-family:var(--font-ui);margin-bottom:0.5rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;font-size:0.95rem;"><span id="import-brokenretro-chevron">▶</span> ${currentLang==='it'?'Mostra elenco':'Show list'}</h4>
           <div id="import-brokenretro-section-content" style="display:none;">
             <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
-              <thead><tr style="border-bottom:1px solid var(--border);color:var(--muted);text-align:left;">
+              <thead><tr style="border-bottom:1px solid var(--border);color:var(--text);text-align:left;">
                 <th style="padding:6px 10px;">${currentLang==='it'?'Serie':'Series'}</th>
                 <th style="padding:6px 10px;">${currentLang==='it'?'Numero/Nome':'Number/Name'}</th>
                 <!-- v6.237 - "Versione": questa colonna mostra _tipoColorato, cioe' esattamente
@@ -37294,7 +37381,7 @@ function renderAdminErrori() {
                 return `<tr>
                   <td style="padding:6px 10px;">${sName}</td>
                   <td style="padding:6px 10px;">${f.number ? f.number + ' ' : ''}${f.name}</td>
-                  <td style="padding:6px 10px;color:var(--muted);">${typeLabel}</td>
+                  <td style="padding:6px 10px;color:var(--text);">${typeLabel}</td>
                   <td style="padding:6px 10px;">${actionBtn}</td>
                 </tr>`;
               }).join('')}</tbody>
@@ -37308,11 +37395,11 @@ function renderAdminErrori() {
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
           <div style="font-size:2.6rem;font-weight:700;color:${duplicateBaseFigGroups.length ? 'var(--danger)' : 'var(--accent)'};">${duplicateBaseFigGroups.length}</div>
-          <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">🧬 ${currentLang==='it'?'Gruppi di Figurine base duplicate':'Duplicate base sticker groups'}</div>
+          <div style="font-size:0.85rem;color:var(--text);margin-top:0.25rem;">#3 🧬 ${currentLang==='it'?'Gruppi di Figurine base duplicate':'Duplicate base sticker groups'}</div>
         </div>
         ${duplicateBaseFigGroups.length ? `
         <div style="flex:1;min-width:280px;">
-          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang==='it'?'Stesso Numero (o Nome, se senza numero) nella stessa serie — probabile duplicato creato da un import che non ha riconosciuto il record già esistente.':'Same Number (or Name, if no number) in the same series — likely a duplicate created by an import that didn\'t recognize the existing record.'}</p>
+          <p style="font-size:0.82rem;color:var(--text);margin-bottom:0.5rem;">${currentLang==='it'?'Stesso Numero (o Nome, se senza numero) nella stessa serie — probabile duplicato creato da un import che non ha riconosciuto il record già esistente.':'Same Number (or Name, if no number) in the same series — likely a duplicate created by an import that didn\'t recognize the existing record.'}</p>
           <h4 onclick="toggleImportSection('dupbasefig')" style="font-family:var(--font-ui);margin-bottom:0.5rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;font-size:0.95rem;"><span id="import-dupbasefig-chevron">▶</span> ${currentLang==='it'?'Mostra elenco':'Show list'}</h4>
           <div id="import-dupbasefig-section-content" style="display:none;">
             ${duplicateBaseFigGroups.map(g => {
@@ -37320,9 +37407,8 @@ function renderAdminErrori() {
               return `<div style="background:var(--card2);border-radius:8px;padding:0.6rem 0.85rem;margin-bottom:0.6rem;">
                 <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.3rem;">${sName} — ${g[0].number ? g[0].number : g[0].name}</div>
                 ${g.map(f => `<div style="display:flex;align-items:center;gap:0.5rem;padding:3px 0;font-size:0.8rem;">
-                  ${f.img ? `<img src="${cloudinaryUrl(f.img,'w_28,h_28,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : `<span style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.65rem;">${currentLang==='it'?'no foto':'no photo'}</span>`}
+                  ${f.img ? `<img src="${cloudinaryUrl(f.img,'w_28,h_28,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : `<span style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;color:var(--text);font-size:0.65rem;">${currentLang==='it'?'no foto':'no photo'}</span>`}
                   <a href="#" onclick="openFigDetail('${f.id}');return false;" style="color:var(--accent);text-decoration:underline;">${f.name} ↗</a>
-                  <span style="color:var(--muted);font-family:monospace;font-size:0.72rem;">${f.id}</span>
                   <button class="tbl-btn tbl-btn-del" onclick="deleteDuplicateBaseFig('${f.id}')" title="${currentLang==='it'?'Elimina questo doppione':'Delete this duplicate'}">🗑️</button>
                 </div>`).join('')}
               </div>`;
@@ -37336,11 +37422,11 @@ function renderAdminErrori() {
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
           <div style="font-size:2.6rem;font-weight:700;color:${duplicateRetroGroups.length ? 'var(--danger)' : 'var(--accent)'};">${duplicateRetroGroups.length}</div>
-          <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">🧬 ${currentLang==='it'?'Gruppi di Retro duplicati':'Duplicate Retro groups'}</div>
+          <div style="font-size:0.85rem;color:var(--text);margin-top:0.25rem;">#4 🧬 ${currentLang==='it'?'Gruppi di Retro duplicati':'Duplicate Retro groups'}</div>
         </div>
         ${duplicateRetroGroups.length ? `
         <div style="flex:1;min-width:280px;">
-          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang==='it'?'Stessa Categoria+Nome nella stessa serie — l\'import per Categoria+Nome può collegarsi al retro sbagliato tra questi.':'Same Category+Name in the same series — Category+Name-based import may link to the wrong retro among these.'}</p>
+          <p style="font-size:0.82rem;color:var(--text);margin-bottom:0.5rem;">${currentLang==='it'?'Stessa Categoria+Nome nella stessa serie — l\'import per Categoria+Nome può collegarsi al retro sbagliato tra questi.':'Same Category+Name in the same series — Category+Name-based import may link to the wrong retro among these.'}</p>
           <h4 onclick="toggleImportSection('dupretro')" style="font-family:var(--font-ui);margin-bottom:0.5rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;font-size:0.95rem;"><span id="import-dupretro-chevron">▶</span> ${currentLang==='it'?'Mostra elenco':'Show list'}</h4>
           <div id="import-dupretro-section-content" style="display:none;">
             ${duplicateRetroGroups.map(g => {
@@ -37349,9 +37435,8 @@ function renderAdminErrori() {
               return `<div style="background:var(--card2);border-radius:8px;padding:0.6rem 0.85rem;margin-bottom:0.6rem;">
                 <div style="font-size:0.85rem;font-weight:600;margin-bottom:0.3rem;">${sName} — ${sub ? sub + ' — ' : ''}${g[0].name}</div>
                 ${g.map(r => `<div style="display:flex;align-items:center;gap:0.5rem;padding:3px 0;font-size:0.8rem;">
-                  ${r.img ? `<img src="${cloudinaryUrl(r.img,'w_28,h_28,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : `<span style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.65rem;">${currentLang==='it'?'no foto':'no photo'}</span>`}
+                  ${r.img ? `<img src="${cloudinaryUrl(r.img,'w_28,h_28,c_fit,q_auto,f_auto')}" style="width:22px;height:22px;object-fit:contain;border-radius:4px;background:var(--card);">` : `<span style="width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;color:var(--text);font-size:0.65rem;">${currentLang==='it'?'no foto':'no photo'}</span>`}
                   <a href="#" onclick="openFigDetail('${r.id}');return false;" style="color:var(--accent);text-decoration:underline;">${currentLang==='it'?'apri':'open'} ↗</a>
-                  <span style="color:var(--muted);font-family:monospace;font-size:0.72rem;">${r.id}</span>
                 </div>`).join('')}
               </div>`;
             }).join('')}
@@ -37364,17 +37449,17 @@ function renderAdminErrori() {
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
           <div style="font-size:2.6rem;font-weight:700;color:${_totSenzaFoto ? 'var(--danger)' : 'var(--accent)'};">${_totSenzaFoto}</div>
-          <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">📷 ${currentLang==='it'?'Oggetti senza foto':'Items without a photo'}</div>
+          <div style="font-size:0.85rem;color:var(--text);margin-top:0.25rem;">📷 ${currentLang==='it'?'Oggetti senza foto':'Items without a photo'}</div>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.2rem;flex:1;min-width:260px;">
-          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">${currentLang==='it'?'Item senza foto':'Items without a photo'}</div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">#5 ${currentLang==='it'?'Item senza foto':'Items without a photo'}</div>
           ${_rigaSez(_senzaFoto, 'foto')}
           ${_avvisoSospensione('senzaFoto', _sospesiFoto)}
           <div style="border-top:1px solid var(--border);margin:0.7rem 0 0.5rem;"></div>
-          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">${currentLang==='it'?'Hanno il fronte ma non il retro':'Front only, back missing'} <span style="color:var(--muted);font-weight:400;">· ${_totSenzaRetro}</span></div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">#6 ${currentLang==='it'?'Hanno il fronte ma non il retro':'Front only, back missing'} <span style="color:var(--text);font-weight:400;">· ${_totSenzaRetro}</span></div>
           ${_rigaSez(_senzaRetro, 'retro')}
           ${_avvisoSospensione('senzaRetro', _sospesiRetro)}
-          <div style="font-size:0.78rem;color:var(--muted);margin-top:0.7rem;line-height:1.5;">
+          <div style="font-size:0.78rem;color:var(--text);margin-top:0.7rem;line-height:1.5;">
             ${currentLang==='it'
               ? 'Esclusi i ' + _fotoNonDisp + ' oggetti marcati "Foto non disponibile". Una variazione che mostra la foto della sua base non è considerata senza foto.'
               : 'Excluding the ' + _fotoNonDisp + ' items marked "Photo unavailable". A variation showing its base photo is not counted as missing.'}
@@ -37392,16 +37477,16 @@ function renderAdminErrori() {
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
           <div style="font-size:2.6rem;font-weight:700;color:${_totChangeRetroErrato ? 'var(--danger)' : 'var(--accent)'};">${_totChangeRetroErrato}</div>
-          <div style="font-size:0.85rem;color:var(--muted);margin-top:0.25rem;">🔗 ${currentLang==='it'?'Change col retro sbagliato':'Changes linked to the wrong back'}</div>
+          <div style="font-size:0.85rem;color:var(--text);margin-top:0.25rem;">#7 🔗 ${currentLang==='it'?'Change col retro sbagliato':'Changes linked to the wrong back'}</div>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.2rem;flex:1;min-width:260px;">
-          <p style="font-size:0.82rem;color:var(--muted);margin:0 0 0.6rem;line-height:1.5;">
+          <p style="font-size:0.82rem;color:var(--text);margin:0 0 0.6rem;line-height:1.5;">
             ${currentLang==='it'
               ? 'Il retro collegato è un retro <b>base</b>, ma esiste un retro con lo <b>stesso nome</b> marcato come change e con lo <b>stesso tipo</b> della figurina. Sono i casi in cui l\'import per Categoria+Nome si è agganciato all\'omonimo sbagliato (vedi “Gruppi di Retro duplicati” qui sopra). Effetto: nella scheda e in tabella si vede il retro base, cioè tutto tranne ciò che rende quella figurina un change.'
               : 'The linked back is a <b>base</b> back, but a back with the <b>same name</b> exists, flagged as a change and with the <b>same type</b> as the sticker. These are the cases where Category+Name import latched onto the wrong namesake.'}
           </p>
           ${_totChangeRetroErrato ? _elencoChangeRetro(_changeRetroErrato)
-            : `<div style="font-size:0.85rem;color:var(--muted);">${currentLang==='it'?'nessuno':'none'}</div>`}
+            : `<div style="font-size:0.85rem;color:var(--text);">${currentLang==='it'?'nessuno':'none'}</div>`}
           ${_avvisoSospensione('changeRetroErrato', _sospesiChangeRetro)}
         </div>
       </div>
