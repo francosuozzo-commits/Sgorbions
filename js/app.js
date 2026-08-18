@@ -1,6 +1,81 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.307 - IL TITOLO DELL'EXPORT 2 SI ACCORCIA (Franco):
+//              "EXPORT 2: ARTICOLI PRESENTI NELLA TUA LISTA (SERIE NON COMPLETE)"
+//              "EXPORT 2: ARTICOLI NELLA TUA LISTA (SERIE INCOMPLETE)"
+//          Solo app.js piu' la versione.
+//          📌 L'INGLESE NON CAMBIA: diceva gia' "ITEMS IN YOUR LIST (INCOMPLETE SERIES)", cioe'
+//          esattamente la forma corta. Era l'italiano ad avere due parole in piu' — "presenti" e
+//          "non complete" — che l'inglese non aveva mai avuto.
+//          ⚠️ RESTANO PIU' LUNGHI il nome del tasto e la voce delle istruzioni, che dicono ancora
+//          "articoli presenti nella tua lista" e "solo serie incomplete". Non sono stati toccati
+//          perche' Franco ha nominato il titolo; ma da adesso il titolo e il tasto sotto di lui
+//          dicono la stessa cosa con parole diverse, ed e' il genere di scarto che si nota solo
+//          leggendoli insieme.
+//          📌 Il titolo era anche il piu' lungo dei tre, ed era quello che nella v6.299 non stava
+//          in riga col tasto: accorciandolo di 13 caratteri quel vincolo si allenta, ma la
+//          disposizione resta quella della v6.302 (tasto a destra delle istruzioni), che non
+//          dipende dalla lunghezza del titolo.
+//
+// v6.306 - IL SELETTORE DICE "Versioni omaggio", E "Classifica" SI TRADUCE ANCHE NEL BLOCCO ADMIN
+//          (Franco).
+//
+//          📌 1. IL SELETTORE HA UN'ETICHETTA SUA, e per questo si puo' cambiare qui senza toccare
+//          niente altro. Quella riga non legge `VERSIONI_ARTICOLO`: e' scritta a mano dentro
+//          `renderItemTypeFilters`, come le sue sei sorelle. Quindi "Versioni omaggio" vale nel
+//          SELETTORE e basta — badge, colonne, spunte e tabelle continuano a dire "Omaggio", che e'
+//          la decisione della v6.240 (*"si chiama Omaggio, non Versione omaggio"*) e resta valida:
+//          li' la parola sta gia' dentro una colonna che si chiama VERSIONE, qui no.
+//          ⚠️ E' un'etichetta in piu' da tenere allineata il giorno che quel nome cambia: sono due
+//          posti, e questo CHANGELOG e' il filo che li lega.
+//
+//          📌 2. "Classifica" NON ERA TRADOTTA in un punto solo: il titolino del blocco admin sopra
+//          la griglia (`admin-classifica-title`), scritto nell'index **senza `data-i18n`**. Tutto il
+//          resto della parola era gia' a posto. Un testo senza `data-i18n` non e' "non ancora
+//          tradotto": e' un testo che il cambio lingua non vede proprio, e resta italiano per
+//          sempre senza dare segno.
+//          ⚠️ IL SUO GEMELLO `admin-ebay-title` NON HA LO STESSO PROBLEMA solo perche' dice "Ebay",
+//          che si scrive uguale nelle due lingue. E' senza `data-i18n` anche lui: il giorno che
+//          qualcuno lo cambia in "Vendita", torna il difetto.
+//
+//          ⚠️ E RESTA UNA DIVERGENZA CHE NON HO TOCCATO: in inglese "Classifica" si dice in DUE modi
+//          — `nav.classifica` la chiama "Ranking", e la mappa delle sezioni "Leaderboard". Due
+//          parole per la stessa pagina. Ho usato "Ranking" per il titolino nuovo, cioe' quella del
+//          menu, ma sceglierne una sola e' una decisione di Franco, non una pulizia.
+//
+// v6.305 - IL NOME DI UN TIPO DI ARTICOLO SI PUO' SCRIVERE ANCHE IN INGLESE (Franco: "vedo che in
+//          ENG Cartoncini non e' tradotto").
+//
+//          📌 "Cartoncini" NON ERA UN TESTO DEL SITO: era un DATO. I tipi di articolo li crea
+//          l'admin, e il modello aveva `nome` e `singolare` — uno per tipo, senza lingua. Quindi non
+//          e' che la traduzione mancasse: non c'era il posto dove scriverla, e nessun dizionario
+//          avrebbe potuto contenerla, perche' quella parola nasce dopo il codice.
+//          ⚠️ E' la ragione per cui non si trovava cercando fra le stringhe: si cercava nel posto
+//          sbagliato.
+//
+//          🆕 Due campi nuovi, `nomeEn` e `singolareEn`, e due caselle nella form del tipo.
+//          🆕 Due funzioni sole, `_nomeTipo()` e `_singolareTipo()`, che scelgono per lingua. Erano
+//          NOVE i punti che scrivevano `t.nome` a mano: nove `currentLang === 'it' ? ... : ...` da
+//          tenere allineati sarebbero stati nove occasioni di dimenticarne uno, e dimenticarlo non
+//          da' errore — mostra la parola italiana a un inglese, cioe' esattamente il difetto di
+//          partenza.
+//
+//          🔴 IL RIPIEGO E' L'ITALIANO, E NON E' UNA COMODITA'. Se `nomeEn` e' vuoto si mostra
+//          `nome`: un tipo senza traduzione deve leggersi in italiano, non sparire. Un nome vuoto in
+//          un box lo renderebbe irraggiungibile — ed e' gia' successo, con la v6.204, quando una
+//          rinomina aveva reso i Cartoncini incliccabili.
+//          📌 Quindi la casella inglese si puo' lasciare vuota, e i tipi che ci sono gia'
+//          continuano a funzionare senza che nessuno li riapra: nessuna migrazione.
+//
+//          ⚠️ COSA RESTA IN ITALIANO, e va detto: le CATEGORIE e le SOTTOCATEGORIE di questi
+//          prodotti (v6.148) sono dati anche loro, e non hanno un campo inglese. Stesso problema,
+//          un piano piu' sotto; non e' stato toccato qui perche' e' un altro elenco e un'altra form.
+//          📌 Sono passati a `_nomeTipo()` anche i messaggi di ELIMINAZIONE: due sono in inglese e
+//          nominavano il tipo in italiano dentro una frase inglese. Restano invece coi campi nudi i
+//          due punti che RIEMPIONO la form — li' si deve vedere e correggere il valore italiano, non
+//          quello scelto per la lingua corrente.
+//
 // v6.304 - "Usa questa foto" RESTA ARANCIONE, MA SENZA FARSI SPARIRE (Franco: "comunque sia quel
 //          pulsante deve essere arancione"). Solo index.html piu' la versione.
 //
@@ -18299,7 +18374,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.304';
+const JS_VERSION = 'v6.307';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -19610,7 +19685,7 @@ const i18n = {
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters:','items.resetFilters':'Clear all filters','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer. Two cases: (1) same character (same front) with a different graphic element in the printing — the back is the same as the base sticker’s; (2) same front, but it is the back that creates the variant — a back that does not belong to the series','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters:','items.resetFilters':'Clear all filters','admin.classifica':'Ranking','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer. Two cases: (1) same character (same front) with a different graphic element in the printing — the back is the same as the base sticker’s; (2) same front, but it is the back that creates the variant — a back that does not belong to the series','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
 'profile.title':'My Profile','profile.owned':'In My List','profile.total':'Total','profile.sec.figurines':'Stickers','profile.sec.retros':'Retros','profile.sec.albums':'Albums','profile.sec.bustine':'Wrappers','profile.sec.extras':'Other Items','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -19700,7 +19775,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.resetFilters':'Azzera filtri','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca indicando dove vuoi cercare','items.resetFilters':'Azzera filtri','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -25158,6 +25233,25 @@ async function _salvaTipiProdotto(tipi) {
 // Il box di un tipo nel primo livello dell'hub. Stessa forma delle card dei cinque prodotti, meno
 // l'elenco delle serie: un tipo senza serie non ha righe da mostrare li' dentro, e un riquadro
 // vuoto sotto una linea di separazione direbbe che manca qualcosa.
+// 🆕 v6.305 - IL NOME DI UN TIPO NELLA LINGUA CORRENTE. Il ripiego e' l'italiano: un tipo senza
+// traduzione si legge in italiano, non sparisce. Un nome vuoto renderebbe il suo box irraggiungibile
+// — e' successo davvero con la v6.204, per un'altra ragione, e non va rifatto per questa.
+function _nomeTipo(t) {
+  if (!t) return '';
+  return ((currentLang === 'it' ? t.nome : (t.nomeEn || t.nome)) || '').trim();
+}
+// Il singolare ha gia' un suo ripiego (il plurale, v6.148): qui se ne aggiunge uno prima, la lingua.
+// L'ordine e' quello che si legge: inglese singolare, inglese plurale, italiano singolare, italiano
+// plurale. Si scende finche' si trova qualcosa da scrivere.
+function _singolareTipo(t) {
+  if (!t) return '';
+  const cand = (currentLang === 'it')
+    ? [t.singolare, t.nome]
+    : [t.singolareEn, t.nomeEn, t.singolare, t.nome];
+  for (const c of cand) if ((c || '').trim()) return c.trim();
+  return '';
+}
+
 function tipoProdottoCardHTML(t, tutti) {
   const suoi = tutti.filter(f => (f.tipoProdotto || '') === t.id);
   const quanti = suoi.filter(_eBase).length;
@@ -25183,7 +25277,7 @@ function tipoProdottoCardHTML(t, tutti) {
     _matitaBox(t.id) + _matitaNome +
     '<div class="card-img-placeholder">' + _foto + '</div>' +
     '<div class="card-body">' +
-      '<div class="card-title" style="margin-bottom:0.5rem;">' + esc(t.nome || '') + '</div>' +
+      '<div class="card-title" style="margin-bottom:0.5rem;">' + esc(_nomeTipo(t)) + '</div>' +
       '<div class="card-desc">' + esc(desc) + '</div>' +
     '</div>' +
   '</div>';
@@ -25222,7 +25316,7 @@ function openTipoProdotto(id) {
   _tipoProdottoCorrente = id;   // DOPO: `openSeriesDetail` azzera, e deve azzerare
   openSeriesSection('extras');  // e questa ridisegna la griglia, quindi il filtro e' gia' acceso
   const titolo = document.getElementById('items-section-title');
-  if (titolo) titolo.textContent = tipo.nome || titolo.textContent;
+  if (titolo) titolo.textContent = _nomeTipo(tipo) || titolo.textContent;
 }
 
 // ---- LA FORM DEL TIPO: due campi, e non e' una form di prodotti ----
@@ -25244,6 +25338,8 @@ function openAddTipoProdottoModal(idDaModificare) {
   if (g('tipo-prodotto-id')) g('tipo-prodotto-id').value = t ? t.id : '';
   if (g('tipo-prodotto-nome')) g('tipo-prodotto-nome').value = t ? (t.nome || '') : '';
   if (g('tipo-prodotto-singolare')) g('tipo-prodotto-singolare').value = t ? (t.singolare || '') : '';
+  if (g('tipo-prodotto-nome-en')) g('tipo-prodotto-nome-en').value = t ? (t.nomeEn || '') : '';
+  if (g('tipo-prodotto-singolare-en')) g('tipo-prodotto-singolare-en').value = t ? (t.singolareEn || '') : '';
 
   if (g('tipo-prodotto-haretro')) g('tipo-prodotto-haretro').checked = !!(t && t.haRetro);
   if (g('tipo-prodotto-ordina')) g('tipo-prodotto-ordina').value = t ? (t.ordina || '') : '';   // v6.155
@@ -25291,14 +25387,14 @@ async function eliminaTipoProdotto() {
   // essere stato disegnato prima che qualcuno aggiungesse un oggetto, e un controllo accanto alla
   // scrittura e' l'unico che non si puo' scavalcare. Stessa forma della v6.143/B.
   if (dentro > 0) {
-    toast((it ? 'Non si può eliminare "' + (t.nome || '') + '": contiene ' + dentro +
+    toast((it ? 'Non si può eliminare "' + _nomeTipo(t) + '": contiene ' + dentro +
                 (dentro === 1 ? ' oggetto.' : ' oggetti.')
-              : 'Cannot delete "' + (t.nome || '') + '": it holds ' + dentro + ' item(s).'), 'error', null, 6000);
+              : 'Cannot delete "' + _nomeTipo(t) + '": it holds ' + dentro + ' item(s).'), 'error', null, 6000);
     return;
   }
   const msg = it
-    ? 'Elimino il tipo di articolo "' + (t.nome || '') + '"?\n\nNon contiene nessun oggetto.'
-    : 'Delete item type "' + (t.nome || '') + '"?\n\nIt holds no items.';
+    ? 'Elimino il tipo di articolo "' + _nomeTipo(t) + '"?\n\nNon contiene nessun oggetto.'
+    : 'Delete item type "' + _nomeTipo(t) + '"?\n\nIt holds no items.';
   if (!confirm(msg)) return;
   try {
     await _salvaTipiProdotto(_tipiProdotto().filter(x => x.id !== id));
@@ -25317,6 +25413,9 @@ async function salvaTipoProdotto() {
   const it = currentLang === 'it';
   const nome = (document.getElementById('tipo-prodotto-nome')?.value || '').trim();
   const singolare = (document.getElementById('tipo-prodotto-singolare')?.value || '').trim();
+  // v6.305 - le due caselle inglesi. Possono restare vuote: il ripiego e' l'italiano.
+  const nomeEn = (document.getElementById('tipo-prodotto-nome-en')?.value || '').trim();
+  const singolareEn = (document.getElementById('tipo-prodotto-singolare-en')?.value || '').trim();
   // v6.167 - il campo "Ordine" non c'e' piu': non lo usava nessuno (Franco). I box si ordinano per
   // NOME, che e' l'unico criterio rimasto e non ha bisogno di essere scritto da qualcuno.
   const ordina = (document.getElementById('tipo-prodotto-ordina')?.value || '').trim();   // v6.155
@@ -25362,12 +25461,12 @@ async function salvaTipoProdotto() {
     if (k < 0) { toast(it ? 'Quel tipo di articolo non esiste più.' : 'That item type no longer exists.', 'error'); return; }
     // Si riscrive il record intero a partire da quello che c'e': cosi' un campo aggiunto in futuro
     // non viene perso da un salvataggio scritto oggi.
-    tipi[k] = { ...tipi[k], nome, singolare, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile };
+    tipi[k] = { ...tipi[k], nome, singolare, nomeEn, singolareEn, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile };
   } else {
     // L'id si genera e non si scrive: e' un riferimento, e un riferimento battuto a mano e' un id
     // storto che non si vede (la lezione della v6.119 sul `baseFigurineId`).
     const id = 'tp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    tipi.push({ id, nome, singolare, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile });
+    tipi.push({ id, nome, singolare, nomeEn, singolareEn, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile });
   }
   try {
     await _salvaTipiProdotto(tipi);
@@ -27005,7 +27104,7 @@ function openSeriesSection(section) {
   // la v6.147. Si usa il SINGOLARE del tipo, che e' il campo scritto apposta nella v6.148.
   const _tipoQuiAdd = _tipoProdottoCorrente ? _tipiProdotto().find(x => x.id === _tipoProdottoCorrente) : null;
   if (addBtn) addBtn.textContent = _tipoQuiAdd
-    ? ((currentLang === 'it' ? '+ Aggiungi ' : '+ Add ') + (_tipoQuiAdd.singolare || _tipoQuiAdd.nome || ''))
+    ? ((currentLang === 'it' ? '+ Aggiungi ' : '+ Add ') + _singolareTipo(_tipoQuiAdd))
     : (addLabels[section] || (currentLang === 'it' ? '+ Aggiungi' : '+ Add'));
   renderItems();
   // Show WIP banner if less than 50% of stickers have photos
@@ -27833,7 +27932,7 @@ function renderItemTypeFilters() {
   // entrambe (regola di Franco), quindi la domanda avrebbe senso. Non li metto perche' non sono
   // stati chiesti, e due pulsanti in piu' su una fila gia' lunga si notano.
   if (presente.free) html += item('free',
-    it ? 'Omaggio' : 'Free', '');   // v6.240
+    it ? 'Versioni omaggio' : 'Free versions', '');   // v6.240, riscritta dalla v6.306
 
   // v5.910 — "Senza foto" vive nel box "Filtri generici", per TUTTI gli utenti (desktop e mobile).
   // v6.054 (Franco) — accanto c'e' "Con foto", ma solo per l'ADMIN.
@@ -28503,7 +28602,7 @@ function _retroCatPanelHTML(pairs, open, clickable, toggleFn, perColonna) {
   // che nomina un'altra cosa fa dubitare dei numeri che ha sotto.
   const _tipoQui = _tipoProdottoCorrente ? _tipiProdotto().find(x => x.id === _tipoProdottoCorrente) : null;
   const titoloTxt = _tipoQui
-    ? ((_tipoQui.nome || '') + (it ? ' per categoria' : ' by category'))
+    ? (_nomeTipo(_tipoQui) + (it ? ' per categoria' : ' by category'))
     : (clickable ? title : (it ? 'Retro base per categoria' : 'Base retros by category'));
   // v6.002 - il numero del totale in BIANCO come tutti gli altri contatori dello
   // specchietto; resta muted il solo punto medio, che e' un separatore e non un dato.
@@ -32959,7 +33058,7 @@ function _titoloTipoScheda(f) {
     // italiana dentro il codice, che la v6.073 ha gia' rifiutato di scrivere.
     // Chi non ha il singolare (i tipi creati prima di questa release) ripiega sul nome: sbagliato
     // di numero, ma leggibile — meglio di un titolo vuoto.
-    if (t) return t.singolare || t.nome || '';
+    if (t) return _singolareTipo(t);
   }
   return getSectionLabelSingular(f.section || 'figurines');
 }
@@ -40497,7 +40596,7 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
   html += '</div></div>';   // v6.294 - il tasto non sta piu' qui: e' salito sopra i riquadri
 
   // === EXPORT 2: figurine presenti nella tua lista, serie NON complete ===
-  html += '<hr style="border-color:var(--border);margin:1.5rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;color:var(--accent2);">' + (currentLang === 'it' ? 'EXPORT 2: ARTICOLI PRESENTI NELLA TUA LISTA (SERIE NON COMPLETE)' : 'EXPORT 2: ITEMS IN YOUR LIST (INCOMPLETE SERIES)') + '</h2>' + '<div style="color:var(--text);font-size:0.88rem;margin-bottom:0.75rem;overflow:hidden;">' + '<button class="btn-primary" style="float:right;margin:0 0 0.5rem 1rem;font-size:0.9rem;padding:0.45rem 1.2rem;white-space:nowrap;line-height:1.2;border-radius:10px;" onclick="exportOwnedIncomplete(this)">' + (currentLang === 'it' ? 'Esporta articoli nella tua lista (serie incomplete)' : 'Export items in your list (incomplete series)') + '</button>'
+  html += '<hr style="border-color:var(--border);margin:1.5rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;color:var(--accent2);">' + (currentLang === 'it' ? 'EXPORT 2: ARTICOLI NELLA TUA LISTA (SERIE INCOMPLETE)' : 'EXPORT 2: ITEMS IN YOUR LIST (INCOMPLETE SERIES)') + '</h2>' + '<div style="color:var(--text);font-size:0.88rem;margin-bottom:0.75rem;overflow:hidden;">' + '<button class="btn-primary" style="float:right;margin:0 0 0.5rem 1rem;font-size:0.9rem;padding:0.45rem 1.2rem;white-space:nowrap;line-height:1.2;border-radius:10px;" onclick="exportOwnedIncomplete(this)">' + (currentLang === 'it' ? 'Esporta articoli nella tua lista (serie incomplete)' : 'Export items in your list (incomplete series)') + '</button>'
     + '<span style="color:' + COL_CATEGORIA + ';">' + (currentLang === 'it' ? 'ISTRUZIONI:' : 'INSTRUCTIONS:') + '</span>'
     + '<ul style="margin:0.35rem 0 0;padding-left:1.2rem;">'
     + (currentLang === 'it'
