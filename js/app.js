@@ -1,6 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.304 - "Usa questa foto" RESTA ARANCIONE, MA SENZA FARSI SPARIRE (Franco: "comunque sia quel
+//          pulsante deve essere arancione"). Solo index.html piu' la versione.
+//
+//          🔴 `.btn-admin` PORTA DUE COSE INSIEME, e la v6.303 se le e' prese tutte e due: il colore
+//          arancione E `display:none !important` per chi non e' admin. Il secondo la v6.303 l'aveva
+//          segnalato ma tenuto, e non e' una cosa da tenere per distrazione: quella finestra ha DUE
+//          tasti, "Usa questa foto" e "Annulla". Nascondere solo il primo lascerebbe una finestra
+//          che si puo' solo annullare — un vicolo cieco, non una protezione. Chi non deve entrare
+//          li' va fermato PRIMA, non davanti a un tasto invisibile.
+//          📌 E' un effetto che da admin non si vede mai, cioe' esattamente come lo si prova.
+//
+//          🆕 `.btn-azione-admin`: il solo COLORE, senza la sparizione. Stesso arancione e stesso
+//          hover di `.btn-admin`, presi dalle stesse variabili — non un arancione che gli somiglia.
+//          📌 Serve una classe e non uno stile inline perche' l'hover, inline, non si scrive.
+//
 // v6.303 - IL TASTO "Usa questa foto" DIVENTA ARANCIONE (Franco: "il bottone action per l'admin
 //          deve essere arancione"). Solo index.html piu' la versione.
 //          📌 E' `class="btn-primary"` che diventa `class="btn-primary btn-admin"`: il colore non e'
@@ -18284,7 +18299,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.303';
+const JS_VERSION = 'v6.304';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
