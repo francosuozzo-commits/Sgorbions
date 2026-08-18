@@ -1,6 +1,35 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.312 - 🔴 LA v6.311 SI ERA FERMATA UN GRADINO PRIMA. Aveva messo la VERSIONE nella chiave
+//          del controllo #4, e questo bastava a non confondere piu' un retro base col suo omaggio.
+//          Non bastava a distinguere DUE OMAGGI DELLO STESSO RETRO: uno NERO e uno ROSSO hanno la
+//          stessa serie, la stessa categoria, lo stesso nome e la stessa versione. Per la chiave
+//          erano lo stesso oggetto, quindi ogni coppia NERO/ROSSO era un "doppione".
+//
+//          📌 E NON RIGUARDA SOLO L'OMAGGIO. Le versioni con un tipo sono tre - change,
+//          omaggio, errore di stampa - e il difetto e' identico per tutte e tre: nella serie 3 le
+//          coppie segnalate erano CHANGE dello stesso retro con `changeType` diverso.
+//
+//          🆕 La chiave passa da `serie|versione|categoria|nome` a
+//          `serie|versione|TIPO|categoria|nome`. Il campo del tipo NON e' scritto a mano: lo dice
+//          `_campoTipoDi(f)`, che lo legge da `VERSIONI_ARTICOLO`. Tre `if` a mano sarebbero stati
+//          tre posti da ricordare il giorno che nasce una quarta versione con un tipo - ed e'
+//          esattamente il modo in cui e' nata la famiglia di difetti dell'omaggio.
+//
+//          ⚠️ COSA CONTINUA A SEGNALARE, ed e' giusto cosi': due retro BASE identici, e due
+//          omaggi con lo STESSO tipo. Quelli sono doppioni veri, ed e' il mestiere del controllo.
+//
+//          📌 COME E' STATA TROVATA: non dal codice, dai dati. `ricognizione-controllo4.js`
+//          ha stampato i gruppi ancora segnalati con dentro la versione di ogni membro, e le coppie
+//          NERO/ROSSO si sono lette a occhio. La chiave vecchia dava 224 gruppi, la v6.311 ne dava
+//          103: meta' del difetto era corretta, l'altra meta' no.
+//          ⚠️ E QUELLO SCRIPT AVEVA UN DIFETTO SUO: usava `%-24s` per incolonnare, che
+//          `console.log` non conosce. Chrome l'ha lasciato letterale e ha spostato TUTTI i valori di
+//          una casella - la versione compariva sotto "cat=", il tipo sotto "isFreeVersion=". Le
+//          colonne si sono rilette a mano. Uno strumento di diagnosi che sposta i valori e' peggio
+//          di nessuno strumento: non tace, risponde male.
+//
 // v6.311 - 🔴 I CONTROLLI #3 E #4 DELLA PAGINA ERRORI DICEVANO IL FALSO, per lo stesso motivo in
 //          due forme diverse: non sapevano delle VERSIONI.
 //              #3 "Figurine base duplicate"  — escludeva una TERNA (variazioni e change) e non
@@ -18443,7 +18472,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.311';
+const JS_VERSION = 'v6.312';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -37052,11 +37081,21 @@ function _diagnosiErrori() {
     // La chiave non guardava la VERSIONE: un retro base e il suo omaggio hanno la stessa categoria e
     // lo stesso nome — e' cosi' che si riconoscono — quindi finivano nello stesso gruppo e il
     // controllo li chiamava doppioni. Lo stesso vale per change ed errori di stampa.
+    // ⚠️ v6.312: questo ragionamento era giusto ma si fermava alla VERSIONE. Vedi sotto.
     // 📌 Qui la versione entra nella CHIAVE invece di filtrare, ed e' la differenza col controllo
     // #3: quello si chiama "Figurine BASE duplicate" e le sole base gli bastano; questo si chiama
     // "Retro duplicati" e basta, quindi deve continuare a trovare anche due omaggi identici — solo
     // senza confondere un omaggio con la sua base.
-    const key = r.seriesId + '|' + (_chiaveTipo(r) || 'base') + '|'
+    // 🔴 v6.312 - LA VERSIONE NON BASTA, CI VUOLE ANCHE IL SUO TIPO. Due omaggi dello stesso
+    // retro, uno NERO e uno ROSSO, hanno serie, categoria, nome e versione identici: sono due
+    // oggetti diversi che la chiave della v6.311 non sapeva separare. Lo stesso per due change con
+    // `changeType` diverso, e per due errori di stampa.
+    // 📌 `_campoTipoDi` dice QUALE campo e' il tipo di questa versione, leggendolo da
+    // `VERSIONI_ARTICOLO`. Scriverlo a mano avrebbe voluto dire tre condizioni da ricordare il
+    // giorno che nasce una quarta versione con un tipo.
+    const _cTipo = _campoTipoDi(r);
+    const _valTipo = _cTipo ? String(r[_cTipo] || '').toLowerCase().trim() : '';
+    const key = r.seriesId + '|' + (_chiaveTipo(r) || 'base') + '|' + _valTipo + '|'
       + (r.category||'').toLowerCase().trim() + '|' + _retroNomeLungo(r).toLowerCase();
     if (!retroGroups[key]) retroGroups[key] = [];
     retroGroups[key].push(r);
