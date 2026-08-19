@@ -1,6 +1,53 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.318 - 🆕 UN VALORE CHE FINISCE CON "!" PRENDE UNO SPAZIO PRIMA DEL PUNTO ESCLAMATIVO.
+//          Franco: *"a video il ! rischia di non vedersi"*. Solo app.js (piu' la versione).
+//
+//          ⚠️ SI TOCCA IL DATO PER UN PROBLEMA DI RESA A SCHERMO. E' il verso opposto della lezione
+//          del `#` della v6.115, ed e' una scelta presa da Franco dopo essere stato messo davanti
+//          alle conseguenze: il valore finisce nei Nomi completi e nei titoli eBay, dove gli 80
+//          caratteri sono un tetto vero e uno spazio in piu' puo' far scattare il troncamento.
+//
+//          🆕 `_spaziaEsclamativoFinale()`, una funzione. Idempotente, e se non c'e' un "!" in
+//          fondo la stringa torna INTATTA - nemmeno ripulita ai bordi: normalizzare di straforo
+//          anche gli spazi sarebbe una seconda modifica non chiesta nascosta dentro la prima.
+//
+//          ⬜ DOVE SCATTA (Franco: "a ogni scrittura, ovunque"):
+//              · `_saveFigurineItem` per i nove campi di testo dell'articolo. E' il punto da cui
+//                passano TUTTE le scritture - scheda, celle della vista tabellare, import, e
+//                qualunque strada futura. Nelle form sarebbe stato un elenco da ricordare.
+//              · `fsSave('series')` per nome, nome corto e i quattro elenchi di tipologie.
+//          🔴 GLI ELENCHI DELLA SERIE VANNO INSIEME AI TIPI DELL'ARTICOLO, o l'import comincia a
+//          scartare righe: il Tipo scritto sull'articolo viene CONFRONTATO con l'elenco configurato
+//          sulla serie, e con lo spazio da una parte sola "RISATE!" e "RISATE !" sono due cose
+//          diverse. E' la ragione per cui la scelta "solo categoria e sottocategoria" e' stata
+//          scartata da Franco dopo averla vista scritta.
+//          🔴 E GLI `items` DENTRO IL DOCUMENTO DELLA SERIE NON SI TOCCANO: le figurine vivono li'
+//          dentro, e normalizzarle da `fsSave` vorrebbe dire che un salvataggio qualunque della
+//          serie riscrive in silenzio centinaia di articoli.
+//
+//          🔴 IL NOME COMPLETO SI RIFA' se un campo si e' mosso. Chi salva lo compone PRIMA di
+//          arrivare al salvataggio: senza, si scriverebbero nello stesso istante una categoria
+//          "ROSSO !" e un Nome completo che dice ancora "ROSSO!".
+//
+//          ⬜ E L'ABBINAMENTO DELLE FOTO PER NOME FILE NON DEVE FALLIRE (Franco). Il file sul disco
+//          si chiama come uno l'ha chiamato, quasi sempre senza spazio. In `normKey` lo spazio
+//          prima del "!" si toglie da ENTRAMBE le parti.
+//          📌 E si toglie davanti a QUALUNQUE "!", non solo a quello finale: nel Nome completo di
+//          un retro la categoria sta all'inizio, quindi lo spazio aggiunto in fondo AL CAMPO
+//          finisce in MEZZO alla chiave ("RISATE ! - GATTO"). Una regola ancorata alla fine - cioe'
+//          la stessa che scrive - qui non funzionerebbe. Sono due regole diverse apposta.
+//
+//          ⬜ L'IMPORT EXCEL: il valore letto dal file passa dalla regola appena entra, nei due
+//          accessori delle colonne. Cosi' le ~25 condizioni che confrontano file e database
+//          confrontano due valori nella stessa forma, e non e' stato necessario toccarne nessuna -
+//          il che tiene questa release fuori dalla famiglia F dell'arretrato, che ha bisogno di una
+//          sua suite di prove prima di essere aperta.
+//          ⚠️ FINESTRA DA CHIUDERE SUBITO: finche' i dati vecchi non sono aggiornati, il database
+//          dice "RISATE!" e il file normalizzato dice "RISATE !". L'aggiornamento massivo va fatto
+//          appena pubblicato - lo fa Franco con la modifica in blocco.
+//
 // v6.317 - 🔴 NELLA SCHEDA IN MODIFICA IL NOME NON SI VEDEVA TUTTO, E LO SPAZIO C'ERA.
 //          Franco: *"viene fatto in modo diverso il calcolo dello spazio da usare?"*. Si', ed e'
 //          tutta la differenza. Solo index.html (una regola CSS in linea, piu' la versione).
@@ -18710,7 +18757,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.317';
+const JS_VERSION = 'v6.318';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -19245,6 +19292,15 @@ function _erroreNienteDb(operazione) {
 async function fsSave(collName, item) {
   // v6.232 - PRIMA DI TUTTO IL RESTO: vedi il blocco qui sopra.
   if (!db) throw _erroreNienteDb('salvataggio');
+  // 🆕 v6.318 - la regola del "!" sui campi della SERIE: il nome, il nome corto e i quattro elenchi
+  // di tipologie. Qui e non nella form della serie, per la stessa ragione dell'altro punto: da qui
+  // passano tutte le scritture di una serie, compresa quella della v6.019 che riscrive i soli
+  // `retroChangeTypes`.
+  // 🔴 GLI `items` NON SI TOCCANO, ed e' la riga piu' importante di questo blocco. Le figurine
+  // vivono DENTRO il documento della serie: normalizzarle da qui vorrebbe dire che un salvataggio
+  // qualunque della serie riscrive in silenzio centinaia di articoli. Gli articoli passano dal loro
+  // punto (`_saveFigurineItem`), uno per volta, dove chi salva sa cosa sta salvando.
+  if (collName === 'series' && item) _applicaEsclamativo(item, _CAMPI_ESCL_SERIE, _ELENCHI_ESCL_SERIE);
   // Invalida la cache se modifichiamo serie o figurine
   if (collName === 'series' || collName === 'figurines' || collName === 'levels') {
     _invalidateSessionCache();
@@ -19365,7 +19421,72 @@ function _sanificaPerFirestore(obj, percorso, rimossi) {
   return { valore: obj, rimossi };
 }
 
+// 🆕 v6.318 (Franco) — UN VALORE CHE FINISCE CON "!" PRENDE UNO SPAZIO PRIMA DEL PUNTO
+// ESCLAMATIVO. Motivo: *"a video il ! rischia di non vedersi"*. Vale al SALVATAGGIO, quindi il dato
+// scritto e' gia' nella forma giusta e nessuna schermata deve ricordarsene.
+//
+// ⚠️ SI TOCCA IL DATO PER UN PROBLEMA DI RESA A SCHERMO, ed e' il verso opposto della lezione del
+// `#` della v6.115. E' una scelta consapevole di Franco, messo davanti alle conseguenze: il valore
+// finisce nei Nomi completi e nei titoli eBay (dove gli 80 caratteri sono un tetto vero).
+//
+// 📌 SOLO IN FONDO, e non e' pigrizia: il "!" in mezzo a una frase e' gia' seguito da uno spazio,
+// quindi si vede. Il caso illeggibile e' quello in cui dopo il "!" non c'e' niente, o c'e' subito
+// il separatore del Nome completo.
+// 📌 IDEMPOTENTE: se lo spazio c'e' gia' non se ne aggiunge un secondo, e "ROSSO!!" diventa
+// "ROSSO !!" (uno spazio prima del gruppo, non fra i due punti).
+// ⚠️ Se non c'e' un "!" in fondo la stringa torna INTATTA, nemmeno ripulita ai bordi: normalizzare
+// di straforo anche gli spazi sarebbe una seconda modifica non chiesta, nascosta dentro la prima.
+function _spaziaEsclamativoFinale(v) {
+  if (typeof v !== 'string') return v;
+  if (!/!\s*$/.test(v)) return v;
+  const s = v.trim();
+  return s.replace(/\s*(!+)$/, (tutto, punti) => (s.length > tutto.length ? ' ' : '') + punti);
+}
+
+// I campi su cui la regola vale. Elenchi dichiarati e non dedotti: un campo di testo non e'
+// riconoscibile dal suo tipo (anche una nota e' una stringa, e li' il "!" e' prosa, non un
+// identificatore). ⚠️ Chi aggiunge un campo di testo che fa da CHIAVE lo aggiunge qui.
+const _CAMPI_ESCL_ARTICOLO = ['name', 'subname', 'category', 'subcategory', 'subseries', 'size',
+                              'changeType', 'freeVersionType', 'printErrorType'];
+const _CAMPI_ESCL_SERIE    = ['name', 'nomeCorto'];
+// 🔴 GLI ELENCHI DELLE TIPOLOGIE VANNO INSIEME AI CAMPI, O L'IMPORT COMINCIA A SCARTARE RIGHE.
+// Il Tipo scritto sull'articolo viene CONFRONTATO con l'elenco configurato sulla serie: se il "!"
+// prendesse lo spazio da una parte sola, "RISATE!" e "RISATE !" diventerebbero due cose diverse.
+const _ELENCHI_ESCL_SERIE  = ['retroChangeTypes', 'frontChangeTypes',
+                              'frontFreeVersionTypes', 'retroFreeVersionTypes', 'freeVersionTypes'];
+
+// Applica la regola a un oggetto e dice QUALI campi ha cambiato: chi chiama ha bisogno di saperlo
+// (il Nome completo va ricalcolato solo se qualcosa si e' mosso).
+function _applicaEsclamativo(oggetto, campi, elenchi) {
+  const cambiati = [];
+  for (const k of campi || []) {
+    const nuovo = _spaziaEsclamativoFinale(oggetto[k]);
+    if (nuovo !== oggetto[k]) { oggetto[k] = nuovo; cambiati.push(k); }
+  }
+  for (const k of elenchi || []) {
+    if (!Array.isArray(oggetto[k])) continue;
+    const nuovo = oggetto[k].map(_spaziaEsclamativoFinale);
+    if (nuovo.some((v, i) => v !== oggetto[k][i])) { oggetto[k] = nuovo; cambiati.push(k); }
+  }
+  return cambiati;
+}
+
 async function _saveFigurineItem(item) {
+  // 🆕 v6.318 - la regola del "!" sta QUI e non nelle form, perche' questo e' il punto da cui
+  // passano TUTTE le scritture di un articolo: la scheda, le celle della vista tabellare, l'import
+  // e qualunque strada futura. Metterla nelle form avrebbe voluto dire un elenco di punti da
+  // ricordare, cioe' il difetto che questa settimana e' costato quattro release.
+  {
+    const cambiati = _applicaEsclamativo(item, _CAMPI_ESCL_ARTICOLO, null);
+    // 🔴 E IL NOME COMPLETO SI RIFA', se qualcosa si e' mosso. Chi salva lo compone PRIMA di
+    // arrivare qui: senza questa riga si scriverebbero insieme una categoria "ROSSO !" e un Nome
+    // completo che dice ancora "ROSSO!" - due campi salvati nello stesso istante che si
+    // contraddicono, ed e' il tipo di divergenza che poi nessuno sa da dove venga.
+    if (cambiati.length && typeof item.fullName === 'string') {
+      try { item.fullName = computeFullName(item, getData('figurines', [])); }
+      catch (e) { console.error('computeFullName dopo la regola del "!"', e); }
+    }
+  }
   // v6.043 - vedi sopra: via gli undefined, ma detti ad alta voce.
   {
     const r = _sanificaPerFirestore(item);
@@ -36651,7 +36772,10 @@ async function startImportRetro() {
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const getCol = (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return String(v[1]).trim(); } return ''; };
+    // v6.318 - il valore letto dal file passa dalla regola del "!" SUBITO, appena entra. Cosi' le
+    // venticinque condizioni che piu' sotto confrontano il file col database confrontano due valori
+    // nella stessa forma, senza doverle toccare una per una.
+    const getCol = (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return _spaziaEsclamativoFinale(String(v[1]).trim()); } return ''; };
     const serieCol = getCol('Serie','series','serie');
     const nome = getCol('Nome','name','nome');
     const categoria = getCol('Categoria','category','categoria');
@@ -37005,7 +37129,8 @@ async function startImportFig() {
   const righeAggiornate = [];    // righe che hanno SOVRASCRITTO un record esistente (dati modificati)
   const errRiga = (msg, lvl) => { figImportLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
 
-  const mkGet = (row) => (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return String(v[1]).trim(); } return ''; };
+  // v6.318 - come l'altro accessore: la regola del "!" si applica in ingresso, una volta sola.
+  const mkGet = (row) => (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return _spaziaEsclamativoFinale(String(v[1]).trim()); } return ''; };
 
   // Retro per Categoria+Nome nella serie corrente. v5.814 — riconciliazione estesa: se la riga indica
   // "Retro - Tipo di change" o "Retro - Tipo errore di stampa", si aggancia il CHANGE/ERRORE DI STAMPA di
@@ -39056,6 +39181,14 @@ async function startAdminFotoNoNumberUpload() {
     .replace(/[\u2010-\u2015\u2212]/g, '-')
     .replace(/[\\/:*?"<>|]/g, '') /* v6.040 - TUTTI i caratteri vietati nei nomi file */
     .replace(/[\s\u00a0\u2000-\u200a\u202f\u3000]+/g, ' ')
+    // 🆕 v6.318 (Franco) - LO SPAZIO PRIMA DEL "!" NON DEVE FAR FALLIRE L'ABBINAMENTO.
+    // Dalla v6.318 un valore che finisce con "!" viene salvato con uno spazio davanti, ma il file
+    // sul disco si chiama come uno l'ha chiamato - quasi sempre senza. Qui si toglie da ENTRAMBE
+    // le parti, quindi "RISATE!" e "RISATE !" diventano la stessa chiave.
+    // ⚠️ E si toglie davanti a QUALUNQUE "!", non solo a quello finale: nel Nome completo di un
+    // retro la categoria sta all'inizio, quindi lo spazio aggiunto in fondo AL CAMPO finisce in
+    // MEZZO alla chiave ("RISATE ! - GATTO"). Una regola ancorata alla fine non lo vedrebbe.
+    .replace(/\s+(!)/g, '$1')
     .trim();
 
   for (let i = 0; i < files.length; i++) {
