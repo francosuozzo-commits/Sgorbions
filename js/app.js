@@ -1,6 +1,213 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.317 - 🔴 NELLA SCHEDA IN MODIFICA IL NOME NON SI VEDEVA TUTTO, E LO SPAZIO C'ERA.
+//          Franco: *"viene fatto in modo diverso il calcolo dello spazio da usare?"*. Si', ed e'
+//          tutta la differenza. Solo index.html (una regola CSS in linea, piu' la versione).
+//
+//          📌 LE DUE MISURE. In `.detail-row` il valore e' un elemento flex con `flex: 0 1 auto`,
+//          cioe' *"chiedi lo spazio che ti serve"*. Ma cosa serva lo dicono due cose diverse:
+//              · in sola lettura il valore e' TESTO: chiede la sua lunghezza e, se non ci sta, va a
+//                capo. Si vede sempre tutto.
+//              · in modifica e' un `<input>`: chiede una larghezza FISSA (la ventina di caratteri
+//                predefinita del browser) e non va a capo mai - quello che eccede scorre fuori.
+//          🔴 E `.form-input` HA GIA' `width:100%`, il che rende il difetto piu' insidioso: cento
+//          per cento DI COSA? Del contenitore, che e' lo `span`, che sta chiedendo la sua larghezza
+//          all'input. Il conto gira a vuoto e resta la misura predefinita. Il nome lungo non veniva
+//          tagliato dallo spazio disponibile - lo spazio c'era: nessuno glielo stava dando.
+//
+//          ⬜ IL RIMEDIO, una riga: allo `span` che contiene un campo si dice di prendersi lo spazio
+//          che avanza. Da li' il `width:100%` che c'era gia' significa qualcosa.
+//          📌 `text-align:right` non e' un di piu': senza, Numero e Punteggio - che hanno una
+//          larghezza fissa - scivolerebbero a sinistra, perche' lo span adesso e' largo quanto la
+//          riga. Sul testo DENTRO i campi non ha effetto, perche' sugli elementi di form
+//          `text-align` non si eredita: e' la stessa ragione per cui e' servita la v6.316.
+//
+//          ⚠️ `:has()` E' UNA SCELTA DICHIARATA. Un selettore "il genitore di" non esiste senza, e
+//          l'alternativa era marcare a mano quindici `<span>` in `app.js`: un'altra lista da tenere
+//          allineata, cioe' il difetto che questa settimana e' costato quattro release. Il prezzo:
+//          su un browser che non lo conosce la regola viene ignorata e si torna a com'era, senza
+//          rompere niente. Accettabile QUI perche' la scheda in modifica la vede il solo admin.
+//
+// v6.316 - 🆕 I CAMPI DI SOLA LETTURA DELLA SCHEDA SI ALLINEANO A DESTRA COME GLI ALTRI VALORI.
+//          Franco: *"come mai il valore del campo Serie e' giustificato a dx, mentre Categoria e
+//          Sottocategoria no? anche nome e sottonome non lo sono"*. Solo index.html (una regola CSS
+//          in linea, piu' la versione).
+//
+//          📌 LA RISPOSTA ALLA SUA DOMANDA, perche' spiega anche perche' il rimedio e' quello:
+//          `.detail-row` ha `justify-content:space-between`, quindi il valore finisce a destra per
+//          tutti. Ma la Serie e' un TESTO, che occupa lo spazio che gli serve; Categoria,
+//          Sottocategoria, Nome e Sottonome sono `<input>`, che hanno una larghezza propria e il
+//          testo a SINISTRA dentro quella larghezza. La casella era gia' a destra: mancava il testo
+//          dentro la casella. E `text-align` non si eredita sugli elementi di form - lo mette a
+//          `start` il foglio di stile del browser - quindi andava scavalcato, non ereditato.
+//
+//          ⬜ SOLO I CAMPI IN SOLA LETTURA, come chiesto, e la ragione regge da sola: in un campo
+//          che si scrive il testo a destra fa saltare il cursore mentre si digita. In uno che non
+//          si scrive quel problema non c'e', e allineato a destra si legge come i valori della
+//          vista in lettura - che e' cio' che quei campi sono diventati con la v6.314.
+//
+//          🔗 Il gancio e' il selettore `[readonly]`, quindi l'allineamento segue DA SE' la stessa
+//          fonte che decide la sola lettura (`_statoCampoEreditato`): non nasce una seconda
+//          condizione da tenere allineata alla prima. E' la ragione per cui e' CSS e non JavaScript.
+//          ⚠️ Ancorato a `.detail-value`: nella scheda della serie ci sono otto `<input readonly>`
+//          (i conteggi calcolati) che stanno fuori di li' e non devono muoversi.
+//          ⚠️ Sotto gli 860px si torna a sinistra: la riga diventa una colonna con l'etichetta
+//          sopra, e li' "a destra" allontanerebbe il valore dalla sua etichetta senza allinearlo a
+//          niente.
+//
+//          ⬜ COSA NON FA: la vista in LETTURA non e' toccata. Li' i valori sono gia' testo dentro
+//          `.detail-value`, quindi gia' a destra per la stessa regola di `space-between`. Se se ne
+//          vede uno che non lo e', e' un caso che non ho trovato e va guardato prima di cambiarlo:
+//          Descrizione e Note stanno di proposito allineate a sinistra (`align-items:flex-start`),
+//          perche' sono paragrafi e non valori.
+//
+// v6.315 - 🆕 IL BOTTONE "AZZERA FILTRI" SI ACCENDE SOLO SE C'E' QUALCOSA DA AZZERARE.
+//          Franco: *"rendilo premibile solo quando premerlo ha un effetto. Cosi' il tasto prende
+//          piu' significato quando e' acceso, e lo si nota maggiormente"*. Solo app.js (piu' la
+//          versione nell'index).
+//
+//          🆕 `_qualcheFiltroAcceso()`, gemella di `azzeraTuttiIFiltri()`: una riga per ogni filtro
+//          che quella spegne, e la domanda e' sempre la stessa - *"e' diverso dal suo valore di
+//          spento?"*.
+//          🔴 SONO DUE LISTE CHE DEVONO DIRE LA STESSA COSA, e non si possono derivare: i filtri
+//          sono variabili sciolte con valori-di-spento diversi (`null`, `false`, `''`, `'all'`, un
+//          Set, e uno che dipende da chi sei). E' la stessa situazione della v6.267, e la risposta
+//          e' la stessa: non un promemoria, un CONTROLLO. `prova-v6315.js` le confronta due volte -
+//          per NOME (i filtri nominati di qua devono essere quelli di la') e ESEGUENDOLE (azzera
+//          tutto e pretende `false`, poi accende un filtro per volta e pretende `true` ogni volta).
+//          Se un domani nasce un filtro nuovo e lo si mette in una sola delle due, il test lo dice.
+//
+//          📌 DUE DETTAGLI CHE SEMBRANO SVISTE E NON LO SONO:
+//              · `_itemTypeFilter` si confronta con `_tipoIniziale()`, non con 'all': da admin lo
+//                spento e' 'all', per tutti gli altri e' 'base'. Con 'all' scritto a mano il
+//                bottone sarebbe rimasto acceso per sempre a chi non e' admin, su un filtro che non
+//                ha mai toccato.
+//              · la ricerca scritta si guarda SENZA `trim()`: anche una casella di soli spazi si
+//                svuota premendo, e svuotarsi e' un effetto. La domanda e' *"premerlo cambia
+//                qualcosa?"*, non *"sto filtrando qualcosa?"*.
+//
+//          ⬜ SPENTO NON VUOL DIRE SPARITO: il bottone resta al suo posto, sbiadito e non
+//          premibile. Sparire e riapparire mentre si tocca un filtro sposterebbe il titolo che gli
+//          sta accanto - lo stesso motivo per cui la v6.270 ha reso la freccia invisibile invece di
+//          toglierla dal markup.
+//          ⚠️ Lo stile dello spento sta in `_aggiornaBottoneAzzera` e non nell'index: `.btn-primary`
+//          non ha una regola `:disabled`, quindi il solo attributo avrebbe reso il bottone inerte
+//          lasciandolo identico a prima - un comando che sembra vivo e non fa niente e' peggio di
+//          un comando spento (v6.020).
+//
+// v6.314 - 🔴 L'OMAGGIO NON ERA UN FIGLIO, E SETTE PUNTI DEL CODICE LO DICEVANO CIASCUNO PER
+//          CONTO SUO. Franco, sulla domanda H2 dell'arretrato: *"si, fai come per Change ed Errore
+//          di stampa"*. Solo app.js (piu' la versione nell'index).
+//
+//          📌 LA DOMANDA ERA UNA, LE RISPOSTE SETTE, E NESSUNA GUARDAVA L'ELENCO:
+//              · `_eFiglioCollegato`      quaterna a mano
+//              · `_nomeVieneDallaBase`    quaterna, e per giunta come QUATTRO PARAMETRI: la firma
+//                                         costringeva ogni chiamante a rifare l'elenco
+//              · `_feCampiDaBase`         COPPIA (solo change ed errore di stampa)
+//              · `_mostraNumero`          TERNA - senza errore di stampa, sbagliata da prima
+//                                         che l'omaggio esistesse
+//              · `refFig` del comparatore TERNA - il difetto latente scritto il 13 agosto
+//              · `_tipoFigurinaDiPartenza` due coppie
+//              · `_numeroRichiesto`       quaterna
+//          Cinque forme diverse (coppia, terna, quaterna, quintina, quattro parametri) per la
+//          stessa domanda: e' il segno che nessuna delle sette sapeva delle altre.
+//
+//          🆕 ADESSO NE ESISTE UNA: `_eFiglioCollegato(f)` = `!_eBase(f)`, cioe' l'altra faccia di
+//          una funzione che l'elenco lo legge gia' dalla v6.234. Le sette la chiamano.
+//
+//          🆕 `idForm` IN `VERSIONI_ARTICOLO` E `_versioniDallaScheda()`. Il commento della v6.235
+//          diceva che l'elenco degli id non si puo' ricavare, e diceva il vero: `isFreeVersion` ->
+//          `fe-is-free-version`, la regola di trasformazione non c'e'. La terza strada non e'
+//          dedurre l'id ne' tenerlo a mano: e' DICHIARARLO nell'elenco. Da li' lo leggono
+//          l'esclusivita' delle caselle e `_versioniDallaScheda()`, che restituisce le cinque
+//          caselle nella forma di un record - cosi' la stessa domanda si fa alla form e a Firestore.
+//          🔴 ERANO QUATTRO BLOCCHI DI getElementById COPIATI, E NON CONTENEVANO LE STESSE CASELLE:
+//          due ne leggevano cinque, due ne leggevano quattro. Non era un rischio futuro: era una
+//          divergenza in atto, ed e' esattamente da li' che l'omaggio spariva.
+//
+//          🔴 E I CAMPI EREDITATI NON SI NASCONDONO PIU': SI MOSTRANO SFUMATI E IN SOLA LETTURA.
+//          Deciso da Franco davanti alla prima stesura, che li faceva sparire anche all'omaggio:
+//          *"quale e' il vantaggio di nasconderli in modifica, quando potresti tranquillamente
+//          lasciarli in sola lettura? il campo Serie, per esempio, e' in sola lettura. E poi la
+//          edit e' per l'admin, che sono io"*. Ha ragione, e la regola della v6.038 gli da' ragione
+//          alla lettera: dice *"non si mostra MODIFICABILE"*, non *"non si mostra"*. Nasconderlo
+//          faceva piu' del necessario e toglieva un'informazione - qual e' la categoria di un
+//          change si poteva sapere solo andando sulla base.
+//          📌 Ed e' il modo che la VISTA TABELLARE ha gia': li' quelle celle non spariscono, si
+//          rifiutano di essere scritte. La v6.143 aveva allineato la tabella alla scheda; qui la
+//          scheda si allinea alla tabella, che era la vista che si comportava meglio.
+//          ⚠️ Niente testo di spiegazione accanto (scelta di Franco): la sfumatura e il fatto che
+//          non si possano scrivere lo dicono da soli.
+//          🔴 E SE SONO VUOTI RESTANO NASCOSTI. La prima stesura li mostrava sempre, e Franco l'ha
+//          fermata: *"ora pero' si vedono anche quando sono vuoti: questo si' che e' inutile... mi
+//          hai portato un'informazione vuota"*. Era una regressione, non un dettaglio: prima quei
+//          campi non c'erano affatto. La regola che ne esce vale oltre questi quattro: un campo di
+//          SOLA LETTURA vuoto e' un ingombro, un campo SCRIVIBILE vuoto e' un invito a scriverci -
+//          quindi il vuoto si nasconde solo quando e' ereditato.
+//          🔴 E il toccare una casella del tipo adesso aggiorna TUTTI E QUATTRO i campi, non il
+//          solo Nome: prima spuntando "Change" su un retro il Nome cambiava subito e gli altri tre
+//          restavano com'erano fino alla riapertura della scheda. Non si vedeva perche' erano
+//          nascosti.
+//
+//          ⬜ COSA CAMBIA PER CHI USA IL SITO, tutto sull'omaggio salvo dove detto:
+//              · nella scheda di un RETRO omaggio Nome, Sottonome, Categoria e Sottocategoria
+//                diventano sfumati e non scrivibili, e al salvataggio li scrive la partenza (e' la
+//                v6.038, estesa alla quinta versione); su change ed errore di stampa quegli stessi
+//                campi RIAPPAIONO, sfumati, dopo essere stati invisibili dalla v6.038;
+//              · sparisce il campo Numero - anche sugli ERRORI DI STAMPA, che lo mostravano per
+//                sbaglio: il numero lo eredita la base (v6.111/v6.261);
+//              · creando un omaggio il salvataggio non pretende piu' un numero che poi sovrascrive;
+//              · nella vista tabellare le celle dei campi ereditati diventano di sola lettura;
+//              · "Allinea item figlio correlati" comincia a vedere gli omaggi;
+//              · nella griglia un omaggio (e un errore di stampa) si ordina sotto il numero della
+//                sua partenza invece che sul proprio.
+//
+//          ✅ MISURATO PRIMA DI TOCCARE, come la v6.038 e la v6.078: `ricognizione-omaggi-base.js`
+//          sui dati veri, 19 agosto. 195 omaggi, ZERO divergenti dalla loro base - e zero anche
+//          sulle altre quattro versioni, che l'ereditarieta' ce l'hanno gia'. Zero partenze
+//          mancanti, rotte o non ammesse su 1056 oggetti con una versione. Accendere l'ereditarieta'
+//          NON riscrive niente a nessuno: se il numero fosse stato un altro, si sarebbe corretta
+//          prima la base.
+//
+//          📌 QUATTRO CAMBI A SOMMA ZERO, e sono la verifica migliore che la funzione sia giusta
+//          (stessa mossa della v6.313 sul salvataggio): le quintine di `updates` - esclusivita',
+//          `baseFigurineId`, eredita' del numero, partenza obbligatoria - erano gia' corrette e
+//          diventano `_eBase(updates)`. Se qualcosa si muove li', e' `_eBase` a essere sbagliata.
+//
+//          🔴 E UNA SECONDA COSA, TROVATA FACENDO IL BUMP E PIU' VECCHIA DELLA RELEASE: QUATTRO
+//          DEI SEI PUNTI DI VERSIONE DELL'INDEX ERANO FERMI ALLA v6.265, cioe' da 48 release.
+//          `email.min.js?v=`, `style.css?v=`, la VERSIONE IN NAVBAR e quella del riquadro di
+//          accesso. Nessun controllo poteva vederlo: il controllo cache confronta `var expected` e
+//          il `?v=` di app.js con JS_VERSION, e quei due erano stati bumpati sempre.
+//          ⚠️ Il sintomo, per chi guarda: sotto gli 860px la navbar si nasconde e compare la barra
+//          della v5.954, che il numero lo prende da JS_VERSION. Quindi il sito rispondeva **v6.265
+//          su desktop e la versione vera sul telefono** - due risposte alla stessa domanda.
+//          ✅ Rimedio (Franco: *"che se li scriva il sito da solo"*): i due punti che MOSTRANO la
+//          versione non ce l'hanno piu' scritta dentro, la riceve app.js da JS_VERSION. I due
+//          `?v=` restano nell'HTML - li legge il browser prima che app.js esista - e sono bumpati.
+//          I punti da cambiare a mano passano da sei a quattro.
+//          📌 L'id `nav-app-version` resta, e resta UNICO: `costruisci-preview.py` lo pretende.
+//
+//          🔴 E UNA TERZA COSA, CHIESTA DA FRANCO E INDIPENDENTE DALLE ALTRE DUE: SULLA CARD DI UN
+//          RETRO LA CATEGORIA SI MOSTRA SEMPRE. Spenta la regola della v5.976, che la faceva
+//          sparire quando il Nome cominciava gia' con la categoria.
+//          📌 Perche' la decisione oggi e' diversa da allora: quando la v5.976 fu scritta la riga
+//          era un valore nudo, e ripeterlo era rumore. Dalla v6.273 ogni riga porta la sua
+//          ETICHETTA - "CATEGORIA: " in bianco, il valore nel colore del campo - e un campo
+//          dichiarato accanto a un nome non e' la stessa parola due volte. L'etichetta ha tolto il
+//          problema che la regola risolveva.
+//          ⚠️ SPENTA LI', NON CANCELLATA: `_retroNameStartsWithCategory` vive in altri QUATTRO
+//          punti e resta. In particolare regge ancora il prefisso "CATEGORIA - " del NOME sulla
+//          card (dove serve davvero: li' la ripetizione sarebbe dentro la stessa riga) e il
+//          🔴 NOME COMPLETO, che e' un campo SALVATO su Firestore - toccarlo non sarebbe
+//          visualizzazione, e' la lezione del `#` della v6.115.
+//
+//          ⬜ COSA QUESTA RELEASE NON FA, e va saputo: i tre gruppi del Tipo nella scheda
+//          (`fe-retro-change-type-group` e i due gemelli) restano tre `if` a mano - l'id del gruppo
+//          non e' dichiarato nell'elenco come `idForm`. E l'IMPORT non e' toccato: e' la famiglia F
+//          dell'arretrato, cambia cio' che viene SCRITTO nei dati e va in una release sua.
+//
 // v6.313 - 🔴 QUATTRO PUNTI DEL CODICE RISPONDEVANO ALLA STESSA DOMANDA - "questi due retro
 //          sono lo stesso oggetto?" - E DAVANO QUATTRO RISPOSTE DIVERSE.
 //              · il salvataggio (v6.035/v6.255) : serie|nome|categoria|SOTTOcategoria|versione|tipo
@@ -18503,7 +18710,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.313';
+const JS_VERSION = 'v6.317';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -24098,6 +24305,13 @@ const VERSIONI_ARTICOLO = [
   { chiave: 'variation',           campo: 'isVariation',           it: 'Variazione ufficiale',     en: 'Official variation',
     badgeIt: 'Variazione<br>ufficiale', badgeEn: 'Official<br>variation',
     itBreve: 'Variazione', enBreve: 'Variation', livello: 'capo', partenza: ['base'],
+    // 🆕 v6.314 - L'ID DELLA CASELLA NELLA SCHEDA. Non si ricava dal nome del campo
+    // (`isFreeVersion` -> `fe-is-free-version`, e la regola di trasformazione non c'e'): si
+    // dichiara. Da qui lo leggono l'esclusivita' delle caselle e `_versioniDallaScheda()`, che
+    // erano due elenchi di id scritti a mano - e il commento della v6.235 segnalava gia' il primo
+    // come la riga da ricordare il giorno di una sesta versione, aggiungendo che dimenticarla non
+    // avrebbe dato errore.
+    idForm: 'fe-is-variation',
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
     // cinque frasi non hanno lo stesso articolo e da `it` non ci si arriva.
     esportaIt: 'Variazioni ufficiali', esportaEn: 'official variations',
@@ -24108,6 +24322,7 @@ const VERSIONI_ARTICOLO = [
   { chiave: 'unofficialVariation', campo: 'isUnofficialVariation', it: 'Variazione non ufficiale', en: 'Unofficial variation',
     badgeIt: 'Variazione<br>non ufficiale', badgeEn: 'Unofficial<br>variation',
     itBreve: 'Var. non ufficiale', enBreve: 'Unofficial var.', livello: 'capo', partenza: ['base'],
+    idForm: 'fe-is-unofficial-variation',
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
     // cinque frasi non hanno lo stesso articolo e da `it` non ci si arriva.
     esportaIt: 'Variazioni non ufficiali', esportaEn: 'unofficial variations',
@@ -24118,7 +24333,7 @@ const VERSIONI_ARTICOLO = [
   { chiave: 'change',              campo: 'isChange',              it: 'Change',                   en: 'Change',
     badgeIt: 'Change', badgeEn: 'Change',
     livello: 'figlio', partenza: ['base', 'variation', 'unofficialVariation'],
-    campoTipo: 'changeType', opzioniTipo: '_opzioniTipoChange',
+    campoTipo: 'changeType', opzioniTipo: '_opzioniTipoChange', idForm: 'fe-is-change',
     // v6.266 - il PLURALE del titolo fisso del riquadro. Vedi la riga dell'omaggio.
     pluraleIt: 'Change', pluraleEn: 'Changes',
     // v6.267 - la coda della dicitura del raggruppamento, dettata da Franco. Vedi l'omaggio.
@@ -24159,7 +24374,7 @@ const VERSIONI_ARTICOLO = [
     // cio' che la v6.234 aveva reso derivato non e' stato toccato in questa release: e' la prova
     // che quel lavoro serviva a qualcosa.
     livello: 'figlio', partenza: ['base', 'variation'],
-    campoTipo: 'freeVersionType', opzioniTipo: '_opzioniTipoOmaggio',
+    campoTipo: 'freeVersionType', opzioniTipo: '_opzioniTipoOmaggio', idForm: 'fe-is-free-version',
     // 🆕 v6.266 - IL PLURALE, e non si deriva da `it`: il titolo fisso del riquadro dice
     // "Omaggi per tipo", e da "Omaggio" non si arriva a "Omaggi" senza inventare una regola di
     // grammatica italiana - che su "Errore di stampa" -> "Errori di stampa" sbaglierebbe subito.
@@ -24196,7 +24411,7 @@ const VERSIONI_ARTICOLO = [
     // ⚠️ `opzioniTipo: null` non e' una dimenticanza: il Tipo di errore di stampa e' l'unico dei tre
     // a ELENCO APERTO (testo libero). E' la differenza che rende la cella della Tipologia un
     // controllo diverso riga per riga, e sta scritta qui invece che in un `if` sparso.
-    campoTipo: 'printErrorType', opzioniTipo: null,
+    campoTipo: 'printErrorType', opzioniTipo: null, idForm: 'fe-is-printerror',
     pluraleIt: 'Errori di stampa', pluraleEn: 'Print errors',
     codaRaggrIt: 'TIPOLOGIA ERRORE DI STAMPA', codaRaggrEn: 'PRINT ERROR TYPE',
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
@@ -24425,6 +24640,23 @@ const _etichettaChiaveTipo = chiave => {
 // un'altra cosa. ⚠️ Quei tre numeri sono anche il collaudo: se cambiassero in questa release,
 // qualcosa non ha ricavato cio' che c'era prima.
 const _eBase = f => !!f && !_VERSIONI_VIVE.some(v => f[v.campo]);
+
+// 🆕 v6.314 - LE CASELLE DELLE VERSIONI NELLA SCHEDA, LETTE DALL'ELENCO.
+// Torna un oggetto della stessa forma di un record (`{isVariation: bool, ...}`), cosi' le funzioni
+// che rispondono alla domanda *"che versione e' questo?"* si possono interrogare con cio' che c'e'
+// scritto nella form esattamente come con cio' che c'e' scritto su Firestore: una domanda sola,
+// due sorgenti.
+// 🔴 PRIMA ERANO QUATTRO BLOCCHI DI `getElementById` COPIATI - due nel salvataggio, uno nel
+// toggle, uno nel controllo del numero - E I QUATTRO NON CONTENEVANO LE STESSE CASELLE: due ne
+// leggevano cinque, due ne leggevano quattro. Un elenco copiato non era un rischio futuro: era
+// gia' divergente, ed e' da li' che l'omaggio spariva.
+// ⚠️ Le caselle che la scheda non ha disegnato non stanno nel DOM: `?.checked` da' `undefined`,
+// che diventa `false`. E' parola per parola il comportamento dei blocchi che sostituisce.
+function _versioniDallaScheda() {
+  const v = {};
+  _VERSIONI_VIVE.forEach(x => { v[x.campo] = !!document.getElementById(x.idForm)?.checked; });
+  return v;
+}
 const _diTipo = (tutti, sec) => tutti.filter(f => (f.section || 'figurines') === sec);
 
 // La copia locale, per non aspettare la rete a ogni disegno: stesso schema di `_colonneDefault`
@@ -28407,9 +28639,16 @@ function _tipoFigurinaDiPartenza(f, figs, idx) {
   const g = idx ? idx.get(f.baseFigurineId)
                 : (figs || getData('figurines', [])).find(x => x.id === f.baseFigurineId);
   if (!g) return null;
-  if (g.isVariation || g.isUnofficialVariation) return 'variation';
-  if (g.isChange || g.isPrintError) return null;
-  return 'base';
+  // 🔴 v6.314 - ERANO DUE COPPIE A MANO, e l'OMAGGIO non stava in nessuna delle due: un figlio la
+  // cui partenza e' un omaggio cadeva nel `return 'base'` finale, cioe' il sotto-filtro rispondeva
+  // *"discende da una base"* di un oggetto che discende da un omaggio. Ora si chiede all'elenco:
+  // base -> 'base'; una versione di livello 'capo' (le due variazioni) -> 'variation'; tutto il
+  // resto -> null, cioe' *"non sta in nessuno dei due gruppi"*, che e' la scelta gia' dichiarata
+  // nel commento qui sopra.
+  // 📌 Sui dati di oggi non cambia una riga: `ricognizione-omaggi-base.js` (19 agosto) ha contato
+  // ZERO partenze non ammesse su 1056 oggetti con una versione. E' una difesa, non una correzione.
+  if (_eBase(g)) return 'base';
+  return _CAPI_VERSIONE.some(v => g[v.campo]) ? 'variation' : null;
 }
 
 // v6.140 - i due sotto-selettori. Stesso comportamento dei chip dello specchietto (v6.096): un
@@ -28550,6 +28789,59 @@ function azzeraTuttiIFiltri() {
   try { renderItems(); } catch (e) { console.error('renderItems (azzeraTuttiIFiltri)', e); }
   try { if (typeof bulkEditActive !== 'undefined' && bulkEditActive) renderBulkEditView(); }
   catch (e) { console.error('renderBulkEditView (azzeraTuttiIFiltri)', e); }
+}
+
+// 🆕 v6.315 (Franco: "rendilo premibile solo quando premerlo ha un effetto; cosi' il tasto prende
+// piu' significato quando e' acceso, e lo si nota maggiormente") - C'E' QUALCOSA DA AZZERARE?
+//
+// 🔴 QUESTA FUNZIONE E' LA GEMELLA DI `azzeraTuttiIFiltri`, E LE DUE DEVONO DIRE LA STESSA COSA.
+// Ogni riga qui sotto risponde a una riga di la': *"questo filtro e' diverso dal suo valore di
+// spento?"*. Se una delle due cresce e l'altra no, il bottone mente - o resta acceso senza avere
+// niente da fare, o resta spento mentre un filtro e' acceso, e il secondo caso e' peggio: e' la
+// famiglia di difetti delle v6.095 e v6.134, dove la griglia si svuota e non lo dice nessuno.
+// ⚠️ Non si deriva, per la stessa ragione scritta sull'altra: i filtri sono variabili sciolte con
+// valori-di-spento diversi (`null`, `false`, `''`, `'all'`, un Set, e uno che dipende da chi sei).
+// Il controllo che tiene insieme le due liste e' `prova-v6315.js`, che le confronta ESEGUENDOLE:
+// azzera tutto, pretende `false`, poi accende un filtro per volta e pretende `true` ogni volta.
+// Un promemoria in un commento non e' un controllo (lezione della v6.250).
+//
+// 📌 `_itemTypeFilter` NON si confronta con una costante ma con `_tipoIniziale()`: da admin lo
+// spento e' 'all', per tutti gli altri e' 'base'. Scrivere 'all' avrebbe tenuto il bottone acceso
+// per sempre a chi non e' admin, sul filtro che non ha mai toccato.
+// 📌 La ricerca scritta si guarda SENZA `trim()`: anche una casella di soli spazi si svuota
+// premendo, e svuotarsi e' un effetto - la X della casella sparisce. La domanda e' "premerlo
+// cambia qualcosa?", non "sto filtrando qualcosa?".
+function _qualcheFiltroAcceso() {
+  return !!(
+       _retroCategoryFilter.size > 0
+    || _retroSubcategoryFilter.size > 0
+    || _VERSIONI_CON_TIPO.some(v => _raggr(v.chiave).filtro.size > 0)   // i tre raggruppamenti
+    || _fotoFilter !== null
+    || _noteFilter
+    || _ownedFilter !== 'all'
+    || _wishlistFilter
+    || _itemTypeFilter !== _tipoIniziale()
+    || _changeParentFilter !== ''
+    || _printErrorParentFilter !== ''
+    || _noOfficialVariationFilter
+    || _ebayFilter
+    || (document.getElementById('items-search')?.value || '') !== ''
+  );
+}
+
+// Il bottone si spegne quando non c'e' niente da azzerare. Non si nasconde: sparire e riapparire
+// mentre si tocca un filtro sposterebbe il titolo accanto, ed e' lo stesso motivo per cui la
+// v6.270 ha reso la freccia INVISIBILE invece di toglierla dal markup.
+// ⚠️ Lo stile spento si scrive qui e non nell'index: `.btn-primary` non ha una regola `:disabled`,
+// quindi senza queste due righe il bottone smetterebbe di funzionare restando identico a prima -
+// un comando inerte che sembra vivo, che e' peggio di un comando spento (v6.020).
+function _aggiornaBottoneAzzera() {
+  const b = document.getElementById('items-reset-filters');
+  if (!b) return;
+  const acceso = _qualcheFiltroAcceso();
+  b.disabled = !acceso;
+  b.style.opacity = acceso ? '' : '0.45';
+  b.style.cursor  = acceso ? '' : 'default';
 }
 
 function getCurrentlyFilteredItems(opts) {
@@ -29432,6 +29724,11 @@ function renderItems() {
   // v6.266 (Omaggio, e da qui in poi chiunque abbia un `campoTipo`)
   try { renderRaggrSummaries(); } catch(e) { console.error('renderRaggrSummaries', e); }
 
+  // v6.315 - il bottone "Azzera filtri" si accende solo se c'e' qualcosa da azzerare. Sta QUI
+  // perche' ogni comando che tocca un filtro finisce per chiamare `renderItems()`: agganciarlo al
+  // ridisegno e' l'unico modo di non dover ricordare il bottone in venti punti diversi.
+  try { _aggiornaBottoneAzzera(); } catch(e) { console.error('_aggiornaBottoneAzzera', e); }
+
   // Selettore "Vista retro" — visibile solo nella sezione Figurine, per tutti.
   // v6.020 (Franco) — e SOLO se i retro si vedono davvero. Quando su telefono "Figurine set base"
   // li nasconde, le cinque voci non producono nessuna immagine diversa: il selettore c'era, si
@@ -29505,8 +29802,15 @@ function renderItems() {
     if (currentSection === 'figurines') {
       const allFigsForSort = _idx;
       // Figurina di riferimento: se stessa se è base, altrimenti la figurina base collegata
+      // 🔴 v6.314 - IL DIFETTO LATENTE DEL 13 AGOSTO, CHIUSO. Questa terna diceva che un errore di
+      // stampa - e da giugno un omaggio - e' un CAPOGRUPPO, mentre a poche righe di distanza
+      // `_chiaviOrdinamentoFigurine` lo tratta da FIGLIO, perche' quella chiede a `_eBase`. Due
+      // idee diverse di *"chi e' un figlio"* dentro lo stesso ordinamento, e il documento le aveva
+      // gia' viste litigare ("`refFig` e `rangoFiglio` non sono d'accordo").
+      // ⚠️ Non mordeva perche' gli errori di stampa senza numero proprio erano ZERO. Non e' una
+      // proprieta' del codice: e' una proprieta' dei dati di quel giorno.
       const refFig = f => {
-        if (!f.isVariation && !f.isUnofficialVariation && !f.isChange) return f;
+        if (_eBase(f)) return f;
         return f.baseFigurineId ? allFigsForSort.get(f.baseFigurineId) : null;
       };
       const refA = refFig(a), refB = refFig(b);
@@ -29957,16 +30261,23 @@ function renderItems() {
     const _mobileFigCard = _isMobileViewport() && !isRetroCard;
     const scoreInlineHTML = (_mobileFigCard && f.score && f.score > 0)
       ? `<span class="fig-score-inline">⭐ ${f.score} pt</span>` : '';
-    // v5.976 — Franco: se la Categoria e' gia' contenuta all'inizio del Nome (al netto della vocale
-    // finale, tolleranza della v5.907), sulla card si nasconde LA CATEGORIA e si mostra il NOME.
-    // Fin qui la regola era l'opposto — si nascondeva il NOME — ma scattava solo sulla coincidenza
-    // ESATTA (v5.780), e in quel caso le due stringhe sono identiche: nascondere l'una o l'altra
-    // dava lo stesso pixel, quindi quale dei due si sopprimesse non si vedeva. Allargando la
-    // condizione a "il nome comincia con la categoria" la scelta diventa visibile, e va nell'altro
-    // verso: con categoria "CERTIFICATO" e nome "CERTIFICATO DI ANTIPATICO", nascondere il nome
-    // avrebbe reso i 218 retro di Serie 1 identici a schermo, cancellando l'unica cosa che li
-    // distingue. La Sottocategoria non si perde: quando la categoria sparisce, scende in riga 2.
-    const _retroCatNelNome = isRetroCard && _retroNameStartsWithCategory(f);
+    // 🔴 v6.314 (Franco) - LA CATEGORIA SULLA CARD DI UN RETRO SI MOSTRA SEMPRE. Qui viveva la
+    // regola della v5.976: se il Nome cominciava gia' con la Categoria (tolleranza di genere della
+    // v5.907), la riga della Categoria spariva per non leggere due volte la stessa parola.
+    // Franco: *"spegni quella regola; mostriamola comunque, dopo l'etichetta CATEGORIA: e col
+    // color code della categoria"*.
+    // 📌 COSA E' CAMBIATO NEL FRATTEMPO, e rende la decisione diversa da quella del 2025: quando
+    // la v5.976 fu scritta la riga era un valore nudo, e ripeterlo era rumore. Dalla v6.273 ogni
+    // riga porta la sua ETICHETTA in bianco e il valore nel colore del campo: "CATEGORIA: RICERCATO"
+    // accanto a un nome che comincia per RICERCATO non e' piu' la stessa parola due volte, e' un
+    // campo dichiarato accanto a un nome. La regola risolveva un problema che l'etichetta ha tolto.
+    // ⚠️ E LA REGOLA NON E' STATA CANCELLATA, E' STATA SPENTA QUI. `_retroNameStartsWithCategory`
+    // vive in altri QUATTRO punti e li' resta: il prefisso "CATEGORIA - " del nome sulla card
+    // (dove serve a non scrivere la parola due volte DENTRO LA STESSA RIGA), il riquadro del retro
+    // collegato nella card di una figurina, `_retroNomeCompleto()` nei risultati di ricerca, e
+    // 🔴 `_retroFullName`, cioe' il NOME COMPLETO - che e' un campo SALVATO su Firestore. Toccare
+    // quello non sarebbe visualizzazione: e' la lezione del `#` della v6.115, dove una modifica
+    // "solo estetica" smetteva di esserlo appena il valore veniva scritto.
     const _retroSub = (f.subcategory || '').trim();
     // v5.991 - una riga per dato: categoria, sottocategoria, nome. Fino alla v5.990
     // categoria e sottocategoria stavano sulla STESSA riga unite da ' · ', eredita' di
@@ -30018,7 +30329,7 @@ function renderItems() {
         // deve restare vuota davvero — un paio di parentesi sole sarebbero una riga piena di niente.
         _rigaCard((f.subname || '').trim() ? '(' + esc((f.subname || '').trim()) + ')' : '',
                   'font-size:0.82rem;color:var(--info);margin-top:1px;', 'subname') +
-        _rigaCard(_campoCard('CATEGORIA: ', _retroCatNelNome ? '' : esc(_catNuda), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
+        _rigaCard(_campoCard('CATEGORIA: ', esc(_catNuda), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
         _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc(_retroSub), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
       );
     // 🧪 v6.274 (Franco) - IL NOME E' AZZURRO, dello stesso colore del sottonome. Tre rami, un
@@ -33556,12 +33867,12 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
   if (appenaSpuntata) {
     const _el = document.getElementById(appenaSpuntata);
     if (_el && _el.checked) {
-      // v6.235 - cinque, non quattro. ⚠️ E' un elenco a mano di id: non si ricava da
-      // `VERSIONI_ARTICOLO` perche' l'id dell'elemento non e' il nome del campo
-      // (`isFreeVersion` -> `fe-is-free-version`). Se un giorno se ne aggiunge una sesta, questa
-      // riga e' fra quelle da toccare, e non da' errore se ci si dimentica: le altre quattro si
-      // spegnerebbero e la nuova no, cioe' due tipi accesi insieme.
-      ['fe-is-variation', 'fe-is-unofficial-variation', 'fe-is-change', 'fe-is-free-version', 'fe-is-printerror']
+      // 🆕 v6.314 - ADESSO SI RICAVA. Il commento della v6.235 diceva il vero - l'id non e' il nome
+      // del campo, la regola di trasformazione non c'e' - e la conclusione che ne traeva era di
+      // tenere l'elenco a mano. La terza strada e' dichiarare l'id nell'elenco (`idForm`) invece
+      // di dedurlo: cosi' la sesta versione si aggiunge in un posto solo, e questa riga non e' piu'
+      // fra quelle da ricordare.
+      _VERSIONI_VIVE.map(x => x.idForm)
         .filter(c => c !== appenaSpuntata)
         .forEach(c => { const x = document.getElementById(c); if (x) x.checked = false; });
     }
@@ -33572,26 +33883,28 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
   const changeTypeGroup = document.getElementById('fe-retro-change-type-group');
   const freeTypeGroup = document.getElementById('fe-free-version-type-group');   // v6.253
   if (!group) return;
-  const isVar = document.getElementById('fe-is-variation')?.checked;
-  const isUnoff = document.getElementById('fe-is-unofficial-variation')?.checked;
-  const isChg = document.getElementById('fe-is-change')?.checked;
+  // 🆕 v6.314 - le cinque caselle si leggono in un colpo solo, dall'elenco. `isVar` e `isUnoff`
+  // spariscono perche' servivano solo alle due righe qui sotto, che ora chiedono all'elenco.
+  const _v = _versioniDallaScheda();
+  const isChg = _v.isChange;
   // ERRORE MIO (v5.711): qui leggevo 'fig-is-printerror-input', l'id dell'ALTRA
   // maschera. La mia sostituzione aveva colpito ENTRAMBE le funzioni, e questa usa il
   // prefisso 'fe-'. node --check non poteva vederlo: getElementById su un id
   // inesistente non e' un errore di sintassi — restituisce null, in silenzio.
-  const isPE = document.getElementById('fe-is-printerror')?.checked;
+  const isPE = _v.isPrintError;
   // 🔴 v6.254 - QUESTA RIGA MANCAVA, e con lei due comportamenti. La v6.253 aveva dichiarato
   // `freeTypeGroup` e non l'aveva mai usato: una variabile scritta e mai letta non da' errore, e
   // `node --check` non ha niente da ridire. A schermo: spuntando Omaggio la riga del Tipo restava
   // nascosta, quindi il tipo non si poteva scegliere, quindi restava vuoto — ed e' per questo che
   // il Nome completo non lo "recepiva" (Franco). Il campo non era rotto: era irraggiungibile.
-  const isFree = document.getElementById('fe-is-free-version')?.checked;
+  const isFree = _v.isFreeVersion;
   // un errore di stampa, come le variazioni, i Change e gli omaggi, e' collegato a un oggetto base
   // ⚠️ `isFree` entra in `showBase` perche' un omaggio ha SEMPRE una partenza (regola di Franco).
   // Senza, spuntando Omaggio restava nascosta anche la tendina "Figurina di partenza" — e siccome
   // `showBase` comanda pure `_mostraCampoNumero`, il Numero ricompariva su un oggetto che lo
   // eredita dalla base. Una riga mancante, tre sintomi.
-  const showBase = isVar || isUnoff || isChg || isFree || isPE;
+  // v6.314 - era una quintina a mano. "Ha una partenza" e "non e' base" sono la stessa domanda.
+  const showBase = !_eBase(_v);
   group.style.display = showBase ? '' : 'none';
   // v5.786 — Retro visibile anche per i Change; per i Change ripopolo il selettore con TUTTE le serie.
   if (retroGroup) {
@@ -33604,12 +33917,23 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
   if (freeTypeGroup) freeTypeGroup.style.display = isFree ? '' : 'none';   // v6.254
   const printErrorTypeGroup = document.getElementById('fe-print-error-type-group');
   if (printErrorTypeGroup) printErrorTypeGroup.style.display = isPE ? '' : 'none';
-  // v5.774 — Nome nascosto per Change/Errore di stampa di RETRO. Un item e' un retro se e' stato
-  // costruito il gruppo Tipo di change (esiste solo per i retro); il Nome verra' derivato dal base.
-  const feNameGroup = document.getElementById('fe-name-group');
-  // v5.790 — il Nome si nasconde per QUALUNQUE Change o Errore di stampa (retro o figurina): in tutti
-  // il Nome eredita dalla base.
-  if (feNameGroup) feNameGroup.style.display = _nomeVieneDallaBase(_feSezione, isChg, isPE, isVar, isUnoff) ? 'none' : ''; // v6.078 - unica fonte
+  // v5.774/v5.790 — i campi che eredita la partenza cambiano appena si tocca una casella del tipo,
+  // non solo alla riapertura della scheda.
+  // 🔴 v6.314 - E ADESSO SONO QUATTRO, NON UNO. Qui si toccava il solo Nome: spuntando "Change" su
+  // un retro il Nome cambiava subito e Categoria, Sottocategoria e Sottonome restavano com'erano
+  // fino alla riapertura. Due comportamenti per quattro campi che il salvataggio tratta allo stesso
+  // modo — e la meta' che non si aggiornava era quella che non si vedeva, perche' erano nascosti.
+  // 🆕 E non si nascondono piu': si sfumano e diventano di sola lettura (vedi la scheda).
+  // ⚠️ E il vuoto EREDITATO si nasconde, qui come alla costruzione della scheda: il valore si legge
+  // dalla casella e non dal record, perche' e' la casella lo stato vero mentre la scheda e' aperta.
+  const _eredAttivi = _nomeVieneDallaBase(_feSezione, _v) ? _campiEreditatiDaBase(_feSezione) : [];
+  document.querySelectorAll('[data-campo-ereditato]').forEach(riga => {
+    const campo = riga.querySelector('input');
+    const st = _statoCampoEreditato(_eredAttivi.includes(riga.dataset.campoEreditato), campo && campo.value);
+    riga.style.display = st.nascosto ? 'none' : '';
+    riga.style.opacity = st.sfumato ? '0.55' : '';
+    if (campo) campo.readOnly = st.solaLettura;
+  });
 }
 
 // v5.779 — la form inline serve tutte le sezioni; il gruppo "Tipo di change" ora esiste anche
@@ -33888,8 +34212,35 @@ function switchToEditMode(figId) {
   // v6.038 - un campo che al salvataggio viene sovrascritto dalla base non si mostra modificabile:
   // scriverci dentro e vedere il proprio testo sparire e' peggio che non poterlo scrivere. Vale per
   // Nome, Sottonome, Categoria e Sottocategoria di un Change/errore di stampa.
-  const _feNameHidden = _nomeVieneDallaBase(f.section, f.isChange, f.isPrintError, f.isVariation, f.isUnofficialVariation); // v6.078
-  const _feCampiDaBase = (f.isChange || f.isPrintError) && f.section === 'retros'; // v6.038
+  const _feNameHidden = _nomeVieneDallaBase(f.section, f); // v6.078; v6.314 - il record intero, non quattro booleani
+  // 🔴 v6.314 (Franco) - I CAMPI COMANDATI DALLA PARTENZA NON SI NASCONDONO PIU': SI MOSTRANO
+  // SFUMATI, IN SOLA LETTURA. La v6.038 aveva scritto la regola giusta - *"un campo che al
+  // salvataggio viene sovrascritto non si mostra MODIFICABILE"* - e poi ne aveva fatto piu' del
+  // necessario, nascondendolo. Franco: *"quale e' il vantaggio di nasconderli in modifica, quando
+  // potresti tranquillamente lasciarli in sola lettura? il campo Serie, per esempio, e' in sola
+  // lettura"*. In sola lettura la regola e' rispettata alla lettera e in piu' si vede QUAL E' la
+  // categoria di un change, che prima si poteva sapere solo andando sulla base.
+  // 📌 Non e' un modo nuovo: e' il modo della VISTA TABELLARE, dove quelle celle rifiutano la
+  // scrittura dicendo "lo comanda la figurina di partenza". La v6.143 aveva allineato la tabella
+  // alla scheda; questa riga allinea la scheda alla tabella, che era la vista che si comportava
+  // meglio. Adesso le due dicono la stessa cosa nello stesso modo.
+  // ⚠️ QUALI campi lo siano non si decide qui: lo dice `_campiEreditatiDaBase`, la stessa funzione
+  // che legge il salvataggio. Un elenco proprio sarebbe la sesta copia della stessa domanda.
+  // 🔴 ...MA SOLO SE HANNO QUALCOSA DA DIRE. Franco, vedendo la prima stesura: *"ora pero' si
+  // vedono anche quando sono vuoti: questo si' che e' inutile... mi hai portato un'informazione
+  // vuota"*. Ha ragione, ed era una regressione vera: prima quei campi non c'erano, adesso c'erano
+  // e non dicevano niente - una riga in piu' e la ricerca di un contenuto che non esiste.
+  // 📌 LA REGOLA CHE NE ESCE, e vale oltre questi quattro campi: un campo di SOLA LETTURA vuoto non
+  // e' un campo, e' un ingombro; un campo SCRIVIBILE vuoto e' un invito a scriverci. Sono due cose
+  // diverse e vanno trattate diversamente - quindi il vuoto si nasconde solo quando e' ereditato.
+  // E' lo stesso criterio dei riquadri eBay della v6.103 (`dataset.vuoto`): si mostrano solo se
+  // hanno qualcosa da mostrare.
+  const _feEreditati = _feNameHidden ? _campiEreditatiDaBase(f.section) : [];
+  const _eredAttr  = campo => ' data-campo-ereditato="' + campo + '"';
+  const _eredStato = campo => _statoCampoEreditato(_feEreditati.includes(campo), f[campo]);
+  const _eredStile = campo => { const st = _eredStato(campo);
+    return st.nascosto ? 'display:none;' : (st.sfumato ? 'opacity:0.55;' : ''); };
+  const _eredRO    = campo => _eredStato(campo).solaLettura ? ' readonly' : '';
   // v6.148 - dichiarata QUI e non piu' accanto alle caselle del tipo: da questa release la usano
   // anche Categoria e Taglia, che nella form vengono prima. Una sola dichiarazione, in cima.
   const _extraSerie = _eProdottoExtraSerie(f);
@@ -33925,7 +34276,7 @@ function switchToEditMode(figId) {
   // partenza.
   // I suggerimenti vengono dal MEDESIMO tipo, non da tutti: proporre a un Cartoncino le categorie
   // dei Poster sarebbe un elenco che cresce e non aiuta.
-    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category"' + (_extraSerie ? ' list="fe-cat-list"' : '') + ' value="' + esc((f.category||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    html += '<div class="detail-row" style="' + _eredStile('category') + '"' + _eredAttr('category') + '><span class="detail-label">' + (currentLang==='it'?'Categoria':'Category') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-category"' + (_extraSerie ? ' list="fe-cat-list"' : '') + ' value="' + esc((f.category||'')) + '"' + _eredRO('category') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   if (_extraSerie) {
     const _cats = [...new Set((getData('figurines', []) || [])
       .filter(x => (x.tipoProdotto || '') === (f.tipoProdotto || '') && (x.category || '').trim())
@@ -33936,7 +34287,7 @@ function switchToEditMode(figId) {
       .map(x => x.subcategory.trim()))].sort((a, b) => a.localeCompare(b, 'it', { numeric: true }));
     html += '<datalist id="fe-subcat-list">' + _subs.map(c => '<option value="' + esc(c) + '"></option>').join('') + '</datalist>';
   }
-    if (isRetrosItem || _extraSerie) html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory"' + (_extraSerie ? ' list="fe-subcat-list"' : '') + ' value="' + esc((f.subcategory||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    if (isRetrosItem || _extraSerie) html += '<div class="detail-row" style="' + _eredStile('subcategory') + '"' + _eredAttr('subcategory') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory"' + (_extraSerie ? ' list="fe-subcat-list"' : '') + ' value="' + esc((f.subcategory||'')) + '"' + _eredRO('subcategory') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   }
 
   // Sottoserie (solo se la serie ha hasSubseries)
@@ -33953,7 +34304,12 @@ function switchToEditMode(figId) {
   // Chiamarlo "Numero" anche li' e' esattamente cio' che ha prodotto l'equivoco: due album
   // numerati 1, due "altri oggetti" numerati 1, e tre foto finite sull'oggetto sbagliato.
   // Fuori: i RETRO, che un ordinamento vero ce l'hanno gia' (categoria, sottocategoria, nome).
-  const _mostraNumero  = _mostraCampoNumero(f.section, f.isVariation || f.isUnofficialVariation || f.isChange);
+  // 🔴 v6.314 - ERA UNA TERNA, E MANCAVANO DUE VERSIONI: l'errore di stampa e l'omaggio. Su
+  // entrambi il campo Numero si mostrava e si poteva scrivere, ma il numero lo riscrive la partenza
+  // al salvataggio (v6.111 per i primi quattro, v6.261 per l'omaggio). L'errore di stampa sbagliava
+  // da prima che l'omaggio esistesse - un errore di stampa ha lo STESSO numero della sua base, e'
+  // la sua ragione d'essere (v6.311).
+  const _mostraNumero  = _mostraCampoNumero(f.section, _eFiglioCollegato(f));
   const _numeroEOrdine = _numeroEOrdinamento(f.section);
   html += '<div class="detail-row" id="fe-number-group" style="' + (_mostraNumero ? '' : 'display:none;') + '"><span class="detail-label">' + (_numeroEOrdine ? (currentLang==='it'?'Ordinamento':'Sort order') : 'N.') + '</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="' + (_numeroEOrdine ? '1' : '01') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;">' + (_numeroEOrdine ? '<span style="font-size:0.75rem;color:var(--muted);">' + (currentLang==='it'?'decide solo la posizione in griglia; non si vede da nessuna parte':'only sets the position in the grid; not shown anywhere') + '</span>' : '') +
     // La casella "Non ha numero" resta SEMPRE nel DOM, anche dove non si mostra: il salvataggio la
@@ -33965,13 +34321,13 @@ function switchToEditMode(figId) {
   // v5.774/779/790 — Nome nascosto per Change ED Errori di stampa, sia Retro sia figurine (eredita
   // dalla base; derivato al salvataggio).
   // (il flag e' dichiarato piu' in alto, v6.038: lo usano anche Categoria/Sottocategoria/Sottonome)
-  html += '<div class="detail-row" id="fe-name-group" style="' + (_feNameHidden ? 'display:none;' : '') + '"><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + esc((f.name||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+  html += '<div class="detail-row" id="fe-name-group" style="' + _eredStile('name') + '"' + _eredAttr('name') + '><span class="detail-label">' + (currentLang==='it'?'Nome':'Name') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-name" value="' + esc((f.name||'')) + '"' + _eredRO('name') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   // v6.036 (Franco) - il SOTTONOME sta SOTTO IL NOME, di cui e' la seconda parte. Stava fra
   // Sottocategoria e Numero, cioe' in mezzo ai campi della categoria e prima ancora del Nome: la
   // stessa disposizione che la v6.026 aveva gia' corretto nella VISTA della scheda. Vista e
   // modifica devono coincidere (regola di Franco, v5.782), e finora non coincidevano.
   if (f.section === 'retros') {
-    html += '<div class="detail-row"' + (_feCampiDaBase ? ' style="display:none;"' : '') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"></span></div>';
+    html += '<div class="detail-row" style="' + _eredStile('subname') + '"' + _eredAttr('subname') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"' + _eredRO('subname') + '></span></div>';
   }
 
   // Punteggio
@@ -34698,9 +35054,26 @@ function toggleFeRetroBianco() {
 // un dietro non ce l'ha), quindi il ramo li' e' inerte - resta perche' la regola vale per sezione.
 // Quattro punti la interrogavano con quattro condizioni copiate: due nascondimenti del campo (uno
 // per form), due ereditarieta' al salvataggio. Ora e' una.
-function _nomeVieneDallaBase(sezione, isChange, isPrintError, isVariation, isUnofficialVariation) {
+function _nomeVieneDallaBase(sezione, rec) {
+  // 🔴 v6.314 - LA FIRMA CAMBIA: quattro booleani -> un oggetto con i flag. I quattro booleani
+  // obbligavano OGNI chiamante a nominare le versioni una per una, cioe' a riscrivere la quaterna:
+  // e' il motivo per cui l'omaggio non e' mai entrato qui, e non si sarebbe potuto farlo entrare
+  // senza toccare anche i tre punti che la chiamano. Con un oggetto - un record di Firestore
+  // oppure `_versioniDallaScheda()` - la domanda la fa `_eFiglioCollegato`, che legge l'elenco.
   if (sezione !== 'retros' && sezione !== 'figurines') return false;
-  return !!(isChange || isPrintError || isVariation || isUnofficialVariation);
+  return _eFiglioCollegato(rec);
+}
+
+// 🆕 v6.314 - COME SI PRESENTA UN CAMPO COMANDATO DALLA PARTENZA. Tre stati, una funzione: la
+// leggono sia la costruzione della scheda sia il toggle delle caselle del tipo, che sono i due
+// momenti in cui la domanda si pone. Scriverla due volte sarebbe bastato a farle divergere alla
+// prima correzione - ed e' successo davvero un piano piu' sotto, dove il toggle aggiornava il solo
+// Nome mentre la scheda ne trattava quattro.
+// ⚠️ `valore` arriva dal RECORD quando si costruisce la scheda e dalla CASELLA quando si tocca una
+// spunta: mentre la scheda e' aperta e' la casella lo stato vero, non il record.
+function _statoCampoEreditato(comandato, valore) {
+  const vuoto = !String(valore == null ? '' : valore).trim();
+  return { nascosto: !!comandato && vuoto, sfumato: !!comandato && !vuoto, solaLettura: !!comandato };
 }
 
 function _campiEreditatiDaBase(section) {
@@ -34751,7 +35124,13 @@ function _messaggioIncongruenzaNumero(numeroScritto, noNumber) {
 // OGNI nodo, non di quelli di uno. Cio' che serviva ancora era la sua meta' utile — la definizione
 // di "chi e' un figlio" — ed e' qui sotto, in una riga, dove la leggono tutti e due i punti.
 function _eFiglioCollegato(f) {
-  return !!(f && (f.isChange || f.isPrintError || f.isVariation || f.isUnofficialVariation));
+  // 🔴 v6.314 - ERA UNA QUATERNA SCRITTA A MANO, E L'OMAGGIO NON C'ERA. Conseguenze, tutte
+  // silenziose: il Nome di un omaggio restava scrivibile nella scheda e il primo salvataggio lo
+  // disfaceva; le celle di Categoria, Sottocategoria e Sottonome nella vista tabellare restavano
+  // modificabili; e "Allinea item figlio correlati" lo saltava.
+  // Adesso la domanda e' l'altra faccia di `_eBase`: chi non e' base e' un figlio. E `_eBase`
+  // l'elenco lo legge gia', quindi la sesta versione non passera' di qui.
+  return !!f && !_eBase(f);
 }
 
 // v6.143 (Franco) - QUESTO CAMPO, SU QUESTO RECORD, LO COMANDA IL GENITORE?
@@ -34957,13 +35336,13 @@ async function saveFigFromDetail(figId, opzioni) {
     const _creazione = !figId;   // v6.104
     // v5.774 — per un Change/Errore di stampa di RETRO il Nome eredita quello del retro base (campo
     // nascosto). Se il base manca, il controllo apposito piu' sotto blocca; qui si salta "Nome obbligatorio".
-    const _isChgChk = !!document.getElementById('fe-is-change')?.checked;
-    const _isPEChk = !!document.getElementById('fe-is-printerror')?.checked;
     // v5.779/790 — Nome ereditato dalla base per Change ED Errori di stampa, sia Retro sia figurine.
     // v6.078 - variazioni incluse, stessa fonte dell'altra form
-    const _isVarChk   = !!document.getElementById('fe-is-variation')?.checked;
-    const _isUnoffChk = !!document.getElementById('fe-is-unofficial-variation')?.checked;
-    const _nameInherited = _nomeVieneDallaBase(existingForCheck?.section, _isChgChk, _isPEChk, _isVarChk, _isUnoffChk);
+    // 🆕 v6.314 - E OMAGGIO, CHE ENTRA DA SE'. Le quattro caselle lette a mano diventano una
+    // domanda all'elenco, e l'elenco le versioni le conosce tutte e cinque. `_vScheda` si legge
+    // QUI una volta sola: piu' sotto la rileggevano altri tre punti, ognuno col suo elenco.
+    const _vScheda = _versioniDallaScheda();
+    const _nameInherited = _nomeVieneDallaBase(existingForCheck?.section, _vScheda);
     // v6.038 - i tre campi che, per un Change/errore di stampa di RETRO, comandano dalla base.
     // Letti qui una volta sola: li usano sia il controllo di chiave duplicata sia `updates`, e
     // leggerli due volte in due punti e' il modo in cui i due finiscono per non coincidere.
@@ -35008,8 +35387,12 @@ async function saveFigFromDetail(figId, opzioni) {
     // v6.101 la stessa riga sta anche nell'altra form, dove mancava.
     const _noNumChk = !!document.getElementById('fe-no-number')?.checked;
     const _numScritto = document.getElementById('fe-number')?.value;
+    // 🔴 v6.314 - ERA UNA QUATERNA, E L'OMAGGIO NON C'ERA: creando un omaggio il salvataggio
+    // pretendeva un numero che l'oggetto eredita dalla sua partenza cento righe piu' sotto
+    // (v6.261). Un campo obbligatorio il cui valore viene poi sovrascritto - lo stesso difetto
+    // che la v6.038 ha tolto ai campi del retro, in un'altra forma.
     const _numeroRichiesto = (existingForCheck?.section === 'figurines')
-      && !_isVarChk && !_isUnoffChk && !_isChgChk && !_isPEChk
+      && _eBase(_vScheda)
       && !_noNumChk;
     if (_numeroRichiesto && !_numScritto) {
       toast(currentLang === 'it' ? 'Il numero è obbligatorio' : 'Number is required', 'error');
@@ -35029,25 +35412,13 @@ async function saveFigFromDetail(figId, opzioni) {
         // v6.255 - la tipologia scritta nella form, qualunque sia la versione scelta. Si legge
         // dal campo che la versione dichiara, non da un `if` per ciascuna.
         const _tipologiaNuova = (() => {
-          const _c = _versioneDiChiave(tipoDiOggetto({
-            isVariation: document.getElementById('fe-is-variation')?.checked || false,
-            isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
-            isChange: document.getElementById('fe-is-change')?.checked || false,
-            isFreeVersion: document.getElementById('fe-is-free-version')?.checked || false,
-            isPrintError: document.getElementById('fe-is-printerror')?.checked || false
-          }));
+          const _c = _versioneDiChiave(tipoDiOggetto(_vScheda));   // v6.314 - era il secondo dei tre elenchi
           if (!_c || !_c.campoTipo) return '';
           const _idCampo = { changeType: 'fe-retro-change-type', freeVersionType: 'fe-free-version-type',
                              printErrorType: 'fe-print-error-type' }[_c.campoTipo];
           return _idCampo ? ((document.getElementById(_idCampo)?.value || '').toLowerCase().trim()) : '';
         })();
-        const tipoNuovo = tipoDiOggetto({
-          isVariation: document.getElementById('fe-is-variation')?.checked || false,
-          isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
-          isChange: document.getElementById('fe-is-change')?.checked || false,
-          isFreeVersion: document.getElementById('fe-is-free-version')?.checked || false,   // v6.235
-          isPrintError: document.getElementById('fe-is-printerror')?.checked || false
-        });
+        const tipoNuovo = tipoDiOggetto(_vScheda);   // v6.314 - era il terzo
         // v6.035 (Franco) - LA SOTTOCATEGORIA ENTRA NELLA CHIAVE. L'import ce l'ha dalla v5.985,
         // dopo una segnalazione di Franco su dati veri; queste due form no, e le due chiavi
         // dicevano cose diverse sullo stesso dato: l'import creava legittimamente due retro che
@@ -35138,14 +35509,14 @@ async function saveFigFromDetail(figId, opzioni) {
       category: _catEff, // v6.038
       subcategory: _subcatEff, // v6.038
       subname: _subnameEff, // v6.038
-      isVariation: document.getElementById('fe-is-variation')?.checked || false,
-      isUnofficialVariation: document.getElementById('fe-is-unofficial-variation')?.checked || false,
-      isChange: document.getElementById('fe-is-change')?.checked || false,
-      // 🔴 v6.235 - SENZA QUESTA RIGA IL FLAG SI CANCELLEREBBE A OGNI SALVATAGGIO. E' il baco della
-      // v5.711 raccontato piu' sopra in questo file: una casella che esiste nella form e non nel
-      // salvataggio non da' errore — legge `null`, scrive `false`, e distrugge il dato in silenzio.
-      isFreeVersion: document.getElementById('fe-is-free-version')?.checked || false,
-      isPrintError: document.getElementById('fe-is-printerror')?.checked || false,
+      // 🔴 QUI SI SCRIVONO LE CINQUE VERSIONI, E UNA CHE MANCASSE SI CANCELLEREBBE A OGNI
+      // SALVATAGGIO. E' il baco della v5.711 e poi della v6.235: una casella che esiste nella form
+      // e non nel salvataggio non da' errore — legge `null`, scrive `false`, e distrugge il dato in
+      // silenzio. 🆕 v6.314 - per questo l'elenco non e' piu' scritto qui: `_versioniDallaScheda()`
+      // le produce tutte, e "tutte" e' una proprieta' dell'elenco, non della memoria di chi scrive.
+      // ⚠️ Nessuna chiave piu' sotto ricalca questi cinque nomi, quindi lo spread non viene
+      // sovrascritto da niente: verificato cercandoli uno per uno in `updates`.
+      ..._vScheda,
       changeType: document.getElementById('fe-retro-change-type')?.value || null,
       // 🔴 v6.253 - SENZA QUESTA RIGA IL TIPO DI OMAGGIO NON SI SALVAVA AFFATTO dalla scheda.
       freeVersionType: document.getElementById('fe-free-version-type')?.value || null,
@@ -35177,7 +35548,8 @@ async function saveFigFromDetail(figId, opzioni) {
     // v6.235 - cinque, non quattro. ⚠️ Se l'omaggio non entrasse in questo controllo, si
     // potrebbe salvare un oggetto omaggio E change insieme: `_chiaviTipo` ne mostrerebbe uno solo
     // (il primo in ordine di dichiarazione) e l'altro resterebbe scritto, invisibile.
-    if ([updates.isVariation, updates.isUnofficialVariation, updates.isChange, updates.isFreeVersion, updates.isPrintError].filter(Boolean).length > 1) {
+    // v6.314 - a somma zero: era una quintina a mano, ora e' un conto sull'elenco.
+    if (_VERSIONI_VIVE.filter(v => updates[v.campo]).length > 1) {
       toast(currentLang === 'it' ? 'Variazione ufficiale, non ufficiale, Change ed Errore di stampa sono mutuamente esclusivi: spunta solo una opzione' : 'Official variation, unofficial variation, Change and Print error are mutually exclusive: check only one', 'error');
       return;
     }
@@ -35185,7 +35557,7 @@ async function saveFigFromDetail(figId, opzioni) {
     // v6.235 - l'omaggio ha SEMPRE una partenza (Franco: *"e' sempre collegato a un articolo di
     // partenza"*), quindi entra qui: senza, il collegamento scelto verrebbe buttato via a `null` —
     // e' esattamente il difetto (a) della v5.734, sull'errore di stampa.
-    updates.baseFigurineId = (updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isFreeVersion || updates.isPrintError)
+    updates.baseFigurineId = !_eBase(updates)   // v6.314 - a somma zero, era la stessa quintina
       ? (document.getElementById('fe-base-figurine')?.value || null)
       : null;
 
@@ -35232,7 +35604,7 @@ async function saveFigFromDetail(figId, opzioni) {
     //
     // Base non trovata -> `null`/`false`, cioe' la stessa coppia che scriveva gia' il numero da solo.
     // v6.261 - l'omaggio eredita il numero dalla sua partenza come gli altri figli.
-    if ((updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isFreeVersion || updates.isPrintError) && updates.baseFigurineId) {
+    if (!_eBase(updates) && updates.baseFigurineId) {   // v6.314 - a somma zero
       const baseFigForNum = getData('figurines', []).find(x => x.id === updates.baseFigurineId);
       updates.number   = baseFigForNum ? baseFigForNum.number : null;
       updates.noNumber = baseFigForNum ? !!baseFigForNum.noNumber : false;
@@ -35240,7 +35612,7 @@ async function saveFigFromDetail(figId, opzioni) {
 
     // v6.261 - e per l'omaggio la partenza e' obbligatoria come per gli altri: Franco, *"un
     // articolo omaggio e' SEMPRE collegato a un articolo di partenza"*.
-    if ((updates.isVariation || updates.isUnofficialVariation || updates.isChange || updates.isFreeVersion || updates.isPrintError) && !updates.baseFigurineId) {
+    if (!_eBase(updates) && !updates.baseFigurineId) {   // v6.314 - a somma zero
       // \uD83D\uDD34 v6.199 - QUI C'ERA LA SECONDA COPIA DEL BIVIO, e diceva pure "Figurina base": il
       // campo si chiama "di partenza" dalla v6.120, e su un album chiedeva una *figurina*. Ora la
       // frase viene da dove viene quella del campo, quindi le due non possono piu' divergere.
@@ -41161,6 +41533,19 @@ if (jsVerEl) jsVerEl.textContent = JS_VERSION;
 // nell'HTML, per non aggiungere un punto di versione da bumpare a mano ad ogni release.
 const appVerMobEl = document.getElementById('nav-app-version-mobile');
 if (appVerMobEl) appVerMobEl.textContent = JS_VERSION;
+// 🔴 v6.314 - E ADESSO ANCHE GLI ALTRI DUE POSTI IN CUI LA VERSIONE SI VEDE. Erano scritti
+// nell'HTML ed erano fermi alla v6.265 da 48 release: la navbar del desktop e il riquadro di
+// accesso dicevano v6.265 mentre girava la v6.313. Nessun controllo poteva accorgersene, perche'
+// il controllo cache confronta `var expected` e il `?v=` di app.js con JS_VERSION - non questi.
+// Sotto gli 860px la navbar si nasconde e compare la barra qui sopra, che il numero lo prende da
+// JS_VERSION: quindi il sito rispondeva v6.265 su desktop e la versione vera sul telefono.
+// 📌 E' la regola che il documento aveva gia' scritto nella v5.954 e applicato a un posto solo:
+// quando la versione va mostrata da qualche parte, la si fa SCRIVERE da JS_VERSION. I punti da
+// cambiare a mano a ogni release passano da sei a quattro.
+['nav-app-version', 'auth-app-version'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.textContent = JS_VERSION;
+});
 const cssVerEl = document.getElementById('nav-css-version');
 if (cssVerEl) cssVerEl.textContent = CSS_VERSION;
 initFirebase().catch(e => {
