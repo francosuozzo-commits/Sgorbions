@@ -1,6 +1,30 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.319 - 🔴 LO SPAZIO VA PRIMA DELL'INTERO BLOCCO FINALE DI PUNTEGGIATURA, NON DEL SOLO "!".
+//          Correzione della v6.318, trovata dal CENSIMENTO della migrazione sui dati veri prima che
+//          scrivesse una riga. Solo app.js (piu' la versione nell'index).
+//
+//          🔴 IL CASO: fra i 25 valori distinti da correggere ce n'era uno che finisce con
+//          punteggiatura MISTA — `PUBBLICITA' PROGRESSO!?!`. La v6.318 cercava il gruppo finale di
+//          soli "!", che li' e' l'ultimo carattere da solo perche' prima c'e' un "?", e infilava lo
+//          spazio in mezzo: `PROGRESSO!? !`. Non era ne' il vecchio ne' qualcosa di sensato.
+//          🆕 Ora il blocco e' `[!?]+` e lo spazio va davanti a tutto: `PROGRESSO !?!`.
+//          ⚠️ Il blocco deve contenere almeno un "!": un valore che finisce col solo "?" non era
+//          nella richiesta, e allargare la regola di straforo sarebbe una modifica non chiesta.
+//          ✅ Sugli altri 24 valori censiti non cambia una virgola.
+//
+//          📌 LA LEZIONE, E VALE PIU' DELLA CORREZIONE: le 33 asserzioni della v6.318 erano scritte
+//          a tavolino, e non avevano previsto la punteggiatura mista — chi le scrive immagina i casi
+//          che ha in mente. I dati veri no. Il censimento ha fatto il mestiere per cui esiste, e
+//          l'ha fatto perche' NON scrive al primo lancio: se avesse applicato subito, quel valore
+//          sarebbe finito storto nel database e ce ne saremmo accorti guardando una card.
+//
+//          📌 L'ABBINAMENTO DELLE FOTO non e' stato toccato, e regge lo stesso: `normKey` toglie il
+//          "?" (e' un carattere vietato nei nomi file) PRIMA di collassare lo spazio davanti al "!",
+//          quindi `PROGRESSO !?!` e il file `PROGRESSO!!.jpg` finiscono sulla stessa chiave.
+//          Verificato eseguendo, non ragionando.
+//
 // v6.318 - 🆕 UN VALORE CHE FINISCE CON "!" PRENDE UNO SPAZIO PRIMA DEL PUNTO ESCLAMATIVO.
 //          Franco: *"a video il ! rischia di non vedersi"*. Solo app.js (piu' la versione).
 //
@@ -18757,7 +18781,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.318';
+const JS_VERSION = 'v6.319';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -19436,11 +19460,28 @@ function _sanificaPerFirestore(obj, percorso, rimossi) {
 // "ROSSO !!" (uno spazio prima del gruppo, non fra i due punti).
 // ⚠️ Se non c'e' un "!" in fondo la stringa torna INTATTA, nemmeno ripulita ai bordi: normalizzare
 // di straforo anche gli spazi sarebbe una seconda modifica non chiesta, nascosta dentro la prima.
+//
+// 🔴 v6.319 - LO SPAZIO VA PRIMA DELL'INTERO BLOCCO FINALE DI PUNTEGGIATURA, NON DEL SOLO "!".
+// Trovato dal censimento della migrazione sui dati veri, e mai sospettato prima: fra i 25 valori
+// distinti ce n'era uno che finisce con punteggiatura MISTA - `PUBBLICITA' PROGRESSO!?!`. La prima
+// stesura cercava il gruppo finale di soli "!", che li' e' l'ultimo carattere da solo, e infilava
+// lo spazio in mezzo: `PROGRESSO!? !`. Non era ne' il vecchio ne' qualcosa di sensato.
+// 📌 Adesso il blocco e' `[!?]+`, e lo spazio va davanti a tutto: `PROGRESSO !?!`.
+// ⚠️ IL BLOCCO DEVE CONTENERE ALMENO UN "!", altrimenti la regola non scatta: un valore che
+// finisce con il solo "?" non e' mai stato nella richiesta di Franco, e allargarla di straforo
+// sarebbe una seconda modifica nascosta dentro la prima.
+// ✅ Sugli altri 24 valori censiti non cambia una virgola: per loro il blocco e' fatto di soli "!".
+// 📌 La lezione, e vale oltre questa riga: 33 asserzioni scritte a tavolino non avevano previsto
+// la punteggiatura mista, perche' chi le scrive immagina i casi che ha in mente. I dati veri no.
+// E' per questo che la migrazione fa il censimento prima di scrivere.
 function _spaziaEsclamativoFinale(v) {
   if (typeof v !== 'string') return v;
-  if (!/!\s*$/.test(v)) return v;
   const s = v.trim();
-  return s.replace(/\s*(!+)$/, (tutto, punti) => (s.length > tutto.length ? ' ' : '') + punti);
+  const m = /([!?]+)$/.exec(s);
+  // ⚠️ "CONTIENE almeno un !", non "FINISCE con un !": la prima stesura della v6.319 chiedeva la
+  // seconda cosa, e su `COME?!?` non scattava. Se ne e' accorta un'asserzione, non un rilettura.
+  if (!m || m[1].indexOf('!') < 0) return v;
+  return s.slice(0, m.index).replace(/\s+$/, '') + (m.index > 0 ? ' ' : '') + m[1];
 }
 
 // I campi su cui la regola vale. Elenchi dichiarati e non dedotti: un campo di testo non e'
