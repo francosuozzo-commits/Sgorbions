@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.321"></script>
-<link rel="stylesheet" href="css/style.css?v=6.321">
+<script src="js/email.min.js?v=6.334"></script>
+<link rel="stylesheet" href="css/style.css?v=6.334">
 
 
 <style>
@@ -900,14 +900,24 @@ button.back-btn { color:#ffffff; }
       </div>
     </div>
     <!-- v5.796 — blocchi admin Classifica/Ebay spostati SOTTO i risultati di ricerca (vedi sotto) -->
-    <div id="items-search-box" style="margin-bottom:1rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-left:-1rem;margin-right:-1rem;">
+    <!-- 🆕 v6.333 (Franco) — LA CORNICE E' BLU, del blu delle AZIONI UTENTE (`--action`, quello
+         di `.btn-primary`). Il box interno resta bianco: cosi' il blu marca il perimetro di quello
+         che si puo' fare, e dentro la gerarchia resta leggibile.
+         📌 Si punta la VARIABILE, non il colore: `--action` e' gia' il blu che il sito usa per i
+         comandi dell'utente (v6.175), quindi se un domani cambia, cambia anche qui - e nessuno deve
+         ricordarsi di questo bordo. -->
+    <div id="items-search-box" style="margin-bottom:1rem;background:var(--card);border:1px solid var(--action);border-radius:var(--radius-lg);padding:1rem 1.4rem;margin-left:-1rem;margin-right:-1rem;">
       <!-- 🆕 v6.272 (Franco) — il titolo e "Azzera filtri" sulla stessa riga.
            🔴 IL BOTTONE È FRATELLO DEL TITOLO, NON FIGLIO: aggiornaTestiRicercaSezione() scrive
            `textContent` su #items-search-title a ogni cambio sezione, e si porterebbe via qualunque
            cosa ci fosse dentro. Il margine sotto è passato dal titolo a questa riga, altrimenti il
            bottone si allineerebbe in alto invece che col testo. -->
       <div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;margin-bottom:0.75rem;">
-        <div id="items-search-title" style="font-size:0.95rem;font-weight:600;color:var(--text);">Imposta la tua ricerca</div>
+        <!-- 🆕 v6.332 - il RIPIEGO: lo si vede solo fra il caricamento e il primo
+             `aggiornaTestiRicercaSezione()`, che ci scrive sopra la frase completa col nome della
+             sezione. Va tenuto allineato a mano con quella funzione, ed e' il punto in cui §5 dice
+             che "ci si perde una release, ogni volta". -->
+        <div id="items-search-title" style="font-size:0.95rem;font-weight:600;color:var(--text);">Imposta i criteri per la tua ricerca</div>
         <button id="items-reset-filters" type="button" class="btn-primary" onclick="azzeraTuttiIFiltri()"
                 data-i18n="items.resetFilters" style="font-size:0.82rem;padding:0.3rem 1rem;">Azzera filtri</button>
       </div>
@@ -918,8 +928,41 @@ button.back-btn { color:#ffffff; }
           <span class="search-clear-btn" id="items-search-clear" onclick="clearSearchField('items-search', () => { renderItems(); if (typeof bulkEditActive!=='undefined' && bulkEditActive) renderBulkEditView(); })" style="display:none;">✕</span>
         </div>
       </div>
-        <div id="items-filter-intro" style="display:none;font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;text-align:left;align-items:center;gap:0.4rem;"><span id="items-filter-intro-text" data-i18n="items.filterIntro">Affina la tua ricerca indicando dove vuoi cercare</span>
-        <button onclick="openFilterLegendModal()" title="Cosa significano questi termini?" style="background:none;border:1px solid var(--muted);color:var(--muted);border-radius:50%;width:18px;height:18px;font-size:0.7rem;line-height:1;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;">i</button></div>
+      <!-- 🆕 v6.326 (Franco, subito dopo) — LA FRASE STA PRIMA DEI RIQUADRI, non dopo.
+           *"Affina la tua ricerca indicando dove vuoi cercare"* introduce quello che segue, e
+           quello che segue adesso sono i quattro riquadri: lasciarla sotto voleva dire presentare
+           qualcosa che il lettore ha gia' passato. Con lei viaggia il bottone «i» della legenda,
+           che e' la spiegazione dei termini usati nei riquadri e quindi va letto prima di essi. -->
+      <!-- 🆕 v6.326 (Franco) — I RIQUADRI DI RAGGRUPPAMENTO STANNO QUI, SUBITO DOPO LA BUCA DI
+           RICERCA: *"diamogli una veste di mera ricerca... portali dentro al macro box e mettili
+           subito dopo la buca"*.
+           📌 NON È UN TRASLOCO ESTETICO, è quello che rende praticabile la prova della v6.325:
+           nascosto il box dei selettori, questi riquadri sono rimasti l'UNICO modo di filtrare per
+           versione, e il comando non può stare dopo la cosa su cui agisce.
+           📌 Erano fuori dal box dalla v5.988, quando erano un RISCONTRO. Da quando si cliccano
+           sono un COMANDO, e un comando va dove si comanda.
+        🆕 v6.327 (Franco) — E ADESSO HANNO UN BOX LORO, con la cornice e l'etichetta degli altri
+           due («Filtri legati alla tua collezione», «Filtri aggiuntivi admin»): erano quattro
+           riquadri sciolti in mezzo alla pagina e adesso sono un gruppo che si vede come tale.
+           📌 L'ETICHETTA NON È UN TESTO NUOVO: è `items-filter-intro`, la frase che fino a ieri
+           stava sopra di loro come riga a sé. Riusarla invece di scriverne una seconda vuol dire
+           che la traduzione (`items.filterIntro`) e il bottone «i» della legenda vengono dietro da
+           soli, e che non nascono due frasi da tenere allineate a mano.
+           ⚠️ Cambia solo la sua VESTE (da riga a etichetta a cavallo del bordo), non il suo
+           contenuto né chi la mostra: `renderItemTypeFilters` continua a metterla in `flex`. -->
+      <div id="items-raggr-box" style="position:relative;margin-top:1.15rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:1.05rem 0.9rem 0.35rem;">
+        <!-- 🆕 v6.333 (Franco) — QUI IL BOTTONE «i» NON C'E' PIU'. E' sceso in fondo a destra dentro
+             il riquadro «Filtra per le Versioni», che e' l'unico posto in cui quella legenda spiega
+             qualcosa: definisce base, variazioni, change, omaggio ed errori di stampa - cioe' le
+             pillole che stanno li' sopra. 📌 Attaccato all'etichetta del box spiegava i termini di
+             una frase che quei termini non li usa. -->
+        <div id="items-filter-intro" style="display:none;position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);align-items:center;gap:0.4rem;white-space:nowrap;max-width:calc(100% - 1.8rem);overflow:hidden;"><span id="items-filter-intro-text" data-i18n="items.filterIntro">Affina la tua ricerca coi seguenti filtri</span></div>
+        <div id="raggr-summary-results" style="display:none;flex-direction:column;align-items:stretch;"></div>
+        <!-- 🗑️ v6.329 - qui stava `retro-cat-summary-results`. I riquadri sono un elenco solo,
+             disegnato in `raggr-summary-results`: due contenitori affiancati non possono alternarsi,
+             e le categorie dovevano andare in mezzo. -->
+      </div>
+
         <!-- v5.916 — Box "Filtri generici": tipo oggetto (Tutti/e, Set base, Variazioni, Change, Errori di stampa) + Senza foto -->
         <div id="items-generic-box" style="position:relative;margin-top:0.95rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">
           <div id="items-generic-box-label" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);">Filtri generici</div>
@@ -947,20 +990,9 @@ button.back-btn { color:#ffffff; }
       </div>
     </div>
       <div id="items-complete-msg" style="display:none;width:100%;color:var(--accent);font-size:0.9rem;font-style:italic;"></div>
-    <!-- v5.988 — gli specchietti dei RISULTATI stanno qui, subito sotto la ricerca e PRIMA dei
-         blocchi admin Classifica/Ebay. Prima erano piu' in basso, appena sopra la griglia: sono
-         il primo riscontro di cosa ha trovato la ricerca, e leggerli dopo i comandi di massa
-         significava passare accanto ai bottoni prima di sapere su quanti oggetti agiscono. -->
-    <div id="retro-cat-summary-results" style="display:none;margin-bottom:0.9rem;"></div>
-    <!-- v6.079 (Franco) — i raggruppamenti per tipo, affiancati sotto al riquadro delle categorie.
-           Stesso stampo e stesso font degli altri: il pannello è la stessa funzione. Sono elastici
-           (flex 1 1 320px) perché contengono pillole cliccabili e devono poter respirare; sotto i
-           660px circa vanno a capo e tornano uno sopra l'altro.
-         🆕 v6.266 — UN CONTENITORE SOLO, e i riquadri dentro li fa `renderRaggrSummaries()` uno per
-           versione, leggendo `VERSIONI_ARTICOLO`. Prima erano due <div> con l'id scritto a mano:
-           l'Omaggio ne avrebbe voluto un terzo qui, e la sesta versione un quarto — e dimenticarlo
-           non dà nessun errore, manca un riquadro e basta. -->
-      <div id="raggr-summary-results" style="display:none;flex-direction:column;align-items:stretch;"></div>
+    <!-- 🆕 v6.326 — QUI NON C'È PIÙ NIENTE: i quattro riquadri di raggruppamento sono saliti
+         DENTRO «Imposta la tua ricerca», subito sotto la buca. Vedi il commento lassù. Questa riga
+         resta come segnavia per chi cercasse i due <div> dove stavano da sempre (v5.988). -->
     <!-- v5.796 — blocchi admin Classifica/Ebay: qui, SOTTO i risultati di ricerca a cui si applicano, prima della griglia/vista tabellare -->
     <div style="display:flex;flex-wrap:wrap;gap:1.5rem;margin-bottom:1rem;">
       <div>
@@ -2931,7 +2963,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.321"></script>
+<script src="js/app.js?v=6.334"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2955,7 +2987,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.321'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.334'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
