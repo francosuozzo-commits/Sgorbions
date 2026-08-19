@@ -1,6 +1,60 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.321 - 🔴 IN CREAZIONE E IN CLONAZIONE IL CAMPO "DI PARTENZA" NON PESCAVA NIENTE.
+//          Trovato da Franco, misurato con `strumenti\sonda-partenza.js`. Solo app.js (piu' la
+//          versione nell'index).
+//
+//          🔴 LA CAUSA, in tre righe di sonda:
+//              versione spuntata : base | partenze ammesse : [] | candidati possibili : 368
+//          L'elenco dei candidati si costruiva UNA VOLTA SOLA, al render, dalla versione che il
+//          record aveva in quel momento. Cloni una figurina base: all'apertura la versione e'
+//          "base", che non ammette nessuna partenza — giusto, li' il campo non serve. Poi spunti
+//          Change o Omaggio: il GRUPPO compare, perche' il toggle aggiorna la visibilita'...
+//          ma l'ELENCO no. Campo visibile, tendina vuota, nessun errore. I 368 candidati erano li'.
+//
+//          📌 PERCHE' IN MODIFICA NON SI VEDEVA, ed e' il motivo per cui e' passato inosservato:
+//          li' il record la sua versione ce l'ha gia' quando apri, quindi l'elenco nasce giusto.
+//          Il difetto si vede SOLO dove la versione si sceglie DOPO l'apertura — creazione e
+//          clonazione, cioe' esattamente quando un collegamento nuovo lo stai creando.
+//          ⚠️ NATO CON LA v6.235, che ha reso l'elenco dipendente dalla versione. Prima la
+//          condizione era "tutto tranne change ed errori di stampa" e non guardava il record:
+//          sbagliata in un altro modo, ma per un record nuovo restituiva comunque qualcosa. E' il
+//          prezzo di una condizione piu' giusta calcolata nel momento sbagliato.
+//
+//          🆕 `_costruisciPartenze(f, chiaveVersione)`: la costruzione dell'elenco esce dal render
+//          e diventa una funzione, chiamata in DUE momenti — all'apertura e a ogni clic su una
+//          casella del tipo. E' la stessa forma della v6.038 sulla visibilita' dei campi: *"va
+//          aggiornata in due momenti, e due copie della stessa regola divergono al primo che se ne
+//          dimentica"*.
+//          📌 Il NUMERO si legge dal CAMPO e non dal record: in creazione lo stai digitando adesso,
+//          e `_stessoGruppoDi` ci restringe sopra (v6.133). Dal record darebbe l'elenco di prima.
+//          📌 `showBase` viene ora dalla stessa fonte che riempie l'elenco ("quante partenze ammette
+//          questa versione") invece di essere una seconda condizione equivalente.
+//          ⚠️ E se la partenza gia' scelta non e' piu' ammessa dalla versione nuova, il campo si
+//          SVUOTA: meglio vuoto e visibile che pieno e destinato a essere rifiutato dal salvataggio.
+//
+// v6.320 - 🆕 NELLA RICERCA GLOBALE IL NOME COMPLETO DEL RETRO SI MOSTRA ANCHE SULLE FIGURINE
+//          BASE. Franco: *"deve fare quello che fa con le variazioni ufficiali e non"*.
+//          Solo app.js (piu' la versione nell'index).
+//
+//          📌 NON ERA UN DIFETTO, ERA UNA DECISIONE, e sta scritta nella v6.103: *"la miniatura si
+//          mostra sempre, il NOME del retro no; per una variazione il retro e' cio' che la distingue
+//          dalle sorelle, per una base e' solo il suo dietro e ripeterlo allungherebbe ogni pillola
+//          senza distinguere niente"*. Il ragionamento reggeva, l'uso no: chi cerca guarda una
+//          pillola per volta, non una figurina accanto alle sue sorelle, e li' il retro dice di che
+//          oggetto si tratta esattamente come per una variazione.
+//          ⚠️ IL PREZZO E' QUELLO CHE LA v6.103 TEMEVA, e va guardato: la riga si allunga per OGNI
+//          figurina base che ha un retro, cioe' per la maggior parte dei risultati. Se ingombra, si
+//          revoca togliendo una parola.
+//
+//          🆕 E LA CODA COL RETRO ESCE DAL RAMO DELLE VERSIONI: prima viveva incastrata in una
+//          catena di ternari dentro `isVarOrChange`, e per estenderla alle basi sarebbe bastato
+//          copiarla fuori — cioe' due copie della stessa riga. Adesso e' scritta una volta e vale
+//          per tutti, quindi il giorno che cambia colore o formato cambia per tutti insieme.
+//          📌 I RETRO restano esclusi (`sec === 'retros'`), e non e' una dimenticanza: li' il Nome
+//          completo del retro E' GIA' il nome della pillola, e la coda lo direbbe due volte.
+//
 // v6.319 - 🔴 LO SPAZIO VA PRIMA DELL'INTERO BLOCCO FINALE DI PUNTEGGIATURA, NON DEL SOLO "!".
 //          Correzione della v6.318, trovata dal CENSIMENTO della migrazione sui dati veri prima che
 //          scrivesse una riga. Solo app.js (piu' la versione nell'index).
@@ -18781,7 +18835,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.319';
+const JS_VERSION = 'v6.321';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -26520,6 +26574,23 @@ function renderCatalogSearch(q) {
                 // ripeterne il nome accanto a quello della figurina allungherebbe ogni pillola
                 // senza distinguere niente.
                 const retroFig = f.retroId ? getData('figurines', []).find(x => x.id === f.retroId) : null;
+                // 🆕 v6.320 (Franco) - IL NOME COMPLETO DEL RETRO VALE ANCHE PER LE FIGURINE BASE.
+                // Franco: *"nella ricerca globale, per i risultati di versione base, non mostra il
+                // Nome completo del retro; deve fare quello che fa con le variazioni"*.
+                // 📌 NON ERA UN DIFETTO, ERA UNA DECISIONE — ed e' scritta due righe piu' su, nella
+                // v6.103: *"la miniatura si mostra sempre, il NOME del retro no; per una variazione
+                // il retro e' cio' che la distingue dalle sorelle e va scritto, per una base e'
+                // solo il suo dietro"*. Il ragionamento reggeva; l'uso no. Chi cerca guarda una
+                // pillola per volta, non una figurina accanto alle sue sorelle, e in quel momento
+                // il retro dice di che oggetto si tratta esattamente come per una variazione.
+                // 🆕 E ADESSO E' SCRITTO UNA VOLTA SOLA. Prima viveva dentro il ramo delle versioni,
+                // incastrato in una catena di ternari: per estenderlo alle basi sarebbe bastato
+                // copiarlo fuori — cioe' due copie della stessa riga, che e' il difetto che questa
+                // settimana e' costato quattro release. Esce dal ramo e vale per tutti.
+                const _codaRetro = retroFig
+                  ? ' <span style="font-size:0.68rem;"> - <span style="color:var(--info);">'
+                    + esc(_retroNomeCompleto(retroFig)) + '</span></span>'
+                  : '';
                 // v6.234 - era la quinta catena a mano, con gli stessi identici quattro testi.
                 const varLabel = _etichettaTipo(f, false);
                 // v6.103 (Franco) - IL TIPO TORNA NEI RISULTATI, per i soli Change ed errori di stampa.
@@ -26567,7 +26638,7 @@ function renderCatalogSearch(q) {
                 return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
                 ${(() => { const front = isVarOrChange ? (f.img || (baseFig && baseFig.img) || null) : f.img; return smallImg(front, '', false); })()}
                 ${retroFig ? smallImg(retroFig.img, currentLang === 'it' ? 'Retro associato' : 'Associated retro') : ''}
-                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">'+f.number+'</span> ' : ''}${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;color:#ffd84d;">Change</span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (tipoLabel ? ' <span style="color:#ffd84d;">' + esc(tipoLabel) + '</span>' : '') + (retroFig ? ' - <span style="color:var(--info);">' + esc(_retroNomeCompleto(retroFig)) + '</span>' : '') + '</span>' : ''}</span>
+                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">'+f.number+'</span> ' : ''}${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;color:#ffd84d;">Change</span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (tipoLabel ? ' <span style="color:#ffd84d;">' + esc(tipoLabel) + '</span>' : '') + '</span>' : ''}${sec === 'retros' ? '' : _codaRetro}</span>
               </span>`;
               }).join('') + '</div>').join('')}
             </div>
@@ -34065,8 +34136,23 @@ function toggleFeBaseFigurineGroup(appenaSpuntata) {
   // Senza, spuntando Omaggio restava nascosta anche la tendina "Figurina di partenza" — e siccome
   // `showBase` comanda pure `_mostraCampoNumero`, il Numero ricompariva su un oggetto che lo
   // eredita dalla base. Una riga mancante, tre sintomi.
-  // v6.314 - era una quintina a mano. "Ha una partenza" e "non e' base" sono la stessa domanda.
-  const showBase = !_eBase(_v);
+  // 🔴 v6.321 - L'ELENCO DELLE PARTENZE SI RIFA' QUI, non solo all'apertura della scheda. Senza
+  // questa riga il gruppo compariva e la tendina restava vuota: vedi `_costruisciPartenze`.
+  // 📌 E `showBase` adesso viene dalla STESSA fonte che riempie l'elenco — "quante partenze
+  // ammette questa versione" — invece di essere una seconda domanda che dice la stessa cosa in
+  // un altro modo. Erano equivalenti, ma due condizioni equivalenti sono due cose da tenere tali.
+  const showBase = _costruisciPartenze(_feRecord, _chiaveTipo(_v)).length > 0;
+  // ⚠️ E se la partenza gia' scelta non e' piu' ammessa, si svuota. Tenerla vorrebbe dire un campo
+  // che mostra un collegamento che il salvataggio rifiutera': meglio vuoto e visibile che pieno e
+  // sbagliato. Succede cambiando versione a un record che una partenza ce l'aveva.
+  {
+    const _sel = document.getElementById('fe-base-figurine');
+    if (_sel && _sel.value && !_feBaseFigurineLinkOptions.some(x => x.id === _sel.value)) {
+      _sel.value = '';
+      const _txt = document.getElementById('fe-base-figurine-search');
+      if (_txt) _txt.value = '';
+    }
+  }
   group.style.display = showBase ? '' : 'none';
   // v5.786 — Retro visibile anche per i Change; per i Change ripopolo il selettore con TUTTE le serie.
   if (retroGroup) {
@@ -34109,6 +34195,47 @@ let _feIsRetro = false;
 // non bastava piu', perche' ora le sezioni si comportano in tre modi e non in due.
 let _feSezione = null;
 let _feBaseFigurineLinkOptions = [];
+// 🆕 v6.321 - IL RECORD APERTO NELLA SCHEDA. Serve al toggle delle caselle del tipo per rifare
+// l'elenco delle partenze: senza, il toggle sa quale versione hai spuntato ma non su quale oggetto.
+let _feRecord = null;
+
+// 🔴 v6.321 - L'ELENCO DELLE PARTENZE SI RIFA' QUANDO CAMBIA LA VERSIONE, NON SOLO ALL'APERTURA.
+// Il baco, trovato da Franco in CLONAZIONE e misurato con `strumenti\sonda-partenza.js`:
+//     versione spuntata: base | partenze ammesse: [] | candidati possibili: 368
+// Cloni una figurina base: all'apertura la versione e' "base", quindi `_partenzeDi('base')` e' un
+// elenco VUOTO e i candidati sono zero — giusto, li' il campo non serve. Poi spunti Change o
+// Omaggio: il GRUPPO compare, perche' il toggle aggiorna la visibilita'... ma l'elenco no, perche'
+// era stato costruito una volta sola al render. Campo visibile, tendina vuota, e nessun errore.
+// 📌 IN MODIFICA NON SI VEDEVA, ed e' il motivo per cui e' passato: li' il record la sua versione
+// ce l'ha gia' quando apri, quindi l'elenco nasce giusto. Si vede SOLO dove la versione si sceglie
+// dopo l'apertura — creazione e clonazione, cioe' proprio quando si crea un collegamento nuovo.
+// ⚠️ NATO CON LA v6.235, che ha reso l'elenco dipendente dalla versione (`partenza` dichiarata in
+// `VERSIONI_ARTICOLO`). Prima la condizione era "tutto tranne change ed errori di stampa" e non
+// guardava il record: sbagliata in altro modo, ma per un record nuovo restituiva comunque qualcosa.
+// E' il prezzo di una condizione piu' giusta calcolata nel momento sbagliato.
+// 📌 Il NUMERO si legge dal campo e non dal record: in creazione lo stai digitando adesso, e
+// `_stessoGruppoDi` ci restringe sopra (v6.133). Leggerlo dal record darebbe l'elenco di prima.
+// ── PERCHE' LA CONDIZIONE E' QUESTA (i commenti arrivano con lei, dal punto in cui viveva) ──
+// v6.120 - VIA L'ESCLUSIONE DELLE VARIAZIONI: un change puo' essere il change di una variazione.
+// v6.133 - E SOLO LO STESSO NUMERO (`_stessoGruppoDi`). Non e' pulizia dell'elenco, e' una difesa:
+//   il numero di un figlio non si scrive, si EREDITA dalla partenza al salvataggio. Scegliere
+//   dall'elenco un oggetto con un altro numero RINUMERA il record in silenzio.
+// 🔴 v6.235 - LA CONDIZIONE E' INCLUSIVA E VIENE DALLA DICHIARAZIONE: `partenza` in
+//   `VERSIONI_ARTICOLO`. Prima diceva "tutto tranne change ed errori di stampa" — descriveva i
+//   candidati senza mai guardare `f`, e con la quinta versione avrebbe ammesso "omaggio di un
+//   omaggio", che Franco nega. La tabella smette di descrivere e comincia a comandare.
+function _costruisciPartenze(f, chiaveVersione) {
+  const amm = _partenzeDi(chiaveVersione);
+  const num = document.getElementById('fe-number')?.value;
+  const rec = f ? { ...f, number: (num === '' || num === undefined) ? f.number : num } : null;
+  _feBaseFigurineLinkOptions = (!rec || !amm.length) ? [] : getData('figurines', [])
+    .filter(x => x.seriesId === rec.seriesId && x.section === rec.section && x.id !== rec.id
+                 && amm.includes(_chiaveTipo(x))
+                 && _stessoGruppoDi(rec, x))
+    .sort(_baseFigurineLinkSort);
+  return amm;
+}
+
 function filterFeBaseFigurineLink() {
   const q = _perRicerca(document.getElementById('fe-base-figurine-search').value.trim()); // v6.093
   const dd = document.getElementById('fe-base-figurine-dropdown');
@@ -34553,36 +34680,12 @@ function switchToEditMode(figId) {
   // v6.235 - da chi puo' nascere QUESTO oggetto: una riga, letta dalla dichiarazione. Sta FUORI
   // dalla catena, o si infila fra `getData()` e `.filter()` e spezza l'espressione — `node --check`
   // lo vede, ma vale la pena scriverlo: e' il punto in cui il commento lungo invita a sbagliare.
-  const _partenzeAmmesse = _partenzeDi(_chiaveTipo(f));
-  _feBaseFigurineLinkOptions = getData('figurines', [])
-    // v6.120 (Franco) - VIA L'ESCLUSIONE DELLE VARIAZIONI: un change puo' essere il change di una
-    // variazione. Restano fuori change ed errori di stampa: un change non e' il change di un change.
-    // v6.133 (Franco) - E SOLO LO STESSO NUMERO. Non e' pulizia dell'elenco, e' una difesa: il
-    // numero di un figlio non si scrive, si EREDITA dalla figurina di partenza al salvataggio
-    // (`updates.number = baseFigForNum.number`). Quindi scegliere dall'elenco una figurina con un
-    // altro numero RINUMERA il record, in silenzio — ed e' il §12.0, "un oggetto che perde il numero
-    // senza che nessuno l'abbia toccato". Su una tendina da mille voci un clic scivolato non si
-    // vede; su una da tre si', e comunque non puo' fare quel danno.
-    // Dove il numero non c'e' si usa il NOME, che e' l'altro modo in cui un gruppo si riconosce; se
-    // non c'e' nemmeno quello (record appena nato) si mostra tutto, perche' non c'e' niente su cui
-    // restringere e un elenco vuoto sarebbe peggio di uno lungo.
-    // 🔴 v6.235 (Franco: "cambia le query in logica inclusiva") — QUI C'ERA IL NEGATIVO, e non
-    // sapeva dire la regola nuova. Diceva *"tutto tranne change ed errori di stampa"*, cioe'
-    // descriveva i CANDIDATI senza mai guardare `f`: offriva gli stessi tre a un change, a un
-    // errore di stampa e a una variazione, indistintamente.
-    // Due conseguenze, una vecchia e una che stava per nascere:
-    //   · un change poteva puntare a una variazione NON ufficiale — e convertendolo in omaggio
-    //     avrebbe prodotto un omaggio che discende da lei, che la regola di Franco nega;
-    //   · dalla v6.235 l'omaggio non e' ne' change ne' errore di stampa, quindi il negativo
-    //     l'avrebbe ammesso fra le partenze DA SOLO: omaggio di un omaggio, change di un omaggio.
-    //     Franco: *"no, mai"*.
-    // Adesso la condizione e' INCLUSIVA e viene dalla dichiarazione: `partenza` in
-    // `VERSIONI_ARTICOLO`, la stessa riga che la terza tabella della console stampa. La tabella
-    // smette di descrivere e comincia a comandare.
-    .filter(x => x.seriesId === f.seriesId && x.section === f.section && x.id !== f.id
-                 && _partenzeAmmesse.includes(_chiaveTipo(x))
-                 && _stessoGruppoDi(f, x))
-    .sort(_baseFigurineLinkSort); // v5.785 — Retro per Nome completo, Figurine per Numero
+  _feRecord = f;   // v6.321 - il toggle ne ha bisogno per rifare l'elenco
+  const _partenzeAmmesse = _costruisciPartenze(f, _chiaveTipo(f));
+  // 🗑️ v6.321 - QUI STAVA LA COSTRUZIONE DELL'ELENCO, scritta in linea. E' diventata
+  // `_costruisciPartenze()` perche' serve DUE volte: qui e nel toggle delle caselle del tipo.
+  // I commenti delle v6.120/v6.133/v6.235 che stavano attaccati a queste righe sono andati
+  // con loro, dentro la funzione: spiegano la condizione, e la condizione si e' spostata.
   const selectedBaseFig = f.baseFigurineId ? _feBaseFigurineLinkOptions.find(x => x.id === f.baseFigurineId) : null;
   // v6.235 - anche questa si ricava: la tendina si mostra a chi PUO' avere una partenza, cioe' a
   // chi ne dichiara almeno una. Prima era la quaterna scritta a mano, e per l'omaggio sarebbe
