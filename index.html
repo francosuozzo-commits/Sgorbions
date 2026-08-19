@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.265"></script>
-<link rel="stylesheet" href="css/style.css?v=6.265">
+<script src="js/email.min.js?v=6.317"></script>
+<link rel="stylesheet" href="css/style.css?v=6.317">
 
 
 <style>
@@ -315,6 +315,63 @@ button.back-btn { color:#ffffff; }
      spazio vuoto in fondo alla pagina. */
   #fig-detail-modal #fig-detail-content { min-height:445px; }
 }
+/* 🆕 v6.317 (Franco: "nelle form in modifica il campo nome non si vede tutto, mentre nella form in
+   sola lettura si vede tutto. Viene fatto in modo diverso il calcolo dello spazio da usare?") — SI',
+   ED E' TUTTA LA DIFFERENZA.
+   In `.detail-row` il valore e' un elemento flex con `flex: 0 1 auto`, cioe' "chiedi lo spazio che
+   ti serve". Cosa serva pero' lo dicono due cose diverse:
+     · in sola lettura il valore e' TESTO, e il testo chiede la sua lunghezza — e se non ci sta va
+       a capo. Si vede sempre tutto.
+     · in modifica e' un `<input>`, che di suo chiede una larghezza FISSA (una ventina di caratteri,
+       la misura predefinita del browser) e non va a capo mai: quello che eccede scorre fuori.
+       `.form-input` ha `width:100%`, ma cento per cento DI COSA? Del contenitore, che e' lo `span`,
+       che sta chiedendo la sua larghezza all'input: il conto gira a vuoto e resta la misura
+       predefinita. Il nome lungo non veniva tagliato dallo spazio disponibile, che c'era: nessuno
+       glielo stava dando.
+   ⬜ IL RIMEDIO: allo `span` che contiene un campo si dice di prendersi lo spazio che avanza. Da
+   li' in poi il `width:100%` che `.form-input` ha gia' significa qualcosa, e il campo si allarga.
+   📌 `text-align:right` NON e' un di piu': senza, i campi a larghezza fissa (Numero, Punteggio)
+   scivolerebbero a sinistra, perche' lo `span` adesso e' largo quanto la riga. Cosi' restano dove
+   sono sempre stati. Sul TESTO dentro i campi non ha effetto — sugli elementi di form
+   `text-align` non si eredita (e' la stessa ragione per cui e' servita la regola della v6.316).
+   ⚠️ `:has()` E' UNA SCELTA, non una distrazione. Non esiste un selettore "il genitore di" senza,
+   e l'alternativa era marcare a mano quindici `<span>` in `app.js` — una lista da tenere allineata,
+   cioe' il difetto che questa settimana e' costato quattro release. Il prezzo: su un browser che
+   non conosce `:has()` la regola viene ignorata e si torna a com'e' oggi, senza rompere niente. E'
+   accettabile QUI perche' la scheda in modifica la vede il solo admin, non i visitatori. */
+.detail-row > .detail-value:has(> .form-input) { flex: 1 1 auto; min-width: 0; text-align: right; }
+@media (max-width:860px) {
+  /* In colonna il flex governa l'altezza, non la larghezza: senza questa riga il campo resterebbe
+     stretto come prima. `stretch` gli fa prendere tutta la riga, che sul telefono e' cio' che
+     serve. */
+  .detail-row > .detail-value:has(> .form-input) { align-self: stretch; }
+}
+/* 🆕 v6.316 (Franco: "come mai il valore del campo Serie e' giustificato a dx, mentre Categoria e
+   Sottocategoria no?") — I CAMPI DI SOLA LETTURA DELLA SCHEDA SI ALLINEANO A DESTRA COME GLI ALTRI.
+   La domanda aveva una risposta precisa, ed e' la stessa per tutti e quattro i campi: in
+   `.detail-row` c'e' `justify-content:space-between`, quindi il VALORE finisce a destra. Ma la
+   Serie e' un testo, e un testo occupa lo spazio che gli serve; Categoria, Sottocategoria, Nome e
+   Sottonome sono degli `<input>`, che hanno una larghezza propria e il testo allineato a SINISTRA
+   dentro quella larghezza. La casella era gia' a destra: era il testo dentro la casella a non
+   esserci. E `text-align` non si eredita dal contenitore per gli elementi di form — e' il foglio di
+   stile del browser a metterlo a `start`, e va scavalcato.
+   📌 SOLO QUELLI IN SOLA LETTURA, e non e' un ripiego: un campo che si scrive con il testo a destra
+   fa saltare il cursore mentre si digita, ed e' fastidioso. Un campo che non si scrive quel
+   problema non ce l'ha, e allineato a destra si legge come i valori della vista in lettura — che e'
+   esattamente cio' che e' diventato.
+   🔗 Il gancio e' `[readonly]`, quindi l'allineamento segue da se' la stessa fonte che decide la
+   sola lettura (`_statoCampoEreditato`, v6.314): non c'e' una seconda condizione da tenere
+   allineata alla prima.
+   ⚠️ Il selettore e' ancorato a `.detail-value` APPOSTA: nella scheda della serie ci sono otto
+   `<input readonly>` (i conteggi calcolati), che stanno fuori da `.detail-value` e non vanno
+   toccati — li' il numero e' gia' dove deve stare. */
+.detail-value input[readonly] { text-align: right; }
+@media (max-width:860px) {
+  /* Sotto gli 860px `.detail-row` diventa una colonna con l'etichetta sopra e il valore sotto, a
+     tutta larghezza: li' "a destra" non allineerebbe niente a niente, allontanerebbe soltanto il
+     valore dalla sua etichetta. Si torna a sinistra, come il resto della colonna. */
+  .detail-value input[readonly] { text-align: left; }
+}
 /* 🆕 v6.218 (Franco: "nella admin console, i nomi del tab, possiamo metterli in bianco?") — I TAB
    DELLA CONSOLE ADMIN SPENTI ERANO `--muted` (#8b7aaa), cioe' viola slavato su fondo scuro: undici
    pulsanti che si leggevano peggio dell'unico acceso. Ora `--text` (#f0eaff), il bianco della
@@ -378,7 +435,15 @@ button.back-btn { color:#ffffff; }
     <div class="nav-brand">
       <a class="nav-logo" onclick="showPage('home')" style="padding:0;"><img src="https://res.cloudinary.com/ddpsge9d8/image/upload/h_72,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="height:36px;width:auto;display:block;"></a>
       <div style="display:flex;align-items:center;gap:0.5rem;margin-top:1px;">
-        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);">v6.265</span>
+        <!-- v6.314 - il numero NON sta piu' qui: lo scrive app.js da JS_VERSION, come la barra del
+             telefono dalla v5.954. Era fermo alla v6.265 da 48 release, e non lo diceva nessuno:
+             il controllo cache in fondo alla pagina guarda altri due punti, non questo. Su
+             desktop il sito mostrava una versione, sul telefono un'altra.
+             ATTENZIONE A COSA SI SCRIVE IN QUESTO COMMENTO: costruisci-preview.py taglia i
+             pezzi cercando delle stringhe letterali nell'index (fra cui quella che dichiara la
+             versione attesa, in fondo). Nominarle qui sposta il taglio e la preview esce
+             DOPPIA - successo scrivendo questa release, e lo script se n'e' accorto. -->
+        <span id="nav-app-version" style="font-size:0.7rem;color:rgba(255,255,255,0.5);font-family:var(--font-ui);"></span>
         <span id="nav-js-version-wrap" style="font-size:0.65rem;color:rgba(255,255,255,0.4);font-family:var(--font-ui);display:none;">JS:<span id="nav-js-version">-</span> CSS:<span id="nav-css-version">-</span></span>
         <span class="nav-online" style="font-size:0.7rem;color:rgba(255,255,255,0.45);font-family:var(--font-ui);" data-i18n="nav.onlineSince">Online dal 21.06.2026</span>
       </div>
@@ -1830,7 +1895,8 @@ button.back-btn { color:#ffffff; }
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
       <div style="text-align:center;margin-top:0.75rem;"><button onclick="openResetModal()" style="background:none;border:none;color:var(--accent);font-size:0.85rem;cursor:pointer;text-decoration:underline;" data-i18n="auth.forgotPassword">Password dimenticata?</button></div>
       <div id="auth-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
-      <div style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);">v6.265</div>
+      <!-- v6.314 - stessa cosa: lo riempie app.js. -->
+      <div id="auth-app-version" style="text-align:center;margin-top:1rem;font-size:0.75rem;color:var(--muted);font-family:var(--font-ui);"></div>
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
@@ -2865,7 +2931,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.313"></script>
+<script src="js/app.js?v=6.317"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2889,7 +2955,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.313'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.317'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
