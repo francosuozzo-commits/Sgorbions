@@ -1,6 +1,469 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.349 - IL BANNER «STAI IMPERSONANDO» PASSA A DESTRA E SI STRINGE (Franco: *"il pulsante «torna
+//          admin» si sovrappone al tasto da usare per tornare indietro, quando si apre una
+//          figurina. Puoi farlo piccolo e metterlo sulla dx (a dx non abbiamo tipicamente
+//          bottoni)"*). Solo app.js, piu' la versione.
+//
+//          🔴 IL DIFETTO L'AVEVO INTRODOTTO IO DUE RELEASE FA. La v6.347 gli ha dato
+//          `left:0.5rem;right:0.5rem` per far entrare il pulsante «Torna admin» su schermi stretti.
+//          Ha risolto quello e aperto questo: un banner largo tutto lo schermo copre per forza cio'
+//          che sta a sinistra - e a sinistra, sotto la navbar, c'e' il tasto INDIETRO di ogni
+//          pagina. Non un tasto qualsiasi: quello che si usa per uscire da dove si e' entrati.
+//          📌 Avevo verificato che il pulsante CI STESSE, non COSA STAVO COPRENDO. Sono due domande
+//          diverse, e alla seconda non si risponde misurando il banner: si risponde aprendo le
+//          pagine. Ho controllato il mio elemento e non la pagina attorno.
+//
+//          🆕 LA REGOLA DI FRANCO E' GENERALE: *"a destra non abbiamo tipicamente bottoni"*. Quindi
+//          il banner va a destra in TUTTI E DUE i casi, telefono e desktop. Sul desktop stava a
+//          sinistra dalla v5.324 e copriva lo stesso tasto - con piu' spazio attorno, quindi senza
+//          dare abbastanza fastidio da essere segnalato. Un difetto che non disturba resta un
+//          difetto, e correggerne uno solo dei due avrebbe lasciato la stessa trappola dove pesa
+//          meno, cioe' dove nessuno la cerchera' piu'.
+//
+//          ⚠️ SU TELEFONO SI ACCORCIA IL TESTO, NON IL PULSANTE. «Stai impersonando: nome — WRITE
+//          MODE» diventa il solo nome: quello che serve sapere e' QUALE utente sei, non la frase
+//          che lo dice, e il 🎭 la introduce da solo. Il pulsante resta con `flex-shrink:0` e la
+//          sua area di tocco. 📌 Guadagnare larghezza stringendo il comando e' esattamente
+//          l'errore della v6.347: la prima volta si e' stretto il pulsante, la seconda si e'
+//          allargato il banner. La terza si toglie il testo, che e' l'unica delle tre cose che non
+//          serve a nessuno per uscire.
+//          ⚠️ E il nome, se lungo, si taglia con i puntini invece di allargare il banner: e' la
+//          stessa famiglia del `<select>` della v6.348, un contenuto che detta la larghezza del
+//          contenitore.
+//
+// v6.348 - LA TENDINA DELLA v6.347 MANDAVA IN SCROLL ORIZZONTALE LA PAGINA PROFILO (Franco:
+//          *"sotto profilo ora vedo una schermata tagliata"*). index.html e app.js, piu' la
+//          versione.
+//
+//          🔴 LA CAUSA NON ERA IL BLOCCO, ERA IL `<select>`. Un select e' largo quanto la sua
+//          OPZIONE PIU' LUNGA, e le opzioni le scrivevo «nickname — email@completa». Dentro un
+//          flex, un figlio ha `min-width:auto`: non puo' restringersi sotto il proprio contenuto,
+//          quindi quella larghezza non veniva compressa ma PROPAGATA al padre, e da li' a tutta la
+//          pagina - piu' larga dello schermo, con la vista scivolata a destra.
+//          ⚠️ `flex:1` NON BASTA: senza `min-width:0` il fattore di restringimento non ha effetto.
+//          E' la trappola classica di flexbox, la stessa che nelle griglie si evita con
+//          `minmax(0, 1fr)` invece di `1fr`.
+//
+//          Tre correzioni, e nessuna e' cosmetica:
+//            · `min-width:0` sul select e sul suo contenitore - la riga che permette di stringersi;
+//            · le opzioni portano solo il NICKNAME (l'email solo se il nickname manca);
+//            · `max-width:100%` e `box-sizing:border-box`, perche' il blocco non possa comunque
+//              superare il suo contenitore.
+//          📌 La seconda vale anche da sola: questa tendina serve a scegliere una PERSONA, non a
+//          leggerne l'indirizzo. Il difetto ha indicato il contenuto migliore invece di costringere
+//          a un compromesso - non capita spesso, e vale la pena accorgersene.
+//
+//          ⚠️ NON SI VEDEVA SUL DESKTOP, dove lo spazio in eccesso c'era: si e' visto al primo
+//          sguardo dal banco prova mobile. E' il secondo difetto in due release che esisteva solo
+//          sotto gli 860px (l'altro era il banner «Torna admin»), su una funzione nata proprio per
+//          essere usata da telefono.
+//
+// v6.347 - IMPERSONARE DA TELEFONO (Franco: *"come faccio a impersonare da mobile? mi sa che non
+//          c'e' tale opzione. mi metti qlc di semplice (giusto il necessario) nella form del
+//          profilo?"*). index.html e app.js, piu' la versione.
+//          Nella pagina Profilo, per il solo admin: una tendina degli utenti e un «Vai».
+//
+//          📌 NON C'ERA DAVVERO. Il comando stava in un posto solo - il pulsante nella tabella
+//          Utenti della console admin - e quella e' una `data-table` a cinque colonne: su un
+//          telefono non e' scomoda, e' irraggiungibile. La funzionalita' esisteva su un solo
+//          dispositivo senza che nessuno l'avesse deciso.
+//
+//          🆕 NIENTE LOGICA NUOVA: il «Vai» chiama `impersonateUser(id)`, la stessa funzione del
+//          pulsante di sempre, con la sua conferma, il suo banner e i suoi controlli. Una seconda
+//          implementazione avrebbe voluto dire due strade per entrare nei panni di un altro
+//          utente, e il giorno che una imparasse un controllo in piu' l'altra diventerebbe la
+//          porta di servizio.
+//          ⚠️ GLI ADMIN NON SONO IN ELENCO: `impersonateUser` esce in silenzio se l'utente e'
+//          admin, quindi una loro voce sarebbe un comando inerte che sembra vivo (v6.020). Il
+//          filtro sta dove si costruisce l'elenco; il rifiuto dentro la funzione resta comunque -
+//          due difese, non una spostata.
+//
+//          🔴 E IL RITORNO ERA UNA TRAPPOLA, che si vedeva solo rendendo possibile l'andata.
+//          Il banner «Stai impersonando» aveva `max-width:33vw`: su uno schermo da 390px sono 129
+//          pixel, dentro cui stavano il nome dell'utente, la scritta WRITE MODE e il pulsante
+//          «✕ Torna admin» - l'unica strada per tornare se stessi. Sotto gli 860px adesso prende
+//          tutta la larghezza e manda il pulsante a capo.
+//          📌 Le due cose sono UNA release perche' sono una funzione sola: dare l'andata senza il
+//          ritorno sarebbe stato peggio che non dare niente - un vicolo cieco al posto di
+//          un'assenza.
+//          ⚠️ E LO STILE SI RISCRIVE A OGNI CHIAMATA, non solo quando il banner nasce: dentro il
+//          banco prova mobile la cornice si ridimensiona, e un telefono vero si ruota. Lasciandolo
+//          nel ramo della creazione, un banner nato largo restava largo - cioe' la correzione
+//          sarebbe sembrata non funzionare proprio nello strumento con cui la si verifica.
+//
+// v6.346 - LA POTATURA DEL SELETTORE DI VERSIONE (Franco: *"ti avevo gia' detto di procedere ad
+//          eliminare tutto, tanto a video quella sezione non c'e' piu; ed abbiamo sostituito
+//          quelle funzionalita"*). index.html e app.js: **-296 righe**.
+//
+//          VIA, IN UN COLPO: il box «Filtri legati alla versione» dall'index con il suo
+//          `items-filter-toggles`; le due manopole della prova (`_PROVA_NASCONDI_SELETTORI`,
+//          `_PROVA_GIALLO`); `_itemTypeFilter` e `_tipoIniziale()`; i sei selettori con la loro
+//          mappa colori e il ripiego; `_sottoSelettori` e i tre richiami; `_PARENT_FILTER`,
+//          `_parentFiltro`, `toggleParentFilter`, `_azzeraTuttiIParent`; `toggleItemTypeFilter`;
+//          `_sciogliRaggruppamentiEstranei`; `_tipoFigurinaDiPartenza`; il ramo del setaccio e le
+//          due righe gemelle in `azzeraTuttiIFiltri` / `_qualcheFiltroAcceso`.
+//
+//          📌 DOVE SONO ANDATE LE COSE CHE FACEVANO. Una cancellazione si giudica da qui, non da
+//          quante righe toglie:
+//            · filtro per versione   -> il riquadro «Filtra per le Versioni» (Set, non radio)
+//            · default «solo base»   -> `_semeVersione()`, v6.338
+//            · «solo fronte» mobile  -> `_soloBasiNelRiquadro()`, v6.345
+//            · sotto-filtri «da chi discende» -> nessun erede, e Franco lo sapeva scegliendo.
+//
+//          🔴 IL DIFETTO CHE QUESTA RELEASE STAVA PER INTRODURRE, e vale piu' delle 296 righe.
+//          `renderItemTypeFilters` cominciava con `const el = getElementById('items-filter-
+//          toggles'); if (!el) return;` - guardia scritta quando quel contenitore era l'unica cosa
+//          che disegnava. Da allora si e' presa anche il box «Filtri legati alla tua lista» e
+//          quello dei filtri admin. Togliendo il contenitore dall'index e lasciando la guardia, la
+//          funzione sarebbe uscita SUBITO a ogni chiamata, spegnendo due box che con i selettori
+//          non c'entrano niente. Nessun errore in console: un `return` in cima e' silenzioso.
+//          📌 La domanda che l'ha trovato non e' «cosa sto togliendo?» ma «CHI ALTRO usa la cosa
+//          che sto togliendo?» - la stessa che la v6.325 aveva posto ai filtri e non al layout
+//          mobile, pagandola con venti release di funzioni spente in silenzio (v6.345).
+//
+//          🧰 SETTE SUITE TOCCATE, e la differenza fra loro e' il punto:
+//            · DISMESSE `prova-v6322` e `prova-v6325`: verificavano i sotto-filtri e il box
+//              nascosto. Non aggiornate - la cosa che misuravano non c'e'. Messe da parte come
+//              `.txt` con una testa che spiega cosa insegnano ancora; il clic finale e' di Franco (§7).
+//            · POTATE `prova-v6266`, `prova-v6314`, `prova-v6315`, `prova-v6323`: hanno perso le
+//              asserzioni sui pezzi rimossi e tenuto tutto il resto. Nessuna e' stata "aggiustata"
+//              per farla passare: dove una riga difendeva una regola revocata, e' stata tolta
+//              dicendolo.
+//            · `prova-v6333`: un id in meno in un elenco di controlli.
+//          🔴 E `prova-v6315` NASCONDEVA UN DIFETTO SUO, trovato solo perche' il banco si e' rotto:
+//          il confronto «per nome» fra le due liste gemelle girava sul testo COI COMMENTI, quindi
+//          un filtro NOMINATO in un commento risultava presente. Dopo questa release, il commento
+//          che spiega la rimozione di `_itemTypeFilter` lo avrebbe fatto sembrare ancora vivo in
+//          tutte e due le liste - la suite avrebbe detto «allineate» confrontando due lapidi. Ora
+//          `pezzo()` toglie i commenti prima di guardare.
+//          📌 Il guasto rumoroso (backtick in un template literal) ha portato a galla quello muto.
+//          Senza il primo, il secondo non lo avrebbe visto nessuno.
+//
+// v6.345 - IL «SOLO FRONTE» SU TELEFONO TORNA, E LEGGE LA PILLOLA BASE (Franco: *"fai in modo che
+//          ora quella funzionalita' faccia leva sulla pillola BASE accesa"*). Solo app.js, piu' la
+//          versione.
+//
+//          🔴 ERA SPENTA DA VENTI RELEASE, E NESSUNO L'AVEVA SCRITTO. La v6.325, per nascondere il
+//          box dei selettori, ha portato `_tipoIniziale()` a 'all' per tutti: da allora
+//          `_itemTypeFilter === 'base'` non e' piu' diventata vera nemmeno una volta. Con lei sono
+//          uscite di scena QUATTRO cose, tutte su telefono e tutte nelle Figurine: il «solo fronte»
+//          (v5.853), l'interruttore «Mostra retro» (v6.020), il nome del retro nascosto sotto la
+//          card (v5.828) e la larghezza ridotta delle card (247px invece di 350). Nessun errore a
+//          schermo: una funzione che ha semplicemente smesso di accadere, e che si nota solo se
+//          qualcuno apre il sito dal telefono ricordandosi com'era.
+//          📌 E' anche il motivo per cui la v6.338 non bastava: aveva rimesso il DEFAULT dentro il
+//          riquadro, ma queste righe continuavano a interrogare la variabile morta. Rimettere un
+//          valore al suo posto non serve se chi lo leggeva guarda ancora da un'altra parte.
+//
+//          🆕 `_soloBasiNelRiquadro()`: la domanda si fa in un posto solo. Erano TRE righe uguali
+//          in tre punti, e la terza (`_hideRetroName`) stava lontano dalle altre due - chi avesse
+//          aggiornato solo le due vicine avrebbe ottenuto card senza retro ma col nome del retro
+//          sotto, cioe' un difetto nuovo dentro una correzione.
+//          ⚠️ «ESATTAMENTE Base», non «Base fra le altre»: il filtro del riquadro e' un Set, e
+//          {base, change} non vuol dire «sto guardando solo le basi». Con `.has('base')` chi
+//          aggiunge i change alla selezione si vedrebbe sparire i retro dalle card - la vista
+//          cambierebbe faccia mentre ALLARGA la ricerca, cioe' il contrario di quel che chiede.
+//
+// v6.344 - L'OMAGGIO ENTRA NELLA LEGENDA DEI RETRO (Franco, testo suo). Solo app.js, piu' la
+//          versione. «Omaggio: retro offerto in versione promo (tipicamente fuori dalle scuole).
+//          Riporta un timbro OMAGGIO (rosso o nero)». Sta fra Change ed Errore di stampa, come in
+//          tutto il resto del sito.
+//          📌 CHIUDE UN BUCO CHE STAVA PER NASCERE. La v6.340 aveva creato la legenda dei Retro
+//          con tre voci - base, change, errore di stampa - perche' erano le tre che Franco aveva
+//          scritto. Ma il sito ammette l'omaggio in TUTTE le sezioni: nei Retro il suo selettore
+//          compare appena ce n'e' uno, e una legenda senza quella voce avrebbe rifatto li' lo
+//          stesso buco che la v6.339 aveva appena chiuso nelle Figurine - a quattro release di
+//          distanza, e nello stesso punto del codice.
+//          ⚠️ La differenza fra le due volte non e' nel codice: e' che stavolta la domanda e' stata
+//          fatta prima di scrivere, invece di scoprire il buco tre release dopo.
+//          🗑️ Cade con lei la riga «resta aperta ... la voce Omaggio per i Retro» della v6.340.
+//
+// v6.343 - I DUE SELETTORI DEL POSSESSO PASSANO ALLA PRIMA PERSONA (Franco). Solo app.js, piu' la
+//          versione. «Presenti nella MIA lista» / «Mancanti dalla MIA lista» (e le due forme corte
+//          su telefono). L'inglese non cambia.
+//
+//          🆕 LA REGOLA, con le sue parole: *"è un'azione, non un titolo; nel titolo «tua» ci sta,
+//          nelle azioni no"*. Distingue CHI PARLA. Il titolo del box e' il sito che si rivolge a
+//          te (v6.342, «Filtri legati alla tua lista»); un comando e' la frase che pronunci TU
+//          premendolo, e nessuno preme un bottone per dirsi «nella tua lista».
+//          📌 E divide bene anche il terzo caso: i RISCONTRI. «N fanno parte della tua lista» resta
+//          alla seconda persona perche' e' il sito che risponde, non tu che chiedi. Una regola che
+//          coprisse solo due casi su tre avrebbe costretto a decidere a occhio ogni volta.
+//
+//          📌 DUE FATTI CHE LA CONFERMANO, ed erano gia' nel codice - nessuno dei due era stato
+//          notato perche' ogni etichetta, letta da sola, suona bene:
+//            (1) L'INGLESE LO FACEVA GIA': `In my list` / `Missing from my list`. Le due lingue
+//                dicevano due cose diverse, e l'italiano era l'eccezione. Questa release non
+//                introduce una convenzione: ne allinea una che esisteva a meta'.
+//            (2) IL TERZO SELETTORE DELLO STESSO BOX e' «Ciò che cerco», non «Ciò che cerchi».
+//                In un riquadro da tre voci ne convivevano due modi.
+//
+// v6.342 - «FILTRI LEGATI ALLA TUA COLLEZIONE» -> «ALLA TUA LISTA» (Franco). index.html e app.js,
+//          piu' la versione. Una parola in due punti: l'etichetta statica e quella che
+//          `renderItemTypeFilters` riscrive a ogni disegno.
+//          📌 NON E' UNA PREFERENZA DI PAROLE. Nel sito quella cosa si chiama LISTA dappertutto -
+//          «Mia lista», «La tua lista», «N nella tua lista», il selettore «nella mia lista / mi
+//          manca», la pagina Liste. Questo box era l'unico posto a chiamarla «collezione», e i tre
+//          filtri che contiene sono esattamente quelli della lista.
+//          ⚠️ Due nomi per la stessa cosa non confondono chi ha scritto il codice: confondono chi
+//          legge la pagina, che non ha modo di sapere se siano due insiemi diversi - e se lo chiede
+//          proprio li', davanti a un filtro che deve scegliere.
+//          📌 I COMMENTI STORICI CHE CITANO IL NOME VECCHIO NON SI TOCCANO (v5.910, v5.916, v6.331,
+//          v6.333): raccontano cosa c'era scritto allora, e riscriverli sarebbe riscrivere la
+//          storia - lo stesso motivo per cui il bump non si fa con un sostituisci-tutto (v6.028).
+//
+// v6.341 - RICERCA GLOBALE: VIA IL TOTALE A DESTRA, E LE FRASI SI ACCORCIANO (Franco). Solo
+//          app.js, piu' la versione nell'index.
+//            · *"il risultato totale non va riportato anche in alto a dx"* -> tolto;
+//            · *"(1 risultato trovato per questa serie) -> (1 risultato per questa serie)"*,
+//              e lo stesso per i tipi di articolo.
+//
+//          📌 TERZA DECISIONE SULLA STESSA RIGA IN UNA SERA, e vale scrivere il giro intero.
+//          Nella prima stesura della v6.337 il conteggio a destra l'avevo tolto IO, chiamandolo
+//          doppione. Franco: *"non e' un doppione ... gli altri sono subtotali"*, e l'ho rimesso.
+//          Adesso lo toglie lui. Le due risposte non si contraddicono: il malinteso stava nel
+//          suo «anche» - il TOTALE ripetuto. Cio' che non era un doppione erano i SUBTOTALI per
+//          tipo di articolo, e infatti restano.
+//          🔴 La lezione, e non e' sul colore: avevo dedotto l'intenzione da una somiglianza nella
+//          pagina («due numeri uguali vicini») invece di chiedere che mestiere facesse ciascuno. La
+//          risposta che ho ricevuto rispondeva a un'altra domanda, e ci sono voluti due giri per
+//          accorgersene. Una domanda mal posta non produce silenzio: produce una risposta.
+//
+//          🆕 E LA FRASE PIU' CORTA HA UN ACCORDO IN MENO. Con «trovato/trovati» se ne va il
+//          participio: resta «risultato/risultati», che e' il nome della cosa contata. La v6.097
+//          nacque da un plurale fisso che sbagliava DUE volte nella stessa riga; adesso di
+//          occasioni per sbagliare ne resta UNA. Non era l'obiettivo della richiesta, e' il suo
+//          effetto migliore.
+//
+//          🆕 E LA RICERCA GLOBALE ENTRA IN NAVBAR, dopo Contatti - solo admin, solo desktop
+//          (Franco). index.html per la casella e la media query, app.js per le due funzioni.
+//          🔴 NON E' UNA SECONDA RICERCA: `ricercaGlobaleDaNavbar` scrive nella casella
+//          dell'Inventario e chiama `renderCatalog()`, cioe' preme il comando che c'e' gia'.
+//          Riscriverla qui avrebbe voluto dire due elenchi di campi da tenere uguali, e al primo
+//          campo aggiunto a uno solo dei due la navbar avrebbe trovato meno cose della pagina -
+//          in silenzio, perche' entrambe rispondono qualcosa. E' la famiglia delle doppie verita'
+//          della v5.711. 📌 Il segno che la strada e' giusta: il giorno che la ricerca impara un
+//          campo nuovo, qui non si tocca una riga.
+//          ⚠️ PARTE SU INVIO e non a ogni tasto: cercare porta alla pagina Inventario, e digitare
+//          una lettera non deve spostare di pagina. Nella casella dell'Inventario, dove i risultati
+//          sono gia' sotto gli occhi, cercare mentre si scrive resta giusto.
+//          ⚠️ DUE CONDIZIONI, DUE POSTI. «Sei admin?» la decide `_aggiornaRicercaNavbar()` da JS;
+//          «c'e' spazio?» una media query a 860px, dove `.nav-links` diventa il panino e una
+//          casella di testo sarebbe l'unica riga non premibile di un menu che si chiude al primo
+//          tocco. Il `!important` serve perche' la regola dell'admin e' inline e vincerebbe.
+//          📌 `_aggiornaRicercaNavbar` sta in cima a `updateNavUser`, PRIMA del bivio fra utente
+//          loggato e ospite: scritta dentro il ramo del loggato sarebbe valsa a meta', e la
+//          casella sarebbe rimasta a schermo dopo il logout di un admin.
+//
+// v6.340 - LA LEGENDA CAMBIA CON LA SEZIONE (Franco, testi suoi). index.html e app.js.
+//          Nei Retro la modale dice «Legenda definizioni retro» ed elenca le sue tre voci: Retro
+//          set base, Change, Errore di stampa.
+//
+//          🔴 SEGNALATO QUATTRO VOLTE SENZA ESSERE CHIUSO (v6.331, v6.332, v6.333, v6.339). Nei
+//          Retro il titolo diceva «definizioni FIGURINE» e quattro voci su cinque parlavano dalla
+//          figurina. Le due sulle variazioni descrivevano per giunta una cosa che li' non puo'
+//          esistere: variazione vuol dire che cambia il dietro, e un retro un dietro non ce l'ha
+//          (v5.707). Non era imprecisione, era una legenda che spiega un'altra pagina.
+//          ⚠️ La v6.333 l'aveva perfino SPOSTATA in fondo al riquadro Versione: resa piu' visibile
+//          e lasciata falsa. 📌 Una segnalazione ripetuta senza essere chiusa diventa rumore che si
+//          smette di leggere - ed e' il motivo per cui e' durata quattro release, non la difficolta'.
+//
+//          📌 LE VOCI RESTANO CHIAVI i18n, e non e' un dettaglio di stile: `applyI18n` cicla
+//          `[data-i18n-html]` e riscrive l'innerHTML dalla chiave, quindi una lista costruita con
+//          le frasi dentro non verrebbe piu' tradotta cambiando lingua a modale aperta. Il TITOLO
+//          cambia `dataset.i18n` e non solo il testo: se cambiasse solo il testo, `applyI18n` lo
+//          riporterebbe a «definizioni figurine» al primo cambio lingua - il difetto del §5.
+//          ⚠️ E NON si chiama `applyI18n()`: quella ridisegna anche i filtri e i testi della
+//          ricerca. Aprire una modale non deve ridisegnare la pagina sotto.
+//
+//          ⚠️ ALBUM, ALTRI OGGETTI E BUSTINE vedono ancora la legenda delle figurine - scelta di
+//          Franco (*"quella delle figurine, per ora"*): imprecisa come oggi, non peggio. Resta
+//          aperta, e con lei la voce Omaggio per i Retro, di cui Franco scrivera' il testo.
+//
+// v6.339 - L'OMAGGIO ENTRA NELLA LEGENDA DELLE DEFINIZIONI (Franco, testo suo). index.html per la
+//          voce, app.js per le due traduzioni e la versione.
+//          «Omaggio: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta
+//          un timbro OMAGGIO (rosso o nero) sul retro».
+//
+//          🔴 MANCAVA DA QUANDO L'OMAGGIO ESISTE. La quinta versione e' nata nelle trentatre'
+//          release fra la v6.232 e la v6.264, e in nessuna di quelle qualcuno ha riaperto questa
+//          modale: la legenda ha continuato a elencare quattro versioni su cinque, dichiarandosi
+//          completa. E' stata segnalata per tre release di fila (v6.331, v6.332, v6.333) senza
+//          essere corretta - la v6.333 anzi l'ha SPOSTATA in fondo al riquadro Versione, cioe'
+//          l'ha resa piu' visibile lasciandola incompleta.
+//          📌 Un elenco non dice mai di essere incompleto: e' la sua forma a promettere che ci sia
+//          tutto. Per questo un buco in un elenco non si nota rileggendolo, ma solo confrontandolo
+//          con la cosa che elenca - e nessuno fa quel confronto, perche' l'elenco lo si apre
+//          proprio quando non si sa.
+//
+//          Sta FRA Change ed Errore di stampa: l'ordine di `VERSIONI_ARTICOLO`, lo stesso della
+//          griglia, dei badge e delle pillole. Il nome e' «Omaggio» perche' e' quello dell'elenco
+//          (`it: 'Omaggio'`), non una parola scelta qui: una legenda deve chiamare le cose con la
+//          parola che il lettore ha appena visto sullo schermo.
+//
+//          ⚠️ RESTA APERTA L'ALTRA META' DELLA SEGNALAZIONE, e non e' stata dimenticata: la modale
+//          si chiama «definizioni FIGURINE» e nei Retro quattro voci su cinque parlano dalla
+//          figurina («variante di retro», «figurina appartenente al set base»). Li' la legenda non
+//          dice il vero, e aggiungere l'omaggio non la rende vera: vuole una release sua, perche'
+//          e' un testo diverso per sezione e non una voce in piu'.
+//
+// v6.338 - IL DEFAULT «SOLO BASE» TORNA, DENTRO IL RIQUADRO (Franco: *"impersonando uno user base,
+//          non ho il filtro Base gia' acceso"*). Solo app.js, piu' la versione nell'index.
+//          Un non-admin che apre una sezione trova la pillola Base gia' accesa nel riquadro
+//          «Filtra per le Versioni»; l'admin continua a partire da tutto (v6.048).
+//
+//          🔴 NON ERA UNA SCELTA, ERA UN EFFETTO COLLATERALE. Il default esisteva dalla v6.047 e
+//          la v6.325 ha dovuto spegnerlo: nascondendo il box dei selettori restava un filtro acceso
+//          senza nessun comando capace di spegnerlo, quindi `_tipoIniziale()` e' stato portato a
+//          'all' per tutti. Da allora - cinque giorni, tredici release, nessuna vista live - gli
+//          utenti aprivano le sezioni con tutte le versioni mescolate, e nessuno l'aveva scritto
+//          da nessuna parte. L'ha visto Franco impersonando un utente.
+//          ✅ Adesso il comando c'e', ed e' il riquadro: la pillola si vede accesa e si spegne con
+//          un clic. La ragione della v6.325 e' soddisfatta, non aggirata.
+//
+//          📌 E IL RIQUADRO FA MEGLIO DEL VECCHIO RADIO. I conteggi di un riquadro ignorano il
+//          filtro del riquadro stesso (v6.271), quindi con Base accesa si continua a leggere
+//          «Variazione ufficiale 40», «Change 12». Il selettore di prima nascondeva e taceva;
+//          questo filtra E DICE COSA STA NASCONDENDO - che era poi la preoccupazione della v6.325.
+//
+//          🆕 `_semeVersione` / `_semeRaggr` / `_raggrAlSuoSeme`: IL SEME IN UN POSTO SOLO, perche'
+//          i punti che lo chiedono sono TRE - chi apre una sezione, chi preme «Azzera filtri», e
+//          chi decide se quel bottone sia premibile. Il terzo e' quello che si dimentica: senza,
+//          «Azzera filtri» sarebbe nato ACCESO su un filtro che l'utente non ha toccato, e
+//          premendolo non sarebbe successo niente (la bugia che la v6.315 aveva tolto).
+//          ⚠️ `_azzeraTuttiIRaggr` adesso vuol dire "torna com'era all'apertura", non "svuota" - lo
+//          stesso significato che aveva `_itemTypeFilter = _tipoIniziale()` nelle righe che
+//          sostituisce: per un non-admin lo spento e' sempre stato 'base', non 'tutti'.
+//          ⚠️ SI SEMINA SOLO SE LE BASI ESISTONO in quella sezione, gemello del ripiego che
+//          `renderItemTypeFilters` fa da sempre: un filtro su un valore che i dati non hanno
+//          aprirebbe su una griglia vuota, e la pillola per rimediare non verrebbe nemmeno disegnata.
+//          🔴 E LA SEZIONE SI PASSA PER ARGOMENTO: in `openSeriesSection` la globale
+//          `currentSection` viene aggiornata piu' sotto, quindi senza argomento il seme guarderebbe
+//          la sezione che si sta LASCIANDO. Difetto visibile solo passando da una sezione con basi
+//          a una senza - cioe' non durante una prova fatta di fretta.
+//
+// v6.337 - NELLA RICERCA GLOBALE I CONTI SI DICONO PER ESTESO, E IN BIANCO (Franco). Solo app.js,
+//          piu' la versione nell'index. Tre punti toccati:
+//            · il riepilogo in cima - *"la frase che espone il risultato facciamola bianca"*:
+//              «Trovati 4 oggetti in 2 serie»;
+//            · accanto al NOME DELLA SERIE: «(4 risultati trovati per questa serie)»;
+//            · accanto a ogni TIPO DI ARTICOLO: «(2 risultati trovati per questo tipo di articolo)».
+//          📌 PERCHE' INSIEME, contro la regola di una cosa per release: sono lo stesso conto visto
+//          da vicino e da lontano. Toccarne uno solo li avrebbe lasciati con pesi diversi, e due
+//          misure disegnate diverse si leggono come due misure DIVERSE - chi guarda cerca la
+//          differenza che il colore promette e non la trova.
+//
+//          ♻️ IL «4 trovati» IN ALTO A DESTRA RESTA, e la mia proposta di toglierlo era sbagliata.
+//          Avevo scritto che sarebbe diventato un doppione della frase accanto al nome - stesso
+//          numero, stessa riga. Franco: *"non e' un doppione ... gli altri sono subtotali"*, e poi
+//          *"perche' parli di 3 livelli? non sono 2?"* - e sono due, dentro il box:
+//            · la SERIE, detta in due modi: la frase accanto al nome e «4 trovati» a destra
+//            · i suoi TIPI DI ARTICOLO, che di quel numero sono i subtotali
+//          («Trovati 4 oggetti in 2 serie», in cima alla pagina, non e' un terzo livello: sta
+//          fuori dai box e riguarda tutta la ricerca. Averlo contato con gli altri e' l'errore che
+//          mi ha fatto vedere un doppione dove c'e' un livello solo detto due volte, apposta.)
+//          📌 IL MIO ERRORE, e vale la pena scriverlo: avevo giudicato due elementi uguali perche'
+//          portano lo stesso NUMERO, senza chiedermi che posto occupano. Il numero a destra e'
+//          incolonnato in tutti i box e serve a confrontare le serie fra loro scorrendo con
+//          l'occhio; la frase accanto al nome si legge. Stesso dato, due mestieri - e un totale ha
+//          senso accanto ai suoi subtotali proprio perche' li somma.
+//          ⚠️ Sono la stessa espressione (`r.figs.length`) e devono restare tali: se un giorno uno
+//          dei due cambiasse fonte, due numeri uguali affiancati diventerebbero due numeri diversi
+//          affiancati, e nessuno saprebbe dire quale dei due mente.
+//
+//          🆕 `_frasePerQuesta(n, ambito)`: la frase e' scritta in un posto solo perche' le due
+//          devono restare PARALLELE. Sono lo stesso conto a due livelli, e se un giorno una dicesse
+//          «trovati» e l'altra «risultati» si leggerebbero come due misure diverse. Gli accordi
+//          sono due e vanno insieme («1 risultato trovato» / «2 risultati trovati»): la v6.097
+//          nacque da un plurale fisso che sbagliava due volte nella stessa riga, e il caso da UNO
+//          e' il piu' comune quando si cerca un nome preciso.
+//          ⚠️ LA PILLOLA «serie» ACCANTO AL NOME RESTA `--muted`, ed e' voluto: non e' un
+//          conteggio, e' un'etichetta che dice PERCHE' quella serie sta nell'elenco (il nome
+//          corrisponde alla ricerca). Sbiancarla per uniformita' avrebbe messo sullo stesso piano
+//          un dato e la sua spiegazione.
+//
+//          🗑️ E VIA `totalSeries`, DICHIARATA E MAI LETTA DALLA v6.103. Serviva alla frase vecchia
+//          («N serie trovate») e contava le serie il cui NOME corrisponde alla ricerca; la frase di
+//          adesso dice «in N serie» con `results.length`, che sono le serie con almeno un
+//          risultato. Due numeri diversi, e quello morto somigliava a quello mostrato: e' la forma
+//          di residuo che al prossimo ritocco della frase viene usato per sbaglio, da chi crede di
+//          aver trovato la variabile gia' pronta. Trovata toccando la riga accanto, non cercandola.
+//
+// v6.336 - «LEGENDA DELLE DEFINIZIONI» IN BIANCO (Franco: *"va in bianco"*). Solo app.js, piu' la
+//          versione nell'index. Una riga: `--muted` -> `--text` nel `pieHTML` del riquadro
+//          Versione.
+//          📌 IL GRIGIO NON ERA UNO SBAGLIO: ERA RIMASTO INDIETRO. Fino alla v6.332 quel link
+//          stava attaccato all'etichetta del box e commentava una frase che i suoi termini non li
+//          usava - li' il grigio da nota a pie' di pagina era giusto. La v6.333 l'ha portato in
+//          fondo al riquadro Versione, sotto le pillole che quella legenda definisce: da nota e'
+//          diventato comando, e la veste e' rimasta quella di prima.
+//          ⚠️ Un elemento che cambia mestiere e non cambia veste continua a dichiarare il mestiere
+//          vecchio - e chi legge crede alla veste, non alla posizione.
+//
+// v6.335 - L'INIBIZIONE E' DELLA PILLOLA, NON DEL RIQUADRO (Franco). Solo app.js, piu' la
+//          versione nell'index.
+//
+//          🔴 IL BACO. Franco: *"se selezioni Change nel riquadro Filtra per versioni non si
+//          devono bloccare gli altri riquadri. Non ricordo di averlo mai detto"*. Succedeva: dalla
+//          v6.271 bastava che UN raggruppamento filtrasse perche' gli altri diventassero grigi in
+//          blocco. Quindi «versione = change» + «tipo di change = ROSSO» - la domanda piu' naturale
+//          del sito - era diventata inesprimibile dalla pagina.
+//
+//          📌 E LA REGOLA CHE LO CAUSAVA ERA SOPRAVVISSUTA AL SUO MOTIVO. La v6.134 vietava due
+//          raggruppamenti insieme con un argomento di FATTO: nessun oggetto e' insieme un change e
+//          un errore di stampa, quindi la combinazione tornava vuota per costruzione. Vale fra i
+//          tre riquadri dei TIPI; non vale per la VERSIONE, che con loro si combina. La v6.323 ha
+//          messo la versione fra i raggruppamenti e il divieto se l'e' portata dietro - la stessa
+//          voce di changelog lo aveva previsto per iscritto (*"quando una regola sopravvive al
+//          motivo che la giustificava, va ri-decisa, non ereditata"*) senza che nessuno ri-decidesse.
+//          ⚠️ Il SETACCIO non e' mai stato d'accordo: applica in AND tutti i raggruppamenti accesi,
+//          e quella combinazione la sapeva gia' fare. A vietarla era solo la pagina.
+//
+//          🆕 LA REGOLA NUOVA, con le parole di Franco: *"quando una pillola accesa rende altre
+//          pillole inutili, queste vanno inibite"*. La domanda non e' *"c'e' un altro riquadro
+//          acceso?"* ma *"premere QUESTA pillola porterebbe da qualche parte?"* - e la risposta e'
+//          il suo conteggio. I tre riquadri dei tipi restano esclusi fra loro come prima, ma per la
+//          ragione vera: i loro conteggi vanno a zero da soli.
+//
+//          🔴 UNA PILLOLA ACCESA NON SI INIBISCE MAI, ed e' la riga che rende sicuro il resto.
+//          Accendi «tipo di change = ROSSO», poi «Base»: quella pillola scende a zero. Se lo zero
+//          bastasse a spegnerla, resterebbe un filtro acceso senza nessun comando che lo spenga -
+//          la famiglia delle v6.095, v6.134 e v6.140, dove la griglia si svuota e chi guarda
+//          conclude che i dati non ci sono. E' il difetto vero da cui la v6.134 difendeva, sotto
+//          l'argomento che dichiarava.
+//
+//          🆕 `_pairsConZeri`: DUE CONTI DOVE PRIMA CE N'ERA UNO. L'ELENCO delle pillole ignora
+//          tutti i raggruppamenti (sono quelle che nella serie ESISTONO), i NUMERI ignorano il solo
+//          filtro del proprio riquadro (v6.271). Servivano separati: `_raggrCounts` costruisce la
+//          mappa dagli oggetti che passano, quindi una pillola a zero non nasceva affatto - e una
+//          pillola che non nasce non puo' mostrarsi grigia. ⚠️ L'ordine viene dall'ELENCO: le
+//          pillole non si rimescolano quando un conteggio cambia.
+//          ⚠️ E `if (!pairs.length)` adesso guarda l'elenco, non i risultati: un riquadro se ne va
+//          se quel tipo nella serie non c'e' (v5.711), non se i filtri glielo hanno svuotato. Erano
+//          la stessa domanda finche' il conto era uno solo.
+//
+//          🗑️ Via `C.inibito` e il parametro `inibito` di `_cfgRaggr` / `_raggrPanelHTML`, e via
+//          `acceso` in `renderRaggrSummaries`: lo stato "non si preme" non arriva piu' da fuori.
+//
+//          📌 DUE INCIAMPI SULLA STESSA COSA, e valgono piu' della release. Quattro suite
+//          ritagliano `_cfgRaggr` dal sorgente partendo dalla riga che dichiara il prefisso "Filtra
+//          per " e fermandosi alla prima graffa a inizio riga.
+//          (1) La prima stesura metteva la funzione nuova IN MEZZO a quelle due righe - il posto
+//          naturale, accanto a `_raggrCounts`. Il ritaglio finiva sulla graffa sbagliata e tutte e
+//          quattro andavano IN ERRORE, che non e' fallire: e' rumore travestito da allarme (la
+//          ragione per cui la v6.313 rimosse `prova-v6312.js`). Adesso la funzione sta attaccata
+//          alla sua unica chiamante, che e' anche il posto piu' sensato.
+//          (2) Poi questo commento ha rotto le stesse quattro suite una seconda volta, per aver
+//          CITATO quella riga alla lettera: il ritaglio la cercava dall'inizio del file e la
+//          trovava qui, nel changelog, mille righe prima del codice vero. Per questo qui sopra il
+//          nome e' descritto e non scritto.
+//          🔴 La lezione delle due insieme: le prove leggono il codice come TESTO, quindi non solo
+//          la POSIZIONE di una funzione e' interfaccia - lo e' anche il fatto di NOMINARE altrove
+//          una stringa che qualcuno usa come ancora. Un'ancora che sia la prima occorrenza di un
+//          testo in un file di 30.000 righe e' fragile per costruzione, e va scelta piu' stretta.
+//
 // v6.334 - IL MESSAGGIO DEL RETRO DOPPIO ENUNCIA LA n-PLA CHE FORMA LA CHIAVE (Franco).
 //          Solo app.js, piu' la versione nell'index.
 //
@@ -19381,7 +19844,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.334';
+const JS_VERSION = 'v6.349';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -20715,7 +21178,7 @@ function getCloudinaryUploadCount() {
 const i18n = {
   en: {
 
-    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
+    'nav.home':'Home','nav.catalog':'Inventory','nav.blog':'Blog','nav.wantlist':'Lists','nav.classifica':'🏆 Ranking','nav.contact':'Contacts','nav.search':'Search…','nav.privacy':'Privacy Policy','privacy.title':'Privacy Policy','nav.wishlist':'What I\'m looking for','wishlist.desc':'<strong>What I\'m looking for</strong> is your personal space to collect the stickers (or other items) you would like to find.<br><br><strong>How does it work?</strong><br>While browsing the Inventory, press the <strong>❤️</strong> button on any item you are interested in: it will be added to your wanted list.<br><br>When your &quot;What I\'m looking for&quot; list is complete, press the 📨 <strong>Send &quot;What I\'m looking for&quot;</strong> button below: the figurinesgorbions.it team will receive it and do their best to help you find what you are after, using the network of the other collectors registered on the site.','wishlist.submit':'📨 Send \"What I\'m looking for\"','wishlist.reset':'🗑️ Reset my \"What I\'m looking for\" list',
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
@@ -20783,7 +21246,7 @@ const i18n = {
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters','items.resetFilters':'Clear all filters','admin.classifica':'Ranking','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer. Two cases: (1) same character (same front) with a different graphic element in the printing — the back is the same as the base sticker’s; (2) same front, but it is the back that creates the variant — a back that does not belong to the series','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters','items.resetFilters':'Clear all filters','admin.classifica':'Ranking','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer. Two cases: (1) same character (same front) with a different graphic element in the printing — the back is the same as the base sticker’s; (2) same front, but it is the back that creates the variant — a back that does not belong to the series','items.filterLegend.free':'<strong>Free</strong>: sticker given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black) on the back','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','items.filterLegend.titleRetros':'📖 Retro definitions glossary','items.filterLegend.retroBase':'<strong>Base set retro</strong>: retro belonging to the series’ base set','items.filterLegend.retroChange':'<strong>Change</strong>: variant intentionally made by the manufacturer; it differs from its base version by one extra element in the artwork','items.filterLegend.retroFree':'<strong>Free</strong>: retro given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black)','items.filterLegend.retroPrintError':'<strong>Print error</strong>: variant purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
 'profile.title':'My Profile','profile.owned':'In My List','profile.total':'Total','profile.sec.figurines':'Stickers','profile.sec.retros':'Retros','profile.sec.albums':'Albums','profile.sec.bustine':'Wrappers','profile.sec.extras':'Other Items','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -20804,7 +21267,7 @@ const i18n = {
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with tissue) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:#fff;">Export items not in my list</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:#fff;">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in my list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
-'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
+'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Cerca…','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
 'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
@@ -20873,7 +21336,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri','items.resetFilters':'Azzera filtri','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine con taglie differenti','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri','items.resetFilters':'Azzera filtri','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda definizioni retro','items.filterLegend.retroBase':'<strong>Retro set base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla sua versione base per un elemento in più nel disegno','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -21007,60 +21470,33 @@ let _noteFilter = false;   // v6.113 - "Con note", solo admin
 // variabile propria e in una riga propria, e non fra le opzioni del tipo.
 let _ownedFilter = 'all'; // 'all' | 'owned' (ce l'ho) | 'missing' (mi manca)
 let _wishlistFilter = false; // v5.908 — filtro "Ciò che cerco": se acceso, mostra solo la wishlist dell'utente
-// 🧪 v6.323/325 — LE DUE MANOPOLE DELLA PROVA SUI SELETTORI DI VERSIONE, in un posto solo.
-// Franco vuole provare a NON usare i selettori in alto per qualche giro, servendosi al loro posto
-// del riquadro «Articoli per versione» nei risultati, e decidere alla fine se i due controlli
-// convivono o se uno dei due sparisce. La v6.323 li ha ingialliti (promemoria); la v6.325 li
-// nasconde del tutto.
-// 📌 SI REVOCA DA QUI, e non altrove: `_PROVA_NASCONDI_SELETTORI = false` li rimette a schermo,
-// `_PROVA_GIALLO = null` toglie il giallo. Franco: *"non cancellarla dal codice; lo faremo quando
+// 🗑️ v6.346 - QUI STAVANO LE DUE MANOPOLE DELLA PROVA, `_itemTypeFilter`, `_tipoIniziale()` E I
+// DUE SOTTO-FILTRI «da chi discende». Franco: *"ti avevo gia' detto di procedere ad eliminare
+// tutto, tanto a video quella sezione non c'e' piu; ed abbiamo sostituito quelle funzionalita"*.
+// La prova nata con la v6.323 (i selettori ingialliti) e la v6.325 (il box nascosto) e' finita, e
+// il suo commento diceva gia' come sarebbe morta: *"non cancellarla dal codice; lo faremo quando
 // abbiamo finito e confermiamo che non ci serve piu'"*.
-// ⚠️ IL COLORE E' SCRITTO QUI E NON IN UNA VARIABILE CSS, che sarebbe la regola: le variabili
-// esistono perche' due punti non divergano, e qui il punto e' uno e a termine.
-const _PROVA_NASCONDI_SELETTORI = true;
-const _PROVA_GIALLO = '#f2c94c';
-
-let _itemTypeFilter = 'base'; // 'base' | 'variation' | 'unofficialVariation' | 'change' | 'all' — sempre uno solo attivo
-// v6.048 (Franco) - da ADMIN si riparte sempre da "tutti". Il valore qui sopra vale solo prima che
-// si entri in una sezione: chi decide davvero e' _tipoIniziale(), chiamata a ogni apertura, perche'
-// al caricamento del file currentUser non esiste ancora.
-// Il perche' della differenza: un utente arriva per guardare la collezione, e "set base" gli mostra
-// la serie come la si ricorda, senza le varianti; un admin arriva per LAVORARCI, e un filtro acceso
-// che non ha scelto lui gli nasconde meta' degli oggetti - compresi quelli che sta cercando perche'
-// hanno qualcosa che non va.
-// 🔴 v6.325 - NASCONDERE I SELETTORI OBBLIGA A TOCCARE ANCHE QUESTO, e non e' un di piu': senza,
-// la prova sarebbe un DIFETTO. Un utente non admin parte su 'base', cioe' con un filtro acceso; se
-// il box che lo contiene non si vede, quel filtro non ha piu' nessun comando che lo spenga. E' la
-// famiglia delle v6.095, v6.134 e v6.140 - *un filtro acceso che non si vede svuota la griglia e
-// chi guarda conclude che i dati non ci sono* - qui in forma peggiore, perche' non svuota: mostra
-// meno oggetti in modo credibile.
-// ⚠️ E DA ADMIN NON SI SAREBBE VISTO: per l'admin il valore iniziale e' gia' 'all'. Il difetto
-// sarebbe stato invisibile proprio a chi sta facendo la prova.
-// 📌 La ragione della differenza fra admin e utente (v6.048) resta valida e non e' stata
-// cancellata: e' sospesa finche' dura la prova, e torna da se' quando la costante torna `false`.
-function _tipoIniziale() {
-  if (_PROVA_NASCONDI_SELETTORI) return 'all';   // 🧪 nessun filtro che non si possa spegnere
-  return currentUser?.isAdmin ? 'all' : 'base';
-}
-// v6.140 (Franco) - DA CHI DISCENDE UN FIGLIO: dalla figurina BASE o da una VARIAZIONE. Sono
-// sotto-filtri del rispettivo selettore, non filtri a se': valgono solo mentre quel selettore e'
-// acceso, e si spengono con lui (vedi `_sciogliRaggruppamentiEstranei`).
-// '' = tutti | 'base' = discende da una base | 'variation' = discende da una variazione.
 //
-// 🆕 v6.322 - LO STATO E' UNO SOLO, INDICIZZATO PER CHIAVE DI VERSIONE. Erano due globali scritte a
-// mano, `_changeParentFilter` e `_printErrorParentFilter`, e l'OMAGGIO ne avrebbe voluta una terza
-// piu' la sua riga in SEI punti: il render, il setaccio, `_sciogliRaggruppamentiEstranei`,
-// `azzeraTuttiIFiltri`, `_qualcheFiltroAcceso` e il toggle. E' lo stesso passaggio che la v6.266
-// ha fatto sui raggruppamenti, per la stessa ragione gia' scritta li': un terzo impianto copiato
-// porta a un quarto il giorno della sesta versione, e dimenticarlo NON DA' ERRORE - manca un
-// sotto-filtro, che e' il tipo di assenza che nessuno nota.
-// ⚠️ Oggetto NUDO, e la famiglia si crea al primo uso invece di nascere da un ciclo qui: e' la
-// precauzione di `_RAGGR`, e vale per lo stesso motivo. `_FIGLI_VERSIONE` e' dichiarato
-// QUATTROMILA RIGHE PIU' SOTTO, e leggerlo da qui sarebbe l'ennesima temporal dead zone (v6.195).
-const _PARENT_FILTER = {};
-const _parentFiltro = c => _PARENT_FILTER[c] || '';
-let _ebayFilter = false; // indipendente da _itemTypeFilter: si combina in AND, non è esclusivo con "Solo base"/ecc.
-let _noOfficialVariationFilter = false; // indipendente da _itemTypeFilter come _ebayFilter, ma impone SEMPRE anche "solo base" (non solo AND con il filtro tipo scelto) — mostra solo figurine base senza nessuna Variazione ufficiale collegata
+// 📌 DOVE SONO FINITE LE COSE CHE FACEVANO, perche' nessuna e' stata persa per strada:
+//   · il FILTRO PER VERSIONE -> il riquadro «Filtra per le Versioni» (`_raggr('versione')`), che
+//     e' un Set invece di un radio e porta i conteggi con se';
+//   · il DEFAULT su 'base' per i non-admin -> `_semeVersione()` (v6.338), che semina la pillola
+//     Base nel riquadro. La ragione della v6.048 - l'admin parte da tutto - vive li' adesso;
+//   · il «SOLO FRONTE» su telefono -> `_soloBasiNelRiquadro()` (v6.345);
+//   · i SOTTO-FILTRI «da chi discende» -> nessun erede, ed e' una scelta dichiarata.
+//
+// ⚠️ `_itemTypeFilter` ERA LETTA DA POSTI CHE NON C'ENTRAVANO COL FILTRO, ed e' la ragione per cui
+// questa potatura ha richiesto tre release invece di una: il layout mobile delle Figurine
+// (v5.828, v5.853, v6.020) le chiedeva *"sto guardando solo le basi?"*, che e' un'altra domanda
+// travestita da stessa condizione. Dalla v6.325 quella variabile valeva sempre 'all', quindi le
+// quattro cose che ne dipendevano erano spente da venti release senza che nessuno lo sapesse.
+// 🔴 Una variabile letta per rispondere a DUE domande diverse muore male: la si spegne per una e
+// si porta via l'altra in silenzio.
+// ♻️ v6.346 - i due commenti qui sotto si riferivano a `_itemTypeFilter`, che non esiste più: il
+// filtro per versione ora è il riquadro. Riscritti e non cancellati, perché quello che dicevano
+// resta vero — cambia solo con CHI si combinano.
+let _ebayFilter = false; // indipendente dal filtro per versione: si combina in AND, non è alternativo a "Base"/ecc.
+let _noOfficialVariationFilter = false; // indipendente come _ebayFilter, ma impone SEMPRE anche "solo base" (non solo AND con le versioni scelte) — mostra solo figurine base senza nessuna Variazione ufficiale collegata
 let _retroViewMode = 'destra-piena'; // 'sotto' | 'destra' | 'dinamico' | 'fronte-grande' | 'destra-piena' — come viene mostrato il Retro rispetto al fronte nella griglia Figurine, visibile a tutti
 
 // v5.827 — ETICHETTA DELLE CARD FIGURINA, SOLO SU TELEFONO.
@@ -21090,16 +21526,37 @@ let _mostraRetroSoloBase = false;
 // Chi la chiama da _itemHasWidePair guarda currentSection e non f.section, ma quella funzione
 // esce gia' prima se f.section !== 'figurines', e viene chiamata solo mentre si impagina la
 // sezione corrente: le due letture coincidono.
+// 🆕 v6.345 (Franco: *"fai in modo che ora quella funzionalita' faccia leva sulla pillola BASE
+// accesa"*) - LA DOMANDA «STO GUARDANDO SOLO LE BASI?» SI FA AL RIQUADRO, NON PIU' AL SELETTORE.
+//
+// 🔴 QUESTA FUNZIONALITA' ERA SPENTA DA VENTI RELEASE E NESSUNO L'AVEVA SCRITTO. La v6.325, per
+// nascondere il box dei selettori, ha portato `_tipoIniziale()` a 'all' per tutti; da allora
+// `_itemTypeFilter === 'base'` non e' piu' diventata vera nemmeno una volta, e con lei sono usciti
+// di scena il «solo fronte» su telefono (v5.853), l'interruttore «Mostra retro» (v6.020), il
+// nascondere il nome del retro (v5.828) e la larghezza ridotta delle card. Non un errore visibile:
+// una funzione che ha smesso di accadere.
+// 📌 E' il motivo per cui la v6.338 non bastava: aveva rimesso il DEFAULT nel riquadro, ma queste
+// tre righe continuavano a interrogare la variabile morta. Rimettere un valore al suo posto non
+// serve se chi lo leggeva guarda ancora da un'altra parte.
+//
+// ⚠️ «ESATTAMENTE Base», non «Base fra le altre». Il filtro del riquadro e' un Set: {base} vuol
+// dire che stai guardando solo le basi, {base, change} no. Con `.has('base')` un utente che
+// aggiunge i change alla selezione si vedrebbe sparire i retro dalle card - cioe' la vista
+// cambierebbe faccia mentre allarga la ricerca, che e' il contrario di quello che sta chiedendo.
+function _soloBasiNelRiquadro() {
+  const f = _raggr('versione').filtro;
+  return f.size === 1 && f.has('base');
+}
 function _soloFronteMobile() {
   return _isMobileViewport()
       && currentSection === 'figurines'
-      && _itemTypeFilter === 'base'
+      && _soloBasiNelRiquadro()
       && !_mostraRetroSoloBase;
 }
 // L'interruttore ha senso solo dove c'e' qualcosa da riaccendere: stessa condizione, ma senza
 // l'ultimo pezzo — altrimenti accendendolo sparirebbe il comando per rispegnerlo.
 function _mostraRetroToggleVisibile() {
-  return _isMobileViewport() && currentSection === 'figurines' && _itemTypeFilter === 'base';
+  return _isMobileViewport() && currentSection === 'figurines' && _soloBasiNelRiquadro();
 }
 function toggleMostraRetroSoloBase() {
   _mostraRetroSoloBase = !_mostraRetroSoloBase;
@@ -22625,7 +23082,46 @@ async function logout() {
     setTimeout(() => { welcomeEl.style.display = 'none'; }, 4000);
   }
 }
+// 🆕 v6.341 (Franco: *"una piccola casella di ricerca che fa partire la stessa ricerca globale che
+// abbiamo sotto Inventario, nella navbar, dopo Contatti. Solo per admin e solo da desktop"*).
+//
+// 🔴 NON E' UNA SECONDA RICERCA, ED E' LA DECISIONE CHE CONTA. Questa funzione non cerca niente:
+// scrive nella casella dell'Inventario e chiama `renderCatalog()`, cioe' preme il comando che
+// esiste gia'. Riscrivere la ricerca qui avrebbe voluto dire due elenchi di campi da tenere
+// uguali - e al primo campo aggiunto a uno dei due, la navbar avrebbe trovato meno cose della
+// pagina senza che nessuno potesse accorgersene, perche' entrambe rispondono qualcosa. E' la
+// famiglia delle "doppie verita'" della v5.711, dove due definizioni di "base" convivevano in due
+// rami del codice.
+// 📌 Il segno che la strada e' giusta: se domani la ricerca globale impara a cercare in un campo
+// nuovo, qui non si tocca una riga.
+//
+// ⚠️ L'ORDINE DELLE TRE RIGHE NON E' INDIFFERENTE. `showPage` prima, perche' la casella
+// dell'Inventario deve esistere ed essere visibile quando ci si scrive dentro; il valore poi; e
+// `renderCatalog()` per ultimo, che e' cio' che fa partire la ricerca. Invertendo le prime due,
+// `showPage` potrebbe ridisegnare la pagina e riportare la casella al suo stato di prima.
+// 📌 `toggleSearchClearBtn` non e' un di piu': senza, la ✕ per svuotare la casella non compare, e
+// chi arriva da qui si trova una ricerca accesa con un comando in meno per spegnerla rispetto a
+// chi ha scritto li' dentro a mano.
+function ricercaGlobaleDaNavbar() {
+  const q = (document.getElementById('nav-search-input')?.value || '').trim();
+  if (!q) return;   // a casella vuota non si va da nessuna parte: sarebbe un salto di pagina senza motivo
+  showPage('catalog');
+  const cerca = document.getElementById('series-search');
+  if (cerca) cerca.value = q;
+  try { toggleSearchClearBtn('series-search'); } catch (e) { console.error('ricercaGlobaleDaNavbar/clearBtn', e); }
+  try { renderCatalog(); } catch (e) { console.error('renderCatalog (ricercaGlobaleDaNavbar)', e); }
+}
+// La casella si vede solo all'admin. Che poi ci sia SPAZIO per vederla lo decide il CSS a 860px,
+// ed e' un'altra domanda: qui non si sa quanto e' largo lo schermo, e li' non si sa chi sei.
+// 📌 Sta in una funzione sua, chiamata in cima a `updateNavUser`, invece che in una riga dentro il
+// ramo "loggato": quel ramo ha un gemello per gli ospiti, e una regola scritta in un ramo solo e'
+// una regola che vale a meta' - la casella sarebbe rimasta a schermo dopo il logout di un admin.
+function _aggiornaRicercaNavbar() {
+  const box = document.getElementById('nav-search');
+  if (box) box.style.display = currentUser?.isAdmin ? '' : 'none';
+}
 function updateNavUser() {
+  _aggiornaRicercaNavbar();   // v6.341 - vale per tutti e due i rami, quindi sta prima del bivio
   const guestNav = document.getElementById('guest-nav');
   const userNav = document.getElementById('user-nav');
   const addSeriesBtn = document.getElementById('admin-add-series-btn');
@@ -25299,7 +25795,13 @@ const _RAGGR_VERSIONE = {
   // ⚠️ La legenda si chiama ancora «Legenda definizioni FIGURINE» e nei Retro non dice il vero
   // (quattro voci su cinque parlano dalla figurina, e l'Omaggio non c'e'). Spostarla qui la rende
   // piu' pertinente e non la corregge: resta aperto.
-  pieHTML: () => `<button onclick="openFilterLegendModal()" title="${currentLang === 'it' ? 'Cosa significano questi termini?' : 'What do these terms mean?'}" style="background:none;border:none;color:var(--muted);font-size:0.75rem;text-decoration:underline;cursor:pointer;padding:0;font-family:inherit;">${currentLang === 'it' ? 'Legenda delle definizioni' : 'Definitions glossary'}</button>`,
+  // 🆕 v6.336 (Franco: *"Legenda delle definizioni -> va in bianco"*) - da `--muted` a `--text`.
+  // 📌 Il grigio lo trattava da nota a pie' di pagina, ed era la sua condizione fino alla v6.332:
+  // stava attaccato all'etichetta del box, dove commentava qualcos'altro. La v6.333 l'ha portato
+  // qui dentro, sotto le pillole che quella legenda definisce, cioe' l'ha promosso a comando - e
+  // il colore era rimasto quello di prima. Non e' una scelta estetica: un elemento che cambia
+  // mestiere e non cambia veste continua a dichiarare il mestiere vecchio.
+  pieHTML: () => `<button onclick="openFilterLegendModal()" title="${currentLang === 'it' ? 'Cosa significano questi termini?' : 'What do these terms mean?'}" style="background:none;border:none;color:var(--text);font-size:0.75rem;text-decoration:underline;cursor:pointer;padding:0;font-family:inherit;">${currentLang === 'it' ? 'Legenda delle definizioni' : 'Definitions glossary'}</button>`,
   valoreDi: f => _chiaveTipo(f),
   etichettaDi: val => {
     if (val === 'base') return (currentLang === 'it') ? 'Base' : 'Base';
@@ -27116,6 +27618,35 @@ function _dipingiInvisibile(idInput, idLabel, coloreSpento) {
 // divergono alla prima modifica dell'ordinamento - com'e' gia' successo altrove in questo file.
 let _elencoRicercaGlobale = [];
 
+// 🆕 v6.337 (Franco) - LA FRASE FRA PARENTESI DEI RISULTATI, SCRITTA UNA VOLTA SOLA.
+// *"affianco al nome della serie ... tra parentesi, in bianco, scrivi (N risultati trovati per
+// questa serie); e lo stesso al fianco delle stringhe successive, quelle per i diversi tipi di
+// articolo"*. Due posti, una funzione: cambia solo la coda, cioe' A COSA si riferisce il conto.
+// 📌 Scritta qui e non due volte in linea per la ragione di sempre, ma con un motivo in piu' di
+// solito: le due frasi devono restare PARALLELE. Sono lo stesso conto a due livelli - la serie e i
+// suoi tipi - e se un giorno una dicesse «trovati» e l'altra «risultati», chi legge cercherebbe
+// una differenza di significato che non c'e' (la lezione della v6.103 sui due conteggi affiancati).
+// ⚠️ GLI ACCORDI SONO DUE E VANNO INSIEME: «1 risultato trovato» / «2 risultati trovati». La
+// v6.097 nacque proprio da un plurale fisso che sbagliava due volte nella stessa riga, e il caso
+// da UNO e' il piu' comune quando si cerca un nome preciso - cioe' quello che si vede di piu'.
+// In inglese non si accorda niente tranne `result(s)`.
+// ♻️ v6.341 (Franco) - VIA «trovato/trovati»: «(1 risultato per questa serie)». La parola diceva
+// una cosa che il contesto dice gia' - siamo dentro i risultati di una ricerca, non c'e' altro che
+// un numero possa essere - e in cambio si portava dietro il participio da accordare.
+// 📌 CON LEI SE NE VA UNO DEI DUE ACCORDI: resta «risultato/risultati», che e' il nome della cosa
+// contata e non si puo' togliere. La v6.097 nacque da un plurale fisso che sbagliava DUE volte
+// nella stessa riga; adesso di occasioni per sbagliare ne resta una. Non e' stato l'obiettivo
+// della richiesta, ma e' il suo effetto migliore: la frase piu' corta e' anche quella con meno
+// da tenere in accordo.
+function _frasePerQuesta(n, ambito) {
+  const it = (currentLang === 'it');
+  if (!it) {
+    const coda = (ambito === 'serie') ? 'this series' : 'this item type';
+    return `(${n} result${n === 1 ? '' : 's'} for ${coda})`;
+  }
+  const coda = (ambito === 'serie') ? 'per questa serie' : 'per questo tipo di articolo';
+  return `(${n} ${n === 1 ? 'risultato' : 'risultati'} ${coda})`;
+}
 function renderCatalogSearch(q) {
   // v6.097 - si azzera SUBITO, prima di ogni ritorno anticipato. I due `return` qui sotto (query
   // vuota, query fatta di soli separatori) e quello del "nessun risultato" lasciavano altrimenti
@@ -27168,7 +27699,12 @@ function renderCatalogSearch(q) {
   }
 
   const totalFigs = results.reduce((n, r) => n + r.figs.length, 0);
-  const totalSeries = results.filter(r => r.seriesMatch).length;
+  // 🗑️ v6.337 - QUI STAVA `totalSeries`, DICHIARATA E MAI LETTA, dalla v6.103. Serviva alla frase
+  // vecchia («N serie trovate»), che contava le serie il cui NOME corrisponde alla ricerca. La
+  // frase nuova dice «in N serie» e usa `results.length`, che e' un'altra cosa - le serie in cui
+  // c'e' almeno un risultato - ed e' quella giusta. Restava li' a somigliare al numero mostrato
+  // senza esserlo: il tipo di residuo che al prossimo ritocco della frase qualcuno usa per sbaglio,
+  // convinto di aver trovato la variabile pronta.
   // v6.097 (Franco) - "1 serie TROVATE" e "1 oggetti TROVATI". Il riepilogo era scritto al plurale
   // fisso, e con un risultato solo - il caso piu' comune quando si cerca un nome preciso - sbagliava
   // l'accordo due volte nella stessa riga.
@@ -27181,9 +27717,12 @@ function renderCatalogSearch(q) {
   //   · `serie` in italiano e' invariabile (1 serie / 2 serie), quindi in coda non c'e' niente da
   //     accordare - ed e' il motivo per cui la frase regge senza un terzo caso.
   // In inglese `series` e `found` sono invariabili: l'unica voce che si accorda resta `item(s)`.
+  // 🆕 v6.337 (Franco: *"la frase che espone il risultato facciamola bianca"*) - da `--muted` a
+  // `--text`. E' l'esito della ricerca, cioe' la cosa per cui si e' premuto: il grigio la metteva
+  // fra le didascalie, sopra un elenco di risultati scritti piu' forte di lei.
   const summary = currentLang === 'it'
-    ? `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">Trovat${totalFigs === 1 ? 'o' : 'i'} ${totalFigs} ${totalFigs === 1 ? 'oggetto' : 'oggetti'} in ${results.length} serie</p>`
-    : `<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">Found ${totalFigs} ${totalFigs === 1 ? 'item' : 'items'} in ${results.length} series</p>`;
+    ? `<p style="color:var(--text);font-size:0.88rem;margin-bottom:1rem;">Trovat${totalFigs === 1 ? 'o' : 'i'} ${totalFigs} ${totalFigs === 1 ? 'oggetto' : 'oggetti'} in ${results.length} serie</p>`
+    : `<p style="color:var(--text);font-size:0.88rem;margin-bottom:1rem;">Found ${totalFigs} ${totalFigs === 1 ? 'item' : 'items'} in ${results.length} series</p>`;
 
   resultsEl.innerHTML = summary + results.map(r => {
     const s = r.series;
@@ -27195,8 +27734,21 @@ function renderCatalogSearch(q) {
           ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_40,h_40,c_fit,q_auto,f_auto')}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;background:var(--card2);flex-shrink:0;">` : '<span style="font-size:1rem;flex-shrink:0;">🎴</span>'}
           <span style="font-family:var(--font-display);font-size:0.95rem;font-weight:600;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
           ${r.seriesMatch ? `<span style="font-size:0.65rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 5px;flex-shrink:0;">${currentLang==='it'?'serie':'series'}</span>` : ''}
+          ${r.figs.length ? `<span style="font-size:0.75rem;color:var(--text);white-space:nowrap;margin-left:0.35rem;flex-shrink:0;">${_frasePerQuesta(r.figs.length, 'serie')}</span>` : ''}
         </div>
-        ${r.figs.length ? `<span style="font-size:0.7rem;color:var(--muted);white-space:nowrap;margin-left:0.5rem;flex-shrink:0;">${r.figs.length} ${currentLang==='it'?(r.figs.length===1?'trovato':'trovati'):'found'}</span>` : ''}
+        ${/* 🗑️ v6.341 (Franco: *"il risultato totale non va riportato anche in alto a dx"*) - VIA
+              IL CONTEGGIO A DESTRA. E' la terza decisione sulla stessa riga in una sera, quindi
+              conviene scrivere come ci si e' arrivati invece del solo esito.
+              · v6.337, prima stesura: l'avevo tolto io, chiamandolo doppione della frase accanto
+                al nome. Motivo: stesso numero, stessa riga.
+              · Franco: *"non e' un doppione ... gli altri sono subtotali"*. L'ho rimesso.
+              · Ora lo toglie lui. E le due cose non si contraddicono: il malinteso stava nel
+                «anche», cioe' nel TOTALE ripetuto. Quello che non era un doppione erano i
+                SUBTOTALI per tipo di articolo, che restano - e infatti sono ancora li'.
+              📌 La lezione, e non e' sul colore: avevo dedotto l'intenzione da una somiglianza
+              nella pagina («due numeri uguali vicini») invece di chiedere che mestiere facesse
+              ciascuno. La risposta che ho ricevuto rispondeva a un'altra domanda, e ci sono voluti
+              due giri per accorgersene. */''}
       </div>`;
     const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: currentLang === 'it' ? 'Album' : 'Albums', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Wrappers' };
     const sectionOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
@@ -27266,7 +27818,7 @@ function renderCatalogSearch(q) {
           // Lo stacco fra gruppi e' piu' largo di quello dentro un gruppo (0.7 contro 0.3): e' cosi'
           // che si vede DOVE finisce una figurina e ne comincia un'altra, senza cornici ne' righelli.
           return `<div style="margin-bottom:0.4rem;">
-            <div style="font-size:0.9rem;color:#ff9d3d;font-weight:600;margin-bottom:0.25rem;">${sectionLabels[sec]}:</div>
+            <div style="font-size:0.9rem;color:#ff9d3d;font-weight:600;margin-bottom:0.25rem;">${sectionLabels[sec]}:<span style="font-size:0.75rem;font-weight:400;color:var(--text);margin-left:0.35rem;">${_frasePerQuesta(inSection.length, 'tipo')}</span></div>
             <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
               ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
@@ -28376,10 +28928,16 @@ function updateSectionCounts() {
 function openSeriesSection(section) {
   _fotoFilter = null;
   _noteFilter = false;   // v6.113 - come i filtri foto: non sopravvive al cambio sezione
-  _itemTypeFilter = _tipoIniziale(); // v6.048 - da admin: 'all'
+  // 🗑️ v6.346 - qui stava `_itemTypeFilter = _tipoIniziale()`. Il suo mestiere - dare a un
+  // non-admin la vista «solo base» all'apertura - lo fa `_azzeraTuttiIRaggr(section)` due righe
+  // piu' sotto, che dalla v6.338 semina la pillola Base nel riquadro invece di svuotarlo.
   _retroCategoryFilter = new Set(); // il filtro per categoria dei Retro non sopravvive al cambio sezione/serie
   _retroSubcategoryFilter = new Set(); // idem per la sottocategoria (v5.987; insiemi dalla v6.269)
-  _azzeraTuttiIRaggr(); // v6.266 - i raggruppamenti per tipo non sopravvivono al cambio sezione/serie
+  // 🆕 v6.338 - LA SEZIONE SI PASSA, e non e' un dettaglio: `currentSection` viene aggiornata piu'
+  // sotto, quindi senza questo argomento il seme guarderebbe se le basi esistono nella sezione che
+  // stiamo LASCIANDO. Nei Retro ce ne sono, negli Album magari no: il difetto sarebbe comparso solo
+  // passando da una sezione con basi a una senza, cioe' mai durante una prova fatta di fretta.
+  _azzeraTuttiIRaggr(section); // v6.266 - i raggruppamenti per tipo non sopravvivono al cambio sezione/serie
   _ownedFilter = 'all'; // si riparte sempre da "tutti": un filtro dimenticato acceso
                         // fra una sezione e l'altra fa sembrare vuota una sezione piena
   _wishlistFilter = false; // v5.908 — anche "Ciò che cerco" riparte spento a ogni sezione
@@ -29121,228 +29679,48 @@ function _tipoColorato(f, conBase) {
 }
 
 function renderItemTypeFilters() {
-  const el = document.getElementById('items-filter-toggles');
-  if (!el) return;
-
+  // 🔴 v6.346 - VIA `el` E LA SUA GUARDIA, E NON E' PULIZIA: SENZA, QUESTA RELEASE AVREBBE ROTTO
+  // DUE BOX. La funzione cominciava con `const el = getElementById('items-filter-toggles'); if
+  // (!el) return;` - una guardia scritta quando quel contenitore era l'unica cosa che disegnava.
+  // Da allora si e' presa anche il box «Filtri legati alla tua lista» e quello dei filtri admin,
+  // che vivono in altri contenitori; e siccome `items-filter-toggles` se ne va dall'index insieme
+  // ai selettori, quella riga avrebbe fatto uscire la funzione SUBITO, ogni volta, spegnendo i due
+  // box superstiti.
+  // 📌 Non l'avrebbe detto nessun errore: `return` in cima e' silenzioso, e i due box sarebbero
+  // semplicemente non comparsi. E' la forma di guasto che si scopre guardando la pagina, se
+  // qualcuno la guarda. Trovato mentre si potava, perche' la domanda «chi altro usa `el`?» va
+  // fatta prima di togliere cio' che lo riempiva - non dopo.
   const it = (currentLang === 'it');
-  // v5.910 — etichette dei due box "Filtri generici" / "Filtri legati alla tua collezione".
-  // v5.914 — l'etichetta del box "generico" ora è "Filtri legati a[lle/i/gli] <sezione>", con la
-  // preposizione articolata corretta per ciascuna sezione (varia con la scheda di ricerca).
-  // 🆕 v6.323 (Franco: *"il nome del blocco dei selettori e' sbagliato"*) - IL BOX SI CHIAMA PER
-  // QUELLO CHE FILTRA, NON PER DOVE SEI. Diceva «Filtri legati ai retro» (v5.914), cioe' nominava
-  // la sezione - che chi guarda sa gia', ce l'ha nel titolo della pagina - invece del criterio. E
-  // dentro quel box, dalla v6.095, c'e' UNA COSA SOLA: i selettori di versione. Ebay, i tre filtri
-  // sulla foto e «senza variazioni ufficiali» stanno nel box admin, non qui.
-  // 📌 Il box gemello faceva gia' la cosa giusta: «Filtri legati alla TUA COLLEZIONE» nomina il
-  // criterio. Era questo l'unico dei due a nominare il soggetto.
-  // 🗑️ Con lui se ne va `_aForm`, cinque preposizioni articolate declinate a mano che esistevano
-  // solo per comporre quella frase - e che al sesto tipo di sezione avrebbero voluto la sesta.
-  const _genLbl = it ? 'Filtri legati alla versione' : 'Filters — Version';
-  const _gbl = document.getElementById('items-generic-box-label'); if (_gbl) _gbl.textContent = _genLbl;
-  // 🧪 v6.325 (Franco) - IL BOX SPARISCE, ma il codice che lo riempie resta e continua a girare.
-  // 📌 Si nasconde il CONTENITORE, non le singole voci: cosi' se ne va anche la cornice e la sua
-  // etichetta, e non resta un riquadro vuoto col bordo - che sarebbe piu' strano dell'originale.
-  // ⚠️ `renderItemTypeFilters` prosegue e riempie `items-filter-toggles` come sempre: il markup
-  // c'e', e' solo invisibile. Rimettere `_PROVA_NASCONDI_SELETTORI = false` lo fa riapparire
-  // gia' pronto, senza che nulla debba essere ricostruito.
-  const _gbox = document.getElementById('items-generic-box');
-  if (_gbox) _gbox.style.display = _PROVA_NASCONDI_SELETTORI ? 'none' : '';
-  const _cbl = document.getElementById('items-collection-box-label'); if (_cbl) _cbl.textContent = it ? 'Filtri legati alla tua collezione' : 'Filters tied to your collection';
-  const sez = currentSection || 'figurines';
-
-  // FILTRI DINAMICI (v5.711). Un filtro compare SOLO SE quel tipo esiste davvero in
-  // questa serie e in questa sezione. Stessa regola dei contatori, e la stessa
-  // funzione: tipiPresenti().
-  // Perche': Franco ha deciso che tutti e cinque i tipi sono AMMESSI ovunque ("alla
-  // peggio non avremo dati"). Ma un filtro sempre visibile su una sezione vuota
-  // sarebbe un interruttore che, cliccato, mostra una pagina vuota — l'"interruttore
-  // che non fa niente" che avevamo evitato nei Retro. Cosi' invece il "alla peggio"
-  // costa davvero zero: la pagina non offre mai un comando inutile, e il giorno che
-  // inserisci il primo Change in un Album, il filtro appare DA SOLO.
-  const g = tipiPresenti(currentSeriesId, sez);
-
-  // se il filtro acceso punta a un tipo che qui non esiste (es. cambiando serie),
-  // torna su "base": un filtro fantasma mostrerebbe una pagina vuota senza spiegazione
-  const presente = {
-    all: true,
-    base: g.base.length > 0,
-    variation: g.variation.length > 0,
-    unofficialVariation: g.unofficial.length > 0,
-    anyVariation: g.variation.length > 0 && g.unofficial.length > 0,
-    change: g.change.length > 0,
-    free: g.free.length > 0,               // v6.235
-    printError: g.printError.length > 0
-  };
-  // v6.048 - se il tipo scelto non ha oggetti si ripiega, e anche qui l'admin ripiega su "tutti":
-  // e' il ripiego che non nasconde niente.
-  // 🔴 v6.325 - anche il RIPIEGO deve saperlo, se no rimetterebbe 'base' a un non-admin appena il
-  // tipo scelto non esiste in questa sezione - cioe' rifarebbe da solo il difetto che
-  // `_tipoIniziale()` ha appena chiuso, in un punto diverso e piu' difficile da trovare.
-  if (!presente[_itemTypeFilter]) _itemTypeFilter =
-    (_PROVA_NASCONDI_SELETTORI || currentUser?.isAdmin) ? 'all' : (presente.base ? 'base' : 'all');
-
-  // v6.227 - la mappa e' quella canonica, non piu' una copia locale: filtri e tabelle devono dare
-  // lo stesso colore alla stessa cosa, e con due mappe bastava ritoccarne una.
-  const coloreTipo = _COLORE_TIPO;
-  // 🧪 v6.325 - `_PROVA_GIALLO` non si dichiara piu' qui: e' salito a primo livello insieme a
-  // `_PROVA_NASCONDI_SELETTORI`, perche' le due manopole della stessa prova devono stare nello
-  // stesso posto. Cercarne una e trovarne solo una e' il modo di revocare la prova a meta'.
-  // v6.141 (Franco) - `sottoHTML`: quello che va IMPILATO SOTTO questo selettore, dentro la sua
-  // stessa colonna. La v6.140 lo attaccava dopo `</div>`, cioe' sotto TUTTA la fila dei filtri, e
-  // da li' non si capiva a chi appartenesse: "si fa estremamente fatica a capire che siano
-  // sottofiltri di Change". Un elemento che precisa un altro deve stargli sotto, non sotto il
-  // gruppo che li contiene tutti e due.
-  const item = (key, label, icon, bold, labelHTML, sottoHTML) => {
-    const col = _PROVA_GIALLO || coloreTipo[key] || 'var(--text)';   // 🧪 v6.323
-    const riga = `
-    <div style="display:flex;align-items:center;gap:0.4rem;">
-      <button class="toggle-btn-blue ${_itemTypeFilter === key ? 'on' : ''}" onclick="toggleItemTypeFilter('${key}')" title="${label}"></button>
-      <span style="font-size:0.82rem;color:${col};${bold ? 'font-weight:600;' : ''}">${icon ? icon + ' ' : ''}${labelHTML || label}</span>
-    </div>`;
-    if (!sottoHTML) return riga;
-    return `<div style="display:flex;flex-direction:column;gap:0.3rem;">${riga}${sottoHTML}</div>`;
-  };
-
-  // v6.140/141 - i due sotto-selettori "da chi discende", IMPILATI e rientrati sotto il loro
-  // padre. Compaiono solo mentre quel padre e' acceso: fuori di li' non avrebbero un soggetto.
-  //
-  // ⚠️ SI MOSTRANO SEMPRE, mentre il loro padre e' acceso — anche se uno dei due gruppi e' vuoto.
-  // La v6.140 li mostrava solo se esistevano ENTRAMBI i gruppi, regola presa da "Variazioni
-  // (ufficiali e non ufficiali)". E' stata sbagliata, e l'ha dimostrato Franco in dieci minuti:
-  // "ti sei dimenticato di fare lo stesso lavoro anche per le figurine errore di stampa". Il
-  // lavoro c'era; era il gruppo "di variazione" degli errori di stampa a essere vuoto, quindi i
-  // due pulsanti non comparivano mai.
-  // La differenza col caso da cui la regola veniva: li' il doppione era REALE (un solo tipo di
-  // variazione -> il filtro unione dice la stessa cosa del filtro singolo). Qui i due pulsanti
-  // sono una PARTIZIONE, e mostrarne uno solo, o nessuno, nasconde la domanda invece della
-  // risposta. Un gruppo a zero e' un'informazione; un selettore che non compare e' indistinguibile
-  // da una funzione mai scritta.
-  // v6.141 - `_figlioParenti`, `_tutteFigs` e `_idxFigs` sono stati TOLTI insieme alla regola che
-  // li chiedeva: contavano quanti figli discendessero da una base e quanti da una variazione, e
-  // servivano solo a decidere se disegnare i due pulsanti. Ora si disegnano sempre, quindi quel
-  // conto non lo guarda piu' nessuno. Un calcolo che sopravvive alla domanda che lo giustificava
-  // e' la stessa cosa del riempitore della v6.139: codice che lavora per un motivo che non c'e'.
-  const _et = it ? { base: 'di figurina base', variation: 'di variazione' }
-                 : { base: 'of base sticker', variation: 'of variation' };
-  // 🆕 v6.322 - UN PARAMETRO SOLO, LA CHIAVE DELLA VERSIONE. Prima ne prendeva tre - se disegnarsi,
-  // il valore corrente e il NOME della funzione da chiamare - cioe' chi chiamava doveva conoscere
-  // il nome di una globale e quello di un toggle: due cose da tenere allineate a mano per ogni
-  // versione. Ora `_sottoSelettori('free')` basta, e bastera' lo stesso il giorno della sesta.
-  //
-  // 🔴 LA GUARDIA SUL LIVELLO E' VERA, non decorativa, ed e' il punto per cui questa funzione sa da
-  // sola a chi tocca: *"da chi discende?"* ha senso solo per un FIGLIO. Chiesta di una base o di
-  // una variazione non ha risposta, e disegnare due pulsanti che non possono filtrare niente
-  // sarebbe un comando inerte che sembra vivo (v6.020). Provata facendola fallire, non a occhio.
-  //
-  // ⚠️ I DUE BOTTONI NON SI DERIVANO DA `partenza`, e la tentazione e' forte perche' l'elenco ce
-  // l'ha gia'. Sarebbe sbagliato: `change` ha `partenza: ['base','variation','unofficialVariation']`
-  // - TRE voci - ma `_tipoFigurinaDiPartenza` di risposte ne da' DUE, perche' le due variazioni
-  // cadono insieme in 'variation' (`_CAPI_VERSIONE`). I bottoni sono le RISPOSTE POSSIBILI di
-  // quella funzione, non l'elenco dei genitori ammessi. Derivarli da `partenza` darebbe al change
-  // un terzo pulsante che dice la stessa cosa del secondo - il doppione che la v6.141 aveva gia'
-  // riconosciuto come tale sulle variazioni.
-  const _sottoSelettori = (chiave) => {
-    const _v = _versioneDiChiave(chiave);
-    if (!_v || _v.livello !== 'figlio') return '';
-    if (_itemTypeFilter !== chiave) return '';
-    const valore = _parentFiltro(chiave);
-    const bottone = (v) => `
-      <div style="display:flex;align-items:center;gap:0.3rem;">
-        <button class="toggle-btn-blue ${valore === v ? 'on' : ''}" style="transform:scale(0.72);transform-origin:left center;"
-                onclick="toggleParentFilter('${chiave}','${v}')" title="${_et[v]}"></button>
-        <span style="font-size:0.72rem;color:var(--muted);">${_et[v]}</span>
-      </div>`;
-    // IMPILATI, non affiancati: sono due alternative della stessa domanda, e in colonna sotto il
-    // loro padre si legge da dove dipendono. Il rientro e' quello del pulsante sopra.
-    return '<div style="display:flex;flex-direction:column;gap:0.2rem;padding-left:1.5rem;">' +
-           bottone('base') + bottone('variation') + '</div>';
-  };
-
-  // il nome dell'oggetto cambia con la sezione: "figurine set base", "retro set base",
-  // "album set base", "oggetti set base"
-  const nomeP = { figurines: it ? 'figurine' : 'stickers', retros: it ? 'retro' : 'retros',
-                  albums: it ? 'album' : 'albums', extras: it ? 'oggetti' : 'items' }[sez]
-              || (it ? 'figurine' : 'stickers');
-
-  // IN FILA, non in colonna (v5.712). Erano impilati da sempre — non l'ha rotto la
-  // v5.711 — ma nella stessa pagina i filtri del POSSESSO sono in riga (v5.697): una
-  // fila e una colonna a due centimetri di distanza, senza che nulla lo giustifichi.
-  // flex-wrap: con sette filtri (Figurine) va a capo da solo; con tre (Retro) sta su
-  // una riga sola. Il gap verticale serve proprio per quando va a capo.
-  // v6.141 - `align-items` da `center` a `flex-start`: con una voce che ora e' una COLONNA (Change
-  // e i suoi due sotto-selettori), il centraggio verticale spingerebbe in mezzo tutte le altre,
-  // che sono alte una riga. Allineate in alto restano dov'erano e la colonna cresce verso il basso.
-  let html = '<div style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:flex-start;">';
-
-  // v5.902 — genere corretto: retro/album/altri oggetti (maschile) → "Tutti"; figurine/bustine (femminile) → "Tutte".
-  html += item('all', it ? (['retros','albums','extras'].includes(currentSection) ? 'Tutti' : 'Tutte') : 'All', '', false);
-
-  if (presente.base) html += item('base',
-    (['bustine','albums','extras'].includes(currentSection)
-      ? (it ? 'Versione standard' : 'Standard version')
-      : (it ? (nomeP.charAt(0).toUpperCase() + nomeP.slice(1)) + ' set base' : 'Base set ' + nomeP)), '', true);
-
-  if (presente.variation) html += item('variation',
-    it ? 'Variazioni ufficiali' : 'Official variations', '');
-
-  if (presente.unofficialVariation) html += item('unofficialVariation',
-    it ? 'Variazioni non ufficiali' : 'Unofficial variations', '');
-
-  // l'unione ha senso SOLO se esistono entrambe: con una sola, direbbe la stessa cosa
-  // del filtro qui sopra, e sarebbe un doppione
-  if (presente.anyVariation) {
-    // v5.870 — etichetta UGUALE su mobile e desktop: "Variazioni (ufficiali e non ufficiali)"
-    // con le parentesi e la "e" (prima su telefono si toglievano le parentesi). I due tipi
-    // restano colorati.
-    const etIt = 'Variazioni (<span style="color:var(--type-official);">ufficiali</span> e <span style="color:var(--type-unofficial);">non ufficiali</span>)';
-    const etEn = 'Variations (<span style="color:var(--type-official);">official</span> and <span style="color:var(--type-unofficial);">unofficial</span>)';
-    html += item('anyVariation',
-      it ? 'Variazioni (ufficiali e non ufficiali)' : 'Variations (official and unofficial)',
-      '', false, it ? etIt : etEn);
-  }
-
-  if (presente.change) html += item('change', it ? 'Change' : 'Change', '', false, null,
-    _sottoSelettori('change'));
-
-  if (presente.printError) html += item('printError',
-    it ? 'Errori di stampa' : 'Print errors', '', false, null,
-    _sottoSelettori('printError'));
-
-  // 🆕 v6.235 (Franco: "nella ricerca manca il selettore Omaggio") — sta FRA Change ed Errore di
-  // stampa, come nell'ordine dettato per l'ordinamento. Compare solo se in questa serie e in
-  // questa sezione ce n'e' almeno uno: e' la regola di tutti gli altri (v5.711), e vuol dire che
-  // finche' non sposti niente su omaggio questo selettore non si vede — non e' un difetto.
-  // 🆕 v6.322 (Franco) - I SOTTO-SELETTORI "DA CHI DISCENDE" CI SONO ANCHE QUI. Fin qui il commento
-  // diceva: *"quelli distinguono i figli di una BASE dai figli di una VARIAZIONE, e l'omaggio puo'
-  // nascere da entrambe, quindi la domanda avrebbe senso. Non li metto perche' non sono stati
-  // chiesti"*. Adesso sono stati chiesti - ed e' l'ELENCO a dire che la domanda ha senso: `free` ha
-  // `livello: 'figlio'` come change ed errore di stampa, e `partenza: ['base', 'variation']`.
-  // 📌 Non e' stata aggiunta una riga per l'omaggio: e' stata tolta quella che lo escludeva.
-  if (presente.free) html += item('free',
-    it ? 'Versioni omaggio' : 'Free versions', '', false, null,
-    _sottoSelettori('free'));   // v6.240, riscritta dalla v6.306
-
-  // v5.910 — "Senza foto" vive nel box "Filtri generici", per TUTTI gli utenti (desktop e mobile).
-  // v6.054 (Franco) — accanto c'e' "Con foto", ma solo per l'ADMIN.
-  // Cambia anche l'etichetta di "Senza foto", che da ACCESO era sbagliata. La tabella di come si
-  // comportava (ricostruita sul codice della v6.053, non a memoria):
-  //   spento  -> scritta "Senza foto", interruttore spento, mostra TUTTI;   cliccando: solo i senza foto
-  //   acceso  -> scritta "Con foto",  interruttore BLU,     mostra i SENZA foto; cliccando: tutti
-  // Da acceso quella scritta non diceva ne' lo stato (mostrava i senza foto) ne' l'effetto del clic
-  // (che riporta a TUTTI, non ai "con foto"): nominava una terza cosa, che non esisteva. Segnalato
-  // da Franco, che l'aveva provata: "il cursore prende il nome di Con foto ed e' blu, ma non mostra
-  // i retro con foto".
-  // Ora ogni interruttore porta il proprio nome, sempre lo stesso, e l'acceso si riconosce dal
-  // colore. Con due filtri affiancati era l'unica forma che non si contraddicesse.
-  // v6.095 (Franco) - I FILTRI FOTO NON STANNO PIU' QUI: sono passati tutti nel riquadro
-  // "Filtri aggiuntivi admin", piu' sotto, insieme a un terzo nuovo.
-  // ⚠️ Questo RIBALTA la v5.796, dove Franco aveva chiesto l'opposto - "Senza foto" fuori dai
-  // filtri admin e visibile a TUTTI. Glielo ho fatto notare il 9 agosto 2026 e ha cambiato idea:
-  // "mettilo solo per gli admin". Scritto qui perche' chi legge la v5.796 non concluda che sia
-  // stata dimenticata.
-  html += '</div>';
-
-  el.innerHTML = html;
+  // 🗑️ v6.346 - QUI COMINCIAVA IL BOX «Filtri legati alla versione», E NON C'E' PIU'.
+  // La v6.325 l'aveva nascosto per una prova di Franco (*"voglio provare a non usarli per qualche
+  // giro"*); i riquadri hanno preso il suo posto e la prova e' finita: *"a video quella sezione non
+  // c'e' piu; ed abbiamo sostituito quelle funzionalita"*. Con lui se ne vanno l'etichetta, il
+  // ripiego del tipo inesistente, i sei selettori e i loro sotto-selettori.
+  // 📌 Il resto di questa funzione NON se ne va, ed e' la ragione per cui non e' stata cancellata
+  // per intero: da qui in giu' disegna il box «Filtri legati alla tua lista» e quello dei filtri
+  // admin, che con i selettori di versione non c'entrano niente. Stavano nella stessa funzione per
+  // ragioni di storia, non di parentela.
+  // 🆕 v6.342 (Franco) - «collezione» -> «lista». Non e' una preferenza di parole: nel sito quella
+  // cosa si chiama LISTA dappertutto - «Mia lista», «La tua lista», «N nella tua lista», il
+  // selettore «nella mia lista / mi manca». Questo box era l'unico posto a chiamarla altrimenti, e
+  // i tre filtri che contiene sono esattamente quelli della lista.
+  // 📌 Due nomi per la stessa cosa non confondono chi ha scritto il codice - confondono chi legge
+  // la pagina, che non ha modo di sapere se «collezione» e «lista» siano due insiemi diversi. E la
+  // domanda se la fa proprio qui, davanti a un filtro che deve scegliere.
+  const _cbl = document.getElementById('items-collection-box-label'); if (_cbl) _cbl.textContent = it ? 'Filtri legati alla tua lista' : 'Filters tied to your list';
+  // 🗑️ v6.346 - QUI STAVANO I SEI SELETTORI DI VERSIONE E I LORO SOTTO-SELETTORI (195 righe).
+  // Se ne vanno insieme al box che li conteneva: `tipiPresenti` per sapere quali disegnare, il
+  // ripiego su un tipo inesistente, la mappa dei colori, `item()`, `_sottoSelettori` e i tre
+  // richiami per change / errore di stampa / omaggio.
+  // 📌 CIO' CHE FACEVANO LO FA IL RIQUADRO «Filtra per le Versioni», e meglio: e' un Set invece di
+  // un radio (quindi l'unione «Variazioni ufficiali e non ufficiali» non ha piu' bisogno di un
+  // pulsante scritto a mano), porta i conteggi accanto a ogni voce, e dalla v6.335 le pillole
+  // senza risultati si spengono da sole.
+  // ⚠️ L'UNICA COSA CHE NON HA UN EREDE sono i sotto-filtri «da chi discende» (di figurina base /
+  // di variazione, v6.140-v6.322). Non e' una dimenticanza: Franco ha scelto di lasciarli andare
+  // sapendolo. Se un giorno servissero, vanno riscritti sul riquadro - e li' andra' risolto il
+  // difetto che nei Retro avevano da sempre: un retro non puo' essere una variazione (v5.707),
+  // quindi quel secondo pulsante non poteva trovare niente e svuotava la griglia.
 
   // SECONDA RIGA: il filtro sul POSSESSO. Contenitore separato, con una linea
   // sopra, perche' e' un'altra domanda: il tipo chiede "che cosa e' questo?", il
@@ -29452,8 +29830,19 @@ function renderItemTypeFilters() {
       // v5.894 — su telefono le etichette IT si accorciano ("Nella tua lista" / "Non nella tua
       // lista") per stare comode sulla stessa riga; su desktop restano per esteso.
       const _pairExtra = _mob ? 'flex:1 1 0;min-width:0;' : '';
-      const _lblOwned = itl ? (_mob ? 'Nella tua lista' : 'Presenti nella tua lista') : 'In my list';
-      const _lblMissing = itl ? (_mob ? 'Non nella tua lista' : 'Mancanti dalla tua lista') : 'Missing from my list';
+      // 🆕 v6.343 (Franco) - «tua» -> «mia» sui DUE SELETTORI, e la regola vale oltre queste due
+      // righe: *"è un'azione, non un titolo; nel titolo «tua» ci sta, nelle azioni no"*.
+      // Distingue CHI PARLA. Il titolo del box e' il sito che si rivolge a te («Filtri legati alla
+      // tua lista», v6.342); un comando e' la frase che pronunci TU premendolo, e nessuno preme un
+      // bottone per dirsi «nella tua lista». Con la stessa regola restano al loro posto i
+      // RISCONTRI - «N fanno parte della tua lista» e' il sito che risponde, non tu che chiedi.
+      // 📌 DUE FATTI CHE LA CONFERMANO, ed erano gia' nel codice. (1) L'INGLESE LO FA DA SEMPRE:
+      // qui sotto c'era gia' `In my list` / `Missing from my list`, cioe' le due lingue dicevano
+      // due cose diverse e l'italiano era l'eccezione. (2) Il TERZO selettore di questo stesso box
+      // e' «Ciò che cerco», non «Ciò che cerchi». Dentro un riquadro da tre voci ne convivevano
+      // due modi, e nessuno l'aveva notato perche' ogni etichetta, presa da sola, suona bene.
+      const _lblOwned = itl ? (_mob ? 'Nella mia lista' : 'Presenti nella mia lista') : 'In my list';
+      const _lblMissing = itl ? (_mob ? 'Non nella mia lista' : 'Mancanti dalla mia lista') : 'Missing from my list';
       const _ownedPair = itemToggle(_ownedFilter === 'owned', "toggleOwnedFilter('owned')", _lblOwned, _pairExtra)
                        + itemToggle(_ownedFilter === 'missing', "toggleOwnedFilter('missing')", _lblMissing, _pairExtra);
       // su mobile i due filtri di possesso su una sola riga (nowrap, larghezza piena); su desktop liberi
@@ -29550,7 +29939,49 @@ function _checkBothOrientationForStack(containerId, which, isVertical, natW, nat
   }
 }
 
+// 🆕 v6.340 (Franco) - LA LEGENDA CAMBIA CON LA SEZIONE, e fin qui ce n'era una sola.
+//
+// 🔴 IL DIFETTO, segnalato per QUATTRO release di fila (v6.331, v6.332, v6.333, v6.339): nei Retro
+// la modale si intitolava «definizioni FIGURINE» e quattro voci su cinque parlavano dalla figurina
+// - «figurina appartenente al set base», «variante di RETRO». Un retro un retro non ce l'ha, e le
+// due voci sulle variazioni descrivevano una cosa che li' non puo' esistere (v5.707). Non era
+// imprecisione: era una legenda che spiega un'altra pagina.
+// ⚠️ La v6.333 l'aveva perfino SPOSTATA in fondo al riquadro Versione - resa piu' visibile e
+// lasciata falsa. Una segnalazione ripetuta senza essere chiusa diventa un rumore che si smette di
+// leggere, ed e' il motivo per cui e' durata quattro release.
+//
+// 📌 LE VOCI RESTANO CHIAVI i18n, NON TESTO. Costruire la lista a mano con le frasi dentro avrebbe
+// rotto il cambio lingua a modale aperta: `applyI18n` cicla `[data-i18n-html]` e riscrive l'innerHTML
+// dalla chiave. Cosi' invece gli `<li>` nascono gia' con la loro chiave, e chi cambia lingua li
+// trova e li traduce senza sapere che sono stati costruiti a runtime. Stessa cosa per il TITOLO,
+// che cambia `dataset.i18n` e non solo il testo - se cambiasse solo il testo, `applyI18n` lo
+// riporterebbe a «definizioni figurine» al primo cambio lingua. E' il difetto del §5 (la voce che
+// dice "Ordinamento" e torna "Numero"), qui evitato prima di scriverlo.
+// 📌 E NON SI CHIAMA `applyI18n()`: quella funzione ridisegna anche i filtri e i testi della
+// ricerca. Aprire una modale non deve ridisegnare la pagina sotto.
+//
+// ⚠️ ALBUM, ALTRI OGGETTI E BUSTINE VEDONO ANCORA LA LEGENDA DELLE FIGURINE, ed e' una scelta di
+// Franco («quella delle figurine, per ora»): imprecisa come oggi, non peggio. Resta aperta.
+const _VOCI_LEGENDA = {
+  figurines: ['base', 'variation', 'unofficialVariation', 'change', 'free', 'printError'],
+  // Nei Retro le due variazioni NON ci sono, e non e' una potatura per brevita': un retro non puo'
+  // essere una variazione perche' variazione vuol dire che cambia il dietro, e un retro un dietro
+  // non ce l'ha. La form lo impedisce dalla v5.707. Elencarle qui sarebbe come nominare un tipo di
+  // oggetto che in questa pagina non puo' esistere.
+  // 🆕 v6.344 - l'Omaggio entra anche qui, fra Change ed Errore di stampa: lo stesso posto che ha
+  // nelle Figurine e in tutto il resto del sito (`VERSIONI_ARTICOLO`).
+  retros:    ['retroBase', 'retroChange', 'retroFree', 'retroPrintError']
+};
 function openFilterLegendModal() {
+  const sez = _VOCI_LEGENDA[currentSection] ? currentSection : 'figurines';
+  const chiaveTitolo = (sez === 'retros') ? 'items.filterLegend.titleRetros' : 'items.filterLegend.title';
+  const h = document.querySelector('#filter-legend-modal .modal-title');
+  if (h) { h.dataset.i18n = chiaveTitolo; h.textContent = t(chiaveTitolo); }
+  const ul = document.getElementById('filter-legend-list');
+  if (ul) ul.innerHTML = _VOCI_LEGENDA[sez].map(k => {
+    const chiave = 'items.filterLegend.' + k;
+    return `<li data-i18n-html="${chiave}">${t(chiave)}</li>`;
+  }).join('');
   document.getElementById('filter-legend-modal').classList.remove('hidden');
 }
 
@@ -29591,85 +30022,18 @@ function toggleWishlistFilter() {
   try { renderItems(); } catch(e) { console.error('renderItems (toggleWishlistFilter)', e); }
 }
 
-// v6.134 (Franco) - I RAGGRUPPAMENTI SI SCIOLGONO QUANDO IL LORO SELETTORE SI SPEGNE.
-// Il baco, con le sue parole: acceso "Change", scelto un tipo di change ("mosca nera"), poi acceso
-// "Errori di stampa" -> nessun risultato. Perche' `_changeTypeFilter` restava pieno, e il filtro
-// pretende `f.isChange && _changeTypeFilter.has(...)`: un errore di stampa non e' un change, quindi
-// non passa nessuno. Il filtro faceva il suo mestiere; a essere rimasto indietro era uno stato che
-// nessuno aveva spento.
-// E' la famiglia dei filtri invisibili gia' vista nella v6.095: un filtro acceso che non si vede
-// nasconde la griglia senza dire perche', e chi guarda conclude che i dati non ci sono.
-//
-// UN SOLO RAGGRUPPAMENTO PER VOLTA, che chiude anche il secondo modo di cascarci: con il selettore
-// su "tutti" si potevano accendere entrambi, e siccome si combinano in AND — nessun oggetto e'
-// insieme change ed errore di stampa — il risultato era di nuovo vuoto. Non e' una limitazione:
-// quella combinazione non era esprimibile, restituiva zero per costruzione.
-function _sciogliRaggruppamentiEstranei(tipo) {
-  // v6.266 - un ciclo sulle versioni con un tipo, al posto di una riga per versione. I valori del
-  // selettore SONO le chiavi dell'elenco ('change', 'free', 'printError'), quindi non c'e' niente
-  // da tradurre in mezzo.
-  // ⚠️ v6.323 - QUI SI CICLA ANCORA `_VERSIONI_CON_TIPO` E NON `_RAGGRUPPAMENTI`, ed e' voluto.
-  // Questa funzione lega un raggruppamento al SELETTORE della sua versione: il riquadro "tipo di
-  // change" ha senso solo mentre il filtro e' su Change. Il raggruppamento per VERSIONE non ha un
-  // selettore corrispondente - e' lui il livello della versione - quindi non deve spegnersi quando
-  // il selettore si muove. Cambiare questa riga in `_RAGGRUPPAMENTI` lo renderebbe inservibile:
-  // si accenderebbe e sparirebbe al primo clic altrove.
-  if (tipo !== 'all') for (const v of _VERSIONI_CON_TIPO) if (tipo !== v.chiave) _raggr(v.chiave).filtro = new Set();
-  // v6.140 - e i due sotto-filtri della figurina di partenza si spengono con il loro selettore.
-  // Qui NON c'e' l'eccezione per 'all' che hanno i raggruppamenti: i sotto-selettori si vedono
-  // solo con il loro padre acceso, quindi su 'all' resterebbero accesi e INVISIBILI - la famiglia
-  // dei filtri invisibili delle v6.095 e v6.134, dove la griglia si svuota e non lo dice nessuno.
-  // 🆕 v6.322 - un ciclo sui FIGLI al posto di una riga per versione, come la riga qui sopra per i
-  // raggruppamenti. ⚠️ E qui NON c'e' la guardia `tipo !== 'all'` che ha quella - il ciclo la
-  // riproduce alla lettera, non e' una svista: su 'all' i sotto-selettori non si disegnano, quindi
-  // lasciarli accesi vorrebbe dire accesi e INVISIBILI, che e' la famiglia delle v6.095 e v6.134.
-  for (const v of _FIGLI_VERSIONE) if (tipo !== v.chiave) _PARENT_FILTER[v.chiave] = '';
-}
-
-// v6.140 - IL TIPO DELLA FIGURINA DI PARTENZA, scritto una volta sola perche' lo chiedono sia il
-// setaccio sia i selettori (che devono sapere se i due gruppi esistono entrambi).
-// Torna 'base', 'variation', oppure NULL quando la domanda non ha risposta: niente
-// `baseFigurineId`, id che non punta a niente, o genitore che e' a sua volta un change/errore di
-// stampa. Quei record non stanno in nessuno dei due gruppi, ed e' voluto: un terzo caso mascherato
-// da uno dei due sarebbe un conto sbagliato che nessuno vedrebbe. Con tutti e due i sotto-filtri
-// spenti continuano a comparire, come prima.
-// `idx` e' una Map id->record, facoltativa: chi deve chiamare questa funzione centinaia di volte
-// di fila (i contatori dei due gruppi) la costruisce una volta invece di fare una `find` lineare
-// su tutte le figurine ad ogni giro.
-function _tipoFigurinaDiPartenza(f, figs, idx) {
-  if (!f || !f.baseFigurineId) return null;
-  const g = idx ? idx.get(f.baseFigurineId)
-                : (figs || getData('figurines', [])).find(x => x.id === f.baseFigurineId);
-  if (!g) return null;
-  // 🔴 v6.314 - ERANO DUE COPPIE A MANO, e l'OMAGGIO non stava in nessuna delle due: un figlio la
-  // cui partenza e' un omaggio cadeva nel `return 'base'` finale, cioe' il sotto-filtro rispondeva
-  // *"discende da una base"* di un oggetto che discende da un omaggio. Ora si chiede all'elenco:
-  // base -> 'base'; una versione di livello 'capo' (le due variazioni) -> 'variation'; tutto il
-  // resto -> null, cioe' *"non sta in nessuno dei due gruppi"*, che e' la scelta gia' dichiarata
-  // nel commento qui sopra.
-  // 📌 Sui dati di oggi non cambia una riga: `ricognizione-omaggi-base.js` (19 agosto) ha contato
-  // ZERO partenze non ammesse su 1056 oggetti con una versione. E' una difesa, non una correzione.
-  if (_eBase(g)) return 'base';
-  return _CAPI_VERSIONE.some(v => g[v.campo]) ? 'variation' : null;
-}
-
-// v6.140 - il toggle dei sotto-selettori. Stesso comportamento dei chip dello specchietto (v6.096):
-// un secondo clic su quello acceso lo spegne, cioe' torna a "tutti". Senza, l'unico modo di tornare
-// indietro sarebbe passare da un altro selettore e rientrare.
-// 🆕 v6.322 - UNO SOLO, con la chiave davanti. Erano due funzioni identiche a meno del nome della
-// globale che toccavano, e l'omaggio ne avrebbe voluta una terza identica alle prime due.
-function toggleParentFilter(chiave, v) {
-  _PARENT_FILTER[chiave] = (_parentFiltro(chiave) === v) ? '' : v;
-  currentItemPage = 1;
-  try { renderItems(); } catch(e) { console.error('renderItems (toggleParentFilter)', e); }
-}
-
-function toggleItemTypeFilter(type) {
-  _itemTypeFilter = type; // comportamento radio puro: sempre uno solo attivo
-  _sciogliRaggruppamentiEstranei(type); // v6.134
-  currentItemPage = 1;
-  try { renderItems(); } catch(e) { console.error('renderItems (toggleItemTypeFilter)', e); }
-}
+// 🗑️ v6.346 - QUI STAVANO QUATTRO FUNZIONI, TUTTE FIGLIE DEL SELETTORE:
+//   · `_sciogliRaggruppamentiEstranei(tipo)` (v6.134) - spegneva il riquadro «tipo di change»
+//     quando il selettore lasciava Change. La chiamava solo `toggleItemTypeFilter`, quindi muore
+//     con lui. 📌 Il difetto da cui difendeva non torna: dalla v6.335 un riquadro senza risultati
+//     ha le pillole a zero e non si preme, e la sua eventuale pillola accesa resta VISIBILE -
+//     cioe' spegnibile. La v6.134 doveva azzerare uno stato invisibile; adesso non e' piu'
+//     invisibile, e non c'e' piu' niente da azzerare di nascosto.
+//   · `_tipoFigurinaDiPartenza(f, figs, idx)` (v6.140, riscritta dalla v6.314) - rispondeva a «da
+//     chi discende questo figlio?». La chiedeva solo il ramo del setaccio dei sotto-filtri.
+//   · `toggleParentFilter(chiave, v)` (v6.322) - il toggle dei due pulsantini.
+//   · `toggleItemTypeFilter(type)` - il clic su un selettore di versione.
+// Nessuna era chiamata da altro: verificato prima di toglierle, non dopo.
 
 // Calcola gli oggetti attualmente visibili per la serie/sezione corrente,
 // applicando gli stessi filtri usati da griglia e vista tabellare (ricerca
@@ -29775,8 +30139,9 @@ function azzeraTuttiIFiltri() {
   _noteFilter = false;
   _ownedFilter = 'all';
   _wishlistFilter = false;
-  _itemTypeFilter = _tipoIniziale(); // 'all' da admin, 'base' agli altri — come all'apertura
-  _azzeraTuttiIParent();             // i sotto-filtri "da chi discende" (v6.322)
+  // 🗑️ v6.346 - qui stavano `_itemTypeFilter = _tipoIniziale()` e `_azzeraTuttiIParent()`. Il
+  // primo lo fa `_azzeraTuttiIRaggr()` qui sopra, che dalla v6.338 rimette il seme del riquadro;
+  // il secondo non ha piu' niente da azzerare.
   _noOfficialVariationFilter = false;
   _ebayFilter = false;
   // La ricerca scritta: scelta di Franco fra le tre proposte, "tutti, ricerca compresa".
@@ -29813,13 +30178,21 @@ function _qualcheFiltroAcceso() {
   return !!(
        _retroCategoryFilter.size > 0
     || _retroSubcategoryFilter.size > 0
-    || _RAGGRUPPAMENTI.some(v => _raggr(v.chiave).filtro.size > 0)      // i raggruppamenti, versione compresa (v6.323)
+    // 🆕 v6.338 - non piu' `filtro.size > 0` ma "e' diverso dal suo SEME". Con il default su Base
+    // il riquadro Versione all'apertura ha gia' un valore dentro: col confronto di prima il
+    // bottone «Azzera filtri» sarebbe nato acceso su un filtro che l'utente non ha mai toccato,
+    // e premendolo non sarebbe successo niente - un comando che promette un effetto e non lo ha,
+    // cioe' esattamente cio' che la v6.315 aveva tolto. 📌 La riga gemella di `azzeraTuttiIFiltri`
+    // e questa leggono ora la STESSA funzione: non possono piu' divergere a mano.
+    || _RAGGRUPPAMENTI.some(v => !_raggrAlSuoSeme(v))                   // i raggruppamenti, versione compresa (v6.323)
     || _fotoFilter !== null
     || _noteFilter
     || _ownedFilter !== 'all'
     || _wishlistFilter
-    || _itemTypeFilter !== _tipoIniziale()
-    || _FIGLI_VERSIONE.some(v => _parentFiltro(v.chiave) !== '')        // i sotto-filtri "da chi discende" (v6.322)
+    // 🗑️ v6.346 - qui stavano le due righe gemelle delle due appena tolte da `azzeraTuttiIFiltri`:
+    // il confronto di `_itemTypeFilter` col suo valore iniziale e quello dei sotto-filtri. Le due
+    // liste restano allineate, che e' l'unica cosa che questa funzione deve garantire (v6.315):
+    // del filtro per versione risponde ora la riga dei raggruppamenti, che lo comprende (v6.338).
     || _noOfficialVariationFilter
     || _ebayFilter
     || (document.getElementById('items-search')?.value || '') !== ''
@@ -29947,36 +30320,17 @@ function getCurrentlyFilteredItems(opts) {
     // che lavorano "sui visibili" - se stesse solo nella griglia, un aggiornamento massivo lanciato
     // da dentro un box toccherebbe anche gli oggetti degli altri.
     if (_tipoProdottoCorrente && (f.tipoProdotto || '') !== _tipoProdottoCorrente) return false;
-    if (_itemTypeFilter !== 'all') {
-      const matchesType =
-        // v6.235 - era la NONA copia della quaterna. Il commento della v6.170 diceva che questo
-        // filtro e il contatore usavano "la stessa definizione", e per anni non era vero: adesso
-        // la condividono per davvero, perche' e' la stessa funzione.
-        (_itemTypeFilter === 'base' && _eBase(f)) ||
-        (_itemTypeFilter === 'variation' && f.isVariation) ||
-        (_itemTypeFilter === 'unofficialVariation' && f.isUnofficialVariation) ||
-        (_itemTypeFilter === 'anyVariation' && (f.isVariation || f.isUnofficialVariation)) ||
-        (_itemTypeFilter === 'change' && f.isChange) ||
-        (_itemTypeFilter === 'free' && f.isFreeVersion) ||    // v6.235
-
-        // ERA UNA STRINGA, ORA E' UN FLAG. Il vecchio codice faceva:
-        //     f.isChange && (f.changeType||'').toLowerCase().trim() === 'errore di stampa'
-        // Bastava scrivere "Errori di stampa" al plurale in una serie perche' il filtro
-        // smettesse di trovarli — in silenzio, senza modo di accorgersene.
-        (_itemTypeFilter === 'printError' && f.isPrintError);
-      if (!matchesType) return false;
-      // v6.140 - il sotto-filtro sulla figurina di partenza. Sta DENTRO il ramo del tipo perche'
-      // e' una domanda che ha senso solo li': "da chi discende questo change?" non si puo' porre
-      // a una base. Con il sotto-filtro spento ('') non tocca niente.
-      // 🆕 v6.322 - UN RAMO SOLO, e nessuna versione nominata. Erano due righe identiche a meno
-      // della chiave, e l'omaggio ne avrebbe voluta una terza. Lo stato e' indicizzato per chiave,
-      // quindi la chiave che serve e' gia' `_itemTypeFilter`: non c'e' piu' niente da tradurre in
-      // mezzo. ✅ A somma zero sulle due di prima: `_parentFiltro` di una chiave che non e' un
-      // figlio torna '' — solo i sotto-selettori scrivono in `_PARENT_FILTER`, e si disegnano solo
-      // per i figli.
-      const _pf = _parentFiltro(_itemTypeFilter);
-      if (_pf && _tipoFigurinaDiPartenza(f, allFigs) !== _pf) return false;
-    }
+    // 🗑️ v6.346 - QUI STAVA IL RAMO DEL SELETTORE DI VERSIONE, e con lui il sotto-filtro «da chi
+    // discende». Trenta righe che il setaccio non esegue piu' da nessuna parte: il filtro per
+    // versione passa dai RAGGRUPPAMENTI, applicati poche righe piu' su insieme agli altri.
+    // 📌 A SOMMA ZERO E VERIFICABILE: il riquadro «Filtra per le Versioni» usa `_chiaveTipo(f)`,
+    // che e' la stessa catena di flag che questo ramo elencava a mano - base, le due variazioni,
+    // change, omaggio, errore di stampa. Era la NONA copia della quaterna quando la v6.235 la
+    // ridusse a una funzione sola; adesso e' zero copie, perche' chi filtra e chi conta chiedono
+    // alla stessa funzione.
+    // ⚠️ L'unica voce senza corrispondente e' `anyVariation`, l'unione delle due variazioni: era
+    // un pulsante scritto a mano per fare un OR che il radio non sapeva esprimere. Nel riquadro
+    // l'OR c'e' di suo (il filtro e' un Set), quindi si ottiene accendendo le due pillole.
     if (currentSection === 'figurines' && _noOfficialVariationFilter) {
       if (f.isVariation || f.isUnofficialVariation || f.isChange) return false; // impone sempre "solo base", a prescindere dal filtro tipo
       const hasOfficialVariation = allFigs.some(x => x.baseFigurineId === f.id && x.isVariation);
@@ -30381,7 +30735,9 @@ function _raggrLabel(t) {
 // la formula per tutti e cinque i riquadri e' stato cambiare queste due righe.
 const _RAGGR_DAVANTI_IT = 'Filtra per ';
 const _RAGGR_DAVANTI_EN = 'Filter by ';
-function _cfgRaggr(v, inibito) {
+// ♻️ v6.335 - via il parametro `inibito`: non e' piu' una proprieta' del riquadro. Chi disegna una
+// pillola guarda il suo conteggio, e quel numero ce l'ha gia' in mano.
+function _cfgRaggr(v) {
   // `min` resta per il titolo del CHIP, che e' una frase di senso compiuto e non puo' usare la coda
   // in maiuscolo: "Filtra per questo TIPOLOGIA DI OMAGGIO" non e' italiano.
   // 🆕 v6.323 - le due frasi si possono DICHIARARE. Restano derivate per le tre versioni, dove la
@@ -30415,13 +30771,14 @@ function _cfgRaggr(v, inibito) {
     // v6.267 - "questo riquadro sta filtrando qualcosa?". Serve al pannello per non lasciarsi
     // chiudere: un filtro acceso dentro un riquadro chiuso e' un filtro invisibile.
     filtroAcceso: () => _raggr(v.chiave).filtro.size > 0,
-    // v6.271 - riquadro visibile ma spento: si vede e non si preme.
-    inibito: !!inibito
+    // 🗑️ v6.335 - qui stava `inibito`, la spia del riquadro spento in blocco. Adesso lo stato
+    // "non si preme" nasce dal conteggio della singola pillola e non ha piu' bisogno di essere
+    // passato da fuori: chi disegna il numero sa gia' se e' zero.
   };
 }
 // Guscio: i punti che chiamavano le due funzioni di prima passano di qui, con la versione in piu'.
-function _raggrPanelHTML(v, pairs, open, clickable, toggleFn, perColonna, inibito) {
-  return _specchiettoTipiHTML(pairs, open, clickable, toggleFn, _cfgRaggr(v, inibito), perColonna);
+function _raggrPanelHTML(v, pairs, open, clickable, toggleFn, perColonna) {
+  return _specchiettoTipiHTML(pairs, open, clickable, toggleFn, _cfgRaggr(v), perColonna);
 }
 
 // 🆕 v6.270 - il triangolino INVISIBILE ma ingombrante, per i riquadri che un filtro acceso
@@ -30554,8 +30911,29 @@ header += `</div>`;
       // una scorciatoia non esiste, e questo sito si usa anche da li'.
       chips = pairs.map(([ct, n], i) => {
         // v6.271 - inibito: stessa forma, stesso ingombro, nessun `onclick` e mezza opacita'.
-        const _inib = !!C.inibito;
-        const active = !_inib && C.attivo(ct);
+        // 🆕 v6.335 (Franco) - L'INIBIZIONE E' DELLA PILLOLA, NON DEL RIQUADRO. Era `!!C.inibito`,
+        // cioe' una proprieta' del riquadro intero decisa fuori di qui: acceso un raggruppamento,
+        // gli altri due diventavano grigi in blocco. Franco: *"se selezioni Change nel riquadro
+        // Filtra per versioni non si devono bloccare gli altri riquadri... quando una pillola
+        // accesa rende altre pillole inutili, queste vanno inibite"*. La domanda non e' *"c'e' un
+        // altro riquadro acceso?"* ma *"premere QUESTA pillola porterebbe da qualche parte?"*, e la
+        // risposta e' il suo conteggio: zero risultati, niente da premere.
+        // 📌 La v6.134 vietava due raggruppamenti insieme con un argomento di FATTO - nessun
+        // oggetto e' insieme un change e un errore di stampa, quindi la combinazione tornava vuota
+        // per costruzione. Quell'argomento vale fra i tre riquadri dei TIPI e non vale per la
+        // VERSIONE, che con loro si combina: «versione = change» + «tipo di change = ROSSO» e' la
+        // domanda piu' naturale del sito. Dalla v6.323, che ha messo la versione fra i
+        // raggruppamenti, il divieto in blocco la rendeva inesprimibile. Il setaccio invece la
+        // sapeva gia' fare: applica in AND tutti i raggruppamenti accesi, e non l'ha mai smesso.
+        // Con la regola per pillola i tre riquadri dei tipi restano esclusi fra loro come prima -
+        // ma per la ragione vera, cioe' perche' i loro conteggi vanno a zero da soli.
+        // 🔴 UNA PILLOLA ACCESA NON SI INIBISCE MAI, ed e' la riga che rende sicuro tutto il resto.
+        // Accendi «tipo di change = ROSSO», poi accendi «Base»: quella pillola scende a zero. Se lo
+        // zero bastasse a spegnerla, resterebbe un filtro acceso senza nessun comando che lo
+        // spenga - la famiglia delle v6.095, v6.134 e v6.140, dove la griglia si svuota e chi
+        // guarda conclude che i dati non ci sono. Accesa resta premibile: si toglie da dov'e'.
+        const active = C.attivo(ct);
+        const _inib = !active && n === 0;
         const bg = active ? 'var(--accent)' : 'var(--card2)';
         const fg = active ? 'var(--bg)' : 'var(--text)';
         const nf = active ? 'var(--bg)' : 'var(--accent)';
@@ -30564,7 +30942,7 @@ header += `</div>`;
           ? (it ? 'Togli questo tipo, lasciando gli altri selezionati' : 'Remove this type, keep the others')
           : (it ? 'Aggiungi questo tipo a quelli già selezionati' : 'Add this type to the current selection');
         return `<span style="display:inline-flex;align-items:center;background:${bg};border:1px solid var(--border);border-radius:999px;font-size:0.82rem;line-height:1.4;overflow:hidden;${_inib ? 'opacity:0.45;' : ''}">`
-          + `<span ${_inib ? '' : `onclick="${C.setter(i)}"`} title="${_inib ? (it ? 'Spegni il raggruppamento attivo per usare questo' : 'Turn off the active grouping to use this one') : C.chipTitle(it)}" style="cursor:${_inib ? 'default' : 'pointer'};display:inline-flex;align-items:center;gap:0.35rem;padding:0.15rem 0.5rem 0.15rem 0.6rem;">`
+          + `<span ${_inib ? '' : `onclick="${C.setter(i)}"`} title="${_inib ? (it ? 'Nessun risultato con i filtri accesi adesso' : 'No results with the filters currently on') : C.chipTitle(it)}" style="cursor:${_inib ? 'default' : 'pointer'};display:inline-flex;align-items:center;gap:0.35rem;padding:0.15rem 0.5rem 0.15rem 0.6rem;">`
           + `<span style="color:${fg};">${esc(C.label(ct))}</span>`
           + `<span style="color:${nf};font-weight:700;">${n}</span></span>`
           + `<span ${_inib ? '' : `onclick="event.stopPropagation();${C.adder(i)}"`} title="${_inib ? '' : titoloPiu}" style="cursor:${_inib ? 'default' : 'pointer'};padding:0.15rem 0.5rem;border-left:1px solid ${active ? 'rgba(0,0,0,0.28)' : 'var(--border)'};color:${fg};font-weight:700;">${segno}</span>`
@@ -30695,19 +31073,45 @@ function renderSpecchiettiTop() {
 // 📌 `skipRaggr`: i conteggi di un riquadro ignorano il PROPRIO filtro, cosi' tutti i tipi
 // restano visibili e cliccabili anche dopo che ne hai scelto uno - come per le categorie. Gli altri
 // raggruppamenti li subiscono eccome, ma dalla v6.134 non ce ne puo' essere un altro acceso.
+// 🆕 v6.335 - L'ELENCO DELLE PILLOLE E I LORO NUMERI SONO DUE CONTI DIVERSI, e prima erano uno.
+// `_raggrCounts` costruisce la mappa dagli oggetti che passano: un valore con zero occorrenze non
+// entra proprio, quindi la sua pillola non nasceva. Finche' l'inibizione era del riquadro non si
+// vedeva; adesso che e' della pillola, una pillola a zero DEVE esistere per potersi mostrare
+// grigia - se no il riquadro tornerebbe a rimpicciolirsi sotto le dita mentre filtri, che e'
+// proprio cio' che la v6.271 aveva evitato scegliendo di inibire invece di far sparire.
+//   · l'ELENCO ignora tutti i raggruppamenti: sono le pillole che in questa serie ESISTONO;
+//   · i NUMERI ignorano il solo filtro di questo riquadro, come e' sempre stato (v6.271), cosi'
+//     scegliere un tipo non fa sparire gli altri tipi dello stesso riquadro.
+// ⚠️ L'ordinamento viene dall'ELENCO, che e' gia' passato per `v.ordina`: le pillole non si
+// riordinano quando un conteggio cambia. Un elenco che si rimescola sotto le dita e' peggio di uno
+// zero, e sarebbe successo prendendo l'ordine dai numeri.
+// 📌 STA QUI, ATTACCATA ALLA SUA UNICA CHIAMANTE, e non lassu' accanto a `_raggrCounts` dov'era
+// naturale metterla: fra `_RAGGR_DAVANTI_IT` e `_cfgRaggr` c'e' un'ANCORA che quattro suite usano
+// per ritagliare `_cfgRaggr` dal sorgente (`pezzo('const _RAGGR_DAVANTI_IT', '\n}')`), e una
+// funzione infilata li' in mezzo le mandava tutte in errore - non a fallire: in errore, cioe'
+// rumore travestito da allarme. L'ordine delle dichiarazioni e' arbitrario, l'ancora no.
 function renderRaggrSummaries() {
   const el = document.getElementById('raggr-summary-results');
   if (!el) return;
   if (!currentSeriesId) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  const _pairsConZeri = (v) => {
+    const numeri = new Map(_raggrCounts(getCurrentlyFilteredItems({ skipRaggr: v.chiave }), v));
+    const elenco = _raggrCounts(getCurrentlyFilteredItems({ skipRaggr: true }), v);
+    return elenco.map(([val]) => [val, numeri.get(val) || 0]);
+  };
   // 🆕 v6.268 (Franco) - UNO PER RIGA. Erano elastici e affiancati (`flex: 1 1 320px`, v6.079,
   // quando erano due): con tre, la disposizione finiva per dipendere dalla larghezza della finestra
   // invece che dal contenuto. `width:100%` in un contenitore in colonna: una riga per riquadro,
   // sempre, e ognuno largo quanto la pagina.
-  // 🆕 v6.271 - i raggruppamenti sono uno per volta (v6.134): se ce n'e' uno acceso, gli altri
-  // due restano al loro posto INIBITI invece di sparire, e contano ignorando tutti i raggruppamenti
-  // — cioe' mostrano cosa si vedrebbe passando a loro. `find` e non `filter`: piu' d'uno acceso non
-  // e' un caso da gestire, e' un caso che la v6.134 rende impossibile.
-  const acceso = _RAGGRUPPAMENTI.find(v => _raggr(v.chiave).filtro.size);
+  // ♻️ v6.335 - QUI STAVA `acceso`, E CON LUI IL DIVIETO IN BLOCCO. La v6.271 inibiva gli ALTRI
+  // riquadri appena uno filtrava, applicando la regola "uno per volta" della v6.134. Quella regola
+  // difendeva da una combinazione vuota per costruzione (nessun oggetto e' insieme change ed
+  // errore di stampa) e con la VERSIONE, entrata fra i raggruppamenti nella v6.323, l'argomento
+  // cade: «versione = change» + «tipo di change = ROSSO» ha senso, e il setaccio la sa gia' fare.
+  // 📌 Adesso l'inibizione la decide la singola pillola, dal suo conteggio (vedi
+  // `_specchiettoTipiHTML`). I tre riquadri dei tipi restano esclusi fra loro come prima, ma per
+  // la ragione vera: i loro conteggi vanno a zero da soli. Un divieto scritto a mano che coincide
+  // con un fatto e' un divieto che nessuno rimette in discussione il giorno che il fatto cambia.
   // 🆕 v6.329 - SI CICLA L'ORDINE, non l'elenco dei raggruppamenti: cosi' le categorie possono
   // stare in mezzo. Il riquadro delle categorie non e' un raggruppamento (e' una funzione a se'
   // dalla v6.079), quindi ha il suo ramo - un `if` solo, che e' il prezzo di poterlo mettere dove
@@ -30719,9 +31123,15 @@ function renderRaggrSummaries() {
     }
     const v = _RAGGRUPPAMENTI.find(x => x.chiave === chiave);
     if (!v) return '';
-    const inibito = !!acceso && acceso.chiave !== v.chiave;
-    const pairs = _raggrCounts(getCurrentlyFilteredItems({ skipRaggr: inibito ? true : v.chiave }), v);
+    // 🆕 v6.335 - DUE CONTI, E SERVONO ENTRAMBI. `_pairsConZeri` tiene le pillole che in questa
+    // serie ESISTONO (elenco) e ci mette accanto quante ne passano i filtri di adesso (numero).
+    // Prima il conto era uno solo e le pillole a zero non nascevano proprio: un tipo che i filtri
+    // avevano svuotato spariva dal riquadro, e con lui spariva il modo di accorgersi che c'era.
+    const pairs = _pairsConZeri(v);
     // Sparisce ancora, ma solo per la ragione di sempre: in questa serie non ce n'e' proprio.
+    // ⚠️ E adesso questa riga guarda l'ELENCO, non i risultati: un riquadro se ne va se quel tipo
+    // non esiste nella serie (v5.711), non se i filtri glielo hanno svuotato. Erano la stessa
+    // domanda finche' i conteggi erano uno solo, e non lo sono piu'.
     if (!pairs.length) return '';
     // 🆕 v6.329 - NIENTE `margin-bottom` QUI: la distanza fra i riquadri la mette il `gap` del
     // contenitore (Franco: *"lo spazio tra i box deve essere sempre lo stesso; non mi sembra sia
@@ -30732,7 +31142,7 @@ function renderRaggrSummaries() {
     return `<div style="width:100%;">`
       // 🆕 v6.330 - stato e toggle tornano. Che poi si veda o no un triangolino lo decide il
       // PANNELLO in base a quante opzioni ha: qui non si sa e non si deve sapere.
-      + _raggrPanelHTML(v, pairs, _raggr(v.chiave).aperto, true, `_toggleRaggrRisultati('${v.chiave}')`, 0, inibito)
+      + _raggrPanelHTML(v, pairs, _raggr(v.chiave).aperto, true, `_toggleRaggrRisultati('${v.chiave}')`, 0)
       + `</div>`;
   }).join('');
   el.innerHTML = html;
@@ -30801,15 +31211,54 @@ function _addRaggrFiltro(chiave, i) {
 // v6.266 - l'azzeramento di tutti, che serve al cambio di sezione/serie.
 // 🗑️ Qui stavano `clearChangeTypeFilter` e `clearPrintErrorTypeFilter`, TOLTE perche' erano
 // codice morto: cercate con `grep` in `app.js` e in `index.html`, non le chiamava nessuno.
-function _azzeraTuttiIRaggr() {
-  for (const v of _RAGGRUPPAMENTI) _raggr(v.chiave).filtro = new Set();   // v6.323 - versione compresa
+// 🆕 v6.338 (Franco: *"impersonando uno user base, non ho il filtro Base gia' acceso"*) - IL
+// DEFAULT TORNA, E STAVOLTA NEL RIQUADRO.
+//
+// Fino alla v6.047 un utente non-admin apriva una sezione con il selettore su «Set base»: arriva
+// per guardare la collezione, e la serie come la si ricorda e' quella senza le varianti. L'admin
+// no - lui arriva per LAVORARCI, e un filtro che non ha scelto lui gli nasconde meta' degli
+// oggetti, compresi quelli che sta cercando perche' hanno qualcosa che non va (v6.048).
+// 🔴 LA v6.325 HA DOVUTO SPEGNERE QUEL DEFAULT, e non per scelta: nascondendo il box dei selettori
+// restava un filtro acceso senza nessun comando capace di spegnerlo. `_tipoIniziale()` tornava
+// 'all' per tutti, e con lui il default e' sparito - per gli utenti, in silenzio, da cinque giorni.
+// ✅ Adesso il comando c'e' ed e' il riquadro «Filtra per le Versioni»: la pillola Base si vede
+// accesa, si preme e si spegne. Il difetto da cui la v6.325 difendeva non puo' ripresentarsi.
+// 📌 E il riquadro fa meglio del vecchio radio: i conteggi ignorano il filtro del proprio riquadro
+// (v6.271), quindi con Base accesa si continua a leggere «Variazione ufficiale 40», «Change 12».
+// Il selettore di prima nascondeva e taceva; questo filtra E DICE COSA STA NASCONDENDO.
+//
+// ⚠️ IL SEME STA IN UN POSTO SOLO perche' i punti che lo chiedono sono TRE e devono dire la stessa
+// cosa: chi apre una sezione, chi preme «Azzera filtri», e chi decide se quel bottone sia premibile.
+// Se il terzo non sapesse del seme, il bottone sarebbe acceso all'apertura su un filtro che
+// l'utente non ha toccato - la stessa famiglia di bugie della v6.315.
+function _semeVersione(section) {
+  if (currentUser?.isAdmin) return new Set();   // v6.048 - l'admin parte da tutto
+  const g = tipiPresenti(currentSeriesId, section || currentSection || 'figurines');
+  // ⚠️ SOLO SE LE BASI CI SONO. Seminare un valore che in questa sezione non esiste vorrebbe dire
+  // aprire su una griglia vuota, e la pillola per rimediare non ci sarebbe nemmeno - il riquadro
+  // disegna le pillole che i dati contengono (v5.711). E' il gemello del ripiego che
+  // `renderItemTypeFilters` fa da sempre sul selettore.
+  return (g.base && g.base.length) ? new Set(['base']) : new Set();
 }
-// 🆕 v6.322 - il gemello per i sotto-filtri "da chi discende", e c'e' per la stessa ragione di
-// quello sopra: `azzeraTuttiIFiltri` e `_qualcheFiltroAcceso` sono due liste scritte a mano che
-// devono dire la stessa cosa, e nessuna delle due deve crescere di una riga a ogni versione nuova.
-function _azzeraTuttiIParent() {
-  for (const v of _FIGLI_VERSIONE) _PARENT_FILTER[v.chiave] = '';
+// Il seme di UN raggruppamento qualunque. Oggi solo la versione ne ha uno; gli altri tre partono
+// spenti, ed e' scritto qui invece che in tre punti perche' il giorno che un altro ne volesse uno
+// ci sia un posto solo da toccare.
+function _semeRaggr(v, section) {
+  return (v.chiave === 'versione') ? _semeVersione(section) : new Set();
 }
+// "Questo raggruppamento e' come lo si trova aprendo?" — la domanda che serve a `_qualcheFiltroAcceso`.
+function _raggrAlSuoSeme(v) {
+  const seme = _semeRaggr(v), f = _raggr(v.chiave).filtro;
+  return f.size === seme.size && [...f].every(x => seme.has(x));
+}
+// ♻️ v6.338 - "azzerare" qui vuol dire TORNARE COM'ERA ALL'APERTURA, non svuotare. E' lo stesso
+// significato che aveva `_itemTypeFilter = _tipoIniziale()` nelle due righe che questa sostituisce:
+// per un non-admin lo spento e' sempre stato 'base', non 'tutti'.
+function _azzeraTuttiIRaggr(section) {
+  for (const v of _RAGGRUPPAMENTI) _raggr(v.chiave).filtro = _semeRaggr(v, section);   // v6.323 - versione compresa
+}
+// 🗑️ v6.346 - qui stava `_azzeraTuttiIParent`, il gemello di quella sopra per i sotto-filtri «da
+// chi discende». Se ne va con lo stato che azzerava.
 
 // v6.075 — fronte e retro affiancati dentro il riquadro della card. Il markup sta scritto qui una
 // volta sola: lo usano la disposizione 'destra' delle figurine e le bustine (§12.2), che di
@@ -31573,7 +32022,13 @@ function renderItems() {
     // v5.828 — col filtro "Solo base" attivo, su telefono NON si mostra il nome del retro
   // associato: sono tutte figurine base, quindi la riga e' ridondante e ruba spazio.
   // Guardia di viewport: sul desktop il nome del retro resta sempre.
-  const _hideRetroName = _isMobileViewport() && _itemTypeFilter === 'base';
+  // 🆕 v6.345 - anche questa passa al riquadro. E' la TERZA riga che faceva la stessa domanda al
+  // selettore morto, ed e' l'unica che stava lontano dalle altre due: chi avesse aggiornato solo
+  // `_soloFronteMobile` e `_mostraRetroToggleVisibile` - le due vicine - avrebbe lasciato le card
+  // senza retro ma col nome del retro sotto, cioe' un difetto nuovo dentro una correzione.
+  // 📌 La domanda ora si fa in un posto solo (`_soloBasiNelRiquadro`), quindi la prossima volta le
+  // righe da trovare sono zero.
+  const _hideRetroName = _isMobileViewport() && _soloBasiNelRiquadro();
   // v5.980 (Franco) — il retro collegato occupa DUE righe, non una: il suo nome, e sotto il suo
   // sottonome in azzurro. Stesso schema della card Retro, cosi' le due sezioni si leggono allo
   // stesso modo. Finche' il sottonome e' vuoto la seconda riga non c'e' e l'aspetto e' quello di
@@ -32387,8 +32842,53 @@ async function markRepliesAsRead(myMsgs) {
   if (badge) badge.style.display = 'none';
 }
 
+// 🆕 v6.347 (Franco) - IMPERSONARE DA TELEFONO. Fin qui il comando stava in un posto solo: il
+// pulsante nella tabella Utenti della console admin, cinque colonne di `data-table` che su un
+// telefono non e' scomoda, e' irraggiungibile. Qui basta una tendina e un bottone.
+//
+// 📌 NIENTE LOGICA NUOVA: si chiama `impersonateUser(id)`, la stessa del pulsante nella tabella,
+// con la sua conferma, il suo banner e i suoi controlli. Una seconda implementazione avrebbe
+// voluto dire due strade per entrare nei panni di un altro utente, e il giorno che una imparasse
+// un controllo in piu' l'altra diventerebbe la porta di servizio.
+// ⚠️ GLI ADMIN NON COMPAIONO NELLA TENDINA, e non e' cosmesi: `impersonateUser` esce senza dire
+// niente se l'utente e' admin (`if (!user || user.isAdmin) return;`). Offrire una voce che, scelta,
+// non fa nulla e non spiega perche' e' un comando inerte che sembra vivo - la famiglia della
+// v6.020. Il filtro sta qui, dove si costruisce l'elenco, non dentro la funzione che lo esegue.
+function _riempiTendinaImpersona() {
+  const wrap = document.getElementById('profile-impersona');
+  if (!wrap) return;
+  // La decide `currentUser`, non l'HTML: questo blocco vive nella pagina profilo di tutti.
+  if (!currentUser?.isAdmin) { wrap.style.display = 'none'; return; }
+  const sel = document.getElementById('profile-impersona-select');
+  if (!sel) return;
+  const utenti = getData('users', [])
+    .filter(u => !u.isAdmin)
+    .sort((a, b) => (a.username || '').localeCompare(b.username || '', 'it', { sensitivity: 'base' }));
+  // 📌 Se non c'e' nessuno da impersonare il blocco non si mostra: una tendina vuota accanto a un
+  // bottone che non puo' funzionare direbbe che qualcosa e' rotto (v5.711, la regola dei filtri
+  // che compaiono solo se hanno dati).
+  if (!utenti.length) { wrap.style.display = 'none'; return; }
+  const scelto = sel.value;   // non si perde la scelta a ogni ridisegno del profilo
+  // 🔴 v6.348 - SOLO IL NICKNAME, e l'email solo se il nickname manca. Nella v6.347 ogni opzione
+  // diceva «nickname — email@completa», e quel testo ha mandato in scroll orizzontale l'intera
+  // pagina profilo: un `<select>` e' largo quanto la sua opzione piu' lunga, e dentro un flex quel
+  // valore non viene compresso ma PROPAGATO al padre (un flex item ha `min-width:auto`).
+  // 📌 La correzione utile e' `min-width:0` nell'HTML; questa qui e' la seconda meta', e vale per
+  // conto suo: questa tendina serve a scegliere una PERSONA, non a leggerne l'indirizzo. Il testo
+  // piu' corto e' anche quello giusto, ed e' un caso in cui il difetto ha indicato il contenuto
+  // migliore invece di costringere a un compromesso.
+  sel.innerHTML = utenti.map(u =>
+    `<option value="${u.id}">${esc(u.username || u.email || '(senza nome)')}</option>`).join('');
+  if (scelto && utenti.some(u => u.id === scelto)) sel.value = scelto;
+  wrap.style.display = '';
+}
+function impersonaDaProfilo() {
+  const id = document.getElementById('profile-impersona-select')?.value;
+  if (id) impersonateUser(id);
+}
 function renderProfile() {
   if (!currentUser) { showPage('home'); return; }
+  try { _riempiTendinaImpersona(); } catch (e) { console.error('_riempiTendinaImpersona', e); }
   const backLabelEl = document.getElementById('profile-back-btn-label');
   if (backLabelEl) {
     const pageLabels = {
@@ -33577,10 +34077,53 @@ function _showImpersonateBanner() {
   if (!banner) {
     banner = document.createElement('div');
     banner.id = 'impersonate-banner';
-    banner.style.cssText = 'position:fixed;top:64px;left:1rem;z-index:99999;background:var(--warn);color:#0e0a1a;padding:0.3rem 0.75rem;display:flex;align-items:center;gap:0.75rem;font-family:var(--font-ui);font-size:0.82rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);border-radius:8px;max-width:33vw;';
     document.body.prepend(banner);
   }
-  banner.innerHTML = '<span>🎭 ' + (currentLang === 'it' ? 'Stai impersonando' : 'Impersonating') + ': <strong>' + currentUser.username + '</strong> — ' + (currentLang === 'it' ? 'WRITE MODE' : 'WRITE MODE') + '</span><button onclick="stopImpersonation()" style="background:#0e0a1a;color:var(--warn);border:none;border-radius:6px;padding:4px 14px;cursor:pointer;font-weight:700;">' + (currentLang === 'it' ? '✕ Torna admin' : '✕ Back to admin') + '</button>';
+  // 🔴 v6.347 - SU TELEFONO QUESTO BANNER ERA UNA TRAPPOLA, e se ne accorgeva solo chi impersona
+  // da li' - cioe' nessuno, finche' la v6.347 non ha reso possibile farlo. `max-width:33vw` su uno
+  // schermo da 390px fa 129 pixel: dentro ci stanno il 🎭, il nome dell'utente, la scritta
+  // WRITE MODE e il pulsante «Torna admin». Il pulsante finiva schiacciato o fuori - e senza di
+  // lui non si torna admin in nessun altro modo.
+  // 📌 Dare l'andata senza il ritorno sarebbe stato peggio che non dare niente: la tendina nel
+  // profilo, da sola, avrebbe portato in un vicolo cieco. Le due cose sono UNA release perche'
+  // sono una funzione sola - «impersonare da telefono» - non due che si somigliano.
+  // ⚠️ LO STILE SI RISCRIVE A OGNI CHIAMATA, e non e' spreco: dentro il `banco prova mobile` la
+  // cornice si ridimensiona (e su un telefono vero basta ruotarlo). Lasciandolo nel ramo della
+  // CREAZIONE, il banner nato largo restava largo dopo il restringimento - cioe' proprio nello
+  // strumento con cui questa correzione si verifica, sarebbe sembrata non funzionare.
+  // 🔴 v6.349 (Franco: *"il pulsante «torna admin» si sovrappone al tasto da usare per tornare
+  // indietro, quando si apre una figurina. Puoi farlo piccolo e metterlo sulla dx (a dx non
+  // abbiamo tipicamente bottoni)"*) - IL BANNER PASSA A DESTRA, E SU TELEFONO SI STRINGE.
+  //
+  // 🔴 IL DIFETTO ERA MIO, DI DUE RELEASE FA. La v6.347 gli ha dato `left:0.5rem;right:0.5rem` per
+  // far entrare il pulsante «Torna admin» su schermi stretti: risolveva il pulsante schiacciato e
+  // apriva questo, perche' un banner largo tutto lo schermo copre per forza cio' che sta a
+  // sinistra - e a sinistra, sotto la navbar, c'e' il tasto INDIETRO di ogni pagina.
+  // 📌 Avevo guardato se il pulsante ci stava, non COSA STAVO COPRENDO. Sono due domande diverse, e
+  // la seconda si fa aprendo le pagine, non misurando il banner.
+  //
+  // 🆕 LA REGOLA DI FRANCO, ed e' generale: *"a destra non abbiamo tipicamente bottoni"*. Vale
+  // anche sul desktop, dove il banner stava a sinistra dalla v5.324 e si sovrapponeva allo stesso
+  // tasto - solo con piu' spazio attorno, quindi senza che desse fastidio abbastanza da segnalarlo.
+  // Un difetto che non disturba resta un difetto: spostati tutti e due.
+  // ⚠️ E SU TELEFONO SI ACCORCIA IL TESTO, non il pulsante. «Stai impersonando: nome — WRITE MODE»
+  // diventa il solo nome: la parola che serve e' QUALE utente sei, non la frase che lo dice, e il
+  // 🎭 la introduce da solo. Cosi' il banner sta in poco spazio senza che il comando si stringa -
+  // era il modo sbagliato di guadagnare larghezza, e la v6.347 aveva sbagliato proprio quello.
+  const _mob = _isMobileViewport();
+  banner.style.cssText = 'position:fixed;top:64px;right:0.5rem;left:auto;z-index:99999;background:var(--warn);color:#0e0a1a;padding:0.35rem 0.6rem;display:flex;align-items:center;gap:0.5rem;font-family:var(--font-ui);font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);border-radius:8px;'
+    + (_mob ? 'font-size:0.74rem;max-width:58vw;' : 'font-size:0.82rem;right:1rem;max-width:33vw;');
+  // Il nome non deve poter allargare il banner oltre la sua misura: se e' lungo si taglia con i
+  // puntini, e resta leggibile quanto basta per sapere chi sei.
+  const _chi = '<strong style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;">' + esc(currentUser.username || '') + '</strong>';
+  const _testo = _mob
+    ? '<span style="display:flex;align-items:center;gap:0.3rem;min-width:0;">🎭 ' + _chi + '</span>'
+    : '<span style="display:flex;align-items:center;gap:0.3rem;min-width:0;">🎭 ' + (currentLang === 'it' ? 'Stai impersonando' : 'Impersonating') + ': ' + _chi + ' — WRITE MODE</span>';
+  // ⚠️ Il pulsante NON si rimpicciolisce con il resto: e' l'unica strada per tornare admin, quindi
+  // `flex-shrink:0` e un'area di tocco che resta premibile anche a 320px di schermo.
+  banner.innerHTML = _testo
+    + '<button onclick="stopImpersonation()" style="background:#0e0a1a;color:var(--warn);border:none;border-radius:6px;padding:5px 12px;cursor:pointer;font-weight:700;flex-shrink:0;white-space:nowrap;font-size:inherit;">'
+    + (_mob ? '✕ admin' : (currentLang === 'it' ? '✕ Torna admin' : '✕ Back to admin')) + '</button>';
   banner.style.display = 'flex';
 }
 
