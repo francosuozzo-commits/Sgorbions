@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.334"></script>
-<link rel="stylesheet" href="css/style.css?v=6.334">
+<script src="js/email.min.js?v=6.349"></script>
+<link rel="stylesheet" href="css/style.css?v=6.349">
 
 
 <style>
@@ -81,6 +81,20 @@
 @media (max-width:860px) {
   .hero-stats-side .stat-num   { font-size:1.4rem; }
   .hero-stats-side .stat-label { font-size:0.7rem; }
+}
+
+/* 🆕 v6.341 (Franco) — LA CASELLA DI RICERCA IN NAVBAR NON ESISTE SU TELEFONO.
+   Sotto gli 860px `.nav-links` smette di essere una riga e diventa il panino: le voci si impilano
+   in colonna, ognuna una riga premibile. Una casella di testo in mezzo a quelle righe sarebbe
+   l'unica che non si preme, dentro un menu che si chiude appena tocchi qualcosa (`closeNavMenu`
+   scatta sul primo click dentro `.nav-links a`) — quindi nemmeno scriverci dentro funzionerebbe
+   davvero.
+   ⚠️ `!important` perché la visibilità la governa anche `_aggiornaRicercaNavbar()` da JS, che
+   scrive `display` IN LINEA sull'elemento: senza, la regola inline dell'admin vincerebbe su
+   questa e la casella ricomparirebbe su telefono. Le due condizioni sono diverse — "sei admin?" e
+   "c'è spazio?" — e questa deve poter dire l'ultima parola. */
+@media (max-width:860px) {
+  #nav-search { display:none !important; }
 }
 
 /* v6.068 - le due righe sotto il logo salgono verso di lui. Il margine stava IN LINEA sul <p>;
@@ -457,6 +471,24 @@ button.back-btn { color:#ffffff; }
     <a onclick="showPage('classifica')" data-page="classifica" id="nav-classifica" style="display:none;" data-i18n="nav.classifica">🏆 Classifica</a>
     <a onclick="showPage('newsletter')" id="nav-newsletter-btn" style="display:none;">📧 Newsletter</a>
     <a onclick="showPage('contact')" data-page="contact" data-i18n="nav.contact">Contatti</a>
+    <!-- 🆕 v6.341 (Franco) — LA RICERCA GLOBALE IN NAVBAR, dopo Contatti. Solo admin, solo desktop.
+         📌 NON È UNA SECONDA RICERCA: scrive nella casella dell'Inventario e chiama `renderCatalog()`,
+         cioè accende quella che c'è già. Una seconda implementazione della stessa ricerca avrebbe
+         voluto dire due elenchi di campi da tenere uguali — e i due sarebbero divergiti al primo
+         campo aggiunto, in silenzio, come le "doppie verità" della v5.711.
+         ⚠️ PARTE SU INVIO, non a ogni tasto: la ricerca porta alla pagina Inventario, e digitare
+         una lettera non deve spostarti di pagina. La casella dell'Inventario invece cerca mentre
+         scrivi, e lì è giusto — sei già dove i risultati compaiono.
+         ⚠️ Si nasconde sotto gli 860px con una regola CSS (vedi in testa) e non con `display:none`
+         da JS, perché lì `.nav-links` diventa il panino: una casella di testo in mezzo alle voci
+         del menu, su telefono, sarebbe una riga che non si può premere. La visibilità per l'ADMIN
+         invece la decide `_aggiornaRicercaNavbar()`: sono due condizioni diverse e stanno in due
+         posti diversi, ognuno dove si sa rispondere. -->
+    <div id="nav-search" style="display:none;">
+      <input type="text" id="nav-search-input" placeholder="Cerca…" data-i18n-placeholder="nav.search"
+             onkeydown="if(event.key==='Enter'){event.preventDefault();ricercaGlobaleDaNavbar();}"
+             style="width:150px;background:rgba(255,255,255,0.07);border:1px solid var(--border);border-radius:999px;color:var(--text);font-family:var(--font-ui);font-size:0.82rem;padding:0.3rem 0.75rem;outline:none;">
+    </div>
     <!-- v5.953 — Logout: su TELEFONO ultima voce del panino, non piu' nella navbar (vedi CSS in
          testa e updateNavUser in app.js). Su desktop resta il pulsante in .nav-right. -->
     <!-- v5.973 — TELEFONO: voce che apre la mini guida del selettore "Mia lista", la stessa che
@@ -963,14 +995,23 @@ button.back-btn { color:#ffffff; }
              e le categorie dovevano andare in mezzo. -->
       </div>
 
-        <!-- v5.916 — Box "Filtri generici": tipo oggetto (Tutti/e, Set base, Variazioni, Change, Errori di stampa) + Senza foto -->
-        <div id="items-generic-box" style="position:relative;margin-top:0.95rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">
-          <div id="items-generic-box-label" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);">Filtri generici</div>
-          <div id="items-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;"></div>
-        </div>
+        <!-- 🗑️ v6.346 (Franco) — QUI STAVA IL BOX DEI SELETTORI DI VERSIONE, dalla v5.916.
+             Era «Filtri generici», poi «Filtri legati alla versione» (v6.323); la v6.325 l'ha
+             nascosto per una prova, i riquadri hanno preso il suo posto, e adesso se ne va:
+             *"a video quella sezione non c'è più; ed abbiamo sostituito quelle funzionalità"*.
+             ⚠️ Con lui sparisce `items-filter-toggles`, che `renderItemTypeFilters` cercava nella
+             sua prima riga per poi uscire se non lo trovava. Quella guardia è stata tolta nella
+             stessa release, e non era facoltativo: la funzione disegna anche i due box qui sotto,
+             quindi sarebbe uscita subito ogni volta, spegnendoli. Un `return` in cima non lascia
+             tracce — nessun errore, solo due riquadri che non compaiono. -->
         <!-- v5.916 — Box "Filtri legati alla tua collezione": nella mia lista, non nella mia lista, ciò che cerco -->
         <div id="items-collection-box" style="display:none;position:relative;margin-top:0.95rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">
-          <div id="items-collection-box-label" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);">Filtri legati alla tua collezione</div>
+          <!-- 🆕 v6.342 (Franco) — «collezione» → «lista», per allinearsi al resto del sito.
+               ⚠️ Questo testo lo si vede per una frazione di secondo: `renderItemTypeFilters` lo
+               riscrive a ogni disegno. Va cambiato lo stesso — è quello che si legge se il JS
+               tarda o non parte, e una versione statica rimasta indietro è la forma di bugia più
+               difficile da notare, perché non è visibile quando le cose funzionano. -->
+          <div id="items-collection-box-label" style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);">Filtri legati alla tua lista</div>
           <div id="items-owned-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem;"></div>
         </div>
         <div id="items-admin-filters" style="display:none;position:relative;margin-top:0.95rem;background:var(--card);border:1px solid rgba(255,255,255,0.6);border-radius:var(--radius-lg);padding:0.95rem 0.9rem 0.8rem;">
@@ -1344,6 +1385,43 @@ button.back-btn { color:#ffffff; }
             <button onclick="openUsernameModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.changeUsername">✏️ Cambia nome utente</button>
             <button id="profile-change-nat-btn" onclick="openNationalityModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;">✏️ Cambia nazionalità</button>
             <button id="profile-change-pwd-btn" onclick="openChangePwdModal()" style="font-size:0.9rem;padding:4px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--muted);cursor:pointer;" data-i18n="profile.changePwd">🔑 Cambia password</button>
+          </div>
+          <!-- 🆕 v6.347 (Franco: *"come faccio a impersonare da mobile? mi metti qlc di semplice
+               (giusto il necessario) nella form del profilo?"*) — IMPERSONA, IN DUE COMANDI.
+               Fin qui si poteva impersonare da un SOLO posto: il pulsante nella tabella Utenti
+               della console admin, che è una `data-table` a cinque colonne — su un telefono non è
+               difficile da usare, è irraggiungibile.
+               📌 NON C'È LOGICA NUOVA: il «Vai» chiama `impersonateUser(id)`, la stessa funzione
+               del pulsante nella tabella, con la sua conferma e il suo banner. Scriverne una
+               seconda avrebbe voluto dire due strade per entrare nei panni di un altro utente, e
+               il giorno che una impara un controllo in più l'altra diventa la porta di servizio.
+               ⚠️ Si vede solo all'admin, e lo decide `renderProfile` — non un `display` scritto qui:
+               questo blocco vive dentro la pagina di tutti. -->
+          <!-- 🔴 v6.348 (Franco: *"sotto profilo ora vedo una schermata tagliata"*) — LA v6.347
+               MANDAVA IN SCROLL ORIZZONTALE TUTTA LA PAGINA PROFILO, e la causa non era il mio
+               blocco: era il `<select>`.
+               Un `<select>` prende la larghezza della sua OPZIONE PIÙ LUNGA, e le opzioni le
+               scrivevo io come «nickname — email@completa». Dentro un flex, un figlio ha
+               `min-width:auto`: non può restringersi sotto il proprio contenuto, quindi quella
+               larghezza non veniva compressa — veniva PROPAGATA al padre, e da lì a tutta la
+               pagina, che è diventata più larga dello schermo.
+               📌 Le tre correzioni, e nessuna è cosmetica:
+                 · `min-width:0` sul select e sul suo contenitore: è la riga che permette a un
+                   flex item di stringersi. Senza, `flex:1` non basta — è la trappola nota di
+                   flexbox, e vale identica per `1fr` nelle griglie;
+                 · le opzioni portano solo il NICKNAME (l'email la scrive `_riempiTendinaImpersona`
+                   solo quando il nickname manca): serve a scegliere una persona, non a leggerne
+                   l'indirizzo, e un testo corto non può spingere niente;
+                 · `max-width:100%` e `box-sizing:border-box` sul blocco, perché non possa
+                   comunque superare il suo contenitore.
+               ⚠️ Il difetto NON si vedeva sul desktop, dove lo spazio in eccesso c'era: si è visto
+               al primo sguardo dal banco prova mobile. -->
+          <div id="profile-impersona" style="display:none;margin-top:0.9rem;max-width:100%;box-sizing:border-box;">
+            <div style="font-size:0.95rem;color:var(--text);margin-bottom:0.3rem;">🎭 Impersona un utente</div>
+            <div style="display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap;min-width:0;max-width:100%;box-sizing:border-box;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;">
+              <select id="profile-impersona-select" style="flex:1 1 0;min-width:0;max-width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:0.45rem 0.6rem;font-family:var(--font-ui);font-size:0.9rem;"></select>
+              <button onclick="impersonaDaProfilo()" class="btn-primary" style="font-size:0.9rem;padding:0.45rem 1.1rem;border-radius:8px;white-space:nowrap;flex-shrink:0;">Vai</button>
+            </div>
           </div>
           <div id="profile-stats-title" style="font-size:0.95rem;color:var(--text);margin-top:0.75rem;margin-bottom:0.3rem;" data-i18n="profile.statsTitle">I tuoi numeri Sgorbions</div>
           <div class="profile-stats" id="profile-stats-box" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:0.6rem 0.9rem;margin-top:0;">
@@ -2636,6 +2714,15 @@ button.back-btn { color:#ffffff; }
       <li data-i18n-html="items.filterLegend.variation"><strong>Variazione ufficiale</strong>: variante di retro documentata e ad altra produzione (non rara)</li>
       <li data-i18n-html="items.filterLegend.unofficialVariation"><strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassissima produzione (molto rara)</li>
       <li data-i18n-html="items.filterLegend.change"><strong>Change</strong>: variante di fronte voluto dal produttore</li>
+      <!-- 🆕 v6.339 (Franco) — L'OMAGGIO ENTRA NELLA LEGENDA, e mancava da quando esiste (v6.232).
+           Sta FRA Change ed Errore di stampa, che è il posto che ha in tutto il resto del sito:
+           l'ordine di `VERSIONI_ARTICOLO`, quello della griglia, dei badge e delle pillole del
+           riquadro Versione. Una legenda che elenca le stesse voci in un ordine suo costringe a
+           cercarle due volte.
+           ⚠️ Il nome è «Omaggio» perché è così che la versione si chiama nell'elenco (`it:
+           'Omaggio'`), non una parola scelta qui: il riquadro dice «Versioni omaggio», i badge
+           dicono OMAGGIO, e la legenda deve usare la stessa parola di ciò che spiega. -->
+      <li data-i18n-html="items.filterLegend.free"><strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro</li>
       <li data-i18n-html="items.filterLegend.printError"><strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa</li>
     </ul>
   </div>
@@ -2963,7 +3050,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.334"></script>
+<script src="js/app.js?v=6.349"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -2987,7 +3074,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.334'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.349'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
