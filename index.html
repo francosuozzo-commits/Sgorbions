@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.349"></script>
-<link rel="stylesheet" href="css/style.css?v=6.349">
+<script src="js/email.min.js?v=6.351"></script>
+<link rel="stylesheet" href="css/style.css?v=6.351">
 
 
 <style>
@@ -2561,6 +2561,28 @@ button.back-btn { color:#ffffff; }
           </div>
         </div>
       </div>
+      <!-- 🆕 v6.350 (Franco: *"mi serve un campo chiamato «Tipologie di errore di stampa», analogo
+           a quello che abbiamo per change ed omaggio, e mi serve sia nella versione figurine che
+           nella versione retro"*) — LE DUE CASELLE, nella stessa forma delle altre quattro.
+           🔴 CHIUDE UN ELENCO CHE ERA APERTO PER SCELTA, e va detto perché il codice lo dichiarava:
+           `opzioniTipo: null` nell'elenco delle versioni portava scritto *"non è una dimenticanza:
+           il Tipo di errore di stampa è l'unico dei tre a ELENCO APERTO (testo libero)"*. La scelta
+           è stata revocata da Franco, che sistemerà i dati: fino ad allora le tipologie scritte a
+           mano che non corrispondono compaiono nella tendina sotto «⚠️ non in elenco» — visibili e
+           modificabili, non sparite.
+           📌 Il testo libero era anche il modo più rapido per accorgersi che la stessa cosa era
+           stata scritta in tre modi. Con l'elenco chiuso quella spia si spegne e al suo posto
+           subentra la tendina: è lo stesso scambio già fatto per change e omaggio. -->
+      <div class="form-group" style="margin-top:0.6rem;">
+        <label class="form-label">Tipologie di errore di stampa FRONTALI (una per riga)</label>
+        <textarea class="form-input" id="series-front-print-error-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
+        <div class="form-hint">Un valore per riga. Sono le tipologie che la tendina «Tipo di errore di stampa» offre sulle FIGURINE di questa serie.</div>
+      </div>
+      <div class="form-group" style="margin-top:0.6rem;">
+        <label class="form-label">Tipologie di errore di stampa DI RETRO (una per riga)</label>
+        <textarea class="form-input" id="series-retro-print-error-types-input" rows="5" style="resize:vertical;font-family:inherit;"></textarea>
+        <div class="form-hint">Un valore per riga. Sono le tipologie che la tendina «Tipo di errore di stampa» offre sui RETRO di questa serie.</div>
+      </div>
     </div><!-- chiude il tab Articoli non base -->
 
     <div class="series-tab-panel" data-tab="visualizzazione" style="display:none;">
@@ -3050,7 +3072,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.349"></script>
+<script src="js/app.js?v=6.351"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3074,7 +3096,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.349'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.351'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
