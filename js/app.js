@@ -1,6 +1,87 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.351 - L'IMPORT DELLE FIGURINE: LA VERSIONE SI DICHIARA (Franco). Solo app.js, piu' la
+//          versione nell'index. Le colonne sono adesso quelle del suo elenco, e sono SEDICI.
+//
+//          🔴 L'OMAGGIO NON ERA IMPORTABILE, e non lo sapeva nessuno. Nessuna colonna lo produceva:
+//          la quinta versione e' nata fra la v6.232 e la v6.264 e l'importatore e' rimasto indietro
+//          senza che una riga lo scrivesse. Non dava errore - semplicemente non c'era strada.
+//          📌 Il motivo sta nel MODELLO vecchio: la versione non si dichiarava, si DEDUCEVA da
+//          quale colonna era piena (`Tipo` = Ufficiale/Non ufficiale, oppure `Tipo di change`,
+//          oppure `Tipo errore di stampa`, mutuamente esclusive). Con quattro versioni funzionava;
+//          alla quinta chiedeva una colonna nuova E una nuova regola di esclusione, cioe' un costo
+//          che nessuno ha pagato. Adesso la Versione e' dichiarata e la sesta non chiedera' niente.
+//
+//          🆕 LE COLONNE, e i nomi sono quelli di Franco: `Versione` (base, variazione ufficiale,
+//          variazione non ufficiale, change, omaggio, errore di stampa), `Figurina di partenza`
+//          (era «Figurina base»), `Tipologia di change` / `di omaggio` / `di errore di stampa`,
+//          `Retro - Categoria` / `Sottocategoria` / `Nome`, `Retro - Tipo di change` / `di omaggio`
+//          / `di errore`.
+//          ⚠️ SOLO I NOMI NUOVI, per sua scelta: un file vecchio dara' «colonna mancante» invece di
+//          importare male. E' l'errore che si vuole - `Tipo` e `Versione` ora dicono due cose
+//          diverse, e riconoscerli entrambi avrebbe voluto dire leggere un file vecchio con le
+//          regole nuove, scartandolo riga per riga senza dire il motivo vero.
+//
+//          🔴 «Retro - Sottocategoria», E IL DIFETTO CHE HA PORTATO A GALLA. Franco: *"manca anche
+//          la colonna Retro - Sottocategoria, dato che sappiamo che la categoria non basta"*.
+//          `findRetro` cercava per Categoria + Nome e prendeva il PRIMO risultato, mentre la chiave
+//          d'identita' di un retro (v6.334, `_vociIdentitaRetro`) e' Serie, Versione, Tipo di
+//          omaggio, Categoria, SOTTOCATEGORIA, Nome. Quattro voci su sei: con due retro omonimi in
+//          sottocategorie diverse l'import ne agganciava uno a caso e non lo diceva.
+//          📌 Una ricerca piu' debole della chiave che cerca non «a volte sbaglia»: sbaglia in
+//          silenzio, che e' la sola cosa che conta. Il file era giusto, il collegamento no, e il
+//          sintomo sarebbe arrivato mesi dopo e altrove.
+//          🆕 Adesso `findRetriCandidati` torna l'ELENCO, e l'ambiguita' si dichiara: la
+//          sottocategoria e' facoltativa (scelta di Franco), ma se senza di lei restano piu'
+//          candidati la riga si scarta ELENCANDO le sottocategorie fra cui scegliere. Una riga
+//          scartata con l'elenco davanti si corregge in un minuto.
+//
+//          🆕 E L'ERRORE DI STAMPA ADESSO SI VALIDA come le altre due, grazie alla v6.350: fino a
+//          ieri era testo libero, quindi un refuso entrava nei dati e si scopriva guardando un
+//          riquadro con due voci quasi uguali. Le tre versioni con tipologia passano ora tutte per
+//          la stessa funzione (`_validaTipologia`), che non e' una copia per simmetria: e' la
+//          prova che le tre differenze che c'erano sono finite tutte.
+//
+//          ⚠️ `isFreeVersion` E `freeVersionType` ENTRANO NELL'ELENCO DEI CAMPI CONFRONTATI da
+//          `_importDiff`. Senza, un omaggio reimportato con la tipologia cambiata sarebbe risultato
+//          «invariato»: il record veniva scritto lo stesso, ma il registro diceva che non era
+//          successo niente - un import che mente sul proprio esito e' peggio di uno che fallisce.
+//
+// v6.350 - LE TIPOLOGIE DI ERRORE DI STAMPA DIVENTANO UN ELENCO (Franco: *"mi serve un campo
+//          chiamato «Tipologie di errore di stampa», analogo a quello che abbiamo per change ed
+//          omaggio, e mi serve sia nella versione figurine che nella versione retro"*).
+//          index.html e app.js, piu' la versione. Due caselle nella scheda della serie
+//          (`frontPrintErrorTypes`, `retroPrintErrorTypes`), la tendina `_opzioniTipoErrore`, e le
+//          tre versioni con tipo che finalmente si comportano tutte allo stesso modo.
+//
+//          🔴 REVOCA UNA SCELTA DICHIARATA, e va scritto perche' il codice la difendeva:
+//          `opzioniTipo: null` portava accanto *"non e' una dimenticanza: il Tipo di errore di
+//          stampa e' l'unico dei tre a ELENCO APERTO (testo libero)"*, e la v6.079 ne spiegava il
+//          vantaggio - *"comparira' esattamente cio' che e' stato scritto, refusi e maiuscole
+//          comprese: il modo piu' rapido per accorgersi che la stessa cosa e' stata scritta in tre
+//          modi"*. ⚠️ Quella spia si spegne. E' il prezzo dichiarato: da qui in avanti la coerenza
+//          la IMPONE la tendina invece di RIVELARLA il riquadro - lo scambio gia' fatto per change
+//          (v6.079) e omaggio (v6.241).
+//          📌 I dati non si toccano. Franco: *"i dati li sistemo io"*. Le tipologie fuori elenco
+//          compaiono sotto «⚠️ non in elenco», visibili e salvabili: sparirebbero solo se il select
+//          ripiegasse sul vuoto, ed e' esattamente il caso che quel ramo evita.
+//
+//          🆕 DUE LISTE E NON UNA, al contrario dell'omaggio (v6.246 ne ha una sola per lato ma la
+//          distinzione la' e' fronte/retro dell'OGGETTO). Qui Franco le ha chieste entrambe, e la
+//          distinzione e' vera: un errore di stampa puo' stare sul fronte o sul retro.
+//
+//          ⚠️ I QUATTRO PUNTI CHE UNA CASELLA NUOVA DEVE TOCCARE, e il codice li elencava gia':
+//            · il caricamento della scheda (`series-*-print-error-types-input`);
+//            · l'AZZERAMENTO per la serie nuova - il commento accanto dice *"e' il punto in cui
+//              «aggiungere una casella» resta indietro per mesi"*, e senza quelle righe la serie
+//              nuova nascerebbe con gli elenchi di quella aperta prima;
+//            · il salvataggio, in TUTTI E DUE i rami (modifica e creazione);
+//            · `_ELENCHI_ESCL_SERIE`, se no le tipologie di una serie si vedrebbero in un'altra.
+//          📌 E un quinto che non era in quell'elenco: `_FUNZIONI_OPZIONI_TIPO`. `opzioniTipo` e' il
+//          NOME della funzione, risolto a runtime in quella tabella: un nome che non c'e' non da'
+//          errore, da' una cella vuota.
+//
 // v6.349 - IL BANNER «STAI IMPERSONANDO» PASSA A DESTRA E SI STRINGE (Franco: *"il pulsante «torna
 //          admin» si sovrappone al tasto da usare per tornare indietro, quando si apre una
 //          figurina. Puoi farlo piccolo e metterlo sulla dx (a dx non abbiamo tipicamente
@@ -19844,7 +19925,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.349';
+const JS_VERSION = 'v6.351';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -20557,7 +20638,13 @@ const _CAMPI_ESCL_SERIE    = ['name', 'nomeCorto'];
 // Il Tipo scritto sull'articolo viene CONFRONTATO con l'elenco configurato sulla serie: se il "!"
 // prendesse lo spazio da una parte sola, "RISATE!" e "RISATE !" diventerebbero due cose diverse.
 const _ELENCHI_ESCL_SERIE  = ['retroChangeTypes', 'frontChangeTypes',
-                              'frontFreeVersionTypes', 'retroFreeVersionTypes', 'freeVersionTypes'];
+                              'frontFreeVersionTypes', 'retroFreeVersionTypes', 'freeVersionTypes',
+                              // 🆕 v6.350 - le due liste degli errori di stampa entrano qui insieme
+                              // alle altre. Dimenticarle avrebbe voluto dire che le tipologie
+                              // scritte in una serie si sarebbero viste in un'altra: e' proprio
+                              // cio' che questo elenco impedisce, e un campo nuovo che non ci entra
+                              // non da' nessun errore - da' un elenco sbagliato in una tendina.
+                              'frontPrintErrorTypes', 'retroPrintErrorTypes'];
 
 // Applica la regola a un oggetto e dice QUALI campi ha cambiato: chi chiama ha bisogno di saperlo
 // (il Nome completo va ricalcolato solo se qualcosa si e' mosso).
@@ -24590,6 +24677,12 @@ function openAddSeriesModal(seriesId) {
       if (rfvInput) rfvInput.value = (s.retroFreeVersionTypes || []).join('\n');
       const ffvInput = document.getElementById('series-front-free-version-types-input');
       if (ffvInput) ffvInput.value = (s.frontFreeVersionTypes || s.freeVersionTypes || []).join('\n');
+      // 🆕 v6.350 - le due caselle degli errori di stampa. Nessun ripiego su un campo unico
+      // precedente, al contrario dell'omaggio: qui prima non c'era proprio niente da leggere.
+      const rpeInput = document.getElementById('series-retro-print-error-types-input');
+      if (rpeInput) rpeInput.value = (s.retroPrintErrorTypes || []).join('\n');
+      const fpeInput = document.getElementById('series-front-print-error-types-input');
+      if (fpeInput) fpeInput.value = (s.frontPrintErrorTypes || []).join('\n');
 
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
     }
@@ -24615,6 +24708,14 @@ function openAddSeriesModal(seriesId) {
     if (rfvInput) rfvInput.value = '';
     const ffvInput = document.getElementById('series-front-free-version-types-input');
     if (ffvInput) ffvInput.value = '';
+    // 🆕 v6.350 - e le due degli errori di stampa. Il commento qui sopra descrive per iscritto il
+    // difetto che questa release avrebbe rifatto saltando queste quattro righe: *"e' il punto in
+    // cui «aggiungere una casella» resta indietro per mesi"*. Averlo letto prima e' l'unico motivo
+    // per cui non e' successo - un avvertimento serve solo se sta dove si lavora, e questo ci sta.
+    const rpeInput = document.getElementById('series-retro-print-error-types-input');
+    if (rpeInput) rpeInput.value = '';
+    const fpeInput = document.getElementById('series-front-print-error-types-input');
+    if (fpeInput) fpeInput.value = '';
   }
   updateSeriesVariationCounts(seriesId || null);
   toggleSeriesCountGroups();
@@ -24695,6 +24796,11 @@ async function saveSeries() {
   const retroFreeVersionTypes = (document.getElementById('series-retro-free-version-types-input')?.value || '')
     .split('\n').map(v => v.trim()).filter(Boolean);
   const frontFreeVersionTypes = (document.getElementById('series-front-free-version-types-input')?.value || '')
+    .split('\n').map(v => v.trim()).filter(Boolean);
+  // 🆕 v6.350 - i tipi di errore di stampa, due liste come le altre quattro.
+  const retroPrintErrorTypes = (document.getElementById('series-retro-print-error-types-input')?.value || '')
+    .split('\n').map(v => v.trim()).filter(Boolean);
+  const frontPrintErrorTypes = (document.getElementById('series-front-print-error-types-input')?.value || '')
     .split('\n').map(v => v.trim()).filter(Boolean);
   let retroChangeTypes = (document.getElementById('series-retro-change-types-input')?.value || '')
     .split('\n').map(v => v.trim()).filter(Boolean);
@@ -24777,7 +24883,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -24785,7 +24891,7 @@ async function saveSeries() {
         _cache.series = series;   // la CACHE tiene gli items: si strippa solo cio' che parte
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -25724,10 +25830,16 @@ const VERSIONI_ARTICOLO = [
   { chiave: 'printError',          campo: 'isPrintError',          it: 'Errore di stampa',         en: 'Print error',
     badgeIt: 'Errore<br>di stampa', badgeEn: 'Print<br>error',
     livello: 'figlio', partenza: ['base', 'variation', 'unofficialVariation'],
-    // ⚠️ `opzioniTipo: null` non e' una dimenticanza: il Tipo di errore di stampa e' l'unico dei tre
-    // a ELENCO APERTO (testo libero). E' la differenza che rende la cella della Tipologia un
-    // controllo diverso riga per riga, e sta scritta qui invece che in un `if` sparso.
-    campoTipo: 'printErrorType', opzioniTipo: null, idForm: 'fe-is-printerror',
+    // ♻️ v6.350 - QUI C'ERA `opzioniTipo: null`, con scritto accanto che NON era una dimenticanza:
+    // il Tipo di errore di stampa era l'unico dei tre a ELENCO APERTO (testo libero), e quella
+    // riga rendeva la cella della Tipologia un controllo diverso riga per riga.
+    // Franco ha revocato la scelta: *"mi serve un campo «Tipologie di errore di stampa», analogo a
+    // quello che abbiamo per change ed omaggio"*. Adesso le tre versioni con tipo si comportano
+    // tutte allo stesso modo, e la differenza che questa riga dichiarava non esiste piu'.
+    // 📌 Il commento vecchio e' stato tolto, non lasciato: diceva il vero fino a ieri, e un
+    // commento che spiega perche' una cosa e' diversa, accanto a una cosa che non lo e' piu', e'
+    // la forma di bugia piu' difficile da smentire - suona come una ragione.
+    campoTipo: 'printErrorType', opzioniTipo: '_opzioniTipoErrore', idForm: 'fe-is-printerror',
     pluraleIt: 'Errori di stampa', pluraleEn: 'Print errors',
     codaRaggrIt: 'tipologia di Errore di stampa', codaRaggrEn: 'Print error type',
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
@@ -25899,7 +26011,13 @@ const _FUNZIONI_OPZIONI_TIPO = {
   // distinguono i change che hanno un retro PROPRIO da quelli che usano il retro della base
   // (v6.102) — una distinzione che NON coincide con la sezione. Restringerli "per simmetria"
   // toglierebbe scelte legittime, e non e' stato chiesto.
-  _opzioniTipoOmaggio: (seriesId, sel, sezione) => _opzioniTipoOmaggio(seriesId, sel, sezione)
+  _opzioniTipoOmaggio: (seriesId, sel, sezione) => _opzioniTipoOmaggio(seriesId, sel, sezione),
+  // 🆕 v6.350 - l'errore di stampa entra qui, e riceve la sezione come l'omaggio: le sue due liste
+  // distinguono fronte e retro, quindi offrire quelle frontali su un retro sarebbe proporre valori
+  // che il controllo di coerenza dovrebbe poi rifiutare (la ragione della v6.253).
+  // ⚠️ Senza questa riga la tendina non comparirebbe affatto e la cella resterebbe vuota: la
+  // tabella si limita a cercare il nome qui dentro, e un nome che non c'e' non da' errore.
+  _opzioniTipoErrore:  (seriesId, sel, sezione) => _opzioniTipoErrore(seriesId, sel, sezione)
 };
 // Il campo della tipologia di un oggetto, o null se la sua versione non ne ha una.
 const _campoTipoDi = f => (_versioneDiChiave(_chiaveTipo(f))?.campoTipo) || null;
@@ -28473,6 +28591,38 @@ function _omaggioTypes(seriesId, campo) {
 }
 function frontOmaggioTypesDiSerie(seriesId) { return _omaggioTypes(seriesId, 'frontFreeVersionTypes'); }
 function retroOmaggioTypesDiSerie(seriesId) { return _omaggioTypes(seriesId, 'retroFreeVersionTypes'); }
+
+// 🆕 v6.350 (Franco) - LE TIPOLOGIE DI ERRORE DI STAMPA, due liste come per l'omaggio.
+// 🔴 CHIUDE UN ELENCO CHE ERA APERTO PER SCELTA. `VERSIONI_ARTICOLO` portava scritto
+// `opzioniTipo: null` con accanto *"non e' una dimenticanza: il Tipo di errore di stampa e' l'unico
+// dei tre a ELENCO APERTO (testo libero)"*, e la v6.079 spiegava il vantaggio: *"nel riquadro
+// comparira' esattamente cio' che e' stato scritto, refusi e maiuscole comprese - il che e' anche
+// il modo piu' rapido per accorgersi che la stessa cosa e' stata scritta in tre modi"*.
+// ⚠️ Quella spia si spegne, ed e' il prezzo dichiarato di questa release: da qui in avanti la
+// coerenza la impone la tendina invece di rivelarla il riquadro. E' lo scambio gia' fatto per
+// change (v6.079) e omaggio (v6.241), che nessuno ha rimpianto.
+// 📌 I dati esistenti non si toccano: quelli fuori elenco compaiono sotto «⚠️ non in elenco» -
+// visibili, salvabili, correggibili. Franco: *"i dati li sistemo io"*.
+// ⚠️ DUE LISTE E NON UNA, al contrario dell'omaggio: qui la distinzione fronte/retro c'e' davvero,
+// perche' un errore di stampa puo' stare sul fronte o sul retro di una figurina - la v6.219 lo dice
+// gia' («degli errori di stampa sappiamo solo che ce ne sono fra le FIGURINE, e non e' mai stato
+// misurato se ce ne siano fra i RETRO»). Franco le ha chieste entrambe: *"sia nella versione
+// figurine che nella versione retro"*.
+function _erroreTypes(seriesId, campo) {
+  const s = getData('series', []).find(x => x.id === seriesId);
+  return (s?.[campo] || [])
+    .filter(t => (t || '').trim())
+    .slice()
+    .sort((a, b) => (a || '').localeCompare((b || ''), 'it', { sensitivity: 'base' }));
+}
+function frontErroreTypesDiSerie(seriesId) { return _erroreTypes(seriesId, 'frontPrintErrorTypes'); }
+function retroErroreTypesDiSerie(seriesId) { return _erroreTypes(seriesId, 'retroPrintErrorTypes'); }
+// L'unione, per chi deve solo sapere "quali tipi esistono in questa serie" - la modifica massiva e
+// l'import. Gemella di `omaggioTypesDiSerie` e `changeTypesDiSerie`, e non e' una copia per
+// simmetria: sono i tre punti che le tre versioni con tipo devono saper rispondere allo stesso modo.
+function erroreTypesDiSerie(seriesId) {
+  return [...new Set([...retroErroreTypesDiSerie(seriesId), ...frontErroreTypesDiSerie(seriesId)])];
+}
 // L'unione, per chi deve solo sapere "quali tipi esistono in questa serie" (la modifica massiva).
 function omaggioTypesDiSerie(seriesId) {
   return [...new Set([...retroOmaggioTypesDiSerie(seriesId), ...frontOmaggioTypesDiSerie(seriesId)])];
@@ -28518,6 +28668,56 @@ function _opzioniTipoOmaggio(seriesId, selezionato, sezione) {
     + gruppo(it ? 'Frontale' : 'Front', fronte);
   if (sel && !elenco.some(t => _n(t) === _n(sel))) {
     html += '<optgroup label="' + (it ? '⚠️ non in elenco \u2014 va aggiunto ai tipi della serie' : '⚠️ not listed')
+         + '"><option value="' + esc(sel) + '" selected>' + esc(sel) + '</option></optgroup>';
+  }
+  return html;
+}
+
+// 🆕 v6.350 - LA TENDINA DELLE TIPOLOGIE DI ERRORE DI STAMPA. Gemella di `_opzioniTipoOmaggio`,
+// compresi i suoi due accorgimenti, che qui valgono per la stessa ragione:
+//   · SE PER QUESTO LATO NON C'E' NESSUNA TIPOLOGIA, LA TENDINA LO DICE (v6.258). Il solo
+//     "— scegli —" e' indistinguibile da un elenco che si sta caricando, e da li' si salverebbe un
+//     errore di stampa SENZA tipo: sintomo lontanissimo dalla causa, che e' una casella vuota nella
+//     scheda della serie. ⚠️ Qui il caso e' piu' probabile che altrove, perche' NESSUNA serie ha
+//     ancora queste due caselle riempite: fino alla v6.349 il campo era testo libero. La prima
+//     volta che si apre un errore di stampa dopo questa release, la tendina dira' esattamente cosa
+//     manca e dove metterlo.
+//   · IL VALORE GIA' SCRITTO MA NON IN ELENCO NON SI PERDE. Senza il ripiego, il select
+//     ripiegherebbe sul vuoto e il tipo verrebbe cancellato al primo salvataggio di quella scheda -
+//     su dati che Franco deve ancora allineare, sarebbe una perdita silenziosa proprio nel momento
+//     in cui li sta guardando.
+function _opzioniTipoErrore(seriesId, selezionato, sezione) {
+  const it = currentLang === 'it';
+  const sel = (selezionato || '').trim();
+  const _n = v => (v || '').trim().toLowerCase();
+  const eRetro = sezione === 'retros';
+  // sezione non dichiarata: si mostrano entrambi. Meglio troppo che un elenco vuoto su una strada
+  // che non conoscevo - stessa scelta di `_opzioniTipoOmaggio`.
+  const retro  = (sezione === undefined || eRetro)  ? retroErroreTypesDiSerie(seriesId) : [];
+  const fronte = (sezione === undefined || !eRetro) ? frontErroreTypesDiSerie(seriesId) : [];
+  const elenco = [...retro, ...fronte];
+  const opt = t => '<option value="' + esc(t) + '"' + (_n(t) === _n(sel) ? ' selected' : '') + '>' + esc(t) + '</option>';
+  const unSolo = !(retro.length && fronte.length);
+  const gruppo = (etichetta, el) => el.length
+    ? (unSolo ? el.map(opt).join('')
+              : '<optgroup label="' + esc(etichetta) + '">' + el.map(opt).join('') + '</optgroup>') : '';
+  if (!elenco.length) {
+    // 📌 Se c'e' gia' un valore scritto, lo si tiene ANCHE quando l'elenco e' vuoto: e' il caso di
+    // tutti i dati di oggi, e perderlo qui vorrebbe dire svuotare un campo pieno per dire che una
+    // casella della serie e' vuota.
+    const avviso = '<option value="">' + (it
+      ? '⚠️ nessuna tipologia di errore di stampa ' + (eRetro ? 'DI RETRO' : 'FRONTALE') + ' in questa serie — si definiscono nella scheda della serie'
+      : '⚠️ no ' + (eRetro ? 'back' : 'front') + ' print error types in this series') + '</option>';
+    return sel
+      ? avviso + '<optgroup label="' + (it ? '⚠️ valore attuale — va aggiunto ai tipi della serie' : '⚠️ current value')
+              + '"><option value="' + esc(sel) + '" selected>' + esc(sel) + '</option></optgroup>'
+      : avviso;
+  }
+  let html = '<option value="">' + (it ? '— scegli —' : '— choose —') + '</option>'
+    + gruppo(it ? 'Di retro' : 'Back', retro)
+    + gruppo(it ? 'Frontale' : 'Front', fronte);
+  if (sel && !elenco.some(t => _n(t) === _n(sel))) {
+    html += '<optgroup label="' + (it ? '⚠️ non in elenco — va aggiunto ai tipi della serie' : '⚠️ not listed')
          + '"><option value="' + esc(sel) + '" selected>' + esc(sel) + '</option></optgroup>';
   }
   return html;
@@ -36135,11 +36335,19 @@ function switchToEditMode(figId) {
     _opzioniTipoOmaggio(f.seriesId, f.freeVersionType, f.section || 'figurines') +
     '</select></div>';
 
-  // Tipo di errore di stampa (testo libero) — TUTTE le sezioni, mostrato quando e' un Errore di
-  // stampa. Stessa posizione del Tipo di change, con cui e' mutuamente esclusivo (v5.767).
+  // Tipo di errore di stampa — TUTTE le sezioni, mostrato quando e' un Errore di stampa. Stessa
+  // posizione del Tipo di change, con cui e' mutuamente esclusivo (v5.767).
+  // ♻️ v6.350 - ERA UN CAMPO DI TESTO, ADESSO E' UNA TENDINA, come per change e omaggio. Lo dice
+  // gia' il commento della vista tabellare: finche' qui si scriveva a mano e altrove si sceglieva
+  // da un elenco, si poteva salvare un tipo che nella serie non esiste senza che nessuno lo
+  // segnalasse - la doppia verita' che l'elenco chiuso serve a impedire.
+  // ⚠️ Riceve la SEZIONE come l'omaggio (v6.253): le due liste della serie distinguono fronte e
+  // retro, e su un retro le tipologie frontali non si applicano a niente.
   html += '<div class="detail-row" id="fe-print-error-type-group" style="' + (f.isPrintError ? '' : 'display:none;') + '">' +
     '<span class="detail-label">' + (currentLang==='it'?'Tipo di errore di stampa':'Print error type') + '</span>' +
-    '<input class="form-input" type="text" id="fe-print-error-type" value="' + esc(f.printErrorType||'') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></div>';
+    '<select class="form-input" id="fe-print-error-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
+    _opzioniTipoErrore(f.seriesId, f.printErrorType, f.section || 'figurines') +
+    '</select></div>';
 
   // Figurina/Retro base — ricerca in digitazione (stesso pattern del Retro associato)
   // v6.235 - da chi puo' nascere QUESTO oggetto: una riga, letta dalla dichiarazione. Sta FUORI
@@ -38739,26 +38947,70 @@ async function startImportFig() {
   // Retro per Categoria+Nome nella serie corrente. v5.814 — riconciliazione estesa: se la riga indica
   // "Retro - Tipo di change" o "Retro - Tipo errore di stampa", si aggancia il CHANGE/ERRORE DI STAMPA di
   // quel retro (isChange+changeType oppure isPrintError+printErrorType); se entrambi vuoti, il retro BASE.
-  const findRetro = (cat, nom, rct, rpet) => getData('figurines', []).find(f =>
+  // 🔴 v6.351 (Franco: *"manca anche la colonna Retro - Sottocategoria, dato che sappiamo che la
+  // categoria non basta"*) - LA RICERCA DEL RETRO ERA PIU' DEBOLE DELLA SUA IDENTITA'.
+  // La chiave che identifica un retro e' dichiarata in `_vociIdentitaRetro` (v6.334): Serie,
+  // Versione, Tipo di omaggio, Categoria, SOTTOCATEGORIA, Nome. Questa ricerca ne usava quattro su
+  // sei - niente sottocategoria, niente omaggio - e `.find()` restituisce il PRIMO che passa.
+  // Quindi con due retro omonimi in sottocategorie diverse l'import ne agganciava uno a caso, e non
+  // lo diceva: il file era giusto, il collegamento sbagliato, e il sintomo compariva mesi dopo.
+  // 📌 Non e' un caso raro: e' il motivo per cui la sottocategoria esiste.
+  //
+  // 🆕 ADESSO TORNA L'ELENCO, non il primo. Chi chiama decide cosa fare con l'ambiguita' - e la
+  // sceltà di Franco e' *"facoltativa, ma se ambigua scarto"*: la sottocategoria si usa se c'e', e
+  // se senza di lei restano piu' candidati la riga viene scartata dicendo QUALI sono. Una riga
+  // scartata con un elenco davanti si corregge in un minuto; un collegamento sbagliato in silenzio
+  // non si corregge affatto, perche' nessuno lo cerca.
+  // ⚠️ `sub` VUOTO NON VUOL DIRE «sottocategoria vuota», vuol dire «non filtrare»: sono due cose
+  // diverse, e confonderle avrebbe reso impossibile agganciare i retro che una sottocategoria non
+  // ce l'hanno. Chi vuole proprio quelli scrive la sottocategoria giusta o si fa dire l'elenco.
+  const _n = v => (v || '').toLowerCase().trim();
+  const findRetriCandidati = (cat, sub, nom, rct, rpet, rfvt) => getData('figurines', []).filter(f =>
     f.seriesId === seriesId && f.section === 'retros' &&
-    (f.category||'').toLowerCase() === cat.toLowerCase() && (f.name||'').toLowerCase() === nom.toLowerCase() &&
-    (rct ? (f.isChange && (f.changeType||'').toLowerCase().trim() === rct.toLowerCase().trim())
-     : rpet ? (f.isPrintError && (f.printErrorType||'').toLowerCase().trim() === rpet.toLowerCase().trim())
-     : (!f.isChange && !f.isPrintError)));
+    _n(f.category) === _n(cat) && _n(f.name) === _n(nom) &&
+    (sub ? _n(f.subcategory) === _n(sub) : true) &&
+    (rct  ? (f.isChange      && _n(f.changeType)     === _n(rct))
+     : rpet ? (f.isPrintError && _n(f.printErrorType) === _n(rpet))
+     : rfvt ? (f.isFreeVersion && _n(f.freeVersionType) === _n(rfvt))
+     : (!f.isChange && !f.isPrintError && !f.isFreeVersion)));
   // Base CERTA nella serie (v5.800): baseFigurineId vuoto E nessun flag speciale.
   const isBaseCert = (f) => f.seriesId === seriesId && f.section === 'figurines' &&
     !f.baseFigurineId && !f.isVariation && !f.isUnofficialVariation && !f.isChange && !f.isPrintError;
 
-  // DOPPIA PASSATA: prima le righe base (Figurina base vuoto), poi le varianti.
+  // 🆕 v6.351 - LE SEI VERSIONI, DICHIARATE INVECE CHE DEDOTTE. Fino alla v6.350 la versione di una
+  // riga si capiva da QUALE COLONNA era stata riempita: `Tipo` = Ufficiale/Non ufficiale, oppure
+  // `Tipo di change`, oppure `Tipo errore di stampa`, i tre mutuamente esclusivi. Franco:
+  // *"la colonna Tipo, chiamala Versione ... i valori ammessi siano base, variazione ufficiale,
+  // variazione non ufficiale, change, omaggio, errore di stampa"*.
+  // 🔴 E L'OMAGGIO, IN QUEL MODELLO, NON ERA IMPORTABILE AFFATTO: nessuna colonna lo produceva. La
+  // quinta versione e' nata nelle trentatre' release fra la v6.232 e la v6.264 e l'import e'
+  // rimasto indietro senza che nessuno lo scrivesse - un buco che si vedeva solo cercando di usarlo.
+  // 📌 Dedurre la versione dalla colonna riempita funzionava con quattro versioni e una sola
+  // colonna libera; alla quinta chiedeva una colonna nuova e una nuova regola di esclusione. Con la
+  // versione DICHIARATA, la sesta non chiedera' niente.
+  const _VERSIONI_IMPORT = {
+    'base': null,   // nessun flag: e' l'assenza delle altre
+    'variazione ufficiale':     'isVariation',
+    'variazione non ufficiale': 'isUnofficialVariation',
+    'change':                   'isChange',
+    'omaggio':                  'isFreeVersion',
+    'errore di stampa':         'isPrintError'
+  };
+  // DOPPIA PASSATA: prima le righe base, poi le varianti — una variante ha bisogno che la sua base
+  // esista gia'. ⚠️ v6.351: l'ordinamento guarda la VERSIONE dichiarata e non piu' la colonna
+  // «Figurina di partenza» valorizzata. Con la colonna, una riga base compilata per errore con la
+  // partenza sarebbe finita in coda e avrebbe fatto fallire le sue varianti - un difetto a valle di
+  // un difetto, cioe' un messaggio d'errore che indica il posto sbagliato.
   const classified = rows.map((row, i) => {
     const g = mkGet(row);
-    return { row, i, g, figBaseRef: g('Figurina base','figurina base','base','base sticker') };
+    const versione = (g('Versione','versione','version') || '').toLowerCase().trim();
+    return { row, i, g, versione, eBase: !versione || versione === 'base' };
   });
-  const ordered = classified.filter(c => !c.figBaseRef).concat(classified.filter(c => c.figBaseRef));
+  const ordered = classified.filter(c => c.eBase).concat(classified.filter(c => !c.eBase));
 
   let done = 0;
   for (const c of ordered) {
-    const { i, g, figBaseRef } = c;
+    const { i, g, versione, eBase } = c;
     const rn = i + 1;
     done++;
     figImportStatus((it?'Riga ':'Row ') + rn + '/' + rows.length, Math.round((done/rows.length)*100));
@@ -38775,28 +39027,72 @@ async function startImportFig() {
     const nome = g('Nome','name','nome');
     const sottoserie = g('Sottoserie','subseries','sottoserie');
     const taglia = g('Taglia','size','taglia');
-    const tipo = g('Tipo','type','tipo');
-    const tipoChange = g('Tipo di change','tipo di change','change type','changetype');
-    const tipoErroreStampa = g('Tipo errore di stampa','print error type','printerrortype');
-    const retroCategoria = g('Retro - Categoria','Retro-Categoria','retro categoria','retro-categoria','Retro (Categoria)','retro (categoria)');
-    const retroNome = g('Retro - Nome','Retro-Nome','retro nome','retro-nome','Retro (Nome)','retro (nome)');
-    // v5.814 — per agganciare un CHANGE / ERRORE DI STAMPA di retro (invece del retro base):
-    const retroTipoChange = g('Retro - Tipo di change','retro - tipo di change','retro tipo di change');
-    const retroTipoErrore = g('Retro - Tipo errore di stampa','retro - tipo errore di stampa','retro tipo errore di stampa','retro - tipo di errore di stampa');
-    const retroRef = retroCategoria + ' / ' + retroNome + (retroTipoChange ? ' [Tipo di change: ' + retroTipoChange + ']' : retroTipoErrore ? ' [Tipo errore di stampa: ' + retroTipoErrore + ']' : '');
+    // 🆕 v6.351 - LE INTESTAZIONI SONO QUELLE NUOVE, e solo quelle (scelta di Franco). Un file
+    // vecchio dara' «colonna mancante» invece di importare male: e' l'errore che si vuole, perche'
+    // «Tipo» e «Versione» ora vogliono dire due cose diverse e riconoscerli entrambi avrebbe
+    // significato leggere un file vecchio con le regole nuove - cioe' scartarlo riga per riga
+    // senza dire il vero motivo.
+    const figBaseRef = g('Figurina di partenza','figurina di partenza');
+    const tipoChange = g('Tipologia di change','tipologia di change');
+    const tipoOmaggio = g('Tipologia di omaggio','tipologia di omaggio');
+    const tipoErroreStampa = g('Tipologia di errore di stampa','tipologia di errore di stampa');
+    const retroCategoria = g('Retro - Categoria','retro - categoria');
+    // 🆕 v6.351 (Franco) - la sottocategoria del retro: la categoria da sola non basta a
+    // identificarlo (vedi `findRetriCandidati`).
+    const retroSottocategoria = g('Retro - Sottocategoria','retro - sottocategoria');
+    const retroNome = g('Retro - Nome','retro - nome');
+    // v5.814 — per agganciare un CHANGE / ERRORE / OMAGGIO di retro invece del retro base:
+    const retroTipoChange = g('Retro - Tipo di change','retro - tipo di change');
+    const retroTipoOmaggio = g('Retro - Tipo di omaggio','retro - tipo di omaggio');   // v6.351
+    const retroTipoErrore = g('Retro - Tipo di errore','retro - tipo di errore');
+    const retroRef = retroCategoria + (retroSottocategoria ? ' / ' + retroSottocategoria : '') + ' / ' + retroNome
+      + (retroTipoChange ? ' [Tipo di change: ' + retroTipoChange + ']'
+       : retroTipoOmaggio ? ' [Tipo di omaggio: ' + retroTipoOmaggio + ']'
+       : retroTipoErrore ? ' [Tipo di errore: ' + retroTipoErrore + ']' : '');
 
-    // ================= FIGURINA BASE (Figurina base vuoto) =================
-    if (!figBaseRef) {
+    // 🆕 v6.351 - IL RETRO SI CERCA IN UN POSTO SOLO, e l'ambiguita' si dichiara invece di
+    // risolverla a caso. Franco: *"facoltativa, ma se ambigua scarto"*.
+    // 📌 Torna `{ retro, errore }` e non solleva: chi chiama deve poter scartare LA RIGA e andare
+    // avanti con le altre, che e' il patto di questo importatore fin dalla v5.807.
+    const cercaRetro = () => {
+      const cand = findRetriCandidati(retroCategoria, retroSottocategoria, retroNome,
+                                      retroTipoChange, retroTipoErrore, retroTipoOmaggio);
+      if (!cand.length) return { retro: null, errore: '❌ Riga ' + rn + ': Retro "' + retroRef + '" non trovato — riga scartata (il Retro deve già esistere)' };
+      if (cand.length > 1) {
+        // ⚠️ L'elenco dei candidati sta NEL MESSAGGIO: senza, chi legge sa che c'e' un'ambiguita' e
+        // non quale, e deve andarsela a cercare in un inventario di migliaia di righe. Con le
+        // sottocategorie scritte davanti, la colonna da riempire si copia da qui.
+        const quali = cand.map(r => '«' + (r.subcategory || '(senza sottocategoria)') + '»').join(', ');
+        return { retro: null, errore: '❌ Riga ' + rn + ': il Retro "' + retroRef + '" è AMBIGUO — ' + cand.length
+          + ' retro corrispondono, nelle sottocategorie: ' + quali + '. Compila «Retro - Sottocategoria» per dire quale' };
+      }
+      return { retro: cand[0], errore: null };
+    };
+
+    // 🆕 v6.351 - LA VERSIONE SI CONTROLLA PRIMA DI TUTTO, e un valore non riconosciuto ferma la
+    // riga qui. ⚠️ Senza questo controllo, «Chnage» scritto male sarebbe caduto nel ramo delle basi
+    // e avrebbe creato una figurina base in piu' - un dato sbagliato invece di un errore.
+    if (versione && !(versione in _VERSIONI_IMPORT)) {
+      errRiga('❌ Riga ' + rn + ': Versione "' + versione + '" non riconosciuta. Valori ammessi: '
+        + Object.keys(_VERSIONI_IMPORT).join(', '), 'err');
+      continue;
+    }
+
+    // ================= FIGURINA BASE (Versione = base, o vuota) =================
+    if (eBase) {
       // Coerenza: una riga base non deve avere campi da variante.
-      if (tipo || tipoChange || tipoErroreStampa) {
-        errRiga('⚠️ Riga ' + rn + ': riga base (colonna "Figurina base" vuota) ma con Tipo / Tipo di change / Tipo errore di stampa valorizzati — incoerente, riga scartata', 'warn');
+      // ♻️ v6.351 - il controllo guarda le tre TIPOLOGIE e la «Figurina di partenza». Prima
+      // guardava `Tipo`, che adesso e' la Versione e su una riga base vale legittimamente «base».
+      if (figBaseRef || tipoChange || tipoOmaggio || tipoErroreStampa) {
+        errRiga('⚠️ Riga ' + rn + ': riga base (Versione «base» o vuota) ma con «Figurina di partenza» o una Tipologia valorizzata — incoerente, riga scartata', 'warn');
          continue;
       }
       if (!numero && !nome) { errRiga('⚠️ Riga ' + rn + ': servono Numero o Nome per identificare la figurina base', 'warn'); continue; }
       // Retro OBBLIGATORIO per le basi (v5.807) e deve già esistere a sistema.
-      if (!retroCategoria || !retroNome) { errRiga('⚠️ Riga ' + rn + ': Retro (Categoria) e Retro (Nome) sono obbligatori per una figurina base', 'warn'); continue; }
-      const retroMatch = findRetro(retroCategoria, retroNome, retroTipoChange, retroTipoErrore);
-      if (!retroMatch) { errRiga('❌ Riga ' + rn + ': Retro "' + retroRef + '" non trovato — riga scartata (il Retro deve già esistere)', 'err'); continue; }
+      if (!retroCategoria || !retroNome) { errRiga('⚠️ Riga ' + rn + ': «Retro - Categoria» e «Retro - Nome» sono obbligatori per una figurina base', 'warn'); continue; }
+      const _r = cercaRetro();
+      if (!_r.retro) { errRiga(_r.errore, 'err'); continue; }
+      const retroMatch = _r.retro;
 
       const isBaseFig = (f) => isBaseCert(f) && (!hasSubseries || !sottoserie || (f.subseries||'').toLowerCase() === sottoserie.toLowerCase());
       let cands;
@@ -38849,57 +39145,104 @@ async function startImportFig() {
       const byName = existingFigs.filter(f => isBaseCert(f) && (f.name||'').toLowerCase() === figBaseRef.toLowerCase());
       if (byName.length === 1) baseFig = byName[0]; else if (byName.length > 1) baseAmb = byName.length;
     }
-    if (baseAmb) { errRiga('❌ Riga ' + rn + ': "Figurina base" = "' + figBaseRef + '" corrisponde a ' + baseAmb + ' figurine base — anomalia, riga saltata', 'err'); continue; }
-    if (!baseFig) { errRiga('⚠️ Riga ' + rn + ': figurina base "' + figBaseRef + '" non trovata nella serie', 'warn'); continue; }
+    if (baseAmb) { errRiga('❌ Riga ' + rn + ': «Figurina di partenza» = "' + figBaseRef + '" corrisponde a ' + baseAmb + ' figurine base — anomalia, riga saltata', 'err'); continue; }
+    if (!baseFig) { errRiga('⚠️ Riga ' + rn + ': figurina di partenza "' + figBaseRef + '" non trovata nella serie', 'warn'); continue; }
 
-    // Sotto-tipo: uno solo tra Tipo / Tipo di change / Tipo errore di stampa.
-    const nSignals = [tipo, tipoChange, tipoErroreStampa].filter(Boolean).length;
-    if (nSignals > 1) {
-      errRiga('❌ Riga ' + rn + ': indicati più tipi insieme (Tipo, Tipo di change, Tipo errore di stampa sono mutuamente esclusivi) — riga scartata', 'warn'); continue;
+    // 🆕 v6.351 - LA VERSIONE DECIDE IL RAMO, e le Tipologie danno il dettaglio. Prima il ramo lo
+    // decideva QUALE colonna era piena, e le tre erano mutuamente esclusive; adesso la Versione
+    // dice cosa e' la riga e ogni versione sa quale Tipologia le appartiene.
+    // ⚠️ UNA TIPOLOGIA CHE NON APPARTIENE ALLA VERSIONE DICHIARATA FERMA LA RIGA. Non e' pignoleria:
+    // «Versione = change» con la «Tipologia di omaggio» piena e' una riga su cui chi l'ha scritta
+    // aveva in mente due cose diverse, e indovinare quale valga vuol dire scegliere per lui.
+    const _tipologie = { change: tipoChange, omaggio: tipoOmaggio, 'errore di stampa': tipoErroreStampa };
+    const _estranee = Object.entries(_tipologie)
+      .filter(([v, val]) => val && v !== versione).map(([v]) => 'Tipologia di ' + v);
+    if (_estranee.length) {
+      errRiga('❌ Riga ' + rn + ': Versione «' + versione + '» ma è valorizzata anche ' + _estranee.join(' e ')
+        + ' — riga scartata', 'err'); continue;
     }
 
     const baseCommon = {
       seriesId, section: 'figurines', number: baseFig.number, name: baseFig.name,
       desc: '', score: 0, subseries: '', size: '', category: '', subcategory: '',
       isVariation: false, isUnofficialVariation: false, isChange: false, isPrintError: false,
-      baseFigurineId: baseFig.id, changeType: null, printErrorType: null, retroId: null, img: null
+      isFreeVersion: false,
+      baseFigurineId: baseFig.id, changeType: null, printErrorType: null, freeVersionType: null,
+      retroId: null, img: null
     };
     let duplicate = null, figData = null, rowType = '', keyInfo = '';
 
-    if (tipoErroreStampa) {
+    // 🆕 v6.351 - LE TRE VERSIONI CON TIPOLOGIA passano tutte di qui: elenco della serie, confronto
+    // senza distinzione di maiuscole, e messaggio che dice quali valori sarebbero ammessi.
+    // 📌 Era gia' cosi' per il change (v5.813) e non lo era per l'errore di stampa, che accettava
+    // testo libero: dalla v6.350 anche lui ha il suo elenco, quindi la differenza e' finita e
+    // questa funzione puo' essere una sola. L'omaggio non era importabile affatto.
+    const _validaTipologia = (etichetta, valore, ammessi) => {
+      const m = ammessi.find(t => t.toLowerCase().trim() === (valore || '').toLowerCase().trim());
+      if (m) return { ok: m };
+      return { errore: '❌ Riga ' + rn + ': «' + etichetta + '» = "' + valore
+        + '" non corrisponde a nessuna delle tipologie configurate per questa serie ('
+        + (ammessi.join(', ') || 'nessuna configurata') + ')' };
+    };
+    // Il retro PROPRIO di un figlio: facoltativo per change e omaggio (se manca eredita la base).
+    const _retroProprio = (etichettaVersione) => {
+      if (!retroCategoria || !retroNome) return null;
+      const _r = cercaRetro();
+      if (_r.retro) return _r.retro.id;
+      const _m = '⚠️ Riga ' + rn + ': ' + _r.errore.replace(/^❌ Riga \d+: /, '')
+        + ' — ' + etichettaVersione + ' importato senza retro proprio (eredita quello della base)';
+      figImportLog(_m, 'warn'); righeIncomplete.push(_m); retroNotFound++;
+      return null;
+    };
+
+    if (versione === 'errore di stampa') {
+      // ♻️ v6.351 - adesso si valida, come le altre due. Fino alla v6.350 era testo libero, quindi
+      // un refuso entrava nei dati e si scopriva solo guardando un riquadro con due voci quasi uguali.
+      if (!tipoErroreStampa) { errRiga('⚠️ Riga ' + rn + ': Versione «errore di stampa» senza «Tipologia di errore di stampa»', 'warn'); continue; }
+      const _v = _validaTipologia('Tipologia di errore di stampa', tipoErroreStampa, erroreTypesDiSerie(seriesId));
+      if (_v.errore) { errRiga(_v.errore, 'err'); continue; }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.section === 'figurines' && f.isPrintError &&
-        f.baseFigurineId === baseFig.id && (f.printErrorType||'').toLowerCase().trim() === tipoErroreStampa.toLowerCase().trim());
-      figData = { ...baseCommon, isPrintError: true, printErrorType: tipoErroreStampa };
+        f.baseFigurineId === baseFig.id && (f.printErrorType||'').toLowerCase().trim() === _v.ok.toLowerCase().trim());
+      figData = { ...baseCommon, isPrintError: true, printErrorType: _v.ok, retroId: _retroProprio(it ? 'Errore di stampa' : 'Print error') };
       rowType = (it ? 'Errore di stampa' : 'Print error');
-      keyInfo = ' [Errore di stampa: ' + tipoErroreStampa + ']';
-    } else if (tipoChange) {
-      const allowedTypes = changeTypesDiSerie(seriesId);
-      const matchedType = allowedTypes.find(t => t.toLowerCase().trim() === tipoChange.toLowerCase().trim());
-      if (!matchedType) { errRiga('❌ Riga ' + rn + ': "Tipo di change" = "' + tipoChange + '" non corrisponde a nessuno dei tipi configurati per questa serie (' + (allowedTypes.join(', ') || 'nessuno configurato') + ')', 'err'); continue; }
-      let changeRetroId = null; // retro PROPRIO del Change (facoltativo; altrimenti eredita la base)
-      if (retroCategoria && retroNome) {
-        const rm = findRetro(retroCategoria, retroNome, retroTipoChange, retroTipoErrore);
-        if (rm) changeRetroId = rm.id;
-        else { const _m = '⚠️ Riga ' + rn + ': Retro "' + retroRef + '" del Change non trovato — Change importato senza retro proprio (eredita quello della base)'; figImportLog(_m, 'warn'); righeIncomplete.push(_m); retroNotFound++; }
-      }
+      keyInfo = ' [Errore di stampa: ' + _v.ok + ']';
+    } else if (versione === 'change') {
+      if (!tipoChange) { errRiga('⚠️ Riga ' + rn + ': Versione «change» senza «Tipologia di change»', 'warn'); continue; }
+      const _v = _validaTipologia('Tipologia di change', tipoChange, changeTypesDiSerie(seriesId));
+      if (_v.errore) { errRiga(_v.errore, 'err'); continue; }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isChange &&
-        (f.changeType||'').toLowerCase().trim() === matchedType.toLowerCase().trim());
-      figData = { ...baseCommon, isChange: true, changeType: matchedType, retroId: changeRetroId };
+        (f.changeType||'').toLowerCase().trim() === _v.ok.toLowerCase().trim());
+      figData = { ...baseCommon, isChange: true, changeType: _v.ok, retroId: _retroProprio('Change') };
       rowType = 'Change';
-      keyInfo = ' [Tipo di change: ' + matchedType + ']';
+      keyInfo = ' [Tipo di change: ' + _v.ok + ']';
+    } else if (versione === 'omaggio') {
+      // 🆕 v6.351 - L'OMAGGIO ENTRA NELL'IMPORT, e prima non c'era nessuna strada per crearlo da
+      // qui: la quinta versione e' nata fra la v6.232 e la v6.264 e l'importatore e' rimasto
+      // indietro senza che nessuno lo scrivesse. Si comporta come il change - tipologia dall'elenco
+      // della serie, retro proprio facoltativo - perche' e' un figlio come lui (v6.314).
+      if (!tipoOmaggio) { errRiga('⚠️ Riga ' + rn + ': Versione «omaggio» senza «Tipologia di omaggio»', 'warn'); continue; }
+      const _v = _validaTipologia('Tipologia di omaggio', tipoOmaggio, omaggioTypesDiSerie(seriesId));
+      if (_v.errore) { errRiga(_v.errore, 'err'); continue; }
+      duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isFreeVersion &&
+        (f.freeVersionType||'').toLowerCase().trim() === _v.ok.toLowerCase().trim());
+      figData = { ...baseCommon, isFreeVersion: true, freeVersionType: _v.ok, retroId: _retroProprio('Omaggio') };
+      rowType = 'Omaggio';
+      keyInfo = ' [Tipo di omaggio: ' + _v.ok + ']';
     } else {
-      if (!tipo) { errRiga('⚠️ Riga ' + rn + ': variante senza tipo. Indica "Ufficiale"/"Non ufficiale" (Variazione), oppure "Tipo di change" (Change), oppure "Tipo errore di stampa" (Errore di stampa)', 'warn'); continue; }
-      const tipoLow = tipo.toLowerCase().trim();
-      const isVariation = tipoLow === 'ufficiale' || tipoLow === 'official';
-      const isUnofficialVariation = tipoLow === 'non ufficiale' || tipoLow === 'unofficial';
-      if (!isVariation && !isUnofficialVariation) { errRiga('⚠️ Riga ' + rn + ': Tipo non riconosciuto "' + tipo + '" (usa Ufficiale / Non ufficiale; per i Change usa "Tipo di change", per gli errori "Tipo errore di stampa")', 'warn'); continue; }
-      if (!retroCategoria || !retroNome) { errRiga('⚠️ Riga ' + rn + ': Retro (Categoria)/Retro (Nome) mancanti (obbligatori per una Variazione)', 'warn'); continue; }
-      const rm = findRetro(retroCategoria, retroNome, retroTipoChange, retroTipoErrore);
-      if (!rm) { errRiga('⚠️ Riga ' + rn + ': Retro "' + retroRef + '" non trovato — riga scartata', 'warn'); continue; }
-      duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.retroId === rm.id && (f.isVariation || f.isUnofficialVariation));
-      figData = { ...baseCommon, isVariation, isUnofficialVariation, retroId: rm.id };
-      rowType = tipo;
-      keyInfo = ' [Retro: ' + retroCategoria + ' / ' + retroNome + ']';
+      // Le due variazioni. ⚠️ Qui il Retro NON e' facoltativo: e' la chiave che le distingue fra
+      // loro (base + Retro), quindi senza non c'e' modo di dire QUALE variazione sia.
+      const isVariation = versione === 'variazione ufficiale';
+      const isUnofficialVariation = versione === 'variazione non ufficiale';
+      if (!isVariation && !isUnofficialVariation) {
+        errRiga('⚠️ Riga ' + rn + ': Versione «' + versione + '» non gestita in questo ramo — riga scartata', 'warn'); continue;
+      }
+      if (!retroCategoria || !retroNome) { errRiga('⚠️ Riga ' + rn + ': «Retro - Categoria» e «Retro - Nome» sono obbligatori per una Variazione', 'warn'); continue; }
+      const _r = cercaRetro();
+      if (!_r.retro) { errRiga(_r.errore, 'err'); continue; }
+      duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.retroId === _r.retro.id && (f.isVariation || f.isUnofficialVariation));
+      figData = { ...baseCommon, isVariation, isUnofficialVariation, retroId: _r.retro.id };
+      rowType = versione;
+      keyInfo = ' [Retro: ' + retroRef + ']';
     }
 
     if (duplicate && !duplicate.isVariation && !duplicate.isUnofficialVariation && !duplicate.isChange && !duplicate.isPrintError) {
@@ -38911,7 +39254,11 @@ async function startImportFig() {
       if (duplicate) {
         const updatedRec = { ...duplicate, ...figData, img: duplicate.img, id: duplicate.id };
         updatedRec.fullName = computeFullName(updatedRec, existingFigs);
-        const _diff = _importDiff(duplicate, updatedRec, ['name','isVariation','isUnofficialVariation','isChange','isPrintError','baseFigurineId','retroId','changeType','printErrorType']);
+        // ⚠️ v6.351 - `isFreeVersion` e `freeVersionType` entrano nell'elenco dei campi confrontati.
+        // Senza, un omaggio reimportato con la tipologia cambiata sarebbe risultato «invariato»: il
+        // record veniva scritto lo stesso, ma il registro avrebbe detto che non era successo niente
+        // - un import che mente sul proprio esito e' peggio di uno che fallisce.
+        const _diff = _importDiff(duplicate, updatedRec, ['name','isVariation','isUnofficialVariation','isChange','isPrintError','isFreeVersion','baseFigurineId','retroId','changeType','printErrorType','freeVersionType']);
         const changed = _diff.length > 0;
         if (changed) {
           await fsSave('figurines', updatedRec);
@@ -40262,8 +40609,8 @@ function renderAdminFoto() {
       <div id="import-fig-section-content" style="display:none;">
       <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>Seleziona la serie, carica il file XLS. Un unico file per figurine base, variazioni, change ed errori di stampa.<br>Colonne: <code>Serie</code> · <code>Numero</code> · <code>Nome</code> · <code>Sottoserie</code> · <code>Taglia</code> · <code>Figurina base</code> · <code>Tipo</code> · <code>Tipo di change</code> · <code>Tipo errore di stampa</code> · <code>Retro (Categoria)</code> · <code>Retro (Nome)</code> · <code>Retro - Tipo di change</code> · <code>Retro - Tipo errore di stampa</code>.<br><br><b>OGNI RIGA È UNA COSA SOLA.</b> Il tipo si legge dalla colonna <code>Figurina base</code>:<br><br><b>Figurina base</b> — colonna <code>Figurina base</code> <b>vuota</b>. Identificata per <code>Numero</code> (o per <code>Nome</code> nelle serie senza numeri); con sottoserie la chiave è Serie+Sottoserie+Numero. <b>Il Retro è obbligatorio</b> e deve già esistere a sistema.<br><br><b>Variazione</b> — <code>Figurina base</code> valorizzata + <code>Tipo</code> = Ufficiale / Non ufficiale. Retro <b>obbligatorio</b> (chiave: base + Retro).<br><br><b>Change</b> — <code>Figurina base</code> valorizzata + <code>Tipo di change</code> (validato sui tipi della serie; chiave: base + Tipo di change). Retro <b>facoltativo</b> (il retro proprio del change; se assente eredita quello della base).<br><br><b>Errore di stampa</b> — <code>Figurina base</code> valorizzata + <code>Tipo errore di stampa</code> (testo libero; chiave: base + Tipo errore di stampa).<br><br><b>La colonna <code>Figurina base</code></b> contiene il riferimento alla base: il suo <b>Numero</b> (serie numerate) o il suo <b>Nome</b> (serie senza numeri) — riconosciuto in automatico. Tipo / Tipo di change / Tipo errore di stampa sono <b>mutuamente esclusivi</b>. Il Nome di variazioni/change/errori è sempre quello della base.<br><br><b>Retro (base o change/errore)</b> — di norma <code>Retro (Categoria)</code> + <code>Retro (Nome)</code> individuano il retro BASE. Per agganciare un <b>change</b> o un <b>errore di stampa di un retro</b>, compila anche <code>Retro - Tipo di change</code> (oppure <code>Retro - Tipo errore di stampa</code>): il Nome del retro resta quello base, è il tipo a distinguere la variante.<br><br>NOTA: elenca le figurine base prima delle loro varianti; le righe con Serie diversa da quella selezionata vengono ignorate.'
-          : 'INSTRUCTIONS:<br>Select the series, upload the XLS file. One file for base stickers, variations, changes and print errors.<br>Columns: <code>Serie</code> · <code>Numero</code> · <code>Nome</code> · <code>Sottoserie</code> · <code>Taglia</code> · <code>Figurina base</code> · <code>Tipo</code> · <code>Tipo di change</code> · <code>Tipo errore di stampa</code> · <code>Retro (Categoria)</code> · <code>Retro (Nome)</code> · <code>Retro - Tipo di change</code> · <code>Retro - Tipo errore di stampa</code>.<br><br><b>EACH ROW IS ONE THING.</b> The type is read from the <code>Figurina base</code> column:<br><br><b>Base sticker</b> — <code>Figurina base</code> <b>empty</b>. Found by <code>Numero</code> (or <code>Nome</code> in series without numbers); with subseries the key is Serie+Sottoserie+Numero. <b>The Retro is required</b> and must already exist.<br><br><b>Variation</b> — <code>Figurina base</code> set + <code>Tipo</code> = Ufficiale / Non ufficiale. Retro <b>required</b> (key: base + Retro).<br><br><b>Change</b> — <code>Figurina base</code> set + <code>Tipo di change</code> (validated against the series types; key: base + Tipo di change). Retro <b>optional</b> (the change\'s own retro; if empty it inherits the base one).<br><br><b>Print error</b> — <code>Figurina base</code> set + <code>Tipo errore di stampa</code> (free text; key: base + Tipo errore di stampa).<br><br><b>The <code>Figurina base</code> column</b> holds the reference to the base: its <b>Numero</b> (numbered series) or its <b>Nome</b> (series without numbers) — auto-detected. Tipo / Tipo di change / Tipo errore di stampa are <b>mutually exclusive</b>. The name of variations/changes/errors is always the base name.<br><br><b>Retro (base or change/error)</b> — normally <code>Retro (Categoria)</code> + <code>Retro (Nome)</code> identify the BASE retro. To link a retro <b>change</b> or <b>print error</b>, also fill <code>Retro - Tipo di change</code> (or <code>Retro - Tipo errore di stampa</code>): the retro name stays the base one, the type distinguishes the variant.<br><br>NOTE: list base stickers before their variants; rows with a Serie different from the selected one are skipped.'}
+          ? 'ISTRUZIONI:<br>- Seleziona la serie<br>- Carica il file XLS.<br><br><b>I dettagli del file da caricare:</b><br>- Un unico file per figurine base, variazioni, change, omaggi ed errori di stampa.<br>- Ogni riga rappresenta quindi una sola Figurina<br><br><b>Significato delle Colonne</b><br>- <code>Serie</code>: nome (completo) della serie della figurina<br>- <code>Numero</code>: numero della figurina (bianco per serie senza numero)<br>- <code>Nome</code>: nome della figurina<br>- <code>Sottoserie</code>: sottoserie di appartenenza della figurina, se applicabile<br>- <code>Taglia</code>: taglia della figurina, se applicabile (in tal caso vedere i valori ammessi)<br>- <code>Versione</code>: tipo della figurina; possibili valori: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>:<br>&nbsp;&nbsp;&nbsp;&nbsp;- da popolare solo per figurine non base (variazione - change - omaggio - errore)<br>&nbsp;&nbsp;&nbsp;&nbsp;- numero (o nome se non c’è numero) della figurina di partenza<br>- <code>Tipologia di change</code>: tipo del change (vedere valori ammessi)<br>- <code>Tipologia di omaggio</code>: tipo di figurina omaggio (vedere valori ammessi)<br>- <code>Tipologia di errore di stampa</code>: tipo di errore di stampa (vedere valori ammessi)<br>- <code>Retro - Categoria</code>: categoria del retro associato alla figurina<br>- <code>Retro - Sottocategoria</code>: sottocategoria del retro associato alla figurina<br>- <code>Retro - Nome</code>: nome del retro associato alla figurina<br>- <code>Retro - Tipo di change</code>: tipologia di change del retro associato<br>- <code>Retro - Tipo di omaggio</code>: tipologia di omaggio del retro associato<br>- <code>Retro - Tipo di errore</code>: tipologia di errore di stampa del retro associato<br><br>NOTA: le righe con Serie diversa da quella selezionata vengono ignorate. Le figurine base si<br>importano prima delle loro varianti, e ci pensa la procedura: non serve ordinarle nel file.'
+          : 'INSTRUCTIONS:<br>- Select the series<br>- Upload the XLS file.<br><br><b>About the file:</b><br>- One single file for base stickers, variations, changes, free versions and print errors.<br>- Each row is therefore one sticker<br><br><b>Columns</b><br>- <code>Serie</code>: full name of the sticker’s series<br>- <code>Numero</code>: sticker number (blank for series without numbers)<br>- <code>Nome</code>: sticker name<br>- <code>Sottoserie</code>: subseries, if any<br>- <code>Taglia</code>: size, if any<br>- <code>Versione</code>: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>: only for non-base stickers — number (or name) of the starting sticker<br>- <code>Tipologia di change</code> / <code>Tipologia di omaggio</code> / <code>Tipologia di errore di stampa</code>: the type, from the ones configured on the series<br>- <code>Retro - Categoria</code> / <code>Retro - Sottocategoria</code> / <code>Retro - Nome</code>: the linked retro<br>- <code>Retro - Tipo di change</code> / <code>Retro - Tipo di omaggio</code> / <code>Retro - Tipo di errore</code>: to link a variant retro instead of the base one<br><br>NOTE: rows whose Serie differs from the selected one are skipped. Base stickers are imported<br>before their variants automatically — no need to sort the file.'}
       </p>
       <a href="templates/template-figurine.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
 
@@ -41539,7 +41886,11 @@ function renderBulkEditView() {
             if (_fnOpz) {
               return `<td style="padding:4px;"><select data-field="${_cT}" data-id="${f.id}" style="width:150px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)">${_fnOpz(f.seriesId, _val, _sezRiga)}</select></td>`;
             }
-            // Elenco APERTO (oggi solo l'errore di stampa): campo di testo, come prima.
+            // ♻️ v6.350 - qui c'era scritto «elenco APERTO (oggi solo l'errore di stampa)»: da
+            // questa release nessuna delle tre versioni con tipo e' piu' a elenco aperto, quindi
+            // questo ramo non lo imbocca piu' nessuno. Resta perche' `opzioniTipo` puo' tornare
+            // `null` per una versione futura, e allora servira' - ma non nomina piu' un caso che
+            // non esiste: un esempio sbagliato in un commento e' peggio di nessun esempio.
             return `<td style="padding:4px;"><input data-field="${_cT}" data-id="${f.id}" value="${esc(_val)}" style="width:140px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`;
           })()}
           ${isAdmin ? `<td style="padding:4px;text-align:center;"><input data-field="score" data-id="${f.id}" value="${f.score||0}" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.score||0, null, 'center')}
@@ -41710,8 +42061,20 @@ function _massivoAggiornaValori() {
       else if (v.opzioniTipo === '_opzioniTipoOmaggio') valori = (currentSection === 'retros')
         ? retroOmaggioTypesDiSerie(currentSeriesId)
         : frontOmaggioTypesDiSerie(currentSeriesId);
-      // Elenco APERTO (errore di stampa): non c'e' una lista sulla serie, quindi si offrono i
-      // valori GIA' IN USO. Non restringe cio' che esiste: descrive cio' che c'e'.
+      // 🆕 v6.350 - l'errore di stampa adesso ha la sua lista sulla serie, come le altre due.
+      // ⚠️ E L'UNIONE CON I VALORI GIA' IN USO NON E' PIGRIZIA: finche' Franco non ha allineato i
+      // dati, in giro ci sono tipologie scritte a mano che nella lista non compaiono. Offrire la
+      // sola lista renderebbe la modifica massiva incapace di TOCCARE proprio i record da
+      // sistemare - che sono il motivo per cui la si aprirebbe adesso.
+      // 📌 La riga sparisce da se' quando i dati sono allineati: l'unione, allora, non aggiunge
+      // niente. Non serve ricordarsi di toglierla.
+      else if (v.opzioniTipo === '_opzioniTipoErrore') valori = [
+        ...((currentSection === 'retros') ? retroErroreTypesDiSerie(currentSeriesId)
+                                          : frontErroreTypesDiSerie(currentSeriesId)),
+        ..._valoriInUso(v.campoTipo)
+      ];
+      // Chi non dichiara una funzione di opzioni: si offrono i valori GIA' IN USO.
+      // Non restringe cio' che esiste: descrive cio' che c'e'.
       else valori = _valoriInUso(v.campoTipo);
       return { v, valori: [...new Set(valori.filter(x => (x || '').trim()))] };
     }).filter(g => g.valori.length);
