@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.372"></script>
-<link rel="stylesheet" href="css/style.css?v=6.372">
+<script src="js/email.min.js?v=6.373"></script>
+<link rel="stylesheet" href="css/style.css?v=6.373">
 
 
 <style>
@@ -978,7 +978,22 @@ button.back-btn { color:#ffffff; }
   </div>
   <!-- ITEMS GRID -->
   <div id="items-section" style="display:none;max-width:1100px;margin:0 auto;padding:0 2rem 2rem;">
-    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
+    <!-- 🆕 v6.373 (Franco: *"il pulsante «Aggiungi figurine» puoi farlo alto come il titolo della
+         pagina... fai lo stesso per tutte le pagine dei 6 articoli"*) — `align-items:stretch`.
+         📌 NON C'ERA NIENTE DA RIPETERE: il pulsante e' UNO SOLO per tutte e sette le sezioni —
+         cambia solo l'etichetta, che `openItemsSection` sceglie da un elenco («+ Aggiungi figurina»,
+         «+ Aggiungi retro»…). Sistemarlo qui vale ovunque, ed e' la ragione per cui una modifica
+         chiesta «per sei pagine» e' una riga.
+         📌 E L'ALTEZZA NON E' UN NUMERO: era `center`, quindi ogni figlio prendeva l'altezza del
+         proprio contenuto; con `stretch` la riga e' alta quanto il suo elemento piu' alto - il
+         titolo - e il pulsante ci si adegua. Scrivere `height:29px` avrebbe funzionato oggi e
+         sarebbe scaduto al primo ritocco del corpo del titolo.
+         ⚠️ Il gruppo di SINISTRA non cambia: ha un `align-items:center` suo, quindi il tasto
+         «indietro», il titolo e «Modifica tipo di articolo» restano centrati fra loro come prima.
+         ⚠️ E quando la riga VA A CAPO (schermo stretto, `flex-wrap:wrap`) il pulsante si ritrova da
+         solo sulla sua riga: li' `stretch` vale sulla sua altezza e il tasto torna della misura di
+         sempre, senza diventare una fascia. -->
+    <div style="display:flex;align-items:stretch;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;">
       <div style="display:flex;align-items:center;gap:0.75rem;">
         <button class="back-btn" onclick="closeItemsSection()">&#8592; <span data-i18n="catalog.sections">Sezioni</span></button>
         <h2 id="items-section-title" style="font-family:var(--font-display);font-size:1.5rem;"></h2>
@@ -992,8 +1007,8 @@ button.back-btn { color:#ffffff; }
              copiata da `detail-edit-series-btn`, meno il `display:none` che decide il JS. -->
         <button id="detail-edit-tipo-btn" onclick="openAddTipoProdottoModal(_tipoProdottoCorrente)" style="display:none;font-size:0.92rem;padding:6px 14px;border-radius:8px;border:1px solid var(--action-admin);background:var(--action-admin);color:#ffffff;cursor:pointer;">&#9998; Modifica tipo di articolo</button>
       </div>
-      <div id="admin-add-item-btn" style="display:none;">
-        <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+      <div id="admin-add-item-btn" style="display:none;align-self:stretch;">
+        <div style="display:flex;align-items:stretch;gap:0.75rem;flex-wrap:wrap;height:100%;">
           <!-- v6.104/105 (§12.1, tappa 2) — "+ Aggiungi" apre LA SCHEDA vuota. E' l'unico dei sette
                punti che CREA; gli altri sei modificano e passano tutti da apriModificaItem().
                v6.110 — la finestra non esiste piu': cancellata da qui e da app.js. -->
@@ -3215,7 +3230,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.372"></script>
+<script src="js/app.js?v=6.373"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3239,7 +3254,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.372'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.373'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
