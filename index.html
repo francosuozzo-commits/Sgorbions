@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.373"></script>
-<link rel="stylesheet" href="css/style.css?v=6.373">
+<script src="js/email.min.js?v=6.377"></script>
+<link rel="stylesheet" href="css/style.css?v=6.377">
 
 
 <style>
@@ -54,6 +54,61 @@
   --type-unofficial: #b98cff;
   --type-printerror: #e8557c;
   --type-free: #9be89b; }
+
+/* 🆕 v6.374 (Franco) — I COLORI DELLE QUATTRO SCATOLE DI LOG, e un interruttore per cambiarli.
+   Franco: *"lo sfondo e' blu e scriviamo in azzurro sopra al blu; gia' non e' il massimo. Poi
+   scriviamo il rosso sopra il blu; anche peggio"*.
+
+   📌 IL NUMERO NON GLI DAVA RAGIONE, E SBAGLIAVA IL NUMERO. Misurato sullo sfondo di prima
+   (`--card2` #221540): l'azzurro `--info` stava a 7,70:1 e il rosso `--danger` a 5,81:1 — sulla
+   carta passano entrambi. Quello che il rapporto di contrasto NON misura e' la TINTA: l'azzurro e'
+   della stessa famiglia del fondo viola-blu, e il rosso su blu e' la coppia peggiore che esista per
+   l'occhio (le lunghezze d'onda lunghe e corte vanno a fuoco su piani diversi: cromostereopsi).
+   La lezione, che vale oltre questo caso: il contrasto si MISURA, la tinta si GUARDA. Sopra 4,5:1
+   vuol dire che il testo si legge, non che si legge bene.
+
+   🔴 E C'ERA UNA RIGA DAVVERO FUORI NORMA, che Franco non aveva nominato: `--muted` #8b7aaa a
+   4,37:1, sotto il minimo WCAG. E' il colore delle righe "gia' presente, nessuna modifica", cioe'
+   la grande maggioranza delle righe di un import vero: il difetto peggiore stava sulla riga piu'
+   frequente, ed era invisibile perche' non era colorata di niente di vistoso.
+
+   🔴 PERCHE' VARIABILI NUOVE E NON `--danger`/`--info`/`--muted`: quelle sono di TUTTO il sito.
+   Cambiarle avrebbe mosso il rosso dei pulsanti di cancellazione, l'azzurro del NOME
+   (`COL_IDENTITA`, v6.277) e il grigio di meta' delle didascalie. Qui il perimetro e' il log.
+
+   🔀 E PERCHE' VARIABILI E NON COLORI SCRITTI NELLE RIGHE: e' la condizione perche' l'interruttore
+   esista. Le righe nascono con `color:var(--log-err)`, quindi cambiando la classe sul CONTENITORE
+   le righe GIA' SCRITTE cambiano colore da sole — le variabili si risolvono quando si disegna, non
+   quando l'HTML viene scritto. Un tema che si cambiasse rigenerando le righe, su un log da 412
+   righe a meta' import, o le perde o le riscrive.
+
+   I contrasti, misurati: txt 15,8 · ok 15,3 · upd 11,1 · warn 10,4 · err 8,2 · dim 7,2.
+   La tavolozza con i log finti sta in `colori-log.html`, in root. */
+:root {
+  --log-bg:  #15121c;                 /* era var(--card2) #221540: via il blu */
+  --log-bd:  rgba(255,255,255,0.12);
+  --log-txt: #f0eaff;                 /* = --text,    invariato */
+  --log-ok:  #b5ff2e;                 /* = --success, invariato */
+  --log-warn:#ffb400;                 /* = --warn,    invariato */
+  --log-upd: #8cd0ff;                 /* era --info    #4db8ff,  7,70 -> 11,08 */
+  --log-err: #ff8a8a;                 /* era --danger  #ff6464,  5,81 ->  8,15 */
+  --log-dim: #a99cc2; }               /* era --muted   #8b7aaa,  4,37 ->  7,24 */
+
+/* Il tema chiaro, per la stanza luminosa. Contrasti: txt 16,3 · dim 6,9 · upd 6,4 · warn 6,6 ·
+   err 6,0 · ok 5,6 — tutti sopra AA.
+   📌 UNA CLASSE SOLA, e non tre: lo stato `auto` NON ha una sua classe. Lo risolve il JS con
+   `matchMedia`, che aggiunge o toglie questa. Con una classe per stato la tavolozza chiara
+   sarebbe stata scritta due volte — qui e dentro una @media — cioe' due copie da tenere uguali,
+   che e' il difetto che questo file ha gia' pagato altrove. */
+.log-tema-chiaro {
+  --log-bg:  #f5f2fa;
+  --log-bd:  #d8d0e4;
+  --log-txt: #1a1030;
+  --log-ok:  #157029;
+  --log-warn:#7d4b00;
+  --log-upd: #1657a8;
+  --log-err: #b3202f;
+  --log-dim: #55506b; }
 /* 🆕 v6.278 (Franco) — L'ALTEZZA DELLA FOTO DEI BOX DEGLI HUB, IN UN POSTO SOLO.
    Era `4/3` scritto a mano in otto punti — sette qui e uno in app.js, dove i box delle serie e dei
    prodotti nascono a runtime. Otto numeri da tenere uguali sono otto occasioni di divergere, e su
@@ -3230,7 +3285,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.373"></script>
+<script src="js/app.js?v=6.377"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3254,7 +3309,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.373'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.377'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
