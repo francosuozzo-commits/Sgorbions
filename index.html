@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.351"></script>
-<link rel="stylesheet" href="css/style.css?v=6.351">
+<script src="js/email.min.js?v=6.371"></script>
+<link rel="stylesheet" href="css/style.css?v=6.371">
 
 
 <style>
@@ -215,6 +215,24 @@ button.back-btn { color:#ffffff; }
    possono comparire insieme. */
 @media (min-width:861px) { #nav-logout-link, #nav-mialista-link { display:none !important; } }
 @media (max-width:860px) { #user-nav .btn-logout { display:none; } }
+
+/* 🆕 v6.353 (Franco) — «IMPERSONA UN UTENTE» SOLO SU TELEFONO.
+   Il blocco #profile-impersona e' nato nella v6.347 per una ragione sola, scritta nel suo commento
+   in app.js: su un telefono il comando di impersonare e' IRRAGGIUNGIBILE, perche' vive in cinque
+   colonne di `data-table` nella console admin. Sul desktop quella tabella si raggiunge benissimo —
+   quindi li' questo blocco non aggiunge niente, e' una SECONDA porta per la stessa cosa. Ed e'
+   esattamente cio' che il commento della v6.347 diceva di non volere: *"due strade per entrare nei
+   panni di un altro utente, e il giorno che una imparasse un controllo in piu' l'altra diventerebbe
+   la porta di servizio"*. Quella frase riguardava la logica, che infatti e' rimasta una sola; questa
+   riga la applica anche al COMANDO.
+   Stessa forma del Logout (v5.953), e per la stessa ragione: la visibilita' la decide una media
+   query, non un listener di resize. Restringere la finestra sul desktop lo fa ricomparire, ed e'
+   voluto — sotto gli 860px il sito E' la versione telefono, in tutti gli altri punti.
+   ⚠️ `_riempiTendinaImpersona` continua a decidere il CHI (solo admin, solo se c'e' qualcuno da
+   impersonare) scrivendo `display` inline. Le due cose non litigano: un `!important` di foglio di
+   stile vince su una dichiarazione inline che `!important` non ce l'ha, quindi su desktop il blocco
+   resta spento qualunque cosa scriva il JS — e su telefono decide il JS, come prima. */
+@media (min-width:861px) { #profile-impersona { display:none !important; } }
 
 /* v5.954 → v5.955 — TELEFONO: la versione sotto la fascia "SITO WEB IN COSTRUZIONE" (Franco).
    Vive dentro il contenitore sticky del banner (vedi il commento nel markup): e' l'unico posto
@@ -642,6 +660,25 @@ button.back-btn { color:#ffffff; }
            da sole, e una riga di titolo sopra una fila di immagini e' spazio che non aggiunge
            niente. Tolte anche le due voci dal dizionario: una chiave che nessuno usa piu' e' una
            di quelle "chiavi morte" che il §5 avverte di non lasciare in giro. -->
+      <!-- 🆕 v6.359 (Franco: *"il pulsante della home «Esplora l'inventario» mettiamolo SOPRA al
+           carosello, non sotto"*).
+           ⚠️ QUESTO RIBALTA LA v6.062, e quella non era una svista: aveva spostato il pulsante
+           QUI SOTTO con un argomento scritto — «prima stava fra i pulsanti dell'hero, cioe' PRIMA
+           di aver fatto vedere qualcosa: chiedeva di entrare a chi non aveva ancora visto niente».
+           L'argomento resta comprensibile; la decisione e' di Franco ed e' cambiata. Il commento
+           vecchio e' stato RISCRITTO e non lasciato accanto al codice nuovo: un commento che
+           argomenta il contrario di cio' che il codice fa e' la forma di bugia piu' difficile da
+           smentire, perche' suona come una ragione (lezione della v6.350).
+           📌 «Inizia a collezionare» RESTA SOTTO: Franco ha nominato un pulsante solo. La v6.072 li
+           aveva messi insieme di proposito, quindi separarli e' una scelta e non un effetto - se un
+           giorno vanno di nuovo in coppia, e' una riga.
+           📌 Il pulsante sta DENTRO la sezione del carosello, non prima: quella sezione nasce
+           `display:none` e la accende `renderCarosello()` solo se ha materiale. Lasciandolo dentro,
+           un carosello vuoto non lascia in pagina un invito orfano - che e' il comportamento di
+           oggi, e non c'e' motivo di cambiarlo insieme alla posizione. -->
+      <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+        <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Esplora l'Inventario Sgorbions!</button>
+      </div>
       <div style="position:relative;">
         <button type="button" id="carosello-prec" aria-label="Precedente"
           style="position:absolute;left:-6px;top:50%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.4rem;line-height:1;padding:0.5rem 0.6rem;border-radius:999px;cursor:pointer;">&#8249;</button>
@@ -649,14 +686,13 @@ button.back-btn { color:#ffffff; }
         <button type="button" id="carosello-succ" aria-label="Successivo"
           style="position:absolute;right:-6px;top:50%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.4rem;line-height:1;padding:0.5rem 0.6rem;border-radius:999px;cursor:pointer;">&#8250;</button>
       </div>
-      <!-- v6.062 (Franco) — "Esplora l'Inventario" scende QUI, sotto il carosello. Prima stava
-           fra i pulsanti dell'hero, cioe' PRIMA di aver fatto vedere qualcosa: chiedeva di entrare
-           a chi non aveva ancora visto niente. Sotto le figurine e' un invito che arriva dopo
-           l'assaggio, che e' il momento in cui uno ha voglia di entrare. -->
+      <!-- 🗄️ v6.062, RIBALTATA DALLA v6.359: "Esplora l'Inventario" era sceso QUI sotto perche'
+           «fra i pulsanti dell'hero stava PRIMA di aver fatto vedere qualcosa». Dal 22 agosto 2026
+           sta sopra il carosello, per decisione di Franco. La riga resta come storia: dice da dove
+           veniva il pulsante e perche' c'era passato. -->
       <!-- v6.072 (Franco) — anche "Inizia a collezionare" scende qui: i due inviti stanno
            insieme, dopo l'assaggio. Nell'hero restavano prima di aver fatto vedere qualcosa. -->
       <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;margin-top:1.2rem;">
-        <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Esplora l'Inventario Sgorbions!</button>
         <button class="btn-primary" onclick="openAuth('register')" data-i18n="hero.cta2" id="btn-start-collecting" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Inizia a collezionare gli Sgorbions</button>
       </div>
     </div>
@@ -953,11 +989,28 @@ button.back-btn { color:#ffffff; }
         <button id="items-reset-filters" type="button" class="btn-primary" onclick="azzeraTuttiIFiltri()"
                 data-i18n="items.resetFilters" style="font-size:0.82rem;padding:0.3rem 1rem;">Azzera filtri</button>
       </div>
-      <div class="search-bar" style="margin-bottom:0.75rem;">
+      <!-- 🆕 v6.365 (Franco) — L'ETICHETTA A CAVALLO DEL BORDO DELLA BARRA DI RICERCA: *"la nuova
+           frase va nella barra di ricerca, come overlay del suo tetto; un po' come facciamo per i
+           box successivi (ad esempio «Filtra per le versioni»)"*.
+           📌 Stessa forma dei riquadri (v6.331): `position:absolute` + `translateY(-50%)` sul bordo
+           superiore, e uno sfondo `var(--card)` che buca la riga del bordo — e' lo sfondo del box che
+           la contiene, quindi il taglio e' invisibile. Se un domani quel box cambiasse colore, questa
+           riga va cambiata con lui: e' l'unico prezzo della tecnica.
+           ⚠️ Il `position:relative` sta sulla `.search-bar` e non sulla `.search-input-wrap`: la
+           seconda vive in `css/style.css`, che non sta nella cartella di lavoro (§5), quindi si
+           lavora sul contenitore che l'index controlla per intero.
+           📌 Il testo passa da `data-i18n` e NON e' duplicato da nessuna parte: a differenza del
+           titolo del box qui sopra, questa frase non contiene il nome della sezione, quindi non ha
+           bisogno di essere composta a runtime ne' di un ripiego statico da tenere allineato.
+           📌 `pointer-events:none`: l'etichetta sta SOPRA il bordo della casella, e senza questa
+           riga un clic sul suo angolo non arriverebbe al campo di testo che sta sotto. -->
+      <div class="search-bar" style="margin-bottom:0.75rem;position:relative;">
+        <span id="items-search-hint" data-i18n="items.searchHint"
+              style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;pointer-events:none;">Inserisci una stringa di ricerca</span>
         <div class="search-input-wrap">
           <span class="search-icon">🔍</span>
-          <input class="search-input" type="text" id="items-search" placeholder="Search..." oninput="try{renderItems();}catch(e){console.error('renderItems (search)',e);} try{if(typeof bulkEditActive!=='undefined'&&bulkEditActive)renderBulkEditView();}catch(e){console.error('renderBulkEditView (search)',e);} toggleSearchClearBtn('items-search')">
-          <span class="search-clear-btn" id="items-search-clear" onclick="clearSearchField('items-search', () => { renderItems(); if (typeof bulkEditActive!=='undefined' && bulkEditActive) renderBulkEditView(); })" style="display:none;">✕</span>
+          <input class="search-input" type="text" id="items-search" placeholder="Search..." oninput="ricercaItemsCambiata()">
+          <span class="search-clear-btn" id="items-search-clear" onclick="clearSearchField('items-search', ricercaItemsCambiata)" style="display:none;">✕</span>
         </div>
       </div>
       <!-- 🆕 v6.326 (Franco, subito dopo) — LA FRASE STA PRIMA DEI RIQUADRI, non dopo.
@@ -1019,14 +1072,19 @@ button.back-btn { color:#ffffff; }
           <div id="items-admin-filter-toggles" style="display:flex;flex-wrap:wrap;gap:0.5rem 1.5rem;align-items:center;"></div>
         </div>
     </div>
-    <!-- v5.937 — allineamento al FONDO: i pulsanti stavano centrati sull'intero blocco dei
-         risultati (titolo + due righe) e quindi galleggiavano a mezz'aria. Con flex-end la loro
-         base coincide con l'ultima riga, quella blu "N fanno parte della tua lista". -->
-    <div id="items-results-row" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.9rem;">
+    <!-- 🗄️ v5.937 — allineamento al FONDO, RIBALTATO dalla v6.369. Allora i pulsanti stavano
+         centrati sull'intero blocco (titolo + due righe) e galleggiavano a mezz'aria; `flex-end`
+         portava la loro base sull'ultima riga, quella blu.
+         🆕 v6.369 (Franco: *"i 2 pulsanti mettili sulla stessa riga di «I risultati della tua
+         ricerca»"*) — adesso si allineano in ALTO, cioe' alla riga del titolo.
+         📌 E' UNA RIGA DI CSS, non uno spostamento di nodi: i due blocchi erano gia' affiancati in
+         `space-between` da sempre, e a decidere su quale delle loro righe si incontrassero era solo
+         `align-items`. La stessa osservazione della v6.367, applicata all'altro capo. -->
+    <div id="items-results-row" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.9rem;">
     <div id="items-count-display" style="font-size:0.95rem;color:var(--muted);margin-bottom:0;"></div>
       <div id="bulk-owned-btns" style="display:none;gap:0.75rem;flex-wrap:wrap;align-items:center;">
-        <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.haveall.hint" title="Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/></svg><span data-i18n="catalog.haveall">Aggiungi risultati ricerca alla tua lista</span></button>
-        <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.havenone.hint" title="Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 14V3"/><path d="M8 7l4-4 4 4"/></svg><span data-i18n="catalog.havenone">Rimuovi risultati ricerca dalla tua lista</span></button>
+        <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.haveall.hint" title="Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/></svg><span data-i18n="catalog.haveall">Aggiungi risultati alla tua lista</span></button>
+        <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.havenone.hint" title="Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 14V3"/><path d="M8 7l4-4 4 4"/></svg><span data-i18n="catalog.havenone">Rimuovi risultati dalla tua lista</span></button>
         <span id="set-all-msg" style="display:none;font-size:0.85rem;color:var(--accent);font-family:var(--font-ui);"></span>
       </div>
     </div>
@@ -2339,10 +2397,7 @@ button.back-btn { color:#ffffff; }
             <input type="checkbox" id="series-has-subseries-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <span data-i18n="form.series.hasSubseries">Ha sottoserie</span>
           </label>
-          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-            <input type="checkbox" id="series-has-sizes-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span data-i18n="form.series.hasSizes">Figurine con taglie differenti</span>
-          </label>
+          
           <!-- v6.219 (Franco) — "Non ha numeri" -> "Senza numeri". ⚠️ Il testo qui e' solo il
                ripiego: quello che si legge lo mette `data-i18n`, quindi la stringa e' stata
                cambiata ANCHE nella tabella delle traduzioni in app.js. Cambiando solo qui, la
@@ -2358,6 +2413,60 @@ button.back-btn { color:#ffffff; }
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-contenitore-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <span>Serie contenitore (articoli senza serie)</span>
+          </label>
+          <!-- 🆕 v6.369 (Franco: *"i campi «Senza numeri» e «Serie contenitore» mettili SOPRA il
+               titoletto «Figurine da incollare»; altrimenti sembra che facciano parte di quella
+               sezione"*) — LE DUE SPUNTE SALGONO.
+               📌 Non e' un ritocco estetico: un titoletto con un bordo sotto dichiara che tutto
+               quello che segue gli appartiene, finche' non ne arriva un altro. La v6.368 ne ha
+               aggiunto uno in mezzo a una colonna che finiva con due spunte di tutt'altro argomento,
+               e da quel momento la pagina diceva una cosa falsa senza che niente lo segnalasse.
+               ⚠️ Le due spunte sono state SPOSTATE, non riscritte: stessi id, stesso `data-i18n`,
+               stessi commenti che le accompagnavano. `saveSeries` le legge per id e non sa dove
+               stiano, quindi il salvataggio non cambia di una riga - ed e' l'unico modo di essere
+               sicuri che uno spostamento sia solo uno spostamento. -->
+          <!-- 🆕 v6.368 (Franco) — I DUE FLAG SOTTO UN TITOLETTO. *"Sulla form della serie, i due
+               flag che abbiamo trattato mettili sotto a un piccolo titoletto chiamato «Figurine da
+               incollare»; come font usa quello che usiamo per i titoletti «Change» e «Omaggio»
+               delle schede di dettaglio"*.
+               📌 Quel font e' la classe `.series-sottotitolo`, che in questa stessa finestra
+               intesta gia' «Variazioni», «Change», «Omaggio» ed «Errori di stampa». Si riusa la
+               CLASSE, non i suoi valori ricopiati: e' la ragione per cui esiste, e il giorno che
+               quei titoletti cambiano aspetto questo cambia con loro.
+               ⚠️ SENZA COLORE, a differenza degli altri tre: li' la tinta e' quella della VERSIONE
+               che intestano (`--type-change`, `--type-free`, `--type-printerror`), e le figurine da
+               incollare non sono una versione — sono una sezione. Dargliene una a caso avrebbe
+               messo in giro un colore che non significa niente, che e' peggio di nessun colore.
+               📌 `margin-top` ridotto rispetto alla classe: qui il titoletto sta DENTRO una colonna
+               di spunte, non in cima a un blocco, e il valore di classe (1,1rem) lo staccherebbe
+               troppo da quella sopra. -->
+          <div class="series-sottotitolo" style="margin-top:0.55rem;">Figurine da incollare</div>
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-has-sizes-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <!-- 🆕 v6.362 (Franco) — UNA SPUNTA SOLA. La v6.361 ne aveva aggiunta una seconda per
+                 prudenza, tenendo separate «taglie» e «da incollare diverse»; Franco ha chiuso il
+                 punto: *"mi hai lasciato 2 flag sulle serie... no, solo «Figurine da incollare
+                 diverse da figurine con velina»"*, ed e' lo stesso fatto detto in due modi — la
+                 Taglia esiste solo dove le da-incollare sono diverse dalle con-velina.
+                 📌 IL CAMPO SALVATO RESTA `hasSizes`: cambia l'etichetta e cambia cio' che comanda,
+                 non il nome sul database. Rinominarlo avrebbe voluto dire riscrivere ogni documento
+                 di serie per un guadagno di sola leggibilita' — e la chiave `form.series.hasSizes`
+                 nomina il campo, non la frase, quindi continua a dire il vero. -->
+            <span data-i18n="form.series.hasSizes">Figurine da incollare diverse da figurine con velina</span>
+          </label>
+          <!-- 🆕 v6.366 (Franco) — LA SECONDA SPUNTA, e stavolta i due flag sono due fatti davvero
+               diversi: *"il flag 1 comanda la visibilita' dei bottoni di Creazione (Aggiungi) e
+               Clonazione (Clona); il flag 2 comanda la visibilita' dei bottoni di modifica (Salva e
+               Salva e resta)"*.
+               📌 PERCHE' ADESSO SI', E NELLA v6.361 NO. Allora le due spunte rispondevano alla stessa
+               domanda («le da-incollare sono diverse?») da due lati, ed erano una sola. Queste no:
+               la prima dice COSA SONO quegli articoli, la seconda dice se in questo momento si
+               possono TOCCARE. La seconda e' un interruttore di sicurezza, e uno lo si accende e
+               spegne mentre si lavora senza che gli articoli cambino natura.
+               ⚠️ Nasce SPENTA su ogni serie, com'e' giusto per un interruttore di sicurezza. -->
+          <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+            <input type="checkbox" id="series-abilita-modifica-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+            <span data-i18n="form.series.abilitaModifica">Abilita modifica figurine da incollare</span>
           </label>
         </div>
       </div>
@@ -3072,7 +3181,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.351"></script>
+<script src="js/app.js?v=6.371"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3096,7 +3205,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.351'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.371'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
