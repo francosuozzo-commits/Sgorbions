@@ -1,6 +1,49 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.373 - IL PULSANTE «+ AGGIUNGI» ALTO QUANTO IL TITOLO DELLA PAGINA (Franco). Solo index.html,
+//          piu' la versione qui.
+//
+//          *"Il pulsante «Aggiungi figurine» puoi farlo alto come il titolo della pagina (Figurine
+//          con velina)? Fai lo stesso per tutte le pagine dei 6 articoli che abbiamo"*.
+//
+//          📌 NON C'ERA NIENTE DA RIPETERE, e vale la pena scriverlo: il pulsante e' UNO SOLO per
+//          tutte e sette le sezioni. A cambiare e' la sola etichetta, che `openItemsSection` sceglie
+//          da un elenco («+ Aggiungi figurina», «+ Aggiungi retro», «+ Aggiungi album»...). Una
+//          modifica chiesta «per sei pagine» e' quindi una riga - ed e' cio' che si compra da un
+//          markup solo riusato, invece di sei copie che si somigliano.
+//
+//          🆕 COME: la riga della testata passa da `align-items:center` a `align-items:stretch`, e
+//          il contenitore del pulsante prende `align-self:stretch` piu' `height:100%` sul suo flex
+//          interno. Cosi' la riga e' alta quanto il suo elemento piu' alto - il titolo - e il
+//          pulsante ci si adegua.
+//          📌 L'ALTEZZA NON E' UN NUMERO, ed e' la parte che conta: scrivere `height:29px` avrebbe
+//          funzionato oggi e sarebbe scaduto al primo ritocco del corpo del titolo, senza che niente
+//          lo segnalasse. Un allineamento che si ricava dal contenuto non scade.
+//          ⚠️ Il gruppo di SINISTRA non cambia: ha un `align-items:center` suo, quindi tasto
+//          indietro, titolo e «Modifica tipo di articolo» restano centrati fra loro come prima.
+//          ⚠️ E QUANDO LA RIGA VA A CAPO (schermo stretto, `flex-wrap:wrap`) il pulsante si ritrova
+//          solo sulla sua riga: li' `stretch` vale sulla sua altezza e il tasto torna della misura
+//          di sempre, invece di diventare una fascia. E' il caso che una `height` fissa avrebbe
+//          sbagliato in silenzio.
+//
+//          🆕 E DUE COSE SUL TEMPLATE DELL'IMPORT FIGURINE (Franco), che stanno qui perche' la
+//          release e' la stessa:
+//          · *"la colonna Sottoserie mettila dopo Serie"* - fatto, nel template e nelle istruzioni a
+//            schermo (IT ed EN).
+//            📌 E' un cambiamento SOLO DI PRESENTAZIONE: l'import cerca le colonne per NOME, non per
+//            posizione (`Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === ...)`), quindi
+//            un file compilato con l'ordine vecchio continua a importarsi identico. Vale la pena
+//            saperlo prima di preoccuparsi dei file gia' scritti.
+//          · *"manca la colonna «Retro - Tipo di omaggio», da mettere come penultima"* - NON MANCA:
+//            c'e', ed e' gia' la penultima. Il file che Franco stava guardando e' quello VECCHIO, a
+//            13 colonne, scaricato prima del push `3aab9ea..ad03f86` di poco fa - e li' davvero non
+//            c'e', perche' quella colonna e' nata con la v6.351.
+//            📌 E' la seconda volta in mezz'ora che il template vecchio fa perdere tempo: la prima
+//            perche' non era stato pubblicato, la seconda perche' ne era rimasta una copia scaricata.
+//            Un file scaricato non si aggiorna da se', e da fuori i due si somigliano.
+//
+// ------------------------------------------------------------
 // v6.372 - DUE COLORI DI VERSIONE SPOSTATI, E «VERSIONE OMAGGIO» NEL TITOLO (Franco).
 //          index.html (i due colori) e app.js (l'etichetta).
 //
@@ -20817,7 +20860,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.372';
+const JS_VERSION = 'v6.373';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42059,8 +42102,8 @@ function renderAdminFoto() {
       <div id="import-fig-section-content" style="display:none;">
       <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
         ${currentLang==='it'
-          ? 'ISTRUZIONI:<br>- Seleziona la serie<br>- Carica il file XLS.<br><br><b>I dettagli del file da caricare:</b><br>- Un unico file per figurine base, variazioni, change, omaggi ed errori di stampa.<br>- Ogni riga rappresenta quindi una sola Figurina<br><br><b>Significato delle Colonne</b><br>- <code>Serie</code>: nome (completo) della serie della figurina<br>- <code>Numero</code>: numero della figurina (bianco per serie senza numero)<br>- <code>Nome</code>: nome della figurina<br>- <code>Sottoserie</code>: sottoserie di appartenenza della figurina, se applicabile<br>- <code>Versione</code>: tipo della figurina; possibili valori: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>:<br>&nbsp;&nbsp;&nbsp;&nbsp;- da popolare solo per figurine non base (variazione - change - omaggio - errore)<br>&nbsp;&nbsp;&nbsp;&nbsp;- numero (o nome se non c’è numero) della figurina di partenza<br>- <code>Tipologia di change</code>: tipo del change (vedere valori ammessi)<br>- <code>Tipologia di omaggio</code>: tipo di figurina omaggio (vedere valori ammessi)<br>- <code>Tipologia di errore di stampa</code>: tipo di errore di stampa (vedere valori ammessi)<br>- <code>Retro - Categoria</code>: categoria del retro associato alla figurina<br>- <code>Retro - Sottocategoria</code>: sottocategoria del retro associato alla figurina<br>- <code>Retro - Nome</code>: nome del retro associato alla figurina<br>- <code>Retro - Tipo di change</code>: tipologia di change del retro associato<br>- <code>Retro - Tipo di omaggio</code>: tipologia di omaggio del retro associato<br>- <code>Retro - Tipo di errore</code>: tipologia di errore di stampa del retro associato<br><br>NOTA: le righe con Serie diversa da quella selezionata vengono ignorate. Le figurine base si<br>importano prima delle loro varianti, e ci pensa la procedura: non serve ordinarle nel file.'
-          : 'INSTRUCTIONS:<br>- Select the series<br>- Upload the XLS file.<br><br><b>About the file:</b><br>- One single file for base stickers, variations, changes, free versions and print errors.<br>- Each row is therefore one sticker<br><br><b>Columns</b><br>- <code>Serie</code>: full name of the sticker’s series<br>- <code>Numero</code>: sticker number (blank for series without numbers)<br>- <code>Nome</code>: sticker name<br>- <code>Sottoserie</code>: subseries, if any<br>- <code>Versione</code>: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>: only for non-base stickers — number (or name) of the starting sticker<br>- <code>Tipologia di change</code> / <code>Tipologia di omaggio</code> / <code>Tipologia di errore di stampa</code>: the type, from the ones configured on the series<br>- <code>Retro - Categoria</code> / <code>Retro - Sottocategoria</code> / <code>Retro - Nome</code>: the linked retro<br>- <code>Retro - Tipo di change</code> / <code>Retro - Tipo di omaggio</code> / <code>Retro - Tipo di errore</code>: to link a variant retro instead of the base one<br><br>NOTE: rows whose Serie differs from the selected one are skipped. Base stickers are imported<br>before their variants automatically — no need to sort the file.'}
+          ? 'ISTRUZIONI:<br>- Seleziona la serie<br>- Carica il file XLS.<br><br><b>I dettagli del file da caricare:</b><br>- Un unico file per figurine base, variazioni, change, omaggi ed errori di stampa.<br>- Ogni riga rappresenta quindi una sola Figurina<br><br><b>Significato delle Colonne</b><br>- <code>Serie</code>: nome (completo) della serie della figurina<br>- <code>Sottoserie</code>: sottoserie di appartenenza della figurina, se applicabile<br>- <code>Numero</code>: numero della figurina (bianco per serie senza numero)<br>- <code>Nome</code>: nome della figurina<br>- <code>Versione</code>: tipo della figurina; possibili valori: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>:<br>&nbsp;&nbsp;&nbsp;&nbsp;- da popolare solo per figurine non base (variazione - change - omaggio - errore)<br>&nbsp;&nbsp;&nbsp;&nbsp;- numero (o nome se non c’è numero) della figurina di partenza<br>- <code>Tipologia di change</code>: tipo del change (vedere valori ammessi)<br>- <code>Tipologia di omaggio</code>: tipo di figurina omaggio (vedere valori ammessi)<br>- <code>Tipologia di errore di stampa</code>: tipo di errore di stampa (vedere valori ammessi)<br>- <code>Retro - Categoria</code>: categoria del retro associato alla figurina<br>- <code>Retro - Sottocategoria</code>: sottocategoria del retro associato alla figurina<br>- <code>Retro - Nome</code>: nome del retro associato alla figurina<br>- <code>Retro - Tipo di change</code>: tipologia di change del retro associato<br>- <code>Retro - Tipo di omaggio</code>: tipologia di omaggio del retro associato<br>- <code>Retro - Tipo di errore</code>: tipologia di errore di stampa del retro associato<br><br>NOTA: le righe con Serie diversa da quella selezionata vengono ignorate. Le figurine base si<br>importano prima delle loro varianti, e ci pensa la procedura: non serve ordinarle nel file.'
+          : 'INSTRUCTIONS:<br>- Select the series<br>- Upload the XLS file.<br><br><b>About the file:</b><br>- One single file for base stickers, variations, changes, free versions and print errors.<br>- Each row is therefore one sticker<br><br><b>Columns</b><br>- <code>Serie</code>: full name of the sticker’s series<br>- <code>Sottoserie</code>: subseries, if any<br>- <code>Numero</code>: sticker number (blank for series without numbers)<br>- <code>Nome</code>: sticker name<br>- <code>Versione</code>: <b>base</b>, <b>variazione ufficiale</b>, <b>variazione non ufficiale</b>, <b>change</b>, <b>omaggio</b>, <b>errore di stampa</b><br>- <code>Figurina di partenza</code>: only for non-base stickers — number (or name) of the starting sticker<br>- <code>Tipologia di change</code> / <code>Tipologia di omaggio</code> / <code>Tipologia di errore di stampa</code>: the type, from the ones configured on the series<br>- <code>Retro - Categoria</code> / <code>Retro - Sottocategoria</code> / <code>Retro - Nome</code>: the linked retro<br>- <code>Retro - Tipo di change</code> / <code>Retro - Tipo di omaggio</code> / <code>Retro - Tipo di errore</code>: to link a variant retro instead of the base one<br><br>NOTE: rows whose Serie differs from the selected one are skipped. Base stickers are imported<br>before their variants automatically — no need to sort the file.'}
       </p>
       <a href="templates/template-figurine.xlsx" download style="display:inline-block;margin-bottom:1rem;font-size:0.85rem;color:var(--accent);text-decoration:underline;">📥 ${currentLang==='it'?'Scarica template vuoto':'Download empty template'}</a>
 
