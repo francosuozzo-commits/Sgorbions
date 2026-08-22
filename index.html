@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.371"></script>
-<link rel="stylesheet" href="css/style.css?v=6.371">
+<script src="js/email.min.js?v=6.372"></script>
+<link rel="stylesheet" href="css/style.css?v=6.372">
 
 
 <style>
@@ -19,7 +19,41 @@
    la riga sarebbe rimasta muta, senza dare errore.
    📌 `.fig-badge-free` c'e' gia' anche se il badge non puo' ancora comparire: nasce accanto alla
    sua variabile, non in un'altra release, cosi' non resta una classe da ricordarsi. */
-:root { --type-free: #9be89b; }
+:root {
+  /* 🆕 v6.372 (Franco) — DUE COLORI DI VERSIONE SPOSTATI, e stanno QUI e non in `css/style.css` per
+     la ragione per cui ci sta gia' `--type-free`: l'index e' l'unico foglio che vive nella cartella
+     di lavoro, quindi una tinta dichiarata qui entra nella PREVIEW e si guarda prima di pubblicare.
+     Definita dopo il `<link>` a style.css, quindi vince su quella.
+     ⚠️ I valori vecchi restano in `css/style.css` e non danno fastidio — ma sono la copia che al
+     prossimo che li legge dira' il falso. Vanno riallineati quando si tocchera' quel file.
+
+     1. `--type-unofficial`: era #7fd4ff, un azzurro a distanza 90 da `--info`, il colore del NOME.
+        Franco: *"il colore code azzurro di «Variazione non ufficiale» e' molto simile a quello del
+        campo NOME"*. Era la coppia PIU' VICINA di tutto il sito: la seconda, `--action`, sta a 182.
+        📌 Si e' spostata la VERSIONE e non il NOME: `--info` e' il colore dell'identita' (numero,
+        nome, sottonome) e ha una costante apposta, `COL_IDENTITA` (v6.277), creata perche' quei tre
+        restino uguali in punti lontani. E il vincolo appartiene alla tavolozza delle versioni, che
+        e' un CODICE: deve distinguersi al suo interno e dal testo attorno. Il nome e' il fondale.
+        Adesso: 176 dal nome.
+
+     2. `--type-printerror`: era #ff7a6b, a distanza 107 da `--type-official` (#ffa94d). Questa non
+        l'aveva segnalata Franco: e' saltata fuori misurando la tavolozza tutta insieme, ed era messa
+        peggio dell'azzurro — perche' quelle due sono ENTRAMBE etichette di versione, e compaiono
+        affiancate nelle pillole del riquadro, dove distinguerle e' tutto il punto.
+        📌 Si e' spostato l'ERRORE e non l'UFFICIALE, e lo dice la misura: l'arancio non ha dove
+        andare senza finire addosso a `CATEGORIA` (#ffd84d) o a `SOTTOCAT` — con cui, fra l'altro, e'
+        gia' IDENTICO (#ffa94d entrambi, distanza 0: una collisione esatta che nessuno aveva notato).
+        Il corallo invece aveva spazio. Adesso: 189 dall'ufficiale.
+        📌 E si allontana anche da `--danger` (#ff6464), da cui distava una trentina: un colore di
+        versione che sembra il rosso «pericolo» del sito era un'altra ambiguita', piu' silenziosa.
+
+     ⚠️ RESTA APERTA la collisione `--type-official` ≡ `SOTTOCAT`: sono lo stesso identico colore.
+     Non si incontrano quasi mai nello stesso punto, ma e' una collisione esatta, non una
+     somiglianza — e la tavolozza a questo punto e' satura: le famiglie di tinta libere sono finite.
+     Chiuderla vuol dire spostare la SOTTOCATEGORIA, non una versione. */
+  --type-unofficial: #b98cff;
+  --type-printerror: #e8557c;
+  --type-free: #9be89b; }
 /* 🆕 v6.278 (Franco) — L'ALTEZZA DELLA FOTO DEI BOX DEGLI HUB, IN UN POSTO SOLO.
    Era `4/3` scritto a mano in otto punti — sette qui e uno in app.js, dove i box delle serie e dei
    prodotti nascono a runtime. Otto numeri da tenere uguali sono otto occasioni di divergere, e su
@@ -3181,7 +3215,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.371"></script>
+<script src="js/app.js?v=6.372"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3205,7 +3239,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.371'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.372'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
