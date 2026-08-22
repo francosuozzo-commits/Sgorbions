@@ -1,6 +1,221 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.377 - IL LUCCHETTO DEL CARICAMENTO: mentre un import gira, le altre finestre non salvano
+//          (Franco). index.html (la versione) e app.js.
+//
+//          *"Non c'e' il modo, allora, di impedire proprio di modificare i dati, dicendo che c'e'
+//          una procedura di caricamento dati in corso?"*
+//
+//          🔴 IL PERICOLO, che Franco ha visto da solo: le figurine vivono DENTRO il documento
+//          della serie, e modificarne una riscrive l'INTERO array `items` dalla copia in memoria di
+//          quella finestra. Due finestre aperte sono due copie: l'ultima che scrive cancella il
+//          lavoro dell'altra, senza un errore e senza un avviso. Un import scrive 304 righe, tu
+//          salvi una cella da un'altra scheda, e le 304 righe non ci sono piu'.
+//
+//          ⚠️ QUESTO NON RISOLVE IL PROBLEMA, NE COPRE UN CASO, e va detto forte perche' un
+//          lucchetto da' la sensazione di una rete che non c'e'. Il difetto vero e' che il sito non
+//          ha NESSUN ascoltatore in tempo reale (`onSnapshot`: zero occorrenze): quindi qualunque
+//          finestra lasciata aperta e' vecchia e puo' disfare il lavoro altrui anche senza nessun
+//          caricamento in corso - basta una scheda aperta da stamattina. La riparazione completa e'
+//          un contatore di REVISIONE sul documento della serie, che rifiuta una scrittura basata su
+//          dati sorpassati. E' stata proposta a Franco accanto a questa; ha scelto il lucchetto per
+//          ora, sapendo cosa copre e cosa no.
+//
+//          🆕 COME: `localStorage` piu' l'evento `storage`. Le finestre dello stesso browser si
+//          vedono fra loro in tempo reale, senza una riga di rete e senza una lettura in piu' a
+//          ogni salvataggio. ⚠️ Il prezzo: vale SOLO fra finestre dello stesso browser e profilo -
+//          da un altro PC o dal telefono questo lucchetto non si vede. Per quello servirebbe un
+//          documento su Firestore, letto prima di ogni scrittura.
+//
+//          🔴 IL BATTITO, che e' la parte che vale piu' del resto. Il guasto peggiore di qualunque
+//          lucchetto e' restare chiuso per sempre: se la finestra che carica va in crash,
+//          `beforeunload` non arriva e la bandiera resta alzata. Con una scadenza FISSA bisognerebbe
+//          indovinare la durata del caricamento piu' lungo, e sbagliare per eccesso (blocco
+//          lunghissimo) o per difetto (lucchetto che cade a meta' lavoro). Chi carica riscrive
+//          invece l'ora ogni 15 secondi, e un lucchetto che tace da piu' di un minuto e' morto per
+//          definizione. Si ripara da se', senza che nessuno debba saperlo.
+//
+//          🆕 DUE CONTROLLI, E NON SONO UN DOPPIONE:
+//          · `_bloccatoDalLucchetto()` nelle due form - l'avviso GENTILE, dove l'utente preme;
+//          · un `throw` dentro `fsSave` per `series` e `figurines` - il fermo DURO, dove si scrive.
+//          E' la regola della v6.143: un controllo che vive accanto alla scrittura e' l'unico che
+//          non si puo' scavalcare. Il primo serve a spiegare, il secondo alle strade che nessuno ha
+//          in mente oggi.
+//
+//          📌 IL LUCCHETTO SI ALZA DOPO I CONTROLLI D'INGRESSO, non in cima alla funzione. In cima
+//          sembra piu' pulito ed e' sbagliato: chi preme «Avvia» senza aver scelto la serie esce da
+//          un `return` anticipato, e la bandiera resterebbe alzata su un caricamento mai cominciato
+//          - col battito a tenerla viva, quindi senza nemmeno la scadenza a salvare la situazione.
+//
+//          📌 E si toglie SOLO IL PROPRIO (`g.finestra === _ID_FINESTRA`): cancellare il lucchetto
+//          di un'altra finestra sarebbe esattamente il danno che questo codice esiste per evitare.
+//
+// ------------------------------------------------------------
+// v6.376 - L'OMAGGIO NON AVEVA IL SUO TAB NELLA SCHEDA (Franco, baco). Solo app.js.
+//
+//          *"Nella form di dettaglio del retro manca il tab relativo ai retro omaggio che usano
+//          quel retro come retro di partenza"*.
+//
+//          🔴 LA CAUSA NON E' UNA DIMENTICANZA, E' UN ELENCO SCRITTO A MANO. In
+//          `buildLinkedFiguresTabsHTML` i gruppi erano QUATTRO righe compilate a mano - variation,
+//          unofficialVariation, change, printError - e `isFreeVersion` non c'era.
+//          ⚠️ E' LO STESSO IDENTICO DIFETTO DELLA v6.314, che di se' scriveva: *"ERA UNA QUATERNA
+//          SCRITTA A MANO, E L'OMAGGIO NON C'ERA"*. Quella release aveva convertito i punti che
+//          conosceva; questo le e' sfuggito ed e' rimasto muto per sessanta release, perche' un tab
+//          che non compare non da' errore: sembra solo che l'omaggio non ci sia.
+//
+//          📌 QUINDI NON E' STATA AGGIUNTA UNA QUINTA RIGA: si legge `VERSIONI_ARTICOLO`.
+//          Aggiungere l'omaggio a mano avrebbe chiuso il caso di Franco e lasciato in piedi la
+//          causa - cioe' avrebbe rimandato lo stesso racconto alla sesta versione. La regola era
+//          gia' scritta qui (v6.055, v6.314): quando una cosa esiste "una per versione", si genera
+//          dall'elenco e non si elenca.
+//
+//          🆕 E L'ICONA DEL TAB SI DICHIARA NELL'ELENCO (`iconaTab`), non si ricava dal nome del
+//          campo: stessa scelta di `idForm` nella v6.314. Da `isFreeVersion` non si deduce
+//          un'emoji, e una regola inventata per dedurla sarebbe un secondo posto in cui sbagliare.
+//          Le quattro icone di prima restano quelle di prima; l'omaggio prende 🎁.
+//
+//          🆕 E LA CODA «di questo retro» ORA VALE PER TUTTE LE VERSIONI. Ce l'avevano solo Change
+//          ed Errori di stampa (v6.025), e non per una ragione: erano gli unici due tab toccati
+//          quel giorno. Aprendo un retro, «Omaggi» e «Omaggi di questo retro» rispondono a due
+//          domande diverse, e quella giusta e' la seconda.
+//
+//          ⚠️ `usaRetro` resta scritto a parte, ed e' giusto: non e' una versione, e' la domanda
+//          "chi mi usa" - guarda `retroId`, non `baseFigurineId`. Metterlo nell'elenco direbbe il
+//          falso sulla natura di quel legame.
+//
+// ------------------------------------------------------------
+// v6.375 - LA VISTA TABELLARE NON AVVISAVA I FIGLI (Franco, baco). Solo app.js, piu' la versione.
+//
+//          *"Ho aggiornato il nome e sottonome di un retro base e la sua versione omaggio non ha
+//          ereditato questa modifica. L'aggiornamento l'ho fatto da vista tabellare"*.
+//
+//          🔴 LA CAUSA: `_collegatiDaAggiornare` - la propagazione ai figli - la chiamava SOLO la
+//          scheda (`saveFigFromDetail`). Dalla tabella (`saveBulkCell`) partiva un `fsSave` di UN
+//          record, e ai figli si rifaceva il solo `fullName`.
+//
+//          📌 E IL DIFETTO SI NASCONDEVA DIETRO IL PROPRIO EFFETTO PARZIALE. Il Nome completo di un
+//          figlio si compone dal nome della BASE: quindi l'omaggio mostrava il nome NUOVO e aveva i
+//          propri `name` e `subname` fermi a prima. Mezzo aggiornamento che sembra intero e' peggio
+//          di nessun aggiornamento - non lo trova nessun controllo, perche' a schermo sembra a
+//          posto. L'ha trovato Franco, usando il sito.
+//
+//          ⚠️ TERZA VOLTA CHE QUESTO FILE INCONTRA LA STESSA FORMA. La v6.133: *"due strade che
+//          scrivono lo stesso campo si comportavano diversamente"* (era il numero). La v6.143 aveva
+//          chiuso quale campo si puo' SCRIVERE da qui, non cosa succede DOPO. La regola che ne
+//          esce: quando due punti scrivono lo stesso dato non basta che applichino la stessa
+//          REGOLA, devono chiamare la stessa FUNZIONE. Una regola applicata due volte e' due
+//          regole che aspettano di divergere.
+//
+//          🆕 E IL BLOCCO IMPROVVISATO AVEVA ALTRI TRE BUCHI, tutti muti, che si chiudono da soli
+//          passando dalla discesa condivisa invece di ripararli uno per uno:
+//          · scendeva UN LIVELLO solo (i figli diretti): un nipote non si muoveva nemmeno nel
+//            Nome completo;
+//          · valeva SOLO PER I RETRO: cambiando il nome di una FIGURINA base dalla tabella, ai
+//            figli non succedeva niente di niente;
+//          · `subcategory` non era nell'elenco che fa scattare il ricalcolo, pur essendo fra i
+//            campi ereditati dai retro (`_campiEreditatiDaBase`).
+//
+//          🆕 E ADESSO LO DICE: se la modifica ha toccato dei collegati compare il toast, come fa
+//          la scheda dalla v6.053. Il difetto era proprio che non si vedeva niente.
+//
+//          ⚠️ Restano un elenco a parte i record che hanno questo retro come PROPRIO retro
+//          (`retroId`): non sono figli e non ereditano campi, ma il loro Nome completo lo contiene.
+//          `_discendenzaDaAggiornare` segue `baseFigurineId`, che e' la discendenza, e va bene
+//          cosi': sono due legami diversi e vanno tenuti tali. Si tolgono dall'elenco quelli gia'
+//          presenti fra i collegati - lo stesso id due volte nella stessa scrittura vuol dire che
+//          vince l'ultimo, e l'ultimo sarebbe la copia SENZA i campi ereditati.
+//
+// ------------------------------------------------------------
+// v6.374 - LE QUATTRO SCATOLE DI LOG: colori nuovi, un interruttore, il pulsante che mancava, e il
+//          riepilogo che scende sotto (Franco). index.html (le variabili) e app.js.
+//
+//          1. 🎨 I COLORI. Franco: *"lo sfondo e' blu e scriviamo in azzurro sopra al blu; gia' non
+//             e' il massimo. Poi scriviamo il rosso sopra il blu; anche peggio"*.
+//             📌 IL NUMERO NON GLI DAVA RAGIONE, E SBAGLIAVA IL NUMERO. Sullo sfondo di prima
+//             (--card2 #221540) l'azzurro stava a 7,70:1 e il rosso a 5,81:1: sulla carta passano
+//             entrambi. Quello che il contrasto NON misura e' la TINTA - l'azzurro e' della stessa
+//             famiglia del fondo, e il rosso su blu e' la coppia peggiore che esista per l'occhio
+//             (cromostereopsi: lunghezze d'onda lunghe e corte a fuoco su piani diversi).
+//             La lezione: IL CONTRASTO SI MISURA, LA TINTA SI GUARDA.
+//             🔴 E c'era una riga davvero fuori norma che Franco non aveva nominato: --muted
+//             #8b7aaa a 4,37:1, SOTTO il minimo WCAG - ed e' il colore delle righe "gia' presente,
+//             nessuna modifica", cioe' la maggioranza delle righe di un import vero. Il difetto
+//             peggiore stava sulla riga piu' frequente.
+//             Adesso: sfondo #15121c, err #ff8a8a (8,15), upd #8cd0ff (11,08), dim #a99cc2 (7,24).
+//             ok, warn e il riepilogo non si toccano. Tavolozza in `colori-log.html`.
+//
+//          2. 🔀 L'INTERRUTTORE, due stati. Franco le voleva tutte e due: *"una da usare quando la
+//             stanza dove mi trovo e' buia e l'altra quando e' luminosa"*. ☀️ Chiaro / 🌙 Scuro,
+//             UNO per tutte e quattro le scatole, ricordato in localStorage `sgorbions_log_tema`.
+//             🔴 GLI STATI ERANO TRE E SONO DIVENTATI DUE, e il giro vale piu' della modifica.
+//             C'era un «Auto» che seguiva `prefers-color-scheme`. Franco ha chiesto da dove
+//             prendesse l'informazione; la risposta - dal tema di WINDOWS, che non cambia da solo
+//             all'alba e al tramonto - gliel'ha fatta bocciare in una riga: *"se auto prende da
+//             Windows allora io direi di non darmela come opzione ma semplicemente di usarla
+//             all'ingresso della pagina"*. Ed e' giusto: un'opzione che si chiama «automatico»
+//             promette che decidera' qualcun altro al posto tuo; se quel qualcuno cambia idea solo
+//             quando gliela fai cambiare tu, e' una terza scelta manuale con un nome che mente.
+//             📌 Il sistema resta la fonte, ma di un valore INIZIALE, letto una volta all'ingresso.
+//             ⚠️ E NON SI SALVA: salvarlo all'avvio lo congelerebbe, e dal secondo caricamento in
+//             poi cambiare il tema di Windows non avrebbe piu' effetto. Si scrive solo quando la
+//             scelta la fa Franco.
+//             📌 LA PREFERENZA STA NEL BROWSER E NON NEL PROFILO: la stanza appartiene al computer
+//             da cui si guarda. Nel profilo seguirebbe Franco dall'ufficio luminoso alla camera
+//             buia, cioe' l'esatto contrario. "Ricordare la scelta" e "ricordarla nell'account"
+//             qui si somigliano e sono opposti.
+//             🔴 E DUE ETICHETTE NON ARRIVAVANO MAI A SCHERMO: erano scritte '\U0001f319 Scuro',
+//             e in JavaScript `\U` maiuscola non e' una sequenza di escape valida - il motore
+//             lascia cadere la barra e stampa `U0001f319 Scuro`. Non era l'icona sbagliata, era
+//             l'icona mai arrivata. L'ha vista Franco; le prove no, perche' controllavano id,
+//             ordine e contrasti e mai il TESTO dei bottoni. Un'etichetta e' un dato come gli
+//             altri: se nessuno la legge, nessuno si accorge che e' rotta.
+//             🎨 E «Svuota log» ha preso `class="btn-primary btn-admin"` invece dello stile
+//             ridisegnato a mano che aveva (Franco). La regola era gia' scritta qui dalla v6.164:
+//             LO STILE SI COPIA, NON SI RISCRIVE «SIMILE».
+//             🗑️ Scartate: `prefers-color-scheme` DA SOLA (segue il sistema, non la stanza, e
+//             Windows non ha pianificazione alba/tramonto), il SENSORE di luce (MDN:
+//             *"Limited availability - not Baseline"*, sperimentale, verificato il 22/08) e la
+//             regola A OROLOGIO (la luce della stanza non e' l'ora: una lampada accesa alle tre la
+//             smentisce - Franco ha detto "la stanza", non "l'ora").
+//
+//          3. 🗑️ IL PULSANTE CHE MANCAVA. Franco: *"tutte le procedure di import devono avere il
+//             pulsante per resettare la finestra del log; quella per il caricamento delle figurine
+//             non lo ha"*. NE MANCAVANO DUE, non una: ce l'avevano solo i due caricamenti FOTO
+//             (v5.901); ne' le figurine ne' i retro. E' di nuovo la v6.361 - si cerca la
+//             CAPACITA', non il pulsante nominato.
+//
+//          4. ⬇️ IL RIEPILOGO SCENDE SOTTO IL LOG. Franco: *"quel recap che viene fatto all'inizio
+//             del box... possiamo metterlo alla fine?"*.
+//             📌 NON ERA DENTRO IL BOX: era `*-status`, incollato sotto la barra di avanzamento,
+//             SOPRA il log - per questo sembrava un'intestazione. Adesso barra e stato stanno sotto
+//             la scatola, in tutte e quattro le procedure e non solo in quella nominata.
+//
+//          5. 🌈 E IL RIEPILOGO DICE I NUMERI COL COLORE DELLE RIGHE CHE LI HANNO PRODOTTI
+//             (Franco). inserite=ok, aggiornate=update, ignorate=warn, errori=err.
+//             🆕 L'ORDINE CAMBIA E GLI ERRORI VANNO IN FONDO (Franco: *"gli errori mettili per gli
+//             ultimi"*): prima stavano davanti ai «Retro non trovati», che invece sono righe
+//             SALVATE, solo con un dato che non si e' trovato. Adesso si legge dal meglio al
+//             peggio, e l'ultima cosa che resta sott'occhio e' quella su cui c'e' da lavorare.
+//             🆕 E `ignorate` dice anche cosa vuol dire: «ignorate (no aggiornamenti)».
+//             ⚠️ UN TERMINE NON HA UN COLORE SOLO, e va detto invece di lasciarlo scoprire:
+//             `errori` conta le righe passate a `errRiga`, che le scrive meta' in 'err' e meta' in
+//             'warn' (10 e 11 nelle figurine) a seconda che il dato sia SBAGLIATO o MANCANTE. Sono
+//             tutte righe scartate e finiscono tutte nel recap "RIGHE NON IMPORTATE": il rosso e'
+//             il loro colore per significato, ma la corrispondenza a schermo non e' esatta. Scelta
+//             dichiarata, non svista.
+//             ⚠️ E nei due log FOTO le righe 'saltate' sono in 'info', che LI' cade sul default
+//             --log-txt e non su --log-dim: e' la divergenza storica fra le due famiglie di log.
+//             Il riepilogo dice il vero, quindi li' 'saltate' e' bianco. Sanarla e' un'altra
+//             decisione, e non e' stata presa di nascosto qui.
+//
+//          🧰 LA CATENA DEI COLORI ERA COPIATA QUATTRO VOLTE, ora e' scritta UNA. E la divergenza
+//          fra le due famiglie non e' stata sanata di soppiatto: e' diventata un ARGOMENTO
+//          esplicito (`_logColore(type, base)`), cioe' una scelta dichiarata invece di due copie
+//          che si erano allontanate da sole.
+//
+// ------------------------------------------------------------
 // v6.373 - IL PULSANTE «+ AGGIUNGI» ALTO QUANTO IL TITOLO DELLA PAGINA (Franco). Solo index.html,
 //          piu' la versione qui.
 //
@@ -20860,7 +21075,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.373';
+const JS_VERSION = 'v6.377';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -21395,6 +21610,20 @@ function _erroreNienteDb(operazione) {
 async function fsSave(collName, item) {
   // v6.232 - PRIMA DI TUTTO IL RESTO: vedi il blocco qui sopra.
   if (!db) throw _erroreNienteDb('salvataggio');
+  // 🆕 v6.377 - IL LUCCHETTO SI CONTROLLA QUI, cioe' nel punto in cui si SCRIVE, e non solo nelle
+  // due form. E' la regola della v6.143: un controllo che vive accanto alla scrittura e' l'unico
+  // che non si puo' scavalcare. Le form hanno il loro avviso gentile (`_bloccatoDalLucchetto`),
+  // che e' un'altra cosa: dice all'utente cosa sta succedendo PRIMA che provi. Questo invece
+  // esiste per le strade che nessuno ha in mente - la console, un pulsante nuovo, un domani.
+  // Riguarda `series` e `figurines` perche' il danno e' li': le figurine vivono dentro il
+  // documento della serie e una scrittura ne riporta indietro l'intero array.
+  if ((collName === 'series' || collName === 'figurines') && _lucchettoAttivo()) {
+    const e = new Error(currentLang === 'it'
+      ? 'C\u2019e\u2019 un caricamento dati in corso in un\u2019altra finestra: salvare adesso cancellerebbe le righe che sta scrivendo.'
+      : 'A data import is running in another window: saving now would erase the rows it is writing.');
+    e.code = 'sgorbions/caricamento-in-corso';
+    throw e;
+  }
   // 🆕 v6.318 - la regola del "!" sui campi della SERIE: il nome, il nome corto e i quattro elenchi
   // di tipologie. Qui e non nella form della serie, per la stessa ragione dell'altro punto: da qui
   // passano tutte le scritture di una serie, compresa quella della v6.019 che riscrive i soli
@@ -26738,7 +26967,8 @@ const VERSIONI_ARTICOLO = [
     // v6.286 - la sola parola che prende il colore della versione: la sua posizione nella
     // frase cambia da riga a riga, quindi si dichiara invece di cercarla per regola.
     esportaParolaIt: 'Variazioni ufficiali', esportaParolaEn: 'official variations',
-    colore: 'var(--type-official)',    badge: 'fig-badge-official',    marcatoreEbay: 'VARIAZIONE' },
+    colore: 'var(--type-official)',    badge: 'fig-badge-official',    marcatoreEbay: 'VARIAZIONE',
+    iconaTab: '🎨' },
   { chiave: 'unofficialVariation', campo: 'isUnofficialVariation', it: 'Variazione non ufficiale', en: 'Unofficial variation',
     badgeIt: 'Variazione<br>non ufficiale', badgeEn: 'Unofficial<br>variation',
     itBreve: 'Var. non ufficiale', enBreve: 'Unofficial var.', livello: 'capo', partenza: ['base'],
@@ -26749,7 +26979,8 @@ const VERSIONI_ARTICOLO = [
     // v6.286 - la sola parola che prende il colore della versione: la sua posizione nella
     // frase cambia da riga a riga, quindi si dichiara invece di cercarla per regola.
     esportaParolaIt: 'Variazioni non ufficiali', esportaParolaEn: 'unofficial variations',
-    colore: 'var(--type-unofficial)',  badge: 'fig-badge-unofficial',  marcatoreEbay: 'VARIAZIONE NON UFFICIALE' },
+    colore: 'var(--type-unofficial)',  badge: 'fig-badge-unofficial',  marcatoreEbay: 'VARIAZIONE NON UFFICIALE',
+    iconaTab: '🎨' },
   { chiave: 'change',              campo: 'isChange',              it: 'Change',                   en: 'Change',
     badgeIt: 'Change', badgeEn: 'Change',
     livello: 'figlio', partenza: ['base', 'variation', 'unofficialVariation'],
@@ -26768,7 +26999,8 @@ const VERSIONI_ARTICOLO = [
     // v6.286 - la sola parola che prende il colore della versione: la sua posizione nella
     // frase cambia da riga a riga, quindi si dichiara invece di cercarla per regola.
     esportaParolaIt: 'Change', esportaParolaEn: 'changes',
-    colore: 'var(--type-change)',      badge: 'fig-badge-change',      marcatoreEbay: 'CHANGE' },
+    colore: 'var(--type-change)',      badge: 'fig-badge-change',      marcatoreEbay: 'CHANGE',
+    iconaTab: '🔄' },
   // ⚠️ v6.234 (Franco: "togliere nuova") — `nuova: true` RESTA, ma non si vede piu' da nessuna
   // parte. Non e' un'etichetta per l'utente: e' l'interruttore che tiene questa versione fuori da
   // `_VERSIONI_VIVE` finche' non arriva la v6.235. Scriverlo a schermo raccontava un dettaglio di
@@ -26840,7 +27072,8 @@ const VERSIONI_ARTICOLO = [
     // v6.286 - la sola parola che prende il colore della versione: la sua posizione nella
     // frase cambia da riga a riga, quindi si dichiara invece di cercarla per regola.
     esportaParolaIt: 'Omaggio', esportaParolaEn: 'free versions',
-    colore: 'var(--type-free)',        badge: 'fig-badge-free',        marcatoreEbay: null },
+    colore: 'var(--type-free)',        badge: 'fig-badge-free',        marcatoreEbay: null,
+    iconaTab: '🎁' },
   { chiave: 'printError',          campo: 'isPrintError',          it: 'Errore di stampa',         en: 'Print error',
     badgeIt: 'Errore<br>di stampa', badgeEn: 'Print<br>error',
     livello: 'figlio', partenza: ['base', 'variation', 'unofficialVariation'],
@@ -26862,7 +27095,8 @@ const VERSIONI_ARTICOLO = [
     // v6.286 - la sola parola che prende il colore della versione: la sua posizione nella
     // frase cambia da riga a riga, quindi si dichiara invece di cercarla per regola.
     esportaParolaIt: 'Errori di stampa', esportaParolaEn: 'print errors',
-    colore: 'var(--type-printerror)',  badge: 'fig-badge-printerror',  marcatoreEbay: 'ERRORE DI STAMPA' }
+    colore: 'var(--type-printerror)',  badge: 'fig-badge-printerror',  marcatoreEbay: 'ERRORE DI STAMPA',
+    iconaTab: '🖨️' }
 ];
 
 // Le versioni che il codice riconosce OGGI. La quinta entrera' qui con la v6.235, e in quel
@@ -36873,24 +37107,57 @@ function buildLinkedFiguresTabsHTML(baseId) {
     : { items: [], ereditati: new Set() };
   if (!linked.length && !_usano.items.length) return '';
 
+  // 🔴 v6.376 (Franco, baco) — L'OMAGGIO NON AVEVA IL SUO TAB, E LA CAUSA E' L'ELENCO SCRITTO A MANO.
+  // *"Nella form di dettaglio del retro manca il tab relativo ai retro omaggio che usano quel retro
+  // come retro di partenza"*.
+  //
+  // Qui c'erano QUATTRO righe scritte a mano — variation, unofficialVariation, change, printError —
+  // e `isFreeVersion` non c'era. Esattamente lo stesso difetto della v6.314, che di se' scriveva:
+  // *"ERA UNA QUATERNA SCRITTA A MANO, E L'OMAGGIO NON C'ERA"*. Quella release aveva convertito i
+  // punti che conosceva; questo le e' sfuggito, ed e' rimasto muto per sessanta release — un tab che
+  // non compare non da' errore, sembra solo che l'omaggio non ci sia.
+  //
+  // 📌 QUINDI NON SI AGGIUNGE UNA QUINTA RIGA: si legge l'ELENCO. Aggiungere l'omaggio a mano
+  // avrebbe chiuso il caso di Franco e lasciato in piedi la causa, cioe' avrebbe rimandato lo stesso
+  // racconto alla sesta versione. La regola gia' scritta in questo file (v6.055, v6.314): quando una
+  // cosa esiste "una per versione", si genera da `VERSIONI_ARTICOLO` e non si elenca.
+  // ⚠️ E l'ICONA si DICHIARA nell'elenco (`iconaTab`), non si ricava: e' la stessa scelta di
+  // `idForm` nella v6.314 — da un nome di campo non si deduce un'emoji, e una regola inventata per
+  // dedurla sarebbe un secondo posto in cui sbagliare.
+  //
+  // `usaRetro` resta scritto a parte, ed e' giusto: non e' una versione: e' la domanda "chi mi usa",
+  // che guarda `retroId` e non `baseFigurineId`. Metterlo nell'elenco vorrebbe dire dire il falso
+  // sulla natura di quel legame.
+  const _etichettaVersione = v => {
+    // Il plurale, che e' cio' che serve al titolo di un tab. `pluraleIt` ce l'hanno solo tre delle
+    // cinque versioni; per le altre due `esportaIt` e' gia' al plurale. Nessuna delle due chiavi
+    // nasce per questo posto, ma sono i plurali che il sito ha gia' deciso — inventarne di nuovi
+    // qui vorrebbe dire un terzo elenco di parole da tenere allineato.
+    const it = v.pluraleIt || v.esportaIt || v.it;
+    const en = v.pluraleEn || v.esportaEn || v.en;
+    return currentLang === 'it' ? it : en;
+  };
+
   const groups = [
     { key: 'usaRetro', label: currentLang === 'it' ? 'Figurine che usano questo retro' : 'Figurines using this back', icon: '🎴', items: _usano.items, ereditati: _usano.ereditati },
-    { key: 'variation', label: currentLang === 'it' ? 'Variazioni ufficiali' : 'Official variations', icon: '🎨', items: linked.filter(x => x.isVariation) },
-    { key: 'unofficialVariation', label: currentLang === 'it' ? 'Variazioni non ufficiali' : 'Unofficial variations', icon: '🎨', items: linked.filter(x => x.isUnofficialVariation) },
-    // v6.025 (Franco) - nella scheda di un RETRO i due tab dicono "di questo retro", in parallelo
-    // col tab delle figurine. Altrove NO: nella scheda di una figurina i Change elencati sono
-    // della figurina, e chiamarli "di questo retro" sarebbe semplicemente falso. La condizione e'
-    // la stessa che accende il tab nuovo (_self e' un retro), non una seconda idea di "sono in un
-    // retro".
-    { key: 'change', label: _selfRetro ? (currentLang === 'it' ? 'Change di questo retro' : 'Changes of this back') : 'Change', icon: '🔄', items: linked.filter(x => x.isChange) },
-    // v6.015 (Franco) - gli ERRORI DI STAMPA mancavano: erano l'unico dei quattro tipi non
-    // elencato qui, rimasto indietro dalla v5.711 quando hanno smesso di essere un
-    // sottotipo di Change e sono diventati un tipo a se'. Chi apriva un retro con un errore
-    // di stampa collegato non aveva modo di arrivarci dalla sua scheda.
-    { key: 'printError', label: _selfRetro
-        ? (currentLang === 'it' ? 'Errori di stampa di questo retro' : 'Print errors of this back')
-        : (currentLang === 'it' ? 'Errori di stampa' : 'Print errors'), icon: '🖨️', items: linked.filter(x => x.isPrintError) },
-  ].filter(g => g.items.length > 0);
+    ...VERSIONI_ARTICOLO.map(v => ({
+      key: v.chiave,
+      // v6.025 (Franco) — nella scheda di un RETRO i tab dicono "di questo retro", in parallelo col
+      // tab delle figurine. Altrove no: nella scheda di una figurina i Change elencati sono della
+      // figurina, e chiamarli "di questo retro" sarebbe falso. La condizione e' `_selfRetro`, la
+      // stessa che accende il tab delle figurine: una sola idea di "sto guardando un retro".
+      // 🆕 v6.376 — la coda vale per TUTTE le versioni e non piu' per due sole. Prima l'avevano
+      // solo Change ed Errori di stampa, e non per una ragione: perche' erano gli unici due tab a
+      // essere stati toccati quel giorno. Aprendo un retro, "Omaggi" e "Omaggi di questo retro"
+      // rispondono a due domande diverse, e quella giusta e' la seconda.
+      label: _selfRetro
+        ? (currentLang === 'it' ? _etichettaVersione(v) + ' di questo retro'
+                                : _etichettaVersione(v) + ' of this back')
+        : _etichettaVersione(v),
+      icon: v.iconaTab || '🏷️',
+      items: linked.filter(x => x[v.campo])
+    })),
+    ].filter(g => g.items.length > 0);
 
   if (!groups.length) return '';
 
@@ -38590,6 +38857,8 @@ async function _salvaFigurineInBlocco(items) {
 }
 
 async function saveFigFromDetail(figId, opzioni) {
+  // v6.377 - vedi `saveBulkCell`: l'avviso sta dove l'utente preme, il fermo dove si scrive.
+  if (_bloccatoDalLucchetto()) return;
   const _resta = !!(opzioni && opzioni.resta);
   // i due pulsanti si spengono durante il salvataggio: con "Salva e resta" la scheda rimane
   // aperta, quindi il secondo clic e' a portata di dito piu' che mai
@@ -39876,13 +40145,276 @@ function _importDiffTxt(diff) {
 
 
 // ── Importazione Retro da XLS ──────────────────────────────────────────
+// ============================================================
+//  v6.377 — IL LUCCHETTO DEL CARICAMENTO (Franco)
+// ------------------------------------------------------------
+//  *"Non c'e' modo, allora, di impedire proprio di modificare i dati, dicendo che c'e' una
+//  procedura di caricamento dati in corso?"*
+//
+//  PERCHE' SERVE, in una riga: le figurine vivono DENTRO il documento della serie, e modificarne
+//  una riscrive l'INTERO array `items` dalla copia in memoria di quella finestra. Due finestre
+//  aperte sono due copie, e l'ultima che scrive cancella il lavoro dell'altra. Senza errore.
+//
+//  ⚠️ QUESTO LUCCHETTO NON RISOLVE IL PROBLEMA, NE COPRE UN CASO — e va scritto qui perche' chi
+//  legge non si faccia l'idea sbagliata. Il difetto vero e' che il sito non ha nessun ascoltatore
+//  in tempo reale (`onSnapshot`: zero occorrenze, e lo dicono gia' due commenti in questo file):
+//  quindi QUALUNQUE finestra lasciata aperta e' vecchia, e puo' disfare il lavoro altrui anche
+//  quando non c'e' nessun caricamento in corso. La riparazione completa e' un contatore di
+//  revisione sul documento della serie, che rifiuta una scrittura basata su dati sorpassati.
+//  Franco l'ha vista e ha scelto per ora il lucchetto: costa poco e si vede. Ma un lucchetto
+//  protegge dal caso a cui si e' pensato, non da quelli a cui non si e' pensato.
+//
+//  PERCHE' `localStorage` E NON FIRESTORE: le finestre dello stesso browser si vedono fra loro in
+//  tempo reale con l'evento `storage`, senza una riga di rete e senza una lettura in piu' a ogni
+//  salvataggio. Il prezzo, e va detto: vale SOLO fra finestre dello stesso browser e dello stesso
+//  profilo. Da un altro PC o dal telefono questo lucchetto non si vede.
+// ============================================================
+const _LUCCHETTO = 'sgorbions_caricamento_in_corso';
+
+// Chi sono io. Serve perche' la finestra che STA caricando dev'essere l'unica a poter scrivere:
+// senza un'identita', il lucchetto bloccherebbe per primo chi l'ha alzato.
+const _ID_FINESTRA = Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+// 🔴 IL BATTITO, e non e' un dettaglio implementativo: e' cio' che evita il guasto peggiore di
+// qualunque lucchetto, cioe' restare chiuso per sempre. Se la finestra che carica viene chiusa di
+// forza, va in crash o perde la corrente, `beforeunload` non arriva e la bandiera resta alzata.
+// Con una SCADENZA FISSA bisognerebbe indovinare quanto dura il caricamento piu' lungo, e sbagliare
+// per eccesso (blocco lunghissimo) o per difetto (lucchetto che cade a meta' lavoro).
+// Il battito toglie la domanda: chi carica riscrive l'ora a ogni riga, e un lucchetto che tace da
+// piu' di un minuto e' morto per definizione. Si ripara da se', senza che nessuno debba saperlo.
+const _LUCCHETTO_SCADE = 60000;
+let _lucchettoCosa = '';
+let _lucchettoTimer = null;
+
+function _lucchettoAttivo() {
+  try {
+    const g = JSON.parse(localStorage.getItem(_LUCCHETTO) || 'null');
+    if (!g || !g.finestra) return null;
+    if (g.finestra === _ID_FINESTRA) return null;                       // e' il nostro
+    if (Date.now() - (g.quando || 0) > _LUCCHETTO_SCADE) return null;   // tace: e' morto
+    return g;
+  } catch(e) { return null; }
+}
+
+function _alzaLucchetto(cosa) {
+  _lucchettoCosa = cosa || '';
+  _battitoLucchetto();
+  if (!_lucchettoTimer) _lucchettoTimer = setInterval(_battitoLucchetto, 15000);
+}
+
+function _battitoLucchetto() {
+  try {
+    localStorage.setItem(_LUCCHETTO, JSON.stringify(
+      { finestra: _ID_FINESTRA, cosa: _lucchettoCosa, quando: Date.now() }));
+  } catch(e) {}
+}
+
+function _abbassaLucchetto() {
+  if (_lucchettoTimer) { clearInterval(_lucchettoTimer); _lucchettoTimer = null; }
+  try {
+    const g = JSON.parse(localStorage.getItem(_LUCCHETTO) || 'null');
+    // ⚠️ Si toglie SOLO il proprio: se nel frattempo un'altra finestra ha cominciato a caricare,
+    // cancellare il suo lucchetto sarebbe esattamente il danno che questo codice esiste per evitare.
+    if (g && g.finestra === _ID_FINESTRA) localStorage.removeItem(_LUCCHETTO);
+  } catch(e) {}
+}
+
+function _nomeCaricamento(cosa) {
+  const it = currentLang === 'it';
+  const n = { figurine: it ? 'figurine' : 'stickers', retro: it ? 'retro' : 'backs',
+              foto: it ? 'foto' : 'photos', fotonn: it ? 'foto' : 'photos' }[cosa];
+  return n || (it ? 'dati' : 'data');
+}
+
+// La fascia. Nasce e muore da sola, quindi non serve markup nella pagina: un elemento che esiste
+// solo quando ha qualcosa da dire non puo' restare in giro vuoto.
+function _mostraFasciaLucchetto() {
+  const g = _lucchettoAttivo();
+  let el = document.getElementById('fascia-lucchetto');
+  if (!g) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'fascia-lucchetto';
+    el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;'
+      + 'background:var(--warn);color:#1a1030;font-family:var(--font-ui);font-weight:700;'
+      + 'font-size:0.85rem;text-align:center;padding:0.5rem 1rem;box-shadow:0 2px 14px rgba(0,0,0,0.4);';
+    document.body.appendChild(el);
+  }
+  el.textContent = currentLang === 'it'
+    ? '⏳ Caricamento ' + _nomeCaricamento(g.cosa) + ' in corso in un’altra finestra — non salvare da qui: sovrascriveresti il suo lavoro.'
+    : '⏳ A ' + _nomeCaricamento(g.cosa) + ' import is running in another window — do not save from here: you would overwrite its work.';
+}
+
+// Le finestre dello stesso browser si accorgono l'una dell'altra da qui. Il `setInterval` serve
+// per la SCADENZA: l'evento `storage` non scatta quando un lucchetto smette di battere.
+try {
+  window.addEventListener('storage', e => { if (e.key === _LUCCHETTO) _mostraFasciaLucchetto(); });
+  window.addEventListener('beforeunload', _abbassaLucchetto);
+  setInterval(_mostraFasciaLucchetto, 5000);
+} catch(e) {}
+
+// Il messaggio per chi prova a salvare. Sta qui e non nelle due form per la ragione di sempre
+// (§12.1): un messaggio scritto due volte fra sei mesi e' due messaggi diversi.
+function _bloccatoDalLucchetto() {
+  const g = _lucchettoAttivo();
+  if (!g) return false;
+  toast(currentLang === 'it'
+    ? '⏳ C’e’ un caricamento ' + _nomeCaricamento(g.cosa) + ' in corso in un’altra finestra. '
+      + 'Aspetta che finisca: salvare adesso cancellerebbe le righe che sta scrivendo.'
+    : '⏳ A ' + _nomeCaricamento(g.cosa) + ' import is running in another window. '
+      + 'Wait for it to finish: saving now would erase the rows it is writing.',
+    'error', null, 8000);
+  return true;
+}
+
+// ============================================================
+//  v6.374 — LE QUATTRO SCATOLE DI LOG: colori, tema, riepilogo
+// ------------------------------------------------------------
+//  Le scatole sono QUATTRO — import figurine, import retro, foto, foto senza numero — e fino alla
+//  v6.373 la catena dei colori era COPIATA quattro volte, con gia' due varianti divergenti: nei due
+//  log foto il default cadeva su --text, nei due import su --muted. Franco ne aveva nominata una
+//  sola; toccare solo quella sarebbe stato l'errore della v6.361 (si cerca la CAPACITA', non
+//  l'elenco dei pulsanti). Da qui in avanti la catena e' scritta UNA volta.
+//  La divergenza NON e' stata sanata di nascosto: resta, ma adesso e' un ARGOMENTO esplicito
+//  (`base`), cioe' una scelta dichiarata invece di due copie che si sono allontanate da sole.
+// ============================================================
+
+// I colori non sono valori ma VARIABILI, ed e' la condizione perche' l'interruttore esista: le
+// righe gia' scritte cambiano colore da sole quando cambia la classe sul contenitore, perche' una
+// var() si risolve quando si disegna, non quando l'HTML viene scritto. Un tema che si cambiasse
+// rigenerando le righe, su un log da 412 righe a meta' import, o le perde o le riscrive.
+// 🆕 v6.374 (Franco) — IL NUMERO DI RIGA A LARGHEZZA FISSA, per incolonnare il log.
+// *"Nel numerare la riga, al fine di migliorare la leggibilita' del testo del log, usare un
+// indicatore di riga sempre a 3 cifre. Es: 001"*.
+// 📌 TRE CIFRE E' IL MINIMO, NON IL MASSIMO, e la differenza conta: la Serie 3 arriva al 672 e un
+// file di caricamento massivo puo' passare le mille righe. Con un `padStart(3)` secco la riga 1000
+// uscirebbe piu' larga delle altre e la colonna si romperebbe proprio sui file grossi, cioe' quelli
+// in cui incolonnare serve. Si guarda quante righe ha il file e ci si allarga se serve: sotto le
+// mille il risultato e' esattamente quello che Franco ha chiesto, sopra resta allineato lo stesso.
+function _nRiga(n, totale) {
+  return String(n).padStart(Math.max(3, String(totale || 0).length), '0');
+}
+
+function _logColore(type, base) {
+  switch (type) {
+    case 'white':  return 'var(--log-txt)';
+    case 'ok':     return 'var(--log-ok)';
+    case 'err':    return 'var(--log-err)';
+    case 'warn':   return 'var(--log-warn)';
+    case 'update': return 'var(--log-upd)';
+    default:       return base === 'txt' ? 'var(--log-txt)' : 'var(--log-dim)';
+  }
+}
+
+// ── L'interruttore del tema (Franco: una stanza buia e una luminosa) ──────────────────────────
+// TRE STATI, e `auto` NON ha una classe sua: la risolve qui `matchMedia`, che aggiunge o toglie
+// `log-tema-chiaro`. Con una classe per stato la tavolozza chiara sarebbe stata scritta due volte.
+// 📌 La preferenza sta nel BROWSER e non nel profilo, e non e' un dettaglio: la stanza appartiene
+// al computer da cui si guarda. Nel profilo seguirebbe Franco dall'ufficio luminoso alla camera
+// buia, cioe' farebbe l'esatto contrario di quello che serve. "Ricordare la scelta dell'utente" e
+// "ricordarla nell'account" qui si somigliano e sono opposti.
+const _LOG_SCATOLE = ['import-fig-log', 'import-retro-log', 'foto-log', 'fotonn-log'];
+const _LOG_TEMI    = ['chiaro', 'scuro'];
+
+// 🔴 GLI STATI SONO DUE, E `auto` NON E' UNO DI LORO — cambiato dopo aver risposto a Franco da dove
+// prendeva l'informazione. `prefers-color-scheme` e' il tema di WINDOWS, non la luce della stanza,
+// e Windows non lo cambia da solo all'alba e al tramonto: quindi «Auto» sarebbe stato un terzo
+// stato manuale travestito da automatismo. Franco: *"se auto prende da Windows allora io direi di
+// non darmela come opzione ma semplicemente di usarla all'ingresso della pagina"*.
+// 📌 LA LEZIONE, e vale oltre questo caso: un'opzione che si chiama «automatico» promette che
+// qualcuno decidera' al posto tuo. Se quel qualcuno cambia idea solo quando gliela fai cambiare
+// tu, non e' un automatismo — e' una terza scelta manuale con un nome che mente. Meglio un valore
+// di PARTENZA buono e due stati onesti.
+// Il sistema resta la fonte, ma di un valore INIZIALE: si legge una volta all'ingresso e da li'
+// comanda la scelta di Franco.
+function _logTemaIniziale() {
+  try {
+    const _t = localStorage.getItem('sgorbions_log_tema');
+    if (_LOG_TEMI.indexOf(_t) >= 0) return _t;
+  } catch(e) {}
+  try { return window.matchMedia('(prefers-color-scheme: light)').matches ? 'chiaro' : 'scuro'; }
+  catch(e) { return 'scuro'; }
+}
+let _logTema = _logTemaIniziale();
+
+// ⚠️ IL VALORE LETTO DAL SISTEMA NON SI SALVA, ed e' la riga che fa funzionare tutto il resto.
+// Salvarlo all'avvio lo CONGELEREBBE: dal secondo caricamento in poi il sito leggerebbe la propria
+// copia invece di richiedere a Windows, e cambiare il tema del sistema non avrebbe piu' effetto.
+// Si scrive solo in `commutaTemaLog`, cioe' quando la scelta la fa Franco.
+function _logTemaEffettivo() { return _logTema; }
+
+function applicaTemaLog() {
+  const chiaro = _logTemaEffettivo() === 'chiaro';
+  _LOG_SCATOLE.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('log-tema-chiaro', chiaro);
+  });
+  // L'etichetta dice DOVE SI E', non dove si andrebbe premendo.
+  // 🔴 LE EMOJI SI SCRIVONO PER ESTESO, non con `\uXXXX` e tanto meno con `\U0001fXXX`.
+  // La prima stesura diceva '\U0001f319 Scuro', che in JavaScript NON e' la luna: `\U` maiuscola
+  // non e' una sequenza di escape valida, il motore lascia cadere la barra e a schermo esce
+  // `U0001f319 Scuro`. Franco l'ha visto subito (*"alla modalita' scuro metti l'icona della luna"*);
+  // le prove no, perche' controllavano gli id, l'ordine e i contrasti e mai il TESTO dei bottoni.
+  // 📌 Un'etichetta e' un dato come gli altri: se nessuno la legge, nessuno si accorge che e' rotta.
+  const et = (_logTemaEffettivo() === 'chiaro') ? '☀️ Chiaro' : '🌙 Scuro';
+  _LOG_SCATOLE.forEach(id => {
+    const b = document.getElementById(id + '-tema');
+    if (b) b.textContent = et;
+  });
+}
+
+// Si chiama `commuta` e non `ruota` perche' gli stati sono tornati due: un nome che dice "gira fra
+// N" su un interruttore a due posizioni e' il genere di residuo che fra sei mesi fa cercare il
+// terzo stato che non c'e'.
+function commutaTemaLog() {
+  _logTema = (_logTema === 'chiaro') ? 'scuro' : 'chiaro';
+  try { localStorage.setItem('sgorbions_log_tema', _logTema); } catch(e) {}
+  applicaTemaLog();
+}
+
+// ── Il riepilogo, coi numeri del colore delle righe che li hanno prodotti ─────────────────────
+// Franco: *"nel recap userei, per i vari termini, il color code con la quale sono scritte le righe
+// di log che a loro afferiscono"*.
+// ⚠️ UN TERMINE NON HA UN COLORE SOLO, ed e' scritto qui perche' non si scopra guardando: `errori`
+// conta le righe passate a `errRiga`, che le scrive meta' in 'err' e meta' in 'warn' (10 e 11 nelle
+// figurine) a seconda che il dato sia SBAGLIATO o MANCANTE. Sono tutte righe scartate e finiscono
+// tutte nel recap "RIGHE NON IMPORTATE", quindi il rosso e' il loro colore per significato; ma la
+// corrispondenza con le righe a schermo non e' esatta, ed e' una scelta, non una svista.
+function _logVociHtml(voci) {
+  return voci
+    .filter(v => v.mostra !== false)
+    .map(v => '<span style="color:var(--log-' + v.tipo + ');">' + v.n + ' ' + v.testo + '</span>')
+    .join(' · ');
+}
+
+function _logRiepilogo(idStatus, idBarra, voci) {
+  const el = document.getElementById(idStatus);
+  // innerHTML e non textContent: il contenuto e' costruito qui da NUMERI e da etichette fisse,
+  // nessun dato del file importato ci passa dentro.
+  if (el) el.innerHTML = '✅ Fine: ' + _logVociHtml(voci);
+  const pr = document.getElementById(idBarra);
+  if (pr) pr.value = 100;
+}
+
+// ── Svuota log, per i due import da XLS (Franco: *"tutte le procedure di import devono avere il
+//    pulsante per resettare la finestra del log"*). I due caricamenti foto ce l'avevano dalla
+//    v5.901; questi due no, ne' le figurine ne' i retro. ─────────────────────────────────────────
+function _svuotaLog(idLog) {
+  const el = document.getElementById(idLog);   if (el) { el.innerHTML = ''; el.style.display = 'none'; }
+  const a  = document.getElementById(idLog + '-actions'); if (a) a.style.display = 'none';
+  const w  = document.getElementById(idLog.replace(/-log$/, '') + '-progress-wrap');
+  if (w) w.style.display = 'none';
+}
+function clearImportFigLog()   { _svuotaLog('import-fig-log'); }
+function clearImportRetroLog() { _svuotaLog('import-retro-log'); }
+
 function retroImportLog(msg, type) {
   const el = document.getElementById('import-retro-log');
   if (!el) return;
   el.style.display = 'block';
   // 'white' esisteva solo in figImportLog dalla v5.808: stesso log, stesse
   // righe di riepilogo, due comportamenti diversi. Allineato in v5.983.
-  const color = type==='white'?'var(--text)':type==='ok'?'var(--success)':type==='err'?'var(--danger)':type==='warn'?'var(--warn)':type==='update'?'var(--info)':'var(--muted)';
+  const color = _logColore(type, 'dim');
   el.innerHTML += '<div style="color:'+color+';margin-bottom:2px;">'+msg+'</div>';
   el.scrollTop = el.scrollHeight;
 }
@@ -39912,10 +40444,23 @@ async function startImportRetro() {
 
   document.getElementById('import-retro-progress-wrap').style.display = 'block';
   document.getElementById('import-retro-log').innerHTML = '';
+  // 🆕 v6.377 - IL LUCCHETTO SI ALZA QUI, cioe' DOPO i controlli d'ingresso e non in cima alla
+  // funzione. In cima sembra piu' pulito ed e' sbagliato: chi preme «Avvia» senza aver scelto la
+  // serie esce da un `return` anticipato, e il lucchetto resterebbe alzato su un caricamento che
+  // non e' mai cominciato - col battito che continua a tenerlo vivo, quindi senza nemmeno la
+  // scadenza a salvare la situazione. Si alza quando il lavoro comincia davvero.
+  _alzaLucchetto('retro');
   document.getElementById('import-retro-log').style.display = 'block';
+  { const _a = document.getElementById('import-retro-log-actions'); if (_a) _a.style.display = 'flex'; }
+  applicaTemaLog();
   const _startBtn = document.getElementById('import-retro-start-btn'); if (_startBtn) _startBtn.disabled = true;
 
-  retroImportLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'info');
+  // 🆕 v6.376 (Franco: *"fallo in bianco"*) — LA RIGA DI AVVIO E' UN DELIMITATORE, non una nota.
+  // Era in 'info', cioe' il grigio delle righe che non hanno niente da dire; ma le altre tre righe
+  // fra trattini — FINE e i due INIZIO/FINE dei recap — sono sempre state in 'white'. Delle
+  // quattro cornici del log, tre erano bianche e una grigia, e non per una decisione: perche'
+  // nessuno le aveva mai guardate insieme.
+  retroImportLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'white');
 
   const selEl = document.getElementById('import-retro-series-select');
   const seriesName = selEl?.selectedOptions[0]?.dataset.name || '';
@@ -39974,7 +40519,7 @@ async function startImportRetro() {
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const rn = i + 1;
+    const rn = _nRiga(i + 1, rows.length);
     // v6.318 - il valore letto dal file passa dalla regola del "!" SUBITO, appena entra. Così le
     // condizioni che più sotto confrontano il file col database confrontano due valori nella
     // stessa forma, senza doverle toccare una per una.
@@ -40147,7 +40692,13 @@ async function startImportRetro() {
     }
   }
 
-  retroImportStatus('✅ Fine: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + skipped + ' ignorate · ' + errors + ' errori', 100);
+  // 🆕 v6.374 - stesso ordine e stessa dicitura dell'import figurine (vedi la' il perche'): un
+  // riepilogo scritto in due modi diversi per due procedure gemelle e' due riepiloghi.
+  _logRiepilogo('import-retro-status', 'import-retro-progress', [
+    { n: inserted, testo: 'inseriti',                     tipo: 'ok'   },
+    { n: updated,  testo: 'aggiornati',                   tipo: 'upd'  },
+    { n: skipped,  testo: 'ignorate (no aggiornamenti)',  tipo: 'warn' },
+    { n: errors,   testo: 'errori',                       tipo: 'err'  }]);
   retroImportLog('--- FINE: ' + inserted + ' inseriti · ' + updated + ' aggiornati · ' + unchanged + ' invariati · ' + skipped + ' ignorate · ' + errors + ' errori ---', 'white');
 
   if (erroriRighe.length) {
@@ -40157,6 +40708,11 @@ async function startImportRetro() {
       : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'white');
     erroriRighe.forEach(msg => retroImportLog(msg, 'warn'));
   }
+  // v6.377 - e si abbassa. Se qualcosa scoppia prima di arrivare qui il lucchetto resta alzato,
+  // ma non per sempre: smette di battere, e dopo un minuto le altre finestre lo considerano morto.
+  // E' la ragione per cui il battito esiste - un lucchetto che si ripara da se' non ha bisogno che
+  // qualcuno si ricordi di ogni via d'uscita.
+  _abbassaLucchetto();
   const _endBtn = document.getElementById('import-retro-start-btn'); if (_endBtn) _endBtn.disabled = false;
   renderItems(); updateSectionCounts();
 }
@@ -40166,7 +40722,7 @@ function figImportLog(msg, type) {
   const el = document.getElementById('import-fig-log');
   if (!el) return;
   el.style.display = 'block';
-  const color = type==='white'?'var(--text)':type==='ok'?'var(--success)':type==='err'?'var(--danger)':type==='warn'?'var(--warn)':type==='update'?'var(--info)':'var(--muted)';
+  const color = _logColore(type, 'dim');
   el.innerHTML += '<div style="color:'+color+';margin-bottom:2px;">'+msg+'</div>';
   el.scrollTop = el.scrollHeight;
 }
@@ -40214,13 +40770,26 @@ async function startImportFig() {
 
   document.getElementById('import-fig-progress-wrap').style.display = 'block';
   document.getElementById('import-fig-log').innerHTML = '';
+  // 🆕 v6.377 - IL LUCCHETTO SI ALZA QUI, cioe' DOPO i controlli d'ingresso e non in cima alla
+  // funzione. In cima sembra piu' pulito ed e' sbagliato: chi preme «Avvia» senza aver scelto la
+  // serie esce da un `return` anticipato, e il lucchetto resterebbe alzato su un caricamento che
+  // non e' mai cominciato - col battito che continua a tenerlo vivo, quindi senza nemmeno la
+  // scadenza a salvare la situazione. Si alza quando il lavoro comincia davvero.
+  _alzaLucchetto('figurine');
   document.getElementById('import-fig-log').style.display = 'block';
+  { const _a = document.getElementById('import-fig-log-actions'); if (_a) _a.style.display = 'flex'; }
+  applicaTemaLog();
   const _startBtn = document.getElementById('import-fig-start-btn'); if (_startBtn) _startBtn.disabled = true;
 
   const selEl = document.getElementById('import-fig-series-select');
   const seriesName = selEl?.selectedOptions[0]?.dataset.name || '';
 
-  figImportLog('--- ' + (it?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'info');
+  // 🆕 v6.376 (Franco: *"fallo in bianco"*) — LA RIGA DI AVVIO E' UN DELIMITATORE, non una nota.
+  // Era in 'info', cioe' il grigio delle righe che non hanno niente da dire; ma le altre tre righe
+  // fra trattini — FINE e i due INIZIO/FINE dei recap — sono sempre state in 'white'. Delle
+  // quattro cornici del log, tre erano bianche e una grigia, e non per una decisione: perche'
+  // nessuno le aveva mai guardate insieme.
+  figImportLog('--- ' + (it?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'white');
 
   let inserted = 0, updated = 0, unchanged = 0, errors = 0, skipped = 0, retroNotFound = 0;
   const erroriRighe = [];        // righe scartate del tutto (nessun salvataggio)
@@ -40298,7 +40867,7 @@ async function startImportFig() {
   let done = 0;
   for (const c of ordered) {
     const { i, g, versione, eBase } = c;
-    const rn = i + 1;
+    const rn = _nRiga(i + 1, rows.length);
     done++;
     figImportStatus((it?'Riga ':'Row ') + rn + '/' + rows.length, Math.round((done/rows.length)*100));
 
@@ -40567,7 +41136,17 @@ async function startImportFig() {
     } catch(e) { errRiga('❌ Riga ' + rn + ': ' + e.message, 'err'); }
   }
 
-  figImportStatus('✅ Fine: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : ''), 100);
+  // 🆕 v6.374 (Franco) - L'ORDINE NON E' CASUALE E GLI ERRORI STANNO IN FONDO: *"gli errori mettili
+  // per gli ultimi"*. Prima venivano prima dei "Retro non trovati", che invece sono righe SALVATE -
+  // solo con un dato che non si e' trovato. Adesso il riepilogo si legge dal meglio al peggio, e
+  // l'ultima cosa che resta sott'occhio e' quella su cui c'e' da lavorare.
+  // E `ignorate` dice anche cosa vuol dire: sono righe su cui non si e' scritto niente.
+  _logRiepilogo('import-fig-status', 'import-fig-progress', [
+    { n: inserted,      testo: 'inserite',                  tipo: 'ok'   },
+    { n: updated,       testo: 'aggiornate',                tipo: 'upd'  },
+    { n: skipped,       testo: 'ignorate (no aggiornamenti)', tipo: 'warn' },
+    { n: retroNotFound, testo: 'Retro non trovati',         tipo: 'warn', mostra: retroNotFound > 0 },
+    { n: errors,        testo: 'errori',                    tipo: 'err'  }]);
   figImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + unchanged + ' invariate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', 'white');
 
   // Recap, ciascuna sezione delimitata da INIZIO/FINE: (1) righe AGGIORNATE (hanno sovrascritto un
@@ -40583,7 +41162,20 @@ async function startImportFig() {
   };
   _recapBlock(righeAggiornate, 'RECAP RIGHE AGGIORNATE', 'RECAP UPDATED ROWS', 'update');
   _recapBlock(erroriRighe, 'RECAP RIGHE NON IMPORTATE', 'RECAP ROWS NOT IMPORTED');
-  _recapBlock(righeIncomplete, 'RECAP RIGHE NON IMPORTATE COMPLETAMENTE', 'RECAP ROWS NOT FULLY IMPORTED');
+  // 🆕 v6.376 (Franco) — «RIGHE CARICATE IN MODO INCOMPLETO», ed e' il contrario di come stava per
+  // essere scritto. Franco aveva chiesto di sostituire COMPLETAMENTE con AFFATTO; guardando cosa
+  // c'e' dentro il blocco, «non importate affatto» sarebbe stato falso: queste righe sono SALVATE,
+  // solo con un dato cercato e non trovato (il Retro del Change). Sono i «Retro non trovati» del
+  // riepilogo, non gli scarti - quelli sono il blocco sopra.
+  // 📌 «NON IMPORTATE COMPLETAMENTE» si legge in tutti e due i modi, ed e' il difetto: una
+  // negazione piu' un avverbio e' un'etichetta che il lettore deve interpretare. La forma
+  // affermativa non ha questo problema - dice che sono entrate e che manca qualcosa.
+  _recapBlock(righeIncomplete, 'RECAP RIGHE CARICATE IN MODO INCOMPLETO', 'RECAP ROWS LOADED INCOMPLETELY');
+  // v6.377 - e si abbassa. Se qualcosa scoppia prima di arrivare qui il lucchetto resta alzato,
+  // ma non per sempre: smette di battere, e dopo un minuto le altre finestre lo considerano morto.
+  // E' la ragione per cui il battito esiste - un lucchetto che si ripara da se' non ha bisogno che
+  // qualcuno si ricordi di ogni via d'uscita.
+  _abbassaLucchetto();
   const _endBtn = document.getElementById('import-fig-start-btn'); if (_endBtn) _endBtn.disabled = false;
   renderItems(); updateSectionCounts();
 }
@@ -42122,11 +42714,15 @@ function renderAdminFoto() {
         </button>
       </div>
 
-      <div id="import-fig-progress-wrap" style="display:none;margin-bottom:0.75rem;">
+      <div id="import-fig-log-actions" style="display:none;justify-content:flex-end;gap:0.4rem;margin-bottom:0.4rem;">
+        <button id="import-fig-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
+        <button onclick="clearImportFigLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
+      </div>
+      <div id="import-fig-log" style="display:none;background:var(--log-bg);border:1px solid var(--log-bd);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      <div id="import-fig-progress-wrap" style="display:none;margin-top:0.75rem;">
         <progress id="import-fig-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="import-fig-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
       </div>
-      <div id="import-fig-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
       </div>
 
       <hr class="divider" style="margin:2rem 0;">
@@ -42155,11 +42751,15 @@ function renderAdminFoto() {
         </button>
       </div>
 
-      <div id="import-retro-progress-wrap" style="display:none;margin-bottom:0.75rem;">
+      <div id="import-retro-log-actions" style="display:none;justify-content:flex-end;gap:0.4rem;margin-bottom:0.4rem;">
+        <button id="import-retro-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
+        <button onclick="clearImportRetroLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
+      </div>
+      <div id="import-retro-log" style="display:none;background:var(--log-bg);border:1px solid var(--log-bd);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      <div id="import-retro-progress-wrap" style="display:none;margin-top:0.75rem;">
         <progress id="import-retro-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="import-retro-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
       </div>
-      <div id="import-retro-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
       </div>
 
       <hr class="divider" style="margin:2rem 0;">
@@ -42200,14 +42800,15 @@ function renderAdminFoto() {
         </button>
       </div>
 
-      <div id="foto-progress-wrap" style="display:none;margin-bottom:1rem;">
+      <div id="foto-log-actions" style="display:none;justify-content:flex-end;gap:0.4rem;margin-bottom:0.4rem;">
+        <button id="foto-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
+        <button onclick="clearFotoLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
+      </div>
+      <div id="foto-log" style="display:none;background:var(--log-bg);border:1px solid var(--log-bd);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      <div id="foto-progress-wrap" style="display:none;margin-top:1rem;">
         <progress id="foto-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="foto-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
       </div>
-      <div id="foto-log-actions" style="display:none;justify-content:flex-end;margin-bottom:0.4rem;">
-        <button onclick="clearFotoLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
-      </div>
-      <div id="foto-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
       </div>
 
     <hr class="divider" style="margin:2rem 0;">
@@ -42255,14 +42856,15 @@ function renderAdminFoto() {
       </button>
     </div>
 
-    <div id="fotonn-progress-wrap" style="display:none;margin-bottom:1rem;">
+    <div id="fotonn-log-actions" style="display:none;justify-content:flex-end;gap:0.4rem;margin-bottom:0.4rem;">
+      <button id="fotonn-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
+      <button onclick="clearFotoNnLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
+    </div>
+    <div id="fotonn-log" style="display:none;background:var(--log-bg);border:1px solid var(--log-bd);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+    <div id="fotonn-progress-wrap" style="display:none;margin-top:1rem;">
       <progress id="fotonn-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
       <div id="fotonn-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
     </div>
-    <div id="fotonn-log-actions" style="display:none;justify-content:flex-end;margin-bottom:0.4rem;">
-      <button onclick="clearFotoNnLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
-    </div>
-    <div id="fotonn-log" style="display:none;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
     </div>
 
       <hr class="divider" style="margin:2rem 0;">
@@ -42294,21 +42896,19 @@ function renderAdminFoto() {
     </div>`;
 }
 
-function clearFotoLog() {
-  const el = document.getElementById('foto-log'); if (el) { el.innerHTML = ''; el.style.display = 'none'; }
-  const a = document.getElementById('foto-log-actions'); if (a) a.style.display = 'none';
-}
+function clearFotoLog() { _svuotaLog('foto-log'); }
 function fotoLog(msg, type) {
   const el = document.getElementById('foto-log');
   if (!el) return;
   el.style.display = 'block';
   const a = document.getElementById('foto-log-actions'); if (a) a.style.display = 'flex';
+  applicaTemaLog();
   const line = document.createElement('div');
   // v5.901 — le righe non colorate (info/default) vanno in BIANCO (var(--text)), non più grigio chiaro.
   // v6.034 — 'white' è un tipo NOMINATO, non il ripiego del default: la riga di riepilogo lo chiede
   // apposta (vedi sotto), e se un domani si cambia il colore di default quella non deve seguirlo.
   // Stessa forma di figImportLog (v5.808) e retroImportLog (v5.983).
-  line.style.color = type === 'white' ? 'var(--text)' : type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--text)';
+  line.style.color = _logColore(type, 'txt');
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
@@ -42405,6 +43005,12 @@ async function startAdminFotoUpload() {
 
   document.getElementById('foto-start-btn').disabled = true;
   document.getElementById('foto-progress-wrap').style.display = 'block';
+  // 🆕 v6.377 - IL LUCCHETTO SI ALZA QUI, cioe' DOPO i controlli d'ingresso e non in cima alla
+  // funzione. In cima sembra piu' pulito ed e' sbagliato: chi preme «Avvia» senza aver scelto la
+  // serie esce da un `return` anticipato, e il lucchetto resterebbe alzato su un caricamento che
+  // non e' mai cominciato - col battito che continua a tenerlo vivo, quindi senza nemmeno la
+  // scadenza a salvare la situazione. Si alza quando il lavoro comincia davvero.
+  _alzaLucchetto('foto');
   document.getElementById('foto-log').innerHTML = '';
   fotoLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + files.length + ' foto ---', 'info');
   await acquireWakeLock(); // v5.909 — evita la sospensione del PC durante il caricamento
@@ -42483,7 +43089,15 @@ async function startAdminFotoUpload() {
     }
   }
 
-  fotoStatus('✅ Fine: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori', 100);
+  // v6.377 - e si abbassa. Se qualcosa scoppia prima di arrivare qui il lucchetto resta alzato,
+  // ma non per sempre: smette di battere, e dopo un minuto le altre finestre lo considerano morto.
+  // E' la ragione per cui il battito esiste - un lucchetto che si ripara da se' non ha bisogno che
+  // qualcuno si ricordi di ogni via d'uscita.
+  _abbassaLucchetto();
+  _logRiepilogo('foto-status', 'foto-progress', [
+    { n: ok,     testo: 'ok',      tipo: 'ok'  },
+    { n: skip,   testo: 'saltate', tipo: 'txt' },
+    { n: errors, testo: 'errori',  tipo: 'err' }]);
   fotoLog('--- FINE: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori ---', 'white'); // v6.034 (Franco)
 
   if (erroriRighe.length) {
@@ -42497,19 +43111,17 @@ async function startAdminFotoUpload() {
   document.getElementById('foto-start-btn').disabled = false;
 }
 
-function clearFotoNnLog() {
-  const el = document.getElementById('fotonn-log'); if (el) { el.innerHTML = ''; el.style.display = 'none'; }
-  const a = document.getElementById('fotonn-log-actions'); if (a) a.style.display = 'none';
-}
+function clearFotoNnLog() { _svuotaLog('fotonn-log'); }
 function fotoNnLog(msg, type) {
   const el = document.getElementById('fotonn-log');
   if (!el) return;
   el.style.display = 'block';
   const a = document.getElementById('fotonn-log-actions'); if (a) a.style.display = 'flex';
+  applicaTemaLog();
   const line = document.createElement('div');
   // v5.901 — righe non colorate in BIANCO (vedi fotoLog).
   // v6.034 — 'white' nominato, come in fotoLog.
-  line.style.color = type === 'white' ? 'var(--text)' : type === 'ok' ? 'var(--success)' : type === 'err' ? 'var(--danger)' : type === 'warn' ? 'var(--warn)' : 'var(--text)';
+  line.style.color = _logColore(type, 'txt');
   line.textContent = new Date().toLocaleTimeString('it-IT') + ' — ' + msg;
   el.appendChild(line);
   el.scrollTop = el.scrollHeight;
@@ -42554,6 +43166,12 @@ async function startAdminFotoNoNumberUpload() {
 
   document.getElementById('fotonn-start-btn').disabled = true;
   document.getElementById('fotonn-progress-wrap').style.display = 'block';
+  // 🆕 v6.377 - IL LUCCHETTO SI ALZA QUI, cioe' DOPO i controlli d'ingresso e non in cima alla
+  // funzione. In cima sembra piu' pulito ed e' sbagliato: chi preme «Avvia» senza aver scelto la
+  // serie esce da un `return` anticipato, e il lucchetto resterebbe alzato su un caricamento che
+  // non e' mai cominciato - col battito che continua a tenerlo vivo, quindi senza nemmeno la
+  // scadenza a salvare la situazione. Si alza quando il lavoro comincia davvero.
+  _alzaLucchetto('fotonn');
   document.getElementById('fotonn-log').innerHTML = '';
   fotoNnLog('--- ' + (currentLang==='it'?'Avvio':'Start') + ': ' + files.length + ' foto (' + scope + ') ---', 'info');
   await acquireWakeLock(); // v5.909 — evita la sospensione del PC durante il caricamento
@@ -42691,7 +43309,15 @@ async function startAdminFotoNoNumberUpload() {
     }
   }
 
-  fotoNnStatus('✅ Fine: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori', 100);
+  // v6.377 - e si abbassa. Se qualcosa scoppia prima di arrivare qui il lucchetto resta alzato,
+  // ma non per sempre: smette di battere, e dopo un minuto le altre finestre lo considerano morto.
+  // E' la ragione per cui il battito esiste - un lucchetto che si ripara da se' non ha bisogno che
+  // qualcuno si ricordi di ogni via d'uscita.
+  _abbassaLucchetto();
+  _logRiepilogo('fotonn-status', 'fotonn-progress', [
+    { n: ok,     testo: 'ok',      tipo: 'ok'  },
+    { n: skip,   testo: 'saltate', tipo: 'txt' },
+    { n: errors, testo: 'errori',  tipo: 'err' }]);
   fotoNnLog('--- FINE: ' + ok + ' ok · ' + skip + ' saltate · ' + errors + ' errori ---', 'white'); // v6.034 (Franco)
 
   if (erroriRighe.length) {
@@ -43823,6 +44449,10 @@ async function deleteBulkSelected() {
 }
 
 async function saveBulkCell(input) {
+  // v6.377 - prima di toccare qualunque cosa: se un'altra finestra sta caricando, si dice e si
+  // esce. Il valore nella casella resta quello che l'utente ha scritto, e va bene: non e' stato
+  // rifiutato, e' stato rimandato.
+  if (_bloccatoDalLucchetto()) return;
   const figId = input.dataset.id;
   const field = input.dataset.field;
   let value = input.value.trim();
@@ -43919,20 +44549,65 @@ async function saveBulkCell(input) {
   if (_CAMPI_TIPOLOGIA.includes(field)) {
     figs[idx].fullName = computeFullName(figs[idx], figs);
   }
-  // v5.980 — Toccando un RETRO cambia il Nome completo di piu' record: il suo, quello dei suoi
-  // Change ed errori di stampa (che lo prendono come base), e quello delle Variazioni di figurina
-  // che lo hanno collegato. Se non si ricalcolano, il campo salvato resta indietro e mostra un
-  // nome che non esiste piu' — proprio il campo su cui poggia tutto il resto.
-  // Basta una sola scrittura: le figurine vivono dentro il documento della serie, quindi
-  // fsSave qui sotto porta con se' anche gli altri record ricalcolati.
   const rec = figs[idx];
-  if (rec.section === 'retros' && ['name', 'subname', 'category', 'changeType', 'printErrorType'].includes(field)) {
-    const dipendenti = figs.filter(x =>
-      x.id === rec.id || x.baseFigurineId === rec.id || x.retroId === rec.id);
-    for (const d of dipendenti) d.fullName = computeFullName(d, figs);
-  }
+
+  // 🔴 v6.375 (Franco, baco) — LA TABELLA NON AVVISAVA I FIGLI, E LO FACEVA A META'.
+  // *"Ho aggiornato il nome e sottonome di un retro base e la sua versione omaggio non ha ereditato
+  // questa modifica. L'aggiornamento l'ho fatto da vista tabellare"*.
+  //
+  // Il punto: `_collegatiDaAggiornare` — la propagazione ai figli — la chiamava SOLO la scheda
+  // (`saveFigFromDetail`). Da qui partiva un `fsSave` di UN record, e ai figli si rifaceva il solo
+  // `fullName`. Quindi l'omaggio si ritrovava il Nome completo aggiornato (che per un figlio si
+  // compone dal nome della BASE) e i propri `name` e `subname` fermi a prima.
+  // 📌 ED E' PEGGIO DEL NON FARE NIENTE: un mezzo aggiornamento non si vede: il Nome completo
+  // giusto fa sembrare che l'ereditarieta' abbia funzionato. Un difetto che si nasconde dietro il
+  // proprio effetto parziale non lo trova nessun controllo — l'ha trovato Franco, usando il sito.
+  //
+  // ⚠️ E' LA TERZA VOLTA CHE QUESTO FILE INCONTRA LA STESSA FORMA. La v6.133 l'aveva gia' scritta:
+  // *"due strade che scrivono lo stesso campo si comportavano diversamente"* (era il numero); la
+  // v6.143 aveva chiuso quale campo si puo' SCRIVERE da qui, ma non cosa succede DOPO averlo
+  // scritto. La regola che ne esce, e che vale oltre questo caso: quando due punti scrivono lo
+  // stesso dato, non basta che applichino la stessa REGOLA — devono chiamare la stessa FUNZIONE.
+  // Una regola applicata due volte e' due regole che aspettano di divergere.
+  //
+  // Il blocco improvvisato che stava qui aveva ALTRI TRE buchi, tutti muti, e si chiudono da soli
+  // passando dalla discesa condivisa invece di ripararli uno per uno:
+  //   · scendeva UN LIVELLO (i figli diretti); `_discendenzaDaAggiornare` scende tutto l'albero,
+  //     quindi un nipote non si muoveva nemmeno nel Nome completo;
+  //   · valeva SOLO PER I RETRO (`rec.section === 'retros'`): cambiando il nome di una FIGURINA
+  //     base dalla tabella, ai figli non succedeva niente di niente;
+  //   · `subcategory` non era nell'elenco che faceva scattare il ricalcolo, pur essendo fra i
+  //     campi ereditati dai retro (`_campiEreditatiDaBase`).
+  const _CAMPI_NOME_RETRO = ['name', 'subname', 'category', 'subcategory'].concat(_CAMPI_TIPOLOGIA);
+  const _toccaIlNome = rec.section === 'retros' && _CAMPI_NOME_RETRO.includes(field);
+  if (_toccaIlNome) rec.fullName = computeFullName(rec, figs);
+
+  // (1) I DISCENDENTI, con la stessa discesa della scheda: a qualunque profondita', in ogni
+  //     sezione, e coi campi ereditati COPIATI e non solo col Nome completo rifatto.
+  const _collegati = _collegatiDaAggiornare(rec);
+
+  // (2) E chi ha questo retro come PROPRIO retro (`retroId`). Non sono figli — non ereditano
+  //     campi — ma il loro Nome completo lo contiene, quindi restano un elenco a parte.
+  //     ⚠️ Si tolgono quelli gia' presenti fra i collegati: lo stesso id due volte nella stessa
+  //     scrittura significa che vince l'ultimo, e l'ultimo sarebbe la copia SENZA i campi ereditati.
+  const _perRetro = _toccaIlNome
+    ? figs.filter(x => x.retroId === rec.id && x.id !== rec.id && !_collegati.some(c => c.id === x.id))
+    : [];
+  for (const d of _perRetro) d.fullName = computeFullName(d, figs);
+
   _cache.figurines = figs;
-  await fsSave('figurines', figs[idx]);
+  // Una scrittura sola per serie, come la scheda dalla v6.116: o si scrive tutto o niente.
+  await _salvaFigurineInBlocco([rec, ..._collegati, ..._perRetro]);
+
+  // v6.375 — e lo si DICE, come fa la scheda dalla v6.053: un salvataggio che ne modifica altri in
+  // silenzio e' il modo in cui ci si accorge dei danni tre giorni dopo. Qui il difetto era proprio
+  // che non si vedeva niente.
+  if (_collegati.length) {
+    const _n = _collegati.length;
+    toast(currentLang === 'it'
+      ? `✅ Aggiornati anche ${_n} collegat${_n === 1 ? 'o' : 'i'}`
+      : `✅ ${_n} linked item${_n === 1 ? '' : 's'} updated too`, 'success', null, 4000);
+  }
 
   // Visual feedback
   input.style.borderColor = 'var(--accent)';
