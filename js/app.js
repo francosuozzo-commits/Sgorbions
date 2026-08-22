@@ -1,6 +1,54 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.372 - DUE COLORI DI VERSIONE SPOSTATI, E «VERSIONE OMAGGIO» NEL TITOLO (Franco).
+//          index.html (i due colori) e app.js (l'etichetta).
+//
+//          1. 🔴 «Variazione non ufficiale»: #7fd4ff -> **#b98cff** (lilla). Franco: *"il colore
+//             code azzurro di «Variazione non ufficiale» e' molto simile a quello del campo NOME"*.
+//             Misurato: distavano **90**, ed era la coppia PIU' VICINA di tutto il sito - la seconda,
+//             `--action`, sta a 182. Adesso: 176.
+//             📌 SI E' SPOSTATA LA VERSIONE E NON IL NOME, e la ragione vale oltre il caso: `--info`
+//             e' il colore dell'IDENTITA' (numero, nome, sottonome) e ha una costante apposta,
+//             `COL_IDENTITA` (v6.277), nata perche' quei tre restino uguali in punti lontani del
+//             file; ha anche `--info-rgb` per bordi e sfondi. Ma soprattutto il vincolo appartiene
+//             alla tavolozza delle VERSIONI, che e' un codice: deve distinguersi al suo interno e
+//             dal testo attorno. Il nome e' il testo attorno, non uno dei cinque.
+//
+//          2. 🔴 «Errore di stampa»: #ff7a6b -> **#e8557c** (cremisi). QUESTA NON L'AVEVA CHIESTA
+//             NESSUNO: e' saltata fuori misurando la tavolozza tutta insieme per rispondere alla
+//             prima. Distava **107** da `--type-official`, ed era messa peggio dell'azzurro -
+//             perche' quelle due sono ENTRAMBE etichette di versione e compaiono AFFIANCATE nelle
+//             pillole del riquadro, dove distinguerle e' tutto il punto. L'azzurro dava fastidio in
+//             un posto solo. Adesso: 189.
+//             📌 Si e' spostato l'ERRORE e non l'UFFICIALE, e lo dice la misura: l'arancio non ha
+//             dove andare senza finire addosso a `CATEGORIA` (#ffd84d) - il corallo invece aveva
+//             spazio. E si allontana anche da `--danger` (#ff6464), da cui distava una trentina: un
+//             colore di versione che sembra il rosso «pericolo» del sito era un'altra ambiguita',
+//             piu' silenziosa di quella che Franco aveva visto.
+//             📌 I due valori stanno nel `:root` dell'INDEX e non in `css/style.css`, come gia'
+//             `--type-free`: l'index e' l'unico foglio che vive nella cartella di lavoro, quindi una
+//             tinta dichiarata li' entra nella PREVIEW e si guarda prima di pubblicare.
+//             ⚠️ I valori vecchi restano dentro `css/style.css`: non danno fastidio (l'index li
+//             scavalca) ma sono la copia che al prossimo che li legge dira' il falso. Da riallineare
+//             quando si tocchera' quel file.
+//             ⚠️ E RESTA APERTA una collisione ESATTA: `--type-official` e `COL_SOTTOCAT` sono lo
+//             stesso identico #ffa94d. Non si incontrano quasi mai nello stesso punto, ma distanza
+//             ZERO non e' una somiglianza. Chiuderla vuol dire spostare la SOTTOCATEGORIA, non una
+//             versione: la tavolozza e' satura, le famiglie di tinta libere sono finite.
+//
+//          3. 🆕 NEL TITOLO L'OMAGGIO SI CHIAMA «VERSIONE OMAGGIO» (Franco), col suo colore.
+//             📌 E' il SESTO testo che quella versione porta con se', e ognuno esiste perche' non e'
+//             una funzione degli altri: `it` (l'etichetta), `pluraleIt` (da «Omaggio» non si arriva a
+//             «Omaggi» senza inventare una regola di grammatica), `codaRaggrIt`, `esportaIt`,
+//             `prefissoTipo` (che finisce nel Nome completo, un campo SALVATO, e per questo non puo'
+//             dipendere da un'etichetta rinominabile - v6.257). Vale la regola di sempre: quando il
+//             testo non e' una funzione dell'etichetta, si dichiara.
+//             ⚠️ IL CAMPO E' FACOLTATIVO: il titolo ripiega su `it`/`en`, quindi le altre quattro
+//             versioni non lo portano e continuano a dire la loro etichetta. Una versione futura che
+//             non lo dichiari si comporta come loro, senza che nessuno debba ricordarsene.
+//
+// ------------------------------------------------------------
 // v6.371 - LA VERSIONE ENTRA NEL TITOLO DELLA SCHEDA, E LE CINQUE FRASI SE NE VANNO (Franco).
 //          Solo app.js, piu' la versione nell'index.
 //
@@ -20769,7 +20817,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.371';
+const JS_VERSION = 'v6.372';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -26731,6 +26779,18 @@ const VERSIONI_ARTICOLO = [
     // Sono due mestieri diversi e ora hanno due campi diversi. Le altre versioni non lo
     // dichiarano, quindi non prefissano niente: e' cio' che decisero la v5.755 e la v5.774.
     prefissoTipo: 'OMAGGIO',
+    // 🆕 v6.372 (Franco: *"nel titolo degli articoli, quando scriviamo OMAGGIO, scriviamo invece
+    // VERSIONE OMAGGIO"*) - L'ETICHETTA DEL TITOLO, dichiarata e non ricavata.
+    // 📌 E' il quinto testo che questa versione porta con se', e ognuno esiste perche' non e' una
+    // funzione degli altri: `it` e' l'etichetta da mostrare, `pluraleIt` il plurale (da «Omaggio»
+    // non si arriva a «Omaggi» senza inventare una regola di grammatica), `codaRaggrIt` la coda del
+    // raggruppamento, `prefissoTipo` la parola nel Nome completo - che e' un campo SALVATO, e per
+    // questo non puo' dipendere da un'etichetta che si puo' rinominare (v6.257). Questa e' la sesta,
+    // e vale la stessa regola: quando il testo non e' una funzione dell'etichetta, si dichiara.
+    // ⚠️ E' FACOLTATIVA: `_titoloSchedaHTML` ripiega su `it`/`en`, quindi le altre quattro versioni
+    // non la portano e nel titolo continuano a dire la loro etichetta di sempre. Una versione futura
+    // che non la dichiari si comporta come loro, senza che nessuno debba ricordarsene.
+    titoloIt: 'Versione omaggio', titoloEn: 'Free version',
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
     // cinque frasi non hanno lo stesso articolo e da `it` non ci si arriva.
     esportaIt: 'versioni Omaggio', esportaEn: 'free versions',
@@ -36612,7 +36672,11 @@ function _titoloSchedaHTML(f, nomeVisualizzato) {
   const _v = _eBase(f) ? null : _versioneDiChiave(_chiaveTipo(f));
   const _coda = _v
     ? ' - <span style="color:' + (_v.colore || 'var(--text)') + ';">'
-      + esc(currentLang === 'it' ? _v.it : _v.en) + '</span>'
+      // 🆕 v6.372 - se la versione dichiara un'etichetta PER IL TITOLO si usa quella, se no la sua
+      // etichetta di sempre. Oggi la dichiara solo l'omaggio («Versione omaggio»); le altre quattro
+      // non la portano e non se ne accorgono. Il ripiego e' l'unica cosa che rende il campo
+      // facoltativo, ed e' quello che evita di doverlo aggiungere a tutte per servirne una.
+      + esc(currentLang === 'it' ? (_v.titoloIt || _v.it) : (_v.titoloEn || _v.en)) + '</span>'
     : '';
   return '<span style="color:var(--info);font-size:0.95rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.15rem;">'
     + esc(tipo) + _coda + '</span>' + esc(nome);
