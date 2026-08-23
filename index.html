@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.392"></script>
-<link rel="stylesheet" href="css/style.css?v=6.392">
+<script src="js/email.min.js?v=6.397"></script>
+<link rel="stylesheet" href="css/style.css?v=6.397">
 
 
 <style>
@@ -572,6 +572,35 @@ button.back-btn { color:#ffffff; }
    che segnala un salvataggio parzialmente fallito non deve essere più timido di un successo. */
 .toast.warn { border-color: var(--warn); }
 .toast.info { border-color: var(--info); }
+
+/* 🆕 v6.396 (Franco) — L'ANNO DELLA SERIE IN BIANCO, come tutto il resto dei dati della serie.
+   L'anno non ha mai avuto un colore SUO: porta .card-tag, che vale color: var(--accent3) — il
+   viola. E quella classe, malgrado il nome generico, è usata in UN posto solo: proprio l'anno.
+   Non c'era una scelta da rispettare, c'era una scelta mai dichiarata.
+   📌 SI SCAVALCA QUI INVECE DI TOCCARE css/style.css: il deploy porta su solo index.html e
+   js/app.js, e questo blocco <style> viene DOPO il <link> a style.css, quindi a parità di
+   specificità vince (§5 dice appunto di aggiungere il CSS inline nell'index).
+   ⚠️ La regola in style.css resta e continuerà a dire viola: chi legge quel file vedrà una cosa che
+   il sito non fa più. È il prezzo dello scavalcamento, e si paga sapendolo. */
+.card-tag { color: var(--text); }
+
+/* 🆕 v6.397 (Franco) — IL COLORE DEI TITOLI DELLE CARD DEGLI HUB, e dell'etichetta di
+   raggruppamento nella ricerca globale. PROVVISORIO: Franco ha detto "per ora mettiamola in giallo;
+   poi vediamo se confermarlo".
+   📌 ESISTE COME TOKEN PROPRIO PERCHÉ È PROVVISORIO. I punti che lo usano sono quattro e stanno in
+   posti lontani del file: con un valore scritto a mano, confermarlo o cambiarlo vorrebbe dire
+   ritrovarli tutti e quattro — e trovarne tre è il difetto che questa settimana è costato sei
+   release. Così invece si tocca questa riga.
+   🔴 IL VALORE È MISURATO, NON SCELTO A OCCHIO. Il giallo che si sarebbe preso d'istinto (#ffe873)
+   sta a ΔE 13,5 da #ffd84d — il giallo con cui, POCHI PIXEL PIÙ SOTTO NELLA STESSA SCHERMATA, le
+   righe della ricerca scrivono «Variazione» e «Change». Due gialli quasi uguali nella stessa
+   videata, uno che significa "tipo di articolo" e l'altro "versione": è esattamente il difetto che
+   Franco aveva segnalato con l'arancione a ΔE 7. Questo sta a ΔE 27,5 dal giallo versione e a ΔE
+   28+ da tutti e sei i colori del codice, con contrasto 13,5:1 sul fondo delle card.
+   ⚠️ È comunque un giallo, come Franco ha chiesto: più tenue di #ffd84d, non un crema.
+   ⚠️ E NON tocca `.card-title` come classe: quella serve anche le card delle serie nell'Inventario,
+   che Franco non ha nominato e restano bianche. Il colore sta sui tre punti, non sulla classe. */
+:root { --tipo-articolo: #f2e08c; }
 
 </style>
 </head>
@@ -2152,7 +2181,7 @@ button.back-btn { color:#ffffff; }
         <div>
           <h1 style="font-family:var(--font-ui);font-size:2.2rem;" data-i18n="wantlist.pageTitle">Le mie liste</h1>
           <p style="color:var(--accent);font-size:0.95rem;margin-top:0.5rem;font-weight:600;" data-i18n-html="wantlist.hook">Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l'Inventario?<br>Se la risposta è sì, sei nel posto giusto !!<br><br></p>
-          <p style="color:#fff;font-size:0.88rem;margin-top:4px;" data-i18n-html="wantlist.desc">Qui trovi l'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)</p>
+          <p style="color:var(--text);font-size:0.88rem;margin-top:4px;" data-i18n-html="wantlist.desc">Qui trovi l'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)</p>
         </div>
       </div>
 
@@ -2192,11 +2221,11 @@ button.back-btn { color:#ffffff; }
     </div>
     <div id="auth-login">
       <div class="form-group">
-        <label class="form-label" style="color:#fff;" data-i18n="form.email">E-mail</label>
+        <label class="form-label" style="color:var(--text);" data-i18n="form.email">E-mail</label>
         <input class="form-input" type="email" id="login-email" placeholder="la-tua@e-mail.com" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <div class="form-group">
-        <label class="form-label" style="color:#fff;" data-i18n="form.password">Password</label>
+        <label class="form-label" style="color:var(--text);" data-i18n="form.password">Password</label>
         <input class="form-input" type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
       </div>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doLogin()" data-i18n="auth.login.btn">Sign In</button>
@@ -2207,19 +2236,19 @@ button.back-btn { color:#ffffff; }
     </div>
     <div id="auth-register" style="display:none;">
       <div class="form-group">
-        <label class="form-label" style="color:#fff;" data-i18n="form.username">Nome utente</label>
+        <label class="form-label" style="color:var(--text);" data-i18n="form.username">Nome utente</label>
         <input class="form-input" type="text" id="reg-username" placeholder="slime_collector_99">
       </div>
       <div class="form-group">
-        <label class="form-label" style="color:#fff;" data-i18n="form.email">E-mail</label>
+        <label class="form-label" style="color:var(--text);" data-i18n="form.email">E-mail</label>
         <input class="form-input" type="email" id="reg-email" placeholder="la-tua@e-mail.com">
       </div>
       <div class="form-group">
-        <label class="form-label" style="color:#fff;" data-i18n="form.password">Password</label>
+        <label class="form-label" style="color:var(--text);" data-i18n="form.password">Password</label>
         <input class="form-input" type="password" id="reg-password" placeholder="Min. 6 characters">
       </div>
       <div class="form-group">
-        <label class="form-label" style="color:#fff;" data-i18n="form.nationality">Nazionalità *</label>
+        <label class="form-label" style="color:var(--text);" data-i18n="form.nationality">Nazionalità *</label>
         <input class="form-input" type="text" id="reg-nationality-search" placeholder="Scrivi il nome del paese..." oninput="filterNationalities()" autocomplete="off">
         <div id="nationality-dropdown" style="display:none;background:var(--card);border:1px solid var(--border2);border-radius:var(--radius);max-height:180px;overflow-y:auto;margin-top:4px;"></div>
         <input type="hidden" id="reg-nationality-code" value="">
@@ -2227,7 +2256,7 @@ button.back-btn { color:#ffffff; }
         <div id="reg-nationality-preview" style="display:none;margin-top:6px;align-items:center;gap:6px;font-size:0.88rem;color:var(--text);"></div>
       </div>
       <div class="form-group" style="margin-top:0.75rem;">
-        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:#fff;line-height:1.4;">
+        <label style="display:flex;align-items:flex-start;gap:0.6rem;cursor:pointer;font-size:0.85rem;color:var(--text);line-height:1.4;">
           <input type="checkbox" id="reg-age-confirm" style="width:16px;height:16px;flex-shrink:0;margin-top:2px;cursor:pointer;">
           <span data-i18n="form.ageConfirm">Confermo di avere almeno 16 anni</span>
         </label>
@@ -2242,7 +2271,7 @@ button.back-btn { color:#ffffff; }
            consenso imposto come condizione del servizio sarebbe nullo (GDPR
            art. 7 par. 4, "consenso liberamente prestato"). -->
       <div class="form-group" style="margin-top:0.75rem;">
-        <label class="form-label" style="color:#fff;" data-i18n="form.newsletterLabel">Vuoi ricevere la newsletter? *</label>
+        <label class="form-label" style="color:var(--text);" data-i18n="form.newsletterLabel">Vuoi ricevere la newsletter? *</label>
         <select class="form-select" id="reg-newsletter-consent">
           <option value="" data-i18n="form.newsletter.opt.none">— Seleziona —</option>
           <option value="yes" data-i18n="form.newsletter.opt.yes">Sì, voglio riceverla</option>
@@ -2250,7 +2279,7 @@ button.back-btn { color:#ffffff; }
         </select>
         <p style="font-size:0.78rem;color:rgba(255,255,255,0.7);margin-top:0.4rem;line-height:1.4;" data-i18n="form.newsletter.hint">Rispondere è obbligatorio, ma sei libero di dire di no: la registrazione funziona comunque. Potrai cambiare idea quando vuoi dal tuo profilo.</p>
       </div>
-      <p style="font-size:0.78rem;color:#fff;margin-top:0.4rem;" data-i18n-html="form.privacyNotice">Registrandoti, accetti la nostra <a href="#" onclick="closeModal('auth-modal');showPage('privacy');return false;" style="color:var(--accent);">Privacy Policy</a>.</p>
+      <p style="font-size:0.78rem;color:var(--text);margin-top:0.4rem;" data-i18n-html="form.privacyNotice">Registrandoti, accetti la nostra <a href="#" onclick="closeModal('auth-modal');showPage('privacy');return false;" style="color:var(--accent);">Privacy Policy</a>.</p>
       <button class="btn-primary" style="width:100%;margin-top:0.5rem;" onclick="doRegister()" id="reg-submit-btn" data-i18n="auth.reg.btn">Create Account</button>
       <div id="reg-wait-notice" style="display:none;margin-top:0.75rem;background:rgba(var(--warn-rgb),0.1);border:1px solid rgba(var(--warn-rgb),0.3);color:var(--warn);padding:0.6rem 1rem;border-radius:8px;font-size:0.85rem;text-align:center;">⏳ <span data-i18n="auth.reg.wait">La registrazione può richiedere fino a un minuto: non chiudere questa finestra.</span></div>
       <div id="reg-error" style="display:none;margin-top:0.75rem;background:rgba(var(--danger-rgb),0.1);border:1px solid rgba(var(--danger-rgb),0.3);color:var(--danger);padding:0.6rem 1rem;border-radius:8px;font-size:0.9rem;text-align:center;"></div>
@@ -3146,10 +3175,10 @@ button.back-btn { color:#ffffff; }
     </div>
     <p style="font-size:0.88rem;color:#fff;margin-bottom:1rem;" data-i18n-html="pwd.resetDesc">Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.</p>
     <div class="form-group">
-      <label class="form-label" style="color:#fff;" data-i18n="modal.resetPwd.emailLabel">Indirizzo E-mail</label>
+      <label class="form-label" style="color:var(--text);" data-i18n="modal.resetPwd.emailLabel">Indirizzo E-mail</label>
       <input class="form-input" type="email" id="reset-email-input" data-i18n-placeholder="modal.resetPwd.emailPh" placeholder="la-tua@e-mail.com" onkeydown="if(event.key==='Enter')doResetPassword()">
     </div>
-    <p style="font-size:0.92rem;color:#fff;margin-top:0.4rem;margin-bottom:1.5rem;" data-i18n-html="modal.resetPwd.forgotEmail">Hai dimenticato anche l'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal('reset-pwd-modal');showPage('contact');return false;" style="color:var(--accent);">Contatta l'amministratore</a>.</p>
+    <p style="font-size:0.92rem;color:var(--text);margin-top:0.4rem;margin-bottom:1.5rem;" data-i18n-html="modal.resetPwd.forgotEmail">Hai dimenticato anche l'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal('reset-pwd-modal');showPage('contact');return false;" style="color:var(--accent);">Contatta l'amministratore</a>.</p>
     <div id="reset-pwd-feedback" style="display:none;margin-bottom:1.25rem;padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;"></div>
     <button class="btn-primary" style="width:100%;" onclick="doResetPassword()" data-i18n="modal.resetPwd.send">Inviami e-mail con link per reset password</button>
   </div>
@@ -3320,7 +3349,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.392"></script>
+<script src="js/app.js?v=6.397"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3344,7 +3373,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.392'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.397'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
