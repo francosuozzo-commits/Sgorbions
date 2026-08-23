@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.377"></script>
-<link rel="stylesheet" href="css/style.css?v=6.377">
+<script src="js/email.min.js?v=6.392"></script>
+<link rel="stylesheet" href="css/style.css?v=6.392">
 
 
 <style>
@@ -538,6 +538,41 @@ button.back-btn { color:#ffffff; }
    blocco. Il modo per accertarlo in dieci secondi, invece di contarle a mano, e' nel §12.9 del
    documento: si legge il CSS dal DOM e si traccia la profondita' riga per riga. */
 
+/* 🆕 v6.380 (Franco: *"mi serve allargare la finestra di log ... aumentane la larghezza del 50%"*)
+   LE QUATTRO SCATOLE DI LOG, UNA REGOLA SOLA.
+   🔴 Lo stesso `style="..."` stava scritto QUATTRO VOLTE dentro app.js, identico carattere per
+   carattere: import figurine, import retro, foto, foto senza numero. Quattro copie di una forma
+   sono quattro occasioni di divergere, ed e' gia' successo su queste stesse scatole (v6.374, dove
+   i colori erano copiati quattro volte con due varianti gia' scappate). Allargarne una sola
+   avrebbe rifatto quel giro.
+   ⚠️ IL +50% E' SUL TETTO, NON SU CIO' CHE SI VEDE. Il tetto passa da 1500px (il pannello admin) a
+   2250px, ma lo schermo vince: su un monitor 1920 il log arriva a 96vw ≈ 1843px, cioe' +23%. Il
+   +50% pieno si vede da 2344px in su. Scriverlo qui perche' «l'ho allargata del 50%» e' vero nel
+   codice e falso sul monitor di chi guarda.
+   📌 Esce dal pannello admin con lo stesso trucco della vista tabellare (`margin-left:50%` piu'
+   `translateX(-50%)`), che nel sito c'e' gia' e si comporta come ci si aspetta: non ne inventiamo
+   un secondo. Sotto gli 860px l'amministrazione non si vede affatto (v5.822), quindi da telefono
+   questa regola non tocca niente. */
+.log-box {
+  background: var(--log-bg); border: 1px solid var(--log-bd); border-radius: var(--radius);
+  padding: 0.75rem; font-family: monospace; font-size: 0.78rem;
+  max-height: 600px; overflow-y: auto; white-space: pre; overflow-x: auto;
+  width: min(2250px, 96vw); max-width: none;
+  margin-left: 50%; transform: translateX(-50%);
+}
+
+/* 🆕 v6.382 — I DUE TIPI DI TOAST CHE NON AVEVANO UN COLORE.
+   🔴 Il codice chiama `toast(msg, 'warn')` e `toast(msg, 'info')`, ma in tutto il CSS esistevano
+   solo `.toast.success` e `.toast.error`. Quei due uscivano quindi con la cornice neutra, identici
+   a un avviso qualunque — e il caso peggiore era proprio l'aggiornamento massivo: quando ALMENO
+   UNA serie non veniva salvata il toast passava a 'warn', cioè diventava più discreto proprio
+   nell'unico momento in cui doveva farsi notare. Franco l'aveva visto da fuori: «il messaggio di
+   conferma salvataggio non è verde come al solito».
+   ⚠️ La cornice qui è PIENA e non trasparente come quelle di success/error, ed è voluto: un avviso
+   che segnala un salvataggio parzialmente fallito non deve essere più timido di un successo. */
+.toast.warn { border-color: var(--warn); }
+.toast.info { border-color: var(--info); }
+
 </style>
 </head>
 <body>
@@ -766,7 +801,7 @@ button.back-btn { color:#ffffff; }
            un carosello vuoto non lascia in pagina un invito orfano - che e' il comportamento di
            oggi, e non c'e' motivo di cambiarlo insieme alla posizione. -->
       <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem;">
-        <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Esplora l'Inventario Sgorbions!</button>
+        <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Esplora l'Inventario Sgorbions !</button>
       </div>
       <div style="position:relative;">
         <button type="button" id="carosello-prec" aria-label="Precedente"
@@ -891,7 +926,7 @@ button.back-btn { color:#ffffff; }
       </div>
       <div id="catalog-search-results" style="display:none;"></div>
       <div class="grid-3" id="catalog-grid">
-        <div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title" data-i18n="catalog.empty">No series yet. Admin can add them!</p></div>
+        <div class="empty-state"><div class="empty-icon">🎴</div><p class="empty-title" data-i18n="catalog.empty">No series yet. Admin can add them !</p></div>
       </div>
     </div>
   </section>
@@ -1233,7 +1268,7 @@ button.back-btn { color:#ffffff; }
     </div>
     <div id="items-pagination-top"></div>
     <div class="grid-6" id="items-grid">
-      <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora!</p></div>
+      <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora !</p></div>
     </div>
     <div id="items-pagination"></div>
     <div id="bulk-edit-view" style="display:none;margin-top:1rem;overflow-x:auto;width:100%;"></div>
@@ -1252,7 +1287,7 @@ button.back-btn { color:#ffffff; }
         <button class="btn-primary" onclick="openPostModal()" data-i18n="blog.post">+ Nuova domanda / Notizia</button>
       </div>
       <div id="blog-list">
-        <div class="empty-state"><div class="empty-icon">💬</div><p class="empty-title" data-i18n="blog.empty">No posts yet. Start the conversation!</p></div>
+        <div class="empty-state"><div class="empty-icon">💬</div><p class="empty-title" data-i18n="blog.empty">No posts yet. Start the conversation !</p></div>
       </div>
     </div>
   </section>
@@ -1539,7 +1574,7 @@ button.back-btn { color:#ffffff; }
         <div style="position:absolute;bottom:0;right:0;width:22px;height:22px;background:var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;">✏️</div>
       </div>
         <div class="profile-info">
-          <div id="must-change-pwd-banner" style="display:none;background:rgba(var(--warn-rgb),0.15);border:1px solid rgba(var(--warn-rgb),0.4);color:var(--warn);padding:0.5rem 1rem;border-radius:8px;font-size:0.85rem;margin-bottom:0.5rem;">⚠️ Stai usando una password temporanea. <button onclick="openChangePwdModal()" style="background:none;border:none;color:var(--warn);text-decoration:underline;cursor:pointer;font-size:0.85rem;">Cambiala subito!</button></div>
+          <div id="must-change-pwd-banner" style="display:none;background:rgba(var(--warn-rgb),0.15);border:1px solid rgba(var(--warn-rgb),0.4);color:var(--warn);padding:0.5rem 1rem;border-radius:8px;font-size:0.85rem;margin-bottom:0.5rem;">⚠️ Stai usando una password temporanea. <button onclick="openChangePwdModal()" style="background:none;border:none;color:var(--warn);text-decoration:underline;cursor:pointer;font-size:0.85rem;">Cambiala subito !</button></div>
           <h2 id="profile-username">Nickname</h2>
           <p id="profile-email" style="color:var(--muted);font-size:1rem;"></p>
           <div id="profile-actions-row" style="margin-top:0.5rem;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
@@ -2116,7 +2151,7 @@ button.back-btn { color:#ffffff; }
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
         <div>
           <h1 style="font-family:var(--font-ui);font-size:2.2rem;" data-i18n="wantlist.pageTitle">Le mie liste</h1>
-          <p style="color:var(--accent);font-size:0.95rem;margin-top:0.5rem;font-weight:600;" data-i18n-html="wantlist.hook">Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br></p>
+          <p style="color:var(--accent);font-size:0.95rem;margin-top:0.5rem;font-weight:600;" data-i18n-html="wantlist.hook">Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l'Inventario?<br>Se la risposta è sì, sei nel posto giusto !!<br><br></p>
           <p style="color:#fff;font-size:0.88rem;margin-top:4px;" data-i18n-html="wantlist.desc">Qui trovi l'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)</p>
         </div>
       </div>
@@ -3004,7 +3039,7 @@ button.back-btn { color:#ffffff; }
       <h2 class="modal-title">Come funziona il selettore <em>Mia lista</em></h2>
       <button class="modal-close" onclick="closeModal('demo-toggle-modal')">✕</button>
     </div>
-    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;">Tocca il selettore <em>Mia lista</em> per aggiungere una figurina alla tua lista personale.<br>Il colore cambierà per indicarti che è nella lista!</p>
+    <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.75rem;">Tocca il selettore <em>Mia lista</em> per aggiungere una figurina alla tua lista personale.<br>Il colore cambierà per indicarti che è nella lista !</p>
     <p style="font-size:0.82rem;color:var(--muted);margin-bottom:1.5rem;font-style:italic;"><strong style="font-style:normal;color:var(--text);">NOTA</strong> — È semplicemente una lista tua: cosa significhi per te (che tu la possieda, l'abbia vista, o qualsiasi altra cosa) lo decidi solo tu — <span style="color:var(--danger);">non è visibile né interpretabile da altri utenti.</span></p>
     <div style="display:flex;align-items:center;gap:1.5rem;background:var(--card2);border-radius:12px;padding:1.25rem;">
       <!-- v5.956 — il riquadro parte con l'emoji e app.js ci mette la foto VERA della figurina
@@ -3086,10 +3121,10 @@ button.back-btn { color:#ffffff; }
 <div class="modal-overlay hidden" id="score-boost-modal">
   <div class="modal" style="max-width:420px;text-align:center;">
     <div style="font-size:3rem;margin-bottom:0.5rem;">🎉</div>
-    <h2 class="modal-title" style="justify-content:center;" data-i18n="modal.scoreBoost.title">Complimenti!</h2>
+    <h2 class="modal-title" style="justify-content:center;" data-i18n="modal.scoreBoost.title">Complimenti !</h2>
     <p id="score-boost-added" style="color:var(--muted);font-size:0.95rem;margin:0.9rem 0 0.4rem;"></p>
     <p id="score-boost-total" style="color:var(--accent);font-size:1.15rem;font-weight:600;font-family:var(--font-ui);margin:0 0 1.35rem;"></p>
-    <button class="btn-primary" style="width:100%;" onclick="closeModal('score-boost-modal')" data-i18n="modal.scoreBoost.ok">Perfetto!</button>
+    <button class="btn-primary" style="width:100%;" onclick="closeModal('score-boost-modal')" data-i18n="modal.scoreBoost.ok">Perfetto !</button>
   </div>
 </div>
 
@@ -3097,7 +3132,7 @@ button.back-btn { color:#ffffff; }
   <div class="modal" style="max-width:420px;text-align:center;">
     <div style="font-size:3rem;margin-bottom:0.5rem;">👋</div>
     <h2 class="modal-title" style="justify-content:center;" data-i18n="modal.accountDeleted.title">Account eliminato</h2>
-    <p style="color:var(--muted);font-size:0.92rem;margin:0.75rem 0 1.25rem;" data-i18n="modal.accountDeleted.desc">Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via!</p>
+    <p style="color:var(--muted);font-size:0.92rem;margin:0.75rem 0 1.25rem;" data-i18n="modal.accountDeleted.desc">Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via !</p>
     <button class="btn-primary" style="width:100%;" onclick="closeModal('account-deleted-modal')" data-i18n="modal.accountDeleted.close">Chiudi</button>
   </div>
 </div>
@@ -3209,7 +3244,7 @@ button.back-btn { color:#ffffff; }
     <div class="modal-header">
       <h2 class="modal-title" data-i18n="newsletterConsent.title">📧 Vuoi ricevere la newsletter?</h2>
     </div>
-    <p style="font-size:0.9rem;color:var(--text);line-height:1.6;margin-bottom:1.25rem;" data-i18n-html="newsletterConsent.body">Non te l'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell'Inventario Sgorbions.<br>Nessuna pubblicità!<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.</p>
+    <p style="font-size:0.9rem;color:var(--text);line-height:1.6;margin-bottom:1.25rem;" data-i18n-html="newsletterConsent.body">Non te l'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell'Inventario Sgorbions.<br>Nessuna pubblicità !<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.</p>
     <div style="display:flex;gap:0.6rem;">
       <button class="btn-primary" style="flex:1;" onclick="setNewsletterConsentFromPrompt(true)" data-i18n="newsletterConsent.yes">Sì, iscrivimi</button>
       <button class="btn-secondary" style="flex:1;" onclick="setNewsletterConsentFromPrompt(false)" data-i18n="newsletterConsent.no">No, grazie</button>
@@ -3285,7 +3320,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.377"></script>
+<script src="js/app.js?v=6.392"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3309,7 +3344,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.377'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.392'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
