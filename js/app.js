@@ -1,6 +1,199 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.397 - LA CONFERMA PRIMA DI USCIRE, E IL GIALLO DEI TITOLI DELLE CARD (Franco). app.js e
+//          index.html.
+//
+//          1) *"pf metti una conferma dopo il tasto Esci"*. La domanda sta DENTRO logout(), non sui
+//          pulsanti: i punti da cui si esce sono tre (navbar desktop, voce di menu mobile, pagina
+//          del profilo) e tutti e tre chiamano quella funzione. Scriverla sull'onclick avrebbe
+//          voluto dire scriverla tre volte, e il quarto pulsante che nascera' domani sarebbe nato
+//          senza. E' il difetto di questa settimana nella sua forma piu' pura: quando due punti
+//          fanno la stessa cosa, non basta che applichino la stessa regola, devono chiamare la
+//          stessa funzione. Verificato prima di metterla che nessuno chiami logout() da programma.
+//
+//          2) *"la tipologia di articolo e' finita tra le (); toglile; e per ora mettiamola in
+//          giallo; pero' va usato lo stesso colore per la stessa informazione nelle card degli hub
+//          Serie e Tipologia di articolo"*. Le parentesi erano la soluzione della v6.394, quando il
+//          colore non poteva distinguere; ora distingue di nuovo, e restavano un secondo segnale
+//          sullo stesso dato. Il giallo e' un token nuovo, --tipo-articolo, dichiarato una volta
+//          nell'index e usato in cinque punti: la ricerca globale, «Cio' che cerco», e i titoli
+//          delle card dei due hub. E' un token PROPRIO perche' e' provvisorio ("poi vediamo se
+//          confermarlo"): con cinque valori scritti a mano, confermarlo vorrebbe dire ritrovarli
+//          tutti e cinque, e trovarne quattro e' il difetto che sopra.
+//
+//          🔴 IL VALORE E' MISURATO. Il giallo d'istinto (#ffe873) stava a Delta-E 13,5 da #ffd84d,
+//          il giallo con cui le righe della ricerca scrivono «Variazione» e «Change» - due gialli
+//          quasi uguali NELLA STESSA SCHERMATA, uno che dice "tipo di articolo" e l'altro
+//          "versione". E' esattamente cio' che Franco aveva segnalato con l'arancione a Delta-E 7.
+//          Scelto #f2e08c: Delta-E 27,5 dal giallo versione, 28+ da tutti e sei i colori del
+//          codice, contrasto 13,5:1 sul fondo delle card.
+//
+//          ⚠️ DIVERGENZA DICHIARATA: le card delle serie nell'INVENTARIO usano la stessa classe
+//          .card-title ma non erano nella richiesta, e restano bianche. Il colore sta sui punti,
+//          non sulla classe, apposta.
+//
+//          Prove: prova-v6397.js (20 asserzioni; ESEGUE logout() con un finto «Annulla» e pretende
+//          che signOut non parta - un confirm() il cui risultato non si guarda passerebbe qualunque
+//          controllo di lettura). Aggiornate prova-v6394 e prova-v6396, che pretendevano le
+//          parentesi; la loro pretesa vera - il colore non deve avvicinarsi a un colore che
+//          significa una versione - e' rimasta e ora misura Delta-E 35.
+//
+// v6.396 - 🔴 RIPARA LA RICERCA GLOBALE, che la v6.394 aveva rotto. Piu' la fascia del lucchetto
+//          spostata in fondo e l'anno della serie in bianco fra parentesi (Franco).
+//          app.js e index.html.
+//
+//          --- 0. IL GUASTO, E COME E' STATO POSSIBILE -----------------------------------------
+//          Franco: *"ahia! si e' rotta la ricerca globale! non trova piu nulla!"*.
+//
+//          🔴 CAUSA: nel commento della v6.394 avevo scritto (Sottoserie) FRA APICI INVERSI. Quel
+//          commento vive dentro un template literal, dove un backtick non e' un carattere: CHIUDE
+//          la stringa. Il testo che segue diventa codice, e a runtime saltava tutta la ricerca.
+//          ⚠️ ED ERANO DUE, cioe' un numero PARI: la sintassi restava valida e `node --check`
+//          taceva. Un backtick dispari e' un errore che si vede subito; un backtick pari e' un
+//          guasto silenzioso. E' la terza volta che questo file incontra la cosa (v6.237 dispari,
+//          v6.243 quattro, oggi due), ed e' la prima in cui e' arrivata fino a Franco.
+//          ✅ LA v6.392 LIVE NON E' MAI STATA TOCCATA: il difetto e' nato dopo il push e ha vissuto
+//          solo nelle anteprime 6.394 e 6.395.
+//
+//          🔴 E IL CONTROLLO CHE ESISTE APPOSTA HA DETTO OK. `controllo-backtick.py` e' stato
+//          corretto in due punti, e il secondo e' quello grave:
+//          · chiedeva «questo commento sta dentro un template literal?», rispondendo con un
+//            tokenizzatore euristico che su 3,6 MB perde il passo — e qui ha sbagliato nella
+//            direzione pericolosa. Ora la domanda e' «un commento HTML contiene un backtick?», che
+//            non richiede di sapere parsare JavaScript e non puo' essere ingannata;
+//          · e uno scanner che, incontrando un apri-commento FASULLO (uno che vive dentro una
+//            stringa), saltava fino al chiudi-commento piu' lontano — inghiottendo i commenti VERI
+//            che stavano in mezzo. E' per questo
+//            che sulla v6.394 non esaminava nemmeno il commento rotto.
+//          📌 Il controllo nuovo e' stato validato su casi di cui si conosce gia' la risposta:
+//          pulito su 6.392 e 6.393, rosso su 6.394 e 6.395, pulito su 6.396.
+//
+//          🆕 E NASCE `prova-v6396.js`, che la ricerca globale la ESEGUE su dati finti e pretende
+//          che produca HTML. Nessuna delle 59 suite lo faceva: guardavano il codice, e il codice
+//          era sintatticamente perfetto. Un difetto che non e' ne' di sintassi ne' di logica lo
+//          prende solo chi la funzione la fa girare.
+//
+//          --- 1. LA FASCIA DEL LUCCHETTO ------------------------------------------------------
+//          Franco: *"falla meno grossa; cosi non riesco a navigare parte della homepage?"*.
+//          🔴 I due problemi erano uno solo: la fascia stava a top:0 con z-index 99999, la NAVBAR
+//          sta a top:0 con z-index 1000. Si sedeva sopra la navigazione e la copriva.
+//          📌 Un avviso che dice «non salvare da qui» e intanto impedisce di andare altrove chiude
+//          l'unica uscita che sta suggerendo.
+//          🆕 Passa in fondo — controllato prima che li' non ci fosse nient'altro di fisso — ed e'
+//          piu' piccola (0.78rem, peso 600, meno imbottitura).
+//
+//          --- 2. L'ANNO DELLA SERIE -----------------------------------------------------------
+//          Bianco e fra parentesi. L'anno non aveva un colore suo: porta `.card-tag`, usata in un
+//          posto solo. Il colore si scavalca nell'index invece di toccare `css/style.css`, che non
+//          fa parte della cartella `_upload_`.
+//
+// v6.395 - IL NOME DELLA SERIE TORNA BIANCO, IL LIME PASSA AL CONTEGGIO (Franco). app.js e
+//          index.html (la sola versione).
+//
+//          Franco: *"il nome delle serie credo sia ovunque in bianco, tranne nella ricerca globale,
+//          dove e' lime. lo farei bianco anche li; scrivendo la frase «N risultati per questa
+//          serie» in lime (che poi e' il colore del risultato nella ricerca standard)"*.
+//
+//          ✅ VERIFICATO, in tutti e due i versi, invece di crederci:
+//          · il nome di una serie altrove EREDITA il colore del testo (bianco) o e' `--muted` nella
+//            lista admin. La ricerca globale era l'unico posto in cui era lime;
+//          · e il lime non e' un colore qualunque: e' `--accent`, che in `updateItemsCountDisplay`
+//            — la ricerca DENTRO una sezione — colora il NUMERO dei risultati.
+//          🔴 Quindi il nome della serie portava il colore che due schermate piu' in la' significa
+//          «quanti ne ho trovati». Non e' uno scambio estetico: e' rimettere un colore sul suo
+//          mestiere.
+//
+//          🆕 E LA FRASE GEMELLA E' PASSATA AL LIME ANCHE PER IL TIPO DI ARTICOLO. Franco ha
+//          nominato «per questa serie»; la stessa frase (`_frasePerQuesta`) esce anche come «per
+//          questo tipo di articolo», due righe piu' sotto. La sua RAGIONE — il lime e' il colore
+//          del conteggio — copre tutte e due, e lasciarne una bianca avrebbe messo lo stesso
+//          messaggio in due colori a due centimetri. ⚠️ E' un'estensione della sua richiesta:
+//          dichiarata qui, non nascosta, e da disfare in una riga se non gli torna.
+//
+//          🔴 E UNA LEZIONE PAGATA SCRIVENDO QUESTA RELEASE: nel commento HTML qui sotto avevo
+//          messo degli APICI INVERSI attorno ai nomi delle variabili. Quel commento vive DENTRO un
+//          template literal, e un backtick li' chiude la stringa: `node --check` ha rifiutato il
+//          file. E' esattamente la v6.217, che di se' scriveva «ne ho messi due lo stesso; corretti,
+//          ne ho messo un altro NELLA FRASE CHE SPIEGAVA DI NON METTERLI. Tre giri.»
+//          📌 La morale di allora vale oggi: un avvertimento scritto nel punto giusto non basta —
+//          l'ha preso il controllo che gira sempre, non la rilettura.
+//
+// v6.394 - L'ETICHETTA CHE RAGGRUPPA PER TIPO DI ARTICOLO: BIANCA E FRA PARENTESI (Franco).
+//          app.js e index.html (la sola versione).
+//
+//          Franco, guardando la ricerca globale: *"la etichetta che raggruppa per tipologia di
+//          articolo i risultati, e' arancione? come mai? non abbiamo un colore neutro, rispetto ai
+//          colori delle tipologie di versione?"*. Poi, davanti alla tavolozza misurata: *"lascialo
+//          il bianco, ma mettilo tra ()"*.
+//
+//          🔴 IL PROBLEMA ERA REALE E MISURATO: `#ff9d3d` sta a **ΔE 7** dall'arancione della
+//          Variazione ufficiale (`--type-official` #ffa94d). Cioe' l'etichetta di un TIPO DI
+//          ARTICOLO portava, a occhio, il colore di una VERSIONE. Due tassonomie diverse, un colore
+//          solo.
+//          📌 E LA v5.704 L'AVEVA GIA' SCRITTO, elencando tre colori scritti a mano da riguardare
+//          «se un domani il codice colore uscira' dalla griglia»: `#ff9d3d` era il primo. Il codice
+//          colore E' uscito dalla griglia — le versioni sono cinque e i loro colori sono ovunque —
+//          quindi quel «se un domani» era oggi, e stava li' da allora.
+//
+//          🆕 LA SOLUZIONE NON E' UN ALTRO COLORE, ED E' LA PARTE CHE VALE. Franco ha guardato la
+//          tavola (`colori-etichette.html`) e ha visto che ogni tinta libera era vicina a qualcosa:
+//          l'azzurro a ΔE 19 dalla Variazione NON ufficiale, il giallo gia' occupato dentro la
+//          stessa riga per la versione, il bianco a ΔE 0 dal colore che significa «oggetto base».
+//          La tavolozza e' semplicemente affollata: cinque versioni piu' il bianco.
+//          Quindi l'etichetta si distingue per **FORMA** invece che per colore — `(Figurine con
+//          velina)` — e la forma non entra in conflitto con niente, perche' il codice colore parla
+//          di colori e non di parentesi.
+//          📌 E le parentesi non sono una convenzione nuova: `(Sottoserie)` nel sito e' gia' scritta
+//          cosi'.
+//
+//          🆕 Cambiate TUTTE E DUE le etichette — ricerca globale e «Cio' che cerco» — che erano la
+//          stessa cosa in due posti (lo diceva gia' il commento della v6.284). Cambiarne una sola
+//          sarebbe stato il difetto che questa settimana e' costato sei release.
+//          ⚠️ Via i due punti dopo l'etichetta: con le parentesi erano un secondo separatore per la
+//          stessa cosa.
+//          🗄️ E il commento della v6.284 e' stato AGGIORNATO, non cancellato: diceva «in ARANCIONE»,
+//          ed era vero fino a ieri. Un commento che sopravvive alla cosa che descrive e' una fonte
+//          scaduta, cioe' §9.8 in miniatura.
+//
+// v6.393 - I BIANCHI LETTERALI DEL TESTO DIVENTANO `var(--text)` (Franco). app.js e index.html.
+//
+//          Nasce da una domanda di Franco sulla tavola dei colori: *"quei 34 usi scritti a mano del
+//          #fff cosa dovrebbero essere?"*.
+//
+//          🔴 E LA RISPOSTA CHE AVEVO DATO PRIMA ERA TROPPO LARGA. Avevo scritto che ognuno di quei
+//          34 «sta dicendo base senza saperlo». Falso: il codice colore dei tipi (v5.703) e'
+//          applicato a BADGE, CONTATORI ed ETICHETTE DEI FILTRI — non al testo corrente. Un
+//          paragrafo di istruzioni in bianco non parla quella lingua. Guardandoli uno per uno i 34
+//          si dividono in due gruppi, e solo uno era un problema.
+//
+//          ✅ QUINDICI SU FONDO COLORATO E DUE SU PULSANTE: NON TOCCATI. Bianco su rosso, su
+//          arancione, dentro una pastiglia: li' e' leggibilita' sopra un fondo pieno, non
+//          appartiene alla grammatica dei tipi. Cambiarli sarebbe stato allargare la richiesta.
+//
+//          🆕 VENTITRE ERANO TESTO SU FONDO SCURO, e sono passati a `var(--text)`: le istruzioni
+//          delle due esportazioni, le didascalie «Fronte»/«Retro» sopra le foto, e le etichette dei
+//          form di accesso, registrazione e reimposta-password.
+//          ⚠️ Erano VENTITRE, non i diciotto che avevo annunciato: la prima stima veniva da un
+//          raggruppamento grossolano, il numero vero da un esame uno per uno. Corretto invece di
+//          lasciare in giro il numero comodo.
+//
+//          📌 IL DIFETTO NON ERA VISIBILE, ED E' PROPRIO QUESTO IL PUNTO. `#ffffff` contro
+//          `--text` #f0eaff sta a ΔE 12,7: si distinguono APPENA. Una differenza netta sembra una
+//          scelta; una differenza appena percettibile sembra una sbavatura, e nessuno la nota
+//          abbastanza da correggerla. Il costo si paga tutto in futuro: il giorno che si tocca
+//          `--text` — un tema piu' caldo, piu' contrasto, qualunque cosa — ventitre punti sparsi
+//          restano indietro e niente lo segnala. E' il difetto delle 46 copie del prefisso di log
+//          (v6.379) in versione cromatica.
+//
+//          📌 CHE L'INTENZIONE FOSSE QUESTA LO DICE IL CODICE STESSO: altrove sta scritto «in
+//          BIANCO (var(--text))». In questo progetto «bianco», come intento, SIGNIFICA `--text`.
+//          Quei ventitre erano i punti in cui l'intenzione era stata scritta col valore invece che
+//          col nome.
+//          ⚠️ Fra loro ci sono le due didascalie «Fronte»/«Retro», che la v6.125 aveva portato a
+//          bianco su richiesta esplicita di Franco. La richiesta non cambia — cambia solo che ora
+//          il bianco si chiama col suo nome.
+//
 // v6.392 - IL NUMERO DI RIGA DEL LOG E' QUELLO DI EXCEL (Franco). app.js e index.html (la versione).
 //
 //          Franco: *"ho sempre un problema; tu conti il numero di riga senza contare la intestazione
@@ -21655,7 +21848,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.392';
+const JS_VERSION = 'v6.397';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -23109,7 +23302,7 @@ const i18n = {
 'contact.q1':'Do you want more information about Sgorbions?','contact.q2':'Do you want to report an error?',
 'contact.q3':'Or do you just want to compliment the administrator?',
 'contact.cta':'For any of these things, send us a message !',
-'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with tissue) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:#fff;">Export items not in my list</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:#fff;">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in my list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
+'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with tissue) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in my list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in my list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
 'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Cerca…','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
@@ -23180,7 +23373,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
-    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
+    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
 'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con velina','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri','items.resetFilters':'Azzera filtri','items.searchHint':'Inserisci una stringa di ricerca','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda definizioni retro','items.filterLegend.retroBase':'<strong>Retro set base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla sua versione base per un elemento in più nel disegno','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
@@ -24929,7 +25122,27 @@ async function doResetPassword() {
   }, 3000);
 }
 
+// 🆕 v6.397 (Franco: *"pf metti una conferma dopo il tasto Esci"*).
+//
+// 📌 LA CONFERMA STA QUI DENTRO, NON SUI PULSANTI. I punti da cui si esce sono TRE — il pulsante
+//    della navbar (#user-nav .btn-logout, desktop), la voce del menu (#nav-logout-link, mobile) e
+//    il pulsante nella pagina del profilo — e tutti e tre chiamano questa funzione. Metterla sui
+//    pulsanti avrebbe voluto dire scriverla tre volte, e la prossima uscita che qualcuno aggiunge
+//    sarebbe nata senza: e' esattamente il difetto che questa settimana e' costato sei release
+//    ("quando due punti scrivono lo stesso dato, non basta che applichino la stessa regola: devono
+//    chiamare la stessa funzione"). Qui la capacita' e' UNA, e la domanda la fa lei.
+//
+// ⚠️ Nessuno chiama logout() da programma: e' stato verificato prima di metterla (tre chiamanti,
+//    tutti e tre un gesto dell'utente). Se un domani servisse un'uscita automatica — sessione
+//    scaduta, cancellazione dell'account — NON deve passare da qui, o il sito si fermerebbe ad
+//    aspettare una risposta che nessuno puo' dare: si estragga il corpo in una _esciDavvero() e la
+//    si chiami direttamente.
 async function logout() {
+  const domanda = currentLang === 'it'
+    ? 'Vuoi uscire dal tuo account?'
+    : 'Do you want to sign out?';
+  if (!confirm(domanda)) return;
+
   // Chiude davvero la sessione Firebase Auth: senza questo, il controllo di
   // sessione introdotto in v5.311 troverebbe ancora una sessione valida al
   // prossimo caricamento e rimetterebbe l'utente loggato "da solo"
@@ -28615,7 +28828,7 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
       // e' la riga che tira le somme, che e' il mestiere che ha. La v6.156 l'aveva solo ripulito
       // dal conto delle serie e lasciato dov'era: avevo letto "mettila sola" dove c'era scritto
       // "mettila sotto".
-      '<div class="card-title" style="margin-bottom:0.5rem;">' + esc(getSectionLabel(sec)) + '</div>' +
+      '<div class="card-title" style="margin-bottom:0.5rem;color:var(--tipo-articolo);">' + esc(getSectionLabel(sec)) + '</div>' +
       // \uD83C\uDD95 v6.206 (Franco) - L'ELENCO SU DUE COLONNE, e la decisione la prende lo SPAZIO.
       // `auto-fill` con un minimo di 130px: dove ci stanno due colonne ne fa due, dove non ci
       // stanno ne fa una. Non c'e' nessun "se desktop" scritto da noi - che sarebbe un numero da
@@ -29080,7 +29293,7 @@ function tipoProdottoCardHTML(t, tutti) {
     _matitaBox(t.id) + _matitaNome +
     '<div class="card-img-placeholder">' + _foto + '</div>' +
     '<div class="card-body">' +
-      '<div class="card-title" style="margin-bottom:0.5rem;">' + esc(_nomeTipo(t)) + '</div>' +
+      '<div class="card-title" style="margin-bottom:0.5rem;color:var(--tipo-articolo);">' + esc(_nomeTipo(t)) + '</div>' +
       '<div class="card-desc">' + esc(desc) + '</div>' +
     '</div>' +
   '</div>';
@@ -29393,7 +29606,7 @@ function openProdottoDetail(sec) {
         (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;">' : '<span style="font-size:3rem;">&#127924;</span>') +
       '</div>' +
       '<div class="card-body prodotto-serie-testo" style="padding:' + (_mobHub ? '0.5rem 0.5rem 0.6rem' : '1.25rem 1.5rem') + ';text-align:left;">' + // v6.080 - su telefono il riquadro si stringe con la colonna
-        '<div class="card-title" style="margin-bottom:0;' + (_mobHub ? 'font-size:0.88rem;line-height:1.2;' : '') + '">' + esc(_nomeSerieCard(s)) + '</div>' +
+        '<div class="card-title" style="margin-bottom:0;color:var(--tipo-articolo);' + (_mobHub ? 'font-size:0.88rem;line-height:1.2;' : '') + '">' + esc(_nomeSerieCard(s)) + '</div>' +
         etichetta +
       '</div>' +
     '</div>';
@@ -29705,9 +29918,20 @@ function renderCatalogSearch(q) {
     const seriesHeader = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
         <div onclick="openSeriesDetail('${s.id}')" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
           ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_40,h_40,c_fit,q_auto,f_auto')}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;background:var(--card2);flex-shrink:0;">` : '<span style="font-size:1rem;flex-shrink:0;">🎴</span>'}
-          <span style="font-family:var(--font-display);font-size:0.95rem;font-weight:600;color:var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
+          <!-- 🆕 v6.395 (Franco) - IL NOME DELLA SERIE E' BIANCO, come in tutto il resto del sito.
+               Qui era l'unico posto in cui era lime: altrove eredita il colore del testo, e nella
+               lista admin e' --muted. 🔴 E il lime non e' un colore qualunque: e' --accent, che
+               nella ricerca DENTRO una sezione colora il NUMERO dei risultati
+               (updateItemsCountDisplay). Cioe' il nome della serie portava il colore che due
+               schermate piu' in la' significa «quanti ne ho trovati».
+               ⚠️ NIENTE APICI INVERSI IN QUESTO COMMENTO: sta dentro un template literal, e un
+               backtick qui CHIUDE la stringa. E' la lezione della v6.217, e scrivendo questa
+               release ci sono cascato di nuovo - l'ha presa node --check, non la rilettura. -->
+          <span style="font-family:var(--font-display);font-size:0.95rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
           ${r.seriesMatch ? `<span style="font-size:0.65rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 5px;flex-shrink:0;">${currentLang==='it'?'serie':'series'}</span>` : ''}
-          ${r.figs.length ? `<span style="font-size:0.75rem;color:var(--text);white-space:nowrap;margin-left:0.35rem;flex-shrink:0;">${_frasePerQuesta(r.figs.length, 'serie')}</span>` : ''}
+          <!-- 🆕 v6.395 - e il lime passa QUI, dove dice cio' che dice sempre: quanti risultati.
+               Non e' uno scambio estetico: e' rimettere un colore sul suo mestiere. -->
+          ${r.figs.length ? `<span style="font-size:0.75rem;color:var(--accent);white-space:nowrap;margin-left:0.35rem;flex-shrink:0;">${_frasePerQuesta(r.figs.length, 'serie')}</span>` : ''}
         </div>
         ${/* 🗑️ v6.341 (Franco: *"il risultato totale non va riportato anche in alto a dx"*) - VIA
               IL CONTEGGIO A DESTRA. E' la terza decisione sulla stessa riga in una sera, quindi
@@ -29808,7 +30032,22 @@ function renderCatalogSearch(q) {
           // Lo stacco fra gruppi e' piu' largo di quello dentro un gruppo (0.7 contro 0.3): e' cosi'
           // che si vede DOVE finisce una figurina e ne comincia un'altra, senza cornici ne' righelli.
           return `<div style="margin-bottom:0.4rem;">
-            <div style="font-size:0.9rem;color:#ff9d3d;font-weight:600;margin-bottom:0.25rem;">${esc(getSectionLabel(sec))}:<span style="font-size:0.75rem;font-weight:400;color:var(--text);margin-left:0.35rem;">${_frasePerQuesta(inSection.length, 'tipo')}</span></div>
+            <!-- 🆕 v6.394 (Franco) - BIANCO E FRA PARENTESI. L'arancione stava a ΔE 7 dal colore
+                 della Variazione ufficiale: due cose diverse dette con lo stesso colore. Franco ha
+                 guardato la tavolozza e ha deciso di NON prendere un altro colore — la tavola e'
+                 affollata (cinque versioni piu' il bianco che significa «base»), e ogni tinta libera
+                 sarebbe stata vicina a qualcosa. Cosi' l'etichetta si distingue per FORMA invece che
+                 per colore, e la forma non entra in conflitto con niente.
+                 📌 E le parentesi non sono una forma nuova: (Sottoserie) nel sito e' gia' scritta
+                 cosi'.
+                 🔴 NIENTE APICI INVERSI QUI DENTRO, e stavolta la ragione e' pagata: nella v6.394 ce
+                 n'erano DUE attorno a (Sottoserie). Essendo in numero PARI la sintassi restava
+                 valida e node --check taceva, ma la stringa si chiudeva li' e a runtime saltava
+                 TUTTA la ricerca globale. Franco: *"si e' rotta la ricerca globale, non trova piu
+                 nulla"*. Un backtick dispari e' un errore che si vede subito; un backtick pari e'
+                 un guasto silenzioso. ⚠️ Via i due punti: con le parentesi erano un secondo separatore per la
+                 stessa cosa. -->
+            <div style="font-size:0.9rem;color:var(--tipo-articolo);font-weight:600;margin-bottom:0.25rem;">${esc(getSectionLabel(sec))}<span style="font-size:0.75rem;font-weight:400;color:var(--accent);margin-left:0.35rem;">${_frasePerQuesta(inSection.length, 'tipo')}</span></div>
             <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
               ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
@@ -29970,7 +30209,7 @@ function seriesCardHTML(s) {
     </div>
     <div class="card-body">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
-        <div class="card-title" style="display:flex;align-items:baseline;gap:0.5rem;flex-wrap:wrap;margin-bottom:0;"><span>${esc(_nomeSerieCard(s))}</span>${s.year ? `<span class="card-tag" style="display:inline;margin-bottom:0;">${s.year}</span>` : ''}</div>
+        <div class="card-title" style="display:flex;align-items:baseline;gap:0.5rem;flex-wrap:wrap;margin-bottom:0;"><span>${esc(_nomeSerieCard(s))}</span>${s.year ? `<span class="card-tag" style="display:inline;margin-bottom:0;">(${s.year})</span>` : ''}</div>
         ${modeScoreHTML || ''}
       </div>
       <div class="card-desc">${(desc||'').substring(0,90)}${(desc||'').length>90?'…':''}</div>
@@ -37021,11 +37260,11 @@ function openFigDetail(figId, elencoNav) {
       photoEl.innerHTML = `
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
           <div>
-            <div style="font-size:0.7rem;color:#fff;text-align:center;margin-bottom:4px;">${currentLang === 'it' ? 'Fronte' : 'Front'}</div>
+            <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:4px;">${currentLang === 'it' ? 'Fronte' : 'Front'}</div>
             ${baseHTML}
           </div>
           <div>
-            <div style="font-size:0.7rem;color:#fff;text-align:center;margin-bottom:4px;">${currentLang === 'it' ? 'Retro' : 'Back'}</div>
+            <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:4px;">${currentLang === 'it' ? 'Retro' : 'Back'}</div>
             ${retroHTML}
             ${retroCaption}
           </div>
@@ -38833,7 +39072,7 @@ const _scriviSlot = (s, v) => { if (s === 'retro') _figEditImgRetroData = v; els
 function _slotFotoEdit(slot, url, f) {
   const s = _SLOT_FOTO[slot];
   const titolo = (_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section))
-    ? '<div style="font-size:0.7rem;color:#fff;text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? s.it : s.en) + '</div>'
+    ? '<div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? s.it : s.en) + '</div>'
     : '';
   const vuoto = currentLang === 'it' ? 'Nessuna foto' : 'No photo';
   return '<div style="margin-bottom:0.6rem;">' + titolo +
@@ -40950,9 +41189,18 @@ function _mostraFasciaLucchetto() {
   if (!el) {
     el = document.createElement('div');
     el.id = 'fascia-lucchetto';
-    el.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;'
-      + 'background:var(--warn);color:#1a1030;font-family:var(--font-ui);font-weight:700;'
-      + 'font-size:0.85rem;text-align:center;padding:0.5rem 1rem;box-shadow:0 2px 14px rgba(0,0,0,0.4);';
+    // 🆕 v6.396 (Franco: "falla meno grossa; cosi non riesco a navigare parte della homepage?")
+    // 🔴 I DUE PROBLEMI ERANO UNO SOLO, e il secondo e' quello grave: la fascia stava a top:0 con
+    // z-index 99999, e la NAVBAR sta a top:0 con z-index 1000. Cioe' si sedeva sopra la navigazione
+    // e la copriva: durante un import non si poteva piu' cambiare pagina.
+    // 📌 Un avviso che dice "non salvare da qui" e intanto impedisce di andare altrove chiude
+    // l'unica uscita che sta suggerendo.
+    // 🆕 Passa in FONDO, dove non c'e' niente - controllato prima e non dopo: gli unici elementi
+    // fissi del sito sono la navbar e il menu a panino, tutti e due in alto. In fondo non copre
+    // nulla e non sposta il contenuto, quindi non serve compensare con un margine da mantenere.
+    el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;'
+      + 'background:var(--warn);color:#1a1030;font-family:var(--font-ui);font-weight:600;'
+      + 'font-size:0.78rem;text-align:center;padding:0.35rem 1rem;box-shadow:0 -2px 14px rgba(0,0,0,0.4);';
     document.body.appendChild(el);
   }
   el.textContent = currentLang === 'it'
@@ -46484,9 +46732,15 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
         const hasNames = true;
         const modeSelector = `
           <div style="display:flex;gap:0.4rem;margin-bottom:0.3rem;align-items:center;flex-wrap:wrap;">
-            <!-- v6.284 (Franco) - in ARANCIONE. Il colore #ff9d3d non e' scelto qui: e' quello che il sito
-                 usa gia' per l'etichetta di sezione dentro un elenco di oggetti mancanti. -->
-            <span style="font-family:var(--font-ui);font-size:0.85rem;color:#ff9d3d;">${sectionLabels[sec] || sec}</span>
+            <!-- 🗄️ v6.284 diceva «in ARANCIONE», e quel commento e' rimasto vero fino alla v6.394.
+                 Non e' stato cancellato perche' racconta una cosa che serve sapere: gia' allora il
+                 colore NON era scelto qui, era copiato dall'etichetta di sezione della ricerca
+                 globale. Le due etichette sono sempre state la stessa cosa in due posti.
+                 🆕 v6.394 (Franco) - adesso sono BIANCHE E FRA PARENTESI, tutte e due. L'arancione
+                 stava a ΔE 7 dal colore della Variazione ufficiale, e Franco ha scelto di non
+                 prendere un'altra tinta: la tavolozza e' affollata, e l'etichetta si distingue per
+                 FORMA invece che per colore. -->
+            <span style="font-family:var(--font-ui);font-size:0.85rem;color:var(--tipo-articolo);">${sectionLabels[sec] || sec}</span>
             <div style="margin-left:auto;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
               ${hasNumbers ? `<div style="display:flex;align-items:center;gap:0.35rem;"><button class="toggle-btn-blue ${mode==='numbers'?'on':''}" onclick="toggleWantlistMode('${groupKey}','numbers')" title="${currentLang === 'it' ? 'Mostra solo numeri' : 'Show numbers only'}"></button><span style="font-size:0.78rem;color:var(--muted);">${currentLang === 'it' ? 'Mostra solo numeri' : 'Show numbers only'}</span></div>` : ''}
               ${hasNumbers ? `<div style="display:flex;align-items:center;gap:0.35rem;"><button class="toggle-btn-blue ${mode==='names'?'on':''}" onclick="toggleWantlistMode('${groupKey}','names')" title="${currentLang === 'it' ? 'Mostra solo nomi' : 'Show names only'}"></button><span style="font-size:0.78rem;color:var(--muted);">${currentLang === 'it' ? 'Mostra solo nomi' : 'Show names only'}</span></div>` : ''}
