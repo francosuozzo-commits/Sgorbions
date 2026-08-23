@@ -1,6 +1,586 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.392 - IL NUMERO DI RIGA DEL LOG E' QUELLO DI EXCEL (Franco). app.js e index.html (la versione).
+//
+//          Franco: *"ho sempre un problema; tu conti il numero di riga senza contare la intestazione
+//          di xls ma in xls c'e': quindi devo sempre ricordarmi di aggiungere 1. potresti contare
+//          da 2?"*.
+//
+//          🔴 LA CAUSA STA IN UNA RIGA CHE NON SI VEDE: `XLSX.utils.sheet_to_json` CONSUMA la prima
+//          riga del foglio per farne le chiavi dell'oggetto. Quindi `rows[0]` **e' gia'** la riga 2
+//          di Excel, e `i + 1` stampava l'indice dell'array — un numero corretto per il programma e
+//          sbagliato per chi ha il file aperto accanto, che e' l'unico che quel numero lo legge.
+//          📌 Non era un errore di calcolo: era un numero che rispondeva a una domanda diversa da
+//          quella che si fa chi legge il log. Come i buchi della v6.383 e il segnaposto della
+//          v6.391 — la terza volta in questo log che il programma dice la verita' su di se' invece
+//          che sul file.
+//
+//          🆕 `i + 2` nei DUE import, e il totale passa `rows.length + 1` per la LARGHEZZA
+//          dell'incolonnamento: con 999 righe di dati l'ultima riga di Excel e' la 1000, e senza il
+//          `+ 1` verrebbe incolonnata su tre cifre.
+//          🆕 E anche i due CONTATORI di avanzamento parlano in righe di Excel — «Riga 273/636»
+//          invece di 273/635. Lasciarli sull'altra scala avrebbe messo due numeri diversi per la
+//          stessa cosa a due centimetri l'uno dall'altro.
+//          🆕 `_ordRiga` (che serve solo a ORDINARE) passa a `i + 2` pur non cambiando niente: un
+//          numero che si chiama «riga del file» e ne dice un altro e' quello che fra sei mesi
+//          qualcuno stampa credendolo giusto.
+//
+//          📌 E UNA COSA CHE FRANCO HA CHIARITO, e vale la pena tenerla scritta: l'ORDINE delle
+//          colonne nel file XLS **non conta**, perche' il parser le cerca per NOME
+//          (`getCol('Retro - Nome')`). L'ordine conta solo nel PREFISSO del log, dove e' quello che
+//          ha dettato lui (L, M, J) e non quello del template — ed e' giusto cosi': li' l'ordine
+//          serve a chi legge, non al programma.
+//
+// v6.391 - I CAMPI VUOTI SPARISCONO DAL PREFISSO DELLA RIGA DI LOG (Franco). app.js e index.html
+//          (la sola versione).
+//
+//          Franco, leggendo un log vero: *"quando nel log abbiamo due «-» consecutivi, e' perche'
+//          manca un campo?"* — si', ed era la colonna M — e poi: *"quando manca del tutto una
+//          colonna, non mettere il «-» (con spazio annesso); non da molto valore"*.
+//
+//          🔧 LA REGOLA DELLA v6.379 SI ROVESCIA, e vale la pena dire perche'. Quella release
+//          teneva il posto segnato ragionando cosi': *chi legge conta i trattini per sapere quale
+//          colonna sta guardando*. Il ragionamento reggeva sulla carta; l'uso l'ha smentito —
+//          Franco ha letto centinaia di righe e i trattini non li ha contati, ha letto i valori.
+//          📌 E il caso che l'ha fatto notare e' quello che rende il segnaposto inutile: la colonna
+//          M («Retro - Tipo di change») e' vuota sulla stragrande maggioranza delle righe, perche'
+//          un tipo di change ce l'hanno solo i change. Il posto vuoto non segnalava un'eccezione:
+//          era il caso normale, ripetuto su ogni riga.
+//          📌 Stessa forma della v6.320 (il Nome completo del retro sulle basi): una decisione
+//          difendibile sulla carta, smentita da chi il sito lo usa. Quando divergono, ha ragione
+//          l'uso.
+//
+//          🔴 IL CASO LIMITE: con TUTTI i campi vuoti non deve restare uno spazio doppio dopo i due
+//          punti. `Riga 12:  ⚠️ …` si vede, ed e' il residuo di un caso limite invece di una riga
+//          scritta apposta.
+//
+//          ⚠️ E una correzione che Franco ha fatto A ME, non al codice: avevo scritto che la
+//          Sottocategoria serve a identificare un retro. E' falso — *"la sottocategoria dei retro
+//          non e' obbligatoria, quindi se vuota un retro puo' essere identificato comunque"*. Nel
+//          codice `findRetriCandidati` la usa solo per DISAMBIGUARE quando i candidati sono piu'
+//          d'uno (v6.351). Sta scritto qui perche' quell'affermazione stava per diventare la
+//          ragione di una modifica.
+//
+// v6.390 - LO SPAZIO PRIMA DEL «!» ANCHE NEI TESTI DELL'INTERFACCIA (Franco). app.js e index.html.
+//
+//          Franco: *"nel sito vedo che abbiamo dei ! che non hanno uno spazio prima. possiamo
+//          metterlo sempre? eg: il pulsante «Esplora l'Inventario Sgorbions!»"*.
+//
+//          📌 LA REGOLA DEI DATI ESISTEVA GIA' (v6.318, `_spaziaEsclamativoFinale`) e NON tocca
+//          l'interfaccia: vale su nome, categoria, sottocategoria, tipologie — i campi che fanno da
+//          CHIAVE, dove «RISATE!» e «RISATE !» sarebbero due cose diverse. I testi del sito sono
+//          un'altra faccenda, e da qui l'incoerenza che Franco vedeva.
+//
+//          🆕 **87 stringhe riscritte** — 76 in app.js e 11 nell'index — italiane E inglesi.
+//          ⚠️ CHE L'INGLESE SIA UN CASO DIVERSO E' STATO DETTO PRIMA DI FARLO: lo spazio prima del
+//          «!» e' una convenzione francese; in inglese `Welcome back !` a un madrelingua sembra un
+//          refuso. Franco ha scelto tutte e due le lingue sapendolo — il sito e' suo e la coerenza
+//          interna gli e' sembrata piu' importante della norma tipografica inglese. Sta scritto qui
+//          perche' fra sei mesi sembrera' un errore, e non lo e'.
+//
+//          🔴 UNA FUNZIONE E' STATA PROTETTA A MANO: `_sottocategoriaPerNome`. Il suo `+ '!'` non e'
+//          testo per l'utente, e' la regola RISATE! della v6.231 che maneggia il «!» come DATO.
+//          Spaziarlo li' avrebbe cambiato i valori scritti su Firestore invece che una scritta —
+//          esattamente la lezione della v6.115: *una modifica «solo estetica» smette di esserlo
+//          appena il valore viene salvato*.
+//
+//          📌 RISCRITTE, NON SISTEMATE A RUNTIME (scelta di Franco). Una funzione che spazia il «!»
+//          mentre disegna avrebbe coperto da se' anche le stringhe future, ma avrebbe agito su OGNI
+//          testo — compresi i «!» in mezzo a una frase, dove non deve toccare niente. Cosi' invece
+//          lo spazio sta dentro il testo, si cerca col `grep`, e chi scrivera' l'88esima stringa
+//          vedra' le altre.
+//
+// v6.389 - LA RICERCA GLOBALE MOSTRA ANCHE LE DA INCOLLARE (E LE CARTE) (Franco). app.js e
+//          index.html (la sola versione).
+//
+//          Franco: *"nella ricerca globale, cerchiamo anche nelle figurine da incollare? Se no,
+//          fallo, ed, ovviamente, li mi aspetto solo una miniatura e i soli campi Nome e Numero"*.
+//
+//          🔴 LA RISPOSTA ERA PEGGIO DI UN NO. La ricerca le TROVAVA gia' — stanno in
+//          `getData('figurines')` e nessun filtro le esclude — e le CONTAVA nel «Trovati N
+//          oggetti». Poi non le disegnava, perche' il render cicla su un elenco di sezioni scritto
+//          a mano dove `attaccare` non c'era. Il totale prometteva risultati che non comparivano
+//          da nessuna parte: 📌 un conteggio che mente e' peggio di una sezione che non si cerca,
+//          perche' non lascia nemmeno il sospetto.
+//
+//          🔴 E NON MANCAVA SOLO `attaccare`: mancavano anche le CARTE (v6.224). Due sezioni su
+//          sette, invisibili nella ricerca da mesi, e nessuno se n'era accorto — un elenco scritto
+//          a mano non da' errore quando e' incompleto. Franco ne ha nominata una; correggere solo
+//          quella sarebbe stato l'errore della v6.374 e della v6.384.
+//
+//          🆕 L'elenco viene da `PRODOTTI_INVENTARIO` e le etichette da `getSectionLabel`, cioe'
+//          dallo stesso descrittore `ARTICOLI` che comanda l'hub dell'Inventario. L'ottava sezione
+//          entrera' da sola.
+//          📌 `PRODOTTI_INVENTARIO` e non `ARTICOLI_ORDINE_DICHIARATO`: e' l'ordine che l'admin
+//          configura, lo stesso che si vede nell'Inventario. I risultati escono nell'ordine in cui
+//          il sito presenta le cose.
+//          📌 E la mappa a mano diceva «Figurine» dove il resto del sito dice «Figurine con
+//          velina» (v6.195): un'etichetta divergente in piu', che sparisce con la mappa.
+//          ⚠️ La STESSA mappa a cinque articoli era gia' stata tolta da altri due punti nella
+//          v6.285. Questa e' la terza copia, ed e' sopravvissuta perche' nessuno la stava cercando.
+//
+//          🆕 LA PILLOLA DELLE DA INCOLLARE: una miniatura sola, Nome e Numero. Niente miniatura
+//          del retro e niente coda col Nome completo del retro. Non e' una semplificazione
+//          estetica: una da-incollare non e' una versione di niente (v6.358, v6.370), quindi
+//          versione, tipologia e retro associato sarebbero campi che su ogni riga direbbero sempre
+//          la stessa cosa — o niente.
+//          ⚠️ LE CARTE NON PRENDONO LA PILLOLA RIDOTTA: Franco ha parlato delle da incollare, e le
+//          carte *"sono come le figurine"* (v6.224). Allargare a loro sarebbe stato dedurre.
+//
+//          ⚠️ NON CI SONO ANCORA DATI da incollare (il bottone n. 5 non e' mai stato premuto), quindi
+//          in anteprima questa sezione restera' vuota: si vedra' quando i dati ci saranno.
+//
+// v6.388 - ANCHE IL RECAP DELL'IMPORT SEGUE L'ORDINE DEL FILE (Franco). app.js e index.html
+//          (la sola versione).
+//
+//          Franco: *"anche nel recap del log di import, devi loggare le righe in ordine, rispetto
+//          al numero di riga del file XLS"*.
+//
+//          🔴 STESSO DIFETTO DELLA v6.383, UN PIANO PIU' SOTTO. Quella release ha messo in ordine
+//          il log principale; le TRE LISTE del recap (righe aggiornate, non importate, caricate in
+//          modo incompleto) hanno continuato a riempirsi nell'ordine in cui il programma LAVORA —
+//          basi tutte prima, varianti poi — quindi il recap ereditava i buchi che il log non aveva
+//          piu'. 📌 Il numero di riga c'era gia', scritto DENTRO il messaggio: non era scritto in
+//          un posto da cui si potesse ordinare. Un dato visibile e non utilizzabile.
+//
+//          🆕 `_voceRecap(msg, lvl)` costruisce la voce con `ord` (il numero di riga del file) e
+//          `seq`, e i tre punti che riempiono le liste passano di li'. `_recapBlock` ordina prima
+//          di stampare.
+//          ⚠️ Ordina una COPIA: il chiamante ha gia' letto `list.length` per il titolo del blocco,
+//          e riordinargli l'array sotto i piedi sarebbe un effetto collaterale che non serve.
+//          ⚠️ `seq` accanto a `ord` per la stessa ragione della v6.383: piu' messaggi possono
+//          venire dalla stessa riga, e il loro ordine non deve dipendere dalla stabilita' di `sort`.
+//
+//          ⚠️ L'IMPORT RETRO NON E' STATO TOCCATO, ed e' una divergenza dichiarata: quel ciclo
+//          scorre il file riga per riga, quindi la sua lista nasce gia' in ordine e non c'e' niente
+//          da riordinare. Aggiungere `ord` anche li' avrebbe voluto dire scrivere codice per
+//          garantire una proprieta' che l'ordine di costruzione gia' garantisce.
+//
+// v6.387 - SI RIPARANO ANCHE I DATI GIA' DISALLINEATI (Franco). app.js e index.html (la versione).
+//
+//          Franco, dopo la v6.386: *"ok ma come fixiamo i dati attualmente non sincronizzati?"*.
+//          Domanda giusta: le release precedenti hanno smesso di PRODURRE il disallineamento, e non
+//          toccano quello gia' in giro. Un record si riallinea solo quando qualcuno lo risalva.
+//
+//          🔴 META' DELL'ATTREZZO C'ERA GIA'. Funzioni → «Allinea item figlio correlati» ripara i
+//          FIGLI, e lo fa con `_discendenzaDaAggiornare` — la stessa discesa del salvataggio. Ma
+//          `_calcolaPianoAllinea` guardava SOLO la discendenza: le figurine col Nome completo
+//          rimasto indietro rispetto al loro retro non le riparava niente.
+//
+//          🆕 `_perRetroDaAggiornare(rec, figs, visti, collegati)` — lo stesso pezzo della v6.386,
+//          ma con il DETTAGLIO (`{ figlio, genitore, campi, nuovo }`, la forma di
+//          `_discendenzaDaAggiornare`). Serve perche' l'anteprima mostra valore vecchio e valore
+//          nuovo, e senza `campi` non avrebbe niente da mostrare.
+//          📌 Cosi' l'attrezzo che RIPARA e il salvataggio che PREVIENE leggono la stessa funzione.
+//          Non possono divergere — che e' l'unico modo di non ritrovarsi con un riparatore che
+//          sistema meno cose di quante il sito ne rompa.
+//
+//          ⚠️ IL PIANO GIRA SU TUTTI I RETRO, NON SOLO SULLE BASI, e la differenza non e' teorica:
+//          un retro OMAGGIO e' a sua volta un figlio, ma le figurine possono usare LUI come proprio
+//          retro. Partendo dalle sole basi quelle righe non si sarebbero mai viste — lo stesso
+//          punto cieco che la v6.384 ha appena chiuso da un'altra parte.
+//
+//          🔧 E L'ANTEPRIMA DICE DUE COSE CHE PRIMA SAREBBERO STATE FALSE:
+//          · la colonna Tipo, sulle righe nuove, dice «usa questo retro» invece di «Base». Quelle
+//            righe non sono figlie di niente: e' una figurina il cui Nome completo cita il retro.
+//          · il valore di ARRIVO si legge da `nuovo` e non piu' da `base`. Per i campi ereditati
+//            sono la stessa cosa; per il Nome completo ricalcolato, `base.fullName` sarebbe il nome
+//            del RETRO — un valore vero, e la risposta a un'altra domanda.
+//
+//          ⚠️ IL PULSANTE SI CHIAMA ANCORA «Allinea item figlio correlati» e ora fa di piu' di
+//          quello che dice: ripara anche righe che figlie non sono. L'etichetta l'ha scelta Franco,
+//          quindi non si cambia da soli — ma va detto, e la scelta e' sua.
+//
+//          📌 COME SI USA, e l'ordine conta: prima ANTEPRIMA (che scrive zero e dice quanti record
+//          e quali), poi Applica. Il numero atteso dai censimenti gia' fatti sul sito e' 3 righe di
+//          discendenza; quante siano le righe «usa questo retro» lo dira' l'anteprima — ed e' un
+//          numero che nessuno conosce ancora, quindi va guardato prima di premere.
+//
+// v6.386 - RINOMINANDO UN RETRO SI AGGIORNA IL NOME COMPLETO DI CHI LO USA — DA TUTTE E QUATTRO LE
+//          STRADE (Franco). app.js e index.html (la sola versione).
+//
+//          Franco: *"quando viene aggiornato il nome di un retro, vengono aggiornati i nomi
+//          completi delle figurine che lo usano? mi pare proprio di no"*. Non gli pareva: era cosi'.
+//
+//          🔴 IL PEZZO ESISTEVA, IN UN POSTO SOLO. `_perRetro` — l'elenco di chi ha quel retro come
+//          proprio `retroId` — l'aveva scritto la v6.375 dentro `saveBulkCell`, e li' era rimasto.
+//          Il quadro completo, misurato prima di toccare niente:
+//
+//            strada che scrive un retro     | figli (baseFigurineId) | chi lo USA (retroId)
+//            scheda di dettaglio            |          si'           |         NO
+//            singola cella (vista tabellare)|          si'           |        si'
+//            aggiornamento massivo          |     si' (v6.382)       |         NO
+//            import retro                   |          NO            |         NO
+//
+//          ⚠️ La riga che pesa di piu' e' l'ultima: l'import retro non propagava NIENTE, ed e' la
+//          strada con cui si caricano i dati in blocco — quella che puo' produrre piu'
+//          disallineamenti in un colpo solo.
+//
+//          🆕 `_daSalvareInsiemeA(rec, figs)` risponde a una domanda sola — «chi altro va riscritto
+//          insieme a questo record» — e la fanno tutti e quattro. Non e' una copia in piu': il
+//          pezzo e' stato ESTRATTO da `saveBulkCell`, che ora chiama la funzione come gli altri.
+//          📌 QUINTA VOLTA. v6.375 (due strade scrivono, una sola avvisa i figli), v6.376 (i tab
+//          generati ma le etichette a mano), v6.382 (il massivo non scendeva), v6.384 (l'omaggio
+//          fuori dalla coppia scritta a mano), e questa. Sempre la stessa forma: una correzione
+//          applicata alla strada da cui era arrivata la segnalazione.
+//
+//          📌 NESSUNA CONDIZIONE SU «QUALE CAMPO HAI TOCCATO», che sarebbe stata un terzo elenco da
+//          tenere allineato (`_CAMPI_NOME_RETRO` e' gia' il secondo). Si ricalcola il Nome completo
+//          e si tiene la riga solo se il risultato e' DIVERSO: chi non cambia non entra nella
+//          scrittura, e la regola non ha niente da ricordare.
+//
+//          ⚠️ TRE CONVENZIONI DI SCRITTURA DIVERSE, e la funzione torna COPIE per tutte:
+//          · la scheda le passa a `_salvaFigurineInBlocco` come ha sempre fatto;
+//          · `saveBulkCell` le rimette dentro `figs` prima di salvare — `_cache.figurines` e
+//            `series.items` condividono gli oggetti, e una copia lasciata fuori non arriverebbe;
+//          · il massivo le riversa sugli originali con `Object.assign`, perche' salva una volta per
+//            serie e regge solo mutando sul posto (vedi v6.382);
+//          · l'import retro salva uno per uno, che li' e' la strada corta e non introduce un
+//            secondo modo di salvare.
+//
+//          🔴 E SE LA PROPAGAZIONE FALLISCE NELL'IMPORT, IL LOG LO DICE. Il retro e' scritto, i
+//          collegati no: chi legge deve sapere che quel disallineamento e' stato creato adesso, non
+//          ereditato dal passato.
+//
+// v6.385 - DUE AGGIUSTAMENTI AL LOG DEGLI IMPORT (Franco). app.js e index.html (la sola versione).
+//
+//          Franco: *"1) prima di ogni recap, lascia una riga vuota. 2) le righe di recap non
+//          dovrebbero avere lo stesso colore, tra recap e log originale?"*
+//
+//          --- 1. LA RIGA VUOTA C'ERA GIA', E NON SI VEDEVA ----------------------------------
+//          🔴 Tutti e due gli import emettevano `('', 'info')` in cima al recap. Ma la riga si
+//          disegna con `'<div ...>' + msg + '</div>'`, e un div senza contenuto e' alto ZERO:
+//          restavano i 2px di margine. Il codice faceva esattamente quello che diceva di fare, e
+//          il risultato non c'era - il genere di difetto che nessun controllo prende.
+//          🆕 Ora una riga vuota diventa `&nbsp;` e occupa una riga.
+//          🧹 E la riga si disegnava con DUE copie identiche della stessa istruzione, una per
+//          import. Ora e' una sola (`_appendRigaLogImport`): erano gia' due occasioni di divergere,
+//          e questa correzione andava applicata a tutte e due.
+//          ⚠️ I due log delle FOTO non passano di qui - costruiscono la riga con `createElement`,
+//          e la riga vuota li' non si usa. Divergenza dichiarata, non sanata di nascosto.
+//
+//          --- 2. IL COLORE DEL RECAP -------------------------------------------------------
+//          🔴 Le liste del recap conservavano la sola STRINGA, e il recap la ristampava con un
+//          livello FISSO ('warn'). Quindi lo stesso identico testo usciva rosso nel log e giallo
+//          nel recap: due decisioni sullo stesso dato, e la seconda non sapeva niente della prima.
+//          Riguardava soprattutto `erroriRighe`, che raccoglie sia `err` sia `warn` - la
+//          divergenza che l'elenco delle aperte segnalava dalla v6.377.
+//          🆕 Ora il livello viaggia col messaggio: le liste tengono `{ msg, lvl }` e il recap lo
+//          rilegge. 📌 Non si "riallineano" i due colori: si toglie la SECONDA DECISIONE. Il recap
+//          e' un'eco, e un'eco non sceglie il tono.
+//          🗑️ Via anche il parametro `itemLvl` di `_recapBlock`: con il livello sulla voce, un
+//          secondo posto da cui prenderlo sarebbe la stessa divergenza appena chiusa.
+//
+// v6.384 - L'OMAGGIO NON ERA RICONOSCIUTO COME DERIVATO NELL'AGGIORNAMENTO MASSIVO (Franco).
+//          app.js e index.html (la sola versione).
+//
+//          Franco, con dei numeri che sono una diagnosi: *"ho fatto un aggiornamento massivo di 44
+//          retro, dei quali 22 erano base e 22 omaggio [...] mi aspettavo dicesse «Aggiornati 22
+//          oggetti, e 22 collegati». Invece ha scritto «Aggiornati 44 oggetti»"*.
+//
+//          🔴 LA CAUSA: `if (c.nonSuDerivati && (rec.isChange || rec.isPrintError)) return;`
+//          Una coppia scritta a mano, e l'omaggio non c'era. Quindi i 22 omaggi non venivano
+//          riconosciuti come derivati, si prendevano la scrittura DIRETTA, e la discesa poi non
+//          trovava piu' niente da propagare: zero collegati. Il conto di Franco era quello giusto.
+//
+//          ⚠️ E IL DANNO NON ERA SOLO NEL CONTEGGIO. `nonSuDerivati` esiste perche' Categoria e
+//          Sottocategoria di un derivato le riscrive la BASE al salvataggio (v6.038). Scriverle
+//          dritte su un omaggio da' un valore che il primo salvataggio della sua base disfa, in
+//          silenzio. Qui non e' successo solo perche' anche le basi erano nella selezione e hanno
+//          ricevuto lo stesso valore: selezionando i SOLI omaggi, il lavoro sarebbe sparito.
+//
+//          📌 TERZA VOLTA PER LO STESSO PUNTO CIECO. La v6.314 aveva tolto la quaterna a mano da
+//          `_eBase` (*"era una quaterna scritta a mano, e l'omaggio non c'era"*), la v6.376 l'ha
+//          ritrovata nei tab della scheda, e questa la trova qui. Ogni volta il codice CONOSCEVA
+//          gia' la risposta e qualcuno la riscriveva a mano accanto.
+//
+//          🆕 Ora la domanda la fa `_campoComandatoDalGenitore(rec, campo)` — la STESSA funzione
+//          che la scheda e la vista tabellare usano da sempre per decidere se un campo e'
+//          scrivibile. Non una regola nuova: quella. E chiede anche del CAMPO, non solo del
+//          record: su una FIGURINA la Categoria non e' ereditata, quindi li' non salta niente.
+//
+//          🗑️ `nonSuDerivati` E' STATO TOLTO da `CAMPI_MASSIVI`, non lasciato inerte: nessuno lo
+//          legge piu', e un flag che sopravvive senza lettori e' quello che fra sei mesi qualcuno
+//          rilegge credendolo la risposta a una domanda che nel frattempo e' cambiata.
+//
+//          ✅ Con questa release lo stesso massivo di Franco dice **«✅ Aggiornati 22 oggetti, e 22
+//          collegati»** — 44 in tutto, come prima, ma detti per quello che sono.
+//
+// v6.383 - IL LOG DELL'IMPORT FIGURINE SEGUE L'ORDINE DEL FILE (Franco). app.js e index.html
+//          (la sola versione).
+//
+//          Franco: *"io mi aspetterei che le righe del log afferissero alle righe del file xls con
+//          lo stesso ordine, ma cosi non mi sembra essere. come mai?"* — e ha incollato le prime
+//          dieci righe: 001, 004, 006, 009, 012, 014, 016, 018, 020, 023.
+//
+//          🔴 NON ERA UN DIFETTO, ERA LA DOPPIA PASSATA che si vedeva da fuori. L'import elabora
+//          `ordered = basi.concat(varianti)`: le righe base tutte per prime, perche' una variante
+//          ha bisogno che la sua base esista gia'. Quei numeri erano le BASI; le 002, 003, 005…
+//          stavano tutte insieme nella seconda meta' del log. Il numero `Riga N` era giusto: erano
+//          i buchi a non essere spiegati da niente.
+//          📌 Cioe' il log raccontava fedelmente cio' che il PROGRAMMA fa, e non cio' che serve a
+//          chi lo legge — che ha il file XLS aperto accanto e cerca la riga 2 dopo la riga 1.
+//
+//          🆕 LE RIGHE SI METTONO DA PARTE E SI STAMPANO ALLA FINE, ordinate per numero di riga.
+//          L'elaborazione NON cambia di una virgola: cambia solo quando e in che ordine si stampa.
+//          Toccare l'ordine di elaborazione avrebbe fatto fallire le varianti le cui basi arrivano
+//          dopo — un difetto vero al posto di un fastidio di lettura.
+//
+//          ⚠️ IL PREZZO, scelto da Franco sapendolo: durante l'elaborazione il log resta vuoto.
+//          Restano la barra e il contatore «Riga N/635», e una riga in cima lo dichiara — un
+//          riquadro vuoto mentre la barra avanza e' indistinguibile da un caricamento piantato.
+//
+//          ⚠️ L'IMPORT RETRO NON E' STATO TOCCATO, ed e' una divergenza DICHIARATA, non capitata:
+//          quello scorre il file riga per riga, in ordine, e non ha passate da riordinare. Franco:
+//          *"lascialo com'e'"*. Le due scatole si comportano diversamente perche' i due import
+//          fanno cose diverse.
+//
+//          📌 `seq` accanto a `ord` non e' un doppione: piu' messaggi escono dalla stessa riga, e
+//          senza un secondo criterio il loro ordine dipenderebbe dalla stabilita' di `sort` — che
+//          oggi c'e', ma e' una cosa da sapere, non da cui dipendere in silenzio.
+//
+// v6.382 - LA CASCATA SCATTA ANCHE SULL'AGGIORNAMENTO MASSIVO, e i toast 'warn' hanno un colore
+//          (Franco). app.js e index.html (due regole CSS e la versione).
+//
+//          Franco, due note sulla vista tabellare: *"a seguito di un aggiornamento massivo il
+//          messaggio di conferma salvataggio non e' verde come al solito"* e *"l'aggiornamento a
+//          cascata scatta anche a seguito di un aggiornamento massivo? puoi controllare e
+//          confermare?"*.
+//
+//          --- 1. LA CASCATA ------------------------------------------------------------------
+//          🔴 LA RISPOSTA ERA NO. `saveBulkCell` (una cella) chiama `_collegatiDaAggiornare` dalla
+//          v6.375; `applicaAggiornamentoMassivo` no, e scrive `category` e `subcategory`, che i
+//          figli ereditano. E' la QUARTA volta che questo file incontra la stessa forma: la v6.375
+//          ne contava gia' tre.
+//
+//          📌 IL PRESUPPOSTO ERA GIA' SCRITTO NEL CODICE, mancava solo l'azione. Il massivo salta
+//          apposta i derivati - `if (c.nonSuDerivati && (rec.isChange || rec.isPrintError)) return`
+//          - col commento *"le riscrive la base al salvataggio (v6.038)"*. Cioe' si aspettava che
+//          fosse la base a spingere il valore giu'. E poi non lo spingeva.
+//
+//          🔴 SI MUTA IL FIGLIO SUL POSTO, e non e' un dettaglio di stile: e' la riga da cui
+//          dipende se la correzione funziona. `_discendenzaDaAggiornare` torna `nuovo`, che e' un
+//          oggetto NUOVO. Ma il massivo salva UNA volta per serie, e regge solo perche' muta i
+//          record sul posto: gli elementi di `_cache.figurines` sono gli STESSI oggetti di
+//          `series.items`, quindi riscrivere il documento della serie porta con se' tutto. Mettere
+//          la copia nuova in cache avrebbe prodotto un aggiornamento che si vede e non si salva -
+//          di nuovo il difetto della v6.375, con l'aria della sua correzione.
+//
+//          ⚠️ LA DISCESA SI FA SOLO PER I CAMPI CHE LA MERITANO: Categoria, Sottocategoria,
+//          Tipologia, Versione. Gli altri sei del massivo non si ereditano, e scendere per loro
+//          sarebbe lavoro per niente su migliaia di record.
+//          ⚠️ E si fa DOPO il ciclo dei bersagli, non dentro: un figlio puo' essere a sua volta un
+//          bersaglio, e scendere prima lo avrebbe ricopiato dal padre non ancora aggiornato.
+//
+//          📊 IL NUMERO E' STATO DECISO PRIMA, sui dati veri (`censimento-cascata.js` in console
+//          sul sito, v6.377, 4389 oggetti, 2301 radici): **2 padri, 3 figli** disallineati, tutti
+//          in Sgorbions 2, sui campi `name` e `subname`. L'arretrato e' minuscolo - questa
+//          correzione serve soprattutto a non produrne altro. Ed e' il collaudo: rilanciando lo
+//          stesso censimento dopo, deve dire ZERO.
+//
+//          --- 2. IL COLORE -------------------------------------------------------------------
+//          🔴 Il codice usa `toast(msg, 'warn')` e `toast(msg, 'info')`, ma nel CSS esistevano solo
+//          `.toast.success` e `.toast.error`. I due tipi senza regola uscivano con la cornice
+//          neutra. Il caso peggiore era proprio questo: quando almeno una serie NON viene salvata
+//          il massivo passa a 'warn', cioe' diventava piu' discreto nell'unico momento in cui
+//          doveva farsi notare.
+//          🆕 Aggiunte `.toast.warn` e `.toast.info` in index.html; e il messaggio di successo del
+//          massivo ora porta la spunta ✅ come tutte le altre conferme del sito.
+//
+// v6.381 - LA SCATOLA DI LOG ERA TAGLIATA A SINISTRA (Franco). app.js e index.html (la versione).
+//
+//          Franco: *"la larghezza della finestra di log va bene ma non e' centrata rispetto allo
+//          schermo; ed infatti e' tagliata a sinistra"*.
+//
+//          🔴 LA CAUSA, misurata sul markup e non dedotta: la v6.380 allarga la scatola con
+//          `margin-left:50%` piu' `translateX(-50%)`, che centra rispetto al GENITORE. Il genitore
+//          dei due log di import e' un `<div style="max-width:900px">` largo 900 e **allineato a
+//          sinistra** dentro il pannello admin da 1500. Quindi il 50% valeva 450px, la scatola
+//          arretrava di meta' della propria larghezza (~921px su un monitor 1920), e il bordo
+//          sinistro finiva ~470px prima del riquadro: fuori dallo schermo.
+//          📌 E la v6.380 credeva che il tetto fosse i 1500px del pannello. Non lo era: erano
+//          quei 900. Un numero cercato nel posto sbagliato.
+//
+//          🆕 LA CORREZIONE E' UNA PAROLA: `margin:0 auto` sul wrapper. Centrato lui, il suo centro
+//          coincide col centro del pannello - che e' gia' centrato nella pagina - e la scatola si
+//          centra sullo schermo come deve. Il modulo di import resta largo 900px: cambia dove sta,
+//          non quanto e' largo.
+//          ⚠️ Il wrapper e' UNO e tiene tutti e due gli import (figurine e retro), quindi la
+//          correzione vale per entrambi. I due log delle FOTO non hanno quel wrapper - riempiono il
+//          pannello, che e' gia' centrato - e infatti non erano tagliati.
+//
+//          📌 LA LEZIONE, che e' gia' scritta al §9.6.4 e non e' stata applicata: sul layout si
+//          MISURA, non si ragiona. La v6.380 ha calcolato una centratura su un genitore che non era
+//          stato guardato. Da qui `misura-log.js` nella cartella del progetto: legge dal DOM i
+//          bordi veri della scatola e li confronta con quelli della finestra, cosi' la prossima
+//          volta la risposta arriva da un numero invece che da un ragionamento.
+//
+// v6.380 - LE QUATTRO SCATOLE DI LOG SI ALLARGANO, E SMETTONO DI ESSERE QUATTRO COPIE (Franco).
+//          index.html (la classe `.log-box` e la versione) e app.js.
+//
+//          Franco: *"la finestra usata per il log della procedura di import, e' gia' al massimo? o
+//          possiamo allargarlo un po'?"*, poi *"mi serve allargare la finestra di log, non
+//          aumentarne la altezza. Aumentane la larghezza del 50%"*.
+//
+//          🔴 NON ERA AL MASSIMO DI NIENTE: il log stava dentro `#admin-panel`, `max-width:1500px`.
+//          Un numero, non un limite. Ora la scatola esce dal pannello con lo stesso trucco della
+//          vista tabellare - `margin-left:50%` piu' `translateX(-50%)` - e arriva a
+//          `min(2250px, 96vw)`.
+//
+//          ⚠️ IL +50% E' SUL TETTO, NON SU CIO' CHE SI VEDE, e va detto: 1500 -> 2250 e' +50% nel
+//          codice, ma lo schermo vince. Su un monitor 1920 il log si ferma a 96vw ≈ 1843px, cioe'
+//          +23%; il +50% pieno si vede da 2344px in su.
+//
+//          📌 E LA LARGHEZZA CONTA PIU' DI IERI: la riga della v6.379 porta cinque campi davanti
+//          all'esito, e con `white-space: pre` non va a capo - scorre. La modifica di ieri ha reso
+//          stretta la scatola di oggi.
+//
+//          🔧 E LA FRECCIA `->` DELLA v6.379 SE NE VA. Franco: *"togli pure «->». Mi sono accorto
+//          ora che gia' c'era una freccia tua (a icona)"* - cioe' l'emoji in testa a ogni esito.
+//          Aveva ragione: `… - OFFERTA -> ⏭️ Serie non corrisponde` mette due frecce in fila.
+//          📌 Si corregge QUI e non nella v6.379 perche' quella non e' mai andata live: il formato
+//          con la freccia non l'ha visto nessuno fuori da un'anteprima. `prova-v6379.js` e' stata
+//          aggiornata al formato definitivo e ora pretende la v6.380 in su.
+//
+//          🧹 LO STESSO `style="..."` STAVA SCRITTO QUATTRO VOLTE, identico: import figurine,
+//          import retro, foto, foto senza numero. Franco ne aveva nominata una - quella
+//          dell'import - e toccare solo quella sarebbe stato l'errore che la v6.374 ha gia' pagato
+//          su queste stesse scatole, dove i colori erano copiati quattro volte con due varianti
+//          gia' divergenti. Ora sono una classe sola: la quinta scatola nasce gia' giusta.
+//          ⚠️ Sotto gli 860px l'amministrazione non si vede (v5.822): da telefono non cambia niente.
+//
+// v6.379 - LA RIGA DI LOG DEI DUE IMPORT DICE PRIMA DI CHI PARLA, POI COSA E' SUCCESSO (Franco).
+//          index.html (la sola versione) e app.js.
+//
+//          Franco: *"1) ad inizio di esportazione puliamo il log. 2) la riga di log impostala
+//          cosi': `Riga n: [colonna n.] - [colonna Nome] - [Colonna L] - [Colonna M] - [Colonna J]
+//          -> "esito"`"* — con l'esito *"nel suo formato attuale"*.
+//
+//          📌 HA DETTO «EXPORT» E INTENDEVA L'IMPORT, e la cosa e' stata CHIESTA invece che
+//          dedotta: le procedure di export un log non ce l'hanno proprio, e le colonne che nomina
+//          combaciano una per una con `template-figurine.xlsx` (C Numero, D Nome, L Retro - Nome,
+//          M Retro - Tipo di change, J Retro - Categoria). La deduzione era solida e sarebbe
+//          bastata; e' la §9.9 - un presupposto che regge da solo un pezzo di lavoro va confermato
+//          con chi lo sa, e costa una riga di conversazione.
+//
+//          🆕 IL FORMATO NUOVO: `Riga 12: 5 - GASTONE BUBBONE - OFFERTA SPECIALE - - OFFERTA ->
+//          ⚠️ colonna Serie mancante`. L'identita' della riga sta davanti alla freccia, l'esito
+//          dietro - e l'esito e' quello di prima, emoji compresa: non e' stato riscritto nessun
+//          messaggio, e' stato tolto a ognuno il pezzo `Riga N:` che si scriveva da se'.
+//
+//          🔴 QUARANTASEI PREFISSI, UNA FUNZIONE SOLA. Ogni riga di log componeva per conto suo
+//          `'⚠️ Riga ' + rn + ': '`: quarantasei copie di un formato, cioe' il modo in cui la
+//          quarantasettesima nasce diversa senza che nessuno se ne accorga. Ora c'e'
+//          `_prefissoRigaLog(rn, campi)`, e i due import le passano i propri campi. E' la lezione
+//          della v6.375 applicata PRIMA del danno: non basta che due punti applichino la stessa
+//          regola, devono chiamare la stessa funzione.
+//
+//          ⚠️ I CAMPI SONO DIVERSI FRA I DUE IMPORT, ED E' DICHIARATO. Le figurine portano i
+//          cinque di Franco; i retro ne portano tre - Nome, Categoria, Sottocategoria - perche'
+//          quel template ha 11 colonne e le «L» e «M» di la' qui non esistono. Il FORMATO e' lo
+//          stesso, i campi no. Anche questo chiesto, non deciso: *"si, con le colonne
+//          equivalenti"*.
+//          📌 E l'ordine dei cinque e' quello che ha dettato lui (L, M, J), NON quello del
+//          template (J, L, M). Si lascia come l'ha detto.
+//
+//          ⚠️ UNA CELLA VUOTA LASCIA IL SUO POSTO VUOTO. Toglierla sposterebbe tutte le altre di
+//          una posizione, e chi legge conta i trattini: `Riga 12:  - GASTONE - …` dice «il Numero
+//          non c'e'», `Riga 12: GASTONE - …` direbbe che il Numero e' GASTONE.
+//
+//          ♻️ LE COLONNE DELL'IMPORT FIGURINE SI LEGGONO IN CIMA AL CICLO. Stavano sotto i due
+//          `continue` della Serie, quindi le righe che escono per prime non avrebbero potuto
+//          portare il prefisso. Non costa niente: `g()` legge celle di un oggetto in memoria.
+//          📌 La domanda che ci ha portati qui era mia e mal posta - avevo chiesto a Franco cosa
+//          fare delle righe che «falliscono prima di aver letto Numero e Nome», presentando
+//          l'ordine delle istruzioni come se fosse un fatto sui dati. Lui: *"come puo' una riga
+//          fallire prima di leggere Numero e Nome?"*. Non puo': bastava spostarle.
+//
+//          🧹 E IL PUNTO 1 AVEVA PIU' SOSTANZA DI QUANTO SEMBRASSE. Il log gia' si azzerava, ma
+//          piu' sotto e solo lui: il RIEPILOGO della corsa precedente («✅ Fine: 304 inserite …»)
+//          restava a schermo per tutto il caricamento nuovo, e stando sotto i `return` anticipati
+//          l'azzeramento non avveniva affatto quando si ripremeva «Avvia» senza aver scelto la
+//          serie - cioe' proprio quando un log vecchio accanto a un errore nuovo inganna di piu'.
+//          Ora `clearImportFigLog()` / `clearImportRetroLog()` stanno in CIMA alle due procedure.
+//          ⚠️ Non e' il caso del lucchetto (v6.377), che si alza DOPO i controlli apposta: quello
+//          accende qualcosa e resterebbe acceso a vuoto. Questo spegne.
+//
+// v6.378 - IL TASTO «AGGIORNA» NELLA VISTA TABELLARE, e l'etichetta dell'omaggio nei tab
+//          collegati (Franco). index.html (la sola versione) e app.js.
+//
+//          --- 1. IL TASTO -------------------------------------------------------------------
+//          *"Nella vista tabella puoi mettere un tasto (admin) «Aggiorna», per comandare un
+//          aggiornamento dei dati della tabella?"* — e alla domanda su cosa rileggere: *"il
+//          contenuto della vista tabellare"*.
+//
+//          🔴 LEGGE DAL SERVER, e questa e' la riga che decide se il pulsante vale qualcosa.
+//          `_rileggiFigurine()` (v6.046) fa quasi la stessa cosa ma passa da `fsGetAll`, cioe'
+//          `getDocs`: la v6.176 ha accertato che a rete giu' quella RISOLVE con la cache locale
+//          invece di rifiutare. Un «Aggiorna» scritto cosi' ridisegna gli stessi dati di prima
+//          dichiarando di aver funzionato: sarebbe il guasto servito con l'aria della cura.
+//          `_leggiSerieRitentando` usa `getDocsFromServer`, che rifiuta - e un rifiuto si dice.
+//
+//          🆕 IL PULSANTE STA DENTRO `bulk-edit-view`, non accanto a «Vista tabellare». Non e' una
+//          preferenza di posizione: dentro non esiste nessuna VISIBILITA' da tenere allineata,
+//          perche' nasce col ridisegno e muore quando `innerHTML` si svuota - e i punti che lo
+//          svuotano sono gia' tre. Fuori sarebbe stato un quarto posto che deve ricordarsi di
+//          nasconderlo, cioe' la v6.376 in attesa di succedere: un pulsante che non sparisce non
+//          da' errore. Compare anche nel ramo «nessun oggetto trovato»: e' li' che uno rilegge.
+//
+//          🆕 TRE CAUTELE, e nessuna e' un vezzo:
+//          · il lucchetto della v6.377 lo ferma - a meta' import i dati non sono ne' i vecchi ne'
+//            i nuovi, e si vedrebbe uno stato che non e' mai esistito;
+//          · se ci sono righe spuntate chiede conferma: la selezione vive SOLO nel DOM
+//            (`.bulk-select-row:checked`) e il ridisegno la cancella;
+//          · il toast dice l'ora E IL CONTEGGIO. E' la riga del §9.6.7: un risultato non dice da
+//            solo a quali dati ha risposto. Se il numero non e' quello atteso, il resto non vale.
+//
+//          📌 SI RIDISEGNA ANCHE LA TESTATA DELLA SERIE. I contatori stanno due centimetri sopra e
+//          leggono le stesse serie: aggiornare la tabella lasciando fermi i numeri sarebbe «mezzo
+//          aggiornamento che sembra intero» - il difetto della v6.375, peggiore di nessun
+//          aggiornamento perche' a schermo sembra a posto.
+//
+//          ⚠️ COSA NON FA: non e' il contatore di revisione lasciato aperto dalla v6.377. Sveglia
+//          QUESTA finestra su comando; non impedisce a una finestra rimasta aperta di sovrascrivere
+//          il lavoro altrui, e chi non lo preme resta vecchio esattamente come prima. Va detto,
+//          perche' un pulsante che si chiama «Aggiorna» promette piu' di quello che da'.
+//
+//          🧹 E la cache di sessione ha smesso di avere DUE chiavi: `'sgorbions_session_cache'`
+//          stava scritta a mano in `_invalidateSessionCache` e come `const SESSION_KEY` locale
+//          dentro `loadAllData`. Il pulsante sarebbe stato il terzo posto. Ora `_SESSION_KEY` e
+//          `_salvaCacheSessione()` sono una sola. ⚠️ Il pulsante la RISCRIVE e non la cancella:
+//          cancellarla avrebbe lasciato i dati freschi solo in memoria, e chi ricarica la pagina
+//          entro i 5 minuti di TTL si riprendeva i vecchi.
+//
+//          --- 2. L'ETICHETTA DELL'OMAGGIO ---------------------------------------------------
+//          Franco, guardando un retro base: *"cosa significa la frase «nessun retro collegato» che
+//          si legge nel tab «Omaggi di questo retro» e posta di fianco alla miniatura di un retro
+//          omaggio?"*, e poi *"se io apro quel retro omaggio, lo vedo collegato al retro base"*.
+//
+//          🔴 NON ERA UN DATO MANCANTE: ERA LA RISPOSTA A UN'ALTRA DOMANDA. L'etichetta di riga si
+//          sceglieva con tre rami scritti a mano - `usaRetro`, `change`/`printError`, e «tutto il
+//          resto» - e quel «tutto il resto» era stato scritto nella v6.030 per le due VARIAZIONI,
+//          dove il retro collegato E' l'identita' della riga. La v6.376 ha fatto nascere i tab da
+//          `VERSIONI_ARTICOLO`, ma ha lasciato l'etichetta all'elenco a mano: l'omaggio e'
+//          comparso, non aveva un ramo suo, ed e' finito in quello delle variazioni. Un retro non
+//          ha un retro, quindi `retroId` e' vuoto e la riga lo annunciava.
+//
+//          ⚠️ E l'omaggio un collegamento CE L'HA - `baseFigurineId`, quello da cui nasce il tab
+//          stesso col suo (1) e la sua miniatura. La frase negava un legame DIVERSO da quello che
+//          il lettore aveva in mente: per questo non suonava inutile, suonava sbagliata.
+//
+//          📌 E' la forma della v6.375 un giorno dopo: generalizzato l'ELENCO, non cio' che
+//          l'elenco produce. Mezza generalizzazione non da' errore, dice una frase che non c'entra.
+//          Percio' NON e' stato aggiunto un quarto ramo per l'omaggio: e' stato tolto l'elenco a
+//          mano. Il ramo del tipo ora chiede al modello «questa versione ha un `campoTipo`?» - ce
+//          l'hanno change, omaggio ed errore di stampa (i tre `livello: 'figlio'`), non le due
+//          variazioni. La distinzione che serviva era gia' scritta nel modello.
+//
+//          ⚠️ LA MINIATURA NON E' STATA TOCCATA, ed e' una scelta dichiarata: `_tabVariazioni`
+//          resta la coppia scritta a mano, perche' la regola della v6.076 («per una variazione la
+//          foto e' il RETRO») parla delle variazioni e di nient'altro. Franco della foto non ha
+//          detto niente, e allargare cio' che ha detto e' la lezione 9 del 17 agosto.
+//
 // v6.377 - IL LUCCHETTO DEL CARICAMENTO: mentre un import gira, le altre finestre non salvano
 //          (Franco). index.html (la versione) e app.js.
 //
@@ -19657,7 +20237,7 @@ function switchAuthTab(tab) {
   document.getElementById('tab-login').classList.toggle('active', tab === 'login');
   document.getElementById('tab-register').classList.toggle('active', tab === 'register');
   const title = document.querySelector('#auth-modal .modal-title');
-  if (title) title.textContent = tab === 'login' ? (currentLang === 'it' ? 'Bentornato!' : 'Welcome back!') : (currentLang === 'it' ? 'Benvenuto!' : 'Welcome!');
+  if (title) title.textContent = tab === 'login' ? (currentLang === 'it' ? 'Bentornato !' : 'Welcome back !') : (currentLang === 'it' ? 'Benvenuto !' : 'Welcome !');
   const ae = document.getElementById('auth-error'); if (ae) ae.style.display = 'none';
   const re = document.getElementById('reg-error'); if (re) re.style.display = 'none';
 }
@@ -20186,7 +20766,7 @@ async function saveEbaySettings() {
   await fsSave('settings', perFirestore);
   _cache.ebaySettings = settings;
   renderEbayAccounts();
-  toast(it ? '✅ Impostazioni Ebay salvate!' : '✅ Ebay settings saved!', 'success');
+  toast(it ? '✅ Impostazioni Ebay salvate !' : '✅ Ebay settings saved !', 'success');
 }
 
 async function saveEmailReplyTo(value) {
@@ -20605,7 +21185,7 @@ async function sendWelcomeEmail(user) {
     user.email,
     user.username,
     'Benvenuto su figurinesgorbions.it! 👾',
-    'Benvenuto nella community Sgorbions di figurinesgorbions.it!\n\nIl tuo account è stato creato con successo. Inizia subito a esplorare l\'Inventario e a costruire la tua lista!'
+    'Benvenuto nella community Sgorbions di figurinesgorbions.it!\n\nIl tuo account è stato creato con successo. Inizia subito a esplorare l\'Inventario e a costruire la tua lista !'
   );
 }
 
@@ -20882,7 +21462,7 @@ async function saveReplyToField() {
   if (!input) return;
   const value = input.value.trim();
   await saveEmailReplyTo(value);
-  toast(currentLang === 'it' ? '✅ Indirizzo salvato!' : '✅ Address saved!', 'success');
+  toast(currentLang === 'it' ? '✅ Indirizzo salvato !' : '✅ Address saved !', 'success');
 }
 
 // Stato dell'ordinamento della tabella destinatari. col=null → ordine
@@ -21075,7 +21655,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.377';
+const JS_VERSION = 'v6.392';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -21453,8 +22033,29 @@ async function _rileggiFigurine() {
   return true;
 }
 
+// 🆕 v6.378 - LA CHIAVE E IL SALVATAGGIO DELLA CACHE DI SESSIONE, IN UN POSTO SOLO.
+// Erano due: la stringa `'sgorbions_session_cache'` scritta qui a mano, e un `const SESSION_KEY`
+// locale dentro `loadAllData`. Due copie della stessa chiave che nessun controllo confrontava - e
+// il pulsante «Aggiorna» della v6.378 sarebbe stato la terza. La lezione della v6.375: due punti
+// che parlano dello stesso dato devono chiamare la stessa funzione, non applicare la stessa regola.
+const _SESSION_KEY = 'sgorbions_session_cache';
+
+// ⚠️ Le serie si salvano SENZA `items`: le figurine sono gia' per intero nell'array piatto, e
+// duplicarle riempirebbe il sessionStorage per niente. `loadAllData` le riattacca in lettura.
+function _salvaCacheSessione() {
+  try {
+    const seriesLight = _cache.series.map(s => { const { items, ...rest } = s; return rest; });
+    sessionStorage.setItem(_SESSION_KEY, JSON.stringify({
+      ts: Date.now(),
+      series: seriesLight,
+      figurines: _cache.figurines,
+      levels: _cache.levels
+    }));
+  } catch(e) {}
+}
+
 function _invalidateSessionCache() {
-  try { sessionStorage.removeItem('sgorbions_session_cache'); } catch(e) {}
+  try { sessionStorage.removeItem(_SESSION_KEY); } catch(e) {}
 }
 
 async function _syncPublicProfile(user) {
@@ -22176,11 +22777,12 @@ async function loadAllData() {
 
   // Cache in sessionStorage per ridurre le letture Firebase
   // Le collection che cambiano raramente vengono cachate per la sessione corrente
-  const SESSION_KEY = 'sgorbions_session_cache';
+  // v6.378 - la chiave sta in `_SESSION_KEY`, fuori di qui: la leggono anche
+  // `_invalidateSessionCache` e il pulsante «Aggiorna» della vista tabellare.
   const CACHE_TTL = 5 * 60 * 1000; // 5 minuti
   let sessionCache = null;
   try {
-    const raw = sessionStorage.getItem(SESSION_KEY);
+    const raw = sessionStorage.getItem(_SESSION_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Date.now() - parsed.ts < CACHE_TTL) sessionCache = parsed;
@@ -22223,17 +22825,9 @@ async function loadAllData() {
       _cache.public_profiles = await fsGetAll('public_profiles');
       if (currentUser?.isAdmin) await _loadAdminOnlyData();
       _cache.levels = await fsGetAll('levels');
-      // Salva in sessionStorage (le serie senza "items": sono già presenti
-      // per intero in figurines, non serve duplicarle e sprecare spazio)
-      try {
-        const seriesLight = _cache.series.map(s => { const { items, ...rest } = s; return rest; });
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify({
-          ts: Date.now(),
-          series: seriesLight,
-          figurines: _cache.figurines,
-          levels: _cache.levels
-        }));
-      } catch(e) {}
+      // Salva in sessionStorage: v6.378 - il come sta in `_salvaCacheSessione()`, che e' la
+      // stessa che usa il pulsante «Aggiorna» della vista tabellare.
+      _salvaCacheSessione();
     }
     await loadAllOwnedFromFirebase();
     _cache.users = _cache.users || [];
@@ -22433,7 +23027,7 @@ const i18n = {
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
-'modal.scoreBoost.title':'Congratulations!','modal.scoreBoost.ok':'Great!','modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go!','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
+'modal.scoreBoost.title':'Congratulations !','modal.scoreBoost.ok':'Great !','modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go !','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
 'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
 'admin.email.fix':'E-mails remaining (as on EmailJS):','admin.email.fix.hint':'Enter the number you read on the EmailJS dashboard, i.e. how many e-mails you have left. The panel above still shows the ones already sent.','admin.save':'Save','admin.generali.title':'🌐 General site settings','admin.generali.timeoutLabel':'Maximum wait for data loading (seconds)','admin.generali.timeoutHint':'Past this time the site stops waiting for data and shows the fault panel. From 3 to 120 seconds. On a slow connection a low value shows «SITE TEMPORARILY UNAVAILABLE» even when the data was on its way.','newsletter.settingsTitle':'⚙️ Email Settings','newsletter.replyToLabel':'Reply-To address','newsletter.replyToHint':'When you reply to a message, the email will go to this address',
@@ -22447,16 +23041,16 @@ const i18n = {
 
 'admin.user.role':'User type','admin.user.collector':'Collector','admin.user.admin':'Admin',
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
-'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message!',
+'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message !',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added!','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with tissue','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with tissue','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
 'hero.challenge':'Challenge others','hero.challengeDesc':'Who has the biggest list? You can also choose to appear anonymously.',
 'hero.desc':'The unofficial database dedicated to the legendary Italian sticker series of the \'90s.','hero.descShort':'The unofficial database of the legendary Italian \'90s series.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
-'hero.cta1':'Explore the Sgorbions Inventory!','hero.cta2':'Start collecting Sgorbions',
+'hero.cta1':'Explore the Sgorbions Inventory !','hero.cta2':'Start collecting Sgorbions',
 'hero.stat1':'Series','hero.stat2':'Stickers','hero.stat2b':'Retros','hero.stat2c':'Albums','hero.stat2d':'Other items','hero.stat2e':'Wrappers','hero.stat3':'Collectors','hero.statLangs':'Site languages',
 'home.featured.eyebrow':'Featured Series','home.featured.title':'Explore the World of Mucus',
 'home.featured.sub':'Every series carefully documented with original illustrations, descriptions and rarity info.',
@@ -22467,13 +23061,13 @@ const i18n = {
 'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
 'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
 'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Items','catalog.allSeriesInfo':'Show information on all series','catalog.allSeriesInfoShort':'All series info','catalog.allSeriesInfoTitle':'The Sgorbions series on record','catalog.addseries':'+ Add Series',
-'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them!',
+'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them !',
 'back':'Inventory','detail.addfig':'+ Add Sticker',
-'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation!',
-'contact.eyebrow':'Get in Touch','contact.sub':'Found a rare piece? Want to contribute? Write to us!',
+'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation !',
+'contact.eyebrow':'Get in Touch','contact.sub':'Found a rare piece? Want to contribute? Write to us !',
 'contact.info.title':'Let\'s Talk Sgorbions','contact.email':'Email','contact.location':'Location',
 'contact.location.val':'Italy 🇮🇹','contact.resp':'Response time','contact.resp.val':'Usually within 24–48 hours',
-'form.name.ph':'Sgorbions Fan','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio!',
+'form.name.ph':'Sgorbions Fan','form.subject':'Subject','form.subject.ph':'I found a rare Sgorbio !',
 'form.message':'Message','form.message.ph':'Tell me everything...',
 'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality','form.ageConfirm':'I confirm I am at least 16 years old','form.newsletterLabel':'Would you like the newsletter? *','form.newsletter.opt.none':'— Select —','form.newsletter.opt.yes':'Yes, I want it','form.newsletter.opt.no':'No, thanks','form.newsletter.hint':'Answering is required, but you are free to say no: registration works anyway. You can change your mind anytime from your profile.','profile.emailPrefs.title':'E-mail preferences','profile.newsletter':'I want to receive the figurinesgorbions.it newsletter','profile.newsletter.hint':'Get the latest news about the Sgorbions inventory.<br>You can turn it on or off whenever you like.','newsletterConsent.title':'📧 Would you like the newsletter?','newsletterConsent.body':'We never actually asked you — and without your consent we won\'t send it.<br><br>It\'s just the occasional update on the latest news from the Sgorbions Inventory.<br>No advertising!<br><br>You can change your mind anytime from your profile.','newsletterConsent.yes':'Yes, sign me up','newsletterConsent.no':'No, thanks','form.privacyNotice':'By registering, you agree to our <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Privacy Policy</a>.','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
 'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Stickers',
@@ -22514,7 +23108,7 @@ const i18n = {
 'owned.toggle':'My list','owned.yes':'✓ My list',
 'contact.q1':'Do you want more information about Sgorbions?','contact.q2':'Do you want to report an error?',
 'contact.q3':'Or do you just want to compliment the administrator?',
-'contact.cta':'For any of these things, send us a message!',
+'contact.cta':'For any of these things, send us a message !',
 'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with tissue) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:#fff;">Export items not in my list</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:#fff;">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in my list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
@@ -22526,7 +23120,7 @@ const i18n = {
 'nav.onlineSince':'Online dal 21.06.2026',
 'profile.changeNat':'✏️ Cambia nazionalità','profile.setNat':'✏️ Imposta nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','profile.changeUsername':'✏️ Cambia nome utente','profile.changeUsername.title':'✏️ Cambia nome utente','profile.changeUsername.hint':'Il nome utente è il nome pubblico visibile ad altri utenti (es. nella Classifica).<br><br>Usare solo lettere, numeri e underscore, massimo 20 caratteri.','profile.changeUsername.save':'Salva','profile.changeUsername.welcomeIntro':'Ti abbiamo assegnato questo nome utente in automatico. Vuoi personalizzarlo? Puoi sempre cambiarlo in seguito dal tuo profilo.','profile.deleteAccount':'🗑️ Elimina il mio account','profile.statsTitle':'I tuoi numeri Sgorbions','profile.myMessages.title':'I miei messaggi con lo staff',
 'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua "Mia lista" e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua lista "Ciò che cerco"','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
-'modal.scoreBoost.title':'Complimenti!','modal.scoreBoost.ok':'Perfetto!','modal.accountDeleted.title':'Account eliminato','modal.accountDeleted.desc':'Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via!','modal.accountDeleted.close':'Chiudi',
+'modal.scoreBoost.title':'Complimenti !','modal.scoreBoost.ok':'Perfetto !','modal.accountDeleted.title':'Account eliminato','modal.accountDeleted.desc':'Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via !','modal.accountDeleted.close':'Chiudi',
 'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
 'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'E-mail inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 e-mail/mese (si azzera il 1° di ogni mese).',
@@ -22542,10 +23136,10 @@ const i18n = {
 'admin.user.role':'Tipologia di utente','admin.user.collector':'Collezionista','admin.user.admin':'Admin',
 
 'contact.title':'Contatta <span class=\'hi\'>l\'amministratore</span>',
-'contact.intro':'Hai trovato qualche pezzo raro che non è censito nel sito?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio!',
+'contact.intro':'Hai trovato qualche pezzo raro che non è censito nel sito?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio !',
 'contact.email.ph':'la-tua@e-mail.com',
 'contact.info':'Informazioni di contatto',
-'newsletter.title':'Invia Newsletter','newsletter.subject':'Oggetto','newsletter.subject.ph':'es. Nuova serie aggiunta!','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate',
+'newsletter.title':'Invia Newsletter','newsletter.subject':'Oggetto','newsletter.subject.ph':'es. Nuova serie aggiunta !','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate',
 'classifica.best':'Chi ha costruito la lista più grande?','classifica.levels':'Livelli di Collezionista Sgorbions',
 'admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio minimo','admin.levels.save':'Salva livello',
 'hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.',
@@ -22563,7 +23157,7 @@ const i18n = {
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','nav.mialista':'Mia lista',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.','hero.descShort':'Il database non ufficiale della leggendaria serie italiana anni \'90.',
-    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions!','hero.cta2':'Inizia a collezionare gli Sgorbions',
+    'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri oggetti','hero.stat2e':'Bustine','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
@@ -22572,12 +23166,12 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle!','catalog.stickers':'Figurine con velina','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con velina','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
-    'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione!',
-    'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici!',
+    'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
+    'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici !',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'E-mail','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
-    "contact.privacy":"Per poterti rispondere conserviamo il tuo indirizzo e-mail e il testo del messaggio. Se non hai un account sul sito, dopo 6 mesi il messaggio viene <strong>cancellato del tutto</strong>, indirizzo compreso. Se ce l'hai, resta finché non elimini l'account.",'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro!','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
+    "contact.privacy":"Per poterti rispondere conserviamo il tuo indirizzo e-mail e il testo del messaggio. Se non hai un account sul sito, dopo 6 mesi il messaggio viene <strong>cancellato del tutto</strong>, indirizzo compreso. Se ce l'hai, resta finché non elimini l'account.",'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro !','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
     'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','form.newsletterLabel':'Vuoi ricevere la newsletter? *','form.newsletter.opt.none':'— Seleziona —','form.newsletter.opt.yes':'Sì, voglio riceverla','form.newsletter.opt.no':'No, grazie','form.newsletter.hint':'Rispondere è obbligatorio, ma sei libero di dire di no: la registrazione funziona comunque. Potrai cambiare idea quando vuoi dal tuo profilo.','profile.emailPrefs.title':'Preferenze e-mail','profile.newsletter':'Voglio ricevere la newsletter di figurinesgorbions.it','profile.newsletter.hint':'Ricevi le ultime novità sull\'inventario degli Sgorbions.<br>Puoi attivarla o disattivarla quando vuoi.','newsletterConsent.title':'📧 Vuoi ricevere la newsletter?','newsletterConsent.body':'Non te l\'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell\'Inventario Sgorbions.<br>Nessuna pubblicità!<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.','newsletterConsent.yes':'Sì, iscrivimi','newsletterConsent.no':'No, grazie','form.privacyNotice':'Registrandoti, accetti la nostra <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Informativa sulla Privacy</a>.','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.desc.en':'Descrizione (Inglese)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
@@ -22586,7 +23180,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
-    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio!','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
+    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:#fff;">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:#fff;">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
 'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con velina','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri','items.resetFilters':'Azzera filtri','items.searchHint':'Inserisci una stringa di ricerca','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda definizioni retro','items.filterLegend.retroBase':'<strong>Retro set base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla sua versione base per un elemento in più nel disegno','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
@@ -24219,7 +24813,7 @@ async function doChangePassword() {
   await fsSave('users', currentUser);
 
   fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem 1rem;border-radius:8px;font-size:0.88rem;';
-  fb.textContent = '✅ Password aggiornata con successo!';
+  fb.textContent = '✅ Password aggiornata con successo !';
   setTimeout(() => closeModal('change-pwd-modal'), 1500);
 }
 
@@ -26090,9 +26684,9 @@ async function saveSeries() {
     toast((currentLang === 'it' ? '❌ Salvataggio fallito: ' + (e?.code || e?.name || 'errore') + ' — riprova' : '❌ Save failed: ' + (e?.code || e?.name || 'error') + ' — please retry'), 'error');
     return;
   }
-  _stopAvviso();   // v6.190 - riuscito: l'avviso non deve comparire un istante dopo il "salvata!"
+  _stopAvviso();   // v6.190 - riuscito: l'avviso non deve comparire un istante dopo il "salvata !"
   editingSeriesImgFile = null;
-  if (fb) { fb.textContent = (currentLang === 'it' ? '✅ Serie salvata!' : '✅ Series saved!'); }
+  if (fb) { fb.textContent = (currentLang === 'it' ? '✅ Serie salvata !' : '✅ Series saved !'); }
   if (btn) btn.disabled = false;
   setTimeout(() => {
     closeModal('add-series-modal');
@@ -26807,7 +27401,7 @@ async function salvaVersioniArticolo() {
   try {
     await fsSave('settings', { id: 'versioni_articolo', perArticolo: per });
     LOCAL.set('versioniArticolo', JSON.stringify(per));
-    if (fb) { fb.style.color = 'var(--success)'; fb.textContent = it ? '\u2705 Versioni salvate!' : '\u2705 Versions saved!'; }
+    if (fb) { fb.style.color = 'var(--success)'; fb.textContent = it ? '\u2705 Versioni salvate !' : '\u2705 Versions saved !'; }
   } catch (e) {
     // v6.232 - adesso un salvataggio che non puo' scrivere FALLISCE, e questo ramo lo mostra.
     console.error('salvaVersioniArticolo', e);
@@ -29129,8 +29723,25 @@ function renderCatalogSearch(q) {
               ciascuno. La risposta che ho ricevuto rispondeva a un'altra domanda, e ci sono voluti
               due giri per accorgersene. */''}
       </div>`;
-    const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: currentLang === 'it' ? 'Album' : 'Albums', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Wrappers' };
-    const sectionOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
+    // 🆕 v6.389 (Franco: *"nella ricerca globale, cerchiamo anche nelle figurine da incollare?"*)
+    // L'ELENCO DELLE SEZIONI VIENE DA `ARTICOLI`, NON PIU' SCRITTO A MANO QUI.
+    //
+    // 🔴 E LA RISPOSTA ALLA DOMANDA ERA PEGGIO DI UN NO. La ricerca le TROVAVA gia' — stanno in
+    // `getData('figurines')` e nessun filtro le esclude — e le CONTAVA nel «Trovati N oggetti».
+    // Poi non le disegnava, perche' il render cicla su questo elenco e `attaccare` non c'era.
+    // Cioe' il totale prometteva risultati che non comparivano da nessuna parte: un conteggio che
+    // mente e' peggio di una sezione che non si cerca, perche' non lascia nemmeno il sospetto.
+    //
+    // 🔴 E NON MANCAVA SOLO `attaccare`: mancavano anche le CARTE (v6.224). Due sezioni su sette,
+    // invisibili nella ricerca, e nessuno se n'era accorto — perche' un elenco scritto a mano non
+    // da' errore quando e' incompleto. Cercando la capacita' invece dell'elenco vengono su tutte e
+    // due, e l'ottava sezione entrera' da sola.
+    // 📌 `PRODOTTI_INVENTARIO` e non `ARTICOLI_ORDINE_DICHIARATO`: e' l'ordine che l'admin puo'
+    // configurare, lo stesso che l'utente vede nell'hub dell'Inventario. I risultati escono
+    // nell'ordine in cui il sito gli presenta le cose.
+    // 📌 E le etichette da `getSectionLabel`, che le legge dallo stesso descrittore: la mappa qui
+    // sopra diceva «Figurine» dove il resto del sito dice «Figurine con velina» (v6.195).
+    const sectionOrder = PRODOTTI_INVENTARIO;
     const figsHTML = r.figs.length
       // v6.050 (Franco) - NEI RISULTATI I RETRO SI MOSTRANO COL NOME COMPLETO.
       // Prima si mostrava il nome LUNGO (nome + sottonome), che non contiene categoria e
@@ -29197,7 +29808,7 @@ function renderCatalogSearch(q) {
           // Lo stacco fra gruppi e' piu' largo di quello dentro un gruppo (0.7 contro 0.3): e' cosi'
           // che si vede DOVE finisce una figurina e ne comincia un'altra, senza cornici ne' righelli.
           return `<div style="margin-bottom:0.4rem;">
-            <div style="font-size:0.9rem;color:#ff9d3d;font-weight:600;margin-bottom:0.25rem;">${sectionLabels[sec]}:<span style="font-size:0.75rem;font-weight:400;color:var(--text);margin-left:0.35rem;">${_frasePerQuesta(inSection.length, 'tipo')}</span></div>
+            <div style="font-size:0.9rem;color:#ff9d3d;font-weight:600;margin-bottom:0.25rem;">${esc(getSectionLabel(sec))}:<span style="font-size:0.75rem;font-weight:400;color:var(--text);margin-left:0.35rem;">${_frasePerQuesta(inSection.length, 'tipo')}</span></div>
             <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
               ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
@@ -29210,6 +29821,12 @@ function renderCatalogSearch(q) {
                 // mostrava niente. E' coerente con gli altri tre tipi e meglio di un buco, ma resta
                 // un ripiego: se un errore di stampa e' visibile nel fronte, la foto della base non
                 // lo fa vedere. Se dà fastidio, e' una condizione da separare, non da togliere.
+                // 🆕 v6.389 (Franco) - LE DA INCOLLARE MOSTRANO UNA MINIATURA SOLA, NOME E NUMERO.
+                // *"li mi aspetto solo una miniatura e i soli campi Nome e Numero"*. Non e' una
+                // semplificazione estetica: una da-incollare non e' una versione di niente
+                // (v6.358/v6.370), quindi versione, tipologia e retro associato sarebbero tre
+                // colonne che su ogni riga direbbero la stessa cosa - o niente.
+                const _soloNomeENumero = sec === 'attaccare';
                 const isVarOrChange = sec === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange || f.isPrintError);
                 const baseFig = (isVarOrChange && f.baseFigurineId) ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
                 // v6.103 (Franco) - LA MINIATURA DEL RETRO VALE ANCHE PER LE FIGURINE BASE.
@@ -29285,8 +29902,8 @@ function renderCatalogSearch(q) {
                   : '';
                 return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
                 ${(() => { const front = isVarOrChange ? (f.img || (baseFig && baseFig.img) || null) : f.img; return smallImg(front, '', false); })()}
-                ${retroFig ? smallImg(retroFig.img, currentLang === 'it' ? 'Retro associato' : 'Associated retro') : ''}
-                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">'+f.number+'</span> ' : ''}${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;color:#ffd84d;">Change</span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (tipoLabel ? ' <span style="color:#ffd84d;">' + esc(tipoLabel) + '</span>' : '') + '</span>' : ''}${sec === 'retros' ? '' : _codaRetro}</span>
+                ${(retroFig && !_soloNomeENumero) ? smallImg(retroFig.img, currentLang === 'it' ? 'Retro associato' : 'Associated retro') : ''}
+                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">'+f.number+'</span> ' : ''}${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;color:#ffd84d;">Change</span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (tipoLabel ? ' <span style="color:#ffd84d;">' + esc(tipoLabel) + '</span>' : '') + '</span>' : ''}${(sec === 'retros' || _soloNomeENumero) ? '' : _codaRetro}</span>
               </span>`;
               }).join('') + '</div>').join('')}
             </div>
@@ -30216,8 +30833,8 @@ function renderSeriesMeta(s) {
     if (currentUser && (complete || n > 0)) {  // v5.885: se ne possiedi 0, niente riga ("0 nella tua lista" era brutto)
       const testo = complete
         ? (it
-            ? (quanti === 1 ? "Ce l'hai!" : (femminile ? 'Le hai tutte!' : 'Li hai tutti!'))
-            : (quanti === 1 ? 'You have it!' : 'You have them all!')) + '\u{1F389}'
+            ? (quanti === 1 ? "Ce l'hai!" : (femminile ? 'Le hai tutte !' : 'Li hai tutti !'))
+            : (quanti === 1 ? 'You have it !' : 'You have them all !')) + '\u{1F389}'
         : nfmt(n) + ' ' + inLista;
       riga2 = `<span class="col-own" style="color:var(--accent);font-weight:600;">${testo}</span>`;
     }
@@ -33067,12 +33684,12 @@ function renderItems() {
     const isComplete = currentUser && currentSection === 'figurines' && itemsSerie.length > 0 && ownedCount === itemsSerie.length;
     completeMsg.style.display = isComplete ? '' : 'none';
     if (isComplete) completeMsg.textContent = currentLang === 'it'
-      ? '\u{1F389} Hai tutte le figurine in lista, per questa serie!'
-      : '\u{1F389} You have all the stickers in your list, for this series!';
+      ? '\u{1F389} Hai tutte le figurine in lista, per questa serie !'
+      : '\u{1F389} You have all the stickers in your list, for this series !';
   }
 
   if (!allItems.length) {
-    grid.innerHTML = `<div class="empty-state"><p class="empty-title" style="white-space:nowrap;">${currentLang === 'it' ? 'Nessun oggetto ancora!' : 'Nothing here yet!'}</p></div>`;
+    grid.innerHTML = `<div class="empty-state"><p class="empty-title" style="white-space:nowrap;">${currentLang === 'it' ? 'Nessun oggetto ancora !' : 'Nothing here yet !'}</p></div>`;
     document.getElementById('items-pagination').innerHTML = '';
     return;
   }
@@ -34631,7 +35248,7 @@ function renderMyCollection(ownedFigs) {
   if (!el) return; // section removed
   const series = getData('series', []);
   if (!ownedFigs.length) {
-    el.innerHTML = `<div class="empty-state"><div class="empty-icon">😢</div><p class="empty-title">${currentLang === 'it' ? "Nessuna figurina ancora!" : "No stickers yet!"}</p><p class="empty-sub">${currentLang === 'it' ? "Sfoglia l'Inventario e aggiungi le figurine alla tua lista." : "Browse the Inventory and add stickers to your list."}</p></div>`;
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">😢</div><p class="empty-title">${currentLang === 'it' ? "Nessuna figurina ancora !" : "No stickers yet !"}</p><p class="empty-sub">${currentLang === 'it' ? "Sfoglia l'Inventario e aggiungi le figurine alla tua lista." : "Browse the Inventory and add stickers to your list."}</p></div>`;
     return;
   }
   const bySeries = {};
@@ -35085,7 +35702,7 @@ async function sendContactReply(id) {
     if (idx >= 0) _cache.contact_messages[idx] = msg;
   }
 
-  toast(alsoEmail ? (currentLang === 'it' ? '✅ Risposta inviata (anche via e-mail)!' : '✅ Reply sent (also by e-mail)!') : (currentLang === 'it' ? '✅ Risposta salvata nel sito' : '✅ Reply saved on the site'), 'success');
+  toast(alsoEmail ? (currentLang === 'it' ? '✅ Risposta inviata (anche via e-mail) !' : '✅ Reply sent (also by e-mail) !') : (currentLang === 'it' ? '✅ Risposta salvata nel sito' : '✅ Reply saved on the site'), 'success');
   renderAdminContacts();
 }
 
@@ -35175,7 +35792,7 @@ function openUsernameModal(isFirstTime) {
   if (welcomeEl) welcomeEl.style.display = isFirstTime ? '' : 'none';
   const titleEl = document.getElementById('username-modal-title');
   if (titleEl) titleEl.textContent = isFirstTime
-    ? (currentLang === 'it' ? '👋 Benvenuto/a!' : '👋 Welcome!')
+    ? (currentLang === 'it' ? '👋 Benvenuto/a !' : '👋 Welcome !')
     : t('profile.changeUsername.title');
   document.getElementById('username-modal').classList.remove('hidden');
 }
@@ -35351,7 +35968,7 @@ async function saveLevel() {
   document.getElementById('level-name-en-input').value = '';
   document.getElementById('level-score-input').value = '';
   renderAdminPunteggi();
-  toast((currentLang === 'it' ? 'Livello salvato!' : 'Level saved!'), 'success');
+  toast((currentLang === 'it' ? 'Livello salvato !' : 'Level saved !'), 'success');
 }
 
 async function deleteLevel(id) {
@@ -37095,6 +37712,28 @@ function _figurineCheUsanoIlRetro(retroId, allFigs) {
   return { items, ereditati };
 }
 
+// 🆕 v6.378 - QUALE CAMPO PORTA IL TIPO DI UNA VERSIONE, e a dirlo e' `VERSIONI_ARTICOLO`.
+// Nasce da una riga che Franco non capiva, ed e' il caso in cui la domanda vale piu' del difetto:
+// nel tab «Omaggi di questo retro» la riga accanto alla miniatura diceva «Nessun Retro collegato».
+// 🔴 Non era un dato mancante: era la risposta a un'ALTRA domanda. L'etichetta di riga si sceglieva
+// con tre rami scritti a mano - `usaRetro`, `change`/`printError`, e tutto il resto - e quel «tutto
+// il resto» era stato scritto nella v6.030 per le due VARIAZIONI, dove il retro collegato e'
+// l'identita' della riga. La v6.376 ha fatto nascere i tab da `VERSIONI_ARTICOLO` (giusto), ma ha
+// lasciato l'etichetta a quell'elenco a mano: l'omaggio e' comparso, non aveva un ramo suo, ed e'
+// caduto nel ramo delle variazioni. Un retro non ha un retro, quindi `retroId` e' vuoto.
+// ⚠️ E l'omaggio un collegamento CE L'HA - `baseFigurineId` - tanto che aprendolo si vede la sua
+// base. La frase negava un legame diverso da quello che l'utente aveva in mente: percio' non
+// suonava inutile, suonava SBAGLIATA.
+// 📌 E' la forma della v6.375, un giorno dopo: generalizzato l'ELENCO, non cio' che l'elenco
+// produce. Mezza generalizzazione non da' errore, dice solo una frase che non c'entra.
+// Percio' qui non si aggiunge un quarto ramo per l'omaggio: si toglie l'elenco a mano. `campoTipo`
+// sta su change, omaggio ed errore di stampa (i tre `livello: 'figlio'`) e NON sulle due
+// variazioni - cioe' la distinzione che serviva era gia' scritta nel modello.
+function _campoTipoDelTab(chiave) {
+  const v = VERSIONI_ARTICOLO.find(x => x.chiave === chiave);
+  return v?.campoTipo || null;
+}
+
 function buildLinkedFiguresTabsHTML(baseId) {
   const allFigs = getData('figurines', []);
   const linked = allFigs.filter(x => x.baseFigurineId === baseId);
@@ -37199,13 +37838,22 @@ function buildLinkedFiguresTabsHTML(baseId) {
         // Il "(dalla base)" non e' un dettaglio estetico: dice che quella riga viene da un dato che
         // sul record NON c'e', e che quindi cambia da sola se si cambia il retro della base.
         if (g.ereditati && g.ereditati.has(item.id)) label += currentLang === 'it' ? ' (dalla base)' : ' (from base)';
-      } else if (g.key === 'change' || g.key === 'printError') {
+      } else if (_campoTipoDelTab(g.key)) {
         // Mostriamo il TIPO (più utile del Nome, che coincide con quello della base).
         // v5.779 — vale sia per i Change di Retro sia per quelli di figurina, entrambi con Tipo.
         // v6.015 — e per gli Errori di stampa, che hanno il loro printErrorType: senza, due
         // errori dello stesso oggetto sarebbero due righe con la stessa scritta.
-        label = item.changeType || item.printErrorType || item.name;
+        // 🆕 v6.378 - QUI STAVA `g.key === 'change' || g.key === 'printError'`, e l'OR con la
+        // catena `item.changeType || item.printErrorType`. Erano due elenchi a mano che dicevano la
+        // stessa cosa in due modi, e l'omaggio non era in nessuno dei due. Ora la domanda e' una
+        // sola e la fa il modello: questa versione ha un campo del tipo? Alla sesta versione
+        // l'etichetta arriva da se', senza che nessuno debba ricordarsi di questa riga.
+        label = item[_campoTipoDelTab(g.key)] || item.name;
       } else {
+        // 🆕 v6.378 - QUI CI ARRIVANO SOLO LE DUE VARIAZIONI, ed e' la cosa che questo ramo dava
+        // per scontata senza dirlo: e' il ramo di chi NON ha un campo del tipo. Prima era il ramo
+        // di «tutto quello che non ho elencato sopra», che e' come una versione nuova ci e' finita
+        // dentro in silenzio.
         // Per le Variazioni il Nome coincide sempre con quello della figurina base: inutile
         // ripeterlo. Mostriamo invece il Retro collegato (Categoria + Nome), la vera chiave
         // v6.030 (Franco) - il SOTTONOME va sulla seconda riga. Nella colonna c'e' spazio in
@@ -38346,7 +38994,7 @@ async function removeBgFromEdit(slot) {
       _scriviSlot(slot, e.target.result);
       preview.src = _datiSlot(slot);
       if (btn) { btn.disabled = false; btn.textContent = _ETICHETTA_SFONDO(); }
-      toast(currentLang === 'it' ? '\u2705 Sfondo rimosso!' : '\u2705 Background removed!', 'success');
+      toast(currentLang === 'it' ? '\u2705 Sfondo rimosso !' : '\u2705 Background removed !', 'success');
     };
     reader.readAsDataURL(croppedBlob);
   } catch(e) { _erroreSfondo(e, btn); }
@@ -38412,7 +39060,7 @@ async function fotoSceltaTogliSfondo() {
     reader.onload = e => {
       if (img) img.src = e.target.result;
       if (btn) { btn.disabled = false; btn.textContent = _ETICHETTA_SFONDO(); }
-      toast(currentLang === 'it' ? '\u2705 Sfondo rimosso!' : '\u2705 Background removed!', 'success');
+      toast(currentLang === 'it' ? '\u2705 Sfondo rimosso !' : '\u2705 Background removed !', 'success');
     };
     reader.readAsDataURL(fuori);
   } catch (e) { _erroreSfondo(e, btn); }
@@ -38774,6 +39422,72 @@ function _discendenzaDaAggiornare(radice, figs) {
 // il patto di quella release, e non cambia — cambia quanti record ci stanno dentro.
 function _collegatiDaAggiornare(base) {
   return _discendenzaDaAggiornare(base).map(x => x.nuovo);
+}
+
+// 🆕 v6.386 (Franco: *"quando viene aggiornato il nome di un retro, vengono aggiornati i nomi
+// completi delle figurine che lo usano? mi pare proprio di no"*) - CHI ALTRO VA RISCRITTO INSIEME
+// A QUESTO RECORD. Una domanda sola, per tutte le strade che scrivono.
+//
+// 🔴 SONO DUE INSIEMI DIVERSI, e vanno tenuti distinti perche' rispondono a due domande diverse:
+//  1. LA DISCENDENZA (`baseFigurineId`): figli, nipoti… Ereditano CAMPI dalla base, e quindi anche
+//     il Nome completo cambia. Se ne occupa `_collegatiDaAggiornare` dalla v6.143.
+//  2. CHI USA QUESTO RETRO (`retroId`): NON sono figli e non ereditano niente — ma il loro Nome
+//     completo CONTIENE il nome del retro, quindi rinominare il retro glielo rende stantio.
+//
+// ⚠️ Il secondo insieme esisteva gia', scritto dentro `saveBulkCell` e SOLO li' (v6.375). Quindi
+// funzionava cambiando una cella dalla vista tabellare, e NON dalla scheda, NON dall'aggiornamento
+// massivo, NON dall'import retro. E' la quinta volta in questo file che una correzione resta sulla
+// strada da cui era arrivata la segnalazione: per questo qui non si copia, si estrae.
+//
+// 📌 SI INCLUDE SOLO CHI CAMBIA DAVVERO. Non serve una condizione su «quale campo hai toccato»
+// (che sarebbe un terzo elenco da tenere allineato): si ricalcola il Nome completo e si tiene la
+// riga solo se il risultato e' diverso. Chi non cambia non entra nella scrittura.
+//
+// ⚠️ `lavoro` non e' `figs`: e' `figs` con dentro il record NUOVO e i collegati NUOVI. Senza,
+// `computeFullName` leggerebbe il nome vecchio del retro e ricalcolerebbe esattamente cio' che
+// c'era prima - un giro a vuoto che sembra funzionare.
+// ⚠️ E si escludono quelli gia' presenti fra i collegati: lo stesso id due volte nella stessa
+// scrittura significa che vince l'ultimo, e l'ultimo sarebbe la copia SENZA i campi ereditati
+// (avvertimento della v6.375, che qui resta valido).
+//
+// Torna COPIE, come `_collegatiDaAggiornare`. Chi ha bisogno di mutare sul posto (l'aggiornamento
+// massivo, che salva una volta per serie) le riversa sugli originali con `Object.assign`.
+function _daSalvareInsiemeA(rec, figs) {
+  if (!rec || !rec.id) return [];
+  const tutte = (figs || getData('figurines', []) || []);
+  const collegati = _collegatiDaAggiornare(rec);
+  const visti = new Set(collegati.map(x => x.id));
+  visti.add(rec.id);
+  return collegati.concat(_perRetroDaAggiornare(rec, tutte, visti, collegati).map(x => x.nuovo));
+}
+
+// 🆕 v6.387 - CHI USA QUESTO RETRO, COL DETTAGLIO. Stessa sostanza della v6.386, ma torna
+// `{ figlio, genitore, campi, nuovo }` invece del solo record nuovo — la stessa forma di
+// `_discendenzaDaAggiornare`.
+// 📌 PERCHE' IL DETTAGLIO SERVE: la riparazione dei dati vecchi (Funzioni → «Allinea item figlio
+// correlati») mostra un'ANTEPRIMA con valore vecchio e valore nuovo, e senza `campi` non avrebbe
+// niente da mostrare. Cosi' l'attrezzo che ripara e il salvataggio che previene leggono la stessa
+// funzione: non possono divergere, che e' l'unico modo di non ritrovarsi con un riparatore che
+// sistema meno cose di quante il sito ne rompa.
+function _perRetroDaAggiornare(rec, figs, visti, collegati) {
+  if (!rec || !rec.id || (rec.section || 'figurines') !== 'retros') return [];
+  const tutte = (figs || getData('figurines', []) || []);
+  const _visti = visti || new Set([rec.id]);
+  const _coll = collegati || [];
+  const perId = new Map(_coll.map(c => [c.id, c]));
+  // ⚠️ `lavoro` non e' `figs`: e' `figs` col record NUOVO e i collegati NUOVI dentro. Senza,
+  // `computeFullName` leggerebbe il nome vecchio del retro e ricalcolerebbe cio' che c'era gia'.
+  const lavoro = tutte.map(f => f.id === rec.id ? rec : (perId.get(f.id) || f));
+  const out = [];
+  for (const f of lavoro) {
+    if (f.retroId !== rec.id || _visti.has(f.id)) continue;
+    let nuovo;
+    try { nuovo = computeFullName(f, lavoro); } catch (e) { continue; }
+    if (nuovo !== f.fullName) {
+      out.push({ figlio: f, genitore: rec, campi: ['fullName'], nuovo: { ...f, fullName: nuovo }, viaRetro: true });
+    }
+  }
+  return out;
 }
 
 // v6.116 - PIU' FIGURINE, UNA SOLA RISCRITTURA.
@@ -39263,7 +39977,8 @@ async function saveFigFromDetail(figId, opzioni) {
 
     // v6.116 - LA BASE E I SUOI COLLEGATI IN UNA SCRITTURA SOLA (vedi _salvaFigurineInBlocco).
     // I collegati si calcolano PRIMA di scrivere, sulla base nuova, e viaggiano con lei.
-    const _collegati = _collegatiDaAggiornare(merged);
+    // v6.386 - non piu' la sola discendenza: anche chi USA questo retro (vedi _daSalvareInsiemeA).
+    const _collegati = _daSalvareInsiemeA(merged);
     try {
       await _salvaFigurineInBlocco([merged, ..._collegati]);
     } catch(e) {
@@ -39287,7 +40002,7 @@ async function saveFigFromDetail(figId, opzioni) {
     const _extra = _propagati
       ? (currentLang==='it' ? ` — aggiornati anche ${_propagati} collegat${_propagati===1?'o':'i'}` : ` — ${_propagati} linked item${_propagati===1?'':'s'} updated too`)
       : '';
-    toast((currentLang==='it'?`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} salvat${savedLabel.endsWith('a')?'a':'o'}!`:`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} saved!`) + _extra, 'success', null, _propagati ? 6000 : 3500);
+    toast((currentLang==='it'?`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} salvat${savedLabel.endsWith('a')?'a':'o'}!`:`✅ ${savedLabel.charAt(0).toUpperCase()+savedLabel.slice(1)} saved !`) + _extra, 'success', null, _propagati ? 6000 : 3500);
     // v6.104 (§12.1) - CREAZIONE: tre cose che la modifica non ha bisogno di fare.
     // La terza e' quella che conta. Con "Salva e resta" la scheda rimane aperta, e i due pulsanti
     // portano l'id in `data-fig-id`: se restassero sull'id vuoto della bozza, il secondo Salva
@@ -39408,7 +40123,7 @@ async function inviaSegnalazione() {
   const fb = document.getElementById('segnalazione-feedback');
   fb.style.display = '';
   fb.style.cssText = 'display:block;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.6rem;border-radius:8px;font-size:0.88rem;margin-bottom:0.75rem;';
-  fb.textContent = currentLang === 'it' ? '✅ Segnalazione inviata! Grazie.' : '✅ Report sent. Thank you!';
+  fb.textContent = currentLang === 'it' ? '✅ Segnalazione inviata! Grazie.' : '✅ Report sent. Thank you !';
   setTimeout(() => closeModal('segnalazione-modal'), 1500);
   updateBellBadge();
   updateMsgBadge();
@@ -39562,7 +40277,7 @@ async function saveEditUser() {
   _cache.users = users;
   closeModal('edit-user-modal');
   renderAdminUsers();
-  toast('Utente aggiornato!', 'success');
+  toast('Utente aggiornato !', 'success');
 }
 
 async function deleteUser(userId) {
@@ -40405,6 +41120,39 @@ function _svuotaLog(idLog) {
   const w  = document.getElementById(idLog.replace(/-log$/, '') + '-progress-wrap');
   if (w) w.style.display = 'none';
 }
+// 🆕 v6.379 (Franco) - IL PREFISSO DELLA RIGA DI LOG, IN UN POSTO SOLO.
+// Formato dettato da Franco: `Riga n: [campo] - [campo] - … -> esito`, con l'esito che resta
+// esattamente quello di prima, emoji compresa: cambia cio' che gli sta davanti, non lui.
+// 🔴 PERCHE' UNA FUNZIONE E NON TRENTASEI STRINGHE. Prima ogni riga di log si scriveva da se' il
+// pezzo `'⚠️ Riga ' + rn + ': '`: trentasei copie di un formato, cioe' il modo in cui la
+// trentasettesima nasce diversa. E' la lezione della v6.375 applicata PRIMA che il danno succeda -
+// due punti che dicono la stessa cosa devono chiamare la stessa funzione, non applicare la stessa
+// regola.
+// 🔧 v6.391 (Franco) - I CAMPI VUOTI SPARISCONO. *"quando manca del tutto una colonna, non mettere
+// il «-» (con spazio annesso); non da molto valore"*.
+//
+// ⚠️ QUI SOPRA C'ERA LA REGOLA OPPOSTA, ed e' giusto sapere perche' e' caduta. La v6.379 teneva il
+// posto vuoto ragionando cosi': *chi legge conta i trattini per sapere quale colonna sta
+// guardando*. Il ragionamento reggeva; l'uso no — Franco ha letto centinaia di righe vere e i
+// trattini non li ha contati, ha letto i valori. E il caso che l'ha fatto notare e' quello che
+// rende il segnaposto inutile: la colonna M («Retro - Tipo di change») e' vuota sulla stragrande
+// maggioranza delle righe, perche' un tipo di change ce l'hanno solo i change. Quindi il posto
+// vuoto non segnalava un'eccezione: era il caso normale, ripetuto su ogni riga.
+// 📌 Stessa forma della v6.320: una decisione difendibile sulla carta, smentita da chi il sito lo
+// usa. Quando le due cose divergono ha ragione l'uso.
+function _prefissoRigaLog(rn, campi) {
+  // 🔧 v6.380 - LA FRECCIA `->` E' STATA TOLTA. Franco: *"togli pure «->». Mi sono accorto ora che
+  // gia' c'era una freccia tua (a icona)"* - l'emoji in testa a ogni esito. Due frecce di fila
+  // sono un separatore che si ripete, non un separatore piu' chiaro.
+  // ⚠️ Lo spazio finale RESTA: senza, l'ultimo campo e l'emoji dell'esito si toccherebbero.
+  const pieni = campi
+    .map(v => (v === undefined || v === null) ? '' : String(v).trim())
+    .filter(v => v !== '');
+  // ⚠️ Se non resta NIENTE non si lascia lo spazio in piu': `Riga 12:  ⚠️ …` con due spazi si vede,
+  // e sarebbe il residuo di un caso limite invece di una riga scritta apposta.
+  return 'Riga ' + rn + ':' + (pieni.length ? ' ' + pieni.join(' - ') : '') + ' ';
+}
+
 function clearImportFigLog()   { _svuotaLog('import-fig-log'); }
 function clearImportRetroLog() { _svuotaLog('import-retro-log'); }
 
@@ -40414,9 +41162,7 @@ function retroImportLog(msg, type) {
   el.style.display = 'block';
   // 'white' esisteva solo in figImportLog dalla v5.808: stesso log, stesse
   // righe di riepilogo, due comportamenti diversi. Allineato in v5.983.
-  const color = _logColore(type, 'dim');
-  el.innerHTML += '<div style="color:'+color+';margin-bottom:2px;">'+msg+'</div>';
-  el.scrollTop = el.scrollHeight;
+  _appendRigaLogImport(el, msg, type);
 }
 
 function retroImportStatus(msg, pct) {
@@ -40427,6 +41173,18 @@ function retroImportStatus(msg, pct) {
 }
 
 async function startImportRetro() {
+  // 🆕 v6.379 (Franco: *"ad inizio di esportazione puliamo il log"*) - SI SVUOTA QUI, PRIMA DEI
+  // CONTROLLI D'INGRESSO, e le due cose che guadagna non si vedono finche' non capitano.
+  // 🔴 Il log gia' si azzerava (`innerHTML = ''`), ma PIU' SOTTO e solo lui: il RIEPILOGO della
+  // corsa precedente - la riga «✅ Fine: 304 inserite …» - viveva nel riquadro del progresso e
+  // restava a schermo per tutto il caricamento nuovo. Un consuntivo che descrive un'altra corsa,
+  // accanto a righe che scorrono, e' peggio di nessun consuntivo: sembra questo.
+  // 🔴 E stando sotto i `return` anticipati non serviva proprio, nel caso in cui serve di piu':
+  // chi ripreme «Avvia» senza aver scelto la serie vedeva il log di prima restare li', accanto a
+  // un messaggio d'errore, come se appartenesse al tentativo appena fallito.
+  // ⚠️ Non e' il caso del lucchetto (v6.377), che si alza DOPO i controlli apposta: alzarlo prima
+  // lo lascerebbe acceso su un caricamento mai cominciato. Qui non si accende niente, si spegne.
+  clearImportRetroLog();
   const seriesId = document.getElementById('import-retro-series-select').value;
   if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series','error'); return; }
   const fileInput = document.getElementById('import-retro-file');
@@ -40471,7 +41229,8 @@ async function startImportRetro() {
   // l'importazione scorrono via in mezzo all'avanzamento, e su un file lungo si
   // perdono. Alla fine, dopo i totali, vengono ripetute tutte insieme.
   const erroriRighe = [];
-  const errRiga = (msg, lvl) => { retroImportLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
+  // v6.385 - come nell'import figurine: il livello viaggia col messaggio (vedi la' il perche').
+  const errRiga = (msg, lvl) => { const l = lvl || 'warn'; retroImportLog(msg, l); erroriRighe.push({ msg, lvl: l }); errors++; };
 
   // 🆕 v6.354 - LE QUATTRO VERSIONI DI UN RETRO, DICHIARATE INVECE CHE DEDOTTE.
   //
@@ -40519,7 +41278,15 @@ async function startImportRetro() {
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
-    const rn = _nRiga(i + 1, rows.length);
+    // 🆕 v6.392 (Franco: *"tu conti il numero di riga senza contare la intestazione di xls ma in
+    // xls c'e': quindi devo sempre ricordarmi di aggiungere 1. potresti contare da 2?"*)
+    // 🔴 `+ 2` E NON `+ 1`, e la ragione sta in una riga che non si vede: `sheet_to_json` CONSUMA
+    // la prima riga del foglio per farne le chiavi, quindi `rows[0]` E' gia' la riga 2 di Excel.
+    // Il numero che stampavamo era l'indice dell'array, non la riga del file: corretto per il
+    // programma e sbagliato per chi ha il file aperto accanto — che e' l'unico che lo legge.
+    // ⚠️ E il totale passa `rows.length + 1` per la LARGHEZZA dell'incolonnamento: con 999 righe di
+    // dati l'ultima riga di Excel e' la 1000, e senza il `+ 1` verrebbe incolonnata su tre cifre.
+    const rn = _nRiga(i + 2, rows.length + 1);
     // v6.318 - il valore letto dal file passa dalla regola del "!" SUBITO, appena entra. Così le
     // condizioni che più sotto confrontano il file col database confrontano due valori nella
     // stessa forma, senza doverle toccare una per una.
@@ -40538,23 +41305,28 @@ async function startImportRetro() {
     const partSottocat   = getCol('Retro di partenza - Sottocategoria');
     const partNome       = getCol('Retro di partenza - Nome');
 
-    retroImportStatus((currentLang==='it'?'Riga ':'Row ') + rn + '/' + rows.length, Math.round((i/rows.length)*100));
+    // v6.392 - anche il contatore parla in righe di EXCEL: «Riga 273/636» invece di 273/635.
+    retroImportStatus((currentLang==='it'?'Riga ':'Row ') + rn + '/' + (rows.length + 1), Math.round((i/rows.length)*100));
 
-    if (!serieCol) { errRiga('⚠️ Riga ' + rn + ': colonna Serie mancante', 'warn'); continue; }
+    // 🆕 v6.379 - le tre colonne che identificano un retro: Nome, Categoria, Sottocategoria.
+    // ⚠️ NON sono le stesse dell'import figurine, e non possono esserlo: questo template ha 11
+    // colonne e le «L» e «M» di la' qui non esistono. Il FORMATO e' lo stesso, i campi no.
+    const pf = () => _prefissoRigaLog(rn, [nome, categoria, sottocategoria]);
+    if (!serieCol) { errRiga(pf() + '⚠️ colonna Serie mancante', 'warn'); continue; }
     if (serieCol.toLowerCase() !== seriesName.toLowerCase()) {
-      retroImportLog('⏭️ Riga ' + rn + ': Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
+      retroImportLog(pf() + '⏭️ Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
       skipped++; continue;
     }
     if (!nome || !categoria) {
-      errRiga('⚠️ Riga ' + rn + ': dati mancanti (nome=' + nome + ' categoria=' + categoria + ')', 'warn');
+      errRiga(pf() + '⚠️ dati mancanti (nome=' + nome + ' categoria=' + categoria + ')', 'warn');
       continue;
     }
 
     // ── LA VERSIONE ──
-    if (!versioneCol) { errRiga('⚠️ Riga ' + rn + ': colonna «Versione» vuota — valori ammessi: ' + _ELENCO_VERSIONI, 'warn'); continue; }
+    if (!versioneCol) { errRiga(pf() + '⚠️ colonna «Versione» vuota — valori ammessi: ' + _ELENCO_VERSIONI, 'warn'); continue; }
     const V = _VERSIONI_RETRO[_n(versioneCol)];
     if (!V) {
-      errRiga('❌ Riga ' + rn + ': Versione «' + versioneCol + '» non ammessa per un retro — valori ammessi: ' + _ELENCO_VERSIONI
+      errRiga(pf() + '❌ Versione «' + versioneCol + '» non ammessa per un retro — valori ammessi: ' + _ELENCO_VERSIONI
         + '. (Un retro non può essere una variazione: la variazione si distingue NEL retro.)', 'err');
       continue;
     }
@@ -40570,7 +41342,7 @@ async function startImportRetro() {
       const v = getCol(cfg.colTipo);
       if (!v) continue;
       if (chiave !== _n(versioneCol)) {
-        errRiga('❌ Riga ' + rn + ': «' + cfg.colTipo + '» è piena ma la Versione dichiarata è «' + versioneCol + '» — riga scartata', 'err');
+        errRiga(pf() + '❌ «' + cfg.colTipo + '» è piena ma la Versione dichiarata è «' + versioneCol + '» — riga scartata', 'err');
         tipo = null; break;
       }
       tipo = v;
@@ -40579,7 +41351,7 @@ async function startImportRetro() {
 
     let tipoValidato = '';
     if (!eBase) {
-      if (!tipo) { errRiga('⚠️ Riga ' + rn + ': «' + V.colTipo + '» è obbligatoria per la Versione «' + versioneCol + '»', 'warn'); continue; }
+      if (!tipo) { errRiga(pf() + '⚠️ «' + V.colTipo + '» è obbligatoria per la Versione «' + versioneCol + '»', 'warn'); continue; }
       // 🆕 v6.354 - ANCHE L'ERRORE DI STAMPA SI VALIDA, grazie alla v6.350. Fin qui il suo tipo
       // entrava come TESTO LIBERO (`printErrorType: tipoErroreStampa || null`), perché le tipologie
       // di errore di stampa una lista configurata non ce l'avevano. Adesso ce l'hanno, e le tre
@@ -40590,13 +41362,13 @@ async function startImportRetro() {
       const ammessi = V.tipi();
       const trovato = ammessi.find(t => _n(t) === _n(tipo));
       if (!trovato) {
-        errRiga('❌ Riga ' + rn + ': «' + V.colTipo + '» = "' + tipo + '" non è fra le tipologie configurate per questa serie ('
+        errRiga(pf() + '❌ «' + V.colTipo + '» = "' + tipo + '" non è fra le tipologie configurate per questa serie ('
           + (ammessi.join(', ') || 'nessuna configurata') + ')', 'err');
         continue;
       }
       tipoValidato = trovato;
     } else if (tipo) {
-      errRiga('❌ Riga ' + rn + ': la Versione è «base» ma «' + tipo + '» è stato scritto in una colonna Tipologia — riga scartata', 'err');
+      errRiga(pf() + '❌ la Versione è «base» ma «' + tipo + '» è stato scritto in una colonna Tipologia — riga scartata', 'err');
       continue;
     }
 
@@ -40604,12 +41376,12 @@ async function startImportRetro() {
     let partenza = null;
     if (!eBase) {
       if (!partCategoria || !partNome) {
-        errRiga('⚠️ Riga ' + rn + ': «Retro di partenza - Categoria» e «Retro di partenza - Nome» sono obbligatorie per la Versione «' + versioneCol + '»', 'warn');
+        errRiga(pf() + '⚠️ «Retro di partenza - Categoria» e «Retro di partenza - Nome» sono obbligatorie per la Versione «' + versioneCol + '»', 'warn');
         continue;
       }
       const cand = candidatiPartenza(partCategoria, partSottocat, partNome);
       if (!cand.length) {
-        errRiga('❌ Riga ' + rn + ': nessun retro base trovato con Categoria "' + partCategoria + '" e Nome "' + partNome + '"'
+        errRiga(pf() + '❌ nessun retro base trovato con Categoria "' + partCategoria + '" e Nome "' + partNome + '"'
           + (partSottocat ? ' nella sottocategoria "' + partSottocat + '"' : '')
           + ' — crea prima il retro base, o controlla che i valori coincidano esattamente', 'err');
         continue;
@@ -40619,13 +41391,13 @@ async function startImportRetro() {
         // non quale, e deve andarsela a cercare. Con le sottocategorie scritte davanti, la colonna
         // da riempire si copia da qui. Stessa forma dell'altro import.
         const quali = cand.map(r => '«' + (r.subcategory || '(senza sottocategoria)') + '»').join(', ');
-        errRiga('❌ Riga ' + rn + ': il retro di partenza "' + partNome + '" è AMBIGUO — ' + cand.length
+        errRiga(pf() + '❌ il retro di partenza "' + partNome + '" è AMBIGUO — ' + cand.length
           + ' retro corrispondono, nelle sottocategorie: ' + quali + '. Compila «Retro di partenza - Sottocategoria» per scegliere', 'err');
         continue;
       }
       partenza = cand[0];
     } else if (partCategoria || partSottocat || partNome) {
-      errRiga('❌ Riga ' + rn + ': la Versione è «base» ma è stato indicato un retro di partenza — un retro base non discende da niente', 'err');
+      errRiga(pf() + '❌ la Versione è «base» ma è stato indicato un retro di partenza — un retro base non discende da niente', 'err');
       continue;
     }
 
@@ -40674,21 +41446,48 @@ async function startImportRetro() {
           await fsSave('figurines', updatedRec);
           const idx = _cache.figurines.findIndex(f => f.id === duplicate.id);
           if (idx >= 0) _cache.figurines[idx] = updatedRec;
-          retroImportLog('🔄 Riga ' + rn + ': "' + nome + '" — sovrascritto' + _tag + _importDiffTxt(_diff), 'update');
+          // 🆕 v6.386 - E SI PROPAGA, che qui non succedeva affatto. Questo import poteva
+          // rinominare un retro esistente e lasciare indietro sia i suoi figli sia tutte le
+          // figurine che lo usano: delle quattro strade che scrivono un retro era la piu' scoperta,
+          // ed e' quella con cui si caricano i dati in blocco - cioe' quella che puo' produrre piu'
+          // disallineamenti in un colpo solo.
+          // ⚠️ Si salva UNO PER UNO e non in blocco: qui i collegati possono stare in serie diverse
+          // e `fsSave('figurines', ...)` sa gia' trovare la serie di ciascuno. Il blocco della
+          // v6.116 serve dove le scritture sono molte sullo stesso documento; qui sono poche e
+          // sparse, e la strada corta e' anche quella che non introduce un secondo modo di salvare.
+          let _propagati = 0;
+          try {
+            for (const _p of _daSalvareInsiemeA(updatedRec, _cache.figurines)) {
+              await fsSave('figurines', _p);
+              const _k = _cache.figurines.findIndex(f => f.id === _p.id);
+              if (_k >= 0) _cache.figurines[_k] = _p;
+              _propagati++;
+            }
+          } catch (e) {
+            // 🔴 Non si tace: il retro E' stato scritto, i suoi collegati no. Chi legge il log deve
+            // sapere che il disallineamento e' stato CREATO adesso, non ereditato dal passato.
+            console.error('propagazione import retro', updatedRec.id, e);
+            errRiga(pf() + '⚠️ "' + nome + '" — salvato, ma la propagazione ai collegati è fallita: '
+              + (e && e.message ? e.message : e), 'err');
+          }
+          retroImportLog(pf() + '🔄 "' + nome + '" — sovrascritto' + _tag + _importDiffTxt(_diff)
+            + (_propagati ? (currentLang === 'it'
+                ? ' · aggiornati anche ' + _propagati + ' collegat' + (_propagati === 1 ? 'o' : 'i')
+                : ' · ' + _propagati + ' linked item' + (_propagati === 1 ? '' : 's') + ' updated too') : ''), 'update');
           updated++;
         } else {
-          retroImportLog('⏭️ Riga ' + rn + ': "' + nome + '" — già presente, nessuna modifica' + _tag, 'info');
+          retroImportLog(pf() + '⏭️ "' + nome + '" — già presente, nessuna modifica' + _tag, 'info');
           unchanged++;
         }
       } else {
         retroData.fullName = computeFullName(retroData, existingFigs);
         await fsSave('figurines', retroData);
-        retroImportLog('✅ Riga ' + rn + ': "' + nome + '" — aggiunto' + _tag
+        retroImportLog(pf() + '✅ "' + nome + '" — aggiunto' + _tag
           + (partenza ? ' (partenza: "' + partenza.name + '")' : ' (' + categoria + ')'), 'ok');
         inserted++;
       }
     } catch(e) {
-      errRiga('❌ Riga ' + rn + ': ' + e.message, 'err');
+      errRiga(pf() + '❌ ' + e.message, 'err');
     }
   }
 
@@ -40706,7 +41505,7 @@ async function startImportRetro() {
     retroImportLog('--- ' + (currentLang === 'it'
       ? 'RIGHE NON IMPORTATE (' + erroriRighe.length + ') ---'
       : 'ROWS NOT IMPORTED (' + erroriRighe.length + ') ---'), 'white');
-    erroriRighe.forEach(msg => retroImportLog(msg, 'warn'));
+    erroriRighe.forEach(r => retroImportLog(r.msg, r.lvl));
   }
   // v6.377 - e si abbassa. Se qualcosa scoppia prima di arrivare qui il lucchetto resta alzato,
   // ma non per sempre: smette di battere, e dopo un minuto le altre finestre lo considerano morto.
@@ -40718,13 +41517,27 @@ async function startImportRetro() {
 }
 
 // ── Importazione Figurine da XLS ───────────────────────────────────────
+// 🆕 v6.385 (Franco: *"prima di ogni recap, lascia una riga vuota"*) - LA RIGA VUOTA ADESSO
+// OCCUPA UNA RIGA.
+// 🔴 La riga vuota c'era gia', in TUTTI E DUE gli import - `figImportLog('', 'info')` in cima a
+// ogni recap - ma produceva un `<div>` senza contenuto, e un div vuoto e' alto zero: restavano i
+// 2px di margine. Veniva emessa e non si vedeva. E' il genere di difetto che nessun controllo
+// prende, perche' il codice fa esattamente quello che dice di fare.
+// 🧹 E i due import disegnavano la riga con DUE copie identiche di questa istruzione. Ora e' una:
+// erano gia' due occasioni di divergere, e la correzione andava applicata a tutte e due.
+// ⚠️ I due log delle FOTO non passano di qui: costruiscono la riga con `createElement`, che e' un
+// altro meccanismo. Divergenza dichiarata, non sanata di nascosto - e li' la riga vuota non si usa.
+function _appendRigaLogImport(el, msg, type) {
+  const color = _logColore(type, 'dim');
+  el.innerHTML += '<div style="color:' + color + ';margin-bottom:2px;">' + (msg === '' ? '&nbsp;' : msg) + '</div>';
+  el.scrollTop = el.scrollHeight;
+}
+
 function figImportLog(msg, type) {
   const el = document.getElementById('import-fig-log');
   if (!el) return;
   el.style.display = 'block';
-  const color = _logColore(type, 'dim');
-  el.innerHTML += '<div style="color:'+color+';margin-bottom:2px;">'+msg+'</div>';
-  el.scrollTop = el.scrollHeight;
+  _appendRigaLogImport(el, msg, type);
 }
 
 function figImportStatus(msg, pct) {
@@ -40749,6 +41562,18 @@ function figImportStatus(msg, pct) {
 // varianti (così una variante trova la sua base anche se nel file la precede). Guardia sui numeri
 // doppi tra basi come rete di sicurezza (non è un caso legittimo).
 async function startImportFig() {
+  // 🆕 v6.379 (Franco: *"ad inizio di esportazione puliamo il log"*) - SI SVUOTA QUI, PRIMA DEI
+  // CONTROLLI D'INGRESSO, e le due cose che guadagna non si vedono finche' non capitano.
+  // 🔴 Il log gia' si azzerava (`innerHTML = ''`), ma PIU' SOTTO e solo lui: il RIEPILOGO della
+  // corsa precedente - la riga «✅ Fine: 304 inserite …» - viveva nel riquadro del progresso e
+  // restava a schermo per tutto il caricamento nuovo. Un consuntivo che descrive un'altra corsa,
+  // accanto a righe che scorrono, e' peggio di nessun consuntivo: sembra questo.
+  // 🔴 E stando sotto i `return` anticipati non serviva proprio, nel caso in cui serve di piu':
+  // chi ripreme «Avvia» senza aver scelto la serie vedeva il log di prima restare li', accanto a
+  // un messaggio d'errore, come se appartenesse al tentativo appena fallito.
+  // ⚠️ Non e' il caso del lucchetto (v6.377), che si alza DOPO i controlli apposta: alzarlo prima
+  // lo lascerebbe acceso su un caricamento mai cominciato. Qui non si accende niente, si spegne.
+  clearImportFigLog();
   const seriesId = document.getElementById('import-fig-series-select').value;
   if (!seriesId) { toast(currentLang==='it'?'Seleziona una serie':'Select a series','error'); return; }
   const fileInput = document.getElementById('import-fig-file');
@@ -40790,12 +41615,50 @@ async function startImportFig() {
   // quattro cornici del log, tre erano bianche e una grigia, e non per una decisione: perche'
   // nessuno le aveva mai guardate insieme.
   figImportLog('--- ' + (it?'Avvio':'Start') + ': ' + rows.length + ' righe ---', 'white');
+  // v6.383 - si dice PRIMA che il log arrivera' dopo: un riquadro vuoto mentre la barra avanza e'
+  // indistinguibile da un caricamento piantato.
+  figImportLog(it ? '⏳ Le righe compariranno alla fine, in ordine di file.' : '⏳ Rows will appear at the end, in file order.', 'info');
 
   let inserted = 0, updated = 0, unchanged = 0, errors = 0, skipped = 0, retroNotFound = 0;
   const erroriRighe = [];        // righe scartate del tutto (nessun salvataggio)
   const righeIncomplete = [];    // righe importate MA con un dato cercato non trovato (es. Retro del Change)
   const righeAggiornate = [];    // righe che hanno SOVRASCRITTO un record esistente (dati modificati)
-  const errRiga = (msg, lvl) => { figImportLog(msg, lvl || 'warn'); erroriRighe.push(msg); errors++; };
+  // 🆕 v6.383 (Franco: *"io mi aspetterei che le righe del log afferissero alle righe del file xls
+  // con lo stesso ordine, ma cosi non mi sembra essere"*) - LE RIGHE DI LOG SI METTONO DA PARTE E
+  // SI STAMPANO IN ORDINE DI FILE ALLA FINE.
+  //
+  // 🔴 L'ELABORAZIONE NON CAMBIA, E NON PUO' CAMBIARE: le righe base devono passare tutte prima
+  // delle varianti, perche' una variante ha bisogno che la sua base esista gia' (`ordered`, poco
+  // piu' sotto). E' l'ordine di STAMPA che seguiva quello di elaborazione, e mostrava 001, 004,
+  // 006, 009... con le righe in mezzo relegate nella seconda meta' del log.
+  // 📌 Cioe' il log raccontava fedelmente cio' che il programma faceva, e non cio' che serviva a
+  // chi lo legge: chi guarda un log di import ha il file aperto accanto.
+  //
+  // ⚠️ IL PREZZO, scelto da Franco sapendolo: durante l'elaborazione il log resta vuoto. Restano
+  // la barra di avanzamento e il contatore «Riga N/635», che continuano a muoversi - e una riga
+  // in cima lo dice, altrimenti un log fermo per mezzo minuto sembra un caricamento bloccato.
+  //
+  // ⚠️ `seq` non e' un doppione di `ord`: piu' messaggi possono uscire dalla STESSA riga, e senza
+  // un secondo criterio il loro ordine dipenderebbe dalla stabilita' di `sort` - che oggi c'e', ma
+  // e' una cosa da sapere, non da cui dipendere in silenzio.
+  const _bufferLog = [];
+  let _ordRiga = 0, _seqLog = 0;
+  const _logRiga = (msg, lvl) => { _bufferLog.push({ ord: _ordRiga, seq: _seqLog++, msg, lvl }); };
+  // 🆕 v6.385 (Franco: *"le righe di recap non dovrebbero avere lo stesso colore, tra recap e log
+  // originale?"*) - IL LIVELLO VIAGGIA COL MESSAGGIO.
+  // 🔴 Prima le liste del recap conservavano la sola STRINGA, e il recap la ristampava con un
+  // livello FISSO ('warn'). Quindi lo stesso identico testo usciva rosso nel log e giallo nel
+  // recap: due decisioni sullo stesso dato, e la seconda non sapeva niente della prima.
+  // 📌 Non si "riallineano" i due colori: si toglie la seconda decisione. Il recap e' un'ECO, e
+  // un'eco non sceglie il tono.
+  // 🆕 v6.388 (Franco: *"anche nel recap del log di import, devi loggare le righe in ordine,
+  // rispetto al numero di riga del file XLS"*) - ANCHE LE VOCI DEL RECAP PORTANO IL NUMERO DI RIGA.
+  // 🔴 E' lo stesso difetto della v6.383 un piano piu' sotto: le tre liste si riempiono nell'ordine
+  // in cui il programma LAVORA (basi tutte prima, varianti poi), quindi il recap ereditava i buchi
+  // che il log principale non ha piu'. Il numero c'era gia' scritto dentro il messaggio; non era
+  // scritto in un posto da cui si potesse ORDINARE.
+  const _voceRecap = (msg, lvl) => ({ msg, lvl, ord: _ordRiga, seq: _seqLog++ });
+  const errRiga = (msg, lvl) => { const l = lvl || 'warn'; _logRiga(msg, l); erroriRighe.push(_voceRecap(msg, l)); errors++; };
 
   // v6.318 - come l'altro accessore: la regola del "!" si applica in ingresso, una volta sola.
   const mkGet = (row) => (...keys) => { for (const k of keys) { const v = Object.entries(row).find(([rk]) => rk.trim().toLowerCase() === k.toLowerCase()); if (v) return _spaziaEsclamativoFinale(String(v[1]).trim()); } return ''; };
@@ -40867,18 +41730,29 @@ async function startImportFig() {
   let done = 0;
   for (const c of ordered) {
     const { i, g, versione, eBase } = c;
-    const rn = _nRiga(i + 1, rows.length);
+    // 🆕 v6.392 (Franco: *"tu conti il numero di riga senza contare la intestazione di xls ma in
+    // xls c'e': quindi devo sempre ricordarmi di aggiungere 1. potresti contare da 2?"*)
+    // 🔴 `+ 2` E NON `+ 1`, e la ragione sta in una riga che non si vede: `sheet_to_json` CONSUMA
+    // la prima riga del foglio per farne le chiavi, quindi `rows[0]` E' gia' la riga 2 di Excel.
+    // Il numero che stampavamo era l'indice dell'array, non la riga del file: corretto per il
+    // programma e sbagliato per chi ha il file aperto accanto — che e' l'unico che lo legge.
+    // ⚠️ E il totale passa `rows.length + 1` per la LARGHEZZA dell'incolonnamento: con 999 righe di
+    // dati l'ultima riga di Excel e' la 1000, e senza il `+ 1` verrebbe incolonnata su tre cifre.
+    const rn = _nRiga(i + 2, rows.length + 1);
+    // v6.392 - anche questo passa a `i + 2`. Serve solo a ORDINARE, quindi il risultato non
+    // cambia di una virgola: si allinea perche' un numero che si chiama «riga del file» e ne
+    // dice un altro e' quello che fra sei mesi qualcuno stampa credendolo giusto.
+    _ordRiga = i + 2;   // v6.383 - la riga del FILE, che e' l'ordine in cui si stampera'
     done++;
-    figImportStatus((it?'Riga ':'Row ') + rn + '/' + rows.length, Math.round((done/rows.length)*100));
+    // v6.392 - anche il contatore parla in righe di EXCEL (vedi sopra).
+    figImportStatus((it?'Riga ':'Row ') + rn + '/' + (rows.length + 1), Math.round((done/rows.length)*100));
 
     const existingFigs = getData('figurines', []);
-    const serieCol = g('Serie','series','serie');
-    if (!serieCol) { errRiga('⚠️ Riga ' + rn + ': colonna Serie mancante', 'warn'); continue; }
-    if (serieCol.toLowerCase() !== seriesName.toLowerCase()) {
-      figImportLog('⏭️ Riga ' + rn + ': Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
-      skipped++; continue;
-    }
-
+    // 🆕 v6.379 - LE COLONNE SI LEGGONO QUI, PRIMA DI OGNI CONTROLLO, e non e' un riordino
+    // estetico: il prefisso del log le nomina tutte, quindi devono esistere anche sulle righe che
+    // escono subito (Serie mancante, Serie che non corrisponde). Prima stavano sotto quei due
+    // `continue`, e quelle righe non avrebbero potuto portare il prefisso. Non costa niente: `g()`
+    // legge celle di un oggetto gia' in memoria.
     const numero = g('Numero','number','numero');
     const nome = g('Nome','name','nome');
     const sottoserie = g('Sottoserie','subseries','sottoserie');
@@ -40912,6 +41786,17 @@ async function startImportFig() {
       + (retroTipoChange ? ' [Tipo di change: ' + retroTipoChange + ']'
        : retroTipoOmaggio ? ' [Tipo di omaggio: ' + retroTipoOmaggio + ']'
        : retroTipoErrore ? ' [Tipo di errore: ' + retroTipoErrore + ']' : '');
+    const serieCol = g('Serie','series','serie');
+    // I cinque campi che identificano la riga, nell'ordine dettato da Franco: Numero, Nome, e poi
+    // le tre colonne del retro - L, M, J. ⚠️ Quell'ordine e' il suo e NON e' quello del template
+    // (L, M, J invece di J, L, M): si lascia come l'ha detto.
+    const pf = () => _prefissoRigaLog(rn, [numero, nome, retroNome, retroTipoChange, retroCategoria]);
+    if (!serieCol) { errRiga(pf() + '⚠️ colonna Serie mancante', 'warn'); continue; }
+    if (serieCol.toLowerCase() !== seriesName.toLowerCase()) {
+      _logRiga(pf() + '⏭️ Serie "' + serieCol + '" non corrisponde a "' + seriesName + '" — ignorata', 'warn');
+      skipped++; continue;
+    }
+
 
     // 🆕 v6.351 - IL RETRO SI CERCA IN UN POSTO SOLO, e l'ambiguita' si dichiara invece di
     // risolverla a caso. Franco: *"facoltativa, ma se ambigua scarto"*.
@@ -40920,13 +41805,13 @@ async function startImportFig() {
     const cercaRetro = () => {
       const cand = findRetriCandidati(retroCategoria, retroSottocategoria, retroNome,
                                       retroTipoChange, retroTipoErrore, retroTipoOmaggio);
-      if (!cand.length) return { retro: null, errore: '❌ Riga ' + rn + ': Retro "' + retroRef + '" non trovato — riga scartata (il Retro deve già esistere)' };
+      if (!cand.length) return { retro: null, errore: pf() + '❌ Retro "' + retroRef + '" non trovato — riga scartata (il Retro deve già esistere)' };
       if (cand.length > 1) {
         // ⚠️ L'elenco dei candidati sta NEL MESSAGGIO: senza, chi legge sa che c'e' un'ambiguita' e
         // non quale, e deve andarsela a cercare in un inventario di migliaia di righe. Con le
         // sottocategorie scritte davanti, la colonna da riempire si copia da qui.
         const quali = cand.map(r => '«' + (r.subcategory || '(senza sottocategoria)') + '»').join(', ');
-        return { retro: null, errore: '❌ Riga ' + rn + ': il Retro "' + retroRef + '" è AMBIGUO — ' + cand.length
+        return { retro: null, errore: pf() + '❌ il Retro "' + retroRef + '" è AMBIGUO — ' + cand.length
           + ' retro corrispondono, nelle sottocategorie: ' + quali + '. Compila «Retro - Sottocategoria» per dire quale' };
       }
       return { retro: cand[0], errore: null };
@@ -40936,7 +41821,7 @@ async function startImportFig() {
     // riga qui. ⚠️ Senza questo controllo, «Chnage» scritto male sarebbe caduto nel ramo delle basi
     // e avrebbe creato una figurina base in piu' - un dato sbagliato invece di un errore.
     if (versione && !(versione in _VERSIONI_IMPORT)) {
-      errRiga('❌ Riga ' + rn + ': Versione "' + versione + '" non riconosciuta. Valori ammessi: '
+      errRiga(pf() + '❌ Versione "' + versione + '" non riconosciuta. Valori ammessi: '
         + Object.keys(_VERSIONI_IMPORT).join(', '), 'err');
       continue;
     }
@@ -40947,12 +41832,12 @@ async function startImportFig() {
       // ♻️ v6.351 - il controllo guarda le tre TIPOLOGIE e la «Figurina di partenza». Prima
       // guardava `Tipo`, che adesso e' la Versione e su una riga base vale legittimamente «base».
       if (figBaseRef || tipoChange || tipoOmaggio || tipoErroreStampa) {
-        errRiga('⚠️ Riga ' + rn + ': riga base (Versione «base» o vuota) ma con «Figurina di partenza» o una Tipologia valorizzata — incoerente, riga scartata', 'warn');
+        errRiga(pf() + '⚠️ riga base (Versione «base» o vuota) ma con «Figurina di partenza» o una Tipologia valorizzata — incoerente, riga scartata', 'warn');
          continue;
       }
-      if (!numero && !nome) { errRiga('⚠️ Riga ' + rn + ': servono Numero o Nome per identificare la figurina base', 'warn'); continue; }
+      if (!numero && !nome) { errRiga(pf() + '⚠️ servono Numero o Nome per identificare la figurina base', 'warn'); continue; }
       // Retro OBBLIGATORIO per le basi (v5.807) e deve già esistere a sistema.
-      if (!retroCategoria || !retroNome) { errRiga('⚠️ Riga ' + rn + ': «Retro - Categoria» e «Retro - Nome» sono obbligatori per una figurina base', 'warn'); continue; }
+      if (!retroCategoria || !retroNome) { errRiga(pf() + '⚠️ «Retro - Categoria» e «Retro - Nome» sono obbligatori per una figurina base', 'warn'); continue; }
       const _r = cercaRetro();
       if (!_r.retro) { errRiga(_r.errore, 'err'); continue; }
       const retroMatch = _r.retro;
@@ -40965,7 +41850,7 @@ async function startImportFig() {
       } else {
         cands = existingFigs.filter(f => isBaseFig(f) && (f.name||'').toLowerCase() === nome.toLowerCase());
       }
-      if (cands.length > 1) { errRiga('❌ Riga ' + rn + ': ci sono ' + cands.length + ' figurine base con Numero ' + numero + ' — anomalia (numeri doppi tra basi), riga saltata', 'err'); continue; }
+      if (cands.length > 1) { errRiga(pf() + '❌ ci sono ' + cands.length + ' figurine base con Numero ' + numero + ' — anomalia (numeri doppi tra basi), riga saltata', 'err'); continue; }
       const duplicate = cands[0] || null;
 
       const figData = {
@@ -40984,16 +41869,16 @@ async function startImportFig() {
           if (changed) {
             await fsSave('figurines', updatedRec);
             const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec;
-            { const _u = '🔄 Riga ' + rn + ': "' + finalName + '" — base sovrascritta' + _importDiffTxt(_diff); figImportLog(_u, 'update'); righeAggiornate.push(_u); updated++; }
-          } else { figImportLog('⏭️ Riga ' + rn + ': "' + finalName + '" — base già presente, nessuna modifica', 'info'); unchanged++; }
+            { const _u = pf() + '🔄 "' + finalName + '" — base sovrascritta' + _importDiffTxt(_diff); _logRiga(_u, 'update'); righeAggiornate.push(_voceRecap(_u, 'update')); updated++; }
+          } else { _logRiga(pf() + '⏭️ "' + finalName + '" — base già presente, nessuna modifica', 'info'); unchanged++; }
         } else {
-          if (!nome) { errRiga('⚠️ Riga ' + rn + ': nessuna base con Numero ' + numero + ' — per crearne una nuova serve anche il Nome', 'warn'); continue; }
+          if (!nome) { errRiga(pf() + '⚠️ nessuna base con Numero ' + numero + ' — per crearne una nuova serve anche il Nome', 'warn'); continue; }
           const newRec = { ...figData, name: nome };
           newRec.fullName = computeFullName(newRec, existingFigs);
           await fsSave('figurines', newRec);
-          figImportLog('✅ Riga ' + rn + ': "' + nome + '" — base aggiunta', 'ok'); inserted++;
+          _logRiga(pf() + '✅ "' + nome + '" — base aggiunta', 'ok'); inserted++;
         }
-      } catch(e) { errRiga('❌ Riga ' + rn + ': ' + e.message, 'err'); }
+      } catch(e) { errRiga(pf() + '❌ ' + e.message, 'err'); }
       continue;
     }
 
@@ -41008,8 +41893,8 @@ async function startImportFig() {
       const byName = existingFigs.filter(f => isBaseCert(f) && (f.name||'').toLowerCase() === figBaseRef.toLowerCase());
       if (byName.length === 1) baseFig = byName[0]; else if (byName.length > 1) baseAmb = byName.length;
     }
-    if (baseAmb) { errRiga('❌ Riga ' + rn + ': «Figurina di partenza» = "' + figBaseRef + '" corrisponde a ' + baseAmb + ' figurine base — anomalia, riga saltata', 'err'); continue; }
-    if (!baseFig) { errRiga('⚠️ Riga ' + rn + ': figurina di partenza "' + figBaseRef + '" non trovata nella serie', 'warn'); continue; }
+    if (baseAmb) { errRiga(pf() + '❌ «Figurina di partenza» = "' + figBaseRef + '" corrisponde a ' + baseAmb + ' figurine base — anomalia, riga saltata', 'err'); continue; }
+    if (!baseFig) { errRiga(pf() + '⚠️ figurina di partenza "' + figBaseRef + '" non trovata nella serie', 'warn'); continue; }
 
     // 🆕 v6.351 - LA VERSIONE DECIDE IL RAMO, e le Tipologie danno il dettaglio. Prima il ramo lo
     // decideva QUALE colonna era piena, e le tre erano mutuamente esclusive; adesso la Versione
@@ -41021,7 +41906,7 @@ async function startImportFig() {
     const _estranee = Object.entries(_tipologie)
       .filter(([v, val]) => val && v !== versione).map(([v]) => 'Tipologia di ' + v);
     if (_estranee.length) {
-      errRiga('❌ Riga ' + rn + ': Versione «' + versione + '» ma è valorizzata anche ' + _estranee.join(' e ')
+      errRiga(pf() + '❌ Versione «' + versione + '» ma è valorizzata anche ' + _estranee.join(' e ')
         + ' — riga scartata', 'err'); continue;
     }
 
@@ -41043,7 +41928,7 @@ async function startImportFig() {
     const _validaTipologia = (etichetta, valore, ammessi) => {
       const m = ammessi.find(t => t.toLowerCase().trim() === (valore || '').toLowerCase().trim());
       if (m) return { ok: m };
-      return { errore: '❌ Riga ' + rn + ': «' + etichetta + '» = "' + valore
+      return { errore: pf() + '❌ «' + etichetta + '» = "' + valore
         + '" non corrisponde a nessuna delle tipologie configurate per questa serie ('
         + (ammessi.join(', ') || 'nessuna configurata') + ')' };
     };
@@ -41052,16 +41937,16 @@ async function startImportFig() {
       if (!retroCategoria || !retroNome) return null;
       const _r = cercaRetro();
       if (_r.retro) return _r.retro.id;
-      const _m = '⚠️ Riga ' + rn + ': ' + _r.errore.replace(/^❌ Riga \d+: /, '')
+      const _m = pf() + '⚠️ ' + _r.errore.replace(/^❌ Riga \d+: /, '')
         + ' — ' + etichettaVersione + ' importato senza retro proprio (eredita quello della base)';
-      figImportLog(_m, 'warn'); righeIncomplete.push(_m); retroNotFound++;
+      _logRiga(_m, 'warn'); righeIncomplete.push(_voceRecap(_m, 'warn')); retroNotFound++;
       return null;
     };
 
     if (versione === 'errore di stampa') {
       // ♻️ v6.351 - adesso si valida, come le altre due. Fino alla v6.350 era testo libero, quindi
       // un refuso entrava nei dati e si scopriva solo guardando un riquadro con due voci quasi uguali.
-      if (!tipoErroreStampa) { errRiga('⚠️ Riga ' + rn + ': Versione «errore di stampa» senza «Tipologia di errore di stampa»', 'warn'); continue; }
+      if (!tipoErroreStampa) { errRiga(pf() + '⚠️ Versione «errore di stampa» senza «Tipologia di errore di stampa»', 'warn'); continue; }
       const _v = _validaTipologia('Tipologia di errore di stampa', tipoErroreStampa, erroreTypesDiSerie(seriesId));
       if (_v.errore) { errRiga(_v.errore, 'err'); continue; }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.section === 'figurines' && f.isPrintError &&
@@ -41070,7 +41955,7 @@ async function startImportFig() {
       rowType = (it ? 'Errore di stampa' : 'Print error');
       keyInfo = ' [Errore di stampa: ' + _v.ok + ']';
     } else if (versione === 'change') {
-      if (!tipoChange) { errRiga('⚠️ Riga ' + rn + ': Versione «change» senza «Tipologia di change»', 'warn'); continue; }
+      if (!tipoChange) { errRiga(pf() + '⚠️ Versione «change» senza «Tipologia di change»', 'warn'); continue; }
       const _v = _validaTipologia('Tipologia di change', tipoChange, changeTypesDiSerie(seriesId));
       if (_v.errore) { errRiga(_v.errore, 'err'); continue; }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isChange &&
@@ -41083,7 +41968,7 @@ async function startImportFig() {
       // qui: la quinta versione e' nata fra la v6.232 e la v6.264 e l'importatore e' rimasto
       // indietro senza che nessuno lo scrivesse. Si comporta come il change - tipologia dall'elenco
       // della serie, retro proprio facoltativo - perche' e' un figlio come lui (v6.314).
-      if (!tipoOmaggio) { errRiga('⚠️ Riga ' + rn + ': Versione «omaggio» senza «Tipologia di omaggio»', 'warn'); continue; }
+      if (!tipoOmaggio) { errRiga(pf() + '⚠️ Versione «omaggio» senza «Tipologia di omaggio»', 'warn'); continue; }
       const _v = _validaTipologia('Tipologia di omaggio', tipoOmaggio, omaggioTypesDiSerie(seriesId));
       if (_v.errore) { errRiga(_v.errore, 'err'); continue; }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.isFreeVersion &&
@@ -41097,9 +41982,9 @@ async function startImportFig() {
       const isVariation = versione === 'variazione ufficiale';
       const isUnofficialVariation = versione === 'variazione non ufficiale';
       if (!isVariation && !isUnofficialVariation) {
-        errRiga('⚠️ Riga ' + rn + ': Versione «' + versione + '» non gestita in questo ramo — riga scartata', 'warn'); continue;
+        errRiga(pf() + '⚠️ Versione «' + versione + '» non gestita in questo ramo — riga scartata', 'warn'); continue;
       }
-      if (!retroCategoria || !retroNome) { errRiga('⚠️ Riga ' + rn + ': «Retro - Categoria» e «Retro - Nome» sono obbligatori per una Variazione', 'warn'); continue; }
+      if (!retroCategoria || !retroNome) { errRiga(pf() + '⚠️ «Retro - Categoria» e «Retro - Nome» sono obbligatori per una Variazione', 'warn'); continue; }
       const _r = cercaRetro();
       if (!_r.retro) { errRiga(_r.errore, 'err'); continue; }
       duplicate = existingFigs.find(f => f.seriesId === seriesId && f.baseFigurineId === baseFig.id && f.retroId === _r.retro.id && (f.isVariation || f.isUnofficialVariation));
@@ -41109,7 +41994,7 @@ async function startImportFig() {
     }
 
     if (duplicate && _eBase(duplicate)) {
-      errRiga('❌ Riga ' + rn + ': la riconciliazione ha trovato "' + duplicate.name + '" che è una figurina base — riga scartata per sicurezza, nessuna modifica effettuata', 'err'); continue;
+      errRiga(pf() + '❌ la riconciliazione ha trovato "' + duplicate.name + '" che è una figurina base — riga scartata per sicurezza, nessuna modifica effettuata', 'err'); continue;
     }
 
     const finalName = baseFig.name;
@@ -41126,14 +42011,14 @@ async function startImportFig() {
         if (changed) {
           await fsSave('figurines', updatedRec);
           const idx = _cache.figurines.findIndex(f => f.id === duplicate.id); if (idx >= 0) _cache.figurines[idx] = updatedRec;
-          { const _u = '🔄 Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — sovrascritta (' + rowType + ')' + _importDiffTxt(_diff); figImportLog(_u, 'update'); righeAggiornate.push(_u); updated++; }
-        } else { figImportLog('⏭️ Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — già presente, nessuna modifica', 'info'); unchanged++; }
+          { const _u = pf() + '🔄 "' + finalName + '"' + keyInfo + ' — sovrascritta (' + rowType + ')' + _importDiffTxt(_diff); _logRiga(_u, 'update'); righeAggiornate.push(_voceRecap(_u, 'update')); updated++; }
+        } else { _logRiga(pf() + '⏭️ "' + finalName + '"' + keyInfo + ' — già presente, nessuna modifica', 'info'); unchanged++; }
       } else {
         figData.fullName = computeFullName(figData, existingFigs);
         await fsSave('figurines', figData);
-        figImportLog('✅ Riga ' + rn + ': "' + finalName + '"' + keyInfo + ' — aggiunta (' + rowType + ')', 'ok'); inserted++;
+        _logRiga(pf() + '✅ "' + finalName + '"' + keyInfo + ' — aggiunta (' + rowType + ')', 'ok'); inserted++;
       }
-    } catch(e) { errRiga('❌ Riga ' + rn + ': ' + e.message, 'err'); }
+    } catch(e) { errRiga(pf() + '❌ ' + e.message, 'err'); }
   }
 
   // 🆕 v6.374 (Franco) - L'ORDINE NON E' CASUALE E GLI ERRORI STANNO IN FONDO: *"gli errori mettili
@@ -41147,20 +42032,34 @@ async function startImportFig() {
     { n: skipped,       testo: 'ignorate (no aggiornamenti)', tipo: 'warn' },
     { n: retroNotFound, testo: 'Retro non trovati',         tipo: 'warn', mostra: retroNotFound > 0 },
     { n: errors,        testo: 'errori',                    tipo: 'err'  }]);
+  // 🆕 v6.383 - LO SCARICO: qui il log prende l'ordine del file XLS, che e' l'unico ordine che
+  // significhi qualcosa per chi legge. `ord` e' il numero di riga, `seq` tiene insieme i messaggi
+  // usciti dalla stessa riga nell'ordine in cui sono stati prodotti.
+  _bufferLog.sort((a, b) => (a.ord - b.ord) || (a.seq - b.seq));
+  _bufferLog.forEach(r => figImportLog(r.msg, r.lvl));
+
   figImportLog('--- FINE: ' + inserted + ' inserite · ' + updated + ' aggiornate · ' + unchanged + ' invariate · ' + skipped + ' ignorate · ' + errors + ' errori' + (retroNotFound ? ' · ' + retroNotFound + ' Retro non trovati' : '') + ' ---', 'white');
 
   // Recap, ciascuna sezione delimitata da INIZIO/FINE: (1) righe AGGIORNATE (hanno sovrascritto un
   // record esistente); (2) righe NON IMPORTATE (scartate); (3) righe NON IMPORTATE COMPLETAMENTE
   // (salvate ma con un dato cercato non trovato, es. il Retro del Change).
-  const _recapBlock = (list, labelIt, labelEn, itemLvl) => {
+  // 🆕 v6.385 - via il parametro `itemLvl`: il livello sta sulla voce, e un secondo posto da cui
+  // prenderlo sarebbe la stessa divergenza appena chiusa.
+  const _recapBlock = (list, labelIt, labelEn) => {
     if (!list.length) return;
     figImportLog('', 'info');
     const _rec = (currentLang === 'it' ? labelIt + ' (' + list.length + ')' : labelEn + ' (' + list.length + ')');
     figImportLog('--- ' + (currentLang === 'it' ? 'INIZIO ' : 'START ') + _rec + ' ---', 'white');
-    list.forEach(msg => figImportLog(msg, itemLvl || 'warn'));
+    // 🆕 v6.388 - in ordine di FILE, come il log principale dalla v6.383. Si ordina una COPIA:
+    // il chiamante ha gia' letto `list.length` per il titolo, e riordinargli l'array sotto i piedi
+    // sarebbe un effetto collaterale che non serve a niente.
+    // ⚠️ `seq` accanto a `ord` per la stessa ragione di la': piu' messaggi possono venire dalla
+    // stessa riga, e il loro ordine non deve dipendere dalla stabilita' di `sort`.
+    list.slice().sort((a, b) => (a.ord - b.ord) || (a.seq - b.seq))
+        .forEach(r => figImportLog(r.msg, r.lvl));
     figImportLog('--- ' + (currentLang === 'it' ? 'FINE ' : 'END ') + _rec + ' ---', 'white');
   };
-  _recapBlock(righeAggiornate, 'RECAP RIGHE AGGIORNATE', 'RECAP UPDATED ROWS', 'update');
+  _recapBlock(righeAggiornate, 'RECAP RIGHE AGGIORNATE', 'RECAP UPDATED ROWS');
   _recapBlock(erroriRighe, 'RECAP RIGHE NON IMPORTATE', 'RECAP ROWS NOT IMPORTED');
   // 🆕 v6.376 (Franco) — «RIGHE CARICATE IN MODO INCOMPLETO», ed e' il contrario di come stava per
   // essere scritto. Franco aveva chiesto di sostituire COMPLETAMENTE con AFFATTO; guardando cosa
@@ -42555,9 +43454,28 @@ function _calcolaPianoAllinea(seriesId) {
   const figs = getData('figurines', []);
   const basi = figs.filter(f => _eBase(f) && (!seriesId || f.seriesId === seriesId));
   const piano = [];
+  const gia = new Set();
   for (const base of basi) {
     for (const x of _discendenzaDaAggiornare(base, figs)) {
       piano.push({ figlio: x.figlio, base: x.genitore, campi: x.campi, nuovo: x.nuovo });
+      gia.add(x.figlio.id);
+    }
+  }
+  // 🆕 v6.387 (Franco: *"ok ma come fixiamo i dati attualmente non sincronizzati?"*) - E CHI USA UN
+  // RETRO COL NOME COMPLETO RIMASTO INDIETRO. Fino alla v6.386 il sito ha smesso di PRODURRE questo
+  // disallineamento; questa riga e' cio' che ripara quello gia' in giro, che nessun attrezzo copriva.
+  //
+  // ⚠️ SI GIRA SU TUTTI I RETRO, NON SOLO SULLE BASI, e la differenza non e' teorica: un retro
+  // OMAGGIO e' a sua volta un figlio, ma le figurine possono usare lui come proprio retro. Partendo
+  // dalle sole basi quelle righe non si sarebbero mai viste - lo stesso punto cieco che la v6.384
+  // ha appena chiuso da un'altra parte.
+  // ⚠️ E si escludono quelle gia' nel piano: lo stesso id due volte significa che vince l'ultimo, e
+  // l'ultimo sarebbe la copia SENZA i campi ereditati (avvertimento della v6.375).
+  const retri = figs.filter(f => f.section === 'retros' && (!seriesId || f.seriesId === seriesId));
+  for (const r of retri) {
+    for (const x of _perRetroDaAggiornare(r, figs, new Set([r.id, ...gia]), [])) {
+      piano.push({ figlio: x.figlio, base: x.genitore, campi: x.campi, nuovo: x.nuovo, viaRetro: true });
+      gia.add(x.figlio.id);
     }
   }
   return piano;
@@ -42602,11 +43520,17 @@ function anteprimaAllineaFigli() {
       // v6.057 (Franco) - la SEZIONE, che mancava: "Change" da solo non dice se e' il change di una
       // figurina o di un retro, e i campi allineati non sono gli stessi nei due casi.
       '<td style="padding:3px 6px;">' + esc(_sezioneEtichetta(v.figlio.section)) + '</td>' +
-      '<td style="padding:3px 6px;">' + esc(_tipoFiglio(v.figlio)) + '</td>' +
+      // v6.387 - per le righe che arrivano da «usa questo retro» il Tipo direbbe «Base», che qui
+      // sarebbe fuorviante: quella riga non e' un figlio di niente, e' una figurina il cui Nome
+      // completo cita il retro. Si dice la RELAZIONE, che e' l'informazione che serve.
+      '<td style="padding:3px 6px;">' + esc(v.viaRetro ? (it ? 'usa questo retro' : 'uses this back') : _tipoFiglio(v.figlio)) + '</td>' +
       '<td style="padding:3px 6px;">' + esc(v.figlio.fullName || v.figlio.name || '') + '</td>' +
       '<td style="padding:3px 6px;color:var(--warn);">' + esc(v.campi.join(', ')) + '</td>' +
       '<td style="padding:3px 6px;color:var(--danger);">' + esc(v.campi.map(k => (v.figlio[k] || '').trim() || '(vuoto)').join(' | ')) + '</td>' +
-      '<td style="padding:3px 6px;color:var(--success);">' + esc(v.campi.map(k => (v.base[k] || '').trim() || '(vuoto)').join(' | ')) + '</td>' +
+      // v6.387 - il valore di arrivo si legge da `nuovo`, non da `base`. Per i campi ereditati sono
+      // la stessa cosa (`nuovo[k]` viene copiato da `base[k]`), ma per il Nome completo ricalcolato
+      // `base.fullName` sarebbe il nome del RETRO: un valore vero, e la risposta a un'altra domanda.
+      '<td style="padding:3px 6px;color:var(--success);">' + esc(v.campi.map(k => (v.nuovo[k] || '').trim() || '(vuoto)').join(' | ')) + '</td>' +
     '</tr>').join('');
   // v6.057 - il conto diviso per sezione: prima di leggere 200 righe si vuole sapere di che cosa
   // si sta parlando. "12 record" non dice se sono figurine o retro, e i campi toccati cambiano.
@@ -42687,7 +43611,7 @@ function renderAdminFoto() {
   const series = getData('series', []).slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
 
   el.innerHTML = `
-    <div style="max-width:900px;">
+    <div style="max-width:900px;margin:0 auto;">
       <!-- v6.135 - il "Ricalcola i Nomi completi" e' stato spostato nella scheda FUNZIONI (§14):
            e' una procedura di intervento sui dati con anteprima, non un import ne' una procedura foto. -->
       <h3 onclick="toggleImportSection('fig')" style="font-family:var(--font-ui);margin-bottom:0.25rem;cursor:pointer;display:flex;align-items:center;gap:0.5rem;user-select:none;"><span id="import-fig-chevron">▶</span> 🃏 ${currentLang==='it'?'Caricamento massivo figurine':'Bulk import of stickers'}</h3>
@@ -42718,7 +43642,7 @@ function renderAdminFoto() {
         <button id="import-fig-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
         <button onclick="clearImportFigLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
       </div>
-      <div id="import-fig-log" style="display:none;background:var(--log-bg);border:1px solid var(--log-bd);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      <div id="import-fig-log" class="log-box" style="display:none;"></div>
       <div id="import-fig-progress-wrap" style="display:none;margin-top:0.75rem;">
         <progress id="import-fig-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="import-fig-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
@@ -42755,7 +43679,7 @@ function renderAdminFoto() {
         <button id="import-retro-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
         <button onclick="clearImportRetroLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
       </div>
-      <div id="import-retro-log" style="display:none;background:var(--log-bg);border:1px solid var(--log-bd);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      <div id="import-retro-log" class="log-box" style="display:none;"></div>
       <div id="import-retro-progress-wrap" style="display:none;margin-top:0.75rem;">
         <progress id="import-retro-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="import-retro-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
@@ -42804,7 +43728,7 @@ function renderAdminFoto() {
         <button id="foto-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
         <button onclick="clearFotoLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
       </div>
-      <div id="foto-log" style="display:none;background:var(--log-bg);border:1px solid var(--log-bd);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+      <div id="foto-log" class="log-box" style="display:none;"></div>
       <div id="foto-progress-wrap" style="display:none;margin-top:1rem;">
         <progress id="foto-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
         <div id="foto-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
@@ -42860,7 +43784,7 @@ function renderAdminFoto() {
       <button id="fotonn-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
       <button onclick="clearFotoNnLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
     </div>
-    <div id="fotonn-log" style="display:none;background:var(--log-bg);border:1px solid var(--log-bd);border-radius:var(--radius);padding:0.75rem;font-family:monospace;font-size:0.78rem;max-height:600px;overflow-y:auto;white-space:pre;overflow-x:auto;"></div>
+    <div id="fotonn-log" class="log-box" style="display:none;"></div>
     <div id="fotonn-progress-wrap" style="display:none;margin-top:1rem;">
       <progress id="fotonn-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
       <div id="fotonn-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
@@ -43595,7 +44519,7 @@ async function setAllOwned(ownAll) {
 
   const setAllMsgEl = document.getElementById('set-all-msg');
   if (setAllMsgEl) {
-    setAllMsgEl.textContent = ownAll ? (currentLang === 'it' ? 'Tutti aggiunti!' : 'All added!') : (currentLang === 'it' ? 'Tutti rimossi!' : 'All removed!');
+    setAllMsgEl.textContent = ownAll ? (currentLang === 'it' ? 'Tutti aggiunti !' : 'All added !') : (currentLang === 'it' ? 'Tutti rimossi !' : 'All removed !');
     setAllMsgEl.style.display = '';
     setTimeout(() => { setAllMsgEl.style.display = 'none'; }, 3000);
   }
@@ -43622,8 +44546,8 @@ function mostraPunteggioGuadagnato(aggiunti, totale) {
     ? 'Hai aggiunto ' + nA + ' ' + pA + ' alla classifica della tua lista.'
     : 'You added ' + nA + ' ' + pA + " to your list's ranking.";
   if (elT) elT.textContent = it
-    ? 'La tua lista ha ora un punteggio di ' + nT + ' ' + pT + '!'
-    : 'Your list now has a score of ' + nT + ' ' + pT + '!';
+    ? 'La tua lista ha ora un punteggio di ' + nT + ' ' + pT + ' !'
+    : 'Your list now has a score of ' + nT + ' ' + pT + ' !';
   document.getElementById('score-boost-modal')?.classList.remove('hidden');
 }
 
@@ -43646,6 +44570,100 @@ function toggleBulkEditView() {
   }
 }
 
+// 🆕 v6.378 (Franco: *"nella vista tabella puoi mettere un tasto (admin) «Aggiorna», per comandare
+// un aggiornamento dei dati della tabella?"*) - RILEGGE LE SERIE DAL SERVER E RIDISEGNA.
+//
+// 🔴 LEGGE CON `_leggiSerieRitentando`, NON CON `fsGetAll`, ed e' la decisione che conta.
+// `_rileggiFigurine()` (v6.046) fa quasi esattamente questo, ma passa da `fsGetAll`, cioe'
+// `getDocs`: la v6.176 ha accertato che a rete giu' quella RISOLVE con la cache locale invece di
+// rifiutare. Un pulsante «Aggiorna» che leggesse cosi' ridisegnerebbe gli stessi dati di prima
+// dichiarando di aver funzionato - cioe' servirebbe il guasto che esiste per curare, con l'aria
+// della cura. `getDocsFromServer` rifiuta, e un rifiuto si puo' dire a chi ha premuto.
+// ⚠️ Non si riusa `_rileggiFigurine` cambiandole la lettura: quella serve alle due procedure di
+// caricamento foto, dove il ripiego sulla cache e' innocuo e un errore in piu' fermerebbe un
+// lavoro lungo. Sono due esigenze diverse sotto la stessa forma.
+//
+// ⚠️ LA CACHE DI SESSIONE SI RISCRIVE, non si cancella e basta. Cancellarla avrebbe lasciato i dati
+// freschi solo in memoria: chi ricarica la pagina entro i 5 minuti di TTL si riprendeva i vecchi.
+//
+// 📌 COSA NON FA, e va scritto perche' un pulsante che si chiama «Aggiorna» promette piu' di quello
+// che da': NON e' il contatore di revisione lasciato aperto dalla v6.377. Sveglia QUESTA finestra
+// su comando; non impedisce a una finestra rimasta aperta altrove di scrivere sopra il lavoro
+// altrui, e chi non lo preme resta vecchio esattamente come prima.
+async function aggiornaVistaTabellare() {
+  if (!currentUser?.isAdmin) return;
+  const btn = document.getElementById('bulk-refresh-btn');
+  // il doppio clic raddoppierebbe una lettura da ~1,4 MB: il pulsante si spegne mentre lavora
+  // (stessa precauzione di `refreshAdminData`, e per la stessa ragione).
+  if (btn?.disabled) return;
+  // A meta' import i dati non sono ne' i vecchi ne' i nuovi: rileggerli adesso mostrerebbe uno
+  // stato che non e' mai esistito. Il lucchetto lo sa gia', e lo dice con le sue parole.
+  if (_bloccatoDalLucchetto()) return;
+
+  // ⚠️ La selezione delle righe vive SOLO nel DOM (`.bulk-select-row:checked`), quindi ridisegnare
+  // la cancella. Si chiede prima invece di lasciarlo scoprire dopo: chi ha appena spuntato venti
+  // righe non ha nessun modo di rifarle in fretta.
+  const nSel = document.querySelectorAll('.bulk-select-row:checked').length;
+  if (nSel > 0 && !confirm(currentLang === 'it'
+      ? 'Hai ' + nSel + ' righe selezionate, e aggiornando la selezione si perde.\n\nProcedo lo stesso?'
+      : 'You have ' + nSel + ' rows selected, and refreshing clears the selection.\n\nProceed anyway?')) return;
+
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = currentLang === 'it' ? '⏳ Lettura…' : '⏳ Loading…';
+  }
+  try {
+    const serie = await _leggiSerieRitentando();
+    // Un elenco vuoto non e' un aggiornamento riuscito a zero serie: e' un sintomo. Sostituire
+    // _cache con niente svuoterebbe la tabella e sembrerebbe una cancellazione dei dati.
+    if (!Array.isArray(serie) || !serie.length) {
+      throw new Error(currentLang === 'it'
+        ? 'il server ha risposto senza nessuna serie'
+        : 'the server returned no series');
+    }
+    _cache.series = serie;
+    _cache.figurines = [];
+    for (const s of _cache.series) for (const item of (s.items || [])) _cache.figurines.push(item);
+    _salvaCacheSessione();
+
+    // 📌 SI RIDISEGNA ANCHE LA TESTATA DELLA SERIE, e non e' zelo: i contatori che stanno due
+    // centimetri sopra la tabella leggono le stesse serie. Aggiornare la tabella e lasciare i
+    // numeri fermi sarebbe «mezzo aggiornamento che sembra intero» - il difetto della v6.375, che
+    // e' peggio di nessun aggiornamento perche' a schermo sembra a posto.
+    const _s = getData('series', []).find(x => x.id === currentSeriesId);
+    if (_s) { try { renderSeriesMeta(_s); } catch(e) { console.error('renderSeriesMeta', e); } }
+
+    renderBulkEditView();
+    _applicaVistaCorrente();
+
+    // §9.6.7: un risultato non dice a quali dati ha risposto. L'ora e il conteggio sono quella
+    // riga - se il numero non e' quello che Franco si aspetta, il resto non vale niente.
+    const ora = new Date().toLocaleTimeString(currentLang === 'it' ? 'it-IT' : 'en-US');
+    toast(currentLang === 'it'
+      ? '🔄 Aggiornato alle ' + ora + ' — ' + _cache.figurines.length + ' oggetti letti'
+      : '🔄 Refreshed at ' + ora + ' — ' + _cache.figurines.length + ' items read',
+      'success', null, 5000);
+  } catch(e) {
+    console.error('aggiornaVistaTabellare', e);
+    // Un errore silenzioso qui sarebbe il peggio possibile: l'admin crederebbe di guardare dati
+    // freschi mentre guarda quelli di prima. Stessa lezione della v5.682, stessa frase.
+    toast(currentLang === 'it'
+      ? '⚠️ Aggiornamento NON riuscito: stai vedendo i dati di prima. (' + (e?.message || e) + ')'
+      : '⚠️ Refresh FAILED: you are seeing the previous data. (' + (e?.message || e) + ')',
+      'error', null, 9000);
+  } finally {
+    // ⚠️ Si ricerca, non si riusa `btn`: se il ridisegno e' andato a buon fine quel nodo non e' piu'
+    // nella pagina - `renderBulkEditView` ha riscritto `innerHTML` - e riabilitare un elemento
+    // staccato lascerebbe a schermo un pulsante spento per sempre.
+    const b = document.getElementById('bulk-refresh-btn');
+    if (b) { b.disabled = false; b.textContent = _ETICHETTA_AGGIORNA(); }
+  }
+}
+
+function _ETICHETTA_AGGIORNA() {
+  return currentLang === 'it' ? '🔄 Aggiorna' : '🔄 Refresh';
+}
+
 function renderBulkEditView() {
   const bulkView = document.getElementById('bulk-edit-view');
   if (!bulkView) return;
@@ -43656,6 +44674,21 @@ function renderBulkEditView() {
   bulkView.style.transform = 'translateX(-50%)';
 
   const isAdmin = !!currentUser?.isAdmin;
+  // 🆕 v6.378 - LA BARRA STA DENTRO LA TABELLA, e non e' una preferenza di posizione: cosi' non
+  // esiste nessuna VISIBILITA' da tenere allineata. Il pulsante nasce quando la tabella si disegna
+  // e muore quando `bulkView.innerHTML` si svuota - e i punti che lo svuotano sono gia' TRE
+  // (`showSection`, `_applicaVistaCorrente`, e il ritorno alla griglia). Metterlo fuori avrebbe
+  // voluto dire un quarto posto che deve ricordarsi di nasconderlo, cioe' il difetto della v6.376
+  // in attesa di succedere: un pulsante che non sparisce non da' errore.
+  // ⚠️ Si emette anche nel ramo «nessun oggetto trovato»: e' proprio li' che uno vuole rileggere.
+  const _barraTabella = !isAdmin ? '' :
+    '<div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;margin-bottom:0.6rem;">'
+    + '<button class="btn-primary btn-admin" id="bulk-refresh-btn" onclick="aggiornaVistaTabellare()"'
+    + ' title="' + (currentLang === 'it'
+        ? 'Rilegge le serie dal server e ridisegna la tabella. Sveglia questa finestra: non impedisce a un’altra finestra rimasta aperta di sovrascrivere.'
+        : 'Re-reads the series from the server and redraws the table. It refreshes this window: it does not stop another stale window from overwriting.')
+    + '" style="font-size:0.85rem;padding:0.35rem 0.9rem;">' + _ETICHETTA_AGGIORNA() + '</button>'
+    + '</div>';
   const owned = getOwned();
   // v6.120 - UN SOLO <datalist> PER TUTTA LA TABELLA, e non e' un risparmio: la vista tabellare
   // mostra una sola serie e una sola sezione, quindi i candidati sono gli STESSI per ogni riga.
@@ -43776,7 +44809,7 @@ function renderBulkEditView() {
     '</datalist>').join('');
   updateItemsCountDisplay(allItems);
 
-  if (!allItems.length) { bulkView.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali.' : 'No items found with the current filters.'}</p>`; return; }
+  if (!allItems.length) { bulkView.innerHTML = _barraTabella + `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali.' : 'No items found with the current filters.'}</p>`; return; }
 
   // Cella di sola lettura per l'utente non-admin (niente input editabile)
   // v6.185 - terzo parametro `align`, e soprattutto VIA IL `text-align:left` CABLATO.
@@ -43891,7 +44924,7 @@ function renderBulkEditView() {
           <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</th>` : ''}
 `;
 
-  bulkView.innerHTML = _datalist + `
+  bulkView.innerHTML = _barraTabella + _datalist + `
     ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
       <button class="btn-danger" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;font-size:0.9rem;padding:0.5rem 1rem;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
@@ -44105,7 +45138,11 @@ const CAMPI_MASSIVI = [
   // distratto.
   // `soloSezione`: esistono solo per i Retro (v5.980, v6.038), quindi nelle altre sezioni il menu
   // non le mostra affatto - meglio di una voce che c'e' e non fa niente.
-  // `nonSuDerivati`: su un Change o un errore di stampa questi campi NON sono dati propri, li
+  // 🗑️ v6.384 - QUI C'ERA `nonSuDerivati`, ed è stato TOLTO invece che lasciato: da questa release
+  // la domanda la fa `_campoComandatoDalGenitore` al modello, e un flag che nessuno legge più
+  // sopravvive alle modifiche finché qualcuno lo rilegge credendolo la risposta a una domanda che
+  // nel frattempo è cambiata. La nota storica che segue resta perché spiega il PERCHÉ.
+  // Su un derivato questi campi NON sono dati propri, li
   // riscrive la base al salvataggio (v6.038). Scriverli li' darebbe un valore che il primo
   // salvataggio disfa: quei record si saltano.
   // `nelNomeCompleto`: sono due dei pezzi con cui `computeFullName` costruisce il Nome completo di
@@ -44113,8 +45150,8 @@ const CAMPI_MASSIVI = [
   // completo non e' una decorazione: e' cio' che la scheda mostra nel titolo e cio' su cui la
   // ricerca globale cerca (v6.049/050). Nessuna delle voci precedenti aveva questo problema, ed e'
   // il motivo per cui il ricalcolo non c'era.
-  { id: 'category',    it: 'Categoria',      en: 'Category',    tipo: 'testo', soloSezione: 'retros', nonSuDerivati: true, nelNomeCompleto: true },
-  { id: 'subcategory', it: 'Sottocategoria', en: 'Subcategory', tipo: 'testo', soloSezione: 'retros', nonSuDerivati: true, nelNomeCompleto: true },
+  { id: 'category',    it: 'Categoria',      en: 'Category',    tipo: 'testo', soloSezione: 'retros', nelNomeCompleto: true },
+  { id: 'subcategory', it: 'Sottocategoria', en: 'Subcategory', tipo: 'testo', soloSezione: 'retros', nelNomeCompleto: true },
   // 🆕 v6.235 (Franco: "mettilo in via definitiva") — IL TIPO, cioe' la VERSIONE.
   //
   // 🔴 NON E' UN CAMPO COME GLI ALTRI, ed e' il motivo per cui ha un ramo suo in
@@ -44362,12 +45399,35 @@ async function applicaAggiornamentoMassivo() {
     }
   }
 
+  // 🆕 v6.382 (Franco: *"l'aggiornamento a cascata scatta anche a seguito di un aggiornamento
+  // massivo? puoi controllare e confermare?"*) — NO, NON SCATTAVA. Ora sì.
+  //
+  // 🔴 QUANDO SERVE, e solo allora. La discesa costa: si fa unicamente per i campi che i figli
+  // ereditano o che finiscono nel loro Nome completo — Categoria, Sottocategoria, Tipologia,
+  // Versione. Gli altri sei campi del massivo (Invisibile, Foto non disponibile, In vendita, Da
+  // pubblicare, Non ha numero, Condizione) non si ereditano: ognuno se li tiene per sé, e chiamare
+  // la discesa per loro sarebbe lavoro per niente su migliaia di record.
+  const _cascataServe = !!(c.nelNomeCompleto || c.versione);
+  const _collegati = new Set();
+
   bersagli.forEach(id => {
     const rec = tutte.find(f => f.id === id);
     if (!rec) return;
     // v6.106 - Categoria e Sottocategoria di un Change o di un errore di stampa le riscrive la base
     // al salvataggio (v6.038): scriverle qui darebbe un valore che il primo salvataggio disfa.
-    if (c.nonSuDerivati && (rec.isChange || rec.isPrintError)) return;
+    // 🆕 v6.384 (Franco) - LA DOMANDA LA FA IL MODELLO, RECORD PER RECORD E CAMPO PER CAMPO.
+    // 🔴 Qui c'era `c.nonSuDerivati && (rec.isChange || rec.isPrintError)`: una coppia scritta a
+    // mano, e l'OMAGGIO non c'era. È la stessa forma che la v6.314 aveva già tolto da `_eBase`
+    // («era una quaterna scritta a mano, e l'omaggio non c'era») e che la v6.376 ha ritrovato nei
+    // tab della scheda. Terza volta, stesso punto cieco.
+    // ⚠️ E il danno non era teorico: `nonSuDerivati` esiste perché Categoria e Sottocategoria di un
+    // derivato le riscrive la BASE al salvataggio (v6.038). Scriverle direttamente su un omaggio
+    // dava un valore che il primo salvataggio della sua base disfaceva — in silenzio.
+    // 📌 `_campoComandatoDalGenitore` è la stessa funzione che usano già la scheda e la vista
+    // tabellare per decidere se un campo è scrivibile: non una regola nuova, la stessa. E chiede
+    // anche del CAMPO, non solo del record — su una FIGURINA la Categoria non è ereditata, quindi
+    // lì non salta niente.
+    if (_campoComandatoDalGenitore(rec, campo)) return;
     if (c.tipologia) {
       // v6.244 - il campo su cui scrivere lo dice la VERSIONE della riga, non la voce del menu.
       // A questo punto tutte le righe hanno la versione giusta: il controllo qui sopra ha gia'
@@ -44402,14 +45462,56 @@ async function applicaAggiornamentoMassivo() {
     toccati++;
     if (!perSerie.has(rec.seriesId)) perSerie.set(rec.seriesId, rec);
   });
+
+  // 🆕 v6.382 - LA DISCESA, dopo che tutti i bersagli sono stati scritti e non dentro il ciclo:
+  // un figlio può essere a sua volta un bersaglio, e scendere prima che il suo valore fosse
+  // aggiornato lo avrebbe fatto ricopiare dal padre vecchio.
+  //
+  // 🔴 SI MUTA IL FIGLIO SUL POSTO, non si sostituisce con la copia che la discesa restituisce, ed
+  // è LA riga da cui dipende se questa correzione funziona. `_discendenzaDaAggiornare` torna
+  // `{ figlio, campi, nuovo }` dove `nuovo` è un oggetto NUOVO (`{...figlio}`). Ma il massivo
+  // salva una volta per SERIE, e regge solo perché muta i record sul posto: gli elementi di
+  // `_cache.figurines` sono gli STESSI oggetti di `series.items`, quindi riscrivere il documento
+  // della serie porta con sé ogni modifica fatta in memoria. Una copia nuova quella catena la
+  // rompe: verrebbe aggiornata in `_cache` e non salverebbe niente. È lo stesso genere di difetto
+  // della v6.375 — un aggiornamento che sembra fatto e non c'è.
+  if (_cascataServe) {
+    for (const rec of bersagli.map(id => tutte.find(f => f.id === id)).filter(Boolean)) {
+      let _agg;
+      // 🔧 v6.386 - non piu' la sola discendenza: `_daSalvareInsiemeA` aggiunge anche chi USA
+      // questo retro, che qui non veniva toccato da nessuno.
+      try { _agg = _daSalvareInsiemeA(rec, tutte); }
+      catch (e) { console.error('propagazione massiva', rec && rec.id, e); continue; }
+      _agg.forEach(nuovo => {
+        const orig = tutte.find(x => x.id === nuovo.id);
+        if (!orig) return;
+        // 🔴 `Object.assign` sull'ORIGINALE, non `tutte[i] = nuovo`: il massivo salva una volta per
+        // serie e regge perche' gli oggetti di `_cache.figurines` sono gli STESSI di `series.items`.
+        // Sostituire il riferimento romperebbe quella catena e la modifica non arriverebbe mai su
+        // Firestore - il difetto della v6.375 travestito da sua correzione (vedi v6.382).
+        Object.assign(orig, nuovo);
+        _collegati.add(orig.id);
+        // ⚠️ Un collegato può stare in un'ALTRA serie: senza questa riga la sua serie non
+        // verrebbe scritta, e la modifica resterebbe solo in memoria fino al ricaricamento.
+        if (!perSerie.has(orig.seriesId)) perSerie.set(orig.seriesId, orig);
+      });
+    }
+  }
   let errori = 0;
   for (const rec of perSerie.values()) {
     try { await fsSave('figurines', rec); } catch(e) { console.error('applicaAggiornamentoMassivo', e); errori++; }
   }
   if (btn) { btn.disabled = false; btn.textContent = it ? 'Applica' : 'Apply'; }
+  // 🆕 v6.382 - e i collegati si DICONO, come fa la cella singola dalla v6.375 e la scheda dalla
+  // v6.053: un salvataggio che ne modifica altri in silenzio è il modo in cui ci si accorge dei
+  // danni tre giorni dopo.
+  const _coda = _collegati.size
+    ? (it ? ', e ' + _collegati.size + ' collegat' + (_collegati.size === 1 ? 'o' : 'i')
+          : ', plus ' + _collegati.size + ' linked item' + (_collegati.size === 1 ? '' : 's'))
+    : '';
   toast(errori
-    ? (it ? 'Aggiornati ' + toccati + ' oggetti, ' + errori + ' serie non salvate' : toccati + ' items updated, ' + errori + ' series failed')
-    : (it ? 'Aggiornati ' + toccati + ' oggetti' : toccati + ' items updated'), errori ? 'warn' : 'success');
+    ? (it ? 'Aggiornati ' + toccati + ' oggetti' + _coda + ', ' + errori + ' serie NON salvate' : toccati + ' items updated' + _coda + ', ' + errori + ' series failed')
+    : (it ? '✅ Aggiornati ' + toccati + ' oggetti' + _coda : '✅ ' + toccati + ' items updated' + _coda), errori ? 'warn' : 'success');
   renderBulkEditView();
   try { renderItems(); } catch(e) {}
 }
@@ -44582,22 +45684,22 @@ async function saveBulkCell(input) {
   const _toccaIlNome = rec.section === 'retros' && _CAMPI_NOME_RETRO.includes(field);
   if (_toccaIlNome) rec.fullName = computeFullName(rec, figs);
 
-  // (1) I DISCENDENTI, con la stessa discesa della scheda: a qualunque profondita', in ogni
-  //     sezione, e coi campi ereditati COPIATI e non solo col Nome completo rifatto.
-  const _collegati = _collegatiDaAggiornare(rec);
-
-  // (2) E chi ha questo retro come PROPRIO retro (`retroId`). Non sono figli — non ereditano
-  //     campi — ma il loro Nome completo lo contiene, quindi restano un elenco a parte.
-  //     ⚠️ Si tolgono quelli gia' presenti fra i collegati: lo stesso id due volte nella stessa
-  //     scrittura significa che vince l'ultimo, e l'ultimo sarebbe la copia SENZA i campi ereditati.
-  const _perRetro = _toccaIlNome
-    ? figs.filter(x => x.retroId === rec.id && x.id !== rec.id && !_collegati.some(c => c.id === x.id))
-    : [];
-  for (const d of _perRetro) d.fullName = computeFullName(d, figs);
+  // 🔧 v6.386 - QUI STAVANO I DUE ELENCHI, E DA QUI SONO STATI ESTRATTI. La discendenza e chi usa
+  // questo retro si chiedono a `_daSalvareInsiemeA`, che ora risponde anche alla scheda, al
+  // massivo e all'import retro. Prima il secondo elenco viveva SOLO qui: cioe' il Nome completo di
+  // chi usa un retro si aggiornava cambiando una cella e non cambiando lo stesso dato altrove.
+  // ⚠️ Torna COPIE, quindi vanno rimesse dentro `figs` prima di salvare: `_cache.figurines` e
+  // `series.items` condividono gli oggetti, e una copia lasciata fuori sarebbe un aggiornamento
+  // che non arriva a Firestore.
+  const _collegati = _daSalvareInsiemeA(rec, figs);
+  for (const c of _collegati) {
+    const _i = figs.findIndex(x => x.id === c.id);
+    if (_i >= 0) figs[_i] = c;
+  }
 
   _cache.figurines = figs;
   // Una scrittura sola per serie, come la scheda dalla v6.116: o si scrive tutto o niente.
-  await _salvaFigurineInBlocco([rec, ..._collegati, ..._perRetro]);
+  await _salvaFigurineInBlocco([rec, ..._collegati]);
 
   // v6.375 — e lo si DICE, come fa la scheda dalla v6.053: un salvataggio che ne modifica altri in
   // silenzio e' il modo in cui ci si accorge dei danni tre giorni dopo. Qui il difetto era proprio
@@ -44654,7 +45756,7 @@ async function saveBulkScore() {
     if (updatedIds.has(f.id)) f.score = score;
     return f;
   });
-  if (fb) fb.textContent = currentLang === 'it' ? '✅ Punteggio assegnato a ' + items.length + ' oggetti!' : '✅ Score assigned to ' + items.length + ' items!';
+  if (fb) fb.textContent = currentLang === 'it' ? '✅ Punteggio assegnato a ' + items.length + ' oggetti !' : '✅ Score assigned to ' + items.length + ' items !';
   if (btn) btn.disabled = false;
   renderItems();
   setTimeout(() => {
@@ -44758,7 +45860,7 @@ async function saveLevelClassifica() {
   resetLevelClassifica();
   const levelsEl = document.getElementById('classifica-levels-table');
   if (levelsEl) renderClassificaLevels(levelsEl);
-  toast(currentLang === 'it' ? '✅ Livello salvato!' : '✅ Level saved!', 'success');
+  toast(currentLang === 'it' ? '✅ Livello salvato !' : '✅ Level saved !', 'success');
 }
 
 async function deleteLevelClassifica(id) {
@@ -44805,7 +45907,7 @@ async function renderClassifica() {
   ranking.sort((a, b) => b.score - a.score);
 
   if (!ranking.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">👤</div><p class="empty-title">' + (currentLang === 'it' ? 'Nessun collezionista ancora!' : 'No collectors yet!') + '</p></div>';
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">👤</div><p class="empty-title">' + (currentLang === 'it' ? 'Nessun collezionista ancora !' : 'No collectors yet !') + '</p></div>';
     return;
   }
 
@@ -45263,7 +46365,7 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
         </div>
       </div>`;
     }).join('');
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! La tua lista comprende tutti gli oggetti dell\'inventario Sgorbions!' : 'Congrats! Your list includes every item in the Sgorbions inventory!') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;color:var(--accent2);">' + (currentLang === 'it' ? 'EXPORT 3: LE TUE SERIE COMPLETE' : 'EXPORT 3: YOUR COMPLETE SERIES') + '</h2>' + '<div style="color:var(--text);font-size:0.88rem;margin-bottom:0.75rem;overflow:hidden;">' + '<button class="btn-primary" style="float:right;margin:0 0 0.5rem 1rem;font-size:0.9rem;padding:0.45rem 1.2rem;white-space:nowrap;line-height:1.2;border-radius:10px;" onclick="exportOwnedList()">' + (currentLang === 'it' ? 'Esporta articoli mie serie complete' : 'Export items of my complete series') + '</button>'
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! La tua lista comprende tutti gli oggetti dell\'inventario Sgorbions !' : 'Congrats! Your list includes every item in the Sgorbions inventory !') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;color:var(--accent2);">' + (currentLang === 'it' ? 'EXPORT 3: LE TUE SERIE COMPLETE' : 'EXPORT 3: YOUR COMPLETE SERIES') + '</h2>' + '<div style="color:var(--text);font-size:0.88rem;margin-bottom:0.75rem;overflow:hidden;">' + '<button class="btn-primary" style="float:right;margin:0 0 0.5rem 1rem;font-size:0.9rem;padding:0.45rem 1.2rem;white-space:nowrap;line-height:1.2;border-radius:10px;" onclick="exportOwnedList()">' + (currentLang === 'it' ? 'Esporta articoli mie serie complete' : 'Export items of my complete series') + '</button>'
     + '<span style="color:' + COL_CATEGORIA + ';">' + (currentLang === 'it' ? 'ISTRUZIONI:' : 'INSTRUCTIONS:') + '</span>'
     + '<ul style="margin:0.35rem 0 0;padding-left:1.2rem;">'
     + (currentLang === 'it'
@@ -45394,7 +46496,7 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
         // If all items in this section are missing, show a simple message
         const allSectionFigs = allFigs.filter(f => f.seriesId === sId && f.section === sec);
         if (items.length === allSectionFigs.length) {
-          return `<div style="margin-bottom:0.4rem;">${modeSelector}<div style="color:var(--muted);font-size:0.88rem;font-style:italic;">${currentLang === 'it' ? 'Nella tua lista manca tutta la serie!' : 'Your list is missing the entire series!'}</div></div>`;
+          return `<div style="margin-bottom:0.4rem;">${modeSelector}<div style="color:var(--muted);font-size:0.88rem;font-style:italic;">${currentLang === 'it' ? 'Nella tua lista manca tutta la serie !' : 'Your list is missing the entire series !'}</div></div>`;
         }
         const sorted = items.sort((a,b) => {
           // Sort by subseries first, then by number, then by name
