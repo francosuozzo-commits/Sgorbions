@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.414"></script>
-<link rel="stylesheet" href="css/style.css?v=6.414">
+<script src="js/email.min.js?v=6.418"></script>
+<link rel="stylesheet" href="css/style.css?v=6.418">
 
 
 <style>
@@ -647,6 +647,22 @@ button.back-btn { color:#ffffff; }
    ⚠️ SE RISULTA TROPPO SCURO — Franco ha già bocciato due colori per questo — il candidato
    successivo è #d4c4a8: più chiaro e più «beige», ma a 110 dal verde, cioè un debito dichiarato
    invece di nessun debito. Una riga. */
+/* 🔴 v6.418 (Franco) — QUI C'ERA IL `subgrid` DELLA v6.416, E NON FUNZIONAVA. Franco, guardando
+   l'anteprima: *"hai messo numero e nome su due righe diverse ma non c'è l'inizio alla stessa
+   altezza per il testo sotto alle foto delle card"*.
+   📌 LO TOLGO INVECE DI LASCIARLO LÌ. Un blocco di CSS che non produce il suo effetto è peggio del
+   difetto che voleva curare: chi legge il foglio fra sei mesi trova una regola, un commento che
+   spiega perché è quella giusta, e nessun modo di sapere che non fa niente. Il difetto almeno si
+   vede. È la stessa famiglia della riga diagnostica che mentiva (v6.410) e dell'etichetta «Svuota
+   log» che prometteva uno svuotamento già avvenuto.
+   ⚠️ E NON SCRIVO QUI PERCHÉ NON FUNZIONAVA, perché non lo so ancora. §9.6.4 dice che il layout si
+   misura nel DOM, e da qui il DOM non c'è: le ipotesi (i figli diretti della card sono due su
+   desktop ma TRE su mobile per via di `.fig-badge-row`; `.fig-card` potrebbe avere un suo
+   `display` che vince; il padre potrebbe non avere tracce da ereditare) sono ipotesi, e questa
+   sessione ha già speso tre diagnosi sbagliate per averle spacciate per cause.
+   Il lavoro resta aperto nel backlog, con l'ispezione in console come primo passo.
+   ✅ QUELLO CHE RESTA DELLA v6.416 È IL PEZZO CHE FUNZIONA: numero e nome su due righe anche su
+   desktop. Franco lo ha visto e va bene. */
 :root { --etichetta-retro: #bfae91; }
 :root { --nome-entita: #4db8ff; }  /* v6.399 - azzurro. Stesso valore di --info, che il sito gia usa */
 
@@ -3397,7 +3413,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.414"></script>
+<script src="js/app.js?v=6.418"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3421,7 +3437,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.414'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.418'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
