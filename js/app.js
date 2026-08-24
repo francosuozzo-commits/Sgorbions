@@ -1,6 +1,164 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.418 - IL `subgrid` DELLA v6.416 NON FUNZIONAVA: lo tolgo. index.html + app.js.
+//
+//          Franco, guardando l'anteprima: *"hai messo numero e nome su due righe diverse ma non c'e'
+//          l'inizio alla stessa altezza per il testo sotto alle foto delle card; dimenticanza?"*
+//          No, non una dimenticanza: il CSS c'era, era scritto, era protetto da `@supports` - e non
+//          produceva il suo effetto.
+//
+//          🔴 LO TOLGO INVECE DI LASCIARLO LI', ed e' il punto di questa release.
+//          Un blocco di CSS che non fa quello che dice e' PEGGIO del difetto che voleva curare. Il
+//          difetto almeno si vede: le scritte disallineate le nota chiunque. Una regola inerte no -
+//          chi apre il foglio fra sei mesi trova quindici righe di commento che spiegano perche'
+//          `subgrid` e' la cura giusta, e nessun modo di sapere che quella cura non e' mai arrivata
+//          al malato. E' la stessa famiglia della riga diagnostica che stampava "x1.25 x1.5"
+//          (v6.410, tolta) e dell'etichetta «Svuota log» che prometteva uno svuotamento gia'
+//          avvenuto: un pezzo di codice che dice piu' di cio' che fa manda fuori strada chi legge.
+//
+//          ⚠️ E NON SCRIVO PERCHE' NON FUNZIONAVA, perche' non lo so. §9.6.4: il layout si misura
+//          nel DOM, e da questa sessione il DOM non c'e'. Le ipotesi ci sono (i figli diretti della
+//          card sono due su desktop ma TRE su mobile, per via di `.fig-badge-row`, e `span 2` non
+//          basterebbe; `.fig-card` potrebbe avere un suo `display` che vince; il padre potrebbe non
+//          avere tracce di riga da ereditare) - ma sono ipotesi, e questa sessione ha gia' speso
+//          TRE diagnosi sbagliate di fila per aver presentato un'ipotesi come una causa. Non ne
+//          aggiungo una quarta a mezzanotte.
+//          📌 Il lavoro resta APERTO NEL BACKLOG, col primo passo scritto: ispezionare in console
+//          `getComputedStyle` della card e del contenitore, e contare i figli diretti nei due
+//          layout. Cinque minuti col browser aperto valgono piu' di un'ora di ragionamento qui.
+//
+//          ✅ DELLA v6.416 RESTA IL PEZZO CHE FUNZIONA: numero e nome su due righe anche su desktop,
+//          con la stessa classe `.fig-name-line` che il mobile usa gia'. Franco l'ha visto e va
+//          bene. Una release che tiene meta' del lavoro e dichiara l'altra meta' aperta e' un
+//          risultato onesto; una che le tiene tutte e due e ne fa funzionare una sola, no.
+//
+//          Prove: prova-v6416 riscritta. Difendeva il CSS e la classe; adesso difende che NON ci
+//          siano piu' (una regola inerte non deve rientrare di soppiatto) e che le due righe di
+//          numero e nome restino.
+//
+// v6.417 - «ARTICOLI», non «risultati». Una riga, e cambia tutta la videata. Solo app.js.
+//
+//          Franco: *"nel totale della ricerca, cambia «oggetti trovati» in «articoli trovati»"*, e
+//          poi, chiarito: *"articoli, non risultati"*.
+//
+//          ✅ LA PAROLA CAMBIA IN UN POSTO E CAMBIA OVUNQUE, ed e' il guadagno che la v6.407 aveva
+//          comprato: `_frasePerQuesta` la usano il TOTALE in cima e i due SOTTOTOTALI (per serie e
+//          per tipologia). Prima il totale diceva «oggetti» e i sottototali «risultati»: due parole
+//          per la stessa cosa a tre righe di distanza, e per cambiarle sarebbero serviti tre punti.
+//
+//          📌 TERZA PAROLA IN UN GIORNO, E NON E' INDECISIONE. Le tre dicono cose diverse:
+//            · «oggetti»    - il termine vecchio, generico;
+//            · «risultati»  - descrive il MECCANISMO: cosa ha trovato la ricerca;
+//            · «articoli»   - descrive la COSA: cosa sono, nel dominio di Franco.
+//          L'ultima e' quella giusta perche' e' la parola che Franco usa parlando delle sue
+//          figurine, e un sito deve parlare la lingua di chi lo usa, non quella del suo motore di
+//          ricerca. La v6.407 era un passo avanti (una parola sola invece di due), questa e' il
+//          passo che sceglie QUALE.
+//
+//          ✅ E chiude una tensione aperta stamattina: `_fraseTipologie` dalla v6.409 dice
+//          «tipologie di ARTICOLI» - era l'unica frase del sito a usare quella parola, e sembrava
+//          una scelta isolata. Adesso e' la parola del conteggio.
+//
+//          ⚠️ In inglese torna `item/items`, che era la forma prima della v6.407 e che «articolo»
+//          traduce: `result/results` era il compagno di «risultati» e se ne va con lui.
+//
+//          Prove: aggiornata prova-v6337, che e' la suite di questa funzione ed e' la terza volta
+//          in un giorno che registra un cambio di parola. Non e' un problema: e' il suo mestiere.
+//
+// v6.416 - IL TESTO DELLE CARD ALLINEATO NELLA STESSA RIGA, e numero/nome su due righe.
+//          index.html e app.js.
+//
+//          Franco, con una schermata: *"se ci sono card con foto in forma diversa (verticale-
+//          orizzontale) ne pagano le conseguenze le scritte sotto alle foto, che, iniziando dopo le
+//          foto, sono tra loro non allineate verticalmente. Ma non possiamo mettere il testo delle
+//          card sotto all'altezza delle foto piu' alte?"*, e poi: *"secondo me aiuta anche mettere
+//          sempre il numero e il nome delle figurine su due righe separate; a volte il nome e'
+//          lungo e la riga unica potrebbe andare a capo"*.
+//
+//          --- LA CAUSA, MISURATA NEL CODICE ---------------------------------------------------
+//          `.fig-img-placeholder` ha un `aspect-ratio` PER CARD: `2` per le coppie affiancate, `1`
+//          per le figurine, `1.6` per i retro. A parita' di larghezza, aspect-ratio diversi danno
+//          altezze diverse - e il corpo della card comincia dove finisce la foto.
+//          📌 Non e' un difetto nato di recente: e' la conseguenza di una scelta giusta (l'aspetto
+//          della foto segue il suo contenuto) che nessuno aveva guardato in una RIGA di card.
+//
+//          --- LA CURA: `subgrid` ---------------------------------------------------------------
+//          La card diventa una grid di due righe che EREDITA le tracce del padre. La prima riga -
+//          la foto - prende l'altezza massima di quella riga, e il corpo comincia allineato.
+//          ✅ E' l'unica soluzione che fa quello che Franco ha chiesto ALLA LETTERA: allinea RIGA
+//          PER RIGA, non su tutta la griglia. Le due alternative scartate:
+//            · un'altezza fissa per tutte le card: allineerebbe tutto, ma sprecherebbe spazio dove
+//              non serve, e la foto piu' alta del catalogo deciderebbe per tutte le altre;
+//            · un calcolo in JS: metterebbe il layout nelle mani di un listener di `resize`, cioe'
+//              di qualcosa che puo' non scattare. E' la regola di §5 sulle due media query.
+//
+//          🔴 E VALE SOLO DOVE LA GRIGLIA E' DAVVERO UNA GRID. In modalita' «destra-piena» il
+//          contenitore diventa un FLEX (riga ~34919), e li' `grid-template-rows: subgrid` non e'
+//          valido: il browser lo scarta e la card resta una grid a righe automatiche - un TERZO
+//          layout, ne' quello di prima ne' quello voluto, e senza nessun errore.
+//          ✅ Per questo il JS mette la classe `griglia-allineata` solo nel ramo non-flex, e il CSS
+//          la pretende. La condizione sta dove la decisione si prende gia', non in una copia.
+//          ⚠️ E tutto dentro `@supports (grid-template-rows: subgrid)`: dove non c'e', non cambia
+//          niente. Meglio il difetto di prima che un layout rotto.
+//
+//          --- NUMERO E NOME SU DUE RIGHE ---------------------------------------------------
+//          📌 NON E' UNA FORMA NUOVA: e' quella che il MOBILE usa gia', con la stessa classe
+//          `.fig-name-line`. Le due viste erano divergenti da sempre, e il desktop era quello che
+//          andava a capo in modo imprevedibile - «167 MAURO CENTAURO» sta su una riga e «169
+//          OLIVIERI SPARVIERO» no, quindi la card cambiava altezza secondo la lunghezza del nome.
+//          ⚠️ Il ripiego `_figLabelOnlyNumber()` NON e' stato copiato dal mobile: li' serve perche'
+//          con pochissimo spazio il nome puo' essere gia' dentro l'etichetta. Su desktop il nome si
+//          scrive sempre, ed e' la decisione che quel ramo prende da sempre.
+//
+//          🔴 QUESTA RELEASE VA GUARDATA, e non e' una formula di cortesia: e' §9.6.4 - «Layout:
+//          misurare il DOM, non ragionarci sopra». Le suite provano che il CSS e' scritto e che la
+//          classe si accende nel ramo giusto; NON possono dire come cade il layout in un browser.
+//          Da guardare in particolare: una riga con una coppia affiancata accanto a una figurina
+//          singola, e la stessa cosa su telefono.
+//
+//          Prove: prova-v6416.js.
+//
+// v6.415 - LA CATEGORIA TORNA GIALLA. Solo app.js, una costante.
+//
+//          Franco: *"fai tornare la categoria delle card delle figurine (e dei retro) gialla"*.
+//
+//          🔴 LA v6.404 L'AVEVA SPOSTATA PER UN CONFLITTO CHE NON SI VERIFICA, e la correzione
+//          e' arrivata da una domanda di Franco, non da una misura:
+//          *"ma quando abbiamo la categoria per le variazioni non ufficiali? La categoria la hanno
+//          solo i retro e i retro non hanno variazioni. Mi sbaglio?"*
+//          E poi la ragione vera, che e' piu' forte di un conteggio:
+//          *"per essere variazioni devi avere 2 facce; i retro ne hanno una"*.
+//          🔴 NON E' UN FATTO SUI DATI, E' UNA REGOLA DEL MODELLO. Una variazione si distingue dalle
+//          sorelle NEL RETRO: senza seconda faccia il concetto non esiste. Il codice lo dice in una
+//          riga - `_schedaDueFoto()` comincia con `if (f.section === 'retros') return false`.
+//          Non e' che di retro-variazione non ce ne sono: **non possono essercene**.
+//
+//          ⚠️ E IO AVEVO LETTO IL CONTRARIO, poche righe prima. In `saveFigurine` c'e'
+//          `if (section !== 'retros' && (isVariation || isUnofficialVariation) && !retro)`, e
+//          l'avevo presentata a Franco come prova che il caso fosse previsto («una guardia che
+//          esisterebbe solo se il caso fosse possibile»). Era una GUARDIA DIFENSIVA: salta un
+//          controllo che li' non avrebbe senso. Una guardia dice da cosa il codice si difende, non
+//          cosa il modello ammette - e le due cose si somigliano abbastanza da ingannare.
+//
+//          📌 LA LEZIONE. Una distanza sotto soglia fra due colori che non possono comparire
+//          insieme **non e' un conflitto**. Misurare e' meccanico e lo fa il codice; sapere se i due
+//          si INCONTRANO richiede il modello, e il modello lo conosce Franco.
+//          ⚠️ Il difetto non era nella misura - 34 era giusto - ma nell'aver trattato un numero
+//          come una conclusione. E' la stessa famiglia delle tre diagnosi sbagliate di stamattina
+//          (§9.6 punto 8): un fatto vero usato per rispondere a una domanda che non era stata fatta.
+//          ✅ E il costo si e' visto: la v6.404 ha speso uno spostamento e l'ultima famiglia di
+//          tinta libera (il turchese) per niente. Quel turchese adesso torna disponibile.
+//
+//          ⚠️ IL CANARINO #fff275 RESTA sulla «Variazione non ufficiale»: non si tocca nient'altro.
+//          I due gialli distano 87, sotto la soglia di 120 - ma quella soglia vale per colori che
+//          si vedono insieme, e questi non lo fanno. Il giorno che nascesse un retro-variazione la
+//          leva e' spostare la VERSIONE, non il campo: le versioni sono un CODICE, i campi sono
+//          fondale (regola della v6.372).
+//
+//          Prove: aggiornata prova-v6404, che pretendeva #3fd0b0 e vietava #ffd84d nel codice vivo.
+//          Non silenziata: rovesciata, con la ragione scritta.
+//
 // v6.414 - LA DATA DI CREAZIONE SENZA L'ORA. Solo app.js.
 //
 //          Franco: *"nella data di creazione degli articoli, non mostriamo mai la ora ma solo la
@@ -22519,7 +22677,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.414';
+const JS_VERSION = 'v6.418';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -24416,7 +24574,31 @@ let _retroResultCatVals = [];      // valori categoria reali dei box cliccabili 
 // prossimo di tutta la tavolozza, contrasto 9,4:1.
 // ⚠️ È una COSTANTE e non un token CSS: sta qui perché la usano punti che compongono HTML a
 // stringa. Cambiarla qui li cambia tutti e 23.
-const COL_CATEGORIA = '#3fd0b0';    // turchese
+// 🔄 v6.415 (Franco) - LA CATEGORIA TORNA GIALLA, e la v6.404 l'aveva spostata per niente.
+// Franco: *"fai tornare la categoria delle card delle figurine (e dei retro) gialla"*.
+//
+// 🔴 PERCHE' ERA STATA SPOSTATA, E PERCHE' NON DOVEVA. La v6.404 ha dato il giallo canarino
+// (#fff275) a «Variazione non ufficiale», e questo giallo gli stava a 34 - due colori
+// indistinguibili. La misura era giusta. La DOMANDA no.
+// Franco: *"ma quando abbiamo la categoria per le variazioni non ufficiali? La categoria la hanno
+// solo i retro e i retro non hanno variazioni"*, e poi la ragione vera: *"per essere variazioni devi
+// avere 2 facce; i retro ne hanno una"*.
+// 📌 NON E' UN FATTO SUI DATI, E' UNA REGOLA DEL MODELLO. Una variazione si distingue dalle sorelle
+// NEL RETRO: senza una seconda faccia il concetto non esiste. Il codice lo dice in una riga -
+// `_schedaDueFoto()` comincia con `if (f.section === 'retros') return false`. Quindi non e' che di
+// retro-variazione non ce ne sono: non possono essercene.
+// ⚠️ E IO AVEVO LETTO IL CONTRARIO. In `saveFigurine` c'e' `if (section !== 'retros' && (isVariation
+// || isUnofficialVariation) && !retro)`, e l'avevo presa come prova che il caso fosse previsto. Era
+// una GUARDIA DIFENSIVA - salta un controllo che li' non ha senso - non un permesso. Una guardia
+// dice cosa il codice si difende dal ricevere, non cosa il modello ammette.
+// 📌 LA LEZIONE: una distanza sotto soglia fra due colori che non possono comparire insieme non e'
+// un conflitto. Misurare e' meccanico; sapere se i due si incontrano richiede il MODELLO, e il
+// modello lo conosce Franco. La v6.404 ha speso uno spostamento e l'ultima famiglia di tinta libera
+// per un conflitto impossibile.
+// ⚠️ Il canarino #fff275 RESTA sulla «Variazione non ufficiale»: non si tocca nulla d'altro.
+// Se un giorno nascesse un retro-variazione, i due gialli si incontrerebbero davvero - e allora la
+// leva e' spostare la VERSIONE, non il campo (le versioni sono un codice, i campi sono fondale).
+const COL_CATEGORIA = '#ffd84d';    // giallo
 const COL_SOTTOCAT  = '#ffa94d';    // arancione
 // 🆕 v6.277 - IL COLORE DELL'IDENTITA' DI UN OGGETTO: numero, nome e sottonome. Nato nella prova
 // della v6.273-276 come `_COL_NOME` dentro il disegno della card, dove bastava perche' il posto era
@@ -30560,10 +30742,25 @@ function _fraseTipologie(n) {
     : `(in ${n} item type${n === 1 ? '' : 's'})`;
 }
 
+// 🔧 v6.417 (Franco) - «ARTICOLI», non «risultati».
+// Franco: *"nel totale della ricerca, cambia «oggetti trovati» in «articoli trovati»"*, e poi,
+// chiarito: *"articoli, non risultati"*.
+//
+// 🔴 LA PAROLA CAMBIA IN UN POSTO E CAMBIA OVUNQUE, ed e' esattamente il guadagno della v6.407:
+// questa funzione la usano il TOTALE in cima e i due SOTTOTOTALI (per serie e per tipologia). Prima
+// di allora il totale diceva «oggetti» e i sottototali «risultati» - due parole per la stessa cosa
+// a tre righe di distanza. Adesso e' una parola sola, e cambiarla e' una riga.
+// 📌 TERZA PAROLA IN UN GIORNO, e non e' indecisione: «oggetti» era il termine vecchio,
+// «risultati» descriveva il MECCANISMO (cosa ha trovato la ricerca), «articoli» descrive la COSA
+// (cosa sono quegli oggetti nel dominio). L'ultima e' quella giusta perche' e' la parola che Franco
+// usa parlando delle sue figurine - e il sito parla la sua lingua, non quella del motore di ricerca.
+// ✅ E si allinea con `_fraseTipologie`, che dalla v6.409 dice «tipologie di ARTICOLI».
+// ⚠️ In inglese torna `item/items`, che era la forma prima della v6.407 e che «articolo» traduce:
+// `result/results` era il compagno di «risultati» e se ne va con lui.
 function _frasePerQuesta(n) {
   return (currentLang === 'it')
-    ? `${n} ${n === 1 ? 'risultato' : 'risultati'}`
-    : `${n} result${n === 1 ? '' : 's'}`;
+    ? `${n} ${n === 1 ? 'articolo' : 'articoli'}`
+    : `${n} item${n === 1 ? '' : 's'}`;
 }
 function renderCatalogSearch(q) {
   // 🆕 v6.405 (Franco) - LE DUE MINIATURE, E IL RAPPORTO FRA LORO SCRITTO UNA VOLTA SOLA.
@@ -34851,6 +35048,11 @@ function renderItems() {
     // v6.020 — !_soloFronteMobile(): senza retro in griglia nessuna card e' larga, quindi il
     // passaggio a flex non serviva a niente e cambiava comunque la disposizione delle card.
     const useFlexForWideMode = currentSection === 'figurines' && _retroViewMode === 'destra-piena' && !_soloFronteMobile();
+    // 🔴 v6.418 - QUI LA v6.416 ACCENDEVA `griglia-allineata`, la classe che serviva al `subgrid`.
+    // Il subgrid non ha funzionato (Franco l'ha visto nell'anteprima) ed e' stato tolto dall'index:
+    // la classe se ne va con lui. Una classe che nessun foglio di stile guarda e' un appiglio che
+    // sembra fare qualcosa, e il giorno che qualcuno ci scrive una regola sopra non sa piu' se
+    // arrivava accesa per caso o per decisione.
     if (useFlexForWideMode) {
       grid.style.display = 'flex';
       grid.style.flexWrap = 'wrap';
@@ -35315,8 +35517,18 @@ function renderItems() {
       : (_mobileFigCard
           ? `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>${scoreInlineHTML}` +
             (_figLabelOnlyNumber() ? '' : `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${f.name}</div>`)
-          : `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>${figLabel ? ' ' : ''}`
-            + `<span style="color:${_COL_NOME};">${catPrefix}${f.name}</span>`);
+          // 🔧 v6.416 (Franco) - NUMERO E NOME SU DUE RIGHE ANCHE SU DESKTOP.
+          // Franco: *"secondo me aiuta anche mettere sempre il numero e il nome delle figurine su
+          // due righe separate; a volte il nome e' lungo e la riga unica potrebbe andare a capo"*.
+          // 📌 NON E' UNA FORMA NUOVA: e' quella che il MOBILE usa gia' (il ramo qui sopra), con la
+          // stessa classe `.fig-name-line`. Le due viste erano divergenti da sempre, e il desktop
+          // era quello che andava a capo in modo imprevedibile - perche' «167 MAURO CENTAURO» sta
+          // su una riga e «169 OLIVIERI SPARVIERO» no, e la card cambia altezza secondo il nome.
+          // ⚠️ Il ripiego `_figLabelOnlyNumber()` NON si copia dal mobile: li' serve perche' con
+          // pochissimo spazio il nome puo' essere gia' dentro l'etichetta. Su desktop il nome si
+          // scrive sempre, ed e' la decisione che quel ramo prende da sempre.
+          : `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>`
+            + `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${f.name}</div>`);
     const imgAspectRatio = currentSection === 'retros' ? '1.6' : '1';
     // LA SCRITTA DEL TIPO VIVE SOLO NEI RETRO (v5.705).
       // Nelle FIGURINE era ridondante: il badge in alto a destra dice gia' il tipo, ed
