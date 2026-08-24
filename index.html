@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.397"></script>
-<link rel="stylesheet" href="css/style.css?v=6.397">
+<script src="js/email.min.js?v=6.414"></script>
+<link rel="stylesheet" href="css/style.css?v=6.414">
 
 
 <style>
@@ -20,40 +20,61 @@
    📌 `.fig-badge-free` c'e' gia' anche se il badge non puo' ancora comparire: nasce accanto alla
    sua variabile, non in un'altra release, cosi' non resta una classe da ricordarsi. */
 :root {
-  /* 🆕 v6.372 (Franco) — DUE COLORI DI VERSIONE SPOSTATI, e stanno QUI e non in `css/style.css` per
-     la ragione per cui ci sta gia' `--type-free`: l'index e' l'unico foglio che vive nella cartella
-     di lavoro, quindi una tinta dichiarata qui entra nella PREVIEW e si guarda prima di pubblicare.
-     Definita dopo il `<link>` a style.css, quindi vince su quella.
-     ⚠️ I valori vecchi restano in `css/style.css` e non danno fastidio — ma sono la copia che al
-     prossimo che li legge dira' il falso. Vanno riallineati quando si tocchera' quel file.
+  /* 🔄 v6.404 (Franco) — LA ROTAZIONE DELLA TAVOLOZZA DELLE VERSIONI, e adesso i sei colori
+     DICONO qualcosa. Fino alla v6.403 erano sei tinte diverse e basta: la scelta di ciascuna era
+     nata dal doversi distinguere dalle altre, non dal significare. Franco le ha rimesse in scala:
 
-     1. `--type-unofficial`: era #7fd4ff, un azzurro a distanza 90 da `--info`, il colore del NOME.
-        Franco: *"il colore code azzurro di «Variazione non ufficiale» e' molto simile a quello del
-        campo NOME"*. Era la coppia PIU' VICINA di tutto il sito: la seconda, `--action`, sta a 182.
-        📌 Si e' spostata la VERSIONE e non il NOME: `--info` e' il colore dell'identita' (numero,
-        nome, sottonome) e ha una costante apposta, `COL_IDENTITA` (v6.277), creata perche' quei tre
-        restino uguali in punti lontani. E il vincolo appartiene alla tavolozza delle versioni, che
-        e' un CODICE: deve distinguersi al suo interno e dal testo attorno. Il nome e' il fondale.
-        Adesso: 176 dal nome.
+        base            #ffffff   bianco    — l'oggetto normale, nessun segnale
+        ufficiale       #9be89b   VERDE     — approvato
+        NON ufficiale   #fff275   GIALLO    — attenzione
+        change          #ff9ecb   rosa      — (invariato, vive in css/style.css)
+        omaggio         #ffa94d   arancione — fuori serie
+        errore stampa   #ff6464   ROSSO     — sbagliato
 
-     2. `--type-printerror`: era #ff7a6b, a distanza 107 da `--type-official` (#ffa94d). Questa non
-        l'aveva segnalata Franco: e' saltata fuori misurando la tavolozza tutta insieme, ed era messa
-        peggio dell'azzurro — perche' quelle due sono ENTRAMBE etichette di versione, e compaiono
-        affiancate nelle pillole del riquadro, dove distinguerle e' tutto il punto.
-        📌 Si e' spostato l'ERRORE e non l'UFFICIALE, e lo dice la misura: l'arancio non ha dove
-        andare senza finire addosso a `CATEGORIA` (#ffd84d) o a `SOTTOCAT` — con cui, fra l'altro, e'
-        gia' IDENTICO (#ffa94d entrambi, distanza 0: una collisione esatta che nessuno aveva notato).
-        Il corallo invece aveva spazio. Adesso: 189 dall'ufficiale.
-        📌 E si allontana anche da `--danger` (#ff6464), da cui distava una trentina: un colore di
-        versione che sembra il rosso «pericolo» del sito era un'altra ambiguita', piu' silenziosa.
+     📌 IL GUADAGNO NON SI MISURA IN DISTANZE: è che verde/giallo/rosso si leggono senza legenda.
+     Le distanze dicono solo che non si è pagato niente per averlo — la coppia interna più vicina
+     passa da 145 a 137, cioè resta dov'era.
 
-     ⚠️ RESTA APERTA la collisione `--type-official` ≡ `SOTTOCAT`: sono lo stesso identico colore.
-     Non si incontrano quasi mai nello stesso punto, ma e' una collisione esatta, non una
-     somiglianza — e la tavolozza a questo punto e' satura: le famiglie di tinta libere sono finite.
-     Chiuderla vuol dire spostare la SOTTOCATEGORIA, non una versione. */
-  --type-unofficial: #b98cff;
-  --type-printerror: #e8557c;
-  --type-free: #9be89b; }
+     🔴 IL GIALLO È #fff275, scelto fra nove provati: 157 dal vicino più prossimo (il verde
+     dell'ufficiale) e contrasto 15,7:1. Con lui la coppia interna più vicina del codice diventa
+     `omaggio ↔ errore` a 144 — cioè il giallo smette di essere il punto debole della tavolozza,
+     e 144 è MEGLIO dei 139 di prima della rotazione.
+     ⚠️ IL PRIMO CANDIDATO ERA #ffe873, e sarebbe stato peggio (142, e per giunta contro
+     l'arancione dell'omaggio). È stato scartato solo perché la misura è stata rifatta con la
+     metrica GIUSTA: vedi il riquadro qui sotto.
+     📌 E #ffe873 era anche il giallo che la v6.397 aveva bocciato perché stava a 34 da
+     `COL_CATEGORIA`. Quel motivo qui è caduto — la CATEGORIA si è spostata — ma ne è saltato fuori
+     un altro. Un colore non è scartato per sempre: è scartato *data una tavolozza*.
+
+     🔴 LA METRICA: `√(2ΔR² + 4ΔG² + 3ΔB²)`, ed è scritta in `prove/prova-v6372.js`. Le prime misure
+     di questa release erano state fatte con *redmean*, ricostruita a occhio perché la formula vera
+     non era stata cercata dove stava: dava 96 dove il documento diceva 90, e su quei numeri
+     approssimati il giallo scelto sarebbe stato un altro. Ritrovata leggendo la suite invece di
+     dedurla. Vale la regola di §9: citare la fonte, non la memoria — e la fonte, per una misura,
+     è il codice che l'ha fatta la prima volta.
+     📌 Un colore scartato non è scartato per sempre: era scartato *data una tavolozza*. Quando la
+     tavolozza si muove, le bocciature vanno riaperte invece che ereditate.
+
+     🔴 E `--danger` SI SPOSTA PERCHÉ L'ERRORE DI STAMPA GLI HA PRESO IL POSTO. #ff6464 era il rosso
+     "pericolo" del sito; adesso è la versione «errore di stampa», e i due non possono essere lo
+     stesso colore. `--danger` prende #e8557c, che è il valore che l'errore di stampa lascia libero.
+     ⚠️ E CON LUI `--danger-rgb`, che il CSS non sa ricavare da un esadecimale: se restasse
+     255,100,100 le ombre e i fondi trasparenti resterebbero del rosso di ieri, e sarebbe un
+     disallineamento invisibile — è la stessa trappola scritta per `--action-admin-rgb`.
+     📌 Lo scambio errore↔danger NON guadagna distanza: i due valori distano 60 fra loro prima e
+     dopo, si scambiano il posto. Il guadagno è solo semantico, e Franco l'ha scelto sapendolo.
+
+     ⚠️ RESTA APERTA, e si è spostata di posto: `--type-free` (#ffa94d) è ora IDENTICO a
+     `COL_SOTTOCAT` — distanza 0. Fino a ieri quella collisione ce l'aveva `--type-official`, quindi
+     non è nata qui: ha cambiato inquilino. Si chiude portando la SOTTOCATEGORIA sul viola #b98cff
+     che «non ufficiale» ha appena lasciato libero (292 dall'omaggio, 267 dalla categoria nuova).
+     Non è stato fatto perché Franco ha nominato solo la CATEGORIA. È una riga. */
+  --type-official:   #9be89b;
+  --type-unofficial: #fff275;
+  --type-free:       #ffa94d;
+  --type-printerror: #ff6464;
+  --danger:          #e8557c;
+  --danger-rgb:      232,85,124; }
 
 /* 🆕 v6.374 (Franco) — I COLORI DELLE QUATTRO SCATOLE DI LOG, e un interruttore per cambiarli.
    Franco: *"lo sfondo e' blu e scriviamo in azzurro sopra al blu; gia' non e' il massimo. Poi
@@ -584,23 +605,50 @@ button.back-btn { color:#ffffff; }
    il sito non fa più. È il prezzo dello scavalcamento, e si paga sapendolo. */
 .card-tag { color: var(--text); }
 
-/* 🆕 v6.397 (Franco) — IL COLORE DEI TITOLI DELLE CARD DEGLI HUB, e dell'etichetta di
-   raggruppamento nella ricerca globale. PROVVISORIO: Franco ha detto "per ora mettiamola in giallo;
-   poi vediamo se confermarlo".
-   📌 ESISTE COME TOKEN PROPRIO PERCHÉ È PROVVISORIO. I punti che lo usano sono quattro e stanno in
-   posti lontani del file: con un valore scritto a mano, confermarlo o cambiarlo vorrebbe dire
-   ritrovarli tutti e quattro — e trovarne tre è il difetto che questa settimana è costato sei
-   release. Così invece si tocca questa riga.
-   🔴 IL VALORE È MISURATO, NON SCELTO A OCCHIO. Il giallo che si sarebbe preso d'istinto (#ffe873)
-   sta a ΔE 13,5 da #ffd84d — il giallo con cui, POCHI PIXEL PIÙ SOTTO NELLA STESSA SCHERMATA, le
-   righe della ricerca scrivono «Variazione» e «Change». Due gialli quasi uguali nella stessa
-   videata, uno che significa "tipo di articolo" e l'altro "versione": è esattamente il difetto che
-   Franco aveva segnalato con l'arancione a ΔE 7. Questo sta a ΔE 27,5 dal giallo versione e a ΔE
-   28+ da tutti e sei i colori del codice, con contrasto 13,5:1 sul fondo delle card.
-   ⚠️ È comunque un giallo, come Franco ha chiesto: più tenue di #ffd84d, non un crema.
-   ⚠️ E NON tocca `.card-title` come classe: quella serve anche le card delle serie nell'Inventario,
-   che Franco non ha nominato e restano bianche. Il colore sta sui tre punti, non sulla classe. */
-:root { --tipo-articolo: #f2e08c; }
+/* 🆕 v6.399 (Franco) — IL NOME DELL'ENTITÀ CHE LA CARD RAPPRESENTA.
+   Il colore dice: "questa parola è il NOME della cosa che questa card, o questo gruppo di
+   risultati, rappresenta" — che è una serie in tre punti su cinque e una tipologia negli altri due.
+   Per questo il token non si chiama più --tipo-articolo come nella v6.397: quel nome era vero
+   allora e sarebbe falso adesso, ed è il difetto che questo progetto rimprovera a «Svuota log».
+   🔵 IL VALORE, IN TRE PASSI E DUE SONO DI FRANCO. v6.397 giallo #f2e08c; v6.398 il blu del
+   selettore Serie/Articoli (#2563eb, cioè --action) — *"troppo scuro"*; v6.399 azzurro.
+   📌 #4db8ff È LO STESSO VALORE DI --info, e non per caso: è l'azzurro che il sito già usa, quindi
+   non nasce una settima tinta da mantenere. Ma resta scritto per esteso e NON come var(--info):
+   sono due manopole con due mestieri diversi che oggi si somigliano, ed è esattamente la lezione
+   dei due arancioni (--accent2 ≡ --action-admin) — il giorno che una cambia, l'altra deve poter
+   restare ferma.
+   ✅ CONTRASTO 8,3:1 sul fondo delle card: il problema della v6.398 (3,5:1, sotto la soglia di
+   4,5:1 per un .card-title di 0,88rem) è chiuso.
+   🔸 IL NODO APERTO, DICHIARATO E NON RISOLTO: --type-unofficial è #7fd4ff, l'azzurro con cui il
+   sito scrive «Variazione non ufficiale». Sta a ΔE 19 da questo, cioè sono parenti a vista, e i due
+   si incontrano in UN punto — dentro un articolo (openProdottoDetail), dove le pillole di
+   _righeTipologie stanno sotto il nome della serie. Nella ricerca globale NON si incontrano:
+   lì «Variazione» e «Change» sono scritti in #ffd84d, giallo. Franco: *"poi vediamo come risolvere
+   il tema delle variazioni non ufficiali"* — quindi è rimandato apposta, non sfuggito.
+   ⚠️ SE SI VOLESSE SCIOGLIERLO CAMBIANDO QUESTO E NON QUELLO: #6aa8ff sta a ΔE 31 dal «non
+   ufficiale» e regge 7,5:1. È una riga.
+   ⚠️ NON tocca `.card-title` come classe: il colore sta sui cinque punti. E NON tocca --action:
+   lo sfondo dei selettori Serie/Articoli resta quello di sempre (Franco, esplicito). */
+/* 🆕 v6.410 (Franco) — L'ETICHETTA «RETRO:» NELLA RICERCA GLOBALE.
+   Franco: *"proviamo a scrivere «RETRO:» in colore beige"*.
+   📌 È UN TOKEN E NON UN VALORE NEL PUNTO, e non è pignoleria: `prova-v6402` sezione B2 vieta i
+   colori scritti a mano dentro `renderCatalogSearch`. Quel divieto nasce dai tre #ffd84d che
+   facevano uscire «Variazione non ufficiale» del colore di «Variazione ufficiale» — un valore
+   scritto a mano è il colore giusto oggi e il colore di ieri il giorno che la tavolozza si muove.
+   🔴 IL BEIGE È SCELTO SU DUE VINCOLI, e il secondo è quello che ha deciso.
+     1. distinguersi da `--text`: «RETRO:» sta ATTACCATO al nome del retro, che è bianco. A 100 di
+        distanza non si vedrebbe che è un altro colore. #bfae91 sta a 236.
+     2. non farsi scambiare per una VERSIONE. Nella stessa pillola compaiono «VARIAZIONE
+        UFFICIALE» in verde, «CHANGE» in rosa, e ora questa etichetta: se il beige si avvicinasse
+        a uno di quei sei, il color code smetterebbe di essere leggibile proprio dove serve.
+   ⚠️ È IL SOLO BEIGE PROVATO CHE RISPETTA LA SOGLIA DI 120. Ne sono stati misurati dieci: tutti i
+   più chiari (#d4c4a8, #e0d0b0, #e5d5b8…) cadono a 110-115 dal verde dell'ufficiale. #bfae91 sta
+   a 128, contrasto 7,7:1 sul fondo delle pillole.
+   ⚠️ SE RISULTA TROPPO SCURO — Franco ha già bocciato due colori per questo — il candidato
+   successivo è #d4c4a8: più chiaro e più «beige», ma a 110 dal verde, cioè un debito dichiarato
+   invece di nessun debito. Una riga. */
+:root { --etichetta-retro: #bfae91; }
+:root { --nome-entita: #4db8ff; }  /* v6.399 - azzurro. Stesso valore di --info, che il sito gia usa */
 
 </style>
 </head>
@@ -3349,7 +3397,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.397"></script>
+<script src="js/app.js?v=6.414"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3373,7 +3421,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.397'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.414'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
