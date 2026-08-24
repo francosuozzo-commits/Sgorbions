@@ -1,6 +1,677 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.414 - LA DATA DI CREAZIONE SENZA L'ORA. Solo app.js.
+//
+//          Franco: *"nella data di creazione degli articoli, non mostriamo mai la ora ma solo la
+//          data"*.
+//
+//          ✅ UN PUNTO SOLO, e contato prima di cercarlo altrove: l'ora si formattava dentro
+//          `_dataCreazioneTesto`, non nei punti che ne mostrano il risultato. Una funzione sola,
+//          una riga.
+//          ⚠️ `toLocaleString` -> `toLocaleDateString`, e non e' pignoleria: togliendo solo `hour`
+//          e `minute` avrebbe funzionato uguale, ma il nome del metodo avrebbe continuato a dire
+//          «data e ora» a chi legge. E' l'etichetta che mente, lo stesso difetto per cui «Svuota
+//          log» e' in attesa di essere rinominato da tre giorni.
+//          📌 E L'ORA NON SI PERDE: `_dataCreazione(f)` la ricava dall'id e torna un Date completo.
+//          Se un domani servisse per ordinare o per una diagnosi, e' li'. Si e' tolta dalla VISTA,
+//          non dal dato - che e' l'unica forma di «togliere» che non chiude porte.
+//
+// v6.413 - LA RICERCA GLOBALE SMETTE DI RISCRIVERE LE REGOLE DELLE FACCE. Solo app.js.
+//
+//          Nasce da tre anomalie che Franco ha segnalato e che io ho diagnosticato TRE VOLTE, e
+//          tre volte sbagliando. Vale la pena scrivere come, perche' l'errore e' sempre lo stesso:
+//            1a) «e' un change senza retroId» - smentito dalla riga che Franco mi aveva incollato,
+//                che conteneva «RETRO: …», il quale si stampa SOLO se il retroId c'e'. L'evidenza
+//                era dentro la domanda.
+//            1b) «la ricerca ripiega il fronte e mostra la foto della base» - smentito da Franco:
+//                *"nella scheda e' corretta; anche nella card"*.
+//            1c) «la ricerca non chiama `_fotoFigurina`, la scheda si'» - smentito da Franco:
+//                *"le figurine da incollare non mostrano la foto manco nella scheda"*.
+//          🔴 IL VIZIO, IN UNA RIGA: leggere nel codice una divergenza VERA e presentarla come LA
+//          CAUSA del sintomo, senza verificare che in quel caso produca quell'effetto. «Esistono
+//          due implementazioni diverse» e «e' questa differenza a farti vedere quello che vedi»
+//          sono due affermazioni, e la seconda va misurata. E' §9.5 - ragionare sulla propria
+//          riformulazione invece che sulle parole dell'altro.
+//
+//          --- QUINDI QUESTA RELEASE NON DIAGNOSTICA NIENTE: TOGLIE LA DIVERGENZA -------------
+//          La ricerca era l'unico punto del sito che RISCRIVEVA le regole delle due facce invece
+//          di chiederle. Adesso chiama `_dueFacce`, la stessa che il commento di
+//          `_mostraSegnapostoFoto` dichiara essere quella «che disegna la card».
+//          Le sue due righe erano indietro di CINQUE casi:
+//            · il ripiego del fronte: `_fotoFigurina` ripiega solo dove il fronte COINCIDE davvero
+//              (v6.080 - «per un CHANGE ripiegare gli metteva come fronte proprio l'immagine che
+//              non lo rappresenta: era un errore, non una mancanza») e risale la catena fino a 4
+//              salti (v6.129). Qui si ripiegava su ogni variazione e change, per un anello solo;
+//            · il retro di un CHANGE si eredita da quello della base (`f.retroId || base.retroId`,
+//              scritto in quattro punti del file). Qui no;
+//            · il RETRO BIANCO (v6.006): qui non esisteva;
+//            · album, bustine e prodotti extra hanno la seconda faccia SUL RECORD (`imgRetro`):
+//              qui non si guardava mai, quindi il retro di un album non compariva MAI;
+//            · le sezioni che una seconda faccia non ce l'hanno (`_schedaDueFoto`).
+//
+//          --- E IL TERZO STATO, che qui mancava -----------------------------------------------
+//          🔴 Card e scheda distinguono TRE casi (v6.079, v6.098): il retro c'e' con la foto, il
+//          retro C'E' ma la foto non e' ancora caricata, il retro non esiste. La ricerca ne aveva
+//          DUE - `url ? <img> : ''` - quindi un retro esistente SENZA FOTO spariva del tutto, e la
+//          pillola mostrava una miniatura sola.
+//          ✅ Adesso il posto resta, con un riquadro tratteggiato e il titolo «Il retro esiste, la
+//          foto non ancora». «C'e' una foto da caricare» e «non c'e' niente da caricare» sono due
+//          cose diverse: un posto vuoto lo dice, il niente lo nasconde.
+//
+//          --- COSA ASPETTARSI, ED E' UNA PREVISIONE FALSIFICABILE ------------------------------
+//          · anomalie 1 e 2 (417 e 600 senza retro): se quei retro esistono e la foto non ce
+//            l'hanno, adesso si vede il riquadro tratteggiato al posto del niente. Se invece
+//            compare una FOTO, allora era il ripiego del change mancante.
+//          · anomalia 3 (da incollare senza foto): si chiude SOLO se quelle figurine hanno un
+//            `baseFigurineId`. Se non ce l'hanno, la foto non comparira' nemmeno adesso - e sara'
+//            un dato da riempire, non un difetto di codice. Lo dice `attaccare()` in
+//            `perche-facce.js`.
+//          ⚠️ Se dopo questa release una delle tre resta, NON e' una quarta ipotesi da fare: e'
+//          il censimento da leggere.
+//
+//          Prove: prova-v6413.js. ESEGUE la ricerca su cinque casi che le due righe vecchie
+//          sbagliavano - change che eredita il retro, retro senza foto, retro bianco, album con
+//          `imgRetro`, change di fronte che NON deve ripiegare - e confronta con `_dueFacce`.
+//
+// v6.412 - «VERSIONE BASE» anche sulle basi, e il nome/numero torna AZZURRO. Solo app.js.
+//
+//          Franco: *"prova a scrivere « - VERSIONE BASE - » dove scrivi « - VARIAZIONE UFFICIALE
+//          - »"*, poi: *"il punto e' il colore. Se la metti bianca e' tutto bianco. Forse dovresti
+//          metterla in bianco, che e' il colore del base, ma dovremmo tornare a mostrare il
+//          nome-numero dei risultati in azzurro, che e' poi il colore che hanno nelle card.
+//          Lo so: sarebbe uguale al nome serie ma proviamo un attimo"*.
+//
+//          --- LA DOMANDA DI FRANCO AVEVA UNA RISPOSTA CHE NON SI ASPETTAVA -------------------
+//          *"Le versioni base non hanno un color code, corretto?"* - no: ce l'hanno, ed e'
+//          `--type-base: #ffffff`. Il bianco NON e' l'assenza di un codice, e' il codice della
+//          BASE. Ma il resto della riga era anch'esso bianco, quindi l'etichetta sarebbe sparita
+//          nel testo: Franco l'ha visto subito e ha spostato il problema invece di forzarlo -
+//          non cambiare il colore della base, ma liberare il bianco dandolo a una cosa sola.
+//
+//          --- NUMERO E NOME TORNANO AZZURRI, E SI USA LA COSTANTE CHE C'ERA GIA' -------------
+//          `COL_IDENTITA` (v6.277) esiste apposta perche' numero, nome e sottonome restino uguali
+//          in punti lontani del sito - ed e' esattamente il colore che quei due hanno nelle card.
+//          Scrivere `var(--info)` a mano qui avrebbe funzionato oggi e sarebbe stata la sesta copia
+//          di una regola che ha gia' una casa.
+//
+//          ⚠️ E COINCIDE COL NOME DELLA SERIE, che dalla v6.399 e' anche lui #4db8ff. Franco lo sa
+//          e ha chiesto di provare lo stesso (*"lo so: sarebbe uguale al nome serie ma proviamo un
+//          attimo"*): e' una scelta, non una svista, e va guardata prima di giudicarla. Se da'
+//          fastidio le due strade sono spostare `--nome-entita` (5 punti, un token) oppure
+//          accettare che l'azzurro voglia dire «identita'» sia della serie sia dell'oggetto - che
+//          e' poi cio' che `COL_IDENTITA` dichiara di significare.
+//
+//          --- UNA VARIABILE NUOVA, NON UNA ALLARGATA ------------------------------------------
+//          🔴 `isVarOrChange` decide DUE cose: se mostrare l'etichetta di versione, e se il fronte
+//          puo' ripiegare sulla foto della base. Allargarla alle basi - la modifica di una riga -
+//          avrebbe fatto ripiegare sulla foto della base una figurina che LA BASE E'.
+//          ✅ Quindi `mostraVersione = sec === 'figurines'`, separata. Due domande diverse che oggi
+//          danno la stessa risposta su quattro casi su cinque non devono condividere una variabile:
+//          e' il modo in cui un difetto entra al primo caso che diverge.
+//
+//          Prove: prova-v6412.js. ESEGUE la ricerca con una figurina BASE e una VARIAZIONE, e
+//          pretende che la base dica «Versione base» e che il fronte della base NON ripieghi.
+//          Aggiornate prova-v6401 (il rastrello dei colori: COL_IDENTITA e' nuovo fra gli ammessi)
+//          e prova-v6396.
+//
+// v6.411 - SPAZIO FRA UNA TIPOLOGIA E LA SUCCESSIVA, nella ricerca globale. Solo app.js.
+//
+//          Franco: *"tra i risultati di una tipologia di articolo e quelli della successiva, lascia
+//          una riga vuota (dello spazio, ecco)"*.
+//
+//          📌 UN `gap` SUL PADRE, NON UN MARGINE PER FIGLIO. E' la lezione della v6.329, e qui vale
+//          per una ragione in piu': i blocchi di sezione senza risultati tornano stringa vuota e
+//          nel DOM non esistono. Con un `margin-bottom` per figlio lo spazio sarebbe finito anche
+//          DOPO l'ultimo gruppo - staccando le pillole dal bordo della card per non dire niente -
+//          e non ci sarebbe stato modo di escludere l'ultimo, perche' QUALE sia l'ultimo dipende da
+//          quali sezioni hanno risultati, non dall'indice del `map`.
+//          ✅ Col `gap` lo spazio sta FRA i figli per costruzione: zero prima del primo, zero dopo
+//          l'ultimo, e il conto dei blocchi non c'entra.
+//
+//          ⚠️ E VIENE VIA ANCHE IL `margin-bottom` DELL'INTESTAZIONE DELLA SERIE. Sommato al gap
+//          avrebbe fatto uno spazio doppio nel punto piu' visibile della card: e' il difetto
+//          classico di chi aggiunge un gap senza togliere i margini che c'erano prima.
+//
+//          🔴 UNA TRAPPOLA SCHIVATA CONTANDO. La stringa da sostituire esiste TRE volte nel file:
+//          una qui e DUE in `renderWantlist`, che non c'entra. Il primo tentativo si e' fermato da
+//          solo perche' pretendeva UNA occorrenza e ne ha trovate tre; senza quel conteggio avrebbe
+//          cambiato anche le spaziature di «Cio' che cerco», in una release che parla d'altro. E'
+//          §5 alla lettera, e stavolta ha pagato subito. Le tre si distinguono per cio' che segue:
+//          qui un a capo, la' `${modeSelector}`.
+//
+//          📌 E UNA NOTA DI PROCEDURA: `rm -rf` sulla cartella e' tornato «Operation not permitted»,
+//          e la catena `&&` si e' fermata li' - la release sembrava scritta e non lo era. Se ne e'
+//          accorta `prove-tutte.py`, che stampa la versione che ha davvero provato (v6.410 mentre
+//          si stava scrivendo la v6.411). Non servivano permessi: `cp -rf` sovrascrive.
+//          ⚠️ Quel numero in coda al riepilogo delle prove NON e' decorativo: e' l'unica cosa che
+//          distingue «settanta verdi» da «settanta verdi sulla versione sbagliata».
+//
+//          Prove: prova-v6411.js. ESEGUE la ricerca e pretende il gap sul contenitore e NESSUN
+//          margine sui blocchi: due spaziature che fanno lo stesso mestiere sono la prossima
+//          divergenza, non una ridondanza innocua.
+//
+// v6.410 - «RETRO:» IN BEIGE nella ricerca globale. index.html e app.js.
+//
+//          Franco: *"nella ricerca globale, proviamo a scrivere «RETRO:» in colore beige"*.
+//
+//          --- DUE SPAN, NON UNO ------------------------------------------------------------
+//          «RETRO:» prende il colore, il NOME del retro resta bianco. E' la stessa distinzione
+//          della v6.404 sul separatore: l'etichetta dice CHE COSA e' il pezzo che segue, il nome
+//          e' il VALORE. Colorarli insieme avrebbe rimesso un colore su un valore, che e' cio' che
+//          questa settimana e' stato tolto dappertutto.
+//          ⚠️ Il « - » davanti resta bianco: e' punteggiatura.
+//
+//          --- IL BEIGE E' SCELTO SU DUE VINCOLI, e il secondo e' quello che ha deciso -------
+//            1. distinguersi da `--text`: «RETRO:» sta ATTACCATO al nome, che e' bianco. Un beige
+//               chiaro a 100 di distanza non si vedrebbe come un colore diverso. #bfae91 sta a 236.
+//            2. non farsi scambiare per una VERSIONE. Nella stessa pillola compaiono «VARIAZIONE
+//               UFFICIALE» in verde e «CHANGE» in rosa: un'etichetta che gli si avvicina rende
+//               illeggibile il color code proprio dove serve.
+//          🔴 DIECI BEIGE MISURATI, UNO SOLO RISPETTA LA SOGLIA DI 120. Tutti i piu' chiari
+//          (#d4c4a8, #e0d0b0, #e5d5b8...) cadono a 110-115 dal verde dell'ufficiale. #bfae91 sta a
+//          128, contrasto 7,7:1 sul fondo delle pillole (--card2, non --card: le pillole hanno un
+//          fondo loro, ed e' il numero che conta).
+//          ⚠️ SE RISULTA TROPPO SCURO - Franco ne ha gia' bocciati due per questo - il successivo
+//          e' #d4c4a8: piu' beige e piu' chiaro, ma a 110 dal verde. Sarebbe un debito dichiarato
+//          invece di nessun debito, ed e' una riga.
+//
+//          --- PERCHE' UN TOKEN PER UN PUNTO SOLO --------------------------------------------
+//          📌 Non e' pignoleria: `prova-v6402` sezione B2 VIETA i colori scritti a mano dentro
+//          `renderCatalogSearch`, e quel divieto nasce dai tre #ffd84d che facevano uscire
+//          «Variazione non ufficiale» del colore di «Variazione ufficiale». La regola e' che un
+//          valore scritto a mano e' il colore giusto oggi e il colore di ieri il giorno che la
+//          tavolozza si muove - ed e' successo due volte in questa stessa giornata.
+//          ✅ Quindi la suite ha imposto la forma giusta senza che nessuno dovesse ricordarsela.
+//
+//          Prove: prova-v6410.js. ESEGUE la ricerca e pretende che il beige stia SOLO
+//          sull'etichetta: un colore messo sullo span intero passerebbe qualunque controllo di
+//          lettura, perche' il codice sarebbe identico a meno di dove si chiude un tag.
+//
+// v6.409 - «(in M tipologie di ARTICOLI)». Due parole. Solo app.js.
+//
+//          Franco: *"scusa, volevo dire «(in M tipologie di articoli)»"*.
+//
+//          Il plurale sta su ARTICOLI e non segue `n`: una tipologia raccoglie articoli al plurale
+//          anche quando la tipologia e' una sola. Quindi «1 tipologia di articoli» - che a leggerlo
+//          sembra un refuso e non lo e', ed e' il motivo per cui la prova lo pretende esplicitamente
+//          invece di lasciarlo dedurre a chi legge il codice fra sei mesi.
+//
+//          ⚠️ IL SITO ALTROVE DICE «di articolo», SINGOLARE, e il conto e' stato fatto prima di
+//          toccare: 5 «tipologia/e di articolo», 51 «tipo di articolo» - compreso il nome dell'hub,
+//          che Franco stesso chiama «hub Tipologia di articolo». Questa frase e' adesso l'unica del
+//          sito a dire «articoli».
+//          📌 E' esattamente la famiglia della divergenza chiusa DUE RELEASE FA - il totale diceva
+//          «oggetti» e i sottototali «risultati» - solo piu' piccola e appena aperta invece che
+//          appena chiusa. Non e' un errore: e' una scelta di Franco, presa mentre guardava la
+//          frase. Ma va scritta, perche' la prossima volta che qualcuno cerca «tipologie di
+//          articolo» nel sorgente questa non la trovera'.
+//          ✅ Se un domani da' fastidio, si allinea in un verso o nell'altro: o questa torna
+//          singolare, o le cinque diventano plurali. Sono sei punti in tutto.
+//
+//          Prove: aggiornata prova-v6408, che pretendeva la forma di ieri.
+//
+// v6.408 - «N RISULTATI (IN M TIPOLOGIE DI ARTICOLO)» accanto a ogni serie. Solo app.js.
+//
+//          Franco: *"affianco ad ogni serie scrivi «N risultati (in M tipologie di articolo)»"*.
+//
+//          🔴 IL CONTO SI FA SU CIO' CHE LA PAGINA MOSTRA, non su cio' che i dati hanno, ed e'
+//          l'unica insidia di questa release. La riga ovvia sarebbe
+//          `new Set(figs.map(f => f.section)).size`: una in meno, e sbagliata. I risultati vengono
+//          raggruppati scorrendo `PRODOTTI_INVENTARIO`, quindi un oggetto con una `section` fuori
+//          da quell'elenco NON compare - ma il Set lo conterebbe lo stesso. Il numero direbbe «in 4
+//          tipologie» sopra un elenco che ne mostra 3.
+//          📌 E sarebbe un difetto silenzioso della peggior specie: nessun errore, nessuna riga
+//          rossa, solo un conto che non torna a chi si mette a verificarlo - cioe' esattamente il
+//          tipo di cosa che fa perdere fiducia in tutti gli altri numeri della pagina.
+//          ✅ Si filtra `PRODOTTI_INVENTARIO`, che e' la stessa fonte da cui il raggruppamento
+//          pesca. Se un giorno una sezione entra o esce, entrambi la seguono.
+//
+//          --- E LE PARENTESI, STAVOLTA, SONO VOLUTE -------------------------------------------
+//          ⚠️ Due release fa Franco ne ha fatte togliere due paia: *"non ho mai capito il
+//          significato di quelle parentesi; toglile"*. Quelle erano un RIPIEGO - servivano a far
+//          risaltare un'etichetta che il colore non distingueva piu' (v6.394), e quando il colore
+//          e' tornato erano rimaste come secondo segnale sulla stessa cosa.
+//          📌 Queste sono una PRECISAZIONE: dicono che il secondo numero commenta il primo.
+//          Stessa forma, due mestieri opposti - e chi arrivera' qui cercando «togli le parentesi»
+//          deve sapere quale delle due sta guardando. E' scritto sia nel codice sia qui.
+//
+//          --- LA FUNZIONE STA ACCANTO ALLA SUA PARENTE, NON DENTRO -----------------------------
+//          `_fraseTipologie` vive accanto a `_frasePerQuesta`, che nella v6.407 aveva appena
+//          assorbito il riepilogo in cima. La tentazione era di fonderle - fanno due frasi che
+//          compaiono sempre insieme - ma contano due cose diverse: quanti sono, e in quante
+//          famiglie si dividono. Una funzione con due mestieri si separa da sola alla prima
+//          richiesta che tocca solo una delle due.
+//
+//          Prove: prova-v6408.js. ESEGUE la ricerca con oggetti di TRE sezioni diverse piu' uno con
+//          una `section` inventata, e pretende che il conto dica 3 e non 4: e' la controprova del
+//          punto qui sopra, e con un solo tipo di oggetto nei finti sarebbe passata comunque.
+//
+// v6.407 - «TROVATI 40 RISULTATI IN 5 SERIE», e la parola diventa una sola. Solo app.js.
+//
+//          Franco: *"la frase «Trovati 40 oggetti in 5 serie» diventa «Trovati 40 articoli in 5
+//          serie»"*, e subito dopo: *"anzi, Trovati 40 risultati in 5 serie"*.
+//
+//          🔴 LA SECONDA VERSIONE E' MIGLIORE DELLA PRIMA, e vale la pena dire perche': «risultati»
+//          e' la parola che i SOTTOTOTALI usavano gia'. Il totale in cima diceva «oggetti», le
+//          righe sotto dicevano «risultati» - due parole per la stessa cosa nella stessa videata, a
+//          tre righe di distanza. Con «articoli» sarebbero diventate due parole diverse lo stesso;
+//          con «risultati» diventano una.
+//          📌 Nessuno l'aveva segnalato in mesi. E' il genere di divergenza che si legge cento
+//          volte senza vederla, perche' ogni singola riga e' scritta bene.
+//
+//          --- E IL CONTO PASSA DALLA FUNZIONE CHE GIA' C'ERA ----------------------------------
+//          Il riepilogo scriveva a mano l'accordo singolare/plurale, in due lingue. Ma
+//          `_frasePerQuesta` - la funzione dei sottototali, rifatta nella v6.402 - quell'accordo lo
+//          fa gia', e dalla v6.402 dice esattamente «40 risultati» / «40 results».
+//          ✅ Quindi qui c'era la SECONDA copia della stessa grammatica, con dentro un'altra parola.
+//          Adesso la parola e la sua grammatica vivono in un posto solo: cambiarle e' una riga, e
+//          non ci si puo' dimenticare meta' dei punti.
+//          ⚠️ RESTA FUORI il participio «Trovat{o|i}»: si accorda in italiano e in inglese non
+//          esiste («Found»), quindi appartiene alla frase e non al conto. Tirarlo dentro avrebbe
+//          voluto dire mettere una regola italiana in una funzione bilingue.
+//
+//          ✅ VERIFICATO PRIMA DI TOCCARE che la frase non abbia un `data-i18n`: e' costruita a
+//          stringa nel template, non pescata dal dizionario, e nel dizionario non esiste nessuna
+//          chiave con «Trovat». E' la trappola di §5 - «cambiare un testo nell'HTML e lasciare il
+//          dizionario significa vedere la modifica sparire da sola» - e costava dieci secondi
+//          escluderla.
+//
+//          Prove: aggiornata prova-v6337, che contava DUE richiami di `_frasePerQuesta` e adesso
+//          ne trova quattro (i due sottototali piu' i due rami di lingua del riepilogo).
+//
+// v6.406 - IL TESTO DELLA RICERCA SCENDE DA ×1,5 A ×1,25, e l'emoji di ripiego smette di
+//          seguire il testo. Solo app.js.
+//
+//          Franco: *"troppo grande; facciamo rollback della modifica fatta ed ingrandisci del 50%
+//          (ora hai ingrandito del 100%)"*, e poi, chiarito: *"ok, hai fatto 1,5x; possiamo invece
+//          fare un 1,25 del valore precedente?"*.
+//
+//          --- IL NUMERO ERA GIUSTO, LA PERCEZIONE ANCHE ------------------------------------------
+//          La v6.405 aveva applicato esattamente ×1,5, cioe' +50%: era quello che era stato
+//          chiesto. Ma un +50% di ALTEZZA e' un +125% di AREA, ed e' l'area che l'occhio legge -
+//          da cui «hai ingrandito del 100%».
+//          📌 LA LEZIONE, e non riguarda i font: una percentuale su una misura lineare non descrive
+//          quello che si vede. La discussione si e' chiusa in una riga quando i numeri sono
+//          diventati PIXEL invece di percentuali - 11px, 16px, 14px sono cose su cui due persone
+//          possono essere d'accordo, «+50%» no.
+//          ⚠️ E la richiesta letterale («rollback, poi +50%») avrebbe rifatto ×1,5 daccapo. Non e'
+//          stata eseguita alla lettera: e' stato chiesto, ed e' venuto fuori che voleva ×1,25.
+//          Costava una riga di conversazione, e alla lettera sarebbe costata una release.
+//
+//          --- COSA CAMBIA ------------------------------------------------------------------------
+//          13 dimensioni, tutte riportate a ×1,25 dell'ORIGINALE (non ×0,833 di quelle attuali:
+//          si riparte dal valore di prima, cosi' non si accumulano arrotondamenti).
+//            0,65 → 0,8125 rem   (10 → 13px)      0,88 → 1,1     rem   (14 → 18px)
+//            0,68 → 0,85   rem   (11 → 14px)      0,90 → 1,125   rem   (14 → 18px)
+//            0,75 → 0,9375 rem   (12 → 15px)      0,95 → 1,1875  rem   (15 → 19px)
+//          🔴 IL ROUND-TRIP E' CONTROLLATO, non sperato: ogni valore attuale viene diviso per 1,5 e
+//          si PRETENDE che l'originale sia un numero pulito prima di rimoltiplicare. Se un giorno
+//          qualcuno ritocca una singola dimensione a mano, quel controllo salta e lo dice, invece di
+//          riscalare in silenzio una misura che non era mai stata scalata.
+//
+//          --- E UN DIFETTO CHE IL ×1,5 HA SMASCHERATO ---------------------------------------------
+//          🔴 IL 🎴 NON E' TESTO. E' il ripiego che compare al posto della FOTO quando una serie non
+//          ne ha, e stava fra i font-size della ricerca: quindi la v6.405 l'ha ingrandito insieme al
+//          testo, portandolo a 24px accanto a miniature da 88. Sproporzionato in un verso o
+//          nell'altro lo era gia' prima (16px contro 28), ma con numeri piccoli non si vedeva.
+//          ✅ Adesso segue `_MINI_SERIE`: occupa la stessa larghezza della foto che sostituisce, ed
+//          e' alto il 60% di quella. Il giorno che la miniatura cambia, cambia anche lui.
+//          📌 Il difetto non e' stato trovato guardando: e' stato trovato perche' il censimento
+//          delle dimensioni lo ha messo in fila con le altre, e a quel punto si vedeva che era
+//          l'unico a 1rem. Contare prima di sostituire fa trovare cose che non si cercavano.
+//
+//          ⚠️ LA MINIATURA DELLA SERIE RESTA A 88px. Franco non l'ha nominata in questo giro, e la
+//          leva per abbassarla senza toccare il rapporto 2:1 e' `_MINI_RISULTATO`.
+//
+//          Prove: aggiornata prova-v6405, la cui soglia era tarata sul ×1,5.
+//
+// v6.405 - LA RICERCA GLOBALE SI LEGGE: font +50%, e la miniatura della serie il doppio di
+//          quella dei risultati. Solo app.js.
+//
+//          Franco: *"proviamo ad ingrandire il font usato per tutto il testo usato nei risultati
+//          della ricerca globale; di un fattore 50%"*, e *"nella ricerca globale la miniatura della
+//          serie la vorrei piu grande della miniatura dei risultati: di un fattore 2:1"*.
+//
+//          --- IL FONT --------------------------------------------------------------------------
+//          14 occorrenze, tutte dentro `renderCatalogSearch`, tutte per 1,5: 1 / 0,95 / 0,9 /
+//          0,88×2 / 0,75×3 / 0,68×5 / 0,65 rem.
+//          🔴 CENSITE PRIMA DI TOCCARLE. Erano sette valori diversi e a occhio se ne vedevano
+//          quattro: le cinque a 0,68rem stanno in cinque punti lontani della stessa riga (numero,
+//          versione, tipologia, «Change» dei retro, coda del retro). Moltiplicare "quelle che si
+//          vedono" avrebbe lasciato indietro le altre, e il difetto sarebbe stato invisibile -
+//          testo piccolo accanto a testo grande sembra una gerarchia, non una dimenticanza.
+//          📌 E RISOLVE DA SE' LA DOMANDA DI PRIMA, che era: *"l'errore di stampa si legge poco,
+//          per via del contrasto col nero sotto"*. Il rosso #ff6464 sta a 5,8:1 sul fondo delle
+//          pillole - sopra la soglia di 4,5, ma il piu' basso dei sei di quasi tre punti. Il
+//          contrasto NON e' cambiato: e' cambiata la dimensione, da 0,68rem (~11px) a 1,02rem
+//          (~16px), e a quella misura 5,8:1 e' un'altra cosa.
+//          ⚠️ Quindi la questione del rosso e' SOSPESA, non chiusa: se dopo l'ingrandimento si
+//          legge ancora poco, le strade misurate restano #ff7a7a (6,7:1, e 158 dal rosa del Change)
+//          oppure un `font-weight:500`, che oggi non c'e' - il testo della versione eredita il 400.
+//          🔴 NON si e' schiarito il rosso: #ff9a9a arrivava a 8,3:1 ma scendeva a 85 dal Change,
+//          sotto la soglia di 120 che `prova-v6372` difende. Sarebbe stato rompere il CODICE dei
+//          colori per aggiustare la leggibilita' di uno solo.
+//
+//          --- LE MINIATURE ---------------------------------------------------------------------
+//          🔴 IL RAPPORTO ERA ROVESCIATO, e va detto perche' Franco ha chiesto «piu' grande»
+//          credendo forse che fosse gia' un po' piu' grande: la serie stava a 28px e i risultati a
+//          44. L'intestazione del gruppo era PIU' PICCOLA delle cose che raggruppa. Nessuno
+//          l'aveva misurato perche' i due numeri vivono a duecento righe di distanza e non si
+//          vedono mai insieme - lo stesso meccanismo delle tre forme dell'anno (v6.400).
+//          📌 IL 2:1 E' SCRITTO COME RELAZIONE: `_MINI_SERIE = _MINI_RISULTATO * 2`. Due costanti
+//          indipendenti avrebbero ricreato in un mese la situazione che questa release corregge.
+//          E la richiesta a Cloudinary della serie segue la costante (w_176 per 88px, il doppio per
+//          gli schermi fitti) invece di restare il `w_40` di quando la miniatura era 28.
+//          ⚠️ La richiesta dei RISULTATI resta `w_64` e non segue la sua costante: e' voluto. La
+//          serie e' UNA per gruppo, i risultati sono centinaia, e legare anche quella avrebbe
+//          alzato il peso di ogni ricerca per una nitidezza che a 44px non si vede.
+//          ⚠️ 88px E' GRANDE. E' quello che il 2:1 comporta partendo da 44, ed e' da guardare: se
+//          l'intestazione ruba troppo spazio, la strada e' abbassare `_MINI_RISULTATO`, che porta
+//          giu' tutte e due mantenendo il rapporto.
+//
+//          Prove: prova-v6405.js. ESEGUE la ricerca e misura l'HTML VERO - i font che escono e i
+//          due lati delle miniature - invece di guardare le costanti: una costante giusta usata in
+//          un punto sbagliato passerebbe qualunque controllo di lettura.
+//
+// v6.404 - LA TAVOLOZZA DELLE VERSIONI DIVENTA UNA SCALA, e la categoria si sposta per farle
+//          posto. index.html e app.js.
+//
+//          Proposta di Franco, per intero:
+//          *"variazioni ufficiali: #9be89b / variazioni non ufficiali: un giallo canarino /
+//            change: #ff9ecb / omaggio: #ffa94d / errori di stampa: #ff6464. Siccome il #ff6464 era
+//            usato per il danger, per il danger puoi usare #e8557c. Cosa ne pensi?"*
+//
+//          --- PERCHE' SI FA, ed e' l'unica ragione che conta -----------------------------------
+//          Fino alla v6.403 i sei colori erano sei tinte diverse e basta: ognuna scelta per
+//          distinguersi dalle altre, nessuna per SIGNIFICARE. Adesso sono una scala - verde
+//          approvato, giallo attenzione, rosso sbagliato - e si leggono senza legenda.
+//          📌 Le distanze non sono il guadagno: dicono solo che non si e' pagato niente per
+//          averlo. La coppia interna piu' vicina passa da 145 a 137, cioe' resta dov'era.
+//
+//          --- IL GIALLO, E UNA LEZIONE SULLE BOCCIATURE ----------------------------------------
+//          #ffe873, scelto fra dieci provati: 137 dal vicino piu' prossimo, contrasto 14,7:1.
+//          🔴 E' LO STESSO GIALLO CHE LA v6.397 AVEVA SCARTATO, con tanto di misura scritta nel
+//          CHANGELOG: stava a 34 da COL_CATEGORIA. Ma la CATEGORIA adesso si e' spostata, e quel
+//          motivo e' caduto.
+//          📌 Un colore non e' scartato per sempre: e' scartato DATA UNA TAVOLOZZA. Quando la
+//          tavolozza si muove, le bocciature vanno riaperte invece che ereditate - altrimenti si
+//          eredita per anni un divieto la cui ragione non esiste piu', e nessuno se ne accorge
+//          perche' la ragione e' scritta accanto al divieto e sembra ancora valida.
+//
+//          --- LA CATEGORIA -------------------------------------------------------------------
+//          COL_CATEGORIA da #ffd84d (giallo) a #3fd0b0 (turchese). Si e' spostato il CAMPO e non la
+//          VERSIONE, ed e' la regola della v6.372: le versioni sono un CODICE e devono
+//          distinguersi, i campi sono fondale. Franco, messo davanti alla scelta, ha deciso cosi'.
+//          Il turchese e' l'unica famiglia di tinta rimasta libera: 355 da SOTTOCAT (il suo vicino
+//          di scheda), 350 dal giallo nuovo, contrasto 9,4:1.
+//          ✅ UN SOLO PUNTO DA TOCCARE: dei sette `#ffd84d` in app.js, sei sono COMMENTI che
+//          raccontano vecchie misure e uno solo e' codice vivo. Contati prima di sostituire.
+//
+//          --- IL DANGER, E LA COPIA CHE IL CSS NON SA RICAVARE ---------------------------------
+//          `--danger` da #ff6464 a #e8557c, perche' #ff6464 e' diventato l'errore di stampa e i due
+//          non possono essere lo stesso colore. Ha 62 usi, quindi si e' cambiato il TOKEN e nessun
+//          punto d'uso.
+//          🔴 E CON LUI `--danger-rgb`, da 255,100,100 a 232,85,124. Il CSS puro non ricava un rgb
+//          da un esadecimale, quindi quel valore e' una copia inevitabile - la stessa che esiste
+//          per `--action-admin-rgb`. Lasciarlo indietro avrebbe tenuto le ombre e i fondi
+//          trasparenti sul rosso di ieri: un disallineamento che non da' errore e non si vede,
+//          perche' un'ombra sbagliata di poco sembra un'ombra.
+//          📌 Lo scambio errore↔danger NON guadagna distanza: i due valori distano 60 fra loro
+//          prima e dopo, si scambiano il posto. Detto a Franco prima, e scelto lo stesso: il
+//          guadagno e' che «errore di stampa» adesso e' rosso.
+//
+//          --- E IL SEPARATORE BIANCO ----------------------------------------------------------
+//          Franco: *"nella ricerca globale metti ' - ' anche prima della tipologia di versione (in
+//          bianco)"*. Il trattino fra versione e tipologia c'era dalla v6.402 ma stava DENTRO lo
+//          span colorato. Adesso i separatori sono in `_sep`, uno solo, bianco.
+//          📌 LA REGOLA: il colore appartiene ai VALORI, la punteggiatura al testo. Un trattino non
+//          e' una versione. E' la stessa che alla v6.401 ha lasciato bianco il « - » di «RETRO:».
+//
+//          ⚠️ RESTA APERTA, e ha solo cambiato inquilino: `--type-free` (#ffa94d) e' ora IDENTICO a
+//          COL_SOTTOCAT, distanza 0. Fino a ieri quella collisione ce l'aveva `--type-official`.
+//          Si chiude portando la SOTTOCATEGORIA sul viola #b98cff che «non ufficiale» ha appena
+//          lasciato libero. Non fatto: Franco ha nominato solo la CATEGORIA.
+//
+//          Prove: prova-v6404.js. Aggiornate prova-v6394 e prova-v6402, che leggevano i colori
+//          vecchi. E `colori-etichette.html` si rigenera con `tavolozza.py`.
+//
+// v6.403 - L'ANNO ESCE DALLA RICERCA GLOBALE. Solo app.js.
+//
+//          Franco: *"non ti ho mai chiesto di mettere l'anno sotto al nome della serie nei
+//          risultati della ricerca globale; toglilo"*.
+//
+//          🔴 E LA RESPONSABILITA' E' MIA, non di una frase ambigua. Franco aveva detto *"mettiamo
+//          l'anno della serie sempre sotto al nome della serie"*; la parola «sempre» l'ho tradotta
+//          in QUATTRO punti - i tre che il nome della serie ce l'avevano gia' scritto da qualche
+//          parte, piu' la ricerca globale, dove l'anno non c'era mai stato. Nel CHANGELOG della
+//          v6.400 questo e' scritto come un fatto («i due punti che l'anno non ce l'avevano
+//          proprio»), non come una scelta da confermare - ed e' li' che si e' persa l'occasione di
+//          chiedere.
+//          📌 LA LEZIONE, che e' §9.9 su un altro terreno: «sempre» dice che la forma dev'essere
+//          una sola DOVE la cosa c'e', non che vada messa dove non c'era. Aggiungere un dato in un
+//          posto nuovo non e' uniformare: e' una richiesta diversa, e si fa una domanda.
+//
+//          ⚠️ L'ALTRO PUNTO NUOVO RESTA, ed e' detto invece che lasciato scoprire: anche le serie
+//          dentro un articolo (`openProdottoDetail`) l'anno non ce l'avevano, e la v6.400 gliel'ha
+//          messo. Franco ha nominato solo la ricerca globale. Se anche quello va tolto, e' la
+//          stessa riga.
+//
+//          🗑️ Se ne va anche la COLONNA che reggeva l'anno: era un `<div flex-direction:column>`
+//          nato per mandarlo a capo, e senza anno non regge piu' niente. Torna lo `<span>` nudo
+//          della v6.399 - non un contenitore vuoto lasciato li' «casomai servisse».
+//
+//          Prove: aggiornate prova-v6400 e prova-v6396. La riga che pretendeva l'anno nella
+//          ricerca globale NON e' stata cancellata: e' stata ROVESCIATA, e adesso fallisce se
+//          l'anno ci torna. Una decisione revocata vale quanto una presa, e si difende uguale.
+//
+// v6.402 - LA RICERCA GLOBALE RISPETTA IL COLOR CODE, e la frase del conteggio diventa una frase.
+//          Solo app.js.
+//
+//          Cinque richieste di Franco in un messaggio, e la prima e' un DIFETTO, non un gusto:
+//          *"la scritta delle versioni non mi sembra rispetti il color code; vedo per esempio
+//          variazione non ufficiale in giallo"*.
+//
+//          --- 1. IL COLOR CODE ---------------------------------------------------------------
+//          🔴 ERA VERO, ED ERA UN GUASTO VECCHIO. Nella riga dei risultati c'erano TRE `#ffd84d`
+//          scritti a mano: sul marcatore della versione, sul tipo, e sul «Change» dei retro. Quindi
+//          «Variazione non ufficiale» usciva GIALLA - cioe' del colore che in tutto il resto del
+//          sito significa «Variazione UFFICIALE». Non un colore sbagliato: il colore di
+//          un'ALTRA cosa, che e' molto peggio, perche' chi legge non vede un errore, vede
+//          un'informazione falsa.
+//          ✅ Ora il colore si chiede a `_COLORE_TIPO[_chiaveTipo(f)]`, la mappa canonica della
+//          v6.234, costruita dalla stessa tabella da cui esce l'etichetta. Etichetta e colore
+//          escono dalla stessa riga e non possono piu' divergere.
+//          📌 LA FUNZIONE ESISTEVA DA VENTI RELEASE, e qui si era scritto il valore invece di
+//          chiederlo. E' §12-bis alla lettera: due chiavi che rispondono alla stessa domanda
+//          divergono sempre - non «possono», SEMPRE, ed e' solo questione di quando.
+//
+//          --- 2. IL MAIUSCOLO E IL « - » -----------------------------------------------------
+//          Franco: *"il tipo di versione e' piccolo; proviamo a metterlo in maiuscolo"*, e *"tra il
+//          tipo di versione e la tipologia della stessa mettiamo ' - '"*.
+//          `text-transform:uppercase`, non `.toUpperCase()`: il DATO resta come sta scritto su
+//          Firestore, cambia solo come si vede. Un maiuscolo applicato al valore sarebbe finito
+//          nelle ricerche e negli export - la lezione della v6.115 sul `#`, dove una modifica
+//          «solo estetica» smetteva di esserlo appena il valore veniva salvato.
+//          ⚠️ IL MAIUSCOLO PRENDE ANCHE LA TIPOLOGIA, non solo la versione. Franco ha nominato «il
+//          tipo di versione»; ma i due adesso vivono in UNO span separati da « - », e mezza riga
+//          maiuscola sarebbe stata piu' strana di tutta. Si separa in due span, se sbagliavo.
+//          🗑️ E i tre span annidati diventano uno: c'erano perche' i colori erano tre valori
+//          scritti a mano. Con un colore solo, annidare non serviva piu' a niente.
+//
+//          --- 3. LA FRASE DEL CONTEGGIO ------------------------------------------------------
+//          Franco: *"non mettiamola tra () ma bensi dopo un ':' - es: Figurine con velina: 4
+//          risultati"*, e *"togliamo la parte finale"*. Parentesi e coda se ne vanno insieme: erano
+//          due modi di dire la stessa cosa, cioe' «questo numero si riferisce a quello li'
+//          accanto». I due punti lo dicono una volta sola e lo dicono meglio.
+//          🗑️ Il parametro `ambito` sparisce con la coda che era la sua unica ragione (v6.346).
+//          ⚠️ Esteso anche al conteggio della SERIE, che Franco non aveva nominato: e' la stessa
+//          funzione, e applicarla a meta' e' il difetto che questa settimana e' costato sei release.
+//
+//          🔸 E IL NODO RIMANDATO ARRIVA ADESSO, in questo punto e per colpa di questa release.
+//          Col color code vero, «Variazione non ufficiale» prende --type-unofficial = #7fd4ff,
+//          azzurro. Nella stessa videata, due righe piu' su, il nome della serie e' --nome-entita =
+//          #4db8ff: ΔE 19, parenti a vista. Finche' la versione era gialla non si incontravano.
+//          Franco lo sapeva - *"poi vediamo come risolvere il tema delle variazioni non
+//          ufficiali"* - e questo e' il «poi». La leva pronta: --nome-entita a #6aa8ff (ΔE 31 dal
+//          «non ufficiale», contrasto 7,5:1), una riga in index.html. NON e' stata tirata da sola.
+//
+//          Prove: prova-v6402.js - ESEGUE la ricerca con una figurina isUnofficialVariation e i
+//          `_COLORE_TIPO` VERI presi dal sorgente, e pretende l'azzurro. Con il giallo a mano una
+//          prova di lettura sarebbe passata. Aggiornate prova-v6396 e prova-v6401 (i finti di
+//          `_frasePerQuesta` e la lista dei colori ammessi).
+//
+// v6.401 - NELLA RICERCA GLOBALE RESTA UN COLORE SOLO, quello delle VERSIONI. Solo app.js.
+//
+//          Franco: *"nella ricerca globale, prima del nome del retro, scrivi RETRO:"*, e
+//          *"prova a scrivere tutto in bianco: tutti valori dei risultati... manteniamo solo il
+//          color code delle versioni"*.
+//
+//          Due punti, e in tutti e due il colore lascia il posto a qualcosa di meglio:
+//            · il RETRO IN CODA a una figurina: da var(--info) a var(--text), con «RETRO: » davanti
+//            · il NUMERO davanti al nome: da var(--muted) a var(--text)
+//
+//          🔴 L'AZZURRO DEL RETRO ERA DIVENTATO AMBIGUO IERI, e la colpa e' della v6.399. Quella
+//          release ha dato a --nome-entita il valore #4db8ff, che e' esattamente var(--info): da
+//          quel momento il retro in coda e il NOME DELLA SERIE due righe piu' su hanno lo stesso
+//          identico azzurro. Non e' stato notato scrivendo la v6.399 perche' si guardava la
+//          tavolozza dei TOKEN, dove --info era una riga fra le altre, invece della SCHERMATA, dove
+//          i due si vedono insieme. E' la stessa famiglia dell'arancione a ΔE 7 e del giallo della
+//          v6.397, con l'aggravante di essere ΔE 0.
+//          📌 LA LEZIONE, che vale oltre questo caso: quando si sceglie un colore riusando un token
+//          che esiste gia', il risparmio e' vero (nessuna tinta nuova da mantenere) ma il conto va
+//          fatto su DOVE QUEL TOKEN E' GIA' USATO, non solo su quanto e' lontano dagli altri. La
+//          v6.399 aveva misurato sei ΔE e non aveva cercato i cinque `var(--info)` gia' scritti.
+//
+//          📌 E IL COLORE NON VIENE TOLTO: VIENE SOSTITUITO DA UNA PAROLA. Un colore dice «questo
+//          pezzo e' diverso» e lascia indovinare in che modo; «RETRO:» lo dice. Il trattino resta,
+//          perche' separa la figurina dal suo retro - un mestiere che la parola non fa.
+//
+//          ✅ COSA RESTA COLORATO, ed e' l'unica cosa: #ffd84d su «Variazione», «Change» e sul tipo
+//          (di change o di errore di stampa). Cioe' il color code delle VERSIONI, che Franco ha
+//          chiesto di mantenere. Il nome della serie in --nome-entita resta anche lui: e'
+//          l'intestazione del gruppo, non un valore del risultato - Franco l'ha confermato punto
+//          per punto invece di lasciarlo dedurre.
+//
+//          Prove: prova-v6401.js. ESEGUE la ricerca e guarda l'HTML VERO, perche' un colore
+//          scritto nel punto giusto di una funzione che non gira e' un colore che non si vede
+//          (v6.396). Aggiornata prova-v6396, che pretendeva il grigio sul numero.
+//
+// v6.400 - L'ANNO DELLA SERIE SEMPRE SOTTO IL NOME, e da quattro forme a una. Solo app.js.
+//
+//          Franco: *"mettiamo l'anno della serie sempre sotto al nome della serie"*.
+//
+//          🔴 «SEMPRE» ERA LA PAROLA DA PRENDERE SUL SERIO. Cercando dove compare il nome di una
+//          serie sono venuti fuori QUATTRO punti e TRE forme dell'anno:
+//            · card della serie (Inventario e home)  - ACCANTO al nome, fra parentesi, bianco (v6.396)
+//            · tabella «tutte le serie», su telefono  - SOTTO il nome, grigio, 0,7rem (v6.210)
+//            · ricerca globale                        - ASSENTE
+//            · le serie dentro un articolo            - ASSENTE
+//          Tre forme non nascono da tre decisioni: nascono da tre momenti in cui nessuno vedeva le
+//          altre due. Per questo la v6.400 non aggiunge due righe, ne toglie tre e ne lascia UNA:
+//          `_annoSottoNome(s)`, dichiarata accanto a `_nomeSerieCard`, che e' la sua parente.
+//
+//          ⚠️ REVOCA DICHIARATA, e Franco l'ha presa con la ragione contraria davanti. La v6.210
+//          aveva scelto il grigio scrivendo perche': «e' un dato secondario, e messo con lo stesso
+//          peso del nome se lo contenderebbe». Messo davanti a quella frase, Franco ha scelto il
+//          BIANCO OVUNQUE, tabella inclusa. Resta il «piu' piccolo» (0,7rem), che quel peso lo
+//          regola comunque. Si torna indietro cambiando UNA riga dentro la funzione.
+//
+//          📌 LE PARENTESI CADONO DA SE', e non e' una seconda decisione: servivano perche' l'anno
+//          stava IN LINEA col nome, e senza «Serie 3 1986» sarebbe stato un titolo solo. Andando a
+//          capo quel compito lo fa la riga nuova. E' la stessa forma del ragionamento della v6.398
+//          sull'etichetta di tipologia, e la stessa frase di Franco: *"non ho mai capito il
+//          significato di quelle parentesi; toglile"*.
+//
+//          🔴 NON E' UN CAMBIO SOLO ESTETICO, ed e' la lezione della v6.115: due dei quattro punti
+//          l'anno non ce l'avevano proprio, quindi qui compare un DATO che prima non si vedeva. Se
+//          una serie ha `year` vuoto la funzione non stampa niente - non stampa una riga vuota, che
+//          nelle card sposterebbe tutto di 0,7rem senza dire niente.
+//
+//          Prove: prova-v6400.js (ESEGUE la funzione: una riga di HTML che non contiene l'anno
+//          passerebbe qualunque controllo di lettura). Aggiornata prova-v6396, che pretendeva il
+//          nome serie e ora se lo trova dentro una colonna.
+//
+// v6.399 - L'AZZURRO. Solo index.html: app.js cambia per il CHANGELOG e basta.
+//
+//          Franco, sulla v6.398: *"no: troppo scuro; possiamo provare un azzurro? poi vediamo come
+//          risolvere il tema delle variazioni non ufficiali. ps. non toccare lo sfondo dei
+//          selettori"*.
+//
+//          --nome-entita passa da #2563eb a #4db8ff. UNA RIGA, ed e' il motivo per cui il token
+//          esiste: i punti che lo usano sono cinque e stanno in capi opposti del file.
+//
+//          ✅ E CHIUDE IL DEBITO DELLA v6.398, che era dichiarato: #2563eb faceva 3,5:1 sul fondo
+//          delle card, sotto la soglia di 4,5:1 per un .card-title di 0,88rem. #4db8ff fa 8,3:1.
+//          Il blu del selettore si leggeva bene perche' li' fa da FONDO col bianco sopra, non da
+//          testo - e infatti li' resta: --action non e' stato toccato, come Franco ha chiesto.
+//          🔒 prova-v6399 lo difende attivamente: _aggiornaBivioInventario deve continuare a
+//          scrivere var(--action) come sfondo. Un giorno verra' naturale "uniformare" i due, ed e'
+//          precisamente cio' che Franco ha vietato.
+//
+//          📌 #4db8ff E' LO STESSO VALORE DI --info. Scelto apposta: e' l'azzurro che il sito gia'
+//          usa, quindi non nasce una settima tinta. Ma scritto per esteso e NON come var(--info) -
+//          e' la lezione dei due arancioni (--accent2 e --action-admin valgono lo stesso e NON
+//          vanno uniti): due valori uguali non sono un doppione quando sono due cose diverse che
+//          oggi si somigliano.
+//
+//          🔸 IL NODO RIMANDATO, e sta scritto perche' non si perda. --type-unofficial e' #7fd4ff,
+//          l'azzurro di «Variazione non ufficiale»: sta a ΔE 19 da questo. Dove si incontrano e'
+//          UN posto solo - dentro un articolo (openProdottoDetail), dove le pillole di
+//          _righeTipologie stanno sotto il nome della serie. Nella ricerca globale NON si
+//          incontrano: verificato, li' «Variazione» e «Change» sono scritti in #ffd84d, giallo.
+//          Se un domani si volesse sciogliere muovendo questo e non quello: #6aa8ff sta a ΔE 31 e
+//          regge 7,5:1.
+//
+//          Prove: prova-v6399.js. Aggiornate prova-v6398 (sezione A: pretendeva #2563eb e la
+//          coppia con --action, che Franco ha sciolto) e prova-v6394 (la tavolozza dichiarata).
+//
+// v6.398 - IL BLU AL POSTO DEL GIALLO, e il token cambia nome perche' ha cambiato mestiere.
+//          index.html e app.js.
+//
+//          Franco: *"niente giallo; usa il blu/azzurro che stiamo usando per il selettore
+//          Serie/Articoli"*, e poi *"proviamo ad usare quel blu per il nome della serie anche nei
+//          risultati della ricerca globale"*. Quindi --tipo-articolo diventa --nome-entita e vale
+//          #2563eb, che e' il valore di --action.
+//
+//          🔴 IL PERIMETRO E' CAMBIATO DI SIGNIFICATO, non solo di ampiezza. La v6.397 colorava
+//          "il tipo di articolo" ovunque comparisse. Adesso il colore dice "questo e' il NOME
+//          della cosa che questa card, o questo gruppo di risultati, rappresenta" - e il nome e'
+//          una serie in tre punti e una tipologia di articolo in due. Per questo il token si
+//          chiama diversamente: --tipo-articolo era vero della v6.397 e sarebbe falso qui, e un
+//          nome che mente e' esattamente il difetto che questo file rimprovera a «Svuota log».
+//          ⚠️ E' MIA la scelta di rinominarlo, non di Franco: si ribalta con un sostituisci-tutto.
+//
+//          I CINQUE PUNTI, e due sono nuovi:
+//            1. seriesCardHTML          - nome serie, hub Serie          🆕 era BIANCO
+//            2. renderCatalogSearch     - nome serie, ricerca globale    🆕 era BIANCO (v6.395)
+//            3. openProdottoDetail      - nomi serie dentro un articolo     era giallo
+//            4. prodottoCardHTML        - le cinque fisse, hub Articoli     era giallo
+//            5. tipoProdottoCardHTML    - i tipi censiti, hub Articoli      era giallo
+//
+//          E DUE PUNTI PERDONO IL COLORE: l'etichetta di tipologia nella ricerca globale e la sua
+//          gemella in «Cio' che cerco» tornano a var(--text). Franco: *"non ho mai capito il
+//          significato di quelle parentesi; toglile"* - quindi restano bianche e NUDE, senza il
+//          ripiego delle parentesi che la v6.394 aveva introdotto e la v6.397 tolto.
+//
+//          ⚠️ IL n.2 REVOCA UNA DECISIONE DELLA v6.395, e va detto invece di lasciarlo scoprire.
+//          Quella release aveva portato il nome serie da --accent a --text scrivendo "IL NOME
+//          DELLA SERIE E' BIANCO, come in tutto il resto del sito". La ragione vera pero' non era
+//          il bianco: era che il lime, due schermate piu' in la', significa "quanti ne ho
+//          trovati". Il blu non ha quel secondo mestiere, e il n.1 sposta con se' anche il resto
+//          del sito - quindi la regola della v6.395 si muove, non si rompe.
+//
+//          🔴 IL CONTRASTO E' SOTTO SOGLIA, ED E' UNA PROVA DICHIARATA TALE. #2563eb su fondo card
+//          fa 3,5:1; .card-title e' 0,88rem, che non e' "testo grande", quindi la soglia resta
+//          4,5:1. Nel selettore quel blu si legge benissimo perche' li' fa da FONDO con sopra il
+//          bianco (_aggiornaBivioInventario), non da testo. Franco lo sa e ha detto di provarlo
+//          lo stesso: *"secondo me ci sta bene la accoppiata con nome serie/articoli"*. Se sul
+//          telefono si legge male, la cura e' schiarirlo - #5b8def sale a 5,6:1 restando a 9 gradi
+//          di tinta - e si cambia UNA riga in index.html.
+//
+//          Prove: prova-v6398.js. Aggiornate v6394, v6396 e v6397 sezione E, che difendevano il
+//          giallo e il perimetro vecchio: riscritte sul perimetro nuovo, non silenziate.
+//
 // v6.397 - LA CONFERMA PRIMA DI USCIRE, E IL GIALLO DEI TITOLI DELLE CARD (Franco). app.js e
 //          index.html.
 //
@@ -21848,7 +22519,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.397';
+const JS_VERSION = 'v6.414';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -22504,11 +23175,20 @@ function _dataCreazione(f) {
   if (!Number.isFinite(t) || t < 1600000000000 || t > Date.now() + 86400000) return null;
   return new Date(t);
 }
+// 🔧 v6.414 (Franco) - LA DATA DI CREAZIONE NON MOSTRA PIU' L'ORA.
+// Franco: *"nella data di creazione degli articoli, non mostriamo mai la ora ma solo la data"*.
+// 📌 UN PUNTO SOLO DA TOCCARE, e vale la pena dirlo perche' non era scontato: l'ora si formattava
+// qui dentro, non nei punti che mostrano il testo. Contati prima di cercare altrove.
+// ⚠️ `toLocaleString` DIVENTA `toLocaleDateString`. Lasciare `toLocaleString` togliendo solo `hour`
+// e `minute` avrebbe funzionato lo stesso, ma il nome del metodo avrebbe continuato a dire «data e
+// ora» a chi legge - ed e' il difetto che questo progetto rimprovera all'etichetta «Svuota log».
+// 📌 L'ORA NON SI PERDE: `_dataCreazione(f)` torna un Date completo, ricavato dall'id. Se un giorno
+// servisse (un ordinamento, una diagnosi), e' li'. Qui si e' tolta dalla VISTA, non dal dato.
 function _dataCreazioneTesto(f) {
   const d = _dataCreazione(f);
   if (!d) return currentLang === 'it' ? 'sconosciuta' : 'unknown';
-  return d.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-GB',
-    { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB',
+    { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 function _recomputeSeriesCounts(series) {
@@ -23726,7 +24406,17 @@ let _retroResultCatVals = [];      // valori categoria reali dei box cliccabili 
 // rosa dei Change e il salmone degli Errori di stampa. Le due tinte sono percio'
 // libere davvero, non per convenzione ma perche' non c'e' niente che le usi.
 // Cambiare tinta = cambiare queste due righe.
-const COL_CATEGORIA = '#ffd84d';    // giallo
+// 🔄 v6.404 (Franco) — LA CATEGORIA SI SPOSTA PER FAR POSTO AL GIALLO DELLA VERSIONE.
+// Era #ffd84d, un giallo. La v6.404 dà il giallo a «Variazione non ufficiale», e i due sarebbero
+// stati a 34 di distanza — cioè lo stesso colore per due cose diverse.
+// 🔴 SI È SPOSTATO IL CAMPO E NON LA VERSIONE, e la regola è quella della v6.372: le versioni sono
+// un CODICE e devono distinguersi, i campi sono fondale. Franco, messo davanti alla scelta, ha
+// deciso così. Il turchese è l'unica famiglia di tinta rimasta libera in una tavolozza satura:
+// 355 da SOTTOCAT (che è il suo vicino di scheda), 350 dal giallo nuovo, 141 dal vicino più
+// prossimo di tutta la tavolozza, contrasto 9,4:1.
+// ⚠️ È una COSTANTE e non un token CSS: sta qui perché la usano punti che compongono HTML a
+// stringa. Cambiarla qui li cambia tutti e 23.
+const COL_CATEGORIA = '#3fd0b0';    // turchese
 const COL_SOTTOCAT  = '#ffa94d';    // arancione
 // 🆕 v6.277 - IL COLORE DELL'IDENTITA' DI UN OGGETTO: numero, nome e sottonome. Nato nella prova
 // della v6.273-276 come `_COL_NOME` dentro il disegno della card, dove bastava perche' il posto era
@@ -28495,11 +29185,14 @@ function apriInfoTutteLeSerie() {
     // ⚠️ Ed e' il nome CORTO, preso da `_nomeSerieCard` - la funzione che esiste dalla v6.080
     // apposta e che sceglie da se' fra corto e lungo secondo lo schermo. Riscrivere qui quel `if`
     // avrebbe fatto la sesta copia di una regola che quel commento dice di tenere in un posto solo.
-    // v6.210 - e sotto il nome l'ANNO, in grigio e piu' piccolo: e' un dato secondario, e messo
-    // con lo stesso peso del nome se lo contenderebbe.
+    // 🔧 v6.400 - e sotto il nome l'ANNO, dalla funzione unica `_annoSottoNome`. Qui c'era la
+    // riga scritta a mano che ha dato la forma a tutte: sotto il nome, 0,7rem. Il GRIGIO invece se
+    // n'e' andato, e la ragione della v6.210 che lo giustificava - «e' un dato secondario, e messo
+    // con lo stesso peso del nome se lo contenderebbe» - e' stata revocata da Franco apposta,
+    // messo davanti a quella frase. Resta il «piu' piccolo», che quel peso lo regola comunque.
     const primaCella = mobile
       ? miniatura + `<div style="font-size:0.75rem;line-height:1.2;margin-top:0.25rem;">${_nomeSerieCard(s)}</div>`
-                  + (s.year ? `<div style="font-size:0.7rem;line-height:1.1;color:var(--muted);">${s.year}</div>` : '')
+                  + _annoSottoNome(s)
       : miniatura;
     // Lo zero resta vuoto, come nella tabella admin (v6.166): una parete di zeri nasconde i numeri
     // veri esattamente come la parete di NO nascondeva i SI. Nome e anno no: quelli ci sono sempre.
@@ -28828,7 +29521,7 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
       // e' la riga che tira le somme, che e' il mestiere che ha. La v6.156 l'aveva solo ripulito
       // dal conto delle serie e lasciato dov'era: avevo letto "mettila sola" dove c'era scritto
       // "mettila sotto".
-      '<div class="card-title" style="margin-bottom:0.5rem;color:var(--tipo-articolo);">' + esc(getSectionLabel(sec)) + '</div>' +
+      '<div class="card-title" style="margin-bottom:0.5rem;color:var(--nome-entita);">' + esc(getSectionLabel(sec)) + '</div>' +
       // \uD83C\uDD95 v6.206 (Franco) - L'ELENCO SU DUE COLONNE, e la decisione la prende lo SPAZIO.
       // `auto-fill` con un minimo di 130px: dove ci stanno due colonne ne fa due, dove non ci
       // stanno ne fa una. Non c'e' nessun "se desktop" scritto da noi - che sarebbe un numero da
@@ -29293,7 +29986,7 @@ function tipoProdottoCardHTML(t, tutti) {
     _matitaBox(t.id) + _matitaNome +
     '<div class="card-img-placeholder">' + _foto + '</div>' +
     '<div class="card-body">' +
-      '<div class="card-title" style="margin-bottom:0.5rem;color:var(--tipo-articolo);">' + esc(_nomeTipo(t)) + '</div>' +
+      '<div class="card-title" style="margin-bottom:0.5rem;color:var(--nome-entita);">' + esc(_nomeTipo(t)) + '</div>' +
       '<div class="card-desc">' + esc(desc) + '</div>' +
     '</div>' +
   '</div>';
@@ -29606,7 +30299,8 @@ function openProdottoDetail(sec) {
         (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;">' : '<span style="font-size:3rem;">&#127924;</span>') +
       '</div>' +
       '<div class="card-body prodotto-serie-testo" style="padding:' + (_mobHub ? '0.5rem 0.5rem 0.6rem' : '1.25rem 1.5rem') + ';text-align:left;">' + // v6.080 - su telefono il riquadro si stringe con la colonna
-        '<div class="card-title" style="margin-bottom:0;color:var(--tipo-articolo);' + (_mobHub ? 'font-size:0.88rem;line-height:1.2;' : '') + '">' + esc(_nomeSerieCard(s)) + '</div>' +
+        '<div class="card-title" style="margin-bottom:0;color:var(--nome-entita);' + (_mobHub ? 'font-size:0.88rem;line-height:1.2;' : '') + '">' + esc(_nomeSerieCard(s)) + '</div>' +
+        _annoSottoNome(s) +
         etichetta +
       '</div>' +
     '</div>';
@@ -29824,16 +30518,65 @@ let _elencoRicercaGlobale = [];
 // nella stessa riga; adesso di occasioni per sbagliare ne resta una. Non e' stato l'obiettivo
 // della richiesta, ma e' il suo effetto migliore: la frase piu' corta e' anche quella con meno
 // da tenere in accordo.
-function _frasePerQuesta(n, ambito) {
-  const it = (currentLang === 'it');
-  if (!it) {
-    const coda = (ambito === 'serie') ? 'this series' : 'this item type';
-    return `(${n} result${n === 1 ? '' : 's'} for ${coda})`;
-  }
-  const coda = (ambito === 'serie') ? 'per questa serie' : 'per questo tipo di articolo';
-  return `(${n} ${n === 1 ? 'risultato' : 'risultati'} ${coda})`;
+// 🔧 v6.402 (Franco) - LA FRASE DICE IL NUMERO E BASTA.
+// Franco: *"la frase «(4 risultati per questo tipo di articolo)» non mettiamola tra () ma bensi
+// dopo un ':' - es: Figurine con velina: 4 risultati"*, e *"togliamo la parte finale: lasciamo
+// «4 risultati»"*.
+//
+// 📌 LE PARENTESI E LA CODA SE NE VANNO INSIEME, e non sono due tagli: erano due modi di dire la
+// stessa cosa, cioe' «questo numero si riferisce a quello li' accanto». I due punti lo dicono una
+// volta, e lo dicono meglio - «Figurine con velina: 4 risultati» e' una frase, «Figurine con
+// velina (4 risultati per questo tipo di articolo)» era una nota a margine di se stessa.
+//
+// 🗑️ E IL PARAMETRO `ambito` SPARISCE, perche' serviva SOLO a scegliere fra le due code. Tenerlo
+// avrebbe lasciato un argomento che nessuno guarda: chi lo legge fra sei mesi crede che scelga
+// qualcosa, lo passa sbagliato e non se ne accorge nessuno. E' la potatura della v6.346.
+//
+// ⚠️ ESTESO ANCHE AL CONTEGGIO DELLA SERIE, che Franco non ha nominato: lui parlava della frase
+// del tipo di articolo. Ma la frase e' UNA funzione sola, e la sua regola - stessa forma per la
+// stessa informazione - e' la stessa che questa settimana e' costata sei release quando e' stata
+// applicata a meta'. Si torna indietro rimettendo il parametro.
+// 🆕 v6.408 (Franco) - IN QUANTE TIPOLOGIE DI ARTICOLO stanno i risultati di una serie.
+// Franco: *"affianco ad ogni serie scrivi «N risultati (in M tipologie di articolo)»"*.
+// 📌 Sta accanto a `_frasePerQuesta` e non dentro: sono due conti diversi - quanti sono, e in
+// quante famiglie si dividono - e unirli avrebbe voluto dire una funzione con due mestieri.
+// ⚠️ LE PARENTESI QUI SONO VOLUTE, e vale la pena scriverlo perche' due release fa Franco ne ha
+// fatte togliere due paia dicendo *"non ho mai capito il significato di quelle parentesi"*. Quelle
+// erano un RIPIEGO: servivano a far risaltare un'etichetta che il colore non distingueva piu'.
+// Queste sono una PRECISAZIONE: dicono che il secondo numero commenta il primo. Stessa forma, due
+// mestieri - e chi trovera' questa riga cercando «togli le parentesi» deve sapere quale delle due.
+function _fraseTipologie(n) {
+  return (currentLang === 'it')
+    // 🔧 v6.409 (Franco): *"volevo dire «(in M tipologie di articoli)»"*. Il plurale sta su
+    // ARTICOLI e non segue `n`: una tipologia raccoglie articoli al plurale anche quando la
+    // tipologia e' una sola. Quindi «1 tipologia di articoli», che a leggerlo sembra un refuso e
+    // non lo e'.
+    // ⚠️ IL SITO ALTROVE DICE «di articolo», singolare: 5 volte «tipologia/e di articolo» e 51
+    // «tipo di articolo» - compreso il nome dell'hub. Questa frase adesso e' l'unica a dire
+    // «articoli», ed e' una scelta di Franco, non una svista. E' la stessa famiglia della
+    // divergenza «oggetti/risultati» chiusa due release fa: se un domani da' fastidio, si allinea
+    // - o si allinea questa, o si allineano quelle cinque.
+    ? `(in ${n} ${n === 1 ? 'tipologia' : 'tipologie'} di articoli)`
+    : `(in ${n} item type${n === 1 ? '' : 's'})`;
+}
+
+function _frasePerQuesta(n) {
+  return (currentLang === 'it')
+    ? `${n} ${n === 1 ? 'risultato' : 'risultati'}`
+    : `${n} result${n === 1 ? '' : 's'}`;
 }
 function renderCatalogSearch(q) {
+  // 🆕 v6.405 (Franco) - LE DUE MINIATURE, E IL RAPPORTO FRA LORO SCRITTO UNA VOLTA SOLA.
+  // Franco: *"nella ricerca globale la miniatura della serie la vorrei piu grande della miniatura
+  // dei risultati: di un fattore 2:1"*.
+  // 🔴 ED ERA IL CONTRARIO: la serie stava a 28px e i risultati a 44. L'intestazione del gruppo era
+  // piu' piccola delle cose che raggruppa - una gerarchia rovesciata, e nessuno l'aveva misurata
+  // perche' i due numeri vivevano a duecento righe di distanza e non si vedevano mai insieme.
+  // 📌 IL 2:1 E' UNA RELAZIONE, non due numeri. Scritto come moltiplicazione, cambiare la miniatura
+  // dei risultati porta con se' quella della serie: due costanti indipendenti avrebbero ricreato in
+  // un mese esattamente la situazione che questa riga sta correggendo.
+  const _MINI_RISULTATO = 44;
+  const _MINI_SERIE = _MINI_RISULTATO * 2;
   // v6.097 - si azzera SUBITO, prima di ogni ritorno anticipato. I due `return` qui sotto (query
   // vuota, query fatta di soli separatori) e quello del "nessun risultato" lasciavano altrimenti
   // in giro l'elenco della ricerca precedente, e le frecce avrebbero scorso dei risultati che a
@@ -29884,6 +30627,21 @@ function renderCatalogSearch(q) {
     return;
   }
 
+  // 🔴 v6.408 - SI CONTANO LE TIPOLOGIE CHE LA PAGINA MOSTRA, non quelle che i dati hanno.
+  // La tentazione era `new Set(figs.map(f => f.section)).size`, che e' una riga in meno ed e'
+  // sbagliata: i risultati vengono raggruppati scorrendo `PRODOTTI_INVENTARIO`, quindi un oggetto
+  // con una `section` che non sta in quell'elenco NON viene mostrato - ma il Set lo conterebbe.
+  // Il numero direbbe «in 4 tipologie» sopra un elenco che ne mostra 3, e sarebbe un difetto
+  // silenzioso: nessun errore, solo un conto che non torna se qualcuno lo verifica a mano.
+  // 📌 E' la stessa regola della sesta copia di `sectionOrder` (v6.389): l'elenco delle sezioni si
+  // legge da `PRODOTTI_INVENTARIO`, non si riscrive e non si aggira.
+  // 🆕 v6.413 - la lista si legge UNA volta: `_dueFacce` la vuole, e chiamarla senza avrebbe fatto
+  // una lettura di `getData` per ogni riga di risultato.
+  const _tutteFigRicerca = getData('figurines', []);
+
+  const _nTipologie = figs =>
+    PRODOTTI_INVENTARIO.filter(sec => figs.some(f => (f.section || 'figurines') === sec)).length;
+
   const totalFigs = results.reduce((n, r) => n + r.figs.length, 0);
   // 🗑️ v6.337 - QUI STAVA `totalSeries`, DICHIARATA E MAI LETTA, dalla v6.103. Serviva alla frase
   // vecchia («N serie trovate»), che contava le serie il cui NOME corrisponde alla ricerca. La
@@ -29906,18 +30664,30 @@ function renderCatalogSearch(q) {
   // 🆕 v6.337 (Franco: *"la frase che espone il risultato facciamola bianca"*) - da `--muted` a
   // `--text`. E' l'esito della ricerca, cioe' la cosa per cui si e' premuto: il grigio la metteva
   // fra le didascalie, sopra un elenco di risultati scritti piu' forte di lei.
+  // 🔧 v6.407 (Franco) - «RISULTATI», E LA PAROLA ADESSO E' UNA SOLA.
+  // Franco: *"la frase «Trovati 40 oggetti in 5 serie» diventa «Trovati 40 risultati in 5 serie»"*.
+  // 🔴 E CHIUDE UNA DIVERGENZA CHE NESSUNO AVEVA NOMINATO: il totale in cima diceva «oggetti», i
+  // sottototali per serie e per tipologia dicevano «risultati». Due parole per la stessa cosa,
+  // nella stessa videata, a tre righe di distanza - il genere di cosa che si legge cento volte
+  // senza vederla, finche' qualcuno non la nomina.
+  // 📌 E IL CONTO NON SI SCRIVE PIU' QUI: lo dice `_frasePerQuesta`, che era gia' la funzione dei
+  // sottototali e sa gia' accordare «risultato/risultati» e «result/results». Qui c'era la SECONDA
+  // copia di quell'accordo, con per giunta un'altra parola dentro. Adesso la parola e la sua
+  // grammatica vivono in un posto solo, e cambiarla e' una riga.
+  // ⚠️ RESTA FUORI il participio «Trovat{o|i}», e non e' una dimenticanza: si accorda in italiano
+  // e non esiste in inglese, quindi appartiene alla frase, non al conto.
   const summary = currentLang === 'it'
-    ? `<p style="color:var(--text);font-size:0.88rem;margin-bottom:1rem;">Trovat${totalFigs === 1 ? 'o' : 'i'} ${totalFigs} ${totalFigs === 1 ? 'oggetto' : 'oggetti'} in ${results.length} serie</p>`
-    : `<p style="color:var(--text);font-size:0.88rem;margin-bottom:1rem;">Found ${totalFigs} ${totalFigs === 1 ? 'item' : 'items'} in ${results.length} series</p>`;
+    ? `<p style="color:var(--text);font-size:1.1rem;margin-bottom:1rem;">Trovat${totalFigs === 1 ? 'o' : 'i'} ${_frasePerQuesta(totalFigs)} in ${results.length} serie</p>`
+    : `<p style="color:var(--text);font-size:1.1rem;margin-bottom:1rem;">Found ${_frasePerQuesta(totalFigs)} in ${results.length} series</p>`;
 
   resultsEl.innerHTML = summary + results.map(r => {
     const s = r.series;
     const desc = (currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt)) || '';
     // Nome serie sempre in cima, cliccabile per aprire la serie
     // Prima riga: nome serie a sx + conteggio oggetti a dx
-    const seriesHeader = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.4rem;">
+    const seriesHeader = `<div style="display:flex;align-items:center;justify-content:space-between;">
         <div onclick="openSeriesDetail('${s.id}')" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
-          ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_40,h_40,c_fit,q_auto,f_auto')}" style="width:28px;height:28px;object-fit:contain;border-radius:4px;background:var(--card2);flex-shrink:0;">` : '<span style="font-size:1rem;flex-shrink:0;">🎴</span>'}
+          ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_' + (_MINI_SERIE * 2) + ',h_' + (_MINI_SERIE * 2) + ',c_fit,q_auto,f_auto')}" style="width:${_MINI_SERIE}px;height:${_MINI_SERIE}px;object-fit:contain;border-radius:6px;background:var(--card2);flex-shrink:0;">` : '<span style="font-size:' + Math.round(_MINI_SERIE * 0.6) + 'px;line-height:' + _MINI_SERIE + 'px;width:' + _MINI_SERIE + 'px;text-align:center;flex-shrink:0;">🎴</span>'}
           <!-- 🆕 v6.395 (Franco) - IL NOME DELLA SERIE E' BIANCO, come in tutto il resto del sito.
                Qui era l'unico posto in cui era lime: altrove eredita il colore del testo, e nella
                lista admin e' --muted. 🔴 E il lime non e' un colore qualunque: e' --accent, che
@@ -29927,11 +30697,11 @@ function renderCatalogSearch(q) {
                ⚠️ NIENTE APICI INVERSI IN QUESTO COMMENTO: sta dentro un template literal, e un
                backtick qui CHIUDE la stringa. E' la lezione della v6.217, e scrivendo questa
                release ci sono cascato di nuovo - l'ha presa node --check, non la rilettura. -->
-          <span style="font-family:var(--font-display);font-size:0.95rem;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
-          ${r.seriesMatch ? `<span style="font-size:0.65rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 5px;flex-shrink:0;">${currentLang==='it'?'serie':'series'}</span>` : ''}
+          <span style="font-family:var(--font-display);font-size:1.1875rem;font-weight:600;color:var(--nome-entita);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
+          ${r.seriesMatch ? `<span style="font-size:0.8125rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 5px;flex-shrink:0;">${currentLang==='it'?'serie':'series'}</span>` : ''}
           <!-- 🆕 v6.395 - e il lime passa QUI, dove dice cio' che dice sempre: quanti risultati.
                Non e' uno scambio estetico: e' rimettere un colore sul suo mestiere. -->
-          ${r.figs.length ? `<span style="font-size:0.75rem;color:var(--accent);white-space:nowrap;margin-left:0.35rem;flex-shrink:0;">${_frasePerQuesta(r.figs.length, 'serie')}</span>` : ''}
+          ${r.figs.length ? `<span style="font-size:0.9375rem;color:var(--accent);white-space:nowrap;margin-left:0.15rem;flex-shrink:0;">: ${_frasePerQuesta(r.figs.length)} ${_fraseTipologie(_nTipologie(r.figs))}</span>` : ''}
         </div>
         ${/* 🗑️ v6.341 (Franco: *"il risultato totale non va riportato anche in alto a dx"*) - VIA
               IL CONTEGGIO A DESTRA. E' la terza decisione sulla stessa riga in una sera, quindi
@@ -30031,7 +30801,7 @@ function renderCatalogSearch(q) {
           // pillole fuori dallo schermo.
           // Lo stacco fra gruppi e' piu' largo di quello dentro un gruppo (0.7 contro 0.3): e' cosi'
           // che si vede DOVE finisce una figurina e ne comincia un'altra, senza cornici ne' righelli.
-          return `<div style="margin-bottom:0.4rem;">
+          return `<div>
             <!-- 🆕 v6.394 (Franco) - BIANCO E FRA PARENTESI. L'arancione stava a ΔE 7 dal colore
                  della Variazione ufficiale: due cose diverse dette con lo stesso colore. Franco ha
                  guardato la tavolozza e ha deciso di NON prendere un altro colore — la tavola e'
@@ -30047,7 +30817,7 @@ function renderCatalogSearch(q) {
                  nulla"*. Un backtick dispari e' un errore che si vede subito; un backtick pari e'
                  un guasto silenzioso. ⚠️ Via i due punti: con le parentesi erano un secondo separatore per la
                  stessa cosa. -->
-            <div style="font-size:0.9rem;color:var(--tipo-articolo);font-weight:600;margin-bottom:0.25rem;">${esc(getSectionLabel(sec))}<span style="font-size:0.75rem;font-weight:400;color:var(--accent);margin-left:0.35rem;">${_frasePerQuesta(inSection.length, 'tipo')}</span></div>
+            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;">${esc(getSectionLabel(sec))}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);margin-left:0.35rem;">${_frasePerQuesta(inSection.length)}</span></div>
             <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
               ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
@@ -30067,7 +30837,47 @@ function renderCatalogSearch(q) {
                 // colonne che su ogni riga direbbero la stessa cosa - o niente.
                 const _soloNomeENumero = sec === 'attaccare';
                 const isVarOrChange = sec === 'figurines' && (f.isVariation || f.isUnofficialVariation || f.isChange || f.isPrintError);
-                const baseFig = (isVarOrChange && f.baseFigurineId) ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
+                // 🔴 v6.402 (Franco) - IL COLORE DELLA VERSIONE SI CHIEDE ALLA TABELLA, non si
+                // scrive. Fino alla v6.401 qui c'erano tre `#ffd84d` a mano, e il risultato era che
+                // «Variazione non ufficiale» usciva GIALLA - cioe' del colore che in tutto il resto
+                // del sito significa «Variazione ufficiale». Franco: *"la scritta delle versioni non
+                // mi sembra rispetti il color code; vedo per esempio variazione non ufficiale in
+                // giallo"*.
+                // 📌 E LA FUNZIONE ESISTEVA GIA' DA VENTI RELEASE. `_COLORE_TIPO` e' la mappa
+                // canonica (v6.234), costruita dalla stessa tabella da cui esce l'etichetta: qui si
+                // era scritto il valore invece di chiederlo, e da quel momento i due potevano
+                // divergere senza che niente lo dicesse. E' §12-bis nella sua forma piu' pura -
+                // due chiavi che rispondono alla stessa domanda divergono sempre.
+                const _colVer = _COLORE_TIPO[_chiaveTipo(f)] || 'var(--text)';
+                // 🆕 v6.404 (Franco) - IL SEPARATORE È BIANCO, I VALORI SONO COLORATI.
+                // Franco: *"nella ricerca globale metti ' - ' anche prima della tipologia di
+                // versione (in bianco)"*. Il trattino fra versione e tipologia esisteva già dalla
+                // v6.402, ma stava DENTRO lo span colorato: era colorato anche lui.
+                // 📌 LA REGOLA CHE NE ESCE, e vale oltre questa riga: il colore appartiene ai
+                // VALORI, la punteggiatura al testo. Un trattino non è una versione, quindi non
+                // porta il colore di una versione — è la stessa regola che alla v6.401 ha lasciato
+                // bianco il « - » davanti a «RETRO:».
+                // ⚠️ Franco ha nominato UN trattino: quello nuovo, davanti alla versione. Ho reso
+                // bianco anche quello che c'era già, perché due separatori identici di due colori
+                // diversi nella stessa riga sono peggio del problema che si stava risolvendo. Si
+                // torna indietro rimettendo `_sep` dentro `_inVersione`.
+                const _sep = ' <span style="font-size:0.85rem;color:var(--text);">-</span> ';
+                const _inVersione = t =>
+                  '<span style="font-size:0.85rem;text-transform:uppercase;color:' + _colVer + ';">' + t + '</span>';
+                // 🔴 v6.413 - LE DUE FACCE SI CHIEDONO, NON SI RISCRIVONO. Qui c'era `baseFig`,
+                // che serviva solo al ripiego del fronte scritto a mano due righe piu' giu'.
+                // Quel ripiego era indietro di CINQUE casi rispetto a `_dueFacce`:
+                //   · `_fotoFigurina` ripiega solo dove il fronte COINCIDE davvero (v6.080) e
+                //     risale la catena fino a 4 salti (v6.129); qui si ripiegava su ogni
+                //     variazione e change, e per un anello solo;
+                //   · il retro di un CHANGE si eredita da quello della base. Qui no;
+                //   · il RETRO BIANCO (v6.006): qui non esisteva;
+                //   · album e bustine hanno la seconda faccia SUL RECORD (`imgRetro`): mai guardata;
+                //   · le sezioni che una seconda faccia non ce l'hanno (`_schedaDueFoto`).
+                // 📌 NON E' LA DIAGNOSI DI UN SINTOMO, e' togliere la divergenza. Quale delle tre
+                // anomalie aperte si chiuda cosi' lo dira' il censimento sui dati veri; quelle che
+                // restano saranno dati da riempire, non codice da correggere.
+                const _facce = _dueFacce(f, _tutteFigRicerca);
                 // v6.103 (Franco) - LA MINIATURA DEL RETRO VALE ANCHE PER LE FIGURINE BASE.
                 // La condizione chiedeva `isVarOrChange`, quindi una figurina base col suo retro
                 // collegato non lo mostrava: nei risultati aveva una foto sola mentre le sue
@@ -30077,7 +30887,10 @@ function renderCatalogSearch(q) {
                 // distingue dalle sorelle e va scritto; per una base e' solo il suo dietro, e
                 // ripeterne il nome accanto a quello della figurina allungherebbe ogni pillola
                 // senza distinguere niente.
-                const retroFig = f.retroId ? getData('figurines', []).find(x => x.id === f.retroId) : null;
+                // 🔧 v6.413 - il record del retro lo da' `_dueFacce`, col ripiego dei change sulla
+                // base che qui non c'era. Le due decisioni raccontate qui sopra (miniatura sempre,
+                // nome solo per le versioni) NON cambiano: cambia solo da dove arriva il record.
+                const retroFig = _facce.retroRec;
                 // 🆕 v6.320 (Franco) - IL NOME COMPLETO DEL RETRO VALE ANCHE PER LE FIGURINE BASE.
                 // Franco: *"nella ricerca globale, per i risultati di versione base, non mostra il
                 // Nome completo del retro; deve fare quello che fa con le variazioni"*.
@@ -30091,12 +30904,50 @@ function renderCatalogSearch(q) {
                 // incastrato in una catena di ternari: per estenderlo alle basi sarebbe bastato
                 // copiarlo fuori — cioe' due copie della stessa riga, che e' il difetto che questa
                 // settimana e' costato quattro release. Esce dal ramo e vale per tutti.
+                // 🔧 v6.401 (Franco) - IL RETRO IN CODA: bianco, e con la parola davanti.
+                // Franco: *"nella ricerca globale, prima del nome del retro, scrivi RETRO:"* e
+                // *"prova a scrivere tutto in bianco... manteniamo solo il color code delle
+                // versioni"*.
+                // 🔴 L'AZZURRO SE NE VA PERCHE' ERA DIVENTATO AMBIGUO, non perche' era brutto. Era
+                // var(--info) = #4db8ff, e dalla v6.399 quello e' anche il valore di
+                // --nome-entita, cioe' del NOME DELLA SERIE che sta due righe piu' su nella stessa
+                // videata. Due cose diverse dello stesso colore, ed e' precisamente il difetto che
+                // Franco aveva segnalato con l'arancione a ΔE 7 e col giallo della v6.397.
+                // 📌 E IL COLORE VIENE SOSTITUITO DA UNA PAROLA, non tolto e basta. Un colore dice
+                // «questo pezzo e' diverso» e lascia indovinare in che modo; «RETRO:» lo dice. Il
+                // trattino resta: separa la figurina dal suo retro, che e' un altro mestiere.
+                // ⚠️ La parola non passa da `t()`: in inglese il sito scrive «retro»/«retros», ed
+                // e' la stessa parola. Se un giorno cambiasse, il posto e' questo.
+                // 🔧 v6.410 (Franco) - «RETRO:» PRENDE UN COLORE SUO, il nome del retro resta bianco.
+                // Franco: *"proviamo a scrivere «RETRO:» in colore beige"*.
+                // 📌 SI DIVIDE IN DUE SPAN, ed è la stessa distinzione della v6.404 sul separatore:
+                // «RETRO:» dice CHE COSA è il pezzo che segue, il nome è il VALORE. Colorare tutto
+                // insieme avrebbe dato un colore al valore, che è quello che questa settimana
+                // abbiamo tolto dappertutto.
+                // ⚠️ Il « - » resta bianco: è punteggiatura, e la regola della v6.404 vale anche qui.
                 const _codaRetro = retroFig
-                  ? ' <span style="font-size:0.68rem;"> - <span style="color:var(--info);">'
-                    + esc(_retroNomeCompleto(retroFig)) + '</span></span>'
+                  ? ' <span style="font-size:0.85rem;"> - '
+                    + '<span style="color:var(--etichetta-retro);">RETRO: </span>'
+                    + '<span style="color:var(--text);">' + esc(_retroNomeCompleto(retroFig)) + '</span>'
+                    + '</span>'
                   : '';
                 // v6.234 - era la quinta catena a mano, con gli stessi identici quattro testi.
-                const varLabel = _etichettaTipo(f, false);
+                // 🆕 v6.412 (Franco) - ANCHE LE BASI DICONO CHE VERSIONE SONO.
+                // Franco: *"prova a scrivere « - VERSIONE BASE - » dove scrivi « - VARIAZIONE
+                // UFFICIALE - »"*. Fino alla v6.411 una figurina base non scriveva niente: si
+                // capiva che era base perche' NON c'era scritto altro, cioe' per assenza.
+                // 📌 `_etichettaTipo(f, true)` tornerebbe «Base», ma Franco ha chiesto «VERSIONE
+                // BASE», e la parola in piu' non e' un vezzo: da sola, «BASE» in mezzo a
+                // «VARIAZIONE UFFICIALE» e «ERRORE DI STAMPA» si legge come un'abbreviazione di
+                // qualcos'altro. E' la stessa ragione della v6.372, che nel titolo della scheda ha
+                // preferito «Versione omaggio» a «Omaggio».
+                const _versioneBase = currentLang === 'it' ? 'Versione base' : 'Base version';
+                const varLabel = _etichettaTipo(f, false) || _versioneBase;
+                // 🔴 UNA VARIABILE NUOVA, E NON `isVarOrChange` ALLARGATA. Quella decide anche il
+                // RIPIEGO DEL FRONTE due righe piu' su: allargarla alle basi avrebbe fatto
+                // ripiegare sulla foto della base una figurina che LA BASE E'. Due domande diverse
+                // che oggi hanno risposte diverse non devono condividere una variabile.
+                const mostraVersione = sec === 'figurines';
                 // v6.103 (Franco) - IL TIPO TORNA NEI RISULTATI, per i soli Change ed errori di stampa.
                 // Era stato tolto con la nota "il tipo e' gia' in fondo al Nome completo, ripeterlo
                 // era la stessa parola due volte". Vero per i RETRO, che qui mostrano
@@ -30135,20 +30986,47 @@ function renderCatalogSearch(q) {
                 // una e non l'altra era il difetto piu' facile del mondo da introdurre oggi, e
                 // nessuno se ne sarebbe accorto finche' non fossero finite affiancate. Ora il bordo
                 // e' un parametro e la misura sta in un posto solo.
-                const _MINI = 44;
+                // ⚠️ v6.405 - `_MINI` resta qui perche' e' la miniatura di UN RISULTATO, e i
+                // risultati si costruiscono in questo map. Il suo doppio, che e' la miniatura della
+                // SERIE, e' dichiarato in cima alla funzione: vedi `_MINI_SERIE`.
+                const _MINI = _MINI_RISULTATO;
                 const smallImg = (url, title, bordo = true) => url
                   ? `<img src="${cloudinaryUrl(url,'w_64,h_64,c_fit,q_auto,f_auto')}"${title ? ` title="${esc(title)}"` : ''} style="width:${_MINI}px;height:${_MINI}px;object-fit:contain;border-radius:4px;background:var(--card);${bordo ? 'border:1px solid var(--border);' : ''}">`
                   : '';
-                return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.75rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
-                ${(() => { const front = isVarOrChange ? (f.img || (baseFig && baseFig.img) || null) : f.img; return smallImg(front, '', false); })()}
-                ${(retroFig && !_soloNomeENumero) ? smallImg(retroFig.img, currentLang === 'it' ? 'Retro associato' : 'Associated retro') : ''}
-                <span>${f.number ? '<span style="color:var(--muted);font-size:0.68rem;">'+f.number+'</span> ' : ''}${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.68rem;color:#ffd84d;">Change</span>' : ''}${isVarOrChange ? ' <span style="font-size:0.68rem;"><span style="color:#ffd84d;">' + varLabel + '</span>' + (tipoLabel ? ' <span style="color:#ffd84d;">' + esc(tipoLabel) + '</span>' : '') + '</span>' : ''}${(sec === 'retros' || _soloNomeENumero) ? '' : _codaRetro}</span>
+                return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.9375rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
+                ${smallImg(_facce.fronte, '', false)}
+                ${_soloNomeENumero ? '' : (() => {
+                  // 🔴 v6.413 - IL TERZO STATO, che qui non c'era. Card e scheda distinguono da
+                  // sempre tre casi (v6.079, v6.098): il retro c'e' con la foto, il retro C'E' ma
+                  // la foto non e' ancora stata caricata, il retro non esiste. La ricerca ne aveva
+                  // DUE - foto o niente - quindi un retro esistente senza foto SPARIVA, e la riga
+                  // mostrava una miniatura sola.
+                  // 📌 «C'e' una foto da caricare» e «non c'e' niente da caricare» sono due cose
+                  // diverse, ed e' la distinzione messa per iscritto dalla v6.079. Un posto vuoto
+                  // la dice; il niente la nasconde.
+                  if (_facce.retro) return smallImg(_facce.retro, currentLang === 'it' ? 'Retro associato' : 'Associated retro');
+                  if (!_facce.retroRec) return '';
+                  const _t = currentLang === 'it' ? 'Il retro esiste, la foto non ancora' : 'Retro exists, photo missing';
+                  return '<span title="' + esc(_t) + '" style="width:' + _MINI + 'px;height:' + _MINI
+                    + 'px;border-radius:4px;background:var(--card);border:1px dashed var(--border);'
+                    + 'display:inline-flex;align-items:center;justify-content:center;'
+                    + 'color:var(--muted);font-size:0.85rem;flex-shrink:0;">□</span>';
+                })()}
+                <span>${f.number ? '<span style="color:' + COL_IDENTITA + ';font-size:0.85rem;">'+f.number+'</span> ' : ''}<span style="color:${COL_IDENTITA};">${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}</span>${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.85rem;text-transform:uppercase;color:' + _COLORE_TIPO.change + ';">Change</span>' : ''}${mostraVersione ? _sep + _inVersione(varLabel) + (tipoLabel ? _sep + _inVersione(esc(tipoLabel)) : '') : ''}${(sec === 'retros' || _soloNomeENumero) ? '' : _codaRetro}</span>
               </span>`;
               }).join('') + '</div>').join('')}
             </div>
           </div>`;
         }).join('') : '';
-    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.6rem 0.75rem;margin-bottom:0.6rem;">
+    // 🆕 v6.411 (Franco) - LO SPAZIO FRA UNA TIPOLOGIA E LA SUCCESSIVA.
+    // Franco: *"tra i risultati di una tipologia di articolo e quelli della successiva, lascia una
+    // riga vuota (dello spazio, ecco)"*.
+    // 📌 UN `gap` SUL PADRE, NON UN MARGINE PER FIGLIO - la lezione della v6.329. Qui vale il
+    // doppio: i blocchi di sezione senza risultati tornano stringa vuota e nel DOM non esistono,
+    // quindi «quale sia l'ultimo» dipende dai dati e non dall'indice del map.
+    // ⚠️ Col `gap` sparisce anche il `margin-bottom` dell'INTESTAZIONE: sommato al gap sarebbe
+    // stato uno spazio doppio nel punto piu' visibile della card.
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.6rem 0.75rem;margin-bottom:0.6rem;display:flex;flex-direction:column;gap:1rem;">
       ${seriesHeader}
       ${figsHTML}
     </div>`;
@@ -30180,6 +31058,33 @@ function openFigFromSearch(figId, seriesId, section) {
 // \uD83D\uDCCC `sempreCorto` non e' "preferisci il corto": e' "qui lo spazio e' quello del telefono anche
 // se siamo su un desktop". La condizione vera resta una sola - lo spazio - e chi chiama la conosce
 // meglio di questa funzione.
+// 🆕 v6.400 (Franco) - L'ANNO DELLA SERIE, SEMPRE SOTTO IL NOME E IN UNA FORMA SOLA.
+// Franco: *"mettiamo l'anno della serie sempre sotto al nome della serie"*.
+//
+// 🔴 PERCHE' UNA FUNZIONE E NON QUATTRO RIGHE. Prima della v6.400 l'anno aveva TRE forme nei
+// quattro punti in cui compare il nome di una serie: accanto al nome fra parentesi e in bianco
+// (card, v6.396), sotto il nome in grigio (tabella «tutte le serie», v6.210), e assente del tutto
+// (ricerca globale, e le serie dentro un articolo). Tre forme non sono nate da tre decisioni: sono
+// nate da tre momenti diversi in cui nessuno vedeva le altre due. Scriverne una quarta a mano
+// avrebbe rimesso lo stesso meccanismo in moto - e' la lezione della sesta copia di sectionOrder,
+// e della v6.080 sui cinque `if` che scelgono il nome corto.
+//
+// 📌 LE PARENTESI CADONO DA SE'. Servivano quando l'anno stava IN LINEA col nome: senza, «Serie 3
+// 1986» si sarebbe letto come un titolo solo. Andando a capo il compito lo fa la riga nuova, e
+// restavano un secondo separatore per la stessa cosa - esattamente com'era per l'etichetta di
+// tipologia nella v6.398. Franco, due messaggi prima: *"non ho mai capito il significato di quelle
+// parentesi; toglile"*.
+//
+// ⚠️ IL BIANCO E' UNA DECISIONE DI FRANCO, PRESA CONTRO UNA RAGIONE SCRITTA. La v6.210 aveva messo
+// l'anno «in grigio e piu' piccolo: e' un dato secondario, e messo con lo stesso peso del nome se
+// lo contenderebbe». Interpellato con quella ragione davanti, Franco ha scelto il bianco OVUNQUE,
+// tabella inclusa. Quindi la v6.210 e' revocata apposta, non per distrazione: resta il «piu'
+// piccolo» (0,7rem), se ne va il grigio.
+function _annoSottoNome(s) {
+  if (!s || !s.year) return '';
+  return '<div style="font-size:0.7rem;line-height:1.1;color:var(--text);font-family:var(--font-ui);">' + esc(s.year) + '</div>';
+}
+
 function _nomeSerieCard(s, sempreCorto) {
   if (!s) return '';
   const corto = (s.nomeCorto || '').trim();
@@ -30209,7 +31114,7 @@ function seriesCardHTML(s) {
     </div>
     <div class="card-body">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
-        <div class="card-title" style="display:flex;align-items:baseline;gap:0.5rem;flex-wrap:wrap;margin-bottom:0;"><span>${esc(_nomeSerieCard(s))}</span>${s.year ? `<span class="card-tag" style="display:inline;margin-bottom:0;">(${s.year})</span>` : ''}</div>
+        <div class="card-title" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.15rem;flex-wrap:wrap;margin-bottom:0;"><span style="color:var(--nome-entita);">${esc(_nomeSerieCard(s))}</span>${_annoSottoNome(s)}</div>
         ${modeScoreHTML || ''}
       </div>
       <div class="card-desc">${(desc||'').substring(0,90)}${(desc||'').length>90?'…':''}</div>
@@ -46740,7 +47645,7 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
                  stava a ΔE 7 dal colore della Variazione ufficiale, e Franco ha scelto di non
                  prendere un'altra tinta: la tavolozza e' affollata, e l'etichetta si distingue per
                  FORMA invece che per colore. -->
-            <span style="font-family:var(--font-ui);font-size:0.85rem;color:var(--tipo-articolo);">${sectionLabels[sec] || sec}</span>
+            <span style="font-family:var(--font-ui);font-size:0.85rem;color:var(--text);">${sectionLabels[sec] || sec}</span>
             <div style="margin-left:auto;display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
               ${hasNumbers ? `<div style="display:flex;align-items:center;gap:0.35rem;"><button class="toggle-btn-blue ${mode==='numbers'?'on':''}" onclick="toggleWantlistMode('${groupKey}','numbers')" title="${currentLang === 'it' ? 'Mostra solo numeri' : 'Show numbers only'}"></button><span style="font-size:0.78rem;color:var(--muted);">${currentLang === 'it' ? 'Mostra solo numeri' : 'Show numbers only'}</span></div>` : ''}
               ${hasNumbers ? `<div style="display:flex;align-items:center;gap:0.35rem;"><button class="toggle-btn-blue ${mode==='names'?'on':''}" onclick="toggleWantlistMode('${groupKey}','names')" title="${currentLang === 'it' ? 'Mostra solo nomi' : 'Show names only'}"></button><span style="font-size:0.78rem;color:var(--muted);">${currentLang === 'it' ? 'Mostra solo nomi' : 'Show names only'}</span></div>` : ''}
