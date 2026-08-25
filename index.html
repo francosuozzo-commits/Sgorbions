@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.418"></script>
-<link rel="stylesheet" href="css/style.css?v=6.418">
+<script src="js/email.min.js?v=6.426"></script>
+<link rel="stylesheet" href="css/style.css?v=6.426">
 
 
 <style>
@@ -1313,7 +1313,13 @@ button.back-btn { color:#ffffff; }
          `space-between` da sempre, e a decidere su quale delle loro righe si incontrassero era solo
          `align-items`. La stessa osservazione della v6.367, applicata all'altro capo. -->
     <div id="items-results-row" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:0.75rem;margin-bottom:0.9rem;">
-    <div id="items-count-display" style="font-size:0.95rem;color:var(--muted);margin-bottom:0;"></div>
+    <!-- 🎨 v6.426 (Franco) - LE ETICHETTE DEI CONTEGGI IN BIANCO: era `--muted`, cioe' il grigio
+         delle note a margine, mentre questa riga e' il riscontro principale della ricerca.
+         📌 SI CAMBIA IL BLOCCO, NON LE DUE FRASI. `updateItemsCountDisplay` colora solo i NUMERI
+         (v5.797: *"colorare SOLO il numero, non l'intera frase"*) e lascia che le etichette
+         ereditino da qui: un punto solo da cambiare, e due frasi che non possono divergere.
+         ⚠️ Il titolo «I risultati della tua ricerca:» dichiara gia' `--text` per conto suo. -->
+    <div id="items-count-display" style="font-size:0.95rem;color:var(--text);margin-bottom:0;"></div>
       <div id="bulk-owned-btns" style="display:none;gap:0.75rem;flex-wrap:wrap;align-items:center;">
         <button class="btn-primary" onclick="setAllOwned(true)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.haveall.hint" title="Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 3v11"/><path d="M8 10l4 4 4-4"/></svg><span data-i18n="catalog.haveall">Aggiungi risultati alla tua lista</span></button>
         <button class="btn-primary" onclick="setAllOwned(false)" style="font-size:0.9rem;padding:0.4rem 1.1rem;display:inline-flex;align-items:center;gap:0.45rem;" data-i18n-title="catalog.havenone.hint" title="Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/><path d="M12 14V3"/><path d="M8 7l4-4 4 4"/></svg><span data-i18n="catalog.havenone">Rimuovi risultati dalla tua lista</span></button>
@@ -3065,18 +3071,43 @@ button.back-btn { color:#ffffff; }
   </div>
 </div>
 
+<style>
+/* 🆕 v6.420 (Franco: *"usiamo il color code anche nelle due legende (figurine e retro)"*)
+   IL TERMINE IN GRASSETTO PRENDE IL COLORE DELLA SUA VERSIONE.
+   🔴 QUI C'ERA UN AZZURRO SOLO PER TUTTE E SEI LE VOCI: `#filter-legend-list strong` in
+   `css/style.css`, scritto nella v5.578 quando il codice colore delle versioni non esisteva ancora.
+   Un colore unico su un elenco di versioni non e' neutro: dice «queste sei cose sono la stessa
+   cosa», ed era l'ultimo posto del sito a dirlo. Non si tocca style.css (§5): questa regola sta
+   inline nell'index, arriva DOPO il <link> e ha un tipo in piu' - vince per ordine e per
+   specificita', cosi' la vittoria non dipende da quale delle due ragioni regge.
+   📌 IL COLORE LO PORTA IL <li>, in `--legenda-colore`, e lo scrive `openFilterLegendModal()`
+   dalla tabella delle versioni. Qui non c'e' nessun colore scritto: c'e' solo il PUNTO in cui va.
+   ⚠️ Il ripiego e' `--text` e non l'azzurro di prima: se un domani nascesse una voce senza colore
+   dichiarato, deve leggersi come «non gliene abbiamo dato uno», non come un sesto colore. */
+#filter-legend-list li strong { color: var(--legenda-colore, var(--text)); }
+</style>
 <!-- FILTER LEGEND MODAL -->
 <div class="modal-overlay hidden" id="filter-legend-modal">
   <div class="modal">
     <div class="modal-header">
-      <h2 class="modal-title" data-i18n="items.filterLegend.title">📖 Legenda definizioni figurine</h2>
+      <h2 class="modal-title" data-i18n="items.filterLegend.title">📖 Legenda delle versioni delle figurine</h2>
       <button class="modal-close" onclick="closeModal('filter-legend-modal')">✕</button>
     </div>
+    <!-- 🆕 v6.420 (Franco: *"nella legenda trova il modo di spiegare che il sito usa un colore
+         per le versioni"*) - LA REGOLA DETTA A PAROLE, sopra le voci che la mostrano.
+         📌 STA QUI E NON IN UNA SETTIMA VOCE DELL'ELENCO: quell'elenco definisce COSE (cos'e' un
+         change, cos'e' un omaggio), questa frase descrive una CONVENZIONE del sito. Infilata fra le
+         definizioni si leggerebbe come una sesta versione che si chiama «i colori».
+         📌 E VALE PER TUTTE E DUE LE LEGENDE senza una riga in piu': `openFilterLegendModal()`
+         cambia il titolo e le voci, non questo paragrafo - che dice la stessa cosa nei due casi.
+         ⚠️ `data-i18n-html` e non `data-i18n`: contiene un <strong>, e `data-i18n` scrive
+         `textContent`, cioe' se lo mangerebbe (§5, la tabella delle tre varianti). -->
+    <p data-i18n-html="items.filterLegend.colorCode" style="margin:0 0 0.9rem 0;font-size:0.86rem;line-height:1.55;color:var(--muted);">🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed &egrave; sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.</p>
     <ul id="filter-legend-list" style="margin:0;padding-left:1.2rem;line-height:1.7;font-size:0.9rem;color:var(--text);">
       <li data-i18n-html="items.filterLegend.base"><strong>Figurina set base</strong>: figurina appartenente al set base della serie</li>
       <li data-i18n-html="items.filterLegend.variation"><strong>Variazione ufficiale</strong>: variante di retro documentata e ad altra produzione (non rara)</li>
       <li data-i18n-html="items.filterLegend.unofficialVariation"><strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassissima produzione (molto rara)</li>
-      <li data-i18n-html="items.filterLegend.change"><strong>Change</strong>: variante di fronte voluto dal produttore</li>
+      <li data-i18n-html="items.filterLegend.change"><strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul></li>
       <!-- 🆕 v6.339 (Franco) — L'OMAGGIO ENTRA NELLA LEGENDA, e mancava da quando esiste (v6.232).
            Sta FRA Change ed Errore di stampa, che è il posto che ha in tutto il resto del sito:
            l'ordine di `VERSIONI_ARTICOLO`, quello della griglia, dei badge e delle pillole del
@@ -3413,7 +3444,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.418"></script>
+<script src="js/app.js?v=6.426"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3437,7 +3468,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.418'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.426'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
