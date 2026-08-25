@@ -1,6 +1,325 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.426 - LA RIGA DEI RISULTATI: IL COLORE SUI NUMERI, «ARTICOLI», LA PARENTESI. index + app.js.
+//
+//          Cinque richieste di Franco sulla pagina di ricerca, e quattro dicono la stessa cosa.
+//
+//          📌 IL FILO: IL COLORE STA SUL DATO, IL TESTO E' TESTO. *"Mettiamo solo il numero in
+//          lime; la scritta «totale» lasciamola bianca"*, *"«articoli trovati» va in bianco"*,
+//          *"anche «fanno parte della tua lista» va in bianco"*. 🔴 E questa regola nel codice era
+//          gia' scritta - dalla v5.797, in `updateItemsCountDisplay`: *"colorare SOLO il numero
+//          (non l'intera frase)"*. Era applicata li' e in nessun altro posto: il «· totale N» dei
+//          riquadri colorava tutta la frase (v6.421, ieri sera), e le etichette di questa riga
+//          erano `--muted` - il grigio delle note a margine - su quello che e' il riscontro
+//          principale della ricerca. Una regola applicata in un punto solo e' un promemoria.
+//
+//          🔴 «OGGETTI» -> «ARTICOLI», E LA v6.417 CREDEVA DI AVERLO GIA' FATTO. Il 25 agosto
+//          Franco aveva scritto testualmente: *"nel totale della ricerca, cambia «oggetti trovati»
+//          in «articoli trovati»"*. La v6.417 ha cambiato `_frasePerQuesta`, cioe' il conteggio
+//          della ricerca GLOBALE - dove pero' la parola era «risultati». La frase citata ALLA
+//          LETTERA vive nella ricerca di SEZIONE e non e' mai stata toccata: per nove release ha
+//          continuato a dire «789 oggetti trovati».
+//          📌 La lezione non e' «cercare meglio»: e' che una richiesta che cita una frase esatta
+//          si chiude cercando QUELLA frase, non il concetto che sembra nominare. La v6.417 ha
+//          risolto un problema vero e ha lasciato aperto quello che le era stato chiesto - e non
+//          se n'e' accorto nessuno perche' la parola giusta era comparsa da qualche parte.
+//
+//          🆕 E LA PARENTESI NON E' PUNTEGGIATURA: *"«789 oggetti trovati 788 fanno parte della
+//          tua lista» diventa «789 articoli trovati (di questi 788 fanno parte della tua lista)»"*.
+//          E' la RELAZIONE fra i due numeri, che prima non era scritta da nessuna parte: due
+//          conteggi affiancati si leggono come due insiemi distinti - 789 piu' 788 - mentre il
+//          secondo e' un SOTTOINSIEME del primo. «Di questi» lo dice in due parole; la parentesi
+//          lo dice anche a chi non le legge.
+//          ⚠️ Su telefono la parentesi c'e' ma «di questi» no: li' le due frasi sono accorciate
+//          dalla v5.850 per stare su una riga, e allungarle disferebbe quella scelta.
+//
+//          📌 E LE ETICHETTE IN BIANCO SONO UNA RIGA SOLA: il colore del BLOCCO in index.html,
+//          non le due frasi una per una. Le etichette non hanno un colore proprio - lo ereditano -
+//          ed e' proprio cio' che rende questa modifica un punto invece che due punti da tenere
+//          uguali. Il titolo dichiara `--text` per conto suo e non cambia.
+//
+//          🧪 prova-v6426.js: il lime sta sul numero e non sulla parola (nelle DUE copie), la
+//          parola «oggetti» non c'e' piu' in nessuno dei due conteggi, la parentesi c'e' in tutte
+//          e due le lingue, e il blocco non e' piu' `--muted`.
+//
+// v6.425 - VIA «IL BIANCO E' IL SET BASE»: LO DICE GIA' LA VOCE SOTTO. index.html + app.js.
+//
+//          Franco: *"toglila; lo dici subito sotto che il bianco e' il set base..."*.
+//
+//          🔴 HA RAGIONE, E IL PUNTO NON E' LA RIPETIZIONE: E' CHE LA FRASE SPIEGAVA UNA COSA
+//          CHE L'ESEMPIO SOTTO GIA' MOSTRA. Due righe piu' giu' c'e' «Figurina set base», scritta
+//          in bianco dalla v6.420 - cioe' la voce dimostra da se' quello che quella coda
+//          annunciava. Una legenda che prima descrive a parole cio' che poi fa vedere si legge due
+//          volte per sapere una cosa sola.
+//
+//          📌 E LA COLPA E' DI COM'ERA NATA (v6.420). L'avevo aggiunta con questa ragione: «il
+//          bianco era l'unica voce a sembrare priva di colore». Ma quella era una preoccupazione
+//          MIA da chi guarda il codice - dove `--type-base: #ffffff` sembra un buco - e non di chi
+//          guarda lo schermo, dove il bianco e' un colore come gli altri e la sua voce ce l'ha.
+//          E' la stessa testa della v6.424, che ha tolto «badge» e «pillole»: due release di fila
+//          in cui il testo era scritto per chi ha scritto il codice.
+//
+//          ⚠️ E NELLA v6.424 QUESTA CODA L'AVEVO TENUTA APPOSTA, dichiarando che tenerla era una
+//          scelta e non una dimenticanza: Franco aveva dettato il pezzo dalla virgola al punto, e
+//          la frase dopo non era nel dettato. 📌 La scelta era giusta e la risposta e' arrivata in
+//          una riga - che e' esattamente cio' che comprano le domande scritte invece che decise:
+//          se l'avessi tolta per interpretazione avrei avuto ragione per caso.
+//
+//          🔧 DUE SUITE AGGIORNATE, E DIFENDEVANO UNA COSA VERA. `prova-v6420` sezione F5 e
+//          `prova-v6424` sezione A6 pretendevano quella coda, ognuna con scritto accanto perche'.
+//          Non erano sbagliate: difendevano una decisione, e la decisione e' stata revocata da chi
+//          decide. 🔴 La differenza fra questo e «aggiustare la prova finche' passa» sta tutta
+//          nella riga di conversazione che c'e' in mezzo - e le due suite adesso pretendono il
+//          CONTRARIO, con la data e la frase di Franco accanto: se un domani quella coda
+//          rientrasse per abitudine, diventano rosse.
+//
+//          🧪 prova-v6425.js: la coda non c'e' in nessuna delle due lingue ne' nel ripiego, e la
+//          voce «set base» sotto c'e' ancora - perche' e' LEI a dire quella cosa adesso, e
+//          toglierle la frase sopra ha senso solo finche' lei resta.
+//
+// v6.424 - LA FRASE DEL CODICE COLORE, RISCRITTA DA FRANCO. index.html + app.js.
+//
+//          Franco: *"sempre nelle 2 due legende, cambiare come segue: «ed e' sempre lo stesso in
+//          tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della
+//          ricerca»"*.
+//
+//          📌 TRE TAGLI, E TUTTI E TRE TOLGONO UN DETTAGLIO DI IMPLEMENTAZIONE:
+//          · «qui sotto» se ne va - l'elenco e' li' e si vede, dirlo era una didascalia;
+//          · «sui BADGE delle card» -> «sulle card»: chi legge sa cos'e' una card, non che il
+//            rettangolino colorato in alto si chiama badge;
+//          · «sulle PILLOLE dei filtri» -> «nei filtri di ricerca»: stessa cosa. «Pillola» e'
+//            la parola con cui NOI chiamiamo quel controllo in questo file, e la v6.423 l'ha
+//            usata trenta volte nei commenti - ma e' un nome da codice, non da legenda.
+//          🔴 Scrivevo per chi ha scritto il codice, che e' il modo piu' facile di scrivere una
+//          spiegazione inutile: nomina esattamente le cose che chi legge non deve sapere.
+//
+//          📌 «Il bianco e' il set base.» RESTA. Franco ha dettato il pezzo dalla virgola al
+//          punto, e quella e' la frase dopo. Toglierla sarebbe stata un'interpretazione, e in una
+//          release che riscrive un testo suo l'interpretazione e' proprio la cosa da non fare.
+//          ⬜ La domanda e' nel documento: toglierla e' tre parole.
+//
+//          ⚠️ IL RIPIEGO STATICO NELL'INDEX NON E' IDENTICO BYTE A BYTE AL DIZIONARIO, e non e'
+//          un difetto: li' la «e» accentata e' scritta come entita' (`&egrave;`). Quindi non si
+//          copia la stringa del dizionario nell'index - si sostituisce la SUA forma. 📌 Ed e' la
+//          ragione per cui `prova-v6424` confronta i due testi NORMALIZZATI (entita' sciolte)
+//          invece che alla lettera: una prova che pretendesse l'uguaglianza byte a byte sarebbe
+//          rossa su un codice giusto, e la si aggiusterebbe allentandola - cioe' perdendola.
+//
+//          🧪 prova-v6424.js: la frase nuova c'e' nelle due lingue, le tre parole da codice non
+//          ci sono piu' in nessuna delle due, e il ripiego dell'index dice cio' che dice il
+//          dizionario italiano - il controllo che la v6.422 ha imparato a fare, applicato prima
+//          che il difetto ci sia invece che dopo.
+//
+// v6.423 - IL TESTO DELLE PILLOLE DELLE VERSIONI PORTA IL LORO COLORE. index.html + app.js.
+//
+//          Franco: *"proviamo a colorare anche il testo delle pillole «Omaggio», «Errore di
+//          stampa», «Change», «Variazione ufficiale» e «Variazione non ufficiale»"*.
+//
+//          📌 IL RIQUADRO «Filtra per le Versioni» ERA L'UNICO POSTO IN CUI I NOMI DELLE VERSIONI
+//          COMPARIVANO IN BIANCO. Il colore c'era gia' - `_RAGGR_VERSIONE` dichiara
+//          `colore: val => _COLORE_TIPO[val]` dalla v6.323 - ma lo usavano solo le righe dei
+//          riquadri non cliccabili. Le pillole lo chiedevano a `C` e non lo mettevano da nessuna
+//          parte. Non e' una tinta nuova: e' una tinta gia' dichiarata che finalmente si vede.
+//
+//          🆕 E LA DOMANDA ORA HA UN NOME: `coloreDelValore`. La distinzione esisteva dalla
+//          v6.323 (`colore` e' una funzione sul raggruppamento per versione, una stringa sugli
+//          altri) ma viveva dentro un `typeof` da riscrivere a ogni uso. 📌 E' l'esatto
+//          COMPLEMENTO di `titoloColore` (v6.419): dove il colore e' del riquadro lo porta il
+//          titolo, dove e' del valore lo portano le pillole. Le due condizioni sono opposte per
+//          costruzione, quindi nessun riquadro puo' finire con tutti e due o con nessuno - e i
+//          tre riquadri dei TIPI restano con le pillole bianche, che e' giusto: li' l'etichetta e'
+//          un tipo scritto da Franco nella scheda della serie, non una versione.
+//
+//          🔴 DA PILLOLA ACCESA IL COLORE NON C'E', ED E' MISURATO. Lo sfondo dell'acceso e' il
+//          lime `--accent`, e i sei colori delle versioni su quel lime danno da 1,05:1 (non
+//          ufficiale) a 2,38:1 (errore di stampa): illeggibili tutti e sei, non «alcuni».
+//          Il testo resta `--bg`. 📌 Non si perde niente: da accesa la pillola e' gia' marcata dal
+//          lime, che in questo sito vuol dire «acceso» ovunque (la regola del colore-stato). Il
+//          colore serve a distinguere le pillole SPENTE fra loro, ed e' li' che adesso c'e'.
+//
+//          ✅ CONTRASTI SU `--card2` (#221540), che e' lo sfondo vero della pillola spenta - non
+//          `--card`, e la differenza va detta perche' il primo numero calcolato era su quello
+//          sbagliato: base 16,8:1 · non ufficiale 14,6:1 · ufficiale 11,5:1 · omaggio 8,8:1 ·
+//          change 8,8:1 · errore di stampa 5,8:1. Il peggiore sta sopra 4,5:1; il bianco di prima
+//          faceva 14,3:1. Nessuna pillola diventa piu' difficile da leggere di quanto serva.
+//
+//          📌 SOLO L'ETICHETTA, NON IL «+». Quel bottoncino e' un COMANDO: se prendesse la tinta
+//          della versione, direbbe che e' «un po' Omaggio». Due mestieri, due variabili - `fg`
+//          resta al comando, `fgEtichetta` va al valore.
+//
+//          ⚠️ «BASE» NON CAMBIA, e non e' un caso rimasto fuori: `--type-base` e' #ffffff, cioe'
+//          praticamente il bianco di prima. La base non e' una versione, e' la loro assenza - ed e'
+//          giusto che sia l'unica a non avere un colore «suo».
+//
+//          📌 APPLICATA ANCHE ALLE PILLOLE NON CLICCABILI (testata della serie), dove oggi non
+//          cambia niente a schermo perche' li' i riquadri hanno tutti un colore di riquadro. E' il
+//          contrario della scelta della v6.419, che si era fermata alla ricerca: li' il titolo
+//          della testata e' un ALTRO testo («Change per tipo»), qui l'etichetta e' la stessa
+//          identica parola. Si restringe quando le due cose sono diverse, non quando sono uguali.
+//
+//          🧪 prova-v6423.js: l'etichetta chiede il colore al valore, il «+» no, l'acceso resta
+//          `--bg`, i tre riquadri dei tipi non sono toccati, e i contrasti si misurano dai colori
+//          VERI letti dall'index invece che da numeri copiati qui.
+//
+// v6.422 - IL TITOLO DELLA LEGENDA FIGURINE, E LA VOCE «CHANGE» RISCRITTA DA FRANCO. index.html + app.js.
+//
+//          Franco: *"Titolo della legenda delle figurine: cambialo in «Legenda delle versioni
+//          delle figurine»"* e la voce Change dettata parola per parola, coi due casi su due righe.
+//
+//          📌 «DEFINIZIONI» -> «VERSIONI», ed e' piu' di un sinonimo. Quella modale elenca le
+//          cinque VERSIONI dell'articolo - sono le voci di `VERSIONI_ARTICOLO`, le stesse delle
+//          pillole e dei badge - e da ieri porta in cima la frase che spiega il codice colore
+//          delle versioni. «Definizioni» diceva cosa fa la pagina (definisce); «versioni» dice di
+//          che cosa parla. La seconda e' l'informazione utile a chi apre.
+//
+//          🔴 LA VOCE «CHANGE» E' TESTO DI FRANCO, e due cose sono USCITE dalla frase vecchia:
+//          da (1) «stesso personaggio», da (2) «un retro che non appartiene alla serie». Non sono
+//          state tolte da me: la frase e' stata dettata intera, ed e' cosi' che finisce. Lo scrivo
+//          perche' chi confronta le due versioni non pensi a una svista di trascrizione.
+//          ⚠️ Il caso (2) senza quella coda dice che la variante nasce dal retro, ma non piu' che
+//          quel retro e' estraneo alla serie: e' l'unica informazione che la modale perde.
+//
+//          🆕 E' IL PRIMO ELENCO DENTRO UN ELENCO DEL SITO. Lo stile sta inline nella stringa e
+//          non in una regola CSS: una regola per un caso solo e' una regola che al secondo caso
+//          nessuno ritrova. ⚠️ `list-style:none` perche' Franco ha scritto «* 1)» - pallino E
+//          numero: il numero e' suo e resta, il pallino sarebbe un secondo marcatore per la stessa
+//          cosa. Se lo rivuole e' una parola.
+//
+//          🔴 E IL RIPIEGO STATICO DELLA VOCE «change» NELL'INDEX ERA GIA' FUORI SINCRONIA:
+//          diceva *"variante di fronte voluto dal produttore"*, una frase che il dizionario non ha
+//          in nessuna delle due lingue. Vive un decimo di secondo - `applyI18n()` ci scrive sopra -
+//          e per questo nessuno l'aveva mai vista. E' la ragione per cui la v6.342 dice di
+//          cambiarli lo stesso: si legge solo quando il JS tarda o non parte, cioe' proprio quando
+//          non c'e' nient'altro da leggere.
+//
+//          ✅ E LA LEGENDA DEI RETRO E' STATA CHIUSA NELLA STESSA RELEASE. La prima stesura si
+//          fermava alle figurine - Franco aveva nominato quelle - e lasciava scritta nel documento
+//          la domanda *"e i retro?"*, perche' due titoli divergenti («delle versioni» contro
+//          «definizioni») sono esattamente l'incoerenza che questo progetto insegue. Franco ha
+//          risposto un minuto dopo, prima che la release fosse chiusa: «Legenda delle versioni dei
+//          retro», e la sua voce Change riscritta.
+//          📌 E LE DUE VOCI «CHANGE» ADESSO CONDIVIDONO LA FORMULA: *"un elemento grafico
+//          differente nella stampa"* e' il caso (1) delle figurine ed e' ora anche la frase dei
+//          retro, che prima diceva *"un elemento in piu' nel disegno"*. Due frasi per la stessa
+//          idea, in due modali che si aprono dallo stesso bottone: adesso e' una. 📌 E i due casi
+//          restano solo nelle figurine, perche' un retro un fronte non ce l'ha - la differenza fra
+//          le due voci e' quella vera, non un residuo.
+//
+//          🧪 prova-v6422.js: i tre posti dicono la stessa cosa, i due casi ci sono in tutte e
+//          due le lingue, il ripiego statico dell'index combacia col dizionario italiano, e i due
+//          titoli hanno la stessa forma.
+//
+// v6.421 - I CONTEGGI IN LIME: IL VIOLA ESCE DAI TOTALI. index.html + app.js.
+//
+//          Franco: *"i numeri che indicano i totali delle sotto-ricerche, fallo anch'essi lime;
+//          ora sono viola, ma abbiamo detto che tutti i conteggi sono lime e che il viola e' solo
+//          per i titoli grandi"*. Chiude il punto 2 del backlog, aperto dal 24 sera.
+//
+//          🔴 I PUNTI ERANO TRE, NON DUE, e il terzo non era nel backlog. Il documento ne aveva
+//          misurati due (le due copie del «· totale N» nei riquadri); un `grep` di `--accent3` sul
+//          codice vivo ne ha trovato un terzo: il «N totali» della riga meta della serie, fucsia
+//          dalla v6.004. E' un conteggio anche lui. ♻️ Cambiarlo REVOCA la v6.004, dichiaratamente:
+//          allora il fucsia fu scelto perche' su quella riga ogni altra tinta significa gia' una
+//          versione, e l'argomento non cade - cade la domanda, perche' adesso una regola generale
+//          c'e', e il lime la supera comunque non essendo colore di nessuna versione.
+//          ⚠️ Quel terzo punto NON era chiesto: se a schermo non convince, e' l'unica riga da
+//          rimettere a `--accent3`.
+//
+//          📌 `--accent` E NON `--success`, e non e' indifferente benche' valgano lo stesso lime
+//          (#b5ff2e - nodo aperto: due manopole o una scritta due volte?). I subtotali della
+//          ricerca globale erano gia' lime e usano `--accent`: prendere l'altro token avrebbe messo
+//          lo stesso colore sotto due nomi nella stessa videata, rendendo quel nodo piu' difficile
+//          da sciogliere invece che piu' facile.
+//
+//          🔴 LE DUE COPIE RESTANO DUE, ED E' LA COSA PIU' IMPORTANTE DI QUESTA VOCE.
+//          La prima stesura le unificava in `_totaleRiquadroHTML` - il documento lo chiedeva
+//          (*"vale la pena chiedersi se le due copie debbano restare due"*) e sembrava il momento
+//          giusto, visto che quel colore stava cambiando. E' stata buttata: OTTO SUITE evalutano
+//          `_specchiettoTipiHTML` ritagliato dal sorgente con `pezzo(...)`, e un simbolo
+//          dichiarato fuori dal ritaglio le manda tutte in ReferenceError - cioe' IN ERRORE, non
+//          rosse: rumore travestito da allarme, la cosa che `prove-tutte.py` conta separata
+//          apposta. Misurato, non temuto: 9 in errore su 77.
+//          📌 LA REGOLA CHE NE ESCE: unificare quelle due copie e' una decisione che costa otto
+//          file di suite, e va presa come tale - non come effetto collaterale di un cambio di
+//          colore. E' rimandata a Franco, col prezzo scritto.
+//          ✅ NEL FRATTEMPO NON RESTA UN PROMEMORIA: `prova-v6421` pretende che le due copie siano
+//          IDENTICHE FRA LORO, byte a byte. Il giorno che una cambia da sola, e' rossa. E' meno di
+//          una funzione sola, ed e' molto piu' di com'erano fino a ieri.
+//
+//          🗑️ Tolto il commento della v6.002 che diceva *"il numero del totale in BIANCO"*:
+//          falso dalla v6.004. Tolto, non aggiornato a meta'.
+//
+//          🧪 prova-v6421.js: `--accent3` non e' piu' in nessuno dei tre punti, le due copie sono
+//          identiche fra loro, e il lime e' `--accent` e non `--success`.
+//
+// v6.420 - IL COLOR CODE NELLE DUE LEGENDE, E LA LEGENDA CHE SPIEGA IL CODICE. index.html + app.js.
+//
+//          Franco: *"usiamo il color code anche nelle due legende (figurine e retro)"* e *"dico di
+//          piu': nella legenda trova il modo di spiegare che il sito usa un colore per le versioni"*.
+//
+//          🔴 LE SEI VOCI ERANO TUTTE DELLO STESSO AZZURRO (#4db8ff), da `#filter-legend-list
+//          strong` in css/style.css - regola della v5.578, scritta quando il codice colore delle
+//          versioni non esisteva. Un colore unico su un elenco di versioni NON e' neutro: dice
+//          «queste sei cose sono la stessa cosa», ed era rimasto l'ultimo posto del sito a dirlo.
+//          La legenda del codice colore era l'unica pagina scritta senza il codice colore.
+//
+//          🔴 IL COLORE STA NELLO `style` DEL <li>, NON DENTRO IL TESTO, e non e' un dettaglio.
+//          Quelle voci portano `data-i18n-html`: al primo cambio lingua `applyI18n()` riscrive il
+//          loro innerHTML dal dizionario, e uno <span> colorato messo dentro il testo sparirebbe
+//          li'. Provando in una lingua sola non si vedrebbe MAI. E' la trappola di §5 vista
+//          dall'altro lato: quella fa sparire il testo, questa avrebbe fatto sparire il colore.
+//          Lo `style` dell'elemento `applyI18n()` non lo tocca - riscrive cio' che c'e' dentro.
+//
+//          📌 LA MAPPA VOCE->VERSIONE E' DICHIARATA, e si poteva derivare: le chiavi dei retro
+//          sono quelle delle figurine col prefisso `retro`. Terza volta in due release che si
+//          sceglie di dichiarare (v6.419 sulla maiuscola, v6.286 su `esportaParola`), e qui la
+//          ragione e' anche piu' netta: una chiave scritta con un altro stile non prenderebbe un
+//          colore sbagliato, ne prenderebbe NESSUNO - e una voce bianca fra cinque colorate si
+//          legge come «questa non ha versione», che sarebbe falso.
+//
+//          🆕 E LA REGOLA ADESSO E' SCRITTA A PAROLE, sopra le voci che la mostrano:
+//          «Ogni versione ha il suo colore, ed e' sempre lo stesso in tutto il sito». Sta FUORI
+//          dall'elenco e non come settima voce: l'elenco definisce COSE, questa frase descrive una
+//          CONVENZIONE - infilata fra le definizioni si leggerebbe come una versione che si chiama
+//          «i colori». Vale per tutte e due le legende senza una riga in piu', perche' dice la
+//          stessa cosa nei due casi. Dice anche che il bianco e' il set base, che era l'unica
+//          voce del codice a non avere un colore «suo» e sembrava una mancanza.
+//
+//          🧪 prova-v6420.js: tutte e dieci le voci hanno una versione dichiarata, i colori
+//          escono da `_COLORE_TIPO` e non a mano, il colore vive nello `style` e non nel testo, la
+//          regola inline batte quella di style.css, e la chiave nuova c'e' in tutte e due le lingue.
+//
+// v6.419 - IL COLOR CODE NEI TITOLI DEI RIQUADRI DELLA FORM DI RICERCA. index.html + app.js.
+//
+//          Franco: *"color code nei titoli dei box della form di ricerca"*. «Filtra per tipologia
+//          di Change», «...di Omaggio», «...di Errore di stampa»: la parola della versione adesso
+//          porta il colore della versione, come lo portano le pillole DENTRO quello stesso riquadro
+//          e i badge sulle card. Il riquadro diceva gia' tre volte di che versione parla - il
+//          titolo era l'unico dei tre a dirlo in bianco.
+//
+//          ✅ LA PAROLA SI DICHIARA, NON SI DEDUCE, ed e' tutta la scelta di questa release.
+//          Nelle tre code la parola e' gia' l'unica in maiuscolo, quindi una regola sulla maiuscola
+//          avrebbe funzionato oggi su tutte e tre. Ma sarebbe una regola di ORTOGRAFIA usata come
+//          dato: basta una coda futura scritta con l'iniziale minuscola - o due parole maiuscole
+//          nella stessa frase - e sbaglia senza dirlo. E' la stessa scelta della v6.286 su
+//          `esportaParolaIt`, e la stessa della v6.267 sulle code: quando il testo non e' una
+//          funzione dell'etichetta, si dichiara.
+//
+//          ⚠️ E NON SI RIUSA `esportaParolaIt`, che pure sembra la stessa cosa: sull'errore di
+//          stampa quella dice «Errori di stampa» (plurale, perche' vive dopo «Includi») mentre la
+//          coda del riquadro dice «Errore di stampa» (singolare). Un campo riusato che combacia su
+//          due casi su tre e' peggio di un campo nuovo: il terzo caso sbaglia in silenzio.
+//
+//          📌 IL TITOLO DEL RIQUADRO VERSIONE NON CAMBIA, e non e' un'eccezione scritta a mano.
+//          «Filtra per le Versioni» non nomina UNA versione, e quel riquadro il colore ce l'ha per
+//          VALORE (ogni pillola il suo) e non per riquadro. Le due condizioni - una parola
+//          dichiarata, un colore di riquadro - mancano entrambe, quindi si esclude da solo.
+//
+//          🧪 prova-v6419.js: le tre parole sono dichiarate, stanno DAVVERO dentro le tre code
+//          (in italiano e in inglese), il titolo colorato esce solo nei riquadri cliccabili, il
+//          colore e' un token e non un esadecimale, e la Versione resta senza.
+//
 // v6.418 - IL `subgrid` DELLA v6.416 NON FUNZIONAVA: lo tolgo. index.html + app.js.
 //
 //          Franco, guardando l'anteprima: *"hai messo numero e nome su due righe diverse ma non c'e'
@@ -22677,7 +22996,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.418';
+const JS_VERSION = 'v6.426';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -24122,7 +24441,7 @@ const i18n = {
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters','items.resetFilters':'Clear all filters','items.searchHint':'Type a search string','admin.classifica':'Ranking','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker definitions glossary','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer. Two cases: (1) same character (same front) with a different graphic element in the printing — the back is the same as the base sticker’s; (2) same front, but it is the back that creates the variant — a back that does not belong to the series','items.filterLegend.free':'<strong>Free</strong>: sticker given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black) on the back','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','items.filterLegend.titleRetros':'📖 Retro definitions glossary','items.filterLegend.retroBase':'<strong>Base set retro</strong>: retro belonging to the series’ base set','items.filterLegend.retroChange':'<strong>Change</strong>: variant intentionally made by the manufacturer; it differs from its base version by one extra element in the artwork','items.filterLegend.retroFree':'<strong>Free</strong>: retro given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black)','items.filterLegend.retroPrintError':'<strong>Print error</strong>: variant purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Refine your search with these filters','items.resetFilters':'Clear all filters','items.searchHint':'Type a search string','admin.classifica':'Ranking','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker versions glossary','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Every version has its own colour</strong>, and it is the same everywhere on the site: on the cards, in the search filters and in the titles of the search boxes.','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer.<br>Two cases can be told apart:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) same front but with a different graphic element in the printing (the back is the same as the base sticker’s)</li><li>2) same front; it is the back that gives rise to the variant</li></ul>','items.filterLegend.free':'<strong>Free</strong>: sticker given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black) on the back','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','items.filterLegend.titleRetros':'📖 Retro versions glossary','items.filterLegend.retroBase':'<strong>Base set retro</strong>: retro belonging to the series’ base set','items.filterLegend.retroChange':'<strong>Change</strong>: variant intentionally made by the manufacturer; it differs from the base version by a different graphic element in the printing','items.filterLegend.retroFree':'<strong>Free</strong>: retro given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black)','items.filterLegend.retroPrintError':'<strong>Print error</strong>: variant purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
 'profile.title':'My Profile','profile.owned':'In My List','profile.total':'Total','profile.sec.figurines':'Stickers','profile.sec.retros':'Retros','profile.sec.albums':'Albums','profile.sec.bustine':'Wrappers','profile.sec.extras':'Other Items','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -24212,7 +24531,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con velina','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri','items.resetFilters':'Azzera filtri','items.searchHint':'Inserisci una stringa di ricerca','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda definizioni figurine','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore. Due casi: (1) stesso personaggio (stesso fronte) con un elemento grafico differente nella stampa — il retro coincide con quello della figurina base; (2) stesso fronte, ma è il retro a dare vita alla variante — un retro che non appartiene alla serie','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda definizioni retro','items.filterLegend.retroBase':'<strong>Retro set base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla sua versione base per un elemento in più nel disegno','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con velina','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Affina la tua ricerca coi seguenti filtri','items.resetFilters':'Azzera filtri','items.searchHint':'Inserisci una stringa di ricerca','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Retro set base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -27896,11 +28215,21 @@ function updateItemsCountDisplay(items) {
   // "N oggetti trovati" + "N fanno parte della tua lista" non ci stanno a un corpo leggibile.
   // Non si rimpicciolisce oltre: si accorcia il testo, che e' la cosa giusta da comprimere.
   const _mobileCount = _isMobileViewport();
+  // 🔴 v6.426 - «ARTICOLI», NON «OGGETTI», E LA v6.417 CREDEVA DI AVERLO GIA' FATTO.
+  // Allora Franco aveva scritto testualmente *"nel totale della ricerca, cambia «oggetti trovati»
+  // in «articoli trovati»"*; quella release ha cambiato `_frasePerQuesta`, cioe' il conteggio della
+  // RICERCA GLOBALE - dove pero' la parola era «risultati». La frase che Franco aveva citato ALLA
+  // LETTERA vive qui, nella ricerca di sezione, e non e' stata toccata.
+  // 📌 LA LEZIONE NON E' «cercare meglio»: e' che una richiesta che cita una frase esatta si
+  // chiude cercando QUELLA frase, non il concetto che sembra nominare. La v6.417 ha risolto un
+  // problema vero (due parole per la stessa cosa nella ricerca globale) e ha lasciato aperto quello
+  // che le era stato chiesto - e per nove release nessuno se n'e' accorto, perche' la frase giusta
+  // era comparsa da qualche parte.
   const trovati = _mobileCount
     ? (it ? `${num(cfmt)} trovati` : `${num(cfmt)} found`)
     : (count === 1
-        ? (it ? `${num('1')} oggetto trovato` : `${num('1')} item found`)
-        : (it ? `${num(cfmt)} oggetti trovati` : `${num(cfmt)} items found`));
+        ? (it ? `${num('1')} articolo trovato` : `${num('1')} item found`)
+        : (it ? `${num(cfmt)} articoli trovati` : `${num(cfmt)} items found`));
 
   let html = `<span>${trovati}</span>`;
 
@@ -27917,7 +28246,20 @@ function updateItemsCountDisplay(items) {
           ? (n === 1 ? 'fa parte della tua lista' : 'fanno parte della tua lista')
           : (n === 1 ? 'is part of your list' : 'are part of your list'));
     // Solo il numero è colorato (blu lista); l'etichetta resta nel colore testo.
-    html += `<span>${numBlue(nfmt)} ${frase}</span>`;
+    // 🆕 v6.426 (Franco) - LA SECONDA FRASE ENTRA IN UNA PARENTESI: *"«789 oggetti trovati 788
+    // fanno parte della tua lista» diventa «789 articoli trovati (di questi 788 fanno parte della
+    // tua lista)»"*.
+    // 📌 NON E' PUNTEGGIATURA: e' la RELAZIONE fra i due numeri, che prima non era scritta da
+    // nessuna parte. Due conteggi affiancati si possono leggere come due insiemi distinti - 789
+    // piu' 788 - mentre il secondo e' un SOTTOINSIEME del primo. «Di questi» lo dice in due parole,
+    // e la parentesi lo dice anche a chi non le legge.
+    // ⚠️ SU TELEFONO la parentesi c'e' ma «di questi» no: li' le due frasi sono gia' accorciate
+    // dalla v5.850 («12 trovati», «3 in lista») per stare su una riga, e allungarle disferebbe
+    // proprio la scelta che rende leggibile quella riga. La parentesi da sola porta comunque il
+    // grosso del significato, e costa due caratteri.
+    html += _mobileCount
+      ? `<span>(${numBlue(nfmt)} ${frase})</span>`
+      : `<span>(${it ? 'di questi ' : 'of these '}${numBlue(nfmt)} ${frase})</span>`;
   }
 
   // 🆕 v6.367 (Franco: *"nei risultati della ricerca, metti tutto sulla stessa riga: «1 oggetto
@@ -27937,7 +28279,7 @@ function updateItemsCountDisplay(items) {
   // ⚠️ IL TITOLO RESTA SOPRA, e non era nell'elenco di Franco: e' l'intestazione del blocco, non uno
   // dei tre pezzi. Se deve entrare in riga anche lui, e' una riga.
   el.innerHTML = `<div style="display:flex;flex-direction:column;gap:1px;">`
-    + `<div style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:0.35rem;">${it ? 'I risultati della tua ricerca' : 'Your search results'}</div>`
+    + `<div style="font-size:0.95rem;font-weight:600;color:var(--text);margin-bottom:0.35rem;">${it ? 'I risultati della tua ricerca:' : 'Your search results:'}</div>`
     + `<div style="display:flex;align-items:baseline;flex-wrap:wrap;gap:0.2rem 1.1rem;">${html}</div>`
     + `</div>`;
 }
@@ -28672,6 +29014,14 @@ const VERSIONI_ARTICOLO = [
     // CHIESTA, non data per scontata: *"si, me lo ero dimenticato"*. 📌 La differenza fra dedurre
     // e chiedere e' una riga di conversazione, e la paga chi legge il codice fra sei mesi.
     codaRaggrIt: 'tipologia di Change', codaRaggrEn: 'Change type',
+    // 🆕 v6.419 (Franco) - LA PAROLA DEL TITOLO DEL RIQUADRO CHE PORTA IL COLORE DELLA
+    // SUA VERSIONE. Stessa forma di `esportaParolaIt` (v6.286), e per la stessa ragione: si
+    // DICHIARA invece di cercarla per regola. Dedurla dalla maiuscola funzionerebbe oggi su
+    // tutte e tre le code - ma sarebbe una regola di ORTOGRAFIA applicata a un DATO, e la prima
+    // coda scritta diversamente la smentirebbe in silenzio.
+    // ⚠️ NON si riusa `esportaParolaIt`: li' l'errore di stampa dice «Errori di stampa» al
+    // plurale, qui la coda dice «Errore di stampa» al singolare. Due frasi, due parole.
+    raggrParolaIt: 'Change', raggrParolaEn: 'Change',
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
     // cinque frasi non hanno lo stesso articolo e da `it` non ci si arriva.
     esportaIt: 'Change', esportaEn: 'changes',
@@ -28725,6 +29075,9 @@ const VERSIONI_ARTICOLO = [
     // derivazione non puo' produrre tre forme diverse. Quando il testo non e' una funzione
     // dell'etichetta, si dichiara — come `prefissoTipo` (v6.257) e i plurali (v6.266).
     codaRaggrIt: 'tipologia di Omaggio', codaRaggrEn: 'Free item type',
+    // 🆕 v6.419 - vedi il change: la parola si dichiara. Vale anche in inglese, dove
+    // «Free item type» ha la parola in DUE token e nessuna regola sulla maiuscola li terrebbe insieme.
+    raggrParolaIt: 'Omaggio', raggrParolaEn: 'Free item',
     // 🆕 v6.257 - LA PAROLA CHE PRECEDE IL TIPO NEL NOME COMPLETO (Franco).
     // ⚠️ NON e' `it`, ed e' il punto: `it` e' un'etichetta DA MOSTRARE, e stanotte e' stata
     // rinominata (v6.240, "Versione omaggio" -> "Omaggio"). Il Nome completo e' un campo SALVATO:
@@ -28768,6 +29121,9 @@ const VERSIONI_ARTICOLO = [
     campoTipo: 'printErrorType', opzioniTipo: '_opzioniTipoErrore', idForm: 'fe-is-printerror',
     pluraleIt: 'Errori di stampa', pluraleEn: 'Print errors',
     codaRaggrIt: 'tipologia di Errore di stampa', codaRaggrEn: 'Print error type',
+    // 🆕 v6.419 - vedi il change. ⚠️ Qui SINGOLARE, mentre `esportaParolaIt` dice «Errori
+    // di stampa»: e' esattamente la coppia che dimostra perche' i due campi non sono lo stesso campo.
+    raggrParolaIt: 'Errore di stampa', raggrParolaEn: 'Print error',
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
     // cinque frasi non hanno lo stesso articolo e da `it` non ci si arriva.
     esportaIt: 'Errori di stampa', esportaEn: 'print errors',
@@ -32220,17 +32576,23 @@ function renderSeriesMeta(s) {
       it ? (g.printError.length === 1 ? 'errore di stampa' : 'errori di stampa')
          : (g.printError.length === 1 ? 'print error' : 'print errors'),
       false, false, 'var(--type-printerror)'));
-    // v6.004 (Franco) - il TOTALE in FUCSIA. Era bianco (come il set base), poi azzurro
-    // --info nella v6.002: ma su questa riga l'azzurro chiaro e' gia' la variazione NON
-    // ufficiale, e due azzurri vicini si confondono proprio dove servono distinti. Il fucsia
-    // --accent3 e' l'unica tinta della palette che qui non significa gia' qualcos'altro:
-    // bianco = base, arancione = ufficiale, azzurro = non ufficiale, rosa = Change,
-    // salmone = errore di stampa.
+    // ♻️ v6.421 - QUI IL FUCSIA SE NE VA, E QUESTA RELEASE REVOCA UNA SCELTA DELLA v6.004.
+    // Allora Franco l'aveva voluto fucsia con un argomento che era giusto: su questa riga ogni
+    // altra tinta significa gia' una versione (bianco = base, arancione = ufficiale, azzurro = non
+    // ufficiale, rosa = Change, salmone = errore di stampa), e il fucsia era l'unica libera.
+    // 📌 L'ARGOMENTO NON CADE, CADE LA DOMANDA. La v6.004 cercava *"una tinta che qui non
+    // voglia gia' dire altro"*; adesso esiste una regola generale - *"tutti i conteggi sono lime,
+    // il viola e' solo per i titoli grandi"* (Franco, 25 agosto) - e una regola generale che si
+    // applica a due dei tre posti in cui vale non e' una regola, e' un promemoria. Il lime supera
+    // comunque la prova che la v6.004 poneva: non e' il colore di nessuna versione.
+    // ⚠️ E' UNA REVOCA E VA GUARDATA A SCHERMO. Questo punto NON era nel backlog - lo ha trovato
+    // un `grep` di `--accent3`, non la richiesta. Se il lime qui non convince, e' questa la riga
+    // da rimettere a `--accent3`, ed e' l'unica: le altre due Franco le ha chieste.
     if (g.items.length || alwaysTotal) m.push(colonna(BULLET, g.items,
       // v6.067 (Franco) - "368 totali" al posto di "368 figurine in totale": stessa ragione della
       // riga del set base, e in piu' sparisce anche il "in", che non serviva a niente.
       it ? 'totali' : 'total',
-      true, nm.f, 'var(--accent3)'));
+      true, nm.f, 'var(--accent)'));
     return m;
   }
 
@@ -33409,6 +33771,22 @@ const _VOCI_LEGENDA = {
   // nelle Figurine e in tutto il resto del sito (`VERSIONI_ARTICOLO`).
   retros:    ['retroBase', 'retroChange', 'retroFree', 'retroPrintError']
 };
+// 🆕 v6.420 (Franco) - IL COLORE DI OGNI VOCE DI LEGENDA, dichiarato voce per voce.
+// 🔴 SI POTEVA DERIVARE, E NON SI E' FATTO. Le chiavi dei retro sono quelle delle figurine col
+// prefisso `retro` (`retroChange` -> `change`), quindi due righe di `replace` + minuscola avrebbero
+// riempito questa mappa da sole. E' la stessa tentazione della v6.419 sulla maiuscola: una regola
+// di ORTOGRAFIA delle chiavi usata come dato. La differenza qui e' anche piu' cara - una chiave
+// nuova scritta con un altro stile non prenderebbe un colore sbagliato: ne prenderebbe NESSUNO, e
+// una voce bianca in mezzo a cinque colorate si legge come «questa non ha versione», che e' falso.
+// 📌 I valori sono CHIAVI DI `_COLORE_TIPO`, non colori: il colore lo dice sempre la tabella
+// delle versioni (v6.402), qui si dice solo DI QUALE versione parla ogni riga.
+const _VERSIONE_DI_VOCE_LEGENDA = {
+  base: 'base', variation: 'variation', unofficialVariation: 'unofficialVariation',
+  change: 'change', free: 'free', printError: 'printError',
+  // I retro non hanno le due variazioni (vedi `_VOCI_LEGENDA`): le quattro voci che esistono
+  // parlano delle stesse quattro versioni delle figurine, quindi ne portano gli stessi colori.
+  retroBase: 'base', retroChange: 'change', retroFree: 'free', retroPrintError: 'printError'
+};
 function openFilterLegendModal() {
   const sez = _VOCI_LEGENDA[currentSection] ? currentSection : 'figurines';
   const chiaveTitolo = (sez === 'retros') ? 'items.filterLegend.titleRetros' : 'items.filterLegend.title';
@@ -33417,7 +33795,16 @@ function openFilterLegendModal() {
   const ul = document.getElementById('filter-legend-list');
   if (ul) ul.innerHTML = _VOCI_LEGENDA[sez].map(k => {
     const chiave = 'items.filterLegend.' + k;
-    return `<li data-i18n-html="${chiave}">${t(chiave)}</li>`;
+    // 🆕 v6.420 (Franco) - IL COLOR CODE ENTRA NELLE DUE LEGENDE.
+    // 🔴 IL COLORE STA NELLO `style` DEL <li>, NON DENTRO IL TESTO, ED E' L'UNICO MODO CHE REGGE.
+    // Queste voci portano `data-i18n-html`: al primo cambio lingua `applyI18n()` riscrive il loro
+    // `innerHTML` da capo, pescando dal dizionario. Un `<span style=...>` infilato qui dentro
+    // sparirebbe in quel momento - e il difetto non si vedrebbe mai provando in una lingua sola.
+    // E' la trappola di §5 vista dall'altro lato: li' si perde il TESTO, qui si perderebbe il COLORE.
+    // 📌 Lo `style` dell'elemento invece `applyI18n()` non lo tocca: riscrive cio' che c'e'
+    // DENTRO, non l'attributo. Il colore sopravvive perche' non abita nel contenuto.
+    const col = _COLORE_TIPO[_VERSIONE_DI_VOCE_LEGENDA[k]] || 'var(--text)';
+    return `<li data-i18n-html="${chiave}" style="--legenda-colore:${col};">${t(chiave)}</li>`;
   }).join('');
   document.getElementById('filter-legend-modal').classList.remove('hidden');
 }
@@ -33889,10 +34276,33 @@ function _retroCatPanelHTML(pairs, open, clickable, toggleFn, perColonna) {
   const titoloTxt = _tipoQui
     ? (_nomeTipo(_tipoQui) + (it ? ' per categoria' : ' by category'))
     : (clickable ? title : (it ? 'Retro base per categoria' : 'Base retros by category'));
-  // v6.002 - il numero del totale in BIANCO come tutti gli altri contatori dello
-  // specchietto; resta muted il solo punto medio, che e' un separatore e non un dato.
+  // 🎨 v6.421 (Franco) - IL TOTALE IN LIME. Era `--accent3`, il viola (#c84bff).
+  // *"tutti i conteggi sono lime e il viola e' solo per i titoli grandi"*.
+  // 📌 `--accent` e non `--success`: valgono lo stesso lime (#b5ff2e) ed e' un nodo aperto - due
+  // manopole o una scritta due volte? - ma i subtotali della ricerca globale usano gia' `--accent`,
+  // e mettere due nomi sullo stesso colore nella stessa videata rende quel nodo piu' difficile da
+  // sciogliere, non piu' facile.
+  // 🔴 QUESTE DUE RIGHE ESISTONO ANCHE IN `_specchiettoTipiHTML`/`_retroCatPanelHTML` (l'altra
+  // di queste due funzioni), IDENTICHE. Non sono state unificate, ed e' una scelta: otto suite
+  // evalutano `_specchiettoTipiHTML` ritagliato dal sorgente, e un simbolo dichiarato fuori le
+  // manda in ReferenceError. Unificare si puo' e forse si deve - ma e' una decisione con un prezzo
+  // di otto file, non l'effetto collaterale di un cambio di colore. Vedi il CHANGELOG.
+  // ✅ NEL FRATTEMPO LE DIFENDE `prova-v6421`, che pretende le due copie IDENTICHE fra loro: il
+  // giorno che una delle due cambia da sola, e' rossa. E' meno di una funzione sola, ma e' piu' di
+  // un promemoria - che e' cio' che c'era fino a ieri.
+  // 🗑️ Tolto il commento della v6.002 che diceva *"il totale in BIANCO"*: non era vero dalla
+  // v6.004, cioe' da diciassette release. Il punto medio resta `--muted`, ed e' l'unica meta' di
+  // quella frase che era rimasta vera: e' un separatore, non un dato.
+  // 🎨 v6.426 (Franco) - IL LIME STA SUL NUMERO, NON SULLA PAROLA: *"mettiamo solo il numero
+  // in lime; la scritta «totale» lasciamola bianca"*. La v6.421 aveva colorato tutta la frase.
+  // 📌 E' LA REGOLA CHE QUESTA RIGA GIA' APPLICAVA A META': il punto medio e' `--muted` dalla
+  // v6.002 perche' e' un separatore e non un dato. Adesso i pezzi sono tre e ognuno dice cosa e':
+  // separatore (muted), etichetta (bianca), DATO (lime). La stessa forma che
+  // `updateItemsCountDisplay` usa dalla v5.797 - li' era gia' scritto *"colorare SOLO il numero,
+  // non l'intera frase"*, e questo era il punto del sito che non l'aveva mai seguita.
   const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">\u00b7 </span>`
-    + `<span style="color:var(--accent3);font-size:0.82rem;font-weight:400;">${it ? 'totale' : 'total'} ${total}</span>`;
+    + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;">${it ? 'totale' : 'total'} </span>`
+    + `<span style="color:var(--accent);font-size:0.82rem;font-weight:400;">${total}</span>`;
   let header = collassabile
     ? `<div onclick="${toggleFn}()" style="${_STILE_ETICHETTA}cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
       + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '\u25bc' : '\u25b6'}</span>`
@@ -34195,6 +34605,23 @@ function _cfgRaggr(v) {
     // 🆕 v6.323 - il colore puo' essere del VALORE e non del riquadro: per la versione ogni chip
     // porta il suo. Stringa o funzione, e chi disegna non deve sapere quale delle due sia.
     colore: (typeof v.colore === 'function') ? v.colore : () => v.colore,
+    // 🆕 v6.419 (Franco) - IL COLOR CODE ENTRA NEI TITOLI DEI RIQUADRI DELLA RICERCA.
+    // Due campi e non uno, perche' le due condizioni sono diverse e vanno vere insieme:
+    //   · `titoloParola` - la parola da colorare, DICHIARATA dalla versione (vedi la tabella);
+    //   · `titoloColore`  - il colore del RIQUADRO, che esiste solo dove `colore` e' una stringa.
+    // 📌 Sul raggruppamento per VERSIONE `colore` e' una funzione del valore: quel riquadro un
+    // colore suo non ce l'ha, e il suo titolo («Filtra per le Versioni») nemmeno una parola da
+    // colorare - le due assenze si tengono, e il titolo resta tutto in `--text` senza casi speciali.
+    titoloParola: it => (it ? v.raggrParolaIt : v.raggrParolaEn) || null,
+    titoloColore: (typeof v.colore === 'string') ? v.colore : null,
+    // 🆕 v6.423 (Franco) - IL COLORE E' DEL VALORE O DEL RIQUADRO? La domanda esisteva gia'
+    // dalla v6.323 - `colore` e' una funzione sul raggruppamento per VERSIONE (ogni pillola la
+    // sua tinta) e una stringa sugli altri (una tinta per tutto il riquadro) - ma viveva solo
+    // dentro un `typeof` da rifare in ogni punto che ne avesse bisogno. Adesso ha un nome.
+    // 📌 E' L'ESATTO COMPLEMENTO DI `titoloColore` (v6.419): dove il colore e' del riquadro
+    // lo porta il TITOLO, dove e' del valore lo portano le PILLOLE. Le due condizioni sono
+    // opposte per costruzione, quindi nessun riquadro puo' finire con tutti e due o con nessuno.
+    coloreDelValore: (typeof v.colore === 'function'),
     pieHTML: v.pieHTML || null,   // v6.333
     unaRiga: !!v.unaRiga,         // v6.357
     label: val => (v.etichettaDi ? v.etichettaDi(val) : _raggrLabel(val)),
@@ -34288,14 +34715,50 @@ function _specchiettoTipiHTML(pairs, open, clickable, toggleFn, C, perColonna) {
   const collassabile = _potrebbeChiudersi && !_staFiltrando;
   if (!collassabile) open = true;
   const titoloTxt = clickable ? title : C.titoloFisso(it);
-  // v6.002 - il numero del totale in BIANCO come tutti gli altri contatori dello
-  // specchietto; resta muted il solo punto medio, che e' un separatore e non un dato.
+  // 🆕 v6.419 (Franco) - «change», «omaggio» ed «errore» nei titoli dei riquadri portano il
+  // colore della loro versione, come gia' fanno le pillole li' sotto e i badge sulle card.
+  // 📌 SOLO nei riquadri della RICERCA (`clickable`). Quelli della testata della serie hanno
+  // un altro titolo (`titoloFisso`: «Change per tipo») e non sono cio' che Franco ha chiesto: se un
+  // domani li si vuole colorati, questa e' la riga da allargare, non una seconda da scrivere.
+  // ⚠️ SE LA PAROLA NON SI TROVA NEL TITOLO, il titolo resta com'era: un `replace` a vuoto
+  // restituisce la stringa intera, quindi il caso peggiore e' il colore che manca - non un titolo
+  // rotto. La suite pretende che si trovi, cosi' l'assenza la scopre una prova e non lo schermo.
+  const _parolaTit = clickable && C.titoloParola && C.titoloParola(it);
+  const _coloreTit = C.titoloColore || null;
+  const titoloHTML = (_parolaTit && _coloreTit && titoloTxt.indexOf(_parolaTit) !== -1)
+    ? titoloTxt.replace(_parolaTit, `<span style="color:${_coloreTit};">${_parolaTit}</span>`)
+    : titoloTxt;
+  // 🎨 v6.421 (Franco) - IL TOTALE IN LIME. Era `--accent3`, il viola (#c84bff).
+  // *"tutti i conteggi sono lime e il viola e' solo per i titoli grandi"*.
+  // 📌 `--accent` e non `--success`: valgono lo stesso lime (#b5ff2e) ed e' un nodo aperto - due
+  // manopole o una scritta due volte? - ma i subtotali della ricerca globale usano gia' `--accent`,
+  // e mettere due nomi sullo stesso colore nella stessa videata rende quel nodo piu' difficile da
+  // sciogliere, non piu' facile.
+  // 🔴 QUESTE DUE RIGHE ESISTONO ANCHE IN `_specchiettoTipiHTML`/`_retroCatPanelHTML` (l'altra
+  // di queste due funzioni), IDENTICHE. Non sono state unificate, ed e' una scelta: otto suite
+  // evalutano `_specchiettoTipiHTML` ritagliato dal sorgente, e un simbolo dichiarato fuori le
+  // manda in ReferenceError. Unificare si puo' e forse si deve - ma e' una decisione con un prezzo
+  // di otto file, non l'effetto collaterale di un cambio di colore. Vedi il CHANGELOG.
+  // ✅ NEL FRATTEMPO LE DIFENDE `prova-v6421`, che pretende le due copie IDENTICHE fra loro: il
+  // giorno che una delle due cambia da sola, e' rossa. E' meno di una funzione sola, ma e' piu' di
+  // un promemoria - che e' cio' che c'era fino a ieri.
+  // 🗑️ Tolto il commento della v6.002 che diceva *"il totale in BIANCO"*: non era vero dalla
+  // v6.004, cioe' da diciassette release. Il punto medio resta `--muted`, ed e' l'unica meta' di
+  // quella frase che era rimasta vera: e' un separatore, non un dato.
+  // 🎨 v6.426 (Franco) - IL LIME STA SUL NUMERO, NON SULLA PAROLA: *"mettiamo solo il numero
+  // in lime; la scritta «totale» lasciamola bianca"*. La v6.421 aveva colorato tutta la frase.
+  // 📌 E' LA REGOLA CHE QUESTA RIGA GIA' APPLICAVA A META': il punto medio e' `--muted` dalla
+  // v6.002 perche' e' un separatore e non un dato. Adesso i pezzi sono tre e ognuno dice cosa e':
+  // separatore (muted), etichetta (bianca), DATO (lime). La stessa forma che
+  // `updateItemsCountDisplay` usa dalla v5.797 - li' era gia' scritto *"colorare SOLO il numero,
+  // non l'intera frase"*, e questo era il punto del sito che non l'aveva mai seguita.
   const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">\u00b7 </span>`
-    + `<span style="color:var(--accent3);font-size:0.82rem;font-weight:400;">${it ? 'totale' : 'total'} ${total}</span>`;
+    + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;">${it ? 'totale' : 'total'} </span>`
+    + `<span style="color:var(--accent);font-size:0.82rem;font-weight:400;">${total}</span>`;
   let header = collassabile
     ? `<div onclick="${toggleFn}" style="${_STILE_ETICHETTA}cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
       + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '\u25bc' : '\u25b6'}</span>`
-      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--text);">${titoloTxt}</span>`
+      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--text);">${titoloHTML}</span>`
       + (open ? totaleSpan : '')
     : `<div style="${_STILE_ETICHETTA}display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">`
       // v6.270 - il segnaposto SOLO se e' un filtro a tenerlo aperto: nella testata il triangolino
@@ -34304,7 +34767,7 @@ function _specchiettoTipiHTML(pairs, open, clickable, toggleFn, C, perColonna) {
       // puo' esserci (niente toggle) non c'e' nessun posto da tenere, e uno spazio vuoto
       // sposterebbe il titolo a destra per niente - il difetto che la v6.270 stava evitando.
       + ((_staFiltrando && _potrebbeChiudersi) ? _TRIANGOLO_FINTO : '')
-      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--text);">${titoloTxt}</span>`
+      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--text);">${titoloHTML}</span>`
       + totaleSpan;
 header += `</div>`;
 
@@ -34374,6 +34837,24 @@ header += `</div>`;
         const _inib = !active && n === 0;
         const bg = active ? 'var(--accent)' : 'var(--card2)';
         const fg = active ? 'var(--bg)' : 'var(--text)';
+        // 🆕 v6.423 (Franco: *"proviamo a colorare anche il testo delle pillole"*) - L'ETICHETTA
+        // DELLA PILLOLA PORTA IL COLORE DELLA SUA VERSIONE, dove il colore e' del valore.
+        // 📌 SOLO L'ETICHETTA: `fg` continua a vestire il «+»/«−», che e' un COMANDO e non un
+        // valore - se prendesse la tinta della versione, il sito direbbe che quel bottoncino e'
+        // «un po' Omaggio». Due mestieri, due variabili.
+        // 🔴 E QUANDO LA PILLOLA E' ACCESA IL COLORE NON C'E', ed e' una rinuncia misurata, non
+        // una dimenticanza: da accesa lo sfondo e' il lime `--accent`, e i sei colori delle versioni
+        // su quel lime danno da 1,05:1 a 2,38:1 - cioe' illeggibili, tutti. Il testo resta `--bg`.
+        // 📌 Non e' una perdita: da accesa la pillola e' gia' marcata dal lime, che in questo sito
+        // significa «acceso» ovunque. Il colore serve a distinguere le pillole SPENTE fra loro, ed
+        // e' esattamente li' che adesso c'e'.
+        // ✅ Contrasti su `--card2` (#221540), lo sfondo vero della pillola spenta: base 16,8:1 -
+        // non ufficiale 14,6:1 - ufficiale 11,5:1 - omaggio 8,8:1 - change 8,8:1 - errore di stampa
+        // 5,8:1. Il peggiore sta sopra 4,5:1, e il bianco di prima faceva 14,3:1.
+        // ⚠️ «Base» e' #ffffff, cioe' praticamente il bianco di prima: quella pillola non cambia, e
+        // non e' un caso da correggere - la base non e' una versione, e' la loro assenza.
+        const fgEtichetta = active ? 'var(--bg)'
+                          : (C.coloreDelValore ? C.colore(ct) : 'var(--text)');
         const nf = active ? 'var(--bg)' : 'var(--accent)';
         const segno = active ? '−' : '+';
         const titoloPiu = active
@@ -34386,7 +34867,7 @@ header += `</div>`;
         // flexbox della v6.348, dall'altro verso.
         return `<span style="display:inline-flex;align-items:center;flex-shrink:0;white-space:nowrap;background:${bg};border:1px solid var(--border);border-radius:999px;font-size:0.82rem;line-height:1.4;overflow:hidden;${_inib ? 'opacity:0.45;' : ''}">`
           + `<span ${_inib ? '' : `onclick="${C.setter(i)}"`} title="${_inib ? (it ? 'Nessun risultato con i filtri accesi adesso' : 'No results with the filters currently on') : C.chipTitle(it)}" style="cursor:${_inib ? 'default' : 'pointer'};display:inline-flex;align-items:center;gap:0.35rem;padding:0.15rem 0.5rem 0.15rem 0.6rem;">`
-          + `<span style="color:${fg};">${esc(C.label(ct))}</span>`
+          + `<span style="color:${fgEtichetta};">${esc(C.label(ct))}</span>`
           + `<span style="color:${nf};font-weight:700;">${n}</span></span>`
           + `<span ${_inib ? '' : `onclick="event.stopPropagation();${C.adder(i)}"`} title="${_inib ? '' : titoloPiu}" style="cursor:${_inib ? 'default' : 'pointer'};padding:0.15rem 0.5rem;border-left:1px solid ${active ? 'rgba(0,0,0,0.28)' : 'var(--border)'};color:${fg};font-weight:700;">${segno}</span>`
           + `</span>`;
@@ -34394,7 +34875,9 @@ header += `</div>`;
     } else {
       chips = pairs.map(([ct, n]) =>
         `<span style="display:inline-flex;align-items:center;gap:0.35rem;background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.82rem;line-height:1.4;">`
-        + `<span style="color:var(--text);">${esc(C.label(ct))}</span>`
+        // 🆕 v6.423 - stessa regola delle pillole della ricerca. Qui non c'e' lo stato «acceso»,
+        // quindi non c'e' nemmeno la rinuncia: il colore c'e' sempre, quando e' del valore.
+        + `<span style="color:${C.coloreDelValore ? C.colore(ct) : 'var(--text)'};">${esc(C.label(ct))}</span>`
         + `<span style="color:var(--accent);font-weight:700;">${n}</span></span>`).join('');
     }
     // 🗑️ v6.331 - QUI STAVA `chipsInTitolo` (v6.330), E LA v6.331 LA ASSORBE INVECE DI TENERLA.
