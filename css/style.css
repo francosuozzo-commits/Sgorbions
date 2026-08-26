@@ -1527,9 +1527,23 @@ footer {
    `#auth-modal`, `#username-modal`, `#delete-account-modal` restano fuori di proposito.
    ⚠️ Chi aggiunge una finestra da amministratore deve aggiungerla a questo elenco, altrimenti
    nasce grigia. E' il prezzo di un confine esplicito: si paga qui, una riga, invece di pagarlo
-   sbiancando per sbaglio la pagina di accesso. */
-#admin .form-label, #admin .form-hint, #admin .detail-label, #admin .data-table th,
-#admin .modal-close, #admin .back-btn, #admin .empty-title, #admin .empty-sub,
+   sbiancando per sbaglio la pagina di accesso.
+
+   🔴 v6.444 (Franco: *"questo testo va in bianco (dimenticanza rispetto al requisito del bianco
+   per admin)"*) — QUESTA REGOLA COMINCIAVA CON OTTO SELETTORI `#admin ...`, E NELL'INDEX QUELL'ID
+   NON ESISTE. Il contenitore della console si chiama `#admin-panel`; `#admin` non compare nemmeno
+   una volta. Quindi la prima riga — cioe' TUTTA la console — non ha mai colpito niente, e a
+   funzionare sono stati solo i quattro modali che seguono, perche' quelli l'id ce l'hanno.
+   📌 La v6.440 ha dichiarato di aver sbiancato la console e ha sbiancato le finestre. Nessuna
+   prova poteva accorgersene: `prova-v6440` cercava le REGOLE dentro `style.css` e le ha trovate
+   tutte. Una regola che c'e' e un selettore che aggancia sono due cose diverse, e fino a oggi
+   nessuno controllava la seconda — adesso lo fa `prova-v6444`, che pretende che ogni `#id` citato
+   qui compaia davvero nell'index.
+   ⚠️ Vale per ogni contenitore aggiunto in futuro: si scrive l'id **copiandolo dall'index**, non
+   ricordandoselo. Un id sbagliato non da' errore, non rompe niente, e non fa niente. */
+#admin-panel .form-label, #admin-panel .form-hint, #admin-panel .detail-label,
+#admin-panel .data-table th, #admin-panel .modal-close, #admin-panel .back-btn,
+#admin-panel .empty-title, #admin-panel .empty-sub,
 #add-series-modal .form-label, #add-series-modal .form-hint, #add-series-modal .modal-close,
 #add-tipo-prodotto-modal .form-label, #add-tipo-prodotto-modal .form-hint, #add-tipo-prodotto-modal .modal-close,
 #edit-user-modal .form-label, #edit-user-modal .form-hint, #edit-user-modal .modal-close,
