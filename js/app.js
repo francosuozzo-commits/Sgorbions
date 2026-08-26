@@ -1,6 +1,244 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.448 - LA TABELLA ELENCA TUTTE LE SERIE, NON SOLO QUELLE CHE CAMBIANO. app.js.
+//
+//          Franco, davanti alla finestra della v6.446: *"ma la tabellina coi valori attuali,
+//          serie per serie?"*.
+//
+//          🔴 NON ERA UN DIFETTO DEL CODICE: ERA LA DOMANDA SBAGLIATA. La v6.446 mostrava la
+//          tabella solo `if (cambiano.length)`, cioe' solo quando almeno una serie aveva un valore
+//          diverso. Ma il caso piu' comune e' l'opposto — dopo un salvataggio globale le serie
+//          sono tutte allineate — e li' la tabella non compariva affatto. Una tabella che sparisce
+//          proprio quando non c'e' niente da perdere costringe a fidarsi invece di guardare.
+//
+//          Adesso c'e' una riga per OGNI serie. La seconda colonna dice le sole sezioni che
+//          cambiano, in arancione (`--warn`); per una serie gia' allineata scrive che lo e', in
+//          grigio, invece di elencare sette numeri identici a quelli che si hanno gia' sotto gli
+//          occhi nei campi. Sopra la tabella, il conteggio: «Ecco cosa hanno oggi le 8 serie.
+//          3 hanno un valore diverso, e lo perderanno.»
+//
+//          📌 PER COLORARE UN PEZZO DI CELLA NON SI E' USATO `innerHTML`. Una cella ora puo'
+//          essere una stringa **o** un elenco di pezzi `{t, warn, spento}`, e ogni pezzo diventa
+//          uno `<span>` riempito con `textContent`. Qui dentro passano i NOMI DELLE SERIE, scritti
+//          a mano da Franco: un nome con dentro una parentesi angolare non deve poter diventare
+//          marcatura. `innerHTML` sarebbe stato comodo per due minuti.
+//
+//          📌 Il singolare e' scritto a parte: «1 serie hanno un valore diverso» e' la riga che fa
+//          dubitare del numero proprio mentre si decide se procedere.
+//
+//          ⚠️ Le due forme sono state guardate PRIMA di scrivere, in `anteprima-tabella-griglie.html`
+//          (banco di prova in root, dati inventati): questa e' la forma A. La forma B — una colonna
+//          per sezione, otto colonne — resta li' descritta, se un giorno servisse il quadro
+//          completo invece delle sole differenze.
+//
+//          Prove: prova-v6448.js. E `prova-v6446` e' stata AGGIORNATA, non dismessa: la sua
+//          pretesa non e' sparita, si e' spostata da «la tabella c'e' se qualcosa cambia» a
+//          «la tabella c'e' se c'e' almeno una serie».
+//
+// v6.447 - I DUE PUNTI DI CONFIGURAZIONE DICONO COSA SUCCEDE DAVVERO. index.html.
+//
+//          Franco: *"in primis vorrei spiegarlo / ricordarlo all'admin, in entrambi i punti di
+//          configurazione"*, e poi il testo del pannello globale dettato parola per parola.
+//
+//          --- IL PANNELLO GLOBALE ------------------------------------------------------------
+//          «valore APPLICATO», non «valore di partenza». Dopo il salvataggio ogni serie ha questo
+//          numero scritto dentro: non e' un ripiego che qualcosa puo' scavalcare, e' IL valore,
+//          finche' non si torna sulla scheda della serie a rimetterne un altro **a mano**.
+//          «Di partenza» faceva credere il contrario, ed era la meta' che mancava alla spiegazione.
+//
+//          --- LA SCHEDA SERIE ----------------------------------------------------------------
+//          🔴 LA NOTA DI PRIMA DICEVA DUE COSE FALSE, e nessuna prova poteva vederlo:
+//          · *"prima che l'utente ridimensioni la finestra"* — ridimensionare NON cambia il
+//            numero: `repeat(7, 1fr)` fa sette colonne a qualunque larghezza, si stringono e non
+//            diminuiscono. A cambiarlo e' il superamento della soglia degli 860px, che e' altro.
+//          · *"valgono anche sugli schermi stretti"* — e' il contrario: sotto gli 860px, nel modo
+//            predefinito, comanda `repeat(auto-fill, minmax(100px,1fr))` di `style.css`.
+//          E non diceva la terza, che e' quella che fa perdere il lavoro: un salvataggio dal
+//          pannello globale li riscrive tutti.
+//
+//          --- E IN TUTTI E DUE -----------------------------------------------------------------
+//          Su «Figurine con velina» il comando «Modalita' visualizzazione» dell'utente parte da
+//          «Fronte e retro sempre grandi», che dispone le card per larghezza e **ignora del tutto
+//          le colonne**. Non si ricorda fra una visita e l'altra: e' il caso NORMALE, non
+//          l'eccezione — ed e' la cosa che un amministratore non puo' dedurre da nessun campo.
+//
+//          📌 Nessuno di questi testi ha un `data-i18n` e nessuno sta nel dizionario: sono
+//          italiano scritto nell'index. Verificato prima di toccarli, non dopo (§5).
+//
+//          Prove: prova-v6447.js.
+//
+// v6.446 - LA CONFERMA DELLE GRIGLIE DIVENTA UNA FINESTRA CON UNA TABELLA. app.js.
+//
+//          Franco, guardando il popup: *"il popup continua a non dare i valori attuali"* e
+//          *"non c'e' manco una tabella"*.
+//
+//          🔴 NON BASTAVA CAMBIARE IL TESTO: `confirm()` e' una finestra del BROWSER e accetta
+//          solo testo. Una tabella li' dentro si puo' solo fingere allineando a spazi, e il font
+//          di sistema non e' a spaziatura fissa: le colonne escono storte. Nasce quindi
+//          `_finestraConferma()`, che torna una **Promise** e sa mostrare una `<table>`.
+//
+//          Nella tabella, due colonne come chiesto: **nome breve della serie** e **colonne oggi**,
+//          con le sole sezioni che cambiano (es. «Figurine con velina 5/3 · Retro 6/4»). Sotto,
+//          una riga con i valori che diventeranno — senza, «colonne oggi» non ha un paragone.
+//
+//          📌 Il nome breve passa da `_nomeSerieCard(s, true)` e non da `s.nomeCorto` scritto a
+//          mano: cosi' il ripiego arriva gratis, e una serie senza nome corto mostra quello lungo
+//          invece di una cella vuota (v6.080). Le serie senza nome corto esistono.
+//
+//          ⚠️ UNA SERIE PUO' COMPARIRE SENZA PERDERE NIENTE: `_serieCheCambiano` prende anche
+//          quelle che su una sezione non hanno mai avuto un valore proprio. Per quelle la cella
+//          dice «non impostato», che e' la verita'. Il filtro NON e' stato cambiato: sarebbe
+//          un'altra decisione, e non e' stata chiesta.
+//
+//          ⚠️ GLI ALTRI 43 `confirm()` DEL FILE NON SI TOCCANO. Convertirli sarebbe una release
+//          in cui ogni riga e' un'occasione di perdere un `await` — e un `await` perso qui non da'
+//          errore: `if (!promise)` e' sempre falso, quindi la conferma sparirebbe e l'azione
+//          partirebbe DA SOLA. Si scoprirebbe dopo aver riscritto tutte le serie.
+//
+//          📌 Esc e il clic sullo sfondo valgono ANNULLA; il fuoco parte da «Annulla» e Invio
+//          conferma solo se il fuoco e' su «Procedi». La via d'uscita distratta porta al ramo che
+//          non fa niente — qui dietro c'e' una scrittura su tutte le serie.
+//
+//          Prove: prova-v6446.js.
+//
+// v6.445 - UNA LARGHEZZA SOLA PER TUTTE E SETTE LE SEZIONI. app.js.
+//
+//          Franco: *"come mai per le figurine con velina la dimensione del contenitore della
+//          griglia e' piu' largo che per le figurine da attaccare? non e' identico per tutte le
+//          tipologie di articolo?"* → *"puoi farli tutti larghi come quello di figurine con
+//          velina?"*
+//
+//          Non era identico, e la riga che decideva era una sola: le cinque righe che allargano
+//          `#items-grid` a `min(1800px, 96vw)` col trucco di centratura stavano DENTRO il ramo
+//          `retros || figurines`, e l'altro ramo le azzerava. Due sezioni su sette uscivano dalla
+//          larghezza della pagina; cinque restavano dentro `#items-section`, che e' 1100px meno
+//          due volte 2rem di padding, cioe' **1036px**.
+//
+//          🔴 IL NUMERO CHE LO RENDE UN DIFETTO E NON UNA SCELTA: «Figurine da attaccare» e
+//          «Carte» dichiarano `{d:7, m:4}` in `ARTICOLI`, **identico** a «Figurine con velina».
+//          Stesso numero impostato, card da ~138px invece di ~247px. Un'impostazione che dice 7
+//          e a schermo ne vale la meta' e' un'impostazione che mente.
+//
+//          📌 E i **247px** non sono un caso: sono esattamente 7 colonne in 1800px col gap da
+//          12px. E' da li' che viene la larghezza fissa `flex:0 0 247px` delle card nel modo
+//          «Fronte e retro sempre grandi». Il cerchio si chiude.
+//
+//          📌 Solo `#items-grid` usa quel trucco: barra di ricerca, filtri e paginazione restano
+//          a 1100px, **come gia' oggi** sulle due sezioni larghe. Non resta niente indietro.
+//
+//          📌 SOTTO GLI 860px NON CAMBIA NIENTE: `style.css` neutralizza `width`, `margin-left` e
+//          `transform` di `#items-grid` con `!important`. Si vede solo sul computer.
+//
+//          ⚠️ DA GUARDARE A SCHERMO: Album, Bustine e Altri oggetti dichiarano 4 colonne, che in
+//          1800px diventano card da ~441px invece di ~250. Franco ha scelto la larghezza unica
+//          sapendolo, ma quei tre numeri vanno rivisti **guardando**, non calcolando.
+//
+//          Prove: prova-v6445.js.
+//
+// v6.444 - `#admin` NON ESISTE: IL BIANCO DELLA CONSOLE NON E' MAI ARRIVATO. css/style.css (+ versione).
+//
+//          Franco, sul testo delle Griglie di visualizzazione: *"questo testo va in bianco
+//          (dimenticanza rispetto al requisito del bianco per admin)"*.
+//
+//          🔴 NON ERA UNA DIMENTICANZA SU QUEL TESTO: ERA TUTTA LA CONSOLE. La regola della
+//          v6.440 comincia con otto selettori `#admin .form-label`, `#admin .form-hint`, …
+//          e **nell'index quell'id non esiste**: il contenitore si chiama `#admin-panel`, e
+//          `#admin` non compare nemmeno una volta. Quindi quella prima riga non ha mai colpito
+//          niente. A funzionare sono stati solo i quattro modali che seguono, perche' quelli
+//          l'id ce l'hanno davvero.
+//
+//          📌 PERCHE' NESSUNA PROVA L'HA VISTO, ed e' la parte che vale piu' della correzione:
+//          `prova-v6440` cercava le REGOLE dentro `style.css` e le ha trovate tutte. **Una regola
+//          che c'e' e un selettore che aggancia sono due cose diverse.** Un id sbagliato in un
+//          foglio di stile non da' errore, non rompe niente, e non fa niente: e' l'unico tipo di
+//          difetto che passa sia da `node --check` sia da una suite che guarda il testo.
+//          Da oggi `prova-v6444` pretende che ogni `#id` citato in quel blocco compaia davvero
+//          nell'index — ed e' il controllo che avrebbe preso questo difetto il giorno stesso.
+//
+//          📌 E la sessione del 26 agosto aveva scritto che «in preview quei tre testi sono
+//          bianchi». Era falso, ed e' su quella riga che a Franco e' stata fatta una domanda con
+//          la premessa sbagliata. Lui aveva ragione tutte e due le volte che ha detto di vedere
+//          del grigio. **Il documento non e' una misura: e' il ricordo di una misura.**
+//
+//          Perimetro, e si dichiara insieme al posto in cui e' stato contato (lezione del
+//          26 agosto): **17 elementi scritti a mano** nelle 395 righe di `#admin-panel`
+//          nell'index — 11 `.form-label`, 6 `.form-hint`. E' un PAVIMENTO, non un totale:
+//          dentro quei contenitori `app.js` ne scrive altri a runtime.
+//
+//          Prove: prova-v6444.js.
+//
+// v6.443 - «STRADA A»: LE FINESTRE SI DICONO CHE UNA SERIE E' CAMBIATA. app.js.
+//
+//          Franco: *"si, mi capita di avere il sito aperto in piu' schede; sul pc"*, e alla
+//          domanda su come proteggersi: *"strada A"*.
+//
+//          --- IL GUASTO ---------------------------------------------------------------------
+//          Le figurine vivono DENTRO il documento della serie, e modificarne una riscrive
+//          l'INTERO array `items` dalla copia in memoria di quella finestra. Una scheda aperta da
+//          un'ora tiene una copia vecchia: la prima modifica fatta da li' cancella il lavoro
+//          dell'altra scheda SENZA NESSUN ERRORE. E' il caso invisibile che il lucchetto della
+//          v6.377 non copriva — quello copre solo la finestra in cui un import sta scrivendo.
+//
+//          --- COSA FA ------------------------------------------------------------------------
+//          · dopo OGNI scrittura riuscita di una serie o di un articolo, la finestra pubblica
+//            l'id di quella serie su `localStorage` (`sgorbions_serie_cambiata`);
+//            i punti di emissione sono CINQUE, e sono tutti dentro `fsSave` / `fsDelete` /
+//            `_deleteFigurineItem` — nessuno dei 78 chiamanti e' stato toccato;
+//          · le altre finestre lo ricevono con l'evento `storage` e segnano quella serie come
+//            sorpassata, in un `Set` che vive IN MEMORIA (e' un fatto loro, non di chi ha scritto);
+//          · compare una fascia in fondo con il pulsante «Rileggi i dati»;
+//          · e `fsSave` RIFIUTA di scrivere su una serie sorpassata, con il messaggio che dice
+//            cosa fare. Il controllo e' accanto a quello del lucchetto e non e' un doppione: uno
+//            dice «qualcuno scrive ADESSO», l'altro «TU sei vecchio».
+//
+//          🔴 SI BLOCCA LA SERIE, NON IL SITO. Chi e' sorpassato sulla serie 3 continua a
+//          lavorare sulla 7. Bloccare tutto avrebbe fermato anche chi non c'entrava.
+//
+//          🔴 IL PULSANTE RILEGGE, NON RICARICA LA PAGINA — deciso da Franco. Lo si preme quasi
+//          sempre con una scheda figurina aperta a meta', e `location.reload()` butterebbe via
+//          quello che ci si sta scrivendo. Rileggendo, il modulo resta e il salvataggio successivo
+//          posa i suoi valori SOPRA i dati freschi: `_saveFigurineItem` riscrive `series.items`
+//          dalla copia in memoria — che adesso e' quella nuova — con il solo articolo sostituito.
+//          ⚠️ Il prezzo e' detto e non nascosto: la pagina DIETRO puo' mostrare ancora i numeri di
+//          prima. La vista tabellare si ridisegna (e' l'unica schermata che esiste per guardare
+//          questi dati); le altre no, e il messaggio lo dichiara invece di lasciarlo credere.
+//
+//          🔴 LA VECCHIAIA NON SCADE, all'opposto del lucchetto. Quello scade apposta, perche' un
+//          lucchetto rimasto chiuso per sempre e' il guasto peggiore di un lucchetto. Qui e' il
+//          contrario: chi non ha riletto E' vecchio, e lo resta. Si spegne in un modo solo,
+//          rileggendo — e SOLO dopo che la lettura e' riuscita.
+//
+//          ⚠️ COSA NON COPRE, e va scritto: vale solo fra finestre dello stesso browser e dello
+//          stesso profilo (dal telefono non arriva); arriva solo alle finestre APERTE quando si
+//          scrive, quindi una scheda riaperta oggi su dati di ieri e' vecchia e nessuno gliel'ha
+//          detto; e NON e' il contatore di revisione lasciato aperto dalla v6.377, che rifiuta la
+//          scrittura sorpassata da qualunque parte arrivi. Quella resta la riparazione completa.
+//
+//          Prove: prova-v6443.js.
+//
+// v6.442 - LA RILETTURA DELLE SERIE ESCE DA «AGGIORNA DATI». app.js.
+//
+//          Release di solo SCORPORO: non cambia una virgola di cosa fa il sito. Serve alla
+//          v6.443, che deve rileggere da una fascia che con la vista tabellare non c'entra niente.
+//
+//          Nasce `_rileggiSerieDalServer()`: legge con `_leggiSerieRitentando`, controlla che la
+//          risposta non sia vuota, riscrive `_cache.series`, `_cache.figurines` e la cache di
+//          sessione, e restituisce quanti articoli ha letto. `aggiornaVistaTabellare` la chiama e
+//          resta con il solo RIDISEGNO, che e' l'unica cosa che riguardi quella schermata.
+//
+//          🔴 L'alternativa era riscrivere quelle dodici righe una seconda volta dentro la
+//          v6.443, ed e' esattamente la lezione della v6.375: due punti che parlano dello stesso
+//          dato devono chiamare la stessa funzione, non applicare la stessa regola.
+//
+//          📌 IL COMMENTO HA SEGUITO IL CODICE. Le due ragioni che spiegavano la lettura (perche'
+//          `_leggiSerieRitentando` e non `fsGetAll`; perche' la cache di sessione si riscrive
+//          invece di cancellarsi) sono andate con lei, e NON sono state riassunte dove stavano: un
+//          commento lasciato a descrivere codice che se n'e' andato e' la copia che al prossimo
+//          che la legge dice il falso — la v6.372 sui colori e' costata tre release cosi'.
+//
+//          Prove: prova-v6442.js.
+//
 // v6.441 - I TRE PULSANTI DELLA VISTA TABELLARE NELL'ARANCIONE DA ADMIN, E «AGGIORNA DATI». app.js.
 //
 //          Franco, da una schermata: *"ci sono 3 pulsanti admin non arancio; vanno resi come gli
@@ -22252,6 +22490,206 @@ function _righeGriglieTipi() {
 // Quali serie hanno un valore DIVERSO da quello che si sta per scrivere. Non e' un abbellimento
 // dell'avviso: e' la differenza fra "attenzione, vale per tutte" (una raccomandazione, che si
 // legge e si salta) e "queste quattro perderanno il loro valore" (un fatto, che si legge).
+// ============================================================
+//  v6.446 — UNA CONFERMA CHE PUO' MOSTRARE UNA TABELLA
+// ------------------------------------------------------------
+//  Franco, guardando il popup: *"il popup continua a non dare i valori attuali"* e *"non c'e'
+//  manco una tabella"*.
+//
+//  🔴 PERCHE' NON BASTAVA CAMBIARE IL TESTO: `confirm()` e' una finestra del BROWSER e accetta
+//  solo testo. Una tabella li' dentro si puo' solo fingere allineando a spazi — e il font di
+//  sistema non e' a spaziatura fissa, quindi le colonne escono storte. Non e' una questione di
+//  gusto: e' che quel disegno non ci sta.
+//
+//  ⚠️ GLI ALTRI 43 `confirm()` DEL FILE NON SI TOCCANO. Questa nasce per l'unico punto che ha
+//  qualcosa da FAR VEDERE prima di decidere. Convertirli tutti sarebbe una release enorme in cui
+//  ogni riga e' un punto in cui si perde un `await` — e un `await` perso qui non da' errore:
+//  `if (!promise) return` e' sempre falso, quindi la conferma sparirebbe e l'azione partirebbe
+//  DA SOLA. E' il tipo di difetto che si scopre dopo aver riscritto tutte le serie.
+//
+//  📌 Torna una Promise che si risolve `true`/`false`, cosi' chi chiama continua a leggersi come
+//  prima (`if (!await ...) return;`) e non deve rovesciarsi in callback.
+//  📌 Esc e il clic sullo sfondo valgono ANNULLA, non OK: la via d'uscita distratta deve portare
+//  al ramo che non fa niente. Qui dietro c'e' una scrittura su tutte le serie.
+// ============================================================
+function _finestraConferma(opz) {
+  return new Promise(resolve => {
+    const it = currentLang === 'it';
+    const o = opz || {};
+    let chiuso = false;
+
+    const ov = document.createElement('div');
+    ov.className = 'modal-overlay';
+    ov.id = 'conferma-modal';
+
+    const box = document.createElement('div');
+    box.className = 'modal';
+    // Piu' larga di una modale normale: due colonne di testo in 662px si spezzano su due righe
+    // ciascuna, e una tabella che va a capo non e' piu' una tabella.
+    box.style.maxWidth = '760px';
+
+    const head = document.createElement('div');
+    head.className = 'modal-header';
+    const h = document.createElement('h2');
+    h.className = 'modal-title';
+    h.textContent = o.titolo || (it ? 'Confermi?' : 'Are you sure?');
+    const x = document.createElement('button');
+    x.className = 'modal-close';
+    x.type = 'button';
+    x.textContent = '✕';
+    head.appendChild(h); head.appendChild(x);
+    box.appendChild(head);
+
+    // Il testo: ogni riga vuota diventa un paragrafo. Si usa `textContent` e non `innerHTML`,
+    // perche' qui dentro finiscono NOMI DI SERIE scritti da Franco — e un nome con dentro una
+    // parentesi angolare non deve poter diventare marcatura.
+    (o.testo || '').split('\n\n').forEach(par => {
+      if (!par.trim()) return;
+      const p = document.createElement('p');
+      p.style.cssText = 'color:var(--text);font-size:0.92rem;line-height:1.5;margin-bottom:0.9rem;';
+      p.textContent = par;
+      box.appendChild(p);
+    });
+
+    // La tabella. `righe` e' un array di array: una cella per colonna.
+    if (o.righe && o.righe.length) {
+      const wrap = document.createElement('div');
+      // Le serie possono essere tante: la finestra ha gia' `max-height:90vh`, ma qui serve che a
+      // scorrere sia la TABELLA e non la pagina, altrimenti i due pulsanti finiscono fuori vista
+      // proprio quando l'elenco e' lungo — cioe' quando la decisione pesa di piu'.
+      wrap.style.cssText = 'max-height:44vh;overflow-y:auto;overflow-x:auto;margin-bottom:1.1rem;'
+        + 'border:1px solid var(--border);border-radius:10px;';
+      const tb = document.createElement('table');
+      tb.className = 'data-table compact';
+      if (o.colonne && o.colonne.length) {
+        const thead = document.createElement('thead');
+        const tr = document.createElement('tr');
+        o.colonne.forEach(c => { const th = document.createElement('th'); th.textContent = c; tr.appendChild(th); });
+        thead.appendChild(tr); tb.appendChild(thead);
+      }
+      const tbody = document.createElement('tbody');
+      o.righe.forEach(r => {
+        const tr = document.createElement('tr');
+        r.forEach((cella, i) => {
+          const td = document.createElement('td');
+          // 🆕 v6.448 - UNA CELLA PUO' ESSERE UNA STRINGA O UN ELENCO DI PEZZI `{t, warn, spento}`.
+          // Serve per colorare SOLO le sezioni che cambiano, lasciando nera la parte che non
+          // cambia. 🔴 E si fa con `<span>` e `textContent`, non con `innerHTML`: qui dentro
+          // passano i NOMI DELLE SERIE, scritti a mano, e un nome con una parentesi angolare non
+          // deve poter diventare marcatura. Un `innerHTML` qui sarebbe comodo per due minuti.
+          if (Array.isArray(cella)) {
+            cella.forEach((p, k) => {
+              if (k) td.appendChild(document.createTextNode(' \u00b7 '));
+              const sp = document.createElement('span');
+              sp.textContent = p.t;
+              if (p.warn) sp.style.cssText = 'color:var(--warn);font-weight:700;';
+              else if (p.spento) sp.style.cssText = 'color:var(--muted);';
+              td.appendChild(sp);
+            });
+          } else {
+            td.textContent = cella;
+          }
+          if (i === 0) td.style.cssText = 'white-space:nowrap;color:var(--text);font-weight:600;';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      tb.appendChild(tbody);
+      wrap.appendChild(tb);
+      box.appendChild(wrap);
+    }
+
+    if (o.coda) {
+      const p = document.createElement('p');
+      p.style.cssText = 'color:var(--text);font-size:0.86rem;line-height:1.5;margin-bottom:1.1rem;';
+      p.textContent = o.coda;
+      box.appendChild(p);
+    }
+
+    const piede = document.createElement('div');
+    piede.style.cssText = 'display:flex;gap:0.6rem;justify-content:flex-end;flex-wrap:wrap;';
+    const bNo = document.createElement('button');
+    bNo.className = 'btn-secondary';
+    bNo.type = 'button';
+    bNo.textContent = o.annulla || (it ? 'Annulla' : 'Cancel');
+    const bSi = document.createElement('button');
+    bSi.className = 'btn-primary btn-admin';
+    bSi.type = 'button';
+    bSi.textContent = o.ok || (it ? 'Procedi' : 'Proceed');
+    // ANNULLA a sinistra e PROCEDI a destra, e il fuoco parte da ANNULLA: chi apre questa finestra
+    // e preme Invio d'istinto deve NON far partire una riscrittura di tutte le serie.
+    piede.appendChild(bNo); piede.appendChild(bSi);
+    box.appendChild(piede);
+
+    ov.appendChild(box);
+    document.body.appendChild(ov);
+    try { bNo.focus(); } catch(e) {}
+
+    const chiudi = esito => {
+      if (chiuso) return;                       // il doppio clic risolverebbe due volte
+      chiuso = true;
+      document.removeEventListener('keydown', tasto);
+      try { ov.remove(); } catch(e) {}
+      resolve(esito);
+    };
+    function tasto(e) {
+      if (e.key === 'Escape') chiudi(false);
+      // Invio conferma SOLO se il fuoco e' sul pulsante che conferma: altrimenti un Invio
+      // distratto varrebbe come un clic su «Procedi».
+      if (e.key === 'Enter' && document.activeElement === bSi) chiudi(true);
+    }
+    document.addEventListener('keydown', tasto);
+    x.addEventListener('click', () => chiudi(false));
+    bNo.addEventListener('click', () => chiudi(false));
+    bSi.addEventListener('click', () => chiudi(true));
+    // Il clic sullo SFONDO, non su un figlio: `e.target === ov` e non `contains`, altrimenti
+    // rilasciare il mouse fuori dopo aver selezionato del testo dentro chiuderebbe la finestra.
+    ov.addEventListener('click', e => { if (e.target === ov) chiudi(false); });
+  });
+}
+
+// 🆕 v6.448 — UNA RIGA PER OGNI SERIE, non solo per quelle che cambiano.
+// Franco, davanti alla finestra: *"ma la tabellina coi valori attuali, serie per serie?"*.
+//
+// 🔴 LA v6.446 MOSTRAVA LA TABELLA SOLO SE QUALCOSA CAMBIAVA, e quindi nel caso piu' comune —
+// tutte le serie gia' allineate da un salvataggio precedente — non la mostrava affatto. Non era
+// un difetto del codice: era la domanda sbagliata. Chi apre quel pannello vuole vedere **cosa
+// hanno oggi le serie**, e una tabella che sparisce proprio quando non c'e' niente da perdere
+// costringe a fidarsi invece di guardare.
+//
+// La seconda colonna dice solo le sezioni che CAMBIANO, in arancione, perche' sono quelle su cui
+// si sta decidendo. Per una serie gia' allineata scrive che e' allineata, in grigio, invece di
+// elencare sette numeri identici a quelli che si hanno gia' sotto gli occhi nei campi.
+//
+// 📌 Il nome breve passa da `_nomeSerieCard(s, true)` e non da `s.nomeCorto` scritto a mano: cosi'
+// il ripiego arriva gratis, e una serie senza nome corto mostra quello lungo invece di una cella
+// vuota (v6.080). Le serie senza nome corto esistono: erano tre, misurate dopo la v6.188.
+// ⚠️ «non impostato» non e' un modo elegante di dire zero: e' una sezione su cui quella serie non
+// ha mai avuto un valore proprio. Riceve il numero nuovo, non lo perde — e dirlo «5/3» sarebbe
+// inventare un dato che non c'e'.
+function _righeGriglieSerie(serie, nuove) {
+  const it = currentLang === 'it';
+  return (serie || []).map(s => {
+    const c = s.colonne || {};
+    const parti = [];
+    Object.keys(nuove).forEach(sez => {
+      const a = c[sez] || {};
+      const d = _colClamp(a.d), m = _colClamp(a.m);
+      if (d === nuove[sez].d && m === nuove[sez].m) return;      // gia' uguale: non e' una notizia
+      parti.push({
+        t: '\u26a0\ufe0f ' + getSectionLabel(sez) + ' '
+           + ((d && m) ? (d + '/' + m) : (it ? 'non impostato' : 'not set')),
+        warn: true
+      });
+    });
+    if (!parti.length) parti.push({
+      t: it ? 'gi\u00e0 uguali a quello che stai applicando' : 'already equal to what you are applying',
+      spento: true
+    });
+    return [_nomeSerieCard(s, true), parti];
+  });
+}
+
 function _serieCheCambiano(nuove) {
   return (getData('series', []) || []).filter(s => {
     const c = s.colonne || {};
@@ -22301,23 +22739,53 @@ async function salvaGriglieVisualizzazione() {
   const tipiCheCambiano = tipi.filter(t =>
     _colClamp(t.colonneDesktop) !== nuoviTipi[t.id].d || _colClamp(t.colonneMobile) !== nuoviTipi[t.id].m);
 
+  // 🆕 v6.446 - la conferma non e' piu' un `confirm()` del browser: e' una finestra del sito, e
+  // dentro c'e' la TABELLA a due colonne (nome breve della serie, valori di oggi).
+  // 🔴 `await`, e non e' una formalita': senza, `_finestraConferma` torna una Promise, `!promise`
+  // e' sempre falso, la conferma sparirebbe dallo schermo e la riscrittura di TUTTE le serie
+  // partirebbe da sola. Non darebbe nessun errore.
+  // 🆕 v6.448 - la tabella elenca TUTTE le serie; `cambiano` resta, ma serve solo a CONTARE.
+  const tutteLeSerie = getData('series', []) || [];
   const cambiano = _serieCheCambiano(nuove);
-  const elenco = cambiano.map(s => '\u2022 ' + s.name).join('\n');
-  const domanda = it
-    ? 'Questi numeri diventano il valore di partenza E vengono scritti su TUTTE le serie.\n\n'
-      + (cambiano.length
-          ? cambiano.length + ' serie hanno oggi un valore diverso e lo perderanno:\n' + elenco
-          : 'Nessuna serie ha un valore diverso: non si perde niente.')
+  const righe = _righeGriglieSerie(tutteLeSerie, nuove);
+  const diventano = Object.keys(nuove)
+    .map(sez => getSectionLabel(sez) + ' ' + nuove[sez].d + '/' + nuove[sez].m).join(' · ');
+  const proceda = await _finestraConferma({
+    titolo: it ? '\uD83D\uDCD0 Griglie di visualizzazione' : '\uD83D\uDCD0 Display grids',
+    testo: (it
+      ? 'Questi numeri diventano il valore applicato a TUTTE le serie, sostituendo quelli '
+        + 'impostati sulle singole schede serie.'
+      : 'These numbers become the value applied to ALL series, replacing the ones set on the '
+        + 'individual series cards.')
+      + '\n\n'
+      // Il conteggio si dice PRIMA della tabella: con dodici serie in elenco, «quante cambiano»
+      // non e' una cosa che si debba contare a occhio.
+      // ⚠️ Il singolare non e' pignoleria: «1 serie hanno un valore diverso» e' la riga che fa
+      // pensare che il numero sia sbagliato proprio mentre si decide se procedere.
+      + (it
+          ? 'Ecco cosa hanno oggi le ' + tutteLeSerie.length + ' serie. '
+            + (cambiano.length === 0 ? 'Nessuna ha un valore diverso: non si perde niente.'
+             : cambiano.length === 1 ? 'Una ha un valore diverso, e lo perder\u00e0.'
+             : cambiano.length + ' hanno un valore diverso, e lo perderanno.')
+          : 'Here is what the ' + tutteLeSerie.length + ' series have today. '
+            + (cambiano.length === 0 ? 'None has a different value: nothing is lost.'
+             : cambiano.length === 1 ? 'One has a different value, and will lose it.'
+             : cambiano.length + ' have a different value, and will lose it.')),
+    // 🔴 La tabella c'e' SEMPRE, purche' ci sia almeno una serie. E' tutta la v6.448.
+    colonne: tutteLeSerie.length ? [it ? 'Serie' : 'Series', it ? 'Colonne oggi' : 'Columns today'] : null,
+    righe: tutteLeSerie.length ? righe : null,
+    // I valori NUOVI, sotto la tabella: senza, la colonna «Colonne oggi» non ha un termine di
+    // paragone e il lettore deve andarselo a ricostruire dai campi che ha appena riempito.
+    coda: (it ? 'Diventeranno: ' : 'They will become: ') + diventano
       + (tipiCheCambiano.length
-          ? '\n\nE ' + tipiCheCambiano.length + ' tipi di articolo cambiano: '
+          ? (it ? '\nE cambiano ' + tipiCheCambiano.length + ' tipi di articolo: '
+                : '\nAnd ' + tipiCheCambiano.length + ' item types change: ')
             + tipiCheCambiano.map(t => _nomeTipo(t)).join(', ')
-          : '')
-      + '\n\nProcedo?'
-    : 'These numbers become the default AND are written to ALL series.\n\n'
-      + (cambiano.length ? cambiano.length + ' series will lose their own value:\n' + elenco
-                         : 'No series has a different value.')
-      + '\n\nProceed?';
-  if (!confirm(domanda)) return;
+          : ''),
+    ok: it ? 'Procedi' : 'Proceed',
+    annulla: it ? 'Annulla' : 'Cancel'
+  });
+  if (!proceda) return;
 
   if (btn) btn.disabled = true;
   const _stop = _avvisaScritturaLenta(() => { if (fb) { fb.style.display = 'block'; fb.textContent = _TESTO_SCRITTURA_LENTA(); } });
@@ -23598,7 +24066,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.441';
+const JS_VERSION = 'v6.448';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -24001,6 +24469,48 @@ function _invalidateSessionCache() {
   try { sessionStorage.removeItem(_SESSION_KEY); } catch(e) {}
 }
 
+// ============================================================
+// 🆕 v6.442 — RILEGGERE LE SERIE DAL SERVER, in un posto solo.
+// ------------------------------------------------------------
+// Questo codice esisteva gia' identico dentro `aggiornaVistaTabellare` (v6.378). Esce di li' e
+// basta: non cambia una virgola di cosa fa, cambia CHI puo' chiamarlo. Serviva perche' la v6.443
+// deve rileggere da una fascia che non ha niente a che vedere con la vista tabellare, e l'unica
+// alternativa era riscrivere queste dodici righe una seconda volta — cioe' la lezione della
+// v6.375: due punti che parlano dello stesso dato devono chiamare la stessa funzione, non
+// applicare la stessa regola.
+//
+// 🔴 LEGGE CON `_leggiSerieRitentando`, E QUESTA E' LA RIGA CHE CONTA. Non `fsGetAll`: la v6.176
+// ha accertato che a rete giu' `getDocs` RISOLVE con la cache locale invece di rifiutare, quindi
+// una rilettura fatta cosi' ridisegnerebbe gli stessi dati di prima dichiarando di aver
+// funzionato. `getDocsFromServer` rifiuta, e un rifiuto si puo' dire a chi lo ha chiesto.
+//
+// ⚠️ NON RIDISEGNA NIENTE, ed e' voluto: chi chiama sa cosa ha a schermo. Mettere qui un
+// `renderBulkEditView` legherebbe di nuovo la rilettura a una schermata sola, che e' esattamente
+// il nodo che questa release scioglie.
+//
+// ⚠️ E NON CONTROLLA IL LUCCHETTO. Lo fa chi chiama, e i due chiamanti lo fanno per ragioni
+// diverse: la vista tabellare perche' a meta' import mostrerebbe uno stato mai esistito, la
+// fascia della v6.443 perche' durante un import i segnali arrivano a raffica.
+// Restituisce il numero di articoli riletti — §9.6.7: un risultato deve poter dire a quali dati
+// ha risposto.
+async function _rileggiSerieDalServer() {
+  const serie = await _leggiSerieRitentando();
+  // Un elenco vuoto non e' un aggiornamento riuscito a zero serie: e' un sintomo. Sostituire
+  // _cache con niente svuoterebbe la tabella e sembrerebbe una cancellazione dei dati.
+  if (!Array.isArray(serie) || !serie.length) {
+    throw new Error(currentLang === 'it'
+      ? 'il server ha risposto senza nessuna serie'
+      : 'the server returned no series');
+  }
+  _cache.series = serie;
+  _cache.figurines = [];
+  for (const s of _cache.series) for (const item of (s.items || [])) _cache.figurines.push(item);
+  // ⚠️ LA CACHE DI SESSIONE SI RISCRIVE, non si cancella e basta. Cancellarla lascerebbe i dati
+  // freschi solo in memoria: chi ricarica la pagina entro il TTL si riprenderebbe i vecchi.
+  _salvaCacheSessione();
+  return _cache.figurines.length;
+}
+
 async function _syncPublicProfile(user) {
   // Mantiene una copia "pubblica" minimale del profilo utente (public_profiles),
   // separata dal documento users che contiene email e altri dati privati.
@@ -24168,6 +24678,19 @@ async function fsSave(collName, item) {
     e.code = 'sgorbions/caricamento-in-corso';
     throw e;
   }
+  // 🆕 v6.443 - IL SECONDO CONTROLLO, E NON E' UN DOPPIONE DEL PRIMO. Quello sopra dice
+  // «qualcuno sta scrivendo ADESSO» e dura quanto un import; questo dice «TU sei vecchio» e vale
+  // per tutto il tempo dopo. Sono due condizioni diverse: si puo' essere sorpassati senza che
+  // nessun import sia in corso — anzi, e' il caso normale, ed e' quello invisibile.
+  // 🔴 SI CONTROLLA LA SERIE, NON IL SITO: chi e' sorpassato sulla serie 3 deve poter continuare
+  // a lavorare sulla 7. Bloccare tutto avrebbe fermato anche chi non c'entrava niente.
+  // Dove sta l'id della serie cambia con la collezione: per una serie e' il suo, per un articolo
+  // e' `seriesId`. Non c'e' una terza forma — le figurine passano tutte da `_saveFigurineItem`,
+  // che quel campo lo pretende gia' per trovare la serie in cui scrivere.
+  if (collName === 'series' || collName === 'figurines') {
+    const _sid = (collName === 'series') ? (item && item.id) : (item && item.seriesId);
+    if (_serieSorpassata(_sid)) throw _erroreSerieSorpassata(_sid);
+  }
   // 🆕 v6.318 - la regola del "!" sui campi della SERIE: il nome, il nome corto e i quattro elenchi
   // di tipologie. Qui e non nella form della serie, per la stessa ragione dell'altro punto: da qui
   // passano tutte le scritture di una serie, compresa quella della v6.019 che riscrive i soli
@@ -24186,7 +24709,15 @@ async function fsSave(collName, item) {
   // per non dover toccare tutti i punti del codice che chiamano
   // fsSave('figurines', ...) — continuano a funzionare senza saperlo.
   if (collName === 'figurines') {
-    return await _saveFigurineItem(item);
+    const _salvato = await _saveFigurineItem(item);
+    // 🆕 v6.443 - DOPO la scrittura, mai prima: se fallisce, sul server non e' cambiato niente e
+    // mandare le altre finestre a rileggere dati identici le bloccherebbe per nulla.
+    // ⚠️ Per un articolo GIA' ESISTENTE il segnale parte due volte: `_saveFigurineItem` riscrive
+    // la serie passando da `fsSave('series', ...)`, che emette a sua volta. E' innocuo — l'insieme
+    // dall'altra parte e' un `Set` e l'id e' lo stesso — e si preferisce al non emettere qui, che
+    // lascerebbe scoperta la strada `arrayUnion` degli articoli NUOVI.
+    _segnalaSerieCambiata(_salvato && _salvato.seriesId);
+    return _salvato;
   }
   const { collection, doc, setDoc, addDoc } = window._fb;
   if (item.id) {
@@ -24194,6 +24725,7 @@ async function fsSave(collName, item) {
     const writes = [setDoc(ref, item, { merge: true })];
     if (collName === 'users') writes.push(_syncPublicProfile(item));
     await Promise.all(writes);
+    if (collName === 'series') _segnalaSerieCambiata(item.id);   // v6.443
     return item;
   } else {
     // Il campo "id" NON viene scritto nel corpo del documento — è ridondante,
@@ -24206,6 +24738,7 @@ async function fsSave(collName, item) {
     const ref = await addDoc(collection(db, collName), item);
     const saved = { ...item, id: ref.id };
     if (collName === 'users') await _syncPublicProfile(saved);
+    if (collName === 'series') _segnalaSerieCambiata(saved.id);  // v6.443 - serie appena nata
     return saved;
   }
 }
@@ -24219,6 +24752,7 @@ async function fsDelete(collName, id) {
   }
   const { doc, deleteDoc } = window._fb;
   await deleteDoc(doc(db, collName, id));
+  if (collName === 'series') _segnalaSerieCambiata(id);   // v6.443
 }
 
 // ============================================================
@@ -24483,6 +25017,12 @@ async function _deleteFigurineItem(id) {
   for (const series of seriesList) {
     const idx = (series.items || []).findIndex(x => x.id === id);
     if (idx >= 0) {
+      // 🆕 v6.443 - IL CONTROLLO STA QUI E NON IN `fsDelete`, per una ragione sola: in `fsDelete`
+      // l'id della serie non si conosce ancora — si scopre ciclando, ed e' questo il ciclo.
+      // 🔴 E STA PRIMA DELLO SPLICE. Fermarsi dopo lascerebbe l'articolo tolto dalla copia in
+      // memoria e vivo sul server: e' il guasto della v6.042, dove un oggetto rimasto in
+      // `series.items` faceva fallire ogni salvataggio successivo di quella serie.
+      if (_serieSorpassata(series.id)) throw _erroreSerieSorpassata(series.id);
       const itemToRemove = series.items[idx];
       series.items.splice(idx, 1);
       _recomputeSeriesCounts(series);
@@ -24494,6 +25034,10 @@ async function _deleteFigurineItem(id) {
         console.warn('arrayRemove non riuscito, riscrivo l\u2019intera serie come fallback:', e.message);
         await fsSave('series', series);
       }
+      // 🆕 v6.443 - dopo la scrittura, e per tutte e due le strade: `arrayRemove` non passa da
+      // `fsSave` e senza questa riga la cancellazione sarebbe l'unico cambiamento che le altre
+      // finestre non vedono. Sul ripiego il segnale parte due volte, ed e' innocuo (vedi fsSave).
+      _segnalaSerieCambiata(series.id);
       break;
     }
   }
@@ -36227,21 +36771,36 @@ function renderItems() {
       // `_colonneGriglia` insieme a tutti gli altri, poche righe piu' sotto.
       grid.style.gridTemplateColumns = '';
     }
-    grid.style.width = 'min(1800px, 96vw)';
-    grid.style.maxWidth = '1800px';
-    grid.style.marginLeft = '50%';
-    grid.style.marginRight = '0';
-    grid.style.transform = 'translateX(-50%)';
   } else {
     grid.style.display = '';
     grid.style.flexWrap = '';
     grid.style.gridTemplateColumns = '';
-    grid.style.width = '';
-    grid.style.maxWidth = '';
-    grid.style.marginLeft = '';
-    grid.style.marginRight = '';
-    grid.style.transform = '';
   }
+  // 🆕 v6.445 (Franco: *"come mai per le figurine con velina la dimensione del contenitore della
+  // griglia e' piu' largo che per le figurine da attaccare? non e' identico per tutte le tipologie
+  // di articolo?"* → *"puoi farli tutti larghi come quello di figurine con velina?"*)
+  // 🔴 LA LARGHEZZA E' UNA SOLA, E VALE PER TUTTE E SETTE LE SEZIONI.
+  // Fino a qui queste cinque righe stavano DENTRO il ramo `retros || figurines`, e l'altro ramo le
+  // azzerava. Cioe' due sezioni su sette uscivano dalla larghezza della pagina e cinque no.
+  // 📌 IL NUMERO CHE LO RENDE UN DIFETTO E NON UNA SCELTA: «Figurine da attaccare» e «Carte»
+  // dichiarano `{d:7, m:4}` in `ARTICOLI`, IDENTICO a «Figurine con velina». Stesso numero di
+  // colonne impostato, ma in 1036px invece che in 1800 — cioe' card da ~138px invece di ~247px.
+  // Un'impostazione che dice 7 e a schermo vale la meta' e' un'impostazione che mente.
+  // 📌 E i 247px non sono un caso: sono esattamente 7 colonne in 1800px col gap da 12px, ed e' da
+  // li' che viene la larghezza fissa `flex:0 0 247px` del modo «Fronte e retro sempre grandi».
+  // ⚠️ NON e' che le altre cinque «avessero deciso» di stare strette: la centratura a 1800px c'e'
+  // dalla v5.667, quando le sezioni erano queste due. «Figurine da attaccare» e' nata nella v6.195
+  // e in quell'`if` non e' mai entrata. Nel CHANGELOG non c'e' una riga che dica di averlo deciso.
+  // 📌 SOTTO GLI 860px NON CAMBIA NIENTE: `style.css` neutralizza `width`, `margin-left` e
+  // `transform` di `#items-grid` con `!important`. Questa release si vede solo sul computer.
+  // ⚠️ Album, Bustine e Altri oggetti dichiarano 4 colonne: in 1800px diventano card da ~441px
+  // invece di ~250. Franco ha scelto la larghezza unica sapendolo; le loro colonne vanno riviste
+  // guardando, non calcolando.
+  grid.style.width = 'min(1800px, 96vw)';
+  grid.style.maxWidth = '1800px';
+  grid.style.marginLeft = '50%';
+  grid.style.marginRight = '0';
+  grid.style.transform = 'translateX(-50%)';
   // v6.162 - e alla fine, se c'e' un numero configurato, comanda lui. Non in modalita' FLEX
   // ('destra-piena'): li' le colonne non esistono, le card si dispongono da se' secondo la
   // larghezza, e scrivere `grid-template-columns` non farebbe niente — meglio non scriverlo che
@@ -43526,6 +44085,218 @@ function _bloccatoDalLucchetto() {
 }
 
 // ============================================================
+//  v6.443 — «STRADA A»: LE FINESTRE SI DICONO CHE UNA SERIE E' CAMBIATA
+// ------------------------------------------------------------
+//  Franco: *«si, mi capita di avere il sito aperto in piu' schede; sul pc»*, e alla domanda su
+//  come proteggersi: *«strada A»*.
+//
+//  IL GUASTO, in una riga: le figurine vivono DENTRO il documento della serie, e modificarne una
+//  riscrive l'INTERO array `items` dalla copia in memoria di quella finestra. Una scheda aperta da
+//  un'ora tiene una copia vecchia; la prima modifica fatta da li' cancella il lavoro dell'altra
+//  scheda SENZA NESSUN ERRORE.
+//
+//  🔴 QUESTO NON E' IL LUCCHETTO DELLA v6.377, E I DUE NON SI SOSTITUISCONO.
+//  Il lucchetto dice *«qualcuno sta scrivendo ADESSO»* e dura quanto un import. Questo dice
+//  *«TU sei vecchio»*, e vale finche' non rileggi. Sono due condizioni diverse, con due
+//  messaggi diversi, e per questo in `fsSave` i controlli sono DUE e non un doppione: il
+//  lucchetto copre la finestra in cui l'altro scrive, questo copre tutto il tempo dopo.
+//
+//  ⚠️ COSA NON COPRE, e va scritto qui perche' chi legge non si faccia l'idea sbagliata:
+//  · vale SOLO fra finestre dello stesso browser e dello stesso profilo. Dal telefono o da un
+//    altro PC questo segnale non arriva, esattamente come il lucchetto;
+//  · arriva solo alle finestre APERTE nel momento in cui si scrive. Una scheda riaperta oggi su
+//    dati di ieri non ha ricevuto niente e non lo sa — e' vecchia e nessuno gliel'ha detto;
+//  · non e' il contatore di revisione lasciato aperto dalla v6.377. Quello vive sul documento e
+//    rifiuta la scrittura sorpassata da qualunque parte arrivi. Questo e' un avviso fra finestre.
+//  La riparazione completa resta quella. Franco ha scelto questa perche' costa poco e si vede.
+//
+//  📌 PERCHE' `localStorage` E NON FIRESTORE: stessa ragione della v6.377 — le finestre dello
+//  stesso browser si vedono con l'evento `storage`, senza una riga di rete e senza una lettura in
+//  piu' a ogni salvataggio.
+// ============================================================
+const _SERIE_CAMBIATA = 'sgorbions_serie_cambiata';
+
+// 🔴 QUESTO INSIEME STA IN MEMORIA, NON IN `localStorage`, e non e' un dettaglio: dice su quali
+// serie **questa** finestra e' sorpassata, che e' un fatto suo. Scriverlo in `localStorage` lo
+// condividerebbe con la finestra che ha appena scritto — cioe' con l'unica che NON e' sorpassata.
+let _serieSorpassate = new Set();
+
+// 🔴 E NON SCADE COL TEMPO, all'opposto del lucchetto — che scade apposta, perche' un lucchetto
+// rimasto chiuso per sempre e' il guasto peggiore di qualunque lucchetto. Qui e' il contrario:
+// chi non ha riletto E' vecchio, e lo resta. Una vecchiaia che passa da sola dopo un minuto
+// sarebbe un avviso che si spegne mentre il difetto e' ancora tutto li'.
+// Si spegne in un modo solo: rileggendo (`_rileggiSerieDalServer`, v6.442).
+let _contatoreSegnale = 0;
+
+// Si chiama DOPO che la scrittura e' riuscita, mai prima: se la scrittura fallisce sul server non
+// e' cambiato niente, e avvisare le altre finestre di rileggere dati identici le manderebbe a fare
+// un giro di rete per nulla — e, peggio, le bloccherebbe.
+function _segnalaSerieCambiata(serieId) {
+  if (!serieId) return;
+  try {
+    // Il contatore serve perche' due scritture nello stesso millesimo produrrebbero due valori
+    // IDENTICI, e un valore identico puo' non far scattare l'evento `storage`. La data da sola
+    // non basta a garantire che il valore cambi.
+    _contatoreSegnale++;
+    localStorage.setItem(_SERIE_CAMBIATA, JSON.stringify({
+      finestra: _ID_FINESTRA, serieId: serieId, quando: Date.now(), n: _contatoreSegnale }));
+  } catch(e) {}
+}
+
+// Il nome della serie come lo vede Franco, non il suo id. «La serie 7a3f9c» non dice niente a
+// nessuno. Se la serie non e' in memoria (puo' succedere: e' appena nata in un'altra finestra) si
+// dice quello che si sa, cioe' che una serie e' cambiata, senza inventarle un nome.
+function _nomeSerieSorpassata(serieId) {
+  try {
+    const s = (_cache.series || []).find(x => x && x.id === serieId);
+    if (s && s.name) return s.name;
+  } catch(e) {}
+  return '';
+}
+
+// La fascia. Come quella del lucchetto: nasce e muore da sola, quindi non serve markup nella
+// pagina. Un elemento che esiste solo quando ha qualcosa da dire non puo' restare in giro vuoto.
+//
+// 🔴 IL LUCCHETTO VINCE, e va deciso qui una volta invece di lasciare due fasce sovrapposte in
+// fondo allo schermo. Durante un import «non salvare da qui» dice gia' tutto quello che serve, e
+// due avvisi nello stesso angolo sono due modi di dire la stessa cosa. Quando il lucchetto cade,
+// il battito da 5 secondi qui sotto rimette questa fascia da solo.
+function _mostraFasciaSorpasso() {
+  let el = document.getElementById('fascia-sorpasso');
+  const daDire = _serieSorpassate.size > 0 && !_lucchettoAttivo();
+  if (!daDire) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'fascia-sorpasso';
+    // In FONDO, come la fascia del lucchetto e per la stessa ragione accertata nella v6.396: in
+    // alto si siederebbe sopra la navbar e chiuderebbe l'unica uscita che sta suggerendo.
+    el.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:99999;'
+      + 'background:var(--warn);color:#1a1030;font-family:var(--font-ui);font-weight:600;'
+      + 'font-size:0.78rem;text-align:center;padding:0.35rem 1rem;box-shadow:0 -2px 14px rgba(0,0,0,0.4);'
+      + 'display:flex;align-items:center;justify-content:center;gap:0.6rem;flex-wrap:wrap;';
+    const testo = document.createElement('span');
+    testo.id = 'fascia-sorpasso-testo';
+    const btn = document.createElement('button');
+    btn.id = 'fascia-sorpasso-btn';
+    btn.type = 'button';
+    btn.style.cssText = 'font:inherit;cursor:pointer;border:0;border-radius:6px;'
+      + 'padding:0.15rem 0.6rem;background:#1a1030;color:var(--warn);';
+    // Un listener vero e non un `onclick` in stringa: il testo del pulsante cambia con la lingua,
+    // e una stringa di codice dentro l'HTML e' un posto in piu' dove sbagliare le virgolette.
+    btn.addEventListener('click', () => _rileggiDallaFascia(btn));
+    el.appendChild(testo);
+    el.appendChild(btn);
+    document.body.appendChild(el);
+  }
+  const it = currentLang === 'it';
+  const nomi = Array.from(_serieSorpassate).map(_nomeSerieSorpassata).filter(Boolean);
+  const quali = nomi.length === 1
+    ? (it ? ' «' + nomi[0] + '»' : ' “' + nomi[0] + '”')
+    : (nomi.length > 1 ? (it ? ' (' + nomi.length + ' serie)' : ' (' + nomi.length + ' series)') : '');
+  const t = document.getElementById('fascia-sorpasso-testo');
+  if (t) t.textContent = it
+    ? '⚠️ Un’altra finestra ha modificato la serie' + quali + ': i dati che hai in memoria sono di prima. '
+      + 'Salvare da qui è bloccato finché non rileggi.'
+    : '⚠️ Another window changed the series' + quali + ': the data you have in memory is stale. '
+      + 'Saving from here is blocked until you refresh.';
+  const b = document.getElementById('fascia-sorpasso-btn');
+  if (b && !b.disabled) b.textContent = it ? '🔄 Rileggi i dati' : '🔄 Refresh data';
+}
+
+// 🔴 RILEGGE E BASTA: NON RICARICA LA PAGINA. Deciso da Franco, e la ragione e' quella che si
+// vede solo pensando a QUANDO si preme questo pulsante — cioe' quasi sempre con una scheda
+// figurina aperta a meta'. `location.reload()` butterebbe via quello che sta scrivendo.
+// Rileggendo invece il modulo resta, e risalvando i suoi valori si posano sopra i dati freschi:
+// `_saveFigurineItem` riscrive `series.items` dalla copia in memoria — che adesso e' quella nuova —
+// con il suo unico articolo sostituito. E' la fusione giusta, ed e' l'unica che non perde niente.
+//
+// ⚠️ IL PREZZO VA DETTO, NON NASCOSTO: la pagina DIETRO puo' mostrare ancora i numeri di prima.
+// Il messaggio finale lo dice con parole sue invece di lasciarlo scoprire. Un «fatto» che copre
+// meta' del lavoro e' il difetto della v6.375, e l'unico modo di non commetterlo senza ricaricare
+// tutto e' dichiarare il perimetro — come per i totali (lezione 1 del 26 agosto).
+async function _rileggiDallaFascia(btn) {
+  // A meta' import i dati non sono ne' i vecchi ne' i nuovi: rileggerli adesso mostrerebbe uno
+  // stato che non e' mai esistito. Stessa precauzione di `aggiornaVistaTabellare`.
+  if (_bloccatoDalLucchetto()) return;
+  if (btn && btn.disabled) return;   // il doppio clic raddoppierebbe una lettura da ~1,4 MB
+  const it = currentLang === 'it';
+  if (btn) { btn.disabled = true; btn.textContent = it ? '⏳ Lettura…' : '⏳ Loading…'; }
+  try {
+    const n = await _rileggiSerieDalServer();
+    // 🔴 SI SVUOTA SOLO DOPO CHE LA LETTURA E' RIUSCITA. Svuotarlo prima, o nel `finally`,
+    // toglierebbe il blocco a una finestra rimasta vecchia: l'avviso sparirebbe e il difetto no.
+    _serieSorpassate.clear();
+    // La vista tabellare e' l'unica schermata cche esiste per GUARDARE questi dati, e ridisegnarla
+    // e' la stessa coppia di chiamate che fa gia' `aggiornaVistaTabellare`: non e' logica nuova.
+    // Le altre schermate no, e il messaggio qui sotto lo dichiara invece di lasciarlo credere.
+    try {
+      if (document.getElementById('bulk-edit-view')?.innerHTML) {
+        renderBulkEditView();
+        _applicaVistaCorrente();
+      }
+    } catch(e) { console.error('ridisegno vista tabellare dopo la rilettura', e); }
+    _mostraFasciaSorpasso();
+    const ora = new Date().toLocaleTimeString(it ? 'it-IT' : 'en-US');
+    toast(it
+      ? '🔄 Riletti ' + n + ' oggetti alle ' + ora + ' — puoi salvare. '
+        + 'Quello che era già a schermo si aggiorna quando cambi pagina.'
+      : '🔄 ' + n + ' items reloaded at ' + ora + ' — you can save now. '
+        + 'What was already on screen updates when you change page.',
+      'success', null, 7000);
+  } catch(e) {
+    console.error('_rileggiDallaFascia', e);
+    // Un errore silenzioso qui sarebbe il peggio: si crederebbe di essere tornati freschi restando
+    // vecchi, e il blocco sparirebbe insieme all'avviso. Stessa lezione della v5.682.
+    toast(it
+      ? '⚠️ Rilettura NON riuscita: sei ancora sui dati di prima. (' + (e?.message || e) + ')'
+      : '⚠️ Refresh FAILED: you are still on the previous data. (' + (e?.message || e) + ')',
+      'error', null, 9000);
+    if (btn) btn.textContent = it ? '🔄 Rileggi i dati' : '🔄 Refresh data';
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+// Il messaggio per chi prova a salvare una serie su cui e' sorpassato. Sta qui e non nelle form
+// per la ragione di sempre (§12.1): un messaggio scritto due volte fra sei mesi e' due messaggi
+// diversi.
+function _serieSorpassata(serieId) {
+  return !!serieId && _serieSorpassate.has(serieId);
+}
+
+function _erroreSerieSorpassata(serieId) {
+  const it = currentLang === 'it';
+  const nome = _nomeSerieSorpassata(serieId);
+  const quale = nome ? (it ? ' «' + nome + '»' : ' “' + nome + '”') : '';
+  const e = new Error(it
+    ? 'Un’altra finestra ha modificato la serie' + quale + ' dopo che questa l’ha letta: salvare '
+      + 'adesso cancellerebbe le sue modifiche. Premi «Rileggi i dati» nella fascia in fondo, poi riprova.'
+    : 'Another window changed the series' + quale + ' after this one read it: saving now would erase '
+      + 'its changes. Press “Refresh data” in the bottom banner, then try again.');
+  e.code = 'sgorbions/serie-sorpassata';
+  return e;
+}
+
+// Le finestre si accorgono l'una dell'altra da qui.
+// 📌 L'evento `storage` NON arriva a chi ha scritto — e' la specifica, non una fortuna. Il
+// controllo su `_ID_FINESTRA` resta lo stesso perche' costa niente e regge se un domani il
+// segnale arrivasse anche da un'altra strada.
+// 📌 Il battito da 5 secondi serve al caso del lucchetto: quando quello cade, nessun evento
+// `storage` avvisa questa fascia che adesso tocca a lei.
+try {
+  window.addEventListener('storage', e => {
+    if (e.key !== _SERIE_CAMBIATA) return;
+    let g = null;
+    try { g = JSON.parse(e.newValue || 'null'); } catch(_) {}
+    if (!g || !g.serieId) return;
+    if (g.finestra === _ID_FINESTRA) return;
+    _serieSorpassate.add(g.serieId);
+    _mostraFasciaSorpasso();
+  });
+  setInterval(_mostraFasciaSorpasso, 5000);
+} catch(e) {}
+
+// ============================================================
 //  v6.374 — LE QUATTRO SCATOLE DI LOG: colori, tema, riepilogo
 // ------------------------------------------------------------
 //  Le scatole sono QUATTRO — import figurine, import retro, foto, foto senza numero — e fino alla
@@ -47116,18 +47887,14 @@ function toggleBulkEditView() {
 // 🆕 v6.378 (Franco: *"nella vista tabella puoi mettere un tasto (admin) «Aggiorna», per comandare
 // un aggiornamento dei dati della tabella?"*) - RILEGGE LE SERIE DAL SERVER E RIDISEGNA.
 //
-// 🔴 LEGGE CON `_leggiSerieRitentando`, NON CON `fsGetAll`, ed e' la decisione che conta.
-// `_rileggiFigurine()` (v6.046) fa quasi esattamente questo, ma passa da `fsGetAll`, cioe'
-// `getDocs`: la v6.176 ha accertato che a rete giu' quella RISOLVE con la cache locale invece di
-// rifiutare. Un pulsante «Aggiorna» che leggesse cosi' ridisegnerebbe gli stessi dati di prima
-// dichiarando di aver funzionato - cioe' servirebbe il guasto che esiste per curare, con l'aria
-// della cura. `getDocsFromServer` rifiuta, e un rifiuto si puo' dire a chi ha premuto.
-// ⚠️ Non si riusa `_rileggiFigurine` cambiandole la lettura: quella serve alle due procedure di
-// caricamento foto, dove il ripiego sulla cache e' innocuo e un errore in piu' fermerebbe un
-// lavoro lungo. Sono due esigenze diverse sotto la stessa forma.
-//
-// ⚠️ LA CACHE DI SESSIONE SI RISCRIVE, non si cancella e basta. Cancellarla avrebbe lasciato i dati
-// freschi solo in memoria: chi ricarica la pagina entro i 5 minuti di TTL si riprendeva i vecchi.
+// 🆕 v6.442 - LA LETTURA NON STA PIU' QUI: sta in `_rileggiSerieDalServer`, e con lei ci sono
+// andate le due ragioni che la spiegavano (perche' `_leggiSerieRitentando` e non `fsGetAll`,
+// perche' la cache di sessione si riscrive invece di cancellarsi). Non sono state riassunte qui:
+// un commento copiato in due posti fra sei mesi e' due commenti diversi, ed e' la lezione della
+// v6.372 sui colori. Qui resta il RIDISEGNO.
+// ⚠️ Non si riusa `_rileggiFigurine` (v6.046) cambiandole la lettura: quella serve alle due
+// procedure di caricamento foto, dove il ripiego sulla cache e' innocuo e un errore in piu'
+// fermerebbe un lavoro lungo. Sono due esigenze diverse sotto la stessa forma.
 //
 // 📌 COSA NON FA, e va scritto perche' un pulsante che si chiama «Aggiorna» promette piu' di quello
 // che da': NON e' il contatore di revisione lasciato aperto dalla v6.377. Sveglia QUESTA finestra
@@ -47156,18 +47923,9 @@ async function aggiornaVistaTabellare() {
     btn.textContent = currentLang === 'it' ? '⏳ Lettura…' : '⏳ Loading…';
   }
   try {
-    const serie = await _leggiSerieRitentando();
-    // Un elenco vuoto non e' un aggiornamento riuscito a zero serie: e' un sintomo. Sostituire
-    // _cache con niente svuoterebbe la tabella e sembrerebbe una cancellazione dei dati.
-    if (!Array.isArray(serie) || !serie.length) {
-      throw new Error(currentLang === 'it'
-        ? 'il server ha risposto senza nessuna serie'
-        : 'the server returned no series');
-    }
-    _cache.series = serie;
-    _cache.figurines = [];
-    for (const s of _cache.series) for (const item of (s.items || [])) _cache.figurines.push(item);
-    _salvaCacheSessione();
+    // 🆕 v6.442 - la lettura e la riscrittura delle cache stanno in `_rileggiSerieDalServer`.
+    // Qui resta il RIDISEGNO, che e' l'unica cosa che riguardi la vista tabellare.
+    await _rileggiSerieDalServer();
 
     // 📌 SI RIDISEGNA ANCHE LA TESTATA DELLA SERIE, e non e' zelo: i contatori che stanno due
     // centimetri sopra la tabella leggono le stesse serie. Aggiornare la tabella e lasciare i
