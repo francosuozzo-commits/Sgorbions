@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.426"></script>
-<link rel="stylesheet" href="css/style.css?v=6.426">
+<script src="js/email.min.js?v=6.428"></script>
+<link rel="stylesheet" href="css/style.css?v=6.428">
 
 
 <style>
@@ -68,10 +68,16 @@
      `COL_SOTTOCAT` — distanza 0. Fino a ieri quella collisione ce l'aveva `--type-official`, quindi
      non è nata qui: ha cambiato inquilino. Si chiude portando la SOTTOCATEGORIA sul viola #b98cff
      che «non ufficiale» ha appena lasciato libero (292 dall'omaggio, 267 dalla categoria nuova).
-     Non è stato fatto perché Franco ha nominato solo la CATEGORIA. È una riga. */
+     Non è stato fatto perché Franco ha nominato solo la CATEGORIA. È una riga.
+     ✅ CHIUSA DALLA v6.427, MA DALL'ALTRO LATO: Franco ha scelto di spostare `--type-free`
+     sul viola e di lasciare la sottocategoria arancione. Questa riga proponeva il contrario:
+     un commento propone, non decide.
+     🔴 ⚠️ E I DUE NUMERI QUI SOPRA SONO SBAGLIATI: 292 e 267 li ha prodotti **redmean**, la
+     metrica ricostruita a occhio il 24 agosto, non `√(2ΔR² + 4ΔG² + 3ΔB²)` di
+     `prove/prova-v6372.js`. La distanza vera viola ↔ arancione è **329**. */
   --type-official:   #9be89b;
   --type-unofficial: #fff275;
-  --type-free:       #ffa94d;
+  --type-free:       #b98cff;   /* v6.427 - viola */
   --type-printerror: #ff6464;
   --danger:          #e8557c;
   --danger-rgb:      232,85,124; }
@@ -3444,7 +3450,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.426"></script>
+<script src="js/app.js?v=6.428"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3468,7 +3474,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.426'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.428'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
