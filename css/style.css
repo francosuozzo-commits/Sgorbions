@@ -624,13 +624,31 @@ body {
 .series-info { display: contents; }
 .series-info > div:first-child { grid-row: 1; grid-column: 1 / -1; }  /* nome+anno sopra */
 #detail-meta { grid-row: 2; grid-column: 2; }  /* contatori a destra della foto */
+/* 🆕 v6.432 (Franco) — LA PAGINA DELLA SERIE SI LEGGE COME LA SUA CARD.
+   Franco: *"nell'hub delle serie il nome serie e l'anno hanno un colore; nella pagina della serie
+   il contrario. Allinea la pagina della serie alla card"*.
+   🔴 I DUE COLORI SI SCAMBIANO, e prima di scriverlo sono stati MISURATI tutti e quattro invece
+   che ricordati — perche' a memoria erano invertiti:
+     · card  (`seriesCardHTML`): nome `--nome-entita` (azzurro) · anno `--text` (bianco)
+     · pagina (prima di qui):    nome `--text` (bianco)         · anno `--accent2` (ARANCIONE)
+   Quindi l'anno della pagina non era nemmeno azzurro: era arancione. Franco l'ha visto a schermo
+   e ha chiesto bianco.
+   📌 IL NOME DELLA SERIE E' UN'ENTITA', e per questo prende `--nome-entita` e non un azzurro
+   qualunque: e' lo stesso token che la card usa dalla v6.399, e il giorno che si muove si muovono
+   insieme. L'anno e' un attributo, e gli attributi sono bianchi.
+   ⚠️ `--accent2` perde qui il suo ultimo uso "da titolo": quel che gli resta e' il badge domanda
+   del blog, l'etichetta ADMIN, il bottone avatar e otto punti negli EXPORT delle mancoliste.
+   Il suo mestiere e' misto, ed e' segnato fra le APERTE.
+   🎉 Ed e' la PRIMA modifica al CSS scritta alla FONTE invece che ridichiarata nell'index: fino
+   alla v6.430 questo file non stava nelle `_upload_` e una riga come queste sarebbe finita nel
+   `<style>` dell'index, portando i selettori dichiarati in due posti da tre a cinque. */
 .series-year {
-  font-family: var(--font-ui); font-size: 0.88rem; color: var(--accent2);
+  font-family: var(--font-ui); font-size: 0.88rem; color: var(--text);
   letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.5rem;
 }
 .series-name {
   font-family: var(--font-display); font-size: clamp(1.8rem, 4vw, 3rem);
-  color: var(--text); margin-bottom: 1rem; line-height: 1.1;
+  color: var(--nome-entita); margin-bottom: 1rem; line-height: 1.1;
 }
 .series-description { color: var(--text); line-height: 1.7; margin: 1rem 0 1.5rem; white-space: pre-line; }
 .progress-bar-wrap { margin-bottom: 0.5rem; }
@@ -1486,3 +1504,37 @@ footer {
 
 /* sul desktop il contenitore delle righe "sopra la foto" non esiste proprio */
 #fig-detail-top:empty { display: none; }
+
+/* 🆕 v6.440 (Franco) — IL GRIGIO DELLE STRUTTURE, SOLO DOVE SEI AMMINISTRATORE.
+   Franco, in preview: *"la pagina «Modifica tipo di articolo» la vedo ancora con del grigio"* e
+   *"anche nella admin console vedo del grigio"*.
+   🔴 AVEVA RAGIONE, E IL BUCO ERA MIO: dalla v6.437 alla v6.439 avevo contato `var(--muted)` solo
+   negli stili INLINE di app.js e index.html — 384 occorrenze — e avevo presentato quel numero come
+   il totale del sito. Ma il grigio delle STRUTTURE non sta inline: sta qui, in 37 regole di
+   `style.css`. `.form-label` e `.form-hint` sono l'etichetta e la nota di OGNI campo di OGNI
+   finestra; `.data-table th` intesta ogni tabella; `.modal-close` e' la ✕. Nessuna di queste era
+   mai stata guardata. **Misurare dove si sa guardare, e chiamarlo totale, e' il modo piu' rapido
+   di dare un numero falso.**
+
+   🔴 SI SCRIVONO REGOLE PIU' STRETTE, NON SI TOCCANO LE CLASSI. `.form-label` ha 54 usi nelle
+   finestre da amministratore ma **10 in quelle dell'utente** (accesso, registrazione, cancellazione
+   account): sbiancare la classe li prenderebbe tutti, e il bianco finirebbe davanti a chi non e'
+   nemmeno registrato — lo stesso confine che la v6.437 aveva gia' rischiato di superare due volte.
+   Queste regole vincono per specificita' e lasciano la classe dov'e'.
+
+   📌 I contenitori sono quelli VERIFICATI in questa sessione: la pagina della console e i quattro
+   modali da amministratore. `#add-series-modal` e `#add-tipo-prodotto-modal` sono admin al 100%;
+   `#auth-modal`, `#username-modal`, `#delete-account-modal` restano fuori di proposito.
+   ⚠️ Chi aggiunge una finestra da amministratore deve aggiungerla a questo elenco, altrimenti
+   nasce grigia. E' il prezzo di un confine esplicito: si paga qui, una riga, invece di pagarlo
+   sbiancando per sbaglio la pagina di accesso. */
+#admin .form-label, #admin .form-hint, #admin .detail-label, #admin .data-table th,
+#admin .modal-close, #admin .back-btn, #admin .empty-title, #admin .empty-sub,
+#add-series-modal .form-label, #add-series-modal .form-hint, #add-series-modal .modal-close,
+#add-tipo-prodotto-modal .form-label, #add-tipo-prodotto-modal .form-hint, #add-tipo-prodotto-modal .modal-close,
+#edit-user-modal .form-label, #edit-user-modal .form-hint, #edit-user-modal .modal-close,
+#ebay-bulk-modal .form-label, #ebay-bulk-modal .form-hint, #ebay-bulk-modal .modal-close,
+#series-ebay-modal .form-label, #series-ebay-modal .form-hint, #series-ebay-modal .modal-close,
+#bulk-score-modal .form-label, #bulk-score-modal .form-hint, #bulk-score-modal .modal-close {
+  color: var(--text);
+}
