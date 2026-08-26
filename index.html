@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.441"></script>
-<link rel="stylesheet" href="css/style.css?v=6.441">
+<script src="js/email.min.js?v=6.448"></script>
+<link rel="stylesheet" href="css/style.css?v=6.448">
 
 
 <style>
@@ -2067,7 +2067,16 @@ button.back-btn { color:#ffffff; }
               <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">&#128208; Griglie di visualizzazione</h4>
               <div id="griglie-tabella"></div>
               <div class="form-hint" style="margin-top:0.6rem;">Quante colonne per riga in ogni box, su computer e su telefono. Da 1 a 12.</div>
-              <div class="form-hint" style="margin-top:0.4rem;"><strong>Salvando, questi numeri diventano il valore di partenza E vengono scritti su TUTTE le serie</strong>, sostituendo quelli impostati sulle singole schede. Prima di procedere ti viene detto quante serie hanno un valore diverso e quali.</div>
+              <!-- 🆕 v6.447 (testo dettato da Franco) — «valore APPLICATO», non «di partenza»: dopo il
+                   salvataggio ogni serie ha questo numero scritto dentro, quindi non e' un ripiego che
+                   qualcuno puo' scavalcare — e' il valore, finche' non si torna sulla scheda della serie
+                   a rimetterne un altro A MANO. Dire «di partenza» faceva credere il contrario. -->
+              <div class="form-hint" style="margin-top:0.6rem;"><strong>NOTA IMPORTANTE:</strong><br>Salvando, questi numeri diventano il valore applicato a TUTTE le serie, sostituendo quelli impostati sulle singole schede serie.<br>Prima di procedere ti viene detto quante serie hanno un valore diverso e quali (e quale valore).</div>
+              <!-- 🆕 v6.447 — LA TERZA RIGA E' UN'ALTRA COSA, e sta a parte apposta: le due sopra parlano
+                   di dove finiscono questi numeri, questa dice che su una sezione non arrivano proprio.
+                   Franco: *"in primis vorrei spiegarlo / ricordarlo all'admin, in entrambi i punti di
+                   configurazione"*. -->
+              <div class="form-hint" style="margin-top:0.6rem;">Su <strong>Figurine con velina</strong> questi numeri possono non arrivare a schermo: il comando «Modalit&agrave; visualizzazione», sopra la griglia, parte da «Fronte e retro sempre grandi», che dispone le card per larghezza e ignora del tutto le colonne. Non si ricorda fra una visita e l&rsquo;altra, quindi &egrave; il caso normale e non l&rsquo;eccezione. Sotto gli 860px, in quel modo, comanda la larghezza dello schermo.</div>
               <button class="btn-primary btn-admin" id="griglie-salva-btn" style="white-space:nowrap;padding:0.6rem 1rem;margin-top:0.75rem;" onclick="salvaGriglieVisualizzazione()">Salva e applica a tutte le serie</button>
               <div id="griglie-feedback" style="display:none;margin-top:0.6rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;"></div>
             </div>
@@ -2958,7 +2967,16 @@ button.back-btn { color:#ffffff; }
            sono quante sono gli articoli, nel loro ordine, e un settimo articolo comparirebbe qui
            senza che nessuno debba ricordarsene. -->
       <div id="series-colonne-tabella"></div>
-      <div style="font-size:0.78rem;color:var(--text);margin-top:0.35rem;">Da 1 a 12. Sono i numeri di partenza, prima che l'utente ridimensioni la finestra, e valgono anche sugli schermi stretti: su mobile tienili bassi.</div>
+      <!-- 🔴 v6.447 — LA NOTA DI PRIMA DICEVA DUE COSE FALSE, e nessuna prova poteva vederlo.
+           1. *"prima che l'utente ridimensioni la finestra"*: ridimensionare NON cambia il numero.
+              `repeat(7, 1fr)` fa sette colonne a qualunque larghezza — si stringono, non diminuiscono.
+              A cambiarlo e' il superamento della soglia degli 860px, che e' un'altra cosa.
+           2. *"valgono anche sugli schermi stretti"*: e' il contrario. Sotto gli 860px, nel modo
+              predefinito, comanda `repeat(auto-fill, minmax(100px,1fr))` di `style.css` e questi
+              numeri non arrivano a schermo.
+           E non diceva la terza, che e' quella che fa perdere il lavoro: un salvataggio dal pannello
+           globale li riscrive tutti. -->
+      <div style="font-size:0.78rem;color:var(--text);margin-top:0.35rem;">Da 1 a 12.<br><strong>NOTA IMPORTANTE:</strong> un salvataggio in <strong>Configurazioni &rarr; Griglie di visualizzazione</strong> riscrive questi numeri su tutte le serie, compresa questa: dopo, vanno rimessi qui a mano.<br>Su <strong>Figurine con velina</strong> il comando «Modalit&agrave; visualizzazione» dell&rsquo;utente parte da «Fronte e retro sempre grandi», che dispone le card per larghezza e ignora del tutto queste colonne. Sotto gli 860px, in quel modo, comanda la larghezza dello schermo.</div>
     </div>
     </div><!-- chiude il tab Visualizzazione -->
 
@@ -3450,7 +3468,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.441"></script>
+<script src="js/app.js?v=6.448"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3474,7 +3492,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.441'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.448'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
