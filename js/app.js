@@ -1,6 +1,453 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.441 - I TRE PULSANTI DELLA VISTA TABELLARE NELL'ARANCIONE DA ADMIN, E «AGGIORNA DATI». app.js.
+//
+//          Franco, da una schermata: *"ci sono 3 pulsanti admin non arancio; vanno resi come gli
+//          altri"* e *"il tasto «Aggiorna», poi, chiamalo «Aggiorna dati»"*.
+//
+//          --- IL NOME ----------------------------------------------------------------------
+//          📌 NON ERA IL PULSANTE CHE SEMBRAVA. Nell'index c'e' `#admin-refresh-btn`, che diceva
+//          gia' «Aggiorna dati» dalla traduzione `admin.refresh`. Quello della schermata e' un
+//          altro: `_ETICHETTA_AGGIORNA()`, il pulsante della vista tabellare. **Due pulsanti che
+//          fanno la stessa promessa con due nomi diversi, in due schermate diverse** — e chi
+//          cercasse la stringa dove sembra ovvio troverebbe quello gia' giusto.
+//
+//          --- I TRE VESTITI ----------------------------------------------------------------
+//          · «Ordina per creazione» e «Aggiornamento massivo»: erano bordo `--border` e testo
+//            `--muted`, cioe' vestiti da secondari spenti. Ora bordo e testo `--action-admin`.
+//          · «Ordina per creazione» ha uno STATO ACCESO, e non l'ho appiattito: da spento e'
+//            arancione svuotato, da acceso arancione pieno con testo bianco. E' la stessa scala di
+//            «Salva e resta» / «Salva» nella scheda — un gradino, non due colori diversi.
+//            ⚠️ Perde pero' il LIME che aveva da acceso: prima l'acceso si distingueva per TINTA,
+//            adesso per pieno/vuoto. Da guardare a schermo: se non si legge, il rimedio non e'
+//            tornare al lime ma ingrossare lo stacco.
+//
+//          🔴 · «Elimina selezionati» ERA `.btn-danger`, cioe' ROSSO, e adesso e' arancione come
+//            gli altri due. Franco ha contato tre pulsanti e ha detto tre, quindi si fa — ma va
+//            scritto che **e' l'unico dei tre che DISTRUGGE dati**, e il rosso era la sua unica
+//            differenza visibile in quella fila. Da oggi l'unica cosa che lo distingue dal vicino
+//            «Ordina per creazione» e' la parola «Elimina».
+//            📌 Resta la conferma prima di cancellare, quindi il rosso non era l'unica rete. Ma se
+//            un giorno un clic di troppo finisse li', questa e' la riga da rimettere: una sola,
+//            `class="btn-primary btn-admin"` torna `class="btn-danger"`.
+//
+//          Prove: prova-v6441.js. La suite pretende il nome nuovo, l'arancione sui tre, e che lo
+//          stato acceso dell'ordinamento resti DISTINGUIBILE da quello spento — perche' quello e'
+//          l'unico dei quattro punti che si puo' rompere senza che si veda.
+//
+// v6.440 - IL GRIGIO DELLE STRUTTURE, SOLO DOVE SEI AMMINISTRATORE. css/style.css (+ versione).
+//
+//          Franco, IN PREVIEW: *"la pagina «Modifica tipo di articolo» la vedo ancora con del
+//          grigio"* e *"anche nella admin console vedo del grigio"*.
+//
+//          🔴 AVEVA RAGIONE, E IL BUCO ERA DI MISURA. Dalla v6.437 alla v6.439 ho contato
+//          `var(--muted)` **solo negli stili inline** di app.js e index.html — 384 occorrenze — e ho
+//          presentato quel numero come il totale del sito. Ma il grigio delle STRUTTURE non sta
+//          inline: sta in **37 regole di `style.css`**, che non avevo mai guardato. `.form-label` e
+//          `.form-hint` sono l'etichetta e la nota di OGNI campo di OGNI finestra; `.data-table th`
+//          intesta ogni tabella; `.modal-close` e' la ✕.
+//          📌 **Misurare dove si sa guardare, e chiamarlo totale, e' il modo piu' rapido di dare un
+//          numero falso.** Tre volte in questa serie ho detto «fatto» su un perimetro che non
+//          conteneva il pezzo piu' visibile, e tutte e tre le volte l'ha trovato Franco a schermo.
+//
+//          🔴 E IL RIMEDIO NON POTEVA ESSERE «SBIANCO LA CLASSE». `.form-label` ha 54 usi nelle
+//          finestre da amministratore ma **10 in quelle dell'utente** — accesso, registrazione,
+//          cancellazione account. Sbiancarla avrebbe portato il bianco davanti a chi non e' nemmeno
+//          registrato: lo stesso confine che la v6.437 aveva gia' rischiato di superare due volte.
+//          ✅ Quindi **regole piu' strette che vincono per specificita'**, e la classe resta dov'e':
+//          `#admin .form-label`, `#add-tipo-prodotto-modal .form-label`, e cosi' per i quattro
+//          modali da amministratore verificati in questa sessione.
+//
+//          📌 SCRITTE IN `css/style.css`, ALLA FONTE — la seconda volta dalla v6.431, dopo la
+//          v6.432. Nell'index avrebbero fatto crescere i selettori dichiarati in due posti.
+//
+//          ⚠️ IL PREZZO DI UN CONFINE ESPLICITO: chi aggiunge una finestra da amministratore deve
+//          aggiungerla a questo elenco, altrimenti nasce grigia. Si paga una riga qui invece di
+//          pagarlo sbiancando per sbaglio la pagina di accesso. `prova-v6440` pretende che i sette
+//          contenitori ci siano, che i quattro dell'utente NON ci siano, e che le classi base
+//          `.form-label` e `.form-hint` siano ANCORA grigie alla radice.
+//
+//          Prove: prova-v6440.js.
+//
+// v6.439 - IL BIANCO CHIUDE: LE ULTIME 38 DELLE FUNZIONI MISTE. app.js.
+//
+//          Terza e ultima passata (v6.437: 119 · v6.438: 58+22 · qui: 38). Restano fuori solo i
+//          grigi che vede chi NON e' amministratore, e sono li' per decisione.
+//
+//          🔴 QUI IL PERIMETRO NON SI POTEVA DEDURRE, E INFATTI NON L'HO DEDOTTO. Nelle due
+//          release precedenti bastava il nome della funzione (`renderAdmin*`, `renderEbay*`) o il
+//          contenitore nell'index. Queste no: sono funzioni di file misti, dove un grigio e' da
+//          admin e quello dopo no. Ho provato il criterio «la RIGA nomina isAdmin»: prende **3 su
+//          137**. Inutile.
+//          ✅ Quindi ognuna e' stata guardata per MESTIERE, e la piu' grossa ha richiesto di
+//          risalire a chi la chiama: `switchToEditMode` (15) e' la form di modifica di un articolo,
+//          e non ha nessuna guardia d'ingresso — sembrerebbe aperta a tutti. Ma il pulsante che la
+//          apre (`✎ Modifica`, riga ~39549) sta dentro un `if (isAdmin)`. **La protezione non era
+//          nella funzione: era nella porta.** Dedurlo dal corpo avrebbe dato la risposta sbagliata.
+//
+//          Le dodici, e perche':
+//          · `switchToEditMode` (15) — la porta e' dentro `if (isAdmin)`, verificato
+//          · `renderMoveFigList` (3) — spostare articoli fra serie
+//          · `renderWishlistAdmin` (3) — la vista admin di «Cio' che cerco»
+//          · `previewRecomputeFullNames` + `applyRecomputeFullNames` (3) — guardia d'ingresso admin
+//          · `anteprimaFixRetroChange` (2) — riparazione dati
+//          · `ebayThFisso`, `ebayColRestoreBar` (4) — tabella eBay
+//          · `_tabellaColonneSerie` (2) — dentro il modale della serie
+//          · `apriInfoTutteLeSerie` (2) — pannello «tutte le serie» della console
+//          · `switchFeTab`, `filterFeRetroLink` (4) — `fe-` e' la form di modifica articolo
+//
+//          ⚠️ RESTANO GRIGI, TUTTI DI PROPOSITO: `openFigDetail` (16) e `renderWantlist` (10) —
+//          la scheda di un articolo e la mancolista le vedono tutti; `renderUnsubscribePage` (8) —
+//          e' di un iscritto; le 11 celle della vista tabellare (v6.438); `paginationHTML`,
+//          `renderClassifica`, `renderBlog`, `renderCatalogSearch`; e i 48 dell'index di chi non e'
+//          admin.
+//          📌 Se un domani si vorra' sbiancare anche `openFigDetail`, il criterio NON e' la
+//          funzione: e' il singolo campo. Meta' di quei sedici sono etichette da admin dentro una
+//          scheda che vede chiunque.
+//
+//          Prove: prova-v6439.js, che come le altre due difende il confine — pretende che le
+//          funzioni di chi non e' admin abbiano ANCORA il loro grigio.
+//
+// v6.438 - IL BIANCO ARRIVA NELL'INDEX, E ALLE INTESTAZIONI DELLA VISTA TABELLARE. index + app.js.
+//
+//          Franco, guardando la v6.437: *"io non vedo tutto bianco"*. Aveva ragione, e il conto lo
+//          spiega: la v6.437 aveva toccato 119 grigi su 384, cioe' un terzo. I 106 dell'index non
+//          li aveva nemmeno visti, perche' quella release lavorava su `app.js`.
+//          📌 La misura era giusta, il messaggio no: avevo aperto con «119 fatte» invece che con
+//          «restano 265». Un numero vero, presentato come se fosse il totale, e' un numero falso.
+//
+//          --- A. I 58 GRIGI SOLO-ADMIN DELL'INDEX -------------------------------------------
+//          Attribuiti al CONTENITORE con id piu' vicino, non alla pagina: i modali sono dichiarati
+//          in coda a `series-detail` e per pagina finivano tutti li' dentro (96 su 106), una
+//          ripartizione che non diceva niente.
+//          Dentro: i contatori di consumo della console (Firebase, Cloudinary, e-mail, reset
+//          password), i pannelli admin, la modifica utente, il modale della SERIE, quelli eBay e
+//          del punteggio massivo. Fuori restano 48 che vede chi non e' admin — la home, la privacy,
+//          il profilo, i modali di autenticazione e cancellazione account.
+//          ⚠️ La sostituzione MASCHERA i commenti HTML prima di cercare, e pretende esattamente 58:
+//          se non tornano si ferma. `--muted` nell'index compare in punti giusti quasi ovunque.
+//
+//          --- B. LE 22 INTESTAZIONI DELLA VISTA TABELLARE -----------------------------------
+//          Franco: *"la vista tabellare non e' solo admin, hai ragione. ma ne farei cmq sia i nomi
+//          colonna in bianco"*.
+//          🔴 SI TOCCANO LE SOLE `<th>`, NON I 33 GRIGI DELLA FUNZIONE. Gli altri 11 sono celle e
+//          note dentro le righe: la' il grigio distingue ancora il contorno dal dato, ed e'
+//          esattamente la distinzione che una tabella fitta perde se si sbianca tutto. Il taglio e'
+//          «riga che contiene `<th>`», e il conteggio e' preteso esatto: 22.
+//          📌 E' la prima applicazione della regola emersa dal modal della v6.435: **cio' che
+//          INTESTA o SPIEGA va in bianco, cio' che ETICHETTA un valore resta grigio.** La vista
+//          tabellare e' il caso in cui le due cose convivono nella stessa videata.
+//
+//          ⚠️ RESTANO GRIGI, e non per dimenticanza: 48 nell'index (utente e visitatore), 11 nella
+//          vista tabellare (celle e note), e i 103 di `app.js` in funzioni miste come
+//          `openFigDetail` o `renderWantlist`, dove alcuni grigi sono da admin e altri no. Quelli
+//          vanno guardati uno per uno.
+//
+//          Prove: prova-v6438.js.
+//
+// v6.437 - IL GRIGIO SPARISCE DALLE SCHERMATE DA AMMINISTRATORE. app.js.
+//
+//          Franco: *"quanto costa mostrare tutti i testi del sito che oggi non sono in bianco ma in
+//          grigio, in quanto secondari, mostrarli in bianco? non tutti tutti: solo quelli admin
+//          visible"*. Centodiciannove occorrenze di `var(--muted)` passano a `var(--text)`.
+//
+//          🔴 IL LAVORO NON E' LA SOSTITUZIONE: E' IL PERIMETRO. Nel sito ci sono 384 grigi vivi
+//          (278 in app.js, 106 nell'index). Deciderne il confine e' l'unica parte che si puo'
+//          sbagliare, e la prima lista che mi ero fatto era SBAGLIATA in due punti grossi:
+//          · `renderUnsubscribePage` (8) — sembra amministrativa e non lo e': e' la pagina che un
+//            iscritto raggiunge dal link in fondo a una newsletter. Stavo per sbiancare la pagina
+//            di un visitatore.
+//          · `renderBulkEditView` (33), la fetta piu' grossa — la vista tabellare NON e' solo
+//            admin: `user-table-view-btn` si accende per QUALUNQUE utente registrato. Ha `isAdmin`
+//            dentro, ma solo per alcune colonne.
+//          📌 Tutte e due erano finite dentro per il criterio «la funzione nomina isAdmin», che e'
+//          un'euristica sul NOME e non una verifica su CHI la vede. `renderEbayViewTable` (15) e'
+//          il caso opposto: non nomina `isAdmin` nel corpo iniziale ed e' solo admin.
+//          **Un perimetro dedotto dai nomi non e' un perimetro: e' un elenco di sospetti.**
+//
+//          Il perimetro vero, controllato uno per uno: 24 funzioni `renderAdmin*`, `renderEbay*`,
+//          `renderNewsletter*`, `renderEmailLog*`, `renderSentMessages*`, `renderGriglie*`, meno le
+//          due escluse. Nessuna di queste e' raggiungibile senza i permessi da amministratore.
+//
+//          ⚠️ RESTANO FUORI, E NON PER DIMENTICANZA: i 106 dell'index (53 contenitori, vanno
+//          smistati a mano) e i 103 di funzioni miste come `openFigDetail` o `renderWantlist`, dove
+//          alcuni grigi sono da admin e altri no. Vanno guardati uno per uno: non c'e' modo di
+//          dedurlo dal nome, ed e' esattamente cio' che questa release ha imparato.
+//
+//          ⚠️ E RESTA UNA DOMANDA APERTA, da guardare a schermo: nelle tabelle fitte il grigio
+//          distingueva l'ETICHETTA dal VALORE. Tolto ovunque, una tabella tutta bianca puo'
+//          leggersi peggio di una a due toni. Il criterio che ha funzionato nel modal della v6.435
+//          e' «spiegazioni in bianco, etichette in grigio»: se a schermo non convince, e' quello il
+//          confine da applicare, e questa release e' il punto da cui tornare indietro.
+//
+//          Prove: prova-v6437.js, che difende ANCHE le due escluse: se un domani qualcuno
+//          «finisce il lavoro» sbiancando la pagina di disiscrizione o la vista tabellare, diventa
+//          rossa. Il senso della release e' il confine, non il colore.
+//
+// v6.436 - IL PANNELLO DELLE GRIGLIE ELENCA ANCHE GLI ARTICOLI SENZA SERIE. app.js.
+//
+//          Franco, dopo un'ora passata a capire perche' il pannello diceva 7 e lo schermo mostrava
+//          5: *"che dalla admin console non si abbia quella colonna per gli articoli senza serie
+//          non mi piace. ci abbiamo messo una vita per capire"*.
+//
+//          🔴 IL DIFETTO NON ERA UN CAMPO MANCANTE: ERA UN PANNELLO CHE SI DICHIARAVA COMPLETO.
+//          «Griglie di visualizzazione» generava le sue righe da `Object.keys(COLONNE_DEFAULT)`,
+//          cioe' dalle sole sei tipologie native, e si presentava come L'elenco delle griglie
+//          essendone META'. Un elenco incompleto che non dice di esserlo e' peggio di un elenco
+//          assente: manda a cercare nel posto sbagliato con la sicurezza di essere in quello giusto.
+//
+//          🔴 SONO UN GRUPPO A PARTE, E LA SEPARAZIONE NON E' ESTETICA. Le sei tipologie vivono in
+//          `settings/griglie` e il salvataggio le scrive su TUTTE le serie; i tipi di articolo
+//          vivono dentro se stessi, in `settings/tipi_prodotto`, e non hanno nessuna serie da
+//          aggiornare. Stessa domanda, due destinazioni diverse: mescolare le righe avrebbe fatto
+//          credere che il salvataggio faccia la stessa cosa per tutti.
+//          📌 Il sottotitolo e' **ARTICOLI SENZA SERIE**, maiuscolo e asciutto. La prima stesura
+//          aggiungeva «il numero sta dentro ciascun tipo, non nelle serie»: vero, ma e' una nota
+//          sul SALVATAGGIO infilata in un'intestazione, che deve dire cosa sono le righe sotto.
+//
+//          📌 SI LEGGE E SI VALIDA TUTTO PRIMA DI SCRIVERE QUALUNQUE COSA. I valori dei tipi
+//          passano dallo stesso `_colClamp` dei sei, e se uno non e' un intero da 1 a 12 ci si
+//          ferma prima del primo `fsSave`. Un salvataggio che scrive meta' delle destinazioni e poi
+//          si accorge di un campo sbagliato lascia pannello e dati in due stati diversi.
+//
+//          📌 E I TIPI SI SCRIVONO PARTENDO DALL'ELENCO VIVO (`{ ...t, colonneDesktop, colonneMobile }`),
+//          perche' `_salvaTipiProdotto` sostituisce l'INTERO documento: ricostruire i tipi da qui
+//          perderebbe nome, singolare, retro, taglia e ordinamento, che questo pannello non conosce.
+//
+//          ⚠️ La domanda di conferma adesso nomina anche i tipi che cambiano. Diceva gia' la verita'
+//          sulle serie («vengono scritti su TUTTE le serie»); tacere sui tipi l'avrebbe resa
+//          incompleta nello stesso modo in cui lo era la tabella.
+//
+//          Prove: prova-v6436.js.
+//
+// v6.435 - LE NOTE DEL MODAL «MODIFICA TIPO DI ARTICOLO» IN BIANCO. index.html.
+//
+//          Franco: *"nella pagina «Modifica tipo di articolo» scrivi tutto in bianco"*.
+//          Sono SETTE note sotto i campi, tutte `--muted`. Cambia il solo colore: restano 0.78rem
+//          e restano note.
+//          📌 Il grigio li' non diceva «secondario», diceva «facoltativo da leggere» — e invece
+//          sono le righe che spiegano cosa fa ogni campo, comprese le due che avvertono di una
+//          conseguenza («il numero vince anche sugli schermi stretti», «vuoto = la disposizione di
+//          sempre»). Una spiegazione che serve non si scrive nel colore di cio' che si puo' saltare.
+//          ⚠️ La sostituzione e' RITAGLIATA su quel modal e il conteggio e' preteso esatto: `--muted`
+//          nell'index compare centinaia di volte ed e' giusto quasi ovunque. Se le note non fossero
+//          state sette, lo script si sarebbe fermato invece di tirare a indovinare.
+//
+// v6.434 - LE FRASI DELLA LISTA CHE NON SONO AZIONI TORNANO BIANCHE. app.js.
+//
+//          Franco: *"le azioni relative a mia lista sono sempre azioni, quindi blu ok"* - e da
+//          quella frase segue il suo contrario, che e' la vera decisione: **cio' che azione NON e',
+//          blu non dev'essere.** Poi: *"rimetti il bianco alle frasi relative a mia lista (dove non
+//          c'e' azione)"*.
+//
+//          🔴 E' UNA REVOCA DELLA v6.430, SCRITTA UN'ORA PRIMA DA ME. Quella release aveva portato
+//          la riga «N nella tua lista» sul blu con la ragione «e' il colore del pulsante che
+//          riempie la lista». Era una deduzione mia; Franco ha guardato lo schermo e ha visto la
+//          cosa piu' larga: quel blu, nel resto del sito, dice «QUESTO SI PREME». `.btn-primary` da
+//          solo lo usa in 64 punti, `.owned-btn` in 6. Una riga di testo dipinta del colore dei
+//          bottoni promette un gesto che non c'e'.
+//
+//          I DUE PUNTI, censiti passandoli uno per uno e non a fiuto (sette usi inline del blu,
+//          classificati guardando se erano premibili):
+//          · `updateItemsCountDisplay` - il numero di «di questi N fanno parte della tua lista»
+//          · `colonna()` - la riga «N nella tua lista» della scheda serie (`.col-own`)
+//          Le due regole di `.owned-btn` NON si toccano: quelle sono il pulsante, cioe' azione.
+//
+//          📌 RESTA IL RILIEVO, VA VIA IL COLORE. Il numero tiene `numBase` (1,5rem, grassetto) e
+//          la riga tiene il `font-weight:600`. Il rilievo qui e' informazione - dice dove guardare;
+//          il colore era una promessa sbagliata. Sono due cose diverse e solo una era di troppo.
+//
+//          ⚠️ NON SI E' TORNATI AL LIME, e la ragione non e' quella che avevo detto io. Avevo
+//          scritto che `--accent` «e' il colore del brand»: **falso**. Le sue regole da marchio
+//          (`.hero-title .s`, `.footer-logo`, `.nav-logo`) sono MORTE - il logo e' un `<img>`. Il
+//          lime vivo sta su cose premibili E su numeri in risalto (`.stat-num`, `.profile-stat-num`,
+//          `.card-badge`). Quindi il lime sarebbe stato difendibile; e' stato scartato per un altro
+//          motivo, misurato: su quella riga ci sono gia' quattro numeri lime a un centimetro
+//          (`160 set base`, `96 variazioni`, `368 totali`), e il quinto non si distinguerebbe da
+//          loro - mentre distinguerlo era tutto il punto.
+//
+//          🔧 `prova-v6430` ha cambiato pretesa e NON e' stata cancellata: le si e' tolto il
+//          colore, che ora pretende `prova-v6434`, e le resta cio' che la v6.434 non ha toccato
+//          (la riga e' una, il grassetto c'e', le etichette restano `--muted`). Due suite che
+//          affermano lo stesso valore sono due copie destinate a divergere.
+//
+//          Prove: prova-v6434.js.
+//
+// v6.433 - SU TELEFONO IL PUNTEGGIO SCENDE SULLA RIGA DELL'ANNO, A DESTRA. app.js.
+//
+//          Franco: *"nel mobile, sulla card della serie, il punteggio mettilo sulla riga dell'anno,
+//          a dx"*. Prima stava accanto al BLOCCO nome+anno, centrato sui due: su telefono, con
+//          `flex-wrap`, andava a capo per conto suo e la testata diventava di tre righe.
+//
+//          🔴 UN PARAMETRO IN PIU' SU `_annoSottoNome`, NON UNA FUNZIONE GEMELLA. Quella funzione
+//          e' nata alla v6.400 proprio per unificare TRE copie dell'anno scritte a mano (card, hub,
+//          cella della tabella su telefono): scriverne una seconda per il solo caso col punteggio
+//          avrebbe rifatto in un giorno il difetto che quella release aveva chiuso. Chi non passa
+//          `coda` ottiene esattamente l'HTML di prima, e gli altri due chiamanti non sono toccati.
+//
+//          🔴 LE CONDIZIONI SONO TRE, E LA TERZA E' QUELLA CHE NON SI VEDE PROVANDO:
+//          `_isMobileViewport()` (sul desktop non e' stato chiesto), `modeScoreHTML` (una serie
+//          senza punteggi non ha coda), e **`s.year`** - perche' SENZA ANNO NON C'E' NESSUNA RIGA
+//          DELL'ANNO. In quel caso il punteggio resta dov'era. Deciso PRIMA di scrivere e detto a
+//          Franco, non scoperto dopo: far comparire una riga vuota solo per reggere un numero
+//          sarebbe una riga che, il giorno che il numero non c'e', resta li' a non dire niente.
+//
+//          ⚠️ IL PUNTEGGIO SI STAMPA IN UN POSTO SOLO, e i due rami sono lontani nello stesso
+//          template. Se il ramo esterno perdesse la sua condizione, su telefono il numero
+//          comparirebbe DUE volte - e dal desktop non si vedrebbe mai, perche' li' la condizione e'
+//          falsa. `prova-v6433` guarda esattamente quello.
+//
+//          Prove: prova-v6433.js.
+//
+// v6.432 - LA PAGINA DELLA SERIE SI LEGGE COME LA SUA CARD. css/style.css (+ versione).
+//
+//          Franco: *"nell'hub delle serie il nome serie e l'anno hanno un colore; nella pagina
+//          della serie il contrario. Allinea la pagina della serie alla card"*.
+//
+//          🔴 I QUATTRO COLORI SONO STATI MISURATI, NON RICORDATI - e per fortuna, perche' a
+//          memoria erano invertiti da tutti e due:
+//            · card  (`seriesCardHTML`): nome `--nome-entita` (azzurro) · anno `--text` (bianco)
+//            · pagina, PRIMA di qui:    nome `--text` (bianco)          · anno `--accent2`
+//          Cioe' l'anno della pagina non era «azzurro» come sembrava a memoria: era ARANCIONE.
+//          Franco l'ha visto a schermo e ha chiesto bianco. Se avessi scambiato i due colori come
+//          li ricordavamo, l'anno sarebbe diventato azzurro e nessuno dei due l'avrebbe voluto.
+//
+//          📌 IL NOME PRENDE `--nome-entita`, NON «un azzurro»: e' il token che la card usa dalla
+//          v6.399, quindi il giorno che si muove i due si muovono insieme. L'anno e' un attributo,
+//          e gli attributi sono bianchi.
+//
+//          🎉 **E' LA PRIMA MODIFICA AL CSS SCRITTA ALLA FONTE.** Fino alla v6.430 `style.css` non
+//          stava nelle `_upload_` e una riga come questa sarebbe finita nel `<style>` dell'index,
+//          portando da tre a cinque i selettori dichiarati in due posti - cioe' allargando proprio
+//          la categoria che il 24 agosto e' costata tre release. La v6.431 e' servita a questo.
+//
+//          ⚠️ `--accent2` PERDE QUI IL SUO ULTIMO USO «DA TITOLO». Gli restano: il badge domanda
+//          del blog, l'etichetta ADMIN dell'elenco utenti, il bottone avatar e otto punti negli
+//          EXPORT delle mancoliste. Il suo mestiere e' misto ed e' segnato fra le APERTE.
+//
+//          Prove: prova-v6432.js, che NON pretende due valori scritti a mano: legge i colori della
+//          CARD da app.js e pretende che la PAGINA li combaci. Se un domani la card cambia, la
+//          suite chiede che la pagina la segua - che e' la cosa che Franco ha chiesto, invece di
+//          due tinte che oggi coincidono.
+//
+// v6.431 - `css/style.css` ENTRA NELLE CARTELLE `_upload_`. index (solo versione) + gli strumenti.
+//
+//          Franco: *"vorrei che sia tutto lineare; secondo me e' meglio trattare tutti i file allo
+//          stesso modo, anche se ci costa un po' di fatica adesso, ma almeno poi non abbiamo piu'
+//          questo tipo di differenza da gestire"*.
+//
+//          🔴 PERCHE', E NON E' ORDINE: dalla v5.878 `style.css` non stava nelle `_upload_`, e
+//          l'unica copia leggibile da li' era quella incollata dentro `preview_ULTIMA.html`. Il 26
+//          agosto quella copia ha fatto descrivere come VIVE delle regole MORTE, due volte di fila;
+//          tre suite scrivevano a mano `--type-base` e `--type-change` dichiarandole «copie
+//          inevitabili»; e `tavolozza.py` esisteva in quella forma solo per aggirare il problema.
+//          Non era una scomodita': era una fonte di bugie ricorrente.
+//
+//          ✅ IL TRASLOCO E' A EFFETTO ZERO, ed e' stato dimostrato invece che affermato: il CSS
+//          della preview ricostruita e' IDENTICO RIGA PER RIGA a quello di prima. Cambia da dove
+//          viene, non cosa dice.
+//
+//          🔴 IL SEME VIENE DA UN CLONE DEL REPO, MAI DALLA PREVIEW, e la differenza non e'
+//          teorica: la preview toglie i quattro `@font-face` (puntano a `../fonts/` con percorso
+//          RELATIVO e in un file solo non funzionerebbero). Un file riseminato da li' pesa 74.579
+//          caratteri invece di 75.491, sembra giusto, passa ogni controllo di dimensione — e
+//          pubblicato toglierebbe al sito i font locali, che ripiegherebbe sui Google Fonts senza
+//          dare nessun errore. `prova-v6431` guarda esattamente quello.
+//
+//          Cosa cambia negli strumenti:
+//          · `costruisci-preview.py` prende il CSS dalla cartella. **Toglie** codice: spariscono
+//            l'avviso «la preview e' vecchia» e la ricostruzione della preview dalla preview.
+//          · `tavolozza.py` legge il file invece di estrarlo, e con lui sparisce il controllo
+//            "la preview e' della versione giusta?" - non c'e' piu' una copia da tenere allineata.
+//          · `prova-v6372`, `prova-v6404` e `prova-v6427` LEGGONO `--type-base` e `--type-change`
+//            invece di scriverli. Erano tre copie: una copia e' esatta il giorno che la scrivi.
+//          · `prova-v6431` (nuova) pretende che la cartella abbia tutti e tre i file.
+//
+//          ⚠️ IL CACHE-BUSTER DI `style.css?v=` SMETTE DI ESSERE UNA FORMALITA'. Finche' il file
+//          non partiva mai, quel numero si bumpava per coerenza; adesso il foglio di stile viaggia,
+//          e un numero indietro serve il CSS vecchio col contenuto nuovo. `prova-v6431` lo controlla.
+//
+//          🔴 IL DEPLOY PASSA DA DUE FILE A TRE: `index.html`, `js/app.js` e `css/style.css`, un
+//          commit per file, un push solo. Scritto nel §D-1.
+//
+//          ⚠️ QUESTO NON CHIUDE DA SOLO LA CLASSE DI GUASTO: `index.html` arriva comunque DOPO il
+//          `<link>` e puo' ancora vincere. I selettori dichiarati in tutti e due i file sono TRE -
+//          `:root` (i token: e' quello che il 24 agosto e' costato tre release), `.admin-tab` e
+//          `.card-tag`. Il passo gemello e' lasciarne una dichiarazione sola.
+//
+//          Prove: prova-v6431.js. In app.js cambia SOLO `JS_VERSION`: la release e' negli strumenti
+//          e nella cartella, non nel codice del sito.
+//
+// v6.430 - LA RIGA «N NELLA TUA LISTA» PASSA AL BLU DELLA LISTA. app.js.
+//
+//          Franco, indicando la scheda serie: *"il valore afferente alla mia lista deve avere il
+//          colore blu usato per la mia lista"*. Era `var(--accent)`, il lime.
+//
+//          📌 IL BLU E' `--action` (#2563eb), E NON UN BLU QUALUNQUE: e' il valore di
+//          `.owned-btn.on` e `.toggle-btn-blue.on`, cioe' del pulsante con cui quella lista si
+//          riempie. Il colore del dato e il colore del gesto che lo produce sono lo stesso.
+//
+//          🔴 TUTTA LA RIGA, NON IL SOLO NUMERO. Quando la serie e' completa quella riga NON HA
+//          nessun numero: dice «Le hai tutte !🎉». Colorare la sola cifra avrebbe lasciato senza
+//          colore proprio il caso in cui la notizia e' migliore. Franco: *"si si mi hai convinto"*.
+//          📌 E NON CONTRADDICE LA v6.426 («il colore sta sul dato, il testo e' testo»): qui il
+//          dato E' la riga. Nei risultati della ricerca, dove il numero c'e' sempre,
+//          `updateItemsCountDisplay` colora la sola cifra - e li' e' giusto cosi'.
+//
+//          🔴 IL PUNTO ERA UNO SOLO, e l'ho verificato invece di supporlo: la riga ha una classe
+//          sua (`col-own`) e si costruisce in `colonna()`, che tutte le colonne riusano. Quindi una
+//          riga cambiata tinge le quattro colonne insieme.
+//          ✅ CENSITI tutti i posti che parlano di «mia lista», col colore che avevano:
+//          · il toggle `.owned-btn.on` -> gia' `--action` ✔
+//          · il numero «di questi N fanno parte della tua lista» (ricerca) -> gia' `--action` ✔
+//          · questa riga (scheda serie) -> era lime, ORA `--action`
+//          · l'etichetta «Mia lista» nella scheda figurina -> `--muted`, NON toccata
+//          · l'intestazione di colonna «Mia lista» (vista tabellare) -> `--muted`, NON toccata
+//          ⚠️ Le ultime due sono ETICHETTE, non valori: la regola della v6.426 dice di non
+//          colorarle. Uniformarle al blu sarebbe stato applicare la richiesta oltre il suo senso.
+//
+//          🔧 Corretto il commento della v5.703, che diceva «il numero della lista resta in
+//          var(--accent)». Il suo ragionamento era giusto (una riga che dice «questo e' tuo» merita
+//          un colore suo), ma il colore scelto era quello del BRAND, che sulla stessa pagina sta
+//          gia' dappertutto: non distingueva niente.
+//
+//          Prove: prova-v6430.js.
+//
+// v6.429 - GLI ERRORI DI STAMPA FUORI DAL CONTEGGIO «FIGURINE». app.js.
+//
+//          Franco: *"il contatore «figurine» credo conti tutto, quindi anche gli errori di stampa;
+//          no! quelli escludiamoli"*. Vero: la colonna «totali» della scheda serie usava
+//          `g.items`, cioe' tutti gli articoli della sezione.
+//
+//          🔴 I POSTI ERANO DUE, NON UNO, E LONTANI FRA LORO. La colonna «totali» della scheda
+//          (`sezRows`) e il badge «N figurine» delle card (`seriesCardHTML`), ciascuno col suo
+//          filtro scritto a mano. Franco ha nominato la SCHEDA - ma cambiare solo quella avrebbe
+//          fatto dire due numeri diversi alla stessa domanda, che e' il §12-bis del documento
+//          («due chiavi che rispondono alla stessa domanda divergono sempre»). Cambiati tutti e due.
+//          ✅ E la regola non e' stata copiata: sta in `senzaErroriDiStampa()`, una funzione sola.
+//          Il giorno che si vorra' escludere anche altro, il posto e' uno.
+//
+//          🔴 UNA VARIABILE NUOVA SULLA CARD, E NON `figs` FILTRATA - ed e' la parte che poteva
+//          rompersi in silenzio. `figs` serve anche a calcolare il PUNTEGGIO MODALE della card
+//          (`scoredFigs`, due righe sotto): filtrarla avrebbe spostato anche quello, senza che
+//          nessuno l'avesse chiesto e senza che niente lo dicesse. Il badge usa `figsConteggio`,
+//          il punteggio resta su `figs`. Due domande diverse non condividono una variabile.
+//
+//          📌 IL CONTO PASSA ANCHE A `miei()`, quindi la riga «N nella tua lista» del totale segue
+//          l'esclusione. Non e' un effetto collaterale: se non seguisse, la lista potrebbe dire un
+//          numero PIU' GRANDE del totale sopra di lei.
+//
+//          ⚠️ SI ESCLUDONO I SOLI ERRORI DI STAMPA. Base, variazioni ufficiali e non, change e
+//          omaggi restano dentro: Franco ha nominato quelli e solo quelli, e la domanda gliel'ho
+//          fatta di piu' del necessario.
+//
+//          📌 `series.counts` NON E' STATO TOCCATO, e non serviva: e' scritto su Firestore ma non
+//          lo legge nessuno (zero letture di `counts.figurines` in tutto il codice vivo). Ogni
+//          numero a schermo si riconta al volo dagli `items`.
+//
+//          Prove: prova-v6429.js.
+//
 // v6.428 - IL SOTTONOME DEL RETRO, SULLA CARD FIGURINA: BIANCO FRA PARENTESI. app.js.
 //
 //          Franco: *"il Sottonome del retro e' azzurro, che pero' e' anche il nome-numero della
@@ -21765,7 +22212,41 @@ function renderGriglieVisualizzazione() {
           'id="griglia-' + sez + '-d" value="' + v.d + '" style="width:64px;text-align:center;padding:0.25rem;"></td>' +
         '<td style="padding:4px 8px;text-align:center;"><input class="form-input" type="number" min="1" max="12" ' +
           'id="griglia-' + sez + '-m" value="' + v.m + '" style="width:64px;text-align:center;padding:0.25rem;"></td></tr>';
-    }).join('') + '</table>';
+    }).join('') +
+    // 🆕 v6.436 (Franco) - LE RIGHE DEGLI ARTICOLI SENZA SERIE.
+    // Franco: *"che dalla admin console non si abbia quella colonna per gli articoli senza serie
+    // non mi piace. ci abbiamo messo una vita per capire"*. Ed e' vero: questa tabella si presenta
+    // come L'elenco delle griglie e ne era META'. Un pannello incompleto che non dichiara di
+    // esserlo manda a cercare nel posto sbagliato con la sicurezza di essere in quello giusto.
+    // 🔴 SONO UN GRUPPO A PARTE, NON SEI RIGHE IN PIU', e la separazione non e' estetica: le sei
+    // tipologie qui sopra vivono in `settings/griglie` e vengono scritte su TUTTE le serie; questi
+    // vivono dentro ciascun tipo, in `settings/tipi_prodotto`, e non hanno nessuna serie da
+    // aggiornare. Stessa domanda, due destinazioni: mescolarli avrebbe fatto credere che il
+    // salvataggio faccia la stessa cosa per tutti.
+    _righeGriglieTipi() + '</table>';
+}
+
+// Le righe dei tipi di articolo per il pannello globale. Vuoto se non ce n'e' nessuno: un
+// sottotitolo che introduce un elenco vuoto e' peggio dell'assenza.
+function _righeGriglieTipi() {
+  const tipi = _tipiProdotto();
+  if (!tipi.length) return '';
+  const it = currentLang === 'it';
+  return '<tr><td colspan="3" style="padding:0.9rem 8px 0.3rem;font-size:0.82rem;color:var(--text);">'
+    // 🔧 v6.436 (Franco) - MAIUSCOLO E SENZA CODA. La spiegazione «il numero sta dentro ciascun
+    // tipo, non nelle serie» era una nota tecnica dentro un'intestazione: il sottotitolo deve
+    // dire COSA sono le righe che seguono, non come funziona il salvataggio.
+    + (it ? '<b>ARTICOLI SENZA SERIE</b>' : '<b>ITEMS WITHOUT A SERIES</b>')
+    + '</td></tr>' +
+    tipi.map(t => {
+      const d = _colClamp(t.colonneDesktop) || COLONNE_DEFAULT.extras.d;
+      const m = _colClamp(t.colonneMobile)  || COLONNE_DEFAULT.extras.m;
+      return '<tr><td style="padding:4px 8px;">' + esc(_nomeTipo(t)) + '</td>' +
+        '<td style="padding:4px 8px;text-align:center;"><input class="form-input" type="number" min="1" max="12" ' +
+          'id="griglia-tipo-' + esc(t.id) + '-d" value="' + d + '" style="width:64px;text-align:center;padding:0.25rem;"></td>' +
+        '<td style="padding:4px 8px;text-align:center;"><input class="form-input" type="number" min="1" max="12" ' +
+          'id="griglia-tipo-' + esc(t.id) + '-m" value="' + m + '" style="width:64px;text-align:center;padding:0.25rem;"></td></tr>';
+    }).join('');
 }
 
 // Quali serie hanno un valore DIVERSO da quello che si sta per scrivere. Non e' un abbellimento
@@ -21801,6 +22282,25 @@ async function salvaGriglieVisualizzazione() {
   }
 
   // 2. dire QUANTE e QUALI serie perdono il loro valore, e farlo prima di scrivere.
+  // 🆕 v6.436 - e i tipi di articolo, letti con la STESSA regola dei sei qui sopra: se un valore
+  // non e' un intero da 1 a 12 ci si ferma PRIMA di scrivere qualunque cosa. Un salvataggio che
+  // scrive meta' delle destinazioni e poi si accorge di un campo sbagliato lascia il pannello e i
+  // dati in due stati diversi, ed e' il difetto che il 24 agosto e' costato una release.
+  const tipi = _tipiProdotto();
+  const nuoviTipi = {};
+  for (const t of tipi) {
+    const d = _colClamp(document.getElementById('griglia-tipo-' + t.id + '-d')?.value);
+    const m = _colClamp(document.getElementById('griglia-tipo-' + t.id + '-m')?.value);
+    if (!d || !m) {
+      toast(it ? 'Valori ammessi: da 1 a 12. Controlla ' + _nomeTipo(t)
+               : 'Allowed: 1 to 12. Check ' + _nomeTipo(t), 'error');
+      return;
+    }
+    nuoviTipi[t.id] = { d, m };
+  }
+  const tipiCheCambiano = tipi.filter(t =>
+    _colClamp(t.colonneDesktop) !== nuoviTipi[t.id].d || _colClamp(t.colonneMobile) !== nuoviTipi[t.id].m);
+
   const cambiano = _serieCheCambiano(nuove);
   const elenco = cambiano.map(s => '\u2022 ' + s.name).join('\n');
   const domanda = it
@@ -21808,6 +22308,10 @@ async function salvaGriglieVisualizzazione() {
       + (cambiano.length
           ? cambiano.length + ' serie hanno oggi un valore diverso e lo perderanno:\n' + elenco
           : 'Nessuna serie ha un valore diverso: non si perde niente.')
+      + (tipiCheCambiano.length
+          ? '\n\nE ' + tipiCheCambiano.length + ' tipi di articolo cambiano: '
+            + tipiCheCambiano.map(t => _nomeTipo(t)).join(', ')
+          : '')
       + '\n\nProcedo?'
     : 'These numbers become the default AND are written to ALL series.\n\n'
       + (cambiano.length ? cambiano.length + ' series will lose their own value:\n' + elenco
@@ -21839,9 +22343,22 @@ async function salvaGriglieVisualizzazione() {
       fatte++;
       if (fb) fb.textContent = (it ? '\u23F3 Scritte ' : '\u23F3 Written ') + fatte + ' / ' + serie.length;
     }
+    // 🆕 v6.436 - i tipi si scrivono DOPO le serie, e in un colpo solo: `_salvaTipiProdotto`
+    // sostituisce l'intero documento `settings/tipi_prodotto`. Quindi si parte dall'elenco vivo e
+    // si cambiano i due campi, invece di ricostruire i tipi da zero - un tipo ha anche nome,
+    // singolare, retro, taglia e ordinamento, e riscriverlo da qui li perderebbe tutti.
+    if (tipi.length) {
+      const aggiornati = tipi.map(t => ({ ...t,
+        colonneDesktop: nuoviTipi[t.id].d, colonneMobile: nuoviTipi[t.id].m }));
+      await _salvaTipiProdotto(aggiornati);
+    }
     _cache.series = serie;
     fine();
-    if (fb) { fb.textContent = it ? '\u2705 Salvato su ' + fatte + ' serie.' : '\u2705 Saved on ' + fatte + ' series.'; setTimeout(() => { fb.style.display = 'none'; }, 6000); }
+    if (fb) {
+      const _coda = tipi.length ? (it ? ' e su ' + tipi.length + ' tipi di articolo.' : ' and ' + tipi.length + ' item types.') : '.';
+      fb.textContent = (it ? '\u2705 Salvato su ' + fatte + ' serie' : '\u2705 Saved on ' + fatte + ' series') + _coda;
+      setTimeout(() => { fb.style.display = 'none'; }, 6000);
+    }
     renderGriglieVisualizzazione();
   } catch (e) {
     console.error('salvaGriglieVisualizzazione', e);
@@ -21984,8 +22501,8 @@ function renderEbayAccountScelta(f, s, pref = 'fig') {
   if (conti.length < 2) {
     gruppo.dataset.vuoto = '1';
     box.innerHTML = conti.length
-      ? `<div style="font-size:0.82rem;color:var(--muted);">${attr(conti[0].etichetta)}</div>`
-      : `<div style="font-size:0.82rem;color:var(--muted);font-style:italic;">${it ? 'Nessun account configurato — vedi Impostazioni → Impostazioni Ebay' : 'No account configured'}</div>`;
+      ? `<div style="font-size:0.82rem;color:var(--text);">${attr(conti[0].etichetta)}</div>`
+      : `<div style="font-size:0.82rem;color:var(--text);font-style:italic;">${it ? 'Nessun account configurato — vedi Impostazioni → Impostazioni Ebay' : 'No account configured'}</div>`;
     return;
   }
   gruppo.dataset.vuoto = '';
@@ -21995,7 +22512,7 @@ function renderEbayAccountScelta(f, s, pref = 'fig') {
     <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;padding:0.15rem 0;">
       <input type="checkbox" data-ebay-account="${attr(a.id)}" ${scelti.includes(a.id) ? 'checked' : ''}
         style="width:15px;height:15px;cursor:pointer;flex-shrink:0;">
-      <span>${attr(a.etichetta)}${a.id === pre?.id ? ` <span style="color:var(--muted);font-weight:400;">${it ? '(predefinito)' : '(default)'}</span>` : ''}</span>
+      <span>${attr(a.etichetta)}${a.id === pre?.id ? ` <span style="color:var(--text);font-weight:400;">${it ? '(predefinito)' : '(default)'}</span>` : ''}</span>
     </label>`).join('') +
     `<div class="form-hint" style="margin-top:0.3rem;">${it
       ? 'Nessuna spunta = solo l\'account predefinito.'
@@ -22081,11 +22598,11 @@ function renderEbayAccounts() {
   if (!box) return;
   const it = (currentLang === 'it');
   if (!_ebayAccountsBozza.length) {
-    box.innerHTML = `<p style="font-size:0.82rem;color:var(--muted);font-style:italic;margin:0 0 0.5rem;">${it ? 'Nessun account ancora. Finché non ce n\'è almeno uno, non c\'è nessuno per conto del quale pubblicare.' : 'No accounts yet.'}</p>`;
+    box.innerHTML = `<p style="font-size:0.82rem;color:var(--text);font-style:italic;margin:0 0 0.5rem;">${it ? 'Nessun account ancora. Finché non ce n\'è almeno uno, non c\'è nessuno per conto del quale pubblicare.' : 'No accounts yet.'}</p>`;
     return;
   }
   const attr = t => String(t || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  const mancante = `<span style="color:var(--muted);font-style:italic;">${it ? 'da leggere da eBay' : 'to read from eBay'}</span>`;
+  const mancante = `<span style="color:var(--text);font-style:italic;">${it ? 'da leggere da eBay' : 'to read from eBay'}</span>`;
   const val = v => v ? `<code style="font-size:0.72rem;">${attr(v)}</code>` : mancante;
   box.innerHTML = _ebayAccountsBozza.map((a, i) => `
     <div style="background:var(--card);border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.5rem;">
@@ -22098,14 +22615,14 @@ function renderEbayAccounts() {
         </label>
         <span onclick="ebayRimuoviAccount(${i})" title="${it ? 'Togli questo account' : 'Remove'}" style="cursor:pointer;color:var(--danger, #e5484d);font-size:0.9rem;">🗑️</span>
       </div>
-      <div style="display:grid;grid-template-columns:auto auto 1fr;gap:0.1rem 0.6rem;font-size:0.75rem;color:var(--muted);margin-top:0.4rem;">
+      <div style="display:grid;grid-template-columns:auto auto 1fr;gap:0.1rem 0.6rem;font-size:0.75rem;color:var(--text);margin-top:0.4rem;">
         <span>🇮🇹</span><span>${it ? 'pagamento / spedizione / resi' : 'payment / shipping / returns'}</span>
         <span>${val(a.it?.paymentPolicyId)} ${val(a.it?.fulfillmentPolicyId)} ${val(a.it?.returnPolicyId)}</span>
         <span>🇺🇸</span><span>${it ? 'pagamento / spedizione / resi' : 'payment / shipping / returns'}</span>
         <span>${val(a.us?.paymentPolicyId)} ${val(a.us?.fulfillmentPolicyId)} ${val(a.us?.returnPolicyId)}</span>
         <span></span><span>${it ? 'magazzino' : 'location'}</span><span>${val(a.merchantLocationKey)}</span>
       </div>
-      <div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem;">${it ? 'codice interno' : 'internal id'} <code>${attr(a.id)}</code></div>
+      <div style="font-size:0.7rem;color:var(--text);margin-top:0.3rem;">${it ? 'codice interno' : 'internal id'} <code>${attr(a.id)}</code></div>
     </div>`).join('');
 }
 
@@ -22677,16 +23194,16 @@ function logDeleteBtn(coll, id) {
 async function renderEmailLogInto(targetId, filterSource) {
   const el = document.getElementById(targetId);
   if (!el) return;
-  el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Caricamento...' : 'Loading...') + '</p>';
+  el.innerHTML = '<p style="color:var(--text);font-style:italic;">' + (currentLang === 'it' ? 'Caricamento...' : 'Loading...') + '</p>';
   try {
     let logs = await fsGetAll('email_log');
     if (filterSource !== 'all') {
       logs = logs.filter(e => e.source === filterSource);
     }
     logs.sort((a,b) => new Date(b.date) - new Date(a.date));
-    if (!logs.length) { el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Nessuna e-mail registrata.' : 'No emails recorded.') + '</p>'; return; }
+    if (!logs.length) { el.innerHTML = '<p style="color:var(--text);font-style:italic;">' + (currentLang === 'it' ? 'Nessuna e-mail registrata.' : 'No emails recorded.') + '</p>'; return; }
     const display = logs.slice(0, 50);
-    const note = logs.length > 50 ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrate le ultime 50 di ' + logs.length : 'Showing last 50 of ' + logs.length}</p>` : '';
+    const note = logs.length > 50 ? `<p style="font-size:0.78rem;color:var(--text);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrate le ultime 50 di ' + logs.length : 'Showing last 50 of ' + logs.length}</p>` : '';
     const sourceLabel = (s) => s === 'newsletter' ? '📬 Newsletter' : s === 'pwdreset' ? '🔑 ' + (currentLang === 'it' ? 'Reset password' : 'Password reset') : '↩️ ' + (currentLang === 'it' ? 'Messaggio ricevuto' : 'Received message');
     const showSourceCol = filterSource === 'all';
     const rows = display.map((e, idx) => {
@@ -22697,18 +23214,18 @@ async function renderEmailLogInto(targetId, filterSource) {
         '<td style="white-space:nowrap;font-size:0.88rem;padding:0.4rem 0.75rem;">' + statusIcon + new Date(e.date).toLocaleDateString('it-IT') + ' ' + new Date(e.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td>' +
         '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + e.to + '</td>' +
         '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;">' + e.subject + '</td>' +
-        (showSourceCol ? '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + sourceLabel(e.source) + '</td>' : '') +
+        (showSourceCol ? '<td style="font-size:0.85rem;color:var(--text);padding:0.4rem 0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + sourceLabel(e.source) + '</td>' : '') +
         '<td style="padding:0.4rem 0.5rem;white-space:nowrap;overflow:hidden;text-align:center;">' + logDeleteBtn('email_log', e.id) + '</td>' +
         '</tr>';
       const colspan = showSourceCol ? 5 : 4;
       const bodyHtml = e.body
         ? '<div style="white-space:pre-line;font-size:0.88rem;line-height:1.6;color:var(--text);padding:0.5rem 0;">' + e.body.replace(/[<]/g,'&lt;').replace(/[>]/g,'&gt;') + '</div>'
         : e.source === 'pwdreset'
-          ? '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Contenuto non disponibile: questa e-mail è generata e inviata direttamente da Firebase Authentication, non dal nostro sistema.' : 'Content not available: this e-mail is generated and sent directly by Firebase Authentication, not by our system.') + '</p>'
-          : '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Corpo non disponibile (email inviata prima di questa funzionalità)' : 'Body not available (email sent before this feature)') + '</p>';
+          ? '<p style="color:var(--text);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Contenuto non disponibile: questa e-mail è generata e inviata direttamente da Firebase Authentication, non dal nostro sistema.' : 'Content not available: this e-mail is generated and sent directly by Firebase Authentication, not by our system.') + '</p>'
+          : '<p style="color:var(--text);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Corpo non disponibile (email inviata prima di questa funzionalità)' : 'Body not available (email sent before this feature)') + '</p>';
       const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="' + colspan + '" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
-        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + e.to + '</div>' +
-        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + e.subject + '</div>' +
+        '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + e.to + '</div>' +
+        '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + e.subject + '</div>' +
         bodyHtml +
         '</td></tr>';
       return mainRow + detailRow;
@@ -22720,7 +23237,7 @@ async function renderEmailLogInto(targetId, filterSource) {
       (showSourceCol ? '<th style="padding:0.4rem 0.75rem;width:130px;">' + (currentLang === 'it' ? 'Origine' : 'Source') + '</th>' : '') +
       '<th style="padding:0.4rem 0.75rem;width:90px;"></th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
-  } catch(err) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Errore caricamento log.' : 'Error loading log.') + '</p>'; }
+  } catch(err) { el.innerHTML = '<p style="color:var(--text);">' + (currentLang === 'it' ? 'Errore caricamento log.' : 'Error loading log.') + '</p>'; }
 }
 
 function toggleEmailDetail(detailId) {
@@ -22746,7 +23263,7 @@ function toggleEmailDetail(detailId) {
 async function renderNewsletterLog(targetId) {
   const el = document.getElementById(targetId);
   if (!el) return;
-  el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Caricamento...' : 'Loading...') + '</p>';
+  el.innerHTML = '<p style="color:var(--text);font-style:italic;">' + (currentLang === 'it' ? 'Caricamento...' : 'Loading...') + '</p>';
   try {
     // Il destinatario si mostra con nome utente e bandierina, come nel resto del
     // pannello. L'indirizzo e-mail invece NON e' un dato neutro: stamparlo accanto
@@ -22772,9 +23289,9 @@ async function renderNewsletterLog(targetId) {
       user: perEmail.get((m.email || '').toLowerCase()) || (m.name ? { username: m.name } : null)
     }));
     const combined = [...emailLogs, ...msgLogs].sort((a,b) => new Date(b.date) - new Date(a.date));
-    if (!combined.length) { el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Nessuna newsletter inviata.' : 'No newsletter sent.') + '</p>'; return; }
+    if (!combined.length) { el.innerHTML = '<p style="color:var(--text);font-style:italic;">' + (currentLang === 'it' ? 'Nessuna newsletter inviata.' : 'No newsletter sent.') + '</p>'; return; }
     const display = combined.slice(0, 50);
-    const note = combined.length > 50 ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrate le ultime 50 di ' + combined.length : 'Showing last 50 of ' + combined.length}</p>` : '';
+    const note = combined.length > 50 ? `<p style="font-size:0.78rem;color:var(--text);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrate le ultime 50 di ' + combined.length : 'Showing last 50 of ' + combined.length}</p>` : '';
     const methodLabel = (e) => e.method === 'email' ? '✉️ E-mail' : '💬 ' + (currentLang === 'it' ? 'Messaggio' : 'Message');
 
     // DUE COLONNE distinte, non due righe impilate: l'utente (bandierina + nome)
@@ -22786,7 +23303,7 @@ async function renderNewsletterLog(targetId) {
     // spedito e a chi.
     const cellaUtente = (e) => {
       const u = e.user;
-      if (!u?.username) return '<span style="color:var(--muted);">—</span>';
+      if (!u?.username) return '<span style="color:var(--text);">—</span>';
       const bandiera = u.nationalityCode
         ? `<img src="${flagUrl(u.nationalityCode)}" title="${esc(u.nationalityName || '')}" style="width:20px;height:15px;object-fit:cover;border-radius:2px;vertical-align:middle;margin-right:0.45rem;">`
         : '';
@@ -22794,7 +23311,7 @@ async function renderNewsletterLog(targetId) {
     };
     const cellaEmail = (e) => (e.method === 'email' && e.to)
       ? esc(e.to)
-      : '<span style="color:var(--muted);">—</span>';
+      : '<span style="color:var(--text);">—</span>';
     const rows = display.map((e, idx) => {
       const detailId = targetId + '-detail-' + idx;
       const statusIcon = e.status === 'failed' ? '<span title="Invio fallito" style="color:#ff6464;">❌ </span>' : '<span style="color:var(--success);">✓ </span>';
@@ -22803,18 +23320,18 @@ async function renderNewsletterLog(targetId) {
         '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + cellaUtente(e) + '</td>' +
         '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + cellaEmail(e) + '</td>' +
         '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;">' + esc(e.subject || '') + '</td>' +
-        '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + methodLabel(e) + '</td>' +
+        '<td style="font-size:0.85rem;color:var(--text);padding:0.4rem 0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + methodLabel(e) + '</td>' +
         '<td style="padding:0.4rem 0.5rem;white-space:nowrap;overflow:hidden;text-align:center;">' + logDeleteBtn(e.coll, e.id) + '</td>' +
         '</tr>';
       const bodyHtml = e.body
         ? '<div style="white-space:pre-line;font-size:0.88rem;line-height:1.6;color:var(--text);padding:0.5rem 0;">' + e.body.replace(/[<]/g,'&lt;').replace(/[>]/g,'&gt;') + '</div>'
-        : '<p style="color:var(--muted);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Corpo non disponibile' : 'Body not available') + '</p>';
+        : '<p style="color:var(--text);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Corpo non disponibile' : 'Body not available') + '</p>';
       const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="6" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
         // Anche qui: per un messaggio interno il "A:" non e' un indirizzo e-mail —
         // e' il destinatario dentro il sito. Mostrare l'indirizzo farebbe credere
         // che gli sia stata scritta un'e-mail, che non e' successo.
-        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + esc(e.method === 'email' ? (e.to || '') : (e.user?.username || '—')) + '</div>' +
-        '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + esc(e.subject || '') + '</div>' +
+        '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + esc(e.method === 'email' ? (e.to || '') : (e.user?.username || '—')) + '</div>' +
+        '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + esc(e.subject || '') + '</div>' +
         bodyHtml +
         '</td></tr>';
       return mainRow + detailRow;
@@ -22827,7 +23344,7 @@ async function renderNewsletterLog(targetId) {
       '<th style="padding:0.4rem 0.75rem;width:130px;">' + (currentLang === 'it' ? 'Mezzo' : 'Method') + '</th>' +
       '<th style="padding:0.4rem 0.75rem;width:90px;"></th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
-  } catch(err) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Errore caricamento log.' : 'Error loading log.') + '</p>'; }
+  } catch(err) { el.innerHTML = '<p style="color:var(--text);">' + (currentLang === 'it' ? 'Errore caricamento log.' : 'Error loading log.') + '</p>'; }
 }
 
 async function renderEmailLog() {
@@ -22845,9 +23362,9 @@ async function renderSentMessagesLog(targetId) {
   const el = document.getElementById(targetId);
   if (!el) return;
   const msgs = getData('contact_messages', []).filter(m => m.replied).sort((a,b) => new Date(b.repliedAt || b.date) - new Date(a.repliedAt || a.date));
-  if (!msgs.length) { el.innerHTML = '<p style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'Nessun messaggio inviato.' : 'No messages sent.') + '</p>'; return; }
+  if (!msgs.length) { el.innerHTML = '<p style="color:var(--text);font-style:italic;">' + (currentLang === 'it' ? 'Nessun messaggio inviato.' : 'No messages sent.') + '</p>'; return; }
   const display = msgs.slice(0, 50);
-  const note = msgs.length > 50 ? `<p style="font-size:0.78rem;color:var(--muted);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrati gli ultimi 50 di ' + msgs.length : 'Showing last 50 of ' + msgs.length}</p>` : '';
+  const note = msgs.length > 50 ? `<p style="font-size:0.78rem;color:var(--text);margin-bottom:0.5rem;">${currentLang === 'it' ? 'Mostrati gli ultimi 50 di ' + msgs.length : 'Showing last 50 of ' + msgs.length}</p>` : '';
   const originLabel = (m) => m.isAnnouncement ? '📬 Newsletter' : '↩️ ' + (currentLang === 'it' ? 'Messaggio ricevuto' : 'Received message');
   const rows = display.map((m, idx) => {
     const detailId = targetId + '-detail-' + idx;
@@ -22856,14 +23373,14 @@ async function renderSentMessagesLog(targetId) {
       '<td style="white-space:nowrap;font-size:0.88rem;padding:0.4rem 0.75rem;">' + new Date(dateVal).toLocaleDateString('it-IT') + ' ' + new Date(dateVal).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) + '</td>' +
       '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + m.email + '</td>' +
       '<td style="font-size:0.88rem;padding:0.4rem 0.75rem;">' + (m.subject || '') + '</td>' +
-      '<td style="font-size:0.85rem;color:var(--muted);padding:0.4rem 0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + originLabel(m) + '</td>' +
+      '<td style="font-size:0.85rem;color:var(--text);padding:0.4rem 0.75rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + originLabel(m) + '</td>' +
       '<td style="padding:0.4rem 0.5rem;white-space:nowrap;overflow:hidden;text-align:center;">' + logDeleteBtn('contact_messages', m.id) + '</td>' +
       '</tr>';
     const bodyText = m.isAnnouncement ? m.message : (m.replyText || '');
     const bodyHtml = '<div style="white-space:pre-line;font-size:0.88rem;line-height:1.6;color:var(--text);padding:0.5rem 0;">' + bodyText.replace(/[<]/g,'&lt;').replace(/[>]/g,'&gt;') + '</div>';
     const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="5" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
-      '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + m.email + '</div>' +
-      '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + (m.subject || '') + '</div>' +
+      '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + m.email + '</div>' +
+      '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + (m.subject || '') + '</div>' +
       bodyHtml +
       '</td></tr>';
     return mainRow + detailRow;
@@ -22929,7 +23446,7 @@ function renderNewsletterUsers() {
   const L = currentLang === 'it';
   let users = getData('users', []).filter(u => !u.isAdmin && u.email);
   if (!users.length) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:0.88rem;padding:0.75rem;">' + (L ? 'Nessun utente registrato.' : 'No registered users.') + '</p>';
+    el.innerHTML = '<p style="color:var(--text);font-size:0.88rem;padding:0.75rem;">' + (L ? 'Nessun utente registrato.' : 'No registered users.') + '</p>';
     if (sumEl) sumEl.innerHTML = '';
     return;
   }
@@ -22992,8 +23509,8 @@ function renderNewsletterUsers() {
           <input type="checkbox" class="newsletter-user-cb" data-id="${u.id}" data-email="${u.email}" data-username="${u.username}" style="width:16px;height:16px;cursor:pointer;">
         </td>
         <td style="overflow-wrap:anywhere;${ok ? 'color:var(--accent);' : ''}">${u.username}</td>
-        <td style="color:var(--muted);overflow-wrap:anywhere;">${u.email}</td>
-        <td style="text-align:center;">${u.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName || ''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : '<span style="color:var(--muted);">—</span>'}</td>
+        <td style="color:var(--text);overflow-wrap:anywhere;">${u.email}</td>
+        <td style="text-align:center;">${u.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${u.nationalityName || ''}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;vertical-align:middle;">` : '<span style="color:var(--text);">—</span>'}</td>
         <td>${consentCell(u)}</td>
         <td style="text-align:center;" title="${ok ? '' : (L ? 'Nessun consenso: e-mail non inviabile' : 'No consent: e-mail cannot be sent')}">
           <input type="checkbox" class="newsletter-user-email-cb" data-id="${u.id}" ${ok ? 'checked' : 'disabled'} style="width:16px;height:16px;cursor:${ok ? 'pointer' : 'not-allowed'};">
@@ -23081,7 +23598,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.428';
+const JS_VERSION = 'v6.441';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -24026,10 +24543,10 @@ function previewRecomputeFullNames() {
   const _ord = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
   daAgg.sort((a, b) => (_ord.indexOf(a.f.section || 'figurines') - _ord.indexOf(b.f.section || 'figurines')) || ((a.f.number || 0) - (b.f.number || 0)) || (a.f.name || '').localeCompare(b.f.name || '', 'it'));
   const rows = daAgg.map(({ f, nuovo }) => '<tr>' +
-    '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;color:var(--muted);white-space:nowrap;">' + secLbl[f.section || 'figurines'] + '</td>' +
+    '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;color:var(--text);white-space:nowrap;">' + secLbl[f.section || 'figurines'] + '</td>' +
     '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;white-space:nowrap;">' + (f.number || '—') + '</td>' +
     '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;">' + esc(f.name || '') + '</td>' +
-    '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;color:var(--muted);">' + esc(f.fullName || '(vuoto)') + '</td>' +
+    '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;color:var(--text);">' + esc(f.fullName || '(vuoto)') + '</td>' +
     '<td style="padding:0.35rem 0.6rem;font-size:0.9rem;text-align:center;color:var(--action-admin);">→</td>' +
     '<td style="padding:0.35rem 0.6rem;font-size:0.8rem;color:var(--text);font-weight:600;">' + esc(nuovo || '(vuoto)') + '</td>' +
   '</tr>').join('');
@@ -24077,7 +24594,7 @@ async function applyRecomputeFullNames() {
   _cache.figurines = figs;
   _recomputePending = null;
   const listaHTML = aggiornati.map(({ vecchio, nuovo }) =>
-    '<div style="font-family:monospace;font-size:0.76rem;line-height:1.5;"><span style="color:var(--muted);">' + esc(vecchio || '(vuoto)') + '</span> → <span style="color:var(--text);">' + esc(nuovo || '(vuoto)') + '</span></div>').join('');
+    '<div style="font-family:monospace;font-size:0.76rem;line-height:1.5;"><span style="color:var(--text);">' + esc(vecchio || '(vuoto)') + '</span> → <span style="color:var(--text);">' + esc(nuovo || '(vuoto)') + '</span></div>').join('');
   show('<b>' + (it ? 'Fatto' : 'Done') + ': ' + fatti + (it ? ' aggiornati' : ' updated') + '</b>' + (falliti ? (', ' + falliti + (it ? ' falliti' : ' failed')) : '') + '.' +
     (aggiornati.length ? ('<div style="margin-top:0.6rem;max-height:320px;overflow:auto;border-top:1px solid var(--border2);padding-top:0.5rem;">' + listaHTML + '</div>') : ''));
   try { renderItems(); } catch (e) {}
@@ -27295,8 +27812,8 @@ function ebayThFisso(col, label, extra) {
   const chiudibile = (col !== 'riga') && EBAY_COLS.filter(ebayColVisibile).length > 1;
   const x = chiudibile
     ? `<span onclick="nascondiEbayCol('${col}')" title="${currentLang === 'it' ? 'Chiudi questa colonna' : 'Hide this column'}"
-        style="margin-left:0.4rem;color:var(--muted);font-size:0.85em;cursor:pointer;">✕</span>` : '';
-  return `<th style="padding:0.4rem 0.6rem;text-align:left;white-space:nowrap;color:var(--muted);${extra || ''}">${label}${x}</th>`;
+        style="margin-left:0.4rem;color:var(--text);font-size:0.85em;cursor:pointer;">✕</span>` : '';
+  return `<th style="padding:0.4rem 0.6rem;text-align:left;white-space:nowrap;color:var(--text);${extra || ''}">${label}${x}</th>`;
 }
 
 // v5.922 (Franco) — COLONNE A SCOMPARSA. La tabella è a larghezza piena: appena una colonna esce,
@@ -27335,9 +27852,9 @@ function ebayColRestoreBar(etichette) {
   if (!nascoste.length) return '';
   const it = (currentLang === 'it');
   const chip = c => `<span onclick="mostraEbayCol('${c}')" title="${it ? 'Rimetti questa colonna' : 'Bring this column back'}"
-    style="display:inline-flex;align-items:center;gap:0.3rem;border:1px dashed var(--border);border-radius:999px;padding:1px 9px;font-size:0.76rem;color:var(--muted);cursor:pointer;">${etichette[c]} <span style="font-weight:700;">+</span></span>`;
+    style="display:inline-flex;align-items:center;gap:0.3rem;border:1px dashed var(--border);border-radius:999px;padding:1px 9px;font-size:0.76rem;color:var(--text);cursor:pointer;">${etichette[c]} <span style="font-weight:700;">+</span></span>`;
   return `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;margin-bottom:0.75rem;">
-    <span style="font-size:0.76rem;color:var(--muted);">${it ? 'Colonne chiuse:' : 'Hidden columns:'}</span>
+    <span style="font-size:0.76rem;color:var(--text);">${it ? 'Colonne chiuse:' : 'Hidden columns:'}</span>
     ${nascoste.map(chip).join('')}
     ${nascoste.length > 1 ? `<span onclick="mostraEbayCol()" style="font-size:0.76rem;color:var(--action-admin);cursor:pointer;text-decoration:underline;margin-left:0.2rem;">${it ? 'rimettile tutte' : 'restore all'}</span>` : ''}
   </div>`;
@@ -27383,7 +27900,7 @@ function renderEbayViewTable() {
   const contiEbay = ebayAccounts(impostazioni);
   const accountCorrente = _ebayViewAccount || ebayAccountPredefinito(impostazioni)?.id || null;
   // Bottoni admin = arancioni (var(--action-admin)), non lime.
-  const tab = (m, label) => `<button onclick="setEbayViewMarket('${m}')" style="font-size:0.82rem;padding:5px 14px;border-radius:8px;border:1px solid ${market === m ? 'var(--action-admin)' : 'var(--border)'};background:${market === m ? 'var(--action-admin)' : 'transparent'};color:${market === m ? '#ffffff' : 'var(--muted)'};cursor:pointer;font-weight:${market === m ? '700' : '400'};">${label}</button>`;
+  const tab = (m, label) => `<button onclick="setEbayViewMarket('${m}')" style="font-size:0.82rem;padding:5px 14px;border-radius:8px;border:1px solid ${market === m ? 'var(--action-admin)' : 'var(--border)'};background:${market === m ? 'var(--action-admin)' : 'transparent'};color:${market === m ? '#ffffff' : 'var(--text)'};cursor:pointer;font-weight:${market === m ? '700' : '400'};">${label}</button>`;
   // v5.927 (Franco) — "Lascia solo titolo": una scorciatoia per la lavorazione dei titoli, che
   // altrimenti costa sei clic sulle ✕. Il bottone si spegne da solo quando è già in quello stato
   // (niente comando che non fa niente) e la strada del ritorno resta quella di sempre: la riga
@@ -27391,26 +27908,26 @@ function renderEbayViewTable() {
   const soloTitolo = EBAY_COLS.every(c => c === 'titolo' ? ebayColVisibile(c) : !ebayColVisibile(c));
   const btnSoloTitolo = `<button onclick="ebaySoloTitolo()" ${soloTitolo ? 'disabled' : ''}
     title="${it ? 'Chiude tutte le colonne tranne il Titolo' : 'Hides every column but the title'}"
-    style="font-size:0.8rem;padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:${soloTitolo ? 'var(--border)' : 'var(--muted)'};cursor:${soloTitolo ? 'default' : 'pointer'};">${it ? 'Lascia solo titolo' : 'Title only'}</button>`;
+    style="font-size:0.8rem;padding:5px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:${soloTitolo ? 'var(--border)' : 'var(--text)'};cursor:${soloTitolo ? 'default' : 'pointer'};">${it ? 'Lascia solo titolo' : 'Title only'}</button>`;
   // v5.979 (Franco) — terzo tab: i due titoli affiancati. Serve perché da quando l'inglese passa
   // dal glossario i due mercati non dicono più la stessa cosa, e alternare fra due schede per
   // confrontarli è il modo peggiore di accorgersi di una differenza.
   // v5.981 — seconda riga di scelta: l'account venditore. Compare solo con almeno due account,
   // perché con uno solo non c'è niente da scegliere e sarebbe una riga di ingombro.
   const _attrA = t => String(t || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-  const tabAcc = a => `<button onclick="setEbayViewAccount('${_attrA(a.id)}')" style="font-size:0.78rem;padding:4px 11px;border-radius:8px;border:1px solid ${accountCorrente === a.id ? 'var(--action-admin)' : 'var(--border)'};background:${accountCorrente === a.id ? 'var(--action-admin)' : 'transparent'};color:${accountCorrente === a.id ? '#ffffff' : 'var(--muted)'};cursor:pointer;font-weight:${accountCorrente === a.id ? '700' : '400'};">${_attrA(a.etichetta)}</button>`;
+  const tabAcc = a => `<button onclick="setEbayViewAccount('${_attrA(a.id)}')" style="font-size:0.78rem;padding:4px 11px;border-radius:8px;border:1px solid ${accountCorrente === a.id ? 'var(--action-admin)' : 'var(--border)'};background:${accountCorrente === a.id ? 'var(--action-admin)' : 'transparent'};color:${accountCorrente === a.id ? '#ffffff' : 'var(--text)'};cursor:pointer;font-weight:${accountCorrente === a.id ? '700' : '400'};">${_attrA(a.etichetta)}</button>`;
   const selettoreAccount = (contiEbay.length > 1 && market !== 'confronto')
     ? `<div style="display:flex;gap:0.4rem;margin-bottom:0.75rem;align-items:center;flex-wrap:wrap;">
-         <span style="font-size:0.78rem;color:var(--muted);">${it ? 'Account:' : 'Account:'}</span>${contiEbay.map(tabAcc).join('')}</div>`
+         <span style="font-size:0.78rem;color:var(--text);">${it ? 'Account:' : 'Account:'}</span>${contiEbay.map(tabAcc).join('')}</div>`
     : '';
   const selector = `<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;align-items:center;">${tab('it', '🇮🇹 eBay.it')}${tab('com', '🇺🇸 eBay.com')}${tab('confronto', '⇄ ' + (it ? 'Titoli mercato a confronto' : 'Titles side by side'))}<span style="flex:1;"></span>${market === 'confronto' ? '' : btnSoloTitolo}</div>` + selettoreAccount;
   if (market === 'confronto') { renderEbayConfrontoTitoli(tableEl, selector); renderEbayOversizeTable(); return; }
   if (!figs.some(f => f.forSale)) {
-    tableEl.innerHTML = selector + `<p style="color:var(--muted);font-style:italic;font-size:0.88rem;">${it ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
+    tableEl.innerHTML = selector + `<p style="color:var(--text);font-style:italic;font-size:0.88rem;">${it ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
     renderEbayOversizeTable();
     return;
   }
-  const muted = x => `<span style="color:var(--muted);">${x}</span>`;
+  const muted = x => `<span style="color:var(--text);">${x}</span>`;
   const esc = s => (s || '').replace(/</g, '&lt;');
   // v5.918 — titolo generato (troncato a 80); un titolo scritto a mano ha la precedenza.
   const titleOf = f => (isIt ? f.ebayTitleIt : f.ebayTitleEn) || ebayTitle(f, market);
@@ -27431,7 +27948,7 @@ function renderEbayViewTable() {
     const troppoLungo = manuale.length > EBAY_TITLE_MAX
       ? ` <span title="${it ? 'Oltre gli 80 caratteri: eBay lo rifiuta' : 'Over 80 characters: eBay will reject it'}" style="color:var(--danger, #e5484d);font-weight:700;">${manuale.length}</span>` : '';
     return `<span id="ebay-titolo-${f.id}" onclick="ebayEditTitolo('${f.id}', event)" title="${it ? 'Clicca per modificare' : 'Click to edit'}"
-      style="display:block;${manuale ? '' : 'color:var(--muted);font-style:italic;'}">${testo}${forbice}${troppoLungo}</span>`;
+      style="display:block;${manuale ? '' : 'color:var(--text);font-style:italic;'}">${testo}${forbice}${troppoLungo}</span>`;
   };
   // v5.981 — Stato di pubblicazione del mercato che si sta guardando. Sola lettura: questi campi
   // li scrive il programma sul PC, il sito non li tocca mai. Sono due cose sovrapposte in una
@@ -27447,9 +27964,9 @@ function renderEbayViewTable() {
     ebayAccountConStato(f).includes(accountCorrente);
   const EBAY_STATI = {
     'pubblicato':      { seg: '●', col: 'var(--success, #3fb950)', it: 'pubblicato',      en: 'published' },
-    'ritirato':        { seg: '○', col: 'var(--muted)',            it: 'ritirato',        en: 'ended' },
+    'ritirato':        { seg: '○', col: 'var(--text)',            it: 'ritirato',        en: 'ended' },
     'errore':          { seg: '▲', col: 'var(--danger, #e5484d)',  it: 'errore',          en: 'error' },
-    'mai pubblicato':  { seg: '·', col: 'var(--muted)',            it: 'mai pubblicato',  en: 'never published' },
+    'mai pubblicato':  { seg: '·', col: 'var(--text)',            it: 'mai pubblicato',  en: 'never published' },
   };
   const statoCell = f => {
     if (!riguardaAccount(f)) return `<span style="color:var(--border);" title="${it ? 'Questo oggetto non va in vendita su questo account' : 'Not for sale on this account'}">${it ? 'non qui' : 'not here'}</span>`;
@@ -27482,7 +27999,7 @@ function renderEbayViewTable() {
     const retro = f.retroId ? getData('figurines', []).find(x => x.id === f.retroId) : null;
     const suo = retro ? (retro.ebayImg || retro.img) : null;
     const cella = suo ? img1(suo)
-      : `<span title="${retro ? (it ? 'Retro associato senza foto' : 'Linked retro has no photo') : (it ? 'Nessun retro associato' : 'No linked retro')}" style="color:var(--muted);font-size:0.75rem;">${retro ? '○' : '—'}</span>`;
+      : `<span title="${retro ? (it ? 'Retro associato senza foto' : 'Linked retro has no photo') : (it ? 'Nessun retro associato' : 'No linked retro')}" style="color:var(--text);font-size:0.75rem;">${retro ? '○' : '—'}</span>`;
     return `<div style="display:flex;gap:0.35rem;align-items:center;justify-content:center;">${mie}${cella}</div>`;
   };
   const td = (c, extra = '') => `<td style="padding:0.4rem 0.6rem;font-size:0.82rem;${extra}">${c}</td>`;
@@ -27500,9 +28017,9 @@ function renderEbayViewTable() {
     // IT/COM e a ogni ridisegno finché la maschera è aperta.
     const chiusa = !!_ebaySectionCollapsed[sec];
     const testa = (comando) => `<h3 onclick="${comando}" style="font-size:0.92rem;font-weight:700;color:var(--text);margin:1.5rem 0 0.5rem;${comando ? 'cursor:pointer;user-select:none;' : ''}">
-      <span style="display:inline-block;width:1em;color:var(--muted);">${comando ? (chiusa ? '▸' : '▾') : ''}</span>${ebaySectionLabel(sec)} <span style="color:var(--muted);font-weight:400;">(${items.length})</span></h3>`;
+      <span style="display:inline-block;width:1em;color:var(--text);">${comando ? (chiusa ? '▸' : '▾') : ''}</span>${ebaySectionLabel(sec)} <span style="color:var(--text);font-weight:400;">(${items.length})</span></h3>`;
     if (!items.length) {
-      return testa('') + `<p style="color:var(--muted);font-style:italic;font-size:0.85rem;margin:0;">${it ? 'Nessun oggetto marcato Ebay.' : 'No items marked Ebay.'}</p>`;
+      return testa('') + `<p style="color:var(--text);font-style:italic;font-size:0.85rem;margin:0;">${it ? 'Nessun oggetto marcato Ebay.' : 'No items marked Ebay.'}</p>`;
     }
     const titolo = testa(`toggleEbaySection('${sec}')`);
     if (chiusa) return titolo;
@@ -27534,7 +28051,7 @@ function renderEbayViewTable() {
     const rows = ordinati.map((f, i) => `<tr style="${_ebaySelected.has(f.id) ? 'background:rgba(255,157,61,0.10);' : ''}"
       onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='${_ebaySelected.has(f.id) ? 'rgba(255,157,61,0.10)' : ''}'">
       ${td(`<input type="checkbox" ${_ebaySelected.has(f.id) ? 'checked' : ''} onclick="ebayToggleSel('${f.id}', event)" style="cursor:pointer;">`, 'width:1%;text-align:center;')}
-      ${vis('riga') ? td(i + 1, 'color:var(--muted);text-align:right;white-space:nowrap;width:1%;') : ''}
+      ${vis('riga') ? td(i + 1, 'color:var(--text);text-align:right;white-space:nowrap;width:1%;') : ''}
       ${vis('nome') ? td(esc(f.fullName || f.name)) : ''}
       ${vis('titolo') ? td(titleCell(f) || muted('—')) : ''}
       ${vis('prezzo') ? td(priceCell(f), 'white-space:nowrap;') : ''}
@@ -27564,7 +28081,7 @@ function renderEbayViewTable() {
       title="${it ? 'Al prossimo lancio del programma questi annunci vengono creati o aggiornati' : 'These listings will be created or updated the next time the program runs'}">${it ? '📤 Metti in coda' : '📤 Queue'}</button>
     <button class="btn-danger-ghost" onclick="ebayImpostaCoda(false)" style="font-size:0.82rem;padding:0.35rem 0.9rem;cursor:pointer;"
       title="${it ? 'Toglie dalla coda: il programma li ignora. Torneranno in coda da sé alla prossima modifica' : 'Removes from the queue. They will return on their own at the next change'}">${it ? '↩︎ Togli dalla coda' : '↩︎ Unqueue'}</button>
-    <span onclick="ebayDeselezionaTutto()" style="font-size:0.78rem;color:var(--muted);cursor:pointer;text-decoration:underline;">${it ? 'deseleziona' : 'clear'}</span>
+    <span onclick="ebayDeselezionaTutto()" style="font-size:0.78rem;color:var(--text);cursor:pointer;text-decoration:underline;">${it ? 'deseleziona' : 'clear'}</span>
   </div>` : '';
   tableEl.innerHTML = selector + barraAzioni + ebayColRestoreBar(etichetteCol) + blocchi;
   renderEbayOversizeTable();
@@ -27583,7 +28100,7 @@ function renderEbayConfrontoTitoli(tableEl, selector) {
   const it = (currentLang === 'it');
   const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.forSale);
   if (!figs.length) {
-    tableEl.innerHTML = selector + `<p style="color:var(--muted);font-style:italic;font-size:0.88rem;">${it ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
+    tableEl.innerHTML = selector + `<p style="color:var(--text);font-style:italic;font-size:0.88rem;">${it ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
     return;
   }
   const esc = s => (s || '').replace(/</g, '&lt;');
@@ -27602,10 +28119,10 @@ function renderEbayConfrontoTitoli(tableEl, selector) {
   const testoCella = (testo, manuale, uguale, f, mercato) => {
     // Il generato resta in grigio corsivo, come nelle altre tabelle: finché è grigio non esiste
     // ancora da nessuna parte.
-    const stile = manuale ? '' : 'color:var(--muted);font-style:italic;';
+    const stile = manuale ? '' : 'color:var(--text);font-style:italic;';
     // Due titoli identici non sono un errore — succede quando nel testo non compare nessuna
     // parola del glossario — ma in una tabella che esiste per confrontarli vale la pena vederlo.
-    const segno = uguale ? ` <span title="${it ? 'Identico al titolo italiano: nessuna parola da tradurre' : 'Identical to the Italian title: no glossary word here'}" style="color:var(--muted);">=</span>` : '';
+    const segno = uguale ? ` <span title="${it ? 'Identico al titolo italiano: nessuna parola da tradurre' : 'Identical to the Italian title: no glossary word here'}" style="color:var(--text);">=</span>` : '';
     return `<span style="${stile}">${esc(testo)}${ebayForbice(f, mercato, testo)}${segno}</span>`;
   };
 
@@ -27617,7 +28134,7 @@ function renderEbayConfrontoTitoli(tableEl, selector) {
   const rows = ordinati.map((r, i) => {
     const uguale = (r.it === r.en);
     return `<tr onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''">
-      ${td(i + 1, bordo + 'color:var(--muted);text-align:right;white-space:nowrap;width:1%;vertical-align:top;')}
+      ${td(i + 1, bordo + 'color:var(--text);text-align:right;white-space:nowrap;width:1%;vertical-align:top;')}
       ${td('🇮🇹', bordo + 'width:1%;white-space:nowrap;')}
       ${td(testoCella(r.it, r.itManuale, false, r.f, 'it'), bordo)}
     </tr>
@@ -27634,9 +28151,9 @@ function renderEbayConfrontoTitoli(tableEl, selector) {
     <button class="btn-primary btn-admin" onclick="ebayRigeneraTitoli()" style="font-size:0.82rem;padding:0.35rem 0.9rem;"
       title="${it ? 'Riscrive ebayTitleIt ed ebayTitleEn di TUTTI gli oggetti marcati Ebay dell\u2019Inventario' : 'Rewrites the IT and EN titles of EVERY item marked Ebay in the catalogue'}">${it ? '🔁 Rigenera tutti i titoli (tutto l’Inventario)' : '🔁 Regenerate all titles (whole catalogue)'}</button>
   </div>` : '';
-  const th = (label, extra = '') => `<th style="padding:0.4rem 0.6rem;text-align:left;white-space:nowrap;color:var(--muted);${extra}">${label}</th>`;
+  const th = (label, extra = '') => `<th style="padding:0.4rem 0.6rem;text-align:left;white-space:nowrap;color:var(--text);${extra}">${label}</th>`;
   tableEl.innerHTML = selector + btnRigenera +
-    `<p style="color:var(--muted);font-size:0.85rem;margin-bottom:0.75rem;">${it
+    `<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.75rem;">${it
       ? ordinati.length + (ordinati.length === 1 ? ' oggetto marcato Ebay' : ' oggetti marcati Ebay') + ', ordinati per titolo italiano; per ciascuno le due righe di mercato. ' +
         (tagliati ? tagliati + (tagliati === 1 ? ' porta la forbice ✂ (tagliato dentro il nome). ' : ' portano la forbice ✂ (tagliati dentro il nome). ') : '') +
         (identici ? identici + (identici === 1 ? ' ha' : ' hanno') + ' i due titoli identici (=): in quel testo non compare nessuna parola del glossario.' : 'Nessuna coppia identica.')
@@ -27664,7 +28181,7 @@ function renderEbayOversizeTable() {
 
   const titolo = `<h3 style="font-size:0.95rem;font-weight:700;color:var(--text);margin-bottom:0.4rem;">${it ? 'Titoli eccedenti la taglia ebay' : 'Titles over the eBay size limit'}</h3>`;
   if (!eccedenti.length) {
-    box.innerHTML = titolo + `<p style="color:var(--muted);font-style:italic;font-size:0.88rem;">${it ? 'Nessun titolo viene tagliato dentro il nome: le regole automatiche bastano a farli stare tutti negli 80 caratteri.' : 'No title is cut inside the name: the automatic rules keep them all within 80 characters.'}</p>`;
+    box.innerHTML = titolo + `<p style="color:var(--text);font-style:italic;font-size:0.88rem;">${it ? 'Nessun titolo viene tagliato dentro il nome: le regole automatiche bastano a farli stare tutti negli 80 caratteri.' : 'No title is cut inside the name: the automatic rules keep them all within 80 characters.'}</p>`;
     return;
   }
   const esc = s => (s || '').replace(/</g, '&lt;');
@@ -27683,21 +28200,21 @@ function renderEbayOversizeTable() {
     const perse = intero.length - EBAY_TITLE_MAX;
     // v5.926 — anche qui il comando è la ✎ a fine riga (non la riga intera), e apre la form.
     return `<tr onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''">
-      ${td(i + 1, 'color:var(--muted);text-align:right;white-space:nowrap;width:1%;')}
-      ${td(ebaySectionLabel(f.section || 'figurines'), 'color:var(--muted);white-space:nowrap;')}
+      ${td(i + 1, 'color:var(--text);text-align:right;white-space:nowrap;width:1%;')}
+      ${td(ebaySectionLabel(f.section || 'figurines'), 'color:var(--text);white-space:nowrap;')}
       ${td(esc(f.fullName || f.name))}
       ${td(esc(troncato), 'color:var(--text);')}
-      ${td(esc(intero), 'color:var(--muted);')}
+      ${td(esc(intero), 'color:var(--text);')}
       ${td('<strong>' + intero.length + '</strong> <span style="color:var(--action-admin);">(+' + perse + ')</span>', 'white-space:nowrap;text-align:right;')}
       ${td(ebayApriBtn(f.id), 'width:1%;text-align:center;')}
     </tr>`;
   }).join('');
   box.innerHTML = titolo +
-    `<p style="color:var(--muted);font-size:0.85rem;margin-bottom:0.75rem;">${it
+    `<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.75rem;">${it
       ? 'Qui finiscono solo i titoli che non si salvano con le regole automatiche: tolta la coda "- Gpk - Topps" restano comunque oltre gli 80 caratteri, e il taglio cade dentro il nome. ' + eccedenti.length + (eccedenti.length === 1 ? ' oggetto' : ' oggetti') + ' da riscrivere a mano.'
       : 'Only titles the automatic rules cannot save: even without the "- Gpk - Topps" tail they exceed 80 characters, so the cut falls inside the name. ' + eccedenti.length + ' item(s) to rewrite by hand.'}</p>` +
     `<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>
-      <th style="padding:0.4rem 0.6rem;text-align:right;white-space:nowrap;color:var(--muted);width:1%;">#</th>${ebayTh('_oversize', 'sezione', it ? 'Sezione' : 'Section')}${ebayTh('_oversize', 'nome', it ? 'Nome completo' : 'Full name')}${ebayTh('_oversize', 'troncato', it ? 'Titolo troncato (80)' : 'Truncated title (80)')}${ebayTh('_oversize', 'intero', it ? 'Titolo intero' : 'Full title')}${ebayTh('_oversize', 'caratteri', it ? 'Caratteri' : 'Chars')}<th style="width:1%;"></th>
+      <th style="padding:0.4rem 0.6rem;text-align:right;white-space:nowrap;color:var(--text);width:1%;">#</th>${ebayTh('_oversize', 'sezione', it ? 'Sezione' : 'Section')}${ebayTh('_oversize', 'nome', it ? 'Nome completo' : 'Full name')}${ebayTh('_oversize', 'troncato', it ? 'Titolo troncato (80)' : 'Truncated title (80)')}${ebayTh('_oversize', 'intero', it ? 'Titolo intero' : 'Full title')}${ebayTh('_oversize', 'caratteri', it ? 'Caratteri' : 'Chars')}<th style="width:1%;"></th>
     </tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 
@@ -27813,8 +28330,8 @@ function _tabellaColonneSerie() {
   box.innerHTML =
     '<table style="border-collapse:collapse;margin-top:0.2rem;">' +
     '<tr><td></td>' +
-      '<td style="padding:0 6px;font-size:0.76rem;color:var(--muted);">desktop</td>' +
-      '<td style="padding:0 6px;font-size:0.76rem;color:var(--muted);">mobile</td></tr>' +
+      '<td style="padding:0 6px;font-size:0.76rem;color:var(--text);">desktop</td>' +
+      '<td style="padding:0 6px;font-size:0.76rem;color:var(--text);">mobile</td></tr>' +
     PRODOTTI_INVENTARIO.map(sez =>
       '<tr><td style="padding:3px 8px 3px 0;font-size:0.84rem;color:var(--text);white-space:nowrap;">' +
         esc(getSectionLabel(sez)) + '</td>' +
@@ -28294,7 +28811,13 @@ function updateItemsCountDisplay(items) {
   //          (var(--action)), non l'accent.
   const numBase = 'font-size:1.5rem;font-weight:700;';
   const num = v => `<span style="${numBase}color:var(--accent);">${v}</span>`;
-  const numBlue = v => `<span style="${numBase}color:var(--action);">${v}</span>`;
+  // 🆕 v6.434 (Franco) - IL NUMERO DELLA LISTA E' BIANCO, e il blu torna a essere solo dei gesti.
+  // Franco: *"le azioni relative a mia lista sono sempre azioni, quindi blu ok"* - e da li'
+  // segue il contrario: cio' che NON e' un'azione non deve essere blu. Un numero non si preme.
+  // 🔴 RESTA `numBase`, cioe' 1,5rem e grassetto: il numero perde il COLORE, non il rilievo.
+  // Toglierlo lo farebbe sparire dentro la frase, e il rilievo qui e' informazione - dice dove
+  // guardare. E' il colore a essere di troppo, non la dimensione.
+  const numLista = v => `<span style="${numBase}color:var(--text);">${v}</span>`;
   const cfmt = count.toLocaleString(it ? 'it-IT' : 'en-US');
   // v5.850 — su telefono le due frasi vanno tenute su UNA riga: alla larghezza di un telefono
   // "N oggetti trovati" + "N fanno parte della tua lista" non ci stanno a un corpo leggibile.
@@ -28343,8 +28866,8 @@ function updateItemsCountDisplay(items) {
     // proprio la scelta che rende leggibile quella riga. La parentesi da sola porta comunque il
     // grosso del significato, e costa due caratteri.
     html += _mobileCount
-      ? `<span>(${numBlue(nfmt)} ${frase})</span>`
-      : `<span>(${it ? 'di questi ' : 'of these '}${numBlue(nfmt)} ${frase})</span>`;
+      ? `<span>(${numLista(nfmt)} ${frase})</span>`
+      : `<span>(${it ? 'di questi ' : 'of these '}${numLista(nfmt)} ${frase})</span>`;
   }
 
   // 🆕 v6.367 (Franco: *"nei risultati della ricerca, metti tutto sulla stessa riga: «1 oggetto
@@ -28693,10 +29216,10 @@ function renderAdminTipoArticolo() {
       return cmp * _tipoArtSort.dir;
     });
   }
-  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--muted);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
   box.innerHTML =
-    '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.9rem;line-height:1.5;">' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       'Questa tabella <strong>stampa il descrittore</strong> <code>ARTICOLI</code> di <code>app.js</code>: ' +
       'righe e colonne si ricavano da lì. Un articolo nuovo compare da sé, e un campo nuovo si porta ' +
       'dietro la sua colonna. Se una cosa che ti aspetti non è una colonna, vuol dire che ' +
@@ -28730,10 +29253,10 @@ function renderAdminTipoArticolo() {
       const _bottone = (d, seg, dis, tit) =>
         '<button type="button" onclick="spostaArticolo(\'' + sez + '\', ' + d + ')"' +
         (dis ? ' disabled' : '') + ' title="' + tit + '"' +
-        ' style="background:none;border:none;color:' + (dis ? 'var(--muted)' : 'var(--accent)') +
+        ' style="background:none;border:none;color:' + (dis ? 'var(--text)' : 'var(--accent)') +
         ';cursor:' + (dis ? 'default' : 'pointer') + ';font-size:0.9rem;padding:0 0.15rem;">' + seg + '</button>';
       const celle = _tipoArtSort.col
-        ? '<span style="color:var(--muted);" title="' + (_it ? 'Le frecce tornano togliendo l\'ordinamento per colonna: qui non stai guardando l\'ordine vero' : 'Arrows come back when no column sort is active') + '">\u2014</span>'
+        ? '<span style="color:var(--text);" title="' + (_it ? 'Le frecce tornano togliendo l\'ordinamento per colonna: qui non stai guardando l\'ordine vero' : 'Arrows come back when no column sort is active') + '">\u2014</span>'
         : (_bottone(-1, '\u25B2', _ord === 0, _it ? 'Sposta su' : 'Move up')
          + _bottone(+1, '\u25BC', _ord === PRODOTTI_INVENTARIO.length - 1, _it ? 'Sposta giù' : 'Move down'));
       return '<tr>' +
@@ -28743,7 +29266,7 @@ function renderAdminTipoArticolo() {
     }).join('') +
     '</table></div>' +
     // La riga che dice PERCHE' e' in sola lettura, e i due numeri sono contati, non scritti.
-    '<p style="font-size:0.8rem;color:var(--muted);margin-top:0.9rem;line-height:1.5;">' +
+    '<p style="font-size:0.8rem;color:var(--text);margin-top:0.9rem;line-height:1.5;">' +
       '<span id="ordine-articoli-feedback" style="font-size:0.85rem;"></span> ' +
       '<strong>' + PRODOTTI_INVENTARIO.length + ' articoli, ' + chiavi.length + ' campi.</strong> ' +
       // v6.233 - QUESTA FRASE DICEVA "sono in sola lettura" e da questa release non e' piu' vera
@@ -28774,13 +29297,13 @@ function renderAdminVersioniArticolo() {
   const box = document.getElementById('admin-versioni-articolo');
   if (!box) return;
   const it = currentLang === 'it';
-  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--muted);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
   const seminato = _versioniArticoloSalvate();
 
   box.innerHTML =
     '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">\uD83E\uDDEC ' + (it ? 'Versioni di articolo possibili' : 'Possible article versions') + '</h4>' +
-    '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.9rem;line-height:1.5;">' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Le <strong>cinque versioni</strong> sono alternative alla base. Qui si dice, per ogni articolo, ' +
           '<strong>quali possono esistere</strong> — la logica è positiva: la casella spenta vuol dire ' +
@@ -28809,7 +29332,7 @@ function renderAdminVersioniArticolo() {
       VERSIONI_ARTICOLO.map((v, iv) =>
         // v6.251 - il bordo e il rientro solo sulla PRIMA: e' li' che comincia il gruppo, e
         // ripeterli su tutte e cinque avrebbe disegnato una griglia invece di un raggruppamento.
-        '<th style="' + th + 'text-align:center;color:' + (v.colore || 'var(--muted)') + ';'
+        '<th style="' + th + 'text-align:center;color:' + (v.colore || 'var(--text)') + ';'
         + (iv === 0 ? 'padding-left:1.4rem;border-left:1px solid var(--border);' : '') + '">' + esc(it ? v.it : v.en) +
         '</th>').join('') +
     '</tr>' +
@@ -28826,9 +29349,9 @@ function renderAdminVersioniArticolo() {
     '</table></div>' +
     '<div style="display:flex;align-items:center;gap:0.9rem;margin-top:0.9rem;">' +
       '<button class="btn-primary btn-admin" onclick="salvaVersioniArticolo()">' + (it ? 'Salva le versioni' : 'Save versions') + '</button>' +
-      '<span id="versioni-articolo-feedback" style="font-size:0.85rem;color:var(--muted);"></span>' +
+      '<span id="versioni-articolo-feedback" style="font-size:0.85rem;color:var(--text);"></span>' +
     '</div>' +
-    '<p style="font-size:0.8rem;color:var(--muted);margin-top:0.9rem;line-height:1.5;">' +
+    '<p style="font-size:0.8rem;color:var(--text);margin-top:0.9rem;line-height:1.5;">' +
       (it
         ? '⚠️ <strong>In questa versione del sito queste spunte non comandano ancora niente</strong>: ' +
           'la scheda oggetto continua a decidere come prima. Servono a essere compilate e controllate ora, ' +
@@ -28854,7 +29377,7 @@ function renderAdminPartenzeVersione() {
   const box = document.getElementById('admin-partenze-versione');
   if (!box) return;
   const it = currentLang === 'it';
-  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--muted);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
+  const th = 'padding:5px 8px;font-size:0.76rem;color:var(--text);text-align:left;white-space:nowrap;border-bottom:1px solid var(--border);';
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);border-bottom:1px solid var(--border);';
   // Le colonne: la base piu' le versioni che qualcuno ammette come partenza. Non un elenco
   // scritto: chi non compare in nessuna riga non ha colonna, ed e' l'informazione stessa.
@@ -28864,7 +29387,7 @@ function renderAdminPartenzeVersione() {
   box.innerHTML =
     '<h4 style="font-family:var(--font-ui);margin:1.6rem 0 0.5rem;">\uD83D\uDD17 ' +
       (it ? 'Da chi pu\u00F2 nascere ogni versione' : 'Allowed starting points') + '</h4>' +
-    '<p style="font-size:0.85rem;color:var(--muted);margin-bottom:0.9rem;line-height:1.5;">' +
+    '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
       (it
         ? 'Ogni versione \u00E8 collegata a un <strong>articolo di partenza</strong>. Qui c\'\u00E8 chi pu\u00F2 farlo, ' +
           'versione per versione. \u00C8 in <strong>sola lettura</strong>: descrive com\'\u00E8 fatto il modello, ' +
@@ -28880,11 +29403,11 @@ function renderAdminPartenzeVersione() {
       return '<tr><td style="' + td + 'white-space:nowrap;"><span style="color:' + (v.colore || 'var(--text)') + ';font-weight:600;">' +
         esc(it ? v.it : v.en) + '</span></td>' +
         colonne.map(c => '<td style="' + td + 'text-align:center;">' +
-          (amm.includes(c) ? '<span style="color:var(--success);">\u2713</span>' : '<span style="color:var(--muted);">\u2014</span>') +
+          (amm.includes(c) ? '<span style="color:var(--success);">\u2713</span>' : '<span style="color:var(--text);">\u2014</span>') +
           '</td>').join('') + '</tr>';
     }).join('') +
     '</table></div>' +
-    '<p style="font-size:0.8rem;color:var(--muted);margin-top:0.9rem;line-height:1.5;">' +
+    '<p style="font-size:0.8rem;color:var(--text);margin-top:0.9rem;line-height:1.5;">' +
       (it
         ? '\uD83D\uDCCC <strong>Chi pu\u00F2 fare da partenza non \u00E8 dichiarato da nessuna parte: si ricava.</strong> ' +
           'Una versione compare come colonna solo se almeno un\'altra riga la ammette. ' +
@@ -29825,7 +30348,7 @@ function apriInfoTutteLeSerie() {
     // (`noNumbers`) o con un estremo solo mostra il conteggio nudo: scrivere "(1/)" o "(/160)"
     // darebbe l'idea di un dato rotto invece che di un dato assente.
     const _intervallo = (s.firstNumber != null && s.lastNumber != null)
-      ? `<div style="font-size:0.72rem;color:var(--muted);line-height:1.25;">(${s.firstNumber}/${s.lastNumber})</div>`
+      ? `<div style="font-size:0.72rem;color:var(--text);line-height:1.25;">(${s.firstNumber}/${s.lastNumber})</div>`
       : '';
     // v6.180 (Franco) - la colonna VAR di telefono: due righe etichettate invece di due colonne.
     // ⚠️ Le righe con zero NON si scrivono, e la cella con entrambi a zero resta vuota: e' la regola
@@ -29853,7 +30376,7 @@ function apriInfoTutteLeSerie() {
       ? `<div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;font-size:0.75rem;line-height:1.15;margin:0.1rem 0;">`
         // v6.213 (Franco) - via `nowrap`: le etichette tornano su due righe. Resta `min-width:0`,
         // che serve a permettere all'etichetta di STRINGERSI invece di allargare la cella.
-        + `<span style="color:var(--muted);min-width:0;">${etichetta}:</span>`
+        + `<span style="color:var(--text);min-width:0;">${etichetta}:</span>`
         + `<span style="font-variant-numeric:tabular-nums;">${n}</span></div>`
       : '';
     // v6.209 (Franco) - le QUATTRO righe della colonna SPECIALI, con le etichette che ha scritto
@@ -31718,9 +32241,21 @@ function openFigFromSearch(figId, seriesId, section) {
 // lo contenderebbe». Interpellato con quella ragione davanti, Franco ha scelto il bianco OVUNQUE,
 // tabella inclusa. Quindi la v6.210 e' revocata apposta, non per distrazione: resta il «piu'
 // piccolo» (0,7rem), se ne va il grigio.
-function _annoSottoNome(s) {
+// 🆕 v6.433 (Franco) - L'ANNO PUO' OSPITARE UNA CODA A DESTRA, e sul telefono ci va il punteggio.
+// 🔴 UN PARAMETRO IN PIU', NON UNA SECONDA FUNZIONE. Questa funzione e' nata alla v6.400 proprio
+// per unificare tre copie dell'anno scritte a mano (card, hub, cella della tabella su telefono):
+// scriverne una gemella per il solo caso col punteggio avrebbe rifatto in un giorno il difetto che
+// quella release aveva chiuso. Chi non passa `coda` ottiene esattamente l'HTML di prima.
+// 📌 SE LA SERIE NON HA L'ANNO questa funzione torna stringa vuota, quindi la coda non ha dove
+// stare: chi chiama deve accorgersene e tenersi il punteggio dov'era. Non si inventa una riga
+// vuota per ospitarlo - una riga che esiste solo per reggere un numero e' una riga che, il giorno
+// che il numero non c'e', resta li' a non dire niente.
+function _annoSottoNome(s, coda) {
   if (!s || !s.year) return '';
-  return '<div style="font-size:0.7rem;line-height:1.1;color:var(--text);font-family:var(--font-ui);">' + esc(s.year) + '</div>';
+  const base = 'font-size:0.7rem;line-height:1.1;color:var(--text);font-family:var(--font-ui);';
+  if (!coda) return '<div style="' + base + '">' + esc(s.year) + '</div>';
+  return '<div style="' + base + 'display:flex;align-items:baseline;justify-content:space-between;'
+       + 'gap:0.5rem;width:100%;"><span>' + esc(s.year) + '</span>' + coda + '</div>';
 }
 
 function _nomeSerieCard(s, sempreCorto) {
@@ -31736,6 +32271,13 @@ function seriesCardHTML(s) {
   const extras = allItems.filter(f => f.section === 'extras');
   const bustine = allItems.filter(f => f.section === 'bustine');
   const figs = allItems.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras' && f.section !== 'bustine');
+  // 🆕 v6.429 - stessa regola della scheda serie: fuori gli errori di stampa, e passando dalla
+  // funzione condivisa invece che da un filtro copiato.
+  // 🔴 UNA VARIABILE NUOVA, E NON `figs` FILTRATA. `figs` serve anche a calcolare il PUNTEGGIO
+  // MODALE della card (`scoredFigs`, due righe sotto): filtrarla avrebbe spostato anche quello,
+  // in silenzio e senza che nessuno l'avesse chiesto. Due domande diverse che oggi hanno
+  // risposte diverse non devono condividere una variabile - e' la stessa ragione della v6.412.
+  const figsConteggio = senzaErroriDiStampa(figs);
   const desc = currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt);
   // Calculate mode score (most common score > 0)
   let modeScoreHTML = '';
@@ -31746,18 +32288,30 @@ function seriesCardHTML(s) {
     const modeScore = Object.entries(freq).sort((a,b) => b[1]-a[1])[0][0];
     modeScoreHTML = `<span style="font-size:0.78rem;color:var(--accent);font-family:var(--font-ui);">⭐ ${modeScore} pt</span>`;
   }
+  // 🆕 v6.433 (Franco) - SU TELEFONO IL PUNTEGGIO STA SULLA RIGA DELL'ANNO, A DESTRA.
+  // Franco: *"nel mobile, sulla card della serie, il punteggio mettilo sulla riga dell'anno, a dx"*.
+  // Prima stava accanto al BLOCCO nome+anno, centrato sui due: su telefono, con `flex-wrap`, andava
+  // a capo per conto suo e la testata diventava di tre righe.
+  // 🔴 LE CONDIZIONI SONO TRE E STANNO IN UNA RIGA SOLA, perche' due delle tre sono ripieghi che
+  // non si vedono provando col telefono su una serie qualunque:
+  //   · `_isMobileViewport()` - sul desktop non cambia niente, non e' stato chiesto;
+  //   · `modeScoreHTML` - una serie senza punteggi non ha nessuna coda da mettere;
+  //   · `s.year` - 🔴 SENZA ANNO NON C'E' NESSUNA RIGA DELL'ANNO. In quel caso il punteggio resta
+  //     dov'era: far comparire una riga vuota solo per reggerlo sarebbe una riga che non dice
+  //     niente. Deciso prima di scrivere, non scoperto dopo.
+  const _puntSuAnno = _isMobileViewport() && !!modeScoreHTML && !!(s && s.year);
   return `<div class="card" onclick="openSeriesDetail('${s.id}')">
     <div class="card-img-placeholder">
       ${s.img ? `<img src="${cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;padding:8px;">` : '🎴'}
     </div>
     <div class="card-body">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
-        <div class="card-title" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.15rem;flex-wrap:wrap;margin-bottom:0;"><span style="color:var(--nome-entita);">${esc(_nomeSerieCard(s))}</span>${_annoSottoNome(s)}</div>
-        ${modeScoreHTML || ''}
+        <div class="card-title" style="display:flex;flex-direction:column;align-items:flex-start;gap:0.15rem;flex-wrap:wrap;margin-bottom:0;${_puntSuAnno ? 'flex:1;min-width:0;' : ''}"><span style="color:var(--nome-entita);">${esc(_nomeSerieCard(s))}</span>${_annoSottoNome(s, _puntSuAnno ? modeScoreHTML : '')}</div>
+        ${_puntSuAnno ? '' : (modeScoreHTML || '')}
       </div>
       <div class="card-desc">${(desc||'').substring(0,90)}${(desc||'').length>90?'…':''}</div>
       <div class="card-meta">
-        <span class="card-badge">${figs.length} ${currentLang === 'it' ? 'figurine' : 'stickers'}</span>
+        <span class="card-badge">${figsConteggio.length} ${currentLang === 'it' ? 'figurine' : 'stickers'}</span>
         ${retros.length ? `<span class="card-badge">${retros.length} ${currentLang === 'it' ? 'retro' : 'retros'}</span>` : ''}
         ${bustine.length ? `<span class="card-badge">${bustine.length} ${currentLang === 'it' ? (bustine.length === 1 ? 'bustina' : 'bustine') : 'wrappers'}</span>` : ''}
         ${albums.length ? `<span class="card-badge">${albums.length} ${currentLang === 'it' ? 'album' : 'albums'}</span>` : ''}
@@ -32406,6 +32960,21 @@ function _opzioniTipoChange(seriesId, selezionato) {
   return html;
 }
 
+// 🆕 v6.429 (Franco) - GLI ERRORI DI STAMPA NON SONO NEL TOTALE.
+// Franco: *"il contatore «figurine» credo conti tutto, quindi anche gli errori di stampa; no!
+// quelli escludiamoli"*.
+// 🔴 LA REGOLA STA IN UNA FUNZIONE, NON IN DUE FILTRI. I posti che dicono «N figurine» sono due e
+// lontani - la colonna «totali» della scheda serie (`sezRows`) e il badge della card
+// (`seriesCardHTML`) - e ciascuno aveva il suo filtro scritto a mano. Cambiarne uno solo avrebbe
+// fatto divergere due numeri che rispondono alla STESSA domanda (§12-bis del documento: due chiavi
+// che rispondono alla stessa domanda divergono sempre). Da qui in avanti la domanda ha una
+// risposta sola, e sta qui.
+// 📌 SI ESCLUDONO I SOLI ERRORI DI STAMPA. Base, variazioni ufficiali e non, change e omaggi
+// restano dentro: Franco ha nominato quelli e solo quelli.
+function senzaErroriDiStampa(elenco) {
+  return elenco.filter(f => !f.isPrintError);
+}
+
 function tipiPresenti(seriesId, section) {
   const items = getData('figurines', []).filter(f => f.seriesId === seriesId && f.section === section);
   return {
@@ -32602,9 +33171,14 @@ function renderSeriesMeta(s) {
   // CODICE COLORE (v5.703): ogni contatore prende il colore del suo tipo, letto dalle
   // variabili CSS. Il bullet e' un quadrato con background:currentColor, quindi si
   // tinge DA SOLO insieme al testo — non c'e' modo che i due si sfasino.
-  // Il colore va sulla riga dell'INVENTARIO, non su quella della lista: il numero
-  // della lista resta in var(--accent) perche' dice un'altra cosa ("questo e' tuo"),
-  // e deve restare riconoscibile a colpo d'occhio in ogni riga.
+  // Il colore va sulla riga dell'INVENTARIO, non su quella della lista: la riga della lista ha un
+  // colore SUO perche' dice un'altra cosa ("questo e' tuo"), e deve restare riconoscibile a colpo
+  // d'occhio in ogni riga.
+  // 🔧 v6.430 - QUI C'ERA SCRITTO «resta in var(--accent)», cioe' il lime. Adesso e' `--action`,
+  // il blu della mia lista. Il ragionamento di questa riga era giusto - una riga che dice «questo
+  // e' tuo» merita un colore suo - ma il colore scelto era quello del BRAND, che sulla stessa
+  // pagina sta gia' dappertutto: non distingueva niente. Il commento e' stato corretto invece che
+  // lasciato: un commento che nomina un colore muore il giorno che il colore si muove.
   const colonna = (icona, elenco, etichetta, forte, femminile = true, colore = null) => {
     const quanti = elenco.length;
     const n = miei(elenco);
@@ -32618,7 +33192,23 @@ function renderSeriesMeta(s) {
             ? (quanti === 1 ? "Ce l'hai!" : (femminile ? 'Le hai tutte !' : 'Li hai tutti !'))
             : (quanti === 1 ? 'You have it !' : 'You have them all !')) + '\u{1F389}'
         : nfmt(n) + ' ' + inLista;
-      riga2 = `<span class="col-own" style="color:var(--accent);font-weight:600;">${testo}</span>`;
+      // 🆕 v6.430 (Franco) - LA RIGA DELLA LISTA E' BLU, ed e' il blu della lista.
+      // Il colore e' `--action` (#2563eb), lo stesso di `.owned-btn.on` e `.toggle-btn-blue.on`:
+      // cioe' del pulsante con cui quella lista si riempie. Non un blu qualunque - QUEL blu.
+      // 🔴 TUTTA LA RIGA, NON IL SOLO NUMERO, e la ragione sta nel ramo qui sopra: quando la
+      // serie e' completa la riga NON HA nessun numero, dice «Le hai tutte !🎉». Colorare la
+      // sola cifra avrebbe lasciato senza colore proprio il caso in cui la notizia e' migliore.
+      // 📌 Percio' questa riga NON contraddice la regola della v6.426 («il colore sta sul dato,
+      // il testo e' testo»): qui il dato E' la riga. Nei risultati della ricerca, dove il
+      // numero c'e' sempre, `updateItemsCountDisplay` colora la sola cifra ed e' giusto cosi'.
+      // 🔧 v6.434 (Franco) - BIANCA, non piu' blu. La v6.430 (un'ora prima) l'aveva messa su
+      // `--action` con la ragione «e' il colore del pulsante che riempie la lista». Franco ha
+      // guardato lo schermo e ha visto la cosa piu' larga: quel blu, in tutto il resto del
+      // sito, dice «QUESTO SI PREME» - `.btn-primary` da solo lo usa in 64 punti, `.owned-btn`
+      // in 6. Una riga di testo che non si preme, dipinta del colore dei bottoni, promette un
+      // gesto che non c'e'.
+      // 📌 E il grassetto RESTA: la riga perde il colore, non il rilievo.
+      riga2 = `<span class="col-own" style="color:var(--text);font-weight:600;">${testo}</span>`;
     }
     return `<div style="display:flex;flex-direction:column;gap:1px;">${riga1}${riga2}</div>`;
   };
@@ -32673,7 +33263,11 @@ function renderSeriesMeta(s) {
     // ⚠️ E' UNA REVOCA E VA GUARDATA A SCHERMO. Questo punto NON era nel backlog - lo ha trovato
     // un `grep` di `--accent3`, non la richiesta. Se il lime qui non convince, e' questa la riga
     // da rimettere a `--accent3`, ed e' l'unica: le altre due Franco le ha chieste.
-    if (g.items.length || alwaysTotal) m.push(colonna(BULLET, g.items,
+    // 🆕 v6.429 - il totale NON comprende gli errori di stampa (vedi `senzaErroriDiStampa`).
+    // ⚠️ Il conto passa anche a `miei()` dentro `colonna`, quindi la riga «N nella tua lista» del
+    // totale segue: se cosi' non fosse, la lista potrebbe dire un numero piu' grande del totale.
+    const _totali = senzaErroriDiStampa(g.items);
+    if (_totali.length || alwaysTotal) m.push(colonna(BULLET, _totali,
       // v6.067 (Franco) - "368 totali" al posto di "368 figurine in totale": stessa ragione della
       // riga del set base, e in piu' sparisce anche il "in", che non serviva a niente.
       it ? 'totali' : 'total',
@@ -36489,16 +37083,16 @@ function renderEbayStatoScheda(f, s, pref = 'fig') {
   const riga = (bandiera, mercato, e) => {
     const stato = e?.stato || (it ? 'mai pubblicato' : 'never published');
     const colore = e?.stato === 'errore' ? 'var(--danger, #e5484d)'
-                 : e?.stato === 'pubblicato' ? 'var(--success, #3fb950)' : 'var(--muted)';
+                 : e?.stato === 'pubblicato' ? 'var(--success, #3fb950)' : 'var(--text)';
     const voci = [];
     if (e?.listingId) voci.push((it ? 'annuncio n. ' : 'listing no. ') + attr(e.listingId));
     if (e?.offerId) voci.push('offerId ' + attr(e.offerId));
     if (e?.aggiornatoIl) voci.push((it ? 'il ' : 'on ') + new Date(e.aggiornatoIl).toLocaleString(it ? 'it-IT' : 'en-GB'));
     return `<div style="display:flex;gap:0.5rem;align-items:baseline;flex-wrap:wrap;font-size:0.78rem;padding:0.15rem 0 0.15rem 0.9rem;">
       <span style="flex-shrink:0;">${bandiera}</span>
-      <code style="font-size:0.7rem;color:var(--muted);">${attr(ebaySku(f.id, mercato))}</code>
+      <code style="font-size:0.7rem;color:var(--text);">${attr(ebaySku(f.id, mercato))}</code>
       <span style="color:${colore};font-weight:600;">${attr(stato)}</span>
-      <span style="color:var(--muted);">${voci.join(' · ')}</span>
+      <span style="color:var(--text);">${voci.join(' · ')}</span>
       ${e?.ultimoErrore ? `<div style="width:100%;color:var(--danger, #e5484d);font-size:0.73rem;">${attr(e.ultimoErrore)}</div>` : ''}
     </div>`;
   };
@@ -36513,7 +37107,7 @@ function renderEbayStatoScheda(f, s, pref = 'fig') {
   }).join('');
   box.innerHTML = `<div style="background:var(--card2);border-radius:8px;padding:0.6rem 0.8rem;">
     <div style="font-size:0.8rem;font-weight:700;">${it ? 'Stato su eBay' : 'Status on eBay'}
-      <span style="font-weight:400;color:var(--muted);">${it ? '— lo scrive il programma, non si modifica da qui' : '— written by the program, read-only here'}</span></div>
+      <span style="font-weight:400;color:var(--text);">${it ? '— lo scrive il programma, non si modifica da qui' : '— written by the program, read-only here'}</span></div>
     ${blocchi}
   </div>`;
 }
@@ -37265,29 +37859,29 @@ function renderAdminFigurineInvisibili() {
 
   const testata =
     '<h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">&#129781; ' + (it ? 'Figurine invisibili' : 'Hidden stickers') + '</h3>' +
-    '<p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.25rem;max-width:900px;">' +
+    '<p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;max-width:900px;">' +
       (it ? 'Oggetti con il campo <b>Invisibile</b> attivo: esistono nell\u2019Inventario ma non compaiono a chi non è admin — né in griglia, né nella ricerca, né nei caroselli, né nei contatori. Qui ci sono tutti, per non perderli di vista.'
           : 'Items with the <b>Hidden</b> flag: they exist in the catalogue but are not shown to non-admins — not in the grid, the search, the carousels or the counters. They are all listed here so they do not get forgotten.') +
     '</p>';
 
   if (!invisibili.length) {
     el.innerHTML = '<div style="max-width:1100px;">' + testata +
-      '<p style="color:var(--muted);">' + (it ? 'Nessun oggetto invisibile.' : 'No hidden items.') + '</p></div>';
+      '<p style="color:var(--text);">' + (it ? 'Nessun oggetto invisibile.' : 'No hidden items.') + '</p></div>';
     return;
   }
 
-  const th = t => '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);white-space:nowrap;">' + t + '</th>';
+  const th = t => '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;">' + t + '</th>';
   const td = (t, st) => '<td style="padding:6px 10px;' + (st || '') + '">' + t + '</td>';
   el.innerHTML = '<div style="max-width:1100px;">' + testata +
-    '<div style="font-size:0.85rem;color:var(--muted);margin-bottom:0.6rem;">' + invisibili.length + ' ' + (it ? 'oggetti' : 'items') + '</div>' +
+    '<div style="font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;">' + invisibili.length + ' ' + (it ? 'oggetti' : 'items') + '</div>' +
     '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;"><thead><tr style="background:var(--card2);">' +
       th(it ? 'Serie' : 'Series') + th(it ? 'Sottoserie' : 'Subseries') + th(it ? 'Sezione' : 'Section') +
       th('N.') + th(it ? 'Nome' : 'Name') + th('') +
     '</tr></thead><tbody>' +
     invisibili.map(f =>
       '<tr style="border-bottom:1px solid var(--border);">' +
-        td(esc(nomeSerie(f.seriesId)), 'color:var(--muted);white-space:nowrap;') +
-        td(esc(f.subseries || ''), 'color:var(--muted);') +
+        td(esc(nomeSerie(f.seriesId)), 'color:var(--text);white-space:nowrap;') +
+        td(esc(f.subseries || ''), 'color:var(--text);') +
         td(esc(getSectionLabelSingular(f.section || 'figurines')), 'color:var(--accent2);white-space:nowrap;') +
         td(_haNumero(f) && f.number ? esc(String(f.number)) : '', 'white-space:nowrap;') +
         td(esc((f.fullName && f.fullName.trim()) ? f.fullName : (f.name || '')), '') +
@@ -37321,7 +37915,7 @@ function sortAdminSeries(col) {
 function renderAdminSeries() {
   const el = document.getElementById('admin-series-table');
   const series = getData('series', []).slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999));
-  if (!series.length) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Nessuna serie ancora.' : 'No series yet.') + '</p>'; return; }
+  if (!series.length) { el.innerHTML = '<p style="color:var(--text);">' + (currentLang === 'it' ? 'Nessuna serie ancora.' : 'No series yet.') + '</p>'; return; }
   // v6.226 - LE COLONNE IN UN ELENCO SOLO: etichetta, allineamento e VALORE PER L'ORDINAMENTO
   // stanno insieme. Prima le intestazioni erano una riga scritta a mano; separandole dai valori,
   // aggiungere una colonna avrebbe voluto dire ricordarsi di aggiungere anche la sua chiave di
@@ -37363,8 +37957,8 @@ function renderAdminSeries() {
   }
   const _ordinata = !!_colSort;   // vero = le frecce non hanno piu' senso
   el.innerHTML = `
-    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.25rem;">${(currentLang === 'it') ? "Usa le frecce per cambiare l'ordine" : 'Use the arrows to change the order'}</p>
-    <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Per eliminare una serie, cancellare prima tutto il suo contenuto.' : 'To delete a series, first delete all its content.'}</p>
+    <p style="font-size:0.82rem;color:var(--text);margin-bottom:0.25rem;">${(currentLang === 'it') ? "Usa le frecce per cambiare l'ordine" : 'Use the arrows to change the order'}</p>
+    <p style="font-size:0.82rem;color:var(--text);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Per eliminare una serie, cancellare prima tutto il suo contenuto.' : 'To delete a series, first delete all its content.'}</p>
     <!-- v6.175 (Franco) - VALORI CENTRATI SOTTO IL NOME DELLA COLONNA. Si centra la TABELLA e si
          riporta a sinistra il solo Nome: cosi' l'allineamento e' una regola sola invece di una
          ripetuta su sedici colonne, e aggiungendone una diciassettesima nasce gia' centrata.
@@ -37410,7 +38004,7 @@ function renderAdminSeries() {
             // mentre la tabella e' ordinata per un'altra colonna: e' li' che serve davvero, perche'
             // e' l'unica cosa che dice dove stava una serie prima di riordinare - e come
             // rimettercela.
-            const _num = '<span style="color:var(--muted);font-size:0.78rem;margin-right:4px;">' + (idx + 1) + '</span>';
+            const _num = '<span style="color:var(--text);font-size:0.78rem;margin-right:4px;">' + (idx + 1) + '</span>';
             return _num + _btn('Up', '▲', _su) + _btn('Down', '▼', _giu);
           })()}
         </td>
@@ -37544,7 +38138,7 @@ function renderAdminFigs() {
   const el = document.getElementById('admin-figs-table');
   const figs = getData('figurines', []);
   const series = getData('series', []);
-  if (!figs.length) { el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Nessuna figurina ancora.' : 'No stickers yet.') + '</p>'; return; }
+  if (!figs.length) { el.innerHTML = '<p style="color:var(--text);">' + (currentLang === 'it' ? 'Nessuna figurina ancora.' : 'No stickers yet.') + '</p>'; return; }
   el.innerHTML = `<table class="data-table"><thead><tr><th>#</th><th>${currentLang==="it"?"Nome":"Name"}</th><th>${currentLang==="it"?"Serie":"Series"}</th><th>${currentLang==="it"?"Azioni":"Actions"}</th></tr></thead><tbody>
     ${figs.map(f => {
       const s = series.find(x => x.id === f.seriesId);
@@ -37560,28 +38154,28 @@ function renderAdminFigs() {
 function renderAdminContacts() {
   const el = document.getElementById('admin-contacts-list');
   const msgs = getData('contact_messages', []).filter(m => !m.isAnnouncement).sort((a,b) => new Date(b.date) - new Date(a.date));
-  if (!msgs.length) { el.innerHTML = `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun messaggio ancora.' : 'No messages yet.'}</p>`; return; }
+  if (!msgs.length) { el.innerHTML = `<p style="color:var(--text);">${currentLang === 'it' ? 'Nessun messaggio ancora.' : 'No messages yet.'}</p>`; return; }
   el.innerHTML = msgs.map(m => `<div style="background:${m.read ? 'var(--card)' : 'rgba(var(--info-rgb),0.06)'};border:1px solid ${m.read ? 'var(--border)' : 'rgba(var(--info-rgb),0.3)'};border-radius:10px;padding:0.75rem 1rem;margin-bottom:0.5rem;">
     <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.4rem;align-items:center;">
       <div style="display:flex;align-items:center;gap:0.5rem;">
         ${m.read ? '' : '<span style="font-size:0.7rem;background:var(--info);color:#fff;border-radius:4px;padding:1px 6px;">NEW</span>'}
         ${m.replied ? `<span style="font-size:0.7rem;background:rgba(181,255,46,0.15);color:var(--accent);border-radius:4px;padding:1px 6px;">✓ ${currentLang === 'it' ? 'RISPOSTO' : 'REPLIED'}</span>` : ''}
-        <strong style="font-family:var(--font-ui);">${esc(m.name || m.email || "—")} <span style="font-size:0.8rem;color:var(--muted);font-family:var(--font-body);">&lt;${m.email}&gt;</span></strong>
+        <strong style="font-family:var(--font-ui);">${esc(m.name || m.email || "—")} <span style="font-size:0.8rem;color:var(--text);font-family:var(--font-body);">&lt;${m.email}&gt;</span></strong>
       </div>
       <div style="display:flex;align-items:center;gap:0.5rem;">
-        <span style="font-size:0.78rem;color:var(--muted);">${new Date(m.date).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB')}</span>
+        <span style="font-size:0.78rem;color:var(--text);">${new Date(m.date).toLocaleDateString(currentLang === 'it' ? 'it-IT' : 'en-GB')}</span>
         <div style="display:flex;gap:0.4rem;align-items:center;">
-          ${!m.read ? `<button class="tbl-btn tbl-btn-edit" onclick="markContactRead('${m.id}')">${currentLang === 'it' ? 'Segna come letto' : 'Mark as read'}</button>` : '<span style="font-size:0.78rem;color:var(--muted);">✓</span>'}
+          ${!m.read ? `<button class="tbl-btn tbl-btn-edit" onclick="markContactRead('${m.id}')">${currentLang === 'it' ? 'Segna come letto' : 'Mark as read'}</button>` : '<span style="font-size:0.78rem;color:var(--text);">✓</span>'}
           <button class="tbl-btn tbl-btn-edit" onclick="toggleReplyBox('${m.id}')">↩️ ${currentLang === 'it' ? 'Rispondi' : 'Reply'}</button>
           <button class="tbl-btn tbl-btn-del" onclick="deleteContactMsg('${m.id}')">🗑️</button>
         </div>
       </div>
     </div>
     ${m.subject ? `<div style="font-size:0.85rem;color:var(--accent3);margin-bottom:0.35rem;">Re: ${esc(m.subject)}</div>` : ''}
-    <div style="font-size:0.88rem;color:var(--muted);white-space:pre-wrap;">${esc(m.message)}</div>
+    <div style="font-size:0.88rem;color:var(--text);white-space:pre-wrap;">${esc(m.message)}</div>
     <div id="reply-box-${m.id}" style="display:none;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);">
       <textarea id="reply-text-${m.id}" class="form-textarea" rows="3" placeholder="${currentLang === 'it' ? 'Scrivi la tua risposta...' : 'Write your reply...'}" style="margin-bottom:0.5rem;"></textarea>
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--muted);margin-bottom:0.6rem;">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.82rem;color:var(--text);margin-bottom:0.6rem;">
         <input type="checkbox" id="reply-also-email-${m.id}" style="width:16px;height:16px;cursor:pointer;">
         ${currentLang === 'it' ? 'Invia anche via e-mail' : 'Also send by e-mail'}
       </label>
@@ -37709,12 +38303,12 @@ function renderAdminUsers() {
       <td><div style="display:flex;gap:0.3rem;"><button class="tbl-btn" style="background:rgba(181,255,46,0.12);border-color:rgba(181,255,46,0.4);color:var(--accent);" onclick="openEditUserModal('${u.id}')">${currentLang === 'it' ? 'Visualizza' : 'View'}</button>${!u.isAdmin ? `<button class="tbl-btn" style="background:rgba(var(--warn-rgb),0.15);border-color:rgba(var(--warn-rgb),0.4);color:var(--warn);" onclick="impersonateUser('${u.id}')">🎭 ${(currentLang === 'it') ? 'Impersona' : 'Impersonate'}</button>` : ''}</div></td>
       <td>
         <div style="display:flex;align-items:center;gap:0.4rem;">
-          <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--muted);">${u.avatar ? '' : (u.username || '?')[0].toUpperCase()}</div>
+          <div style="width:24px;height:24px;border-radius:50%;flex-shrink:0;background:${u.avatar ? 'url(' + u.avatar + ') center/cover' : 'var(--card2)'};border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:0.8rem;color:var(--text);">${u.avatar ? '' : (u.username || '?')[0].toUpperCase()}</div>
           ${u.username || '(senza nickname)'}${u.isAdmin?'<span class="admin-badge">ADMIN</span>':''}${u.nationalityCode ? '<img src="'+flagUrl(u.nationalityCode)+'" title="'+(u.nationalityName||'')+'" style="width:18px;height:12px;object-fit:cover;border-radius:2px;margin-left:4px;">' : ''}
         </div>
       </td>
       <td>${u.email}</td>
-      <td style="font-size:0.82rem;">${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(u.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '<span style="color:var(--muted);font-style:italic;">mai</span>'}</td>
+      <td style="font-size:0.82rem;">${u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('it-IT') + ' ' + new Date(u.lastLogin).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}) : '<span style="color:var(--text);font-style:italic;">mai</span>'}</td>
       <td>${new Date(u.joined).toLocaleDateString()}</td>
     </tr>`).join('')}
   </tbody></table>`;
@@ -37857,7 +38451,7 @@ function renderAdminPunteggi() {
   if (!el) return;
   const levels = getData('levels', []).sort((a,b) => a.minScore - b.minScore);
   if (!levels.length) {
-    el.innerHTML = '<p style="color:var(--muted);font-style:italic;">Nessun livello definito ancora.</p>';
+    el.innerHTML = '<p style="color:var(--text);font-style:italic;">Nessun livello definito ancora.</p>';
     return;
   }
   el.innerHTML = `<table class="data-table compact"><thead><tr>
@@ -38070,7 +38664,7 @@ async function renderAdminRisorse() {
     const reads = getReadCount();
     const pct = Math.round(reads / 50000 * 100);
     const color = pct >= 90 ? 'var(--danger)' : pct >= 60 ? 'var(--warn)' : 'var(--accent)';
-    readsEl.innerHTML = `<span style="color:${color};">${reads.toLocaleString('it-IT')}</span> <span style="font-size:0.72rem;color:var(--muted);">(${pct}% del limite)</span>`;
+    readsEl.innerHTML = `<span style="color:${color};">${reads.toLocaleString('it-IT')}</span> <span style="font-size:0.72rem;color:var(--text);">(${pct}% del limite)</span>`;
   }
 
   // Cloudinary upload counter
@@ -38082,7 +38676,7 @@ async function renderAdminRisorse() {
     const pct = Math.round(uploads * 0.01 / 25 * 100);
     const color = pct >= 90 ? 'var(--danger)' : pct >= 60 ? 'var(--warn)' : 'var(--accent)';
     if (clUploads) clUploads.innerHTML = `<span style="color:${color};">${uploads.toLocaleString('it-IT')}</span>`;
-    if (clCredits) clCredits.innerHTML = `<span style="color:${color};">~${credits}</span> <span style="font-size:0.72rem;color:var(--muted);">(${pct}% del limite)</span>`;
+    if (clCredits) clCredits.innerHTML = `<span style="color:${color};">~${credits}</span> <span style="font-size:0.72rem;color:var(--text);">(${pct}% del limite)</span>`;
   }
 
   // Storico letture ultimi 30 giorni
@@ -38090,13 +38684,13 @@ async function renderAdminRisorse() {
   if (histEl) {
     const history = getReadHistory();
     if (!history.length) {
-      histEl.innerHTML = '<p style="font-size:0.78rem;color:var(--muted);font-style:italic;">Nessuno storico ancora — si accumula giorno per giorno.</p>';
+      histEl.innerHTML = '<p style="font-size:0.78rem;color:var(--text);font-style:italic;">Nessuno storico ancora — si accumula giorno per giorno.</p>';
     } else {
       const fmtDate = d => {
         const [y, m, day] = d.split('-');
         return day + '/' + m + '/' + y;
       };
-      histEl.innerHTML = '<div style="font-size:0.78rem;font-weight:600;color:var(--muted);margin-bottom:0.4rem;">📅 Storico letture (ultimi ' + history.length + ' giorni)</div>' +
+      histEl.innerHTML = '<div style="font-size:0.78rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">📅 Storico letture (ultimi ' + history.length + ' giorni)</div>' +
         '<table class="data-table compact"><thead><tr><th>Data (PT)</th><th>Letture fsGetAll</th><th>% limite</th></tr></thead><tbody>' +
         history.map(r => {
           const pct = Math.round(r.count / 50000 * 100);
@@ -38160,7 +38754,7 @@ function renderAdminEventi() {
   if (!el) return;
   const eventi = (_cache.eventi || []).sort((a,b) => new Date(b.date) - new Date(a.date));
   if (!eventi.length) {
-    el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Nessun evento ancora.' : 'No events yet.') + '</p>';
+    el.innerHTML = '<p style="color:var(--text);">' + (currentLang === 'it' ? 'Nessun evento ancora.' : 'No events yet.') + '</p>';
     return;
   }
   const typeIcon = { 'new_user': '👤', 'new_post': '📝', 'reset_pwd': '🔑', 'login': '🔓', 'newsletter_off': '📭', 'account_deleted': '🗑️' };
@@ -39860,8 +40454,8 @@ function switchFeTab(tab) {
   const ebayBtn = document.getElementById('fe-tab-btn-ebay');
   if (genDiv) genDiv.style.display = tab === 'generale' ? '' : 'none';
   if (ebayDiv) ebayDiv.style.display = tab === 'ebay' ? '' : 'none';
-  if (genBtn) { genBtn.style.borderBottomColor = tab === 'generale' ? 'var(--accent)' : 'transparent'; genBtn.style.color = tab === 'generale' ? 'var(--accent)' : 'var(--muted)'; }
-  if (ebayBtn) { ebayBtn.style.borderBottomColor = tab === 'ebay' ? 'var(--accent)' : 'transparent'; ebayBtn.style.color = tab === 'ebay' ? 'var(--accent)' : 'var(--muted)'; }
+  if (genBtn) { genBtn.style.borderBottomColor = tab === 'generale' ? 'var(--accent)' : 'transparent'; genBtn.style.color = tab === 'generale' ? 'var(--accent)' : 'var(--text)'; }
+  if (ebayBtn) { ebayBtn.style.borderBottomColor = tab === 'ebay' ? 'var(--accent)' : 'transparent'; ebayBtn.style.color = tab === 'ebay' ? 'var(--accent)' : 'var(--text)'; }
 }
 
 function handleFeEbayImg(e) {
@@ -40104,13 +40698,13 @@ function filterFeRetroLink() {
   const filtered = q
     ? _feRetroLinkOptions.filter(r => _perRicerca(_retroLinkLabel(r)).includes(q) || _perRicerca(r.category).includes(q) || _perRicerca(r.subcategory).includes(q))
     : _feRetroLinkOptions;
-  if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--muted);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
+  if (!filtered.length) { dd.innerHTML = '<div style="padding:10px 12px;color:var(--text);font-size:0.85rem;">' + (currentLang==='it'?'Nessun risultato':'No results') + '</div>'; dd.style.display = ''; return; }
   dd.style.display = '';
   dd.innerHTML = filtered.map(r => {
     const sub = [r.category, r.subcategory].map(v => (v||'').trim()).filter(Boolean).join(' · ');
     return `<div onclick="selectFeRetroLink('${r.id}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background=''">
       <div style="font-size:0.9rem;">${esc(_retroLinkLabel(r))}</div>
-      ${sub ? `<div style="font-size:0.75rem;color:var(--muted);">${sub}</div>` : ''}
+      ${sub ? `<div style="font-size:0.75rem;color:var(--text);">${sub}</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -40351,7 +40945,7 @@ function switchToEditMode(figId) {
   // con la vista di visualizzazione, dove Serie sta SOTTO i tab. Prima qui stava sopra i tab.
   html += '<div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin:0.75rem 0 1rem;">' +
     '<button type="button" id="fe-tab-btn-generale" onclick="switchFeTab(\'generale\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>' +
-    '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>' +
+    '<button type="button" id="fe-tab-btn-ebay" onclick="switchFeTab(\'ebay\')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>' +
     '</div>';
   html += '<div id="fe-tab-generale">';
 
@@ -40421,11 +41015,11 @@ function switchToEditMode(figId) {
   // la sua ragione d'essere (v6.311).
   const _mostraNumero  = _mostraCampoNumero(f.section, _eFiglioCollegato(f));
   const _numeroEOrdine = _numeroEOrdinamento(f.section);
-  html += '<div class="detail-row" id="fe-number-group" style="' + (_mostraNumero ? '' : 'display:none;') + '"><span class="detail-label">' + (_numeroEOrdine ? (currentLang==='it'?'Ordinamento':'Sort order') : 'N.') + '</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="' + (_numeroEOrdine ? '1' : '01') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;">' + (_numeroEOrdine ? '<span style="font-size:0.75rem;color:var(--muted);">' + (currentLang==='it'?'decide solo la posizione in griglia; non si vede da nessuna parte':'only sets the position in the grid; not shown anywhere') + '</span>' : '') +
+  html += '<div class="detail-row" id="fe-number-group" style="' + (_mostraNumero ? '' : 'display:none;') + '"><span class="detail-label">' + (_numeroEOrdine ? (currentLang==='it'?'Ordinamento':'Sort order') : 'N.') + '</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="' + (_numeroEOrdine ? '1' : '01') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;">' + (_numeroEOrdine ? '<span style="font-size:0.75rem;color:var(--text);">' + (currentLang==='it'?'decide solo la posizione in griglia; non si vede da nessuna parte':'only sets the position in the grid; not shown anywhere') + '</span>' : '') +
     // La casella "Non ha numero" resta SEMPRE nel DOM, anche dove non si mostra: il salvataggio la
     // legge (`fe-no-number`), e se non la trova scrive `false`. Toglierla avrebbe azzerato il flag
     // in silenzio al primo salvataggio, che e' il modo peggiore di perdere un dato.
-    '<label style="' + (_numeroEOrdine ? 'display:none;' : 'display:flex;') + 'align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--muted);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
+    '<label style="' + (_numeroEOrdine ? 'display:none;' : 'display:flex;') + 'align-items:center;gap:0.3rem;cursor:pointer;font-size:0.75rem;color:var(--text);white-space:nowrap;"><input type="checkbox" id="fe-no-number" ' + (f.noNumber?'checked':'') + ' style="width:14px;height:14px;cursor:pointer;">' + (currentLang==='it'?'Non ha numero':'Does not have a number') + '</label></span></div>';
 
   // Nome
   // v5.774/779/790 — Nome nascosto per Change ED Errori di stampa, sia Retro sia figurine (eredita
@@ -40637,14 +41231,14 @@ function switchToEditMode(figId) {
     // delle colonne fisse perche' la scheda e' piu' stretta della finestra e su telefono quattro
     // colonne rigide diventerebbero illeggibili.
     '<div id="fe-for-sale-fields" style="display:' + (f.forSale ? 'grid' : 'none') + ';grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:0.6rem;">' +
-    '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Prezzo (€)':'Price (€)') + '</label><input class="form-input" type="number" id="fe-price" value="' + (f.price||'') + '" min="0" step="0.01" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
+    '<div><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Prezzo (€)':'Price (€)') + '</label><input class="form-input" type="number" id="fe-price" value="' + (f.price||'') + '" min="0" step="0.01" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
     // v6.103 - priceUsd. Il vuoto resta VUOTO e non diventa 0: 0 vuol dire "lo regalo", vuoto vuol
     // dire "non l'ho ancora deciso", e solo nel secondo caso il programma si rifiuta di pubblicare
     // su eBay.com (v5.981). Per questo qui c'e' `?? ''` e non `|| ''`: con `||` un prezzo di 0
     // sparirebbe dal campo, e riaprendo la scheda sembrerebbe non essere mai stato deciso.
-    '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Prezzo ($)':'Price ($)') + '</label><input class="form-input" type="number" id="fe-price-usd" value="' + (f.priceUsd ?? '') + '" min="0" step="0.01" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
-    '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Quantità':'Quantity') + '</label><input class="form-input" type="number" id="fe-quantity" value="' + (f.quantity||1) + '" min="1" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
-    '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Condizione':'Condition') + '</label><select class="form-input" id="fe-condition" style="padding:0.3rem 0.5rem;font-size:0.85rem;">' +
+    '<div><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Prezzo ($)':'Price ($)') + '</label><input class="form-input" type="number" id="fe-price-usd" value="' + (f.priceUsd ?? '') + '" min="0" step="0.01" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
+    '<div><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Quantità':'Quantity') + '</label><input class="form-input" type="number" id="fe-quantity" value="' + (f.quantity||1) + '" min="1" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
+    '<div><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' + (currentLang==='it'?'Condizione':'Condition') + '</label><select class="form-input" id="fe-condition" style="padding:0.3rem 0.5rem;font-size:0.85rem;">' +
     '<option value="new"' + (f.condition!=='used'?' selected':'') + '>' + (currentLang==='it'?'Nuovo':'New') + '</option>' +
     '<option value="used"' + (f.condition==='used'?' selected':'') + '>' + (currentLang==='it'?'Usato':'Used') + '</option>' +
     '</select></div></div>' +
@@ -40664,7 +41258,7 @@ function switchToEditMode(figId) {
       '<label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.85rem;font-weight:600;">' +
       '<input type="checkbox" id="fe-da-pubblicare" ' + (f.daPubblicare ? 'checked' : '') + ' style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">' +
       '<span>📤 ' + (currentLang==='it'?'In coda per eBay':'Queued for eBay') + '</span></label>' +
-      '<div style="font-size:0.7rem;color:var(--muted);margin-top:0.3rem;">' + (currentLang==='it'
+      '<div style="font-size:0.7rem;color:var(--text);margin-top:0.3rem;">' + (currentLang==='it'
         ? 'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto.'
         : 'Raised automatically when price, quantity, condition, title, description or photo change.') + '</div>' +
     '</div>' +
@@ -40674,26 +41268,26 @@ function switchToEditMode(figId) {
     // v6.103 - titoli e descrizioni. Il titolo lasciato vuoto NON e' un titolo mancante: la Vista
     // Ebay ci mette quello generato dal Nome completo, ed e' per questo che il segnaposto lo dice.
     '<div id="fe-ebay-testi" style="display:' + (f.forSale ? 'block' : 'none') + ';margin-top:0.75rem;">' +
-      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' +
+      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' +
         (currentLang==='it'?'Titolo annuncio':'Listing title') + ' 🇮🇹 IT <span id="fe-ebay-title-it-count" style="font-size:0.7rem;"></span></label>' +
         '<input class="form-input" type="text" id="fe-ebay-title-it" value="' + esc(f.ebayTitleIt || '') + '" oninput="contaCaratteriEbayTitolo(\'fe-ebay-title-it\',\'fe-ebay-title-it-count\')" placeholder="' + (currentLang==='it'?'vuoto = titolo generato dal Nome completo':'empty = title generated from the full name') + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
-      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' +
+      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' +
         (currentLang==='it'?'Titolo annuncio':'Listing title') + ' 🇬🇧 EN <span id="fe-ebay-title-en-count" style="font-size:0.7rem;"></span></label>' +
         '<input class="form-input" type="text" id="fe-ebay-title-en" value="' + esc(f.ebayTitleEn || '') + '" oninput="contaCaratteriEbayTitolo(\'fe-ebay-title-en\',\'fe-ebay-title-en-count\')" placeholder="' + (currentLang==='it'?'vuoto = titolo generato dal Nome completo':'empty = title generated from the full name') + '" style="padding:0.3rem 0.5rem;font-size:0.85rem;"></div>' +
-      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' +
+      '<div style="margin-bottom:0.6rem;"><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' +
         (currentLang==='it'?'Descrizione annuncio':'Listing description') + ' 🇮🇹 IT</label>' +
         '<textarea class="form-input" id="fe-ebay-desc-it" rows="3" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(f.ebayDescIt || '') + '</textarea></div>' +
-      '<div><label style="font-size:0.72rem;color:var(--muted);display:block;margin-bottom:2px;">' +
+      '<div><label style="font-size:0.72rem;color:var(--text);display:block;margin-bottom:2px;">' +
         (currentLang==='it'?'Descrizione annuncio':'Listing description') + ' 🇬🇧 EN</label>' +
         '<textarea class="form-input" id="fe-ebay-desc-en" rows="3" style="padding:0.3rem 0.5rem;font-size:0.85rem;resize:vertical;">' + esc(f.ebayDescEn || '') + '</textarea></div>' +
     '</div>' +
     '</div>';
   html += '<div style="margin-bottom:0.75rem;' + ((f.section === 'figurines' || f.section === 'retros') ? '' : 'display:none;') + '">' +
     '<label class="detail-label" style="display:block;margin-bottom:0.4rem;">📷 ' + (currentLang==='it'?'Foto per Ebay':'Ebay photo') + '</label>' +
-    '<div style="font-size:0.72rem;color:var(--muted);margin-bottom:0.5rem;">' + (currentLang==='it'?'Foto dedicata da usare per l\'annuncio Ebay, indipendente da quella dell\u2019Inventario':'Dedicated photo for the Ebay listing, separate from the catalog one') + '</div>' +
+    '<div style="font-size:0.72rem;color:var(--text);margin-bottom:0.5rem;">' + (currentLang==='it'?'Foto dedicata da usare per l\'annuncio Ebay, indipendente da quella dell\u2019Inventario':'Dedicated photo for the Ebay listing, separate from the catalog one') + '</div>' +
     (f.ebayImg
       ? '<img id="fe-ebay-img-preview" src="' + cloudinaryUrl(f.ebayImg,'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
-      : '<div id="fe-ebay-img-preview" style="width:100%;height:240px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + (currentLang==='it'?'Nessuna foto':'No photo') + '</div>') +
+      : '<div id="fe-ebay-img-preview" style="width:100%;height:240px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + (currentLang==='it'?'Nessuna foto':'No photo') + '</div>') +
     '<label style="cursor:pointer;display:inline-block;">' +
     '<span style="display:inline-block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;">📷 ' + (currentLang==='it'?'Carica foto':'Upload photo') + '</span>' +
     '<input type="file" id="fe-ebay-img-file" accept="image/*" style="display:none;" onchange="handleFeEbayImg(event)">' +
@@ -40714,7 +41308,7 @@ function switchToEditMode(figId) {
   // lo stesso id sono un difetto che si manifesta il giorno in cui uno dei due smette di rispondere.
   const barra =
     '<div style="position:sticky;top:0;z-index:5;display:flex;gap:0.5rem;justify-content:flex-end;align-items:center;background:var(--card);padding:0.6rem 0 0.7rem;margin-bottom:0.2rem;border-bottom:1px solid var(--border);">' +
-    '<button onclick="closeModal(\'fig-detail-modal\')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;">' + (currentLang==='it'?'Annulla':'Cancel') + '</button>' +
+    '<button onclick="closeModal(\'fig-detail-modal\')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;">' + (currentLang==='it'?'Annulla':'Cancel') + '</button>' +
     // v6.052 - "Salva e resta": salva e lascia la scheda aperta. Serve a chi sistema piu' campi di
     // seguito, che con un solo Salva doveva riaprire l'oggetto ogni volta.
     // 🆕 v6.361 - I DUE «SALVA» SPARISCONO su una da-incollare che non puo' essere diversa dalla
@@ -42075,7 +42669,7 @@ function renderAdminSegnalazioni() {
   const el = document.getElementById('admin-segnalazioni-table');
   const segnalazioni = (_cache.segnalazioni || []).sort((a,b) => new Date(b.date) - new Date(a.date));
   if (!segnalazioni.length) {
-    el.innerHTML = '<p style="color:var(--muted);">' + (currentLang === 'it' ? 'Nessuna segnalazione ancora.' : 'No comments yet.') + '</p>';
+    el.innerHTML = '<p style="color:var(--text);">' + (currentLang === 'it' ? 'Nessuna segnalazione ancora.' : 'No comments yet.') + '</p>';
     return;
   }
   // L'utente si ritrova una volta sola, non a ogni riga: prima la ricerca era
@@ -42088,8 +42682,8 @@ function renderAdminSegnalazioni() {
   ${segnalazioni.map(s => { const u = perId.get(String(s.userId)); return `<tr style="${s.read ? '' : 'background:rgba(181,255,46,0.05);'}">
     <td style="white-space:nowrap;font-size:0.78rem;">${new Date(s.date).toLocaleDateString('it-IT')}</td>
     <td style="display:flex;align-items:center;gap:6px;">${esc(s.username || '—')}${u?.nationalityCode ? `<img src="${flagUrl(u.nationalityCode)}" title="${esc(u.nationalityName || '')}" style="width:18px;height:12px;object-fit:cover;border-radius:2px;">` : ''}</td>
-    <td style="font-size:0.8rem;color:var(--muted);">${u?.email ? esc(u.email) : '—'}</td>
-    <td style="font-size:0.82rem;">${esc(s.serieName || '')}<br><span style="color:var(--muted);">${s.figNumber ? esc(String(s.figNumber))+' ' : ''}${esc(s.figName || '')}</span></td>
+    <td style="font-size:0.8rem;color:var(--text);">${u?.email ? esc(u.email) : '—'}</td>
+    <td style="font-size:0.82rem;">${esc(s.serieName || '')}<br><span style="color:var(--text);">${s.figNumber ? esc(String(s.figNumber))+' ' : ''}${esc(s.figName || '')}</span></td>
     <td style="white-space:pre-wrap;">${esc(s.commento || '')}</td>
     <td style="display:flex;gap:0.4rem;"><button class="tbl-btn tbl-btn-edit" onclick="markSegnalazioneRead('${s.id}')">${s.read ? '✓' : (currentLang === 'it' ? 'Segna come letta' : 'Mark as read')}</button><button class="tbl-btn tbl-btn-del" onclick="deleteSegnalazione('${s.id}')" title="${(currentLang === 'it') ? 'Elimina questa segnalazione' : 'Delete this report'}">🗑️</button></td>
   </tr>`; }).join('')}
@@ -44796,7 +45390,7 @@ function renderMoveFigList() {
       && !f.baseFigurineId && _eBase(f))
     .sort((a, b) => ((Number(a.number) || 0) - (Number(b.number) || 0)) || (a.name || '').localeCompare(b.name || ''));
   if (!figs.length) {
-    box.innerHTML = `<div style="color:var(--muted);font-size:0.85rem;">${it ? 'Nessuna figurina base in questa serie.' : 'No base stickers in this series.'}</div>`;
+    box.innerHTML = `<div style="color:var(--text);font-size:0.85rem;">${it ? 'Nessuna figurina base in questa serie.' : 'No base stickers in this series.'}</div>`;
     box.style.display = 'block'; if (info) info.textContent = ''; return;
   }
   const retroLabel = (id) => { const r = all.find(x => x.id === id); return r ? (r.fullName || r.name || '') : ''; };
@@ -44811,11 +45405,11 @@ function renderMoveFigList() {
       const numStr = (f.number != null && f.number !== '') ? (f.number + ' ') : '';
       const thumb = f.img
         ? `<img src="${f.img}" alt="" loading="lazy" style="width:36px;height:36px;object-fit:cover;border-radius:5px;flex-shrink:0;background:var(--card2);border:1px solid var(--border2);">`
-        : `<span style="width:36px;height:36px;border-radius:5px;flex-shrink:0;background:var(--card2);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.9rem;">🃏</span>`;
+        : `<span style="width:36px;height:36px;border-radius:5px;flex-shrink:0;background:var(--card2);border:1px solid var(--border2);display:inline-flex;align-items:center;justify-content:center;color:var(--text);font-size:0.9rem;">🃏</span>`;
       return `<label style="display:flex;align-items:center;gap:0.55rem;padding:0.3rem 0;font-size:0.85rem;cursor:pointer;">
         <input type="checkbox" class="move-fig-cb" value="${f.id}" checked style="width:auto;">
         ${thumb}
-        <span><b>${numStr}</b>${esc(f.name || '')}<span style="color:var(--muted);">${rlbl}</span></span>
+        <span><b>${numStr}</b>${esc(f.name || '')}<span style="color:var(--text);">${rlbl}</span></span>
       </label>`;
     }).join('');
   box.style.display = 'block';
@@ -44955,7 +45549,7 @@ function renderAdminFunzioni() {
   el.innerHTML =
     '<div style="max-width:900px;">' +
       '<h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">&#128295; ' + (it ? 'Funzioni' : 'Functions') + '</h3>' +
-      '<p style="color:var(--muted);font-size:0.85rem;margin-bottom:1.5rem;">' +
+      '<p style="color:var(--text);font-size:0.85rem;margin-bottom:1.5rem;">' +
         (it ? 'Procedure di intervento manuale complesso. Ognuna mostra un’anteprima e chiede conferma prima di scrivere.'
             : 'Complex manual procedures. Each one previews the changes and asks for confirmation before writing.') + '</p>' +
 
@@ -45063,7 +45657,7 @@ function renderAdminFunzioni() {
       // `applyRecomputeFullNames()` non cambiano di una riga.
       '<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">' +
         '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;">' + (it ? '4. Ricalcola i Nomi completi' : '4. Recompute full names') + '</h4>' +
-        '<p style="font-size:0.85rem;color:var(--muted);margin:0 0 0.75rem;">' +
+        '<p style="font-size:0.85rem;color:var(--text);margin:0 0 0.75rem;">' +
           (it ? 'Rigenera il <b>Nome completo</b> di figurine e retro di <b>una serie</b> secondo le regole attuali. Prima mostra l\'<b>anteprima</b> (valore attuale → nuovo) dei soli record che cambierebbero.<br><b>Serve dopo ogni modifica alle regole di composizione</b>: il Nome completo e\' un campo memorizzato, quindi finche\' non si ricalcola la stessa serie contiene due forme diverse.'
               : 'Regenerate the <b>full name</b> of stickers and retros of <b>one series</b> per current rules. It first <b>previews</b> (current → new) only the records that would change.<br><b>Needed after any change to the composition rules</b>: the full name is a stored field, so until it is recomputed the same series holds two different forms.') +
         '</p>' +
@@ -45073,7 +45667,7 @@ function renderAdminFunzioni() {
           serie.map(x => '<option value="' + x.id + '" data-name="' + esc(x.name) + '">' + esc(x.name) + '</option>').join('') +
         '</select>' +
         '<button class="btn-primary btn-admin" onclick="previewRecomputeFullNames()" id="recompute-fullnames-btn">&#128269; ' + (it ? 'Conta e mostra anteprima' : 'Count and preview') + '</button>' +
-        '<div id="recompute-fullnames-progress" style="display:none;font-size:0.85rem;color:var(--muted);margin-top:1rem;"></div>' +
+        '<div id="recompute-fullnames-progress" style="display:none;font-size:0.85rem;color:var(--text);margin-top:1rem;"></div>' +
       '</div>' +
 
       // 🆕 v6.358 (Franco) - FUNZIONE 5. Nasce dal wizard: *"al momento non ci sono figurine da
@@ -45313,10 +45907,10 @@ function anteprimaFixRetroChange() {
     _pianoFixRetro.map(v => {
       const num = _haNumero(v.fig) && v.fig.number ? v.fig.number + ' ' : '';
       return '<div style="font-size:0.8rem;padding:0.2rem 0;line-height:1.4;">' +
-        '<span style="color:var(--muted);">' + esc(serieNome(v.fig.seriesId)) + '</span> · ' +
+        '<span style="color:var(--text);">' + esc(serieNome(v.fig.seriesId)) + '</span> · ' +
         esc(num + (v.fig.fullName || v.fig.name || '')) +
         '<br><span style="color:var(--danger);padding-left:0.5rem;">' + esc(v.retroAttuale.name || '') + '</span>' +
-        ' <span style="color:var(--muted);">&rarr;</span> ' +
+        ' <span style="color:var(--text);">&rarr;</span> ' +
         '<span style="color:var(--success);">' + esc(v.corretto.name || '') + ' · ' + esc(v.corretto.changeType || '') + '</span></div>';
     }).join('') + '</div>';
 }
@@ -45588,13 +46182,13 @@ function renderAdminFoto() {
       </div>
 
       <div id="import-fig-log-actions" style="display:none;justify-content:flex-end;gap:0.4rem;margin-bottom:0.4rem;">
-        <button id="import-fig-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
+        <button id="import-fig-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
         <button onclick="clearImportFigLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
       </div>
       <div id="import-fig-log" class="log-box" style="display:none;"></div>
       <div id="import-fig-progress-wrap" style="display:none;margin-top:0.75rem;">
         <progress id="import-fig-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
-        <div id="import-fig-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
+        <div id="import-fig-status" style="font-size:0.85rem;color:var(--text);margin-top:0.4rem;"></div>
       </div>
       </div>
 
@@ -45625,13 +46219,13 @@ function renderAdminFoto() {
       </div>
 
       <div id="import-retro-log-actions" style="display:none;justify-content:flex-end;gap:0.4rem;margin-bottom:0.4rem;">
-        <button id="import-retro-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
+        <button id="import-retro-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
         <button onclick="clearImportRetroLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
       </div>
       <div id="import-retro-log" class="log-box" style="display:none;"></div>
       <div id="import-retro-progress-wrap" style="display:none;margin-top:0.75rem;">
         <progress id="import-retro-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
-        <div id="import-retro-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
+        <div id="import-retro-status" style="font-size:0.85rem;color:var(--text);margin-top:0.4rem;"></div>
       </div>
       </div>
 
@@ -45674,13 +46268,13 @@ function renderAdminFoto() {
       </div>
 
       <div id="foto-log-actions" style="display:none;justify-content:flex-end;gap:0.4rem;margin-bottom:0.4rem;">
-        <button id="foto-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
+        <button id="foto-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
         <button onclick="clearFotoLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
       </div>
       <div id="foto-log" class="log-box" style="display:none;"></div>
       <div id="foto-progress-wrap" style="display:none;margin-top:1rem;">
         <progress id="foto-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
-        <div id="foto-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
+        <div id="foto-status" style="font-size:0.85rem;color:var(--text);margin-top:0.4rem;"></div>
       </div>
       </div>
 
@@ -45730,13 +46324,13 @@ function renderAdminFoto() {
     </div>
 
     <div id="fotonn-log-actions" style="display:none;justify-content:flex-end;gap:0.4rem;margin-bottom:0.4rem;">
-      <button id="fotonn-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--muted);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
+      <button id="fotonn-log-tema" onclick="commutaTemaLog()" style="font-size:0.75rem;padding:3px 10px;border:1px solid var(--border);background:transparent;color:var(--text);border-radius:6px;cursor:pointer;">🌙 Scuro</button>
       <button onclick="clearFotoNnLog()" class="btn-primary btn-admin" style="font-size:0.75rem;padding:0.3rem 0.9rem;">🗑️ ${currentLang==='it'?'Svuota log':'Clear log'}</button>
     </div>
     <div id="fotonn-log" class="log-box" style="display:none;"></div>
     <div id="fotonn-progress-wrap" style="display:none;margin-top:1rem;">
       <progress id="fotonn-progress" value="0" max="100" style="width:100%;accent-color:var(--accent);"></progress>
-      <div id="fotonn-status" style="font-size:0.85rem;color:var(--muted);margin-top:0.4rem;"></div>
+      <div id="fotonn-status" style="font-size:0.85rem;color:var(--text);margin-top:0.4rem;"></div>
     </div>
     </div>
 
@@ -45755,7 +46349,7 @@ function renderAdminFoto() {
             <option value="">-- ${currentLang==='it'?'Seleziona una serie':'Select a series'} --</option>
             ${series.map(s => `<option value="${s.id}" data-name="${s.name}">${s.name}</option>`).join('')}
           </select>
-          <div id="move-fig-info" style="font-size:0.8rem;color:var(--muted);margin-bottom:0.4rem;"></div>
+          <div id="move-fig-info" style="font-size:0.8rem;color:var(--text);margin-bottom:0.4rem;"></div>
           <div id="move-fig-list" style="display:none;max-height:340px;overflow:auto;border:1px solid var(--border2);border-radius:var(--radius);padding:0.6rem;margin-bottom:0.9rem;"></div>
           <label class="form-label">${currentLang==='it'?'Serie di destinazione':'Target series'}</label>
           <select id="move-dst-series-select" class="form-select" style="margin-bottom:0.9rem;">
@@ -46609,8 +47203,13 @@ async function aggiornaVistaTabellare() {
   }
 }
 
+// 🆕 v6.441 (Franco) - «Aggiorna dati», non «Aggiorna».
+// 📌 E NON E' IL PULSANTE DELL'INDEX: quello (`#admin-refresh-btn`) diceva gia' «Aggiorna dati»
+// dalla traduzione `admin.refresh`. Sono DUE pulsanti che fanno la stessa promessa con due nomi
+// diversi, in due schermate diverse. Cercare la stringa dove sembrava ovvio avrebbe trovato quello
+// gia' giusto e lasciato questo com'era.
 function _ETICHETTA_AGGIORNA() {
-  return currentLang === 'it' ? '🔄 Aggiorna' : '🔄 Refresh';
+  return currentLang === 'it' ? '🔄 Aggiorna dati' : '🔄 Refresh data';
 }
 
 function renderBulkEditView() {
@@ -46830,22 +47429,22 @@ function renderBulkEditView() {
   // sarebbe rimasto indietro al primo ritocco, e sfalsato in fondo: cioe' proprio dove serve.
   const _RIGA_INTESTAZIONI = `
           ${isAdmin ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);width:30px;"><input type="checkbox" id="bulk-select-all" onchange="toggleBulkSelectAll(this)"></th>' : ''}
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);width:36px;">#</th>
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);width:${currentSection === 'retros' ? 48 : 92}px;">${(currentLang === 'it') ? 'Foto' : 'Photo'}</th>
-          ${isAdmin ? `<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>` : ''}
-          ${currentSeriesHasSubseries ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottoserie</th>' : ''}
-          ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Categoria</th>' : ''}
-          ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottocategoria</th>' : ''}
-          ${currentSection === 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Categoria</th><th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Sottocategoria</th>' : ''}
-          ${(currentSection !== 'retros' && !_cSoloExtra) ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">N.</th>' : ''}
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);width:36px;">#</th>
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);width:${currentSection === 'retros' ? 48 : 92}px;">${(currentLang === 'it') ? 'Foto' : 'Photo'}</th>
+          ${isAdmin ? `<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</th>` : ''}
+          ${currentSeriesHasSubseries ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottoserie</th>' : ''}
+          ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Categoria</th>' : ''}
+          ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottocategoria</th>' : ''}
+          ${currentSection === 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Categoria</th><th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottocategoria</th>' : ''}
+          ${(currentSection !== 'retros' && !_cSoloExtra) ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">N.</th>' : ''}
           <!-- v6.184 (Franco) - nelle Figurine qui c'era "Nome Completo" in sola lettura, e il Nome
                non c'era affatto. Ora c'e' il NOME, modificabile come nelle altre sezioni, e il Nome
                completo esce dalla tabella: e' un valore calcolato, e questa e' una vista di modifica. -->
-          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Nome' : 'Name'}</th>
-          ${_cAttaccare ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Famiglia' : 'Family'}</th>` : ''}
-          ${_cAttaccare ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Commento album' : 'Album note'}</th>` : ''}
-          ${currentSection === 'figurines' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Retro</th>` : ''}
-          ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Sottonome' : 'Subname'}</th>` : ''}
+          <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Nome' : 'Name'}</th>
+          ${_cAttaccare ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Famiglia' : 'Family'}</th>` : ''}
+          ${_cAttaccare ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Commento album' : 'Album note'}</th>` : ''}
+          ${currentSection === 'figurines' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Retro</th>` : ''}
+          ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Sottonome' : 'Subname'}</th>` : ''}
           <!-- v6.237 (Franco) - LA COLONNA C'E' SU TUTTE E SETTE LE SEZIONI, e si chiama VERSIONE.
                Era limitata alle figurine, quindi sui retro non compariva: e gli unici due articoli
                su cui Franco deve spostare da change a omaggio sono proprio figurine e retro.
@@ -46855,7 +47454,7 @@ function renderBulkEditView() {
                l'insieme delle cinque, ed e' quella che usano l'elenco, la console e la scheda.
                ATTENZIONE, e' un commento HTML dentro un template literal: niente backtick qui
                dentro, chiuderebbero la stringa. Costato un giro. -->
-          ${_cVersione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Versione' : 'Version'}</th>` : ''}
+          ${_cVersione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Versione' : 'Version'}</th>` : ''}
           <!-- v6.242 (Franco) - UNA COLONNA SOLA, "TIPOLOGIA", SU TUTTE E SETTE LE SEZIONI.
                Prima qui c'era "Tipo di change", e solo sui retro. Il Tipo di errore di stampa non
                era esposto da nessuna parte, e con la v6.241 se ne e' aggiunto un terzo.
@@ -46863,22 +47462,22 @@ function renderBulkEditView() {
                pieno. Tre colonne sarebbero state tre colonne di cui due sempre vuote.
                Si legge in coppia con quella accanto: VERSIONE dice quale versione, TIPOLOGIA quale
                tipo dentro quella versione. -->
-          ${_cVersione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Tipologia' : 'Type'}</th>` : ''}
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
-          ${(isAdmin && !_cSoloExtra) ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);min-width:420px;">${_etichettaDiPartenza(currentSection)}</th>` : ''}
-          ${_cTaglia ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);">Taglia</th>' : ''}
-          ${_ordinaPerCreazione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--muted);white-space:nowrap;">${currentLang === 'it' ? 'Data creazione' : 'Created on'}</th>` : ''}
+          ${_cVersione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Tipologia' : 'Type'}</th>` : ''}
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
+          ${(isAdmin && !_cSoloExtra) ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);min-width:420px;">${_etichettaDiPartenza(currentSection)}</th>` : ''}
+          ${_cTaglia ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Taglia</th>' : ''}
+          ${_ordinaPerCreazione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;">${currentLang === 'it' ? 'Data creazione' : 'Created on'}</th>` : ''}
           ${!isAdmin ? `
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Mia lista' : 'My list'}</th>
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--muted);">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</th>` : ''}
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Mia lista' : 'My list'}</th>
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Ciò che cerco' : "What I'm looking for"}</th>` : ''}
 `;
 
   bulkView.innerHTML = _barraTabella + _datalist + `
     ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
-      <button class="btn-danger" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;font-size:0.9rem;padding:0.5rem 1rem;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
-      <button onclick="toggleOrdinaPerCreazione()" title="${_ordinaPerCreazione ? (currentLang === 'it' ? 'Torna all\'ordine normale' : 'Back to the normal order') : (currentLang === 'it' ? 'Dal piu’ recente. Gli oggetti senza data leggibile restano in fondo.' : 'Most recent first. Items without a readable date stay at the bottom.')}" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid ${_ordinaPerCreazione ? 'var(--accent)' : 'var(--border)'};background:${_ordinaPerCreazione ? 'rgba(181,255,46,0.10)' : 'transparent'};color:${_ordinaPerCreazione ? 'var(--accent)' : 'var(--muted)'};">🕒 ${currentLang === 'it' ? 'Ordina per creazione' : 'Sort by creation'}</button>
-      <button onclick="toggleAggiornamentoMassivo()" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--border);background:transparent;color:var(--muted);">✏️ ${currentLang === 'it' ? 'Aggiornamento massivo' : 'Bulk update'}</button>
+      <button class="btn-primary btn-admin" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;font-size:0.9rem;padding:0.5rem 1rem;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
+      <button onclick="toggleOrdinaPerCreazione()" title="${_ordinaPerCreazione ? (currentLang === 'it' ? 'Torna all\'ordine normale' : 'Back to the normal order') : (currentLang === 'it' ? 'Dal piu’ recente. Gli oggetti senza data leggibile restano in fondo.' : 'Most recent first. Items without a readable date stay at the bottom.')}" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--action-admin);background:${_ordinaPerCreazione ? 'var(--action-admin)' : 'transparent'};color:${_ordinaPerCreazione ? '#ffffff' : 'var(--action-admin)'};font-weight:600;">🕒 ${currentLang === 'it' ? 'Ordina per creazione' : 'Sort by creation'}</button>
+      <button onclick="toggleAggiornamentoMassivo()" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--action-admin);background:transparent;color:var(--action-admin);font-weight:600;">✏️ ${currentLang === 'it' ? 'Aggiornamento massivo' : 'Bulk update'}</button>
     </div>
     <!-- v6.080 (Franco) — il pannello nasce chiuso: e' una procedura che scrive, non un comando da
          sfiorare. I due ambiti dicono il numero di righe che toccherebbero, e la conferma lo ripete. -->
@@ -48068,7 +48667,7 @@ function renderWishlistAdmin(el) {
       { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
   };
 
-  var html = '<p style="color:var(--muted);font-size:0.88rem;margin-bottom:1rem;">' +
+  var html = '<p style="color:var(--text);font-size:0.88rem;margin-bottom:1rem;">' +
     (currentLang === 'it' ? allMsgs.length + ' liste ricevute' : allMsgs.length + ' lists received') + '</p>';
 
   allMsgs.forEach(function(m) {
@@ -48076,12 +48675,12 @@ function renderWishlistAdmin(el) {
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem;">';
     html += '<span style="font-weight:600;">👤 ' + esc(m.name || m.email || '—') + '</span>';
     html += '<div style="display:flex;align-items:center;gap:0.5rem;">';
-    html += '<span style="font-size:0.78rem;color:var(--muted);">📨 ' + fmt(m.date) + '</span>';
+    html += '<span style="font-size:0.78rem;color:var(--text);">📨 ' + fmt(m.date) + '</span>';
     html += '<button class="wl-delete-btn" data-msg-id="' + m.id + '" style="font-size:0.75rem;padding:2px 8px;border-radius:6px;border:1px solid rgba(var(--danger-rgb),0.4);background:rgba(var(--danger-rgb),0.08);color:var(--danger);cursor:pointer;" title="' + (currentLang === 'it' ? 'Elimina' : 'Delete') + '">🗑️</button>';
     html += '</div>';
     html += '</div>';
     if (m.email) {
-      html += '<div style="font-size:0.78rem;color:var(--muted);margin-bottom:0.4rem;">✉️ ' + m.email + '</div>';
+      html += '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.4rem;">✉️ ' + m.email + '</div>';
     }
     html += '<div style="font-size:0.82rem;color:var(--text);white-space:pre-line;line-height:1.6;background:var(--card2);border-radius:8px;padding:0.5rem 0.75rem;">' +
       _wlMsgBody(m.message) + '</div>';
