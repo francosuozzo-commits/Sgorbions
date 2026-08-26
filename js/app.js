@@ -1,6 +1,88 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.428 - IL SOTTONOME DEL RETRO, SULLA CARD FIGURINA: BIANCO FRA PARENTESI. app.js.
+//
+//          Franco: *"il Sottonome del retro e' azzurro, che pero' e' anche il nome-numero della
+//          figurina"*. Vero, e sulla STESSA card: numero e nome della figurina sono `COL_IDENTITA`
+//          (= `var(--info)`, azzurro) dalla v6.275, e il sottonome del retro collegato era lo
+//          stesso azzurro. Due cose diverse, un colore solo, a due centimetri di distanza.
+//
+//          🔴 LA REGOLA NON E' «copia la card del retro»: LI' IL SOTTONOME E' AZZURRO. Franco l'ha
+//          detta in una riga — *"nella card del retro, Nome e Sottonome hanno lo stesso colore,
+//          quindi fai cosi"* — e la regola vera e': **il sottonome porta il colore del NOME CHE GLI
+//          STA SOPRA, e le parentesi dicono che e' un sottonome.**
+//          · card RETRO: il nome e' `COL_IDENTITA` (azzurro) -> sottonome azzurro fra parentesi.
+//          · card FIGURINA: il nome del retro collegato e' BIANCO dalla v6.276 -> sottonome bianco.
+//          Stessa regola, due esiti diversi. Copiare il VALORE invece della regola avrebbe messo
+//          l'azzurro proprio dove Franco lo stava togliendo.
+//
+//          📌 E LE PARENTESI NON SONO UNA DECORAZIONE. Finche' il sottonome era azzurro sotto un
+//          nome bianco, il colore diceva «sono due cose». Tolto quello, senza parentesi resterebbero
+//          due righe bianche identiche e il sottonome si leggerebbe come il seguito del nome. Le
+//          parentesi sono cio' che prende il posto del colore, non un vezzo aggiunto sopra.
+//          E sono la stessa forma che la card RETRO usa dalla v6.273, quindi le due sezioni
+//          continuano a leggersi allo stesso modo — che era lo scopo della v5.980.
+//
+//          🔧 Corretto il commento della v5.980, che diceva «sottonome in azzurro» e da oggi
+//          direbbe il falso. Un commento che nomina un colore muore il giorno che il colore si
+//          muove: e' il difetto che il 24 agosto e' costato tre release.
+//
+//          ⚠️ LA CARD DEL RETRO NON SI TOCCA: il suo sottonome resta azzurro fra parentesi, perche'
+//          li' il nome sopra e' azzurro. Chi legge questa voce e "uniforma" le due card ha copiato
+//          il valore invece della regola.
+//
+//          Prove: prova-v6428.js.
+//
+// v6.427 - L'OMAGGIO SUL VIOLA: l'ultima coppia di colori IDENTICI si scioglie. index + app.js.
+//
+//          `--type-free` valeva #ffa94d, cioe' ESATTAMENTE `COL_SOTTOCAT`: distanza ZERO. Ora vale
+//          **#b98cff**, il viola che «Variazione non ufficiale» ha lasciato libero alla v6.404
+//          passando al canarino #fff275. La sottocategoria NON si tocca: resta arancione.
+//
+//          🔴 SI E' MOSSA LA VERSIONE, NON IL CAMPO — E QUESTO ROVESCIA IL COMMENTO DELLA v6.404,
+//          che proponeva l'opposto: *«si chiude portando la SOTTOCATEGORIA sul viola»*, con la
+//          regola «le versioni sono un CODICE, i campi sono fondale». Franco ha scelto il contrario:
+//          l'arancione resta alla sottocategoria, il viola va all'omaggio.
+//          📌 E LA PRIMA STESURA DI QUESTA RELEASE AVEVA SPOSTATO LA SOTTOCATEGORIA, perche' quel
+//          commento l'aveva convinta. **Un commento propone, non decide.** Una regola scritta nel
+//          codice dice come si e' ragionato l'ultima volta, non come si deve ragionare stavolta:
+//          e' una fonte da portare a Franco, non una delega a firmarla al posto suo.
+//
+//          ⚠️ CONSEGUENZA DA SAPERE, non da scoprire: `--type-free` ESCE DALLA SCALA SEMANTICA
+//          della v6.404 (verde approvato · giallo attenzione · rosso sbagliato). L'omaggio non e'
+//          un giudizio sulla figurina, quindi un colore fuori scala si difende — ma va detto.
+//
+//          🔴 E I DUE NUMERI DEL COMMENTO DELLA v6.404 ERANO SBAGLIATI — «292 dall'omaggio, 267
+//          dalla categoria nuova». Con la metrica del progetto, quella di `prove/prova-v6372.js`
+//          (`√(2ΔR² + 4ΔG² + 3ΔB²)`), la distanza vera fra il viola e l'arancione e' **329**.
+//          📌 DA DOVE VENIVA IL 292: e' esattamente **redmean** su quella coppia (291,68). Redmean
+//          e' la metrica ricostruita a occhio il 24 agosto al posto di quella vera, e il documento
+//          l'aveva gia' segnata come errore CHIUSO. Non era chiuso: un numero prodotto da quella
+//          metrica era rimasto in un commento e ha continuato a rispondere per ventitre release.
+//          **Una misura sbagliata non muore quando si corregge lo strumento: muore quando si
+//          correggono i numeri che aveva gia' prodotto.**
+//          ⚠️ Il 267 non torna con nessuna delle due metriche sulla categoria (324 con redmean).
+//          Il piu' vicino e' redmean sull'ERRORE DI STAMPA (267,85): probabilmente e' sbagliata
+//          anche l'etichetta, non solo il numero. Scritto come sospetto, non indovinato.
+//
+//          ⚠️ IL VICINO NUOVO DELL'OMAGGIO E' `--type-change` (#ff9ecb) A 139. Sopra la soglia 120,
+//          ma i due sono tutti e due CODICI DI VERSIONE e si incontrano nella legenda, fianco a
+//          fianco. Prima l'omaggio stava a 144 dall'errore di stampa: il quadro non peggiora, ma
+//          e' il numero da guardare a schermo per primo.
+//          ⚠️ E NON CHIUDE CATEGORIA ↔ SOTTOCATEGORIA, che restano a **94**, sotto la soglia 120.
+//          Non e' una regressione (c'erano gia'), ma e' l'unica coppia stretta rimasta e nessuno
+//          l'aveva mai censita: l'ha stampata la controprova di questa suite sulla v6.426.
+//
+//          ✅ LA PROVA CALCOLA, NON CITA. `prova-v6427.js` ritaglia la metrica dal file che la
+//          contiene e misura all'istante: un numero copiato in un commento e' esatto il giorno che
+//          lo scrivi e basta — e' questa release la dimostrazione.
+//          ⚠️ RESTA SCOPERTO `tavolozza.py`: legge i token `--*`, NON le costanti `COL_*` di
+//          app.js. Ecco perche' questa collisione l'ha dovuta trovare una persona, mentre lo
+//          strumento nato apposta per vederle guardava altrove.
+//
+//          Prove: prova-v6427.js. Aggiornato in tutti e due i file il commento della v6.404.
+//
 // v6.426 - LA RIGA DEI RISULTATI: IL COLORE SUI NUMERI, «ARTICOLI», LA PARENTESI. index + app.js.
 //
 //          Cinque richieste di Franco sulla pagina di ricerca, e quattro dicono la stessa cosa.
@@ -909,6 +991,9 @@
 //          COL_SOTTOCAT, distanza 0. Fino a ieri quella collisione ce l'aveva `--type-official`.
 //          Si chiude portando la SOTTOCATEGORIA sul viola #b98cff che «non ufficiale» ha appena
 //          lasciato libero. Non fatto: Franco ha nominato solo la CATEGORIA.
+//          ✅ CHIUSA DALLA v6.427, MA DALL'ALTRO LATO: Franco ha spostato `--type-free`, non
+//          la sottocategoria. ⚠️ E i due numeri di questa riga (292 / 267) erano di redmean,
+//          non della metrica del progetto: il vero e' 329.
 //
 //          Prove: prova-v6404.js. Aggiornate prova-v6394 e prova-v6402, che leggevano i colori
 //          vecchi. E `colori-etichette.html` si rigenera con `tavolozza.py`.
@@ -22996,7 +23081,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.426';
+const JS_VERSION = 'v6.428';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -36092,9 +36177,12 @@ function renderItems() {
   // righe da trovare sono zero.
   const _hideRetroName = _isMobileViewport() && _soloBasiNelRiquadro();
   // v5.980 (Franco) — il retro collegato occupa DUE righe, non una: il suo nome, e sotto il suo
-  // sottonome in azzurro. Stesso schema della card Retro, cosi' le due sezioni si leggono allo
-  // stesso modo. Finche' il sottonome e' vuoto la seconda riga non c'e' e l'aspetto e' quello di
-  // sempre.
+  // sottonome. Stesso schema della card Retro, cosi' le due sezioni si leggono allo stesso modo.
+  // Finche' il sottonome e' vuoto la seconda riga non c'e' e l'aspetto e' quello di sempre.
+  // 🔧 v6.428 - QUI C'ERA SCRITTO «sottonome in azzurro», e dalla v6.428 e' BIANCO FRA PARENTESI.
+  // La riga e' stata corretta invece che lasciata: un commento che nomina un colore diventa
+  // falso il giorno che il colore si muove, ed e' il difetto che il 24 agosto e' costato tre
+  // release. Il colore vero sta nella riga che lo scrive, non qui.
   // v6.088 (Franco) - via l'esclusione dei CHANGE. "Mostriamo sempre il nome del retro sotto al
   // nome della figurina, ma non lo facciamo per change ed errori di stampa - se ci pensi e'
   // sbagliato." Lo e': il retro e' cio' che dice QUALE versione stai guardando, e vale per un
@@ -36127,7 +36215,20 @@ function renderItems() {
                  // v6.276 (Franco) - in BIANCO, non piu' grigio. Vedi il CHANGELOG: e' il posto
                  // che il bianco ha lasciato libero passando l'identita' all'azzurro.
                  `<div style="font-size:0.78rem;color:var(--text);">${esc(_retroNomeCorto(r))}</div>` +
-                 (sotto ? `<div style="font-size:0.78rem;color:var(--info);">${esc(sotto)}</div>` : '');
+                 // 🆕 v6.428 (Franco) - BIANCO E FRA PARENTESI, come nella card del retro.
+                 // Franco: *"il Sottonome del retro e' azzurro, che pero' e' anche il
+                 // nome-numero della figurina"*. Due cose diverse dello stesso colore nella
+                 // STESSA card: il numero e il nome della figurina sono COL_IDENTITA, cioe'
+                 // var(--info), e questo sottonome era lo stesso azzurro.
+                 // 🔴 E LA REGOLA NON E' "copia il colore della card retro": li' il sottonome
+                 // e' AZZURRO. La regola che Franco ha enunciato e' un'altra e vale in tutte e
+                 // due: **il sottonome porta il colore del nome che gli sta sopra, e le
+                 // parentesi dicono che e' un sottonome.** Nella card retro il nome e' azzurro
+                 // (COL_IDENTITA) e il sottonome con lui; qui il nome del retro e' BIANCO dalla
+                 // v6.276, quindi il sottonome diventa bianco. Stessa regola, due esiti.
+                 // 📌 Percio' le parentesi non sono una decorazione: sono cio' che distingue il
+                 // sottonome dal nome ora che il colore non li distingue piu'.
+                 (sotto ? `<div style="font-size:0.78rem;color:var(--text);">(${esc(sotto)})</div>` : '');
         })()
       : '';
     // v6.020 — stessa aggiunta di useFlexForWideMode: le due devono dire la stessa cosa, una
