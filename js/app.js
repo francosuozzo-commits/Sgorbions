@@ -1,6 +1,27 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.464 — IL TITOLO DELLA PAGINA DI UN TIPO DI ARTICOLO STA IN MEZZO (Franco: *"qui, diversamente
+//          dalla pagina della serie, non ha senso che sia piu a sx, dato che non c'e' ne foto da
+//          mostrare ne descrizione"*). 🔴 L'allineamento a sinistra non era una scelta fatta per
+//          questa pagina: era quello della pagina di una SERIE, dove a sinistra c'e' la copertina
+//          e sotto la descrizione. Un vincolo ereditato da dove la testata e' appesa, come il
+//          contenitore da 1100px della v6.460. Si centrano titolo e riga delle numeriche insieme
+//          (la v6.156 le aveva gia' unite perche' «sono la stessa cosa»), NON il contenitore:
+//          dentro ci sono anche il tasto «← Inventario» e il carosello. Modificato css/style.css.
+// v6.463 — I TRE CAROSELLI CHIEDONO LA FOTO A `_fotoFigurina` INVECE DI LEGGERE `f.img` (Franco:
+//          *"il carosello deve mostrare le figurine da attaccare, usando la foto della loro
+//          figurina di partenza"*). 🔴 NESSUNA REGOLA NUOVA: `_fotoFigurina` risale al
+//          `baseFigurineId` dalla v6.358, e la card della griglia e la scheda di dettaglio
+//          gliela chiedevano gia'. I caroselli erano gli unici tre posti rimasti a leggere il
+//          campo grezzo — per questo la sezione «Figurine da attaccare» contava 672 figurine e
+//          ne mostrava zero, e sotto due elementi la fila si nasconde da sola.
+//          ⚠️ SI VEDE ANCHE SULLA HOME: quella fila non filtra `_eBase`, quindi da ora possono
+//          entrarci variazioni e change di retro che la foto la prendono dalla base. E' la
+//          regola della v6.080, non un effetto collaterale — ma e' un cambiamento visibile.
+//          ⚠️ E i tre record con una foto attaccata a mano ESISTONO ANCORA: `_fotoFigurina`
+//          restituisce comunque la loro, quindi da qui in avanti non si notano. Resta un punto
+//          aperto sui DATI. Modificato js/app.js.
 // v6.462 — LE FIGURINE DA ATTACCARE NON HANNO PIU' I TRE COMANDI DELLA FOTO (Franco: *"leva la
 //          possibilita' di attaccare foto alle fig da attaccare"*, *"togli tutti e 3 i bottoni"*).
 //          Una da-attaccare eredita l'immagine dalla gemella con velina: una foto sua non la
@@ -24206,7 +24227,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.462';
+const JS_VERSION = 'v6.464';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -26583,7 +26604,22 @@ function _caroselloMostraSerie(elenco) {
   return new Set((elenco || []).map(f => f.seriesId)).size > 1;
 }
 
-function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie) {
+// 🆕 v6.463 (Franco) - IL CAROSELLO CHIEDE LA FOTO A `_fotoFigurina`, COME FANNO GIA' TUTTI GLI
+// ALTRI. Franco: *"il carosello deve mostrare le figurine da attaccare, usando la foto della loro
+// figurina di partenza"*.
+// 🔴 QUI NON NASCE NESSUNA REGOLA NUOVA: la regola c'e' dalla v6.358 e vive in `_fotoFigurina`, che
+// per una da attaccare risale al `baseFigurineId` e restituisce la foto della gemella con velina.
+// La card della griglia e la scheda di dettaglio gliela chiedevano gia'. I tre caroselli no:
+// leggevano `f.img` grezzo, e una da attaccare quel campo non ce l'ha PER COSTRUZIONE. Risultato:
+// 672 figurine in sezione e zero in fila - e la fila, sotto due elementi, si nasconde da sola.
+// 📌 Le tre che si vedevano prima non erano "quelle che ci sono": erano i tre record a cui una foto
+// era stata attaccata a mano, cioe' le eccezioni che il comando tolto dalla v6.462 rendeva
+// possibili. ⚠️ Quei tre record ESISTONO ANCORA: il divieto non li cancella. Da qui in avanti non
+// si notano piu', perche' `_fotoFigurina` restituisce comunque la loro foto propria (la riga
+// `if (f.img) return f.img` viene prima di tutto) - ma restano un punto aperto sui DATI.
+// ⚠️ E IL PARAMETRO `figs` NON E' UNA COMODITA': senza, `_fotoFigurina` rifarebbe `getData` per
+// ogni card della fila. Si legge l'elenco una volta e si passa, come fa gia' la griglia.
+function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs) {
   const etichetta = ((f.section || '') === 'retros')
     ? _retroNomeCompleto(f)
     : (f.number ? f.number + ' ' : '') + (f.name || '');
@@ -26602,7 +26638,7 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie) {
     'style="flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">' +
     // v6.080 - altezzaFoto 0 vuol dire "quadrata rispetto alla card" (telefono): niente altezza
     // fissa sotto una card stretta, che e' cio' che allungava il box in verticale.
-    '<img src="' + cloudinaryUrl(f.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" ' +
+    '<img src="' + cloudinaryUrl(_fotoFigurina(f, figs) || f.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" ' +
       'style="width:100%;' + (altezzaFoto ? 'height:' + altezzaFoto + 'px;' : 'aspect-ratio:1;height:auto;') + 'object-fit:contain;border-radius:6px;background:var(--card);">' +
     righe +
   '</div>';
@@ -26648,7 +26684,15 @@ function renderCarosello() {
   const box = document.getElementById('home-carosello');
   if (!sez || !box) return;
   _caroselloSpegni('home');
-  const disponibili = getData('figurines', []).filter(f => (f.section || 'figurines') === 'figurines' && f.img);
+  // 🆕 v6.463 - la foto si chiede a `_fotoFigurina`, non si legge da `f.img`. L'elenco si legge UNA
+  // volta e si passa: `_fotoFigurina` senza `figs` rifarebbe `getData` per ogni figurina.
+  // ⚠️ QUI IL CAMBIAMENTO SI VEDE ANCHE FUORI DALLE «DA ATTACCARE», ED E' BENE SAPERLO: la fila
+  // della home non filtra per `_eBase`, quindi da adesso possono entrarci anche variazioni e change
+  // di retro che una foto propria non ce l'hanno e la prendono dalla base. Non e' un effetto
+  // collaterale sfuggito: e' la regola della v6.080, che consente il ripiego esattamente dove il
+  // fronte E' quello della base. Le altre due file filtrano `_eBase` e non se ne accorgono.
+  const _figs = getData('figurines', []);
+  const disponibili = _figs.filter(f => (f.section || 'figurines') === 'figurines' && _fotoFigurina(f, _figs));
   if (disponibili.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   // si mescola una COPIA: ordinare a caso l'elenco vero cambierebbe l'ordine in tutto il sito
   const mazzo = disponibili.slice();
@@ -26659,7 +26703,7 @@ function renderCarosello() {
   const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x)])); // v6.080
   const inFila = mazzo.slice(0, CAROSELLO_MAX); // v6.081 - la serie si guarda sulle card che finiscono davvero in fila
   const mostraSerie = _caroselloMostraSerie(inFila);
-  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie)).join('');
+  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs)).join('');
   sez.style.display = '';
   const prec = document.getElementById('carosello-prec');
   const succ = document.getElementById('carosello-succ');
@@ -26682,9 +26726,11 @@ function renderCaroselloSerie() {
   const box = document.getElementById('serie-carosello');
   if (!sez || !box) return;
   _caroselloSpegni('serie');
-  const base = getData('figurines', [])
+  // 🆕 v6.463 - vedi il commento in `renderCarosello`: la foto la sa `_fotoFigurina`.
+  const _figs = getData('figurines', []);
+  const base = _figs
     .filter(f => f.seriesId === currentSeriesId && (f.section || 'figurines') === 'figurines'
-      && _eBase(f) && f.img)
+      && _eBase(f) && _fotoFigurina(f, _figs))
     .sort((a, b) => (a.number || 0) - (b.number || 0));
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x)])); // v6.080
@@ -26692,7 +26738,7 @@ function renderCaroselloSerie() {
   // lo stesso invece di scrivere `false`: se un giorno questo carosello mostrasse anche altro, la
   // riga della serie ricomparirebbe da sola.
   const mostraSerie = _caroselloMostraSerie(base);
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie)).join('');
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs)).join('');
   sez.style.display = '';
   const prec = document.getElementById('serie-carosello-prec');
   const succ = document.getElementById('serie-carosello-succ');
@@ -26719,9 +26765,13 @@ function renderCaroselloProdotto() {
   const box = document.getElementById('prodotto-carosello');
   if (!sez || !box) return;
   _caroselloSpegni('prodotto');
-  const base = getData('figurines', [])
+  // 🆕 v6.463 - LA FILA CHE HA FATTO NASCERE QUESTA RELEASE. E' questa: la sezione «Figurine da
+  // attaccare» contava 672 figurine e ne mostrava zero, perche' il filtro chiedeva `f.img` e una da
+  // attaccare quel campo non ce l'ha per costruzione.
+  const _figs = getData('figurines', []);
+  const base = _figs
     .filter(f => (f.section || 'figurines') === _prodottoCorrente
-      && _eBase(f) && f.img);
+      && _eBase(f) && _fotoFigurina(f, _figs));
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   const serie = getData('series', []);
   const nomeSerie = new Map(serie.map(x => [x.id, _nomeSerieCard(x)])); // v6.080 - terzo carosello
@@ -26748,7 +26798,7 @@ function renderCaroselloProdotto() {
     }
   }
   const mostraSerie = _caroselloMostraSerie(mazzo); // v6.081 - qui le serie sono di solito piu' d'una, ma non per forza
-  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie)).join('');
+  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs)).join('');
   sez.style.display = '';
   const prec = document.getElementById('prodotto-carosello-prec');
   const succ = document.getElementById('prodotto-carosello-succ');
