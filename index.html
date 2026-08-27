@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.448"></script>
-<link rel="stylesheet" href="css/style.css?v=6.448">
+<script src="js/email.min.js?v=6.462"></script>
+<link rel="stylesheet" href="css/style.css?v=6.462">
 
 
 <style>
@@ -902,7 +902,7 @@ button.back-btn { color:#ffffff; }
       <div style="display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.2rem;">
         <button class="btn-primary" onclick="showPage('catalog')" data-i18n="hero.cta1" id="btn-explore-catalog" style="font-size:1.32rem;padding:0.86rem 2.3rem;">Esplora l'Inventario Sgorbions !</button>
       </div>
-      <div style="position:relative;">
+      <div class="carosello-largo" style="position:relative;">
         <button type="button" id="carosello-prec" aria-label="Precedente"
           style="position:absolute;left:-6px;top:50%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.4rem;line-height:1;padding:0.5rem 0.6rem;border-radius:999px;cursor:pointer;">&#8249;</button>
         <div id="home-carosello" style="display:flex;gap:0.9rem;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:0.2rem 0.4rem 0.8rem;"></div>
@@ -1856,11 +1856,11 @@ button.back-btn { color:#ffffff; }
             <div style="display:flex;align-items:center;gap:0.75rem;margin-top:0.75rem;flex-wrap:wrap;">
               <label style="font-size:0.88rem;color:var(--text);" data-i18n="admin.email.fix">E-mail rimanenti (come su EmailJS):</label>
               <input type="number" id="email-count-edit" min="0" max="200" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:8px;font-size:0.88rem;">
-              <button class="btn-secondary" style="font-size:0.85rem;padding:4px 14px;" onclick="saveEmailCounter()" data-i18n="admin.save">Salva</button>
+              <button class="btn-secondary btn-admin-ghost" style="font-size:0.85rem;padding:4px 14px;" onclick="saveEmailCounter()" data-i18n="admin.save">Salva</button>
             </div>
             <p style="font-size:0.78rem;color:var(--text);margin:0.35rem 0 0 0;line-height:1.4;" data-i18n="admin.email.fix.hint">Inserisci il numero che leggi sul pannello EmailJS, cioè quante e-mail ti restano. Il riquadro qui sopra continua invece a mostrare quelle già inviate.</p>
             <div style="margin-top:0.6rem;">
-              <button id="email-recalc-btn" class="btn-secondary" style="font-size:0.85rem;padding:4px 14px;" onclick="recalcEmailCounterFromLog()" data-i18n="admin.email.recalc">🔄 Ricalcola dal log</button>
+              <button id="email-recalc-btn" class="btn-secondary btn-admin-ghost" style="font-size:0.85rem;padding:4px 14px;" onclick="recalcEmailCounterFromLog()" data-i18n="admin.email.recalc">🔄 Ricalcola dal log</button>
               <p style="font-size:0.78rem;color:var(--text);margin:0.35rem 0 0 0;line-height:1.4;" data-i18n="admin.email.recalc.hint">Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.</p>
             </div>
           </div>
@@ -2077,7 +2077,10 @@ button.back-btn { color:#ffffff; }
                    Franco: *"in primis vorrei spiegarlo / ricordarlo all'admin, in entrambi i punti di
                    configurazione"*. -->
               <div class="form-hint" style="margin-top:0.6rem;">Su <strong>Figurine con velina</strong> questi numeri possono non arrivare a schermo: il comando «Modalit&agrave; visualizzazione», sopra la griglia, parte da «Fronte e retro sempre grandi», che dispone le card per larghezza e ignora del tutto le colonne. Non si ricorda fra una visita e l&rsquo;altra, quindi &egrave; il caso normale e non l&rsquo;eccezione. Sotto gli 860px, in quel modo, comanda la larghezza dello schermo.</div>
-              <button class="btn-primary btn-admin" id="griglie-salva-btn" style="white-space:nowrap;padding:0.6rem 1rem;margin-top:0.75rem;" onclick="salvaGriglieVisualizzazione()">Salva e applica a tutte le serie</button>
+              <!-- 🔄 v6.453 — QUI C'ERA «Salva e aggiorna tutte le serie», ed è stato tolto.
+                   Scriveva tutti e quattordici i valori del pannello su ogni serie: si cambiava un
+                   numero e se ne applicavano quattordici. Ora il salvataggio sta accanto a ogni
+                   singola casella (il 💾 nella tabella qui sopra) e vale solo per quella. -->
               <div id="griglie-feedback" style="display:none;margin-top:0.6rem;background:rgba(181,255,46,0.1);border:1px solid rgba(181,255,46,0.2);color:var(--accent);padding:0.5rem 0.8rem;border-radius:8px;font-size:0.85rem;"></div>
             </div>
             <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
@@ -2131,7 +2134,7 @@ button.back-btn { color:#ffffff; }
               <label class="form-label" style="display:block;margin-bottom:0.4rem;">👥 Account venditore</label>
               <p style="font-size:0.82rem;color:var(--text);margin-bottom:0.6rem;">Gli account eBay su cui si vende. Il <strong>predefinito</strong> è quello usato dagli oggetti che non ne indicano uno. Le regole di pagamento, spedizione e resi appartengono a ciascun account: le legge il programma da eBay, non si scrivono qui.</p>
               <div id="ebay-settings-accounts" style="margin-bottom:0.6rem;"></div>
-              <button class="btn-secondary" onclick="ebayAggiungiAccount()" style="font-size:0.82rem;padding:0.35rem 0.9rem;cursor:pointer;">➕ Aggiungi account</button>
+              <button class="btn-secondary btn-admin-ghost" onclick="ebayAggiungiAccount()" style="font-size:0.82rem;padding:0.35rem 0.9rem;cursor:pointer;">➕ Aggiungi account</button>
 
               <hr class="divider" style="margin:1rem 0;">
 
@@ -2465,7 +2468,7 @@ button.back-btn { color:#ffffff; }
     <div style="display:flex;gap:0.6rem;justify-content:space-between;align-items:center;margin-top:1rem;">
       <button class="btn-danger" id="tipo-prodotto-elimina" style="display:none;" onclick="eliminaTipoProdotto()">Elimina</button>
       <div style="display:flex;gap:0.6rem;margin-left:auto;">
-        <button class="btn-secondary" onclick="closeModal('add-tipo-prodotto-modal')">Annulla</button>
+        <button class="btn-secondary btn-admin-ghost" onclick="closeModal('add-tipo-prodotto-modal')">Annulla</button>
         <button class="btn-primary" onclick="salvaTipoProdotto()">Salva</button>
       </div>
     </div>
@@ -2581,13 +2584,13 @@ button.back-btn { color:#ffffff; }
           <label class="form-label" data-i18n="form.series.cover">Cover Image</label>
           <img id="series-img-preview" class="file-preview" style="margin-top:0;">
           <label style="display:block;cursor:pointer;margin-top:0.4rem;">
-            <span style="display:block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:4px 8px;white-space:nowrap;text-align:center;">&#128247; <span data-i18n="form.click">Clicca per caricare</span></span>
+            <span class="btn-foto" style="display:block;">&#128247; <span data-i18n="form.click">Clicca per caricare</span></span>
             <input type="file" id="series-img-file" accept="image/*" style="display:none;" onchange="handleSeriesImg(event)">
           </label>
           <!-- v6.189 (Franco) — "Rimuovi sfondo" anche qui. La stringa di stile e' COPIATA da
                `fig-edit-remove-bg-btn` nella scheda oggetto, non riscritta somigliante: due
                stringhe uguali si confrontano a occhio, due simili no (lezione v6.164). -->
-          <button id="series-remove-bg-btn" type="button" onclick="removeBgFromSeries()" style="width:100%;margin-top:0.4rem;font-size:0.72rem;color:var(--accent2);border:1px solid var(--accent2);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">&#10024; Rimuovi sfondo</button>
+          <button id="series-remove-bg-btn" type="button" onclick="removeBgFromSeries()" class="btn-foto" style="width:100%;margin-top:0.4rem;">&#10024; Rimuovi sfondo</button>
         </div>
       </div>
     </div>
@@ -3309,11 +3312,11 @@ button.back-btn { color:#ffffff; }
     <div class="modal-header">
       <h2 class="modal-title" id="fig-detail-title" data-i18n="modal.figdetail.title" style="overflow:hidden;white-space:normal;word-break:break-word;line-height:1.25;font-size:1.1rem;min-width:0;flex:1;">Dettaglio figurina</h2>
       <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;">
-        <button id="fig-detail-prev-btn" onclick="navigateFigDetail(-1)" class="btn-secondary" style="padding:0.35rem 0.65rem;flex-shrink:0;" title="Previous">◀</button>
+        <button id="fig-detail-prev-btn" onclick="navigateFigDetail(-1)" class="btn-secondary btn-admin-ghost" style="padding:0.35rem 0.65rem;flex-shrink:0;" title="Previous">◀</button>
         <!-- v6.097 (Franco) — il contatore fra le due frecce. Niente data-i18n: la stringa la
              compone app.js insieme ai due numeri, quindi applyI18n() non deve toccarla (§5). -->
         <span id="fig-detail-nav-count" style="font-size:0.72rem;color:var(--muted);font-family:var(--font-ui);white-space:nowrap;flex-shrink:0;min-width:3.5rem;text-align:center;"></span>
-        <button id="fig-detail-next-btn" onclick="navigateFigDetail(1)" class="btn-secondary" style="padding:0.35rem 0.65rem;flex-shrink:0;" title="Next">▶</button>
+        <button id="fig-detail-next-btn" onclick="navigateFigDetail(1)" class="btn-secondary btn-admin-ghost" style="padding:0.35rem 0.65rem;flex-shrink:0;" title="Next">▶</button>
         <button class="modal-close" onclick="closeModal('fig-detail-modal')">✕</button>
       </div>
     </div>
@@ -3358,10 +3361,10 @@ button.back-btn { color:#ffffff; }
       <button class="modal-close" onclick="fotoSceltaAnnulla()">&#10005;</button>
     </div>
     <img id="foto-scelta-preview" alt="" style="width:100%;max-height:320px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.75rem;">
-    <button id="foto-scelta-bg-btn" type="button" onclick="fotoSceltaTogliSfondo()" style="width:100%;margin-bottom:0.75rem;font-size:0.72rem;color:var(--accent2);border:1px solid var(--accent2);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">&#10024; Rimuovi sfondo</button>
+    <button id="foto-scelta-bg-btn" type="button" onclick="fotoSceltaTogliSfondo()" class="btn-foto" style="width:100%;margin-bottom:0.75rem;">&#10024; Rimuovi sfondo</button>
     <div style="display:flex;gap:0.6rem;">
       <button class="btn-primary btn-azione-admin" style="flex:1;" onclick="fotoSceltaConferma()">Usa questa foto</button>
-      <button class="btn-secondary" style="flex:1;" onclick="fotoSceltaAnnulla()">Annulla</button>
+      <button class="btn-secondary btn-admin-ghost" style="flex:1;" onclick="fotoSceltaAnnulla()">Annulla</button>
     </div>
   </div>
 </div>
@@ -3468,7 +3471,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.448"></script>
+<script src="js/app.js?v=6.462"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3492,7 +3495,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.448'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.462'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
