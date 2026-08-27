@@ -716,6 +716,23 @@ body {
   border-bottom: 1px solid var(--border);
 }
 .series-hero-inner { max-width: 1100px; margin: 0 auto; }
+/* 🆕 v6.463-bis / v6.464 (Franco) — NELLA PAGINA DI UN TIPO DI ARTICOLO IL TITOLO STA IN MEZZO.
+   Parole sue: *"qui, diversamente dalla pagina della serie, non ha senso che sia piu a sx, dato
+   che non c'e' ne foto da mostrare ne descrizione"*.
+   🔴 L'allineamento a sinistra della testata non era una scelta presa per questa pagina: e' quello
+   della pagina di una SERIE, dove a sinistra del titolo c'e' la copertina e sotto la descrizione.
+   Qui quelle due cose non esistono, e il titolo restava appoggiato a un bordo che non ha piu'
+   niente accanto. E' la stessa forma della v6.460: un vincolo EREDITATO da dove una cosa e'
+   appesa, che nessuno aveva deciso e che si vede solo quando il contorno cambia.
+   📌 Si centrano il titolo E la riga delle numeriche, non il solo titolo: la v6.156 le aveva gia'
+   avvicinate perche' *"sono la stessa cosa"*, e centrarne una lasciando l'altra a sinistra le
+   rifarebbe sembrare due.
+   ⚠️ NON si centra il contenitore: dentro c'e' anche il tasto «← Inventario», che sopra i 1440px
+   e' posizionato in assoluto ma sotto sta nel flusso — un `text-align` sul contenitore lo
+   sposterebbe in mezzo su schermi stretti, dove nessuno l'ha chiesto. E c'e' il carosello, che la
+   sua larghezza se la calcola da se'. */
+#prodotto-detail .series-name,
+#prodotto-detail #prodotto-detail-meta { text-align: center; }
 .back-btn {
   font-family: var(--font-ui); background: transparent;
   border: 1px solid var(--border); color: var(--muted);
