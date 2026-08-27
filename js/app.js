@@ -1,6 +1,83 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.462 — LE FIGURINE DA ATTACCARE NON HANNO PIU' I TRE COMANDI DELLA FOTO (Franco: *"leva la
+//          possibilita' di attaccare foto alle fig da attaccare"*, *"togli tutti e 3 i bottoni"*).
+//          Una da-attaccare eredita l'immagine dalla gemella con velina: una foto sua non la
+//          prevede il modello. 🔴 E' anche la spiegazione del carosello che mostrava TRE
+//          figurine su 672: pretende `f.img`, e li' `img` e' vuoto tranne in tre record a cui
+//          una foto era stata attaccata a mano. ⚠️ Quei tre restano: e' un punto aperto sui
+//          DATI. Modificato js/app.js.
+// v6.461 — LA FILA DEL CAROSELLO NON SFONDA PIU' A DESTRA (Franco: *"il carosello della scheda
+//          delle Figurine da attaccare e' rotto"*). La v6.460 aveva copiato `96vw` dalla griglia,
+//          ma la griglia sta in un contenitore che occupa tutta la pagina, mentre i due caroselli
+//          delle schede stanno dentro `.series-hero`, che ha 2rem di margine per lato. Ora la
+//          larghezza e' `calc(100vw - 4rem)`: la finestra meno i margini veri. Modificato css.
+// v6.460 — LA FOTO DEL CAROSELLO AL 75% (247 → 185) E LA FILA LARGA COME LA GRIGLIA.
+//          Franco: *"le foto portale al 75% della dimensione attuale; e porta la larghezza del
+//          carosello alla larghezza della griglia"*. 🔴 Le due cose sono la stessa correzione:
+//          il 247 della v6.459 era la larghezza di una card nella GRIGLIA (min(1800px,96vw)) ma
+//          il carosello sta dentro `.section-inner`, larga al massimo 1100px. Stesso numero,
+//          contenitore quasi meta'. Modificato index.html, js/app.js, css/style.css.
+// v6.459 — I TRE CAROSELLI HANNO UNA MISURA SOLA, ED E' QUELLA DELLA GRIGLIA: 247px.
+//          Franco, in due battute: *"falli uguali, della dimensione di quello della home"*, poi
+//          *"io pero' li farei piu' larghi; per intenderci, della larghezza della griglia"*.
+//          Serie e mazzo erano a 150 e la home a 175: adesso tutti e tre a 247, che e' la larghezza
+//          di una card nella griglia (sette colonne in 1800px). Quel 150 veniva dalla v6.071, dove
+//          il carosello della serie era «chiesto da Franco» ma la taglia ridotta no: era un
+//          ragionamento fatto per conto proprio (vetrina contro elenco), mai messo davanti a lui.
+//          Le due funzioni della larghezza diventano una. Modificato js/app.js.
+// v6.458 — IL RIQUADRO DELLA FOTO NEL CAROSELLO DIVENTA QUADRATO ANCHE SUL COMPUTER.
+//          Era largo quanto la cella e alto un numero fisso: un rettangolo in piedi, in cui una
+//          figurina coricata si fermava a meta' altezza. Ora la larghezza della cella E' l'altezza
+//          della foto: le in piedi restano identiche, le coricate pareggiano. ⚠️ Cambia il modo:
+//          prima il numero di card era fisso e la dimensione variabile, ora il contrario.
+//          Sul telefono non cambia niente: li' era gia' quadrato. Modificato js/app.js.
+// v6.457 — I COMANDI DELLA FOTO DIVENTANO PIENI, COME I PULSANTI ADMIN (Franco: *"arancione
+//          sin dall'inizio, non al passaggio del mouse, e scritta bianca"*). La v6.456 li aveva
+//          fatti bordati, che e' la forma di un pulsante secondario. E «Rimuovi foto» entra nel
+//          gruppo, quindi PERDE IL ROSSO: decisione di Franco, presa dopo che gliel'avevo
+//          sconsigliata due volte. Modificato js/app.js, css/style.css.
+// v6.456 — I COMANDI DELLA FOTO ENTRANO NELLA FAMIGLIA ARANCIONE, E IN UNA REGOLA SOLA.
+//          «Rimuovi sfondo» (4) e «Cambia foto» (3) avevano lo stile copiato a mano; il primo
+//          usava `--accent2`, l'arancione del MARCHIO, invece di `--action-admin`, quello
+//          dell'azione — identici oggi, divergenti il giorno che uno dei due cambia. Ora una
+//          classe `.btn-foto`, che sa anche fare `:hover`. «Rimuovi» diventa «Rimuovi foto» e
+//          resta rosso. Modificato index.html, js/app.js, css/style.css.
+// v6.455 — VIA LA CODA DALLA FINESTRA DELLE GRIGLIE (Franco: *"non stare manco a dirla quella
+//          frase; e' difficile da capire e alla fine non serve dirlo"*). Spiegava che fine
+//          fanno le serie NON elencate, e per farlo doveva introdurre la distinzione fra valore
+//          proprio e valore generale — cioe' il modello dei dati. Modificato js/app.js.
+// v6.454 — LA FINESTRA DELLE GRIGLIE RISCRITTA PAROLA PER PAROLA (Franco, foto alla mano).
+//          Titolo che dice l'azione col nome in grassetto, «desktop» al posto di «computer»,
+//          l'ATTENZIONE davanti alla perdita, i nomi delle serie nel loro azzurro, e la coda
+//          rifatta: diceva che le serie senza valore proprio «non vengono toccate», che si
+//          legge come «non cambiano» — invece cambiano, seguendo il valore generale.
+//          Modificato js/app.js.
+// v6.453 — OGNI CASELLA DELLE GRIGLIE HA IL SUO SALVATAGGIO, E IL PULSANTE UNICO SE NE VA.
+//          Prima un solo pulsante scriveva tutti e quattordici i valori del pannello su OGNI
+//          serie: si cambiava un numero e se ne applicavano quattordici. Ora ogni casella ha il
+//          suo 💾, che scrive il valore generale e tocca SOLO le serie con un valore proprio
+//          diverso su quella casella. Modificato index.html, js/app.js, css/style.css.
+// v6.452 — TRE COMMENTI DICEVANO CHE SOTTO GLI 860px IL CSS «FORZA QUATTRO COLONNE». FALSO
+//          DALLA v5.854: la regola e' `repeat(auto-fill, minmax(100px,1fr)) !important`. Due
+//          corretti in app.js, uno in css/style.css; la voce di CHANGELOG della v5.975 e'
+//          annotata e non riscritta, perche' e' storia. Nessuna riga di codice e' cambiata.
+//          Modificato js/app.js, css/style.css.
+// v6.451 — VIA «ANNULLA» DALLA SCHEDA DI DETTAGLIO, E «SALVA E RESTA» DIVENTA PIENO COME «SALVA».
+//          «Annulla» chiamava la stessa identica riga della ✕ in alto a destra: prometteva di
+//          annullare le modifiche e si limitava a chiudere. Restano due pulsanti, tutti e due
+//          che salvano, tutti e due pieni. Modificato js/app.js, css/style.css.
+// v6.450 — I TRE PULSANTI DELLA BARRA DELLA SCHEDA DI DETTAGLIO ENTRANO NELLA FAMIGLIA ARANCIONE.
+//          «Annulla» era grigio, «Salva e resta» bordato arancione, «Salva» pieno: tre colori
+//          scritti a mano addosso a ciascuno, e nessuno dei tre reagiva al passaggio del mouse
+//          perche' uno stile inline non sa fare :hover. Ora portano `btn-barra-admin` (+ `pieno`
+//          per il Salva) e la regola sta in css/style.css. Modificato js/app.js, css/style.css.
+// v6.449 — I PULSANTI CHIARI DELLE SCHERMATE ADMIN SI ACCENDONO IN ARANCIONE COME GLI ALTRI.
+//          Otto pulsanti prendono la classe `btn-admin-ghost`; la regola sta in css/style.css.
+//          I quindici `.btn-secondary` pubblici (paginazione, logout, «No, grazie», «Reset
+//          password», i due «Ciò che cerco») NON sono toccati. Modificato index.html, js/app.js,
+//          css/style.css.
 // v6.448 - LA TABELLA ELENCA TUTTE LE SERIE, NON SOLO QUELLE CHE CAMBIANO. app.js.
 //
 //          Franco, davanti alla finestra della v6.446: *"ma la tabellina coi valori attuali,
@@ -90,6 +167,12 @@
 //          quelle che su una sezione non hanno mai avuto un valore proprio. Per quelle la cella
 //          dice «non impostato», che e' la verita'. Il filtro NON e' stato cambiato: sarebbe
 //          un'altra decisione, e non e' stata chiesta.
+//          🔄 v6.453 — QUESTO PUNTO SI E' CHIUSO, E NON CAMBIANDO IL FILTRO. `_serieCheCambiano`
+//          non esiste piu': col salvataggio per singola casella si toccano solo le serie che hanno
+//          un valore PROPRIO e diverso su quella casella, quindi le serie senza valore proprio non
+//          entrano piu' nel discorso — non perche' siano state escluse da un filtro, ma perche' non
+//          c'e' piu' niente che le riguardi. 📌 Il modo migliore di chiudere una decisione difficile
+//          e' togliere la domanda, non risponderle.
 //
 //          ⚠️ GLI ALTRI 43 `confirm()` DEL FILE NON SI TOCCANO. Convertirli sarebbe una release
 //          in cui ogni riga e' un'occasione di perdere un `await` — e un `await` perso qui non da'
@@ -9628,9 +9711,15 @@
 //
 //          DOVE E COME:
 //          - vuoto = come oggi. Nessuna migrazione, le serie non toccate restano identiche;
-//          - il numero si scrive con `!important`, perche' sotto gli 860px il CSS forza quattro
-//            colonne con `!important` (v5.821). Chi mette un numero comanda anche li' — ed e' per
-//            questo che i campi sono due: su mobile si tiene basso, e lo dice l'aiuto sotto;
+//          - il numero si scrive con `!important`, perche' sotto gli 860px il CSS scrive lui le
+//            colonne con `!important`. Chi mette un numero comanda anche li' — ed e' per questo che
+//            i campi sono due: su mobile si tiene basso, e lo dice l'aiuto sotto;
+//            🔄 v6.452 — QUI C'ERA SCRITTO «il CSS forza quattro colonne (v5.821)», E DALLA v5.854
+//            NON E' PIU' VERO: la regola e' `repeat(auto-fill, minmax(100px,1fr)) !important`, cioe'
+//            quante ne stanno larghe almeno 100px — tre su un telefono da 360, quattro da ~440.
+//            📌 La conclusione del commento (serve `!important`) restava giusta, ed e' il motivo per
+//            cui l'errore e' sopravvissuto a cinquecento release: una ragione sbagliata che porta a
+//            una conclusione giusta non si fa notare da nessuna parte.
 //          - **si toglie sempre prima di riscriverlo**: un `!important` lasciato acceso da un giro
 //            precedente vincerebbe anche dove non deve piu';
 //          - **non in modalita' FLEX** ('destra-piena'): li' le colonne non esistono, e uno stile
@@ -13918,6 +14007,12 @@
 //          consente quattro colonne (1032px), cinque ne vorrebbero 1296. Ora le colonne sono
 //          dichiarate (repeat(5,1fr)) e il gap scende a 1rem: 194px per box a pagina piena.
 //          Mobile invariato: sotto gli 860px resta la griglia a quattro colonne della v5.825.
+//          🔄 v6.452 — QUESTA RIGA E' FALSA, E RESTA SCRITTA COM'ERA PERCHE' E' STORIA: era gia'
+//          falsa il giorno in cui e' stata scritta, perche' la v5.854 aveva sostituito le quattro
+//          colonne fisse con `auto-fill minmax(100px,1fr)` VENTUN release prima. Una voce di
+//          CHANGELOG dice cosa si credeva allora: correggerla cancellerebbe proprio la cosa utile,
+//          cioe' che un'idea sbagliata e' rimasta in giro per settecento release senza incontrare
+//          nessuno che la smentisse.
 //          Solo index.html (qui cambia solo la versione).
 // ------------------------------------------------------------
 // v5.974 - Franco, profilo utente: il box "I tuoi numeri Sgorbions" mostra un contatore per
@@ -22446,10 +22541,8 @@ function renderGriglieVisualizzazione() {
     Object.keys(COLONNE_DEFAULT).map(sez => {
       const v = _colonneDefault(sez);
       return '<tr><td style="padding:4px 8px;">' + esc(getSectionLabel(sez)) + '</td>' +
-        '<td style="padding:4px 8px;text-align:center;"><input class="form-input" type="number" min="1" max="12" ' +
-          'id="griglia-' + sez + '-d" value="' + v.d + '" style="width:64px;text-align:center;padding:0.25rem;"></td>' +
-        '<td style="padding:4px 8px;text-align:center;"><input class="form-input" type="number" min="1" max="12" ' +
-          'id="griglia-' + sez + '-m" value="' + v.m + '" style="width:64px;text-align:center;padding:0.25rem;"></td></tr>';
+        _cellaGriglia('griglia-' + sez, 'd', v.d, "salvaUnaGriglia('" + sez + "','d')") +
+        _cellaGriglia('griglia-' + sez, 'm', v.m, "salvaUnaGriglia('" + sez + "','m')") + '</tr>';
     }).join('') +
     // 🆕 v6.436 (Franco) - LE RIGHE DEGLI ARTICOLI SENZA SERIE.
     // Franco: *"che dalla admin console non si abbia quella colonna per gli articoli senza serie
@@ -22480,10 +22573,8 @@ function _righeGriglieTipi() {
       const d = _colClamp(t.colonneDesktop) || COLONNE_DEFAULT.extras.d;
       const m = _colClamp(t.colonneMobile)  || COLONNE_DEFAULT.extras.m;
       return '<tr><td style="padding:4px 8px;">' + esc(_nomeTipo(t)) + '</td>' +
-        '<td style="padding:4px 8px;text-align:center;"><input class="form-input" type="number" min="1" max="12" ' +
-          'id="griglia-tipo-' + esc(t.id) + '-d" value="' + d + '" style="width:64px;text-align:center;padding:0.25rem;"></td>' +
-        '<td style="padding:4px 8px;text-align:center;"><input class="form-input" type="number" min="1" max="12" ' +
-          'id="griglia-tipo-' + esc(t.id) + '-m" value="' + m + '" style="width:64px;text-align:center;padding:0.25rem;"></td></tr>';
+        _cellaGriglia('griglia-tipo-' + esc(t.id), 'd', d, "salvaUnTipoGriglia('" + esc(t.id) + "','d')") +
+        _cellaGriglia('griglia-tipo-' + esc(t.id), 'm', m, "salvaUnTipoGriglia('" + esc(t.id) + "','m')") + '</tr>';
     }).join('');
 }
 
@@ -22532,7 +22623,23 @@ function _finestraConferma(opz) {
     head.className = 'modal-header';
     const h = document.createElement('h2');
     h.className = 'modal-title';
-    h.textContent = o.titolo || (it ? 'Confermi?' : 'Are you sure?');
+    // 🆕 v6.454 - IL TITOLO PUO' ESSERE UN ELENCO DI PEZZI `{t, forte}`, come lo sono le celle dalla
+    // v6.448. Serve perche' Franco vuole il nome della sezione in grassetto dentro una frase, e la
+    // frase non e' il nome: «Modifica n. di colonne per **Figurine da attaccare** vista desktop».
+    // 🔴 E si fa con `<span>` e `textContent`, non con `innerHTML`, per la STESSA ragione delle
+    // celle: qui dentro passano nomi scritti a mano, e un nome con dentro una parentesi angolare
+    // non deve poter diventare marcatura. La tentazione di un `innerHTML` in un titolo e' anche
+    // piu' forte che in una cella, perche' «tanto e' solo un grassetto».
+    if (Array.isArray(o.titolo)) {
+      o.titolo.forEach(p => {
+        const sp = document.createElement('span');
+        sp.textContent = p.t;
+        if (p.forte) sp.style.fontWeight = '800';
+        h.appendChild(sp);
+      });
+    } else {
+      h.textContent = o.titolo || (it ? 'Confermi?' : 'Are you sure?');
+    }
     const x = document.createElement('button');
     x.className = 'modal-close';
     x.type = 'button';
@@ -22589,7 +22696,10 @@ function _finestraConferma(opz) {
           } else {
             td.textContent = cella;
           }
-          if (i === 0) td.style.cssText = 'white-space:nowrap;color:var(--text);font-weight:600;';
+          // 🔄 v6.454 - la prima colonna e' il NOME DI UN'ENTITA' (una serie), e sul sito i nomi
+          // delle entita' sono azzurri dalla v6.399. Era bianco come un testo qualunque: qui dentro
+          // e' l'unica cosa che si cerca con l'occhio, scorrendo un elenco per riconoscere la propria.
+          if (i === 0) td.style.cssText = 'white-space:nowrap;color:var(--nome-entita);font-weight:600;';
           tr.appendChild(td);
         });
         tbody.appendChild(tr);
@@ -22609,7 +22719,7 @@ function _finestraConferma(opz) {
     const piede = document.createElement('div');
     piede.style.cssText = 'display:flex;gap:0.6rem;justify-content:flex-end;flex-wrap:wrap;';
     const bNo = document.createElement('button');
-    bNo.className = 'btn-secondary';
+    bNo.className = 'btn-secondary btn-admin-ghost';
     bNo.type = 'button';
     bNo.textContent = o.annulla || (it ? 'Annulla' : 'Cancel');
     const bSi = document.createElement('button');
@@ -22666,175 +22776,205 @@ function _finestraConferma(opz) {
 // vuota (v6.080). Le serie senza nome corto esistono: erano tre, misurate dopo la v6.188.
 // ⚠️ «non impostato» non e' un modo elegante di dire zero: e' una sezione su cui quella serie non
 // ha mai avuto un valore proprio. Riceve il numero nuovo, non lo perde — e dirlo «5/3» sarebbe
-// inventare un dato che non c'e'.
-function _righeGriglieSerie(serie, nuove) {
+// ============================================================
+// 🆕 v6.453 — OGNI CASELLA HA IL SUO SALVATAGGIO. Franco: *"mi lasci il pannello così come è ma mi
+// metti un singolo bottone di salvataggio affianco ad ogni valore modificabile. Se ci riesci non
+// serve più il pulsante Salva e aggiorna tutte le serie"*.
+//
+// 🔴 COSA C'ERA PRIMA, E PERCHE' ERA UN DIFETTO DI PROMESSA. `salvaGriglieVisualizzazione()` leggeva
+// TUTTI e quattordici i campi del pannello (sette sezioni per due) e li scriveva su OGNI serie,
+// sovrascrivendo il valore proprio di quella serie su tutte e sette le sezioni. Franco cambiava un
+// numero e ne applicava quattordici. Non era un baco: il pannello nasce cosi' nella v6.197, dove il
+// documento registra la richiesta come *"con aggiornamento in massa su tutte le serie"*. Quello che
+// non era mai stato scritto e' che l'aggiornamento in massa dovesse essere una SCELTA.
+//
+// 🔴 E LA COSA CHE HA DECISO IL DISEGNO: I LIVELLI SONO DUE. C'e' il valore generale del pannello e
+// c'e' il valore proprio della singola serie, e quello della serie vince sempre (`_colonneGriglia`).
+// Quindi un pulsantino che salvasse SOLO il valore generale non cambierebbe niente a schermo finche'
+// le serie hanno un valore proprio — e ce l'hanno tutte, messo li' dal salvataggio in massa che
+// stiamo togliendo.
+//
+// ✅ QUINDI: il pulsantino scrive il valore generale, e poi tocca **solo le serie che hanno un
+// valore proprio su QUELLA casella e diverso**. Le serie senza valore proprio NON si toccano: gia'
+// seguono il generale, quindi il risultato a schermo e' identico, e restano «non impostato» invece
+// di diventare impostate per il solo fatto di essere passate di li'. Nel caso comune le scritture
+// sono zero, contro le quattordici di prima.
+// 📌 Questo chiude anche il punto aperto n.3 del 27 agosto — «le serie senza valore proprio compaiono
+// fra quelle che perderanno il loro valore» — non cambiando il conteggio, ma togliendo la ragione
+// per cui quel conteggio le guardava.
+// ============================================================
+
+// la cella del pannello: il campo e il suo pulsantino, che valgono per QUELLA casella e basta
+function _cellaGriglia(idBase, chiave, valore, azione) {
   const it = currentLang === 'it';
-  return (serie || []).map(s => {
-    const c = s.colonne || {};
-    const parti = [];
-    Object.keys(nuove).forEach(sez => {
-      const a = c[sez] || {};
-      const d = _colClamp(a.d), m = _colClamp(a.m);
-      if (d === nuove[sez].d && m === nuove[sez].m) return;      // gia' uguale: non e' una notizia
-      parti.push({
-        t: '\u26a0\ufe0f ' + getSectionLabel(sez) + ' '
-           + ((d && m) ? (d + '/' + m) : (it ? 'non impostato' : 'not set')),
-        warn: true
-      });
-    });
-    if (!parti.length) parti.push({
-      t: it ? 'gi\u00e0 uguali a quello che stai applicando' : 'already equal to what you are applying',
-      spento: true
-    });
-    return [_nomeSerieCard(s, true), parti];
-  });
+  const dove = chiave === 'd' ? 'desktop' : (it ? 'telefono' : 'mobile');
+  return '<td style="padding:4px 8px;text-align:center;white-space:nowrap;">'
+    + '<input class="form-input" type="number" min="1" max="12" id="' + idBase + '-' + chiave + '"'
+    + ' value="' + valore + '" style="width:64px;text-align:center;padding:0.25rem;">'
+    + '<button type="button" class="btn-barra-admin mini" style="margin-left:0.35rem;"'
+    + ' title="' + (it ? 'Salva solo questo valore (' + dove + ')' : 'Save only this value (' + dove + ')') + '"'
+    + ' onclick="' + azione + '">\uD83D\uDCBE</button></td>';
 }
 
-function _serieCheCambiano(nuove) {
-  return (getData('series', []) || []).filter(s => {
-    const c = s.colonne || {};
-    return Object.keys(nuove).some(sez => {
-      const a = c[sez] || {};
-      return _colClamp(a.d) !== nuove[sez].d || _colClamp(a.m) !== nuove[sez].m;
-    });
-  });
+function _etichettaDove(chiave) {
+  const it = currentLang === 'it';
+  // 🔄 v6.454 (Franco) - in italiano si diceva «computer»: ora si dice «desktop» in tutte e due le
+  // lingue. E' la parola che Franco usa parlando, ed e' quella che sta nell'intestazione della
+  // colonna del pannello — dove infatti c'era gia' scritto «desktop».
+  return chiave === 'd' ? 'desktop' : (it ? 'telefono' : 'mobile');
 }
 
-async function salvaGriglieVisualizzazione() {
+// 🔴 UNA CASELLA SOLA, PER LE SEZIONI. Scrive il generale e tocca solo chi ha un valore proprio.
+async function salvaUnaGriglia(sez, chiave) {
   const it = currentLang === 'it';
   const fb = document.getElementById('griglie-feedback');
-  const btn = document.getElementById('griglie-salva-btn');
-
-  // 1. leggere e validare TUTTI i campi prima di toccare qualunque cosa: se uno e' storto non si
-  //    scrive niente. Un salvataggio a meta' su dieci serie sarebbe il caso peggiore.
-  const nuove = {};
-  for (const sez of Object.keys(COLONNE_DEFAULT)) {
-    const d = _colClamp(document.getElementById('griglia-' + sez + '-d')?.value);
-    const m = _colClamp(document.getElementById('griglia-' + sez + '-m')?.value);
-    if (!d || !m) {
-      toast(it ? 'Valori ammessi: da 1 a 12. Controlla ' + getSectionLabel(sez)
-               : 'Allowed: 1 to 12. Check ' + getSectionLabel(sez), 'error');
-      return;
-    }
-    nuove[sez] = { d, m };
+  const el = document.getElementById('griglia-' + sez + '-' + chiave);
+  const v = _colClamp(el && el.value);
+  if (!v) {
+    toast(it ? 'Valori ammessi: da 1 a 12. Controlla ' + getSectionLabel(sez)
+             : 'Allowed: 1 to 12. Check ' + getSectionLabel(sez), 'error');
+    return;
   }
+  const prima = _colonneDefault(sez)[chiave];
+  const dove = _etichettaDove(chiave);
+  const serie = getData('series', []) || [];
+  // 📌 solo chi ha un valore PROPRIO su questa casella: gli altri seguono il generale da soli
+  const daToccare = serie.filter(s => {
+    const proprio = _colClamp(s.colonne && s.colonne[sez] && s.colonne[sez][chiave]);
+    return proprio && proprio !== v;
+  });
 
-  // 2. dire QUANTE e QUALI serie perdono il loro valore, e farlo prima di scrivere.
-  // 🆕 v6.436 - e i tipi di articolo, letti con la STESSA regola dei sei qui sopra: se un valore
-  // non e' un intero da 1 a 12 ci si ferma PRIMA di scrivere qualunque cosa. Un salvataggio che
-  // scrive meta' delle destinazioni e poi si accorge di un campo sbagliato lascia il pannello e i
-  // dati in due stati diversi, ed e' il difetto che il 24 agosto e' costato una release.
-  const tipi = _tipiProdotto();
-  const nuoviTipi = {};
-  for (const t of tipi) {
-    const d = _colClamp(document.getElementById('griglia-tipo-' + t.id + '-d')?.value);
-    const m = _colClamp(document.getElementById('griglia-tipo-' + t.id + '-m')?.value);
-    if (!d || !m) {
-      toast(it ? 'Valori ammessi: da 1 a 12. Controlla ' + _nomeTipo(t)
-               : 'Allowed: 1 to 12. Check ' + _nomeTipo(t), 'error');
-      return;
-    }
-    nuoviTipi[t.id] = { d, m };
-  }
-  const tipiCheCambiano = tipi.filter(t =>
-    _colClamp(t.colonneDesktop) !== nuoviTipi[t.id].d || _colClamp(t.colonneMobile) !== nuoviTipi[t.id].m);
+  // 🔄 v6.454 (Franco, davanti alla finestra) - RISCRITTA PAROLA PER PAROLA.
+  // 📌 «Cambia solo questa casella. Tutte le altre restano come sono» e' stata TOLTA: rassicurava
+  // su un pericolo che dopo la v6.453 non esiste piu'. Una riga che difende da una cosa gia' morta
+  // occupa il posto di quella che conta.
+  const testo =
+    (it ? '\u00AB' + getSectionLabel(sez) + '\u00BB, per ' + dove + ': passa da ' + prima + ' a ' + v
+        : '\u00AB' + getSectionLabel(sez) + '\u00BB, for ' + dove + ': from ' + prima + ' to ' + v)
+    + '\n\n'
+    + (daToccare.length === 0
+        ? (it ? 'Nessuna serie ha un valore proprio diverso: si scrive solo il valore generale, e le serie lo seguono.'
+              : 'No series has its own different value: only the general value is written, and the series follow it.')
+        : daToccare.length === 1
+          ? (it ? 'ATTENZIONE: una serie ha un valore diverso, e lo perder\u00E0.'
+                : 'WARNING: one series has a different value, and will lose it.')
+          : (it ? 'ATTENZIONE: ' + daToccare.length + ' serie hanno un valore diverso, e lo perderanno.'
+                : 'WARNING: ' + daToccare.length + ' series have a different value, and will lose it.'));
 
-  // 🆕 v6.446 - la conferma non e' piu' un `confirm()` del browser: e' una finestra del sito, e
-  // dentro c'e' la TABELLA a due colonne (nome breve della serie, valori di oggi).
-  // 🔴 `await`, e non e' una formalita': senza, `_finestraConferma` torna una Promise, `!promise`
-  // e' sempre falso, la conferma sparirebbe dallo schermo e la riscrittura di TUTTE le serie
-  // partirebbe da sola. Non darebbe nessun errore.
-  // 🆕 v6.448 - la tabella elenca TUTTE le serie; `cambiano` resta, ma serve solo a CONTARE.
-  const tutteLeSerie = getData('series', []) || [];
-  const cambiano = _serieCheCambiano(nuove);
-  const righe = _righeGriglieSerie(tutteLeSerie, nuove);
-  const diventano = Object.keys(nuove)
-    .map(sez => getSectionLabel(sez) + ' ' + nuove[sez].d + '/' + nuove[sez].m).join(' · ');
+  const righe = daToccare.map(s => [
+    _nomeSerieCard(s, true),
+    [{ t: '\u26A0\uFE0F ' + dove + ': ' + _colClamp(s.colonne[sez][chiave]), warn: true }]
+  ]);
+
   const proceda = await _finestraConferma({
-    titolo: it ? '\uD83D\uDCD0 Griglie di visualizzazione' : '\uD83D\uDCD0 Display grids',
-    testo: (it
-      ? 'Questi numeri diventano il valore applicato a TUTTE le serie, sostituendo quelli '
-        + 'impostati sulle singole schede serie.'
-      : 'These numbers become the value applied to ALL series, replacing the ones set on the '
-        + 'individual series cards.')
-      + '\n\n'
-      // Il conteggio si dice PRIMA della tabella: con dodici serie in elenco, «quante cambiano»
-      // non e' una cosa che si debba contare a occhio.
-      // ⚠️ Il singolare non e' pignoleria: «1 serie hanno un valore diverso» e' la riga che fa
-      // pensare che il numero sia sbagliato proprio mentre si decide se procedere.
-      + (it
-          ? 'Ecco cosa hanno oggi le ' + tutteLeSerie.length + ' serie. '
-            + (cambiano.length === 0 ? 'Nessuna ha un valore diverso: non si perde niente.'
-             : cambiano.length === 1 ? 'Una ha un valore diverso, e lo perder\u00e0.'
-             : cambiano.length + ' hanno un valore diverso, e lo perderanno.')
-          : 'Here is what the ' + tutteLeSerie.length + ' series have today. '
-            + (cambiano.length === 0 ? 'None has a different value: nothing is lost.'
-             : cambiano.length === 1 ? 'One has a different value, and will lose it.'
-             : cambiano.length + ' have a different value, and will lose it.')),
-    // 🔴 La tabella c'e' SEMPRE, purche' ci sia almeno una serie. E' tutta la v6.448.
-    colonne: tutteLeSerie.length ? [it ? 'Serie' : 'Series', it ? 'Colonne oggi' : 'Columns today'] : null,
-    righe: tutteLeSerie.length ? righe : null,
-    // I valori NUOVI, sotto la tabella: senza, la colonna «Colonne oggi» non ha un termine di
-    // paragone e il lettore deve andarselo a ricostruire dai campi che ha appena riempito.
-    coda: (it ? 'Diventeranno: ' : 'They will become: ') + diventano
-      + (tipiCheCambiano.length
-          ? (it ? '\nE cambiano ' + tipiCheCambiano.length + ' tipi di articolo: '
-                : '\nAnd ' + tipiCheCambiano.length + ' item types change: ')
-            + tipiCheCambiano.map(t => _nomeTipo(t)).join(', ')
-          : ''),
+    // 🔄 v6.454 - il titolo dice cosa si sta facendo, non solo dove: «Figurine da attaccare ·
+    // desktop» nominava due cose e non un'azione. Il nome della sezione va in grassetto perche' e'
+    // l'unica parola che cambia da una finestra all'altra.
+    titolo: [{ t: '\uD83D\uDCD0 ' + (it ? 'Modifica n. di colonne per ' : 'Change no. of columns for ') },
+             { t: getSectionLabel(sez), forte: true },
+             { t: it ? ' vista ' + dove : ' ' + dove + ' view' }],
+    testo: testo,
+    colonne: righe.length ? [it ? 'Serie' : 'Series', it ? 'Valore attuale' : 'Current value'] : null,
+    righe: righe.length ? righe : null,
+    // 🔄 v6.455 (Franco) - QUI C'ERA UNA CODA, ED E' STATA TOLTA DEL TUTTO.
+    // Prima diceva che le serie senza valore proprio «non vengono toccate» — falso per omissione,
+    // perche' cambiano eccome, seguendo il valore generale. La v6.454 l'aveva riscritta in «seguono
+    // il valore generale, quindi passano a N da sole», che era vera. Franco: *"non stare manco a
+    // dirla quella frase; e' difficile da capire e alla fine non serve dirlo"*.
+    // 📌 E ha ragione due volte. Quella riga rispondeva a una domanda che nasce solo se uno si
+    // chiede perche' l'elenco ha tredici righe e le serie sono quattordici — cioe' quasi mai. Per
+    // spiegarlo bisognava introdurre la distinzione fra «valore proprio» e «valore generale», che
+    // e' il modello dei dati: si chiedeva al lettore di imparare come funziona il salvataggio per
+    // decidere se premere Procedi.
+    // 🔴 La regola che ne esce: una finestra di conferma dice COSA SUCCEDE A CHI E' IN ELENCO. Chi
+    // non c'e' non e' un mistero da spiegare, e' semplicemente qualcuno che non perde niente.
     ok: it ? 'Procedi' : 'Proceed',
     annulla: it ? 'Annulla' : 'Cancel'
   });
   if (!proceda) return;
 
-  if (btn) btn.disabled = true;
   const _stop = _avvisaScritturaLenta(() => { if (fb) { fb.style.display = 'block'; fb.textContent = _TESTO_SCRITTURA_LENTA(); } });
-  const fine = () => { _stop(); if (btn) btn.disabled = false; };
   if (fb) { fb.style.display = 'block'; fb.textContent = it ? '\u23F3 Salvataggio in corso...' : '\u23F3 Saving...'; }
-
   try {
-    // 3. prima il valore di PARTENZA. Se si scrivessero prima le serie e questo fallisse, una serie
-    //    nuova nascerebbe con numeri diversi da tutte le altre - due verita' invece di una.
-    await fsSave('settings', { id: 'griglie', colonne: nuove });
-    LOCAL.set('colonneDefault', JSON.stringify(nuove));
+    // il generale si riscrive INTERO, perche' e' cosi' che e' memorizzato: ma cambia una casella sola
+    const generale = {};
+    Object.keys(COLONNE_DEFAULT).forEach(k => { generale[k] = _colonneDefault(k); });
+    generale[sez][chiave] = v;
+    await fsSave('settings', { id: 'griglie', colonne: generale });
+    LOCAL.set('colonneDefault', JSON.stringify(generale));
 
-    // 4. poi le serie, una per una. ⚠️ Il payload passa da `_serieSenzaItems`: senza, ogni
-    //    serie si porterebbe dietro le sue figurine - 521 KB per Serie 3, ed e' esattamente il
-    //    guasto misurato e chiuso dalla v6.172.
-    const serie = getData('series', []) || [];
     let fatte = 0;
-    for (const s of serie) {
-      const agg = { ...s, colonne: { ...(s.colonne || {}), ...nuove } };
+    for (const s of daToccare) {
+      const agg = { ...s, colonne: { ...(s.colonne || {}) } };
+      agg.colonne[sez] = { ...(agg.colonne[sez] || {}) };
+      agg.colonne[sez][chiave] = v;
       await fsSave('series', _serieSenzaItems(agg));
       const idx = serie.findIndex(x => x.id === s.id);
       if (idx >= 0) serie[idx] = agg;
       fatte++;
-      if (fb) fb.textContent = (it ? '\u23F3 Scritte ' : '\u23F3 Written ') + fatte + ' / ' + serie.length;
-    }
-    // 🆕 v6.436 - i tipi si scrivono DOPO le serie, e in un colpo solo: `_salvaTipiProdotto`
-    // sostituisce l'intero documento `settings/tipi_prodotto`. Quindi si parte dall'elenco vivo e
-    // si cambiano i due campi, invece di ricostruire i tipi da zero - un tipo ha anche nome,
-    // singolare, retro, taglia e ordinamento, e riscriverlo da qui li perderebbe tutti.
-    if (tipi.length) {
-      const aggiornati = tipi.map(t => ({ ...t,
-        colonneDesktop: nuoviTipi[t.id].d, colonneMobile: nuoviTipi[t.id].m }));
-      await _salvaTipiProdotto(aggiornati);
+      if (fb) fb.textContent = (it ? '\u23F3 Scritte ' : '\u23F3 Written ') + fatte + ' / ' + daToccare.length;
     }
     _cache.series = serie;
-    fine();
+    _stop();
     if (fb) {
-      const _coda = tipi.length ? (it ? ' e su ' + tipi.length + ' tipi di articolo.' : ' and ' + tipi.length + ' item types.') : '.';
-      fb.textContent = (it ? '\u2705 Salvato su ' + fatte + ' serie' : '\u2705 Saved on ' + fatte + ' series') + _coda;
+      fb.textContent = (it
+        ? '\u2705 ' + getSectionLabel(sez) + ' \u00B7 ' + dove + ' = ' + v
+          + (fatte ? ', e riscritte ' + fatte + ' serie.' : '. Nessuna serie da riscrivere.')
+        : '\u2705 ' + getSectionLabel(sez) + ' \u00B7 ' + dove + ' = ' + v
+          + (fatte ? ', ' + fatte + ' series rewritten.' : '. No series to rewrite.'));
       setTimeout(() => { fb.style.display = 'none'; }, 6000);
     }
     renderGriglieVisualizzazione();
   } catch (e) {
-    console.error('salvaGriglieVisualizzazione', e);
-    fine();
-    // ⚠️ Si dice ANCHE quante ne erano gia' passate: "fallito" da solo farebbe credere che non
-    // sia cambiato niente, e invece qualcosa e' gia' scritto.
-    if (fb) { fb.style.display = 'block'; fb.textContent = it ? '\u274C Salvataggio interrotto. Alcune serie potrebbero essere state aggiornate: riapri il pannello per vedere lo stato.' : '\u274C Save interrupted. Some series may already be updated.'; }
+    console.error('salvaUnaGriglia', e);
+    _stop();
+    if (fb) { fb.style.display = 'block'; fb.textContent = it ? '\u274C Salvataggio interrotto. Riapri il pannello per vedere lo stato.' : '\u274C Save interrupted.'; }
     toast(it ? '\u274C Salvataggio fallito: ' + (e?.code || e?.name || 'errore') : '\u274C Save failed', 'error');
+  }
+}
+
+// 🔴 UNA CASELLA SOLA, PER I TIPI DI ARTICOLO. Qui i livelli sono uno: il tipo porta il suo valore
+// addosso, non esiste nessun «valore proprio della serie» da rispettare. Quindi niente tabella.
+async function salvaUnTipoGriglia(tipoId, chiave) {
+  const it = currentLang === 'it';
+  const fb = document.getElementById('griglie-feedback');
+  const el = document.getElementById('griglia-tipo-' + tipoId + '-' + chiave);
+  const v = _colClamp(el && el.value);
+  const tipi = _tipiProdotto();
+  const t = tipi.find(x => x.id === tipoId);
+  if (!t) { toast(it ? 'Tipo di articolo non trovato' : 'Item type not found', 'error'); return; }
+  if (!v) { toast(it ? 'Valori ammessi: da 1 a 12. Controlla ' + _nomeTipo(t) : 'Allowed: 1 to 12.', 'error'); return; }
+  const dove = _etichettaDove(chiave);
+  const campo = chiave === 'd' ? 'colonneDesktop' : 'colonneMobile';
+  const prima = _colClamp(t[campo]) || COLONNE_DEFAULT.extras[chiave];
+  if (prima === v) {
+    toast(it ? 'Era gi\u00E0 ' + v + ': non cambia niente' : 'Already ' + v + ': nothing changes');
+    return;
+  }
+  const proceda = await _finestraConferma({
+    titolo: [{ t: '\uD83D\uDCD0 ' + (it ? 'Modifica n. di colonne per ' : 'Change no. of columns for ') },
+             { t: _nomeTipo(t), forte: true },
+             { t: it ? ' vista ' + dove : ' ' + dove + ' view' }],
+    testo: (it ? '\u00AB' + _nomeTipo(t) + '\u00BB, per ' + dove + ': passa da ' + prima + ' a ' + v
+               : '\u00AB' + _nomeTipo(t) + '\u00BB, for ' + dove + ': from ' + prima + ' to ' + v),
+    ok: it ? 'Procedi' : 'Proceed',
+    annulla: it ? 'Annulla' : 'Cancel'
+  });
+  if (!proceda) return;
+
+  if (fb) { fb.style.display = 'block'; fb.textContent = it ? '\u23F3 Salvataggio in corso...' : '\u23F3 Saving...'; }
+  try {
+    const aggiornati = tipi.map(x => x.id === tipoId ? { ...x, [campo]: v } : x);
+    await _salvaTipiProdotto(aggiornati);
+    if (fb) {
+      fb.textContent = '\u2705 ' + _nomeTipo(t) + ' \u00B7 ' + dove + ' = ' + v + '.';
+      setTimeout(() => { fb.style.display = 'none'; }, 6000);
+    }
+    renderGriglieVisualizzazione();
+  } catch (e) {
+    console.error('salvaUnTipoGriglia', e);
+    if (fb) { fb.style.display = 'block'; fb.textContent = it ? '\u274C Salvataggio interrotto.' : '\u274C Save interrupted.'; }
+    toast(it ? '\u274C Salvataggio fallito' : '\u274C Save failed', 'error');
   }
 }
 
@@ -24066,7 +24206,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.448';
+const JS_VERSION = 'v6.462';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -26226,8 +26366,60 @@ function _caroselloPasso() { return CAROSELLO_PASSO_MS; }
 // misurato. La mezza scheda tagliata sul bordo e' voluta: dice che la fila continua.
 // Formula: N schede occupano N*(card+gap) meno l'ultimo gap, che non c'e'.
 const _caroselloLarghezza = n => 'calc((100% + 0.9rem) / ' + n + ' - 0.9rem)';
-const CAROSELLO_LARGHEZZA = _caroselloLarghezza(6.5);        // home
-const CAROSELLO_LARGHEZZA_SERIE = _caroselloLarghezza(8.5);  // serie: foto piu' piccole (v6.071)
+// 🔄 v6.458 - LE DUE FRAZIONI NON SI USANO PIU', E LA RAGIONE E' GEOMETRIA, NON GUSTO.
+// Franco, guardando il carosello sul computer: *"la foto orizzontale occupa meta' dello spazio
+// delle verticali"*. Il riquadro della foto era LARGO QUANTO LA CELLA e ALTO un numero fisso: due
+// misure che non si parlavano, quindi il riquadro veniva un rettangolo in piedi. Dentro un
+// rettangolo in piedi una figurina coricata e' limitata dalla larghezza e si ferma a meta' altezza;
+// una in piedi lo riempie. 📌 In un riquadro QUADRATO invece le due orientazioni occupano
+// esattamente la stessa area — 3:4 diventa 75x100, 4:3 diventa 100x75 — ed e' il motivo per cui sul
+// TELEFONO il difetto non c'era: li' il riquadro e' gia' quadrato dalla v6.080.
+// ✅ Quindi la larghezza della cella non e' piu' una frazione dello schermo: e' l'ALTEZZA DELLA
+// FOTO, piu' il padding della card. Il quadrato viene da se', e nessuna figurina si rimpicciolisce
+// — le in piedi restano alte esattamente come prima, le coricate crescono fino a pareggiarle.
+// ⚠️ E QUESTO ROVESCIA UNA COSA, che va detta perche' e' un cambio di comportamento e non un
+// ritocco: prima il NUMERO di card era fisso (sei e mezza, otto e mezza) e la loro dimensione
+// dipendeva dal monitor; adesso la dimensione e' fissa e il numero e' una conseguenza. Su un
+// portatile se ne vedranno quattro, su un monitor grande otto o nove.
+// 📌 Il `6.5` e l'`8.5` erano numeri provati e ritoccati da Franco (il commento della v6.071 diceva
+// «foto piu' piccole» accanto all'8.5). Restano qui sotto, non cancellati: se un giorno si tornasse
+// indietro, quei due numeri sono la cosa che serve e che nessuno si ricorderebbe.
+// 🔄 v6.459 (Franco: *"falli uguali, della dimensione di quello della home"*)
+// LE MISURE ERANO DUE, ADESSO E' UNA. La home aveva 175, serie e mazzo 150.
+// 📌 DA DOVE VENIVA QUEL 150, cercato invece che ricordato: dal CHANGELOG della v6.071, che dice
+// *«Foto piu' piccole (150 invece di 175) e piu' schede in fila (8,5 invece di 6,5): qui e' un
+// elenco da scorrere, non una vetrina da guardare»*. La stessa voce dice *«Chiesto da Franco»* —
+// ma quelle parole stanno sul CAROSELLO, non sul rimpicciolimento: il carosello della serie era una
+// richiesta, la sua taglia ridotta era un ragionamento fatto per conto proprio.
+// ⚠️ Il ragionamento non era sbagliato — vetrina contro elenco e' una distinzione vera. Semplicemente
+// non era mai stato messo davanti a Franco, e messo davanti non ha retto.
+// 🔴 E LA MISURA UNICA E' 247, NON 175 (Franco: *"io pero' li farei piu' larghi; per intenderci,
+// della larghezza della griglia"*).
+// 📌 247 NON E' UN NUMERO SCELTO A OCCHIO: e' la larghezza di una card nella griglia, cioe' sette
+// colonne dentro `min(1800px, 96vw)` col divario da 12px. Il progetto lo sa gia' e lo scrive nel
+// commento della v6.445: *«i 247px non sono un caso [...] ed e' da li' che viene la larghezza fissa
+// flex:0 0 247px delle card»*.
+// ✅ E LA GRIGLIA CI ERA GIA' ARRIVATA: `.fig-img` in style.css e' `width:100%; aspect-ratio:1`,
+// cioe' quadrata. Il carosello non sta inventando una forma nuova — sta smettendo di essere l'unico
+// posto del sito dove la foto sta in un rettangolo.
+// ⚠️ CHE COSA HA DI FRAGILE QUESTO NUMERO: 247 e' vero finche' Figurine con velina e' a SETTE
+// colonne. Se un giorno quel numero cambia nel pannello Griglie, le card della griglia cambiano
+// larghezza e questa costante resta indietro — senza che niente si accorga di niente. Non e' legata,
+// e' COPIATA: legarla vorrebbe dire far dipendere il carosello della home da un'impostazione di
+// sezione, che e' peggio. Sta scritto qui perche' quel giorno si sappia dove guardare.
+// 🔄 v6.460 (Franco: *"le foto portale al 75% della dimensione attuale"*) — 247 x 0,75 = 185.
+// 📌 Il 247 della v6.459 non era sbagliato come numero: era sbagliato il CONTESTO. Era la larghezza
+// di una card nella griglia, e la griglia e' larga `min(1800px, 96vw)`; il carosello invece stava
+// dentro `.section-inner`, che e' larga al massimo 1100px. Stesso numero, contenitore quasi meta':
+// le card venivano fuori enormi. La v6.460 fa tutte e due le cose — rimpicciolisce la foto E
+// allarga la fila — perche' sono la stessa correzione vista dai due lati.
+const CAROSELLO_ALTEZZA = 185;   // px sul computer, per tutti e tre i caroselli
+// il padding della card, 0.5rem per lato: la foto e' larga quanto il contenuto, non quanto la card
+const _caroselloLato = px => 'calc(' + px + 'px + 1rem)';
+const CAROSELLO_LARGHEZZA = _caroselloLato(CAROSELLO_ALTEZZA);
+// 🗄️ le due frazioni di prima, se un giorno servisse tornare indietro:
+//    home  = _caroselloLarghezza(6.5)
+//    serie = _caroselloLarghezza(8.5)
 // Quante schede si vedono su TELEFONO. In un posto solo perche' e' un numero che si prova, si
 // guarda e si ricambia: 5 alla prima stesura, poi 4, poi 3 (v6.080).
 const CAROSELLO_COLONNE_MOBILE = 3;
@@ -26240,8 +26432,10 @@ const HUB_COLONNE_MOBILE = 2;
 // larghezza di un telefono quelle frazioni davano card da una quarantina di pixel: foto minuscole.
 // Il numero si sceglie qui e non nelle costanti perche' dipende dalla larghezza dello schermo, che
 // al caricamento del file non si sa ancora - le costanti restano come valore del desktop.
-function _caroselloLarghezzaHome()  { return _isMobileViewport() ? _caroselloLarghezza(CAROSELLO_COLONNE_MOBILE) : CAROSELLO_LARGHEZZA; }
-function _caroselloLarghezzaSerie() { return _isMobileViewport() ? _caroselloLarghezza(CAROSELLO_COLONNE_MOBILE) : CAROSELLO_LARGHEZZA_SERIE; }
+// 🔄 v6.459 - ERANO DUE FUNZIONI IDENTICHE TRANNE UN NUMERO, e quel numero adesso e' lo stesso.
+// Tenerne due che restituiscono la stessa cosa e' il modo migliore per ritrovarsi, fra sei mesi,
+// con una cambiata e l'altra no: due nomi per un solo concetto si separano da soli.
+function _caroselloLarghezzaCard() { return _isMobileViewport() ? _caroselloLarghezza(CAROSELLO_COLONNE_MOBILE) : CAROSELLO_LARGHEZZA; }
 // E l'ALTEZZA DELLA FOTO su telefono smette di essere un numero fisso. Era il vero motivo del "box
 // allungato tantissimo in verticale": 175px di altezza sopra una card larga 60 fanno un rettangolo
 // in piedi, e dentro `object-fit:contain` rimpicciolisce la figurina per farcela stare. Le colonne
@@ -26465,7 +26659,7 @@ function renderCarosello() {
   const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x)])); // v6.080
   const inFila = mazzo.slice(0, CAROSELLO_MAX); // v6.081 - la serie si guarda sulle card che finiscono davvero in fila
   const mostraSerie = _caroselloMostraSerie(inFila);
-  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(175), _caroselloLarghezzaHome(), mostraSerie)).join('');
+  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie)).join('');
   sez.style.display = '';
   const prec = document.getElementById('carosello-prec');
   const succ = document.getElementById('carosello-succ');
@@ -26498,7 +26692,7 @@ function renderCaroselloSerie() {
   // lo stesso invece di scrivere `false`: se un giorno questo carosello mostrasse anche altro, la
   // riga della serie ricomparirebbe da sola.
   const mostraSerie = _caroselloMostraSerie(base);
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(150), _caroselloLarghezzaSerie(), mostraSerie)).join('');
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie)).join('');
   sez.style.display = '';
   const prec = document.getElementById('serie-carosello-prec');
   const succ = document.getElementById('serie-carosello-succ');
@@ -26554,7 +26748,7 @@ function renderCaroselloProdotto() {
     }
   }
   const mostraSerie = _caroselloMostraSerie(mazzo); // v6.081 - qui le serie sono di solito piu' d'una, ma non per forza
-  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(150), _caroselloLarghezzaSerie(), mostraSerie)).join('');
+  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie)).join('');
   sez.style.display = '';
   const prec = document.getElementById('prodotto-carosello-prec');
   const succ = document.getElementById('prodotto-carosello-succ');
@@ -31910,7 +32104,9 @@ function _creaProdottoDetail() {
       // v6.156 - meno aria fra il titolo e le numeriche: erano due blocchi separati da uno spazio
       // che li faceva sembrare due cose, e sono la stessa.
       '<div id="prodotto-detail-meta" style="font-size:0.85rem;color:var(--muted);margin:0.1rem 0 0;"></div>' +
-      '<div id="prodotto-carosello-sez" style="display:none;width:100%;position:relative;margin-top:0.6rem;">' +
+      // 🔴 v6.460 - qui c'era `width:100%` inline, e batteva `.carosello-largo`. Vedi la nota
+      // gemella in `_caroselloSerieMostra`.
+      '<div id="prodotto-carosello-sez" class="carosello-largo" style="display:none;position:relative;margin-top:0.6rem;">' +
         '<button type="button" id="prodotto-carosello-prec" aria-label="Precedente" style="position:absolute;left:-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">&#8249;</button>' +
         '<div id="prodotto-carosello" style="display:flex;gap:0.9rem;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:0.2rem 0.4rem 0.6rem;"></div>' +
         '<button type="button" id="prodotto-carosello-succ" aria-label="Successivo" style="position:absolute;right:-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">&#8250;</button>' +
@@ -33641,7 +33837,14 @@ function _caroselloSerieMostra(heroInner) {
   if (!sez) {
     sez = document.createElement('div');
     sez.id = 'serie-carosello-sez';
-    sez.style.cssText = 'display:none;width:100%;position:relative;margin-top:0.6rem;';
+    // 🔴 v6.460 - VIA `width:100%` DA QUI: era INLINE, e l'inline batte il foglio di stile. La
+    // classe `.carosello-largo` c'era gia' e non agganciava niente — la fila della serie restava
+    // larga come prima e nessuna prova poteva accorgersene, perche' la regola ESISTEVA. E' la
+    // stessa forma della v6.444 (un selettore che non aggancia) e della v6.450 (l'inline che
+    // vince): terza volta in una giornata che uno stile scritto addosso all'elemento decide al
+    // posto del foglio. 📌 La larghezza adesso la da' SOLO la classe: un posto, non due.
+    sez.className = 'carosello-largo';
+    sez.style.cssText = 'display:none;position:relative;margin-top:0.6rem;';
     sez.innerHTML =
       '<button type="button" id="serie-carosello-prec" aria-label="Precedente" style="position:absolute;left:-6px;top:42%;transform:translateY(-50%);z-index:2;border:none;background:rgba(0,0,0,0.55);color:var(--text);font-size:1.3rem;line-height:1;padding:0.4rem 0.55rem;border-radius:999px;cursor:pointer;">&#8249;</button>' +
       '<div id="serie-carosello" style="display:flex;gap:0.9rem;overflow-x:auto;scroll-behavior:smooth;scroll-snap-type:x mandatory;padding:0.2rem 0.4rem 0.6rem;"></div>' +
@@ -36747,8 +36950,11 @@ function renderItems() {
   // descriverebbe il render PRECEDENTE.
 
   // v6.162 - si toglie sempre PRIMA: il numero configurato si scrive con `!important` (per battere
-  // la regola del CSS che sotto gli 860px forza quattro colonne), e un `!important` lasciato acceso
-  // da un giro precedente vincerebbe anche dove non deve piu'.
+  // la regola del CSS che sotto gli 860px scrive le colonne con `!important`), e un `!important`
+  // lasciato acceso da un giro precedente vincerebbe anche dove non deve piu'.
+  // 🔄 v6.452 — DICEVA «forza quattro colonne»: falso dalla v5.854, che l'ha cambiata in
+  // `repeat(auto-fill, minmax(100px,1fr))`. Il numero quattro qui non c'entra piu' niente; quello
+  // che conta, e che resta vero, e' che quella regola porta un `!important`.
   grid.style.removeProperty('grid-template-columns');
   if (currentSection === 'retros' || currentSection === 'figurines') {
     // v6.020 — !_soloFronteMobile(): senza retro in griglia nessuna card e' larga, quindi il
@@ -39658,6 +39864,20 @@ function _daAttaccareCreazioneVietata(f) {
   const s = getData('series', []).find(x => x.id === f.seriesId);
   return !(s && s.hasSizes);
 }
+// 🆕 v6.462 (Franco: *"leva la possibilita' di attaccare foto alle figurine da attaccare"*, poi
+// *"togli tutti e 3 i bottoni"*)
+// 🔴 UNA FIGURINA DA ATTACCARE NON HA UNA FOTO SUA, PER COSTRUZIONE. E' la stessa figurina della
+// gemella con velina vista dall'altro lato: nome, numero e immagine li eredita da quella (v6.361).
+// Il comando per attaccargliene una prometteva quindi una cosa che il modello esclude.
+// ⚠️ E NON E' UN'IPOTESI: il carosello di quella sezione mostrava TRE figurine su 672, perche'
+// pretende `f.img` e in quella sezione `img` e' vuoto. Le tre che passavano sono quelle a cui una
+// foto e' stata attaccata a mano — cioe' i tre record che questo divieto rende impossibili da
+// creare. 📌 Il divieto non li cancella: restano li' finche' qualcuno non li ripulisce, ed e' un
+// punto aperto sui DATI, non sul codice.
+// 📌 Terzo fratello della stessa famiglia, e la forma e' la loro: una domanda sola per funzione.
+function _daAttaccareFotoVietata(f) {
+  return !!f && f.section === 'attaccare';
+}
 function _daAttaccareModificaVietata(f) {
   if (!f || f.section !== 'attaccare') return false;
   const s = getData('series', []).find(x => x.id === f.seriesId);
@@ -41848,12 +42068,12 @@ function switchToEditMode(figId) {
       ? '<img id="fe-ebay-img-preview" src="' + cloudinaryUrl(f.ebayImg,'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
       : '<div id="fe-ebay-img-preview" style="width:100%;height:240px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + (currentLang==='it'?'Nessuna foto':'No photo') + '</div>') +
     '<label style="cursor:pointer;display:inline-block;">' +
-    '<span style="display:inline-block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;">📷 ' + (currentLang==='it'?'Carica foto':'Upload photo') + '</span>' +
+    '<span class="btn-foto" style="display:inline-block;">📷 ' + (currentLang==='it'?'Carica foto':'Upload photo') + '</span>' +
     '<input type="file" id="fe-ebay-img-file" accept="image/*" style="display:none;" onchange="handleFeEbayImg(event)">' +
     '</label>' +
     // v6.191 - il bottone "Rimuovi sfondo" anche qui. Stringa di stile COPIATA da
     // `fig-edit-remove-bg-btn`, non riscritta somigliante (lezione v6.164).
-    '<button id="fe-ebay-remove-bg-btn" type="button" onclick="removeBgFromEbay()" style="width:100%;margin-top:0.4rem;font-size:0.72rem;color:var(--accent2);border:1px solid var(--accent2);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' +
+    '<button id="fe-ebay-remove-bg-btn" type="button" onclick="removeBgFromEbay()" class="btn-foto" style="width:100%;margin-top:0.4rem;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' +
     '</div>';
   html += '</div>'; // chiude fe-tab-ebay
 
@@ -41867,7 +42087,19 @@ function switchToEditMode(figId) {
   // lo stesso id sono un difetto che si manifesta il giorno in cui uno dei due smette di rispondere.
   const barra =
     '<div style="position:sticky;top:0;z-index:5;display:flex;gap:0.5rem;justify-content:flex-end;align-items:center;background:var(--card);padding:0.6rem 0 0.7rem;margin-bottom:0.2rem;border-bottom:1px solid var(--border);">' +
-    '<button onclick="closeModal(\'fig-detail-modal\')" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--text);cursor:pointer;">' + (currentLang==='it'?'Annulla':'Cancel') + '</button>' +
+    // 🔴 v6.451 - QUI C'ERA «ANNULLA», ED E' STATO TOLTO PERCHE' NON FACEVA NIENTE DI SUO.
+    // Franco: *"se fanno la stessa cosa, elimina Annulla"*. Chiamava `closeModal('fig-detail-modal')`,
+    // cioe' ESATTAMENTE la stessa riga della ✕ in alto a destra: stessa funzione, stesso argomento,
+    // stesso effetto. Le strade per chiudere questa scheda erano TRE — la ✕, l'Annulla, e il clic
+    // sullo sfondo (questa finestra non sta in `NO_CLICK_CLOSE`) — e tutte e tre identiche.
+    // 📌 IL PUNTO NON E' CHE FOSSE DI TROPPO: e' che sembrava fare un'altra cosa. Un pulsante
+    // chiamato «Annulla» accanto a due «Salva» promette di annullare le modifiche, e invece chiude
+    // e basta, esattamente come la ✕. Prometteva una garanzia che il codice non dava.
+    // ⚠️ RESTA VERO, E NON E' STATO CHIESTO DI CAMBIARLO: chiudendo con modifiche non salvate non
+    // viene chiesto niente, da nessuna delle due strade rimaste. Togliere l'Annulla non ha creato
+    // questo comportamento e non lo ha peggiorato — ha tolto il pulsante che lasciava credere il
+    // contrario. Se un giorno si vorra' avvertire, il lavoro e' accorgersi delle modifiche pendenti,
+    // non rimettere un pulsante.
     // v6.052 - "Salva e resta": salva e lascia la scheda aperta. Serve a chi sistema piu' campi di
     // seguito, che con un solo Salva doveva riaprire l'oggetto ogni volta.
     // 🆕 v6.361 - I DUE «SALVA» SPARISCONO su una da-incollare che non puo' essere diversa dalla
@@ -41877,8 +42109,8 @@ function switchToEditMode(figId) {
     // una sezione dove modificare non ha senso sarebbe la porta di servizio - la stessa forma
     // dell'errore che la v6.347 aveva evitato tenendo UNA sola strada per impersonare.
     (_daAttaccareModificaVietata(f) ? '' :   // v6.366 - i due Salva seguono «Abilita modifica»
-    '<button id="fig-edit-save-stay-btn" data-fig-id="' + f.id + '" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:1px solid var(--action-admin);background:transparent;color:var(--action-admin);cursor:pointer;font-weight:600;">💾 ' + (currentLang==='it'?'Salva e resta':'Save and stay') + '</button>' +
-    '<button id="fig-edit-save-btn" data-fig-id="' + f.id + '" style="font-size:0.82rem;padding:4px 12px;border-radius:8px;border:none;background:var(--action-admin);color:#ffffff;cursor:pointer;font-weight:600;">💾 ' + (currentLang==='it'?'Salva':'Save') + '</button>'
+    '<button id="fig-edit-save-stay-btn" data-fig-id="' + f.id + '" class="btn-barra-admin pieno">💾 ' + (currentLang==='it'?'Salva e resta':'Save and stay') + '</button>' +
+    '<button id="fig-edit-save-btn" data-fig-id="' + f.id + '" class="btn-barra-admin pieno">💾 ' + (currentLang==='it'?'Salva':'Save') + '</button>'
     ) +
     '</div>';
 
@@ -41929,18 +42161,34 @@ function _slotFotoEdit(slot, url, f) {
     ? '<div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:3px;">' + (currentLang === 'it' ? s.it : s.en) + '</div>'
     : '';
   const vuoto = currentLang === 'it' ? 'Nessuna foto' : 'No photo';
+  // 🔴 v6.462 - NIENTE COMANDI DELLA FOTO PER LE FIGURINE DA ATTACCARE. Si mostra l'anteprima (che
+  // per loro e' quasi sempre il riquadro vuoto) e ci si ferma: niente «Cambia foto», niente «Rimuovi
+  // foto», niente «Rimuovi sfondo». 📌 Si esce PRIMA di comporre i tre comandi invece di nasconderli
+  // con `display:none`: un comando nascosto resta cliccabile col tabulatore e resta nel DOM a far
+  // credere a chi legge il codice che quella strada esista ancora.
+  if (_daAttaccareFotoVietata(f)) {
+    const nota = currentLang === 'it'
+      ? 'La foto arriva dalla figurina con velina collegata: qui non se ne attacca una propria.'
+      : 'The photo comes from the linked sticker: no photo of its own here.';
+    return '<div style="margin-bottom:0.6rem;">' + titolo +
+      (url
+        ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(url, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0;">'
+        : '<div id="' + s.preview + '" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + vuoto + '</div>') +
+      '<div style="font-size:0.72rem;color:var(--text);margin-top:0.4rem;">' + nota + '</div>' +
+    '</div>';
+  }
   return '<div style="margin-bottom:0.6rem;">' + titolo +
     (url
       ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(url, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
       : '<div id="' + s.preview + '" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + vuoto + '</div>') +
     '<div style="display:flex;gap:0.4rem;margin-top:0.3rem;">' +
       '<label style="flex:1;cursor:pointer;text-align:center;">' +
-        '<span style="display:block;font-size:0.72rem;color:var(--accent);border:1px solid var(--accent);border-radius:6px;padding:2px 8px;white-space:nowrap;">\u{1F4F7} ' + (currentLang === 'it' ? 'Cambia foto' : 'Change photo') + '</span>' +
+        '<span class="btn-foto" style="display:block;">\u{1F4F7} ' + (currentLang === 'it' ? 'Cambia foto' : 'Change photo') + '</span>' +
         '<input type="file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event, \'' + slot + '\')">' +
       '</label>' +
-      (url ? '<button onclick="removeFigPhoto(\'' + slot + '\')" style="flex:1;font-size:0.72rem;color:var(--danger);border:1px solid rgba(var(--danger-rgb),0.4);background:transparent;border-radius:6px;padding:2px 8px;cursor:pointer;white-space:nowrap;">\u{1F5D1}\uFE0F ' + (currentLang === 'it' ? 'Rimuovi' : 'Remove') + '</button>' : '') +
+      (url ? '<button onclick="removeFigPhoto(\'' + slot + '\')" class="btn-foto" style="flex:1;">\u{1F5D1}\uFE0F ' + (currentLang === 'it' ? 'Rimuovi foto' : 'Remove photo') + '</button>' : '') +
     '</div>' +
-    '<button id="' + s.btn + '" onclick="removeBgFromEdit(\'' + slot + '\')" style="width:100%;margin-top:0.4rem;font-size:0.72rem;color:var(--accent2);border:1px solid var(--accent2);background:transparent;border-radius:6px;padding:4px 8px;cursor:pointer;white-space:nowrap;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' +
+    '<button id="' + s.btn + '" onclick="removeBgFromEdit(\'' + slot + '\')" class="btn-foto" style="width:100%;margin-top:0.4rem;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' +
   '</div>';
 }
 
