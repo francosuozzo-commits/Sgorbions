@@ -354,6 +354,117 @@ body {
 }
 .btn-secondary:hover { border-color: var(--accent3); color: var(--accent3); transform: translateY(-2px); }
 
+/* 🆕 v6.449 (Franco: *"tutti i pulsanti admin devono comportarsi allo stesso modo -> uniforma"*)
+   🔴 I PULSANTI CHIARI DELLE SCHERMATE DA AMMINISTRATORE ENTRANO NELLA FAMIGLIA ARANCIONE — E LA
+   REGOLA DI BASE QUI SOPRA NON SI TOCCA. `.btn-secondary` è il pulsante chiaro di TUTTO il sito:
+   23 usi, di cui 15 pubblici — le quattro frecce di cambio pagina della griglia, il logout, il
+   «No, grazie» dell'iscrizione, «Reset password», i due «Ciò che cerco». Cambiare il viola in
+   arancione lassù li avrebbe tinti tutti, davanti a chi non è nemmeno registrato: è la stessa
+   forma dell'errore contro cui questo progetto si è già difeso per i grigi.
+   🔴 E NON SI POTEVA SCOPARLI COL PANNELLO: `#admin-panel` finisce alla riga 2164 dell'index, le
+   finestre cominciano dalla 2379 — cioè FUORI. `#admin-panel .btn-secondary` avrebbe mancato
+   proprio i due «Annulla» da cui è nata questa release: è esattamente la v6.444, una regola che
+   c'è e un selettore che non aggancia niente.
+   ✅ Quindi: gli otto pulsanti admin portano una classe in più, e la regola aggancia quella.
+   📌 «Elimina selezionati» resta ROSSO (`.btn-danger`): è l'unico del gruppo che distrugge dati,
+   e farlo uguale agli altri lo farebbe sembrare innocuo. Non è una dimenticanza. */
+.btn-secondary.btn-admin-ghost:hover { border-color: var(--action-admin); color: var(--action-admin); }
+
+/* 🆕 v6.450 (Franco, foto alla mano: *"puoi uniformarli ai tasti admin arancioni?"*)
+   🔴 LA BARRA DELLA SCHEDA DI DETTAGLIO. I suoi tre pulsanti non erano `.btn-secondary`: erano
+   scritti a mano in `openFigDetail`, con il colore attaccato addosso a ciascuno — «Annulla»
+   grigio, «Salva e resta» bordato arancione, «Salva» pieno. Quindi NON erano condivisi con
+   nessun pulsante pubblico, e cambiarli non tocca niente fuori da quella scheda.
+   📌 E NESSUNO DEI TRE REAGIVA AL MOUSE, per un motivo strutturale: uno stile scritto inline non
+   sa fare `:hover`. Non era una scelta, era una conseguenza di dove stava scritto il colore.
+   Portarlo in un foglio di stile e' quello che restituisce la reazione, non un'aggiunta a parte.
+   🔄 v6.451 — QUESTE RIGHE DICEVANO IL FALSO PER UNA RELEASE, E SONO STATE RISCRITTE. Dicevano
+   che «Annulla» e «Salva e resta» si somigliavano e che il pieno restava al solo «Salva»: la
+   v6.451 ha tolto «Annulla» (chiamava la stessa riga della ✕: prometteva di annullare le
+   modifiche e si limitava a chiudere) e ha dato il pieno anche a «Salva e resta». Ora i pulsanti
+   della barra sono DUE, tutti e due pieni, tutti e due salvano — e la variante bordata non e' piu'
+   usata da nessuno qui, ma resta la forma di base della classe.
+   📌 Il rischio di confondere chi salva con chi scarta e' sparito togliendo chi scartava, non
+   colorandolo diversamente. */
+.btn-barra-admin {
+  font-family: var(--font-ui); font-size: 0.82rem; font-weight: 600;
+  padding: 4px 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s;
+  background: transparent; border: 1px solid var(--action-admin); color: var(--action-admin);
+}
+.btn-barra-admin:hover { background: var(--action-admin); color: #ffffff; }
+.btn-barra-admin.pieno { background: var(--action-admin); color: #ffffff; }
+.btn-barra-admin.pieno:hover { background: var(--action-admin-hover); border-color: var(--action-admin-hover); }
+
+/* 🆕 v6.453 — la variante piccola, per il 💾 accanto a ogni casella del pannello Griglie. */
+.btn-barra-admin.mini { font-size: 0.78rem; padding: 2px 7px; line-height: 1.4; }
+
+/* 🆕 v6.456 (Franco: *"il tasto rimuovi sfondo non è arancione"*, poi *"anche cambia foto"*)
+   🔴 I COMANDI DELLA FOTO ERANO SETTE STRINGHE DI STILE COPIATE A MANO, e un commento della v6.189
+   lo dichiarava perfino: «la stringa di stile e' COPIATA da...». Copiare uno stile e' copiare anche
+   il giorno in cui bisognera' cambiarlo in sette posti ricordandoseli tutti.
+   🔴 E USAVANO L'ARANCIONE SBAGLIATO. Nel foglio ci sono DUE arancioni con lo stesso valore:
+   `--accent2` (il marchio: i riflessi, il logo) e `--action-admin` (l'azione da amministratore).
+   «Rimuovi sfondo» usava il primo. Oggi non si vede — sono lo stesso #ff6b1a — ma l'index dice a
+   chiare lettere che possono divergere: «il giorno che una cambia, l'altra deve poter». Quel giorno
+   questi pulsanti avrebbero seguito il marchio invece dell'azione, staccandosi dal gruppo da soli e
+   senza che nessuno avesse toccato niente. 📌 Due token con lo stesso valore non sono lo stesso
+   token: sono due promesse diverse che oggi coincidono.
+   🔴 «CAMBIA FOTO» ERA LIME, E FRANCO HA DETTO CHE ERA FINITO LI' PER CASO. Resta uno `<span>`, e
+   non e' pigrizia: sta dentro un `<label>` che contiene l'`<input type="file">`, ed e' il clic
+   sull'etichetta ad aprire la scelta del file. Un `<button>` li' dentro si prenderebbe il clic e non
+   lo passerebbe piu': sarebbe uscito un pulsante arancione e MUTO, che passa `node --check`, passa
+   le suite, passa il controllo del markup, e si rompe solo in mano a chi lo usa.
+   ⚠️ «Rimuovi foto» NON entra qui: e' rosso perche' cancella. */
+.btn-foto {
+  font-family: var(--font-ui); font-size: 0.72rem;
+  border: 1px solid var(--action-admin); color: #ffffff;
+  background: var(--action-admin); border-radius: 6px; padding: 4px 8px;
+  cursor: pointer; white-space: nowrap; text-align: center; transition: all 0.2s;
+}
+.btn-foto:hover { background: var(--action-admin-hover); border-color: var(--action-admin-hover); }
+
+/* 🆕 v6.460 (Franco: *"porta la larghezza del carosello alla larghezza della griglia"*)
+   🔴 IL CAROSELLO NON ERA STRETTO: ERA IL SUO CONTENITORE. Le tre file stanno dentro
+   `.section-inner`, che ha `max-width: 1100px`, mentre la griglia degli articoli usa
+   `min(1800px, 96vw)`. Nessuno aveva deciso che il carosello fosse piu' stretto della griglia: e'
+   una conseguenza di dove e' appeso, ed e' rimasta invisibile finche' le card erano piccole.
+   ✅ La ricetta e' COPIATA da quella che `renderItems` scrive sulla griglia — stessa larghezza,
+   stessa centratura col trucco del 50% piu' traslazione. Copiata e non condivisa perche' la
+   griglia se la scrive da sola in JS: metterle d'accordo davvero vorrebbe dire spostare anche
+   quella qui, ed e' un'altra release.
+   ⚠️ Se un giorno la griglia cambia larghezza, questa regola resta indietro in silenzio. Il posto
+   da guardare e' `grid.style.width` in `renderItems`.
+   📌 Solo sopra gli 860px: sotto, la griglia stessa neutralizza tutto questo con `!important`, e il
+   carosello li' e' gia' a posto. */
+@media (min-width: 861px) {
+  .carosello-largo {
+    /* 🔄 v6.461 - ERA `96vw`, COPIATO DALLA GRIGLIA, E SFONDAVA. Il trucco «margine al 50% piu'
+       traslazione all'indietro» serve a uscire dal proprio contenitore, e funziona per la griglia
+       perche' quella sta in un contenitore che occupa tutta la pagina. I due caroselli delle schede
+       invece stanno dentro `.series-hero`, che ha 2rem di margine per lato: chiedere il 96% della
+       finestra li' dentro vuol dire chiedere piu' spazio di quanto ce ne sia, e la fila esce a
+       destra. 📌 Il numero non era sbagliato: era copiato da un posto dove il contorno e' un altro.
+       ✅ `calc(100vw - 4rem)` non e' una stima: e' la finestra MENO i margini che ci sono davvero,
+       quindi non puo' sfondare ne' qui ne' nella home, che ha lo stesso 2rem per lato. */
+    width: min(1800px, calc(100vw - 4rem)); max-width: 1800px;
+    margin-left: 50%; margin-right: 0; transform: translateX(-50%);
+  }
+}
+
+/* 🔄 v6.457 (Franco: *"non ci siamo. devono avere tutti le classiche caratteristiche di tasto admin
+   -> arancione sin dall'inizio (non al passaggio del mouse) e scritta bianca"*)
+   La v6.456 li aveva fatti BORDATI, arancioni solo di contorno e pieni al passaggio del mouse: e'
+   la forma di un pulsante secondario, e questi non lo sono. Ora sono pieni da subito, come
+   `.btn-admin`.
+   🔴 E «RIMUOVI FOTO» ENTRA NEL GRUPPO, quindi PERDE IL ROSSO. Contro questo avevo argomentato due
+   volte — cancella la foto, e uguale agli altri sembra innocuo — e Franco ha deciso lo stesso, che
+   e' una scelta sua da fare. 📌 Resta scritto qui perche' e' una DECISIONE, non una dimenticanza:
+   se un domani qualcuno lo rimette rosso «per sicurezza», sta ribaltando una scelta presa, non
+   correggendo una svista. La differenza fra le due cose e' tutta in questa riga.
+   ⚠️ Da guardare a schermo: i tre pulsanti sono adesso tre rettangoli arancioni pieni uno accanto
+   all'altro, e uno dei tre distrugge. Se a schermo si confondono, il rimedio non e' tornare al
+   rosso: e' chiedere conferma prima di cancellare, che oggi non succede.
+
 /* hero stats */
 .hero-stats {
   display: flex; column-gap: 3rem; row-gap: 1rem; justify-content: center; flex-wrap: wrap;
@@ -1022,7 +1133,14 @@ footer {
 
 @media (max-width: 480px) {
   .modal { padding: 1.5rem; }
-  /* v5.825 — la griglia figurine resta a 4 colonne anche qui (prima scendeva a 3) */
+  /* 🔄 v6.452 — QUI C'ERA: «v5.825 — la griglia figurine resta a 4 colonne anche qui (prima
+     scendeva a 3)». È un commento SENZA REGOLA, solo dentro questo blocco a 480px: non governa
+     niente, e per giunta dice il falso dalla v5.854, che ha sostituito le quattro colonne fisse
+     con `repeat(auto-fill, minmax(100px,1fr))` — a 480px ne escono tre o quattro secondo il
+     telefono, non quattro per definizione.
+     📌 Un commento rimasto solo dopo che la sua regola se n'è andata è la forma più tenace di
+     questo difetto: non c'è codice sotto che possa smentirlo, quindi nessuno lo rilegge mai
+     accanto a un fatto. Il vero comportamento a 480px sta nel blocco a 860px, più sotto. */
 }
 
 /* ===== SECTION CHOICE CARDS ===== */
@@ -1372,8 +1490,13 @@ footer {
 
 /* ---- v5.825 — PAGINA FIGURINE/RETRO/ALBUM/ALTRI: 4 risultati per riga fino in fondo ----
    .grid-6 (7 colonne sul desktop) in v5.821 scendeva a 4 colonne sotto i 768px e a 3 sotto i 480.
-   Franco vuole 4 per riga su tutto il mobile: qui la fisso a 4 dagli 860px in giù e più sotto
-   viene tolta la regola a 3 colonne del breakpoint 480. La foto della serie in cima a queste
+   Franco vuole almeno 4 per riga sul mobile grande: qui la griglia viene riscritta dagli 860px in
+   giù e più sotto viene tolta la regola a 3 colonne del breakpoint 480.
+   🔄 v6.452 — QUESTA TESTA DICEVA «qui la fisso a 4 dagli 860px in giù», E LO SMENTIVA IL COMMENTO
+   DELLA v5.854 DODICI RIGHE PIÙ SOTTO, dentro questo stesso blocco: le colonne fisse non ci sono
+   più, c'è `repeat(auto-fill, minmax(100px,1fr))`. Le due frasi hanno convissuto per quasi
+   seicento release. 📌 Chi legge un blocco di CSS legge la testa e poi la regola: se la testa
+   mente, la smentita che sta in fondo arriva a chi era già convinto. La foto della serie in cima a queste
    pagine è la stessa .series-cover della scheda serie, quindi è già a 90px (v5.824). */
 @media (max-width: 860px) {
   /* renderItems() scrive stili INLINE sulla griglia, e su Figurine col modo di
