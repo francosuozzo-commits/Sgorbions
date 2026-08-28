@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.469"></script>
-<link rel="stylesheet" href="css/style.css?v=6.469">
+<script src="js/email.min.js?v=6.474"></script>
+<link rel="stylesheet" href="css/style.css?v=6.474">
 
 
 <style>
@@ -1247,7 +1247,7 @@ button.back-btn { color:#ffffff; }
               style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;pointer-events:none;">Ricerca per parola chiave</span>
         <div class="search-input-wrap">
           <span class="search-icon">🔍</span>
-          <input class="search-input" type="text" id="items-search" placeholder="Search..." oninput="ricercaItemsCambiata()">
+          <input class="search-input" type="text" id="items-search" placeholder="Cerca..." data-i18n-placeholder="items.searchPlaceholder" oninput="ricercaItemsCambiata()">
           <span class="search-clear-btn" id="items-search-clear" onclick="clearSearchField('items-search', ricercaItemsCambiata)" style="display:none;">✕</span>
         </div>
       </div>
@@ -3505,7 +3505,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.469"></script>
+<script src="js/app.js?v=6.474"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3529,7 +3529,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.469'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.474'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
