@@ -1,6 +1,449 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.504 — TROVATO: `subseriesHTML is not defined`. La griglia torna a disegnare.
+//          🔴 La v6.501 ha tolto la DICHIARAZIONE di `subseriesHTML` e ha lasciato il
+//          suo USO nel markup della card: ReferenceError alla prima card, `renderItems`
+//          morta, griglia vuota. E vuota in SILENZIO — `renderItems` non ha nessun
+//          «empty-state», quindi una griglia che non si disegna e una senza risultati si
+//          somigliano perfettamente.
+//          ✅ A chiudere il caso è stata una frase di Franco: *"la vista tabellare
+//          invece va"*. Le due viste condividono il SETACCIO e non il disegno: se una
+//          trova e l'altra no, il filtro è innocente e il difetto sta in `renderItems`.
+//          🔴 DUE DIFETTI NELLA STESSA RELEASE, e il primo mascherava il secondo: la
+//          v6.503 aveva corretto una zona morta ed era giusta, ma subito dopo arrivava
+//          questo. Chi corregge il primo errore di una catena crede di aver finito.
+//          ⚠️ E il controllo che serviva l'avevo scritto IERI, nella v6.495: «restano N
+//          riferimenti VIVI al campo tolto». Lì aveva trovato un uso superstite che
+//          avrebbe rotto la creazione di una serie; nella v6.501 non l'ho messo.
+//          Una verifica scritta una volta va nella cassetta degli attrezzi.
+//          Modificato js/app.js.
+// v6.503 — LA GRIGLIA TORNA A MOSTRARE GLI ARTICOLI. Correzione della v6.501, rotta
+//          da me (Franco: *"non si trova più nessun articolo"*).
+//          🔴 `descHTML` chiamava `_rigaCard` cento righe prima della sua dichiarazione:
+//          due `const` nello stesso `map`, quindi ReferenceError alla prima card e
+//          `renderItems` morta. Griglia vuota in TUTTE le sezioni.
+//          🔴 E NIENTE SE N'È ACCORTO: `node --check` vede la sintassi e questo è un
+//          errore di ESECUZIONE; nessuna delle 133 suite esegue `renderItems` (vuole il
+//          DOM e mezza applicazione — tutte ne leggono il testo, che era giusto); la
+//          preview costruisce e non esegue; e `controllo-tdz.py`, che esiste APPOSTA
+//          per questo errore, guarda solo i nomi a PRIMO LIVELLO — i miei stavano
+//          dentro una funzione. Quattro reti, e il pesce è passato da tutte.
+//          ✅ Le due definizioni salgono in cima al `map`, prima di ogni uso: spostare
+//          la chiamata avrebbe sistemato questo caso lasciando la trappola al prossimo.
+//          ⬜ Resta da decidere se allargare `controllo-tdz.py` agli scope interni:
+//          avrebbe preso questo caso in un secondo, ed è un lavoro a sé.
+//          Modificato js/app.js.
+// v6.502 — IL FILTRO «SENZA RARITÀ», solo admin (Franco).
+//          📌 Ricalcato su `_noteFilter` (v6.113), il gemello esatto. Un filtro vive in
+//          OTTO punti e sette falliscono in silenzio: dichiarazione, azzeramento al
+//          cambio sezione, la funzione con `currentItemPage = 1`, l'azzeramento per i
+//          NON-admin (il più pericoloso: il pulsante sta solo nel riquadro admin, quindi
+//          un utente si troverebbe mezza griglia nascosta senza poterla riaprire —
+//          lezione v6.095), il pulsante, «togli tutti i filtri», la spia dei filtri
+//          accesi, e il setaccio.
+//          ⚠️ «Senza rarità» è `!(f.score > 0)`, non `f.score === 0`: nei dati il «senza»
+//          ha tre facce (undefined, null, 0) e solo la terza è rara. Con l'uguaglianza il
+//          filtro avrebbe mostrato quasi niente e sarebbe sembrato rotto. È la stessa
+//          condizione con cui la card decide se scrivere la stella.
+//          Modificato js/app.js.
+// v6.501 — LE RIGHE DELLA CARD SMETTONO DI SFARFALLARE (Franco: *"la parte con le
+//          scritte sfarfalla in verticale; tutto il testo va scritto sul fondo, ma
+//          facendo in modo che in ogni riga ci sia la stessa tipologia di contenuto"*).
+//          ✅ LA MACCHINA ESISTEVA DALLA v6.092: `_rigaCard` + `_allineaRigheRetro`,
+//          che riserva il posto di un campo PER RIGA DI GRIGLIA — misurando gli
+//          offsetTop dopo il render, con un ResizeObserver che la rifà. Ma le
+//          `.retro-riga` le generavano solo le card dei retro: le figurine, cioè la
+//          griglia che si guarda tutti i giorni, erano rimaste fuori.
+//          📌 Le due cose chieste servono tutte e due: il posto fisso mette in colonna
+//          i campi, il testo in fondo salva il caso del NOME che va a capo — lo spazio
+//          che avanza si accumula sopra, e le righe finali restano allineate.
+//          🔴 E il ramo «il retro collegato non esiste» tornava ZERO righe invece di
+//          tre: lo stesso sfarfallio, nel caso più difficile da notare.
+//          🗑️ Sottoserie via dalla card (Franco: la useremo in un altro modo).
+//          🔄 La FAMIGLIA si vede ora su TUTTE E DUE le card. Franco aveva chiesto di
+//          spostarla sulle da-attaccare; la v6.366 l'aveva messa sulle con-retro con la
+//          sua ragione scritta accanto, e davanti a quella: *"hai ragione, lasciala
+//          anche per le figurine con retro"*. Una decisione vecchia con il suo perché
+//          accanto si è difesa da sola.
+//          ⚠️ `_allineaRigheRetro` e `.retro-riga` ora valgono per tutte le sezioni: il
+//          nome dice meno di quello che fa. Rinominarli è meccanico ed è un'altra
+//          release; qui il debito si dichiara.
+//          Modificato index.html, js/app.js, css/style.css.
+// v6.500 — «ARTICOLI NON IN QUESTA SERIE», IN GIALLO (Franco).
+//          📌 Il giallo è `--warn` (#ffb400), non uno scelto a occhio: la tavolozza ne
+//          ha due, e l'altro (`--type-unofficial`) è il colore di una VERSIONE —
+//          usarlo qui spargerebbe un token che significa già qualcos'altro, che è
+//          esattamente ciò che `prova-v6398` impedisce per `--nome-entita`.
+//          E «scuro» sceglie da sé: #ffb400 è ambra, #fff275 è giallo chiaro.
+//          ✅ Contrasto misurato: 9,4:1 su --card2, 10,9:1 sul fondo pagina (il bianco
+//          che se ne va stava a 14,3:1, la soglia AA è 4,5:1).
+//          🔴 E REVOCA UNA DECISIONE PRESA: la v6.229 aveva messo quel testo in bianco
+//          su richiesta di Franco, e la v6.496 l'aveva lasciato citandola. Ora Franco
+//          chiede il giallo: la decisione nuova batte la vecchia perché viene dalla
+//          stessa persona, non perché il colore sia migliore. Il commento nell'index è
+//          stato riscritto con lei.
+//          Modificato index.html.
+// v6.499 — «RARITÀ 20», E LO DICONO CON LA STESSA VOCE CAROSELLO E GRIGLIE (Franco,
+//          due richieste che sono la stessa).
+//          📌 Il carosello diceva «20 rarità» (v6.493), le griglie «20 punti»
+//          (v6.486): due posti che mostrano lo stesso numero della stessa cosa,
+//          arrivati a dirlo diverso perché toccati in due momenti diversi.
+//          🔴 Le griglie passavano da `_codaPunti`, il carosello da `_stellaRarita`:
+//          due funzioni per la stessa etichetta erano la CONDIZIONE del difetto.
+//          Allineare il testo lasciandole due l'avrebbe riaperta subito.
+//          📌 L'etichetta va prima del numero: «20 rarità» si legge come una quantità
+//          — e la rarità non si conta, è un valore. «rarità 20» la nomina e la misura.
+//          ⚠️ La scheda dell'articolo resta «⭐ 20 punti», ed è giusto: lì l'etichetta
+//          «Rarità» c'è già nella colonna a sinistra, e direbbe «Rarità: rarità 20».
+//          ⚠️ Restano «punti» anche i livelli e la Classifica: lì è il Punteggio
+//          rarità dell'utente, cioè una somma — e le somme si contano davvero.
+//          Modificato js/app.js.
+// v6.498 — LA FINESTRA DICE QUANTI ARTICOLI RICEVEREBBERO QUELLA RARITÀ (Franco).
+//          🔴 Il numero c'era già, ma arrivava tardi: `saveBulkScore` lo nomina nella
+//          conferma (§14 regola 2), cioè col dito già sul pulsante. Adesso si vede
+//          all'apertura — si decide SE prima, si conferma dopo.
+//          📌 Stesso numero e stessa fonte: `getCurrentlyFilteredItems()`, la funzione
+//          che poi decide su chi scrivere. Contarlo in un altro modo darebbe due
+//          numeri che divergono (§12-bis).
+//          ⚠️ Il caso ZERO si dice qui invece di lasciarlo scoprire dopo il clic, ma il
+//          pulsante NON si disabilita: la difesa vera resta in `saveBulkScore`, che
+//          vale anche se la finestra resta aperta mentre i filtri cambiano.
+//          Modificato index.html, js/app.js.
+// v6.497 — «ASSEGNA RARITÀ AI RISULTATI»: la finestra dice cosa fa davvero (Franco,
+//          cinque testi in un colpo).
+//          📌 Il filo è uno solo: da «selezionati / visibili / oggetti» a «RISULTATI
+//          DELLA RICERCA». «Visibili» descriveva un MECCANISMO — ciò che i filtri non
+//          nascondono — «i risultati della ricerca» descrive quello che l'utente ha
+//          davanti. È l'istruzione permanente del documento (si parla la lingua dello
+//          schermo) applicata a una finestra intera.
+//          ⚠️ La spiegazione perde «Potrai modificare i singoli punteggi in seguito»:
+//          Franco ha dettato la frase nuova per intero e quella coda non c'era. Diceva
+//          una cosa vera e ovvia, e occupava una riga in una finestra di quattro.
+//          ⚠️ L'inglese non è stato dettato: le cinque forme seguono l'italiano parola
+//          per parola (regola v6.483). «in bulk» è la parola che il codice usa già
+//          (`bulkscore`, `openBulkScoreModal`).
+//          Modificato index.html, js/app.js.
+// v6.496 — «ARTICOLI CHE QUESTA SERIE NON HA» DIVENTA UN TITOLETTO (Franco).
+//          📌 La forma è COPIATA da `.series-year` — font-ui, letter-spacing 2px,
+//          maiuscoletto — che è il titoletto della stessa famiglia visiva: dentro una
+//          scheda, non in cima a una pagina. Il sito ne ha già quattro varianti
+//          (.card-tag, .series-year, .section-eyebrow, .hero-eyebrow): inventarne una
+//          quinta avrebbe dato un titoletto simile a tutti e uguale a nessuno.
+//          ⚠️ Il colore resta BIANCO per decisione di Franco (v6.229), non per
+//          dimenticanza: gli altri titoletti portano un accento. Cambiarlo adesso
+//          sarebbe revocare una decisione presa, passando per una questione di stile.
+//          Modificato index.html.
+// v6.495 — VIA IL CAMPO «N. figurine album» DALLA SCHEDA DELLA SERIE (Franco).
+//          ✅ E misurando prima di togliere è venuto fuori che NON SERVIVA GIÀ PIÙ:
+//          `s.albumCount` era scritto e riletto solo dalla sua casella, e nessun punto
+//          del sito lo mostrava. Il commento della v5.160 dice che l'hero della serie
+//          lo mostrava — è rimasto il commento, se n'è andato l'uso.
+//          ⚠️ Il dato già scritto RESTA sui documenti: in modifica il payload parte da
+//          `...series[idx]` e se lo porta dietro. Cancellarlo è un intervento sui dati.
+//          🔴 E NON si è lasciato un `albumCount = null` «per sicurezza»: avrebbe
+//          scritto null su ogni serie salvata, cioè cancellato il dato a ogni modifica.
+//          🗑️ Via anche le due chiavi i18n: senza il campo sarebbero chiavi MORTE, e il
+//          §5 ne elenca già cinque con scritto perché fanno danno.
+//          Modificato index.html, js/app.js.
+// v6.494 — IL COMMENTO CHE SI LEGGEVA NELLA PAGINA (Franco).
+//          🔴 Il commento della v6.490 aveva DUE «-->»: il primo lo chiudeva, e le due
+//          righe dopo finivano come testo in mezzo alla riga di ogni collezionista.
+//          Scritto in due passate: la nota aggiunta in coda portava il suo
+//          terminatore e l'ha infilato PRIMA di quello che c'era già.
+//          🔴 PEGGIO DEL BACKTICK, e la ragione conta più del difetto: un backtick
+//          rompe la sintassi e `node --check` si ferma. Un secondo «-->» non rompe
+//          niente — file valido, 133 suite verdi, preview costruita, e il controllo
+//          del markup contento, perché il difetto sta uguale nei due file che
+//          confronta. Un difetto che non rompe niente attraversa TUTTI i controlli
+//          automatici del progetto: restano solo gli occhi.
+//          ✅ Il rimedio è un controllo, non un proposito: `cambia(dentro_template)`
+//          rifiutava già i backtick (v6.490) e da oggi rifiuta anche un testo con più
+//          di un «-->».
+//          Modificato js/app.js.
+// v6.493 — LE CARD DEL CAROSELLO: NOME BREVE DELLA SERIE, E LA STELLA DICE «rarità»
+//          (Franco, due richieste sulla stessa card).
+//          📌 Il nome breve non è un campo nuovo né una regola nuova:
+//          `_nomeSerieCard(s, sempreCorto)` esiste dalla v6.080 e il corto lo usa già
+//          su telefono. I tre caroselli la chiamavano SENZA il secondo parametro,
+//          quindi sul computer mostravano il nome lungo. Si accende un comportamento
+//          che la funzione ha da centinaia di release.
+//          ⚠️ Se una serie il nome breve non ce l'ha, la funzione ripiega da sé sul
+//          nome lungo: nessuna card resta senza etichetta.
+//          📌 La parola accanto alla stella nasce come FUNZIONE (`_stellaRarita`) e
+//          non come tre stringhe uguali: quelle righe erano già tre copie, e la
+//          parola a mano avrebbe creato tre posti da cui divergere.
+//          ⚠️ Ed è tradotta, mentre il numero da solo non lo era — terza volta oggi
+//          che attaccare una parola a un numero scopre una riga da tradurre.
+//          Modificato js/app.js.
+// v6.492 — LA CLASSIFICA: NOME UTENTE IN AZZURRO, IL GRIGIO AL BIANCO (Franco).
+//          📌 L'azzurro è `--nome-entita` (#4db8ff), quello che il sito usa già per il
+//          NOME di una cosa (serie, tipi di articolo, e i box della v6.477): un nome
+//          utente è un nome. Ed è l'unica variabile dichiarata una volta sola in tutto
+//          il progetto, quindi si può usare da lontano senza la trappola della
+//          tavolozza del 24 agosto.
+//          🔴 «Tutto il testo in grigio» sono CINQUE punti, e quattro non si vedevano
+//          guardando la riga: la data, i conteggi, il numero di posizione (grigio solo
+//          fuori dal podio), più il banner dell'anonimato e il titolo dei livelli, che
+//          stanno nell'index. Trovati cercando `var(--muted)`, non leggendo.
+//          ⚠️ Un grigio RESTA ed è dichiarato: l'iniziale dentro l'avatar senza foto —
+//          lì la lettera è il riempimento di un cerchio, non testo da leggere.
+//          ⚠️ E il lime di #1 #2 #3 non si tocca: è un evidenziatore, non un grigio.
+//          Modificato index.html, js/app.js.
+// v6.491 — «200 punti» NON SI SPEZZA PIÙ IN DUE RIGHE (Franco, sulla tabella dei
+//          livelli della pagina Classifica).
+//          🔴 IL DIFETTO L'HO INTRODOTTO IO TRE RELEASE FA: fino alla v6.485 quella
+//          cella diceva «200 pt», due caratteri che in una colonna dentro un riquadro
+//          da 360px ci stavano sempre. La v6.486 ha scritto «punti».
+//          📌 È la trappola della v6.468, che il documento porta scritta — e l'ho
+//          rifatta guardando la PAROLA invece del posto in cui sarebbe finita.
+//          ✅ Toccate tutte e due le tabelle, non solo quella nominata: la gemella
+//          della console ha lo stesso testo, e sistemarne una sola vuol dire lasciare
+//          che l'altra si spezzi il giorno che qualcuno stringe quella pagina.
+//          ⚠️ `nowrap` non fa entrare il testo, gli vieta di andare a capo: a sei cifre
+//          quella cella allarga la tabella.
+//          Modificato js/app.js.
+// v6.490 — IL PUNTEGGIO DELLA CLASSIFICA VA A DESTRA (Franco).
+//          📌 La colonna era già a destra — la spinge lì il blocco del nome, che ha
+//          `flex:1`. Quello che era centrato è il CONTENUTO di quella colonna: il
+//          numero e il livello sotto, che hanno larghezze diverse.
+//          ⚠️ Il livello (🏅) segue il numero: stanno nello stesso div, sono la stessa
+//          colonna, e due `text-align` dove ne basta uno divergono alla prima modifica.
+//          ⬜ NON incolonna i punteggi di righe diverse fra loro: la colonna è larga
+//          quanto il suo contenuto, e per i primi tre c'è anche il trofeo a spostarla.
+//          Servirebbe una `min-width`, ed è un'altra decisione — si guarda la pagina.
+//          Modificato js/app.js.
+// v6.489 — GLI ALTRI SEI «pt», QUELLI DELLA CLASSIFICA (Franco: *"ci sono ancora
+//          occorrenze di «pt» nella pagina Classifica"*).
+//          🔴 IL CENSIMENTO DELLA v6.486 AVEVA CERCATO LE FORME CHE AVEVO GIA' VISTO,
+//          NON LA PAROLA: le ancore erano `score} pt`, `+ ' pt'` e la riga della
+//          tabella livelli, tutte ricavate dai cinque punti gia' trovati. Gli altri
+//          sei scrivono la stessa coda in altri modi e nessuna delle tre li vedeva.
+//          📌 Cercare «i posti che assomigliano a quelli che ho trovato» trova solo
+//          quello che si sa già. Per dire «non ne restano» bisogna cercare la parola
+//          — `\bpt\b` — e poi CLASSIFICARE i risultati.
+//          ⚠️ Due volte di fila sulla stessa parola: la v6.482 l'aveva mancata perché
+//          cercava sinonimi interi, la v6.486 perché cercava forme note.
+//          ✅ Restano tre «pt» ed è giusto: il codice paese del Portogallo, e
+//          `_ptDate()` con la sua variabile — che sta per Pacific Time.
+//          ⚠️ «Min pt» diventa «Min punti» dentro un input largo 80px: se si vede
+//          mozzato, si allarga il campo o si scrive «Min» (lezione v6.468).
+//          Modificato js/app.js.
+// v6.488 — IL TITOLO DELLA CLASSIFICA, seconda stesura (Franco: *"Di chi è la lista
+//          con punteggio rarità maggiore ?"*). La v6.486 aveva scritto «Chi ha
+//          costruito la lista con punteggio rarità maggiore ?», anch'essa parola per
+//          parola come chiesta: questa non la corregge, la sostituisce.
+//          ⚠️ L'inglese segue la FORMA e non le parole: «Whose list has the highest
+//          Rarity score?». Una traduzione letterale sarebbe inglese sbagliato — è la
+//          regola della v6.483 applicata alla struttura invece che al pronome.
+//          Modificato index.html, js/app.js.
+// v6.487 — UN OMAGGIO NON HA UN FRONTE SUO: LO EREDITA DALLA PARTENZA (Franco).
+//          ✅ Il modello gli da' ragione in tre punti: l'omaggio HA gia' una partenza
+//          dichiarata (`partenza: ['base','variation']`); la legenda del sito dice che
+//          il timbro OMAGGIO sta SUL RETRO, quindi il fronte e' quello della partenza;
+//          e `_frontePariAllaBase` non lo nominava.
+//          🔴 Non era un errore di allora: quella regola e' della v6.080 e l'omaggio e'
+//          nato nella v6.235. Quarta volta in giornata che un difetto e' una regola
+//          scritta prima del caso che dovrebbe coprire.
+//          📌 Sul RETRO non serviva niente: per le figurine arriva dal record collegato
+//          (`retroId`), non da un campo di questo record — il che rende ancora piu'
+//          strano il campo «foto retro» che la scheda mostrava.
+//          ✅ Via i comandi foto, tutti e tre, come la v6.462 per le da-attaccare.
+//          ⬜ Resta il punto sui DATI: gli omaggi con una foto propria gia' caricata
+//          continuano a mostrarla (`if (f.img) return f.img`). Quanti siano lo dice
+//          `censimento-omaggi-foto.js`, che nasce con questa release.
+//          Modificato js/app.js.
+// v6.486 — LE TRE CODE DELLA RARITÀ (Franco: *"c'e' ancora «pt»"* -> «punti»; il
+//          titolo della Classifica; la maiuscola di «Ricalcolo Punteggi»).
+//          🔴 «pt» NON ERA STATO SALTATO: NON ERA CERCABILE. Il censimento della
+//          v6.482 cercava «punteggio», «punti», «score», «points» — e «pt» non e'
+//          nessuna delle quattro; cercarla da sola da' 17 righe, quasi tutte il
+//          codice paese del Portogallo. Un'abbreviazione e' un sinonimo che nessuna
+//          ricerca per sinonimi trova. L'ha vista Franco guardando una card.
+//          📌 Le tre code diventano `_codaPunti`, una funzione sola — e con lei
+//          arrivano due cose che «pt» nascondeva: la TRADUZIONE (era una stringa
+//          sola per le due lingue) e il SINGOLARE.
+//          Modificato index.html, js/app.js.
+// v6.485 — LA VERSIONE BASE SI CHIAMA «VERSIONE BASE» ANCHE NEI CONTEGGI (Franco:
+//          *"negli altri posti avevamo detto che deve apparire «versione base» e non
+//          «base»; lo vedo sempre nella card del tipo di articolo dell'hub"*).
+//          📌 Seguito della v6.475, che quella decisione l'aveva applicata ai due
+//          posti nominati allora (la pillola della ricerca, le due legende).
+//          🔴 Terza volta oggi che un difetto e' una REGOLA applicata dove la si
+//          stava scrivendo e non dove viveva gia': le due fonti del nome «Figurine
+//          con retro» (v6.481), `_soloBase` che non era arrivata a
+//          `_descArticoliBase` (v6.484), e questo.
+//          ⚠️ Nella card il singolare resta anche al plurale — «1541 articoli
+//          (versione base)» — perché la parentesi dice QUALI articoli sono contati,
+//          non quante versioni esistono.
+//          ⚠️ `_etichettaChiaveTipo` resta «Base»: è un'intestazione di colonna, e la
+//          v6.475 l'aveva già lasciata fuori con questa ragione scritta.
+//          Modificato js/app.js.
+// v6.484 — «(base)» SPARISCE DOVE NON DISTINGUE NIENTE, anche nelle card
+//          dell'Inventario (Franco: *"si era detto che i tipi con una sola versione
+//          la parola «base» non deve apparire mai; invece appare su «Figurine da
+//          attaccare»"*).
+//          🔴 LA REGOLA C'ERA DALLA v6.465 (`_soloBase`), e valeva per le tre
+//          disposizioni di `_righeTipologie`. `_descArticoliBase` e' nata dopo
+//          (v6.471) ed e' un QUARTO posto che dice la stessa cosa, senza la regola.
+//          📌 E la v6.474 ci ha unificato sopra le due card dell'Inventario: cosa
+//          giusta, ma fatta sulla frase di PRIMA della v6.465 — cioe' ha reso
+//          coerenti due card che sbagliavano tutte e due. Unificare due punti non li
+//          rende giusti, li rende uguali: quando si unifica, si ricontrolla che il
+//          testo scelto sia ancora quello buono.
+//          ✅ La domanda, per tutti e due i chiamanti, e' «esistono articoli di
+//          questo tipo che NON sono base?». Il flag si passa, non si ricalcola: la
+//          funzione ha un numero, non l'elenco (lezione v5.978).
+//          Modificato js/app.js.
+// v6.483 — L'INGLESE DICE «in your list» DOVE L'ITALIANO DICE «nella tua lista»
+//          (Franco: *"baco: (nella tua lista) in Inglese è (in my list)"*).
+//          🔴 Non era UNA stringa sbagliata: il sito usava TUTTE E DUE le forme —
+//          ~20 «in your list» e 16 «in my list», mescolate senza regola. Franco ne
+//          ha vista una; il censimento ha trovato le altre.
+//          ✅ LA REGOLA CHE DECIDE: l'inglese segue l'italiano DELLA STESSA STRINGA.
+//          Dodici stringhe dicevano «tua» in italiano e «my» in inglese: corrette.
+//          🔴 TRE NO, e senza la regola sarebbero state «uniformate» per sbaglio:
+//          `_lblOwned` («Presenti nella mia lista» / «In my list») e `profile.owned`
+//          («Nella Mia Lista» / «In My List») sono scritte in prima persona, e li'
+//          «my» e' la parola giusta. Si sarebbe corretto un difetto creandone tre.
+//          📌 «My list» come NOME della funzionalità resta: e' il nome della cosa,
+//          non una frase rivolta all'utente.
+//          📌 Le sostituzioni saltano i COMMENTI: quattro delle sedici occorrenze
+//          stanno in note che riportano com'era scritta una stringa allora.
+//          Modificato js/app.js.
+// v6.482 — IL PUNTEGGIO DIVENTA RARITA' (Franco: *"gli articoli non danno un
+//          punteggio ma semplicemente hanno una loro rarità"*, *"per tenere il
+//          profilo del sito meno pretenzioso"*).
+//          🔴 NON E' UNA SOSTITUZIONE DI PAROLA. «Punteggio» nominava DUE cose: il
+//          valore sull'ARTICOLO e la SOMMA della lista di un UTENTE (Livelli,
+//          Classifica, informativa privacy). Su quest'ultima «rarità» non regge —
+//          «la tua lista ha ora una rarità di 340» non vuol dire niente — e un
+//          sostituisci-tutto avrebbe scritto proprio quelle frasi.
+//          ✅ Deciso da Franco davanti alla distinzione: l'articolo ha una RARITA',
+//          la somma e' il PUNTEGGIO RARITA'. In inglese Rarity / Rarity score.
+//          🔴 NON toccati, e non per pigrizia: `f.score` su Firestore (sarebbe una
+//          migrazione su ~3300 oggetti, come `nomeCorto` v6.220), il valore
+//          `punteggio` dell'ORDINAMENTO — che e' SALVATO nei dati delle serie e
+//          smetterebbe di ordinare in silenzio — e gli id, le chiavi i18n e i nomi
+//          di funzione, che `app.js` cerca per nome. Il sito dice «Rarità» dove si
+//          legge e `score` dove si esegue: asimmetria dichiarata il giorno che nasce.
+//          ⚠️ `form.fig.scoreHint` e' stata RISCRITTA, non tradotta: «Punti assegnati
+//          a chi possiede questo oggetto» descriveva il meccanismo dal lato utente, e
+//          parola per parola avrebbe attribuito all'utente la rarità dell'articolo.
+//          📌 «punti» resta dov'e' la somma: un Punteggio rarità si misura in punti.
+//          Modificato index.html, js/app.js.
+// v6.481 — «FIGURINE CON VELINA» DIVENTA «FIGURINE CON RETRO» (Franco), in inglese
+//          «Stickers with backs» (scelto da lui), e in TUTTE le frasi che lo
+//          nominano (deciso da lui: *"sì, tutte"*).
+//          🔴 IL NOME AVEVA DUE FONTI: `ARTICOLI.figurines.it` (da cui
+//          `getSectionLabel`) e `catalog.stickers` nelle due tabelle i18n (da cui la
+//          card dell'hub della pagina serie). Cambiarne una avrebbe fatto dire al
+//          sito due nomi diversi a due schermate di distanza. Unificarle e' un'altra
+//          release; intanto `prova-v6481` pretende che coincidano.
+//          🔴 IL CENSIMENTO NON E' STATO FATTO A OCCHIO: «velina» compare 104 volte,
+//          quasi tutte in COMMENTI che raccontano la storia del progetto e che NON
+//          vanno toccati. Le occorrenze vive sono sedici, contate togliendo i
+//          commenti dal testo — e la sedicesima (un secondo form-hint nell'index)
+//          l'ha trovata il conteggio, non la lettura.
+//          ✅ Lo script della release RICONTA alla fine: se resta viva una sola
+//          «velina» o «tissue», non scrive niente.
+//          ⚠️ Il singolare inglese e' `sticker with back`, non `backs`.
+//          Modificato index.html, js/app.js.
+// v6.480 — IL CAMPO «NOME ALBUM» SULLA SERIE, sotto «Nome breve» (Franco), e via la
+//          frase «Obbligatorio. Si usa sulle card su telefono...» (Franco).
+//          Quattro punti, e nessuno e' saltabile: il markup nella scheda, il
+//          RIPRISTINO all'apertura (senza, il salvataggio successivo cancella il
+//          dato — l'avvertimento dei flag della v6.219), la lettura in `saveSeries`,
+//          e i DUE payload — modifica e creazione. Il secondo e' quello che si
+//          dimentica, perche' si prova sempre su una serie che c'e' gia'.
+//          ⚠️ FACOLTATIVO, ed e' una decisione: renderlo obbligatorio come «Nome
+//          breve» impedirebbe di salvare QUALUNQUE serie esistente finche' non le si
+//          apre tutte. Se deve esserlo, e' una riga piu' un giro di riempimento.
+//          📌 Su Firestore si chiama `nomeAlbum`: la forma la detta `nomeCorto`.
+//          ⚠️ L'etichetta non e' tradotta, come quella di «Nome breve»: fatto uguale
+//          di proposito, ma ora il difetto vale per due campi. Si chiude con due
+//          chiavi nel dizionario, per tutti e due insieme.
+//          🗑️ La frase tolta diceva anche «Obbligatorio», che `saveSeries` fa
+//          rispettare da se' con un messaggio nel momento in cui serve.
+//          Modificato index.html, js/app.js.
+// v6.479 — «x NELLA TUA LISTA» VA FRA PARENTESI, DAPPERTUTTO (Franco: *"proviamo a
+//          mettere, ovunque nel sito, x nella tua lista tra ()?"*).
+//          📌 Non e' una convenzione nuova: la pagina delle Liste scriveva gia'
+//          «(N / M nella tua lista)». Gli altri due posti la scrivevano nuda —
+//          una convenzione applicata in un posto solo e' una convenzione che muore.
+//          🔴 IL CENSIMENTO PRIMA DI TOCCARE: la frase compare 94 volte fra app.js e
+//          index.html, e le occorrenze VIVE col numero davanti sono TRE. Due cambiate,
+//          una era gia' a posto.
+//          ⚠️ Fuori di proposito: i tooltip «È nella tua lista» (stato, non conteggio),
+//          l'etichetta «Figurine nella tua lista» della navbar (il numero sta nella
+//          riga sotto), «N figurine base (su M) non nella tua lista» nelle Liste (ha
+//          gia' parentesi sue e dice il contrario), e il ramo «Le hai tutte !🎉».
+//          Modificato js/app.js.
+// v6.478 — LA TABELLA DELLE SERIE AVEVA 17 TITOLI E 16 CELLE (Franco: *"i titoli
+//          colonna sono uno piu delle colonne; è tutto shiftato a sx di 1 a partire
+//          dalla colonna HA OMAGGIO"*).
+//          🔴 Mancava il <td> di `omaggio`, dalla v6.235: quella release aggiunse la
+//          colonna a COLONNE_SERIE — che disegna le INTESTAZIONI — mentre il corpo
+//          della riga e' una fila di <td> scritti a mano. Titolo sì, cella no, e
+//          nessun errore: la tabella si sfalsa in silenzio.
+//          📌 Il commento della v6.226 aveva promesso il contrario (*"le colonne in
+//          un elenco solo, così dimenticarsene non e' più possibile"*): l'elenco
+//          unico proteggeva l'ORDINAMENTO, non il CONTENUTO — metà del problema
+//          risolto con la faccia di tutto.
+//          📌 E `_conteggiSerie` dichiara che `omaggi` *"e' quello che legge la
+//          colonna HA OMAGGIO"*: un commento che descriveva un uso mai esistito.
+//          🆕 prova-v6478.js conta i titoli e le celle. Finché quei due numeri li
+//          guarda una prova, il corpo scritto a mano può restare; generarlo
+//          dall'elenco resta la correzione vera, ed e' un lavoro a sé.
+//          Modificato js/app.js.
+// v6.477 — I SEI BOX DELLA PAGINA SERIE PRENDONO IL VESTITO DELLE CARD DELL'HUB
+//          ARTICOLI (Franco, guardando la v6.476: *"il titolo dovrebbe essere
+//          azzurro come i box dell'hub Articoli"* · *"«xxx oggetti» dovrebbe essere
+//          «xxx articoli» e bianca"* · *"anche «x nella tua lista» bianca"*).
+//          📌 Tre richieste, una cosa sola: quei box e le card dell'hub sono la
+//          stessa figura — immagine, nome, conteggio — e la dicevano con due vesti.
+//          Nome: --text -> --nome-entita (azzurro, come `prodottoCardHTML`).
+//          Conteggio: --muted -> --text (bianco, come `tipoProdottoCardHTML`), e
+//          con lui la riga «N nella tua lista», che sta nello stesso elemento.
+//          🆕 E via l'ULTIMA «oggetti»: il commento della v6.471 l'aveva gia'
+//          segnata come punto aperto, la v6.474 aveva chiuso la gemella.
+//          ⚠️ L'inglese non cambia: diceva gia' `items`.
+//          ⚠️ Questa release pubblica TRE file: lo stile sta in css/style.css, che
+//          dalla v6.431 viaggia col push (§5). Modificato index.html, js/app.js,
+//          css/style.css.
+// v6.476 — I SEI BOX DELLA PAGINA SERIE SU UNA RIGA SOLA (Franco: *"procedi con 6 box
+//          pagina serie"*), e lo spazio non viene tolto a nessuno.
+//          🔴 IL CONTENITORE ERA STRETTO SENZA CHE NESSUNO L'AVESSE DECISO: 1100px,
+//          mentre il carosello sopra sta a min(1800px, calc(100vw - 4rem)) (v6.461) e
+//          la griglia degli articoli a min(1800px, 96vw). Il selettore delle sezioni
+//          era l'unico rimasto indietro — la stessa cosa che la v6.460 aveva trovato
+//          per il carosello, con le stesse parole.
+//          📌 L'ha visto Franco, e il mio primo conto rispondeva alla domanda
+//          sbagliata: avevo misurato le larghezze A CONTENITORE FERMO, cioe' avevo
+//          trattato un valore ereditato come un vincolo.
+//          A 1366px il box vale quanto valeva con cinque colonne (194px): sopra si
+//          guadagna (276px a 1920), sotto si perde (181px a 1280) e si e' scelto di
+//          stare a sei lo stesso.
+//          ⚠️ Il max-width nuovo vive SOLO sopra gli 861px e con !important: nel
+//          markup e' inline, e cambiarlo li' avrebbe stretto anche il TELEFONO, dove
+//          1100px non morde e 96vw morderebbe (374px invece di 390).
+//          Modificato index.html.
+// v6.475 — LA PILLOLA E LA SUA LEGENDA SMETTONO DI CHIAMARE LA STESSA COSA IN DUE MODI
+//          (Franco: *"la pillola Base etichettala Versioni base"* / *"nella legenda,
+//          Figurina set base diventa Versione base"*; il singolare l'ha confermato lui).
+//          Il riquadro «Filtra per le Versioni» diceva «Base»; la voce di legenda che la
+//          DEFINISCE diceva «Figurina set base» — e il link a quella legenda sta in fondo
+//          a quel riquadro dalla v6.333. Chi lo premeva trovava spiegato un termine che
+//          nella pillola non compariva.
+//          📌 Tre punti, una parola: la pillola (`_RAGGR_VERSIONE.etichettaDi`) e le DUE
+//          voci di legenda — figurine e retro, allineata su decisione di Franco.
+//          ⚠️ NON e' stata toccata `_etichettaChiaveTipo`, che ha lo stesso `if` poco
+//          sotto: quella riempie le INTESTAZIONI di una tabella e la diagnostica in
+//          console, dove «Base» e' una colonna e non una pillola.
+//          📌 La pillola vive in un riquadro `unaRiga` (v6.357), che scorre invece di
+//          mandare a capo: l'etichetta piu' lunga non puo' essere troncata come lo era
+//          stata quella della v6.468 — la' l'etichetta era `nowrap` con `max-width`.
+//          Modificato index.html, js/app.js.
 // v6.474 — LE DUE CARD DELL'INVENTARIO SMETTONO DI DIRE LA STESSA COSA IN DUE MODI (Franco:
 //          *"falla bianca / mettila al fondo / usa la parola articoli"*). La card dei tipi di
 //          articolo personalizzati diceva «12 oggetti» dove la gemella dice «12 articoli (base)»,
@@ -24459,7 +24902,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.474';
+const JS_VERSION = 'v6.504';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -25916,8 +26359,8 @@ const i18n = {
 'profile.anon':'Show me as anonymous in the ranking',
 'classifica.anonInfo':'🕵️ Want to stay anonymous? You can hide your name from other collectors. Only you will see it. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Set anonymity here</a>.','nav.onlineSince':'Online since 21.06.2026','profile.changeNat':'✏️ Change nationality','profile.setNat':'✏️ Set nationality','profile.changePwd':'🔑 Change password','profile.changePwd.title':'🔑 Change password','profile.changeNat.title':'Change nationality','profile.changeUsername':'✏️ Change username','profile.changeUsername.title':'✏️ Change username','profile.changeUsername.hint':'Your username is the public name visible to other users (e.g. in the Leaderboard).<br><br>Use only letters, numbers and underscores, max 20 characters.','profile.changeUsername.save':'Save','profile.changeUsername.welcomeIntro':'We\u2019ve assigned you this username automatically. Want to personalize it? You can always change it later from your profile.','profile.deleteAccount':'🗑️ Delete my account','profile.statsTitle':'Your Sgorbions numbers','profile.myMessages.title':'My messages with the staff',
 'modal.deleteAccount.title':'🗑️ Delete my account','modal.deleteAccount.intro':'If you continue, we will permanently delete:','modal.deleteAccount.item1':'Your profile: nickname, e-mail, avatar, nationality','modal.deleteAccount.item2':'Your "My list" and your Ranking position','modal.deleteAccount.item3':'Your \'What I\'m looking for\' list','modal.deleteAccount.item4':'Your current access with this e-mail — you can still register a new account with the same e-mail in the future, but it will be empty: no data from the old one will be recovered','modal.deleteAccount.blogNote':'Any posts or comments you wrote on the blog <strong>remain visible</strong> to other users, but your name will be replaced with "Deleted user" — no one will be able to trace them back to you.','modal.deleteAccount.irreversible':'This action cannot be undone.','modal.deleteAccount.confirmPwd':'Confirm your password to proceed','modal.deleteAccount.confirmBtn':'Permanently delete my account','modal.deleteAccount.confirmGoogleBtn':'Verify with Google and delete my account',
-'modal.scoreBoost.title':'Congratulations !','modal.scoreBoost.ok':'Great !','modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go !','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Scores','admin.risorse':'🗄️ Resources',
-'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on score. Each level activates from its minimum score upward.',
+'modal.scoreBoost.title':'Congratulations !','modal.scoreBoost.ok':'Great !','modal.accountDeleted.title':'Account deleted','modal.accountDeleted.desc':'Your account and all your data have been permanently deleted. Sorry to see you go !','modal.accountDeleted.close':'Close','admin.title':'Admin Panel','admin.series':'Series','admin.figurines':'Stickers','admin.contacts':'Messages','admin.users':'Users','admin.segnalazioni':'🔔 Comments','admin.eventi':'🔔 Events','admin.punteggi':'🏆 Rarity scores','admin.risorse':'🗄️ Resources',
+'admin.levels.heading':'🏆 User levels','admin.levels.desc':'Define levels based on the Rarity score. Each level activates from its minimum score upward.',
 'admin.risorse.title':'🗄️ Resources','admin.email.thisMonth':'Emails sent this month','admin.email.plan':'Free EmailJS plan: 200 emails/month (resets on the 1st of each month).',
 'admin.email.fix':'E-mails remaining (as on EmailJS):','admin.email.fix.hint':'Enter the number you read on the EmailJS dashboard, i.e. how many e-mails you have left. The panel above still shows the ones already sent.','admin.save':'Save','admin.generali.title':'🌐 General site settings','admin.generali.timeoutLabel':'Maximum wait for data loading (seconds)','admin.griglie.title':'📐 Display grids','admin.griglie.hint':'How many columns per row in each box, on computer and on phone. From 1 to 12.','admin.griglie.legendLink':'How it is decided','admin.griglie.legendTitle':'📐 How the number of columns is decided','admin.griglie.legendBody':'The most specific value wins, and the two cases <b>do not overlap</b>:<br>\u2022 inside a <b>series</b> \u2192 that series\u2019 value, or the general one next to this<br>\u2022 inside an <b>item type</b> \u2192 that type\u2019s value, or the general one<br>Opening a series makes the item type irrelevant, and the other way round.<br><br><b>Computer and phone</b> have separate values: below 860px the \u00ABphone\u00BB column applies.<br><br>\u26A0\uFE0F <b>One exception only.</b> In Stickers, with the \u00ABFront and back always full size\u00BB display mode, the columns are decided by the <b>available space</b> and not by this table: cards stay large and as many fit as fit. It applies on computer and on phone, and it is intended.','admin.generali.timeoutHint':'Past this time the site stops waiting for data and shows the fault panel. From 3 to 120 seconds. On a slow connection a low value shows «SITE TEMPORARILY UNAVAILABLE» even when the data was on its way.','newsletter.settingsTitle':'⚙️ Email Settings','newsletter.replyToLabel':'Reply-To address','newsletter.replyToHint':'When you reply to a message, the email will go to this address',
 'admin.firebase.plan':'Free plan (Spark): 1 GB storage, 50,000 reads/day, 20,000 writes/day.',
@@ -25932,7 +26375,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message !',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Who has built the biggest list?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with tissue','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Score selected','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','form.series.albumCount':'N. of album stickers','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
@@ -25968,19 +26411,19 @@ const i18n = {
 'form.reply.placeholder':'Write a reply...','comment.admin':'Administrator','comment.login':'Log in to reply',
 'auth.title':'Welcome back','auth.login':'Login','auth.register':'Sign up',
 'auth.login.btn':'Enter','auth.reg.btn':'Confirm registration','auth.reg.wait':'Registration can take up to a minute: don\u2019t close this window.',
-'modal.bulkscore.title':'⭐ Score Selected','modal.bulkscore.desc':'Assign the same score to all currently visible items (those not hidden by any active filters). You can edit individual scores later.',
-'modal.bulkscore.label':'Score per item','modal.bulkscore.apply':'Apply to visible',
+'modal.bulkscore.title':'⭐ Assign rarity to results','modal.bulkscore.desc':'Assign the same rarity to all the items returned by the search.',
+'modal.bulkscore.label':'Rarity to assign','modal.bulkscore.apply':'Apply rarity in bulk',
 'modal.figdetail.title':'Sticker detail','modal.segnala.send':'Send comment','modal.segnala.title':'🚩 Report an issue','modal.segnala.desc':'Describe the issue you found with this sticker. The report will only be visible to the administrator.','modal.segnala.comment':'Comment','modal.segnala.placeholder':'Describe the issue...',
 'modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','modal.series.delete':'Delete series',
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
-'form.series.hasSizes':'Stick-in stickers differ from the tissue ones','form.series.abilitaModifica':'Enable editing of stick-in stickers','form.series.hasSubseries':'Has subseries',
+'form.series.hasSizes':'Stick-in stickers differ from the ones with backs','form.series.abilitaModifica':'Enable editing of stick-in stickers','form.series.hasSubseries':'Has subseries',
 'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has sticker Change','form.series.hasRetroChange':'Has back Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of sticker Change','form.series.countRetroChange':'No. of back Change','form.series.retroChangeTypes':'BACK change types (one per line)','form.series.retroChangeTypesHint':'One value per line. The difference is on the BACK: a change of these types has a back of its own, or the "Blank back" flag.','form.series.frontChangeTypes':'FRONT change types (one per line)','form.series.frontChangeTypesHint':'One value per line. The difference is on the FRONT: a change of these types uses the back of its base sticker. The same type cannot be in both lists.','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
-'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Add preset search filters','items.resetFilters':'Clear all filters','items.searchHint':'Search by keyword','items.searchPlaceholder':'Search...','admin.classifica':'Ranking','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker versions glossary','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Every version has its own colour</strong>, and it is the same everywhere on the site: on the cards, in the search filters and in the titles of the search boxes.','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer.<br>Two cases can be told apart:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) same front but with a different graphic element in the printing (the back is the same as the base sticker’s)</li><li>2) same front; it is the back that gives rise to the variant</li></ul>','items.filterLegend.free':'<strong>Free</strong>: sticker given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black) on the back','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','items.filterLegend.titleRetros':'📖 Retro versions glossary','items.filterLegend.retroBase':'<strong>Base set retro</strong>: retro belonging to the series’ base set','items.filterLegend.retroChange':'<strong>Change</strong>: variant intentionally made by the manufacturer; it differs from the base version by a different graphic element in the printing','items.filterLegend.retroFree':'<strong>Free</strong>: retro given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black)','items.filterLegend.retroPrintError':'<strong>Print error</strong>: variant purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
+'form.fig.score':'Rarity','form.fig.scoreHint':'How rare it is. It adds to the Rarity score of whoever has it in their list',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Add preset search filters','items.resetFilters':'Clear all filters','items.searchHint':'Search by keyword','items.searchPlaceholder':'Search...','admin.classifica':'Ranking','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker versions glossary','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Every version has its own colour</strong>, and it is the same everywhere on the site: on the cards, in the search filters and in the titles of the search boxes.','items.filterLegend.base':'<strong>Base version</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer.<br>Two cases can be told apart:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) same front but with a different graphic element in the printing (the back is the same as the base sticker’s)</li><li>2) same front; it is the back that gives rise to the variant</li></ul>','items.filterLegend.free':'<strong>Free</strong>: sticker given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black) on the back','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','items.filterLegend.titleRetros':'📖 Retro versions glossary','items.filterLegend.retroBase':'<strong>Base version</strong>: retro belonging to the series’ base set','items.filterLegend.retroChange':'<strong>Change</strong>: variant intentionally made by the manufacturer; it differs from the base version by a different graphic element in the printing','items.filterLegend.retroFree':'<strong>Free</strong>: retro given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black)','items.filterLegend.retroPrintError':'<strong>Print error</strong>: variant purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
 'profile.title':'My Profile','profile.owned':'In My List','profile.total':'Total','profile.sec.figurines':'Stickers','profile.sec.retros':'Retros','profile.sec.albums':'Albums','profile.sec.bustine':'Wrappers','profile.sec.extras':'Other Items','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -25998,7 +26441,7 @@ const i18n = {
 'contact.q1':'Do you want more information about Sgorbions?','contact.q2':'Do you want to report an error?',
 'contact.q3':'Or do you just want to compliment the administrator?',
 'contact.cta':'For any of these things, send us a message !',
-'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with tissue) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in my list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in my list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
+'wantlist.desc':'Here you can see the series for which your list is complete or incomplete, compared to the Inventory.<br><br>You can export the following lists to Excel:<br>1) Items not in your list (stickers, cards, retros, albums, wrappers, other...)<br>2) Items in your list (incomplete series)<br>3) stickers (with backs) and cards in your list (complete series)','wantlist.pageTitle':'My lists','wantlist.hook':'Would you like to build lists of Sgorbions items in just a few clicks, based on YOUR own list built by browsing the Inventory?<br>If the answer is yes, you\u2019re in the right place!!<br><br>','wantlist.missingTitle':'EXPORT 1: ITEMS NOT IN YOUR LIST','wantlist.hintMissing':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hint':'Click "Exclude from missing list" on series you are not interested in exporting.','wantlist.hintExportMissing':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of items not in your list.<br>Then press <i style="color:var(--text);">Export items not in your list</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">INSTRUCTIONS:</span> Select the series for which to export the list of stickers in your list.<br>Then press <i style="color:var(--text);">Export list of stickers in your list (incomplete series only)</i>.','wantlist.exportMissing':'Export items not in your list','wantlist.exportIncomplete':'Export list of stickers in your list (incomplete series only)','wantlist.export':'Export my complete series stickers'
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
 'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Cerca…','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
@@ -26010,8 +26453,8 @@ const i18n = {
 'profile.changeNat':'✏️ Cambia nazionalità','profile.setNat':'✏️ Imposta nazionalità','profile.changePwd':'🔑 Cambia password','profile.changePwd.title':'🔑 Cambia password','profile.changeNat.title':'Cambia nazionalità','profile.changeUsername':'✏️ Cambia nome utente','profile.changeUsername.title':'✏️ Cambia nome utente','profile.changeUsername.hint':'Il nome utente è il nome pubblico visibile ad altri utenti (es. nella Classifica).<br><br>Usare solo lettere, numeri e underscore, massimo 20 caratteri.','profile.changeUsername.save':'Salva','profile.changeUsername.welcomeIntro':'Ti abbiamo assegnato questo nome utente in automatico. Vuoi personalizzarlo? Puoi sempre cambiarlo in seguito dal tuo profilo.','profile.deleteAccount':'🗑️ Elimina il mio account','profile.statsTitle':'I tuoi numeri Sgorbions','profile.myMessages.title':'I miei messaggi con lo staff',
 'modal.deleteAccount.title':'🗑️ Elimina il mio account','modal.deleteAccount.intro':'Se continui, cancelleremo per sempre:','modal.deleteAccount.item1':'Il tuo profilo: nickname, e-mail, avatar, nazionalità','modal.deleteAccount.item2':'La tua "Mia lista" e la tua posizione in Classifica','modal.deleteAccount.item3':'La tua lista "Ciò che cerco"','modal.deleteAccount.item4':'Il tuo accesso attuale con questa e-mail — potrai comunque registrare un account nuovo con la stessa e-mail in futuro, ma sarà vuoto: nessun dato di quello vecchio verrà recuperato','modal.deleteAccount.blogNote':'Gli eventuali post o commenti che hai scritto sul blog <strong>restano visibili</strong> agli altri utenti, ma il tuo nome verrà sostituito da "Utente eliminato" — nessuno potrà più risalire a te.','modal.deleteAccount.irreversible':'Questa azione non si può annullare.','modal.deleteAccount.confirmPwd':'Conferma la tua password per procedere','modal.deleteAccount.confirmBtn':'Elimina definitivamente il mio account','modal.deleteAccount.confirmGoogleBtn':'Verifica con Google ed elimina il mio account',
 'modal.scoreBoost.title':'Complimenti !','modal.scoreBoost.ok':'Perfetto !','modal.accountDeleted.title':'Account eliminato','modal.accountDeleted.desc':'Il tuo account e tutti i tuoi dati sono stati cancellati definitivamente. Ci dispiace vederti andare via !','modal.accountDeleted.close':'Chiudi',
-'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi','admin.risorse':'🗄️ Risorse',
-'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al punteggio. Ogni livello si attiva dal punteggio minimo indicato in su.',
+'admin.segnalazioni':'🔔 Segnalazioni','admin.eventi':'🔔 Eventi','admin.punteggi':'🏆 Punteggi rarità','admin.risorse':'🗄️ Risorse',
+'admin.levels.heading':'🏆 Livelli utente','admin.levels.desc':'Definisci i livelli in base al Punteggio rarità. Ogni livello si attiva dal punteggio minimo indicato in su.',
 'admin.risorse.title':'🗄️ Risorse','admin.email.thisMonth':'E-mail inviate questo mese','admin.email.plan':'Piano gratuito EmailJS: 200 e-mail/mese (si azzera il 1° di ogni mese).',
 'admin.email.fix':'E-mail rimanenti (come su EmailJS):','admin.email.fix.hint':'Inserisci il numero che leggi sul pannello EmailJS, cioè quante e-mail ti restano. Il riquadro qui sopra continua invece a mostrare quelle già inviate.','admin.save':'Salva','admin.generali.title':'🌐 Impostazioni generali sito','admin.generali.timeoutLabel':'Attesa massima per il caricamento dei dati (secondi)','admin.griglie.title':'📐 Griglie di visualizzazione','admin.griglie.hint':'Quante colonne per riga in ogni box, su computer e su telefono. Da 1 a 12.','admin.griglie.legendLink':'Come si decide','admin.griglie.legendTitle':'📐 Come si decide il numero di colonne','admin.griglie.legendBody':'Vale il valore pi\u00F9 specifico che esiste, e i due casi <b>non si sovrappongono</b>:<br>\u2022 dentro una <b>serie</b> \u2192 il valore di quella serie, se non c\u2019\u00E8 quello generale qui accanto<br>\u2022 dentro un <b>tipo di articolo</b> \u2192 il valore di quel tipo, se non c\u2019\u00E8 quello generale<br>Aprendo una serie il tipo di articolo non conta, e viceversa.<br><br><b>Computer e telefono</b> hanno valori separati: sotto gli 860px vale la colonna \u00ABtelefono\u00BB.<br><br>\u26A0\uFE0F <b>Una sola eccezione.</b> Nelle Figurine, con la modalit\u00E0 \u00ABFronte e retro sempre grandi\u00BB, le colonne le decide lo <b>spazio disponibile</b> e non questa tabella: le card restano grandi e ne entrano quante ce ne stanno. Vale su computer e su telefono, ed \u00E8 voluto.','admin.generali.timeoutHint':'Oltre questo tempo il sito smette di aspettare i dati e mostra il pannello di guasto. Da 3 a 120 secondi. Con una connessione lenta un valore basso fa comparire «SITO MOMENTANEAMENTE NON DISPONIBILE» anche quando i dati stavano arrivando.','newsletter.settingsTitle':'⚙️ Impostazioni E-mail','newsletter.replyToLabel':'Indirizzo per le risposte (Reply-To)','newsletter.replyToHint':'Quando rispondi a un messaggio, l\'e-mail arriverà a questo indirizzo',
 'admin.firebase.plan':'Piano gratuito (Spark): 1 GB storage, 50.000 letture/giorno, 20.000 scritture/giorno.',
@@ -26029,8 +26472,8 @@ const i18n = {
 'contact.email.ph':'la-tua@e-mail.com',
 'contact.info':'Informazioni di contatto',
 'newsletter.title':'Invia Newsletter','newsletter.subject':'Oggetto','newsletter.subject.ph':'es. Nuova serie aggiunta !','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate',
-'classifica.best':'Chi ha costruito la lista più grande?','classifica.levels':'Livelli di Collezionista Sgorbions',
-'admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio minimo','admin.levels.save':'Salva livello',
+'classifica.best':'Di chi è la lista con punteggio rarità maggiore ?','classifica.levels':'Livelli di Collezionista Sgorbions',
+'admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio rarità minimo','admin.levels.save':'Salva livello',
 'hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.',
 'banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
 
@@ -26055,7 +26498,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con velina','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Punteggio selezionati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','form.series.albumCount':'N. figurine album','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici !',
@@ -26069,8 +26512,8 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
-    'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con velina','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Retro set base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+    'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità massiva','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -26204,6 +26647,10 @@ let currentSeriesId = null;
 // da ADMIN e vivono nel riquadro "Filtri aggiuntivi admin".
 let _fotoFilter = null;
 let _noteFilter = false;   // v6.113 - "Con note", solo admin
+// 🆕 v6.502 (Franco) - "Senza rarità", solo admin. Ricalcato su `_noteFilter`: stessi
+// otto punti, stesso riquadro, stesse trappole. Se un domani si tocca uno dei due, si
+// guardi anche l'altro — sono gemelli per costruzione, non per caso.
+let _senzaRaritaFilter = false;   // v6.502
 // Il filtro sul TIPO di oggetto (set base, variazioni, change...) risponde alla
 // domanda "che cosa e' questo?". Non rispondeva a quella che un collezionista si fa
 // davvero: "cosa mi manca?". Da qui il secondo filtro, che e' una DIMENSIONE
@@ -26721,6 +27168,31 @@ function _caroselloScorriBox(box, dir) {
 // con cui i retro si nominano davvero (§13.1).
 // Le righe hanno altezza FISSA e restano vuote invece di sparire: nomi di lunghezza diversa
 // darebbero card di altezza diversa, e in una fila che scorre si vedrebbe subito.
+// 🆕 v6.493 (Franco: *"dove c'e' la stella, scrivere «rarità» accanto al punteggio"*)
+// LA STELLA E LA SUA PAROLA, IN UN POSTO SOLO.
+// 📌 Le righe che disegnano il punteggio nel carosello sono TRE — figurine su computer,
+// retro su telefono, e il ramo comune — cioe' erano gia' tre copie della stessa riga.
+// Aggiungere la parola a mano in tutte e tre avrebbe creato tre posti da cui puo'
+// divergere: e' la lezione di `_codaPunti` (v6.486), applicata prima invece che dopo.
+// ⚠️ La parola e' TRADOTTA, il numero da solo non lo era: ogni volta che si attacca una
+// parola a un numero si scopre di dover tradurre una riga che prima non ne aveva
+// bisogno. Terza volta in giornata (v6.471 «articoli», v6.486 «punti»).
+// ⚠️ Stringa vuota se il punteggio e' zero, com'era prima: la riga resta (tiene
+// l'altezza, e le card della fila si allineano) ma non scrive «0 rarità», che
+// sarebbe un dato dove non ce n'e' uno.
+// 🔄 v6.499 (Franco: *"cambiare da «n rarità» a «rarità 2»"*) — L'ETICHETTA VA PRIMA.
+// 📌 «20 rarità» si legge come una QUANTITA' — venti rarita', come «venti punti» — e la
+// rarita' non si conta: e' un valore, uno solo per articolo. «rarità 20» la nomina e poi
+// la misura, come un cartellino.
+// 🆕 E da questa release la usano anche le CARD DELLE GRIGLIE, che dicevano «20 punti»
+// passando da `_codaPunti`. Due funzioni per la stessa etichetta erano la condizione da
+// cui le due forme diverse sono nate: allineare il testo lasciandole due l'avrebbe
+// riaperta alla prima modifica di una delle due.
+function _stellaRarita(n) {
+  if (!(n > 0)) return '';
+  return '&#11088; ' + (currentLang === 'it' ? 'rarità ' : 'rarity ') + esc(String(n));
+}
+
 function _caroselloRighe(f, nomeSerie, mostraSerie) {
   const serie = esc(nomeSerie.get(f.seriesId) || '');
   // v6.081 (Franco) - LA SERIE SI MOSTRA SOLO SE DISTINGUE. Nel carosello della scheda serie tutte
@@ -26790,7 +27262,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
         // a capo da se': il troncamento che si vedeva era quello del ramo non-telefono.
         { t: esc(f.subcategory || ''), col: COL_SOTTOCAT,    dim: '0.64rem', alt: '1.2em' },
         { t: esc(_etichettaR),         col: COL_IDENTITA,    dim: '0.7rem',  alt: 'auto' },
-        { t: f.score > 0 ? '&#11088; ' + esc(String(f.score)) : '', col: 'var(--success)', dim: '0.66rem', alt: '1.2em', dx: 'right' }
+        { t: _stellaRarita(f.score), col: 'var(--success)', dim: '0.66rem', alt: '1.2em', dx: 'right' }
       ];
     }
     // Le figurine restano come deciso prima: serie, numero, e il nome parola per parola - li' sono
@@ -26812,7 +27284,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
       { t: esc(f.category || ''),    col: COL_CATEGORIA,    dim: '0.68rem', alt: '2.5em' },
       { t: esc(f.subcategory || ''), col: COL_SOTTOCAT,     dim: '0.68rem', alt: '1.2em' },
       { t: esc(f.name || ''),        col: COL_IDENTITA,     dim: '0.74rem', alt: '2.5em' },
-      { t: f.score > 0 ? '&#11088; ' + esc(String(f.score)) : '', col: 'var(--success)', dim: '0.7rem', alt: '1.2em', dx: 'right' }
+      { t: _stellaRarita(f.score), col: 'var(--success)', dim: '0.7rem', alt: '1.2em', dx: 'right' }
     ];
   }
   return [
@@ -26820,7 +27292,7 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
     // v6.277 (Franco) - numero e nome in azzurro, come sulle card.
     { t: f.number ? esc(String(f.number)) : '', col: COL_IDENTITA,    dim: '0.7rem',  alt: '1.2em' }, // v6.080 - senza cancelletto
     { t: esc(f.name || ''),                     col: COL_IDENTITA,    dim: '0.74rem', alt: '2.5em' },
-    { t: f.score > 0 ? '&#11088; ' + esc(String(f.score)) : '', col: 'var(--success)', dim: '0.7rem', alt: '1.2em', dx: 'right' }
+    { t: _stellaRarita(f.score), col: 'var(--success)', dim: '0.7rem', alt: '1.2em', dx: 'right' }
   ];
 }
 
@@ -26932,7 +27404,7 @@ function renderCarosello() {
     const j = Math.floor(Math.random() * (i + 1));
     [mazzo[i], mazzo[j]] = [mazzo[j], mazzo[i]];
   }
-  const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x)])); // v6.080
+  const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x, true)])); // v6.080, v6.493: sempre il nome BREVE
   const inFila = mazzo.slice(0, CAROSELLO_MAX); // v6.081 - la serie si guarda sulle card che finiscono davvero in fila
   const mostraSerie = _caroselloMostraSerie(inFila);
   box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs)).join('');
@@ -26965,7 +27437,7 @@ function renderCaroselloSerie() {
       && _eBase(f) && _fotoFigurina(f, _figs))
     .sort((a, b) => (a.number || 0) - (b.number || 0));
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
-  const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x)])); // v6.080
+  const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x, true)])); // v6.080, v6.493: sempre il nome BREVE
   // v6.081 - qui il filtro e' f.seriesId === currentSeriesId, quindi vale sempre false. Si calcola
   // lo stesso invece di scrivere `false`: se un giorno questo carosello mostrasse anche altro, la
   // riga della serie ricomparirebbe da sola.
@@ -27006,7 +27478,7 @@ function renderCaroselloProdotto() {
       && _eBase(f) && _fotoFigurina(f, _figs));
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   const serie = getData('series', []);
-  const nomeSerie = new Map(serie.map(x => [x.id, _nomeSerieCard(x)])); // v6.080 - terzo carosello
+  const nomeSerie = new Map(serie.map(x => [x.id, _nomeSerieCard(x, true)])); // v6.080 - terzo carosello; v6.493: nome BREVE
   // Si lavora sempre su una COPIA: riordinare l'elenco vero cambierebbe l'ordine in tutto il sito.
   const mazzo = base.slice();
   // v6.073 (Franco) — l'ordine dipende dal prodotto, e non e' un capriccio: le BUSTINE sono
@@ -29292,6 +29764,13 @@ function _ripristinaFlagSerie(s) {
   spunta('series-has-retro-free-version-input',    s && s.hasRetroFreeVersion);   // v6.248
   const nc = document.getElementById('series-nome-corto-input');
   if (nc) nc.value = (s && s.nomeCorto) || '';                               // v6.080
+  // 🆕 v6.480 - il Nome album. 🔴 Questa riga non e' facoltativa come il campo: senza, la scheda
+  // si aprirebbe con la casella VUOTA su una serie che il nome album ce l'ha, e `saveSeries` lo
+  // riscriverebbe vuoto al primo salvataggio — cancellando il dato mentre si cambia altro.
+  // E' lo stesso avvertimento dei flag (v6.219, v6.235): cio' che la form non ripristina, il
+  // salvataggio lo azzera.
+  const na = document.getElementById('series-nome-album-input');
+  if (na) na.value = (s && s.nomeAlbum) || '';                               // v6.480
   renderSeriesBypassCheckboxes(s && s.controlliSospesi);                     // v6.080
   // Dipende da `noRetro`, quindi va DOPO le spunte e non prima: e' il motivo per cui sta qui
   // dentro invece che nei due rami.
@@ -29431,7 +29910,6 @@ function openAddSeriesModal(seriesId) {
       //  che l'admin credeva ancora di controllare.)
       document.getElementById('series-first-number-input').value = s.firstNumber || '';
       document.getElementById('series-last-number-input').value = s.lastNumber || '';
-      document.getElementById('series-album-count-input').value = s.albumCount || '';
       // v6.186 - le otto spunte, `nomeCorto` e i controlli sospesi sono passati in
       //          `_ripristinaFlagSerie`, chiamata qui sopra per tutti e due i rami.
       // 🔴 v6.170 — LA CASELLA NUOVA VA RIPRISTINATA QUI, e questa riga e' la piu' importante della
@@ -29495,7 +29973,7 @@ function openAddSeriesModal(seriesId) {
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
     }
   } else {
-    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-album-count-input','series-desc-input','series-desc-en-input'].forEach(id => document.getElementById(id).value = '');
+    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-desc-input','series-desc-en-input'].forEach(id => document.getElementById(id).value = '');
     // 🔴 v6.186 - QUI STAVA IL BUCO: si azzeravano TRE caselle su otto, e le altre cinque
     //             (`hasRetroChange`, `noRetro`, `hasSubseries`, `hasSizes`, `hasVariations`) piu'
     //             `nomeCorto` e i controlli sospesi restavano quelli dell'ultima serie aperta.
@@ -29588,6 +30066,11 @@ async function saveSeries() {
   const serieContenitore = document.getElementById('series-contenitore-input')?.checked || false; // v6.204
   const controlliSospesi = _leggiControlliSospesi(); // v6.080
   const nomeCorto = (document.getElementById('series-nome-corto-input')?.value || '').trim(); // v6.080
+  // 🆕 v6.480 - stessa forma della riga sopra, `.trim()` compreso: due campi gemelli letti
+  // in due modi diversi divergono alla prima modifica di uno dei due.
+  // ⚠️ NON entra nel controllo degli obbligatori due schermate piu' giu': vedi il commento
+  // nell'index. Il vuoto e' ammesso, ed e' una decisione.
+  const nomeAlbum = (document.getElementById('series-nome-album-input')?.value || '').trim(); // v6.480
   const countVariations = parseInt(document.getElementById('series-count-variations-input').value) || null;
   const countUnofficialVariations = parseInt(document.getElementById('series-count-unofficial-variations-input').value) || null;
   const countChange = parseInt(document.getElementById('series-count-change-input').value) || null;
@@ -29598,7 +30081,10 @@ async function saveSeries() {
   const count = document.getElementById('series-count-input').value;
   const firstNumber = parseInt(document.getElementById('series-first-number-input').value) || null;
   const lastNumber = parseInt(document.getElementById('series-last-number-input').value) || null;
-  const albumCount = parseInt(document.getElementById('series-album-count-input').value) || null;
+  // 🗑️ v6.495 - qui si leggeva `series-album-count-input`. La casella non c'e' piu'.
+  // ⚠️ NON si e' lasciato un `const albumCount = null` per prudenza: scriverebbe `null`
+  // su ogni serie salvata, cioe' CANCELLEREBBE il dato esistente a ogni modifica. Il
+  // campo sparisce dai payload, e lo spread `...series[idx]` conserva cio' che c'e'.
   const descIt = document.getElementById('series-desc-input').value.trim();
   const desc = document.getElementById('series-desc-en-input').value.trim();
   // v6.246 - i tipi di omaggio, DUE liste come i change: uno per riga.
@@ -29692,7 +30178,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, albumCount: albumCount ?? series[idx].albumCount ?? null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -29700,7 +30186,7 @@ async function saveSeries() {
         _cache.series = series;   // la CACHE tiene gli items: si strippa solo cio' che parte
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, albumCount: albumCount ?? null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -30031,8 +30517,16 @@ function toggleSearchClearBtn(inputId) {
 const ARTICOLI = {
   figurines: {
     pos: 1,
-    it: 'Figurine con velina',   en: 'Stickers with tissue',
-    itSing: 'figurina con velina', enSing: 'sticker with tissue',
+    // 🔄 v6.481 (Franco) — «Figurine con velina» -> «Figurine con retro». L'inglese
+    // l'ha scelto lui: «Stickers with backs». ⚠️ Il SINGOLARE dice `back`, non `backs`:
+    // una figurina di retro ne ha uno, e le due righe devono concordare da sole.
+    // 🔴 QUESTA NON E' L'UNICA FONTE DEL NOME: c'e' anche `catalog.stickers` nelle due
+    // tabelle i18n, da cui lo prende la card dell'hub della pagina serie. Le due sono
+    // state cambiate insieme, e `prova-v6481` pretende che restino uguali — perche'
+    // nessuna delle due sa dell'altra, ed e' la forma esatta del difetto della
+    // tavolozza del 24 agosto.
+    it: 'Figurine con retro',   en: 'Stickers with backs',
+    itSing: 'figurina con retro', enSing: 'sticker with back',
     genere: 'f',
     icona: '&#129535;',
     colonne: { d: 7, m: 4 },
@@ -30827,7 +31321,17 @@ const _RAGGR_VERSIONE = {
   pieHTML: () => `<button onclick="openFilterLegendModal()" title="${currentLang === 'it' ? 'Cosa significano questi termini?' : 'What do these terms mean?'}" style="background:none;border:none;color:var(--text);font-size:0.75rem;text-decoration:underline;cursor:pointer;padding:0;font-family:inherit;">${currentLang === 'it' ? 'Legenda versioni' : 'Versions glossary'}</button>`,
   valoreDi: f => _chiaveTipo(f),
   etichettaDi: val => {
-    if (val === 'base') return (currentLang === 'it') ? 'Base' : 'Base';
+    // 🔄 v6.475 (Franco: *"la pillola «Base» etichettala «Versioni base»"*, poi al
+    // SINGOLARE su sua conferma) — LA PILLOLA E LA SUA LEGENDA ORA DICONO LA STESSA
+    // PAROLA. Diceva «Base» mentre la voce che la definisce diceva «Figurina set base»,
+    // e il link a quella legenda sta in fondo a QUESTO riquadro (v6.333): si premeva
+    // «Cosa significano questi termini?» e si trovava spiegato un termine assente.
+    // 📌 Singolare come le vicine («Variazione ufficiale», «Change», «Omaggio»), e
+    // identico alla voce di legenda: due punti del sito, una parola sola.
+    // ⚠️ Questo riquadro e' `unaRiga` (v6.357): le pillole non vanno a capo, il box
+    // scorre. Un'etichetta piu' lunga qui non tronca e non rompe niente — fa
+    // cominciare lo scorrimento prima, su schermo stretto.
+    if (val === 'base') return (currentLang === 'it') ? 'Versione base' : 'Base version';
     const v = _versioneDiChiave(val);
     return v ? ((currentLang === 'it') ? v.it : v.en) : val;
   },
@@ -31605,7 +32109,15 @@ function _titoloProdotto(sec) {
 function _contiTipologie(oggetti) {
   const conta = f => oggetti.filter(f).length;
   return [
-    { n: conta(_eBase),                     col: 'var(--type-base)',       it: ['base', 'base'],                                     en: ['base', 'base'], k: 'base' },
+    // 🔄 v6.485 (Franco: *"negli altri posti avevamo detto che deve apparire «versione
+    // base» e non «base»"*) — LA VOCE PRENDE LA FORMA DELLE SUE VICINE, singolare e
+    // plurale: le altre quattro hanno sempre avuto due parole diverse, questa aveva
+    // «base» due volte perche' la parola era invariabile. Ora non lo e' piu'.
+    // 📌 Segue la v6.475, che la stessa decisione l'aveva applicata alla pillola della
+    // ricerca e alle due legende — cioe' ai posti nominati quel giorno, non a tutti
+    // quelli che dicono la parola. Una decisione di nome applicata a meta' non sembra
+    // sbagliata: sembra un altro posto.
+    { n: conta(_eBase),                     col: 'var(--type-base)',       it: ['versione base', 'versioni base'],                   en: ['base version', 'base versions'], k: 'base' },
     { n: conta(f => f.isVariation),         col: 'var(--type-official)',   it: ['variazione ufficiale', 'variazioni ufficiali'],     en: ['official variation', 'official variations'], k: 'ufficiale' },
     { n: conta(f => f.isUnofficialVariation), col: 'var(--type-unofficial)', it: ['variazione non ufficiale', 'variazioni non ufficiali'], en: ['unofficial variation', 'unofficial variations'], k: 'nonufficiale' },
     { n: conta(f => f.isChange),            col: 'var(--type-change)',     it: ['change', 'change'],                                 en: ['change', 'changes'], k: 'change' },
@@ -31742,10 +32254,48 @@ function _righeTipologie(oggetti, modo) {
 // questo progetto — due punti che rispondono alla stessa domanda divergono SEMPRE (§12-bis).
 // 📌 «(base)» non e' decorativo: tutte e due contano `_eBase`, e prima nessuna delle due lo
 // diceva. La parola nuova non aggiunge un dettaglio, toglie un'ambiguita' che c'era gia'.
-function _descArticoliBase(n) {
-  return currentLang === 'it'
-    ? (n === 1 ? '1 articolo (base)' : n + ' articoli (base)')
-    : (n === 1 ? '1 item (base)'     : n + ' items (base)');
+// 🆕 v6.484 (Franco: *"si era detto che i tipi di articolo che hanno solo una versione la
+// parola «base» non deve apparire mai; invece appare sulla card «Figurine da attaccare»"*).
+// 🔴 LA REGOLA NON E' NUOVA: E' LA v6.465, e questa funzione non la conosceva. La' e' scritta
+// con le parole di Franco di allora — *"la parola base non indicarla se c'e' solo una tipologia
+// di versione nei conteggi da mostrare"* — e col perche': «change» dice COSA sono quei dodici,
+// «base» dice solo che non sono le altre; se le altre non ci sono, non dice piu' niente.
+// 📌 PERCHE' ERA SFUGGITA, ed e' la parte che vale piu' della correzione: questa funzione nasce
+// DOPO (v6.471) e la v6.474 ha unificato su di lei le DUE card dell'Inventario. Unificare due
+// punti che dicono la stessa cosa e' giusto — ma li ha uniti sulla frase di PRIMA della v6.465,
+// cioe' ha reso coerenti due card che sbagliavano tutte e due. Unificare non rende giusto: rende
+// uguale. 🔴 Quando si unifica, si controlla che il testo scelto sia ancora quello buono.
+// ⚠️ `soloBase` si RICEVE, non si calcola qui: questa funzione ha in mano un numero, non
+// l'elenco. Ricavarlo qui vorrebbe dire rileggere gli articoli una seconda volta per una
+// domanda a cui chi chiama ha gia' risposto (lezione v5.978).
+// 📌 Il valore di partenza e' `false`: chi un domani chiamasse la funzione senza pensarci
+// ottiene il comportamento vecchio, che e' quello prudente — «(base)» di troppo si legge, «base»
+// mancante dove serviva no.
+// 🆕 v6.486 (Franco: *"c'e' ancora «pt», che e' l'abbreviazione di «punteggio»"*, poi
+// *"cambiato «pt» in «punti»"*) — LA CODA DEL NUMERO DI RARITA', IN UN POSTO SOLO.
+// 🔴 «pt» ERA UGUALE NELLE DUE LINGUE, e per questo le tre righe che lo scrivevano
+// erano una stringa sola: il sito non traduceva quella coda e non se ne accorgeva
+// nessuno. «punti» costringe a tradurre — ed e' esattamente cio' che era successo
+// alla v6.471 quando «base» diventò «articoli».
+// 📌 E fa comparire un caso che l'abbreviazione non aveva: il SINGOLARE.
+function _codaPunti(n) {
+  const it = currentLang === 'it';
+  return n + (it ? (n === 1 ? ' punto' : ' punti') : (n === 1 ? ' point' : ' points'));
+}
+
+function _descArticoliBase(n, soloBase = false) {
+  const it = currentLang === 'it';
+  if (soloBase) {
+    return it ? (n === 1 ? '1 articolo' : n + ' articoli')
+              : (n === 1 ? '1 item'     : n + ' items');
+  }
+  // 🔄 v6.485 (Franco) — «(base)» -> «(versione base)».
+  // ⚠️ SINGOLARE anche quando gli articoli sono tanti, e non e' una svista: la
+  // parentesi dice QUALI articoli sono stati contati, non quante versioni ci sono.
+  // «1541 articoli (versioni base)» direbbe che le versioni sono 1541.
+  return it
+    ? (n === 1 ? '1 articolo (versione base)' : n + ' articoli (versione base)')
+    : (n === 1 ? '1 item (base version)'      : n + ' items (base version)');
 }
 
 function prodottoCardHTML(sec, tutti, serieOrdinate) {
@@ -31764,7 +32314,10 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
   // e l'istruzione permanente in testa al documento dice di parlare la lingua dello schermo.
   // ⚠️ La gemella dice ancora «12 oggetti» per la stessa cosa (conta anch'essa le sole base, e
   // non lo dice): due parole per un conto solo, ed è un punto aperto, non una svista di qui.
-  const desc = _descArticoliBase(basi.length);
+  // 🆕 v6.484 - «esistono articoli di questo tipo che NON sono base?». Se no, «(base)»
+  // non distingue niente e non si scrive. E' `_soloBase` della v6.465 detto con i dati
+  // che questa card ha in mano.
+  const desc = _descArticoliBase(basi.length, basi.length === miei.length);
   // v6.073 (Franco) — le serie che di quel prodotto non hanno NIENTE non si mostrano affatto.
   // Uno zero occupa una riga per dire che non c'e' niente da dire: l'elenco cambia lunghezza da
   // una card all'altra, ma dice solo cose vere.
@@ -32251,7 +32804,10 @@ function _singolareTipo(t) {
 function tipoProdottoCardHTML(t, tutti) {
   const suoi = tutti.filter(f => (f.tipoProdotto || '') === t.id);
   const quanti = suoi.filter(_eBase).length;
-  const desc = _descArticoliBase(quanti);
+  // 🆕 v6.484 - la stessa domanda della gemella, con i nomi di qui. Le due card sono
+  // state unificate dalla v6.474: se una impara la regola e l'altra no, tornano a
+  // divergere - ed e' esattamente cio' che quella release voleva impedire.
+  const desc = _descArticoliBase(quanti, quanti === suoi.length);
   const _url = _fotoBoxUrl(t.id);   // v6.145
   const _foto = _url
     ? '<img src="' + cloudinaryUrl(_url, 'w_400,h_400,c_fit,q_auto,f_auto') +
@@ -33446,7 +34002,7 @@ function seriesCardHTML(s) {
     const freq = {};
     scoredFigs.forEach(f => { freq[f.score] = (freq[f.score] || 0) + 1; });
     const modeScore = Object.entries(freq).sort((a,b) => b[1]-a[1])[0][0];
-    modeScoreHTML = `<span style="font-size:0.78rem;color:var(--accent);font-family:var(--font-ui);">⭐ ${modeScore} pt</span>`;
+    modeScoreHTML = `<span style="font-size:0.78rem;color:var(--accent);font-family:var(--font-ui);">⭐ ${_codaPunti(modeScore)}</span>`;
   }
   // 🆕 v6.433 (Franco) - SU TELEFONO IL PUNTEGGIO STA SULLA RIGA DELL'ANNO, A DESTRA.
   // Franco: *"nel mobile, sulla card della serie, il punteggio mettilo sulla riga dell'anno, a dx"*.
@@ -34358,7 +34914,12 @@ function renderSeriesMeta(s) {
         ? (it
             ? (quanti === 1 ? "Ce l'hai!" : (femminile ? 'Le hai tutte !' : 'Li hai tutti !'))
             : (quanti === 1 ? 'You have it !' : 'You have them all !')) + '\u{1F389}'
-        : nfmt(n) + ' ' + inLista;
+        // 🔄 v6.479 (Franco) — fra parentesi anche qui: e' la stessa frase dei box
+        // della pagina serie, e finche' i due posti la scrivevano diversa uno dei due
+        // era sbagliato senza che si potesse dire quale.
+        // ⚠️ Il ramo qui sopra («Le hai tutte !🎉») resta NUDO, ed e' voluto: non e'
+        // «x nella tua lista», e' un'esclamazione, e una parentesi la spegnerebbe.
+        : '(' + nfmt(n) + ' ' + inLista + ')';
       // 🆕 v6.430 (Franco) - LA RIGA DELLA LISTA E' BLU, ed e' il blu della lista.
       // Il colore e' `--action` (#2563eb), lo stesso di `.owned-btn.on` e `.toggle-btn-blue.on`:
       // cioe' del pulsante con cui quella lista si riempie. Non un blu qualunque - QUEL blu.
@@ -34541,10 +35102,27 @@ function updateSectionCounts() {
     const el = document.getElementById('count-' + sec);
     if (!el) return;
     const total = items.length;
-    const unit = currentLang === 'it' ? ' oggetti' : ' items';
+    // 🔄 v6.477 (Franco: *"dovrebbe essere «xxx articoli»"*) — L'ULTIMA «oggetti».
+    // 📌 Chiude un punto che il codice si era annotato da solo: il commento della
+    // v6.471 diceva *"la gemella dice ancora «12 oggetti» per la stessa cosa: due
+    // parole per un conto solo, ed è un punto aperto"*. La v6.474 ha sistemato la
+    // gemella, questa toglie quella rimasta qui.
+    // 📌 «articoli» e' la parola dello SCHERMO — la scheda si chiama «Tipo di
+    // articolo» — ed e' l'istruzione permanente in testa a procedura-deploy.md.
+    // ⚠️ L'inglese NON cambia: `items` era gia' la parola giusta. Una modifica sola,
+    // e non due, perche' le due lingue non erano sbagliate allo stesso modo.
+    const unit = currentLang === 'it' ? ' articoli' : ' items';
     if (currentUser && total > 0) {
       const ownedCount = items.filter(f => owned.includes(f.id)).length;
-      const ownedLabel = currentLang === 'it' ? ownedCount + ' nella tua lista' : ownedCount + ' in my list';
+      // 🔄 v6.479 (Franco: *"proviamo a mettere, ovunque nel sito, «x nella tua lista»
+      // tra ()"*, con questa card per esempio) — LE PARENTESI NON SONO UNA NOVITA':
+      // la pagina delle Liste scrive gia' «(N / M nella tua lista)». Qui e negli
+      // specchietti della scheda serie la stessa frase era nuda, ed erano due modi di
+      // scrivere la stessa cosa a due schermate di distanza.
+      // 📌 Perche' le parentesi ci stanno bene: questa riga e' un INCISO sul numero
+      // della riga sopra («100 articoli» / «(12 nella tua lista)»), non un secondo
+      // dato in fila. La parentesi lo dice senza doverlo spiegare.
+      const ownedLabel = currentLang === 'it' ? '(' + ownedCount + ' nella tua lista)' : '(' + ownedCount + ' in your list)';
       el.innerHTML = total + unit + '<br>' + ownedLabel;
     } else {
       el.textContent = total + unit;
@@ -34555,6 +35133,7 @@ function updateSectionCounts() {
 function openSeriesSection(section) {
   _fotoFilter = null;
   _noteFilter = false;   // v6.113 - come i filtri foto: non sopravvive al cambio sezione
+  _senzaRaritaFilter = false;   // v6.502 - idem
   // 🗑️ v6.346 - qui stava `_itemTypeFilter = _tipoIniziale()`. Il suo mestiere - dare a un
   // non-admin la vista «solo base» all'apertura - lo fa `_azzeraTuttiIRaggr(section)` due righe
   // piu' sotto, che dalla v6.338 semina la pillola Base nel riquadro invece di svuotarlo.
@@ -35187,8 +35766,8 @@ async function backfillPublicScores() {
     const realUserIds = new Set(allUsers.map(u => u.id));
     const orphanOwned = allOwned.filter(o => !realUserIds.has(o.userId)).length;
 
-    if (progressEl) progressEl.textContent = 'Completato: punteggio aggiornato per tutti i ' + done + ' utenti.' + (orphanOwned ? ' (' + orphanOwned + ' dati "Mia lista" orfani ignorati, utenti non più esistenti)' : '');
-    toast('Punteggio ricalcolato per tutti i ' + done + ' utenti', 'success');
+    if (progressEl) progressEl.textContent = 'Completato: Punteggio rarità aggiornato per tutti i ' + done + ' utenti.' + (orphanOwned ? ' (' + orphanOwned + ' dati "Mia lista" orfani ignorati, utenti non più esistenti)' : '');
+    toast('Punteggio rarità ricalcolato per tutti i ' + done + ' utenti', 'success');
     _cache.public_profiles = await fsGetAll('public_profiles');
     renderClassifica();
   } catch(e) {
@@ -35239,6 +35818,15 @@ function toggleNoteFilter() {
   _noteFilter = !_noteFilter;
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (toggleNoteFilter)', e); }
+}
+
+// 🆕 v6.502 (Franco: *"un filtro, admin visibile, per mostrare le carte senza punteggio
+// rarita'"*). `currentItemPage = 1` come i due gemelli qui sopra, e per la stessa ragione
+// della v6.113: restare a pagina 7 di un elenco che si e' appena accorciato mostra il vuoto.
+function toggleSenzaRaritaFilter() {
+  _senzaRaritaFilter = !_senzaRaritaFilter;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleSenzaRaritaFilter)', e); }
 }
 
 // ============================================================
@@ -35389,6 +35977,7 @@ function renderItemTypeFilters() {
       // tipo che nella sezione non esiste. Gira dentro renderItems, PRIMA del filtro: vale subito.
       _fotoFilter = null;
       _noteFilter = false;   // v6.113 - stessa ragione: un non-admin non ha come spegnerlo
+      _senzaRaritaFilter = false;   // v6.502 - idem, ed e' il punto che si dimentica
     } else {
       const itl = (currentLang === 'it');
       // niente emoji, per la regola posta da Franco: le icone ci sono sempre o mai.
@@ -35442,6 +36031,10 @@ function renderItemTypeFilters() {
       // posto da cui si puo' spegnere, ed e' anche la ragione per cui va azzerato quando chi guarda
       // non e' admin (vedi sopra, lezione della v6.095).
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_noteFilter ? 'on' : ''}" onclick="toggleNoteFilter()" title="${itl ? 'Con note' : 'With notes'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Con note' : 'With notes'}</span></div>`;
+      // 🆕 v6.502 - "Senza rarità". La stringa e' COPIATA da quella qui sopra e cambiano
+      // solo la variabile, la funzione e le due parole: due pulsanti gemelli scritti in
+      // due modi somiglianti si confrontano male a occhio (lezione v6.164).
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_senzaRaritaFilter ? 'on' : ''}" onclick="toggleSenzaRaritaFilter()" title="${itl ? 'Senza rarità' : 'Without rarity'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Senza rarità' : 'Without rarity'}</span></div>`;
 
       elAdmT.innerHTML = ha;
       elAdm.style.display = '';
@@ -35807,6 +36400,7 @@ function azzeraTuttiIFiltri() {
   _azzeraTuttiIRaggr();              // i tre raggruppamenti per tipo (v6.266)
   _fotoFilter = null;
   _noteFilter = false;
+  _senzaRaritaFilter = false;   // v6.502
   _ownedFilter = 'all';
   _wishlistFilter = false;
   // 🗑️ v6.346 - qui stavano `_itemTypeFilter = _tipoIniziale()` e `_azzeraTuttiIParent()`. Il
@@ -35857,6 +36451,7 @@ function _qualcheFiltroAcceso() {
     || _RAGGRUPPAMENTI.some(v => !_raggrAlSuoSeme(v))                   // i raggruppamenti, versione compresa (v6.323)
     || _fotoFilter !== null
     || _noteFilter
+    || _senzaRaritaFilter               // v6.502
     || _ownedFilter !== 'all'
     || _wishlistFilter
     // 🗑️ v6.346 - qui stavano le due righe gemelle delle due appena tolte da `azzeraTuttiIFiltri`:
@@ -35970,6 +36565,12 @@ function getCurrentlyFilteredItems(opts) {
     // in cui non c'e' scritto niente. Il campo lo scrive solo l'admin (v6.096), quindi l'oggetto qui
     // e' sempre quello giusto - non c'e' il ripiego sulla base che complica il filtro delle foto.
     if (_noteFilter && !String(f.note || '').trim()) return false;
+    // 🆕 v6.502 - "Senza rarità". ⚠️ `!(f.score > 0)` e non `f.score === 0`: nei dati il
+    // «senza» ha tre facce — `undefined` (mai toccato), `null`, `0` — e la sola terza e'
+    // rara. Con l'uguaglianza il filtro avrebbe mostrato quasi niente e sarebbe sembrato
+    // rotto. E' la stessa condizione con cui `_stellaRarita` decide se scrivere la stella:
+    // cio' che la card tace e' cio' che questo filtro mostra.
+    if (_senzaRaritaFilter && (f.score > 0)) return false;
     if (_own) {
       const ceLho = _own.includes(f.id);
       if (_ownedFilter === 'owned' && !ceLho) return false;
@@ -37518,6 +38119,20 @@ function renderItems() {
     }
   }
   grid.innerHTML = items.map(f => {
+    // 🔴 v6.503 - QUESTE DUE STANNO IN CIMA, E NON E' UNA QUESTIONE DI ORDINE ESTETICO.
+    // Sono `const`, quindi vivono in una zona morta finche' la loro riga non viene
+    // eseguita: chiamarle prima non da' `undefined`, da' ReferenceError e ferma tutto.
+    // La v6.501 l'ha fatto — `descHTML` le usava cento righe prima — e la griglia si e'
+    // svuotata in ogni sezione. Non se n'e' accorto nessuno dei quattro controlli
+    // (node --check, le 133 suite, la preview, controllo-tdz.py): l'ha visto Franco.
+    // 📌 Chi aggiunge una riga alla card la scriva pure dove vuole: da qui in poi la
+    // funzione che le serve e' gia' definita.
+    // ── il markup di UNA RIGA della card: porta il nome del suo campo (data-campo) e,
+    //    se e' vuota, la classe retro-riga-vuota. Chi decide se riservarle il posto e'
+    //    _allineaRigheRetro(), dopo il render - perche' quali card stiano sulla stessa
+    //    riga di griglia lo sa solo il CSS, in base alla larghezza (v6.092).
+    const _rigaCard = (testo, stile, campo) =>
+      `<div class="retro-riga${testo ? '' : ' retro-riga-vuota'}" data-campo="${campo}" style="${stile}">${testo || '&nbsp;'}</div>`;
     const isOwned = owned.includes(f.id);
     const icon = SECTION_ICONS[currentSection];
     // Una Variazione/Change è essenzialmente un collegamento (Figurina base + Retro): se non ha
@@ -37714,14 +38329,18 @@ function renderItems() {
     const adminBtns = (_btnModifica || _btnClona)
       ? `<div style="position:absolute;top:8px;left:8px;display:flex;gap:4px;">${_btnModifica}${_btnClona}</div>` : '';
     const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="${currentLang === 'it' ? 'Segnala qualcosa all\'amministratore per questa figurina' : 'Report something to the administrator about this sticker'}" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
-    const descHTML = f.desc ? `<div class="fig-desc" style="font-size:0.78rem;color:var(--muted);margin-top:4px;">${f.desc.substring(0,60)}${f.desc.length>60?'...':''}</div>` : '';
+    const descHTML = _rigaCard(
+    f.desc ? esc(f.desc.substring(0,60)) + (f.desc.length > 60 ? '...' : '') : '',
+    'font-size:0.78rem;color:var(--muted);margin-top:4px;', 'descrizione');
     // v5.980 (Franco) — il punteggio sta SEMPRE in fondo alla card, in riga con "Mia lista".
     // Prima era una riga a se' sopra la barra delle azioni: la sua altezza dipendeva da quante
     // righe aveva la card (nome corto o lungo, sottoserie, sottonome, descrizione), quindi in una
     // griglia il punteggio non era mai alla stessa altezza da una card all'altra. Ancorandolo alla
     // barra delle azioni si allinea da solo, qualunque cosa ci sia sopra. Niente margin-top: qui
     // l'allineamento lo da' la riga.
-    const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);">⭐ ${f.score} pt</div>` : '';
+    // 🔄 v6.499 - era «⭐ N punti», da `_codaPunti`. Ora dice «⭐ rarità N» e lo chiede alla
+  // stessa funzione del carosello: un'etichetta sola per i due posti che la mostrano.
+  const scoreHTML = (f.score && f.score > 0) ? `<div style="font-size:0.78rem;color:var(--accent);">${_stellaRarita(f.score)}</div>` : '';
     // 🆕 v6.362 - anche la card passa da `_mostraTaglia`. Prima bastava che `f.size` non fosse
     // vuoto, e col trasloco quella riga sarebbe diventata una perdita di dati travestita: i valori
     // di Taglia gia' scritti sulle figurine CON VELINA restano nei record (nessuno li cancella), e
@@ -37729,7 +38348,10 @@ function renderItems() {
     // esiste piu'. ⚠️ I dati vecchi non si toccano qui: si smettono di mostrare dove non hanno piu'
     // significato. Spostarli sulle rispettive da-incollare e' un intervento sui DATI, con anteprima,
     // e non una riga di rendering.
-    const sizeHTML = (f.size && _mostraTaglia(f, _serieById.get(f.seriesId))) ? `<div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">📏 ${f.size}</div>` : '';
+    // 🔄 v6.501 - anche taglia e descrizione a posto fisso (Franco: *"anche loro"*).
+    const sizeHTML = _rigaCard(
+      (f.size && _mostraTaglia(f, _serieById.get(f.seriesId))) ? '📏 ' + esc(f.size) : '',
+      'font-size:0.78rem;color:var(--muted);margin-top:2px;', 'taglia');
     // v5.804 — Franco: la sottoserie NON sostituisce più il numero sulla card. Il numero resta in
     // etichetta (#N) e la sottoserie va su una riga a parte, nello stesso punto/stile in cui i Retro
     // mostrano la loro categoria (vedi subseriesHTML poco sotto).
@@ -37752,7 +38374,10 @@ function renderItems() {
   // un avviso, niente. Prima di modificare un pezzo di markup va guardato CHI LO USA, non solo che
   // esista: `grep` del nome, e se torna una riga sola quella riga e' morta.
     // v5.804 — riga Sottoserie per le Figurine, nello stesso punto/stile della categoria dei Retro.
-    const subseriesHTML = (currentSection === 'figurines' && f.subseries) ? `<div style="font-size:0.78rem;color:var(--muted);">${esc(f.subseries)}</div>` : '';
+    // 🗑️ v6.501 (Franco) - QUI STAVA LA SOTTOSERIE. *"Va tagliata fuori; useremo le
+    // sottoserie in un altro modo, e non abbiamo articoli con sottoserie popolata"*.
+    // 📌 Il campo resta sul modello e nella scheda: sparisce dalla GRIGLIA, dove
+    // avrebbe preteso una riga a posto fisso per un dato che oggi non ha nessuno.
     // v5.765 — Card Retro: PRIMA riga = Categoria (con Sottocategoria se presente), SECONDA riga
     // = Nome. Sostituisce il vecchio schema (prima riga "Categoria - Nome", seconda la categoria).
     // Le Figurine restano invariate. Il vecchio prefisso catPrefix qui per i Retro non serve piu'.
@@ -37762,7 +38387,7 @@ function renderItems() {
     // a se' piu' in basso, che su una card da 85px era una riga sprecata.
     const _mobileFigCard = _isMobileViewport() && !isRetroCard;
     const scoreInlineHTML = (_mobileFigCard && f.score && f.score > 0)
-      ? `<span class="fig-score-inline">⭐ ${f.score} pt</span>` : '';
+      ? `<span class="fig-score-inline">${_stellaRarita(f.score)}</span>` : '';
     // 🔴 v6.314 (Franco) - LA CATEGORIA SULLA CARD DI UN RETRO SI MOSTRA SEMPRE. Qui viveva la
     // regola della v5.976: se il Nome cominciava gia' con la Categoria (tolleranza di genere della
     // v5.907), la riga della Categoria spariva per non leggere due volte la stessa parola.
@@ -37804,8 +38429,11 @@ function renderItems() {
     // se e' vuota, la classe retro-riga-vuota. Chi decide e' _allineaRigheRetro(), dopo il render -
     // perche' quali card stiano sulla stessa riga di griglia lo sa solo il CSS, in base alla
     // larghezza. Il markup non prova a indovinarlo.
-    const _rigaCard = (testo, stile, campo) =>
-      `<div class="retro-riga${testo ? '' : ' retro-riga-vuota'}" data-campo="${campo}" style="${stile}">${testo || '&nbsp;'}</div>`;
+    // 🔄 v6.503 - LE DUE DEFINIZIONI SONO SALITE IN CIMA AL `map`. Stavano qui, e la
+    // v6.501 ha fatto chiamare `_rigaCard` da `descHTML`, che sta cento righe piu' su:
+    // ReferenceError alla prima card, e griglia vuota in tutte le sezioni.
+    // 📌 Spostate le DEFINIZIONI e non la chiamata: cosi' ogni uso futuro nasce gia'
+    // dopo la dichiarazione, invece di rimettere a posto un caso e lasciare la trappola.
     // 🧪 v6.273 (Franco) - il campo si presenta: etichetta in bianco, valore in azzurro.
     // ⚠️ Col valore vuoto torna '' e non l'etichetta da sola, altrimenti `_rigaCard` vedrebbe una
     // riga piena dove non c'e' niente e l'allineamento fra card affiancate (v6.037) salterebbe.
@@ -37828,9 +38456,27 @@ function renderItems() {
     // vivono dentro il ciclo che disegna le card. `node --check` nemmeno: la sintassi e' perfetta.
     // L'unico modo di accorgersene e' guardare l'ordine delle dichiarazioni, che e' esattamente
     // quello che la v6.195 ha imparato a caro prezzo su un'altra riga.
-    const _famigliaCard = (currentSection === 'figurines') ? (_famigliaPerBase.get(f.id) || '') : '';
-    const famigliaHTML = _famigliaCard
-      ? `<div style="font-size:0.82rem;margin-top:1px;">${_campoCard(currentLang === 'it' ? 'FAMIGLIA: ' : 'FAMILY: ', esc(_famigliaCard), COL_CATEGORIA)}</div>` : '';
+    // 🔄 v6.501 (Franco) - LA FAMIGLIA SI VEDE SU TUTTE E DUE LE CARD: sulle figurine
+    // con retro, dov'era, E sulle da-attaccare, che sono l'articolo a cui il campo
+    // appartiene davvero.
+    // 📌 LA v6.366 NON VIENE REVOCATA, ed e' il punto: quella release aveva messo la
+    // famiglia sulle con-retro con una ragione scritta (*"la famiglia e' un fatto
+    // dell'album, il campo vive sulla da-attaccare, ma chi guarda l'inventario guarda le
+    // figurine con velina"*). Franco ha prima chiesto di spostarla, poi - messo davanti
+    // a quella ragione - ha detto *"hai ragione, lasciala anche per le figurine con
+    // retro"*. Una decisione vecchia con la sua ragione accanto si e' difesa da sola.
+    // ⚠️ DUE FONTI PER LO STESSO CAMPO, e sono diverse per costruzione: sulla con-retro
+    // la famiglia sta sulla da-attaccare collegata (mappa `_famigliaPerBase`); sulla
+    // da-attaccare sta sul record stesso. Non e' una copia da unificare: e' lo stesso
+    // dato guardato dai due capi del collegamento.
+    const _famigliaCard = (currentSection === 'figurines') ? (_famigliaPerBase.get(f.id) || '')
+                        : (currentSection === 'attaccare') ? ((f.famiglia || '').trim())
+                        : '';
+    // 🔄 v6.501 - da `_rigaCard`, come tutte le altre: cosi' `_allineaRigheRetro` le
+    // tiene in colonna per riga di griglia invece di lasciarle scorrere.
+    const famigliaHTML = _rigaCard(
+      _campoCard(currentLang === 'it' ? 'FAMIGLIA: ' : 'FAMILY: ', esc(_famigliaCard), COL_CATEGORIA),
+      'font-size:0.82rem;margin-top:1px;', 'famiglia');
     // v6.158 (Franco) - LE RIGHE DI UN PRODOTTO EXTRA SERIE: NOME, CATEGORIA, SOTTOCATEGORIA, una
   // per riga e in quest'ordine. Usa lo stesso `_rigaCard` dei retro, che tiene la riga anche quando
   // il campo e' vuoto: e' cio' che fa restare allineate due card affiancate (v6.037). Senza, due
@@ -37932,11 +38578,15 @@ function renderItems() {
       // della sua versione (`_cardTypeColor`, da `VERSIONI_ARTICOLO`): la v6.273 l'aveva schiacciato
       // sull'azzurro insieme agli altri due, e Franco ha corretto — l'etichetta e' una novita', il
       // codice colore no.
-      const typeIndicatorHTML = _cardTypeLabel
-        ? `<div style="font-size:0.82rem;font-weight:600;">`
-          + `<span style="color:var(--text);">TIPOLOGIA: </span>`
-          + `<span style="color:${_cardTypeColor};">${esc(_cardTypeLabel.toUpperCase())}</span></div>`
-        : '';
+      // 🔄 v6.501 - la TIPOLOGIA e' sempre dichiarata e resta VUOTA sulle versioni base,
+      // che sono la maggioranza: e' la riga che Franco ha nominato per ultima, e la piu'
+      // importante da tenere ferma proprio perche' manca quasi sempre.
+      const typeIndicatorHTML = _rigaCard(
+        _cardTypeLabel
+          ? '<span style="color:var(--text);">TIPOLOGIA: </span>'
+            + '<span style="color:' + _cardTypeColor + ';">' + esc(_cardTypeLabel.toUpperCase()) + '</span>'
+          : '',
+        'font-size:0.82rem;font-weight:600;', 'tipologia');
       // v5.980 (Franco) — ordine della card, dall'alto: nome, sottonome, tipo di change o di
       // errore di stampa; e in fondo, sulla stessa riga, punteggio e "Mia lista".
       // Il tipo e' quindi risalito fra le righe di testo, dov'e' un'informazione da leggere
@@ -37972,7 +38622,13 @@ function renderItems() {
   const retroNameHTML = (currentSection === 'figurines' && f.retroId && !_hideRetroName)
       ? (() => {
           const r = getData('figurines', []).find(x => x.id === f.retroId);
-          if (!r) return '';
+          // 🔴 v6.501 - QUI SI TORNAVA STRINGA VUOTA, cioe' ZERO righe invece di tre.
+          // Un `retroId` che punta a un record sparito e' raro ma possibile, e in quel
+          // caso la card si accorciava di tre righe: esattamente lo sfarfallio che
+          // questa release toglie, nel caso piu' difficile da notare.
+          if (!r) return _rigaCard('', 'font-size:0.78rem;', 'retro-cat')
+                       + _rigaCard('', 'font-size:0.78rem;', 'retro-nome')
+                       + _rigaCard('', 'font-size:0.78rem;', 'retro-sub');
           const sotto = (r.subname || '').trim();
           // v6.090 (Franco) - anche la CATEGORIA del retro, che dice di che retro si tratta quanto
           // il nome. Con la stessa regola della card Retro: se il Nome comincia gia' con la
@@ -37990,10 +38646,13 @@ function renderItems() {
           // sta fra i suoi dati; sulla card di una figurina e' la CHIAVE con cui riconosci di quale
           // retro si tratta, e una chiave si legge per prima. Franco: "li' al momento lo lascerei
           // com'e'".
-          return (mostraCat ? `<div style="font-size:0.78rem;color:${COL_CATEGORIA};">${esc(cat)}</div>` : '') +
+          // 🔄 v6.501 - da `_rigaCard`: la riga e' sempre DICHIARATA e resta vuota dove il
+                 // dato non c'e'. Prima spariva, e ogni card che ne aveva una in meno
+                 // tirava su tutto quello che stava sotto.
+                 return _rigaCard(mostraCat ? esc(cat) : '', 'font-size:0.78rem;color:' + COL_CATEGORIA + ';', 'retro-cat') +
                  // v6.276 (Franco) - in BIANCO, non piu' grigio. Vedi il CHANGELOG: e' il posto
                  // che il bianco ha lasciato libero passando l'identita' all'azzurro.
-                 `<div style="font-size:0.78rem;color:var(--text);">${esc(_retroNomeCorto(r))}</div>` +
+                 _rigaCard(esc(_retroNomeCorto(r)), 'font-size:0.78rem;color:var(--text);', 'retro-nome') +
                  // 🆕 v6.428 (Franco) - BIANCO E FRA PARENTESI, come nella card del retro.
                  // Franco: *"il Sottonome del retro e' azzurro, che pero' e' anche il
                  // nome-numero della figurina"*. Due cose diverse dello stesso colore nella
@@ -38007,7 +38666,7 @@ function renderItems() {
                  // v6.276, quindi il sottonome diventa bianco. Stessa regola, due esiti.
                  // 📌 Percio' le parentesi non sono una decorazione: sono cio' che distingue il
                  // sottonome dal nome ora che il colore non li distingue piu'.
-                 (sotto ? `<div style="font-size:0.78rem;color:var(--text);">(${esc(sotto)})</div>` : '');
+                 _rigaCard(sotto ? '(' + esc(sotto) + ')' : '', 'font-size:0.78rem;color:var(--text);', 'retro-sub');
         })()
       : '';
     // v6.020 — stessa aggiunta di useFlexForWideMode: le due devono dire la stessa cosa, una
@@ -38024,7 +38683,7 @@ function renderItems() {
       </div>
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
-        ${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : (subseriesHTML + famigliaHTML))}
+        ${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : famigliaHTML)}
         ${retroNameHTML}
         ${typeIndicatorHTML}
         ${descHTML}
@@ -39242,6 +39901,21 @@ function renderAdminSeries() {
              Le due colonne ora dicono quale sia quale: "Change" da solo non lo diceva, ed e' il
              motivo per cui su Serie 1 la cella sembrava sbagliata (0 di figurina, 144 di retro). -->
         <td>${c.changeRetro || ''}</td>
+        <!-- 🆕 v6.478 (Franco: *"i titoli colonna sono uno piu delle colonne; è tutto shiftato
+             a sx di 1 a partire da HA OMAGGIO"*) — LA CELLA CHE MANCAVA DALLA v6.235.
+             Quella release aggiunse HA OMAGGIO a COLONNE_SERIE, che disegna le INTESTAZIONI;
+             il corpo della riga pero' e' ancora una fila di td scritti a mano, quindi comparve
+             il titolo e non la cella. Da qui in poi ogni valore finiva sotto il titolo
+             precedente, e l'ultima colonna restava vuota. Diciassette titoli, sedici celle.
+             📌 Il valore e' lo stesso che l'elenco dichiara per l'ORDINAMENTO (val: r =&gt;
+             r.c.omaggi): la colonna ordinava gia' per un numero che non mostrava.
+             📌 Lo zero resta VUOTO come nelle quattro colonne accanto (v6.166): una parete di
+             zeri nasconde i numeri veri.
+             ⚠️ La correzione VERA sarebbe generare le celle dall'elenco, come le intestazioni.
+             Non e' una riga sola — questi sedici td hanno stili, title, pulsanti e commenti
+             propri — quindi e' un lavoro a se'. Nel frattempo il conto dei due numeri lo
+             sorveglia prova-v6478.js, che e' cio' che mancava davvero. -->
+        <td>${c.omaggi || ''}</td>
         <!-- v6.166 (Franco) - le colonne della griglia delle FIGURINE, che sono quelle
              che si guardano piu' spesso. Si mostra il valore vero: quello della serie se c'e',
              altrimenti il default - lo stesso numero che il sito usa, non un trattino. Una tabella
@@ -39640,11 +40314,11 @@ function renderAdminPunteggi() {
     return;
   }
   el.innerHTML = `<table class="data-table compact"><thead><tr>
-    <th>${(currentLang === 'it') ? 'Nome livello' : 'Level name'}</th><th>${(currentLang === 'it') ? 'Punteggio minimo' : 'Min. score'}</th><th></th>
+    <th>${(currentLang === 'it') ? 'Nome livello' : 'Level name'}</th><th>${(currentLang === 'it') ? 'Punteggio rarità minimo' : 'Min. rarity score'}</th><th></th>
   </tr></thead><tbody>
   ${levels.map(lv => `<tr>
     <td><strong>${lv.name}</strong>${lv.nameEn ? ' / ' + lv.nameEn : ''}</td>
-    <td>${lv.minScore.toLocaleString('it-IT')} pt</td>
+    <td style="white-space:nowrap;">${_codaPunti(lv.minScore.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US'))}</td>
     <td>
       <button class="tbl-btn tbl-btn-edit" onclick="editLevel('${lv.id}')">${(currentLang === 'it') ? 'Modifica' : 'Edit'}</button>
       <button class="tbl-btn tbl-btn-del" onclick="deleteLevel('${lv.id}')" title="${(currentLang === 'it') ? 'Elimina questo livello' : 'Delete this level'}">🗑️</button>
@@ -39667,7 +40341,7 @@ async function saveLevel() {
   const nameEn = document.getElementById('level-name-en-input')?.value.trim() || '';
   const minScore = parseInt(document.getElementById('level-score-input').value);
   const editId = document.getElementById('level-edit-id').value;
-  if (!name || isNaN(minScore)) { toast((currentLang === 'it' ? 'Compila nome e punteggio minimo' : 'Fill in name and minimum score'), 'error'); return; }
+  if (!name || isNaN(minScore)) { toast((currentLang === 'it' ? 'Compila nome e punteggio rarità minimo' : 'Fill in name and minimum rarity score'), 'error'); return; }
 
   let levels = getData('levels', []);
   if (editId) {
@@ -40296,7 +40970,20 @@ function _daAttaccareCreazioneVietata(f) {
 // punto aperto sui DATI, non sul codice.
 // 📌 Terzo fratello della stessa famiglia, e la forma e' la loro: una domanda sola per funzione.
 function _daAttaccareFotoVietata(f) {
-  return !!f && f.section === 'attaccare';
+  // 🆕 v6.487 (Franco: *"un articolo in versione omaggio deve prendere la foto frontale
+  // dal suo articolo base di partenza e la foto del retro dal retro (in versione omaggio)
+  // associato"*) — ANCHE L'OMAGGIO, e per la stessa ragione delle da-attaccare: il
+  // comando prometteva una cosa che il modello esclude.
+  // 📌 IL NOME DELLA FUNZIONE ORA DICE MENO DI QUELLO CHE FA, ed e' una scelta: si
+  // chiama `_daAttaccareFotoVietata` e vale per due casi. Rinominarla toccherebbe i due
+  // punti che la chiamano piu' questa riga, e il guadagno sarebbe di sola lettura — ma il
+  // debito e' scritto qui, non lasciato al prossimo che la legge. Se un giorno i casi
+  // diventano tre, si rinomina: a quel punto il nome vecchio sarebbe una bugia e non piu'
+  // una scorciatoia.
+  // ⚠️ Vale per un omaggio di QUALUNQUE sezione, non solo per le figurine: un retro in
+  // versione omaggio ha anche lui la sua partenza. Se un giorno si scoprisse che per una
+  // sezione non deve valere, la condizione va ristretta QUI e in `_fotoFigurina` insieme.
+  return !!f && (f.section === 'attaccare' || !!f.isFreeVersion);
 }
 function _daAttaccareModificaVietata(f) {
   if (!f || f.section !== 'attaccare') return false;
@@ -40522,7 +41209,7 @@ function openFigDetail(figId, elencoNav) {
 
   // Punteggio
   if (f.score > 0 || isAdmin) {
-    (_mobileDetail ? { push: v => { _rowScoreMobile = v; } } : rows).push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Punteggio' : 'Score'}</span><span class="detail-value">${f.score > 0 ? '⭐ ' + f.score + ' pt' : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non assegnato' : 'not assigned') + '</span>'}</span></div>`);
+    (_mobileDetail ? { push: v => { _rowScoreMobile = v; } } : rows).push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Rarità' : 'Rarity'}</span><span class="detail-value">${f.score > 0 ? '⭐ ' + _codaPunti(f.score) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non assegnato' : 'not assigned') + '</span>'}</span></div>`);
   }
 
   // Da vendere: spostato nel tab Ebay, vedi sotto
@@ -41081,7 +41768,7 @@ const CAMPI_ORDINAMENTO_TIPO = {
   categoria:   { etichetta: 'Categoria',   num: false, val: f => (f.category || '') },
   sottocategoria: { etichetta: 'Sottocategoria', num: false, val: f => (f.subcategory || '') },   // v6.160
   taglia:      { etichetta: 'Taglia',      num: false, val: f => (f.size || '') },
-  punteggio:   { etichetta: 'Punteggio',   num: true,  val: f => (f.score ?? 0) },
+  punteggio:   { etichetta: 'Rarità',   /* v6.482 - solo l'ETICHETTA: la chiave `punteggio` e' un valore SALVATO (ordinamento della serie) */   num: true,  val: f => (f.score ?? 0) },
   creazione:   { etichetta: 'Creazione',   num: true,  val: f => (_dataCreazione(f) || 0) }
 };
 
@@ -41339,8 +42026,21 @@ function _fotoFigurina(f, allFigs, _salti) {
   // sua volta un change, siamo nel caso B.
   const figs = allFigs || getData('figurines', []);
   const _changeDiRetro = !!(f.isChange && f.retroId && figs.find(x => x.id === f.retroId)?.isChange);
+  // 🆕 v6.487 (Franco) — L'OMAGGIO ENTRA NELL'ELENCO, e la ragione e' la stessa delle
+  // variazioni: il timbro OMAGGIO sta SUL RETRO — lo dice la voce di legenda del sito —
+  // quindi il fronte e' quello dell'articolo di partenza, sempre.
+  // 🔴 PERCHE' MANCAVA: questa regola l'ha dettata Franco nella v6.080, quando l'omaggio
+  // non esisteva ancora (e' della v6.235). Una regola scritta prima del caso che
+  // dovrebbe coprire non lo copre — e non lo dice.
+  // ⚠️ Nessuna condizione in piu' sul retro, a differenza dell'errore di stampa: li'
+  // `f.retroId` distingue DOVE sta il difetto (davanti o dietro), qui non c'e' niente da
+  // distinguere — un omaggio ha il timbro dietro per definizione. Aggiungere `&& f.retroId`
+  // vorrebbe dire negare il fronte ereditato agli omaggi a cui il retro non e' ancora
+  // stato collegato, cioe' proprio a quelli incompleti.
+  // 📌 Il `&& f.baseFigurineId` che regge tutto sta gia' nella condizione qui sotto: senza
+  // partenza non si ripiega su niente, e la funzione torna `null` come prima.
   const _frontePariAllaBase = f.isVariation || f.isUnofficialVariation
-    || (f.isPrintError && f.retroId) || _changeDiRetro;
+    || (f.isPrintError && f.retroId) || _changeDiRetro || f.isFreeVersion;
   // 🆕 v6.358 - LA FIGURINA DA ATTACCARE NON HA UNA FOTO SUA, E NON DEVE AVERLA. Franco: *"la foto
   // della parte frontale (come collegamento, come per le variazioni, cosi' non ingrandiamo
   // Cloudinary)"*. E' lo stesso fronte della figurina con velina: caricarne una copia vorrebbe dire
@@ -42234,7 +42934,7 @@ function switchToEditMode(figId) {
   }
 
   // Punteggio
-  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Punteggio':'Score') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
+  html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Rarità':'Rarity') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-score" value="' + (f.score||0) + '" min="0" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;"></span></div>';
 
   if (_extraSerie && _tipoHaTaglia(f.tipoProdotto)) {   // v6.160 - solo se il TIPO la prevede
     // v6.151 - il markup del select viene da `_selectTagliaHTML`, lo stesso che usa la vista
@@ -42587,9 +43287,17 @@ function _slotFotoEdit(slot, url, f) {
   // con `display:none`: un comando nascosto resta cliccabile col tabulatore e resta nel DOM a far
   // credere a chi legge il codice che quella strada esista ancora.
   if (_daAttaccareFotoVietata(f)) {
+    // 🆕 v6.487 - due casi, due frasi: la nota deve dire da dove arriva DAVVERO la foto,
+    // e i due posti sono diversi (la gemella con retro / l'articolo di partenza).
+    // 📌 Una frase sola per tutti e due avrebbe dovuto essere vaga — «arriva da un altro
+    // articolo» — e una spiegazione vaga in un punto dove manca un comando lascia
+    // esattamente il dubbio che era li' per togliere.
+    const _omg = !!f.isFreeVersion && f.section !== 'attaccare';
     const nota = currentLang === 'it'
-      ? 'La foto arriva dalla figurina con velina collegata: qui non se ne attacca una propria.'
-      : 'The photo comes from the linked sticker: no photo of its own here.';
+      ? (_omg ? 'La foto del fronte arriva dall\'articolo di partenza; quella del retro dal retro in versione omaggio collegato.'
+              : 'La foto arriva dalla figurina con retro collegata: qui non se ne attacca una propria.')
+      : (_omg ? 'The front photo comes from the source item; the back one from the linked free-version back.'
+              : 'The photo comes from the linked sticker: no photo of its own here.');
     return '<div style="margin-bottom:0.6rem;">' + titolo +
       (url
         ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(url, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0;">'
@@ -43982,11 +44690,11 @@ function openEditUserModal(userId) {
       fsGetAll('levels').then(lvs => {
         _cache.levels = lvs;
         const lv = getUserLevel(score);
-        levelEl.textContent = lv ? lv.name + ' (' + score.toLocaleString('it-IT') + ' pt)' : '— (' + score.toLocaleString('it-IT') + ' pt)';
+        levelEl.textContent = lv ? lv.name + ' (' + _codaPunti(score.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US')) + ')' : '— (' + _codaPunti(score.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US')) + ')';
       });
     } else {
       const lv = getUserLevel(score);
-      levelEl.textContent = lv ? lv.name + ' (' + score.toLocaleString('it-IT') + ' pt)' : '— (' + score.toLocaleString('it-IT') + ' pt)';
+      levelEl.textContent = lv ? lv.name + ' (' + _codaPunti(score.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US')) + ')' : '— (' + _codaPunti(score.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US')) + ')';
     }
   }
   const deleteBtn = document.getElementById('edit-user-delete-btn');
@@ -47125,7 +47833,7 @@ function renderAdminFunzioni() {
       '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
         '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;">' + (it ? '5. Crea le Figurine da attaccare' : '5. Create the stick-in stickers') + '</h4>' +
         '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
-          (it ? 'Crea una <b>Figurina da attaccare</b> per ogni <b>Figurina con velina</b> di tipo <b>base</b> che ancora non ce l’ha.<br><br>' +
+          (it ? 'Crea una <b>Figurina da attaccare</b> per ogni <b>Figurina con retro</b> di tipo <b>base</b> che ancora non ce l’ha.<br><br>' +
                 '<b>Cosa eredita dalla figurina di partenza:</b><br>' +
                 'Nome e Numero (comandati da lei: sulla scheda non sono modificabili);<br>' +
                 'la foto del fronte, <b>come collegamento</b> — nessuna immagine nuova su Cloudinary.<br><br>' +
@@ -47236,7 +47944,7 @@ function anteprimaDaAttaccare() {
     // 📌 «Niente da fare» e' un esito, non un errore: e' anche cio' che si vede al secondo lancio,
     // ed e' la prova che la funzione e' ripetibile senza danni.
     esito.innerHTML = '<div style="font-size:0.9rem;color:var(--success);">' +
-      (it ? 'Ogni figurina con velina ha già la sua figurina da attaccare. Niente da creare.'
+      (it ? 'Ogni figurina con retro ha già la sua figurina da attaccare. Niente da creare.'
           : 'Every sticker already has its stick-in counterpart. Nothing to create.') + '</div>';
     return;
   }
@@ -47268,7 +47976,7 @@ async function applicaDaAttaccare() {
   const totale = _pianoAttacca.reduce((n, r) => n + r.mancanti.length, 0);
   // §14, regola 2: la conferma NOMINA il numero. «Sei sicuro?» senza un numero non e' una domanda.
   if (!confirm(it
-    ? `Creare ${totale} figurine da attaccare in ${_pianoAttacca.length} serie? Nome, Numero e foto le erediteranno dalla figurina con velina di partenza.`
+    ? `Creare ${totale} figurine da attaccare in ${_pianoAttacca.length} serie? Nome, Numero e foto le erediteranno dalla figurina con retro di partenza.`
     : `Create ${totale} stick-in stickers across ${_pianoAttacca.length} series? Name, number and photo are inherited from the source sticker.`)) return;
   if (btn) btn.disabled = true;
   let creati = 0, serieScritte = 0;
@@ -48536,8 +49244,8 @@ function mostraPunteggioGuadagnato(aggiunti, totale) {
     ? 'Hai aggiunto ' + nA + ' ' + pA + ' alla classifica della tua lista.'
     : 'You added ' + nA + ' ' + pA + " to your list's ranking.";
   if (elT) elT.textContent = it
-    ? 'La tua lista ha ora un punteggio di ' + nT + ' ' + pT + ' !'
-    : 'Your list now has a score of ' + nT + ' ' + pT + ' !';
+    ? 'La tua lista ha ora un Punteggio rarità di ' + nT + ' ' + pT + ' !'
+    : 'Your list now has a Rarity score of ' + nT + ' ' + pT + ' !';
   document.getElementById('score-boost-modal')?.classList.remove('hidden');
 }
 
@@ -48897,7 +49605,7 @@ function renderBulkEditView() {
                Si legge in coppia con quella accanto: VERSIONE dice quale versione, TIPOLOGIA quale
                tipo dentro quella versione. -->
           ${_cVersione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Tipologia' : 'Type'}</th>` : ''}
-          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${(currentLang === 'it') ? 'Punteggio' : 'Score'}</th>
+          <th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">${(currentLang === 'it') ? 'Rarità' : 'Rarity'}</th>
           ${(isAdmin && !_cSoloExtra) ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);min-width:420px;">${_etichettaDiPartenza(currentSection)}</th>` : ''}
           ${_cTaglia ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Taglia</th>' : ''}
           ${_ordinaPerCreazione ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;">${currentLang === 'it' ? 'Data creazione' : 'Created on'}</th>` : ''}
@@ -49701,18 +50409,40 @@ async function saveBulkCell(input) {
 // ============================================================
 //  BULK SCORE
 // ============================================================
+// 🆕 v6.498 (Franco: *"dai indicazione di quanti articoli riceverebbero quel punteggio
+// rarita'"*) — QUANTI SONO, PRIMA DI PREMERE.
+// 🔴 Il numero esisteva gia' e arrivava tardi: `saveBulkScore` lo nomina nella conferma
+// (§14 regola 2, «la conferma NOMINA il numero»), cioe' quando si sta gia' premendo.
+// Sono due momenti diversi e servono tutti e due: qui si decide SE, li' si conferma.
+// 📌 IL CONTO VIENE DA `getCurrentlyFilteredItems()`, la stessa funzione che poi decide
+// su chi scrivere. Contarlo in un altro modo vorrebbe dire due numeri che possono
+// divergere — la finestra ne direbbe uno e il salvataggio toccherebbe altri (§12-bis).
+// ⚠️ Il caso ZERO si dice qui invece di lasciarlo scoprire dopo il clic. Il pulsante
+// pero' NON si disabilita: `saveBulkScore` il suo controllo ce l'ha gia', e quello vale
+// anche se la finestra resta aperta mentre i filtri cambiano — questa riga no.
 function openBulkScoreModal() {
   if (!currentUser?.isAdmin) return;
   document.getElementById('bulk-score-input').value = '';
+  const _n = (getCurrentlyFilteredItems() || []).length;
+  const _el = document.getElementById('bulk-score-quanti');
+  if (_el) {
+    const it = currentLang === 'it';
+    _el.style.color = _n ? 'var(--accent)' : 'var(--danger)';
+    _el.innerHTML = _n
+      ? (it ? 'La riceverebbero <b>' + _n + '</b> articol' + (_n === 1 ? 'o' : 'i') + '.'
+            : '<b>' + _n + '</b> item' + (_n === 1 ? '' : 's') + ' would get it.')
+      : (it ? 'La ricerca non ha restituito nessun articolo.'
+            : 'The search returned no items.');
+  }
   document.getElementById('bulk-score-modal').classList.remove('hidden');
 }
 
 async function saveBulkScore() {
   const score = parseInt(document.getElementById('bulk-score-input').value);
-  if (isNaN(score) || score < 0) { toast('Inserisci un punteggio valido', 'error'); return; }
+  if (isNaN(score) || score < 0) { toast('Inserisci una rarità valida', 'error'); return; }
   const items = getCurrentlyFilteredItems();
   if (!items.length) { toast(currentLang === 'it' ? 'Nessun oggetto visibile con i filtri attuali' : 'No items visible with the current filters', 'error'); return; }
-  if (!confirm((currentLang === 'it' ? 'Assegnare ' + score + ' punti a tutti i ' + items.length + ' oggetti attualmente visibili (non nascosti dai filtri)?' : 'Assign ' + score + ' points to all ' + items.length + ' currently visible items (not hidden by filters)?'))) return;
+  if (!confirm((currentLang === 'it' ? 'Assegnare la rarità ' + score + ' a tutti i ' + items.length + ' oggetti attualmente visibili (non nascosti dai filtri)?' : 'Assign rarity ' + score + ' to all ' + items.length + ' currently visible items (not hidden by filters)?'))) return;
   const fb = document.getElementById('bulk-score-feedback');
   const btn = document.querySelector('#bulk-score-modal .btn-primary');
   if (btn) btn.disabled = true;
@@ -49738,7 +50468,7 @@ async function saveBulkScore() {
     if (updatedIds.has(f.id)) f.score = score;
     return f;
   });
-  if (fb) fb.textContent = currentLang === 'it' ? '✅ Punteggio assegnato a ' + items.length + ' oggetti !' : '✅ Score assigned to ' + items.length + ' items !';
+  if (fb) fb.textContent = currentLang === 'it' ? '✅ Rarità assegnata a ' + items.length + ' oggetti !' : '✅ Rarity assigned to ' + items.length + ' items !';
   if (btn) btn.disabled = false;
   renderItems();
   setTimeout(() => {
@@ -49763,7 +50493,16 @@ function renderClassificaLevels(el) {
     html += '</tr></thead><tbody>';
     html += levels.map(lv => {
       let row = '<tr><td><strong>' + ((currentLang !== 'it' && lv.nameEn) ? lv.nameEn : lv.name) + '</strong></td>';
-      row += '<td>' + lv.minScore.toLocaleString('it-IT') + ' pt</td>';
+      // 🆕 v6.491 (Franco: *"oggi a volte abbiamo 200 / punti, invece io vorrei
+      // «200 punti»"*) — IL NUMERO E LA SUA PAROLA NON SI SEPARANO.
+      // 🔴 Il difetto e' nato con la v6.486, che ha scritto «punti» dove c'era «pt»:
+      // cinque caratteri in piu' in una colonna che vive nel riquadro laterale da
+      // 360px. E' la trappola della v6.468, ripetuta guardando la parola invece del
+      // posto in cui sarebbe finita.
+      // ⚠️ `nowrap` non fa ENTRARE il testo, gli vieta di andare a capo: se un giorno
+      // i punteggi arrivano a sei cifre, questa cella allarga la tabella. E' il primo
+      // posto da guardare, non l'ultimo.
+      row += '<td style="white-space:nowrap;">' + _codaPunti(lv.minScore.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US')) + '</td>';
       if (isAdmin) {
         row += '<td style="display:flex;gap:0.3rem;">';
         row += '<button class="tbl-btn tbl-btn-edit cl-edit-btn" data-id="' + lv.id + '">' + (currentLang === 'it' ? 'Modifica' : 'Edit') + '</button>';
@@ -49787,7 +50526,7 @@ function renderClassificaLevels(el) {
     html += '<div style="display:flex;gap:0.5rem;flex-wrap:wrap;">';
     html += '<input class="form-input" type="text" id="cl-name-it" placeholder="' + (currentLang === 'it' ? 'Nome IT' : 'Name IT') + '" style="flex:1;min-width:100px;">';
     html += '<input class="form-input" type="text" id="cl-name-en" placeholder="Name EN" style="flex:1;min-width:100px;">';
-    html += '<input class="form-input" type="number" id="cl-score" placeholder="Min pt" style="width:80px;">';
+    html += '<input class="form-input" type="number" id="cl-score" placeholder="Min punti" style="width:80px;">';
     html += '<button class="btn-primary btn-admin" style="padding:0.4rem 0.75rem;font-size:0.82rem;" onclick="saveLevelClassifica()">💾</button>';
     html += '<button style="padding:0.4rem 0.75rem;font-size:0.82rem;background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:var(--radius);cursor:pointer;" onclick="resetLevelClassifica()">✕</button>';
     html += '</div></div>';
@@ -49829,7 +50568,7 @@ async function saveLevelClassifica() {
   const nameEn = document.getElementById('cl-name-en')?.value.trim() || '';
   const minScore = parseInt(document.getElementById('cl-score')?.value);
   const editId = document.getElementById('cl-edit-id')?.value;
-  if (!name || isNaN(minScore)) { toast(currentLang === 'it' ? 'Compila nome e punteggio' : 'Fill in name and score', 'error'); return; }
+  if (!name || isNaN(minScore)) { toast(currentLang === 'it' ? 'Compila nome e punteggio rarità' : 'Fill in name and rarity score', 'error'); return; }
   let levels = getData('levels', []);
   if (editId) {
     const idx = levels.findIndex(l => l.id === editId);
@@ -49933,15 +50672,43 @@ async function renderClassifica() {
       : (isTop3 ? 'rgba(181,255,46,0.2)' : 'var(--border)');
 
     return `<div class="cl-row" style="background:${rowBg};border:1px solid ${rowBorder};border-radius:var(--radius-lg);padding:0.4rem 1rem;margin-bottom:0.3rem;display:flex;align-items:center;gap:1rem;">
-      <div class="cl-pos" style="font-size:1.1rem;width:40px;text-align:center;flex-shrink:0;font-family:var(--font-ui);color:${isTop3 ? 'var(--accent)' : 'var(--muted)'};">#${position}</div>
+      <div class="cl-pos" style="font-size:1.1rem;width:40px;text-align:center;flex-shrink:0;font-family:var(--font-ui);color:${isTop3 ? 'var(--accent)' : 'var(--text)'};">#${position}</div>
       <div class="cl-avatar">${displayAvatar}</div>
       <div style="flex:1;">
-        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;">${displayName}${adminNote}${meNote}${!isAnon && user.nationalityCode ? `<img src="${flagUrl(user.nationalityCode)}" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}${!isAnon ? `<span style="font-size:0.92rem;color:var(--muted);font-family:var(--font-body);font-weight:400;">(${(currentLang === 'it') ? 'utente dal' : 'member since'} ${user.joined ? new Date(user.joined).toLocaleDateString((currentLang === 'it') ? 'it-IT' : 'en-GB') : '—'})</span>` : ''}</div>
-        <div style="font-size:0.82rem;color:var(--muted);margin-top:2px;">${countFigurines} ${(currentLang === 'it') ? 'figurine' : 'stickers'} · ${countAlbums} album · ${countExtras} ${(currentLang === 'it') ? 'altri articoli' : 'extras'}</div>
+        <div style="font-family:var(--font-ui);font-size:1.15rem;color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="color:var(--nome-entita);">${displayName}</span>${adminNote}${meNote}${!isAnon && user.nationalityCode ? `<img src="${flagUrl(user.nationalityCode)}" title="${user.nationalityName||''}" style="width:22px;height:15px;object-fit:cover;border-radius:2px;">` : ''}${!isAnon ? `<span style="font-size:0.92rem;color:var(--text);font-family:var(--font-body);font-weight:400;">(${(currentLang === 'it') ? 'utente dal' : 'member since'} ${user.joined ? new Date(user.joined).toLocaleDateString((currentLang === 'it') ? 'it-IT' : 'en-GB') : '—'})</span>` : ''}</div>
+        <div style="font-size:0.82rem;color:var(--text);margin-top:2px;">${countFigurines} ${(currentLang === 'it') ? 'figurine' : 'stickers'} · ${countAlbums} album · ${countExtras} ${(currentLang === 'it') ? 'altri articoli' : 'extras'}</div>
       </div>
       <div style="display:flex;align-items:center;gap:0.75rem;">
-        <div style="text-align:center;">
-          <div style="font-family:var(--font-ui);font-size:1.1rem;color:var(--accent);">${score.toLocaleString('it-IT')} pt</div>
+        <!-- 🔄 v6.490 (Franco: *"pagina classifica, mettere la giustificazione a dx il
+             punteggio"*) — era "center". 📌 La COLONNA era gia' a destra (la spinge li'
+             il blocco del nome, che ha flex:1): quello che era centrato e' il suo
+             CONTENUTO, cioe' il numero e il livello sotto, che hanno larghezze diverse.
+             ⚠️ Il livello segue il numero perche' sta nello stesso div, ed e' voluto:
+             sono la stessa colonna e dicono la stessa cosa. Due text-align dove ne
+             basta uno divergerebbero alla prima modifica.
+             NIENTE APICI INVERSI IN QUESTO COMMENTO: sta DENTRO un template literal,
+             e li' un backtick lo chiude. La prima stesura ne aveva due, attorno a
+             "center" e a "flex:1", e "node --check" si e' fermato sulla riga giusta.
+             🔴 POI CE N'E' SCAPPATO UN TERZO, NELLA FRASE CHE PARLA DEI BACKTICK.
+             Per questo il controllo non e' piu' affidato all'attenzione: lo script di
+             questa release rifiuta di scrivere un commento che ne contenga.
+             🔴 v6.494 — E QUI C'ERA UN SECONDO TERMINATORE DI COMMENTO, messo in coda a
+             questa nota quando la nota fu aggiunta al commento gia' scritto.
+             ⚠️ Quel simbolo NON si puo' scrivere qui dentro nemmeno per nominarlo: la
+             correzione di questo difetto, alla prima stesura, lo conteneva — e chiudeva
+             il commento esattamente come faceva l'originale. Si dice a parole.
+             Chiudeva il commento tre righe
+             prima della fine, e le due righe successive si LEGGEVANO nella pagina, in
+             mezzo alla riga di ogni collezionista. L'ha visto Franco.
+             📌 Peggio del backtick, e per una ragione precisa: il backtick rompe la
+             sintassi e node si ferma; un secondo terminatore non rompe niente. File
+             valido, 133 suite verdi, preview costruita, controllo del markup contento
+             (il difetto sta uguale nei due file che confronta). Un difetto che non
+             rompe niente attraversa TUTTI i controlli automatici di questo progetto.
+             📌 E' la stessa nota che i commenti delle v6.164/v6.166/v6.174 portano gia'
+             scritta a due schermate da qui — presa lo stesso, per la terza volta. -->
+        <div style="text-align:right;">
+          <div style="font-family:var(--font-ui);font-size:1.1rem;color:var(--accent);">${_codaPunti(score.toLocaleString(currentLang === 'it' ? 'it-IT' : 'en-US'))}</div>
           ${(() => { const lv = getUserLevel(score); if (!lv) return ''; const lvName = (currentLang !== 'it' && lv.nameEn) ? lv.nameEn : lv.name; return `<div style="font-size:0.72rem;color:var(--accent);opacity:0.8;font-family:var(--font-ui);">🏅 ${lvName}</div>`; })()}
         </div>
         ${isTop3 ? trophies[idx] : (medal ? `<span style="font-size:1.5rem;">${medal}</span>` : '')}
@@ -50371,7 +51138,7 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
   // 📌 Non si usa `getSectionLabel()`, che pure verrebbe da `ARTICOLI` ed e' la fonte giusta: li'
   // le figurine si chiamano "Figurine con velina" (v6.195), e questa riga avrebbe rinominato di
   // straforo una cosa che nessuno ha chiesto di rinominare.
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine base non nella tua lista' : 'Base stickers not in my list', carte: currentLang === 'it' ? 'Carte base non nella tua lista' : 'Base cards not in my list', attaccare: currentLang === 'it' ? 'Figurine da attaccare base non nella tua lista' : 'Base stickers to stick not in my list', retros: currentLang === 'it' ? 'Retro base non nella tua lista' : 'Base retros not in my list', albums: currentLang === 'it' ? 'Album base non nella tua lista' : 'Base albums not in my list', extras: currentLang === 'it' ? 'Altri oggetti base non nella tua lista' : 'Base other items not in my list', bustine: currentLang === 'it' ? 'Bustine base non nella tua lista' : 'Base wrappers not in my list' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine base non nella tua lista' : 'Base stickers not in your list', carte: currentLang === 'it' ? 'Carte base non nella tua lista' : 'Base cards not in your list', attaccare: currentLang === 'it' ? 'Figurine da attaccare base non nella tua lista' : 'Base stickers to stick not in your list', retros: currentLang === 'it' ? 'Retro base non nella tua lista' : 'Base retros not in your list', albums: currentLang === 'it' ? 'Album base non nella tua lista' : 'Base albums not in your list', extras: currentLang === 'it' ? 'Altri oggetti base non nella tua lista' : 'Base other items not in your list', bustine: currentLang === 'it' ? 'Bustine base non nella tua lista' : 'Base wrappers not in your list' };
 
   const sortedEntries = Object.entries(bySeries).sort(([aId], [bId]) => {
     const aS = series.find(x => x.id === aId);
@@ -50387,7 +51154,7 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
   // il paragrafo di istruzioni e il pulsante di export, che erano attaccati a quell'h3.
   // v6.297 (Franco) - le istruzioni dell'EXPORT 1 sono un ELENCO PUNTATO. Contenitore `<div>` e
   // non `<p>`: un `<ul>` dentro un paragrafo non e' HTML valido, e il browser lo butterebbe fuori.
-  html += '<div style="color:var(--text);font-size:0.88rem;margin-bottom:0.75rem;overflow:hidden;">' + '<button class="btn-primary" style="float:right;margin:0 0 0.5rem 1rem;font-size:0.9rem;padding:0.45rem 1.2rem;white-space:nowrap;line-height:1.2;border-radius:10px;" onclick="exportWantlist(this)">' + (currentLang === 'it' ? 'Esporta articoli non nella tua lista' : 'Export items not in my list') + '</button>'
+  html += '<div style="color:var(--text);font-size:0.88rem;margin-bottom:0.75rem;overflow:hidden;">' + '<button class="btn-primary" style="float:right;margin:0 0 0.5rem 1rem;font-size:0.9rem;padding:0.45rem 1.2rem;white-space:nowrap;line-height:1.2;border-radius:10px;" onclick="exportWantlist(this)">' + (currentLang === 'it' ? 'Esporta articoli non nella tua lista' : 'Export items not in your list') + '</button>'
     + '<span style="color:' + COL_CATEGORIA + ';">' + (currentLang === 'it' ? 'ISTRUZIONI:' : 'INSTRUCTIONS:') + '</span>'
     + '<ul style="margin:0.35rem 0 0;padding-left:1.2rem;">'
     + (currentLang === 'it'
@@ -50396,7 +51163,7 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
           + '<li>Premi il tasto <i style="color:var(--info);">Esporta articoli non nella tua lista</i>.</li>'
         : '<li>Select the special version types you want in the list to export</li>'
           + '<li>Deselect the series you are not interested in</li>'
-          + '<li>Press <i style="color:var(--info);">Export items not in my list</i>.</li>')
+          + '<li>Press <i style="color:var(--info);">Export items not in your list</i>.</li>')
     + '</ul></div>';
 
   // v5.962 — due colonne: a sinistra i rettangoli delle serie, a destra il pulsante di export,
@@ -50437,7 +51204,7 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
           <span style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;cursor:pointer;" onclick="toggleWantlistCollapse('${sId}')">
             <span style="font-size:0.8rem;color:var(--muted);user-select:none;">${_wantlistCollapsed[sId] === false ? '▼' : '▶'}</span>
             <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')}</span>
-            <span class="card-badge" style="color:var(--success);">${figurinesOnlyMissing} ${currentLang === 'it' ? 'figurine base (su' : 'base stickers (out of'} ${figurinesOnlyTotal}${currentLang === 'it' ? ') non nella tua lista' : ') not in my list'}</span>
+            <span class="card-badge" style="color:var(--success);">${figurinesOnlyMissing} ${currentLang === 'it' ? 'figurine base (su' : 'base stickers (out of'} ${figurinesOnlyTotal}${currentLang === 'it' ? ') non nella tua lista' : ') not in your list'}</span>
           </span>
           <!-- v6.292 (Franco) - la spunta sta nella riga del NOME, non in quella delle cinque
                versioni: li' avrebbe fatto sette etichette su una riga che ne misura gia' ~1013px,
@@ -50566,7 +51333,7 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
     const ownedCount = figurinesOnlyTotal - figurinesOnlyMissing;
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:0.5rem 0.9rem;margin-bottom:0.5rem;">
       <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.35rem;">
-        <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')} <span class="card-badge" style="color:var(--accent);">(${ownedCount}&nbsp;/&nbsp;${figurinesOnlyTotal}&nbsp;${currentLang==='it'?'nella tua lista':'in my list'})</span></span>
+        <span style="font-family:var(--font-display);font-size:1.2rem;">${s ? s.name : (currentLang === 'it' ? 'Serie sconosciuta' : 'Unknown series')} <span class="card-badge" style="color:var(--accent);">(${ownedCount}&nbsp;/&nbsp;${figurinesOnlyTotal}&nbsp;${currentLang==='it'?'nella tua lista':'in your list'})</span></span>
         <!-- v6.292 (Franco) - la spunta sta QUI, ultimo figlio della riga del nome:
              spinta a destra dal margine automatico, e senza una riga tutta sua il
              riquadro e' piu' basso di una riga. -->
