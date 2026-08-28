@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.464"></script>
-<link rel="stylesheet" href="css/style.css?v=6.464">
+<script src="js/email.min.js?v=6.469"></script>
+<link rel="stylesheet" href="css/style.css?v=6.469">
 
 
 <style>
@@ -1244,7 +1244,7 @@ button.back-btn { color:#ffffff; }
            riga un clic sul suo angolo non arriverebbe al campo di testo che sta sotto. -->
       <div class="search-bar" style="margin-bottom:0.75rem;position:relative;">
         <span id="items-search-hint" data-i18n="items.searchHint"
-              style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;pointer-events:none;">Inserisci una stringa di ricerca</span>
+              style="position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);white-space:nowrap;max-width:calc(100% - 1.8rem);overflow:hidden;z-index:1;pointer-events:none;">Ricerca per parola chiave</span>
         <div class="search-input-wrap">
           <span class="search-icon">🔍</span>
           <input class="search-input" type="text" id="items-search" placeholder="Search..." oninput="ricercaItemsCambiata()">
@@ -1279,7 +1279,7 @@ button.back-btn { color:#ffffff; }
              qualcosa: definisce base, variazioni, change, omaggio ed errori di stampa - cioe' le
              pillole che stanno li' sopra. 📌 Attaccato all'etichetta del box spiegava i termini di
              una frase che quei termini non li usa. -->
-        <div id="items-filter-intro" style="display:none;position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);align-items:center;gap:0.4rem;white-space:nowrap;max-width:calc(100% - 1.8rem);overflow:hidden;"><span id="items-filter-intro-text" data-i18n="items.filterIntro">Affina la tua ricerca coi seguenti filtri</span></div>
+        <div id="items-filter-intro" style="display:none;position:absolute;top:0;left:0.9rem;transform:translateY(-50%);background:var(--card);padding:0 0.4rem;font-size:0.78rem;font-weight:600;color:var(--text);align-items:center;gap:0.4rem;white-space:nowrap;max-width:calc(100% - 1.8rem);overflow:hidden;"><span id="items-filter-intro-text" data-i18n="items.filterIntro">Aggiungi dei filtri di ricerca preimpostati</span></div>
         <div id="raggr-summary-results" style="display:none;flex-direction:column;align-items:stretch;"></div>
         <!-- 🗑️ v6.329 - qui stava `retro-cat-summary-results`. I riquadri sono un elenco solo,
              disegnato in `raggr-summary-results`: due contenitori affiancati non possono alternarsi,
@@ -2064,9 +2064,9 @@ button.back-btn { color:#ffffff; }
                  scritto a mano, cosi' una sezione nuova compare da se' come e' successo con la
                  sesta (v6.195). -->
             <div style="background:var(--card2);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
-              <h4 style="font-family:var(--font-ui);margin-bottom:0.75rem;">&#128208; Griglie di visualizzazione</h4>
+              <h4 data-i18n="admin.griglie.title" style="font-family:var(--font-ui);margin-bottom:0.75rem;">&#128208; Griglie di visualizzazione</h4>
               <div id="griglie-tabella"></div>
-              <div class="form-hint" style="margin-top:0.6rem;">Quante colonne per riga in ogni box, su computer e su telefono. Da 1 a 12.</div>
+              <div class="form-hint" style="margin-top:0.6rem;"><span data-i18n="admin.griglie.hint">Quante colonne per riga in ogni box, su computer e su telefono. Da 1 a 12.</span> <span style="color:var(--muted);">&middot;</span> <button type="button" onclick="openGriglieLegend()" style="background:none;border:none;color:var(--text);font-size:inherit;text-decoration:underline;cursor:pointer;padding:0;font-family:inherit;" data-i18n="admin.griglie.legendLink">Come si decide</button></div>
               <!-- 🆕 v6.447 (testo dettato da Franco) — «valore APPLICATO», non «di partenza»: dopo il
                    salvataggio ogni serie ha questo numero scritto dentro, quindi non e' un ripiego che
                    qualcuno puo' scavalcare — e' il valore, finche' non si torna sulla scheda della serie
@@ -3114,6 +3114,40 @@ button.back-btn { color:#ffffff; }
 #filter-legend-list li strong { color: var(--legenda-colore, var(--text)); }
 </style>
 <!-- FILTER LEGEND MODAL -->
+<!-- 🆕 v6.469 (Franco) — LA REGOLA DELLE COLONNE, SCRITTA DOVE SI CONFIGURA.
+     *"possiamo scrivere da qualche parte nel sito la regola - nel modo piu sintetico possibile -
+     che descrive come viene determinato il n. di colonne della griglia... metti magari una
+     legenda linkabile affianco alla tabella di cfg"*.
+     🔴 PERCHE' NEL SITO E NON SOLO NEL DOCUMENTO: la tabella qui accanto mostra due numeri per
+     riga e non dice quale dei due arriva a schermo ne' quando. Chi la compila deve dedurlo, e il
+     28 agosto la deduzione ha portato fuori strada perfino chi guardava il codice.
+     📌 LA FORMA E' QUELLA DI `filter-legend-modal`: stesso overlay, stessa testata, stesso
+     `closeModal`. Un secondo modo di aprire una spiegazione sarebbe un secondo comportamento da
+     imparare per la stessa cosa.
+     ⚠️ Il corpo usa `data-i18n-html` e NON `data-i18n`: contiene marcatura, e `data-i18n`
+     scrive `textContent` — la porterebbe via al primo `applyI18n()` (§5).
+     📌 L'ECCEZIONE IN FONDO E' LA META' PIU' IMPORTANTE: e' l'unico caso in cui questa tabella
+     non comanda, ed e' una SCELTA (procedura-deploy.md §12-ter), non un difetto. Senza quella
+     riga, chi vede le colonne non applicarsi crede che il salvataggio non abbia funzionato. -->
+<div class="modal-overlay hidden" id="griglie-legend-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 class="modal-title" data-i18n="admin.griglie.legendTitle">&#128208; Come si decide il numero di colonne</h2>
+      <button class="modal-close" onclick="closeModal('griglie-legend-modal')">&#10005;</button>
+    </div>
+    <div style="font-size:0.92rem;line-height:1.65;" data-i18n-html="admin.griglie.legendBody">
+      Vale il valore pi&ugrave; specifico che esiste, e i due casi <b>non si sovrappongono</b>:<br>
+      &bull; dentro una <b>serie</b> &rarr; il valore di quella serie, se non c&rsquo;&egrave; quello generale qui accanto<br>
+      &bull; dentro un <b>tipo di articolo</b> &rarr; il valore di quel tipo, se non c&rsquo;&egrave; quello generale<br>
+      Aprendo una serie il tipo di articolo non conta, e viceversa.<br><br>
+      <b>Computer e telefono</b> hanno valori separati: sotto gli 860px vale la colonna &laquo;telefono&raquo;.<br><br>
+      &#9888;&#65039; <b>Una sola eccezione.</b> Nelle Figurine, con la modalit&agrave; &laquo;Fronte e retro sempre
+      grandi&raquo;, le colonne le decide lo <b>spazio disponibile</b> e non questa tabella: le card restano
+      grandi e ne entrano quante ce ne stanno. Vale su computer e su telefono, ed &egrave; voluto.
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay hidden" id="filter-legend-modal">
   <div class="modal">
     <div class="modal-header">
@@ -3471,7 +3505,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.464"></script>
+<script src="js/app.js?v=6.469"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3495,7 +3529,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.464'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.469'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
