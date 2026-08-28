@@ -620,6 +620,19 @@ body {
 }
 
 .fig-body { padding: 0.9rem 1rem 1rem; flex: 1; display: flex; flex-direction: column; }
+/* 🆕 v6.501 (Franco: *"tutto il testo va scritto sul fondo"*) — IL TESTO SI ANCORA IN
+   BASSO. `.fig-body` è un flex verticale: il primo figlio che dichiara `margin-top:auto`
+   si prende tutto lo spazio che avanza, e da lì in giù tutto scende. Mettendolo sul
+   NOME — che è il primo blocco di testo — il vuoto si accumula sotto la foto invece che
+   in fondo alla card, e le righe finali di card diverse restano allineate fra loro
+   anche quando un nome va a capo e un altro no.
+   📌 PERCHÉ SERVE ANCHE COL POSTO FISSO: i segnaposto (v6.092) mettono in colonna i
+   CAMPI, ma non possono sapere quante righe occuperà un nome lungo. Le due cose
+   coprono due metà dello stesso difetto, ed è il motivo per cui Franco le ha chieste
+   tutte e due nella stessa frase.
+   ⚠️ La riga qui sotto resta e non è ridondante: se un domani il nome sparisse dalla
+   card, `.fig-actions` tornerebbe a essere l'unico a reggere il fondo. */
+.fig-body > .fig-name { margin-top: auto; }
 .fig-body > .fig-actions { margin-top: auto; }
 
 /* v5.873 — card SENZA foto: il riquadro "FOTO NON DISPONIBILE" non ha piu' aspect-ratio fisso
@@ -1171,10 +1184,25 @@ footer {
   box-shadow: 0 12px 40px rgba(200,75,255,0.2);
 }
 .section-choice-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+/* 🔄 v6.477 (Franco) — QUESTI BOX PRENDONO IL VESTITO DELLE CARD DELL'HUB ARTICOLI.
+   Sono la stessa figura — immagine, nome, conteggio sotto — e dicevano le stesse cose con
+   due colori diversi. Misurato sull'hub, non ricordato: `prodottoCardHTML` scrive il nome
+   con `color:var(--nome-entita)`, `tipoProdottoCardHTML` scrive il conteggio con
+   `var(--type-base)`, cioe' azzurro e bianco. Qui erano bianco e grigio.
+   ⚠️ `--nome-entita` e' dichiarata nell'INDEX (#4db8ff, v6.399) e non qui, e si usa lo
+   stesso: le variabili vivono su `:root`, che e' un elemento solo — chi le dichiara conta
+   per la cascata, non per la visibilita'. Di questa ne esiste UNA dichiarazione sola in
+   tutto il progetto (verificato), quindi non c'e' il doppio valore che il 24 agosto e'
+   costato tre release.
+   📌 Il grigio del conteggio non era una scelta di gusto: era il colore delle note a pie'
+   di pagina applicato a un dato. La stessa correzione della v6.336 sul link della legenda. */
 .section-choice-title {
-  font-family: var(--font-display); font-size: 1.6rem; color: var(--text); margin-bottom: 0.5rem;
+  font-family: var(--font-display); font-size: 1.6rem; color: var(--nome-entita); margin-bottom: 0.5rem;
 }
-.section-choice-count { font-size: 0.88rem; color: var(--muted); }
+/* 📌 Bianco anche la seconda riga, «N nella tua lista» (Franco, esplicito): sta dentro
+   QUESTO stesso elemento — `updateSectionCounts` scrive le due righe separate da un <br> —
+   quindi qui non c'e' modo di colorarle diverse, ne' motivo. */
+.section-choice-count { font-size: 0.88rem; color: var(--text); }
 
 /* ===== SCROLL ANIMATIONS ===== */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
