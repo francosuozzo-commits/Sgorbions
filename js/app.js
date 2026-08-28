@@ -1,6 +1,124 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.474 — LE DUE CARD DELL'INVENTARIO SMETTONO DI DIRE LA STESSA COSA IN DUE MODI (Franco:
+//          *"falla bianca / mettila al fondo / usa la parola articoli"*). La card dei tipi di
+//          articolo personalizzati diceva «12 oggetti» dove la gemella dice «12 articoli (base)»,
+//          in grigio invece che in bianco, e attaccata al titolo invece che in fondo al box. Nella
+//          stessa griglia, affiancate.
+//          🔴 SI E' UNIFICATA LA FUNZIONE, NON IL TESTO: nasce `_descArticoliBase(n)`, e le due
+//          card la chiamano. Copiare la frase avrebbe risolto oggi e riaperto domani, al primo
+//          ritocco di una delle due — e' il difetto n.1 del progetto, due punti che rispondono
+//          alla stessa domanda divergono SEMPRE (§12-bis). Non era una divergenza teorica:
+//          esisteva, e nessuno l'aveva vista perche' le due card non si guardano mai da sole.
+//          📌 «(base)» dice una cosa che prima NESSUNA delle due diceva: contano tutte e due
+//          `_eBase`, cioe' le sole base. Non e' un dettaglio in piu', e' un'ambiguita' in meno.
+//          🔴 PER L'ANCORAGGIO IN FONDO SERVE UNA STRADA DIVERSA DA QUELLA DELLA v6.472: li'
+//          era l'elenco delle serie ad assorbire lo spazio, qui un elenco non c'e' — la card ha
+//          solo titolo e conto. Lo spazio vuoto viene quindi DICHIARATO, con un separatore
+//          flessibile che non contiene niente. 📌 Non `margin-top:auto` sulla scritta, per la
+//          stessa ragione della v6.472: quel margine si mangia il distacco quando la card e'
+//          piena, e sposterebbe il difetto invece di toglierlo.
+//          ⚠️ Lo STILE della scritta e' duplicato fra le due card, ed e' l'unica cosa rimasta in
+//          due copie: sono stili inline dentro due stringhe, e condividerli vorrebbe dire una
+//          classe nuova nel foglio di stile — struttura dentro una release di allineamento.
+//          `prova-v6474.js` pretende che i due stili restino identici, che e' la rete finche' non
+//          si fa la classe. Modificato js/app.js.
+// v6.473 — «ELIMINA SELEZIONATI» TORNA ROSSO (Franco: *"fallo rosso"*). Portava
+//          `btn-primary btn-admin`, cioe' l'arancione delle azioni admin: era l'UNICO pulsante
+//          del sito che distrugge dati senza `btn-danger`.
+//          🔴 E NON E' UNA DIMENTICANZA NUOVA: E' UNA CORREZIONE DISFATTA. Il commento della
+//          v5.723 in `css/style.css` nomina questo pulsante per nome — *«IL CASO PEGGIORE:
+//          deleteBulkSelected, che cancella DEFINITIVAMENTE molti oggetti in ciclo, portava
+//          btn-secondary. Trasparente, neutro, identico a un "Annulla". L'azione piu' distruttiva
+//          del sito sembrava la meno pericolosa. Non era un problema di stile: era un problema di
+//          SICUREZZA»* — ed e' per LUI che `.btn-danger` era stata creata. Lo stesso commento
+//          assegna la classe: *«.btn-danger = il punto di non ritorno, o la cancellazione
+//          massiva»*.
+//          📌 E SI SA ESATTAMENTE QUANDO E' TORNATO ARANCIONE, perche' l'ha detto una prova e
+//          non una deduzione: la **v6.441** (26 agosto), su richiesta di Franco di uniformare i
+//          tre pulsanti della barra. Lo dice `prova-v6441.js`, che pretendeva l'arancione ed e'
+//          diventata rossa nel momento in cui questa release ha rimesso il rosso.
+//          🔴 E QUELLA SUITE AVEVA LASCIATO IL BIGLIETTO, due giorni prima: *«Elimina
+//          selezionati era .btn-danger - ROSSO - ed e' l'unico dei tre che DISTRUGGE dati. Franco
+//          ha chiesto di uniformarlo, quindi la suite pretende l'arancione. Ma la riga qui sotto e'
+//          anche il promemoria di dove tornare: rimettere btn-danger e' una parola sola»*.
+//          📌 E' il caso in cui il meccanismo delle prove ha funzionato per intero: una
+//          decisione discutibile e' stata scritta, sorvegliata, spiegata e infine ribaltata, e in
+//          nessun momento e' stata dimenticata.
+//          🔴 LA LEZIONE: **una regola di uniformita' passa sopra le eccezioni motivate**,
+//          perche' a occhio l'eccezione somiglia a una svista. Qui l'eccezione era una misura di
+//          SICUREZZA presa nella v5.723, ed e' durata due giorni contro «facciamoli tutti uguali».
+//          📌 LA SOSTITUZIONE E' ESATTA e non tocca la taglia: il commento della v5.723 dice
+//          che `.btn-danger` ha *«MISURE IDENTICHE a .btn-primary: cambia SOLO il colore»*, e gli
+//          stili inline di questo pulsante (font-size, padding) restano dove sono.
+//          📌 E il pulsante resta spento finche' non c'e' nulla di selezionato:
+//          `updateBulkDeleteCount` tocca `disabled` e l'opacita', **non la classe** — quindi la
+//          veste non puo' essere riscritta a runtime. Sorvegliato da `prova-v6473.js`.
+//          Modificato js/app.js.
+// v6.472 — «N articoli (base)» STA SEMPRE IN FONDO ALLA CARD (Franco: *"la scritta «N articoli
+//          base» mettila sempre al fondo del box"*). Era già l'ultimo elemento del corpo — la
+//          v6.157 l'aveva messa sotto l'elenco — ma «ultimo» non vuol dire «in fondo»: l'elenco
+//          delle serie è lungo quanto le serie che quel tipo ha, quindi sulla stessa riga della
+//          griglia la scritta finiva a tre altezze diverse, col vuoto sotto.
+//          🔴 NON SI E' USATO `margin-top:auto` SULLA SCRITTA, che era la scorciatoia ovvia:
+//          quel margine mangia il distacco di 0.45rem quando la card è piena, e la riga finirebbe
+//          appiccicata all'ultima serie proprio nelle card più fitte. Avrebbe spostato il difetto
+//          dalle card corte a quelle lunghe invece di toglierlo. È l'ELENCO ad assorbire lo spazio
+//          libero (`flex:1 1 auto`), e la scritta resta dov'era rispetto a lui.
+//          📌 `align-content:start` sull'elenco non è una rifinitura: quel contenitore è una
+//          GRIGLIA, e una griglia che riceve spazio in più lo distribuisce fra le righe — le
+//          pillole delle serie si sarebbero allontanate l'una dall'altra. Lo spazio deve restare
+//          vuoto, non essere spartito.
+//          ⚠️ TUTTO INLINE E SU QUESTA CARD SOLTANTO: `.card` e `.card-body` sono condivise da
+//          mezzo sito (le serie, i box dell'hub, i tipi di articolo). Una regola sulle classi
+//          avrebbe cambiato griglie che nessuno ha guardato — è il difetto della v6.464, dove un
+//          allineamento ereditato si era portato dietro una pagina che non c'entrava.
+//          ⚠️ E RESTA VISIBILE UNA DIVERGENZA, nella stessa griglia: la card gemella dei tipi di
+//          articolo personalizzati (`tipoProdottoCardHTML`) non ha l'elenco delle serie e non è
+//          stata toccata, quindi la sua riga — che per giunta dice «12 oggetti» invece di
+//          «articoli» — resta attaccata al titolo. Due card affiancate, due comportamenti.
+//          Modificato js/app.js.
+// v6.471 — «1541 base» DIVENTA «1541 articoli (base)», IN BIANCO (Franco). È la riga sotto al
+//          titolo delle card dell'Inventario, cioè l'altra metà della domanda del 27 agosto:
+//          quella sotto al titolo della PAGINA era diventata una frase con le v6.466/6.467,
+//          questa era rimasta la scritta secca di prima.
+//          🔴 LA PAROLA NUOVA COSTRINGE A TRADURRE, e la vecchia lo nascondeva: «base» si
+//          scrive uguale nelle due lingue, quindi la riga poteva restare una stringa sola e il
+//          buco non si vedeva. «articoli» no. Da questa release la riga ha due forme — come la
+//          sua gemella `tipoProdottoCardHTML`, che bilingue lo era già dal principio.
+//          📌 «articoli» e non «oggetti»: è la parola che l'interfaccia usa («tipo di
+//          articolo»), e l'istruzione permanente in testa al documento dice di parlare la lingua
+//          dello schermo, non quella del codice.
+//          📌 IL BIANCO È `--type-base`, lo stesso della v6.467 e per la stessa ragione:
+//          questo È il conto delle base, quindi porta il colore che nel codice colore delle
+//          tipologie SIGNIFICA base (v5.703). Le due scritte che contano le base sono dello
+//          stesso bianco perché puntano la stessa variabile, non perché sono state dipinte uguali.
+//          Serve un inline: `.card-desc` dichiara `color: var(--muted)`, ed è da lì che veniva il
+//          grigio spento.
+//          ⚠️ SU TELEFONO QUESTA RIGA NON SI VEDE AFFATTO, e non da oggi: sotto gli 860px
+//          `#catalog-grid .card-desc` è `display:none` (v5.848, «in 85px di larghezza erano
+//          briciole di testo»). La release cambia quindi solo il desktop — non è un difetto, ma
+//          chi prova dal telefono non vedrà nulla e potrebbe crederlo.
+//          ⚠️ E RESTA UN PUNTO APERTO ACCANTO: la card gemella dei tipi di articolo personalizzati
+//          dice «12 oggetti» per la stessa cosa — conta anch'essa le sole base, e non lo dice.
+//          Due parole per un conto solo, nella stessa griglia. Modificato js/app.js.
+// v6.470 — IL SEGNAPOSTO DELLA CASELLA DI RICERCA SMETTE DI PARLARE INGLESE IN ITALIANO
+//          (Franco, dopo che il difetto era emerso scrivendo la v6.468: *"sistemalo"*).
+//          `#items-search` diceva `Search...` **sempre**, perche' il segnaposto era scritto a mano
+//          nell'index SENZA `data-i18n-placeholder`: il dizionario non lo raggiungeva.
+//          🔴 ERA L'UNICA CASELLA DI RICERCA DEL SITO SENZA QUELL'ATTRIBUTO — misurato, non
+//          supposto: `#series-search` ha `catalog.searchglobal` e `#nav-search-input` ha
+//          `nav.search`. Un difetto isolato, non una famiglia: e' il motivo per cui questa
+//          release e' di due righe e non di dieci.
+//          📌 IL RIPIEGO PASSA ALL'ITALIANO INSIEME ALL'ATTRIBUTO. L'index e' scritto in
+//          italiano — lo sono tutti gli altri ripieghi — e il ripiego e' cio' che si vede nei
+//          millisecondi prima che `applyI18n()` giri. Lasciando `Search...` li' dentro, dopo la
+//          correzione la casella avrebbe lampeggiato l'inglese a ogni apertura: il difetto
+//          sarebbe rimasto, solo piu' breve e piu' difficile da notare.
+//          ⚠️ `data-i18n-PLACEHOLDER`, non `data-i18n`: quest'ultimo scrive `textContent`, e su un
+//          `<input>` non farebbe assolutamente niente — senza un errore, senza un segno (§5).
+//          Modificato js/app.js e index.html.
 // v6.469 — LA REGOLA DELLE COLONNE SCRITTA NEL SITO, accanto alla tabella che la governa
 //          (Franco: *"possiamo scrivere da qualche parte nel sito la regola - nel modo piu
 //          sintetico possibile... metti magari una legenda linkabile affianco alla tabella di
@@ -24341,7 +24459,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.469';
+const JS_VERSION = 'v6.474';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -25862,7 +25980,7 @@ const i18n = {
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Score','form.fig.scoreHint':'Points awarded to whoever owns this item',
-'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Add preset search filters','items.resetFilters':'Clear all filters','items.searchHint':'Search by keyword','admin.classifica':'Ranking','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker versions glossary','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Every version has its own colour</strong>, and it is the same everywhere on the site: on the cards, in the search filters and in the titles of the search boxes.','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer.<br>Two cases can be told apart:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) same front but with a different graphic element in the printing (the back is the same as the base sticker’s)</li><li>2) same front; it is the back that gives rise to the variant</li></ul>','items.filterLegend.free':'<strong>Free</strong>: sticker given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black) on the back','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','items.filterLegend.titleRetros':'📖 Retro versions glossary','items.filterLegend.retroBase':'<strong>Base set retro</strong>: retro belonging to the series’ base set','items.filterLegend.retroChange':'<strong>Change</strong>: variant intentionally made by the manufacturer; it differs from the base version by a different graphic element in the printing','items.filterLegend.retroFree':'<strong>Free</strong>: retro given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black)','items.filterLegend.retroPrintError':'<strong>Print error</strong>: variant purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
+'form.fig.descPlaceholder':'Describe this sticker...','form.fig.forSale':'🏷️ For sale on Ebay','form.fig.price':'Price (€)','form.fig.priceUsd':'Price ($)','form.fig.daPubblicare':'📤 Queued for eBay','form.fig.daPubblicareHint':'Rises on its own when you change price, quantity, condition, title, description or photo. The listing is created or updated the next time the program runs.','form.fig.quantity':'Quantity','form.fig.condition':'Condition','form.fig.conditionNew':'New','form.fig.conditionUsed':'Used','admin.refresh':'Refresh data','items.adminFilters':'Extra admin filters','items.searchBox':'Your search','items.filterIntro':'Add preset search filters','items.resetFilters':'Clear all filters','items.searchHint':'Search by keyword','items.searchPlaceholder':'Search...','admin.classifica':'Ranking','items.retroViewMode.label':'Display mode:','items.retroViewMode.destraPiena':'Front and back always full size','items.retroViewMode.sotto':'Back always below','items.retroViewMode.destra':'Back always on the right','items.retroViewMode.dinamico':'Back always full size','items.retroViewMode.fronteGrande':'Front always full size','items.filterLegend.title':'📖 Sticker versions glossary','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Every version has its own colour</strong>, and it is the same everywhere on the site: on the cards, in the search filters and in the titles of the search boxes.','items.filterLegend.base':'<strong>Base set sticker</strong>: sticker belonging to the series\u2019 base set','items.filterLegend.variation':'<strong>Official variation</strong>: documented retro variant, with a high print run (not rare)','items.filterLegend.unofficialVariation':'<strong>Unofficial variation</strong>: undocumented retro variant, with a low print run (rare)','items.filterLegend.change':'<strong>Change</strong>: variant intentionally made by the manufacturer.<br>Two cases can be told apart:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) same front but with a different graphic element in the printing (the back is the same as the base sticker’s)</li><li>2) same front; it is the back that gives rise to the variant</li></ul>','items.filterLegend.free':'<strong>Free</strong>: sticker given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black) on the back','items.filterLegend.printError':'<strong>Print error</strong>: variant (front or back) purely resulting from the printing process','items.filterLegend.titleRetros':'📖 Retro versions glossary','items.filterLegend.retroBase':'<strong>Base set retro</strong>: retro belonging to the series’ base set','items.filterLegend.retroChange':'<strong>Change</strong>: variant intentionally made by the manufacturer; it differs from the base version by a different graphic element in the printing','items.filterLegend.retroFree':'<strong>Free</strong>: retro given away as a promo (typically outside schools). It bears an OMAGGIO stamp (red or black)','items.filterLegend.retroPrintError':'<strong>Print error</strong>: variant purely resulting from the printing process','detail.myListTitle':'My list','catalog.haveall.hint':'Adds to your list every result of the current search, on all pages','catalog.havenone.hint':'Removes from your list every result of the current search, on all pages',
 'profile.title':'My Profile','profile.owned':'In My List','profile.total':'Total','profile.sec.figurines':'Stickers','profile.sec.retros':'Retros','profile.sec.albums':'Albums','profile.sec.bustine':'Wrappers','profile.sec.extras':'Other Items','profile.series':'Series Tracked','profile.myListHint':'Your personal list: what it means to you is entirely up to you — it\u2019s not visible or interpreted by other users.',
 'profile.collection':'My Collection',
 'profile.sliderHint':'Try tapping the toggle! 👆',
@@ -25952,7 +26070,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Punteggio Selezionati','modal.bulkscore.desc':'Assegna lo stesso punteggio a tutti gli oggetti attualmente visibili (quelli non nascosti da eventuali filtri attivi). Potrai modificare i singoli punteggi in seguito.','modal.bulkscore.label':'Punteggio per ogni oggetto','modal.bulkscore.apply':'Applica ai visibili','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con velina) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con velina','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Retro set base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con velina','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Punteggio','form.fig.scoreHint':'Punti assegnati a chi possiede questo oggetto','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Figurina set base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Retro set base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -31614,6 +31732,22 @@ function _righeTipologie(oggetti, modo) {
   ).join('<span style="color:var(--muted);">; </span>');
 }
 
+// 🆕 v6.474 (Franco) — LA FRASE DEL CONTO DELLE BASI, IN UN POSTO SOLO.
+// Le due card dell'Inventario — le sette sezioni fisse e i tipi di articolo personalizzati —
+// contano tutte e due le sole BASI e lo dicevano con due parole diverse: «1541 articoli (base)»
+// l'una, «12 oggetti» l'altra. Non era una scelta: erano due stringhe in due punti che non si
+// parlavano, e nessuno le vedeva insieme finche' non ci si fermava sulla griglia mista.
+// 🔴 SI E' UNIFICATA LA FUNZIONE, NON IL TESTO. Copiare la frase da una card all'altra
+// avrebbe risolto oggi e riaperto domani, al primo ritocco di una delle due: e' il difetto n.1 di
+// questo progetto — due punti che rispondono alla stessa domanda divergono SEMPRE (§12-bis).
+// 📌 «(base)» non e' decorativo: tutte e due contano `_eBase`, e prima nessuna delle due lo
+// diceva. La parola nuova non aggiunge un dettaglio, toglie un'ambiguita' che c'era gia'.
+function _descArticoliBase(n) {
+  return currentLang === 'it'
+    ? (n === 1 ? '1 articolo (base)' : n + ' articoli (base)')
+    : (n === 1 ? '1 item (base)'     : n + ' items (base)');
+}
+
 function prodottoCardHTML(sec, tutti, serieOrdinate) {
   const miei = _diTipo(tutti, sec);
   const basi = miei.filter(_eBase);
@@ -31621,7 +31755,16 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
   // v6.156 (Franco) - resta il solo riepilogo: il numero delle serie se ne va. Sotto c'e' gia'
   // l'elenco delle serie con i loro numeri, quindi dirne il conto qui era ripetere in cifre una
   // cosa che si legge per esteso due righe piu' sotto.
-  const desc = basi.length + ' base';
+  // 🆕 v6.471 (Franco) — «1541 base» DIVENTA «1541 articoli (base)», E VA IN BIANCO.
+  // 🔴 LA PAROLA NUOVA COSTRINGE A TRADURRE, e la vecchia lo nascondeva: «base» è uguale
+  // nelle due lingue, quindi la riga poteva restare una stringa sola e nessuno se ne accorgeva.
+  // «articoli» no. Da qui in poi questa riga ha due forme, come la sua gemella
+  // `tipoProdottoCardHTML`, che bilingue lo era già.
+  // 📌 «articoli» e non «oggetti»: è la parola che l'interfaccia usa — «tipo di articolo» —
+  // e l'istruzione permanente in testa al documento dice di parlare la lingua dello schermo.
+  // ⚠️ La gemella dice ancora «12 oggetti» per la stessa cosa (conta anch'essa le sole base, e
+  // non lo dice): due parole per un conto solo, ed è un punto aperto, non una svista di qui.
+  const desc = _descArticoliBase(basi.length);
   // v6.073 (Franco) — le serie che di quel prodotto non hanno NIENTE non si mostrano affatto.
   // Uno zero occupa una riga per dire che non c'e' niente da dire: l'elenco cambia lunghezza da
   // una card all'altra, ma dice solo cose vere.
@@ -31642,10 +31785,25 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
     '</span>';
   }).join('');
   const foto = _fotoProdotto(sec);
-  return '<div class="card" style="position:relative;" onclick="openProdottoDetail(\'' + sec + '\')">' +
+  // 🆕 v6.472 (Franco) — «N articoli (base)» STA SEMPRE IN FONDO ALLA CARD.
+  // Prima stava subito DOPO l'elenco delle serie, che è di lunghezza diversa da una card
+  // all'altra: sulla stessa riga della griglia la scritta finiva a tre altezze diverse, e sotto
+  // restava il vuoto. Non era «in fondo al box»: era «dopo l'ultima serie».
+  // 🔴 NON SI USA `margin-top:auto` SULLA SCRITTA, che sarebbe la scorciatoia ovvia: quel
+  // margine si mangia il distacco di 0.45rem quando la card è piena, e la riga finirebbe
+  // appiccicata all'ultima serie proprio nelle card più fitte — cioè si sposterebbe il difetto
+  // dalle card corte a quelle lunghe. È l'ELENCO che assorbe lo spazio libero (`flex:1`), e la
+  // scritta resta dov'era rispetto a lui, con il suo margine intatto.
+  // 📌 `align-content:start` sull'elenco NON è decorativo: quel contenitore è una griglia, e
+  // una griglia che riceve spazio in più lo distribuisce fra le RIGHE — le pillole delle serie si
+  // allontanerebbero l'una dall'altra invece di restare in cima. Lo spazio deve restare vuoto.
+  // ⚠️ Tutto inline e su QUESTA card: `.card` e `.card-body` sono classi condivise da mezzo sito
+  // (le serie, i tipi di articolo, i box dell'hub). Una regola sulle classi avrebbe cambiato
+  // griglie che nessuno ha guardato.
+  return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="openProdottoDetail(\'' + sec + '\')">' +
     _matitaBox(sec) +   // v6.145
     '<div class="card-img-placeholder">' + foto + '</div>' +
-    '<div class="card-body">' +
+    '<div class="card-body" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0;">' +
       // v6.157 (Franco) - IL TOTALE VA SOTTO L'ELENCO, non sopra. Sopra era una premessa; sotto
       // e' la riga che tira le somme, che e' il mestiere che ha. La v6.156 l'aveva solo ripulito
       // dal conto delle serie e lasciato dov'era: avevo letto "mettila sola" dove c'era scritto
@@ -31660,8 +31818,8 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
       // una card larga ~320px due colonne non ci stavano: quasi tutte le serie sarebbero finite a
       // puntini. E' per questo che le due cose - due colonne e nome corto - sono una sola
       // modifica e non due.
-      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.35rem;padding-top:0.2rem;">' + righe + '</div>' +
-      '<div class="card-desc" style="margin-top:0.45rem;padding-top:0.45rem;border-top:1px solid rgba(255,255,255,0.06);">' + esc(desc) + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.35rem;padding-top:0.2rem;flex:1 1 auto;align-content:start;">' + righe + '</div>' +
+      '<div class="card-desc" style="margin-top:0.45rem;padding-top:0.45rem;border-top:1px solid rgba(255,255,255,0.06);color:var(--type-base);">' + esc(desc) + '</div>' +
     '</div>' +
   '</div>';
 }
@@ -32093,9 +32251,7 @@ function _singolareTipo(t) {
 function tipoProdottoCardHTML(t, tutti) {
   const suoi = tutti.filter(f => (f.tipoProdotto || '') === t.id);
   const quanti = suoi.filter(_eBase).length;
-  const desc = currentLang === 'it'
-    ? (quanti === 1 ? '1 oggetto' : quanti + ' oggetti')
-    : (quanti === 1 ? '1 item' : quanti + ' items');
+  const desc = _descArticoliBase(quanti);
   const _url = _fotoBoxUrl(t.id);   // v6.145
   const _foto = _url
     ? '<img src="' + cloudinaryUrl(_url, 'w_400,h_400,c_fit,q_auto,f_auto') +
@@ -32111,12 +32267,25 @@ function tipoProdottoCardHTML(t, tutti) {
       'width:30px;height:30px;line-height:1;cursor:pointer;font-size:0.9rem;' +
       'background:rgba(0,0,0,0.6);color:#fff;">&#9881;</button>'
     : '';
-  return '<div class="card" style="position:relative;" onclick="openTipoProdotto(\'' + t.id + '\')">' +
+  // 🆕 v6.474 (Franco) — LA SCRITTA VA IN FONDO E IN BIANCO, come nella card gemella.
+  // 🔴 QUI NON C'E' NESSUN ELENCO CHE POSSA ASSORBIRE LO SPAZIO — l'altra card ha la lista
+  // delle serie, questa ha solo titolo e conto — quindi lo spazio vuoto va DICHIARATO: un
+  // separatore flessibile che non contiene niente e non dice niente, ed e' esattamente il suo
+  // mestiere. 📌 Non `margin-top:auto` sulla scritta: quel margine si mangerebbe il distacco
+  // di 0.45rem quando la card e' piena, e la riga finirebbe attaccata al titolo proprio nelle card
+  // strette. E' la stessa ragione scritta nella v6.472, e vale anche dove l'elenco non c'e'.
+  // 📌 Lo stile della scritta e' copiato dalla gemella CARATTERE PER CARATTERE, ed e' l'unica
+  // cosa che qui e' stata duplicata invece che condivisa: sono stili inline dentro due stringhe,
+  // e metterli in comune vorrebbe dire una classe nuova nel foglio di stile — una modifica di
+  // struttura dentro una release di allineamento. Sorvegliato da `prova-v6474.js`, che pretende
+  // che i due stili restino uguali.
+  return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="openTipoProdotto(\'' + t.id + '\')">' +
     _matitaBox(t.id) + _matitaNome +
     '<div class="card-img-placeholder">' + _foto + '</div>' +
-    '<div class="card-body">' +
+    '<div class="card-body" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0;">' +
       '<div class="card-title" style="margin-bottom:0.5rem;color:var(--nome-entita);">' + esc(_nomeTipo(t)) + '</div>' +
-      '<div class="card-desc">' + esc(desc) + '</div>' +
+      '<div style="flex:1 1 auto;"></div>' +
+      '<div class="card-desc" style="margin-top:0.45rem;padding-top:0.45rem;border-top:1px solid rgba(255,255,255,0.06);color:var(--type-base);">' + esc(desc) + '</div>' +
     '</div>' +
   '</div>';
 }
@@ -48740,7 +48909,7 @@ function renderBulkEditView() {
   bulkView.innerHTML = _barraTabella + _datalist + `
     ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
-      <button class="btn-primary btn-admin" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;font-size:0.9rem;padding:0.5rem 1rem;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
+      <button class="btn-danger" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;font-size:0.9rem;padding:0.5rem 1rem;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
       <button onclick="toggleOrdinaPerCreazione()" title="${_ordinaPerCreazione ? (currentLang === 'it' ? 'Torna all\'ordine normale' : 'Back to the normal order') : (currentLang === 'it' ? 'Dal piu’ recente. Gli oggetti senza data leggibile restano in fondo.' : 'Most recent first. Items without a readable date stay at the bottom.')}" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--action-admin);background:${_ordinaPerCreazione ? 'var(--action-admin)' : 'transparent'};color:${_ordinaPerCreazione ? '#ffffff' : 'var(--action-admin)'};font-weight:600;">🕒 ${currentLang === 'it' ? 'Ordina per creazione' : 'Sort by creation'}</button>
       <button onclick="toggleAggiornamentoMassivo()" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--action-admin);background:transparent;color:var(--action-admin);font-weight:600;">✏️ ${currentLang === 'it' ? 'Aggiornamento massivo' : 'Bulk update'}</button>
     </div>
