@@ -1,6 +1,280 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.520 — «FRONTALI» E «POSTERIORI» IN CIMA AL RIQUADRO DEGLI ERRORI DI STAMPA, con
+//          le tipologie sotto (Franco: *"un po' come facciamo per le categorie e
+//          sottocategorie"*).
+//          🔴 È IL PRIMO FILTRO CHE SETACCIA SU UNA COSA CALCOLATA: gli altri
+//          confrontano un valore scritto nel record, il lato si ricava dal retro
+//          attaccato. Per questo non entra fra i `_raggrAttivi` e vive accanto a loro.
+//          ⚠️ E costerebbe caro scritto male: `_latoErroreStampa` cerca il retro con un
+//          `find`, e dentro il setaccio sarebbe quadratico — ~56 ms a passata, misurati
+//          in un browser. La funzione impara invece a ricevere un INDICE, costruito
+//          solo a filtro acceso: la regola resta in un posto solo e il costo scende a
+//          un millesimo. Riscriverla nel setaccio sarebbe stato il §12-bis servito.
+//          📌 Le due pillole sono ORTOGONALI alle tipologie e non chiamano
+//          `_soloQuestoRaggr`: aggiungono una dimensione, non spengono un fratello.
+//          📌 I conteggi vengono da `skipLato: true`, cioè ignorando la propria
+//          scelta: altrimenti accesa una, l'altra direbbe zero per sempre (v6.335).
+//          ⚠️ Il riquadro sarà sbilanciato — 168 contro 2 — e non è un difetto: sono i
+//          due gruppi veri, e vederlo è metà del valore di questo riquadro.
+//          Modificato js/app.js, index.html.
+// v6.519 — IL LATO ENTRA NEL BADGE: «Errore di stampa frontale» / «posteriore», e la
+//          parentesi (FRONTE) sulla riga TIPOLOGIA se ne va (Franco: *"per la card ho
+//          cambiato idea… scrivilo come terza riga del badge"*).
+//          📌 È il posto giusto: il badge nomina la VERSIONE, la riga TIPOLOGIA il
+//          TIPO. «Fronte» e «retro» non sono un tipo di errore — dicono che genere di
+//          errore è quello. La parentesi lo tradiva già: è quasi sempre il segno di
+//          una cosa messa dove non è di casa.
+//          🔴 E «posteriore» vale anche nel TITOLO della scheda, che diceva «sul
+//          retro»: due frasi per la stessa cosa a due schermate di distanza sarebbero
+//          il difetto più puro di questa settimana. La parola sta in un posto solo.
+//          ⚠️ Da guardare: il titolo della scheda ora dice «ERRORE DI STAMPA
+//          POSTERIORE». Se «sul retro» piaceva di più, si cambia in un punto solo.
+//          🗑️ Via il parametro `breve`: serviva solo alla parentesi. Un parametro che
+//          nessuno passa è un ramo che nessuno prova (v6.393).
+//          Modificato js/app.js, index.html.
+// v6.518 — SEMPRE «TUTTE», e la v6.516 è revocata per intero (Franco: *"la parola è
+//          tipologie, quindi al plurale abbiamo sempre TUTTE"*).
+//          🔴 La v6.516 si era accordata con la cosa sbagliata: aveva letto «TUTTI gli
+//          errori di stampa» e ne aveva dedotto un accordo con gli ARTICOLI. Il
+//          comando invece accende tutte le TIPOLOGIE, femminile in ogni riquadro.
+//          🗑️ Via la parola condizionata, via `genereM` dal pannello, via le tre
+//          dichiarazioni `genere: 'm'`. Lasciarle sarebbe stato il danno peggiore: un
+//          flag dichiarato e non letto non fa niente oggi e mente domani.
+//          ⚠️ E la lezione: nella v6.516 avevo esteso la correzione a due riquadri non
+//          nominati, con l'argomento — buono — che una regola vale dove vale. Quello
+//          che mancava era il primo passo: capire con che cosa la parola si accorda.
+//          Estendere in fretta una regola sbagliata la sbaglia in tre posti.
+//          Modificato js/app.js, index.html.
+// v6.517 — «Filtra per tipologia di VERSIONE OMAGGIO» (Franco).
+//          📌 È la coda della v6.514, che aveva portato «Versione omaggio» sulla
+//          pillola e nella scheda e aveva lasciato indietro il TITOLO del riquadro.
+//          🔴 La solita forma: una decisione applicata solo dove la si stava
+//          scrivendo. Stavolta il conto l'ha fatto un grep, non la memoria.
+//          ⚠️ `raggrParolaIt` si sposta insieme: il pannello cerca quella stringa
+//          dentro il titolo per colorarla (v6.419), e lasciandola a «Omaggio» avrebbe
+//          colorato mezza espressione.
+//          📌 `pluraleIt: 'Omaggi'` NON si tocca: quelli sono gli oggetti, non la
+//          versione — la stessa distinzione della v6.514.
+//          Modificato js/app.js, index.html.
+// v6.516 — «TUTTI» DOVE LE VOCI SONO MASCHILI, «TUTTE» DOVE SONO FEMMINILI (Franco:
+//          *"per gli errori di stampa diventa TUTTI"*).
+//          📌 Il comando si accorda con ciò che comanda: «TUTTE» sta bene sopra le
+//          variazioni e non sta in piedi sopra gli errori di stampa.
+//          🔴 IL GENERE SI DICHIARA, NON SI DEDUCE: nessuno guarda l'ultima lettera
+//          della parola: ogni raggruppamento dice il suo, come le sezioni in
+//          `ARTICOLI` da sempre. È la regola della v6.073 — niente grammatica
+//          italiana dentro il codice.
+//          ⚠️ E VALE ANCHE DOVE FRANCO NON HA NOMINATO: la stessa frase storta la
+//          dicono i change e gli omaggi. Correggere il solo riquadro nominato avrebbe
+//          lasciato due «TUTTE» sbagliate a due centimetri da quella giusta — la
+//          forma di difetto che il 29 agosto si è ripetuta sei volte.
+//          📌 Ripiego al femminile: chi non dichiara niente continua a dire «Tutte».
+//          ⚠️ L'inglese non cambia: «All» non ha genere.
+//          Modificato js/app.js, index.html.
+// v6.515 — «TUTTE» ESCE DALLA FILA E VA IN FONDO A DESTRA, su una riga sua (Franco:
+//          *"TUTTE mettilo in fondo a dx nel blocco filtri"*).
+//          📌 Terzo ritocco allo stesso comando, e ognuno ha tolto una confusione: la
+//          v6.511 lo metteva in testa a forma di pillola, la v6.512 in coda e
+//          rettangolare, questa lo tira FUORI dall'elenco che comanda. Il filo è uno:
+//          la posizione dice il mestiere quanto la forma, e un comando dentro la fila
+//          si legge come una voce della fila per quanto lo si vesta diverso.
+//          ✅ Il posto esisteva già: il piede del riquadro è della v6.333, dove vive il
+//          link «Legenda versioni». Nessun angolo nuovo.
+//          ⚠️ I due non si pestano i piedi perché `pieHTML` ce l'ha il solo riquadro
+//          delle versioni, dove «Tutte» non c'è (è una partizione, v6.512).
+//          ⚠️ `_chipTutte` sale di un blocco e diventa `let` con default '': nella
+//          vista non cliccabile il comando non esiste, e senza il default il riquadro
+//          stamperebbe «undefined» in fondo a destra.
+//          Modificato js/app.js, index.html.
+// v6.514 — LE PILLOLE DELLE VERSIONI AL PLURALE E IN MAIUSCOLO, e «Versione omaggio»
+//          anche nella scheda dell'articolo (Franco, con l'elenco dettato:
+//          VERSIONI BASE · VARIAZIONI UFFICIALI · VARIAZIONI NON UFFICIALI · CHANGE ·
+//          VERSIONI OMAGGIO · ERRORI DI STAMPA).
+//          📌 Il plurale è una cosa del FILTRO, non della versione: una pillola nomina
+//          un insieme, la scheda nomina un oggetto. Quindi un campo nuovo,
+//          `filtroIt`/`filtroEn`, accanto a `it`/`en` — che NON si tocca, perché vive
+//          in otto punti. È il meccanismo di `titoloIt` della v6.372, ripiego compreso.
+//          🔴 «VERSIONI OMAGGIO» non è il plurale di «Omaggio»: il descrittore aveva
+//          già `pluraleIt: 'Omaggi'`, ed è la parola giusta per il posto sbagliato —
+//          «Omaggi» sono gli oggetti, «Versioni omaggio» è la versione.
+//          🎨 Il maiuscolo lo mette il `text-transform`, non i dati (v6.371). Il
+//          riquadro lo dichiara con `etichetteMaiuscole`, come `unaRiga` (v6.357).
+//          ✅ Nella scheda, `_labelVersione` chiede `titoloIt`: la frase «Versione
+//          omaggio» esisteva già dalla v6.372 e la usava solo il titolo, mentre la
+//          riga della spunta diceva «Omaggio». Nessuna stringa nuova.
+//          ⚠️ REVOCA LA v6.475, che aveva scelto il singolare per combaciare con la
+//          voce di legenda: quella coppia ora è scucita. La legenda NON è stata
+//          toccata di iniziativa — lì le voci sono frasi intere, ed è una decisione.
+//          Modificato js/app.js, index.html.
+// v6.513 — IL COMANDO SI CHIAMA «TUTTE», E DA SPENTO È BIANCO (Franco: *"Chiamalo
+//          «Tutte», lascialo in bianco"*).
+//          📌 «tipologie» la dice già il titolo del riquadro: era la stessa parola due
+//          volte a due centimetri di distanza. Ed è anche l'unica forma che regge in
+//          ogni riquadro senza coniugare (v6.073: niente grammatica nel codice).
+//          🎨 L'etichetta torna a `--text`: la visibilità gliela dà la forma, e il
+//          verde da spento la faceva sembrare accesa — due segnali per uno stato, e
+//          uno dei due mentiva. Da accesa resta scura su fondo d'accento, come ogni
+//          altra voce selezionata.
+//          Modificato js/app.js, index.html.
+// v6.512 — «TUTTE LE TIPOLOGIE»: via dal riquadro dove non filtrava, in fondo alla
+//          fila, e rettangolare (Franco: *"dove la hai messa adesso non serve a
+//          niente"*, *"mettila per ultima"*, *"la fai rettangolare"*).
+//          🔴 IL DIFETTO ERA SCRITTO NELLA v6.511, DA ME, E L'HO MESSA LO STESSO: quel
+//          commento dice che nelle versioni «accenderle tutte non filtra niente,
+//          perché sono una partizione». Ho preso alla lettera un «in tutte le
+//          sezioni» che voleva dire «non solo in una», contro una ragione tecnica che
+//          sapevo — e l'ho segnalata in fondo al riepilogo invece che prima.
+//          ✅ Il mestiere vero è un filtro per SOTTRAZIONE: accendere tutte le
+//          tipologie e poi spegnere solo quella da escludere. Con le sole pillole
+//          singole, escluderne una su sette voleva dire accenderne sei a mano.
+//          📌 Dove si decide: `unaSolaInerte` sul descrittore delle versioni, che
+//          dalla v6.359 poggia su questo stesso fatto. Il pannello però legge
+//          `C.partizione`, cioè il fatto, non il nome storto.
+//          ⚠️ Debito dichiarato: `partizione` sarebbe il nome giusto del flag; la
+//          rinomina è meccanica (un uso, tre asserzioni in prova-v6360).
+//          🎨 Rettangolo da 6px, bordo d'accento anche da spenta, maiuscoletto: una
+//          pillola dice «sono una voce fra le altre», e questo comando non lo è.
+//          Modificato js/app.js, index.html.
+// v6.511 — LA PILLOLA «TUTTE LE TIPOLOGIE», in ogni riquadro della ricerca (Franco,
+//          chiesta ieri e precisata oggi: *"una nuova pillola che consenta di
+//          applicare il filtro a tutte le voci di quella sezione"*).
+//          🔴 Il pezzo perso non era un comando, era una DOMANDA che non si poteva
+//          più fare: «tutti i change, qualunque tipo abbiano» si poteva solo
+//          compitare, una pillola per volta. E una selezione compitata smette di
+//          voler dire «tutti» il giorno che nasce un tipo nuovo, senza dirlo.
+//          ✅ L'insieme si calcola al clic su `vals`, quindi la stessa pillola premuta
+//          domani comprende anche ciò che è nato oggi.
+//          ⚠️ Premuta da accesa AZZERA: è `_setRaggrFiltro` applicato all'insieme
+//          intero, e la rende un interruttore invece che un vicolo cieco.
+//          📌 Sotto le due tipologie non compare: con una sarebbe quella pillola con
+//          un altro nome, con due è un clic risparmiato su due.
+//          📌 Nei riquadri delle VERSIONI non filtra niente — sono una partizione,
+//          i tipi no — ma c'è lo stesso, perché Franco l'ha chiesta in tutte le
+//          sezioni. È la distinzione che regge `unaSolaInerte` dalla v6.359.
+//          Modificato js/app.js, index.html.
+// v6.510 — IL SITO DICE DA CHE PARTE STA L'ERRORE: «ERRORE DI STAMPA FRONTALE» /
+//          «SUL RETRO» nel titolo della scheda, e sulla card «TIPOLOGIA: DECENTRATA
+//          (FRONTE)» (Franco: *"vorrei che per chi guarda sia ben chiaro quale sia la
+//          foto dell'errore"*, e nella griglia *"in un modo più soft"*).
+//          🔴 IL LATO LO DICE IL RETRO ATTACCATO, e non lo si chiede a nessuno: se è a
+//          sua volta un errore di stampa il difetto sta dietro, se è un retro base sta
+//          sul fronte. È la stessa mossa dei change (v6.083) — guardare COSA c'è
+//          dall'altro capo — e il commento di quella release afferma che «per gli
+//          errori di stampa distingue»: è la frase falsa da cui è nato tutto. Su 91
+//          con un `retroId`, ad avere un retro loro sono DUE.
+//          ✅ Le due liste della serie non c'entrano più (Franco: *"proviamo a non
+//          considerarli affatto"*): restano all'import. E non potevano farlo comunque
+//          — un DIFETTO COLORE capita davanti o dietro, perché per gli errori di
+//          stampa il tipo è il GENERE del difetto, non il lato.
+//          ⚠️ La parola NON sta in `_etichettaTipo`: quella serve anche le pillole dei
+//          filtri, e un filtro non può dire «frontale» — filtra una versione.
+//          ⚠️ Su un retro si tace: quell'articolo È la faccia.
+//          ⚠️ Prezzo, due articoli: RETRO GIALLO e DIFETTO RETRO in serie 3 sono
+//          difetti dietro senza retro collegato, e verranno chiamati «frontali».
+//          🔴 NON tocca `_fotoFigurina`: nessuna foto cambia ancora.
+//          Modificato js/app.js, index.html.
+// v6.509 — SU UNA FIGURINA SI PUÒ SCEGLIERE ANCHE UNA TIPOLOGIA DI ERRORE «DI
+//          RETRO»; su un retro no (Franco: *"viene da sé che i retro, non avendo un
+//          fronte, non possono avere un tipo di errore di stampa di tipo fronte"*).
+//          🔴 Le due liste della serie DICHIARANO IL LATO del difetto, e nessuno lo
+//          sapeva — nemmeno chi le riempiva, che però lo faceva giusto. La prova: su
+//          170 errori di stampa gli unici DUE modellati bene (retro tutto loro) sono
+//          esattamente le due figurine il cui tipo sta nella lista RETRO.
+//          ⚠️ Ma la regola non era esprimibile: la figurina vedeva solo la lista
+//          «fronte». Quelle due sono entrate da altre porte — l'import, che fino alla
+//          v6.354 scriveva testo libero, e la tendina che conserva i valori fuori
+//          elenco. Il dato era più avanti del codice.
+//          ✅ L'asimmetria è fisica: due facce pescano da due liste, una faccia da una.
+//          📌 La forma esisteva già in `_opzioniTipoChange`, due funzioni più sotto.
+//          ⚠️ NON tocca `_fotoFigurina`: nessuna foto cambia. È il primo di quattro
+//          passi, e l'ordine è voluto — prima si rende dicibile la verità, poi si
+//          sanano i dati, poi le validazioni, e solo alla fine il fronte smette di
+//          essere ereditato. Al contrario, ~145 fronti sparirebbero a regola falsa.
+//          Modificato js/app.js, index.html.
+// v6.508 — I BADGE DELLA CARD VANNO A CAPO (Franco: *"nella card 5 pillole non ci
+//          stanno su una riga; vai a capo"*).
+//          🔴 LA REGOLA ESISTEVA GIÀ IN DUE POSTI e non era mai arrivata alla base:
+//          `flex-wrap: wrap` stava nel media query del telefono (col commento che
+//          dice esattamente il problema di oggi — «nello stretto vanno a capo invece
+//          di schiacciarsi») e ricopiato a mano sulle card «Prodotti». `.card-meta`
+//          invece era `space-between` senza wrap: con due badge bastava, con i
+//          cinque della v6.506 no.
+//          📌 Due copie di una regola sono anche due prove che la regola serviva.
+//          ✅ Ora sta nella base, e le due copie smettono di ripeterla — ma solo per
+//          le proprietà diventate ridondanti: i loro `gap` più stretti restano,
+//          perché lì i badge sono più piccoli. Ridondante non vuol dire diverso.
+//          ⚠️ `space-between` non poteva restare: coi badge a capo distribuisce il
+//          vuoto dentro ogni riga, e un'ultima riga da due li spara ai lati opposti.
+//          📌 A schermo cambia UN punto solo, la card della serie. Negli altri due il
+//          rendering è identico: si è tolta la ripetizione, non il comportamento.
+//          Modificato css/style.css, js/app.js, index.html.
+// v6.507 — «N TOTALI (+ M ERRORI DI STAMPA)», CON M IN ROSSO, nella pagina della
+//          serie (Franco: *"continua a non contarli ma indica così"*).
+//          🔴 Chiude la segnalazione da cui è nato tutto: la card diceva 795 dove la
+//          ricerca ne trovava 630. La v6.506 ha spezzato il conto per sezione, questa
+//          scrive accanto al totale perché non si ritrova: 539 + 91 = 630.
+//          🔴 SULLA CARD LA CODA NON CI VA, ed è una decisione presa a schermo:
+//          *"sulla card non devi mettere la frase tra (); lì non c'è spazio"*. Un
+//          badge sta su una riga corta, e la parentesi manderebbe a capo il conteggio
+//          più importante della card. ⚠️ Il prezzo è dichiarato: lì 539 resta non
+//          spiegato, e la spiegazione vive dove uno la va a cercare.
+//          ✅ LA CODA STA COMUNQUE IN UNA FUNZIONE SOLA, `codaErroriDiStampa`,
+//          attaccata a `senzaErroriDiStampa`: sono le due metà della stessa regola —
+//          una toglie, l'altra dice quanto ha tolto. Il giorno che servisse anche
+//          altrove si chiama, non si riscrive (§12-bis, `prova-v6429`).
+//          📌 Il rosso è `--type-printerror` (#ff6464, misurato sui valori vivi del
+//          browser): è il colore che lì significa già «errore di stampa». Un rosso
+//          nuovo sarebbe stata una seconda tinta per lo stesso significato.
+//          ⚠️ A zero la coda sparisce: «(+ 0 errori di stampa)» non dice niente.
+//          Modificato js/app.js, index.html.
+// v6.506 — UN CONTATORE PER SEZIONE SULLA CARD DELLA SERIE (Franco: *"chi ha mai
+//          detto che figurine con retro e da attaccare andassero sommate? sono due
+//          articoli diversi"*).
+//          🔴 Il conto era giusto e la domanda era sbagliata, e torna all'unità:
+//          795 = 630 (con retro) + 256 (da attaccare) − 91 (errori di stampa). Il
+//          badge sommava DUE sezioni e toglieva gli errori di stampa, la ricerca ne
+//          contava UNA e li teneva. §12-bis nella sua forma pura.
+//          🔴 E LA SOMMA NON L'AVEVA DECISA NESSUNO: il badge sceglieva cosa contare
+//          per ESCLUSIONE («tutto ciò che non è retro, album, extra, bustina»),
+//          quindi si è preso `attaccare` da sé il giorno che `attaccare` è nata.
+//          ⚠️ E si prenderebbe anche la prossima: `carte` oggi non ha record, ma
+//          entrerebbe in silenzio. È la trappola della v6.214.
+//          ✅ Ora l'elenco viene da `ARTICOLI` — ordine, nomi, singolare e plurale
+//          nelle due lingue — quindi una sezione nuova prende il suo contatore da sé,
+//          col nome che si legge sullo schermo.
+//          ✅ Gli errori di stampa restano FUORI (Franco: *"non contarli manco nella
+//          card della serie, allora nell'hub serie, senno' è una incongruenza"*), e
+//          lo scarto si applica ora una volta PER SEZIONE: spezzato il badge, uno
+//          scarto solo su un mucchio unico non saprebbe più a chi appartengono gli
+//          scartati. La regola resta in `senzaErroriDiStampa`, non è stata ricopiata.
+//          📌 Serie 2 passa da «795 figurine» a «539 Figurine con retro» + «256
+//          Figurine da attaccare». Che 539 non si ritrovi entrando (630) lo chiude la
+//          v6.507, con la coda «(+ 91 errori di stampa)» negli stessi due posti.
+//          📌 `figs` resta per esclusione perché serve solo al punteggio modale: la
+//          v6.429 aveva già scritto perché le due non condividono una variabile.
+//          Modificato js/app.js, index.html.
+// v6.505 — LO SFARFALLIO ERA DIMEZZATO, NON TOLTO: due `margin-top:auto` nello
+//          stesso flex si dividono lo spazio a metà (Franco: *"cmq sia lo
+//          sfarfallamento c'è ancora"*, con la foto).
+//          🔴 IL COMMENTO DELLA v6.501 DICHIARAVA UNA REGOLA CSS CHE NON ESISTE:
+//          *"il primo figlio che dichiara margin-top:auto si prende tutto lo
+//          spazio"*. In flexbox lo spazio libero si ripartisce IN PARTI UGUALI fra
+//          tutti i margini auto, e ce n'erano due — `.fig-name` (v6.501) e
+//          `.fig-actions` (v5.980). Il testo scendeva di metà, e l'altra metà si
+//          apriva fra l'ultima riga e i comandi.
+//          ✅ Misurato ESEGUENDO in un browser, non dedotto: 300px di scatola, 260
+//          liberi → auto su tutti e due, nome a 130px (la metà esatta); auto sul solo
+//          nome, 260px. E la foto di Franco lo diceva già: le card con fronte e retro
+//          affiancati (foto più bassa, più spazio libero) avevano il testo più in alto
+//          E il buco più largo sopra la rarità. Metà sopra, metà sotto.
+//          ✅ La rete di sicurezza della v6.501 resta: l'auto delle azioni si azzera
+//          solo quando un `.fig-name` le precede (`~`), quindi senza nome `.fig-actions`
+//          regge il fondo da solo come dal 2 maggio.
+//          📌 Il commento sbagliato è stato CORRETTO nel testo, non solo scavalcato:
+//          lasciarlo lì avrebbe rimesso la trappola in cassaforte.
+//          Modificato css/style.css, js/app.js, index.html.
 // v6.504 — TROVATO: `subseriesHTML is not defined`. La griglia torna a disegnare.
 //          🔴 La v6.501 ha tolto la DICHIARAZIONE di `subseriesHTML` e ha lasciato il
 //          suo USO nel markup della card: ReferenceError alla prima card, `renderItems`
@@ -24902,7 +25176,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.504';
+const JS_VERSION = 'v6.520';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -26651,6 +26925,16 @@ let _noteFilter = false;   // v6.113 - "Con note", solo admin
 // otto punti, stesso riquadro, stesse trappole. Se un domani si tocca uno dei due, si
 // guardi anche l'altro — sono gemelli per costruzione, non per caso.
 let _senzaRaritaFilter = false;   // v6.502
+// 🆕 v6.520 (Franco: *"nel box dei filtri per errore di stampa si riesce a mettere 2
+// pillole: FRONTALI - POSTERIORI"*) — IL LATO DEL DIFETTO COME FILTRO.
+// 🔴 È IL PRIMO FILTRO DEL PANNELLO CHE SETACCIA SU UNA COSA CALCOLATA: tutti gli altri
+// confrontano un valore SCRITTO nel record, questo lo ricava dal retro attaccato
+// (`_latoErroreStampa`, v6.510). Per questo non può entrare fra i `_raggrAttivi`, che sono
+// costruiti come «campo + insieme di valori ammessi»: vive accanto a loro, come il filtro
+// foto e quello delle note.
+// 📌 È ORTOGONALE alle tipologie: si accende «POSTERIORI» e insieme una tipologia, e il
+// setaccio le combina — è il rapporto fra categoria e sottocategoria a cui Franco allude.
+let _filtroLatoErrore = new Set();   // v6.520 — 'fronte' | 'retro'
 // Il filtro sul TIPO di oggetto (set base, variazioni, change...) risponde alla
 // domanda "che cosa e' questo?". Non rispondeva a quella che un collezionista si fa
 // davvero: "cosa mi manca?". Da qui il secondo filtro, che e' una DIMENSIONE
@@ -30650,6 +30934,16 @@ const ARTICOLI = {
 // sconosciuta non deve far esplodere il disegno di una pagina.
 function _art(sez) { return ARTICOLI[sez] || ARTICOLI.figurines; }
 
+// 🆕 v6.506 — IL NOME DI UNA SEZIONE COME LO SI DICE IN UN BADGE: singolare se è uno
+// solo, e nella lingua corrente. Sta accanto a `_art` e chiede al DESCRITTORE, non a una
+// tabella parallela: è la lezione della v6.481, dove lo stesso nome viveva in due fonti
+// che non si conoscevano e cambiarne una faceva dire al sito due parole diverse.
+function _nomeSezioneCard(sez, n) {
+  const a = _art(sez);
+  if (currentLang === 'it') return n === 1 ? a.itSing : a.it;
+  return n === 1 ? a.enSing : a.en;
+}
+
 // ============================================================
 // 🆕 v6.221 (Franco: "devi creare la tabella del tipo di articolo") — LA SEZIONE DI CONSOLE.
 // ------------------------------------------------------------
@@ -31095,6 +31389,7 @@ async function _aggiornaOrdineArticoliDaConfigurazione() {
 // tre catene su cinque era DIVERSO (vedi il CHANGELOG). Adesso e' un fatto scritto in un posto.
 const VERSIONI_ARTICOLO = [
   { chiave: 'variation',           campo: 'isVariation',           it: 'Variazione ufficiale',     en: 'Official variation',
+    filtroIt: 'Variazioni ufficiali', filtroEn: 'Official variations',   // v6.514
     badgeIt: 'Variazione<br>ufficiale', badgeEn: 'Official<br>variation',
     itBreve: 'Variazione', enBreve: 'Variation', livello: 'capo', partenza: ['base'],
     // 🆕 v6.314 - L'ID DELLA CASELLA NELLA SCHEDA. Non si ricava dal nome del campo
@@ -31113,6 +31408,7 @@ const VERSIONI_ARTICOLO = [
     colore: 'var(--type-official)',    badge: 'fig-badge-official',    marcatoreEbay: 'VARIAZIONE',
     iconaTab: '🎨' },
   { chiave: 'unofficialVariation', campo: 'isUnofficialVariation', it: 'Variazione non ufficiale', en: 'Unofficial variation',
+    filtroIt: 'Variazioni non ufficiali', filtroEn: 'Unofficial variations',   // v6.514
     badgeIt: 'Variazione<br>non ufficiale', badgeEn: 'Unofficial<br>variation',
     itBreve: 'Var. non ufficiale', enBreve: 'Unofficial var.', livello: 'capo', partenza: ['base'],
     idForm: 'fe-is-unofficial-variation',
@@ -31125,6 +31421,7 @@ const VERSIONI_ARTICOLO = [
     colore: 'var(--type-unofficial)',  badge: 'fig-badge-unofficial',  marcatoreEbay: 'VARIAZIONE NON UFFICIALE',
     iconaTab: '🎨' },
   { chiave: 'change',              campo: 'isChange',              it: 'Change',                   en: 'Change',
+    filtroIt: 'Change', filtroEn: 'Changes',   // v6.514
     badgeIt: 'Change', badgeEn: 'Change',
     livello: 'figlio', partenza: ['base', 'variation', 'unofficialVariation'],
     campoTipo: 'changeType', opzioniTipo: '_opzioniTipoChange', idForm: 'fe-is-change',
@@ -31174,6 +31471,9 @@ const VERSIONI_ARTICOLO = [
   // *si cambia cio' che si LEGGE, non cio' che si CHIAMA* — rinominarlo sarebbe una migrazione su
   // ogni record per cambiare una parola che nessuno vede.
   { chiave: 'free',                campo: 'isFreeVersion',         it: 'Omaggio',                  en: 'Free',
+    // 🔴 v6.514 - «VERSIONI OMAGGIO», e NON il `pluraleIt` che sta qui sotto: «Omaggi» sono
+    // gli oggetti, «Versioni omaggio» e' la versione. Franco l'ha ribadito apposta.
+    filtroIt: 'Versioni omaggio', filtroEn: 'Free versions',
     badgeIt: 'Omaggio', badgeEn: 'Free',
     // 🆕 v6.235 - VIVA. Tolto `nuova: true`, ed e' l'unica riga che serviva: da qui la Versione
     // omaggio entra in `_VERSIONI_VIVE` e compare DA SE' nel colore, nell'etichetta, in `_eBase`,
@@ -31196,10 +31496,20 @@ const VERSIONI_ARTICOLO = [
     // ⚠️ E' la ragione per cui questo campo esiste: la v6.266 ricavava la frase da `it`, e una
     // derivazione non puo' produrre tre forme diverse. Quando il testo non e' una funzione
     // dell'etichetta, si dichiara — come `prefissoTipo` (v6.257) e i plurali (v6.266).
-    codaRaggrIt: 'tipologia di Omaggio', codaRaggrEn: 'Free item type',
+    // 🔄 v6.517 (Franco) - «tipologia di Versione Omaggio». È la coda della v6.514, che
+    // aveva portato «Versione omaggio» sulla pillola del filtro e nella riga della scheda
+    // e aveva lasciato indietro proprio il TITOLO di questo riquadro.
+    // 🔴 Stessa forma di difetto di sempre: una decisione applicata solo dove la si stava
+    // scrivendo. Il rimedio è cercare la PAROLA e poi classificare, non i posti che
+    // assomigliano a quelli già trovati — e stavolta il conto è stato fatto col grep.
+    codaRaggrIt: 'tipologia di Versione Omaggio', codaRaggrEn: 'Free version type',
     // 🆕 v6.419 - vedi il change: la parola si dichiara. Vale anche in inglese, dove
     // «Free item type» ha la parola in DUE token e nessuna regola sulla maiuscola li terrebbe insieme.
-    raggrParolaIt: 'Omaggio', raggrParolaEn: 'Free item',
+    // ⚠️ v6.517 - LA PAROLA COLORATA SI SPOSTA INSIEME AL TITOLO, o smette di colorare: il
+    // pannello cerca questa stringa DENTRO il titolo e la avvolge nel colore della versione
+    // (v6.419). Lasciandola a «Omaggio», il titolo avrebbe colorato la sola seconda parola
+    // di «Versione Omaggio» — cioè il difetto che la v6.419 è servita a togliere.
+    raggrParolaIt: 'Versione Omaggio', raggrParolaEn: 'Free version',
     // 🆕 v6.257 - LA PAROLA CHE PRECEDE IL TIPO NEL NOME COMPLETO (Franco).
     // ⚠️ NON e' `it`, ed e' il punto: `it` e' un'etichetta DA MOSTRARE, e stanotte e' stata
     // rinominata (v6.240, "Versione omaggio" -> "Omaggio"). Il Nome completo e' un campo SALVATO:
@@ -31229,6 +31539,7 @@ const VERSIONI_ARTICOLO = [
     colore: 'var(--type-free)',        badge: 'fig-badge-free',        marcatoreEbay: null,
     iconaTab: '🎁' },
   { chiave: 'printError',          campo: 'isPrintError',          it: 'Errore di stampa',         en: 'Print error',
+    filtroIt: 'Errori di stampa', filtroEn: 'Print errors',   // v6.514
     badgeIt: 'Errore<br>di stampa', badgeEn: 'Print<br>error',
     livello: 'figlio', partenza: ['base', 'variation', 'unofficialVariation'],
     // ♻️ v6.350 - QUI C'ERA `opzioniTipo: null`, con scritto accanto che NON era una dimenticanza:
@@ -31241,6 +31552,10 @@ const VERSIONI_ARTICOLO = [
     // commento che spiega perche' una cosa e' diversa, accanto a una cosa che non lo e' piu', e'
     // la forma di bugia piu' difficile da smentire - suona come una ragione.
     campoTipo: 'printErrorType', opzioniTipo: '_opzioniTipoErrore', idForm: 'fe-is-printerror',
+    // 🆕 v6.520 - il riquadro degli errori di stampa porta un cappello: le due pillole del
+    // LATO. È l'unico che ce l'ha, ed è per questo che si dichiara qui invece che nel
+    // pannello (stessa scelta di `pieHTML`, v6.333).
+    cappelloHTML: () => _pillolLatoErroreHTML(),
     pluraleIt: 'Errori di stampa', pluraleEn: 'Print errors',
     codaRaggrIt: 'tipologia di Errore di stampa', codaRaggrEn: 'Print error type',
     // 🆕 v6.419 - vedi il change. ⚠️ Qui SINGOLARE, mentre `esportaParolaIt` dice «Errori
@@ -31331,9 +31646,18 @@ const _RAGGR_VERSIONE = {
     // ⚠️ Questo riquadro e' `unaRiga` (v6.357): le pillole non vanno a capo, il box
     // scorre. Un'etichetta piu' lunga qui non tronca e non rompe niente — fa
     // cominciare lo scorrimento prima, su schermo stretto.
-    if (val === 'base') return (currentLang === 'it') ? 'Versione base' : 'Base version';
+    // 🔄 v6.514 (Franco) — AL PLURALE, perché una pillola di filtro nomina un INSIEME
+    // («mostrami le variazioni ufficiali») mentre la scheda nomina UN oggetto. Sono due
+    // frasi diverse, e fino a oggi condividevano la stessa parola.
+    // ⚠️ REVOCA LA v6.475, che aveva scelto il SINGOLARE per combaciare con la voce di
+    // legenda («due punti del sito, una parola sola»): quella coppia adesso è scucita, e la
+    // legenda NON è stata toccata di iniziativa — lì le voci sono frasi intere.
+    // 📌 «VERSIONI BASE», non «Basi»: la base è una versione, non un mucchio di oggetti.
+    if (val === 'base') return (currentLang === 'it') ? 'Versioni base' : 'Base versions';
     const v = _versioneDiChiave(val);
-    return v ? ((currentLang === 'it') ? v.it : v.en) : val;
+    // il ripiego su `it` è ciò che rende `filtroIt` facoltativo: una versione che non lo
+    // dichiara continua a dire la sua etichetta di sempre (meccanismo della v6.372).
+    return v ? ((currentLang === 'it') ? (v.filtroIt || v.it) : (v.filtroEn || v.en)) : val;
   },
   ordina: (a, b) => _ordineVersione(a[0]) - _ordineVersione(b[0]),
   // 🆕 v6.357 (Franco) - QUESTO RIQUADRO STA SU UNA RIGA SOLA, e la bandierina sta qui invece che
@@ -31345,6 +31669,13 @@ const _RAGGR_VERSIONE = {
   // ⚠️ Quindi non e' una preferenza estetica applicabile a tutti: e' una proprieta' di un elenco
   // che ha un tetto. Chi un domani la mettesse su un riquadro dei tipi otterrebbe l'altro difetto.
   unaRiga: true,
+  // 🆕 v6.514 (Franco: *"tutto in maiuscolo"*) - LE ETICHETTE DI QUESTO RIQUADRO SI
+  // LEGGONO IN MAIUSCOLO. 📌 Il maiuscolo NON si scrive nei dati: lo mette il
+  // `text-transform`, come nel titolo della scheda (v6.371) — scriverlo a mano vorrebbe
+  // dire due maiuscoli che possono divergere, e nei dati le etichette stanno in forma
+  // normale. ⚠️ La bandierina sta qui e non nel pannello per la stessa ragione di
+  // `unaRiga` (v6.357): è vera di QUESTO riquadro e falsa degli altri.
+  etichetteMaiuscole: true,
   // 🆕 v6.359 - se in questa sezione esiste una sola versione, il riquadro non compare: la
   // spiegazione sta in `renderRaggrSummaries`. Le versioni sono una partizione degli articoli, i
   // tipi no: per questo la bandierina e' qui e non sugli altri riquadri.
@@ -31601,9 +31932,16 @@ const _puoEsserePartenza = chiave =>
 // 📌 Il testo NON e' un parametro: viene da `VERSIONI_ARTICOLO` come il colore. Passandolo a mano
 // si sarebbero potuti scrivere due nomi diversi per la stessa versione — l'etichetta della casella
 // e quella del badge — che e' il difetto che questa release sta chiudendo, non uno da aprire.
+// 🔄 v6.514 (Franco: *"usa l'espressione «Versione omaggio» anche nella form dell'articolo
+// (figurina, retro, etc)"*) — LA RIGA DELLA SPUNTA CHIEDE LA STESSA PAROLA DEL TITOLO.
+// 📌 La frase ESISTE GIÀ nel descrittore dalla v6.372 (`titoloIt: 'Versione omaggio'`), e
+// finora la usava solo il titolo della scheda mentre questa riga diceva «Omaggio». Due
+// parole per la stessa cosa, nella stessa finestra, a cinque centimetri l'una dall'altra.
+// ✅ Nessuna stringa nuova: è un ripiego in più, non una copia. Le altre quattro versioni
+// non dichiarano `titoloIt` e continuano a dire quello che dicevano.
 function _labelVersione(chiave) {
   const v = _versioneDiChiave(chiave);
-  const testo = v ? (currentLang === 'it' ? v.it : v.en) : chiave;
+  const testo = v ? (currentLang === 'it' ? (v.titoloIt || v.it) : (v.titoloEn || v.en)) : chiave;
   const col = (v && v.colore) || 'var(--text)';
   return '<span class="detail-label" style="color:' + col + ';">' + esc(testo) + '</span>';
 }
@@ -32225,7 +32563,12 @@ function _righeTipologie(oggetti, modo) {
     // sta su una riga e veniva troncata. Sul desktop resta `nowrap`, dove lo spazio c'e' e una
     // pillola spezzata sarebbe solo piu' brutta. Il numero resta comunque attaccato alla prima riga.
     const _mobPil = _isMobileViewport();
-    return '<div class="card-meta" style="display:flex;flex-wrap:wrap;justify-content:flex-start;gap:0.3rem;margin-top:0.45rem;padding-top:0.45rem;">' +
+    // 🔄 v6.508 - via `display`, `flex-wrap` e `justify-content` da questa riga: erano una
+    // COPIA A MANO di quello che la regola `.card-meta` fa dalla v6.508. Il `gap` resta
+    // (0.3rem, piu' stretto del base) e cosi' i due margini: sono differenze volute.
+    // 📌 Questa riga e' una delle due prove che la regola serviva: era stata scritta qui
+    // da chi aveva davanti il caso dei badge stretti, senza risalire alla base.
+    return '<div class="card-meta" style="gap:0.3rem;margin-top:0.45rem;padding-top:0.45rem;">' +
       voci.map(v => '<span class="card-badge" style="color:' + v.col + ';'
         + (_mobPil ? 'white-space:normal;line-height:1.25;text-align:left;' : 'white-space:nowrap;') + '">' +
         '<b style="font-variant-numeric:tabular-nums;">' + v.n + '</b>' + _etic(v) + '</span>').join('') +
@@ -33982,18 +34325,43 @@ function _nomeSerieCard(s, sempreCorto) {
 
 function seriesCardHTML(s) {
   const allItems = getData('figurines', []).filter(f => f.seriesId === s.id);
-  const retros = allItems.filter(f => f.section === 'retros');
-  const albums = allItems.filter(f => f.section === 'albums');
-  const extras = allItems.filter(f => f.section === 'extras');
-  const bustine = allItems.filter(f => f.section === 'bustine');
+  // 🆕 v6.506 (Franco: *"chi ha mai detto che figurine con retro e da attaccare andassero
+  // sommate? sono due articoli diversi"*) — UN CONTATORE PER SEZIONE, E L'ELENCO DELLE
+  // SEZIONI VIENE DAL DESCRITTORE.
+  // 🔴 QUI SOTTO C'ERA UNA SCELTA PER ESCLUSIONE, ed è il difetto vero: `figs` era «tutto
+  // ciò che non è retro, album, altri oggetti o bustina», quindi sommava `figurines` e
+  // `attaccare` in un badge solo che diceva «figurine». Nessuno l'aveva deciso: era il
+  // risultato di un elenco di ciò che NON si conta, scritto quando le sezioni erano meno.
+  // ⚠️ E una scelta per esclusione ACCOGLIE IN SILENZIO ogni sezione futura: oggi `carte`
+  // non ha nemmeno un record, ma il giorno che ne avesse finirebbe dentro il conto delle
+  // «figurine» senza che nessuno sbagli niente. È la trappola della v6.214.
+  // 📌 Ordine e nomi vengono da `ARTICOLI` (`pos`, `it`/`en`, `itSing`/`enSing`), cioè
+  // dalle parole che si leggono sullo schermo: un badge nomina la sezione in cui si
+  // finisce premendo la card, e una sezione nuova prende il suo contatore da sé.
+  // ⚠️ LO SCARTO DEGLI ERRORI DI STAMPA (v6.429) RESTA, e ora si applica DENTRO il giro,
+  // una volta per sezione: spezzato il badge in due, uno scarto solo su un mucchio unico
+  // non avrebbe più saputo a chi appartenevano gli scartati. La regola non è stata
+  // ricopiata: la sa `senzaErroriDiStampa`, e continua a saperla solo lei.
+  // 📌 Franco, dopo averci pensato: *"non contarli manco nella card della serie, allora
+  // nell'hub serie, senno' è una incongruenza"* — la card e la pagina della serie dicono
+  // lo stesso numero sulla stessa cosa, e una che scarta mentre l'altra conta è il §12-bis
+  // a due centimetri di distanza.
+  const _conteggiSezione = Object.keys(ARTICOLI)
+    .sort((a, b) => (ARTICOLI[a].pos ?? 99) - (ARTICOLI[b].pos ?? 99))
+    .map(sez => [sez, senzaErroriDiStampa(allItems.filter(f => f.section === sez)).length])
+    .filter(([, n]) => n > 0);
   const figs = allItems.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras' && f.section !== 'bustine');
-  // 🆕 v6.429 - stessa regola della scheda serie: fuori gli errori di stampa, e passando dalla
-  // funzione condivisa invece che da un filtro copiato.
-  // 🔴 UNA VARIABILE NUOVA, E NON `figs` FILTRATA. `figs` serve anche a calcolare il PUNTEGGIO
-  // MODALE della card (`scoredFigs`, due righe sotto): filtrarla avrebbe spostato anche quello,
-  // in silenzio e senza che nessuno l'avesse chiesto. Due domande diverse che oggi hanno
-  // risposte diverse non devono condividere una variabile - e' la stessa ragione della v6.412.
-  const figsConteggio = senzaErroriDiStampa(figs);
+  // ⚠️ v6.506 — `figs` RESTA, e resta per esclusione, ma da adesso serve a UNA COSA SOLA:
+  // il punteggio modale della card (`scoredFigs`, qui sotto). Non è più un numero mostrato,
+  // quindi la sua definizione larga non dice più niente di sbagliato a chi legge la card.
+  // La v6.429 aveva già scritto che le due domande non devono condividere una variabile, e
+  // aveva ragione: è per questo che qui si toglie il conteggio e non `figs`.
+  // 🗑️ v6.506 — VIA `figsConteggio` (v6.429), e NON è una revoca: la sua regola resta, e
+  // resta nella stessa funzione condivisa. Cambia che il conto non è più uno solo su un
+  // mucchio unico, quindi lo scarto si applica dentro il giro, una volta per sezione.
+  // ⚠️ Che il numero non si ritrovi entrando (539 qui, 630 nella ricerca) resta vero, ed è
+  // ciò che chiude la v6.507 scrivendo accanto al numero «(+ M errori di stampa)» — negli
+  // stessi due posti. Questa release spezza il conto, quella lo spiega.
   const desc = currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt);
   // Calculate mode score (most common score > 0)
   let modeScoreHTML = '';
@@ -34027,11 +34395,7 @@ function seriesCardHTML(s) {
       </div>
       <div class="card-desc">${(desc||'').substring(0,90)}${(desc||'').length>90?'…':''}</div>
       <div class="card-meta">
-        <span class="card-badge">${figsConteggio.length} ${currentLang === 'it' ? 'figurine' : 'stickers'}</span>
-        ${retros.length ? `<span class="card-badge">${retros.length} ${currentLang === 'it' ? 'retro' : 'retros'}</span>` : ''}
-        ${bustine.length ? `<span class="card-badge">${bustine.length} ${currentLang === 'it' ? (bustine.length === 1 ? 'bustina' : 'bustine') : 'wrappers'}</span>` : ''}
-        ${albums.length ? `<span class="card-badge">${albums.length} ${currentLang === 'it' ? 'album' : 'albums'}</span>` : ''}
-        ${extras.length ? `<span class="card-badge">${extras.length} ${currentLang === 'it' ? 'Altro' : 'Other'}</span>` : ''}
+        ${_conteggiSezione.map(([sez, n]) => `<span class="card-badge">${n} ${_nomeSezioneCard(sez, n)}</span>`).join('')}
       </div>
     </div>
   </div>`;
@@ -34621,10 +34985,25 @@ function _opzioniTipoErrore(seriesId, selezionato, sezione) {
   const sel = (selezionato || '').trim();
   const _n = v => (v || '').trim().toLowerCase();
   const eRetro = sezione === 'retros';
-  // sezione non dichiarata: si mostrano entrambi. Meglio troppo che un elenco vuoto su una strada
-  // che non conoscevo - stessa scelta di `_opzioniTipoOmaggio`.
-  const retro  = (sezione === undefined || eRetro)  ? retroErroreTypesDiSerie(seriesId) : [];
-  const fronte = (sezione === undefined || !eRetro) ? frontErroreTypesDiSerie(seriesId) : [];
+  // 🆕 v6.509 (Franco: *"viene da sé che i retro, non avendo un fronte, non possono avere un
+  // tipo di errore di stampa di tipo fronte"*) — L'ELENCO È ASIMMETRICO, E LO È PER UN FATTO
+  // FISICO: una figurina ha DUE facce, quindi il suo difetto può stare di qua o di là e pesca
+  // da tutte e due le liste; un retro una faccia sola ce l'ha, e il suo difetto è lì per
+  // definizione.
+  // 🔴 PRIMA LA FIGURINA VEDEVA SOLO LA LISTA «FRONTE», e questo rendeva la regola
+  // INESPRIMIBILE: su una figurina col difetto dietro non si poteva scegliere il tipo giusto.
+  // 📌 Le due liste della serie DICHIARANO IL LATO DEL DIFETTO — misurato: in serie 2 la lista
+  // «fronte» ha DECENTRATA, OPACA, MACCHIA NERA…, la lista «retro» ha MACCHIA ROSA e SEMI
+  // ROSA. E su 170 errori di stampa gli unici DUE con un retro tutto loro sono esattamente le
+  // due figurine il cui tipo sta nella lista RETRO: chi inseriva i dati usava già le liste
+  // come lato, e il codice era l'unico a non saperlo.
+  // ⚠️ Quelle due ci sono arrivate da un'altra porta, e vale la pena saperlo: l'import fino
+  // alla v6.354 scriveva il tipo come TESTO LIBERO, e la tendina conserva i valori fuori
+  // elenco sotto «⚠️ non in elenco». Il dato era più avanti del codice.
+  // 📌 La forma giusta esisteva già due funzioni più sotto: `_opzioniTipoChange` chiede
+  // entrambe le liste senza condizioni. Si copia lo stile che c'è, non se ne disegna uno simile.
+  const retro  = retroErroreTypesDiSerie(seriesId);
+  const fronte = eRetro ? [] : frontErroreTypesDiSerie(seriesId);
   const elenco = [...retro, ...fronte];
   const opt = t => '<option value="' + esc(t) + '"' + (_n(t) === _n(sel) ? ' selected' : '') + '>' + esc(t) + '</option>';
   const unSolo = !(retro.length && fronte.length);
@@ -34636,8 +35015,12 @@ function _opzioniTipoErrore(seriesId, selezionato, sezione) {
     // tutti i dati di oggi, e perderlo qui vorrebbe dire svuotare un campo pieno per dire che una
     // casella della serie e' vuota.
     const avviso = '<option value="">' + (it
-      ? '⚠️ nessuna tipologia di errore di stampa ' + (eRetro ? 'DI RETRO' : 'FRONTALE') + ' in questa serie — si definiscono nella scheda della serie'
-      : '⚠️ no ' + (eRetro ? 'back' : 'front') + ' print error types in this series') + '</option>';
+      // 🔄 v6.509 - su una FIGURINA l'avviso non dice più «FRONTALE»: da questa release una
+      // figurina pesca da tutte e due le liste, quindi se l'elenco è vuoto sono vuote
+      // ENTRAMBE, e dire «nessuna tipologia FRONTALE» manderebbe a cercare la casella
+      // sbagliata. Sul retro la parola resta, perché lì la lista è davvero una sola.
+      ? '⚠️ nessuna tipologia di errore di stampa ' + (eRetro ? 'DI RETRO ' : '') + 'in questa serie — si definiscono nella scheda della serie'
+      : '⚠️ no ' + (eRetro ? 'back ' : '') + 'print error types in this series') + '</option>';
     return sel
       ? avviso + '<optgroup label="' + (it ? '⚠️ valore attuale — va aggiunto ai tipi della serie' : '⚠️ current value')
               + '"><option value="' + esc(sel) + '" selected>' + esc(sel) + '</option></optgroup>'
@@ -34689,6 +35072,36 @@ function _opzioniTipoChange(seriesId, selezionato) {
 // restano dentro: Franco ha nominato quelli e solo quelli.
 function senzaErroriDiStampa(elenco) {
   return elenco.filter(f => !f.isPrintError);
+}
+
+// 🆕 v6.507 (Franco: *"continua a non contarli ma indica così: N totali (+ M errori di
+// stampa)"*, e *"M errori di stampa in rosso"*) — LA META' CHE DICE QUANTO SI È TOLTO.
+// 🔴 STA ATTACCATA A `senzaErroriDiStampa` DI PROPOSITO: sono le due metà della stessa
+// regola — una toglie, l'altra dichiara quanto ha tolto — e chi un domani cambiasse l'una
+// senza l'altra le trova a due righe di distanza invece che in due capitoli del file.
+// 🔴 OGGI LA CHIAMA UN POSTO SOLO — la riga «totali» della pagina serie — E RESTA UNA
+// FUNZIONE LO STESSO. Sulla card della serie la coda è stata provata a schermo e
+// scartata: *"non devi mettere la frase tra (); lì non c'è spazio"*, e un badge che va a
+// capo per una parentesi è peggio del numero non spiegato. ⚠️ Il prezzo è dichiarato:
+// sulla card 539 continua a non ritrovarsi, e la spiegazione vive dove uno la cerca.
+// 📌 I posti che dicono «quante figurine» restano due e lontani, e il 26 agosto erano già
+// andati fuori sincrono (è la ragione di `prova-v6429`): il giorno che questa coda
+// servisse anche là, si chiama — non si riscrive (§12-bis).
+// 📌 IL ROSSO È `--type-printerror` e non un rosso nuovo: è il colore che nella pagina
+// della serie significa già «errore di stampa», sulla colonna a fianco. Il valore vivo è
+// #ff6464 — misurato dal browser, non letto da style.css, che l'index può ridichiarare
+// (v6.372). ⚠️ Il commento del progetto che lo chiama «salmone» è vecchio: si è guardato
+// il valore, non la parola che lo descrive.
+// ⚠️ A zero la coda non si scrive: «(+ 0 errori di stampa)» occupa una riga per non dire
+// niente, e su una card i badge sono corti per mestiere.
+function codaErroriDiStampa(elenco) {
+  const n = elenco.filter(f => f.isPrintError).length;
+  if (!n) return '';
+  const it = currentLang === 'it';
+  const q = n.toLocaleString(it ? 'it-IT' : 'en-US');
+  return ' (+ <span style="color:var(--type-printerror);">' + q + ' '
+       + (it ? (n === 1 ? 'errore di stampa' : 'errori di stampa')
+             : (n === 1 ? 'print error' : 'print errors')) + '</span>)';
 }
 
 function tipiPresenti(seriesId, section) {
@@ -34998,7 +35411,13 @@ function renderSeriesMeta(s) {
     if (_totali.length || alwaysTotal) m.push(colonna(BULLET, _totali,
       // v6.067 (Franco) - "368 totali" al posto di "368 figurine in totale": stessa ragione della
       // riga del set base, e in piu' sparisce anche il "in", che non serviva a niente.
-      it ? 'totali' : 'total',
+      // 🆕 v6.507 - «N totali (+ M errori di stampa)». La coda è la STESSA funzione che usa
+      // il badge della card: i due posti dicono lo stesso numero sulla stessa cosa, quindi
+      // devono anche spiegarlo con le stesse parole. È il §12-bis applicato al testo, non
+      // solo ai conti.
+      // 📌 Qui gli errori di stampa hanno GIÀ una colonna tutta loro, poche righe sopra:
+      // la coda non aggiunge un dato nuovo, dice che quel dato NON è dentro questo totale.
+      (it ? 'totali' : 'total') + codaErroriDiStampa(g.items),
       true, nm.f, 'var(--accent)'));
     return m;
   }
@@ -36401,6 +36820,7 @@ function azzeraTuttiIFiltri() {
   _fotoFilter = null;
   _noteFilter = false;
   _senzaRaritaFilter = false;   // v6.502
+  _filtroLatoErrore = new Set();   // v6.520
   _ownedFilter = 'all';
   _wishlistFilter = false;
   // 🗑️ v6.346 - qui stavano `_itemTypeFilter = _tipoIniziale()` e `_azzeraTuttiIParent()`. Il
@@ -36452,6 +36872,7 @@ function _qualcheFiltroAcceso() {
     || _fotoFilter !== null
     || _noteFilter
     || _senzaRaritaFilter               // v6.502
+    || _filtroLatoErrore.size > 0       // v6.520
     || _ownedFilter !== 'all'
     || _wishlistFilter
     // 🗑️ v6.346 - qui stavano le due righe gemelle delle due appena tolte da `azzeraTuttiIFiltri`:
@@ -36502,6 +36923,15 @@ function getCurrentlyFilteredItems(opts) {
   // panoramica di cio' che i filtri lasciano passare, non dei risultati di una
   // ricerca. La ricerca resta invece nel riquadro dei risultati.
   const _skipSearch = !!(opts && opts.skipSearch);
+  // 🆕 v6.520 - l'indice si costruisce SOLO se il filtro è acceso: a filtro spento non si
+  // paga niente, e a filtro acceso si paga una volta sola invece che una per articolo.
+  // ⚠️ `skipLato` serve al riquadro che disegna le due pillole: deve contare quanti
+  // articoli finirebbero da una parte e dall'altra IGNORANDO la propria scelta, o le due
+  // pillole direbbero sempre «tutti di qua, zero di là» appena se ne accende una. È la
+  // stessa ragione di `skipRaggr` e `skipCategory`.
+  const _skipLato = !!(opts && opts.skipLato);
+  const _latoAcceso = !_skipLato && _filtroLatoErrore.size > 0;
+  const _idxLato = _latoAcceso ? new Map(allFigs.map(x => [x.id, x])) : null;
   return allFigs.filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
     // Filtro per categoria (solo Retro), attivato cliccando un box nello specchietto risultati (v5.762)
@@ -36535,6 +36965,10 @@ function getCurrentlyFilteredItems(opts) {
       if (r.valoreDi) { if (!r.filtro.has(r.valoreDi(f))) return false; }
       else if (!(f[r.campo] && r.filtro.has((f[r.campoTipo] || '').trim()))) return false;
     }
+    // 🆕 v6.520 - il lato del difetto. Chi non è un errore di stampa ha lato `null`, quindi
+    // con una pillola accesa sparisce: è voluto — «FRONTALI» vuol dire «gli errori di
+    // stampa che stanno davanti», non «tutto ciò che non sta dietro».
+    if (_latoAcceso && !_filtroLatoErrore.has(_latoErroreStampa(f, allFigs, _idxLato))) return false;
     // v6.054 - i due versi dello stesso filtro
     // v6.086 (Franco) - si chiede `_fotoFigurina()`, non `f.img`. Il filtro guardava la foto
     // PROPRIA del record mentre la griglia disegna col ripiego sulla base: una variazione senza
@@ -37070,7 +37504,18 @@ function _cfgRaggr(v) {
     // opposte per costruzione, quindi nessun riquadro puo' finire con tutti e due o con nessuno.
     coloreDelValore: (typeof v.colore === 'function'),
     pieHTML: v.pieHTML || null,   // v6.333
+    // 🆕 v6.520 - IL CAPPELLO DEL RIQUADRO, sopra le pillole. Stessa scelta di `pieHTML`:
+    // lo dichiara il DESCRITTORE, il pannello non sa cosa ci finirà dentro. Così la riga
+    // vale per il solo riquadro che la vuole, invece di diventare una bandierina da
+    // spegnere su tutti gli altri.
+    cappelloHTML: v.cappelloHTML || null,   // v6.520
     unaRiga: !!v.unaRiga,         // v6.357
+    maiuscole: !!v.etichetteMaiuscole,   // v6.514
+    // 🗑️ v6.518 - QUI STAVA `genereM`, e non e' stato lasciato inerte: un flag dichiarato e
+    // non letto non fa niente oggi e mente domani, perche' il primo che lo trova ci
+    // costruisce sopra credendo che il progetto quella distinzione la faccia. È la regola
+    // della v6.393 sul codice irraggiungibile, e la famiglia dei «valori vecchi che
+    // restano in giro» del §COLORI.
     label: val => (v.etichettaDi ? v.etichettaDi(val) : _raggrLabel(val)),
     // 🆕 v6.266 - `setter` e `adder` sono FUNZIONI dell'indice e restituiscono la chiamata intera.
     // Prima erano il NOME di una funzione globale e il pannello ci appiccicava `(i)`: con quella
@@ -37078,6 +37523,18 @@ function _cfgRaggr(v) {
     // dentro, che e' la copia che questa release toglie.
     setter: i => `_setRaggrFiltro('${v.chiave}', ${i})`,
     adder:  i => `_addRaggrFiltro('${v.chiave}', ${i})`,   // v6.096 - il "+" del chip
+    tutte:  () => `_tuttiRaggrFiltro('${v.chiave}')`,      // v6.511 - la pillola «Tutte»
+    // 🆕 v6.512 - I VALORI DI QUESTO RIQUADRO SONO UNA PARTIZIONE? Se sì, «Tutte» non
+    // filtra niente: ogni articolo ha una versione (`base` compresa), quindi accenderle
+    // tutte seleziona l'elenco intero. Nei riquadri dei TIPI no — accenderli tutti vuol
+    // dire «quelli che un tipo ce l'hanno», ed è una domanda vera.
+    // 📌 IL FATTO È GIÀ DICHIARATO, e si chiama `unaSolaInerte` dalla v6.359: quel flag
+    // poggia su questa stessa proprietà — il suo commento dice «le versioni sono una
+    // partizione degli articoli e i tipi no». Un fatto solo, due conseguenze.
+    // ⚠️ DEBITO: il nome dice una conseguenza, non il fatto. `partizione` sarebbe giusto,
+    // e la rinomina è meccanica (un uso qui, tre asserzioni in prova-v6360). Non si fa in
+    // una release di correzione. Chi CONSUMA però legge il fatto, non il nome storto.
+    partizione: !!v.unaSolaInerte,
     setVals: vals => { _raggr(v.chiave).vals = vals; },
     attivo: val => _raggr(v.chiave).filtro.has(val),
     // v6.267 - "questo riquadro sta filtrando qualcosa?". Serve al pannello per non lasciarsi
@@ -37245,9 +37702,64 @@ header += `</div>`;
         + header
         + `<div style="display:flex;gap:0 1.6rem;align-items:flex-start;flex-wrap:wrap;font-size:0.82rem;line-height:1.45;margin-top:0.45rem;">${corpo}</div></div>`;
     }
-    let chips;
+    // 🔄 v6.515 - `_chipTutte` sale di un blocco: nasceva dentro l'`if (clickable)` come
+    // `const`, quindi era invisibile al punto dove si compone `body`. Adesso vive quanto
+    // `chips`, che è la variabile con la stessa identica vita.
+    // 📌 `let` e non `const` perché ha due strade e una la lascia vuota: nella vista NON
+    // cliccabile (la testata della serie) il comando non c'è, e lì deve restare stringa
+    // vuota invece che `undefined` — o il riquadro stamperebbe «undefined» in fondo a destra.
+    let chips, _chipTutte = '';
     if (clickable) {
       C.setVals(pairs.map(p => p[0]));
+      // 🆕 v6.511 — LA PILLOLA «TUTTE LE TIPOLOGIE», in testa e senza il mezzo «+».
+      // 📌 Il «+» degli altri chip vuol dire «aggiungi questo a quelli accesi»: su «tutte»
+      // non avrebbe niente da aggiungere, quindi la pillola è intera e fa una cosa sola.
+      // ⚠️ Sotto le due tipologie non compare: con una sola sarebbe quella pillola con un
+      // altro nome, e con due è un clic risparmiato su due.
+      // 📌 Nei riquadri delle VERSIONI accenderle tutte non filtra niente, perché le
+      // versioni sono una partizione (ogni articolo ne ha una, base compresa) mentre i tipi
+      // no. La pillola c'è lo stesso — Franco l'ha chiesta «in tutte le sezioni» — ma lì è
+      // un interruttore che accende e spegne la stessa vista. È la distinzione che regge
+      // `unaSolaInerte` dalla v6.359.
+      const _tutteAccese = pairs.length > 0 && pairs.every(([ct]) => C.attivo(ct));
+      const _totaleTutte = pairs.reduce((s, p) => s + p[1], 0);
+      // 🔄 v6.512 (Franco: *"dove la hai messa adesso non serve a niente: premerla e fare
+      // una ricerca senza premerla dà lo stesso risultato"*) — NON SI DISEGNA DOVE NON
+      // FILTRA. La v6.511 la metteva ovunque, e il suo stesso commento spiegava perché nei
+      // riquadri delle versioni sarebbe stata un no-op. L'ho scritto e l'ho messa lo
+      // stesso, in nome di un «in tutte le sezioni» che voleva dire «non solo in una».
+      _chipTutte = (pairs.length < 2 || !C.tutte || C.partizione) ? '' :
+        `<span style="display:inline-flex;align-items:center;flex-shrink:0;white-space:nowrap;`
+        + `background:${_tutteAccese ? 'var(--accent)' : 'var(--card2)'};border:1px solid var(--accent);`
+        // 🎨 v6.512 (Franco: *"che sia maggiormente visibile; invece di farla a forma di
+        // pillola la fai rettangolare"*) — 6px invece di 999px, bordo d'accento anche da
+        // spenta, etichetta in maiuscoletto.
+        // 📌 Non è decorazione: una pillola dice «sono una voce fra le altre», e questo
+        // comando non lo è — accende e spegne la fila intera. Forma diversa per un
+        // mestiere diverso, come la v5.723 distingue le manopole dei filtri dai quadrati
+        // che scrivono sul database.
+        // 🗑️ v6.515 - via il `margin-left` che lo staccava dalle pillole: adesso ha una riga
+        // tutta sua, e quel margine lo spostava di tre pixel dal bordo destro del riquadro.
+        + `border-radius:6px;font-size:0.78rem;line-height:1.4;overflow:hidden;">`
+        + `<span onclick="${C.tutte()}" title="${it ? (_tutteAccese ? 'Togli il filtro' : 'Accendi tutte le voci, poi spegni quelle da escludere') : (_tutteAccese ? 'Clear the filter' : 'Turn on every entry, then switch off the ones to exclude')}" `
+        + `style="cursor:pointer;display:inline-flex;align-items:center;gap:0.4rem;padding:0.2rem 0.7rem;">`
+        // 🔄 v6.513 (Franco: *"Chiamalo «Tutte», lascialo in bianco"*) - la parola e il colore.
+        // 📌 «tipologie» la dice già il TITOLO del riquadro («Change per tipo», «Errori di
+        // stampa per tipo»): ripeterla a due centimetri era la stessa parola due volte. Ed è
+        // anche la sola forma che regge in tutti i riquadri senza mettersi a coniugare — la
+        // v6.073 ha già rifiutato di scrivere grammatica italiana dentro il codice.
+        // 🎨 E da spenta l'etichetta è BIANCA: la visibilità gliela dà la FORMA (rettangolo,
+        // bordo d'accento, maiuscoletto). Il verde in più la faceva sembrare accesa quando
+        // non lo era — due segnali per lo stesso stato, e uno dei due mentiva.
+        // 🔄 v6.518 (Franco: *"la parola è tipologie, quindi al plurale abbiamo sempre
+        // TUTTE"*) - SEMPRE «TUTTE», e la v6.516 è revocata per intero.
+        // 🔴 Quella release si era accordata con la cosa sbagliata: aveva letto «TUTTI gli
+        // errori di stampa» e ne aveva dedotto che il comando si accordasse con gli
+        // ARTICOLI. Il comando invece accende tutte le TIPOLOGIE, e «tipologie» è
+        // femminile in ogni riquadro. Una parola sottintesa, e cambia il genere di tutto.
+        + `<span style="color:${_tutteAccese ? 'var(--bg)' : 'var(--text)'};font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">${it ? 'Tutte' : 'All'}</span>`
+        + `<span style="color:${_tutteAccese ? 'var(--bg)' : 'var(--accent)'};font-weight:700;">${_totaleTutte}</span>`
+        + `</span></span>`;
       // v6.096 (Franco) - IL CHIP HA DUE ZONE, come "Aggiungi a filtro" di Excel.
       // L'etichetta fa quello di sempre: accende questo tipo e spegne gli altri, e un secondo clic
       // sull'unico acceso azzera. Il "+" a destra invece AGGIUNGE senza togliere, e su un tipo gia'
@@ -37314,17 +37826,22 @@ header += `</div>`;
         // flexbox della v6.348, dall'altro verso.
         return `<span style="display:inline-flex;align-items:center;flex-shrink:0;white-space:nowrap;background:${bg};border:1px solid var(--border);border-radius:999px;font-size:0.82rem;line-height:1.4;overflow:hidden;${_inib ? 'opacity:0.45;' : ''}">`
           + `<span ${_inib ? '' : `onclick="${C.setter(i)}"`} title="${_inib ? (it ? 'Nessun risultato con i filtri accesi adesso' : 'No results with the filters currently on') : C.chipTitle(it)}" style="cursor:${_inib ? 'default' : 'pointer'};display:inline-flex;align-items:center;gap:0.35rem;padding:0.15rem 0.5rem 0.15rem 0.6rem;">`
-          + `<span style="color:${fgEtichetta};">${esc(C.label(ct))}</span>`
+          + `<span style="color:${fgEtichetta};${C.maiuscole ? 'text-transform:uppercase;letter-spacing:0.03em;' : ''}">${esc(C.label(ct))}</span>`
           + `<span style="color:${nf};font-weight:700;">${n}</span></span>`
           + `<span ${_inib ? '' : `onclick="event.stopPropagation();${C.adder(i)}"`} title="${_inib ? '' : titoloPiu}" style="cursor:${_inib ? 'default' : 'pointer'};padding:0.15rem 0.5rem;border-left:1px solid ${active ? 'rgba(0,0,0,0.28)' : 'var(--border)'};color:${fg};font-weight:700;">${segno}</span>`
           + `</span>`;
       }).join('');
+      // 🗑️ v6.515 - QUI IL COMANDO ENTRAVA NELLA FILA DELLE PILLOLE, e adesso non piu':
+      // Franco lo vuole *"in fondo a dx nel blocco filtri"*, cioè FUORI dall'elenco che
+      // comanda. La v6.512 lo aveva già spostato in coda e reso rettangolare, ma stando
+      // dentro la fila continuava a leggersi come una voce fra le voci — la posizione dice
+      // il mestiere quanto la forma. Si compone più sotto, nel piede del riquadro.
     } else {
       chips = pairs.map(([ct, n]) =>
         `<span style="display:inline-flex;align-items:center;gap:0.35rem;background:var(--card2);border:1px solid var(--border);border-radius:999px;padding:0.15rem 0.6rem;font-size:0.82rem;line-height:1.4;">`
         // 🆕 v6.423 - stessa regola delle pillole della ricerca. Qui non c'e' lo stato «acceso»,
         // quindi non c'e' nemmeno la rinuncia: il colore c'e' sempre, quando e' del valore.
-        + `<span style="color:${C.coloreDelValore ? C.colore(ct) : 'var(--text)'};">${esc(C.label(ct))}</span>`
+        + `<span style="color:${C.coloreDelValore ? C.colore(ct) : 'var(--text)'};${C.maiuscole ? 'text-transform:uppercase;letter-spacing:0.03em;' : ''}">${esc(C.label(ct))}</span>`
         + `<span style="color:var(--accent);font-weight:700;">${n}</span></span>`).join('');
     }
     // 🗑️ v6.331 - QUI STAVA `chipsInTitolo` (v6.330), E LA v6.331 LA ASSORBE INVECE DI TENERLA.
@@ -37368,9 +37885,19 @@ header += `</div>`;
     // la griglia si svuota e chi guarda conclude che i dati non ci sono.
     // 📌 La bandierina la porta il DESCRITTORE (`unaRiga`), non il pannello: vale per la versione,
     // che ha un tetto di sei, e non per i riquadri dei tipi, che possono averne venti.
-    body = `<div style="display:flex;flex-wrap:${C.unaRiga ? 'nowrap' : 'wrap'};align-items:center;gap:0.4rem;${C.unaRiga ? 'overflow-x:auto;' : ''}${_etichettaSulBordo ? '' : 'margin-top:0.6rem;'}">${chips}`
+    body = (C.cappelloHTML ? C.cappelloHTML() : '')
+      + `<div style="display:flex;flex-wrap:${C.unaRiga ? 'nowrap' : 'wrap'};align-items:center;gap:0.4rem;${C.unaRiga ? 'overflow-x:auto;' : ''}${_etichettaSulBordo ? '' : 'margin-top:0.6rem;'}">${chips}`
       + (C.pieHTML ? `<span style="margin-left:auto;padding-left:0.6rem;flex-shrink:0;white-space:nowrap;">${C.pieHTML()}</span>` : '')
-      + `</div>`;
+      + `</div>`
+      // 🆕 v6.515 (Franco: *"TUTTE mettilo in fondo a dx nel blocco filtri"*) — IL COMANDO
+      // SU UNA RIGA SUA, ALLINEATO A DESTRA. Non è un angolo nuovo: è lo stesso «in fondo a
+      // destra» che la v6.333 ha dato al link della legenda. Qui però è una riga a sé e non
+      // un pezzo della fila, perché quel comando la fila la COMANDA.
+      // ⚠️ Non si pesta i piedi con `pieHTML`, e non per fortuna: quello ce l'ha il solo
+      // riquadro delle VERSIONI, dove «Tutte» non compare perché i valori sono una
+      // partizione (v6.512). Se un domani un riquadro avesse tutti e due, finirebbero uno
+      // sopra l'altro — questa riga è dopo, quindi sotto.
+      + (_chipTutte ? `<div style="display:flex;justify-content:flex-end;margin-top:0.5rem;">${_chipTutte}</div>` : '');
     // 🆕 v6.333 (Franco) - IL PIEDE DEL RIQUADRO, in fondo a destra. Lo dichiara il DESCRITTORE
     // (`pieHTML`), come `chipsInTitolo` della v6.330 - ma stavolta e' una cosa che c'e' davvero e
     // non una bandierina: il pannello non sa cosa ci mettera' dentro, e non deve saperlo.
@@ -37607,6 +38134,45 @@ function toggleRetroCatResults() {
 // "tipo di change = ROSSO" e' una domanda sensata, e vietarla e' una SCELTA - non piu' la
 // constatazione di un'impossibilita'. Franco l'ha presa sapendolo: una prova che misura una cosa
 // sola. Se durante i giri senza selettori la combinazione manchera', si riapre.
+// 🆕 v6.520 - accende e spegne un lato. ⚠️ NON chiama `_soloQuestoRaggr`, a differenza
+// delle pillole delle tipologie: quelle sono fratelli che si escludono, questa aggiunge una
+// DIMENSIONE. Spegnere le tipologie premendo «POSTERIORI» vorrebbe dire buttare via la
+// meta' della domanda che l'utente stava scrivendo.
+// 🆕 v6.520 - LE DUE PILLOLE DEL LATO, col loro conteggio.
+// 📌 I numeri vengono da `getCurrentlyFilteredItems({ skipLato: true })`, cioè dai filtri
+// di adesso MENO la scelta di questo riquadro: è la stessa medicina di `_pairsConZeri`
+// (v6.335). Contandoli con la scelta attiva, appena se ne accende una l'altra direbbe
+// zero e nessuno potrebbe più cambiare idea.
+// ⚠️ Si disegnano anche a zero, e per la stessa ragione della v6.335: una pillola che
+// sparisce si porta via il modo di accorgersi che quel gruppo esiste. Oggi POSTERIORI ne
+// ha due su 170, e vederlo è metà del valore di questo riquadro.
+function _pillolLatoErroreHTML() {
+  const it = currentLang === 'it';
+  const items = getCurrentlyFilteredItems({ skipLato: true });
+  const figs = getData('figurines', []);
+  const idx = new Map(figs.map(x => [x.id, x]));
+  const conta = { fronte: 0, retro: 0 };
+  for (const f of items) { const l = _latoErroreStampa(f, figs, idx); if (l) conta[l]++; }
+  const voci = [['fronte', it ? 'FRONTALI' : 'ON THE FRONT'], ['retro', it ? 'POSTERIORI' : 'ON THE BACK']];
+  const chip = ([lato, testo]) => {
+    const on = _filtroLatoErrore.has(lato);
+    return `<span onclick="_toggleLatoErrore('${lato}')" title="${it ? (on ? 'Togli questo lato' : 'Mostra solo gli errori di stampa di questo lato') : (on ? 'Remove this side' : 'Show only the print errors on this side')}" `
+      + `style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;`
+      + `background:${on ? 'var(--accent)' : 'var(--card2)'};border:1px solid var(--type-printerror);`
+      + `border-radius:999px;padding:0.15rem 0.7rem;font-size:0.8rem;line-height:1.4;font-weight:700;`
+      + `letter-spacing:0.04em;white-space:nowrap;">`
+      + `<span style="color:${on ? 'var(--bg)' : 'var(--type-printerror)'};">${testo}</span>`
+      + `<span style="color:${on ? 'var(--bg)' : 'var(--accent)'};">${conta[lato]}</span></span>`;
+  };
+  return `<div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.6rem;">`
+    + voci.map(chip).join('') + `</div>`;
+}
+function _toggleLatoErrore(lato) {
+  if (_filtroLatoErrore.has(lato)) _filtroLatoErrore.delete(lato);
+  else _filtroLatoErrore.add(lato);
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (_toggleLatoErrore)', e); }
+}
 function _soloQuestoRaggr(chiave) {
   for (const v of _RAGGRUPPAMENTI) if (v.chiave !== chiave) _raggr(v.chiave).filtro = new Set();
 }
@@ -37623,6 +38189,25 @@ function _setRaggrFiltro(chiave, i) {
   try { renderItems(); } catch(e) { console.error('renderItems (_setRaggrFiltro)', e); }
 }
 // v6.096 - AGGIUNGE (o toglie) senza toccare gli altri: e' il "+" / "−" del chip.
+// 🆕 v6.511 (Franco: *"una nuova pillola che consenta di applicare il filtro a tutte le
+// voci di quella sezione"*) — ACCENDE TUTTE LE TIPOLOGIE DEL RIQUADRO IN UN COLPO.
+// 🔴 NON E' UNA SCORCIATOIA PER SETTE CLIC: e' una domanda che dopo le pillole non si
+// poteva piu' fare. «Tutti i change, qualunque tipo abbiano» si poteva solo COMPITARE, una
+// pillola per volta — e il giorno che nasce un tipo nuovo quella selezione smette di voler
+// dire «tutti» senza che nessuno lo dica. Qui l'insieme si calcola al momento del clic su
+// `vals`, cioe' sulle tipologie che esistono adesso.
+// ⚠️ Premuta quando e' gia' accesa AZZERA, invece di lasciare il filtro pieno: e' lo stesso
+// gesto di `_setRaggrFiltro` («se il filtro e' solo questo, lo tolgo») applicato all'insieme
+// intero, e rende la pillola un interruttore invece che un vicolo cieco.
+function _tuttiRaggrFiltro(chiave) {
+  const s = _raggr(chiave);
+  if (!s.vals.length) return;
+  const tutteAccese = s.vals.every(v => s.filtro.has(v)) && s.filtro.size === s.vals.length;
+  if (tutteAccese) s.filtro = new Set();
+  else { s.filtro = new Set(s.vals); _soloQuestoRaggr(chiave); }
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (_tuttiRaggrFiltro)', e); }
+}
 function _addRaggrFiltro(chiave, i) {
   const s = _raggr(chiave);
   const val = s.vals[i];
@@ -38308,8 +38893,18 @@ function renderItems() {
       const _badgeNascosto = _vBadge
         && (_vBadge.chiave === 'variation' || _vBadge.chiave === 'unofficialVariation')
         && currentSection !== 'figurines';
+      // 🆕 v6.519 (Franco: *"scrivilo come terza riga del badge: «errore di stampa frontale»
+      // o «errore di stampa posteriore»"*) — IL LATO ENTRA NEL BADGE.
+      // 📌 È il posto giusto perché il badge nomina la VERSIONE dell'articolo, e il lato dice
+      // che genere di errore di stampa è quello. Sulle altre versioni la coda è vuota e il
+      // badge resta identico: `_latoErroreStampaTesto` risponde solo agli errori di stampa.
+      // ⚠️ Il badge diventa più lungo e il suo riquadro è stretto: «Errore di stampa
+      // frontale» va su tre righe — che è quello che Franco chiede — e in inglese «Print
+      // error on the front» ne fa quattro. Da guardare a schermo, desktop e telefono.
+      const _codaLatoBadge = _latoErroreStampaTesto(f);
       const _testoBadge = (_vBadge && !_badgeNascosto)
-        ? (currentLang === 'it' ? _vBadge.badgeIt : _vBadge.badgeEn) : '';
+        ? ((currentLang === 'it' ? _vBadge.badgeIt : _vBadge.badgeEn)
+           + (_codaLatoBadge ? ' ' + _codaLatoBadge : '')) : '';
       if (_testoBadge) {
         typeBadgeHTML = `<div class="fig-owned-badge ${_vBadge.badge}">${_testoBadge}</div>`;
       }
@@ -38584,6 +39179,12 @@ function renderItems() {
       const typeIndicatorHTML = _rigaCard(
         _cardTypeLabel
           ? '<span style="color:var(--text);">TIPOLOGIA: </span>'
+            // 🗑️ v6.519 (Franco: *"non scrivere (FRONTE) o (RETRO) sulla card"*) - QUI STAVA
+            // LA PARENTESI COL LATO, e se n'è andata al posto giusto: il BADGE.
+            // 📌 Questa riga nomina il TIPO dell'errore («DECENTRATA»), il badge nomina la
+            // VERSIONE. «Fronte» e «retro» non sono un tipo di errore: dicono che genere di
+            // errore è quello, quindi appartengono al badge. La parentesi lo tradiva già —
+            // è quasi sempre il segno di una cosa messa dove non è di casa.
             + '<span style="color:' + _cardTypeColor + ';">' + esc(_cardTypeLabel.toUpperCase()) + '</span>'
           : '',
         'font-size:0.82rem;font-weight:600;', 'tipologia');
@@ -41980,6 +42581,60 @@ function _titoloTipoScheda(f) {
 // le etichette sono in forma normale («Errore di stampa»), non urlata.
 // ⚠️ `esc()` sull'etichetta e non sul separatore: il ' - ' e il markup del colore sono nostri, il
 // testo del descrittore no. Un'etichetta con dentro un `<` non puo' rompere il titolo.
+// 🆕 v6.510 (Franco: *"il tipo di errore di stampa di una figurina con retro lo capisci dal
+// retro attaccato; se è errore allora è il suo, se è un retro base l'errore di stampa sta nel
+// fronte della figurina"*) — DA CHE PARTE STA L'ERRORE, E NON LO CHIEDE A NESSUNO.
+// 📌 È LA STESSA MOSSA DEI CHANGE, dalla v6.083: non ci si fida di `retroId`, si guarda COSA
+// c'è dall'altro capo del collegamento. Quel commento però aggiunge che «per gli errori di
+// stampa distingue», ed è la frase falsa da cui è nato tutto: su 91 errori di stampa con un
+// `retroId`, ad avere davvero un retro loro sono DUE.
+// ⚠️ LE DUE LISTE DELLA SERIE NON C'ENTRANO, per decisione di Franco: restano all'import,
+// dove fanno un lavoro vero. E non potevano farlo comunque — un DIFETTO COLORE capita
+// davanti o dietro: per i change il tipo È il lato, qui il tipo è il GENERE del difetto.
+// ⚠️ SU UN RETRO SI TACE: quell'articolo È la faccia, e «RETRO - ERRORE DI STAMPA SUL RETRO»
+// direbbe la stessa parola due volte. La regola sta qui, non nei due punti che disegnano.
+// 🆕 v6.520 - LA FUNZIONE IMPARA A RICEVERE UN INDICE, e non e' ottimizzazione prematura:
+// dalla v6.520 questa regola gira DENTRO il setaccio, una volta per articolo. Col `find`
+// sull'archivio intero sarebbe quadratica — misurato in un browser, ~12 µs a ricerca su
+// 4.399 elementi, cioe' ~56 ms per ogni passata del setaccio, che gira piu' volte per
+// render. Con l'indice si scende a un millesimo.
+// 🔴 E SI FA COSI' INVECE DI RISCRIVERE LA REGOLA NEL SETACCIO: una seconda copia sarebbe
+// il §12-bis servito su un piatto, e questa regola e' nata proprio correggendo una copia
+// che diceva il falso.
+// 📌 L'uscita anticipata senza `retroId` non e' un caso limite: vale per 79 errori di
+// stampa su 170, che un retro collegato non ce l'hanno affatto.
+function _latoErroreStampa(f, allFigs, indice) {
+  if (!f || !f.isPrintError || f.section === 'retros') return null;
+  if (!f.retroId) return 'fronte';
+  const r = indice ? indice.get(f.retroId)
+                   : (allFigs || getData('figurines', [])).find(x => x.id === f.retroId);
+  return (r && r.isPrintError) ? 'retro' : 'fronte';
+}
+
+// 🆕 v6.510 - LE PAROLE, IN UNA FONTE SOLA. Forma LUNGA per il titolo della scheda
+// («Errore di stampa frontale», «Errore di stampa sul retro» — le parole di Franco) e forma
+// BREVE per la card, dove lo spazio è poco e la riga dice già «TIPOLOGIA».
+// 🔴 NON SI POTEVA METTERE IN `_etichettaTipo`, che sarebbe stato il posto ovvio: quella
+// funzione serve anche le PILLOLE DEI FILTRI, e un filtro non può dire «frontale» — filtra
+// una versione, non un articolo. Il lato è un fatto del singolo articolo.
+// 🔄 v6.519 (Franco) — «frontale» e «POSTERIORE», e una forma sola per tutti.
+// 🗑️ VIA IL PARAMETRO `breve`: era la forma «FRONTE»/«RETRO» che serviva solo alla
+// parentesi sulla riga TIPOLOGIA della card, e quella parentesi non c'è più. Un parametro
+// che nessuno passa è un ramo che nessuno prova: resta verde per anni e poi sbaglia il
+// giorno che qualcuno lo usa credendolo collaudato (regola v6.393).
+// 🔴 E «posteriore» vale anche per il TITOLO della scheda, che fino alla v6.518 diceva
+// «sul retro». Le due frasi nominano la stessa cosa a due schermate di distanza: tenerle
+// diverse sarebbe la forma più pura del difetto che questo progetto paga da giorni.
+// 📌 Il vantaggio di avere la parola in un posto solo è proprio questo: se «sul retro»
+// piacesse di più, si cambia qui e cambia dappertutto.
+function _latoErroreStampaTesto(f, allFigs) {
+  const lato = _latoErroreStampa(f, allFigs);
+  if (!lato) return '';
+  const it = currentLang === 'it';
+  return it ? (lato === 'retro' ? 'posteriore'  : 'frontale')
+            : (lato === 'retro' ? 'on the back' : 'on the front');
+}
+
 function _titoloSchedaHTML(f, nomeVisualizzato) {
   const tipo = _titoloTipoScheda(f);
   const nome = (_haNumero(f) && f.number) ? (f.number + ' - ' + nomeVisualizzato) : nomeVisualizzato;
@@ -41990,7 +42645,16 @@ function _titoloSchedaHTML(f, nomeVisualizzato) {
       // etichetta di sempre. Oggi la dichiara solo l'omaggio («Versione omaggio»); le altre quattro
       // non la portano e non se ne accorgono. Il ripiego e' l'unica cosa che rende il campo
       // facoltativo, ed e' quello che evita di doverlo aggiungere a tutte per servirne una.
-      + esc(currentLang === 'it' ? (_v.titoloIt || _v.it) : (_v.titoloEn || _v.en)) + '</span>'
+      // 🆕 v6.510 - e se e' un errore di stampa, il titolo dice DA CHE PARTE: «ERRORE DI
+      // STAMPA FRONTALE», «ERRORE DI STAMPA SUL RETRO». Il maiuscolo lo mette il
+      // text-transform dello span, come per il resto del titolo: non si scrive a mano.
+      // ⚠️ NIENTE APICI INVERSI IN QUESTO COMMENTO, ed e' una cicatrice: prova-v6371 e
+      // prova-v6372 ESTRAGGONO questa funzione e la interpolano in un template literal.
+      // Un backtick qui dentro chiude la stringa della prova, e le due suite muoiono con
+      // un «missing ) after argument list» che del backtick non fa parola. E' il quarto
+      // inciampo in tre giorni sullo stesso sasso (v6.164/166/174, poi la v6.490).
+      + esc((currentLang === 'it' ? (_v.titoloIt || _v.it) : (_v.titoloEn || _v.en))
+            + (_latoErroreStampaTesto(f) ? ' ' + _latoErroreStampaTesto(f) : '')) + '</span>'
     : '';
   return '<span style="color:var(--info);font-size:0.95rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:0.15rem;">'
     + esc(tipo) + _coda + '</span>' + esc(nome);
