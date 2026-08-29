@@ -533,8 +533,20 @@ body {
   margin-bottom: 0.5rem;
 }
 .card-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+/* 🆕 v6.508 (Franco: *"nella card 5 pillole non ci stanno su una riga; vai a capo"*) —
+   I BADGE VANNO A CAPO, E LA REGOLA STA QUI PERCHÉ QUI DOVEVA STARE DA SEMPRE.
+   🔴 `flex-wrap: wrap` esisteva già in DUE posti — il media query del telefono qui sotto
+   e, ricopiato a mano in linea, le card del taglio «Prodotti» — e in nessuno dei due era
+   tornato indietro fino alla regola comune. Con due badge `space-between` bastava; dalla
+   v6.506, che ha spezzato il conto per sezione, i badge sono cinque e si schiacciavano.
+   📌 Due copie di una regola non sono solo una ripetizione: sono due prove che la regola
+   serviva, scritte da chi ogni volta aveva davanti il caso stretto e non è risalito.
+   ⚠️ E `space-between` NON poteva restare: con i badge che vanno a capo distribuisce il
+   vuoto DENTRO ogni riga, quindi un'ultima riga con due badge li spara ai lati opposti
+   della card. `flex-start` più un `gap` li tiene una fila che si accoda. */
 .card-meta {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: center; justify-content: flex-start;
+  flex-wrap: wrap; gap: 0.4rem;
   margin-top: 1rem; padding-top: 1rem;
   border-top: 1px solid rgba(255,255,255,0.06);
 }
@@ -621,8 +633,10 @@ body {
 
 .fig-body { padding: 0.9rem 1rem 1rem; flex: 1; display: flex; flex-direction: column; }
 /* 🆕 v6.501 (Franco: *"tutto il testo va scritto sul fondo"*) — IL TESTO SI ANCORA IN
-   BASSO. `.fig-body` è un flex verticale: il primo figlio che dichiara `margin-top:auto`
-   si prende tutto lo spazio che avanza, e da lì in giù tutto scende. Mettendolo sul
+   BASSO. `.fig-body` è un flex verticale: un figlio con `margin-top:auto` si prende lo
+   spazio che avanza, e da lì in giù tutto scende. ⚠️ SE A DICHIARARLO SONO IN DUE, LO
+   SPAZIO SI DIVIDE FRA LORO IN PARTI UGUALI — vedi la v6.505 qui sotto, che è il difetto
+   che questa release credeva di aver chiuso. Mettendolo sul
    NOME — che è il primo blocco di testo — il vuoto si accumula sotto la foto invece che
    in fondo alla card, e le righe finali di card diverse restano allineate fra loro
    anche quando un nome va a capo e un altro no.
@@ -634,6 +648,20 @@ body {
    card, `.fig-actions` tornerebbe a essere l'unico a reggere il fondo. */
 .fig-body > .fig-name { margin-top: auto; }
 .fig-body > .fig-actions { margin-top: auto; }
+/* 🆕 v6.505 (Franco: *"cmq sia lo sfarfallamento c'è ancora"*) — DUE `margin-top:auto`
+   NELLO STESSO FLEX SI DIVIDONO LO SPAZIO A METÀ: NON SE LO PRENDE IL PRIMO.
+   🔴 Fino a oggi il commento qui sopra dichiarava il contrario, e su quella frase la
+   v6.501 ha lasciato in piedi metà del suo difetto: il testo scendeva di metà dello
+   spazio libero, e l'altra metà si apriva fra l'ultima riga e i comandi. Si vedeva sulle
+   card con fronte e retro AFFIANCATI — foto più bassa, più spazio libero, più errore.
+   📌 Misurato ESEGUENDO in un browser (300px di scatola, 260 liberi): con l'auto su tutti
+   e due il nome finiva a 130px, esattamente la metà; con l'auto sul solo nome a 260px.
+   ⚠️ `prove/prova-v6505.js` NON rifà quella misura — node non impagina — ma tiene
+   l'invariante: qui dentro non possono restare due `margin-top:auto` non neutralizzati.
+   ✅ E la rete di sicurezza della riga sopra resta vera: l'auto delle azioni si azzera
+   SOLO quando un `.fig-name` le precede davvero (`~`). Senza nome la regola non si
+   applica, e `.fig-actions` torna a reggere il fondo da solo. */
+.fig-body > .fig-name ~ .fig-actions { margin-top: 0; }
 
 /* v5.873 — card SENZA foto: il riquadro "FOTO NON DISPONIBILE" non ha piu' aspect-ratio fisso
    (che lo teneva quadrato e piccolo) ma si ESPANDE a riempire l'altezza della card. Poiche' nella
@@ -1439,10 +1467,15 @@ footer {
   #catalog-grid .card-title { font-size: 0.88rem; gap: 0.3rem !important; line-height: 1.2; }
   #catalog-grid .card-tag { font-size: 0.62rem; letter-spacing: 0.5px; }
 
-  /* riga badge: nello stretto vanno a capo invece di schiacciarsi */
+  /* riga badge: nello stretto vanno a capo invece di schiacciarsi.
+     🔄 v6.508 — `flex-wrap` e `justify-content` se ne vanno da qui: dicevano la stessa
+     cosa della regola base, che dalla v6.508 li ha. Questa riga li aveva dal giorno in
+     cui sono serviti sul telefono, e nessuno era risalito alla base — dove servivano
+     uguale, e infatti sul desktop i cinque badge si schiacciavano.
+     ⚠️ Il `gap` RESTA ed è più stretto di quello base (0.2 contro 0.4): qui i badge sono
+     più piccoli. Non è ridondanza, è una differenza voluta. */
   #catalog-grid .card-meta {
-    margin-top: 0.4rem; padding-top: 0.4rem;
-    flex-wrap: wrap; justify-content: flex-start; gap: 0.2rem;
+    margin-top: 0.4rem; padding-top: 0.4rem; gap: 0.2rem;
   }
   #catalog-grid .card-badge { font-size: 0.62rem; padding: 1px 6px; }
 
