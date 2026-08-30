@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.538 — Il controllo #5 «Articoli senza foto» conta anche gli ERRORI DI STAMPA
+//          FRONTALI senza foto propria (Franco). Misurato: +89 nella Serie 2.
+//          🔴 Il controllo chiedeva «esce una foto?» e `_fotoFigurina` gli rispondeva di
+//          si', restituendo quella della BASE. La domanda giusta e' «ha una foto SUA?»,
+//          e ora ha un nome: `_mancaLaFotoChePorta`.
+//          📌 Stretta apposta: una variazione che mostra il fronte della base non manca
+//          di niente (il suo fronte e' quello) e un errore di stampa POSTERIORE nemmeno
+//          (il dietro ce l'ha suo). Un errore FRONTALE si': il fronte e' l'unica cosa
+//          che lo distingue.
+//          ⚠️ `_fotoFigurina` NON e' toccata: resta l'ultima dell'ordine deciso con
+//          Franco (prima si sanano i dati). Qui cambia solo il CONTROLLO.
+//          Modificato js/app.js, index.html.
 // v6.537 — Pagina ERRORI: «Oggetti senza foto» diventa «#5 Articoli senza foto»
 //          (Franco). 📌 Il 5 non e' arbitrario: il riquadro accanto diceva gia' «#5», e
 //          il quadrone era l'unico senza numero fra il #4 e il #6.
@@ -25377,7 +25389,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.537';
+const JS_VERSION = 'v6.538';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43210,6 +43222,22 @@ function _titoloSchedaHTML(f, nomeVisualizzato) {
     + esc(tipo) + _coda + '</span>' + esc(nome);
 }
 
+// 🆕 v6.538 (Franco: *"non conteggia figurine ove la foto non c'e' e non c'e' quel
+// flag"*) - MANCA LA FOTO CHE CONTA? E' una domanda diversa da «esce una foto?», e il
+// controllo #5 faceva la seconda.
+// 🔴 Vale per gli errori di stampa il cui difetto sta DAVANTI, e solo per loro: il fronte
+// e' l'unica cosa che li distingue, quindi mostrare quello di un altro copre proprio la
+// faccia interessante. Misurato il 30 agosto: 89 casi nella Serie 2.
+// 📌 Una VARIAZIONE che mostra il fronte della base non manca di niente — il suo fronte e'
+// quello. Un errore di stampa POSTERIORE nemmeno: il dietro ce l'ha suo.
+// ⚠️ Non tocca `_fotoFigurina`: quella riga resta l'ultima dell'ordine deciso con Franco
+// (prima si sanano i dati). Qui si cambia solo cosa il CONTROLLO considera mancante.
+function _mancaLaFotoChePorta(f, allFigs) {
+  if (!f) return false;
+  if (f.img) return false;
+  if (!f.isPrintError) return !_fotoFigurina(f, allFigs);
+  return _latoErroreStampa(f, allFigs) === 'fronte' || !_fotoFigurina(f, allFigs);
+}
 function _fotoFigurina(f, allFigs, _salti) {
   if (!f) return null;
   if (f.img) return f.img;
@@ -48341,7 +48369,8 @@ function _diagnosiErrori() {
     // secondo. Le serie escluse vengono contate qui perche' la pagina Errori le deve dichiarare.
     const _soFoto  = _controlloSospeso(f.seriesId, 'senzaFoto', seriesList);
     const _soRetro = _controlloSospeso(f.seriesId, 'senzaRetro', seriesList);
-    if (!_fotoFigurina(f, allFigs)) { if (_soFoto) _sospesiFoto++; else _senzaFoto[sez].push(f); }
+    // 🔄 v6.538 - la domanda e' «manca la foto che conta?», non «esce una foto?».
+    if (_mancaLaFotoChePorta(f, allFigs)) { if (_soFoto) _sospesiFoto++; else _senzaFoto[sez].push(f); }
     else {
       const _ff = _dueFacce(f, allFigs);
       // v6.080 (Franco) - se il RETRO collegato dichiara "Foto non disponibile", quella foto non
@@ -48707,8 +48736,8 @@ function renderAdminErrori() {
           ${_avvisoSospensione('senzaRetro', _sospesiRetro)}
           <div style="font-size:0.78rem;color:var(--text);margin-top:0.7rem;line-height:1.5;">
             ${currentLang==='it'
-              ? 'Esclusi i ' + _fotoNonDisp + ' oggetti marcati "Foto non disponibile". Una variazione che mostra la foto della sua base non è considerata senza foto.'
-              : 'Excluding the ' + _fotoNonDisp + ' items marked "Photo unavailable". A variation showing its base photo is not counted as missing.'}
+              ? 'Esclusi i ' + _fotoNonDisp + ' articoli marcati "Foto non disponibile". Una variazione che mostra la foto della sua base non è considerata senza foto — il suo fronte è quello. Un ERRORE DI STAMPA FRONTALE invece sì: il fronte è l\'unica cosa che lo distingue, e quello che mostra è di un altro.'
+              : 'Excluding the ' + _fotoNonDisp + ' items marked "Photo unavailable". A variation showing its base photo is not counted as missing — its front IS that one. A PRINT ERROR ON THE FRONT is: the front is the only thing that tells it apart, and the one it shows belongs to another item.'}
             ${_retroNonDisp ? (currentLang==='it'
               ? '<br>Escluse anche ' + _retroNonDisp + ' figurine il cui Retro collegato è marcato "Foto non disponibile": quella foto non arriverà mai.'
               : '<br>Also excluding ' + _retroNonDisp + ' stickers whose linked Retro is marked "Photo unavailable".') : ''}
