@@ -1,6 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.545 — Accanto a «Invisibili» nasce «Visibili» (Franco), e i due sono UNO stato a
+//          tre posizioni: 'all' | 'visibili' | 'invisibili'.
+//          🔴 Non due booleani: accesi insieme sarebbero una domanda senza risposta, e
+//          la griglia si svuoterebbe senza spiegazione (v6.095 / v6.134 / v6.140).
+//          Premere una spegne l'altra; ripremerla torna a «tutti».
+//          📌 Lo schema e' quello di `_ownedFilter`, tre righe piu' giu' nel setaccio.
+//          ⚠️ Il campo e' `invisibile` (i semilavorati, v6.542), non
+//          `fotoNonDisponibile`.
+//          Modificato js/app.js, index.html.
+// v6.544 — «Altri oggetti» diventa «Altri articoli» (Franco). La v6.543 l'aveva salvato
+//          apposta: e' il NOME di una sezione, e cambiarlo dentro un rinomina-tutto
+//          sarebbe stato deciderlo al posto suo.
+//          🔴 NOVE PUNTI, e il numero l'ha corretto lo script: avevo censito «sei» a occhio
+//          e il controllo `attese` mi ha fermato. Sono il descrittore `ARTICOLI.extras`,
+//          due tabelle di etichette a mano, TRE voci di traduzione, il titolo della
+//          sezione, `typeLabels` e `sectionLabels`.
+//          ⚠️ Nove copie per un nome solo: e' il §12-bis. Questa release le mette in
+//          fila, non le unifica. ⬜ Da far chiedere al descrittore, un giorno.
+//          ⚠️ L'inglese non cambia: «Other items» va gia' bene.
+//          Modificato js/app.js, index.html.
 // v6.543 — Il sito dice ARTICOLI, non «oggetti», ovunque parli all'utente (Franco, sul
 //          messaggio dell'aggiornamento massivo).
 //          📌 Non solo quel messaggio: censite col `grep`, le frasi erano una trentina —
@@ -25440,7 +25460,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.543';
+const JS_VERSION = 'v6.545';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -26518,7 +26538,7 @@ function previewRecomputeFullNames() {
   });
   if (!daAgg.length) { _recomputePending = null; show('Serie "' + esc(serie.name) + '": ' + (it ? 'tutti i Nomi completi sono già aggiornati. Nessuna modifica.' : 'all full names already up to date. No changes.')); return; }
   _recomputePending = { serieId, daAgg };
-  const secLbl = { figurines: it ? 'Figurine' : 'Stickers', retros: 'Retro', albums: it ? 'Album' : 'Albums', extras: it ? 'Altri oggetti' : 'Other items', bustine: it ? 'Bustine' : 'Wrappers' };
+  const secLbl = { figurines: it ? 'Figurine' : 'Stickers', retros: 'Retro', albums: it ? 'Album' : 'Albums', extras: it ? 'Altri articoli' : 'Other items', bustine: it ? 'Bustine' : 'Wrappers' };
   // v5.905 — ordina per categoria (Figurine, Retro, Bustine, Album, Altri oggetti), poi Numero, poi Nome.
   const _ord = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
   daAgg.sort((a, b) => (_ord.indexOf(a.f.section || 'figurines') - _ord.indexOf(b.f.section || 'figurines')) || ((a.f.number || 0) - (b.f.number || 0)) || (a.f.name || '').localeCompare(b.f.name || '', 'it'));
@@ -27090,7 +27110,7 @@ const i18n = {
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
     'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.','hero.descShort':'Il database non ufficiale della leggendaria serie italiana anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','hero.cta2':'Inizia a collezionare gli Sgorbions',
-    'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri oggetti','hero.stat2e':'Bustine','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
+    'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri articoli','hero.stat2e':'Bustine','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
     'home.featured.btn':'Vedi Tutte le Serie →',
     'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
@@ -27098,7 +27118,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici !',
@@ -27116,7 +27136,7 @@ const i18n = {
 'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
-    'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri oggetti','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
+    'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri articoli','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
     'profile.sliderHint':'Prova a toccare il selettore <em>Mia lista</em> !!!',
     'admin.title':'Pannello Admin','admin.series':'Serie','admin.figurines':'Figurine','admin.contacts':'Messaggi','admin.users':'Utenti',
     'admin.series.title':'Gestisci Serie','admin.figurines.title':'Gestisci Figurine','admin.contacts.title':'Messaggi Ricevuti','admin.users.title':'Utenti Registrati:',
@@ -27258,7 +27278,14 @@ let _senzaRaritaFilter = false;   // v6.502
 // vicine, due significati diversi.
 // 📌 E nessuno dei due e' il conteggio del controllo #5: li' stanno gli articoli senza la
 // foto che conta, marcati o no.
-let _invisibiliFilter = false;   // v6.540
+// 🔄 v6.545 (Franco: *"mi sa che mi serva anche un filtro «Visibili»"*) - TRE POSIZIONI,
+// NON DUE BOOLEANI: 'all' | 'visibili' | 'invisibili'.
+// 🔴 Due interruttori indipendenti si contraddicono: accesi insieme o non filtrano niente
+// — e allora perche' sono accesi? — o non trovano niente, e la griglia si svuota senza
+// spiegazione. E' la famiglia dei guai v6.095 / v6.134 / v6.140.
+// 📌 Lo schema e' quello di `_ownedFilter`, che sta tre righe piu' giu' nel setaccio e
+// funziona cosi' dal principio: si copia quello che c'e' (v6.175).
+let _visibilitaFilter = 'all';   // v6.545 — 'all' | 'visibili' | 'invisibili'
 // 🆕 v6.520 (Franco: *"nel box dei filtri per errore di stampa si riesce a mettere 2
 // pillole: FRONTALI - POSTERIORI"*) — IL LATO DEL DIFETTO COME FILTRO.
 // 🔴 È IL PRIMO FILTRO DEL PANNELLO CHE SETACCIA SU UNA COSA CALCOLATA: tutti gli altri
@@ -29444,7 +29471,7 @@ const EBAY_SECTIONS = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
 function ebaySectionLabel(sec) {
   const it = (currentLang === 'it');
   return ({ figurines: it ? 'Figurine' : 'Stickers', retros: 'Retro', bustine: it ? 'Bustine' : 'Wrappers',
-            albums: it ? 'Album' : 'Albums', extras: it ? 'Altri oggetti' : 'Other items' })[sec] || sec;
+            albums: it ? 'Album' : 'Albums', extras: it ? 'Altri articoli' : 'Other items' })[sec] || sec;
 }
 // v5.979 — MARCATORE DELLE VERSIONI SPECIALI (Franco). Fino alla v5.978 il titolo diceva solo
 // il Nome completo, e per le varianti quello NON basta: computeFullName() dà "Nome - NomeRetro"
@@ -31261,7 +31288,7 @@ const ARTICOLI = {
   },
   extras: {
     pos: 6,
-    it: 'Altri oggetti', en: 'Other Items',
+    it: 'Altri articoli', en: 'Other Items',
     itSing: 'articolo', enSing: 'item',
     genere: 'm',
     icona: '&#127873;',
@@ -32776,7 +32803,7 @@ function _fotoProdotto(sec) {
 function _titoloProdotto(sec) {
   const it = {
     figurines: 'Le Figurine Sgorbions', retros: 'I Retro Sgorbions', bustine: 'Le Bustine Sgorbions',
-    albums: 'Gli Album Sgorbions',      extras: 'Gli Altri oggetti Sgorbions'
+    albums: 'Gli Album Sgorbions',      extras: 'Gli Altri articoli Sgorbions'
   };
   const en = {
     figurines: 'The Sgorbions Stickers', retros: 'The Sgorbions Retros', bustine: 'The Sgorbions Wrappers',
@@ -35934,7 +35961,7 @@ function openSeriesSection(section) {
   _fotoFilter = null;
   _noteFilter = false;   // v6.113 - come i filtri foto: non sopravvive al cambio sezione
   _senzaRaritaFilter = false;   // v6.502 - idem
-  _invisibiliFilter = false;    // v6.540 - idem
+  _visibilitaFilter = 'all';    // v6.545 - idem
   // 🗑️ v6.346 - qui stava `_itemTypeFilter = _tipoIniziale()`. Il suo mestiere - dare a un
   // non-admin la vista «solo base» all'apertura - lo fa `_azzeraTuttiIRaggr(section)` due righe
   // piu' sotto, che dalla v6.338 semina la pillola Base nel riquadro invece di svuotarlo.
@@ -36658,10 +36685,13 @@ function toggleNoteFilter() {
 // 🆕 v6.540 - il gemello di `toggleSenzaRaritaFilter`, riga per riga: stesso azzeramento
 // della pagina e stesso ridisegno. Copiare quello che c'e' invece di inventarne uno simile
 // e' la medicina della v6.175.
-function toggleInvisibiliFilter() {
-  _invisibiliFilter = !_invisibiliFilter;
+// 🔄 v6.545 - un comando solo per tutte e due le pillole: premerne una accende quella e
+// spegne l'altra, ripremerla torna a 'all'. Cosi' lo stato contraddittorio non esiste,
+// invece di esistere e essere vietato da qualche parte.
+function toggleVisibilitaFilter(quale) {
+  _visibilitaFilter = (_visibilitaFilter === quale) ? 'all' : quale;
   currentItemPage = 1;
-  try { renderItems(); } catch(e) { console.error('renderItems (toggleInvisibiliFilter)', e); }
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleVisibilitaFilter)', e); }
 }
 function toggleSenzaRaritaFilter() {
   _senzaRaritaFilter = !_senzaRaritaFilter;
@@ -36818,7 +36848,7 @@ function renderItemTypeFilters() {
       _fotoFilter = null;
       _noteFilter = false;   // v6.113 - stessa ragione: un non-admin non ha come spegnerlo
       _senzaRaritaFilter = false;   // v6.502 - idem, ed e' il punto che si dimentica
-      _invisibiliFilter = false;    // v6.540 - e questo e' quel punto
+      _visibilitaFilter = 'all';    // v6.545 - e questo e' quel punto
     } else {
       const itl = (currentLang === 'it');
       // niente emoji, per la regola posta da Franco: le icone ci sono sempre o mai.
@@ -36877,7 +36907,10 @@ function renderItemTypeFilters() {
       // due modi somiglianti si confrontano male a occhio (lezione v6.164).
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_senzaRaritaFilter ? 'on' : ''}" onclick="toggleSenzaRaritaFilter()" title="${itl ? 'Senza rarità' : 'Without rarity'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Senza rarità' : 'Without rarity'}</span></div>`;
       // 🆕 v6.540 - «Invisibili», accanto a «Senza rarità»: stesso interruttore, stessa riga.
-      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_invisibiliFilter ? 'on' : ''}" onclick="toggleInvisibiliFilter()" title="${itl ? 'Solo gli articoli nascosti agli utenti normali' : 'Only items hidden from normal users'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Invisibili' : 'Invisible'}</span></div>`;
+      // 🔄 v6.545 - e con lei «Visibili». Sono due facce dello stesso stato: accenderne una
+      // spegne l'altra, e non c'e' modo di averle accese insieme.
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_visibilitaFilter === 'visibili' ? 'on' : ''}" onclick="toggleVisibilitaFilter('visibili')" title="${itl ? 'Solo gli articoli che gli utenti normali vedono' : 'Only items normal users can see'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Visibili' : 'Visible'}</span></div>`;
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_visibilitaFilter === 'invisibili' ? 'on' : ''}" onclick="toggleVisibilitaFilter('invisibili')" title="${itl ? 'Solo gli articoli nascosti agli utenti normali' : 'Only items hidden from normal users'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Invisibili' : 'Invisible'}</span></div>`;
 
       elAdmT.innerHTML = ha;
       elAdm.style.display = '';
@@ -37244,7 +37277,7 @@ function azzeraTuttiIFiltri() {
   _fotoFilter = null;
   _noteFilter = false;
   _senzaRaritaFilter = false;   // v6.502
-  _invisibiliFilter = false;    // v6.540
+  _visibilitaFilter = 'all';    // v6.545
   _filtroLatoErrore = new Set();   // v6.520
   _ownedFilter = 'all';
   _wishlistFilter = false;
@@ -37297,7 +37330,7 @@ function _qualcheFiltroAcceso() {
     || _fotoFilter !== null
     || _noteFilter
     || _senzaRaritaFilter               // v6.502
-    || _invisibiliFilter                // v6.540
+    || _visibilitaFilter !== 'all'      // v6.545
     || _filtroLatoErrore.size > 0       // v6.520
     || _ownedFilter !== 'all'
     || _wishlistFilter
@@ -37431,13 +37464,16 @@ function getCurrentlyFilteredItems(opts) {
     // rotto. E' la stessa condizione con cui `_stellaRarita` decide se scrivere la stella:
     // cio' che la card tace e' cio' che questo filtro mostra.
     if (_senzaRaritaFilter && (f.score > 0)) return false;
+    // 🔄 v6.545 - tre posizioni: 'invisibili' tiene solo i nascosti, 'visibili' solo gli
+    // altri, 'all' non filtra. Le due domande sono l'una il complemento dell'altra, quindi
+    // si scrivono in una riga sola: due righe separate si sarebbero potute contraddire.
     // 🔴 v6.542 - IL CAMPO E' `invisibile`, NON `fotoNonDisponibile`. La v6.540 guardava il
     // secondo, che dice «la foto non esiste» ed e' definitivo. Il primo esiste dalla v6.080
     // e vuol dire un'altra cosa: l'articolo e' nascosto agli utenti normali finche' non e'
     // pronto — Franco: *"gli utenti normali non voglio che vedano dei semi-lavorati"*.
     // 📌 Due parole vicine e due significati diversi. Bastava cercarla: c'era gia' in dieci
     // punti, casella della scheda compresa.
-    if (_invisibiliFilter && !f.invisibile) return false;
+    if (_visibilitaFilter !== 'all' && (_visibilitaFilter === 'invisibili') !== !!f.invisibile) return false;
     if (_own) {
       const ceLho = _own.includes(f.id);
       if (_ownedFilter === 'owned' && !ceLho) return false;
@@ -52149,7 +52185,7 @@ function renderWishlist() {
     // Prima si raggruppa per tipo di oggetto (Figurine/Retro/Album/Altri
     // oggetti), altrimenti non si capisce cosa si sta guardando quando una
     // serie ha in lista più tipi diversi mescolati insieme
-    const typeLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri oggetti' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Wrappers' };
+    const typeLabels = { figurines: currentLang === 'it' ? 'Figurine' : 'Stickers', retros: 'Retro', albums: 'Album', extras: currentLang === 'it' ? 'Altri articoli' : 'Other items', bustine: currentLang === 'it' ? 'Bustine' : 'Wrappers' };
     const typeOrder = ['figurines', 'retros', 'albums', 'extras', 'bustine'];
     const byType = {};
     figs.forEach(f => {
@@ -52488,7 +52524,7 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
   // 📌 Non si usa `getSectionLabel()`, che pure verrebbe da `ARTICOLI` ed e' la fonte giusta: li'
   // le figurine si chiamano "Figurine con velina" (v6.195), e questa riga avrebbe rinominato di
   // straforo una cosa che nessuno ha chiesto di rinominare.
-  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine base non nella tua lista' : 'Base stickers not in your list', carte: currentLang === 'it' ? 'Carte base non nella tua lista' : 'Base cards not in your list', attaccare: currentLang === 'it' ? 'Figurine da attaccare base non nella tua lista' : 'Base stickers to stick not in your list', retros: currentLang === 'it' ? 'Retro base non nella tua lista' : 'Base retros not in your list', albums: currentLang === 'it' ? 'Album base non nella tua lista' : 'Base albums not in your list', extras: currentLang === 'it' ? 'Altri oggetti base non nella tua lista' : 'Base other items not in your list', bustine: currentLang === 'it' ? 'Bustine base non nella tua lista' : 'Base wrappers not in your list' };
+  const sectionLabels = { figurines: currentLang === 'it' ? 'Figurine base non nella tua lista' : 'Base stickers not in your list', carte: currentLang === 'it' ? 'Carte base non nella tua lista' : 'Base cards not in your list', attaccare: currentLang === 'it' ? 'Figurine da attaccare base non nella tua lista' : 'Base stickers to stick not in your list', retros: currentLang === 'it' ? 'Retro base non nella tua lista' : 'Base retros not in your list', albums: currentLang === 'it' ? 'Album base non nella tua lista' : 'Base albums not in your list', extras: currentLang === 'it' ? 'Altri articoli base non nella tua lista' : 'Base other items not in your list', bustine: currentLang === 'it' ? 'Bustine base non nella tua lista' : 'Base wrappers not in your list' };
 
   const sortedEntries = Object.entries(bySeries).sort(([aId], [bId]) => {
     const aS = series.find(x => x.id === aId);
