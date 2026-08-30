@@ -1281,7 +1281,14 @@ footer {
   display: flex; align-items: center; gap: 0.5rem 0.9rem; flex-wrap: wrap; margin-top: 0.4rem;
 }
 .fig-act { display: inline-flex; align-items: center; gap: 0.35rem; }
-.fig-act-label { font-size: 0.78rem; color: var(--muted); }
+/* 🆕 v6.523 (Franco: *"nella card delle figurine, tutto il testo grigio lo voglio
+   bianco"*) — LE TRE ETICHETTE DEL TRITTICO IN FONDO ALLA CARD: «Mia lista», «Ciò che
+   cerco», «Errore?». Sono TESTO, quindi passano al bianco del sito.
+   ⚠️ Il bottone che sta accanto a ognuna NON le segue, e la ragione è nel §sotto:
+   `.owned-btn` usa lo stesso `--muted` per dire SPENTO, e il suo acceso è #ffffff.
+   📌 `var(--text)` e non #fff: è lo stesso bianco di `.fig-name`, due righe più su nella
+   stessa card. Due bianchi diversi a un centimetro di distanza sono un difetto. */
+.fig-act-label { font-size: 0.78rem; color: var(--text); }
 /* v5.873 — il toggle "Mia lista" nella card era piu' massiccio del cuore e della bandierina:
    ridotto a dimensioni allineate agli altri due controlli del trittico. */
 #items-grid .fig-act-mylist .owned-btn { width: 30px; height: 20px; font-size: 0.72rem; }
