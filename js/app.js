@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.542 — CORREZIONE della v6.540: il filtro admin «Invisibili» guarda il campo
+//          `invisibile`, non `fotoNonDisponibile`.
+//          🔴 Ho letto «invisibili» e ho pensato al flag della foto. `invisibile` esiste
+//          dalla v6.080, ha la sua casella nella scheda e la sua pagina admin, e vuol
+//          dire «nascosto agli utenti normali» — Franco: *"gli utenti normali non
+//          voglio che vedano dei semi-lavorati"*.
+//          📌 Due parole vicine e due significati diversi: bastava cercarla, c'era in
+//          dieci punti.
+//          Modificato js/app.js, index.html.
 // v6.541 — CORREZIONE della v6.539: senza il fronte, il RETRO resta. La card mostra
 //          «FOTO NON DISPONIBILE» davanti e la foto del retro dietro (Franco: *"mi hai
 //          tolto anche la foto del retro; era proprio necessario?"* — no).
@@ -25421,7 +25430,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.541';
+const JS_VERSION = 'v6.542';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27232,11 +27241,13 @@ let _noteFilter = false;   // v6.113 - "Con note", solo admin
 // otto punti, stesso riquadro, stesse trappole. Se un domani si tocca uno dei due, si
 // guardi anche l'altro — sono gemelli per costruzione, non per caso.
 let _senzaRaritaFilter = false;   // v6.502
-// 🆕 v6.540 (Franco: *"aggiungi un filtro per l'admin relativo alle foto invisibili (Nome:
-// Invisibili)"*) - GLI ARTICOLI MARCATI «FOTO NON DISPONIBILE».
-// 📌 Sono quelli per cui la foto NON ESISTE, e il flag e' definitivo: *"quel flag indica
-// che io la foto non ce la ho"*. NON sono gli 89 errori di stampa frontali — quelli la
-// foto ce l'hanno e va caricata, e li conta il controllo #5 (v6.538).
+// 🆕 v6.540 (Franco) - IL FILTRO DEI SEMILAVORATI: gli articoli con `invisibile`, cioe'
+// quelli che gli utenti normali non vedono finche' non sono pronti (campo della v6.080).
+// 🔴 v6.542 - LA v6.540 GUARDAVA IL CAMPO SBAGLIATO, `fotoNonDisponibile`. Quello dice «la
+// foto non esiste» ed e' definitivo; questo dice «non e' ancora da mostrare». Due parole
+// vicine, due significati diversi.
+// 📌 E nessuno dei due e' il conteggio del controllo #5: li' stanno gli articoli senza la
+// foto che conta, marcati o no.
 let _invisibiliFilter = false;   // v6.540
 // 🆕 v6.520 (Franco: *"nel box dei filtri per errore di stampa si riesce a mettere 2
 // pillole: FRONTALI - POSTERIORI"*) — IL LATO DEL DIFETTO COME FILTRO.
@@ -36856,7 +36867,7 @@ function renderItemTypeFilters() {
       // due modi somiglianti si confrontano male a occhio (lezione v6.164).
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_senzaRaritaFilter ? 'on' : ''}" onclick="toggleSenzaRaritaFilter()" title="${itl ? 'Senza rarità' : 'Without rarity'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Senza rarità' : 'Without rarity'}</span></div>`;
       // 🆕 v6.540 - «Invisibili», accanto a «Senza rarità»: stesso interruttore, stessa riga.
-      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_invisibiliFilter ? 'on' : ''}" onclick="toggleInvisibiliFilter()" title="${itl ? 'Solo gli articoli marcati «Foto non disponibile»' : 'Only items marked \"Photo unavailable\"'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Invisibili' : 'Invisible'}</span></div>`;
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_invisibiliFilter ? 'on' : ''}" onclick="toggleInvisibiliFilter()" title="${itl ? 'Solo gli articoli nascosti agli utenti normali' : 'Only items hidden from normal users'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Invisibili' : 'Invisible'}</span></div>`;
 
       elAdmT.innerHTML = ha;
       elAdm.style.display = '';
@@ -37410,8 +37421,13 @@ function getCurrentlyFilteredItems(opts) {
     // rotto. E' la stessa condizione con cui `_stellaRarita` decide se scrivere la stella:
     // cio' che la card tace e' cio' che questo filtro mostra.
     if (_senzaRaritaFilter && (f.score > 0)) return false;
-    // v6.540 - «Invisibili»: solo gli articoli marcati «Foto non disponibile».
-    if (_invisibiliFilter && !f.fotoNonDisponibile) return false;
+    // 🔴 v6.542 - IL CAMPO E' `invisibile`, NON `fotoNonDisponibile`. La v6.540 guardava il
+    // secondo, che dice «la foto non esiste» ed e' definitivo. Il primo esiste dalla v6.080
+    // e vuol dire un'altra cosa: l'articolo e' nascosto agli utenti normali finche' non e'
+    // pronto — Franco: *"gli utenti normali non voglio che vedano dei semi-lavorati"*.
+    // 📌 Due parole vicine e due significati diversi. Bastava cercarla: c'era gia' in dieci
+    // punti, casella della scheda compresa.
+    if (_invisibiliFilter && !f.invisibile) return false;
     if (_own) {
       const ceLho = _own.includes(f.id);
       if (_ownedFilter === 'owned' && !ceLho) return false;
