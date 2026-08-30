@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.522 — «CON RETRO: » DAVANTI AL NOME DEL RETRO, nella seconda riga del campo «… di»
+//          (Franco, sulla v6.521: *"punto 4 ok ma prima del nome del retro scrivi: «Con
+//          retro: »"*).
+//          📌 Il « · » della v6.521 era un separatore e non una spiegazione: diceva «qui
+//          c'e' un'altra cosa» senza dire CHE cosa. E' lo stesso difetto del §9.2-bis
+//          (due card identiche, indistinguibili senza una riga che le presenti).
+//          🔴 La parola viene da `getSectionLabelSingular('retros')`, cioe' dal
+//          descrittore `ARTICOLI`: scriverla fra apici sarebbe la seconda copia di un
+//          nome che il sito mostra in venti posti. In inglese dira' «With retro: »,
+//          perche' e' quello che il descrittore dichiara (`enSing: 'retro'`).
+//          ⚠️ Solo dove un retro c'e': «Con retro: senza retro» non si scrive.
+//          Modificato js/app.js, index.html.
 // v6.521 — IL LINK «DI PARTENZA» SI SPEZZA IN DUE: la figurina sopra, il suo retro
 //          sotto, e il secondo link porta DAVVERO a quel retro (Franco: *"la prima riga
 //          menziona la figurina, la seconda il retro — e il link del retro punti
@@ -25196,7 +25208,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.521';
+const JS_VERSION = 'v6.522';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42038,10 +42050,22 @@ function openFigDetail(figId, elencoNav) {
         : (_pezziPuntata.codaTesto
             ? `<span style="color:var(--muted);font-style:italic;">${esc(_pezziPuntata.codaTesto)}</span>`
             : '');
+      // 🆕 v6.522 (Franco: *"prima del nome del retro scrivi: «Con retro: »"*) - LA SECONDA
+      // RIGA SI PRESENTA. Il « · » della v6.521 era un separatore, non una spiegazione: dice
+      // «qui c'e' un'altra cosa» e non dice CHE cosa, e sotto il nome di una figurina un
+      // secondo nome cliccabile puo' essere qualunque parente.
+      // 🔴 LA PAROLA LA DICE IL DESCRITTORE, non questa riga: `getSectionLabelSingular` legge
+      // `ARTICOLI.retros`, che e' dove stanno i nomi delle sezioni. Scrivere 'retro' fra apici
+      // sarebbe la seconda copia di un nome che si vede a schermo in venti posti.
+      // ⚠️ E si scrive SOLO quando un retro c'e': «Con retro: senza retro» e' una frase che si
+      // contraddice in tre parole. Senza, resta il solo «senza retro» della v6.359.
+      const _capoRetro = _pezziPuntata.retro
+        ? (currentLang === 'it' ? 'Con ' : 'With ') + getSectionLabelSingular('retros') + ': '
+        : '';
       rows.push(`<div class="detail-row" style="border-bottom:none;flex-direction:column;align-items:flex-start;gap:2px;">`
         + `<span class="detail-label" style="font-style:italic;">${relationLabel}</span>`
         + `<a href="#" onclick="openFigDetail('${baseFig.id}');return false;" title="${esc(_pezziPuntata.testa)}" style="color:var(--accent);text-decoration:underline;">${esc(_pezziPuntata.testa)}</a>`
-        + (_apreRetro ? `<span style="font-size:0.92rem;"><span style="color:var(--muted);">&middot; </span>${_apreRetro}</span>` : '')
+        + (_apreRetro ? `<span style="font-size:0.92rem;"><span style="color:var(--muted);">${esc(_capoRetro)}</span>${_apreRetro}</span>` : '')
         + `</div>`);
     }
   }
