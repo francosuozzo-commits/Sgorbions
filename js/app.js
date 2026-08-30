@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.536 — CORREZIONE della v6.534: le due sezioni FRONTALI/POSTERIORI non si vedevano.
+//          🔴 `corpoHTML` era dichiarato sul descrittore del riquadro ma non veniva
+//          inoltrato da `_cfgRaggr`, quindi `C.corpoHTML` era sempre undefined e il
+//          pannello disegnava la lista piatta di sempre.
+//          📌 Due righe piu' su c'erano gia' `pieHTML` e `cappelloHTML` inoltrati allo
+//          stesso modo: il passaggio era scritto due volte davanti a me.
+//          ⚠️ Nessuna prova se n'era accorta: `prova-v6534` esegue il corpo da solo,
+//          cioe' verifica che la funzione faccia la cosa giusta, non che qualcuno la
+//          CHIAMI. Stessa cecita' della v6.529, terza volta in un giorno.
+//          Modificato js/app.js, index.html.
 // v6.535 — CORREZIONE URGENTE della v6.533: le voci delle categorie tornano INTERE.
 //          🔴 Una voce e' una TERNA `[categoria, conteggio, sottocategorie]`, e la v6.533
 //          la ricomponeva a due: `sotto` arrivava `undefined` e `_retroCatPanelHTML`
@@ -25357,7 +25367,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.535';
+const JS_VERSION = 'v6.536';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -37833,6 +37843,12 @@ function _cfgRaggr(v) {
     // vale per il solo riquadro che la vuole, invece di diventare una bandierina da
     // spegnere su tutti gli altri.
     cappelloHTML: v.cappelloHTML || null,   // v6.520
+    // 🔴 v6.536 - E ANCHE IL CORPO. La v6.534 l'aveva dichiarato sul descrittore e si era
+    // dimenticata di farlo passare DI QUI: `C.corpoHTML` restava undefined, il pannello
+    // cadeva nel ramo di sempre e le due sezioni non si vedevano.
+    // 📌 Il passaggio era scritto due volte nelle righe qui sopra, per `pieHTML` e per
+    // `cappelloHTML`. Dichiarare non basta: quello che vale e' arrivare.
+    corpoHTML: v.corpoHTML || null,   // v6.536
     unaRiga: !!v.unaRiga,         // v6.357
     maiuscole: !!v.etichetteMaiuscole,   // v6.514
     // 🗑️ v6.518 - QUI STAVA `genereM`, e non e' stato lasciato inerte: un flag dichiarato e
