@@ -1,6 +1,27 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.547 — Nel riquadro ERRORI DI STAMPA una sezione senza errori di quel lato non si
+//          disegna affatto (Franco).
+//          🔴 REVOCA la scelta della v6.520 («si disegnano anche a zero»): valeva per un
+//          gruppo che PUO' esistere. Se nella serie non c'e' nemmeno un errore di quel
+//          lato, non e' un gruppo vuoto — e' un gruppo che non c'e'.
+//          ⚠️ Si decide sulla SEZIONE INTERA, non sui risultati filtrati: altrimenti
+//          accendere una tipologia frontale farebbe sparire POSTERIORI da sotto le dita,
+//          cioe' il difetto segnalato stamattina, rifatto qui.
+//          📌 Coi dati di oggi: FRONTALI resta sempre, POSTERIORI compare solo nella
+//          Serie 2, che ne ha due.
+//          Modificato js/app.js, index.html.
+// v6.546 — Un errore di stampa POSTERIORE non ha piu' i comandi della foto (Franco).
+//          🔴 Il difetto sta sul retro, e quel retro e' un ALTRO record con la sua foto;
+//          davanti eredita la faccia della base (v6.539, ed e' giusto). Nessuna delle
+//          due facce puo' essere sua, quindi «Carica foto» prometteva una cosa che il
+//          modello non consente.
+//          📌 Si aggiunge un caso a `_daAttaccareFotoVietata` (v6.487), non si scrive un
+//          secondo divieto.
+//          ⚠️ La nota ha la SUA frase: le altre due parlano della «figurina con retro
+//          collegata» e dell'«articolo di partenza», che qui non c'entrano.
+//          Modificato js/app.js, index.html.
 // v6.545 — Accanto a «Invisibili» nasce «Visibili» (Franco), e i due sono UNO stato a
 //          tre posizioni: 'all' | 'visibili' | 'invisibili'.
 //          🔴 Non due booleani: accesi insieme sarebbero una domanda senza risposta, e
@@ -25460,7 +25481,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.545';
+const JS_VERSION = 'v6.547';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -38698,6 +38719,16 @@ function _corpoErroriPerLatoHTML(C) {
   const figs = getData('figurines', []);
   const idx = new Map(figs.map(x => [x.id, x]));
   const items = getCurrentlyFilteredItems({ skipRaggr: true, skipLato: true });
+  // 🆕 v6.547 (Franco: *"se non ci sono errori posteriori non mostrare affatto la relativa
+  // pillola"*) - QUANTI CE NE SONO NELLA SEZIONE, filtri esclusi.
+  // 🔴 E' un conteggio DIVERSO da quello delle pillole, apposta. Se decidessimo con i
+  // risultati di adesso, accendere una tipologia frontale farebbe sparire POSTERIORI da
+  // sotto le dita — cioe' il difetto che Franco ha segnalato stamattina, rifatto qui.
+  // Una sezione c'e' o non c'e'; non balla mentre si cerca.
+  const _dellaSezione = figs.filter(x => x.seriesId === currentSeriesId
+    && (x.section || 'figurines') === currentSection && x.isPrintError);
+  const _esiste = { fronte: false, retro: false };
+  for (const f of _dellaSezione) { const l = _latoErroreStampa(f, figs, idx); if (l) _esiste[l] = true; }
   const conta = { fronte: new Map(), retro: new Map() };
   for (const f of items) {
     const lato = _latoErroreStampa(f, figs, idx);
@@ -38709,6 +38740,11 @@ function _corpoErroriPerLatoHTML(C) {
   _VOCI_ERR_LATO = [];
   const stato = _raggr('printerror');
   const sezione = (lato, testo) => {
+    // 🔄 v6.547 - REVOCA UNA SCELTA DELLA v6.520, che disegnava le pillole anche a zero
+    // «per non portar via il modo di accorgersi che quel gruppo esiste». Vero per un gruppo
+    // che PUO' esistere: se nella serie non c'e' nemmeno un errore di questo lato, non e'
+    // un gruppo vuoto, e' un gruppo che non c'e'.
+    if (!_esiste[lato]) return '';
     const voci = [...conta[lato].entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'it'));
     const latoAcceso = _filtroLatoErrore.has(lato);
     const totale = voci.reduce((s, v) => s + v[1], 0);
@@ -42177,7 +42213,19 @@ function _daAttaccareFotoVietata(f) {
   // ⚠️ Vale per un omaggio di QUALUNQUE sezione, non solo per le figurine: un retro in
   // versione omaggio ha anche lui la sua partenza. Se un giorno si scoprisse che per una
   // sezione non deve valere, la condizione va ristretta QUI e in `_fotoFigurina` insieme.
-  return !!f && (f.section === 'attaccare' || !!f.isFreeVersion);
+  // 🆕 v6.546 (Franco: *"per un errore di stampa posteriore, per definizione non e'
+  // possibile associare una sua foto"*) - E ANCHE L'ERRORE DI STAMPA POSTERIORE.
+  // 🔴 Il difetto sta sul RETRO, e quel retro e' un ALTRO record, con la sua foto. Davanti
+  // eredita la faccia della base, ed e' giusto (v6.539): davanti e' identico alla base.
+  // Quindi nessuna delle due facce puo' essere sua, e un «Carica foto» prometterebbe una
+  // cosa che il modello non consente.
+  // 📌 Si aggiunge un caso al divieto che esiste (v6.487), non se ne scrive un secondo.
+  // ⚠️ Il `!!` non e' cosmetico: senza, con `isPrintError` assente l'espressione vale
+  // `undefined` e la funzione restituisce `undefined` invece di `false`. Funziona lo
+  // stesso in un `if`, ma un chiamante che confronta con `false` sbaglierebbe — e una
+  // prova che lo fa e' esattamente quella che l'ha trovato.
+  const _erroreDietro = !!(f && f.isPrintError && _latoErroreStampa(f) === 'retro');
+  return !!f && (f.section === 'attaccare' || !!f.isFreeVersion || _erroreDietro);
 }
 function _daAttaccareModificaVietata(f) {
   if (!f || f.section !== 'attaccare') return false;
@@ -44678,10 +44726,16 @@ function _slotFotoEdit(slot, url, f) {
     // articolo» — e una spiegazione vaga in un punto dove manca un comando lascia
     // esattamente il dubbio che era li' per togliere.
     const _omg = !!f.isFreeVersion && f.section !== 'attaccare';
+    // 🆕 v6.546 - il terzo caso ha la SUA frase: le altre due parlano della «figurina con
+    // retro collegata» e dell'«articolo di partenza», che qui non c'entrano. Una nota
+    // riciclata direbbe il falso proprio dove serve spiegare.
+    const _errDietro = !!f.isPrintError && _latoErroreStampa(f) === 'retro';
     const nota = currentLang === 'it'
-      ? (_omg ? 'La foto del fronte arriva dall\'articolo di partenza; quella del retro dal retro in versione omaggio collegato.'
+      ? (_errDietro ? 'Il difetto sta sul retro, e quel retro è un altro articolo: la foto arriva da lì. Davanti la faccia è quella della figurina di partenza.'
+        : _omg ? 'La foto del fronte arriva dall\'articolo di partenza; quella del retro dal retro in versione omaggio collegato.'
               : 'La foto arriva dalla figurina con retro collegata: qui non se ne attacca una propria.')
-      : (_omg ? 'The front photo comes from the source item; the back one from the linked free-version back.'
+      : (_errDietro ? 'The defect is on the back, and that back is another item: the photo comes from there. The front is the source sticker\'s.'
+        : _omg ? 'The front photo comes from the source item; the back one from the linked free-version back.'
               : 'The photo comes from the linked sticker: no photo of its own here.');
     return '<div style="margin-bottom:0.6rem;">' + titolo +
       (url
