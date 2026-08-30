@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.532 — CORREZIONE: lo scambio delle foto non girava per l'ADMIN. `openFigDetail`
+//          finisce con un `if/else` (con il tab Ebay e senza) e la chiamata a
+//          `_scambiaFotoGrandi` era dentro l'`else`. L'admin vede il tab Ebay, quindi
+//          prendeva l'altro ramo: per lui le foto restavano piccole e la spia taceva.
+//          🔴 TERZA VOLTA DI FILA LA STESSA FORMA: la modifica applicata dove stavo
+//          guardando (v6.529 la radice, v6.530 il nodo, v6.532 il ramo). Le mie misure
+//          erano da NON loggato, cioe' sempre sul ramo che funzionava.
+//          ✅ La chiamata esce dal ramo e sta prima del `classList.remove` che mostra il
+//          modale: l'unico punto che tutti e due i rami attraversano per forza.
+//          📌 Trovato da Franco: «in f12 non vedo niente», e poi «sto scorrendo con la
+//          freccia dx» — che escludeva il modo di aprire le schede e lasciava il ramo.
+//          Modificato js/app.js, index.html.
 // v6.531 — La scheda dice all'ADMIN, in console, se lo scambio delle foto ha
 //          funzionato: una riga per foto (Franco: *"come potrei fare per dirti, io,
 //          che sta funzionando?"* · *"mettila solo all'admin"*).
@@ -25307,7 +25319,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.531';
+const JS_VERSION = 'v6.532';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42553,17 +42565,20 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     if (f.forSale) riempiEbayVistaLettura(f);
   } else {
     document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + rows.join('') + _codaAzioniDetail(bottomButtons);
-  // 🆕 v6.529 - adesso il markup c'e': si caricano le foto grandi di lato e si scambiano
-  // quando arrivano. ⚠️ Vale per TUTTE le `img[data-grande]` della scheda, quindi una foto
-  // nuova entra nel giro senza che nessuno se ne ricordi.
-  // 🔄 v6.530 - LA RADICE È IL MODALE, NON `fig-detail-content`. Le due foto grandi stanno
-  // nella colonna della foto, che di quel nodo è SORELLA: lanciando lo scambio là dentro
-  // non le trovava, e restavano piccole per sempre. Misurato sul sito: 3 img nel modale,
-  // 1 sola dentro `fig-detail-content`, e le due foto ancora con `data-grande` addosso.
-  // 📌 La v6.529 aveva una prova verde su questa riga: verificava che la CHIAMATA ci
-  // fosse, non che arrivasse a qualcosa.
-  try { _scambiaFotoGrandi(document.getElementById('fig-detail-modal')); } catch(e) { console.error('_scambiaFotoGrandi', e); }
   }
+  // 🆕 v6.529 - il markup c'e': si caricano le foto grandi di lato e si scambiano quando
+  // arrivano. Vale per TUTTE le `img[data-grande]` della scheda.
+  // 🔄 v6.530 - la radice e' il MODALE: le foto grandi stanno nella colonna della foto,
+  // SORELLA di `fig-detail-content`. Lanciando lo scambio la' dentro non le trovava.
+  // 🔴 v6.532 - E STA FUORI DAL `if/else`, che e' il difetto vero delle due release
+  // precedenti. Questa funzione finisce con due rami — con il tab Ebay e senza — e la
+  // chiamata era dentro l'`else`: l'ADMIN vede il tab Ebay, quindi prendeva l'altro ramo e
+  // per lui lo scambio non partiva mai. Le mie misure erano da non loggato, cioe' dal ramo
+  // sbagliato — la stessa forma di difetto tre volte di fila: applicare la modifica dove
+  // si sta guardando.
+  // 📌 Qui ci passano tutti e due i rami per forza: e' l'unica riga prima che il modale si
+  // mostri.
+  try { _scambiaFotoGrandi(document.getElementById('fig-detail-modal')); } catch(e) { console.error('_scambiaFotoGrandi', e); }
   document.getElementById('fig-detail-modal').classList.remove('hidden');
 }
 
