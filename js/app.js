@@ -1,6 +1,20 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.533 — Premendo FRONTALI/POSTERIORI gli altri riquadri NON spariscono piu': restano,
+//          con le pillole a zero e non premibili (Franco: *"si e' sempre detto di non
+//          nascondere nulla afferente agli altri box; semplicemente diventano non
+//          premibili"*).
+//          🔴 La v6.520 aveva aggiunto `skipLato` SOLO dove lo stava scrivendo. Gli altri
+//          riquadri costruiscono il proprio elenco con «ignora gli altri riquadri», e
+//          quel «tutti gli altri» non comprendeva il lato perche' il lato non esisteva
+//          quando la riga fu scritta. Elenco vuoto → riquadro non disegnato.
+//          ✅ Ovunque una chiamata salti gli altri per costruire un ELENCO, salta anche
+//          il lato. I CONTEGGI restano veri, cioe' zero: ed e' lo zero che spegne la
+//          pillola (`_inib`, gia' esistente). Non si nasconde, si spegne.
+//          📌 Tre punti, censiti col `grep`: i riquadri delle versioni, la categoria nei
+//          risultati, la categoria in testata.
+//          Modificato js/app.js, index.html.
 // v6.532 — CORREZIONE: lo scambio delle foto non girava per l'ADMIN. `openFigDetail`
 //          finisce con un `if/else` (con il tab Ebay e senza) e la chiamata a
 //          `_scambiaFotoGrandi` era dentro l'`else`. L'admin vede il tab Ebay, quindi
@@ -25319,7 +25333,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.532';
+const JS_VERSION = 'v6.533';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -37585,7 +37599,12 @@ header += `</div>`;
 function _pannelloCategorieRisultati() {
   const isRetro = (currentSection === 'retros' || !!_tipoProdottoCorrente) && !!currentSeriesId;
   if (!isRetro) return '';
-  const pairs = _retroCatCounts(getCurrentlyFilteredItems({ skipCategory: true, skipSubcategory: true }));
+  // 🔄 v6.533 - stessa medicina di `_pairsConZeri`: l'ELENCO dei valori ignora anche il
+  // lato, i CONTEGGI no. Prima era una chiamata sola, quindi con una pillola del lato
+  // accesa spariva anche questo riquadro.
+  const _numeri = new Map(_retroCatCounts(getCurrentlyFilteredItems({ skipCategory: true, skipSubcategory: true })));
+  const _elenco = _retroCatCounts(getCurrentlyFilteredItems({ skipCategory: true, skipSubcategory: true, skipLato: true }));
+  const pairs = _elenco.map(([val]) => [val, _numeri.get(val) || 0]);
   return pairs.length ? _retroCatPanelHTML(pairs, _retroCatResultsOpen, true, 'toggleRetroCatResults') : '';
 }
 // 🆕 v6.269 - TOGLIERE UNA CATEGORIA PORTA VIA LE SUE SOTTOCATEGORIE. Lasciarle selezionate
@@ -38246,7 +38265,9 @@ function renderSpecchiettiTop() {
   // riquadri finivano su due righe pur essendo affiancati fra loro. Un contenitore, tre pannelli.
   // I conteggi restano quelli di sempre: i filtri si', la ricerca no (v5.986).
   const cat = (currentSection === 'retros')
-    ? _retroCatCounts(getCurrentlyFilteredItems({ skipSearch: true }))
+    // v6.533 - e anche qui: gli altri riquadri della testata leggono la sezione intera,
+    // questo passava dal setaccio e col lato acceso spariva da solo.
+    ? _retroCatCounts(getCurrentlyFilteredItems({ skipSearch: true, skipLato: true }))
     : [];
   // v6.079 (Franco) - su TELEFONO i tre stanno in colonna e si possono chiudere (aperti di
   // default); sul desktop restano in fila e sempre aperti, com'erano. La differenza sta tutta in
@@ -38302,7 +38323,13 @@ function renderRaggrSummaries() {
   if (!currentSeriesId) { el.style.display = 'none'; el.innerHTML = ''; return; }
   const _pairsConZeri = (v) => {
     const numeri = new Map(_raggrCounts(getCurrentlyFilteredItems({ skipRaggr: v.chiave }), v));
-    const elenco = _raggrCounts(getCurrentlyFilteredItems({ skipRaggr: true }), v);
+    // 🔄 v6.533 - ANCHE `skipLato`. «Ignora gli altri riquadri» e' cio' che questa riga
+    // dice da sempre; il lato e' uno di quelli, ma non esisteva quando e' stata scritta,
+    // quindi il «tutti» non lo comprendeva. Senza, con una pillola del lato accesa questo
+    // elenco viene vuoto e il riquadro sparisce — contro la regola di Franco.
+    // 📌 I CONTEGGI (sopra) non cambiano: restano zero, ed e' lo zero che rende la pillola
+    // non premibile. Non si nasconde niente, si spegne.
+    const elenco = _raggrCounts(getCurrentlyFilteredItems({ skipRaggr: true, skipLato: true }), v);
     return elenco.map(([val]) => [val, numeri.get(val) || 0]);
   };
   // 🆕 v6.268 (Franco) - UNO PER RIGA. Erano elastici e affiancati (`flex: 1 1 320px`, v6.079,
