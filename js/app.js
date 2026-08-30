@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.537 — Pagina ERRORI: «Oggetti senza foto» diventa «#5 Articoli senza foto»
+//          (Franco). 📌 Il 5 non e' arbitrario: il riquadro accanto diceva gia' «#5», e
+//          il quadrone era l'unico senza numero fra il #4 e il #6.
+//          📌 «Articoli» e non «Item»: e' la parola dello schermo, cambiata in tutti e
+//          tre i punti che la dicevano.
+//          ⚠️ Il CONTEGGIO non e' toccato: gli errori di stampa che mostrano la foto
+//          della base continuano a non essere contati. E' il punto 3 di Franco, e
+//          confligge con il punto 1 (marcarli invisibili li ESCLUDE da questo
+//          controllo): la decisione e' sua, ed e' scritta nel documento.
+//          Modificato js/app.js, index.html.
 // v6.536 — CORREZIONE della v6.534: le due sezioni FRONTALI/POSTERIORI non si vedevano.
 //          🔴 `corpoHTML` era dichiarato sul descrittore del riquadro ma non veniva
 //          inoltrato da `_cfgRaggr`, quindi `C.corpoHTML` era sempre undefined e il
@@ -25367,7 +25377,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.536';
+const JS_VERSION = 'v6.537';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -48138,7 +48148,7 @@ function _toggleElencoSenzaFoto(id) {
 // escluse da ciascun conteggio. Un controllo spento in silenzio e' peggio di un controllo che
 // segnala il falso, perche' il primo non lo scopri mai.
 const CONTROLLI_SOSPENDIBILI = [
-  { id: 'senzaFoto',   it: 'Item senza foto',            en: 'Items without a photo' },
+  { id: 'senzaFoto',   it: 'Articoli senza foto',        en: 'Items without a photo' },   // v6.537
   { id: 'senzaRetro',  it: 'Fronte senza retro',         en: 'Front without a back' },
   { id: 'senzaNumero', it: 'Figurine senza numero',      en: 'Stickers without a number' },
   // v6.084 (Franco) - sospendibile come gli altri: una serie in cui i retro-change si stanno
@@ -48685,10 +48695,10 @@ function renderAdminErrori() {
       <div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;display:inline-block;min-width:240px;text-align:center;flex-shrink:0;">
           <div style="font-size:2.6rem;font-weight:700;color:${_totSenzaFoto ? 'var(--danger)' : 'var(--accent)'};">${_totSenzaFoto}</div>
-          <div style="font-size:0.85rem;color:var(--text);margin-top:0.25rem;">📷 ${currentLang==='it'?'Oggetti senza foto':'Items without a photo'}</div>
+          <div style="font-size:0.85rem;color:var(--text);margin-top:0.25rem;">#5 📷 ${currentLang==='it'?'Articoli senza foto':'Items without a photo'}</div>
         </div>
         <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem 1.2rem;flex:1;min-width:260px;">
-          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">#5 ${currentLang==='it'?'Item senza foto':'Items without a photo'}</div>
+          <div style="font-size:0.85rem;font-weight:600;color:var(--text);margin-bottom:0.4rem;">#5 ${currentLang==='it'?'Articoli senza foto':'Items without a photo'}</div>
           ${_rigaSez(_senzaFoto, 'foto')}
           ${_avvisoSospensione('senzaFoto', _sospesiFoto)}
           <div style="border-top:1px solid var(--border);margin:0.7rem 0 0.5rem;"></div>
