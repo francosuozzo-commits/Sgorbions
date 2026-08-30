@@ -1,6 +1,40 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.524 — LA SCHEDA SI RICORDA DA DOVE SEI ARRIVATO (Franco: *"se premo la «x» si
+//          esce, tornando alla griglia; viene persa quindi la memoria"*). Aprendo una
+//          scheda da un link dentro un'altra scheda, il tasto in alto a destra diventa
+//          «↩» e riporta a quella di prima; a fondo pila torna «✕» e chiude.
+//          🔴 La memoria sta in `openFigDetail`, NON sui link: i punti che aprono una
+//          scheda da dentro un'altra sono tanti e ne nasceranno altri. Si guarda un
+//          FATTO che vale per tutti — la scheda era gia' aperta, e su un altro
+//          oggetto? — invece di tenere allineato l'ennesimo elenco.
+//          ⚠️ Le frecce ◀▶ sono escluse (terzo parametro `senzaMemoria`): passano da
+//          `openFigDetail` anche loro, e senza l'esclusione venti frecce diventerebbero
+//          venti pressioni per uscire. Sfogliare non e' saltare.
+//          📌 Si ricorda anche l'elenco delle frecce, non solo l'id: tornare
+//          all'oggetto giusto avendo perso il «3 di 47» e' mezzo ritorno.
+//          📌 Esc e il clic fuori chiudono tutto a qualunque profondita', e non
+//          cambiano: sono la via di fuga che rende accettabile un tasto che risale un
+//          passo per volta.
+//          📌 Il difetto nasce dalla v6.521, ed e' il prezzo di una cosa giusta: prima
+//          da questa scheda si saltava poco, quindi il ritorno non mancava a nessuno.
+//          Modificato js/app.js, index.html.
+// v6.523 — NELLA CARD IL TESTO GRIGIO DIVENTA BIANCO (Franco: *"tutto il testo grigio
+//          lo voglio bianco"*). Censiti col `grep`, sono TRE: la descrizione e la
+//          taglia (in linea, qui) e le tre etichette «Mia lista / Ciò che cerco /
+//          Errore?» (`.fig-act-label`, in style.css).
+//          ⛔ NON diventano bianchi i due CONTROLLI che usano lo stesso `--muted`: il
+//          pulsante ✓ di «Mia lista» e il cuoricino ♡. Lì il grigio dice SPENTO e il
+//          bianco (#ffffff) dice ACCESO: sbiancarli cancellerebbe la differenza fra le
+//          due condizioni. Non sono testo, sono stato.
+//          ⚠️ E un quarto punto SEMBRA grigio e non lo è: `.fig-number` dichiara
+//          `--muted` in style.css, ma tutti e due i punti che scrivono quello <span>
+//          gli mettono un `color:` in linea. È un valore morto, della famiglia del
+//          §COLORI: lasciato stare, ma adesso censito.
+//          📌 Il bianco è `var(--text)` (#f0eaff), quello di `.fig-name` nella stessa
+//          card, non #fff: due bianchi diversi a un centimetro sono un difetto.
+//          Modificato js/app.js, css/style.css, index.html.
 // v6.522 — «CON RETRO: » DAVANTI AL NOME DEL RETRO, nella seconda riga del campo «… di»
 //          (Franco, sulla v6.521: *"punto 4 ok ma prima del nome del retro scrivi: «Con
 //          retro: »"*).
@@ -25208,7 +25242,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.522';
+const JS_VERSION = 'v6.524';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34461,11 +34495,34 @@ let _currentDetailFigId = null;
 // QUEL tab, e finche' si resta dentro le frecce scorrono quello. Chi apre da una card non passa
 // niente e torna alla griglia - il reset e' automatico, non c'e' uno stato da ricordarsi di
 // azzerare, che e' il modo in cui questa roba si rompe.
+// 🆕 v6.524 (Franco: *"se premo la «x» si esce, tornando alla griglia; viene persa la
+// memoria"*) — DA DOVE SEI ARRIVATO. Ogni voce e' { id, elenco }: l'oggetto su cui si
+// stava, e l'elenco che le frecce ◀▶ stavano sfogliando. 📌 L'elenco serve quanto l'id:
+// tornare all'oggetto giusto avendo perso il «3 di 47» e' mezzo ritorno.
+let _pilaSchede = [];   // v6.524
 let _elencoNav = null;
 function _navIdsCorrenti(figId) {
   return (_elencoNav && _elencoNav.includes(figId)) ? _elencoNav : _gridOrderedIds;
 }
 
+// 🆕 v6.524 - IL TASTO IN ALTO A DESTRA: torna indietro se c'e' un indietro, altrimenti
+// chiude. 📌 Chi vuole uscire e basta ha Esc e il clic fuori dalla finestra, che chiudono
+// tutto a qualunque profondita': e' la via di fuga che rende accettabile un tasto che
+// risale un passo per volta.
+// ⚠️ Il `while` non e' prudenza generica: un oggetto puo' essere stato CANCELLATO mentre si
+// era dentro la sua discendenza (la scheda ha il tasto Elimina). Senza, il ritorno
+// finirebbe su un id che non esiste piu'. Si risale finche' si trova qualcosa di vero.
+function chiudiSchedaFigurina() {
+  const figs = getData('figurines', []) || [];
+  while (_pilaSchede.length) {
+    const prec = _pilaSchede.pop();
+    if (figs.some(x => x.id === prec.id)) {
+      openFigDetail(prec.id, prec.elenco, true);   // true: tornare indietro non impila
+      return;
+    }
+  }
+  closeModal('fig-detail-modal');
+}
 function navigateFigDetail(direction) {
   if (!_currentDetailFigId) return;
   const ids = _navIdsCorrenti(_currentDetailFigId);
@@ -34488,7 +34545,9 @@ function navigateFigDetail(direction) {
     currentSeriesId = _nuovo.seriesId;
     currentSection = _nuovo.section || 'figurines';
   }
-  openFigDetail(ids[newIdx], _elencoNav); // v6.033 - restando nello stesso elenco
+  // v6.524 - il terzo parametro: sfogliare NON e' saltare, quindi non lascia traccia nella
+  // pila. Venti frecce non devono diventare venti pressioni per uscire.
+  openFigDetail(ids[newIdx], _elencoNav, true); // v6.033 - restando nello stesso elenco
 }
 const ROWS_PER_PAGE = 7;
 
@@ -38989,7 +39048,7 @@ function renderItems() {
     const reportBtn = currentUser && !currentUser.isAdmin ? `<button onclick="event.stopPropagation();openSegnalazioneModal('${f.id}')" title="${currentLang === 'it' ? 'Segnala qualcosa all\'amministratore per questa figurina' : 'Report something to the administrator about this sticker'}" style="font-size:0.65rem;padding:1px 6px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:var(--muted);cursor:pointer;">🚩</button>` : '';
     const descHTML = _rigaCard(
     f.desc ? esc(f.desc.substring(0,60)) + (f.desc.length > 60 ? '...' : '') : '',
-    'font-size:0.78rem;color:var(--muted);margin-top:4px;', 'descrizione');
+    'font-size:0.78rem;color:var(--text);margin-top:4px;', 'descrizione');   // v6.523 - era --muted
     // v5.980 (Franco) — il punteggio sta SEMPRE in fondo alla card, in riga con "Mia lista".
     // Prima era una riga a se' sopra la barra delle azioni: la sua altezza dipendeva da quante
     // righe aveva la card (nome corto o lungo, sottoserie, sottonome, descrizione), quindi in una
@@ -39009,7 +39068,7 @@ function renderItems() {
     // 🔄 v6.501 - anche taglia e descrizione a posto fisso (Franco: *"anche loro"*).
     const sizeHTML = _rigaCard(
       (f.size && _mostraTaglia(f, _serieById.get(f.seriesId))) ? '📏 ' + esc(f.size) : '',
-      'font-size:0.78rem;color:var(--muted);margin-top:2px;', 'taglia');
+      'font-size:0.78rem;color:var(--text);margin-top:2px;', 'taglia');   // v6.523 - era --muted
     // v5.804 — Franco: la sottoserie NON sostituisce più il numero sulla card. Il numero resta in
     // etichetta (#N) e la sottoserie va su una riga a parte, nello stesso punto/stile in cui i Retro
     // mostrano la loro categoria (vedi subseriesHTML poco sotto).
@@ -41679,7 +41738,26 @@ function _secondaFacciaSulRecord(sezione) {
   return !!sezione && sezione !== 'retros' && sezione !== 'figurines';
 }
 
-function openFigDetail(figId, elencoNav) {
+// 🔴 v6.524 - LA MEMORIA STA QUI E NON SUI LINK. I punti che aprono una scheda da dentro
+// un'altra sono tanti (il campo «… di», la didascalia del retro, i tab dei collegati) e ne
+// nasceranno altri: metterci su ciascuno un «ricordati da dove vieni» sarebbe l'ennesimo
+// elenco da tenere allineato. Qui si guarda invece un FATTO che vale per tutti — la scheda
+// era gia' aperta, e su un altro oggetto? — cosi' un link nuovo entra nel giro da se'.
+// ⚠️ `senzaMemoria` esiste per le frecce ◀▶ e per il ritorno stesso. Le frecce passano da
+// qui (v6.033), e senza l'esclusione sfogliare venti figurine costruirebbe una pila di
+// venti: per uscire ci vorrebbero venti pressioni. Sfogliare non e' saltare.
+function openFigDetail(figId, elencoNav, senzaMemoria) {
+  {
+    const _mod = document.getElementById('fig-detail-modal');
+    const _giaAperta = !!_mod && !_mod.classList.contains('hidden');
+    // ⚠️ Aperta da FERMA (griglia, ricerca, un'altra pagina): non c'e' nessun «indietro» da
+    // offrire, e la pila si azzera. E' anche cio' che tiene pulite le uscite che non passano
+    // dal tasto — Esc, clic fuori, la chiusura dopo un clone.
+    if (!_giaAperta) _pilaSchede = [];
+    else if (!senzaMemoria && _currentDetailFigId && _currentDetailFigId !== figId) {
+      _pilaSchede.push({ id: _currentDetailFigId, elenco: _elencoNav });
+    }
+  }
   _figEditImgData = null; _figEditImgRetroData = null; // reset immagini editing precedenti
   // v6.104 - si apre un oggetto vero: se una bozza era rimasta in sospeso (creazione annullata) qui
   // finisce. Non e' raggiungibile per altre strade - `_recordInModifica` la restituisce solo con un
@@ -41726,6 +41804,20 @@ function openFigDetail(figId, elencoNav) {
   // Vale per TUTTI e tre gli elenchi (griglia, tab dei collegati, ricerca globale): il numero lo
   // sappiamo comunque, e delle frecce che a volte dicono dove sei e a volte no sono due
   // comportamenti da tenere a mente invece di uno.
+  // 🎨 v6.524 - UNA FORMA DIVERSA PER UN MESTIERE DIVERSO (regola della v6.512): lo stesso
+  // tasto chiude o torna indietro a seconda di dove sei, quindi deve dirlo. Un «✕» che
+  // invece di chiudere risale sarebbe una bugia disegnata.
+  // 📌 Il titolo non nomina l'oggetto di destinazione, di proposito: comporre quel nome
+  // qui sarebbe la copia numero tre della regola che lo compone (v6.022/v6.128), e per un
+  // suggerimento che dura mezzo secondo non vale il debito.
+  const _chiudiBtn = document.getElementById('fig-detail-close-btn');
+  if (_chiudiBtn) {
+    const _siTorna = _pilaSchede.length > 0;
+    _chiudiBtn.textContent = _siTorna ? '\u21a9' : '\u2715';
+    _chiudiBtn.title = _siTorna
+      ? (currentLang === 'it' ? 'Torna alla scheda precedente' : 'Back to the previous card')
+      : (currentLang === 'it' ? 'Chiudi' : 'Close');
+  }
   const countEl = document.getElementById('fig-detail-nav-count');
   if (countEl) {
     countEl.textContent = navIdx === -1 ? '' : `${navIdx + 1} ${currentLang === 'it' ? 'di' : 'of'} ${_navIds.length}`;
