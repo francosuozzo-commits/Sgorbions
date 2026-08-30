@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.531 — La scheda dice all'ADMIN, in console, se lo scambio delle foto ha
+//          funzionato: una riga per foto (Franco: *"come potrei fare per dirti, io,
+//          che sta funzionando?"* · *"mettila solo all'admin"*).
+//          ✅ piccola subito (w_300) → grande dopo N ms (w_800)
+//          ❌ la grande NON e' arrivata entro 15 s — resta w_300
+//          ⚠️ partita direttamente dalla grande: i due tempi non ci sono
+//          📌 Anche il fallimento si dice: senza, «non ho visto niente» e «ha
+//          funzionato» si somigliano — ed e' cosi' che il difetto della v6.529 era
+//          rimasto invisibile.
+//          ⚠️ Niente per chi non e' admin.
+//          Modificato js/app.js, index.html.
 // v6.530 — CORREZIONE della v6.529: lo scambio non arrivava alle foto, che restavano
 //          piccole. `_scambiaFotoGrandi` girava su `#fig-detail-content`, e le due foto
 //          grandi stanno nella colonna della foto, SORELLA di quel nodo.
@@ -25296,7 +25307,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.530';
+const JS_VERSION = 'v6.531';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -25379,14 +25390,47 @@ function _fotoInDueTempi(url, optsGrande, stile) {
 // E chi fa lo scambio, dopo che il markup e' nel DOM. Un solo giro su tutte le foto della
 // scheda: si carica la grande di lato e si sostituisce solo quando e' pronta, cosi' non
 // c'e' nessun momento in cui il riquadro e' vuoto.
+// 🆕 v6.531 (Franco: *"come potrei fare per dirti, io, che sta funzionando?"* ·
+// *"mettila solo all'admin"*) - LA SCHEDA DICE SE LO SCAMBIO HA FUNZIONATO.
+// 📌 Sta dentro il sito e non in uno script da incollare perche' la domanda torna a ogni
+// scheda aperta, e una risposta da incollare a mano non c'e' mai quando serve.
+// ⚠️ Solo per l'admin: un sito che parla da solo nella console di un visitatore e' rumore
+// che non gli appartiene.
+function _nomeTrasf(u) { const m = String(u).match(/[/]upload[/]([^/]*)[/]/); return m ? m[1] : '(senza trasformazione)'; }
 function _scambiaFotoGrandi(radice) {
   const dove = radice || document;
+  const parla = !!(currentUser && currentUser.isAdmin);
   dove.querySelectorAll('img[data-grande]').forEach(img => {
     const grande = img.getAttribute('data-grande');
     img.removeAttribute('data-grande');   // una volta sola, anche se si ridisegna
-    if (!grande || grande === img.src) return;
+    if (!grande || grande === img.src) {
+      // ⚠️ Il sospetto di Franco: se partisse gia' dalla grande, i due tempi non
+      // esisterebbero e si aspetterebbe come prima. Va detto, non taciuto.
+      if (parla) console.log('%c\u26a0\ufe0f foto: partita direttamente dalla grande ('
+        + _nomeTrasf(img.src) + ')', 'color:#e0a800;font-weight:bold');
+      return;
+    }
+    const partenza = img.src, t0 = performance.now();
+    let detto = false;
     const pre = new Image();
-    pre.onload = () => { img.src = grande; };
+    pre.onload = () => {
+      img.src = grande;
+      if (parla && !detto) { detto = true; console.log('%c\u2705 foto: piccola subito ('
+        + _nomeTrasf(partenza) + ') \u2192 grande dopo ' + Math.round(performance.now() - t0)
+        + ' ms (' + _nomeTrasf(grande) + ')', 'color:#2eb872;font-weight:bold'); }
+    };
+    // 📌 Anche il fallimento si dice: senza, «non ho visto niente» e «ha funzionato» si
+    // somigliano — ed e' esattamente com'era nascosto il difetto della v6.529.
+    if (parla) setTimeout(() => {
+      if (detto) return;
+      detto = true;
+      console.log('%c\u274c foto: la grande NON e\' arrivata entro 15 s \u2014 resta '
+        + _nomeTrasf(img.src), 'color:#e05252;font-weight:bold');
+    }, 15000);
+    pre.onerror = () => {
+      if (parla && !detto) { detto = true; console.log('%c\u274c foto: la grande non si e\' caricata ('
+        + _nomeTrasf(grande) + ') \u2014 resta la piccola', 'color:#e05252;font-weight:bold'); }
+    };
     pre.src = grande;
   });
 }
