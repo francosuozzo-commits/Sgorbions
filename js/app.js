@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.530 — CORREZIONE della v6.529: lo scambio non arrivava alle foto, che restavano
+//          piccole. `_scambiaFotoGrandi` girava su `#fig-detail-content`, e le due foto
+//          grandi stanno nella colonna della foto, SORELLA di quel nodo.
+//          🔴 Trovato da una domanda di Franco («la piccola con che dimensione viene
+//          mostrata?»), andando a misurare invece di rispondere a memoria.
+//          ⚠️ E la prova della v6.529 era VERDE: controllava che la chiamata ci fosse,
+//          non che arrivasse a qualcosa — il suo DOM finto conteneva le immagini per
+//          costruzione. Ora esegue con le foto FUORI da `fig-detail-content`.
+//          Modificato js/app.js, index.html.
 // v6.529 — LE FOTO DELLA SCHEDA ARRIVANO IN DUE TEMPI: prima la piccola che la griglia
 //          ha gia' in cache (0 ms), poi la grande, che sostituisce quando e' pronta.
 //          🔴 Misurato su 30 retri, con `new Image()` e `encodedBodySize`: 63 kB di
@@ -25287,7 +25296,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.529';
+const JS_VERSION = 'v6.530';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -42503,7 +42512,13 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   // 🆕 v6.529 - adesso il markup c'e': si caricano le foto grandi di lato e si scambiano
   // quando arrivano. ⚠️ Vale per TUTTE le `img[data-grande]` della scheda, quindi una foto
   // nuova entra nel giro senza che nessuno se ne ricordi.
-  try { _scambiaFotoGrandi(document.getElementById('fig-detail-content')); } catch(e) { console.error('_scambiaFotoGrandi', e); }
+  // 🔄 v6.530 - LA RADICE È IL MODALE, NON `fig-detail-content`. Le due foto grandi stanno
+  // nella colonna della foto, che di quel nodo è SORELLA: lanciando lo scambio là dentro
+  // non le trovava, e restavano piccole per sempre. Misurato sul sito: 3 img nel modale,
+  // 1 sola dentro `fig-detail-content`, e le due foto ancora con `data-grande` addosso.
+  // 📌 La v6.529 aveva una prova verde su questa riga: verificava che la CHIAMATA ci
+  // fosse, non che arrivasse a qualcosa.
+  try { _scambiaFotoGrandi(document.getElementById('fig-detail-modal')); } catch(e) { console.error('_scambiaFotoGrandi', e); }
   }
   document.getElementById('fig-detail-modal').classList.remove('hidden');
 }
