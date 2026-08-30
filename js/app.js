@@ -1,6 +1,17 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.541 — CORREZIONE della v6.539: senza il fronte, il RETRO resta. La card mostra
+//          «FOTO NON DISPONIBILE» davanti e la foto del retro dietro (Franco: *"mi hai
+//          tolto anche la foto del retro; era proprio necessario?"* — no).
+//          🔴 Una riga: `if (!fronte) return vuoto;` annullava la COPPIA, la card cadeva
+//          nel ramo a foto singola e spariva anche il retro. Aveva senso finche'
+//          «niente fronte» voleva dire «niente foto affatto»: dalla v6.539 vuol dire
+//          «il fronte non e' suo».
+//          📌 I quattro punti che disegnavano il fronte con un `<img>` a mano passano
+//          ora da `_facciaRetroHTML`, che il caso «niente url» lo sapeva gia' gestire:
+//          era usata solo per il retro.
+//          Modificato js/app.js, index.html.
 // v6.540 — Filtro admin «Invisibili»: gli articoli marcati «Foto non disponibile»
 //          (Franco). Sta accanto a «Senza rarità» nella riga dei filtri admin.
 //          📌 Mostra quelli per cui la foto NON ESISTE — il flag e' definitivo. NON gli
@@ -25410,7 +25421,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.540';
+const JS_VERSION = 'v6.541';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34871,8 +34882,17 @@ function _coppiaFronteRetro(f, allFigs, idx) {
     || retroDaCollegare;
   if (!entra) return vuoto;
   const fronte = _fotoFigurina(f, allFigs); // divergenza 1, risolta a favore del renderer
-  if (!fronte) return vuoto;                // senza fronte la card cade nel ramo a foto singola
   const retroRec = retroBianco ? { img: RETRO_BIANCO_IMG, name: '' } : get(effRetroId); // divergenza 2
+  // 🔄 v6.541 (Franco: *"mi hai tolto anche la foto del retro; era proprio necessario?"*)
+  // - LA COPPIA SI ANNULLA SOLO SE MANCANO TUTTE E DUE LE FACCE.
+  // 🔴 Qui c'era `if (!fronte) return vuoto;`, e aveva senso finche' «niente fronte» voleva
+  // dire «niente foto affatto». Dalla v6.539 vuol dire «il fronte non e' suo» — un errore di
+  // stampa frontale senza foto propria — e il retro invece ce l'ha eccome. Con quella riga
+  // la coppia si annullava, la card cadeva nel ramo a foto singola, e il retro spariva con
+  // il fronte: due facce perse per correggerne una.
+  // 📌 Il posto del fronte lo prende il placeholder «FOTO NON DISPONIBILE», che
+  // `_facciaRetroHTML` sa disegnare da sempre.
+  if (!fronte && !(retroRec && retroRec.img)) return vuoto;
   return {
     mostra: true,
     // la card larga esiste SOLO in 'destra-piena': nelle altre quattro disposizioni la coppia si
@@ -39286,13 +39306,13 @@ function renderItems() {
         } else if (_retroViewMode === 'dinamico') {
           const dualId = 'dual-' + f.id;
           imgHTML = `<div id="${dualId}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;">${_facciaRetroHTML(_fronteCoppia)}</div>
             <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(_retroImg, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`, _retroVuoto)}</div>
           </div>`;
         } else if (_retroViewMode === 'fronte-grande') {
           const dualId2 = 'dualf-' + f.id;
           imgHTML = `<div id="${dualId2}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId2}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;">${_facciaRetroHTML(_fronteCoppia, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId2}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`)}</div>
             <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(_retroImg, null, _retroVuoto)}</div>
           </div>`;
         } else if (_retroViewMode === 'destra-piena') {
@@ -39320,13 +39340,13 @@ function renderItems() {
           // box e' orizzontale comunque. La condizione guarda percio' la foto, non il record.
           if (!_retroImg) _checkBothOrientationForStack(dualId5, 'retro', false, 138, 100);
           imgHTML = `<div id="${dualId5}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
-            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;" onload="_checkBothOrientationForStack('${dualId5}','front',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;">${_facciaRetroHTML(_fronteCoppia, `onload="_checkBothOrientationForStack('${dualId5}','front',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`)}</div>
             <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_facciaRetroHTML(_retroImg, `onload="_checkBothOrientationForStack('${dualId5}','retro',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`, _retroVuoto)}</div>
           </div>`;
         } else {
           // 'sotto' (default)
           imgHTML = `<div style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;"><img src="${cloudinaryUrl(_fronteCoppia)}" style="width:100%;height:100%;object-fit:contain;padding:2px;"></div>
+            <div style="flex:1;min-height:0;overflow:hidden;">${_facciaRetroHTML(_fronteCoppia)}</div>
             <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(_retroImg, null, _retroVuoto)}</div>
           </div>`;
         }
