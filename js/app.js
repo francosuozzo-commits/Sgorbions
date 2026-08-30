@@ -1,6 +1,19 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.526 — Nella scheda il tab «Omaggi» diventa «Versioni omaggio» (Franco).
+//          🔴 La parola c'era gia': `filtroIt`, decisa dalla v6.514 per le pillole. Il
+//          tab leggeva `pluraleIt`, che e' il plurale degli OGGETTI. Si cambia la
+//          chiave interrogata, non si inventa una parola nuova.
+//          📌 Cambia solo questo tab: sulle altre quattro versioni le due chiavi
+//          dicono la stessa cosa.
+//          Modificato js/app.js, index.html.
+// v6.525 — Nella SCHEDA della figurina le etichette (Serie, Numero, Nome, Rarità…)
+//          passano da `--muted` a `--text` (Franco). Vale per la vista e per la form,
+//          che usano la stessa classe `.detail-label`: 46 punti su 48.
+//          ⚠️ Restano grigi i «non impostato» e il «senza retro»: lì il grigio dice
+//          VUOTO, non «etichetta» — stessa regola del ✓ e del ♡ nella v6.523.
+//          Modificato css/style.css, index.html.
 // v6.524 — LA SCHEDA SI RICORDA DA DOVE SEI ARRIVATO (Franco: *"se premo la «x» si
 //          esce, tornando alla griglia; viene persa quindi la memoria"*). Aprendo una
 //          scheda da un link dentro un'altra scheda, il tasto in alto a destra diventa
@@ -25242,7 +25255,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.524';
+const JS_VERSION = 'v6.526';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -43071,8 +43084,12 @@ function buildLinkedFiguresTabsHTML(baseId) {
     // cinque versioni; per le altre due `esportaIt` e' gia' al plurale. Nessuna delle due chiavi
     // nasce per questo posto, ma sono i plurali che il sito ha gia' deciso — inventarne di nuovi
     // qui vorrebbe dire un terzo elenco di parole da tenere allineato.
-    const it = v.pluraleIt || v.esportaIt || v.it;
-    const en = v.pluraleEn || v.esportaEn || v.en;
+    // 🔄 v6.526 (Franco) - PRIMA «filtroIt», che e' il nome della VERSIONE al plurale.
+    // «pluraleIt» e' il plurale degli OGGETTI: «Omaggi» sono le figurine, «Versioni
+    // omaggio» e' la versione — distinzione gia' scritta nel commento della v6.514.
+    // 📌 Cambia solo questo tab: sulle altre quattro versioni le due chiavi coincidono.
+    const it = v.filtroIt || v.pluraleIt || v.esportaIt || v.it;
+    const en = v.filtroEn || v.pluraleEn || v.esportaEn || v.en;
     return currentLang === 'it' ? it : en;
   };
 
