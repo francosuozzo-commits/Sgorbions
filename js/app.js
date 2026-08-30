@@ -1,6 +1,27 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.540 — Filtro admin «Invisibili»: gli articoli marcati «Foto non disponibile»
+//          (Franco). Sta accanto a «Senza rarità» nella riga dei filtri admin.
+//          📌 Mostra quelli per cui la foto NON ESISTE — il flag e' definitivo. NON gli
+//          89 errori di stampa frontali: quelli la foto ce l'hanno e va caricata, e li
+//          conta il controllo #5 (v6.538).
+//          🔴 Gemello esatto di «Senza rarita'» (v6.502): stesso interruttore, stessi
+//          TRE azzeramenti, stessa comparsa nel bottone «azzera filtri».
+//          Modificato js/app.js, index.html.
+// v6.539 — 🔴 LA RIGA CHE IL DOCUMENTO TENEVA PER ULTIMA. Un errore di stampa FRONTALE
+//          non eredita piu' il fronte della sua base: la card mostra «FOTO NON
+//          DISPONIBILE» (Franco).
+//          🔴 La condizione chiedeva `f.isPrintError && f.retroId`, cioe' SE UN RETRO
+//          C'ERA. La domanda giusta e' DA CHE PARTE STA IL DIFETTO, e la risposta era
+//          scritta da venti release: `_latoErroreStampa` (v6.510).
+//          ⚠️ Misurato prima di scrivere: 89 perdono la foto ereditata (tutti in Serie
+//          2, tutti frontali), 2 la tengono perche' posteriori. Il documento stimava
+//          «~145»: quel conto non era mai stato rifatto.
+//          📌 Non e' un peggioramento: e' un difetto che smette di essere invisibile.
+//          Sono le stesse 89 che il controllo #5 conta dalla v6.538, e la foto esiste:
+//          va solo caricata.
+//          Modificato js/app.js, index.html.
 // v6.538 — Il controllo #5 «Articoli senza foto» conta anche gli ERRORI DI STAMPA
 //          FRONTALI senza foto propria (Franco). Misurato: +89 nella Serie 2.
 //          🔴 Il controllo chiedeva «esce una foto?» e `_fotoFigurina` gli rispondeva di
@@ -25389,7 +25410,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.538';
+const JS_VERSION = 'v6.540';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27200,6 +27221,12 @@ let _noteFilter = false;   // v6.113 - "Con note", solo admin
 // otto punti, stesso riquadro, stesse trappole. Se un domani si tocca uno dei due, si
 // guardi anche l'altro — sono gemelli per costruzione, non per caso.
 let _senzaRaritaFilter = false;   // v6.502
+// 🆕 v6.540 (Franco: *"aggiungi un filtro per l'admin relativo alle foto invisibili (Nome:
+// Invisibili)"*) - GLI ARTICOLI MARCATI «FOTO NON DISPONIBILE».
+// 📌 Sono quelli per cui la foto NON ESISTE, e il flag e' definitivo: *"quel flag indica
+// che io la foto non ce la ho"*. NON sono gli 89 errori di stampa frontali — quelli la
+// foto ce l'hanno e va caricata, e li conta il controllo #5 (v6.538).
+let _invisibiliFilter = false;   // v6.540
 // 🆕 v6.520 (Franco: *"nel box dei filtri per errore di stampa si riesce a mettere 2
 // pillole: FRONTALI - POSTERIORI"*) — IL LATO DEL DIFETTO COME FILTRO.
 // 🔴 È IL PRIMO FILTRO DEL PANNELLO CHE SETACCIA SU UNA COSA CALCOLATA: tutti gli altri
@@ -35866,6 +35893,7 @@ function openSeriesSection(section) {
   _fotoFilter = null;
   _noteFilter = false;   // v6.113 - come i filtri foto: non sopravvive al cambio sezione
   _senzaRaritaFilter = false;   // v6.502 - idem
+  _invisibiliFilter = false;    // v6.540 - idem
   // 🗑️ v6.346 - qui stava `_itemTypeFilter = _tipoIniziale()`. Il suo mestiere - dare a un
   // non-admin la vista «solo base» all'apertura - lo fa `_azzeraTuttiIRaggr(section)` due righe
   // piu' sotto, che dalla v6.338 semina la pillola Base nel riquadro invece di svuotarlo.
@@ -36586,6 +36614,14 @@ function toggleNoteFilter() {
 // 🆕 v6.502 (Franco: *"un filtro, admin visibile, per mostrare le carte senza punteggio
 // rarita'"*). `currentItemPage = 1` come i due gemelli qui sopra, e per la stessa ragione
 // della v6.113: restare a pagina 7 di un elenco che si e' appena accorciato mostra il vuoto.
+// 🆕 v6.540 - il gemello di `toggleSenzaRaritaFilter`, riga per riga: stesso azzeramento
+// della pagina e stesso ridisegno. Copiare quello che c'e' invece di inventarne uno simile
+// e' la medicina della v6.175.
+function toggleInvisibiliFilter() {
+  _invisibiliFilter = !_invisibiliFilter;
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (toggleInvisibiliFilter)', e); }
+}
 function toggleSenzaRaritaFilter() {
   _senzaRaritaFilter = !_senzaRaritaFilter;
   currentItemPage = 1;
@@ -36741,6 +36777,7 @@ function renderItemTypeFilters() {
       _fotoFilter = null;
       _noteFilter = false;   // v6.113 - stessa ragione: un non-admin non ha come spegnerlo
       _senzaRaritaFilter = false;   // v6.502 - idem, ed e' il punto che si dimentica
+      _invisibiliFilter = false;    // v6.540 - e questo e' quel punto
     } else {
       const itl = (currentLang === 'it');
       // niente emoji, per la regola posta da Franco: le icone ci sono sempre o mai.
@@ -36798,6 +36835,8 @@ function renderItemTypeFilters() {
       // solo la variabile, la funzione e le due parole: due pulsanti gemelli scritti in
       // due modi somiglianti si confrontano male a occhio (lezione v6.164).
       ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_senzaRaritaFilter ? 'on' : ''}" onclick="toggleSenzaRaritaFilter()" title="${itl ? 'Senza rarità' : 'Without rarity'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Senza rarità' : 'Without rarity'}</span></div>`;
+      // 🆕 v6.540 - «Invisibili», accanto a «Senza rarità»: stesso interruttore, stessa riga.
+      ha += `<div style="display:flex;align-items:center;gap:0.4rem;"><button class="toggle-btn-blue ${_invisibiliFilter ? 'on' : ''}" onclick="toggleInvisibiliFilter()" title="${itl ? 'Solo gli articoli marcati «Foto non disponibile»' : 'Only items marked \"Photo unavailable\"'}"></button><span style="font-size:0.82rem;color:var(--text);">${itl ? 'Invisibili' : 'Invisible'}</span></div>`;
 
       elAdmT.innerHTML = ha;
       elAdm.style.display = '';
@@ -37164,6 +37203,7 @@ function azzeraTuttiIFiltri() {
   _fotoFilter = null;
   _noteFilter = false;
   _senzaRaritaFilter = false;   // v6.502
+  _invisibiliFilter = false;    // v6.540
   _filtroLatoErrore = new Set();   // v6.520
   _ownedFilter = 'all';
   _wishlistFilter = false;
@@ -37216,6 +37256,7 @@ function _qualcheFiltroAcceso() {
     || _fotoFilter !== null
     || _noteFilter
     || _senzaRaritaFilter               // v6.502
+    || _invisibiliFilter                // v6.540
     || _filtroLatoErrore.size > 0       // v6.520
     || _ownedFilter !== 'all'
     || _wishlistFilter
@@ -37349,6 +37390,8 @@ function getCurrentlyFilteredItems(opts) {
     // rotto. E' la stessa condizione con cui `_stellaRarita` decide se scrivere la stella:
     // cio' che la card tace e' cio' che questo filtro mostra.
     if (_senzaRaritaFilter && (f.score > 0)) return false;
+    // v6.540 - «Invisibili»: solo gli articoli marcati «Foto non disponibile».
+    if (_invisibiliFilter && !f.fotoNonDisponibile) return false;
     if (_own) {
       const ceLho = _own.includes(f.id);
       if (_ownedFilter === 'owned' && !ceLho) return false;
@@ -43281,8 +43324,22 @@ function _fotoFigurina(f, allFigs, _salti) {
   // stato collegato, cioe' proprio a quelli incompleti.
   // 📌 Il `&& f.baseFigurineId` che regge tutto sta gia' nella condizione qui sotto: senza
   // partenza non si ripiega su niente, e la funzione torna `null` come prima.
+  // 🔴 v6.539 (Franco: *"queste 89 non devono mostrare la foto della figurina di partenza"*)
+  // - PER UN ERRORE DI STAMPA CONTA DA CHE PARTE STA IL DIFETTO, non se un retro c'e'.
+  // La condizione diceva `f.isPrintError && f.retroId`, cioe' chiedeva se un retro esisteva:
+  // un errore FRONTALE con un retro attaccato ereditava il fronte lo stesso, e quel fronte e'
+  // proprio l'unica cosa che lo distingue. Copriva la faccia interessante con quella di un
+  // altro, e lo faceva in silenzio.
+  // 📌 La domanda giusta era gia' scritta da venti release: `_latoErroreStampa` (v6.510).
+  // ⚠️ MISURATO PRIMA DI SCRIVERE: 89 articoli perdono la foto ereditata (tutti in Serie 2,
+  // tutti frontali) e 2 la tengono, perche' sono posteriori e davanti la faccia della base e'
+  // quella giusta. Il documento stimava «~145»: quel conto non era mai stato rifatto.
+  // 📌 Non e' un peggioramento: e' un difetto che smette di essere invisibile. Quelle 89
+  // sono le stesse che il controllo #5 conta dalla v6.538, e la foto Franco ce l'ha —
+  // deve solo caricarla.
+  const _erroreCheEreditaIlFronte = f.isPrintError && _latoErroreStampa(f, figs) === 'retro';
   const _frontePariAllaBase = f.isVariation || f.isUnofficialVariation
-    || (f.isPrintError && f.retroId) || _changeDiRetro || f.isFreeVersion;
+    || _erroreCheEreditaIlFronte || _changeDiRetro || f.isFreeVersion;
   // 🆕 v6.358 - LA FIGURINA DA ATTACCARE NON HA UNA FOTO SUA, E NON DEVE AVERLA. Franco: *"la foto
   // della parte frontale (come collegamento, come per le variazioni, cosi' non ingrandiamo
   // Cloudinary)"*. E' lo stesso fronte della figurina con velina: caricarne una copia vorrebbe dire
