@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.543 — Il sito dice ARTICOLI, non «oggetti», ovunque parli all'utente (Franco, sul
+//          messaggio dell'aggiornamento massivo).
+//          📌 Non solo quel messaggio: censite col `grep`, le frasi erano una trentina —
+//          conferme di cancellazione, «Nessun oggetto trovato», l'ordinamento, l'import.
+//          Correggere la sola frase vista sarebbe stata la v6.537 daccapo.
+//          ⚠️ NON toccati: «Altri oggetti», che e' il NOME della sezione `extras`
+//          dichiarato in `ARTICOLI`, e «Soggetto», che e' un'altra parola. Un
+//          sostituisci-tutto ingenuo li avrebbe rovinati (trappola della v6.028).
+//          🔴 E niente fuori dalle stringhe: nessun campo, nessuna chiave, nessun id.
+//          Modificato js/app.js, index.html.
 // v6.542 — CORREZIONE della v6.540: il filtro admin «Invisibili» guarda il campo
 //          `invisibile`, non `fotoNonDisponibile`.
 //          🔴 Ho letto «invisibili» e ho pensato al flag della foto. `invisibile` esiste
@@ -25057,7 +25067,7 @@ async function renderEmailLogInto(targetId, filterSource) {
           : '<p style="color:var(--text);font-style:italic;font-size:0.85rem;">' + (currentLang === 'it' ? 'Corpo non disponibile (email inviata prima di questa funzionalità)' : 'Body not available (email sent before this feature)') + '</p>';
       const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="' + colspan + '" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
         '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + e.to + '</div>' +
-        '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + e.subject + '</div>' +
+        '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Articolo:' : 'Subject:') + '</strong> ' + e.subject + '</div>' +
         bodyHtml +
         '</td></tr>';
       return mainRow + detailRow;
@@ -25163,7 +25173,7 @@ async function renderNewsletterLog(targetId) {
         // e' il destinatario dentro il sito. Mostrare l'indirizzo farebbe credere
         // che gli sia stata scritta un'e-mail, che non e' successo.
         '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + esc(e.method === 'email' ? (e.to || '') : (e.user?.username || '—')) + '</div>' +
-        '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + esc(e.subject || '') + '</div>' +
+        '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Articolo:' : 'Subject:') + '</strong> ' + esc(e.subject || '') + '</div>' +
         bodyHtml +
         '</td></tr>';
       return mainRow + detailRow;
@@ -25212,7 +25222,7 @@ async function renderSentMessagesLog(targetId) {
     const bodyHtml = '<div style="white-space:pre-line;font-size:0.88rem;line-height:1.6;color:var(--text);padding:0.5rem 0;">' + bodyText.replace(/[<]/g,'&lt;').replace(/[>]/g,'&gt;') + '</div>';
     const detailRow = '<tr id="' + detailId + '" style="display:none;"><td colspan="5" style="padding:0.75rem 1rem;background:var(--card2);border-bottom:1px solid var(--border);">' +
       '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.4rem;"><strong>' + (currentLang === 'it' ? 'Da:' : 'From:') + '</strong> figurinesgorbions.it &nbsp;|&nbsp; <strong>' + (currentLang === 'it' ? 'A:' : 'To:') + '</strong> ' + m.email + '</div>' +
-      '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Oggetto:' : 'Subject:') + '</strong> ' + (m.subject || '') + '</div>' +
+      '<div style="font-size:0.78rem;color:var(--text);margin-bottom:0.75rem;"><strong>' + (currentLang === 'it' ? 'Articolo:' : 'Subject:') + '</strong> ' + (m.subject || '') + '</div>' +
       bodyHtml +
       '</td></tr>';
     return mainRow + detailRow;
@@ -25394,7 +25404,7 @@ async function sendNewsletterMessage(user, subject, body) {
 async function sendNewsletterFromAdmin() {
   const subject = document.getElementById('newsletter-subject').value.trim();
   const body = document.getElementById('newsletter-body').value.trim();
-  if (!subject || !body) { toast('Compila oggetto e messaggio', 'error'); return; }
+  if (!subject || !body) { toast('Compila articolo e messaggio', 'error'); return; }
   const selected = [...document.querySelectorAll('.newsletter-user-cb:checked')];
   if (!selected.length) { toast((currentLang === 'it' ? 'Seleziona almeno un utente' : 'Select at least one user'), 'error'); return; }
   if (!confirm((currentLang === 'it' ? 'Inviare la newsletter a ' : 'Send newsletter to ') + selected.length + (currentLang === 'it' ? ' utenti?' : ' users?'))) return;
@@ -25430,7 +25440,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.542';
+const JS_VERSION = 'v6.543';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27035,7 +27045,7 @@ const i18n = {
   ,'form.fig.noNumber':'Does not have a number','auth.googleBtn':'Sign in with Google','auth.or':'or'},
   it: {
 'nav.home':'Home','nav.catalog':'Inventario','nav.blog':'Blog / D&R','nav.wantlist':'Liste','nav.classifica':'🏆 Classifica','nav.contact':'Contatti','nav.search':'Cerca…','nav.privacy':'Informativa sulla Privacy','privacy.title':'Informativa sulla Privacy','nav.wishlist':'Ciò che cerco',
-'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni oggetto che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
+'wishlist.desc':'<strong>Ciò che cerco</strong> è il tuo spazio personale per raccogliere le figurine (o altro materiale) Sgorbions che vorresti trovare.<br><br><strong>Come si usa ?</strong><br>Navigando nell\'Inventario, premi il tasto <strong>❤️</strong> su ogni articolo che ti interessa: verrà aggiunto alla lista di ciò che cerchi.<br><br>Quando la tua lista &quot;Ciò che cerco&quot; è completa, premi il pulsante 📨 <strong>Invia &quot;Ciò che cerco&quot;</strong> presente qui sotto: il team di figurinesgorbions.it la riceverà e farà del suo meglio per aiutarti a trovare ciò che cerchi, sfruttando la rete degli altri collezionisti iscritti al sito.',
 'wishlist.submit':'📨 Invia "Ciò che cerco"','wishlist.reset':'🗑️ Resetta lista "Ciò che cerco"',
 'profile.anon':'Mostrami come utente anonimo nella classifica',
 'classifica.anonInfo':'🕵️ Vuoi rimanere anonimo? Puoi nascondere il tuo nome agli altri collezionisti. Solo tu lo vedrai. <a href="#" onclick="showPage(\'profile\');return false;" style="color:var(--accent);">Imposta l\'anonimato qui</a>.',
@@ -27061,7 +27071,7 @@ const i18n = {
 'contact.intro':'Hai trovato qualche pezzo raro che non è censito nel sito?<br>Vuoi avere altre informazioni sugli Sgorbions?<br>Vuoi segnalare un errore?<br>O vuoi semplicemente fare i complimenti all\'amministratore?<br><br>Per una qualsiasi di queste cose, inviaci un messaggio !',
 'contact.email.ph':'la-tua@e-mail.com',
 'contact.info':'Informazioni di contatto',
-'newsletter.title':'Invia Newsletter','newsletter.subject':'Oggetto','newsletter.subject.ph':'es. Nuova serie aggiunta !','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate',
+'newsletter.title':'Invia Newsletter','newsletter.subject':'Articolo','newsletter.subject.ph':'es. Nuova serie aggiunta !','newsletter.body':'Corpo del messaggio','newsletter.body.ph':'Scrivi il messaggio per gli utenti selezionati...','newsletter.recipients':'Destinatari','newsletter.selectAll':'Seleziona tutti','newsletter.deselectAll':'Deseleziona tutti','newsletter.send':'📧 Invia agli utenti selezionati','newsletter.log':'Ultime e-mail inviate',
 'classifica.best':'Di chi è la lista con punteggio rarità maggiore ?','classifica.levels':'Livelli di Collezionista Sgorbions',
 'admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio rarità minimo','admin.levels.save':'Salva livello',
 'hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.',
@@ -27085,7 +27095,7 @@ const i18n = {
     'home.featured.btn':'Vedi Tutte le Serie →',
     'home.how.eyebrow':'Come Funziona','home.how.title':'La Tua Collezione, Organizzata',
     'how.1.title':'Sfoglia l\'Inventario','how.1.desc':'Esplora tutte le serie di Sgorbions con foto e descrizioni complete.',
-    'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di oggetti nella tua lista rispetto all\'Inventario Sgorbions.',
+    'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
     'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri oggetti','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
@@ -27093,7 +27103,7 @@ const i18n = {
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici !',
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'E-mail','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
-    "contact.privacy":"Per poterti rispondere conserviamo il tuo indirizzo e-mail e il testo del messaggio. Se non hai un account sul sito, dopo 6 mesi il messaggio viene <strong>cancellato del tutto</strong>, indirizzo compreso. Se ce l'hai, resta finché non elimini l'account.",'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Oggetto','form.subject.ph':'Ho trovato uno Sgorbio raro !','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
+    "contact.privacy":"Per poterti rispondere conserviamo il tuo indirizzo e-mail e il testo del messaggio. Se non hai un account sul sito, dopo 6 mesi il messaggio viene <strong>cancellato del tutto</strong>, indirizzo compreso. Se ce l'hai, resta finché non elimini l'account.",'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Articolo','form.subject.ph':'Ho trovato uno Sgorbio raro !','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
     'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','form.newsletterLabel':'Vuoi ricevere la newsletter? *','form.newsletter.opt.none':'— Seleziona —','form.newsletter.opt.yes':'Sì, voglio riceverla','form.newsletter.opt.no':'No, grazie','form.newsletter.hint':'Rispondere è obbligatorio, ma sei libero di dire di no: la registrazione funziona comunque. Potrai cambiare idea quando vuoi dal tuo profilo.','profile.emailPrefs.title':'Preferenze e-mail','profile.newsletter':'Voglio ricevere la newsletter di figurinesgorbions.it','profile.newsletter.hint':'Ricevi le ultime novità sull\'inventario degli Sgorbions.<br>Puoi attivarla o disattivarla quando vuoi.','newsletterConsent.title':'📧 Vuoi ricevere la newsletter?','newsletterConsent.body':'Non te l\'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell\'Inventario Sgorbions.<br>Nessuna pubblicità!<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.','newsletterConsent.yes':'Sì, iscrivimi','newsletterConsent.no':'No, grazie','form.privacyNotice':'Registrandoti, accetti la nostra <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Informativa sulla Privacy</a>.','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
     'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.desc.en':'Descrizione (Inglese)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
@@ -27102,7 +27112,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
-    'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità massiva','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli oggetti non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista oggetti non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista oggetti non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
+    'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità massiva','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
 'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
@@ -27143,7 +27153,7 @@ function t(key) { return (i18n[currentLang] || i18n.en)[key] || (i18n.en)[key] |
 function aggiornaTestiRicercaSezione() {
   if (!currentSection) return;
   const it = (currentLang === 'it');
-  const nome = (getSectionLabel(currentSection) || (it ? 'oggetti' : 'items')).toLowerCase();
+  const nome = (getSectionLabel(currentSection) || (it ? 'articoli' : 'items')).toLowerCase();
   const si = document.getElementById('items-search');
   if (si) si.placeholder = (it ? 'Cerca ' : 'Search ') + nome + '...';
   const st = document.getElementById('items-search-title');
@@ -29701,8 +29711,8 @@ function ebayApriBtn(id) {
   const ic = (comando, simbolo, titolo) => `<span onclick="event.stopPropagation();${comando}" title="${titolo}"
     style="cursor:pointer;color:var(--action-admin);font-size:0.95rem;padding:0 3px;">${simbolo}</span>`;
   return `<span style="white-space:nowrap;">`
-    + ic(`apriModificaItem('${id}')`, '✎', it ? 'Modifica: apre la scheda dell\'oggetto' : 'Edit: open the item card')   // v6.105
-    + ic(`openFigDetail('${id}')`, '↗', it ? 'Scheda: apre il dettaglio dell\'oggetto' : 'Card: open the item detail')
+    + ic(`apriModificaItem('${id}')`, '✎', it ? 'Modifica: apre la scheda dell\'articolo' : 'Edit: open the item card')   // v6.105
+    + ic(`openFigDetail('${id}')`, '↗', it ? 'Scheda: apre il dettaglio dell\'articolo' : 'Card: open the item detail')
     + `</span>`;
 }
 function ebayToggleSel(id, ev) {
@@ -29743,11 +29753,11 @@ async function ebayRigeneraTitoli() {
 
   const bersagli = [];
   for (const s of serie) for (const item of (s.items || [])) if (item.forSale) bersagli.push({ s, item });
-  if (!bersagli.length) { toast(it ? 'Nessun oggetto marcato Ebay nell\u2019Inventario' : 'No items marked Ebay', 'error'); return; }
+  if (!bersagli.length) { toast(it ? 'Nessun articolo marcato Ebay nell\u2019Inventario' : 'No items marked Ebay', 'error'); return; }
 
   const scritti = bersagli.filter(b => (b.item.ebayTitleIt || '').trim() || (b.item.ebayTitleEn || '').trim()).length;
   const domanda = it
-    ? ('Rigenerare titolo IT ed EN di ' + bersagli.length + ' oggetti, in tutto l\u2019Inventario?' +
+    ? ('Rigenerare titolo IT ed EN di ' + bersagli.length + ' articoli, in tutto l\u2019Inventario?' +
        (scritti ? '\n\nAttenzione: ' + scritti + ' hanno già un titolo salvato, comprese le correzioni fatte a mano. Verranno sovrascritti.' : ''))
     : ('Regenerate IT and EN titles of ' + bersagli.length + ' items across the whole catalogue?' +
        (scritti ? '\n\n' + scritti + ' already have a saved title, including manual fixes. They will be overwritten.' : ''));
@@ -29825,7 +29835,7 @@ async function ebayImpostaCoda(valore) {
   _ebaySelected.clear();
   try { renderEbayViewTable(); } catch (e) { console.error('ebayImpostaCoda, ridisegno', e); }
   const esito = it
-    ? (valore ? (toccati + (toccati === 1 ? ' oggetto messo' : ' oggetti messi') + ' in coda') : (toccati + (toccati === 1 ? ' oggetto tolto' : ' oggetti tolti') + ' dalla coda'))
+    ? (valore ? (toccati + (toccati === 1 ? ' articolo messo' : ' articoli messi') + ' in coda') : (toccati + (toccati === 1 ? ' articolo tolto' : ' articoli tolti') + ' dalla coda'))
     : (toccati + ' item(s) ' + (valore ? 'queued' : 'removed from the queue'));
   toast(esito + (errori ? (it ? ' (' + errori + ' serie NON salvate, vedi console)' : ' (' + errori + ' series failed)') : ''), errori ? 'error' : 'success');
 }
@@ -29839,7 +29849,7 @@ async function ebayApplicaTitoli() {
   // Sovrascrivere un titolo scritto a mano è la sola cosa irreversibile qui: si chiede prima.
   const giaScritti = scelti.filter(f => (f.ebayTitleIt || '').trim() || (f.ebayTitleEn || '').trim()).length;
   const domanda = it
-    ? ('Scrivere il titolo generato su ' + scelti.length + (scelti.length === 1 ? ' oggetto' : ' oggetti') + '?' +
+    ? ('Scrivere il titolo generato su ' + scelti.length + (scelti.length === 1 ? ' articolo' : ' articoli') + '?' +
        (giaScritti ? '\n\nAttenzione: ' + giaScritti + (giaScritti === 1 ? ' ha' : ' hanno') + ' già un titolo scritto a mano, che verrà sovrascritto.' : ''))
     : ('Write the generated title on ' + scelti.length + ' item(s)?' + (giaScritti ? '\n\n' + giaScritti + ' already have a manual title that will be overwritten.' : ''));
   if (!confirm(domanda)) return;
@@ -29861,7 +29871,7 @@ async function ebayApplicaTitoli() {
   _cache.figurines = figs;
   _ebaySelected.clear();
   try { renderEbayViewTable(); } catch (e) { console.error('ebayApplicaTitoli', e); }
-  toast(it ? ('Titolo scritto su ' + salvati + (salvati === 1 ? ' oggetto' : ' oggetti')) : ('Title written on ' + salvati + ' item(s)'), 'success');
+  toast(it ? ('Titolo scritto su ' + salvati + (salvati === 1 ? ' articolo' : ' articoli')) : ('Title written on ' + salvati + ' item(s)'), 'success');
 }
 
 // Modifica in cella: il testo diventa un input, Invio o uscita salvano, Esc annulla.
@@ -30033,7 +30043,7 @@ function renderEbayViewTable() {
   const selector = `<div style="display:flex;gap:0.5rem;margin-bottom:0.75rem;align-items:center;">${tab('it', '🇮🇹 eBay.it')}${tab('com', '🇺🇸 eBay.com')}${tab('confronto', '⇄ ' + (it ? 'Titoli mercato a confronto' : 'Titles side by side'))}<span style="flex:1;"></span>${market === 'confronto' ? '' : btnSoloTitolo}</div>` + selettoreAccount;
   if (market === 'confronto') { renderEbayConfrontoTitoli(tableEl, selector); renderEbayOversizeTable(); return; }
   if (!figs.some(f => f.forSale)) {
-    tableEl.innerHTML = selector + `<p style="color:var(--text);font-style:italic;font-size:0.88rem;">${it ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
+    tableEl.innerHTML = selector + `<p style="color:var(--text);font-style:italic;font-size:0.88rem;">${it ? 'Nessun articolo marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
     renderEbayOversizeTable();
     return;
   }
@@ -30079,7 +30089,7 @@ function renderEbayViewTable() {
     'mai pubblicato':  { seg: '·', col: 'var(--text)',            it: 'mai pubblicato',  en: 'never published' },
   };
   const statoCell = f => {
-    if (!riguardaAccount(f)) return `<span style="color:var(--border);" title="${it ? 'Questo oggetto non va in vendita su questo account' : 'Not for sale on this account'}">${it ? 'non qui' : 'not here'}</span>`;
+    if (!riguardaAccount(f)) return `<span style="color:var(--border);" title="${it ? 'Questo articolo non va in vendita su questo account' : 'Not for sale on this account'}">${it ? 'non qui' : 'not here'}</span>`;
     const e = statoEbay(f);
     const inCoda = f.daPubblicare
       ? `<span title="${it ? 'In coda: al prossimo lancio del programma viene creato o aggiornato' : 'Queued for the next run'}">📤</span> ` : '';
@@ -30129,7 +30139,7 @@ function renderEbayViewTable() {
     const testa = (comando) => `<h3 onclick="${comando}" style="font-size:0.92rem;font-weight:700;color:var(--text);margin:1.5rem 0 0.5rem;${comando ? 'cursor:pointer;user-select:none;' : ''}">
       <span style="display:inline-block;width:1em;color:var(--text);">${comando ? (chiusa ? '▸' : '▾') : ''}</span>${ebaySectionLabel(sec)} <span style="color:var(--text);font-weight:400;">(${items.length})</span></h3>`;
     if (!items.length) {
-      return testa('') + `<p style="color:var(--text);font-style:italic;font-size:0.85rem;margin:0;">${it ? 'Nessun oggetto marcato Ebay.' : 'No items marked Ebay.'}</p>`;
+      return testa('') + `<p style="color:var(--text);font-style:italic;font-size:0.85rem;margin:0;">${it ? 'Nessun articolo marcato Ebay.' : 'No items marked Ebay.'}</p>`;
     }
     const titolo = testa(`toggleEbaySection('${sec}')`);
     if (chiusa) return titolo;
@@ -30210,7 +30220,7 @@ function renderEbayConfrontoTitoli(tableEl, selector) {
   const it = (currentLang === 'it');
   const figs = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.forSale);
   if (!figs.length) {
-    tableEl.innerHTML = selector + `<p style="color:var(--text);font-style:italic;font-size:0.88rem;">${it ? 'Nessun oggetto marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
+    tableEl.innerHTML = selector + `<p style="color:var(--text);font-style:italic;font-size:0.88rem;">${it ? 'Nessun articolo marcato Ebay in questa serie.' : 'No items marked Ebay in this series.'}</p>`;
     return;
   }
   const esc = s => (s || '').replace(/</g, '&lt;');
@@ -30259,12 +30269,12 @@ function renderEbayConfrontoTitoli(tableEl, selector) {
   const tagliati = ordinati.filter(r => ebayTitleStato(r.f, 'it') === 'tagliato' || ebayTitleStato(r.f, 'com') === 'tagliato').length;
   const btnRigenera = currentUser?.isAdmin ? `<div style="margin-bottom:0.75rem;">
     <button class="btn-primary btn-admin" onclick="ebayRigeneraTitoli()" style="font-size:0.82rem;padding:0.35rem 0.9rem;"
-      title="${it ? 'Riscrive ebayTitleIt ed ebayTitleEn di TUTTI gli oggetti marcati Ebay dell\u2019Inventario' : 'Rewrites the IT and EN titles of EVERY item marked Ebay in the catalogue'}">${it ? '🔁 Rigenera tutti i titoli (tutto l’Inventario)' : '🔁 Regenerate all titles (whole catalogue)'}</button>
+      title="${it ? 'Riscrive ebayTitleIt ed ebayTitleEn di TUTTI gli articoli marcati Ebay dell\u2019Inventario' : 'Rewrites the IT and EN titles of EVERY item marked Ebay in the catalogue'}">${it ? '🔁 Rigenera tutti i titoli (tutto l’Inventario)' : '🔁 Regenerate all titles (whole catalogue)'}</button>
   </div>` : '';
   const th = (label, extra = '') => `<th style="padding:0.4rem 0.6rem;text-align:left;white-space:nowrap;color:var(--text);${extra}">${label}</th>`;
   tableEl.innerHTML = selector + btnRigenera +
     `<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.75rem;">${it
-      ? ordinati.length + (ordinati.length === 1 ? ' oggetto marcato Ebay' : ' oggetti marcati Ebay') + ', ordinati per titolo italiano; per ciascuno le due righe di mercato. ' +
+      ? ordinati.length + (ordinati.length === 1 ? ' articolo marcato Ebay' : ' articoli marcati Ebay') + ', ordinati per titolo italiano; per ciascuno le due righe di mercato. ' +
         (tagliati ? tagliati + (tagliati === 1 ? ' porta la forbice ✂ (tagliato dentro il nome). ' : ' portano la forbice ✂ (tagliati dentro il nome). ') : '') +
         (identici ? identici + (identici === 1 ? ' ha' : ' hanno') + ' i due titoli identici (=): in quel testo non compare nessuna parola del glossario.' : 'Nessuna coppia identica.')
       : ordinati.length + ' item(s) marked Ebay, sorted by Italian title; two market rows each. ' +
@@ -30321,7 +30331,7 @@ function renderEbayOversizeTable() {
   }).join('');
   box.innerHTML = titolo +
     `<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.75rem;">${it
-      ? 'Qui finiscono solo i titoli che non si salvano con le regole automatiche: tolta la coda "- Gpk - Topps" restano comunque oltre gli 80 caratteri, e il taglio cade dentro il nome. ' + eccedenti.length + (eccedenti.length === 1 ? ' oggetto' : ' oggetti') + ' da riscrivere a mano.'
+      ? 'Qui finiscono solo i titoli che non si salvano con le regole automatiche: tolta la coda "- Gpk - Topps" restano comunque oltre gli 80 caratteri, e il taglio cade dentro il nome. ' + eccedenti.length + (eccedenti.length === 1 ? ' articolo' : ' articoli') + ' da riscrivere a mano.'
       : 'Only titles the automatic rules cannot save: even without the "- Gpk - Topps" tail they exceed 80 characters, so the cut falls inside the name. ' + eccedenti.length + ' item(s) to rewrite by hand.'}</p>` +
     `<div style="overflow-x:auto;"><table class="data-table" style="border-spacing:0;width:100%;"><thead><tr>
       <th style="padding:0.4rem 0.6rem;text-align:right;white-space:nowrap;color:var(--text);width:1%;">#</th>${ebayTh('_oversize', 'sezione', it ? 'Sezione' : 'Section')}${ebayTh('_oversize', 'nome', it ? 'Nome completo' : 'Full name')}${ebayTh('_oversize', 'troncato', it ? 'Titolo troncato (80)' : 'Truncated title (80)')}${ebayTh('_oversize', 'intero', it ? 'Titolo intero' : 'Full title')}${ebayTh('_oversize', 'caratteri', it ? 'Caratteri' : 'Chars')}<th style="width:1%;"></th>
@@ -30725,7 +30735,7 @@ async function saveSeries() {
   if (retroChangeTypes.some(t => /^error[ei]\s+di\s+stampa$/i.test(t))) {
     retroChangeTypes = retroChangeTypes.filter(t => !/^error[ei]\s+di\s+stampa$/i.test(t));
     toast(currentLang === 'it'
-      ? '"Errore di stampa" non \u00e8 pi\u00f9 un tipo di change: ora \u00e8 un tipo di oggetto a s\u00e9. L\u2019ho tolto dalla lista.'
+      ? '"Errore di stampa" non \u00e8 pi\u00f9 un tipo di change: ora \u00e8 un tipo di articolo a s\u00e9. L\u2019ho tolto dalla lista.'
       : '"Print error" is no longer a change type: it is now an object type of its own. Removed from the list.',
       'info');
   }
@@ -30855,7 +30865,7 @@ function _aggiornaPulsanteEliminaSerie(seriesId) {
   // stesso aspetto.
   btn.disabled = n > 0;
   if (hint) hint.textContent = n > 0
-    ? (it ? `Non si può eliminare: la serie ha ancora ${n} prodotti collegati (figurine, retro, album, bustine, altri oggetti). Svuotala prima.`
+    ? (it ? `Non si può eliminare: la serie ha ancora ${n} prodotti collegati (figurine, retro, album, bustine, altri articoli). Svuotala prima.`
           : `Cannot delete: the series still has ${n} linked products. Empty it first.`)
     : (it ? 'La serie è vuota: si può eliminare.' : 'The series is empty: it can be deleted.');
 }
@@ -31252,7 +31262,7 @@ const ARTICOLI = {
   extras: {
     pos: 6,
     it: 'Altri oggetti', en: 'Other Items',
-    itSing: 'oggetto', enSing: 'item',
+    itSing: 'articolo', enSing: 'item',
     genere: 'm',
     icona: '&#127873;',
     colonne: { d: 4, m: 3 },
@@ -31450,7 +31460,7 @@ function renderAdminVersioniArticolo() {
         ? 'Le <strong>cinque versioni</strong> sono alternative alla base. Qui si dice, per ogni articolo, ' +
           '<strong>quali possono esistere</strong> — la logica è positiva: la casella spenta vuol dire ' +
           '<em>non può esistere</em>, non <em>non ce ne sono</em>. ' +
-          'Le caselle sono nate accese dove i dati avevano già oggetti di quel tipo.'
+          'Le caselle sono nate accese dove i dati avevano già articoli di quel tipo.'
         : 'The <strong>five versions</strong> are alternatives to the base. Here you declare, per article, ' +
           '<strong>which ones can exist</strong>. Positive logic: unchecked means <em>cannot exist</em>.') +
     '</p>' +
@@ -31496,7 +31506,7 @@ function renderAdminVersioniArticolo() {
     '<p style="font-size:0.8rem;color:var(--text);margin-top:0.9rem;line-height:1.5;">' +
       (it
         ? '⚠️ <strong>In questa versione del sito queste spunte non comandano ancora niente</strong>: ' +
-          'la scheda oggetto continua a decidere come prima. Servono a essere compilate e controllate ora, ' +
+          'la scheda articolo continua a decidere come prima. Servono a essere compilate e controllate ora, ' +
           'così quando comanderanno (v6.234) partiranno già giuste.' +
           (seminato ? '' : ' <strong>Non risultano ancora seminate</strong>: riapri la pagina da admin.')
         : '⚠️ <strong>These checkboxes do not drive anything yet</strong> in this release.') +
@@ -32235,7 +32245,7 @@ function verificaPartenzeSuiDati(silenzioSeOk) {
     if (!silenzioSeOk) console.log('[v6.235] \u2705 partenze: nessuna violazione. La tabella descrive i dati.');
     return violazioni;
   }
-  console.warn('[v6.235] \uD83D\uDD34 ' + violazioni.length + ' oggetti hanno una partenza che la tabella '
+  console.warn('[v6.235] \uD83D\uDD34 ' + violazioni.length + ' articoli hanno una partenza che la tabella '
     + '\u00ABDa chi pu\u00F2 nascere ogni versione\u00BB non ammette. Sono nati sotto la regola vecchia, '
     + 'piu\' larga. Da oggi la loro tendina non offre piu\' quella partenza.');
   const perCoppia = new Map();
@@ -33606,7 +33616,7 @@ function openAddTipoProdottoModal(idDaModificare) {
     del.style.opacity = _dentro > 0 ? '0.45' : '';
     del.style.cursor = _dentro > 0 ? 'not-allowed' : '';
     del.title = _dentro > 0
-      ? (it ? 'Non si può eliminare: contiene ' + _dentro + (_dentro === 1 ? ' oggetto.' : ' oggetti.') +
+      ? (it ? 'Non si può eliminare: contiene ' + _dentro + (_dentro === 1 ? ' articolo.' : ' articoli.') +
               ' Spostali o cancellali prima.'
             : 'Cannot delete: it holds ' + _dentro + ' item(s).')
       : (it ? 'Elimina questo tipo di articolo' : 'Delete this item type');
@@ -33631,12 +33641,12 @@ async function eliminaTipoProdotto() {
   // scrittura e' l'unico che non si puo' scavalcare. Stessa forma della v6.143/B.
   if (dentro > 0) {
     toast((it ? 'Non si può eliminare "' + _nomeTipo(t) + '": contiene ' + dentro +
-                (dentro === 1 ? ' oggetto.' : ' oggetti.')
+                (dentro === 1 ? ' articolo.' : ' articoli.')
               : 'Cannot delete "' + _nomeTipo(t) + '": it holds ' + dentro + ' item(s).'), 'error', null, 6000);
     return;
   }
   const msg = it
-    ? 'Elimino il tipo di articolo "' + _nomeTipo(t) + '"?\n\nNon contiene nessun oggetto.'
+    ? 'Elimino il tipo di articolo "' + _nomeTipo(t) + '"?\n\nNon contiene nessun articolo.'
     : 'Delete item type "' + _nomeTipo(t) + '"?\n\nIt holds no items.';
   if (!confirm(msg)) return;
   try {
@@ -33672,7 +33682,7 @@ async function salvaTipoProdotto() {
   // accorgersi di aver deciso. Ora si dichiara, e il messaggio dice con cosa si compila — un campo
   // obbligatorio che non spiega cosa vuole e' un ostacolo, non una regola.
   if (!_ord.passi.length) {
-    toast((it ? 'L\u2019ordinamento degli oggetti è obbligatorio. Ammessi: '
+    toast((it ? 'L\u2019ordinamento degli articoli è obbligatorio. Ammessi: '
                 + Object.keys(CAMPI_ORDINAMENTO_TIPO).join(', ') + '.'
               : 'The sort order is required.'), 'error', null, 9000);
     return;
@@ -35730,7 +35740,7 @@ function renderSeriesMeta(s) {
     figurines: { p: it ? 'figurine' : 'stickers', s: it ? 'figurina' : 'sticker', f: true  },
     retros:    { p: it ? 'retro'    : 'retros',   s: it ? 'retro'    : 'retro',   f: false },
     albums:    { p: it ? 'album'    : 'albums',   s: it ? 'album'    : 'album',   f: false },
-    extras:    { p: it ? 'oggetti'  : 'items',    s: it ? 'oggetto'  : 'item',    f: false },
+    extras:    { p: it ? 'articoli'  : 'items',    s: it ? 'articolo'  : 'item',    f: false },
     bustine:   { p: it ? 'bustine'  : 'wrappers',    s: it ? 'bustina'  : 'wrapper',    f: true  }
   };
 
@@ -36296,16 +36306,16 @@ function _etichettaPartenza(f) {
 function _validaBaseId(rec, id, figs) {
   const it = currentLang === 'it';
   if (!id) return null; // vuoto = scollegato, ed e' ammesso
-  if (id === rec.id) return it ? 'Un oggetto non puo\' essere base di se stesso.' : 'An item cannot be its own base.';
+  if (id === rec.id) return it ? 'Un articolo non puo\' essere base di se stesso.' : 'An item cannot be its own base.';
   const b = figs.find(x => x.id === id);
-  if (!b) return it ? 'Nessun oggetto con id ' + id + ' — controlla di aver incollato tutto.'
+  if (!b) return it ? 'Nessun articolo con id ' + id + ' — controlla di aver incollato tutto.'
                     : 'No item with id ' + id + ' — check you pasted the whole thing.';
-  if (b.seriesId !== rec.seriesId) return it ? 'Quell\'oggetto e\' di un\'altra serie.' : 'That item belongs to another series.';
-  if ((b.section || 'figurines') !== (rec.section || 'figurines')) return it ? 'Quell\'oggetto e\' di un\'altra sezione.' : 'That item belongs to another section.';
+  if (b.seriesId !== rec.seriesId) return it ? 'Quell\'articolo e\' di un\'altra serie.' : 'That item belongs to another series.';
+  if ((b.section || 'figurines') !== (rec.section || 'figurines')) return it ? 'Quell\'articolo e\' di un\'altra sezione.' : 'That item belongs to another section.';
   // v6.133 - stesso gruppo: il numero di un figlio si eredita dalla figurina di partenza, quindi
   // sceglierne una di un altro numero rinumererebbe il record senza dirlo.
   if (!_stessoGruppoDi(rec, b)) return it
-    ? 'Quell\'oggetto ha un altro numero (' + (b.number ?? '—') + '): sceglierlo rinumererebbe questo record.'
+    ? 'Quell\'articolo ha un altro numero (' + (b.number ?? '—') + '): sceglierlo rinumererebbe questo record.'
     : 'That item has a different number (' + (b.number ?? '—') + '): choosing it would renumber this record.';
   return null;
 }
@@ -36450,7 +36460,7 @@ function contaCaratteriEbayTitolo(idInput, idSpan) {
 function cloneFigurine(itemId) {
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
   const src = getData('figurines', []).find(x => x.id === itemId);
-  if (!src) { toast((currentLang === 'it' ? 'Oggetto non trovato' : 'Item not found'), 'error'); return; }
+  if (!src) { toast((currentLang === 'it' ? 'Articolo non trovato' : 'Item not found'), 'error'); return; }
   closeModal('fig-detail-modal');            // se il clone parte dalla scheda di dettaglio, la chiude
   // v6.105 (§12.1, tappa 2) - IL CLONE E' UNA BOZZA COPIATA DALLA SORGENTE.
   // Prima era: apri la finestra sull'originale, poi svuota `edit-fig-id` perche' il salvataggio
@@ -36708,7 +36718,7 @@ function _controllaVersioniMultiple(f) {
   if (addosso.length < 2) return;
   if (!_versioniMultipleViste) {
     _versioniMultipleViste = new Set();
-    console.warn('[v6.234] \uD83D\uDD34 Oggetti con PIU\' DI UNA versione addosso: sui tre ordini di '
+    console.warn('[v6.234] \uD83D\uDD34 Articoli con PIU\' DI UNA versione addosso: sui tre ordini di '
       + 'precedenza di prima davano risposte diverse, quindi su questi l\'unificazione CAMBIA '
       + 'cio\' che si legge. Vanno guardati:');
   }
@@ -37147,7 +37157,7 @@ function toggleWishlistFilter() {
 // il bug segnalato da Franco
 async function _applyBulkFigurineUpdate(updateFn, confirmMsg, successMsg, skipConfirm) {
   const items = getCurrentlyFilteredItems();
-  if (!items.length) { toast(currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali' : 'No items found with the current filters', 'error'); return false; }
+  if (!items.length) { toast(currentLang === 'it' ? 'Nessun articolo trovato con i filtri attuali' : 'No items found with the current filters', 'error'); return false; }
   if (!skipConfirm && !confirm(confirmMsg(items.length))) return false;
   const seriesList = getData('series', []);
   const sIdx = seriesList.findIndex(s => s.id === currentSeriesId);
@@ -37179,9 +37189,9 @@ async function _applyBulkFigurineUpdate(updateFn, confirmMsg, successMsg, skipCo
 
 function openEbayBulkModal() {
   const items = getCurrentlyFilteredItems();
-  if (!items.length) { toast(currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali' : 'No items found with the current filters', 'error'); return; }
+  if (!items.length) { toast(currentLang === 'it' ? 'Nessun articolo trovato con i filtri attuali' : 'No items found with the current filters', 'error'); return; }
   document.getElementById('ebay-bulk-modal-desc').textContent = currentLang === 'it'
-    ? `I valori inseriti verranno applicati a tutti i ${items.length} oggetti attualmente visualizzati.`
+    ? `I valori inseriti verranno applicati a tutti i ${items.length} articoli attualmente visualizzati.`
     : `These values will be applied to all ${items.length} currently displayed items.`;
   document.getElementById('ebay-bulk-price').value = '';
   document.getElementById('ebay-bulk-quantity').value = 1;
@@ -37196,7 +37206,7 @@ async function confirmEbayBulkApply() {
   const ok = await _applyBulkFigurineUpdate(
     it => ({ ...it, forSale: true, price, quantity, condition }),
     null,
-    n => currentLang === 'it' ? `✅ ${n} oggetti aggiornati per Ebay` : `✅ ${n} items updated for Ebay`,
+    n => currentLang === 'it' ? `✅ ${n} articoli aggiornati per Ebay` : `✅ ${n} items updated for Ebay`,
     true
   );
   if (ok) closeModal('ebay-bulk-modal');
@@ -37205,8 +37215,8 @@ async function confirmEbayBulkApply() {
 async function unmarkFilteredForSale() {
   await _applyBulkFigurineUpdate(
     it => ({ ...it, forSale: false, price: null, quantity: null, condition: null }),
-    n => currentLang === 'it' ? `Togliere "Ebay" a tutti i ${n} oggetti attualmente visualizzati?` : `Remove "Ebay" from all ${n} currently displayed items?`,
-    n => currentLang === 'it' ? `✅ "Ebay" tolto da ${n} oggetti` : `✅ "Ebay" removed from ${n} items`
+    n => currentLang === 'it' ? `Togliere "Ebay" a tutti i ${n} articoli attualmente visualizzati?` : `Remove "Ebay" from all ${n} currently displayed items?`,
+    n => currentLang === 'it' ? `✅ "Ebay" tolto da ${n} articoli` : `✅ "Ebay" removed from ${n} items`
   );
 }
 
@@ -39092,7 +39102,7 @@ function renderItems() {
   }
 
   if (!allItems.length) {
-    grid.innerHTML = `<div class="empty-state"><p class="empty-title" style="white-space:nowrap;">${currentLang === 'it' ? 'Nessun oggetto ancora !' : 'Nothing here yet !'}</p></div>`;
+    grid.innerHTML = `<div class="empty-state"><p class="empty-title" style="white-space:nowrap;">${currentLang === 'it' ? 'Nessun articolo ancora !' : 'Nothing here yet !'}</p></div>`;
     document.getElementById('items-pagination').innerHTML = '';
     return;
   }
@@ -39189,7 +39199,7 @@ function renderItems() {
     if (tot <= 1) return '';
     const _ser = getData('series', []).find(s => s.id === currentSeriesId);
     const firstNum = currentSection === 'retros' ? 1 : _ser?.firstNumber;
-    const sectionLabelLower = (getSectionLabel(currentSection) || (currentLang === 'it' ? 'oggetti' : 'items')).toLowerCase();
+    const sectionLabelLower = (getSectionLabel(currentSection) || (currentLang === 'it' ? 'articoli' : 'items')).toLowerCase();
     // v5.893 — la coda dei risultati passa da "${label} ${from}..${to} | ${total} ${label}"
     // a "${label} ${from}..${to} di ${total}": via la pipe e la ripetizione della parola.
     // Senza range (sezioni senza numeri) resta "${total} ${label}".
@@ -40150,7 +40160,7 @@ function ebayCampiCambiati(prima, dopo) {
 let _savingFigurine = false;
 
 async function deleteFigurine(id) {
-  if (!confirm('Eliminare questo oggetto?')) return;
+  if (!confirm('Eliminare questo articolo?')) return;
   await fsDelete('figurines', id);
   _cache.figurines = _cache.figurines.filter(x => x.id !== id);
   renderItems(); renderHomeStats(); updateSectionCounts();
@@ -40852,20 +40862,20 @@ function renderAdminFigurineInvisibili() {
   const testata =
     '<h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">&#129781; ' + (it ? 'Figurine invisibili' : 'Hidden stickers') + '</h3>' +
     '<p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;max-width:900px;">' +
-      (it ? 'Oggetti con il campo <b>Invisibile</b> attivo: esistono nell\u2019Inventario ma non compaiono a chi non è admin — né in griglia, né nella ricerca, né nei caroselli, né nei contatori. Qui ci sono tutti, per non perderli di vista.'
+      (it ? 'Articoli con il campo <b>Invisibile</b> attivo: esistono nell\u2019Inventario ma non compaiono a chi non è admin — né in griglia, né nella ricerca, né nei caroselli, né nei contatori. Qui ci sono tutti, per non perderli di vista.'
           : 'Items with the <b>Hidden</b> flag: they exist in the catalogue but are not shown to non-admins — not in the grid, the search, the carousels or the counters. They are all listed here so they do not get forgotten.') +
     '</p>';
 
   if (!invisibili.length) {
     el.innerHTML = '<div style="max-width:1100px;">' + testata +
-      '<p style="color:var(--text);">' + (it ? 'Nessun oggetto invisibile.' : 'No hidden items.') + '</p></div>';
+      '<p style="color:var(--text);">' + (it ? 'Nessun articolo invisibile.' : 'No hidden items.') + '</p></div>';
     return;
   }
 
   const th = t => '<th style="padding:8px 10px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);white-space:nowrap;">' + t + '</th>';
   const td = (t, st) => '<td style="padding:6px 10px;' + (st || '') + '">' + t + '</td>';
   el.innerHTML = '<div style="max-width:1100px;">' + testata +
-    '<div style="font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;">' + invisibili.length + ' ' + (it ? 'oggetti' : 'items') + '</div>' +
+    '<div style="font-size:0.85rem;color:var(--text);margin-bottom:0.6rem;">' + invisibili.length + ' ' + (it ? 'articoli' : 'items') + '</div>' +
     '<table style="width:100%;border-collapse:collapse;font-size:0.85rem;"><thead><tr style="background:var(--card2);">' +
       th(it ? 'Serie' : 'Series') + th(it ? 'Sottoserie' : 'Subseries') + th(it ? 'Sezione' : 'Section') +
       th('N.') + th(it ? 'Nome' : 'Name') + th('') +
@@ -44080,7 +44090,7 @@ function apriModificaItem(itemId) {
   const f = getData('figurines', []).find(x => x.id === itemId);
   // Il controllo c'e' perche' la finestra ce l'aveva: `openAddItemModal` su un id sconosciuto
   // apriva una form vuota che al salvataggio avrebbe CREATO un record. Meglio dirlo.
-  if (!f) { toast((currentLang === 'it' ? 'Oggetto non trovato' : 'Item not found'), 'error'); return; }
+  if (!f) { toast((currentLang === 'it' ? 'Articolo non trovato' : 'Item not found'), 'error'); return; }
   openFigDetail(itemId);
   switchToEditMode(itemId);
 }
@@ -44939,7 +44949,7 @@ async function removeBgFromSeries() {
 }
 function removeFigPhoto(slot) {
   slot = slot || 'fronte';
-  if (!confirm(currentLang === 'it' ? 'Rimuovere la foto da questo oggetto?' : 'Remove the photo from this item?')) return;
+  if (!confirm(currentLang === 'it' ? 'Rimuovere la foto da questo articolo?' : 'Remove the photo from this item?')) return;
   _scriviSlot(slot, '__remove__'); // segnale speciale per saveFigFromDetail
   const preview = document.getElementById(_SLOT_FOTO[slot].preview);
   if (preview) {
@@ -46961,7 +46971,7 @@ async function _rileggiDallaFascia(btn) {
     _mostraFasciaSorpasso();
     const ora = new Date().toLocaleTimeString(it ? 'it-IT' : 'en-US');
     toast(it
-      ? '🔄 Riletti ' + n + ' oggetti alle ' + ora + ' — puoi salvare. '
+      ? '🔄 Riletti ' + n + ' articoli alle ' + ora + ' — puoi salvare. '
         + 'Quello che era già a schermo si aggiorna quando cambi pagina.'
       : '🔄 ' + n + ' items reloaded at ' + ora + ' — you can save now. '
         + 'What was already on screen updates when you change page.',
@@ -48212,7 +48222,7 @@ async function clearStrayRetroId(figId) {
   const series = seriesList[sIdx];
   series.items = series.items || [];
   const iIdx = series.items.findIndex(x => x.id === figId);
-  if (iIdx < 0) { toast(currentLang === 'it' ? 'Oggetto non trovato' : 'Item not found', 'error'); return; }
+  if (iIdx < 0) { toast(currentLang === 'it' ? 'Articolo non trovato' : 'Item not found', 'error'); return; }
   series.items[iIdx] = { ...series.items[iIdx], retroId: null };
   try {
     await fsSave('series', series);
@@ -49057,7 +49067,7 @@ function renderAdminFunzioni() {
           // una cosa sola, letta a colpo d'occhio) e le due avvertenze si raccolgono sotto un unico
           // "NOTE:" invece di stare una in mezzo ai campi e una in fondo.
           (it
-            ? 'Riporta i campi comandati dalla base sui suoi oggetti collegati — <b>Change</b>, <b>Errori di stampa</b> e <b>Variazioni</b> (ufficiali e non).<br><br>' +
+            ? 'Riporta i campi comandati dalla base sui suoi articoli collegati — <b>Change</b>, <b>Errori di stampa</b> e <b>Variazioni</b> (ufficiali e non).<br><br>' +
               '<b>Campi allineati:</b><br>' +
               'Figurine: Nome.<br>' +
               'Retro: Nome, Sottonome, Categoria, Sottocategoria;<br><br>' +
@@ -49591,7 +49601,7 @@ function anteprimaAllineaFigli() {
           '<th style="padding:4px 6px;text-align:left;">' + (it?'Sezione':'Section') + '</th>' + /* v6.057 */
           // v6.237 - "Versione": la cella porta `_tipoFiglio`, cioe' la versione in forma breve.
           '<th style="padding:4px 6px;text-align:left;">' + (it?'Versione':'Version') + '</th>' +
-          '<th style="padding:4px 6px;text-align:left;">' + (it?'Oggetto':'Item') + '</th>' +
+          '<th style="padding:4px 6px;text-align:left;">' + (it?'Articolo':'Item') + '</th>' +
           '<th style="padding:4px 6px;text-align:left;">' + (it?'Campi':'Fields') + '</th>' +
           '<th style="padding:4px 6px;text-align:left;">' + (it?'Attuale':'Current') + '</th>' +
           '<th style="padding:4px 6px;text-align:left;">' + (it?'Nuovo (dalla base)':'New (from base)') + '</th>' +
@@ -49779,7 +49789,7 @@ function renderAdminFoto() {
     <div id="import-fotonn-section-content" style="display:none;">
     <p style="color:var(--text);font-size:0.85rem;margin-bottom:1.25rem;">
       ${currentLang==='it'
-        ? 'ISTRUZIONI:<br>Per figurine senza numero e per i Retro (base e Change), che non hanno un numero proprio. Seleziona la serie e indica cosa stai caricando (Figurine o Retro), poi seleziona le foto.<br><br><b>Figurine</b>: nome file = Nome esatto della figurina, es. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Retro (base e Change)</b>: nome file = <b>Nome completo</b> del Retro, esattamente come appare nella colonna "Nome Completo" della Vista tabellare. Il Nome completo include già Categoria, Nome e — per i Change — il Tipo in MAIUSCOLO, quindi distingue da solo un Change dal suo Retro base, e due Retro con lo stesso Nome in Categorie diverse. Es. <code>Animali - Gatto.jpg</code> per un Retro base, <code>Animali - Gatto - BORDO ORO.jpg</code> per un Change.<br><br>Nota: i caratteri <code>\ / : * ? " &lt; &gt; |</code> non sono ammessi nei nomi file, quindi vanno <b>omessi</b> dal nome del file — il confronto li ignora automaticamente da entrambe le parti (es. il Nome completo <code>Ma davvero? - Rosso</code> si abbina al file <code>Ma davvero - Rosso.jpg</code>, e <code>COMIC / FLICK IT - Anita</code> si abbina a <code>COMIC FLICK IT - Anita.jpg</code>). Vanno <b>tolti</b>, non sostituiti: se al posto di uno di questi metti un trattino o un underscore, il file non viene riconosciuto.<br><br>Se il nome del file non corrisponde a nessun oggetto (o corrisponde a più di uno), viene segnalato e saltato.<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
+        ? 'ISTRUZIONI:<br>Per figurine senza numero e per i Retro (base e Change), che non hanno un numero proprio. Seleziona la serie e indica cosa stai caricando (Figurine o Retro), poi seleziona le foto.<br><br><b>Figurine</b>: nome file = Nome esatto della figurina, es. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Retro (base e Change)</b>: nome file = <b>Nome completo</b> del Retro, esattamente come appare nella colonna "Nome Completo" della Vista tabellare. Il Nome completo include già Categoria, Nome e — per i Change — il Tipo in MAIUSCOLO, quindi distingue da solo un Change dal suo Retro base, e due Retro con lo stesso Nome in Categorie diverse. Es. <code>Animali - Gatto.jpg</code> per un Retro base, <code>Animali - Gatto - BORDO ORO.jpg</code> per un Change.<br><br>Nota: i caratteri <code>\ / : * ? " &lt; &gt; |</code> non sono ammessi nei nomi file, quindi vanno <b>omessi</b> dal nome del file — il confronto li ignora automaticamente da entrambe le parti (es. il Nome completo <code>Ma davvero? - Rosso</code> si abbina al file <code>Ma davvero - Rosso.jpg</code>, e <code>COMIC / FLICK IT - Anita</code> si abbina a <code>COMIC FLICK IT - Anita.jpg</code>). Vanno <b>tolti</b>, non sostituiti: se al posto di uno di questi metti un trattino o un underscore, il file non viene riconosciuto.<br><br>Se il nome del file non corrisponde a nessun articolo (o corrisponde a più di uno), viene segnalato e saltato.<br>Lo script rimuove lo sfondo, con AI, e aggiorna il database (Firebase).'
         : 'INSTRUCTIONS:<br>For unnumbered stickers and for Retros (base and Change), which don\'t have a number of their own. Select the series and what you\'re uploading (Stickers or Retro), then select the photos.<br><br><b>Stickers</b>: filename = exact sticker Name, e.g. <code>SGORBIO MAXIMUS.jpg</code>.<br><b>Retro (base and Change)</b>: filename = the Retro\'s <b>Full name</b>, exactly as shown in the "Full name" column of the Table view. The full name already includes Category, Name and — for Changes — the Type in UPPERCASE, so it alone tells a Change apart from its base Retro, and two Retros sharing the same Name in different Categories. E.g. <code>Animali - Gatto.jpg</code> for a base Retro, <code>Animali - Gatto - BORDO ORO.jpg</code> for a Change.<br><br>Note: the characters <code>\ / : * ? " &lt; &gt; |</code> aren\'t allowed in filenames, so <b>leave them out</b> — the match ignores them on both sides (e.g. the full name <code>Ma davvero? - Rosso</code> matches <code>Ma davvero - Rosso.jpg</code>, and <code>COMIC / FLICK IT - Anita</code> matches <code>COMIC FLICK IT - Anita.jpg</code>). They must be <b>removed</b>, not replaced: a dash or underscore in their place will not match.<br><br>If the filename doesn\'t match any item (or matches more than one), it is flagged and skipped.<br>The script removes the background with AI and updates the database (Firebase).'}
     </p>
 
@@ -49986,7 +49996,7 @@ async function startAdminFotoUpload() {
   // per scheda, quindi un oggetto creato altrove non ci sarebbe e il caricamento direbbe "Nessun
   // oggetto trovato" accusando il dato invece della propria cache.
   try {
-    if (await _rileggiFigurine()) fotoLog((currentLang==='it'?'Elenco oggetti riletto dal database.':'Item list re-read from the database.'), 'info');
+    if (await _rileggiFigurine()) fotoLog((currentLang==='it'?'Elenco articoli riletto dal database.':'Item list re-read from the database.'), 'info');
   } catch(e) { console.warn('_rileggiFigurine', e); fotoLog((currentLang==='it'?'Rilettura non riuscita: uso l\u2019elenco gia\u2019 in memoria.':'Re-read failed: using the list already in memory.'), 'warn'); }
   const allFigs = getData('figurines', []).filter(f => f.seriesId === seriesId && (f.section || 'figurines') === 'figurines');
   fotoLog((currentLang==='it'?'Figurine nella serie:':'Stickers in series:') + ' ' + allFigs.length, 'info');
@@ -50151,13 +50161,13 @@ async function startAdminFotoNoNumberUpload() {
   // per scheda, quindi un oggetto creato altrove non ci sarebbe e il caricamento direbbe "Nessun
   // oggetto trovato" accusando il dato invece della propria cache.
   try {
-    if (await _rileggiFigurine()) fotoNnLog((currentLang==='it'?'Elenco oggetti riletto dal database.':'Item list re-read from the database.'), 'info');
+    if (await _rileggiFigurine()) fotoNnLog((currentLang==='it'?'Elenco articoli riletto dal database.':'Item list re-read from the database.'), 'info');
   } catch(e) { console.warn('_rileggiFigurine', e); fotoNnLog((currentLang==='it'?'Rilettura non riuscita: uso l\u2019elenco gia\u2019 in memoria.':'Re-read failed: using the list already in memory.'), 'warn'); }
   const allFigs = getData('figurines', []);
   const candidates = allFigs
     .filter(f => f.seriesId === seriesId && (scope === 'retro' ? f.section === 'retros' : (f.section === 'figurines' && !f.number && !f.isVariation && !f.isUnofficialVariation && !f.isChange)))
     .map(f => ({ item: f, key: (scope === 'retro') ? (f.fullName || computeFullName(f, allFigs)) : f.name }));
-  fotoNnLog((currentLang==='it'?'Oggetti candidati nella serie:':'Candidate items in series:') + ' ' + candidates.length, 'info');
+  fotoNnLog((currentLang==='it'?'Articoli candidati nella serie:':'Candidate items in series:') + ' ' + candidates.length, 'info');
 
   let ok = 0, skip = 0, errors = 0;
 
@@ -50229,9 +50239,9 @@ async function startAdminFotoNoNumberUpload() {
 
     if (!name) { errRiga('⚠️ Nome file non valido: ' + file.name, 'warn');  continue; }
     const matches = candidates.filter(c => normKey(c.key) === normKey(name));
-    if (!matches.length) { errRiga('⚠️ Nessun oggetto trovato con ' + (scope === 'retro' ? 'Nome completo' : 'Nome') + ' "' + name + '"', 'warn');  continue; }
+    if (!matches.length) { errRiga('⚠️ Nessun articolo trovato con ' + (scope === 'retro' ? 'Nome completo' : 'Nome') + ' "' + name + '"', 'warn');  continue; }
     if (matches.length > 1) {
-      errRiga('⚠️ "' + name + '" è ambiguo: ' + matches.length + ' oggetti nella serie corrispondono — controlla eventuali duplicati nel database', 'warn');
+      errRiga('⚠️ "' + name + '" è ambiguo: ' + matches.length + ' articoli nella serie corrispondono — controlla eventuali duplicati nel database', 'warn');
        continue;
     }
     const fig = matches[0].item;
@@ -50513,10 +50523,10 @@ async function setAllOwned(ownAll) {
   const n = items.length;
   const msg = ownAll
     ? (currentLang === 'it'
-        ? `Aggiungere alla tua lista ${n} ${n === 1 ? 'oggetto' : 'oggetti'}?`
+        ? `Aggiungere alla tua lista ${n} ${n === 1 ? 'articolo' : 'articoli'}?`
         : `Add ${n} ${n === 1 ? 'item' : 'items'} to your list?`)
     : (currentLang === 'it'
-        ? `Rimuovere dalla tua lista ${n} ${n === 1 ? 'oggetto' : 'oggetti'}?`
+        ? `Rimuovere dalla tua lista ${n} ${n === 1 ? 'articolo' : 'articoli'}?`
         : `Remove ${n} ${n === 1 ? 'item' : 'items'} from your list?`);
   if (!confirm(msg)) return;
   let owned = getOwned();
@@ -50665,7 +50675,7 @@ async function aggiornaVistaTabellare() {
     // riga - se il numero non e' quello che Franco si aspetta, il resto non vale niente.
     const ora = new Date().toLocaleTimeString(currentLang === 'it' ? 'it-IT' : 'en-US');
     toast(currentLang === 'it'
-      ? '🔄 Aggiornato alle ' + ora + ' — ' + _cache.figurines.length + ' oggetti letti'
+      ? '🔄 Aggiornato alle ' + ora + ' — ' + _cache.figurines.length + ' articoli letti'
       : '🔄 Refreshed at ' + ora + ' — ' + _cache.figurines.length + ' items read',
       'success', null, 5000);
   } catch(e) {
@@ -50839,7 +50849,7 @@ function renderBulkEditView() {
     '</datalist>').join('');
   updateItemsCountDisplay(allItems);
 
-  if (!allItems.length) { bulkView.innerHTML = _barraTabella + `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun oggetto trovato con i filtri attuali.' : 'No items found with the current filters.'}</p>`; return; }
+  if (!allItems.length) { bulkView.innerHTML = _barraTabella + `<p style="color:var(--muted);">${currentLang === 'it' ? 'Nessun articolo trovato con i filtri attuali.' : 'No items found with the current filters.'}</p>`; return; }
 
   // Cella di sola lettura per l'utente non-admin (niente input editabile)
   // v6.185 - terzo parametro `align`, e soprattutto VIA IL `text-align:left` CABLATO.
@@ -50958,7 +50968,7 @@ function renderBulkEditView() {
     ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
       <button class="btn-danger" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;font-size:0.9rem;padding:0.5rem 1rem;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
-      <button onclick="toggleOrdinaPerCreazione()" title="${_ordinaPerCreazione ? (currentLang === 'it' ? 'Torna all\'ordine normale' : 'Back to the normal order') : (currentLang === 'it' ? 'Dal piu’ recente. Gli oggetti senza data leggibile restano in fondo.' : 'Most recent first. Items without a readable date stay at the bottom.')}" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--action-admin);background:${_ordinaPerCreazione ? 'var(--action-admin)' : 'transparent'};color:${_ordinaPerCreazione ? '#ffffff' : 'var(--action-admin)'};font-weight:600;">🕒 ${currentLang === 'it' ? 'Ordina per creazione' : 'Sort by creation'}</button>
+      <button onclick="toggleOrdinaPerCreazione()" title="${_ordinaPerCreazione ? (currentLang === 'it' ? 'Torna all\'ordine normale' : 'Back to the normal order') : (currentLang === 'it' ? 'Dal piu’ recente. Gli articoli senza data leggibile restano in fondo.' : 'Most recent first. Items without a readable date stay at the bottom.')}" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--action-admin);background:${_ordinaPerCreazione ? 'var(--action-admin)' : 'transparent'};color:${_ordinaPerCreazione ? '#ffffff' : 'var(--action-admin)'};font-weight:600;">🕒 ${currentLang === 'it' ? 'Ordina per creazione' : 'Sort by creation'}</button>
       <button onclick="toggleAggiornamentoMassivo()" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--action-admin);background:transparent;color:var(--action-admin);font-weight:600;">✏️ ${currentLang === 'it' ? 'Aggiornamento massivo' : 'Bulk update'}</button>
     </div>
     <!-- v6.080 (Franco) — il pannello nasce chiuso: e' una procedura che scrive, non un comando da
@@ -51338,7 +51348,7 @@ async function applicaAggiornamentoMassivo() {
 
   const idsSel = Array.from(document.querySelectorAll('.bulk-select-row:checked')).map(cb => cb.dataset.id);
   const bersagli = (ambito === 'sel') ? idsSel : getCurrentlyFilteredItems().map(f => f.id);
-  if (!bersagli.length) { toast(it ? 'Nessun oggetto da aggiornare' : 'No items to update', 'error'); return; }
+  if (!bersagli.length) { toast(it ? 'Nessun articolo da aggiornare' : 'No items to update', 'error'); return; }
 
   const etichettaValore = (c.tipo === 'bool') ? (valore ? (it ? 'Sì' : 'Yes') : 'No')
     // v6.106 - un testo vuoto si dice a parole: fra le virgolette della conferma non si vedrebbe,
@@ -51356,7 +51366,7 @@ async function applicaAggiornamentoMassivo() {
   // Funzioni (§14). Un massivo che non dichiara il numero di righe e' il modo piu' rapido di
   // riscrivere mille record per sbaglio.
   if (!confirm((it ? 'Impostare ' : 'Set ') + '"' + (it ? c.it : c.en) + '" = "' + etichettaValore + '" '
-      + (it ? 'su ' : 'on ') + bersagli.length + (it ? ' oggetti? L’operazione non è annullabile.' : ' items? This cannot be undone.'))) return;
+      + (it ? 'su ' : 'on ') + bersagli.length + (it ? ' articoli? L’operazione non è annullabile.' : ' items? This cannot be undone.'))) return;
 
   const btn = document.getElementById('massivo-applica-btn');
   if (btn) { btn.disabled = true; btn.textContent = it ? 'Aggiornamento…' : 'Updating…'; }
@@ -51419,7 +51429,7 @@ async function applicaAggiornamentoMassivo() {
       const elenco = _illegali.slice(0, 12).map(x => '\u2022 ' + (x.rec.name || x.rec.id)
         + '  \u2190  ' + (x.padre.name || x.padre.id) + ' (' + _etichettaChiaveTipo(_chiaveTipo(x.padre)) + ')').join('\n');
       alert((it
-        ? _illegali.length + ' oggetti su ' + bersagli.length + ' NON possono diventare \u00AB' + et + '\u00BB:\n'
+        ? _illegali.length + ' articoli su ' + bersagli.length + ' NON possono diventare \u00AB' + et + '\u00BB:\n'
           + 'la loro figurina di partenza non \u00E8 fra quelle ammesse per questa versione.\n\n' + elenco
           + (_illegali.length > 12 ? '\n\u2026e altri ' + (_illegali.length - 12) : '')
           + '\n\nNon \u00E8 stato modificato NIENTE. Togli queste righe dalla selezione, oppure cambia prima la loro partenza.'
@@ -51540,8 +51550,8 @@ async function applicaAggiornamentoMassivo() {
           : ', plus ' + _collegati.size + ' linked item' + (_collegati.size === 1 ? '' : 's'))
     : '';
   toast(errori
-    ? (it ? 'Aggiornati ' + toccati + ' oggetti' + _coda + ', ' + errori + ' serie NON salvate' : toccati + ' items updated' + _coda + ', ' + errori + ' series failed')
-    : (it ? '✅ Aggiornati ' + toccati + ' oggetti' + _coda : '✅ ' + toccati + ' items updated' + _coda), errori ? 'warn' : 'success');
+    ? (it ? 'Aggiornati ' + toccati + ' articoli' + _coda + ', ' + errori + ' serie NON salvate' : toccati + ' items updated' + _coda + ', ' + errori + ' series failed')
+    : (it ? '✅ Aggiornati ' + toccati + ' articoli' + _coda : '✅ ' + toccati + ' items updated' + _coda), errori ? 'warn' : 'success');
   renderBulkEditView();
   try { renderItems(); } catch(e) {}
 }
@@ -51562,7 +51572,7 @@ function updateBulkDeleteCount() {
 async function deleteBulkSelected() {
   const ids = Array.from(document.querySelectorAll('.bulk-select-row:checked')).map(cb => cb.dataset.id);
   if (!ids.length) return;
-  if (!confirm((currentLang === 'it' ? 'Eliminare definitivamente ' : 'Permanently delete ') + ids.length + (currentLang === 'it' ? ' oggetti selezionati? L\u2019operazione non è reversibile.' : ' selected items? This cannot be undone.'))) return;
+  if (!confirm((currentLang === 'it' ? 'Eliminare definitivamente ' : 'Permanently delete ') + ids.length + (currentLang === 'it' ? ' articoli selezionati? L\u2019operazione non è reversibile.' : ' selected items? This cannot be undone.'))) return;
 
   const btn = document.getElementById('bulk-delete-btn');
   if (btn) btn.disabled = true;
@@ -51575,7 +51585,7 @@ async function deleteBulkSelected() {
       console.error('deleteBulkSelected', id, e);
     }
   }
-  toast(done + (currentLang === 'it' ? ' oggetti eliminati' : ' items deleted'), 'success');
+  toast(done + (currentLang === 'it' ? ' articoli eliminati' : ' items deleted'), 'success');
   renderBulkEditView();
   renderItems(); renderHomeStats(); updateSectionCounts();
 }
@@ -51781,8 +51791,8 @@ async function saveBulkScore() {
   const score = parseInt(document.getElementById('bulk-score-input').value);
   if (isNaN(score) || score < 0) { toast('Inserisci una rarità valida', 'error'); return; }
   const items = getCurrentlyFilteredItems();
-  if (!items.length) { toast(currentLang === 'it' ? 'Nessun oggetto visibile con i filtri attuali' : 'No items visible with the current filters', 'error'); return; }
-  if (!confirm((currentLang === 'it' ? 'Assegnare la rarità ' + score + ' a tutti i ' + items.length + ' oggetti attualmente visibili (non nascosti dai filtri)?' : 'Assign rarity ' + score + ' to all ' + items.length + ' currently visible items (not hidden by filters)?'))) return;
+  if (!items.length) { toast(currentLang === 'it' ? 'Nessun articolo visibile con i filtri attuali' : 'No items visible with the current filters', 'error'); return; }
+  if (!confirm((currentLang === 'it' ? 'Assegnare la rarità ' + score + ' a tutti i ' + items.length + ' articoli attualmente visibili (non nascosti dai filtri)?' : 'Assign rarity ' + score + ' to all ' + items.length + ' currently visible items (not hidden by filters)?'))) return;
   const fb = document.getElementById('bulk-score-feedback');
   const btn = document.querySelector('#bulk-score-modal .btn-primary');
   if (btn) btn.disabled = true;
@@ -51808,7 +51818,7 @@ async function saveBulkScore() {
     if (updatedIds.has(f.id)) f.score = score;
     return f;
   });
-  if (fb) fb.textContent = currentLang === 'it' ? '✅ Rarità assegnata a ' + items.length + ' oggetti !' : '✅ Rarity assigned to ' + items.length + ' items !';
+  if (fb) fb.textContent = currentLang === 'it' ? '✅ Rarità assegnata a ' + items.length + ' articoli !' : '✅ Rarity assigned to ' + items.length + ' items !';
   if (btn) btn.disabled = false;
   renderItems();
   setTimeout(() => {
@@ -52076,7 +52086,7 @@ function renderWishlistCount() {
   el.style.display = '';
   if (btn) btn.style.display = n ? '' : 'none';   // niente da azzerare = niente comando
   el.innerHTML = it
-    ? ('La tua lista <strong>"Ciò che cerco"</strong> conta <strong>' + n + '</strong> ' + (n === 1 ? 'oggetto' : 'oggetti') + '.')
+    ? ('La tua lista <strong>"Ciò che cerco"</strong> conta <strong>' + n + '</strong> ' + (n === 1 ? 'articolo' : 'articoli') + '.')
     : ('Your <strong>"What I\'m looking for"</strong> list has <strong>' + n + '</strong> item' + (n === 1 ? '' : 's') + '.');
 }
 
@@ -52088,7 +52098,7 @@ async function resetWishlist() {
   const n = (_wishlist || []).length;
   if (!n) { toast(it ? 'La lista è già vuota' : 'The list is already empty', 'error'); return; }
   const domanda = it
-    ? ('Svuotare la lista "Ciò che cerco"?\n\nVerranno tolti tutti i ' + n + ' oggetti che contiene. L\'operazione non si può annullare.')
+    ? ('Svuotare la lista "Ciò che cerco"?\n\nVerranno tolti tutti i ' + n + ' articoli che contiene. L\'operazione non si può annullare.')
     : ('Empty your "What I\'m looking for" list?\n\nAll ' + n + ' items will be removed. This cannot be undone.');
   if (!confirm(domanda)) return;
   _wishlist = [];
@@ -52454,7 +52464,7 @@ const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'f
         </div>
       </div>`;
     }).join('');
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! La tua lista comprende tutti gli oggetti dell\'inventario Sgorbions !' : 'Congrats! Your list includes every item in the Sgorbions inventory !') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;color:var(--accent2);">' + (currentLang === 'it' ? 'EXPORT 3: LE TUE SERIE COMPLETE' : 'EXPORT 3: YOUR COMPLETE SERIES') + '</h2>' + '<div style="color:var(--text);font-size:0.88rem;margin-bottom:0.75rem;overflow:hidden;">' + '<button class="btn-primary" style="float:right;margin:0 0 0.5rem 1rem;font-size:0.9rem;padding:0.45rem 1.2rem;white-space:nowrap;line-height:1.2;border-radius:10px;" onclick="exportOwnedList()">' + (currentLang === 'it' ? 'Esporta articoli mie serie complete' : 'Export items of my complete series') + '</button>'
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🎉</div><p class="empty-title">' + (currentLang === 'it' ? 'Complimenti! La tua lista comprende tutti gli articoli dell\'inventario Sgorbions !' : 'Congrats! Your list includes every item in the Sgorbions inventory !') + '</p><p class="empty-sub">' + (currentLang === 'it' ? 'Non ti manca nessuna figurina.' : 'You are not missing any sticker.') + '</p></div>' + (completeBoxes ? '<hr style="border-color:var(--border);margin:1rem 0;"><h2 style="font-family:var(--font-ui);font-size:1.5rem;margin-bottom:0.6rem;color:var(--accent2);">' + (currentLang === 'it' ? 'EXPORT 3: LE TUE SERIE COMPLETE' : 'EXPORT 3: YOUR COMPLETE SERIES') + '</h2>' + '<div style="color:var(--text);font-size:0.88rem;margin-bottom:0.75rem;overflow:hidden;">' + '<button class="btn-primary" style="float:right;margin:0 0 0.5rem 1rem;font-size:0.9rem;padding:0.45rem 1.2rem;white-space:nowrap;line-height:1.2;border-radius:10px;" onclick="exportOwnedList()">' + (currentLang === 'it' ? 'Esporta articoli mie serie complete' : 'Export items of my complete series') + '</button>'
     + '<span style="color:' + COL_CATEGORIA + ';">' + (currentLang === 'it' ? 'ISTRUZIONI:' : 'INSTRUCTIONS:') + '</span>'
     + '<ul style="margin:0.35rem 0 0;padding-left:1.2rem;">'
     + (currentLang === 'it'
