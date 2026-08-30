@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.522"></script>
-<link rel="stylesheet" href="css/style.css?v=6.522">
+<script src="js/email.min.js?v=6.524"></script>
+<link rel="stylesheet" href="css/style.css?v=6.524">
 
 
 <style>
@@ -3423,7 +3423,11 @@ button.back-btn { color:#ffffff; }
              compone app.js insieme ai due numeri, quindi applyI18n() non deve toccarla (§5). -->
         <span id="fig-detail-nav-count" style="font-size:0.72rem;color:var(--muted);font-family:var(--font-ui);white-space:nowrap;flex-shrink:0;min-width:3.5rem;text-align:center;"></span>
         <button id="fig-detail-next-btn" onclick="navigateFigDetail(1)" class="btn-secondary btn-admin-ghost" style="padding:0.35rem 0.65rem;flex-shrink:0;" title="Next">▶</button>
-        <button class="modal-close" onclick="closeModal('fig-detail-modal')">✕</button>
+        <!-- v6.524 (Franco) - QUESTO TASTO NON CHIUDE SEMPRE: se sei arrivato qui da un link
+             dentro un'altra scheda, torna a quella. Il glifo e il titolo li scrive app.js
+             a ogni apertura (✕ chiude, ↩ torna indietro), quindi qui restano solo i valori
+             di partenza — quelli che si vedono se lo script non gira. -->
+        <button id="fig-detail-close-btn" class="modal-close" onclick="chiudiSchedaFigurina()" title="Chiudi">✕</button>
       </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 320px;gap:2rem;align-items:start;">
@@ -3577,7 +3581,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.522"></script>
+<script src="js/app.js?v=6.524"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3601,7 +3605,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.522'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.524'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
