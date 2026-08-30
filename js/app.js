@@ -1,6 +1,30 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.535 — CORREZIONE URGENTE della v6.533: le voci delle categorie tornano INTERE.
+//          🔴 Una voce e' una TERNA `[categoria, conteggio, sottocategorie]`, e la v6.533
+//          la ricomponeva a due: `sotto` arrivava `undefined` e `_retroCatPanelHTML`
+//          moriva su `sotto.length`. Si fermavano `renderRaggrSummaries` e
+//          `_mostraTestataSerie`, quindi dall'hub le sezioni sembravano vuote.
+//          ⚠️ SOLO DA ADMIN: quel ramo e' dentro `clickable`, e le mie prove del giorno
+//          erano tutte da non loggato. Stessa cecita' della v6.531, sei ore dopo.
+//          📌 Segnalato da Franco: «BACO ENORME».
+//          Modificato js/app.js, index.html.
+// v6.534 — Il riquadro ERRORI DI STAMPA si divide in DUE SEZIONI: FRONTALI e POSTERIORI,
+//          ognuna aperta dalla sua pillola, con sotto le proprie tipologie (Franco).
+//          📌 Sezioni e non sottopillole: 179 frontali contro 2 posteriori, annidare
+//          avrebbe schiacciato la seconda in un angolo.
+//          🔴 Premere una tipologia accende ANCHE il suo lato: nella sezione FRONTALI la
+//          pillola dice 75, e se uscissero anche le posteriori quel 75 non si
+//          ritroverebbe (regola della v6.506).
+//          📌 Un valore presente su tutti e due i lati compare DUE volte, ognuna col
+//          conteggio del suo lato: sono due domande diverse (Franco: «ripetilo»).
+//          ⚠️ La pillola si disegna in UN posto solo (`_chipTipoHTML`, estratta): la
+//          sua forma e' cambiata quattro volte in un giorno, una copia sarebbe morta
+//          vecchia.
+//          ⚠️ Via il `cappelloHTML` della v6.520: le due pillole ora intestano le
+//          sezioni, tenerlo le avrebbe disegnate due volte.
+//          Modificato js/app.js, index.html.
 // v6.533 — Premendo FRONTALI/POSTERIORI gli altri riquadri NON spariscono piu': restano,
 //          con le pillole a zero e non premibili (Franco: *"si e' sempre detto di non
 //          nascondere nulla afferente agli altri box; semplicemente diventano non
@@ -25333,7 +25357,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.533';
+const JS_VERSION = 'v6.535';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31784,7 +31808,10 @@ const VERSIONI_ARTICOLO = [
     // 🆕 v6.520 - il riquadro degli errori di stampa porta un cappello: le due pillole del
     // LATO. È l'unico che ce l'ha, ed è per questo che si dichiara qui invece che nel
     // pannello (stessa scelta di `pieHTML`, v6.333).
-    cappelloHTML: () => _pillolLatoErroreHTML(),
+    // 🔄 v6.534 - VIA IL CAPPELLO, DENTRO IL CORPO. Le due pillole non stanno piu' in cima:
+    // sono l'intestazione delle due sezioni. Tenere anche `cappelloHTML` avrebbe disegnato
+    // le stesse due pillole due volte nello stesso riquadro.
+    corpoHTML: (C) => _corpoErroriPerLatoHTML(C),
     pluraleIt: 'Errori di stampa', pluraleEn: 'Print errors',
     codaRaggrIt: 'tipologia di Errore di stampa', codaRaggrEn: 'Print error type',
     // 🆕 v6.419 - vedi il change. ⚠️ Qui SINGOLARE, mentre `esportaParolaIt` dice «Errori
@@ -37602,9 +37629,16 @@ function _pannelloCategorieRisultati() {
   // 🔄 v6.533 - stessa medicina di `_pairsConZeri`: l'ELENCO dei valori ignora anche il
   // lato, i CONTEGGI no. Prima era una chiamata sola, quindi con una pillola del lato
   // accesa spariva anche questo riquadro.
-  const _numeri = new Map(_retroCatCounts(getCurrentlyFilteredItems({ skipCategory: true, skipSubcategory: true })));
+  // 🔴 v6.535 - LA VOCE E' UNA TERNA, NON UNA COPPIA: `[categoria, conteggio,
+  // sottocategorie]`. La v6.533 la ricomponeva a due e `sotto` arrivava `undefined`, quindi
+  // `_retroCatPanelHTML` moriva su `sotto.length` — ma solo nel ramo `clickable`, cioe' solo
+  // da ADMIN. Dall'hub le sezioni sembravano vuote.
+  // ✅ Quando la categoria ha ancora risultati si tiene la sua terna INTERA; quando non ne
+  // ha, si tiene il nome e si azzerano conteggio e sottoconteggi. La voce resta, spenta:
+  // e' quello che la v6.533 voleva.
+  const _vive = new Map(_retroCatCounts(getCurrentlyFilteredItems({ skipCategory: true, skipSubcategory: true })).map(v => [v[0], v]));
   const _elenco = _retroCatCounts(getCurrentlyFilteredItems({ skipCategory: true, skipSubcategory: true, skipLato: true }));
-  const pairs = _elenco.map(([val]) => [val, _numeri.get(val) || 0]);
+  const pairs = _elenco.map(v => _vive.get(v[0]) || [v[0], 0, (v[2] || []).map(s => [s[0], 0])]);
   return pairs.length ? _retroCatPanelHTML(pairs, _retroCatResultsOpen, true, 'toggleRetroCatResults') : '';
 }
 // 🆕 v6.269 - TOGLIERE UNA CATEGORIA PORTA VIA LE SUE SOTTOCATEGORIE. Lasciarle selezionate
@@ -37856,6 +37890,75 @@ function _raggrPanelHTML(v, pairs, open, clickable, toggleFn, perColonna) {
 // esattamente come le spaziature della v6.329 erano finite disuguali.
 const _SOGLIA_COLLASSO = 10;
 const _TRIANGOLO_FINTO = `<span aria-hidden="true" style="visibility:hidden;font-size:0.8rem;">\u25bc</span>`;
+// 🆕 v6.534 - LA PILLOLA DI UN VALORE, IN UN POSTO SOLO. Estratta da `_specchiettoTipiHTML`
+// perche' dalla v6.534 la disegnano in due: la fila di sempre e le sezioni del riquadro
+// degli errori di stampa. Ricopiarne il markup sarebbe stata la seconda copia di una forma
+// che cambia spesso — v6.512, v6.513, v6.515 e v6.518 l'hanno toccata in un giorno solo.
+// 📌 `attiva` e `n` restano separati: lo ZERO su una voce spenta e' cio' che la rende non
+// premibile (`_inib`), ed e' la regola che tiene visibili i riquadri invece di nasconderli.
+function _chipTipoHTML(o) {
+  const it = o.it, n = o.n;
+        // v6.271 - inibito: stessa forma, stesso ingombro, nessun `onclick` e mezza opacita'.
+        // 🆕 v6.335 (Franco) - L'INIBIZIONE E' DELLA PILLOLA, NON DEL RIQUADRO. Era `!!C.inibito`,
+        // cioe' una proprieta' del riquadro intero decisa fuori di qui: acceso un raggruppamento,
+        // gli altri due diventavano grigi in blocco. Franco: *"se selezioni Change nel riquadro
+        // Filtra per versioni non si devono bloccare gli altri riquadri... quando una pillola
+        // accesa rende altre pillole inutili, queste vanno inibite"*. La domanda non e' *"c'e' un
+        // altro riquadro acceso?"* ma *"premere QUESTA pillola porterebbe da qualche parte?"*, e la
+        // risposta e' il suo conteggio: zero risultati, niente da premere.
+        // 📌 La v6.134 vietava due raggruppamenti insieme con un argomento di FATTO - nessun
+        // oggetto e' insieme un change e un errore di stampa, quindi la combinazione tornava vuota
+        // per costruzione. Quell'argomento vale fra i tre riquadri dei TIPI e non vale per la
+        // VERSIONE, che con loro si combina: «versione = change» + «tipo di change = ROSSO» e' la
+        // domanda piu' naturale del sito. Dalla v6.323, che ha messo la versione fra i
+        // raggruppamenti, il divieto in blocco la rendeva inesprimibile. Il setaccio invece la
+        // sapeva gia' fare: applica in AND tutti i raggruppamenti accesi, e non l'ha mai smesso.
+        // Con la regola per pillola i tre riquadri dei tipi restano esclusi fra loro come prima -
+        // ma per la ragione vera, cioe' perche' i loro conteggi vanno a zero da soli.
+        // 🔴 UNA PILLOLA ACCESA NON SI INIBISCE MAI, ed e' la riga che rende sicuro tutto il resto.
+        // Accendi «tipo di change = ROSSO», poi accendi «Base»: quella pillola scende a zero. Se lo
+        // zero bastasse a spegnerla, resterebbe un filtro acceso senza nessun comando che lo
+        // spenga - la famiglia delle v6.095, v6.134 e v6.140, dove la griglia si svuota e chi
+        // guarda conclude che i dati non ci sono. Accesa resta premibile: si toglie da dov'e'.
+        const active = !!o.attiva;
+        const _inib = !active && n === 0;
+        const bg = active ? 'var(--accent)' : 'var(--card2)';
+        const fg = active ? 'var(--bg)' : 'var(--text)';
+        // 🆕 v6.423 (Franco: *"proviamo a colorare anche il testo delle pillole"*) - L'ETICHETTA
+        // DELLA PILLOLA PORTA IL COLORE DELLA SUA VERSIONE, dove il colore e' del valore.
+        // 📌 SOLO L'ETICHETTA: `fg` continua a vestire il «+»/«−», che e' un COMANDO e non un
+        // valore - se prendesse la tinta della versione, il sito direbbe che quel bottoncino e'
+        // «un po' Omaggio». Due mestieri, due variabili.
+        // 🔴 E QUANDO LA PILLOLA E' ACCESA IL COLORE NON C'E', ed e' una rinuncia misurata, non
+        // una dimenticanza: da accesa lo sfondo e' il lime `--accent`, e i sei colori delle versioni
+        // su quel lime danno da 1,05:1 a 2,38:1 - cioe' illeggibili, tutti. Il testo resta `--bg`.
+        // 📌 Non e' una perdita: da accesa la pillola e' gia' marcata dal lime, che in questo sito
+        // significa «acceso» ovunque. Il colore serve a distinguere le pillole SPENTE fra loro, ed
+        // e' esattamente li' che adesso c'e'.
+        // ✅ Contrasti su `--card2` (#221540), lo sfondo vero della pillola spenta: base 16,8:1 -
+        // non ufficiale 14,6:1 - ufficiale 11,5:1 - omaggio 8,8:1 - change 8,8:1 - errore di stampa
+        // 5,8:1. Il peggiore sta sopra 4,5:1, e il bianco di prima faceva 14,3:1.
+        // ⚠️ «Base» e' #ffffff, cioe' praticamente il bianco di prima: quella pillola non cambia, e
+        // non e' un caso da correggere - la base non e' una versione, e' la loro assenza.
+        const fgEtichetta = active ? 'var(--bg)'
+                          : (o.colore || 'var(--text)');
+        const nf = active ? 'var(--bg)' : 'var(--accent)';
+        const segno = active ? '−' : '+';
+        const titoloPiu = active
+          ? (it ? 'Togli questo tipo, lasciando gli altri selezionati' : 'Remove this type, keep the others')
+          : (it ? 'Aggiungi questo tipo a quelli già selezionati' : 'Add this type to the current selection');
+        // ⚠️ v6.357 - `flex-shrink:0` e `white-space:nowrap`: in un contenitore `nowrap` un flex item
+        // si comprime di default (`min-width:auto` non lo salva quando c'e' overflow dichiarato), e
+        // senza queste due le pillole si schiaccerebbero e le etichette andrebbero a capo DENTRO la
+        // pillola - cioe' il riquadro tornerebbe alto, per un'altra strada. E' la stessa trappola di
+        // flexbox della v6.348, dall'altro verso.
+        return `<span style="display:inline-flex;align-items:center;flex-shrink:0;white-space:nowrap;background:${bg};border:1px solid var(--border);border-radius:999px;font-size:0.82rem;line-height:1.4;overflow:hidden;${_inib ? 'opacity:0.45;' : ''}">`
+          + `<span ${_inib ? '' : `onclick="${o.onSet}"`} title="${_inib ? (it ? 'Nessun risultato con i filtri accesi adesso' : 'No results with the filters currently on') : (o.titolo || '')}" style="cursor:${_inib ? 'default' : 'pointer'};display:inline-flex;align-items:center;gap:0.35rem;padding:0.15rem 0.5rem 0.15rem 0.6rem;">`
+          + `<span style="color:${fgEtichetta};${o.maiuscole ? 'text-transform:uppercase;letter-spacing:0.03em;' : ''}">${esc(o.etichetta)}</span>`
+          + `<span style="color:${nf};font-weight:700;">${n}</span></span>`
+          + `<span ${_inib ? '' : `onclick="event.stopPropagation();${o.onAdd}"`} title="${_inib ? '' : titoloPiu}" style="cursor:${_inib ? 'default' : 'pointer'};padding:0.15rem 0.5rem;border-left:1px solid ${active ? 'rgba(0,0,0,0.28)' : 'var(--border)'};color:${fg};font-weight:700;">${segno}</span>`
+          + `</span>`;
+}
 function _specchiettoTipiHTML(pairs, open, clickable, toggleFn, C, perColonna) {
   const it = (currentLang === 'it');
   const total = pairs.reduce((s, p) => s + p[1], 0);
@@ -38059,68 +38162,11 @@ header += `</div>`;
       // in un gesto nuovo, che chi non lo cerca non incontra - e nessuno deve reimparare niente.
       // Il "+" e' un elemento VISIBILE e non una scorciatoia da tastiera (ctrl-clic): sul telefono
       // una scorciatoia non esiste, e questo sito si usa anche da li'.
-      chips = pairs.map(([ct, n], i) => {
-        // v6.271 - inibito: stessa forma, stesso ingombro, nessun `onclick` e mezza opacita'.
-        // 🆕 v6.335 (Franco) - L'INIBIZIONE E' DELLA PILLOLA, NON DEL RIQUADRO. Era `!!C.inibito`,
-        // cioe' una proprieta' del riquadro intero decisa fuori di qui: acceso un raggruppamento,
-        // gli altri due diventavano grigi in blocco. Franco: *"se selezioni Change nel riquadro
-        // Filtra per versioni non si devono bloccare gli altri riquadri... quando una pillola
-        // accesa rende altre pillole inutili, queste vanno inibite"*. La domanda non e' *"c'e' un
-        // altro riquadro acceso?"* ma *"premere QUESTA pillola porterebbe da qualche parte?"*, e la
-        // risposta e' il suo conteggio: zero risultati, niente da premere.
-        // 📌 La v6.134 vietava due raggruppamenti insieme con un argomento di FATTO - nessun
-        // oggetto e' insieme un change e un errore di stampa, quindi la combinazione tornava vuota
-        // per costruzione. Quell'argomento vale fra i tre riquadri dei TIPI e non vale per la
-        // VERSIONE, che con loro si combina: «versione = change» + «tipo di change = ROSSO» e' la
-        // domanda piu' naturale del sito. Dalla v6.323, che ha messo la versione fra i
-        // raggruppamenti, il divieto in blocco la rendeva inesprimibile. Il setaccio invece la
-        // sapeva gia' fare: applica in AND tutti i raggruppamenti accesi, e non l'ha mai smesso.
-        // Con la regola per pillola i tre riquadri dei tipi restano esclusi fra loro come prima -
-        // ma per la ragione vera, cioe' perche' i loro conteggi vanno a zero da soli.
-        // 🔴 UNA PILLOLA ACCESA NON SI INIBISCE MAI, ed e' la riga che rende sicuro tutto il resto.
-        // Accendi «tipo di change = ROSSO», poi accendi «Base»: quella pillola scende a zero. Se lo
-        // zero bastasse a spegnerla, resterebbe un filtro acceso senza nessun comando che lo
-        // spenga - la famiglia delle v6.095, v6.134 e v6.140, dove la griglia si svuota e chi
-        // guarda conclude che i dati non ci sono. Accesa resta premibile: si toglie da dov'e'.
-        const active = C.attivo(ct);
-        const _inib = !active && n === 0;
-        const bg = active ? 'var(--accent)' : 'var(--card2)';
-        const fg = active ? 'var(--bg)' : 'var(--text)';
-        // 🆕 v6.423 (Franco: *"proviamo a colorare anche il testo delle pillole"*) - L'ETICHETTA
-        // DELLA PILLOLA PORTA IL COLORE DELLA SUA VERSIONE, dove il colore e' del valore.
-        // 📌 SOLO L'ETICHETTA: `fg` continua a vestire il «+»/«−», che e' un COMANDO e non un
-        // valore - se prendesse la tinta della versione, il sito direbbe che quel bottoncino e'
-        // «un po' Omaggio». Due mestieri, due variabili.
-        // 🔴 E QUANDO LA PILLOLA E' ACCESA IL COLORE NON C'E', ed e' una rinuncia misurata, non
-        // una dimenticanza: da accesa lo sfondo e' il lime `--accent`, e i sei colori delle versioni
-        // su quel lime danno da 1,05:1 a 2,38:1 - cioe' illeggibili, tutti. Il testo resta `--bg`.
-        // 📌 Non e' una perdita: da accesa la pillola e' gia' marcata dal lime, che in questo sito
-        // significa «acceso» ovunque. Il colore serve a distinguere le pillole SPENTE fra loro, ed
-        // e' esattamente li' che adesso c'e'.
-        // ✅ Contrasti su `--card2` (#221540), lo sfondo vero della pillola spenta: base 16,8:1 -
-        // non ufficiale 14,6:1 - ufficiale 11,5:1 - omaggio 8,8:1 - change 8,8:1 - errore di stampa
-        // 5,8:1. Il peggiore sta sopra 4,5:1, e il bianco di prima faceva 14,3:1.
-        // ⚠️ «Base» e' #ffffff, cioe' praticamente il bianco di prima: quella pillola non cambia, e
-        // non e' un caso da correggere - la base non e' una versione, e' la loro assenza.
-        const fgEtichetta = active ? 'var(--bg)'
-                          : (C.coloreDelValore ? C.colore(ct) : 'var(--text)');
-        const nf = active ? 'var(--bg)' : 'var(--accent)';
-        const segno = active ? '−' : '+';
-        const titoloPiu = active
-          ? (it ? 'Togli questo tipo, lasciando gli altri selezionati' : 'Remove this type, keep the others')
-          : (it ? 'Aggiungi questo tipo a quelli già selezionati' : 'Add this type to the current selection');
-        // ⚠️ v6.357 - `flex-shrink:0` e `white-space:nowrap`: in un contenitore `nowrap` un flex item
-        // si comprime di default (`min-width:auto` non lo salva quando c'e' overflow dichiarato), e
-        // senza queste due le pillole si schiaccerebbero e le etichette andrebbero a capo DENTRO la
-        // pillola - cioe' il riquadro tornerebbe alto, per un'altra strada. E' la stessa trappola di
-        // flexbox della v6.348, dall'altro verso.
-        return `<span style="display:inline-flex;align-items:center;flex-shrink:0;white-space:nowrap;background:${bg};border:1px solid var(--border);border-radius:999px;font-size:0.82rem;line-height:1.4;overflow:hidden;${_inib ? 'opacity:0.45;' : ''}">`
-          + `<span ${_inib ? '' : `onclick="${C.setter(i)}"`} title="${_inib ? (it ? 'Nessun risultato con i filtri accesi adesso' : 'No results with the filters currently on') : C.chipTitle(it)}" style="cursor:${_inib ? 'default' : 'pointer'};display:inline-flex;align-items:center;gap:0.35rem;padding:0.15rem 0.5rem 0.15rem 0.6rem;">`
-          + `<span style="color:${fgEtichetta};${C.maiuscole ? 'text-transform:uppercase;letter-spacing:0.03em;' : ''}">${esc(C.label(ct))}</span>`
-          + `<span style="color:${nf};font-weight:700;">${n}</span></span>`
-          + `<span ${_inib ? '' : `onclick="event.stopPropagation();${C.adder(i)}"`} title="${_inib ? '' : titoloPiu}" style="cursor:${_inib ? 'default' : 'pointer'};padding:0.15rem 0.5rem;border-left:1px solid ${active ? 'rgba(0,0,0,0.28)' : 'var(--border)'};color:${fg};font-weight:700;">${segno}</span>`
-          + `</span>`;
-      }).join('');
+      chips = pairs.map(([ct, n], i) => _chipTipoHTML({
+        etichetta: C.label(ct), colore: C.coloreDelValore ? C.colore(ct) : null,
+        n, attiva: C.attivo(ct), maiuscole: C.maiuscole,
+        onSet: C.setter(i), onAdd: C.adder(i), titolo: C.chipTitle(it), it
+      })).join('');
       // 🗑️ v6.515 - QUI IL COMANDO ENTRAVA NELLA FILA DELLE PILLOLE, e adesso non piu':
       // Franco lo vuole *"in fondo a dx nel blocco filtri"*, cioè FUORI dall'elenco che
       // comanda. La v6.512 lo aveva già spostato in coda e reso rettangolare, ma stando
@@ -38175,10 +38221,14 @@ header += `</div>`;
     // la griglia si svuota e chi guarda conclude che i dati non ci sono.
     // 📌 La bandierina la porta il DESCRITTORE (`unaRiga`), non il pannello: vale per la versione,
     // che ha un tetto di sei, e non per i riquadri dei tipi, che possono averne venti.
-    body = (C.cappelloHTML ? C.cappelloHTML() : '')
-      + `<div style="display:flex;flex-wrap:${C.unaRiga ? 'nowrap' : 'wrap'};align-items:center;gap:0.4rem;${C.unaRiga ? 'overflow-x:auto;' : ''}${_etichettaSulBordo ? '' : 'margin-top:0.6rem;'}">${chips}`
+    // 🆕 v6.534 - UN RIQUADRO PUO' DICHIARARE UN CORPO SUO, e allora la fila di pillole non
+    // si disegna: e' il caso degli errori di stampa, che dalla v6.534 hanno due SEZIONI.
+    // Stessa scelta di `cappelloHTML` e `pieHTML`: lo dichiara il DESCRITTORE, il pannello
+    // non sa cosa ci finira' dentro.
+    body = C.corpoHTML ? C.corpoHTML(C) : (C.cappelloHTML ? C.cappelloHTML() : '')
+      + (C.corpoHTML ? '' : `<div style="display:flex;flex-wrap:${C.unaRiga ? 'nowrap' : 'wrap'};align-items:center;gap:0.4rem;${C.unaRiga ? 'overflow-x:auto;' : ''}${_etichettaSulBordo ? '' : 'margin-top:0.6rem;'}">${chips}`
       + (C.pieHTML ? `<span style="margin-left:auto;padding-left:0.6rem;flex-shrink:0;white-space:nowrap;">${C.pieHTML()}</span>` : '')
-      + `</div>`
+      + `</div>`)
       // 🆕 v6.515 (Franco: *"TUTTE mettilo in fondo a dx nel blocco filtri"*) — IL COMANDO
       // SU UNA RIGA SUA, ALLINEATO A DESTRA. Non è un angolo nuovo: è lo stesso «in fondo a
       // destra» che la v6.333 ha dato al link della legenda. Qui però è una riga a sé e non
@@ -38444,6 +38494,88 @@ function toggleRetroCatResults() {
 // ⚠️ Si disegnano anche a zero, e per la stessa ragione della v6.335: una pillola che
 // sparisce si porta via il modo di accorgersi che quel gruppo esiste. Oggi POSTERIORI ne
 // ha due su 170, e vederlo è metà del valore di questo riquadro.
+// 🆕 v6.534 - LE VOCI DELLE DUE SEZIONI, in un elenco piatto con l'indice. Si passa
+// l'INDICE e non il valore perche' un tipo puo' contenere apostrofi, e un valore infilato
+// dentro un `onclick` andrebbe sfuggito a mano: e' la stessa ragione per cui i riquadri
+// normali usano `setVals` piu' un indice.
+let _VOCI_ERR_LATO = [];   // v6.534 - [{ lato, val }]
+// 🔴 v6.534 - PREMERE UNA TIPOLOGIA ACCENDE ANCHE IL SUO LATO. Dentro la sezione FRONTALI
+// la pillola DECENTRATA dice 75: se premendola uscissero anche le decentrate posteriori,
+// quel 75 non si ritroverebbe. E' la regola della v6.506.
+function _soloVoceErroreLato(i) {
+  const v = _VOCI_ERR_LATO[i]; if (!v) return;
+  const s = _raggr('printerror'); if (!s) return;
+  s.filtro = new Set([v.val]);
+  _filtroLatoErrore = new Set([v.lato]);
+  _soloQuestoRaggr('printerror');
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (_soloVoceErroreLato)', e); }
+}
+// 📌 Il «+» aggiunge la tipologia a quelle accese e apre anche il suo lato: due sezioni
+// accese insieme sono una domanda legittima («tutte le DECENTRATA, di qua e di la'»).
+function _aggiungiVoceErroreLato(i) {
+  const v = _VOCI_ERR_LATO[i]; if (!v) return;
+  const s = _raggr('printerror'); if (!s) return;
+  if (s.filtro.has(v.val) && _filtroLatoErrore.has(v.lato)) s.filtro.delete(v.val);
+  else { s.filtro.add(v.val); _filtroLatoErrore.add(v.lato); }
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (_aggiungiVoceErroreLato)', e); }
+}
+// 🆕 v6.534 (Franco: *"fai 2 sottosezioni nel box ERRORI DI STAMPA"*) - IL CORPO A DUE
+// SEZIONI. L'intestazione di ognuna e' la sua pillola del lato, e sotto stanno le tipologie
+// di QUEL lato, contate su quel lato.
+// ⚠️ Un tipo che sta su tutti e due i lati compare DUE volte (Franco: *"nessun problema:
+// ripetilo"*), ognuna col suo conteggio: sono due domande diverse.
+// 📌 L'elenco viene da `skipRaggr: true, skipLato: true` — cioe' «cosa lasciano passare
+// gli ALTRI riquadri» — come tutti gli altri elenchi dopo la v6.533. I conteggi si fanno
+// per lato su quello stesso insieme, quindi una sezione vuota resta scritta con zero
+// invece di sparire.
+function _corpoErroriPerLatoHTML(C) {
+  const it = currentLang === 'it';
+  const figs = getData('figurines', []);
+  const idx = new Map(figs.map(x => [x.id, x]));
+  const items = getCurrentlyFilteredItems({ skipRaggr: true, skipLato: true });
+  const conta = { fronte: new Map(), retro: new Map() };
+  for (const f of items) {
+    const lato = _latoErroreStampa(f, figs, idx);
+    if (!lato) continue;
+    const tipo = (f.printErrorType || '').trim();
+    if (!tipo) continue;
+    conta[lato].set(tipo, (conta[lato].get(tipo) || 0) + 1);
+  }
+  _VOCI_ERR_LATO = [];
+  const stato = _raggr('printerror');
+  const sezione = (lato, testo) => {
+    const voci = [...conta[lato].entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'it'));
+    const latoAcceso = _filtroLatoErrore.has(lato);
+    const totale = voci.reduce((s, v) => s + v[1], 0);
+    const testa = `<span onclick="_toggleLatoErrore('${lato}')" title="${it ? (latoAcceso ? 'Togli questo lato' : 'Mostra solo gli errori di stampa di questo lato') : (latoAcceso ? 'Remove this side' : 'Show only the print errors on this side')}" `
+      + `style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;`
+      + `background:${latoAcceso ? 'var(--accent)' : 'var(--card2)'};border:1px solid var(--type-printerror);`
+      + `border-radius:999px;padding:0.15rem 0.7rem;font-size:0.8rem;line-height:1.4;font-weight:700;`
+      + `letter-spacing:0.04em;white-space:nowrap;">`
+      + `<span style="color:${latoAcceso ? 'var(--bg)' : 'var(--type-printerror)'};">${testo}</span>`
+      + `<span style="color:${latoAcceso ? 'var(--bg)' : 'var(--accent)'};">${totale}</span></span>`;
+    const pillole = voci.map(([val, n]) => {
+      const i = _VOCI_ERR_LATO.push({ lato, val }) - 1;
+      return _chipTipoHTML({
+        etichetta: val, colore: null, n,
+        attiva: !!(stato && stato.filtro.has(val)) && latoAcceso,
+        maiuscole: true,
+        onSet: `_soloVoceErroreLato(${i})`, onAdd: `_aggiungiVoceErroreLato(${i})`,
+        titolo: it ? 'Cerca solo questa tipologia, su questo lato' : 'Search only this type, on this side', it
+      });
+    }).join('');
+    // ⚠️ Una sezione senza voci NON sparisce: resta la sua pillola a zero. E' la regola
+    // di Franco del 30 agosto — non si nasconde niente, si spegne.
+    return `<div style="margin-top:0.6rem;">${testa}`
+      + `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;margin-top:0.4rem;padding-left:0.2rem;">`
+      + (pillole || `<span style="color:var(--muted);font-style:italic;font-size:0.8rem;">${it ? 'nessuna tipologia con i filtri accesi adesso' : 'no type with the filters currently on'}</span>`)
+      + `</div></div>`;
+  };
+  return sezione('fronte', it ? 'FRONTALI' : 'ON THE FRONT')
+       + sezione('retro',  it ? 'POSTERIORI' : 'ON THE BACK');
+}
 function _pillolLatoErroreHTML() {
   const it = currentLang === 'it';
   const items = getCurrentlyFilteredItems({ skipLato: true });
