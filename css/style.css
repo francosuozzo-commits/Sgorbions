@@ -684,7 +684,9 @@ body {
 }
 .detail-row:last-child { border-bottom: none; }
 .detail-row-edit { border-bottom: none !important; padding: 0.25rem 0; }
-.detail-label { color: var(--muted); font-size: 0.85rem; min-width: 180px; }
+/* v6.525 - bianche, non grigie (Franco). Il grigio nella scheda resta a dire «vuoto»
+   (i «non impostato»), non a dire «etichetta». */
+.detail-label { color: var(--text); font-size: 0.85rem; min-width: 180px; }
 .detail-value { color: var(--text); font-weight: 500; padding-left: 0.5rem; }
 
 .toggle-btn-blue {
