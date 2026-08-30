@@ -1,6 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.521 — IL LINK «DI PARTENZA» SI SPEZZA IN DUE: la figurina sopra, il suo retro
+//          sotto, e il secondo link porta DAVVERO a quel retro (Franco: *"la prima riga
+//          menziona la figurina, la seconda il retro — e il link del retro punti
+//          veramente a quel retro"*).
+//          🔴 LA META' CHE VALE E' UN DIFETTO CORRETTO, non un abbellimento: fino alla
+//          v6.520 la riga era UNA sola ancora, quindi cliccare sul nome del retro
+//          apriva la FIGURINA. Il testo diceva una cosa e il link ne apriva un'altra.
+//          🔴 E si fa SENZA una seconda copia della regola: il corpo di
+//          `_baseFigurineLinkLabel` diventa `_partenzaInPezzi` (testa · retro · coda) e
+//          l'etichetta intera torna a essere la loro somma. Uno `split(' · ')` avrebbe
+//          funzionato oggi e mentito al primo retro col punto mediano nel Nome.
+//          ⚠️ Via il `white-space:nowrap`, superstite della v6.122: la v6.123 aveva
+//          scritto che il testo puo' andare a capo e aveva lasciato la riga che glielo
+//          vieta. Una riga lunga non andava a capo: usciva.
+//          📌 Vale per tutte e CINQUE le versioni, non per le quattro nominate: la
+//          modifica sta nella riga e non nel bivio delle etichette (v6.261 al contrario).
+//          📌 Non e' il doppione tolto dalla v6.125: quello rifaceva la didascalia sotto
+//          la foto (retro dell'articolo APERTO), questo porta al retro della sua
+//          figurina DI PARTENZA.
+//          Modificato js/app.js, index.html.
 // v6.520 — «FRONTALI» E «POSTERIORI» IN CIMA AL RIQUADRO DEGLI ERRORI DI STAMPA, con
 //          le tipologie sotto (Franco: *"un po' come facciamo per le categorie e
 //          sottocategorie"*).
@@ -25176,7 +25196,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.520';
+const JS_VERSION = 'v6.521';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35798,7 +35818,20 @@ function _etichettaDiPartenza(sezione) {
     : 'Source ' + nome;
 }
 
-function _baseFigurineLinkLabel(f) {
+// 🆕 v6.521 - L'ETICHETTA DI PARTENZA SI PUO' CHIEDERE A PEZZI, e non e' un vezzo: la
+// scheda dell'articolo deve poterne fare DUE LINK diversi (la figurina e il suo retro,
+// che sono due record), mentre la tendina la vuole intera perche' e' la stringa che
+// l'utente sceglie e da cui si risale all'id (v6.120/v6.121).
+// 🔴 SI FA COSI' INVECE DI SPEZZARE LA STRINGA DOVE SERVE. Uno «split» sul punto mediano
+// funzionerebbe oggi e mentirebbe al primo retro il cui Nome contiene un punto mediano —
+// e sarebbe la seconda copia di una regola, cioe' la famiglia di difetti che questo
+// progetto insegue da cento release.
+// 📌 Restituisce il RECORD del retro, non il suo nome: chi vuole il nome ha «codaTesto»,
+// chi vuole linkarlo ha l'id. Un nome non si puo' ri-trasformare in un record.
+// ⚠️ Il risultato di «testa + coda» e' identico, carattere per carattere, a quello che
+// questa funzione restituiva fino alla v6.520: la v6.521 SPEZZA e non cambia. Lo prova
+// «prova-v6521.js», che ESEGUE le due strade e le confronta.
+function _partenzaInPezzi(f) {
   // v5.785 — usa f.section (più robusto di currentSection, valido anche nella form inline del dettaglio).
   // Per i RETRO l'etichetta è il NOME COMPLETO (richiesta di Franco: elenco base ordinato/mostrato per
   // Nome completo), con fallback alla vecchia forma "Categoria · Sottocategoria — Nome" se il fullName
@@ -35806,7 +35839,8 @@ function _baseFigurineLinkLabel(f) {
   // v6.022 — il ripiego non si riscrive piu' la vecchia forma "Categoria · Sottocategoria — Nome":
   // chiede a _retroNomeCompleto(), che sa la regola vera. Era questo a produrre
   // "PREMIO — PREMIO DI MIGLIOR ATTORE" sui 94 retro il cui Nome inizia con la categoria.
-  if (f.section === 'retros') return _retroNomeCompleto(f);
+  // v6.521 - un RETRO un retro non ce l'ha: un pezzo solo, e la riga resta una.
+  if (f.section === 'retros') return { testa: _retroNomeCompleto(f), retro: null, coda: '', codaTesto: '' };
   // v6.120 (Franco) - IL RETRO NELL'ETICHETTA, e senza non si puo' scegliere. Da questa release
   // l'elenco contiene anche le VARIAZIONI, e una variazione ha lo STESSO numero e lo STESSO nome
   // della sua base: "214 ADAM BOMB" comparirebbe due o tre volte identico, proprio nel momento in
@@ -35832,9 +35866,13 @@ function _baseFigurineLinkLabel(f) {
   // un'informazione: e' rumore, e su migliaia di voci e' rumore che copre il segnale.
   // E' la stessa correzione della v6.198 sugli album, estesa alla sua ragione invece che al suo caso.
   const _puoAvereRetro = (f.section || 'figurines') === 'figurines';
-  const _coda = _r
-    ? ' · ' + _retroNomeCompleto(_r)
-    : (_puoAvereRetro ? (currentLang === 'it' ? ' · senza retro' : ' · no back') : '');
+  // v6.521 - il TESTO della coda e il SEPARATORE, separati. Prima erano impastati in tre
+  // stringhe che contenevano ognuna il proprio « · », e per riavere il solo nome del retro
+  // bisognava ritagliarlo. Il separatore adesso sta scritto una volta sola.
+  const _codaTesto = _r
+    ? _retroNomeCompleto(_r)
+    : (_puoAvereRetro ? (currentLang === 'it' ? 'senza retro' : 'no back') : '');
+  const _coda = _codaTesto ? ' · ' + _codaTesto : '';
   // \uD83D\uDD34 v6.198 (Franco: "tu mostra il campo nome completo cosi io capisco quale album va
   // preso"). Senza numero e senza retro questa riga produceva il solo nome piu' la coda
   // "\u00b7 senza retro" - che su un album non e' un'informazione ma un rumore: un album un retro non
@@ -35843,8 +35881,21 @@ function _baseFigurineLinkLabel(f) {
   // Stanotte due elenchi cablati di cinque nomi si sono rivelati bombe a orologeria (v6.195): un
   // sesto prodotto sarebbe caduto fuori da tutti e due senza dare errore.
   const _senzaNumero = (f.number === null || f.number === undefined || f.number === '');
-  if (_senzaNumero && !_r) return f.fullName || f.name || '';
-  return (f.number ? f.number + ' ' : '') + (f.name || '') + _coda;
+  if (_senzaNumero && !_r) return { testa: f.fullName || f.name || '', retro: null, coda: '', codaTesto: '' };
+  return { testa: (f.number ? f.number + ' ' : '') + (f.name || ''), retro: _r, coda: _coda, codaTesto: _codaTesto };
+}
+
+// 🆕 v6.521 - E L'ETICHETTA INTERA E' LA SOMMA DEI PEZZI. Due righe, e sono tutta la
+// garanzia che serve: la tendina, il campo di ricerca e la riscoperta dell'id per nome
+// (~50 posti che confrontano questa stringa con quella scelta) continuano a vedere
+// esattamente cio' che vedevano prima, perche' e' la STESSA regola sommata.
+// ⚠️ Non si aggiunge una guardia su «f» mancante, per quanto costi poco: fino alla v6.520
+// questa funzione su un «f» vuoto si fermava con un errore, e tutti i suoi chiamanti la
+// proteggono gia'. Farla tacere sarebbe un cambiamento di comportamento infilato dentro
+// una release che dichiara di non cambiarne nessuno.
+function _baseFigurineLinkLabel(f) {
+  const p = _partenzaInPezzi(f);
+  return p.testa + p.coda;
 }
 
 // v5.785 — ordinamento condiviso delle opzioni "base": Retro per NOME COMPLETO, Figurine per Numero.
@@ -41936,7 +41987,20 @@ function openFigDetail(figId, elencoNav) {
       // mai — cioe' il presupposto era sbagliato proprio nel caso normale.
       // `_baseFigurineLinkLabel` e' la stessa funzione che scrive le voci della tendina: cosi' quello
       // che leggi nella scheda e quello che avresti scelto nell'elenco sono la stessa riga.
-      const _nomePuntata = _baseFigurineLinkLabel(baseFig);
+      // 🆕 v6.521 (Franco) - DUE PEZZI, DUE LINK: sopra la figurina, sotto il SUO retro.
+      // 🔴 La meta' che conta e' la seconda, ed e' la correzione di un difetto: fino alla
+      // v6.520 la riga era una sola ancora, quindi cliccare sul nome del RETRO apriva la
+      // FIGURINA. Il testo diceva una cosa e il link ne apriva un'altra, proprio nel pezzo
+      // di riga che parla del retro.
+      // 📌 Non e' il doppione tolto dalla v6.125: quella riga rifaceva la didascalia sotto
+      // la foto, che porta al retro DELL'ARTICOLO APERTO. Questo porta al retro della sua
+      // FIGURINA DI PARTENZA — un altro record. ⚠️ Sui figli che il retro se lo fanno
+      // prestare dalla base i due bersagli coincidono (89 errori di stampa su 170,
+      // censiti il 29 agosto): a farli coincidere sono i DATI, non il codice.
+      // 📌 E `_nomePuntata` sparisce, invece di restare "per il titolo": adesso ogni pezzo
+      // ha il suo, e una variabile che nessuno legge e' la forma piu' silenziosa di
+      // codice morto — il primo che la trova ci costruisce sopra credendo che serva.
+      const _pezziPuntata = _partenzaInPezzi(baseFig);
       // v6.122 (Franco) - NON VA A CAPO, per tutti e tre i tipi (variazione, change, errore di
       // stampa). ⚠️ E il motivo per cui la tendina poteva allargarsi QUI NON VALE: quella e'
       // `position:absolute` e galleggia sopra il contenuto, questa riga sta nel flusso. Un
@@ -41956,7 +42020,29 @@ function openFigDetail(figId, elencoNav) {
       // foto cominciava a 975, quindi il testo veniva tagliato 32px PRIMA della foto: a limitarlo
       // non era la foto, era la colonna. E la riga non stava nemmeno sotto la foto come si era
       // creduto (riga a 520, fondo della foto a 527): le stava accanto per sette pixel.
-      rows.push(`<div class="detail-row" style="border-bottom:none;flex-direction:column;align-items:flex-start;gap:2px;"><span class="detail-label" style="font-style:italic;">${relationLabel}</span><a href="#" onclick="openFigDetail('${baseFig.id}');return false;" title="${esc(_nomePuntata)}" style="color:var(--accent);text-decoration:underline;white-space:nowrap;">${esc(_nomePuntata)}</a></div>`);
+      // ⚠️ VIA IL `white-space:nowrap`, ed era un superstite. La v6.122 lo aveva messo per
+      // tenere la riga su una linea sola quando stava ACCANTO alla foto; la v6.123 ha
+      // sciolto il nodo mettendo il valore su una riga tutta sua e ha scritto *«il testo
+      // puo' andare a capo perche' adesso andare a capo non costa niente»* — ma il
+      // `nowrap` e' rimasto nel markup, e quel capo lo vietava. Una riga lunga non andava
+      // a capo: usciva. E' meta' esatta del problema che Franco descrive.
+      // 📌 Il secondo pezzo comincia col « · » che prima stava in mezzo alla stringa: e' lo
+      // stesso separatore, mandato a capo. Chi legge ritrova il segno che conosce, e la
+      // seconda riga si vede subito come la coda della prima invece che come un'altra cosa.
+      // ⚠️ Quando il retro non c'e', «senza retro» resta scritto ma NON e' un link: non c'e'
+      // niente da aprire, e un'ancora che non porta da nessuna parte e' peggio del testo.
+      const _apreRetro = _pezziPuntata.retro
+        ? `<a href="#" onclick="openFigDetail('${_pezziPuntata.retro.id}');return false;" `
+          + `title="${esc((currentLang === 'it' ? 'Il retro della figurina di partenza: ' : 'The back of the source figurine: ') + _pezziPuntata.codaTesto)}" `
+          + `style="color:var(--accent);text-decoration:underline;">${esc(_pezziPuntata.codaTesto)}</a>`
+        : (_pezziPuntata.codaTesto
+            ? `<span style="color:var(--muted);font-style:italic;">${esc(_pezziPuntata.codaTesto)}</span>`
+            : '');
+      rows.push(`<div class="detail-row" style="border-bottom:none;flex-direction:column;align-items:flex-start;gap:2px;">`
+        + `<span class="detail-label" style="font-style:italic;">${relationLabel}</span>`
+        + `<a href="#" onclick="openFigDetail('${baseFig.id}');return false;" title="${esc(_pezziPuntata.testa)}" style="color:var(--accent);text-decoration:underline;">${esc(_pezziPuntata.testa)}</a>`
+        + (_apreRetro ? `<span style="font-size:0.92rem;"><span style="color:var(--muted);">&middot; </span>${_apreRetro}</span>` : '')
+        + `</div>`);
     }
   }
 
