@@ -1,6 +1,20 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.529 — LE FOTO DELLA SCHEDA ARRIVANO IN DUE TEMPI: prima la piccola che la griglia
+//          ha gia' in cache (0 ms), poi la grande, che sostituisce quando e' pronta.
+//          🔴 Misurato su 30 retri, con `new Image()` e `encodedBodySize`: 63 kB di
+//          mediana ma 830 ms di mediana (p90 1,6 s). Il tempo non e' scaricare, e' la
+//          PRIMA richiesta della trasformazione — e la scheda ne chiedeva una (`w_800`)
+//          che la griglia (`w_300`) non aveva mai chiesto.
+//          ⚠️ ERRATA sulla misura precedente: `fetch()` manda `Accept: */*`, quindi
+//          `f_auto` gli risponde PNG (1.047 kB) mentre al tag <img> risponde WebP
+//          (114 kB). Su quel numero avevo concluso «sono i byte»: falso. I byte stanno
+//          bene. Il peso vero si misura con `new Image()`, mai con `fetch`.
+//          📌 La piccola e' la misura PREDEFINITA di `cloudinaryUrl`, non un numero
+//          scritto a parte: e' la stessa della griglia, ed e' cio' che rende lo
+//          scambio gratuito.
+//          Modificato js/app.js, index.html.
 // v6.528 — Anche il carosello nella pagina della SERIE va al 75% (185 → 139), come
 //          quello dei tipi di articolo (Franco: *"e' quello nella pagina della serie
 //          che e' rimasto come quello della home"*).
@@ -25273,7 +25287,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.528';
+const JS_VERSION = 'v6.529';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -25338,6 +25352,35 @@ function flagUrl(code) {
 // destinazione com'e'.
 const RETRO_BIANCO_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
   '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="200"><rect width="320" height="200" fill="#ffffff"/></svg>');
+// 🆕 v6.529 - LA FOTO DELLA SCHEDA ARRIVA IN DUE TEMPI: prima la piccola che la griglia
+// ha gia' scaricato (stessa URL, quindi cache del browser, 0 ms), poi la grande.
+// 🔴 Perche' serve, misurato su 30 retri: 63 kB di mediana ma 830 ms di mediana. Il tempo
+// non e' scaricare, e' la PRIMA richiesta di quella trasformazione — e la scheda ne chiede
+// una che la griglia non ha mai chiesto, quindi la paga sempre.
+// 📌 La piccola e' la MISURA PREDEFINITA di cloudinaryUrl, non un numero scritto qui: e'
+// la stessa che usa la griglia, ed e' l'unica cosa che rende lo scambio gratuito.
+// ⚠️ Se la grande non arriva, `onerror` non fa niente e resta la piccola. Una foto
+// morbida e' meglio di un riquadro vuoto.
+function _fotoInDueTempi(url, optsGrande, stile) {
+  if (!url) return '';
+  const piccola = cloudinaryUrl(url);
+  const grande  = cloudinaryUrl(url, optsGrande);
+  return '<img src="' + piccola + '" data-grande="' + grande + '" style="' + stile + '">';
+}
+// E chi fa lo scambio, dopo che il markup e' nel DOM. Un solo giro su tutte le foto della
+// scheda: si carica la grande di lato e si sostituisce solo quando e' pronta, cosi' non
+// c'e' nessun momento in cui il riquadro e' vuoto.
+function _scambiaFotoGrandi(radice) {
+  const dove = radice || document;
+  dove.querySelectorAll('img[data-grande]').forEach(img => {
+    const grande = img.getAttribute('data-grande');
+    img.removeAttribute('data-grande');   // una volta sola, anche se si ridisegna
+    if (!grande || grande === img.src) return;
+    const pre = new Image();
+    pre.onload = () => { img.src = grande; };
+    pre.src = grande;
+  });
+}
 function cloudinaryUrl(url, opts = 'w_300,h_300,c_fit,q_auto,f_auto') {
   if (!url || !url.includes('cloudinary.com')) return url;
   // Insert transformation parameters after /upload/
@@ -42259,7 +42302,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       // fronte e retro sono sempre alti uguali e l'area foto non cambia dimensione tra una figurina e
       // l'altra (niente sfarfallamento).
       const baseHTML = frontImg
-        ? `<img src="${cloudinaryUrl(frontImg, 'w_800,h_800,c_fit,q_auto,f_auto')}" style="width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+        ? `${_fotoInDueTempi(frontImg, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
         : noPhotoBox;
       // v6.044 - due assenze diverse, due riquadri diversi: se il Retro ESISTE ma non ha foto resta
       // "Foto non disponibile" (manca un'immagine di qualcosa che c'e'); se il Retro non c'e'
@@ -42268,11 +42311,11 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       const boxVuoto = '<div style="width:100%;height:300px;background:var(--card2);border-radius:8px;"></div>';
       const retroHTML = _bustina
         ? (f.imgRetro
-            ? `<img src="${cloudinaryUrl(f.imgRetro, 'w_800,h_800,c_fit,q_auto,f_auto')}" style="width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+            ? `${_fotoInDueTempi(f.imgRetro, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
             : boxVuoto)
         : (retroFig
             ? (retroFig.img
-                ? `<img src="${cloudinaryUrl(retroFig.img, 'w_800,h_800,c_fit,q_auto,f_auto')}" style="width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+                ? `${_fotoInDueTempi(retroFig.img, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
                 : noPhotoBox)
             : boxVuoto);
       // v6.031 (Franco) - come nel tab Variazioni (v6.030): il sottonome su una riga sua, in
@@ -42308,7 +42351,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       // delle orizzontali): sarebbe tornata a far ballare la finestra, che e' il difetto peggiore.
       const _altezzaFotoRetro = 380;
       photoEl.innerHTML = f.img
-        ? `<img src="${cloudinaryUrl(f.img, 'w_640,h_640,c_fit,q_auto,f_auto')}" style="width:100%;height:${_altezzaFotoRetro}px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;">`
+        ? `${_fotoInDueTempi(f.img, 'w_640,h_640,c_fit,q_auto,f_auto', 'width:100%;height:' + _altezzaFotoRetro + 'px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
         : '<div style="width:100%;height:' + _altezzaFotoRetro + 'px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non ancora disponibile' : 'Photo not yet available') + '</div>';
     }
   }
@@ -42448,7 +42491,8 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       <button type="button" id="figdetail-tab-btn-generale" onclick="switchFigDetailTab('generale')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">📋 Generale</button>
       <button type="button" id="figdetail-tab-btn-ebay" onclick="switchFigDetailTab('ebay')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-size:0.85rem;cursor:pointer;">🏷️ Ebay</button>
     </div>`;
-    document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + tabNav +
+    // v6.529 - lo scambio si lancia dopo, quando questo markup e' nel DOM (in fondo alla funzione).
+  document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + tabNav +
       '<div id="figdetail-tab-generale">' + rows.join('') + '</div>' +
       '<div id="figdetail-tab-ebay" style="display:none;">' + ebayRows.join('') + '</div>' +
       _codaAzioniDetail(bottomButtons);
@@ -42456,6 +42500,10 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     if (f.forSale) riempiEbayVistaLettura(f);
   } else {
     document.getElementById('fig-detail-content').innerHTML = _barraAzioniDetail(bottomButtons) + rows.join('') + _codaAzioniDetail(bottomButtons);
+  // 🆕 v6.529 - adesso il markup c'e': si caricano le foto grandi di lato e si scambiano
+  // quando arrivano. ⚠️ Vale per TUTTE le `img[data-grande]` della scheda, quindi una foto
+  // nuova entra nel giro senza che nessuno se ne ricordi.
+  try { _scambiaFotoGrandi(document.getElementById('fig-detail-content')); } catch(e) { console.error('_scambiaFotoGrandi', e); }
   }
   document.getElementById('fig-detail-modal').classList.remove('hidden');
 }
