@@ -1,6 +1,13 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.528 — Anche il carosello nella pagina della SERIE va al 75% (185 → 139), come
+//          quello dei tipi di articolo (Franco: *"e' quello nella pagina della serie
+//          che e' rimasto come quello della home"*).
+//          📌 La costante si chiama ora `CAROSELLO_ALTEZZA_RIDOTTA`: la leggono in due,
+//          e un nome che dice «PRODOTTO» direbbe il falso al primo che lo trova.
+//          ⚠️ La HOME resta a 185: non e' stata chiesta.
+//          Modificato js/app.js, index.html.
 // v6.527 — Il carosello nelle pagine dei TIPI DI ARTICOLO ha la foto al 75%: 185px →
 //          139px, testo invariato (Franco, desktop).
 //          📌 Solo quello: `CAROSELLO_ALTEZZA` e' condivisa da tutti e tre i caroselli,
@@ -25266,7 +25273,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.527';
+const JS_VERSION = 'v6.528';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27492,13 +27499,13 @@ const CAROSELLO_ALTEZZA = 185;   // px sul computer, per tutti e tre i caroselli
 const _caroselloLato = px => 'calc(' + px + 'px + 1rem)';
 const CAROSELLO_LARGHEZZA = _caroselloLato(CAROSELLO_ALTEZZA);
 // 🆕 v6.527 (Franco: *"il carosello nelle pagine delle tipologie di articolo e' troppo
-// alto; facciamolo al 75%"*) - IL SOLO CAROSELLO DEI TIPI DI ARTICOLO. Sta a parte perche'
+// alto; facciamolo al 75%"*) — 🔄 v6.528: e anche quello della SERIE. Sta a parte perche'
 // gli altri due non cambiano: la costante di sopra e' condivisa da tutti e tre.
 // 📌 Il 75% si scrive come moltiplicazione e non come 139: cosi' il legame col numero
 // generale resta visibile, e se un giorno i caroselli rimpiccioliscono tutti, questo
 // scende con loro invece di restare indietro da solo.
-const CAROSELLO_ALTEZZA_PRODOTTO = Math.round(CAROSELLO_ALTEZZA * 0.75);   // 139px
-const CAROSELLO_LARGHEZZA_PRODOTTO = _caroselloLato(CAROSELLO_ALTEZZA_PRODOTTO);
+const CAROSELLO_ALTEZZA_RIDOTTA = Math.round(CAROSELLO_ALTEZZA * 0.75);   // 139px
+const CAROSELLO_LARGHEZZA_RIDOTTA = _caroselloLato(CAROSELLO_ALTEZZA_RIDOTTA);
 // 🗄️ le due frazioni di prima, se un giorno servisse tornare indietro:
 //    home  = _caroselloLarghezza(6.5)
 //    serie = _caroselloLarghezza(8.5)
@@ -27824,7 +27831,8 @@ function renderCaroselloSerie() {
   // lo stesso invece di scrivere `false`: se un giorno questo carosello mostrasse anche altro, la
   // riga della serie ricomparirebbe da sola.
   const mostraSerie = _caroselloMostraSerie(base);
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs)).join('');
+  // v6.528 - al 75% come quello dei tipi di articolo. La home no: non e' stata chiesta.
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs)).join('');
   sez.style.display = '';
   const prec = document.getElementById('serie-carosello-prec');
   const succ = document.getElementById('serie-carosello-succ');
@@ -27885,7 +27893,7 @@ function renderCaroselloProdotto() {
   }
   const mostraSerie = _caroselloMostraSerie(mazzo); // v6.081 - qui le serie sono di solito piu' d'una, ma non per forza
   // v6.527 - qui, e solo qui, la foto e' al 75%: e' la pagina che Franco ha segnalato.
-  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA_PRODOTTO), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_PRODOTTO, mostraSerie, _figs)).join('');
+  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs)).join('');
   sez.style.display = '';
   const prec = document.getElementById('prodotto-carosello-prec');
   const succ = document.getElementById('prodotto-carosello-succ');
