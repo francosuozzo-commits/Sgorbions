@@ -1,6 +1,64 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.578 — Sulla figurina col difetto DIETRO il «Tipo di errore di stampa» e' in sola
+//          lettura e mostra il valore del retro (Franco). 🔴 La v6.577 aveva ristretto la
+//          tendina e cosi' il valore giusto finiva sotto «non in elenco — va aggiunto ai
+//          tipi della serie»: un avviso FALSO, perche' nella serie c'era.
+//          📌 Se il tipo si legge dal retro, non va nemmeno chiesto. ⚠️ Un input hidden
+//          tiene lo stesso id, cosi' il salvataggio non cambia di una riga.
+//          Modificato js/app.js, index.html.
+// v6.577 — Il tipo di un errore di stampa POSTERIORE si legge dal retro (Franco).
+//          🔴 Misurato da sessione admin su 181 errori: le figurine col difetto dietro
+//          sono DUE, e in tutte e due il tipo era identico a quello del retro —
+//          divergenze zero, quindi una copia e non un secondo dato.
+//          ✅ `_tipoErroreStampa` lo chiede a chi lo possiede; il campo sulla figurina può
+//          restare vuoto. La fascetta della card e la cornice della scheda passano da lì.
+//          🔄 Revoca metà della v6.509: la lista «di retro» non serve più alle figurine,
+//          perché quel tipo non va più SCELTO. Modificato js/app.js, index.html.
+// v6.576 — La legenda dell'errore di stampa dice «(frontale o posteriore)» invece di
+//          «(di fronte o retro)»: sono le parole che il resto del sito usa dalla v6.519.
+//          🔴 Era l'ultima riga rimasta indietro, e non passava da _latoErroreStampaTesto
+//          perche' vive nel dizionario i18n e parla del concetto, non di un articolo.
+//          ✅ L'inglese diceva gia' «(front or back)». Modificato js/app.js, index.html.
+// v6.575 — Nel tab «Figurine con questo retro» anche le figurine BASE mostrano il loro
+//          nome, senza la coda col nome del retro (Franco). 🔴 E' la v6.024 che finisce
+//          il lavoro: allora la coda era stata tolta alle sole Variazioni, perche' per
+//          loro nasce da computeFullName; alle base arriva dal `fullName` salvato.
+//          🔴 Scartato il taglio a stringhe: misurato, solo 789 righe su 1.617 finiscono
+//          col nome del retro di oggi. ⚠️ Change ed errori di stampa restano com'erano.
+//          Modificato js/app.js, index.html.
+// v6.574 — Nei RETRO tornano le pillole delle tipologie di errore di stampa (Franco).
+//          🔴 Sparite dal 30 agosto: il corpo della v6.534 divide per LATO, e nei retro il
+//          lato non esiste (`_latoErroreStampa` tace, v6.510). Il pannello sceglieva
+//          guardando se `corpoHTML` ESISTE, non cosa produce, e disegnava il niente.
+//          ✅ Un corpo che non produce niente non e' un corpo: si ripiega sulle pillole.
+//          Modificato js/app.js, index.html.
+// v6.573 — L'etichetta dei tab dei collegati si allinea a SINISTRA (Franco).
+//          📌 Il `text-align:center` non era una scelta grafica: l'avevo scritto alla
+//          v6.568, quando i bottoni hanno cominciato a dividersi la riga, per far
+//          sembrare centrato un testo dentro un bottone piu' largo di lui.
+//          ✅ A sinistra i nomi partono tutti dallo stesso punto: con parole di lunghezza
+//          diversa e' l'unica cosa che li tiene in fila. Modificato js/app.js, index.html.
+// v6.572 — Cade la coda «di questo retro» dai cinque tab delle versioni (Franco).
+//          🔴 Revoca la v6.025 E la v6.376: la seconda esisteva solo per estendere la
+//          prima a tutte, quindi se ne vanno insieme. Dentro un retro quella coda
+//          ripeteva il contesto — stessa forma della v6.561 col badge.
+//          ⚠️ Il primo tab NON si tocca: «Figurine con questo retro» nomina la faccia
+//          attaccata, non la derivazione, e senza coda direbbe solo «Figurine».
+//          Modificato js/app.js, index.html.
+// v6.571 — I tab dei collegati vanno a COLONNE automatiche (Franco: «cosa accade se ce ne
+//          sono 3?»). 🔴 Misurato: la barra e' larga 468px, quindi con flex ce ne stavano
+//          due per riga e il terzo si allargava a 468 — 231 · 231 e poi 468. Con quattro
+//          no: e' il numero dispari a lasciare l'orfano.
+//          ✅ Con `repeat(auto-fit, minmax(220px,1fr))` un tab solo occupa una COLONNA e
+//          non la riga. I 220px sono quelli della v6.569, nessun numero nuovo.
+//          Modificato js/app.js, index.html.
+// v6.570 — «Figurine con questo retro» al posto di «Figurine che usano questo retro»
+//          (Franco). 📌 Sei caratteri in meno sull'etichetta PIU' LUNGA della barra, che e'
+//          quella che decide quando i tab si spezzano. 🔴 Ed e' l'unica delle sei che si
+//          poteva cambiare qui: le altre cinque vengono dal descrittore VERSIONI_ARTICOLO
+//          e servono anche filtri ed export. Modificato js/app.js, index.html.
 // v6.569 — I tab dei collegati riempiono la riga sempre, non solo quando sono due
 //          (Franco: «regola generale, niente numeri magici»).
 //          🔴 La v6.568 aveva scritto `groups.length === 2`, e la domanda «cosa accade se
@@ -25629,7 +25687,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.569';
+const JS_VERSION = 'v6.578';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27302,7 +27360,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità ai risultati','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri articoli','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -35610,7 +35668,14 @@ function _opzioniTipoErrore(seriesId, selezionato, sezione) {
   // elenco sotto «⚠️ non in elenco». Il dato era più avanti del codice.
   // 📌 La forma giusta esisteva già due funzioni più sotto: `_opzioniTipoChange` chiede
   // entrambe le liste senza condizioni. Si copia lo stile che c'è, non se ne disegna uno simile.
-  const retro  = retroErroreTypesDiSerie(seriesId);
+  // 🔄 v6.577 - REVOCA META' DELLA v6.509 (Franco). Quella release aveva aperto alle
+  // figurine anche la lista «di retro», col motivo scritto qui sopra: senza, il caso del
+  // difetto dietro era INESPRIMIBILE. Era vero allora e non lo e' piu': dalla v6.577 quel
+  // tipo non va scelto, si LEGGE dal retro (_tipoErroreStampa). Ricopiarlo a mano era
+  // l'unica cosa che quella lista permetteva di fare qui, ed era una copia.
+  // ⚠️ I valori gia' scritti non spariscono: la tendina conserva i fuori elenco sotto
+  // «⚠️ non in elenco», e a schermo il tipo arriva comunque dal retro.
+  const retro  = eRetro ? retroErroreTypesDiSerie(seriesId) : [];
   const fronte = eRetro ? [] : frontErroreTypesDiSerie(seriesId);
   const elenco = [...retro, ...fronte];
   const opt = t => '<option value="' + esc(t) + '"' + (_n(t) === _n(sel) ? ' selected' : '') + '>' + esc(t) + '</option>';
@@ -38625,8 +38690,20 @@ header += `</div>`;
     // usciva solo il corpo.
     // ✅ Ora sono due passaggi: prima il CORPO, poi «Tutte» attaccato a quello che ne esce.
     // Un riquadro con un corpo suo non e' un riquadro senza comandi.
-    const _corpoRiquadro = C.corpoHTML ? C.corpoHTML(C) : (C.cappelloHTML ? C.cappelloHTML() : '')
-      + (C.corpoHTML ? '' : `<div style="display:flex;flex-wrap:${C.unaRiga ? 'nowrap' : 'wrap'};align-items:center;gap:0.4rem;${C.unaRiga ? 'overflow-x:auto;' : ''}${_etichettaSulBordo ? '' : 'margin-top:0.6rem;'}">${chips}`
+    // 🔴 v6.574 (Franco: *"nella Serie 2, nella form di ricerca dei retro, sono sparite le
+    // pillole delle tipologie di errore di stampa"*)
+    // UN CORPO CHE NON PRODUCE NIENTE NON E' UN CORPO. Qui si guardava se `corpoHTML`
+    // ESISTE, non cosa restituisce — e il corpo degli errori di stampa (v6.534) divide per
+    // LATO, mentre nella sezione RETRO il lato non c'e': `_latoErroreStampa` tace su un
+    // retro, apposta, perche' quell'articolo E' la faccia (v6.510). Risultato: corpo vuoto
+    // e nessuna pillola, dal 30 agosto.
+    // ✅ Se il corpo torna vuoto si ripiega sulle pillole di sempre. E' una regola, non un
+    // caso particolare: vale per qualunque riquadro che un domani dichiari un corpo suo.
+    // 🔴 `_latoErroreStampa` NON si tocca: quel null e' la risposta giusta. Il difetto era
+    // in chi non prevedeva che di lati non ce ne fosse nessuno.
+    const _corpoSuo = C.corpoHTML ? C.corpoHTML(C) : '';
+    const _corpoRiquadro = _corpoSuo ? _corpoSuo : (C.cappelloHTML ? C.cappelloHTML() : '')
+      + (_corpoSuo ? '' : `<div style="display:flex;flex-wrap:${C.unaRiga ? 'nowrap' : 'wrap'};align-items:center;gap:0.4rem;${C.unaRiga ? 'overflow-x:auto;' : ''}${_etichettaSulBordo ? '' : 'margin-top:0.6rem;'}">${chips}`
       + (C.pieHTML ? `<span style="margin-left:auto;padding-left:0.6rem;flex-shrink:0;white-space:nowrap;">${C.pieHTML()}</span>` : '')
       + `</div>`)
       // 🆕 v6.515 (Franco: *"TUTTE mettilo in fondo a dx nel blocco filtri"*) — IL COMANDO
@@ -39659,7 +39736,9 @@ function renderItems() {
     // della scheda (v6.510), e con l'INDICE: questa riga gira per ogni card, e col find
     // sull'archivio intero sarebbe quadratica (la ragione della v6.520).
     const _latoErrCard = _latoErroreStampa(f, _allFigs, _idx);
-    const _tipoErrCard = f.printErrorType || '';   // v6.556 - il testo della fascetta
+    // 🔄 v6.577 - il testo della fascetta si CHIEDE: col difetto dietro vive sul retro.
+    // ⚠️ Con l'indice, come il lato: questa riga gira per ogni card (ragione della v6.520).
+    const _tipoErrCard = _tipoErroreStampa(f, _allFigs, _idx);
     if (_cp.mostra) {
       const _fronteCoppia = _cp.fronte;
       // v6.094 - basta che il retro ESISTA: la foto puo' mancare, e in quel caso al suo posto va il
@@ -43052,6 +43131,8 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       // 🆕 v6.552 - da che parte sta l'errore. Torna null se non e' un errore di stampa,
       // quindi la cornice non compare mai dove non c'entra.
       const _latoErr = _latoErroreStampa(f, getData('figurines', []));
+      // 🆕 v6.577 - e il TIPO si chiede alla stessa fonte del lato.
+      const _tipoErr = _tipoErroreStampa(f, getData('figurines', []));
       const retroCaption = retroFig
         ? `<div style="font-size:0.72rem;text-align:center;margin-top:4px;"><a href="#" onclick="openFigDetail('${retroFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(_retroNomeCompletoSenzaSottonome(retroFig, getData('figurines', [])))} ↗</a>${_capSotto ? `<div style="color:var(--info);margin-top:1px;">${esc(_capSotto)}</div>` : ''}</div>` /* v6.031 */
         : '';
@@ -43063,11 +43144,11 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
           <div>
             <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:14px;">${currentLang === 'it' ? 'Fronte' : 'Front'}</div>
-            ${_latoErr === 'fronte' ? _corniceErroreStampaHTML(baseHTML, f.printErrorType) : baseHTML}
+            ${_latoErr === 'fronte' ? _corniceErroreStampaHTML(baseHTML, _tipoErr) : baseHTML}
           </div>
           <div>
             <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:14px;">${currentLang === 'it' ? 'Retro' : 'Back'}</div>
-            ${_latoErr === 'retro' ? _corniceErroreStampaHTML(retroHTML, f.printErrorType) : retroHTML}
+            ${_latoErr === 'retro' ? _corniceErroreStampaHTML(retroHTML, _tipoErr) : retroHTML}
             ${retroCaption}
           </div>
         </div>`;
@@ -43661,6 +43742,26 @@ function _latoErroreStampa(f, allFigs, indice) {
 // diverse sarebbe la forma più pura del difetto che questo progetto paga da giorni.
 // 📌 Il vantaggio di avere la parola in un posto solo è proprio questo: se «sul retro»
 // piacesse di più, si cambia qui e cambia dappertutto.
+// 🆕 v6.577 (Franco: *"la fascetta deve leggerlo dal retro; il campo della figurina può
+// rimanere vuoto"*) — CHE TIPO DI ERRORE MOSTRO PER QUESTO ARTICOLO.
+// 🔴 Il tipo non si conserva sull'articolo, si CHIEDE a chi lo possiede: sul retro quando
+// il difetto sta dietro, sulla figurina quando sta davanti.
+// 📌 E' la stessa mossa di _latoErroreStampa: non ci si fida del campo scritto qui, si
+// guarda cosa c'e' dall'altro capo del collegamento.
+// 📌 Misurato su 181 errori di stampa da sessione admin: le figurine col difetto dietro
+// sono DUE, e in tutte e due il tipo era identico a quello del retro. Divergenze zero:
+// non era un secondo dato, era una copia.
+// ⚠️ Se il retro non dichiara niente si ripiega sul campo della figurina: meglio il valore
+// vecchio che nessun valore, e non si perde quello che c'e' gia' scritto.
+function _tipoErroreStampa(f, allFigs, indice) {
+  if (!f) return '';
+  const _mio = (f.printErrorType || '').trim();
+  if (_latoErroreStampa(f, allFigs, indice) !== 'retro') return _mio;
+  const r = indice ? indice.get(f.retroId)
+                   : (allFigs || getData('figurines', [])).find(x => x.id === f.retroId);
+  return ((r && r.printErrorType) || '').trim() || _mio;
+}
+
 function _latoErroreStampaTesto(f, allFigs) {
   const lato = _latoErroreStampa(f, allFigs);
   if (!lato) return '';
@@ -44022,7 +44123,7 @@ function buildLinkedFiguresTabsHTML(baseId) {
   };
 
   const groups = [
-    { key: 'usaRetro', label: currentLang === 'it' ? 'Figurine che usano questo retro' : 'Figurines using this back', icon: '🎴', items: _usano.items, ereditati: _usano.ereditati },
+    { key: 'usaRetro', label: currentLang === 'it' ? 'Figurine con questo retro' : 'Figurines with this back', icon: '🎴', items: _usano.items, ereditati: _usano.ereditati },
     ...VERSIONI_ARTICOLO.map(v => ({
       key: v.chiave,
       // v6.025 (Franco) — nella scheda di un RETRO i tab dicono "di questo retro", in parallelo col
@@ -44033,10 +44134,17 @@ function buildLinkedFiguresTabsHTML(baseId) {
       // solo Change ed Errori di stampa, e non per una ragione: perche' erano gli unici due tab a
       // essere stati toccati quel giorno. Aprendo un retro, "Omaggi" e "Omaggi di questo retro"
       // rispondono a due domande diverse, e quella giusta e' la seconda.
-      label: _selfRetro
-        ? (currentLang === 'it' ? _etichettaVersione(v) + ' di questo retro'
-                                : _etichettaVersione(v) + ' of this back')
-        : _etichettaVersione(v),
+      // 🗑️ v6.572 (Franco: *"«Versioni omaggio di questo retro» -> «Versioni omaggio»"*,
+      // e alla domanda se valesse per uno o per tutti: «a tutti e cinque»)
+      // 🔴 QUI STAVA LA CODA «di questo retro», E SE NE VANNO DUE RELEASE INSIEME: la
+      // v6.025 che l'aveva data a due tab e la v6.376 che l'aveva estesa agli altri tre.
+      // La ragione scritta era che «Omaggi» e «Omaggi di questo retro» rispondono a due
+      // domande diverse. Vale altrove; qui no: sei GIA' dentro il retro, e il tab elenca
+      // cio' che ne deriva. La coda ripeteva il contesto, come «ERRORE DI STAMPA»
+      // ripeteva il badge (v6.561).
+      // 📌 Si e' tolta la REGOLA, non aggiunta un'eccezione per gli omaggi: toglierla a
+      // uno solo avrebbe rifatto lo squilibrio che la v6.376 era nata per chiudere.
+      label: _etichettaVersione(v),
       icon: v.iconaTab || '🏷️',
       items: linked.filter(x => x[v.campo])
     })),
@@ -44061,9 +44169,20 @@ function buildLinkedFiguresTabsHTML(baseId) {
   // ✅ Adesso non si conta niente: ogni bottone DICHIARA quanto spazio gli serve (sotto,
   // flex:1 1 220px) e il wrap decide dove spezzare. Le righe restano piene comunque siano.
   let html = '<div style="margin-top:1.2rem;">';
-  html += '<div style="display:flex;gap:0.4rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;flex-wrap:wrap;">';
+  // 🔄 v6.571 (Franco: *"cosa accade se ce ne sono 3?"*) — A COLONNE, NON A RIGHE.
+  // 🔴 Misurato sul sito a 1440px: la barra e' larga 468px, quindi con flex ce ne stavano
+  // due per riga e il TERZO, solo sulla sua, si allargava a tutti i 468 (misure vere:
+  // 231 · 231 e poi 468). Con quattro non succedeva: e' il numero DISPARI a lasciare
+  // l'orfano, e nessun conteggio poteva prevederlo — dipende da quanti ce ne stanno.
+  // ✅ Con le colonne automatiche le colonne si decidono una volta sola: un tab rimasto
+  // solo occupa UNA colonna, non la riga.
+  // 📌 I 220px sono gli stessi della v6.569 — «quanto spazio vuole un tab» — e restano
+  // l'unica cosa dichiarata. Quanti ce ne stiano lo decide la larghezza.
+  // 📌 align-items:end perche' un nome lungo va a capo e uno corto no: senza, le
+  // sottolineature dei tab non sarebbero in fila.
+  html += '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));align-items:end;gap:0.4rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;">';
   groups.forEach((g, i) => {
-    html += `<button class="linked-fig-tab-btn" data-tab="${g.key}" onclick="switchLinkedFigTab('${g.key}')" style="flex:1 1 220px;min-width:0;white-space:normal;text-align:center;line-height:1.2;font-size:0.8rem;padding:6px 12px;border:none;border-bottom:2px solid ${i===0?'var(--accent)':'transparent'};background:transparent;color:${i===0?'var(--accent)':'var(--muted)'};cursor:pointer;font-weight:${i===0?'600':'400'};">${g.icon} ${g.label} (${g.items.length})</button>`;
+    html += `<button class="linked-fig-tab-btn" data-tab="${g.key}" onclick="switchLinkedFigTab('${g.key}')" style="min-width:0;white-space:normal;text-align:left;line-height:1.2;font-size:0.8rem;padding:6px 12px;border:none;border-bottom:2px solid ${i===0?'var(--accent)':'transparent'};background:transparent;color:${i===0?'var(--accent)':'var(--muted)'};cursor:pointer;font-weight:${i===0?'600':'400'};">${g.icon} ${g.label} (${g.items.length})</button>`;
   });
   html += '</div>';
 
@@ -44088,8 +44207,20 @@ function buildLinkedFiguresTabsHTML(baseId) {
         // distingue fra loro. Gli altri tipi NON si toccano: per un Change il suffisso e' il TIPO
         // e per un errore di stampa e' il tipo di errore - li' il suffisso E' l'identita' della
         // riga, non un di piu'.
+        // 🔄 v6.575 (Franco) - E VALE ANCHE PER LE BASE. La v6.024 aveva tolto il nome del
+        // retro alle sole Variazioni perche' li' nasce da computeFullName(); alle base
+        // arriva dal campo `fullName` SALVATO, e quella strada non era stata guardata.
+        // La ragione della v6.024 non cambia: dentro la scheda di quel retro, il nome del
+        // retro e' l'unica cosa che TUTTE le righe hanno in comune.
+        // 🔴 SCARTATA la strada del taglio a stringhe («se finisce col nome del retro,
+        // togli»): misurato sul sito, su 1.617 righe solo 789 finiscono davvero col nome
+        // completo del retro — le altre hanno un fullName salvato che finisce con un nome
+        // diverso. E' la lezione della v6.521: si compone dai pezzi che si conoscono, non
+        // si spezza una stringa per riconoscerli.
+        // ⚠️ Change ed errori di stampa restano fuori, come nella v6.024: li' il suffisso
+        // e' il TIPO, cioe' l'identita' della riga.
         const _isVar = item.isVariation || item.isUnofficialVariation;
-        const nome = _isVar
+        const nome = (_isVar || _eBase(item))
           ? (item.name || item.fullName || '')
           : ((item.fullName && item.fullName.trim()) ? item.fullName : computeFullName(item, allFigs));
         const num = (!item.noNumber && item.number) ? item.number + ' \u2014 ' : '';
@@ -44822,11 +44953,36 @@ function switchToEditMode(figId) {
   // segnalasse - la doppia verita' che l'elenco chiuso serve a impedire.
   // ⚠️ Riceve la SEZIONE come l'omaggio (v6.253): le due liste della serie distinguono fronte e
   // retro, e su un retro le tipologie frontali non si applicano a niente.
+  // 🔄 v6.578 (Franco, con lo screenshot della 329: *"non e' vero che SEMI ROSA non e' in
+  // elenco: io lo trovo, nel campo Tipologie errori di stampa posteriori"*)
+  // 🔴 COL DIFETTO DIETRO NON SI SCEGLIE: SI LEGGE. La v6.577 aveva ristretto la tendina delle
+  // figurine alla sola lista frontale, e su un difetto posteriore il valore giusto finiva sotto
+  // «⚠️ non in elenco — va aggiunto ai tipi della serie»: un avviso FALSO, perche' nella serie
+  // c'e'. Il meccanismo dei fuori elenco aveva fatto il suo mestiere — conservare il valore —
+  // ma la frase accanto accusava la configurazione di un difetto che non ha.
+  // 📌 Se il tipo si LEGGE dal retro, sulla figurina non va nemmeno chiesto. Un campo
+  // modificabile la cui tendina non contiene la risposta giusta e' peggio dei due estremi.
+  // 📌 La forma della riga e' quella che il riquadro della foto usa gia' qui sopra: il valore,
+  // e accanto da dove arriva.
+  // ⚠️ L'`input hidden` NON e' decorazione: chi salva legge `#fe-print-error-type`.value, e un
+  // div non ce l'ha. Senza, si salverebbe `undefined` al posto del tipo — e il salvataggio non
+  // ha bisogno di sapere niente di tutto questo.
+  const _peDietro = f.isPrintError && _latoErroreStampa(f, getData('figurines', [])) === 'retro';
+  const _peTipo = _tipoErroreStampa(f, getData('figurines', []));
   html += '<div class="detail-row" id="fe-print-error-type-group" style="' + (f.isPrintError ? '' : 'display:none;') + '">' +
     '<span class="detail-label">' + (currentLang==='it'?'Tipo di errore di stampa':'Print error type') + '</span>' +
-    '<select class="form-input" id="fe-print-error-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
-    _opzioniTipoErrore(f.seriesId, f.printErrorType, f.section || 'figurines') +
-    '</select></div>';
+    (_peDietro
+      ? '<span class="detail-value" style="text-align:right;">' + esc(_peTipo || (currentLang==='it'?'non impostato':'not set')) +
+        '<input type="hidden" id="fe-print-error-type" value="' + esc(_peTipo) + '">' +
+        // ⚠️ NON `--muted`: dentro `switchToEditMode` il grigio e' vietato (v6.439, e
+        // `prova-v6439` lo verifica). Li' il testo e' bianco perche' e' la form dell'admin.
+        '<div style="font-size:0.72rem;color:var(--text);opacity:0.75;margin-top:2px;">' +
+        (currentLang==='it' ? 'Il difetto sta sul retro: la tipologia arriva da quel retro.'
+                            : 'The defect is on the back: the type comes from that back.') +
+        '</div></span>'
+      : '<select class="form-input" id="fe-print-error-type" style="padding:0.3rem 0.5rem;font-size:0.9rem;">' +
+        _opzioniTipoErrore(f.seriesId, f.printErrorType, f.section || 'figurines') +
+        '</select>') + '</div>';
 
   // Figurina/Retro base — ricerca in digitazione (stesso pattern del Retro associato)
   // v6.235 - da chi puo' nascere QUESTO oggetto: una riga, letta dalla dichiarazione. Sta FUORI
