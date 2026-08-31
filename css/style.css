@@ -327,6 +327,13 @@ body {
 .btn-danger:hover { background: #ff8080; }
 
 .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+/* 🆕 v6.567 (Franco) — LO STESSO PER I PRIMARI, e si copia invece di disegnarne uno
+   simile (regola v6.175). `saveBulkScore` disabilita gia' il suo pulsante mentre salva:
+   non era cliccabile, semplicemente non lo SEMBRAVA — e un pulsante che sembra vivo e non
+   risponde fa premere due volte.
+   ⚠️ Vale per tutti i .btn-primary del sito, non solo per quello: ogni pulsante primario
+   che qualcuno disabilita, da oggi, lo dice anche a chi guarda. */
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* IL ROSSO VUOTO (v5.723): "elimina questo", ma la conferma deve ancora arrivare.
    Erano QUATTRO pulsanti con lo stesso stile scritto a mano quattro volte (bordo rosso,
@@ -583,6 +590,64 @@ body {
   position: relative; overflow: hidden;
 }
 .fig-img img { width: 100%; height: 100%; object-fit: cover; }
+/* 🆕 v6.555 (Franco: *"potremmo provare a mettere questa cornice anche sulla card?"*) —
+   LA CORNICE DELL'ERRORE DI STAMPA SULLA CARD, IN UNA REGOLA SOLA.
+   🔴 La coppia fronte/retro si disegna in cinque modi (`_retroViewMode`), e la cornice non sta
+   in nessuno dei cinque: il JS dichiara solo DA CHE PARTE sta l'errore, qui si decide COME si
+   vede. Un sesto modo di impaginare la coppia nascera' gia' incorniciato.
+   📌 `box-shadow:inset` e non `border`: un bordo vero toglierebbe 2px per lato alla foto, dentro
+   un riquadro che di spazio non ne ha. L'ombra sta sopra, non ruba niente.
+   ⚠️ Nessuna etichetta qui, al contrario della scheda (v6.553): le facce stanno dentro un
+   `overflow:hidden` che taglierebbe sia il testo sia la parte che sporge dal bordo. Sulla card
+   la cornice dice DOVE; il COSA lo dice la riga TIPOLOGIA sotto la foto. */
+.fig-img-placeholder[data-lato-errore="fronte"] > .coppia-facce > div:first-child,
+.fig-img-placeholder[data-lato-errore="retro"]  > .coppia-facce > div:last-child {
+  /* 🔄 v6.560 — QUI STAVA UN box-shadow:inset, ED E' STATO SOSTITUITO DA UNA LINEA VERA,
+     RIENTRATA. L'ombra interna correva sul bordo della faccia, e la faccia vive in un
+     `overflow:hidden`: un'etichetta a cavallo di quella linea sarebbe stata tagliata a meta'.
+     ✅ Rientrando di 7px la linea sta tutta dentro il riquadro, e la scritta ci si appende come
+     nella scheda. 📌 Resta l'assillo della v6.557 — non rubare spazio alla foto — ed e' per
+     questo che e' uno pseudo-elemento sopra l'immagine e non un `border` sul contenitore. */
+  border-radius: 3px;
+  /* 🆕 v6.556 — e la fascetta col tipo si ancora QUI, non alla coppia. Senza questa riga
+     finirebbe in cima al riquadro anche quando a essere incorniciata e' la faccia di
+     sotto: le due facce sono figlie di un contenitore gia' posizionato. */
+  position: relative;
+  /* 🆕 v6.565 — TRE PIXEL DI RESPIRO, e non sono estetica. Se una foto riempie la faccia
+     esatta, «appena fuori dalla foto» cade fuori dalla faccia, dove taglia
+     l'overflow:hidden — ed e' il caso che Franco vedeva (la 315). Con 3px l'immagine si
+     stringe di un'inezia e la linea ha dove appoggiarsi senza coprire niente. */
+  padding: 3px;
+  box-sizing: border-box;
+}
+.fig-img-placeholder[data-lato-errore="fronte"] > .coppia-facce > div:first-child::before,
+.fig-img-placeholder[data-lato-errore="retro"]  > .coppia-facce > div:last-child::before {
+  content: '';
+  /* 🔄 v6.563 — DA 7px A ZERO. La rientranza serviva a far stare la scritta a cavallo
+     della linea (v6.560), ma costava il taglio della foto: una foto verticale riempie la
+     faccia in altezza — misurato sul sito, 124x174 dentro un riquadro 174x174 — quindi
+     una linea a 7px dal bordo le passa sopra. Sempre, non a volte.
+     ✅ Sul bordo, la linea coincide con la separazione fra le due facce o col bordo della
+     card: non c'e' niente da tagliare. E' il «filo fra le due foto» chiesto da Franco.
+     📌 Niente raggio: agli angoli ci pensa gia' .fig-card, che e' arrotondata e taglia. */
+  /* 🔄 v6.564 — 2px E UN FILO SCURO DENTRO (Franco: «non mi sembra sia cambiato molto»).
+     📌 `--type-printerror` e' un corallo chiaro: contro una figurina satura di colori
+     chiari un filo di 1px non ha contrasto contro niente. Non serve un colore piu'
+     acceso, serve qualcosa di DIVERSO da quello che c'e' sotto — la stessa idea del
+     bordo attorno ai sottotitoli. Cosi' stacca sia sul chiaro sia sullo scuro.
+     ⚠️ E i 2px non tornano a mangiare la foto come nella v6.557: li' la linea era
+     rientrata e ci passava sopra, qui e' sul bordo e cresce verso l'interno di 1px. */
+  position: absolute; inset: 0;
+  border: 2px solid var(--type-printerror);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55);
+  /* 🆕 v6.565 — le due misure le scrive `_adattaCorniciErrore` guardando dove l'immagine
+     e' DAVVERO dipinta. Lo zero e' il ripiego per l'istante prima che la foto carichi:
+     meglio una cornice sul riquadro che nessuna cornice. */
+  inset: var(--cornice-y, 0) var(--cornice-x, 0);
+  pointer-events: none;
+}
+
+
 .fig-img-placeholder { 
   background: linear-gradient(135deg, var(--bg2) 0%, var(--card2) 100%);
   width: 100%; aspect-ratio: 1; display: flex; align-items: center;
@@ -1256,16 +1321,22 @@ footer {
      l'immagine solo in orizzontale, l'altezza resta 36px. Solo desktop. */
   #navbar .nav-logo img { width: 150px !important; height: 36px !important; object-fit: fill; }
 
-  /* v5.846 — il RETRO ha piu' larghezza del fronte: le due foto non hanno le stesse
-     proporzioni (il retro e' tipicamente piu' largo che alto), quindi a parita' di colonna
-     rendeva un'immagine visivamente piu' piccola. Il fronte resta com'e' - Franco lo da' per
-     buono - e a crescere sono la colonna del retro e, di conseguenza, il modale. */
+  /* 🗑️ v6.550 — QUI STAVA LA v5.846, ED E' REVOCATA. Diceva: *"il retro e' piu' largo del
+     fronte, quindi a parita' di colonna rende un'immagine visivamente piu' piccola"*, e dava al
+     retro una colonna 1.4fr. Era vero finche' le due foto avevano ALTEZZA FISSA uguale: la
+     larghezza in piu' era l'unico modo di farlo crescere.
+     🔴 Ma era anche la causa dello squilibrio che Franco ha visto: misurato sul sito, la foto
+     orizzontale usciva a 117k px2 e quella verticale a 62k — quasi il doppio.
+     ✅ Dalla v6.550 ogni faccia sta in un riquadro QUADRATO (aspect-ratio:1, come nella card):
+     il vincolo e' il lato, non l'altezza, e le aree si pareggiano da sole. Le colonne tornano
+     pari — se restassero 1fr/1.4fr i due quadrati sarebbero di lato diverso e il difetto
+     tornerebbe piu' grosso di prima. Il modale resta largo: le foto crescono tutte e due. */
   #fig-detail-modal .modal { max-width: min(1320px, 97vw) !important; }
   #fig-detail-modal .modal > div:nth-child(2) {
     grid-template-columns: 1fr 740px !important;
   }
   #fig-detail-photo > div {
-    grid-template-columns: 1fr 1.4fr !important;
+    grid-template-columns: 1fr 1fr !important;
     align-items: stretch !important;
   }
   /* il blocco del retro (etichetta, foto, link) centrato verticalmente rispetto al fronte,
