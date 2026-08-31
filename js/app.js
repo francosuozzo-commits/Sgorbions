@@ -1,6 +1,154 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.569 — I tab dei collegati riempiono la riga sempre, non solo quando sono due
+//          (Franco: «regola generale, niente numeri magici»).
+//          🔴 La v6.568 aveva scritto `groups.length === 2`, e la domanda «cosa accade se
+//          sono 3?» l'ha trovato subito: con tre o quattro si tornava a impilare.
+//          ✅ Ora ogni bottone dichiara `flex:1 1 220px` e il wrap decide dove spezzare:
+//          in nessun punto si legge quanti sono. ⚠️ Con 5-6 tab le colonne si stringono e
+//          i nomi vanno su piu' righe: scelta di Franco, sapendolo.
+//          Modificato js/app.js, index.html.
+// v6.568 — Con DUE tab dei collegati i bottoni si dividono la riga invece di impilarsi
+//          (Franco). 📌 La barra era gia' flex: mandava a capo perche' i due nomi non ci
+//          stavano. 🔴 Accorciare i nomi era vietato — v6.025/v6.376 dicono che «Omaggi» e
+//          «Omaggi di questo retro» sono due domande diverse — quindi cambia il layout:
+//          il testo va a capo DENTRO il bottone invece di mandare a capo il bottone.
+//          ⚠️ Solo con due: in sei darebbe colonne da una parola. Modificato js/app.js,
+//          index.html.
+// v6.567 — «Applica rarità ai risultati» (era «massiva»), e il pulsante si vede spento
+//          mentre salva (Franco, le due piu' vecchie del backlog).
+//          📌 Nello stesso riquadro il titolo diceva gia' «ai risultati» e la descrizione
+//          «restituiti dalla ricerca»: «massiva» era l'unica parola che non diceva a chi.
+//          ✅ E il pulsante era GIA' disabilitato da saveBulkScore: mancava solo la riga
+//          di CSS che lo mostra — copiata da .btn-danger:disabled (v5.723), non inventata.
+//          Modificato js/app.js, css/style.css, index.html.
+// v6.566 — Il ✕ torna accanto alla freccia: dalla catena di salti si esce senza
+//          risalirla (Franco). 🔴 La v6.524 aveva scritto la propria scusante nel suo
+//          commento — «chi vuole uscire ha Esc e il clic fuori» — e due vie di fuga che
+//          non si vedono non sono una via di fuga. ✅ Due mestieri, due tasti: ↩ risale
+//          un passo, ✕ abbandona il viaggio e svuota la pila. Il secondo compare solo
+//          quando c'e' una catena. Modificato js/app.js, index.html.
+// v6.565 — La cornice della griglia si posa sulla FOTO, non sul riquadro (Franco).
+//          🔴 Faccia e foto non sono la stessa cosa: con object-fit:contain l'immagine si
+//          centra e lascia bande vuote. Nessun inset fisso poteva servirle tutte — zero
+//          taglia le foto che riempiono la faccia, altri numeri allontanano le altre.
+//          ✅ _adattaCorniciErrore misura dove l'immagine e' dipinta e passa due variabili
+//          alla regola CSS. ⚠️ La faccia incorniciata prende 3px di padding: senza, «fuori
+//          dalla foto» sarebbe fuori dalla faccia, dove taglia l'overflow.
+//          Modificato js/app.js, css/style.css, index.html.
+// v6.564 — La cornice della griglia si vede: 2px piu' un filo scuro subito dentro
+//          (Franco: «non mi sembra sia cambiato molto», e aveva ragione). 🔴 La v6.563
+//          aveva risolto solo META' della segnalazione — il taglio — e lasciato la
+//          visibilita', che era l'altra meta'. 📌 Un corallo chiaro da 1px non stacca da
+//          una figurina satura: non serve un colore piu' acceso, serve un secondo colore.
+//          Modificato js/app.js, css/style.css, index.html.
+// v6.563 — La cornice della griglia non taglia piu' la foto (Franco). 🔴 Era una
+//          conseguenza diretta della v6.560: la linea rientrata di 7px passava sopra le
+//          foto che riempiono la faccia — cioe' tutte quelle verticali. ✅ Con inset:0 la
+//          linea cade sui bordi della faccia, che sono il bordo della card o la
+//          separazione fra le due foto: il «filo fra le due foto» chiesto da Franco.
+//          🔴 Prezzo: sulla card la scritta non puo' piu' stare a cavallo (non c'e' piu'
+//          la rientranza che glielo permetteva) e si appoggia dentro l'angolo. Sulla
+//          scheda resta a cavallo. Modificato js/app.js, css/style.css, index.html.
+// v6.562 — La scritta sulla cornice della card passa da 0,5 a 0,68rem (Franco: «si fa
+//          fatica a leggere»). 📌 0,5rem erano 8 pixel, tutti maiuscoli: sotto gli 11 px
+//          una maiuscola spaziata non si legge, si riconosce. ⚠️ Non 0,72 come la scheda:
+//          li' la faccia e' il doppio. 🔴 E torna il troncamento sui tipi lunghi.
+//          Modificato js/app.js, index.html.
+// v6.561 — La scritta sulla cornice dice SOLO la tipologia (Franco). 🔄 Revoca la v6.553
+//          e la meta' testuale della v6.560: «ERRORE DI STAMPA» e' gia' nel badge, sulla
+//          stessa immagine. Il COME era giusto (le parole dal descrittore), il COSA no.
+//          📌 Senza tipo la fascetta sparisce: la cornice dice DOVE, il badge dice COSA.
+//          Modificato js/app.js, index.html.
+// v6.560 — La scritta torna LUNGO la cornice, e stavolta anche sulla card (Franco).
+//          🔴 Alla v6.558 avevo letto «scrivi dentro il bordo» come «dentro il riquadro»
+//          e avevo tolto l'etichetta dal bordo della scheda: era l'opposto: andava
+//          portata sulla card. La scheda torna com'era, la card impara la forma.
+//          ✅ Sulla card la cornice si disegna RIENTRATA di 7px, cosi' la sua linea sta
+//          tutta dentro il riquadro e l'overflow:hidden non taglia piu' niente.
+//          ⚠️ Li' l'etichetta va sul lato di SOTTO: sopra c'e' il badge (v6.557).
+//          📌 E il testo diventa uno solo per tutti e due (_testoFascettaErrore).
+//          Modificato js/app.js, css/style.css, index.html.
+// v6.559 — Il comando «TUTTE» torna nel riquadro ERRORI DI STAMPA (Franco).
+//          🔴 Non una dimenticanza: una PRECEDENZA. Il + lega piu' stretto del ? :, quindi
+//          la riga di «Tutte» faceva parte del ramo FALSO del ternario — e il riquadro con
+//          un corpoHTML suo (solo gli errori di stampa, dalla v6.534) prende l'altro.
+//          ✅ Ora il corpo si compone prima e il comando si attacca dopo, a qualunque
+//          corpo. Modificato js/app.js, index.html.
+// v6.558 — Anche la scheda scrive DENTRO il bordo (Franco). 🔴 Le due fascette ora fanno
+//          la stessa cosa in due misure, quindi lo stile nasce in un posto solo
+//          (_stileFascettaErrore) e le due funzioni chiedono la propria taglia.
+//          🔄 REVOCA la v6.554: aveva alzato «Fronte»/«Retro» a 14px per fare posto
+//          all'etichetta che sporgeva dal bordo. Ora non sporge piu', quindi tornano a
+//          4px — una regola col motivo morto resta per anni senza che nessuno sappia
+//          perche'. Modificato js/app.js, index.html.
+// v6.557 — Sulla card la cornice scende a 1px e la fascetta va in basso a sinistra
+//          (Franco). 🔴 La sovrapposizione era prevedibile: il badge del tipo sta a
+//          top:8px right:8px dalla v5.711, e la fascetta nasceva in alto e larga quanto
+//          la faccia. ⚠️ La scheda non si tocca: li' la faccia e' il doppio e badge non
+//          ce ne sono. Modificato js/app.js, css/style.css, index.html.
+// v6.556 — La cornice della card porta una fascetta col TIPO dell'errore, dentro il
+//          riquadro (Franco). 🔴 Non si poteva copiare l'etichetta della scheda: quella
+//          sta a cavallo del bordo e qui la faccia vive in un overflow:hidden che ne
+//          taglierebbe la meta'. ⚠️ La strada tutta-CSS non esisteva: content:attr() legge
+//          solo gli attributi dell'elemento su cui gira, e il tipo sta sul contenitore.
+//          ✅ Il testo lo mette il JS in TRE stringhe sole, per dieci punti.
+//          Modificato js/app.js, css/style.css, index.html.
+// v6.555 — Anche la card della griglia incornicia la faccia che porta l'errore (Franco).
+//          🔴 La coppia si disegna in CINQUE modi: la cornice non sta in nessuno dei
+//          cinque. Il lato si dichiara una volta sul contenitore (data-lato-errore) e a
+//          disegnare pensa una regola CSS — un sesto modo nasce gia' con la cornice.
+//          ⚠️ Sulla card niente etichetta: le facce sono ~174px dentro un overflow:hidden,
+//          che taglierebbe il testo. La cornice dice DOVE, la riga TIPOLOGIA dice COSA.
+//          Modificato js/app.js, css/style.css, index.html.
+// v6.554 — «Fronte» e «Retro» sopra le foto della scheda prendono aria: 4px -> 14px
+//          (Franco). L'etichetta della cornice sporge sopra il bordo di ~7px perche' e'
+//          alzata di meta' altezza (v6.331), quindi con 4px si toccavano. ⚠️ Cambiate
+//          tutte e due, anche la faccia senza cornice: affiancate, si vedrebbero storte.
+//          Modificato js/app.js, index.html.
+// v6.553 — L'etichetta della cornice dice «ERRORE DI STAMPA - <tipo>» (Franco). Le due
+//          parole vengono dal descrittore VERSIONI_ARTICOLO, non scritte a mano: in
+//          inglese dira' «PRINT ERROR - » da se'. 🔄 Revoca la riga della v6.552 sul
+//          «senza tipo niente etichetta»: la testa non manca mai.
+//          Modificato js/app.js, index.html.
+// v6.552 — La scheda di un errore di stampa INCORNICIA la faccia che porta l'errore, e
+//          l'etichetta sul bordo superiore dice il tipo (Franco).
+//          📌 Quale faccia lo diceva gia' _latoErroreStampa (v6.510): qui c'e' solo il
+//          disegno, copiato dai riquadri di ricerca della v6.331.
+//          Modificato js/app.js, index.html.
+// v6.551 — La card «Sfida gli altri» non promette piu' la lista PIU' GRANDE, ma quella
+//          col punteggio maggiore (Franco). Dal giorno della Rarita' la Classifica non
+//          ordina per quantita', quindi la card in home prometteva una gara che non si
+//          gioca. La gemella dentro la pagina (classifica.best) era gia' corretta:
+//          restava la copia della home. ⬜ Le due frasi non combaciano ancora — punto
+//          aperto, e' una decisione di Franco.
+//          Modificato js/app.js, index.html.
+// v6.550 — Le due foto della scheda in un riquadro QUADRATO ciascuna, come nelle card
+//          (Franco). Con l'altezza fissa il vincolo era l'altezza per tutte e due, e
+//          dentro colonne larghe diverse l'orizzontale arrivava a quasi il doppio di
+//          area: misurato sul sito, 62k px2 contro 117k. Col quadrato il vincolo e' il
+//          lato e le aree si pareggiano. ⚠️ Revoca la v5.846 (colonne 1fr/1.4fr).
+//          Modificato js/app.js, css/style.css, index.html.
+// v6.549 — La riga dei totali e la descrizione della serie cambiano lingua (Franco).
+//          🔴 La v6.548 aveva preso due chiamate su tre: la riga dei totali la disegna
+//          renderSeriesMeta, che non sta dentro _mostraTestataSerie. E accanto c'era la
+//          descrizione, scelta una volta sola dentro openSeriesDetail.
+//          ✅ La scelta della descrizione esce in _applicaDescrizioneSerie (un posto
+//          solo, due chiamanti) e applyI18n ridisegna descrizione + totali, nell'ordine
+//          che openSeriesDetail usa da sempre.
+//          Modificato js/app.js, index.html.
+// v6.548 — La testata della serie cambia lingua, e i nomi delle sezioni li dice il
+//          DESCRITTORE (Franco).
+//          🔴 Due difetti, e il secondo spiega il primo: i sette titoli delle card stavano
+//          nell'HTML con un data-i18n ciascuno — e «Figurine da attaccare» il suo non
+//          ce l'aveva; e al cambio lingua la testata non si ridisegnava affatto, quindi
+//          conteggi e descrizioni restavano nella lingua di prima.
+//          ✅ Ora il titolo lo scrive updateSectionCounts chiedendolo a getSectionLabel,
+//          e applyI18n ridisegna testata e conteggi. Una sezione nuova nasce gia'
+//          tradotta senza toccare l'HTML.
+//          📌 E l'index perde le ultime DUE «Altri oggetti» (card + statistica home).
+//          Modificato js/app.js, index.html.
 // v6.547 — Nel riquadro ERRORI DI STAMPA una sezione senza errori di quel lato non si
 //          disegna affatto (Franco).
 //          🔴 REVOCA la scelta della v6.520 («si disegnano anche a zero»): valeva per un
@@ -25481,7 +25629,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.547';
+const JS_VERSION = 'v6.569';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27020,7 +27168,7 @@ const i18n = {
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
-'hero.challenge':'Challenge others','hero.challengeDesc':'Who has the biggest list? You can also choose to appear anonymously.',
+'hero.challenge':'Challenge others','hero.challengeDesc':'Who has the highest-scoring list? You can also choose to appear anonymously.',
 'hero.desc':'The unofficial database dedicated to the legendary Italian sticker series of the \'90s.','hero.descShort':'The unofficial database of the legendary Italian \'90s series.',
 'hero.nota':'<strong style="color:var(--accent);">NOTE:</strong><br>This site is purely for collecting and sharing information among collectors. We want to connect collectors from around the world, and let them search for items they do not own, finding other collectors to trade with.<br><br>The information on the site represents the knowledge of the administrator and does not claim to be official information.',
 'hero.cta1':'Explore the Sgorbions Inventory !','hero.cta2':'Start collecting Sgorbions',
@@ -27053,7 +27201,7 @@ const i18n = {
 'auth.title':'Welcome back','auth.login':'Login','auth.register':'Sign up',
 'auth.login.btn':'Enter','auth.reg.btn':'Confirm registration','auth.reg.wait':'Registration can take up to a minute: don\u2019t close this window.',
 'modal.bulkscore.title':'⭐ Assign rarity to results','modal.bulkscore.desc':'Assign the same rarity to all the items returned by the search.',
-'modal.bulkscore.label':'Rarity to assign','modal.bulkscore.apply':'Apply rarity in bulk',
+'modal.bulkscore.label':'Rarity to assign','modal.bulkscore.apply':'Apply rarity to results',
 'modal.figdetail.title':'Sticker detail','modal.segnala.send':'Send comment','modal.segnala.title':'🚩 Report an issue','modal.segnala.desc':'Describe the issue you found with this sticker. The report will only be visible to the administrator.','modal.segnala.comment':'Comment','modal.segnala.placeholder':'Describe the issue...',
 'modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','modal.series.delete':'Delete series',
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
@@ -27129,7 +27277,7 @@ const i18n = {
 
 'nav.login':'Accedi','nav.register':'Registrati','nav.logout':'Esci','nav.mialista':'Mia lista',
     'hero.eyebrow':'🇮🇹 Le Figurine Più Orribili degli Anni \'90',
-    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista più grande? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.','hero.descShort':'Il database non ufficiale della leggendaria serie italiana anni \'90.',
+    'hero.sub':'L\'Universo dei Collezionisti','hero.myvsTotal':'Mia lista / Totale Inventario','hero.challenge':'Sfida gli altri','hero.challengeDesc':'Chi ha la lista con maggior punteggio? Puoi anche scegliere di apparire in modo anonimo.','hero.desc':'Il database non ufficiale dedicato alla leggendaria serie italiana degli anni \'90.','hero.descShort':'Il database non ufficiale della leggendaria serie italiana anni \'90.',
     'hero.nota':'<strong style="color:var(--accent);">NOTA:</strong><br>Questo sito ha un puro scopo di collezionismo e scambio di informazioni tra collezionisti. Vogliamo mettere i collezionisti di tutto il mondo in contatto tra loro, e consentire loro di cercare materiale non in loro possesso, trovando altri collezionisti con cui fare scambi.<br><br>Le informazioni contenute nel sito rappresentano la conoscenza dell\'amministratore, e non pretendono di essere un\'informazione ufficiale.','hero.cta1':'Esplora l\'Inventario Sgorbions !','hero.cta2':'Inizia a collezionare gli Sgorbions',
     'hero.stat1':'Serie','hero.stat2':'Figurine','hero.stat2b':'Retro','hero.stat2c':'Album','hero.stat2d':'Altri articoli','hero.stat2e':'Bustine','hero.stat3':'Collezionisti','hero.statLangs':'Lingue del sito',
     'home.featured.eyebrow':'Serie in Evidenza','home.featured.title':'Esplora il Mondo del Moccio','home.featured.sub':'Ogni serie accuratamente documentata con illustrazioni originali, descrizioni e info sulla rarità.',
@@ -27153,7 +27301,7 @@ const i18n = {
     'form.post.type':'Tipo di Post','form.post.title':'Titolo','form.post.body':'Contenuto','form.post.question':'❓ Domanda','form.post.news':'📢 Notizia / Scoperta',
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
-    'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità massiva','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
+    'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità ai risultati','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
 'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (di fronte o retro) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
@@ -27237,6 +27385,27 @@ function applyI18n() {
   try { aggiornaTestiRicercaSezione(); } catch (e) { console.error('aggiornaTestiRicercaSezione', e); }
   // e le etichette dei box filtri, anch'esse costruite a mano con il nome della sezione
   try { if (currentSection) renderItemTypeFilters(); } catch (e) { console.error('renderItemTypeFilters (i18n)', e); }
+  // 🆕 v6.548 (Franco: *"tutta la parte alta della scheda della serie non cambia lingua"*)
+  // - E ANCHE LA TESTATA DELLA SERIE. setLang chiamava applyI18n() e renderAll(), ma quei
+  // due non toccano la testata: i conteggi («N articoli», «M nella tua lista») e le
+  // descrizioni restavano nella lingua di prima, e a cambiare erano solo i pezzi con
+  // data-i18n. Mezza schermata in una lingua e mezza nell'altra.
+  // 📌 Stesse try/catch delle due righe qui sopra: se una parte non c'e', le altre si
+  // ridisegnano lo stesso.
+  // ⚠️ L'ORDINE CONTA: updateSectionCounts riscrive i titoli DOPO che applyI18n ha
+  // ripassato tutti i data-i18n, altrimenti il titolo tornerebbe quello della chiave.
+  // 🆕 v6.549 (Franco, sulla preview della v6.548: *"la parte alta della scheda serie,
+  // quelle coi totali messi in riga, non ha cambiato lingua"*)
+  // 🔴 LA v6.548 AVEVA PRESO DUE CHIAMATE SU TRE. La riga dei totali («N articoli»,
+  // «N nella tua lista», «Le hai tutte !») la disegna renderSeriesMeta, che NON sta
+  // dentro _mostraTestataSerie: si vede in closeItemsSection, dove le tre chiamate
+  // stanno una accanto all'altra.
+  // 📌 L'ORDINE e' quello che openSeriesDetail usa da sempre: descrizione, poi i totali
+  // (che riscrivono #detail-meta con innerHTML), poi il resto della testata.
+  try { if (currentSeriesId) _applicaDescrizioneSerie(getData('series', []).find(x => x.id === currentSeriesId)); } catch (e) { console.error('_applicaDescrizioneSerie (i18n)', e); }
+  try { if (currentSeriesId) refreshSeriesMeta(); } catch (e) { console.error('refreshSeriesMeta (i18n)', e); }
+  try { if (currentSeriesId) _mostraTestataSerie(); } catch (e) { console.error('_mostraTestataSerie (i18n)', e); }
+  try { if (currentSeriesId) updateSectionCounts(); } catch (e) { console.error('updateSectionCounts (i18n)', e); }
 }
 
 function setLang(lang, byUser = false) {
@@ -34852,6 +35021,16 @@ function chiudiSchedaFigurina() {
   }
   closeModal('fig-detail-modal');
 }
+// 🆕 v6.566 (Franco: *"se voglio interrompere questa catena di salti ed uscire non posso"*)
+// ESCE DALLA CATENA, senza risalirla. 🔴 Non e' il gemello di chiudiSchedaFigurina: quello
+// risale un passo, questo abbandona il viaggio. Due mestieri, due tasti - la v6.524 aveva
+// ragione a dire che un solo tasto che fa tutti e due sarebbe una bugia disegnata.
+// ⚠️ La pila si SVUOTA: se restasse, la prossima scheda aperta mostrerebbe la freccia e
+// riporterebbe dentro una catena che l'utente aveva chiuso.
+function esciDaSchedaFigurina() {
+  _pilaSchede = [];
+  closeModal('fig-detail-modal');
+}
 function navigateFigDetail(direction) {
   if (!_currentDetailFigId) return;
   const ids = _navIdsCorrenti(_currentDetailFigId);
@@ -35886,6 +36065,23 @@ function renderSeriesMeta(s) {
 // punto: la stessa funzione, di nuovo non richiamata quando il dato cambia.
 // Un punto solo, chiamato da chiunque tocchi la lista: cosi' la prossima funzione che
 // modifichera' la lista non dovra' ricordarsi di ripetere la ricerca della serie.
+// 🆕 v6.549 - QUALE DESCRIZIONE, IN QUALE LINGUA. Una riga sola, in un posto solo:
+// la chiama openSeriesDetail all'apertura e applyI18n al cambio lingua.
+// 📌 Va applicata PRIMA di renderSeriesMeta: quello riscrive #detail-meta con innerHTML
+// e salvaNodiDaMeta() sposta fuori i nodi che ci vivono dentro, descrizione compresa.
+function _applicaDescrizioneSerie(s) {
+  if (!s) return '';
+  const desc = currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt);
+  const p = document.getElementById('detail-desc');
+  if (p) p.textContent = desc || '';
+  // v5.856 — su telefono la descrizione della serie si chiude a tendina: parte accorciata a tre
+  // righe, con un comando "Mostra tutto / Mostra meno" sotto. Il comando compare solo se il testo
+  // e' davvero lungo (oltre ~140 caratteri): sotto quella soglia le tre righe bastano e un
+  // comando che non fa niente e' peggio che non averlo. Sul desktop nulla cambia.
+  _setupSeriesDescToggle(desc || '');
+  return desc || '';
+}
+
 function refreshSeriesMeta() {
   if (!currentSeriesId) return;
   const s = getData('series', []).find(x => x.id === currentSeriesId);
@@ -35910,15 +36106,13 @@ function openSeriesDetail(seriesId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const det = document.getElementById('series-detail');
   det.style.display = 'block';
-  const desc = currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt);
   document.getElementById('detail-name').textContent = s.name;
   document.getElementById('detail-year').textContent = s.year;
-  document.getElementById('detail-desc').textContent = desc || '';
-  // v5.856 — su telefono la descrizione della serie si chiude a tendina: parte accorciata a tre
-  // righe, con un comando "Mostra tutto / Mostra meno" sotto. Il comando compare solo se il testo
-  // e' davvero lungo (oltre ~140 caratteri): sotto quella soglia le tre righe bastano e un
-  // comando che non fa niente e' peggio che non averlo. Sul desktop nulla cambia.
-  _setupSeriesDescToggle(desc || '');
+  // 🔄 v6.549 - LA SCELTA DELLA LINGUA DELLA DESCRIZIONE ESCE DA QUI. Stava dentro
+  // openSeriesDetail, che gira UNA VOLTA all'apertura: cambiando lingua a serie aperta
+  // la descrizione restava quella di prima. Ora la regola sta in un posto solo e la
+  // usano tutti e due i chiamanti - non se ne fa una seconda copia.
+  _applicaDescrizioneSerie(s);
   _aggiornaComandiTestata();   // v6.164 - la regola sta li', non piu' qui
 
   // Campi meta nella hero
@@ -35949,6 +36143,20 @@ function updateSectionCounts() {
     const items = getData('figurines', []).filter(f => f.seriesId === currentSeriesId && f.section === sec);
     const el = document.getElementById('count-' + sec);
     if (!el) return;
+    // 🆕 v6.548 - IL TITOLO DELLA CARD LO DICE IL DESCRITTORE, non l'HTML. Nell'index i
+    // sette titoli erano scritti a mano con un data-i18n ciascuno - e «Figurine da
+    // attaccare» il suo non ce l'aveva, quindi restava in italiano per sempre.
+    // 📌 Cosi' una sezione nuova nasce gia' tradotta, e nessuno deve ricordarsi di
+    // aggiungere una chiave: ARTICOLI le due lingue le ha da sempre.
+    // 📌 Il titolo e' il fratello PRECEDENTE del contatore: nell'HTML gli sta sempre
+    // accanto, quindi non serve inventargli un id.
+    // ⚠️ Il data-i18n va TOLTO, non solo scavalcato: applyI18n gira dopo e riscriverebbe
+    // il titolo dalla chiave - e per «attaccare» quella chiave non esiste nemmeno.
+    const _tit = el.previousElementSibling;
+    if (_tit && _tit.classList && _tit.classList.contains('section-choice-title')) {
+      _tit.removeAttribute('data-i18n');
+      _tit.textContent = getSectionLabel(sec);
+    }
     const total = items.length;
     // 🔄 v6.477 (Franco: *"dovrebbe essere «xxx articoli»"*) — L'ULTIMA «oggetti».
     // 📌 Chiude un punto che il codice si era annotato da solo: il commento della
@@ -38409,7 +38617,15 @@ header += `</div>`;
     // si disegna: e' il caso degli errori di stampa, che dalla v6.534 hanno due SEZIONI.
     // Stessa scelta di `cappelloHTML` e `pieHTML`: lo dichiara il DESCRITTORE, il pannello
     // non sa cosa ci finira' dentro.
-    body = C.corpoHTML ? C.corpoHTML(C) : (C.cappelloHTML ? C.cappelloHTML() : '')
+    // 🔴 v6.559 (Franco: *"manca il tasto TUTTI nella sezione ERRORI DI STAMPA"*)
+    // QUI C'ERA UN SOLO `body =` CON UN TERNARIO, e la riga di «Tutte» stava DOPO due
+    // addendi: in JavaScript il + lega piu' stretto del ? :, quindi finiva tutta nel ramo
+    // FALSO. Il riquadro che dichiara un corpo suo - gli errori di stampa, e nessun altro -
+    // prendeva l'altro ramo e restava senza comando. Provato eseguendo: con corpoHTML
+    // usciva solo il corpo.
+    // ✅ Ora sono due passaggi: prima il CORPO, poi «Tutte» attaccato a quello che ne esce.
+    // Un riquadro con un corpo suo non e' un riquadro senza comandi.
+    const _corpoRiquadro = C.corpoHTML ? C.corpoHTML(C) : (C.cappelloHTML ? C.cappelloHTML() : '')
       + (C.corpoHTML ? '' : `<div style="display:flex;flex-wrap:${C.unaRiga ? 'nowrap' : 'wrap'};align-items:center;gap:0.4rem;${C.unaRiga ? 'overflow-x:auto;' : ''}${_etichettaSulBordo ? '' : 'margin-top:0.6rem;'}">${chips}`
       + (C.pieHTML ? `<span style="margin-left:auto;padding-left:0.6rem;flex-shrink:0;white-space:nowrap;">${C.pieHTML()}</span>` : '')
       + `</div>`)
@@ -38421,6 +38637,8 @@ header += `</div>`;
       // riquadro delle VERSIONI, dove «Tutte» non compare perché i valori sono una
       // partizione (v6.512). Se un domani un riquadro avesse tutti e due, finirebbero uno
       // sopra l'altro — questa riga è dopo, quindi sotto.
+      ;
+    body = _corpoRiquadro
       + (_chipTutte ? `<div style="display:flex;justify-content:flex-end;margin-top:0.5rem;">${_chipTutte}</div>` : '');
     // 🆕 v6.333 (Franco) - IL PIEDE DEL RIQUADRO, in fondo a destra. Lo dichiara il DESCRITTORE
     // (`pieHTML`), come `chipsInTitolo` della v6.330 - ma stavolta e' una cosa che c'e' davvero e
@@ -38940,11 +39158,66 @@ function _facciaRetroHTML(imgUrl, onloadAttr, vuoto) {
 // spariva dalla card - il contrario di quello che serve.
 // v6.098 - `retroVuoto` vale SOLO per la faccia di destra: il fronte di una figurina esiste sempre,
 // quindi la sua assenza e' sempre una foto che manca, mai una faccia che non c'e'.
-function _coppiaAffiancataHTML(imgFronte, imgRetro, retroVuoto) {
-  return `<div style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
-            <div style="flex:1;min-height:0;overflow:hidden;">${_facciaRetroHTML(imgFronte)}</div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_facciaRetroHTML(imgRetro, null, retroVuoto)}</div>
+// 🆕 v6.556 (Franco: *"si', solo il tipo, dentro la cornice"*) - LA FASCETTA DELLA CARD.
+// 🔴 NON e' l'etichetta della scheda: quella sta a cavallo del bordo, e qui la faccia vive
+// dentro un overflow:hidden che ne taglierebbe la meta' sporgente. Questa sta DENTRO.
+// 🔄 v6.557 - STA IN BASSO A SINISTRA, non in alto. Il badge del tipo vive a top:8px
+// right:8px (v5.711): una fascetta larga quanto la faccia e appoggiata in alto gli
+// finiva sotto. In basso a sinistra l'angolo e' libero, e la fascetta prende solo lo
+// spazio che le serve invece di tutta la larghezza.
+// 📌 Dice solo il TIPO: la faccia e' ~174px, e la frase intera non ci entra. Il resto lo
+// dice la riga TIPOLOGIA sotto la foto.
+// ⚠️ Si ancora alla faccia grazie al position:relative che la regola della v6.555 mette
+// sulle due facce giuste: senza, finirebbe in cima alla coppia anche incorniciando quella
+// di sotto.
+// 🔴 Concatenata, non template literal: questo corpo finisce dentro il template di
+// prova-v6556, e un apice inverso lo spezzerebbe.
+function _etichettaErroreCardHTML(lato, latoErr, tipo) {
+  if (!tipo || lato !== latoErr) return '';
+  return '<span style="' + _stileFascettaErrore(true) + '">' + _testoFascettaErrore(tipo) + '</span>';
+}
+
+function _coppiaAffiancataHTML(imgFronte, imgRetro, retroVuoto, _latoErrCard, _tipoErrCard) {
+  return `<div class="coppia-facce" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
+            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(imgFronte)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(imgRetro, null, retroVuoto)}</div>
           </div>`;
+}
+
+// 🆕 v6.565 (Franco: *"la cornice e' ancora sopra la foto"*) — LA CORNICE SI POSA SULLA FOTO,
+// non sul riquadro. La faccia e la foto non sono la stessa cosa: con object-fit:contain
+// l'immagine si centra e lascia due bande vuote. Un inset fisso non poteva servirle tutte:
+// zero taglia le foto che riempiono la faccia, e qualunque altro numero allontana le altre.
+// 📌 Qui si MISURA dove l'immagine e' davvero dipinta e si passano due variabili alla regola.
+// ⚠️ I 2px di distacco non sono decorazione: senza, la linea appoggia sul primo pixel dipinto,
+// che e' esattamente quello che Franco vedeva.
+// 📌 Gira dopo il disegno e guarda quello che c'e': non tocca i cinque modi di impaginare la
+// coppia, e un sesto modo funzionerebbe senza saperlo.
+function _adattaCorniciErrore(radice) {
+  var dove = radice || document;
+  var caselle = dove.querySelectorAll('.fig-img-placeholder[data-lato-errore]');
+  Array.prototype.forEach.call(caselle, function (ph) {
+    var coppia = ph.querySelector('.coppia-facce');
+    if (!coppia || coppia.children.length < 2) return;
+    var faccia = ph.getAttribute('data-lato-errore') === 'retro'
+      ? coppia.children[coppia.children.length - 1]
+      : coppia.children[0];
+    var img = faccia.querySelector('img');
+    if (!img) return;
+    var misura = function () {
+      var rf = faccia.getBoundingClientRect(), ri = img.getBoundingClientRect();
+      var nw = img.naturalWidth, nh = img.naturalHeight;
+      if (!rf.width || !rf.height || !ri.width || !ri.height || !nw || !nh) return;
+      // quanto e' grande DAVVERO l'immagine dentro il suo box, con object-fit:contain
+      var s = Math.min(ri.width / nw, ri.height / nh);
+      var dx = (ri.left - rf.left) + (ri.width  - nw * s) / 2;
+      var dy = (ri.top  - rf.top)  + (ri.height - nh * s) / 2;
+      faccia.style.setProperty('--cornice-x', Math.max(0, Math.round(dx) - 2) + 'px');
+      faccia.style.setProperty('--cornice-y', Math.max(0, Math.round(dy) - 2) + 'px');
+    };
+    if (img.complete && img.naturalWidth) misura();
+    else img.addEventListener('load', misura, { once: true });
+  });
 }
 
 function renderItems() {
@@ -39382,6 +39655,11 @@ function renderItems() {
     // era sfuggito perche' la condizione stava scritta in mezzo al renderer invece che in una
     // funzione con dei parametri.
     const _cp = _coppiaFronteRetro(f, _allFigs, _idx);
+    // 🆕 v6.555 - da che parte sta l'errore, per la cornice sulla card. Stessa funzione
+    // della scheda (v6.510), e con l'INDICE: questa riga gira per ogni card, e col find
+    // sull'archivio intero sarebbe quadratica (la ragione della v6.520).
+    const _latoErrCard = _latoErroreStampa(f, _allFigs, _idx);
+    const _tipoErrCard = f.printErrorType || '';   // v6.556 - il testo della fascetta
     if (_cp.mostra) {
       const _fronteCoppia = _cp.fronte;
       // v6.094 - basta che il retro ESISTA: la foto puo' mancare, e in quel caso al suo posto va il
@@ -39400,18 +39678,18 @@ function renderItems() {
       // fronte non torna `mostra`. Il livello di indentazione dei rami resta quello di prima, per
       // tenere il diff piccolo su un blocco delicato come questo.
         if (_retroViewMode === 'destra') {
-          imgHTML = _coppiaAffiancataHTML(_fronteCoppia, _retroImg, _retroVuoto); // v6.075 — markup condiviso con le bustine
+          imgHTML = _coppiaAffiancataHTML(_fronteCoppia, _retroImg, _retroVuoto, _latoErrCard, _tipoErrCard); // v6.075 — markup condiviso con le bustine
         } else if (_retroViewMode === 'dinamico') {
           const dualId = 'dual-' + f.id;
-          imgHTML = `<div id="${dualId}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;">${_facciaRetroHTML(_fronteCoppia)}</div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(_retroImg, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`, _retroVuoto)}</div>
+          imgHTML = `<div id="${dualId}" class="coppia-facce" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
+            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`, _retroVuoto)}</div>
           </div>`;
         } else if (_retroViewMode === 'fronte-grande') {
           const dualId2 = 'dualf-' + f.id;
-          imgHTML = `<div id="${dualId2}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;">${_facciaRetroHTML(_fronteCoppia, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId2}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`)}</div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(_retroImg, null, _retroVuoto)}</div>
+          imgHTML = `<div id="${dualId2}" class="coppia-facce" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
+            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia, `onload="if(this.naturalHeight>this.naturalWidth){const c=document.getElementById('${dualId2}');if(c){c.style.flexDirection='row';const rd=c.children[1];rd.style.borderTop='none';rd.style.borderLeft='1px solid var(--border)';}}"`)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, null, _retroVuoto)}</div>
           </div>`;
         } else if (_retroViewMode === 'destra-piena') {
           // Fronte+Retro mai rimpiccioliti rispetto alla dimensione "piena" che avrebbero in
@@ -39437,15 +39715,15 @@ function renderItems() {
           // v6.098 - vale per ENTRAMBE le assenze: segnaposto e riquadro vuoto sono due box, e un
           // box e' orizzontale comunque. La condizione guarda percio' la foto, non il record.
           if (!_retroImg) _checkBothOrientationForStack(dualId5, 'retro', false, 138, 100);
-          imgHTML = `<div id="${dualId5}" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
-            <div style="flex:1;min-height:0;overflow:hidden;">${_facciaRetroHTML(_fronteCoppia, `onload="_checkBothOrientationForStack('${dualId5}','front',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`)}</div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_facciaRetroHTML(_retroImg, `onload="_checkBothOrientationForStack('${dualId5}','retro',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`, _retroVuoto)}</div>
+          imgHTML = `<div id="${dualId5}" class="coppia-facce" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:row;">
+            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia, `onload="_checkBothOrientationForStack('${dualId5}','front',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-left:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, `onload="_checkBothOrientationForStack('${dualId5}','retro',this.naturalHeight>this.naturalWidth,this.naturalWidth,this.naturalHeight)"`, _retroVuoto)}</div>
           </div>`;
         } else {
           // 'sotto' (default)
-          imgHTML = `<div style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
-            <div style="flex:1;min-height:0;overflow:hidden;">${_facciaRetroHTML(_fronteCoppia)}</div>
-            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_facciaRetroHTML(_retroImg, null, _retroVuoto)}</div>
+          imgHTML = `<div class="coppia-facce" style="width:100%;height:100%;position:absolute;top:0;left:0;display:flex;flex-direction:column;">
+            <div style="flex:1;min-height:0;overflow:hidden;">${_etichettaErroreCardHTML('fronte', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_fronteCoppia)}</div>
+            <div style="flex:1;min-height:0;overflow:hidden;border-top:1px solid var(--border);">${_etichettaErroreCardHTML('retro', _latoErrCard, _tipoErrCard)}${_facciaRetroHTML(_retroImg, null, _retroVuoto)}</div>
           </div>`;
         }
     }
@@ -39476,7 +39754,7 @@ function renderItems() {
     // ⚠️ E' la stessa forma della v6.152 e della v6.147: una regola giusta applicata in un posto e
     // non nell'altro. Qui non era nemmeno una copia divergente — era una meta' sola.
     if (!imgHTML && _schedaDueFoto(f) && _secondaFacciaSulRecord(currentSection) && (f.img || f.imgRetro)) {
-      imgHTML = _coppiaAffiancataHTML(f.img, f.imgRetro);
+      imgHTML = _coppiaAffiancataHTML(f.img, f.imgRetro, undefined, _latoErrCard, _tipoErrCard);
     }
     if (!imgHTML) {
       // v5.872 — quando manca la foto, un placeholder GRIGIO PIENO "FOTO NON DISPONIBILE" che
@@ -39908,7 +40186,10 @@ function renderItems() {
     const finalAspectRatio = hasWidePair ? '2' : imgAspectRatio;
     return `<div class="fig-card${_cardNoPhoto ? ' fig-card--noimg' : ''}" onclick="if(!event.target.closest('button'))openFigDetail('${f.id}')" style="${cardSpanStyle}">
       ${_mobileFigCard ? `<div class="fig-badge-row">${typeBadgeHTML}</div>` : ''}
-      <div class="fig-img-placeholder" style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
+      <!-- v6.555 - IL LATO SI DICHIARA QUI, UNA VOLTA. La coppia si disegna in cinque
+           modi diversi (_retroViewMode): scrivere la cornice dentro ognuno voleva dire
+           dieci punti da tenere allineati. Qui c'e' il FATTO, il disegno lo fa il CSS. -->
+      <div class="fig-img-placeholder"${_latoErrCard ? ` data-lato-errore="${_latoErrCard}"` : ''} style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
         ${imgHTML}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}
       </div>
       <div class="fig-body">
@@ -39938,6 +40219,8 @@ function renderItems() {
     }
   };
   grid.addEventListener('click', grid._wishlistHandler);
+  // 🆕 v6.565 - le cornici si stringono sulle foto appena la griglia e' in piedi.
+  try { _adattaCorniciErrore(grid); } catch (e) { console.error('_adattaCorniciErrore', e); }
 
   // Render pagination controls (bottom)
   const paginationEl = document.getElementById('items-pagination');
@@ -42336,6 +42619,15 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     _chiudiBtn.title = _siTorna
       ? (currentLang === 'it' ? 'Torna alla scheda precedente' : 'Back to the previous card')
       : (currentLang === 'it' ? 'Chiudi' : 'Close');
+    // 🆕 v6.566 - E ACCANTO, IL ✕ VERO, ma solo quando c'e' una catena da abbandonare.
+    // Con la pila vuota sarebbero due tasti che fanno la stessa cosa, ed e' peggio di uno.
+    const _escBtn = document.getElementById('fig-detail-exit-btn');
+    if (_escBtn) {
+      _escBtn.style.display = _siTorna ? '' : 'none';
+      _escBtn.title = currentLang === 'it'
+        ? 'Chiudi e torna alla griglia'
+        : 'Close and go back to the grid';
+    }
   }
   const countEl = document.getElementById('fig-detail-nav-count');
   if (countEl) {
@@ -42732,43 +43024,50 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       // niente da collegare e niente dove andare.
       const _bustina = _secondaFacciaSulRecord(f.section); // v6.076 - non piu' le sole bustine
       const retroFig = (!_bustina && _detEffRetroId) ? getData('figurines', []).find(x => x.id === _detEffRetroId) : null;
-      const noPhotoBox = '<div style="width:100%;height:300px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non disponibile' : 'Photo not available') + '</div>';
+      const noPhotoBox = '<div style="width:100%;aspect-ratio:1;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + (currentLang === 'it' ? 'Foto non disponibile' : 'Photo not available') + '</div>';
       // v5.916 — altezza FISSA 200px su entrambe le foto (come il box "foto non disponibile"): così
       // fronte e retro sono sempre alti uguali e l'area foto non cambia dimensione tra una figurina e
       // l'altra (niente sfarfallamento).
       const baseHTML = frontImg
-        ? `${_fotoInDueTempi(frontImg, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
+        ? `${_fotoInDueTempi(frontImg, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
         : noPhotoBox;
       // v6.044 - due assenze diverse, due riquadri diversi: se il Retro ESISTE ma non ha foto resta
       // "Foto non disponibile" (manca un'immagine di qualcosa che c'e'); se il Retro non c'e'
       // proprio, il riquadro e' VUOTO - non c'e' nessuna foto mancante, c'e' un collegamento da
       // fare. Scrivere "Foto non disponibile" li' direbbe una cosa falsa.
-      const boxVuoto = '<div style="width:100%;height:300px;background:var(--card2);border-radius:8px;"></div>';
+      const boxVuoto = '<div style="width:100%;aspect-ratio:1;background:var(--card2);border-radius:8px;"></div>';
       const retroHTML = _bustina
         ? (f.imgRetro
-            ? `${_fotoInDueTempi(f.imgRetro, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
+            ? `${_fotoInDueTempi(f.imgRetro, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
             : boxVuoto)
         : (retroFig
             ? (retroFig.img
-                ? `${_fotoInDueTempi(retroFig.img, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;height:300px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
+                ? `${_fotoInDueTempi(retroFig.img, 'w_800,h_800,c_fit,q_auto,f_auto', 'width:100%;aspect-ratio:1;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;')}`
                 : noPhotoBox)
             : boxVuoto);
       // v6.031 (Franco) - come nel tab Variazioni (v6.030): il sottonome su una riga sua, in
       // azzurro, e il link resta sulla prima. Il sottonome non entra nel link, come sulle card:
       // e' un pezzo del nome, non un secondo posto dove cliccare.
       const _capSotto = retroFig ? _retroSottonome(retroFig, getData('figurines', [])) : '';
+      // 🆕 v6.552 - da che parte sta l'errore. Torna null se non e' un errore di stampa,
+      // quindi la cornice non compare mai dove non c'entra.
+      const _latoErr = _latoErroreStampa(f, getData('figurines', []));
       const retroCaption = retroFig
         ? `<div style="font-size:0.72rem;text-align:center;margin-top:4px;"><a href="#" onclick="openFigDetail('${retroFig.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(_retroNomeCompletoSenzaSottonome(retroFig, getData('figurines', [])))} ↗</a>${_capSotto ? `<div style="color:var(--info);margin-top:1px;">${esc(_capSotto)}</div>` : ''}</div>` /* v6.031 */
         : '';
       photoEl.innerHTML = `
+        <!-- v6.550 (Franco: *"come le card"*) - RIQUADRO QUADRATO PER FACCIA.
+             Con l'altezza fissa il vincolo era lo stesso per tutte e due, quindi le due
+             foto uscivano alte uguali e larghe a caso: misurate 62k px2 contro 117k.
+             Col quadrato il vincolo e' il LATO, come nella card, e le aree si pareggiano. -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
           <div>
-            <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:4px;">${currentLang === 'it' ? 'Fronte' : 'Front'}</div>
-            ${baseHTML}
+            <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:14px;">${currentLang === 'it' ? 'Fronte' : 'Front'}</div>
+            ${_latoErr === 'fronte' ? _corniceErroreStampaHTML(baseHTML, f.printErrorType) : baseHTML}
           </div>
           <div>
-            <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:4px;">${currentLang === 'it' ? 'Retro' : 'Back'}</div>
-            ${retroHTML}
+            <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:14px;">${currentLang === 'it' ? 'Retro' : 'Back'}</div>
+            ${_latoErr === 'retro' ? _corniceErroreStampaHTML(retroHTML, f.printErrorType) : retroHTML}
             ${retroCaption}
           </div>
         </div>`;
@@ -43370,6 +43669,85 @@ function _latoErroreStampaTesto(f, allFigs) {
             : (lato === 'retro' ? 'on the back' : 'on the front');
 }
 
+// 🆕 v6.552 (Franco: *"una cornice attorno alla foto che fa riferimento all'errore; la
+// cornice potrebbe dire il valore del tipo di errore di stampa, nel lato superiore"*)
+// 📌 QUALE faccia incorniciare non si decide qui: lo dice _latoErroreStampa (v6.510).
+// Questa funzione sa solo disegnare, e la forma la copia dai riquadri di ricerca della
+// v6.331 - etichetta in absolute, alzata di meta' altezza, con uno sfondo che taglia il
+// bordo. ⚠️ Lo sfondo e' var(--bg2) perche' dentro il modale il fondo e' quello.
+// 📌 Senza tipo la cornice resta e l'etichetta no: la cornice dice DOVE, l'etichetta COSA.
+// 🔴 SCRITTA CONCATENANDO, NON CON UN TEMPLATE LITERAL: questo corpo finisce dentro il
+// template di prova-v6552, e un apice inverso lo spezzerebbe (otto volte in due giorni).
+// 🆕 v6.558 (Franco: *"fallo come la cornice della card: scrivi dentro il bordo"*)
+// 🔴 LO STILE DELLA FASCETTA, IN UN POSTO SOLO. Fino alla v6.557 la scheda scriveva SUL
+// bordo e la card DENTRO: due disegni diversi, e tenerli separati era onesto. Ora fanno la
+// stessa cosa in due misure, quindi due copie sarebbero due disegni che divergono.
+// ⚠️ Le due taglie non sono la stessa a caso: la faccia della scheda e' ~355px e quella
+// della card ~174. Un margine di 2px su una faccia grande sembra un errore di stampa vero.
+// 🔴 Concatenata, non template literal: finisce dentro il template delle prove.
+// 🆕 v6.560 - IL TESTO DELLA FASCETTA, IN UN POSTO SOLO. La v6.558 aveva unificato il
+// disegno e lasciato diviso il testo: la scheda diceva testa + tipo, la card il solo
+// tipo. Due fascette uguali a vedersi che dicevano cose diverse.
+// 📌 La testa viene dal descrittore (v6.553): in inglese dice PRINT ERROR da se'.
+// ⚠️ Sulla card la frase intera non ci sta e la troncano i puntini. E' il prezzo del
+// dirle uguali, ed e' dichiarato: la forma corta si rimette cambiando qui, in un punto.
+// 🔴 Concatenata, non template literal: finisce dentro il template delle prove.
+function _testoFascettaErrore(tipo) {
+  // 🔄 v6.561 (Franco: *"ERRORE DI STAMPA e' gia' scritto nel badge - solo la tipologia"*)
+  // 🔴 QUI STAVA LA TESTA, E LE SUE DUE RELEASE SONO REVOCATE. La v6.553 la prendeva dal
+  // descrittore e la v6.560 la portava anche sulla card: il COME era giusto, il COSA no.
+  // Sulla stessa immagine c'e' gia' il badge che dice «ERRORE DI STAMPA»: era la stessa
+  // parola due volte a due centimetri di distanza.
+  // 📌 E' il difetto di sempre visto da un'altra faccia: non una regola scritta in due
+  // posti, ma una PAROLA mostrata in due posti. Si toglie la copia, non si sistema.
+  // 📌 Senza tipo la fascetta sparisce: la cornice dice DOVE, il badge dice COSA.
+  return tipo ? esc(tipo) : '';
+}
+
+function _stileFascettaErrore(compatta) {
+  // 🔄 v6.560 - A CAVALLO DELLA LINEA, come i riquadri di ricerca della v6.331. Lo sfondo
+  // interrompe il bordo e il testo prende il colore degli errori di stampa: e' la forma che la
+  // scheda aveva fino alla v6.557, e che Franco chiedeva anche per la card.
+  // ⚠️ SULLA CARD STA SOTTO, non sopra: in alto a destra c'e' il badge del tipo (v5.711), ed e'
+  // lo stesso scontro che la v6.557 aveva gia' risolto scendendo.
+  // 📌 Sulla card i 7px non sono un margine: sono la RIENTRANZA della cornice, quella che le
+  // permette di avere una linea tutta dentro il riquadro invece che sul suo bordo tagliato.
+  // 🔄 v6.563 - SULLA CARD NON PIU' A CAVALLO, ed e' geometria e non gusto. La linea
+  // adesso corre sui bordi della faccia (inset:0, perche' rientrata tagliava la foto):
+  // una scritta a cavallo finirebbe meta' fuori, dove taglia prima l'overflow della
+  // faccia e poi quello di .fig-card. Verrebbe mozzata, come prima della v6.560.
+  // 📌 Sulla SCHEDA resta a cavallo: li' la cornice e' un bordo suo, staccato dalla foto.
+  var lato = compatta
+    ? 'bottom:3px;left:6px;'
+    : 'top:0;left:0.9rem;transform:translateY(-50%);';
+  return 'position:absolute;z-index:2;' + lato
+    + 'max-width:calc(100% - ' + (compatta ? '12px' : '1.8rem') + ');'
+    + 'background:var(--bg2);color:var(--type-printerror);'
+    // 🔄 v6.562 (Franco: *"si fa fatica a leggere"*) - 0,5rem erano OTTO PIXEL, e sotto i
+    // 10-11 una maiuscola spaziata smette di essere una parola. 0,68 sono ~11px.
+    // ⚠️ Non 0,72 come la scheda: li' la faccia e' ~355px, qui ~174. Alla stessa misura
+    // la scritta si prenderebbe piu' di meta' larghezza della foto.
+    + 'font-size:' + (compatta ? '0.68rem' : '0.72rem') + ';font-weight:700;'
+    + 'text-transform:uppercase;text-align:left;'
+    + 'padding:' + (compatta ? '0 4px' : '0 0.4rem') + ';'
+    + 'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;pointer-events:none;';
+}
+
+function _corniceErroreStampaHTML(dentro, tipo) {
+  // 🔄 v6.553 (Franco: *"possiamo scrivere «ERRORE DI STAMPA - » prima del testo"*)
+  // 🔴 LE DUE PAROLE VENGONO DAL DESCRITTORE, non da qui: sono le stesse che usano il
+  // titolo della scheda, il badge e i filtri. Scriverle a mano sarebbe la sesta copia,
+  // e in inglese qualcuno dovrebbe ricordarsi di tradurle. Cosi' dice «PRINT ERROR - »
+  // da se'.
+  // 🔄 Revoca la riga della v6.552 *"senza tipo la cornice resta e l'etichetta no"*: la
+  // testa non manca mai, quindi senza tipo l'etichetta dice «ERRORE DI STAMPA» e basta.
+  var _txt = _testoFascettaErrore(tipo);
+  var eti = _txt
+    ? '<span style="' + _stileFascettaErrore(false) + '">' + _txt + '</span>'
+    : '';
+  return '<div style="position:relative;border:2px solid var(--type-printerror);border-radius:10px;padding:6px;">' + eti + dentro + '</div>';
+}
+
 function _titoloSchedaHTML(f, nomeVisualizzato) {
   const tipo = _titoloTipoScheda(f);
   const nome = (_haNumero(f) && f.number) ? (f.number + ' - ' + nomeVisualizzato) : nomeVisualizzato;
@@ -43667,10 +44045,25 @@ function buildLinkedFiguresTabsHTML(baseId) {
   if (!groups.length) return '';
 
   const firstKey = groups[0].key;
+  // 🆕 v6.568 (Franco, con lo screenshot di un retro: *"se i tab sono due si possono mettere
+  // uno affianco all'altro?"*) — CON DUE TAB SI DIVIDONO LA RIGA.
+  // 📌 La barra era gia' flex: non impilava per scelta, impilava perche' i due nomi non ci
+  // stavano e il wrap faceva il suo mestiere.
+  // 🔴 Accorciare i nomi sarebbe stata la strada facile, ed e' vietata: le v6.025 e v6.376
+  // dicono che «Omaggi» e «Omaggi di questo retro» rispondono a due domande diverse. Si
+  // cambia il layout, non le parole.
+  // ⚠️ Solo con DUE: dividere la riga in sei darebbe colonne da una parola. Sopra i due
+  // resta il wrap, che a quel punto e' la cosa giusta.
+  // 🗑️ v6.569 - QUI STAVA `_dueTab = groups.length === 2`, ED E' STATA TOLTA, non
+  // affiancata. Risolveva il caso che Franco aveva davanti e lasciava fuori gli altri:
+  // con tre o quattro tab si tornava a impilare. E l'ha trovato lui in un colpo, con una
+  // domanda sola — *"cosa accade se sono 3?"*.
+  // ✅ Adesso non si conta niente: ogni bottone DICHIARA quanto spazio gli serve (sotto,
+  // flex:1 1 220px) e il wrap decide dove spezzare. Le righe restano piene comunque siano.
   let html = '<div style="margin-top:1.2rem;">';
   html += '<div style="display:flex;gap:0.4rem;border-bottom:1px solid var(--border);margin-bottom:0.75rem;flex-wrap:wrap;">';
   groups.forEach((g, i) => {
-    html += `<button class="linked-fig-tab-btn" data-tab="${g.key}" onclick="switchLinkedFigTab('${g.key}')" style="font-size:0.8rem;padding:6px 12px;border:none;border-bottom:2px solid ${i===0?'var(--accent)':'transparent'};background:transparent;color:${i===0?'var(--accent)':'var(--muted)'};cursor:pointer;font-weight:${i===0?'600':'400'};">${g.icon} ${g.label} (${g.items.length})</button>`;
+    html += `<button class="linked-fig-tab-btn" data-tab="${g.key}" onclick="switchLinkedFigTab('${g.key}')" style="flex:1 1 220px;min-width:0;white-space:normal;text-align:center;line-height:1.2;font-size:0.8rem;padding:6px 12px;border:none;border-bottom:2px solid ${i===0?'var(--accent)':'transparent'};background:transparent;color:${i===0?'var(--accent)':'var(--muted)'};cursor:pointer;font-weight:${i===0?'600':'400'};">${g.icon} ${g.label} (${g.items.length})</button>`;
   });
   html += '</div>';
 
@@ -53199,4 +53592,6 @@ try { _aggiornaFraseHome(); } catch (e) { console.error('_aggiornaFraseHome (avv
 window.addEventListener('resize', function () {
   try { _aggiornaLogoNavbar(); } catch (e) {}
   try { _aggiornaFraseHome(); } catch (e) {}   // v6.183
+  // 🆕 v6.565 - le facce cambiano larghezza col viewport, e con loro le bande vuote.
+  try { _adattaCorniciErrore(); } catch (e) {}
 });
