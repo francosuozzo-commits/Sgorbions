@@ -1,6 +1,18 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.584 — SERIE INVISIBILI (Franco): col campo `invisibile` una serie sparisce dal sito, e
+//          con lei TUTTI i suoi articoli — ricerca globale, caroselli, classifica, contatori
+//          e Mia lista compresi. La vede solo l'admin.
+//          📌 Stesso meccanismo della v6.080 sulle figurine: il filtro sta dentro `getData`,
+//          non nei punti che disegnano.
+//          ⚠️ Il memo non basta piu' sull'IDENTITA' dell'array: spuntando la casella
+//          `saveSeries` muta una casella e l'array resta lo stesso oggetto, quindi la chiave
+//          porta anche una FIRMA delle serie nascoste. Senza, la serie resterebbe visibile
+//          fino al ricaricamento della pagina.
+//          🔴 E la riga che conta e' il ripristino in `_ripristinaFlagSerie` (lezione v6.219):
+//          senza, ogni salvataggio rimetterebbe in vista la serie. Modificato js/app.js,
+//          index.html.
 // v6.583 — Togliere un tipo dalla lista di una serie non e' piu' un gesto muto: se degli
 //          articoli lo usano ancora, il salvataggio lo DICE, e se ne e' sparito uno ed e'
 //          nato uno CHIEDE se era una rinomina (Franco: «chiede, mostrando quanti sono»).
@@ -25734,7 +25746,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.583';
+const JS_VERSION = 'v6.584';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -25979,12 +25991,49 @@ const LOCAL = {
 // Il memo non e' un vezzo: getData('figurines') viene chiamata anche DENTRO dei cicli, e filtrare
 // 3300 oggetti a ogni chiamata renderebbe quadratico del codice che oggi e' lineare. Si riusa il
 // risultato finche' l'array in cache e' lo stesso oggetto - e quando cambia, cambia identita'.
-let _memoVisibili = { src: null, out: null };
+// 🆕 v6.584 (Franco: «non mostrare le serie che io indico come invisibili») - QUALI SERIE SONO
+// NASCOSTE, in una stringa sola.
+// 📌 Serve DUE volte, e per questo torna una firma invece di un Set: come chiave del memo (una
+// stringa si confronta con ===, un Set no) e come sorgente del Set stesso.
+// ⚠️ Si calcola a ogni giro, ed e' voluto: le serie sono una decina, le figurine 4.400. E' il
+// conto che rende inutile un secondo memo qui.
+function _firmaSerieNascoste(serie) {
+  let f = '';
+  for (const s of (serie || [])) if (s.invisibile) f += s.id + '|';
+  return f;
+}
+
+// 🆕 v6.584 - LE SERIE VISIBILI. Gemella di `_figurineVisibili`, e per la stessa ragione: il
+// filtro sta QUI e non nei punti che disegnano — sono 82 le chiamate a `getData('series')`.
+// ⚠️ IL MEMO NON E' ZELO: `getData('series')` gira DENTRO cicli sulle figurine (`_serieSenzaRetro`
+// fa un `.find` per articolo). Senza, ogni giro costruirebbe un array nuovo.
+// 🔴 E LA CHIAVE E' IDENTITA' *PIU'* FIRMA. Spuntando «invisibile» l'array non cambia identita' —
+// `saveSeries` scrive `series[idx] = {...}`, cioe' muta una casella — quindi il solo `===`
+// terrebbe buono un memo scaduto, e la serie resterebbe in vista fino al ricaricamento.
+let _memoSerie = { src: null, firma: null, out: null };
+function _serieVisibili(tutte) {
+  if (currentUser?.isAdmin) return tutte;
+  const firma = _firmaSerieNascoste(tutte);
+  if (_memoSerie.src === tutte && _memoSerie.firma === firma) return _memoSerie.out;
+  const out = tutte.filter(s => !s.invisibile);
+  _memoSerie = { src: tutte, firma, out };
+  return out;
+}
+
+// 🔄 v6.584 - E QUI SPARISCONO ANCHE GLI ARTICOLI DELLE SERIE NASCOSTE (Franco: «anche tutti i
+// suoi articoli», Mia lista compresa).
+// 📌 La Mia lista non ha bisogno di niente: tiene gli id in `localStorage` ma incrocia sempre con
+// `getData('figurines')`, quindi un articolo che non passa di qui non compare da nessuna parte.
+// ⚠️ La firma entra nella chiave del memo per la ragione scritta sopra: senza, cambiando la
+// visibilita' di una serie le sue figurine resterebbero visibili fino a un ricaricamento.
+let _memoVisibili = { src: null, firma: null, out: null };
 function _figurineVisibili(tutte) {
   if (currentUser?.isAdmin) return tutte;
-  if (_memoVisibili.src === tutte) return _memoVisibili.out;
-  const out = tutte.filter(f => !f.invisibile);
-  _memoVisibili = { src: tutte, out };
+  const firma = _firmaSerieNascoste(_cache.series);
+  if (_memoVisibili.src === tutte && _memoVisibili.firma === firma) return _memoVisibili.out;
+  const nascoste = new Set(firma ? firma.slice(0, -1).split('|') : []);
+  const out = tutte.filter(f => !f.invisibile && !nascoste.has(f.seriesId));
+  _memoVisibili = { src: tutte, firma, out };
   return out;
 }
 function getData(k, def) {
@@ -25992,6 +26041,8 @@ function getData(k, def) {
     return LOCAL.get(k) || def;
   }
   if (k === 'figurines' && Array.isArray(_cache[k])) return _figurineVisibili(_cache[k]);
+  // 🆕 v6.584 - e le serie, dalla stessa porta (v6.080)
+  if (k === 'series' && Array.isArray(_cache[k])) return _serieVisibili(_cache[k]);
   return _cache[k] !== undefined ? _cache[k] : def;
 }
 function setData(k, v) {
@@ -30699,6 +30750,11 @@ function _ripristinaFlagSerie(s) {
     document.querySelectorAll('.series-articolo-nascosto').forEach(x => { x.checked = nascosti.includes(x.value); });
   }
   spunta('series-contenitore-input',               s && s.serieContenitore); // v6.204
+  // 🔴 v6.584 - IL RIPRISTINO DEL FLAG NUOVO, e vale l'avvertimento della v6.219: senza
+  // questa riga la casella si aprirebbe sempre spenta e `saveSeries` scriverebbe `false` —
+  // cioe' ogni salvataggio rimetterebbe in vista una serie nascosta. Dodici flag, dodici
+  // ripristini.
+  spunta('series-invisibile-input',                s && s.invisibile);       // v6.584
   spunta('series-has-subseries-input',             s && s.hasSubseries);     // v6.169
   spunta('series-has-sizes-input',                 s && s.hasSizes);
   spunta('series-abilita-modifica-input',          s && s.abilitaModifica); // v6.366         // v6.169
@@ -31118,6 +31174,7 @@ async function saveSeries() {
   const noAlbums = articoliNascosti.includes('albums');
 
   const serieContenitore = document.getElementById('series-contenitore-input')?.checked || false; // v6.204
+  const invisibile = document.getElementById('series-invisibile-input')?.checked || false; // v6.584
   const controlliSospesi = _leggiControlliSospesi(); // v6.080
   const nomeCorto = (document.getElementById('series-nome-corto-input')?.value || '').trim(); // v6.080
   // 🆕 v6.480 - stessa forma della riga sopra, `.trim()` compreso: due campi gemelli letti
@@ -31245,7 +31302,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -31263,7 +31320,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -41646,7 +41703,12 @@ function renderAdminSeries() {
             return _num + _btn('Up', '▲', _su) + _btn('Down', '▼', _giu);
           })()}
         </td>
-        <td style="text-align:left;" title="${esc(s.name)}">${esc(_nomeSerieCard(s, true))}</td><td>${s.year}</td><td>${c.base}</td>
+        <!-- 🆕 v6.584 - il 🫥 davanti al nome dice che la serie e i suoi articoli non si
+             vedono. Sta QUI e non in una colonna sua: una colonna in piu' su una tabella
+             gia' larga si paga tutti i giorni per un caso che capita di rado.
+             📌 E' la STESSA faccina della scheda «🫥 Figurine» in console (v6.080): la
+             stessa idea si mostra con lo stesso segno, o sono due cose diverse. -->
+        <td style="text-align:left;" title="${esc(s.name)}">${s.invisibile ? '\u{1FAE5} ' : ''}${esc(_nomeSerieCard(s, true))}</td><td>${s.year}</td><td>${c.base}</td>
         <td>${s.firstNumber ?? ''}</td>
         <td>${s.lastNumber ?? ''}</td>
         <!-- v6.166 - le due colonne erano NEGATIVE (noNumbers, noRetro) e ora sono positive: la
