@@ -4,11 +4,21 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.584"></script>
-<link rel="stylesheet" href="css/style.css?v=6.584">
+<script src="js/email.min.js?v=6.585"></script>
+<link rel="stylesheet" href="css/style.css?v=6.585">
 
 
 <style>
+/* 🆕 v6.585 — LA COPERTINA DELLA CARD DIVENTA UN CONTENITORE MISURABILE, e serve a una cosa
+   sola: il timbro «IN ARRIVO !» dentro di lei si dimensiona in `cqw`, cioe' in centesimi della
+   LARGHEZZA DELLA CARD.
+   🔴 Perche' non basta il viewport: su telefono l'Inventario va a TRE colonne (media query
+   860px, v5.835) e una card e' larga 114px — misurato sul sito, non stimato. Un timbro a corpo
+   fisso ne occupava 172, cioe' usciva dai bordi; e la stessa card, sul desktop, e' larga il
+   triplo. La grandezza giusta dipende dalla CARD, non dallo schermo.
+   ⚠️ `inline-size` e non `size`: contiene solo la larghezza. Con `size` il placeholder
+   dovrebbe dichiarare anche l'altezza, e la sua altezza viene da `aspect-ratio`. */
+.card-img-placeholder { container-type: inline-size; }
 /* 🆕 v6.234 — IL COLORE DELLA VERSIONE OMAGGIO, scelto da Franco fra tre candidati.
    Le altre quattro tinte dei tipi (--type-official, --type-unofficial, --type-change,
    --type-printerror) vivono in `css/style.css`, che nelle cartelle `_upload_` non c'e' piu' dalla
@@ -3070,6 +3080,19 @@ button.back-btn { color:#ffffff; }
       <div class="form-hint">La serie <b>e tutti i suoi articoli</b> spariscono dal sito: catalogo, ricerca globale, caroselli, classifica, contatori e Mia lista. Restano visibili solo all&rsquo;admin.</div>
     </div>
 
+    <!-- 🆕 v6.585 (Franco: «un timbro alla foto copertina della serie») — SERIE IN COSTRUZIONE.
+         ⚠️ Sta SOTTO «Serie invisibile» e non accanto, perche' le due caselle non sono due gradi
+         della stessa cosa: una toglie la serie dal sito, l'altra la lascia dov'e' e dice che sta
+         arrivando. Spuntarle tutte e due non e' una contraddizione — una serie nascosta che un
+         giorno riappare si porta dietro il timbro gia' pronto. -->
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+        <input type="checkbox" id="series-in-costruzione-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+        <span>&#128679; Serie in costruzione</span>
+      </label>
+      <div class="form-hint">Sulla copertina della card compare il timbro <b>IN ARRIVO !</b> (<b>COMING SOON !</b> in inglese). La serie resta visibile e si pu&ograve; aprire.</div>
+    </div>
+
     <!-- v6.170 - qui stava il blocco dei tre conteggi (griglia 1fr 1fr 1fr). Ogni numero e' andato
          sotto la sua spunta, nella colonna di destra qui sopra: erano separati da tutta la tabella
          delle colonne della griglia. -->
@@ -3600,7 +3623,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.584"></script>
+<script src="js/app.js?v=6.585"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3624,7 +3647,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.584'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.585'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
