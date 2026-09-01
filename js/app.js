@@ -1,6 +1,30 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.581 — La regola «quale descrizione della serie, in quale lingua» vive in UN posto:
+//          la nuova `_descSerie(s)` (Franco: «unificare», decisione n.5 dalla v6.549).
+//          🔴 Era scritta a mano in QUATTRO punti, due dei quali nella stessa funzione.
+//          Nessuno sbagliava: il costo era tutto nel giorno in cui la regola cambia e se
+//          ne aggiornano tre su quattro — senza nessun errore, solo la descrizione
+//          sbagliata in un punto solo.
+//          📌 La v6.549 aveva gia' fatto un quarto del lavoro senza saperlo.
+//          ⚠️ NON tocca `renderAdminSerie`: li' `s.descIt || s.desc` riempie il campo
+//          ITALIANO e non deve guardare la lingua. Modificato js/app.js, index.html.
+// v6.580 — Ricerca globale: i «:» stanno ATTACCATI al nome della serie, e lo spazio viene
+//          dopo (Franco: «Sgorbions serie 3: 5 articoli»).
+//          🔴 La causa non era il margine ma il `gap:0.5rem` del flex dell'intestazione:
+//          i due punti aprivano lo span del CONTEGGIO, cioe' un altro figlio, e il gap
+//          cadeva PRIMA di loro. Correggere il `margin-left` non avrebbe spostato nulla.
+//          ✅ Ora i due punti vivono dentro lo span del NOME — l'unico posto in cui
+//          nessun gap puo' infilarsi — sotto la stessa condizione che accende il
+//          conteggio. Modificato js/app.js, index.html.
+// v6.579 — I cinque titoli delle funzioni (gli h4 numerati della scheda Funzioni) sono
+//          AZZURRI (Franco: «il titolo funzione mettilo azzurro»). Il colore e'
+//          `var(--info)`, gia' in tavolozza: non se n'e' dichiarato uno nuovo, e non si
+//          e' preso `--type-unofficial` — quello significa gia' qualcosa (la variazione
+//          non ufficiale), e un colore con un mestiere non e' una tinta libera.
+//          ⚠️ L'h3 «Funzioni» in cima NON cambia: chiesto a Franco prima di scrivere.
+//          Modificato js/app.js, index.html.
 // v6.578 — Sulla figurina col difetto DIETRO il «Tipo di errore di stampa» e' in sola
 //          lettura e mostra il valore del retro (Franco). 🔴 La v6.577 aveva ristretto la
 //          tendina e cosi' il valore giusto finiva sotto «non in elenco — va aggiunto ai
@@ -25687,7 +25711,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.578';
+const JS_VERSION = 'v6.581';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -34455,7 +34479,7 @@ function renderCatalogSearch(q) {
   // anche direttamente non dipende da niente.
   const results = [];
   allSeries.forEach(s => {
-    const desc = (currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt)) || '';
+    const desc = _descSerie(s);
     const seriesMatch = _matchRicerca(s.name, qn) || _matchRicerca(desc, qn);   // v6.264
     // v6.096 - l'elenco dei campi sta in _campiRicercaFigurina, condiviso con la ricerca di sezione
     const matchingFigs = allFigs.filter(f => f.seriesId === s.id && _figMatchRicerca(f, qn));
@@ -34524,7 +34548,7 @@ function renderCatalogSearch(q) {
 
   resultsEl.innerHTML = summary + results.map(r => {
     const s = r.series;
-    const desc = (currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt)) || '';
+    const desc = _descSerie(s);
     // Nome serie sempre in cima, cliccabile per aprire la serie
     // Prima riga: nome serie a sx + conteggio oggetti a dx
     const seriesHeader = `<div style="display:flex;align-items:center;justify-content:space-between;">
@@ -34539,11 +34563,11 @@ function renderCatalogSearch(q) {
                ⚠️ NIENTE APICI INVERSI IN QUESTO COMMENTO: sta dentro un template literal, e un
                backtick qui CHIUDE la stringa. E' la lezione della v6.217, e scrivendo questa
                release ci sono cascato di nuovo - l'ha presa node --check, non la rilettura. -->
-          <span style="font-family:var(--font-display);font-size:1.1875rem;font-weight:600;color:var(--nome-entita);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
+          <span style="font-family:var(--font-display);font-size:1.1875rem;font-weight:600;color:var(--nome-entita);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}${r.figs.length ? ':' : ''}</span>
           ${r.seriesMatch ? `<span style="font-size:0.8125rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 5px;flex-shrink:0;">${currentLang==='it'?'serie':'series'}</span>` : ''}
           <!-- 🆕 v6.395 - e il lime passa QUI, dove dice cio' che dice sempre: quanti risultati.
                Non e' uno scambio estetico: e' rimettere un colore sul suo mestiere. -->
-          ${r.figs.length ? `<span style="font-size:0.9375rem;color:var(--accent);white-space:nowrap;margin-left:0.15rem;flex-shrink:0;">: ${_frasePerQuesta(r.figs.length)} ${_fraseTipologie(_nTipologie(r.figs))}</span>` : ''}
+          ${r.figs.length ? `<span style="font-size:0.9375rem;color:var(--accent);white-space:nowrap;flex-shrink:0;">${_frasePerQuesta(r.figs.length)} ${_fraseTipologie(_nTipologie(r.figs))}</span>` : ''}
         </div>
         ${/* 🗑️ v6.341 (Franco: *"il risultato totale non va riportato anche in alto a dx"*) - VIA
               IL CONTEGGIO A DESTRA. E' la terza decisione sulla stessa riga in una sera, quindi
@@ -34984,7 +35008,7 @@ function seriesCardHTML(s) {
   // ⚠️ Che il numero non si ritrovi entrando (539 qui, 630 nella ricerca) resta vero, ed è
   // ciò che chiude la v6.507 scrivendo accanto al numero «(+ M errori di stampa)» — negli
   // stessi due posti. Questa release spezza il conto, quella lo spiega.
-  const desc = currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt);
+  const desc = _descSerie(s);
   // Calculate mode score (most common score > 0)
   let modeScoreHTML = '';
   const scoredFigs = figs.filter(f => f.score && f.score > 0);
@@ -36130,13 +36154,36 @@ function renderSeriesMeta(s) {
 // punto: la stessa funzione, di nuovo non richiamata quando il dato cambia.
 // Un punto solo, chiamato da chiunque tocchi la lista: cosi' la prossima funzione che
 // modifichera' la lista non dovra' ricordarsi di ripetere la ricerca della serie.
+// 🆕 v6.581 (Franco: «unificare») - LA REGOLA DELLA DESCRIZIONE VIVE QUI, E SOLO QUI.
+// «In italiano prendi `descIt`, e se manca ripiega su `desc`; in inglese il contrario.»
+// 🔴 Era scritta a mano in QUATTRO punti — due dentro `renderCatalogSearch`, uno in
+// `seriesCardHTML`, uno in `_applicaDescrizioneSerie` — e le quattro copie dicevano la stessa
+// cosa: nessuno schermo sbagliava niente. Il costo di una copia non si paga quando la si scrive,
+// si paga il giorno che la regola cambia e se ne aggiornano tre su quattro. E quel giorno non
+// darebbe nessun errore: la descrizione sbagliata in un punto solo, senza un sintomo che porti
+// alla causa.
+// 📌 IL RIPIEGO NON E' SIMMETRICO PER CASO: chi legge in italiano preferisce l'italiano e
+// accetta l'inglese piuttosto che il vuoto, e viceversa. Una descrizione che manca nella propria
+// lingua e' meno utile di una che c'e' nell'altra.
+// ⚠️ TORNA SEMPRE UNA STRINGA, mai `undefined`: i chiamanti facevano gia' `desc || ''` a valle,
+// e adesso quella coda e' ridondante — lasciata dov'e', perche' una ridondanza che non puo'
+// divergere da niente non e' una copia.
+// ⚠️ NON copre `renderAdminSerie`, dove c'e' `s.descIt || s.desc || ''`: quella riga SEMBRA la
+// stessa e non lo e'. Riempie la casella di modifica del campo ITALIANO, quindi non deve guardare
+// la lingua di navigazione — o navigando in inglese si troverebbe il testo inglese dentro il
+// campo italiano, e il primo salvataggio lo scriverebbe li'.
+function _descSerie(s) {
+  if (!s) return '';
+  return (currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt)) || '';
+}
+
 // 🆕 v6.549 - QUALE DESCRIZIONE, IN QUALE LINGUA. Una riga sola, in un posto solo:
 // la chiama openSeriesDetail all'apertura e applyI18n al cambio lingua.
 // 📌 Va applicata PRIMA di renderSeriesMeta: quello riscrive #detail-meta con innerHTML
 // e salvaNodiDaMeta() sposta fuori i nodi che ci vivono dentro, descrizione compresa.
 function _applicaDescrizioneSerie(s) {
   if (!s) return '';
-  const desc = currentLang === 'it' ? (s.descIt || s.desc) : (s.desc || s.descIt);
+  const desc = _descSerie(s);
   const p = document.getElementById('detail-desc');
   if (p) p.textContent = desc || '';
   // v5.856 — su telefono la descrizione della serie si chiude a tendina: parte accorciata a tre
@@ -49698,7 +49745,7 @@ function renderAdminFunzioni() {
             : 'Complex manual procedures. Each one previews the changes and asks for confirmation before writing.') + '</p>' +
 
       '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;">' +
-        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;">' + (it ? '1. Allinea item figlio correlati' : '1. Align related child items') + '</h4>' + // v6.079 - numerate, ora sono due
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '1. Allinea item figlio correlati' : '1. Align related child items') + '</h4>' + // v6.079 - numerate, ora sono due
         '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
           // v6.056 - testo riscritto da Franco. I campi vanno a capo uno per sezione: erano su una
           // riga sola e si leggevano come un elenco unico, mentre sono due elenchi diversi.
@@ -49739,7 +49786,7 @@ function renderAdminFunzioni() {
       // resetRetroLinksForSeries() conta le figurine interessate e le mette nella richiesta di
       // conferma, quindi il numero lo vedi prima di decidere e non dopo.
       '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
-        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;">' + (it ? '2. Azzera collegamenti Retro di una serie' : '2. Reset Retro links for a series') + '</h4>' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '2. Azzera collegamenti Retro di una serie' : '2. Reset Retro links for a series') + '</h4>' +
         '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
           (it ? 'Rimuove il campo <b>Retro associato</b> da tutte le figurine della serie scelta — sia base sia variazioni e change.<br><br>' +
                 'Serve come pulizia prima di ricaricare i collegamenti con l’import da XLS.<br><br>' +
@@ -49765,7 +49812,7 @@ function renderAdminFunzioni() {
       // senza foto?": 98 change su 119 puntavano al retro base invece che al retro-change omonimo.
       // Stessa forma delle altre due: anteprima, conferma col numero, scrittura, ricontrollo.
       '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
-        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;">' + (it ? '3. Ricollega i Change al Retro giusto' : '3. Relink Changes to the right Retro') + '</h4>' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '3. Ricollega i Change al Retro giusto' : '3. Relink Changes to the right Retro') + '</h4>' +
         '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
           (it ? 'Corregge i <b>Change</b> il cui <b>Retro associato</b> punta al retro <b>base</b> invece che al retro-change omonimo.<br><br>' +
                 'Interviene solo dove il retro giusto è <b>uno solo e certo</b>: stesso nome del retro attuale, marcato come change, e con lo stesso <b>tipo di change</b> della figurina.<br><br>' +
@@ -49800,7 +49847,7 @@ function renderAdminFunzioni() {
       // Gli id restano identici (`recompute-fullnames-*`), quindi `previewRecomputeFullNames()` e
       // `applyRecomputeFullNames()` non cambiano di una riga.
       '<div style="background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-bottom:1rem;">' +
-        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;">' + (it ? '4. Ricalcola i Nomi completi' : '4. Recompute full names') + '</h4>' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '4. Ricalcola i Nomi completi' : '4. Recompute full names') + '</h4>' +
         '<p style="font-size:0.85rem;color:var(--text);margin:0 0 0.75rem;">' +
           (it ? 'Rigenera il <b>Nome completo</b> di figurine e retro di <b>una serie</b> secondo le regole attuali. Prima mostra l\'<b>anteprima</b> (valore attuale → nuovo) dei soli record che cambierebbero.<br><b>Serve dopo ogni modifica alle regole di composizione</b>: il Nome completo e\' un campo memorizzato, quindi finche\' non si ricalcola la stessa serie contiene due forme diverse.'
               : 'Regenerate the <b>full name</b> of stickers and retros of <b>one series</b> per current rules. It first <b>previews</b> (current → new) only the records that would change.<br><b>Needed after any change to the composition rules</b>: the full name is a stored field, so until it is recomputed the same series holds two different forms.') +
@@ -49820,7 +49867,7 @@ function renderAdminFunzioni() {
       // avremo altre, fammi un bottone nella sezione FUNZIONI che fa questa cosa"* - quindi e'
       // ripetibile e non crea doppioni.
       '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
-        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;">' + (it ? '5. Crea le Figurine da attaccare' : '5. Create the stick-in stickers') + '</h4>' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '5. Crea le Figurine da attaccare' : '5. Create the stick-in stickers') + '</h4>' +
         '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
           (it ? 'Crea una <b>Figurina da attaccare</b> per ogni <b>Figurina con retro</b> di tipo <b>base</b> che ancora non ce l’ha.<br><br>' +
                 '<b>Cosa eredita dalla figurina di partenza:</b><br>' +
