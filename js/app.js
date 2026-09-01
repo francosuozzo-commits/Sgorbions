@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.585 — SERIE IN COSTRUZIONE (Franco): col campo `inCostruzione` la card della serie
+//          porta un timbro «IN ARRIVO !» / «COMING SOON !» sulla copertina.
+//          📌 Gemello della v6.584 e NON lo stesso campo: `invisibile` toglie la serie dal
+//          sito, `inCostruzione` la lascia dov'e' e dice che sta arrivando.
+//          ⚠️ Il timbro sta in `seriesCardHTML`, che serve Inventario E home: e' la stessa
+//          card, e sdoppiarla per mostrarlo in un posto solo avrebbe creato due card che
+//          divergono.
+//          ⚠️ Colore `--info` e non `--warn`: nella tavolozza delle versioni arancione e
+//          rosso hanno gia' un mestiere, e #ffb400 e' a un passo dall'arancione
+//          dell'omaggio. Modificato js/app.js, index.html.
 // v6.584 — SERIE INVISIBILI (Franco): col campo `invisibile` una serie sparisce dal sito, e
 //          con lei TUTTI i suoi articoli — ricerca globale, caroselli, classifica, contatori
 //          e Mia lista compresi. La vede solo l'admin.
@@ -25746,7 +25756,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.584';
+const JS_VERSION = 'v6.585';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30755,6 +30765,9 @@ function _ripristinaFlagSerie(s) {
   // cioe' ogni salvataggio rimetterebbe in vista una serie nascosta. Dodici flag, dodici
   // ripristini.
   spunta('series-invisibile-input',                s && s.invisibile);       // v6.584
+  // 🔴 v6.585 - e il ripristino del flag nuovo, per la stessa ragione della riga qui sopra:
+  // senza, ogni salvataggio spegnerebbe il timbro. Tredici flag, tredici ripristini.
+  spunta('series-in-costruzione-input',            s && s.inCostruzione);    // v6.585
   spunta('series-has-subseries-input',             s && s.hasSubseries);     // v6.169
   spunta('series-has-sizes-input',                 s && s.hasSizes);
   spunta('series-abilita-modifica-input',          s && s.abilitaModifica); // v6.366         // v6.169
@@ -31175,6 +31188,7 @@ async function saveSeries() {
 
   const serieContenitore = document.getElementById('series-contenitore-input')?.checked || false; // v6.204
   const invisibile = document.getElementById('series-invisibile-input')?.checked || false; // v6.584
+  const inCostruzione = document.getElementById('series-in-costruzione-input')?.checked || false; // v6.585
   const controlliSospesi = _leggiControlliSospesi(); // v6.080
   const nomeCorto = (document.getElementById('series-nome-corto-input')?.value || '').trim(); // v6.080
   // 🆕 v6.480 - stessa forma della riga sopra, `.trim()` compreso: due campi gemelli letti
@@ -31302,7 +31316,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -31320,7 +31334,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -35181,6 +35195,41 @@ function _nomeSerieCard(s, sempreCorto) {
   return ((sempreCorto || _isMobileViewport()) && corto) ? corto : (s.name || '');
 }
 
+// 🆕 v6.585 (Franco: «un timbro alla foto copertina della serie — COMING SOON ! per l'Inglese e
+// IN ARRIVO ! per l'italiano») - IL TIMBRO DELLE SERIE IN COSTRUZIONE.
+// 📌 Torna la stringa vuota quando la serie non e' marcata: chi lo usa lo interpola e basta, senza
+// un `if` suo. Una funzione che risponde «niente» e' piu' facile da usare bene di un ramo da
+// ricordarsi.
+// ⚠️ IL COLORE E' `--info` E NON `--warn`: il rosso e l'arancione hanno gia' un mestiere nella
+// tavolozza delle versioni (v6.404 — arancione l'omaggio, rosso l'errore di stampa) e `--warn`
+// (#ffb400) e' a un passo dall'arancione dell'omaggio. Un timbro non deve sembrare un
+// codice-colore che qui non c'entra: «in arrivo» e' un'informazione, non un allarme.
+// 📌 E la pastiglia scura sotto non e' decorazione: il timbro sta su copertine che non si
+// conoscono, quindi il contrasto lo garantisce cio' che mettiamo noi, non cio' che c'e' sotto.
+// ⚠️ `pointer-events:none` perche' la card intera e' cliccabile: un rettangolo in mezzo che
+// mangia il clic sarebbe un buco invisibile proprio al centro della copertina.
+// 🔴 E LA MISURA E' IN `cqw`, NON IN `rem`, PERCHE' MISURATO SUL SITO: su telefono l'Inventario
+// va a TRE colonne (css/style.css, media query 860px, v5.835), e li' una card e' larga **114px**.
+// Col timbro a corpo fisso «COMING SOON !» ne misurava **172** — cioe' usciva dalla card di
+// mezzo dito, e sarebbe stato visibile solo aprendo il sito da telefono.
+// ✅ Con `clamp(0.4rem, 7.5cqw, 0.95rem)` lo stesso timbro misura **94px** dentro 114. Misurato
+// nel browser sulla griglia vera, non stimato.
+// 📌 `cqw` e non `vw`: il timbro deve scalare con la CARD, non con lo schermo — e la card cambia
+// larghezza perche' cambia la griglia, non perche' cambia il telefono. Il `container-type` sta
+// nel blocco <style> dell'index (procedura §5: il CSS si modifica inline).
+// ⚠️ Tutto il resto e' in `em`, quindi segue il corpo da se': un padding in `rem` accanto a un
+// testo che si rimpicciolisce avrebbe fatto una pastiglia grande con dentro una scritta minuscola.
+function _timbroInCostruzione(s) {
+  if (!s || !s.inCostruzione) return '';
+  const testo = currentLang === 'it' ? 'IN ARRIVO !' : 'COMING SOON !';
+  return '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-12deg);'
+    + 'pointer-events:none;white-space:nowrap;z-index:2;'
+    + 'padding:0.3em 0.8em;border:max(1px,0.1em) solid var(--info);border-radius:0.5em;'
+    + 'background:rgba(0,0,0,0.55);color:var(--info);'
+    + 'font-family:var(--font-ui);font-size:clamp(0.4rem,7.5cqw,0.95rem);font-weight:800;'
+    + 'letter-spacing:0.08em;text-transform:uppercase;">' + testo + '</div>';
+}
+
 function seriesCardHTML(s) {
   const allItems = getData('figurines', []).filter(f => f.seriesId === s.id);
   // 🆕 v6.506 (Franco: *"chi ha mai detto che figurine con retro e da attaccare andassero
@@ -35245,6 +35294,11 @@ function seriesCardHTML(s) {
   return `<div class="card" onclick="openSeriesDetail('${s.id}')">
     <div class="card-img-placeholder">
       ${s.img ? `<img src="${cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;padding:8px;">` : '🎴'}
+      ${/* 🆕 v6.585 - il timbro sta FUORI dal ternario: una serie in arrivo senza copertina e' il
+             caso piu' probabile, non l'eccezione, e li' il timbro va sopra il 🎴.
+             📌 `.card-img-placeholder` e' gia' `position:relative` (v5.x, css/style.css): il
+             timbro si aggancia a lei, non alla card. */''}
+      ${_timbroInCostruzione(s)}
     </div>
     <div class="card-body">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
