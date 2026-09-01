@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.585"></script>
-<link rel="stylesheet" href="css/style.css?v=6.585">
+<script src="js/email.min.js?v=6.588"></script>
+<link rel="stylesheet" href="css/style.css?v=6.588">
 
 
 <style>
@@ -843,9 +843,21 @@ button.back-btn { color:#ffffff; }
        pointer-events:none non intercetta i clic di quello che copre.
        Il contenitore esterno resta con il suo id: app.js ne legge offsetHeight per gli scroll, e
        ora quel valore vale zero sul desktop - cioe' la verita'. -->
-  <div style="position:relative;height:0;pointer-events:none;">
-    <span data-i18n="banner.wip" style="position:absolute;top:0;left:0;background:linear-gradient(90deg,#ff6b1a,#c84bff);color:#fff;padding:0.15rem 0.7rem;border-bottom-right-radius:10px;font-family:var(--font-ui);font-size:0.72rem;font-weight:700;letter-spacing:0.3px;white-space:nowrap;">🚧   SITO WEB IN COSTRUZIONE   🚧</span>
-  </div>
+  <!-- 🗑️ v6.588 (Franco: «togli pure il banner della homepage») — QUI STAVA LA TARGHETTA
+       «🚧 SITO WEB IN COSTRUZIONE 🚧», nata come fascia a tutta larghezza (v5.955) e rimpicciolita
+       a targhetta d'angolo dalla v6.064/065.
+       📌 Se ne va perche' adesso c'e' chi lo dice meglio: una serie non pronta si nasconde
+       (v6.584) o porta il timbro «IN ARRIVO !» e non si apre (v6.585 → v6.587). Il cartello
+       diceva «tutto e' in costruzione» di un sito con tre serie censite e 4.400 articoli dentro;
+       adesso lo dice la serie che lo e' davvero.
+       🔴 IL CONTENITORE RESTA, E NON E' UN RESIDUO: dentro c'e' #mobile-version-bar (la versione
+       su telefono) e app.js legge l'offsetHeight di #construction-banner per gli scroll
+       (scrollToItemsTop). Toglierlo avrebbe rotto un calcolo che col cartello non c'entra —
+       lo diceva gia' il commento della v6.064.
+       ⚠️ DEBITO SCRITTO: il contenitore si chiama ancora `construction-banner` e non contiene
+       piu' nessuna «construction». Rinominarlo tocca l'id qui, il getElementById in app.js e il
+       CSS: tre punti per un guadagno di sola lettura. Il nome adesso racconta la storia, non il
+       contenuto. -->
   <div id="mobile-version-bar"><span id="nav-app-version-mobile"></span></div>
 </div>
 <div id="page-home" class="page active">
@@ -3623,7 +3635,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.585"></script>
+<script src="js/app.js?v=6.588"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3647,7 +3659,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.585'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.588'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
