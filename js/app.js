@@ -1,6 +1,30 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.588 — 🗑️ VIA IL CARTELLO «SITO WEB IN COSTRUZIONE» dalla home (Franco), e con lui le
+//          due chiavi `banner.wip` del dizionario: un dizionario e' l'elenco delle cose che
+//          il sito DICE, e una voce che nessuno pronuncia piu' e' una frase che il prossimo
+//          lettore crede viva.
+//          📌 Ultimo gesto della catena v6.584 → v6.587: il cartello se ne va perche' adesso
+//          lo dice la SERIE che e' davvero in costruzione, non tutto il sito.
+//          🔴 Il contenitore #construction-banner RESTA: dentro c'e' la versione su telefono
+//          e app.js ne legge l'offsetHeight per gli scroll. Modificato js/app.js, index.html.
+// v6.587 — Il timbro «IN ARRIVO !» compare anche sulla copertina della serie nell'hub
+//          Articoli, e una serie in costruzione NON SI APRE PIU' — ne' dall'hub ne' dalla
+//          card dell'Inventario. L'admin entra come sempre (Franco).
+//          📌 Una domanda sola, `_serieBloccata`, per tutti i punti che portano dentro una
+//          serie: due `if` gemelli sarebbero due verita' destinate a divergere.
+//          🔴 Il timbro RESTA ed e' lui la spiegazione: un comando che sparisce non dice
+//          perche' non si puo' fare (lezione v6.171 sul pulsante Elimina).
+//          ⚠️ Al box dell'hub servivano `position:relative` (o il timbro si aggancia alla
+//          pagina) e `container-type:inline-size` (o il cqw cade sul viewport, in silenzio).
+//          Modificato js/app.js, index.html.
+// v6.586 — Il timbro «IN ARRIVO !» e' ROSSO (Franco: «scrivilo in rosso non in azzurro»).
+//          ⚠️ `--danger` (#e8557c) e NON `--type-printerror` (#ff6464), che nella tavolozza
+//          delle versioni significa ERRORE DI STAMPA: un timbro di quel colore su una
+//          copertina di serie direbbe una cosa che non c'entra.
+//          📌 `--danger` e' dichiarata in DUE posti con DUE valori (style.css #ff6464,
+//          index #e8557c): vince l'index, che arriva dopo. Modificato js/app.js, index.html.
 // v6.585 — SERIE IN COSTRUZIONE (Franco): col campo `inCostruzione` la card della serie
 //          porta un timbro «IN ARRIVO !» / «COMING SOON !» sulla copertina.
 //          📌 Gemello della v6.584 e NON lo stesso campo: `invisibile` toglie la serie dal
@@ -25756,7 +25780,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.585';
+const JS_VERSION = 'v6.588';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27330,7 +27354,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message !',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','banner.wip':'🚧   WEBSITE UNDER CONSTRUCTION   🚧','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
@@ -27430,7 +27454,6 @@ const i18n = {
 'classifica.best':'Di chi è la lista con punteggio rarità maggiore ?','classifica.levels':'Livelli di Collezionista Sgorbions',
 'admin.levels.addEdit':'Aggiungi / modifica livello','admin.levels.nameIt':'Nome (IT)','admin.levels.nameEn':'Nome (EN)','admin.levels.minScore':'Punteggio rarità minimo','admin.levels.save':'Salva livello',
 'hero.tagline':'Fatto con 💚 da collezionisti, per collezionisti.',
-'banner.wip':'🚧   SITO WEB IN COSTRUZIONE   🚧',
 
 
 
@@ -34371,9 +34394,18 @@ function openProdottoDetail(sec) {
     // per cui il codice della v5.703 esiste - e il nome per esteso resta nel passaggio del mouse.
     const suoi = miei.filter(f => f.seriesId === s.id);
     const etichetta = _righeTipologie(suoi, 'pillole'); // v6.080 - come le card dell'Inventario
-    return '<div class="section-choice-card" onclick="apriSerieDaProdotto(\'' + s.id + '\')" style="padding:0;overflow:hidden;">' +
-      '<div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;display:flex;align-items:center;justify-content:center;">' +
+    // 🆕 v6.587 (Franco: «mostra il timbro anche sulla copertina della serie dall'hub Articoli, e
+    // anche li blocca la pressione utente») - LA STESSA COPPIA DELLA CARD DELL'INVENTARIO.
+    // ⚠️ Al box servono DUE righe che non aveva, e nessuna delle due da' errore se manca:
+    //   · `position:relative` — il timbro e' `position:absolute` e senza un antenato posizionato
+    //     si aggancia a quello che trova, cioe' comparirebbe in mezzo alla pagina;
+    //   · `container-type:inline-size` — senza, il `cqw` del corpo (v6.585) cade in silenzio sul
+    //     viewport e il timbro si dimensiona sullo schermo invece che sul box.
+    const _bloccataHub = _serieBloccata(s);
+    return '<div class="section-choice-card"' + (_bloccataHub ? '' : ' onclick="apriSerieDaProdotto(\'' + s.id + '\')"') + ' style="padding:0;overflow:hidden;' + (_bloccataHub ? 'cursor:default;' : '') + '">' +
+      '<div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;container-type:inline-size;">' +
         (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;">' : '<span style="font-size:3rem;">&#127924;</span>') +
+        _timbroInCostruzione(s) +
       '</div>' +
       '<div class="card-body prodotto-serie-testo" style="padding:' + (_mobHub ? '0.5rem 0.5rem 0.6rem' : '1.25rem 1.5rem') + ';text-align:left;">' + // v6.080 - su telefono il riquadro si stringe con la colonna
         '<div class="card-title" style="margin-bottom:0;color:var(--nome-entita);' + (_mobHub ? 'font-size:0.88rem;line-height:1.2;' : '') + '">' + esc(_nomeSerieCard(s)) + '</div>' +
@@ -35200,10 +35232,17 @@ function _nomeSerieCard(s, sempreCorto) {
 // 📌 Torna la stringa vuota quando la serie non e' marcata: chi lo usa lo interpola e basta, senza
 // un `if` suo. Una funzione che risponde «niente» e' piu' facile da usare bene di un ramo da
 // ricordarsi.
-// ⚠️ IL COLORE E' `--info` E NON `--warn`: il rosso e l'arancione hanno gia' un mestiere nella
-// tavolozza delle versioni (v6.404 — arancione l'omaggio, rosso l'errore di stampa) e `--warn`
-// (#ffb400) e' a un passo dall'arancione dell'omaggio. Un timbro non deve sembrare un
-// codice-colore che qui non c'entra: «in arrivo» e' un'informazione, non un allarme.
+// 🔄 v6.586 (Franco: «scrivilo in rosso non in azzurro») - IL TIMBRO E' ROSSO.
+// ⚠️ E QUALE ROSSO E' LA PARTE CHE CONTA: in questo sito ce ne sono DUE, e uno dei due significa
+// gia' qualcosa. `--type-printerror` (#ff6464) e' la versione ERRORE DI STAMPA nella tavolozza
+// (v6.404): un timbro di quel colore su una copertina di serie direbbe una cosa che non c'entra.
+// Si usa `--danger` (#e8557c), il rosso «pericolo», che alla v6.404 ha preso il posto lasciato
+// libero proprio dall'errore di stampa.
+// 📌 ⚠️ `--danger` VIVE IN DUE POSTI CON DUE VALORI: `css/style.css` dice ancora #ff6464 e
+// l'index lo ridefinisce a #e8557c. Vince l'index, che arriva dopo. Non e' un difetto di questa
+// release, ma e' la «seconda copia di cui non si sa l'esistenza» del §📁 del documento.
+// 📌 E LA PASTIGLIA SCURA ADESSO SERVE PIU' DI PRIMA: un rosso su una copertina rossa sparirebbe,
+// e le copertine non le sceglie il codice.
 // 📌 E la pastiglia scura sotto non e' decorazione: il timbro sta su copertine che non si
 // conoscono, quindi il contrasto lo garantisce cio' che mettiamo noi, non cio' che c'e' sotto.
 // ⚠️ `pointer-events:none` perche' la card intera e' cliccabile: un rettangolo in mezzo che
@@ -35219,13 +35258,24 @@ function _nomeSerieCard(s, sempreCorto) {
 // nel blocco <style> dell'index (procedura §5: il CSS si modifica inline).
 // ⚠️ Tutto il resto e' in `em`, quindi segue il corpo da se': un padding in `rem` accanto a un
 // testo che si rimpicciolisce avrebbe fatto una pastiglia grande con dentro una scritta minuscola.
+// 🆕 v6.587 (Franco: «blocca la pressione del tasto della serie — non per admin») - QUESTA
+// SERIE SI PUO' APRIRE?
+// 📌 Una domanda sola per i due punti che portano dentro una serie (la card dell'Inventario e il
+// box dell'hub Articoli). Due `if` gemelli sarebbero due verita' che il giorno del cambio
+// litigano — e ne nasceranno altri: la home usa gia' la stessa card.
+// ⚠️ L'ADMIN NON E' UN'ECCEZIONE MESSA DOPO, e' meta' della domanda: e' lui che deve poter entrare
+// in una serie in costruzione, se no non puo' lavorarci. Stessa forma di `_figurineVisibili`.
+function _serieBloccata(s) {
+  return !!(s && s.inCostruzione) && !currentUser?.isAdmin;
+}
+
 function _timbroInCostruzione(s) {
   if (!s || !s.inCostruzione) return '';
   const testo = currentLang === 'it' ? 'IN ARRIVO !' : 'COMING SOON !';
   return '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-12deg);'
     + 'pointer-events:none;white-space:nowrap;z-index:2;'
-    + 'padding:0.3em 0.8em;border:max(1px,0.1em) solid var(--info);border-radius:0.5em;'
-    + 'background:rgba(0,0,0,0.55);color:var(--info);'
+    + 'padding:0.3em 0.8em;border:max(1px,0.1em) solid var(--danger);border-radius:0.5em;'
+    + 'background:rgba(0,0,0,0.55);color:var(--danger);'
     + 'font-family:var(--font-ui);font-size:clamp(0.4rem,7.5cqw,0.95rem);font-weight:800;'
     + 'letter-spacing:0.08em;text-transform:uppercase;">' + testo + '</div>';
 }
@@ -35291,7 +35341,13 @@ function seriesCardHTML(s) {
   //     dov'era: far comparire una riga vuota solo per reggerlo sarebbe una riga che non dice
   //     niente. Deciso prima di scrivere, non scoperto dopo.
   const _puntSuAnno = _isMobileViewport() && !!modeScoreHTML && !!(s && s.year);
-  return `<div class="card" onclick="openSeriesDetail('${s.id}')">
+  // 🆕 v6.587 - se la serie e' in costruzione la card non si apre (per chi non e' admin).
+  // ⚠️ Il `cursor:default` si scrive IN LINEA e non si tocca `.card` nel foglio: quella classe la
+  // usano decine di card che devono restare cliccabili. Uno stile in linea vince senza rompere
+  // niente altrove.
+  // 📌 Il timbro resta, ed e' lui a dire perche' (v6.171: un comando che sparisce non spiega).
+  const _bloccata = _serieBloccata(s);
+  return `<div class="card"${_bloccata ? ' style="cursor:default;"' : ` onclick="openSeriesDetail('${s.id}')"`}>
     <div class="card-img-placeholder">
       ${s.img ? `<img src="${cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto')}" style="width:100%;height:100%;object-fit:contain;position:absolute;top:0;left:0;padding:8px;">` : '🎴'}
       ${/* 🆕 v6.585 - il timbro sta FUORI dal ternario: una serie in arrivo senza copertina e' il
