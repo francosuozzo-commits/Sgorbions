@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sgorbions</title>
-<script src="js/email.min.js?v=6.583"></script>
-<link rel="stylesheet" href="css/style.css?v=6.583">
+<script src="js/email.min.js?v=6.584"></script>
+<link rel="stylesheet" href="css/style.css?v=6.584">
 
 
 <style>
@@ -3055,6 +3055,21 @@ button.back-btn { color:#ffffff; }
 
     <div class="series-tab-panel" data-tab="avanzate" style="display:none;">
 
+    <!-- 🆕 v6.584 (Franco: «non mostrare le serie che io indico come invisibili») — SERIE
+         INVISIBILE. Sta in CIMA al tab Avanzate e non in fondo accanto all'Elimina: e' un
+         interruttore che si cerca, non uno che si incontra. E non e' distruttivo — si spegne
+         quando si vuole — quindi non gli si applica la regola dell'Elimina (v6.171), che sta in
+         fondo apposta perche' cancellare non si disfa.
+         ⚠️ Il testo dice ANCHE cosa porta con se': senza, «invisibile» si legge come «non compare
+         nel menu», e nessuno si aspetta che spariscano 700 articoli dalla ricerca. -->
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
+        <input type="checkbox" id="series-invisibile-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+        <span>&#129765; Serie invisibile</span>
+      </label>
+      <div class="form-hint">La serie <b>e tutti i suoi articoli</b> spariscono dal sito: catalogo, ricerca globale, caroselli, classifica, contatori e Mia lista. Restano visibili solo all&rsquo;admin.</div>
+    </div>
+
     <!-- v6.170 - qui stava il blocco dei tre conteggi (griglia 1fr 1fr 1fr). Ogni numero e' andato
          sotto la sua spunta, nella colonna di destra qui sopra: erano separati da tutta la tabella
          delle colonne della griglia. -->
@@ -3585,7 +3600,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.583"></script>
+<script src="js/app.js?v=6.584"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3609,7 +3624,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.583'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.584'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
