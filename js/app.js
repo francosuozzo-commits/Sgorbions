@@ -1,6 +1,29 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.583 — Togliere un tipo dalla lista di una serie non e' piu' un gesto muto: se degli
+//          articoli lo usano ancora, il salvataggio lo DICE, e se ne e' sparito uno ed e'
+//          nato uno CHIEDE se era una rinomina (Franco: «chiede, mostrando quanti sono»).
+//          🔴 Nasce dal 1 settembre: `MACCHIA ROSA` modificata invece che affiancata, due
+//          articoli orfani, e nessun errore da nessuna parte.
+//          🔴 La rinomina NON e' automatica: il codice non distingue «ho rinominato» da
+//          «ho cambiato idea», ed e' lo stesso gesto. Automatica, quel giorno avrebbe
+//          AMPLIFICATO lo sbaglio in silenzio invece di rivelarlo.
+//          ⚠️ Fronte e retro si guardano UNITI: spostare un tipo da una lista all'altra
+//          non lo fa sparire (e' il §A aperto sulla serie 1).
+//          🆕 `listeTipo` in VERSIONI_ARTICOLO; `_tipiSparitiInUso`, `_confermaTipiSpariti`,
+//          `_applicaRinomineTipo`. Modificato js/app.js, index.html.
+// v6.582 — Il TIPO di un errore di stampa posteriore scende dal retro alle figurine che
+//          lo usano, a ogni salvataggio (Franco: «basta che vi siano delle regole di
+//          sincronizzazione»). Nuova `_tipoDaRetroErrore`, dentro `_perRetroDaAggiornare`.
+//          🔴 Chiude il buco visto il 1 settembre: corretto il retro 4635, la figurina 407
+//          era rimasta indietro. Dalla v6.577 il valore si LEGGE dal retro, ma la copia sul
+//          record si riallineava solo aprendo e salvando quella figurina.
+//          📌 Un posto solo, CINQUE strade: scheda, vista tabellare, aggiornamento massivo,
+//          import retro e «Allinea item figlio correlati» — che cosi' ripara anche i record
+//          gia' divergenti oggi, senza una riga in piu'.
+//          ⚠️ Se il retro non dichiara niente NON si propaga il vuoto (ripiego v6.577): la
+//          release allinea un dato, non lo toglie. Modificato js/app.js, index.html.
 // v6.581 — La regola «quale descrizione della serie, in quale lingua» vive in UN posto:
 //          la nuova `_descSerie(s)` (Franco: «unificare», decisione n.5 dalla v6.549).
 //          🔴 Era scritta a mano in QUATTRO punti, due dei quali nella stessa funzione.
@@ -25711,7 +25734,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.581';
+const JS_VERSION = 'v6.583';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30957,6 +30980,110 @@ function handleSeriesImg(e) {
   reader.readAsDataURL(file);
 }
 let editingSeriesImgFile = null;
+// 🆕 v6.583 (Franco: «chiede, mostrando quanti sono») - I TIPI CHE SPARISCONO DA UNA LISTA E
+// CHE QUALCUNO STA ANCORA USANDO.
+// 🔴 Il 1 settembre, nella casella DI RETRO della serie 2, la riga «MACCHIA ROSA» e' stata
+// MODIFICATA mentre si volevano AFFIANCARE due righe nuove. Due valori aggiunti, uno perso,
+// nessun errore: se n'e' accorto solo il censimento, e per via indiretta — «due articoli sono
+// diventati orfani». Questa funzione fa quella domanda al momento del gesto invece che tre
+// giorni dopo.
+// ⚠️ FRONTE E RETRO SI GUARDANO UNITI, e non e' una scorciatoia: spostare un tipo da FRONTALI a
+// DI RETRO non lo fa sparire, resta dichiarato. Con le due liste separate scatterebbe un avviso
+// falso proprio sul lavoro che Franco ha in coda sulla serie 1 (MALTAGLIATO).
+// 📌 Il candidato alla rinomina si propone SOLO quando ne e' sparito uno ed e' nato uno: con due
+// nati non c'e' nessun appaiamento, e indovinarlo sarebbe peggio che non provarci.
+// 📌 Le liste si chiedono a VERSIONI_ARTICOLO (listeTipo): una versione futura entra da se'.
+function _tipiSparitiInUso(seriesId, listeNuove) {
+  const _n = x => (x || '').trim().toLowerCase();
+  const s = getData('series', []).find(x => x.id === seriesId);
+  if (!s) return [];
+  const figs = getData('figurines', []).filter(f => f.seriesId === seriesId);
+  const out = [];
+  for (const v of _VERSIONI_VIVE) {
+    if (!v.campoTipo || !v.listeTipo) continue;
+    const vecchia = v.listeTipo.reduce((a, k) => a.concat(s[k] || []), []).filter(t => (t || '').trim());
+    const nuova = (listeNuove[v.campoTipo] || []).filter(t => (t || '').trim());
+    const spariti = vecchia.filter(t => !nuova.some(x => _n(x) === _n(t)));
+    const nati = nuova.filter(t => !vecchia.some(x => _n(x) === _n(t)));
+    for (const t of spariti) {
+      const quanti = figs.filter(f => _n(f[v.campoTipo]) === _n(t)).length;
+      if (!quanti) continue;
+      out.push({ campo: v.campoTipo, versione: v, da: t, quanti,
+                 candidato: (spariti.length === 1 && nati.length === 1) ? nati[0] : null });
+    }
+  }
+  return out;
+}
+
+// 🆕 v6.583 - LA DOMANDA. Torna l'elenco delle rinomine accettate, mai null: la SERIE si salva
+// comunque, perche' quali tipi dichiarare l'ha appena deciso Franco e la domanda riguarda gli
+// ARTICOLI. Bloccargli il salvataggio per chiedergli se era sicuro sarebbe una porta chiusa
+// senza chiave (v6.101).
+// 🔴 LA RINOMINA NON E' AUTOMATICA, e non e' prudenza: il codice non puo' distinguere «ho
+// rinominato questa cosa» da «ho cambiato idea su cosa va in questa riga» — e' lo stesso gesto.
+// Il 1 settembre una rinomina automatica avrebbe riscritto in silenzio gli articoli MACCHIA
+// ROSA, amplificando lo sbaglio invece di rivelarlo.
+// 📌 Senza candidato non si CHIEDE: si AVVISA. Non c'e' niente da scegliere, e un «Annulla» che
+// non annulla niente e' peggio di un avviso.
+function _confermaTipiSpariti(seriesId, listeNuove) {
+  const casi = _tipiSparitiInUso(seriesId, listeNuove);
+  const it = currentLang === 'it';
+  const rinomine = [];
+  for (const c of casi) {
+    const eti = it ? (c.versione.pluraleIt || c.versione.it) : (c.versione.pluraleEn || c.versione.en);
+    const quanti = c.quanti + ' ' + (it ? (c.quanti === 1 ? 'articolo' : 'articoli') : (c.quanti === 1 ? 'item' : 'items'));
+    if (c.candidato) {
+      const domanda = it
+        ? ('«' + c.da + '» non \u00e8 pi\u00f9 fra i tipi di ' + eti + ' di questa serie, e ' + quanti + ' lo usano ancora.'
+           + '\n\nL\u2019hai rinominato in «' + c.candidato + '» ?'
+           + '\n\nOK = rinomino anche gli articoli\nAnnulla = li lascio come sono, fuori elenco')
+        : ('"' + c.da + '" is no longer among the ' + eti + ' types of this series, and ' + quanti + ' still use it.'
+           + '\n\nDid you rename it to "' + c.candidato + '" ?'
+           + '\n\nOK = rename those items too\nCancel = leave them as they are');
+      if (confirm(domanda)) rinomine.push({ campo: c.campo, da: c.da, a: c.candidato });
+    } else {
+      toast(it
+        ? ('\u26a0\ufe0f ' + quanti + ' usano ancora «' + c.da + '», che non \u00e8 pi\u00f9 fra i tipi di ' + eti + ': restano fuori elenco.')
+        : ('\u26a0\ufe0f ' + quanti + ' still use "' + c.da + '", no longer among the ' + eti + ' types: they stay off-list.'),
+        'info', null, 8000);
+    }
+  }
+  return rinomine;
+}
+
+// 🆕 v6.583 - LA RINOMINA, quando Franco ha detto di si'.
+// ⚠️ IL NOME COMPLETO SI RICALCOLA, e non e' un di piu': per change, omaggio ed errore di stampa
+// il tipo sta DENTRO il Nome completo (computeFullName). Senza, resterebbero articoli col tipo
+// nuovo e il nome vecchio — due campi dello stesso record che raccontano due versioni.
+// 🔗 E I RETRO SI PORTANO DIETRO CHI LI USA, passando da `_daSalvareInsiemeA` (v6.582): senza,
+// rinominare il tipo su un retro lascerebbe indietro proprio le figurine, cioe' ricreerebbe la
+// divergenza della 407 mentre se ne ripara un'altra.
+// 📌 Si muta sul posto e si salva in blocco, come fa `ebayRigeneraTitoli`: gli oggetti di
+// `series.items` e di `_cache.figurines` sono gli stessi.
+async function _applicaRinomineTipo(seriesId, rinomine) {
+  if (!rinomine || !rinomine.length) return 0;
+  const _n = x => (x || '').trim().toLowerCase();
+  const figs = getData('figurines', []);
+  const toccati = new Map();
+  for (const r of rinomine) {
+    for (const f of figs) {
+      if (f.seriesId !== seriesId || _n(f[r.campo]) !== _n(r.da)) continue;
+      f[r.campo] = r.a;
+      toccati.set(f.id, f);
+    }
+  }
+  if (!toccati.size) return 0;
+  for (const f of toccati.values()) { try { f.fullName = computeFullName(f, figs); } catch (e) {} }
+  for (const f of Array.from(toccati.values())) {
+    for (const c of _daSalvareInsiemeA(f, figs)) {
+      const i = figs.findIndex(x => x.id === c.id);
+      if (i >= 0) { Object.assign(figs[i], c); toccati.set(c.id, figs[i]); }
+    }
+  }
+  await _salvaFigurineInBlocco(Array.from(toccati.values()));
+  return toccati.size;
+}
+
 async function saveSeries() {
   const name = document.getElementById('series-name-input').value.trim();
   const year = document.getElementById('series-year-input').value;
@@ -31055,6 +31182,19 @@ async function saveSeries() {
       'error', null, 7000);
     return;
   }
+  // 🆕 v6.583 - E QUI SI GUARDA COSA E' SPARITO. Sta PRIMA che il pulsante Salva venga spento
+  // (piu' sotto), cosi' l'uscita non deve rimettere a posto niente: e' la lezione della v6.190,
+  // dove un `return` anticipato lasciava la form morta.
+  // ⚠️ Solo in MODIFICA: una serie nuova non ha liste vecchie, quindi non puo' aver perso niente.
+  // 📌 Le rinomine si applicano DOPO che la serie e' stata scritta — piu' giu', dentro il `try`:
+  // se la scrittura della serie fallisse, gli articoli sarebbero gia' stati riscritti verso una
+  // lista che non esiste. Qui si raccoglie soltanto la risposta.
+  const _idSerieMod = document.getElementById('edit-series-id')?.value || '';
+  const _rinomineTipo = _idSerieMod
+    ? _confermaTipiSpariti(_idSerieMod, { changeType: frontChangeTypes.concat(retroChangeTypes),
+                                          freeVersionType: frontFreeVersionTypes.concat(retroFreeVersionTypes),
+                                          printErrorType: frontPrintErrorTypes.concat(retroPrintErrorTypes) })
+    : [];
   // v6.188 (Franco: "ho creato una serie dimenticandomi di mettere il nome corto e la ha creata")
   // - il NOME CORTO entra fra gli obbligatori. Fino alla v6.187 il vuoto era uno stato ammesso e
   // documentato ("Vuoto = nome per esteso"), quindi questa release non chiude un buco: CAMBIA UNA
@@ -31111,6 +31251,16 @@ async function saveSeries() {
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
         await fsSave('series', _serieSenzaItems(series[idx]));
         _cache.series = series;   // la CACHE tiene gli items: si strippa solo cio' che parte
+        // 🆕 v6.583 - LE RINOMINE ACCETTATE, dopo che la serie e' stata scritta.
+        // ⚠️ L'ordine e' questo e non l'altro: se la scrittura della serie fallisce si esce dal
+        // `catch` qui sotto, e gli articoli non sono ancora stati toccati. Al contrario avrebbero
+        // un tipo che nella serie non e' dichiarato — cioe' il difetto che questa release chiude.
+        if (_rinomineTipo.length) {
+          const _quanti = await _applicaRinomineTipo(editId, _rinomineTipo);
+          if (_quanti) toast((currentLang === 'it'
+            ? '\u2705 Rinominati ' + _quanti + ' articol' + (_quanti === 1 ? 'o' : 'i')
+            : '\u2705 ' + _quanti + ' item' + (_quanti === 1 ? '' : 's') + ' renamed'), 'success', null, 5000);
+        }
       }
     } else {
       const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, created: new Date().toISOString() };
@@ -32068,6 +32218,9 @@ const VERSIONI_ARTICOLO = [
     badgeIt: 'Change', badgeEn: 'Change',
     livello: 'figlio', partenza: ['base', 'variation', 'unofficialVariation'],
     campoTipo: 'changeType', opzioniTipo: '_opzioniTipoChange', idForm: 'fe-is-change',
+    // 🆕 v6.583 - DOVE la serie dichiara i tipi di questa versione. Terzo pezzo accanto a
+    // `campoTipo` e `opzioniTipo`: chi deve sapere quali tipi esistono lo chiede all'elenco.
+    listeTipo: ['frontChangeTypes', 'retroChangeTypes'],
     // v6.266 - il PLURALE del titolo fisso del riquadro. Vedi la riga dell'omaggio.
     pluraleIt: 'Change', pluraleEn: 'Changes',
     // v6.267 - la coda della dicitura del raggruppamento, dettata da Franco. Vedi l'omaggio.
@@ -32125,6 +32278,7 @@ const VERSIONI_ARTICOLO = [
     // che quel lavoro serviva a qualcosa.
     livello: 'figlio', partenza: ['base', 'variation'],
     campoTipo: 'freeVersionType', opzioniTipo: '_opzioniTipoOmaggio', idForm: 'fe-is-free-version',
+    listeTipo: ['frontFreeVersionTypes', 'retroFreeVersionTypes'],   // v6.583
     // 🆕 v6.266 - IL PLURALE, e non si deriva da `it`: il titolo fisso del riquadro dice
     // "Omaggi per tipo", e da "Omaggio" non si arriva a "Omaggi" senza inventare una regola di
     // grammatica italiana - che su "Errore di stampa" -> "Errori di stampa" sbaglierebbe subito.
@@ -32195,6 +32349,7 @@ const VERSIONI_ARTICOLO = [
     // commento che spiega perche' una cosa e' diversa, accanto a una cosa che non lo e' piu', e'
     // la forma di bugia piu' difficile da smentire - suona come una ragione.
     campoTipo: 'printErrorType', opzioniTipo: '_opzioniTipoErrore', idForm: 'fe-is-printerror',
+    listeTipo: ['frontPrintErrorTypes', 'retroPrintErrorTypes'],   // v6.583
     // 🆕 v6.520 - il riquadro degli errori di stampa porta un cappello: le due pillole del
     // LATO. È l'unico che ce l'ha, ed è per questo che si dichiara qui invece che nel
     // pannello (stessa scelta di `pieHTML`, v6.333).
@@ -45973,6 +46128,25 @@ function _daSalvareInsiemeA(rec, figs) {
 // niente da mostrare. Cosi' l'attrezzo che ripara e il salvataggio che previene leggono la stessa
 // funzione: non possono divergere, che e' l'unico modo di non ritrovarsi con un riparatore che
 // sistema meno cose di quante il sito ne rompa.
+// 🆕 v6.582 (Franco: «basta che vi siano delle regole di sincronizzazione») - IL TIPO CHE UNA
+// FIGURINA DEVE PRENDERE DAL SUO RETRO, o niente.
+// 🔴 Dalla v6.577 il tipo di un errore di stampa POSTERIORE si LEGGE dal retro e dalla v6.578 il
+// campo sulla figurina e' di sola lettura — ma la copia sul RECORD restava indietro finche'
+// qualcuno non apriva e salvava quella figurina. Il 1 settembre, corretto il retro 4635, la
+// figurina 407 e' rimasta col valore vecchio: la prima divergenza mai vista in questo progetto,
+// e l'ha prodotta una correzione.
+// ⚠️ TORNA null QUANDO NON C'E' NIENTE DA PROPAGARE, E NON IL VUOTO. Se il retro non dichiara
+// nessun tipo si lascia stare quello gia' scritto sulla figurina: e' il ripiego della v6.577, e
+// senza di lui salvare un retro-errore senza tipo CANCELLEREBBE il tipo su tutte le figurine
+// collegate — la release toglierebbe un dato invece di allinearlo.
+// 📌 Le due condizioni sono quelle di _latoErroreStampa: la figurina e' un errore di stampa E il
+// retro che usa lo e' a sua volta. Non si richiama quella funzione perche' qui il retro ce
+// l'abbiamo gia' in mano — cercarlo di nuovo per id direbbe la stessa cosa in un giro in piu'.
+function _tipoDaRetroErrore(f, retro) {
+  if (!f || !retro || !f.isPrintError || !retro.isPrintError) return null;
+  return (retro.printErrorType || '').trim() || null;
+}
+
 function _perRetroDaAggiornare(rec, figs, visti, collegati) {
   if (!rec || !rec.id || (rec.section || 'figurines') !== 'retros') return [];
   const tutte = (figs || getData('figurines', []) || []);
@@ -45985,11 +46159,25 @@ function _perRetroDaAggiornare(rec, figs, visti, collegati) {
   const out = [];
   for (const f of lavoro) {
     if (f.retroId !== rec.id || _visti.has(f.id)) continue;
-    let nuovo;
-    try { nuovo = computeFullName(f, lavoro); } catch (e) { continue; }
-    if (nuovo !== f.fullName) {
-      out.push({ figlio: f, genitore: rec, campi: ['fullName'], nuovo: { ...f, fullName: nuovo }, viaRetro: true });
+    // 🆕 v6.582 - PRIMA IL TIPO, POI IL NOME COMPLETO, e l'ordine non e' negoziabile: per un
+    // errore di stampa computeFullName compone «NomeBase - tipo», quindi calcolando il nome
+    // prima si scriverebbe il tipo nuovo accanto a un Nome completo che porta ancora il vecchio.
+    // Nessun errore, nessun segnale: due campi dello stesso record che raccontano due versioni.
+    // 📌 I campi si accumulano in un elenco invece di essere due rami separati, perche' e'
+    // quello che l'anteprima dell'«Allinea» legge (v6.387): una riga puo' cambiare il solo
+    // Nome completo (il retro e' stato rinominato) o tutti e due (gli e' cambiato il tipo).
+    const campi = [];
+    let corrente = f;
+    const _tipoDalRetro = _tipoDaRetroErrore(f, rec);
+    if (_tipoDalRetro !== null && _tipoDalRetro !== (f.printErrorType || '').trim()) {
+      corrente = { ...f, printErrorType: _tipoDalRetro };
+      campi.push('printErrorType');
     }
+    let nuovo;
+    try { nuovo = computeFullName(corrente, lavoro); } catch (e) { continue; }
+    if (nuovo !== f.fullName) campi.push('fullName');
+    if (!campi.length) continue;
+    out.push({ figlio: f, genitore: rec, campi, nuovo: { ...corrente, fullName: nuovo }, viaRetro: true });
   }
   return out;
 }
