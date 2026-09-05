@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.603';
+const JS_VERSION = 'v6.605';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27819,6 +27819,40 @@ let _visibilitaFilter = 'all';   // v6.545 — 'all' | 'visibili' | 'invisibili'
 // 📌 È ORTOGONALE alle tipologie: si accende «POSTERIORI» e insieme una tipologia, e il
 // setaccio le combina — è il rapporto fra categoria e sottocategoria a cui Franco allude.
 let _filtroLatoErrore = new Set();   // v6.520 — 'fronte' | 'retro'
+// 🆕 v6.604 (Franco: *"da sotto a sopra non da' valore, anzi fuorvia"*) — LE PILLOLE
+// DELLE TIPOLOGIE PREMUTE, RICORDATE COL LORO LATO.
+// 🔴 PERCHE' NON BASTA `_raggr('printerror').filtro`: quello conserva la STRINGA del tipo,
+// e lo stesso nome vive su tutti e due i lati — Franco: *"teoricamente tutte, perche' ogni
+// figurina puo' essere decentrata sul lato frontale o sul lato posteriore"*. Da «DECENTRATA»
+// non si torna indietro a «quella di sopra»: la coppia va ricordata, o il vincolo di lato
+// che Franco chiede («solo quel lato, non entrambi») e' inesprimibile.
+// 📌 La chiave usa `\u0000` come separatore perche' e' l'unico carattere che un nome di
+// tipologia scritto a mano non puo' contenere. Un `|` o un `-` sarebbero bastati fino al
+// giorno che qualcuno battezza un errore «SCRITTA - GRIGIA».
+let _VOCI_ERR_SCELTE = new Set();   // v6.604 — 'lato\u0000tipo'
+const _K_VOCE_ERR = (lato, val) => lato + '\u0000' + val;
+// 🔴 v6.604 — IL VINCOLO DI LATO NON E' UNO STATO: E' UNA DOMANDA, e si rifa' ogni volta.
+// Questa e' la riga che rende impossibile il baco degli «zero retri» in questa forma. Un
+// `_latoImplicito` tenuto a parte andrebbe spento a mano dai punti giusti — e «i punti
+// giusti» e' precisamente l'elenco che nessuno riesce a tenere allineato (5 settembre:
+// tre liste di filtri, 13 / 13 / 10). Ricavandolo, l'ultima pillola che si spegne porta
+// via il vincolo per costruzione, non per diligenza.
+// ⚠️ E POTA MENTRE LEGGE: una voce il cui tipo non e' piu' nel filtro (perche' l'ha tolto
+// un altro comando — le pillole generiche `_soloTipo`/`_tuttiTipi`/`_aggiungiTipo` scrivono
+// sullo stesso `filtro`) sparisce qui, invece di restare a vincolare un lato per un tipo
+// che nessuno cerca piu'.
+function _latiDaTipologia() {
+  const out = new Set();
+  const s = _raggr('printerror');
+  if (!s) { _VOCI_ERR_SCELTE = new Set(); return out; }
+  for (const k of [..._VOCI_ERR_SCELTE]) {
+    const i = k.indexOf('\u0000');
+    if (i < 0) { _VOCI_ERR_SCELTE.delete(k); continue; }
+    if (s.filtro.has(k.slice(i + 1))) out.add(k.slice(0, i));
+    else _VOCI_ERR_SCELTE.delete(k);
+  }
+  return out;
+}
 // Il filtro sul TIPO di oggetto (set base, variazioni, change...) risponde alla
 // domanda "che cosa e' questo?". Non rispondeva a quella che un collezionista si fa
 // davvero: "cosa mi manca?". Da qui il secondo filtro, che e' una DIMENSIONE
@@ -38204,6 +38238,11 @@ const _FILTRI = [
   // 🔴 IL COLPEVOLE DEL 5 SETTEMBRE: c'era nelle prime due liste e non nella terza.
   { nome: 'lato errore stampa',   azzera: () => { _filtroLatoErrore = new Set(); },
                                   acceso: () => _filtroLatoErrore.size > 0 },
+  // 🆕 v6.604 — LE PILLOLE DELLE TIPOLOGIE COL LORO LATO. Entra nell'elenco il giorno
+  // stesso in cui nasce: e' l'unica lezione che il 5 settembre ha lasciato per iscritto.
+  { nome: 'tipologie errore per lato',
+                                  azzera: () => { _VOCI_ERR_SCELTE = new Set(); },
+                                  acceso: () => _VOCI_ERR_SCELTE.size > 0 },
   { nome: 'posseduti',            azzera: () => { _ownedFilter = 'all'; },
                                   acceso: () => _ownedFilter !== 'all' },
   { nome: 'lista dei desideri',   azzera: () => { _wishlistFilter = false; },
@@ -38310,7 +38349,13 @@ function getCurrentlyFilteredItems(opts) {
   // stessa ragione di `skipRaggr` e `skipCategory`.
   const _skipLato = !!(opts && opts.skipLato);
   const _latoAcceso = !_skipLato && _filtroLatoErrore.size > 0;
-  const _idxLato = _latoAcceso ? new Map(allFigs.map(x => [x.id, x])) : null;
+  // 🆕 v6.604 — IL SECONDO VINCOLO DI LATO, quello che porta con se' la pillola premuta.
+  // 📌 Segue `skipLato` come il primo: il riquadro che disegna le due sezioni conta
+  // ignorando la PROPRIA scelta, o appena si preme una tipologia l'altra sezione direbbe
+  // zero e nessuno potrebbe piu' cambiare idea (stessa ragione della v6.520).
+  const _latiTip = _skipLato ? null : _latiDaTipologia();
+  const _vincoloTip = !!(_latiTip && _latiTip.size);
+  const _idxLato = (_latoAcceso || _vincoloTip) ? new Map(allFigs.map(x => [x.id, x])) : null;
   return allFigs.filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
     // Filtro per categoria (solo Retro), attivato cliccando un box nello specchietto risultati (v5.762)
@@ -38347,7 +38392,16 @@ function getCurrentlyFilteredItems(opts) {
     // 🆕 v6.520 - il lato del difetto. Chi non è un errore di stampa ha lato `null`, quindi
     // con una pillola accesa sparisce: è voluto — «FRONTALI» vuol dire «gli errori di
     // stampa che stanno davanti», non «tutto ciò che non sta dietro».
-    if (_latoAcceso && !_filtroLatoErrore.has(_latoErroreStampa(f, allFigs, _idxLato))) return false;
+    // 🔄 v6.604 — il lato si calcola UNA volta e serve due vincoli: quello ESPLICITO della
+    // pillola padre e quello IMPLICITO che la pillola della tipologia porta con se'.
+    // ⚠️ Sono in AND e non e' pignoleria: «POSTERIORI» acceso piu' una tipologia scelta
+    // sotto FRONTALI e' una domanda senza risposta, e deve dare zero — non l'unione delle
+    // due, che sarebbe la risposta a una domanda che nessuno ha fatto.
+    if (_latoAcceso || _vincoloTip) {
+      const _lat = _latoErroreStampa(f, allFigs, _idxLato);
+      if (_latoAcceso && !_filtroLatoErrore.has(_lat)) return false;
+      if (_vincoloTip && !_latiTip.has(_lat)) return false;
+    }
     // v6.054 - i due versi dello stesso filtro
     // v6.086 (Franco) - si chiede `_fotoFigurina()`, non `f.img`. Il filtro guardava la foto
     // PROPRIA del record mentre la griglia disegna col ripiego sulla base: una variazione senza
@@ -39611,7 +39665,11 @@ function _soloVoceErroreLato(i) {
   const v = _VOCI_ERR_LATO[i]; if (!v) return;
   const s = _raggr('printerror'); if (!s) return;
   s.filtro = new Set([v.val]);
-  _filtroLatoErrore = new Set([v.lato]);
+  // 🔄 v6.604 — QUI STAVA `_filtroLatoErrore = new Set([v.lato])`, cioe' l'accensione del
+  // padre. Il VINCOLO resta (lo porta la coppia qui sotto), la LUCE no: il lato lo dice
+  // gia' la sezione in cui la pillola sta, e il numero del padre — piu' grande di quello
+  // che stai per ottenere — accanto a una pillola accesa diceva il falso.
+  _VOCI_ERR_SCELTE = new Set([_K_VOCE_ERR(v.lato, v.val)]);
   _soloQuestoRaggr('printerror');
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (_soloVoceErroreLato)', e); }
@@ -39621,8 +39679,19 @@ function _soloVoceErroreLato(i) {
 function _aggiungiVoceErroreLato(i) {
   const v = _VOCI_ERR_LATO[i]; if (!v) return;
   const s = _raggr('printerror'); if (!s) return;
-  if (s.filtro.has(v.val) && _filtroLatoErrore.has(v.lato)) s.filtro.delete(v.val);
-  else { s.filtro.add(v.val); _filtroLatoErrore.add(v.lato); }
+  // 🔄 v6.604 — si ragiona sulla COPPIA, non sul nome.
+  // ⚠️ Il tipo esce dal filtro SOLO se nessun'altra sezione lo sta ancora chiedendo:
+  // con «DECENTRATA» accesa di qua e di la', spegnerne una non deve spegnere l'altra.
+  // E' il caso che Franco dice essere teoricamente universale, quindi non e' un ramo raro.
+  const k = _K_VOCE_ERR(v.lato, v.val);
+  if (_VOCI_ERR_SCELTE.has(k)) {
+    _VOCI_ERR_SCELTE.delete(k);
+    const _altrove = [..._VOCI_ERR_SCELTE].some(x => x.slice(x.indexOf('\u0000') + 1) === v.val);
+    if (!_altrove) s.filtro.delete(v.val);
+  } else {
+    _VOCI_ERR_SCELTE.add(k);
+    s.filtro.add(v.val);
+  }
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (_aggiungiVoceErroreLato)', e); }
 }
@@ -39680,7 +39749,15 @@ function _corpoErroriPerLatoHTML(C) {
       const i = _VOCI_ERR_LATO.push({ lato, val }) - 1;
       return _chipTipoHTML({
         etichetta: val, colore: null, n,
-        attiva: !!(stato && stato.filtro.has(val)) && latoAcceso,
+        // 🔄 v6.604 — DUE MODI DI ESSERE ACCESA, e sono davvero due:
+        //   · l'hai premuta tu           → la coppia sta in `_VOCI_ERR_SCELTE`
+        //   · l'ha accesa il PADRE       → Franco: *"da sopra a sotto ha senso, te li
+        //     coloro perche' di fatto lo stai facendo indirettamente"*.
+        // 📌 E il «di fatto» e' esatto, non approssimato: il Tipo di errore di stampa e'
+        // OBBLIGATORIO dalla v5.771, quindi non esistono errori senza tipologia che il
+        // padre includerebbe e che nessuna pillola rappresenta. «Padre acceso» e «tutti i
+        // figli accesi» selezionano lo stesso insieme.
+        attiva: !!(stato && _VOCI_ERR_SCELTE.has(_K_VOCE_ERR(lato, val))) || latoAcceso,
         maiuscole: true,
         onSet: `_soloVoceErroreLato(${i})`, onAdd: `_aggiungiVoceErroreLato(${i})`,
         titolo: it ? 'Cerca solo questa tipologia, su questo lato' : 'Search only this type, on this side', it
@@ -45994,15 +46071,22 @@ function _slotFotoEdit(slot, url, f) {
       // gesto, ma senza il passaggio dal pulsante Salva. La seconda `<label>` ha una `<input>` sua:
       // due comandi non possono condividere la stessa casella file, o il primo che la usa
       // deciderebbe anche per il secondo.
-      // 📌 Etichetta accorciata («Aggiungi e salva», non «Aggiungi foto e salva»): i due tasti stanno
-      // affiancati e la parola «foto» e' gia' nel primo. Confermato da Franco.
+      // 🔄 v6.605 — QUI STAVA IL CONTRARIO, e la frase e' stata corretta insieme al codice:
+      //   «Etichetta accorciata («Aggiungi e salva», non «Aggiungi foto e salva»): i due tasti
+      //    stanno affiancati e la parola «foto» e' gia' nel primo. Confermato da Franco.»
+      // Era vera, e la sua ragione era lo SPAZIO: la riga ne teneva tre. Dalla v6.605 i tasti
+      // per riga sono due, lo spazio c'e', e Franco ha rimesso il nome per intero.
+      // 🔴 UNA SPIEGAZIONE VECCHIA E' PIU' PERICOLOSA DI UNA REGOLA VECCHIA: la regola la vede
+      // una prova, la spiegazione no — nessuna suite legge i commenti. Il 6 settembre 2026 la
+      // frase della v5.770 («il tipo di errore di stampa e' facoltativo»), mai cancellata dalla
+      // v5.771 che lo rese obbligatorio, ha fatto dare per buona una buca che non esisteva.
+      // L'unica difesa e' cancellarla nella release che la smentisce, cioe' adesso.
       // 📌 `btn-foto` e non una classe nuova: e' la famiglia di questa riga, gia' coerente — la
       // stessa regola che la v6.601 ha appena applicato ai tasti admin.
       '<label style="flex:1;cursor:pointer;text-align:center;">' +
-        '<span class="btn-foto" style="display:block;">\u{1F4BE} ' + (currentLang === 'it' ? (url ? 'Cambia e salva' : 'Aggiungi e salva') : (url ? 'Change and save' : 'Add and save')) + '</span>' +
+        '<span class="btn-foto" style="display:block;">\u{1F4BE} ' + (currentLang === 'it' ? (url ? 'Cambia foto e salva' : 'Aggiungi foto e salva') : (url ? 'Change photo and save' : 'Add photo and save')) + '</span>' +
         '<input type="file" accept="image/*" style="display:none;" onchange="handleFigEditImgESalva(event, \'' + slot + '\')">' +
       '</label>' +
-      (url ? '<button onclick="removeFigPhoto(\'' + slot + '\')" class="btn-foto" style="flex:1;">\u{1F5D1}\uFE0F ' + (currentLang === 'it' ? 'Rimuovi foto' : 'Remove photo') + '</button>' : '') +
     '</div>' +
     // 🆕 v6.596 (Franco: «quando la foto non c'e', "Rimuovi sfondo" sparisce») — un
     // comando che non ha niente su cui agire non si mostra. Prima compariva sempre e
@@ -46011,7 +46095,19 @@ function _slotFotoEdit(slot, url, f) {
     // ⚠️ Si ESCLUDE dalla composizione, non si nasconde con display:none — un comando
     // nascosto resta cliccabile col tabulatore e resta nel DOM a far credere a chi legge
     // il codice che quella strada esista ancora (parole della v6.462).
-    (url ? '<button id="' + s.btn + '" onclick="removeBgFromEdit(\'' + slot + '\')" class="btn-foto" style="width:100%;margin-top:0.4rem;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' : '') +
+    // 🆕 v6.605 (Franco: *"riga 2: Rimuovi foto e Rimuovi sfondo"*) — LA SECONDA RIGA, e non
+    // e' solo simmetria: questi due sono gli unici comandi del riquadro che fanno PERDERE
+    // qualcosa. Insieme si leggono come un gruppo; sparpagliati erano vicini di casa.
+    // ⚠️ SENZA FOTO LA RIGA NON C'E' — non e' vuota, e' assente, e restano i due comandi che
+    // una foto la mettono. Regola della v6.596 e della v6.462: un comando che non ha niente
+    // su cui agire non si mostra, e si ESCLUDE dalla composizione invece di nascondersi con
+    // `display:none` — nascosto resterebbe raggiungibile col tabulatore.
+    // 📌 `flex:1` su tutti e due, come nella riga di sopra: le due righe hanno la stessa
+    // griglia, quindi i quattro tasti sono larghi uguali e le colonne si incolonnano.
+    (url ? '<div style="display:flex;gap:0.4rem;margin-top:0.4rem;">' +
+      '<button onclick="removeFigPhoto(\'' + slot + '\')" class="btn-foto" style="flex:1;">\u{1F5D1}\uFE0F ' + (currentLang === 'it' ? 'Rimuovi foto' : 'Remove photo') + '</button>' +
+      '<button id="' + s.btn + '" onclick="removeBgFromEdit(\'' + slot + '\')" class="btn-foto" style="flex:1;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' +
+    '</div>' : '') +
   '</div>';
 }
 
