@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sgorbions — il database delle figurine italiane anni '90</title>
+<title>figurineSgorbions.it — il database degli Sgorbions</title>
 
 <!-- 🆕 v6.589 — LE BASI SEO (Franco: «vorrei fare in modo che il sito sia trovabile tramite
      ricerca Google»). Cercato il 2 settembre 2026: il sito non compariva. Di cinque ragioni
@@ -21,7 +21,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Sgorbions">
 <meta property="og:url" content="https://figurinesgorbions.it/">
-<meta property="og:title" content="Sgorbions — il database delle figurine italiane anni '90">
+<meta property="og:title" content="figurineSgorbions.it — il database degli Sgorbions">
 <meta property="og:description" content="Il database non ufficiale degli Sgorbions, le figurine italiane degli anni '90: serie, numeri, retri, errori di stampa e varianti. Fatto da collezionisti.">
 <meta property="og:image" content="https://res.cloudinary.com/ddpsge9d8/image/upload/w_1200,h_630,c_pad,b_rgb:0e0a1a,q_auto,f_jpg/sgorbions_xwmoig">
 <meta property="og:image:width" content="1200">
@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.589"></script>
-<link rel="stylesheet" href="css/style.css?v=6.589">
+<script src="js/email.min.js?v=6.594"></script>
+<link rel="stylesheet" href="css/style.css?v=6.594">
 
 
 <style>
@@ -200,7 +200,18 @@
             grid-template-areas:"sx logo dx";
             align-items:center; justify-items:center;
             gap:0.9rem 1.5rem; width:100%; max-width:1280px; margin:0 auto 1.75rem; }
-.hero-top .hero-logo-img { grid-area:logo; margin-top:0; }
+/* 🆕 v6.591 — L'<h1> che avvolge il logo non deve portarsi dietro lo stile del browser.
+   `margin:0` e `font-size:inherit` lo rendono trasparente al layout: la griglia dell'hero
+   (v6.019, aree "sx logo dx") continua a vedere lo stesso rettangolo di prima.
+   ⚠️ `grid-area:logo` si sposta SULL'h1: adesso e' lui il figlio diretto della griglia,
+   non piu' l'immagine. Lasciarlo sull'immagine avrebbe messo l'h1 nella prima cella
+   libera — cioe' addosso ai numeri di sinistra — senza dare nessun errore.
+   🔴 E VA FATTO IN DUE POSTI: la stessa assegnazione vive anche nella media query
+   dell'860 (v5.948), piu' sotto. Cambiarne uno solo avrebbe dato una home giusta sul
+   desktop e scomposta sul telefono — ed e' esattamente il difetto che la v6.585 aveva
+   gia' pagato col timbro «IN ARRIVO !». */
+.hero-top .hero-h1 { grid-area:logo; margin:0; padding:0; font-size:inherit; font-weight:inherit; }
+.hero-top .hero-logo-img { margin-top:0; }
 .hero-stats-left   { grid-area:sx; }
 .hero-stats-right  { grid-area:dx; }
 
@@ -270,7 +281,12 @@
   .hero-top { grid-template-columns:auto minmax(0,1fr) auto;
               grid-template-areas:"sx logo dx";
               gap:0.5rem 0.4rem; align-items:center; margin-bottom:1rem; }
-  #hero .hero-top .hero-logo-img { grid-area:logo; justify-self:stretch;
+  /* 🆕 v6.591 — la POSIZIONE nella griglia passa all'h1 (e' lui il figlio della
+     griglia), le MISURE restano sull'immagine. Il !important sulle misure serve
+     ancora, per la stessa ragione della v5.948: il CSS del sito impone
+     width:65% e max-width:320px. */
+  #hero .hero-top .hero-h1 { grid-area:logo; justify-self:stretch; }
+  #hero .hero-top .hero-logo-img {
               max-width:190px !important; width:100% !important; margin:0 auto !important;
               margin-top:0 !important; }
   .hero-stats-side { max-width:none; margin:0; padding-top:0; }
@@ -912,7 +928,16 @@ button.back-btn { color:#ffffff; }
        fastidio; ora che la riga di mezzo è centrata verticalmente, quel margine fa parte della
        cella e spinge l'IMMAGINE 8px sopra il centro — misurato, i due gruppi laterali
        risultavano 8px più in basso del logo. Lo spazio lo fa il gap della griglia. -->
-  <img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions" style="max-width:440px;width:100%;margin:0 auto;display:block;">
+  <!-- 🆕 v6.591 — IL LOGO DIVENTA IL TITOLONE DELLA HOME. L'<h1> non aggiunge nessuna
+       scritta: avvolge l'immagine che c'era gia', e l'`alt` fa da testo del titolo (modo
+       standard per i loghi, W3C). A schermo non cambia niente, e non c'e' testo nascosto.
+       📌 Fino alla v6.590 la home era l'UNICA sezione senza <h1>: le altre nove ce l'hanno
+       da sempre. Ed e' l'unica che Google puo' vedere, perche' le altre stanno dietro il
+       login (§15.1 di progetto-sgorbions.md).
+       ⚠️ Il margine e il corpo di <h1> sono azzerati nel CSS qui sopra: senza, il logo si
+       sposta e si rimpicciolisce. E' l'unico modo in cui questa release puo' rompere
+       qualcosa, e si vede a occhio. -->
+  <h1 class="hero-h1"><img class="hero-logo-img" src="https://res.cloudinary.com/ddpsge9d8/image/upload/w_800,q_auto,f_auto/sgorbions_xwmoig" alt="Sgorbions — le figurine italiane anni '90" style="max-width:440px;width:100%;margin:0 auto;display:block;"></h1>
   <div class="hero-stats-side hero-stats-right" id="hero-stats-right" style="display:none;">
     <div class="stat-item"><span class="stat-num" id="stat-bustine">0</span><span class="stat-label" data-i18n="hero.stat2e">Bustine</span></div>
     <div class="stat-item"><span class="stat-num" id="stat-albums">0</span><span class="stat-label" data-i18n="hero.stat2c">Album</span></div>
@@ -3661,7 +3686,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.589"></script>
+<script src="js/app.js?v=6.594"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3685,7 +3710,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.589'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.594'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
