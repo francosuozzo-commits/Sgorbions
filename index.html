@@ -1,11 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="it">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sgorbions</title>
-<script src="js/email.min.js?v=6.588"></script>
-<link rel="stylesheet" href="css/style.css?v=6.588">
+<title>Sgorbions — il database delle figurine italiane anni '90</title>
+
+<!-- 🆕 v6.589 — LE BASI SEO (Franco: «vorrei fare in modo che il sito sia trovabile tramite
+     ricerca Google»). Cercato il 2 settembre 2026: il sito non compariva. Di cinque ragioni
+     misurate, qui se ne chiudono tre — il titolo che diceva due parole, la descrizione che non
+     c'era, e la lingua dichiarata sbagliata — piu' l'Open Graph, che mancava del tutto.
+     🔴 RESTA APERTO il punto piu' grosso: il sito e' UNA pagina sola. E dal 5 settembre si sa
+     anche perche' non basterebbe costruire il routing — `showPage` tiene il catalogo DIETRO IL
+     LOGIN, e Googlebot e' sempre sloggato. Vedi release-v6589.py. -->
+<meta name="description" content="Il database non ufficiale degli Sgorbions, le figurine italiane degli anni '90: serie, numeri, retri, errori di stampa e varianti. Fatto da collezionisti.">
+<link rel="canonical" href="https://figurinesgorbions.it/">
+<meta name="robots" content="index,follow,max-image-preview:large">
+
+<!-- Open Graph: senza queste righe un link condiviso su WhatsApp o Facebook appariva senza
+     anteprima. L'immagine e' il logo su fondo --bg (#0e0a1a), misurata 1200x630. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Sgorbions">
+<meta property="og:url" content="https://figurinesgorbions.it/">
+<meta property="og:title" content="Sgorbions — il database delle figurine italiane anni '90">
+<meta property="og:description" content="Il database non ufficiale degli Sgorbions, le figurine italiane degli anni '90: serie, numeri, retri, errori di stampa e varianti. Fatto da collezionisti.">
+<meta property="og:image" content="https://res.cloudinary.com/ddpsge9d8/image/upload/w_1200,h_630,c_pad,b_rgb:0e0a1a,q_auto,f_jpg/sgorbions_xwmoig">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Il logo Sgorbions">
+<meta property="og:locale" content="it_IT">
+<meta property="og:locale:alternate" content="en_GB">
+<meta name="twitter:card" content="summary_large_image">
+<script src="js/email.min.js?v=6.589"></script>
+<link rel="stylesheet" href="css/style.css?v=6.589">
 
 
 <style>
@@ -3635,7 +3661,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.588"></script>
+<script src="js/app.js?v=6.589"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3659,7 +3685,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.588'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.589'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
