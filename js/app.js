@@ -1,6 +1,42 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.598 — 🔎 LA RICERCA DELL'INVENTARIO SI SVUOTA ARRIVANDOCI DA UN'ALTRA PAGINA (Franco).
+//          La Ricerca Globale non e' una ricerca a se': porta sull'Inventario e SCRIVE la
+//          stringa nella casella di li'. Cambiando pagina e tornando, restava un filtro
+//          attivo in una casella che l'utente non aveva mai toccato.
+//          📌 Stessa forma del difetto della v6.597: un filtro acceso da un gesto che non lo
+//          nominava. 🔴 Si svuota in `showPage` e NON in `renderCatalog`: quest'ultima la
+//          chiama anche il ritorno da una SERIE, dove la ricerca deve restare.
+//          ⚠️ La Ricerca Globale regge per ORDINE: showPage prima, la scrittura dopo.
+//          Modificato js/app.js.
+// v6.597 — 🔴 I FILTRI SI DICHIARANO IN UN POSTO SOLO (`_FILTRI`), e le TRE funzioni che li
+//          trattano lo scorrono: il pulsante «Azzera», la sua gemella che lo accende, e il
+//          cambio sezione. Erano tre elenchi a mano: 13, 13 e **10**.
+//          🔴 Il difetto che ha fatto emergere tutto (Franco): premere una TIPOLOGIA di errore
+//          di stampa accende anche il suo LATO (v6.534, ed e' giusto); al cambio sezione la
+//          tipologia si spegneva e il lato no. Nella sezione Retro quel filtro toglie TUTTO,
+//          perche' un retro non ha un lato — zero risultati senza nessun filtro visibile.
+//          ✅ Chi non dichiara `dura` si azzera: un filtro nuovo sbaglia dalla parte giusta.
+//          📌 `_ebayFilter` e `_noOfficialVariationFilter` ora si azzerano (deciso da Franco:
+//          era dimenticanza). Modificato js/app.js.
+// v6.596 — 🏷️ I COMANDI DELLA FOTO DICONO LA VERITA' QUANDO UNA FOTO NON C'E' (Franco).
+//          «Cambia foto» diventa «Aggiungi foto» dove non c'e' niente da cambiare, e
+//          «Rimuovi sfondo» sparisce invece di rispondere «Carica prima una foto» (v6.020).
+//          📌 Vale anche in CLONAZIONE senza nessun caso speciale: un clone non ha foto
+//          propria, quindi `url` e' vuoto. NON si e' aggiunto un parametro «sono in
+//          creazione/clonazione/modifica»: quello e' uno STATO da tenere allineato, mentre
+//          «una foto c'e'?» e' un FATTO che la funzione ha gia' in mano. Modificato js/app.js.
+// v6.595 — 🔴 «QUALE RETRO APPARTIENE A QUESTO ARTICOLO?» IN UN POSTO SOLO. Franco, dopo la
+//          v6.594: «continuo a non vedere la foto del retro». Aveva ragione: quella release
+//          aveva corretto `_coppiaFronteRetro`, che serve SOLO la griglia. La stessa regola
+//          viveva in `_dueFacce` (ricerca globale, catalogo, vista massiva, pagina Errori) e
+//          in `_figurineCheUsanoIlRetro` — tre copie, una corretta.
+//          ✅ Ora c'e' `_retroEffettivo` e le tre la chiamano.
+//          ⚠️ E `prova-v6594` aveva detto di sì contando tre chiamate che stavano TUTTE
+//          dentro renderItems: contava le chiamate, non le funzionalita'.
+//          ⚠️ Il tab «Figurine che usano questo retro» adesso elenca anche gli errori
+//          frontali che lo ereditano: e' corretto, e prima non comparivano. Modificato js/app.js.
 // v6.594 — 🔄 UN ERRORE DI STAMPA FRONTALE EREDITA IL RETRO DELLA SUA BASE (Franco: «la
 //          foto del retro non e' mostrata, ne' nella scheda ne' nella ricerca ne' nella card»).
 //          `_coppiaFronteRetro` sapeva gia' farlo per i CHANGE e non per gli errori di stampa:
@@ -25832,7 +25868,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.594';
+const JS_VERSION = 'v6.598';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -28641,6 +28677,34 @@ function showPage(page) {
   // uscendone: un timer lasciato acceso e' il modo in cui questi caroselli iniziano ad accelerare.
   if (page === 'home') { try { renderCarosello(); } catch(e) { console.error('renderCarosello', e); } }
   else _caroselloStop();
+  // 🆕 v6.598 (Franco) — ARRIVANDO ALL'INVENTARIO DA UN'ALTRA PAGINA, LA RICERCA SI SVUOTA.
+  // Il difetto: `ricercaGlobaleDaNavbar` non fa una ricerca a se' — porta qui e SCRIVE la stringa
+  // dentro `#series-search`, la casella dell'Inventario. Da quel momento esiste un filtro attivo
+  // in una casella che l'utente non ha mai toccato: cambia pagina, torna, e trova l'Inventario
+  // semivuoto senza che niente glielo spieghi.
+  // 📌 E' la forma del difetto della v6.597: un filtro acceso da un gesto che non lo nominava.
+  // 🔴 QUI E NON IN `renderCatalog`, che sarebbe il posto naturale e sbagliato: `renderCatalog` la
+  // chiamano tutte e due le strade, e svuotare li' romperebbe il ritorno da una SERIE — uno ha
+  // cercato, e' entrato a guardare, torna indietro e si aspetta i suoi risultati. Il ritorno da una
+  // serie passa da `closeSeriesDetail`, che non passa di qui: le due strade erano gia' separate.
+  // ⚠️ E LA RICERCA GLOBALE CONTINUA A FUNZIONARE PER ORDINE DELLE OPERAZIONI:
+  // `ricercaGlobaleDaNavbar` chiama PRIMA `showPage('catalog')` e scrive la stringa DOPO. Se un
+  // domani qualcuno invertisse quelle due righe, la Ricerca Globale smetterebbe di funzionare
+  // senza dare nessun errore. `prova-v6598` guarda esattamente quell'ordine.
+  if (page === 'catalog') {
+    const _rc = document.getElementById('series-search');
+    if (_rc && _rc.value !== '') {
+      _rc.value = '';
+      try { toggleSearchClearBtn('series-search'); } catch (e) { console.error('showPage/clearBtn', e); }
+    }
+    // 📌 E anche la casella della navbar, che lascia la scia opposta: resta piena dopo la ricerca,
+    // e tornando qui si vede un testo scritto che non filtra piu' niente.
+    const _rn = document.getElementById('nav-search-input');
+    if (_rn && _rn.value !== '') {
+      _rn.value = '';
+      try { toggleSearchClearBtn('nav-search-input'); } catch (e) { console.error('showPage/clearBtnNav', e); }
+    }
+  }
   if (page === 'catalog') renderCatalog();
   if (page === 'blog') renderBlog();
   if (page === 'profile') {
@@ -35577,6 +35641,38 @@ function _figIndex(allFigs) {
 // chiamabile da qualunque punto senza doversi chiedere "dove mi trovo?" - ed e' cio' che ha reso
 // possibile fonderle: le due copie partivano proprio da qui, una con `currentSection` e una con
 // `f.section`.
+// 🆕 v6.595 — QUALE RETRO APPARTIENE A QUESTO ARTICOLO. UNA DOMANDA, UN POSTO SOLO.
+// Fino alla v6.594 questa regola viveva scritta in TRE funzioni: `_coppiaFronteRetro` (la griglia),
+// `_dueFacce` (la ricerca globale, il catalogo, la vista massiva, la pagina Errori) e
+// `_figurineCheUsanoIlRetro` (il tab del retro). La v6.594 ne corresse una, e Franco continuo' a
+// non vedere il retro negli altri due posti — giustamente.
+// ⚠️ E NON ERA LA PRIMA VOLTA: `_coppiaFronteRetro` NACQUE alla v6.099 proprio per togliere una
+// duplicazione («era la duplicazione. Ora c'e' _coppiaFronteRetro() e i due chiamanti la
+// leggono»). Quella deduplicazione ne prese due su tre, e la terza ha continuato a divergere per
+// quasi cinquecento release. 📌 Una deduplicazione fatta a meta' e' peggio di nessuna: lascia
+// scritto nel documento che il problema e' risolto.
+//
+// LA REGOLA, per intero:
+//   · un `retroId` PROPRIO vince sempre — un errore di stampa POSTERIORE ha il suo, difettoso, ed
+//     e' l'unica cosa che lo distingue: ereditare quello pulito della base lo coprirebbe;
+//   · altrimenti lo eredita dalla BASE, e i due casi sono lo stesso caso: il change di retro e
+//     l'errore di stampa FRONTALE hanno il difetto DAVANTI, quindi il dietro e' quello della base;
+//   · altrimenti non ce n'e' uno.
+// 📌 Torna l'ID e non il record: chi chiama ha gia' il suo indice (una `Map` nella griglia, un
+// `.find` altrove) e sa come pescarlo. Tornare il record obbligherebbe questa funzione a scegliere
+// il modo di cercare per tutti.
+// 📌 «errore di stampa senza retro proprio» e «errore di stampa frontale» sono la stessa cosa per
+// definizione (`_latoErroreStampa`), quindi non serve chiamarla — e non si deve, perche' questa
+// riga gira dentro cicli su migliaia di articoli.
+function _retroEffettivo(f, figs, indice) {
+  if (!f) return null;
+  if (f.retroId) return f.retroId;
+  if (!(f.isChange || f.isPrintError) || !f.baseFigurineId) return null;
+  const b = indice ? indice.get(f.baseFigurineId)
+                   : (figs || getData('figurines', [])).find(x => x.id === f.baseFigurineId);
+  return (b && b.retroId) || null;
+}
+
 function _coppiaFronteRetro(f, allFigs, idx) {
   const vuoto = { mostra: false, larga: false, fronte: null, retroImg: null, retroVuoto: false };
   if (!f || f.section !== 'figurines') return vuoto;
@@ -35605,9 +35701,8 @@ function _coppiaFronteRetro(f, allFigs, idx) {
   //    «retro giallo» minuscolo (la v6.540 e' stata riscritta per esattamente questo).
   //    ✅ La soluzione e' nei DATI ed e' gia' in coda («I DUE RETRI DELLA SERIE 3»): creati e
   //    collegati quei due retri, `retroId` esiste, vince lui, e questa eredita' si spegne da sola.
-  const _ereditaIlRetroDellaBase = f.isChange || (f.isPrintError && !f.retroId);
-  const baseForChange = (_ereditaIlRetroDellaBase && f.baseFigurineId) ? get(f.baseFigurineId) : null;
-  const effRetroId = f.retroId || (baseForChange ? baseForChange.retroId : null) || null;
+  // 🔄 v6.595 - la regola non sta piu' qui: la sa `_retroEffettivo`, e la sanno tutti insieme.
+  const effRetroId = _retroEffettivo(f, allFigs, idx);
   const retroBianco = !!f.retroBianco && !f.retroId; // v6.006
   // v6.098 caso C: la figurina che un retro dovrebbe averlo e non e' collegata entra comunque, e al
   // posto del retro va il riquadro vuoto. Caso B: tranne dove i retro non esistono proprio.
@@ -36711,23 +36806,16 @@ function updateSectionCounts() {
 }
 
 function openSeriesSection(section) {
-  _fotoFilter = null;
-  _noteFilter = false;   // v6.113 - come i filtri foto: non sopravvive al cambio sezione
-  _senzaRaritaFilter = false;   // v6.502 - idem
-  _visibilitaFilter = 'all';    // v6.545 - idem
-  // 🗑️ v6.346 - qui stava `_itemTypeFilter = _tipoIniziale()`. Il suo mestiere - dare a un
-  // non-admin la vista «solo base» all'apertura - lo fa `_azzeraTuttiIRaggr(section)` due righe
-  // piu' sotto, che dalla v6.338 semina la pillola Base nel riquadro invece di svuotarlo.
-  _retroCategoryFilter = new Set(); // il filtro per categoria dei Retro non sopravvive al cambio sezione/serie
-  _retroSubcategoryFilter = new Set(); // idem per la sottocategoria (v5.987; insiemi dalla v6.269)
-  // 🆕 v6.338 - LA SEZIONE SI PASSA, e non e' un dettaglio: `currentSection` viene aggiornata piu'
-  // sotto, quindi senza questo argomento il seme guarderebbe se le basi esistono nella sezione che
-  // stiamo LASCIANDO. Nei Retro ce ne sono, negli Album magari no: il difetto sarebbe comparso solo
-  // passando da una sezione con basi a una senza, cioe' mai durante una prova fatta di fretta.
-  _azzeraTuttiIRaggr(section); // v6.266 - i raggruppamenti per tipo non sopravvivono al cambio sezione/serie
-  _ownedFilter = 'all'; // si riparte sempre da "tutti": un filtro dimenticato acceso
-                        // fra una sezione e l'altra fa sembrare vuota una sezione piena
-  _wishlistFilter = false; // v5.908 — anche "Ciò che cerco" riparte spento a ogni sezione
+  // 🔄 v6.597 - QUI STAVA LA TERZA LISTA, ed era quella che divergeva: dieci voci contro le
+  // tredici delle altre due. Mancavano `_filtroLatoErrore` (il colpevole del 5 settembre 2026),
+  // `_ebayFilter` e `_noOfficialVariationFilter`.
+  // 📌 Il commento della v5.908 diceva gia' tutto — «un filtro dimenticato acceso fra una sezione
+  // e l'altra fa sembrare vuota una sezione piena» — ed era scritto per un altro filtro. Il
+  // pericolo era descritto; mancava il modo di non ripeterlo.
+  // 🆕 `section` si passa perche' i raggruppamenti seminano la pillola Base guardando la sezione in
+  // cui si sta ENTRANDO: `currentSection` viene aggiornata piu' sotto, quindi senza l'argomento il
+  // seme guarderebbe la sezione che stiamo LASCIANDO (v6.338).
+  _azzeraFiltriNonDuraturi(section);
   currentSection = section;
   // La riga dei contatori DEVE seguire la scheda. Senza questa chiamata resterebbe
   // quella disegnata all'apertura della serie — cioe' le Figurine — e continuerebbe
@@ -38023,22 +38111,70 @@ async function unmarkFilteredForSale() {
 // ⚠️ `_tipoProdottoCorrente` NON SI AZZERA, ed e' l'unica esclusione. Il setaccio lo consulta come
 // gli altri, ma non e' un filtro: e' DOVE SEI, il box di tipo prodotto in cui sei entrato.
 // Azzerarlo butterebbe fuori dalla pagina chi ha premuto un bottone che dice "azzera i filtri".
+// 🆕 v6.597 — I FILTRI SI DICHIARANO QUI, E IN NESSUN ALTRO POSTO.
+// Fino alla v6.596 lo stesso elenco viveva scritto a mano in TRE funzioni: `azzeraTuttiIFiltri`
+// (13 voci), `_qualcheFiltroAcceso` (13) e `openSeriesSection` (10). Le prime due erano allineate
+// — sopra la seconda c'era scritto in maiuscolo che dovevano dirsi la stessa cosa, ed era vero —
+// ma la terza viveva altrove e nessuno l'aveva contata.
+// 🔴 IL DANNO, riprodotto da Franco il 5 settembre 2026: premere una TIPOLOGIA di errore di stampa
+// accende anche il suo LATO (`_soloVoceErroreLato`, v6.534, ed e' giusto). Cambiando sezione,
+// `_azzeraTuttiIRaggr` spegne la tipologia e `_filtroLatoErrore` resta acceso: rimane in piedi la
+// meta' INVISIBILE di un gesto la cui meta' visibile e' stata azzerata. E nella sezione Retro quel
+// filtro toglie tutto, perche' `_latoErroreStampa` risponde `null` per ogni retro. Zero risultati,
+// in qualunque serie, senza nessun filtro visibile acceso.
+//
+// OGNI VOCE DICE QUATTRO COSE:
+//   · nome   — per i messaggi e per le prove;
+//   · azzera — rimettilo al default;
+//   · acceso — sei diverso dal default?
+//   · dura   — sopravvivi al cambio sezione? (assente = NO)
+// 🔴 IL DEFAULT E' LA SCELTA SICURA: chi non dichiara `dura` si azzera. Un filtro nuovo aggiunto
+// senza pensarci sbaglia dalla parte giusta — mentre prima sbagliava dalla parte che fa sembrare
+// vuota una sezione piena (parole del commento della v5.908, scritto per un altro filtro e valse
+// per questo).
+// 📌 `_ebayFilter` e `_noOfficialVariationFilter` sopravvivevano al cambio sezione. Franco, il
+// 5 settembre, alla domanda «voluto o dimenticanza?»: dimenticanza. Da qui si azzerano come gli
+// altri.
+// ⚠️ LA RICERCA SCRITTA NON E' QUI, e non e' una svista: non e' una variabile ma il contenuto di
+// una casella del DOM, e le tre funzioni la trattano gia' in tre modi legittimamente diversi.
+const _FILTRI = [
+  { nome: 'categoria retro',      azzera: () => { _retroCategoryFilter = new Set(); },
+                                  acceso: () => _retroCategoryFilter.size > 0 },
+  { nome: 'sottocategoria retro', azzera: () => { _retroSubcategoryFilter = new Set(); },
+                                  acceso: () => _retroSubcategoryFilter.size > 0 },
+  // 📌 I raggruppamenti (tipi e versione) hanno gia' le loro due funzioni gemelle dalla v6.338:
+  //    qui si limitano a entrare nell'elenco, senza cambiare mestiere.
+  { nome: 'raggruppamenti',       azzera: (sez) => { _azzeraTuttiIRaggr(sez); },
+                                  acceso: () => _RAGGRUPPAMENTI.some(v => !_raggrAlSuoSeme(v)) },
+  { nome: 'foto',                 azzera: () => { _fotoFilter = null; },
+                                  acceso: () => _fotoFilter !== null },
+  { nome: 'note',                 azzera: () => { _noteFilter = false; },
+                                  acceso: () => _noteFilter },
+  { nome: 'senza rarita',         azzera: () => { _senzaRaritaFilter = false; },
+                                  acceso: () => _senzaRaritaFilter },
+  { nome: 'visibilita',           azzera: () => { _visibilitaFilter = 'all'; },
+                                  acceso: () => _visibilitaFilter !== 'all' },
+  // 🔴 IL COLPEVOLE DEL 5 SETTEMBRE: c'era nelle prime due liste e non nella terza.
+  { nome: 'lato errore stampa',   azzera: () => { _filtroLatoErrore = new Set(); },
+                                  acceso: () => _filtroLatoErrore.size > 0 },
+  { nome: 'posseduti',            azzera: () => { _ownedFilter = 'all'; },
+                                  acceso: () => _ownedFilter !== 'all' },
+  { nome: 'lista dei desideri',   azzera: () => { _wishlistFilter = false; },
+                                  acceso: () => _wishlistFilter },
+  { nome: 'senza variazioni uff', azzera: () => { _noOfficialVariationFilter = false; },
+                                  acceso: () => _noOfficialVariationFilter },
+  { nome: 'solo eBay',            azzera: () => { _ebayFilter = false; },
+                                  acceso: () => _ebayFilter },
+];
+
+// Azzera i filtri che NON sopravvivono al cambio sezione. `sez` serve ai raggruppamenti, che
+// seminano la pillola Base guardando la sezione in cui si sta ENTRANDO (v6.338).
+function _azzeraFiltriNonDuraturi(sez) { _FILTRI.forEach(f => { if (!f.dura) f.azzera(sez); }); }
+
 function azzeraTuttiIFiltri() {
-  _retroCategoryFilter = new Set();
-  _retroSubcategoryFilter = new Set();
-  _azzeraTuttiIRaggr();              // i tre raggruppamenti per tipo (v6.266)
-  _fotoFilter = null;
-  _noteFilter = false;
-  _senzaRaritaFilter = false;   // v6.502
-  _visibilitaFilter = 'all';    // v6.545
-  _filtroLatoErrore = new Set();   // v6.520
-  _ownedFilter = 'all';
-  _wishlistFilter = false;
-  // 🗑️ v6.346 - qui stavano `_itemTypeFilter = _tipoIniziale()` e `_azzeraTuttiIParent()`. Il
-  // primo lo fa `_azzeraTuttiIRaggr()` qui sopra, che dalla v6.338 rimette il seme del riquadro;
-  // il secondo non ha piu' niente da azzerare.
-  _noOfficialVariationFilter = false;
-  _ebayFilter = false;
+  // 🔄 v6.597 - l'elenco non sta piu' qui: sta in `_FILTRI`, e lo leggono anche
+  // `_qualcheFiltroAcceso` e il cambio sezione. Erano tre copie a mano, e la terza divergeva.
+  _FILTRI.forEach(f => f.azzera());
   // La ricerca scritta: scelta di Franco fra le tre proposte, "tutti, ricerca compresa".
   const cerca = document.getElementById('items-search');
   if (cerca) cerca.value = '';
@@ -38070,29 +38206,13 @@ function azzeraTuttiIFiltri() {
 // premendo, e svuotarsi e' un effetto - la X della casella sparisce. La domanda e' "premerlo
 // cambia qualcosa?", non "sto filtrando qualcosa?".
 function _qualcheFiltroAcceso() {
+  // 🔄 v6.597 - la stessa dichiarazione di `azzeraTuttiIFiltri`, scorsa invece che ricopiata:
+  // «le due devono dire la stessa cosa» adesso non e' piu' una promessa, e' una conseguenza.
   return !!(
-       _retroCategoryFilter.size > 0
-    || _retroSubcategoryFilter.size > 0
-    // 🆕 v6.338 - non piu' `filtro.size > 0` ma "e' diverso dal suo SEME". Con il default su Base
-    // il riquadro Versione all'apertura ha gia' un valore dentro: col confronto di prima il
-    // bottone «Azzera filtri» sarebbe nato acceso su un filtro che l'utente non ha mai toccato,
-    // e premendolo non sarebbe successo niente - un comando che promette un effetto e non lo ha,
-    // cioe' esattamente cio' che la v6.315 aveva tolto. 📌 La riga gemella di `azzeraTuttiIFiltri`
-    // e questa leggono ora la STESSA funzione: non possono piu' divergere a mano.
-    || _RAGGRUPPAMENTI.some(v => !_raggrAlSuoSeme(v))                   // i raggruppamenti, versione compresa (v6.323)
-    || _fotoFilter !== null
-    || _noteFilter
-    || _senzaRaritaFilter               // v6.502
-    || _visibilitaFilter !== 'all'      // v6.545
-    || _filtroLatoErrore.size > 0       // v6.520
-    || _ownedFilter !== 'all'
-    || _wishlistFilter
-    // 🗑️ v6.346 - qui stavano le due righe gemelle delle due appena tolte da `azzeraTuttiIFiltri`:
-    // il confronto di `_itemTypeFilter` col suo valore iniziale e quello dei sotto-filtri. Le due
-    // liste restano allineate, che e' l'unica cosa che questa funzione deve garantire (v6.315):
-    // del filtro per versione risponde ora la riga dei raggruppamenti, che lo comprende (v6.338).
-    || _noOfficialVariationFilter
-    || _ebayFilter
+       _FILTRI.some(f => f.acceso())
+    // ⚠️ LA RICERCA SCRITTA RESTA FUORI DALL'ELENCO: non e' una variabile, e' il contenuto di una
+    // casella del DOM. Metterla in `_FILTRI` avrebbe voluto dire dare a ogni descrittore un
+    // accesso al documento per l'unico caso che ne ha bisogno.
     || (document.getElementById('items-search')?.value || '') !== ''
   );
 }
@@ -44493,8 +44613,11 @@ function _dueFacce(f, tutte) {
   if (!_schedaDueFoto(f)) return { fronte, retro: null, retroRec: null };
   if (_secondaFacciaSulRecord(f?.section)) return { fronte, retro: f?.imgRetro || null, retroRec: null };
   if (f?.retroBianco && !f?.retroId) return { fronte, retro: RETRO_BIANCO_IMG, retroRec: null };
-  const base = f?.isChange && f?.baseFigurineId ? figs.find(x => x.id === f.baseFigurineId) : null;
-  const idRetro = f?.isChange ? (f.retroId || base?.retroId || null) : (f?.retroId || null);
+  // 🔄 v6.595 - QUI STAVA LA SECONDA COPIA DELLA REGOLA, ed e' quella che Franco vedeva: questa
+  // funzione serve `renderCatalogSearch` (la ricerca globale), `renderCatalog`, la vista massiva e
+  // i controlli della pagina Errori. La v6.594 aveva corretto solo `_coppiaFronteRetro`, cioe' la
+  // griglia, e negli altri due posti il retro continuava a non comparire.
+  const idRetro = _retroEffettivo(f, figs);
   const rec = idRetro ? figs.find(x => x.id === idRetro) : null;
   return { fronte, retro: rec?.img || null, retroRec: rec || null };
 }
@@ -44507,10 +44630,14 @@ function _figurineCheUsanoIlRetro(retroId, allFigs) {
   figs.forEach(f => {
     if (!f || f.id === retroId || f.section === 'retros') return;
     if (f.retroId === retroId) { items.push(f); return; }
-    if (f.isChange && !f.retroId && f.baseFigurineId) {
-      const base = byId.get(f.baseFigurineId);
-      if (base && base.retroId === retroId) { items.push(f); ereditati.add(f.id); }
-    }
+    // 🔄 v6.595 - LA TERZA COPIA, e questa rispondeva alla domanda AL CONTRARIO: «chi usa questo
+    // retro?» invece di «quale retro ha questo articolo?». Non puo' chiamare `_retroEffettivo`
+    // per l'insieme, ma la chiama per OGNI articolo e confronta — cosi' le due risposte non
+    // possono piu' divergere.
+    // ⚠️ CAMBIA COSA ELENCA, ED E' VOLUTO: adesso trova anche gli errori di stampa FRONTALI che
+    // ereditano questo retro dalla base. E' corretto (lo usano davvero), e prima non comparivano.
+    const _suo = _retroEffettivo(f, figs, byId);
+    if (_suo === retroId) { items.push(f); ereditati.add(f.id); }
   });
   items.sort((a, b) => (a.number || 0) - (b.number || 0)
     || String(a.name || '').localeCompare(String(b.name || ''), 'it', { sensitivity: 'base' }));
@@ -45763,12 +45890,19 @@ function _slotFotoEdit(slot, url, f) {
       : '<div id="' + s.preview + '" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + vuoto + '</div>') +
     '<div style="display:flex;gap:0.4rem;margin-top:0.3rem;">' +
       '<label style="flex:1;cursor:pointer;text-align:center;">' +
-        '<span class="btn-foto" style="display:block;">\u{1F4F7} ' + (currentLang === 'it' ? 'Cambia foto' : 'Change photo') + '</span>' +
+        '<span class="btn-foto" style="display:block;">\u{1F4F7} ' + (currentLang === 'it' ? (url ? 'Cambia foto' : 'Aggiungi foto') : (url ? 'Change photo' : 'Add photo')) + '</span>' +
         '<input type="file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event, \'' + slot + '\')">' +
       '</label>' +
       (url ? '<button onclick="removeFigPhoto(\'' + slot + '\')" class="btn-foto" style="flex:1;">\u{1F5D1}\uFE0F ' + (currentLang === 'it' ? 'Rimuovi foto' : 'Remove photo') + '</button>' : '') +
     '</div>' +
-    '<button id="' + s.btn + '" onclick="removeBgFromEdit(\'' + slot + '\')" class="btn-foto" style="width:100%;margin-top:0.4rem;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' +
+    // 🆕 v6.596 (Franco: «quando la foto non c'e', "Rimuovi sfondo" sparisce») — un
+    // comando che non ha niente su cui agire non si mostra. Prima compariva sempre e
+    // rispondeva «Carica prima una foto»: un tasto che esiste solo per dirti che non
+    // serviva. E' la regola della v6.020, gia' applicata dalla v6.462 due righe piu' su.
+    // ⚠️ Si ESCLUDE dalla composizione, non si nasconde con display:none — un comando
+    // nascosto resta cliccabile col tabulatore e resta nel DOM a far credere a chi legge
+    // il codice che quella strada esista ancora (parole della v6.462).
+    (url ? '<button id="' + s.btn + '" onclick="removeBgFromEdit(\'' + slot + '\')" class="btn-foto" style="width:100%;margin-top:0.4rem;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' : '') +
   '</div>';
 }
 
