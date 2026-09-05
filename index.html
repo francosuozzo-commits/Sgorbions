@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.599"></script>
-<link rel="stylesheet" href="css/style.css?v=6.599">
+<script src="js/email.min.js?v=6.603"></script>
+<link rel="stylesheet" href="css/style.css?v=6.603">
 
 
 <style>
@@ -116,6 +116,13 @@
   --type-free:       #b98cff;   /* v6.427 - viola */
   --type-printerror: #ff6464;
   --danger:          #e8557c;
+  /* 🆕 v6.603 — IL TIMBRO «IN ARRIVO !» (v6.585) HA UN NOME SUO, anche se oggi
+     vale quanto `--danger`. Proprio perche' la tinta e' la stessa: finche' la
+     condividono, il giorno che una si muove si trascina l'altra — ed e' quello
+     che ha reso illeggibile la faccenda dei colori fra il 2 e il 6 settembre 2026.
+     📌 Un nome dice un SIGNIFICATO: un timbro «in arrivo» e un comando che
+     cancella non significano la stessa cosa, quindi non condividono la variabile. */
+  --in-arrivo:       #e8557c;
   --danger-rgb:      232,85,124; }
 
 /* 🆕 v6.374 (Franco) — I COLORI DELLE QUATTRO SCATOLE DI LOG, e un interruttore per cambiarli.
@@ -3686,7 +3693,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.599"></script>
+<script src="js/app.js?v=6.603"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3710,7 +3717,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.599'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.603'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
