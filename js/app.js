@@ -1,6 +1,16 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.599 — 🖼️ I COMANDI DELLA FOTO SEGUONO LA FOTO, ANCHE PRIMA DI SALVARE (Franco).
+//          Ripara un difetto della v6.596: quella aveva reso «Rimuovi sfondo» e l'etichetta
+//          dipendenti dalla presenza della foto, ma `url` e' la fotografia del momento in cui
+//          la scheda si e' aperta — caricando un file i comandi restavano indietro.
+//          🔴 La causa vera e' piu' vecchia: il markup dello slot esisteva in TRE copie
+//          (`_slotFotoEdit`, `handleFigEditImg`, `removeFigPhoto`). La v6.596 non l'ha creata,
+//          l'ha resa visibile. ✅ Ora chi cambia la foto chiama `_ridisegnaSlotFoto` e il
+//          riquadro decide da se': una copia sola.
+//          ⚠️ `'__remove__'` e' una stringa VERISSIMA: va tradotta in «nessuna foto», o il
+//          riquadro crederebbe che una foto ci sia. Modificato js/app.js.
 // v6.598 — 🔎 LA RICERCA DELL'INVENTARIO SI SVUOTA ARRIVANDOCI DA UN'ALTRA PAGINA (Franco).
 //          La Ricerca Globale non e' una ricerca a se': porta sull'Inventario e SCRIVE la
 //          stringa nella casella di li'. Cambiando pagina e tornando, restava un filtro
@@ -25868,7 +25878,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.598';
+const JS_VERSION = 'v6.599';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -45346,6 +45356,7 @@ function switchToEditMode(figId) {
   // questo markup sarebbero divergite alla prima modifica, e la seconda non se ne accorgerebbe
   // nessuno finche' non si guarda proprio quella.
   if (photo) {
+    _figSlotF = f;   // 🆕 v6.599 - il record della scheda aperta, per poter ridisegnare un riquadro solo
     photo.innerHTML = _slotFotoEdit('fronte', f.img, f)
       + (_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section) ? _slotFotoEdit('retro', f.imgRetro, f) : '');
   }
@@ -45848,6 +45859,42 @@ const _scriviSlot = (s, v) => { if (s === 'retro') _figEditImgRetroData = v; els
 
 // Il riquadro di uno slot: anteprima, "Cambia foto", "Rimuovi" (solo se una foto c'e') e
 // "Rimuovi sfondo". Identico per i due slot, tranne gli id e l'intestazione.
+// 🆕 v6.599 — IL RECORD DELLA SCHEDA APERTA, per poter ridisegnare un riquadro da solo.
+// Si scrive a OGNI apertura, una riga sopra il disegno: se una scheda e' aperta, questa variabile
+// e' la sua, e non puo' restare indietro.
+// ⚠️ Il commento della v6.524 poco piu' su diffida delle variabili di stato — «andrebbe azzerata
+// quando si apre un altro oggetto, e prima o poi qualcuno se ne dimenticherebbe». Il pericolo li'
+// era una variabile scritta in un punto e letta in un ALTRO momento; questa la scrive e la legge
+// lo stesso gesto, dentro la stessa scheda.
+let _figSlotF = null;
+
+// 🆕 v6.599 — CHI CAMBIA LA FOTO RIDISEGNA IL RIQUADRO, E IL RIQUADRO DECIDE DA SE'.
+// Franco, dopo la v6.596: «non appena ho caricato una foto (anche se non ho ancora salvato) una
+// foto c'e', quindi [«Rimuovi sfondo»] deve apparire».
+// 🔴 LA STRADA OVVIA ERA SBAGLIATA: insegnare a `handleFigEditImg` a mostrare quel bottone. Quella
+// funzione sa «e' arrivata una foto», non sa QUALI COMANDI ESISTONO — e domani ne nasce un terzo
+// che lei non conosce. E' l'ennesima lista da tenere allineata a mano, quella che stanotte e'
+// costata le v6.595 e v6.597.
+// 📌 E cosi' spariscono anche le DUE RICOSTRUZIONI A MANO del markup: `handleFigEditImg` si
+// fabbricava il suo `<img>` con gli stili inline, `removeFigPhoto` il suo segnaposto. Erano tre
+// copie dello stesso riquadro, e due non sapevano niente dei comandi.
+//
+// ⚠️ IL VALORE DI ADESSO HA TRE STATI, NON DUE:
+//   · `_datiSlot(slot)` vuoto → nessuno ha toccato niente: vale la foto del RECORD;
+//   · una stringa base64      → foto nuova, non ancora salvata;
+//   · `'__remove__'`          → la foto e' stata TOLTA.
+// 🔴 `'__remove__'` e' una stringa non vuota, quindi verissima: passata cosi' com'e' farebbe
+// credere al riquadro che una foto ci sia. E' lo stesso inganno del `null` che non e' ne' 'fronte'
+// ne' 'retro' (v6.597) — un valore speciale che passa per un valore normale.
+function _ridisegnaSlotFoto(slot) {
+  const cont = document.getElementById('fig-slot-' + slot);
+  if (!cont || !_figSlotF) return;
+  const pend = _datiSlot(slot);
+  const url = (pend === '__remove__') ? ''
+            : (pend || (slot === 'retro' ? _figSlotF.imgRetro : _figSlotF.img));
+  cont.outerHTML = _slotFotoEdit(slot, url, _figSlotF);
+}
+
 function _slotFotoEdit(slot, url, f) {
   const s = _SLOT_FOTO[slot];
   const titolo = (_schedaDueFoto(f) && _secondaFacciaSulRecord(f.section))
@@ -45877,14 +45924,17 @@ function _slotFotoEdit(slot, url, f) {
       : (_errDietro ? 'The defect is on the back, and that back is another item: the photo comes from there. The front is the source sticker\'s.'
         : _omg ? 'The front photo comes from the source item; the back one from the linked free-version back.'
               : 'The photo comes from the linked sticker: no photo of its own here.');
-    return '<div style="margin-bottom:0.6rem;">' + titolo +
+    // 🆕 v6.599 - il contenitore porta un id: cosi' questo riquadro si puo' RIDISEGNARE da
+    //    solo quando la foto cambia, senza toccare il resto della scheda.
+    return '<div id="fig-slot-' + slot + '" style="margin-bottom:0.6rem;">' + titolo +
       (url
         ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(url, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0;">'
         : '<div id="' + s.preview + '" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;">' + vuoto + '</div>') +
       '<div style="font-size:0.72rem;color:var(--text);margin-top:0.4rem;">' + nota + '</div>' +
     '</div>';
   }
-  return '<div style="margin-bottom:0.6rem;">' + titolo +
+  // 🆕 v6.599 - stesso id dell'altro ramo: chi ridisegna non deve sapere quale dei due e'.
+  return '<div id="fig-slot-' + slot + '" style="margin-bottom:0.6rem;">' + titolo +
     (url
       ? '<img id="' + s.preview + '" src="' + cloudinaryUrl(url, 'w_640,h_640,c_fit,q_auto,f_auto') + '" style="width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.5rem;">'
       : '<div id="' + s.preview + '" style="width:100%;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;">' + vuoto + '</div>') +
@@ -46249,17 +46299,13 @@ function removeFigPhoto(slot) {
   slot = slot || 'fronte';
   if (!confirm(currentLang === 'it' ? 'Rimuovere la foto da questo articolo?' : 'Remove the photo from this item?')) return;
   _scriviSlot(slot, '__remove__'); // segnale speciale per saveFigFromDetail
-  const preview = document.getElementById(_SLOT_FOTO[slot].preview);
-  if (preview) {
-    preview.src = '';
-    preview.style.display = 'none';
-    // Mostra placeholder
-    const placeholder = document.createElement('div');
-    placeholder.id = _SLOT_FOTO[slot].preview;
-    placeholder.style.cssText = 'width:160px;height:200px;background:var(--card2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:0.75rem;text-align:center;padding:8px;margin-bottom:0.5rem;';
-    placeholder.textContent = currentLang === 'it' ? 'Nessuna foto' : 'No photo';
-    preview.replaceWith(placeholder);
-  }
+  // 🔄 v6.599 - QUI STAVA LA TERZA COPIA DEL MARKUP: un segnaposto «Nessuna foto» ricostruito a
+  // mano, con stili suoi — e infatti divergenti (`width:160px` contro il `width:100%` di
+  // `_slotFotoEdit`). Nessuno se n'era accorto perche' una differenza di larghezza in un riquadro
+  // che sta sparendo non la guarda nessuno.
+  // ✅ Adesso si ridisegna, e tornano insieme il segnaposto, l'etichetta «Aggiungi foto» e la
+  // sparizione di «Rimuovi sfondo» (Franco: «si, esatto»).
+  _ridisegnaSlotFoto(slot);
   toast(currentLang === 'it' ? 'Foto rimossa — premi Salva per confermare' : 'Photo removed — press Save to confirm', 'success');
 }
 
@@ -46270,16 +46316,13 @@ function handleFigEditImg(event, slot) {
   const reader = new FileReader();
   reader.onload = e => {
     _scriviSlot(slot, e.target.result);
-    let preview = document.getElementById(_SLOT_FOTO[slot].preview);
-    // Se il preview è un div placeholder, lo sostituiamo con un img
-    if (preview && preview.tagName === 'DIV') {
-      const img = document.createElement('img');
-      img.id = _SLOT_FOTO[slot].preview;
-      img.style.cssText = 'width:100%;height:200px;object-fit:contain;border-radius:8px;background:var(--card2);padding:4px;display:block;margin-bottom:0.5rem;';
-      preview.replaceWith(img);
-      preview = img;
-    }
-    if (preview) preview.src = _datiSlot(slot);
+    // 🔄 v6.599 - QUI STAVA LA RICOSTRUZIONE A MANO dell'anteprima: si fabbricava un `<img>` con
+    // i suoi stili inline, copia di quelli che `_slotFotoEdit` scrive gia'. Funzionava finche' i
+    // comandi erano incondizionati; dalla v6.596 «Rimuovi sfondo» e l'etichetta dipendono dalla
+    // presenza della foto, e questa strada li lasciava indietro — Franco caricava una foto e il
+    // bottone non compariva.
+    // ✅ Adesso si ridisegna il riquadro e decide lui: anteprima, etichetta e comandi insieme.
+    _ridisegnaSlotFoto(slot);
   };
   reader.readAsDataURL(file);
 }
