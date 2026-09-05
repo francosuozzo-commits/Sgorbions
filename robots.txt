@@ -1,0 +1,10 @@
+# robots.txt — v6.589, 5 settembre 2026.
+# Il sito e' una pagina sola: qui si apre tutto e si indica la sitemap.
+User-agent: *
+Allow: /
+
+# La disiscrizione dalla newsletter e' l'unico uso che il sito fa dell'URL
+# (`?unsubscribe=1`, app.js): e' un'azione personale, non una pagina da indicizzare.
+Disallow: /?unsubscribe=
+
+Sitemap: https://figurinesgorbions.it/sitemap.xml
