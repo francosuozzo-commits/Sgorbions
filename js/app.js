@@ -1,6 +1,15 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.589 — 🔎 LE BASI SEO (Franco: «vorrei che il sito sia trovabile su Google»), ampiezza A.
+//          index.html: <title> vero, meta description, canonical, robots, Open Graph completo
+//          (un link su WhatsApp appariva senza anteprima) e lang="it" al posto di "en".
+//          NUOVI in radice: robots.txt e sitemap.xml — 🔴 il push passa da TRE file a CINQUE.
+//          🔴 app.js: setLang scrive document.documentElement.lang. E' la SECONDA META' della
+//          regola: lang="it" da solo mentirebbe appena si cambia lingua, e non darebbe errore.
+//          ⚠️ La sitemap elenca UNA pagina: showPage tiene il catalogo dietro il login e
+//          Googlebot e' sempre sloggato — il punto 5 (sito a pagina unica) resta aperto.
+//          Modificato js/app.js, index.html; aggiunti robots.txt, sitemap.xml.
 // v6.588 — 🗑️ VIA IL CARTELLO «SITO WEB IN COSTRUZIONE» dalla home (Franco), e con lui le
 //          due chiavi `banner.wip` del dizionario: un dizionario e' l'elenco delle cose che
 //          il sito DICE, e una voce che nessuno pronuncia piu' e' una frase che il prossimo
@@ -25780,7 +25789,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.588';
+const JS_VERSION = 'v6.589';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27600,6 +27609,15 @@ function applyI18n() {
 function setLang(lang, byUser = false) {
   currentLang = lang;
   LOCAL.set('lang', lang);
+  // 🆕 v6.589 — LA SECONDA META' DELLA REGOLA DELLA LINGUA. L'index dichiara `lang="it"`, che e'
+  // il default giusto (_detectBrowserLang ripiega sull'italiano), ma il sito la lingua la CAMBIA:
+  // il rilevamento all'avvio, il pulsante della bandiera, la nazionalita' scelta in
+  // registrazione. Senza questa riga <html lang> resterebbe fermo, e una pagina inglese si
+  // dichiarerebbe italiana **a Google e ai lettori di schermo**, cioe' ai due che quell'attributo
+  // esiste per servire. Nessun errore da nessuna parte: e' la forma del `cqw` senza
+  // `container-type` (v6.585).
+  // 📌 Qui e non altrove perche' setLang e' l'IMBUTO: ci passano tutti e tre i modi.
+  document.documentElement.lang = lang;
   if (byUser && currentUser) {
     LOCAL.set('lang_set_by_user_' + currentUser.id, true);
     // Persistiamo la scelta anche sul documento utente: localStorage vive solo su
