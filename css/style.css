@@ -96,8 +96,18 @@
      una riga.
      --danger-rgb serve agli rgba(): le opacita' in uso vanno da 0.08 a 0.4, e vanno
      conservate tutte — sono sfondi di hover, non il colore pieno. */
-  --danger:     #ff6464;
-  --danger-rgb: 255,100,100;
+  /* 🗑️ v6.603 — QUI STAVANO `--danger: #ff6464` e `--danger-rgb: 255,100,100`, cioe' i valori
+     di PRIMA della rotazione della tavolozza (v6.404, 2 settembre 2026). Quel giorno Franco ha
+     rimesso in scala i sei colori delle versioni — verde approvato, giallo attenzione, ROSSO
+     SBAGLIATO — e `--danger` ha CEDUTO `#ff6464` all'errore di stampa prendendosi `#e8557c`.
+     L'index e' stato aggiornato, questo foglio no.
+     🔴 Non si vedeva, perche' l'index arriva dopo e vinceva lui: la riga qui era morta e diceva
+     il falso a chiunque la leggesse. Il 6 settembre 2026 ha ingannato me — avevo concluso che il
+     rosa fosse l'intruso e stavo per «riparare» una scelta di Franco. L'ha fermato `prova-v6404`.
+     📌 Le due dichiarazioni ora sono UNA, nell'index, insieme a `--danger-rgb` (che e' una copia
+     obbligata: il CSS puro non ricava un rgb() da un esadecimale, quindi deve muoversi con lei).
+     ⚠️ E i comandi che cancellano sono ROSA, per scelta: Franco, 6 settembre — «OK per la A:
+     tutto in rosa». Un rosa d'allarme, che in una fila si distingue lo stesso. */
 
   /* L'AZZURRO DELL'INFORMAZIONE (v5.722). Uno solo, e NON e' quello dei tipi.
      #7fd4ff (--type-unofficial) appartiene ai TIPI e non lo usa nessun altro.
@@ -303,6 +313,33 @@ body {
    Definita DOPO btn-primary: vince lo sfondo. Stessa taglia, cambia solo il colore. */
 .btn-admin { background: var(--action-admin); color: #ffffff; }
 .btn-admin:hover { transform: translateY(-2px); background: var(--action-admin-hover); box-shadow: 0 8px 30px rgba(var(--action-admin-rgb),0.4); }
+/* 🆕 v6.601 — LA VARIANTE SVUOTATA DI .btn-admin, e non e' un vezzo: «Ordina per creazione» ha
+   DUE stati — spento e acceso — e quel gradino era scritto a mano dentro un ternario, insieme a
+   tutto il resto del vestito. Un pulsante che si veste da solo non ha :hover, non ha l'ombra, e
+   ha misure sue: era la segnalazione di Franco («non sono come gli altri tasti admin»).
+   📌 La scala e' la stessa di «Salva e resta» / «Salva» nella scheda: un gradino, non due colori
+   diversi (v6.441). */
+.btn-admin-off { background: transparent; color: var(--action-admin); border: 1px solid var(--action-admin); }
+.btn-admin-off:hover { transform: translateY(-2px); background: rgba(var(--action-admin-rgb),0.12); box-shadow: 0 8px 30px rgba(var(--action-admin-rgb),0.25); }
+
+/* 🔴 v6.601 — LA REGOLA DELLE ELIMINAZIONI, DETTA DA FRANCO E SCRITTA QUI PERCHE' NON SI RIAPRA
+   UNA TERZA VOLTA: «abbiamo sempre detto che le eliminazioni fanno eccezione e sono sempre rosse».
+   🔄 v6.603 — LA PAROLA E' CAMBIATA, LA SOSTANZA NO: non «sempre rosse», **sempre `--danger`**.
+   Il 6 settembre e' saltato fuori che dal 2 settembre `--danger` NON e' piu' rossa: la rotazione
+   della tavolozza (v6.404) le ha fatto cedere `#ff6464` all'errore di stampa. Le due regole non
+   possono valere insieme — quel rosso significa «sbagliato» — e Franco ha scelto la tavolozza:
+   «OK per la A: tutto in rosa».
+   📌 Ed e' il motivo per cui qui si scrive il NOME della variabile e non il colore: un colore
+   invecchia con la tavolozza, un significato no.
+   ⚠️ NON e' una preferenza di stile. In una fila di comandi che si somigliano, il colore e' l'unica
+   cosa che si legge PRIMA della parola: un pulsante che cancella deve dirlo senza essere letto.
+   📌 STORIA, perche' e' gia' successo: la v5.723 rese rosso `deleteBulkSelected` per SICUREZZA (il
+   commento e' qui sotto); la v6.441 glielo tolse per uniformare tre pulsanti, e il suo stesso
+   commento si scrisse contro — «e' l'unico dei tre che DISTRUGGE dati, e il rosso era la sua unica
+   differenza visibile». Poi qualcuno l'ha rimesso, e il documento non lo sapeva.
+   🔴 QUINDI: un pulsante che cancella NON prende mai .btn-admin ne' .btn-admin-off, nemmeno per
+   uniformare una fila. Se una fila sembra disomogenea, e' perche' uno dei suoi pulsanti fa una
+   cosa diversa dagli altri. */
 /* IL PULSANTE CHE DISTRUGGE (v5.723). Non esisteva.
    I pulsanti distruttivi erano DICIASSETTE, vestiti in SEI modi diversi: due
    btn-primary riverniciati di rosso a mano (la classe che significa "fai questa cosa",
