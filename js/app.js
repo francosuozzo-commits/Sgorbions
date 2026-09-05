@@ -1,6 +1,49 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.594 — 🔄 UN ERRORE DI STAMPA FRONTALE EREDITA IL RETRO DELLA SUA BASE (Franco: «la
+//          foto del retro non e' mostrata, ne' nella scheda ne' nella ricerca ne' nella card»).
+//          `_coppiaFronteRetro` sapeva gia' farlo per i CHANGE e non per gli errori di stampa:
+//          la card entrava nel ramo a due facce e disegnava il riquadro del retro VUOTO.
+//          📌 Il difetto sta davanti, quindi il dietro e' quello della base: non e' un ripiego,
+//          e' il retro giusto. Censiti PRIMA di scrivere: 79 casi su 170 errori di stampa, e
+//          79 su 79 hanno una base con retro — nessun caso limite, quindi una riga sola.
+//          🔴 Due (n.629 «DIFETTO RETRO» e n.641 «RETRO GIALLO») hanno il difetto DIETRO e il
+//          loro retro non esiste ancora: erediteranno quello pulito finche' non si creano —
+//          lavoro sui dati gia' in coda. Modificato js/app.js.
+// v6.593 — ✨ LA RIMOZIONE SFONDO SOPRAVVIVE A UNA GIORNATA SENZA GPU (Franco, dopo un
+//          «Errore rimozione sfondo» sul sito vivo). Tre cose nella stessa funzione:
+//          🔴 1. il motore si sceglie chiedendo la SCHEDA (`requestAdapter()`), non guardando
+//          l'OGGETTO `navigator.gpu` — che in Chrome esiste sempre, anche quando la scheda no.
+//          🔴 2. un caricamento fallito non resta incollato: `_rmbgLoading` si svuota, quindi
+//          ripremere il bottone riprova davvero. Era questo il motivo per cui «chiudendo
+//          Chrome funziona»: era l'unico modo di buttare via quella variabile.
+//          🔴 3. il toast dice la CAUSA (GPU, memoria, rete) invece di «qualcosa e' andato
+//          storto», e sul processore il bottone avvisa: 27,6s misurati contro pochi.
+//          📌 Il ripiego su wasm c'era gia' ed era IRRAGGIUNGIBILE: dopo un fallimento webgpu,
+//          transformers.js resta agganciata a quella scelta per tutta la pagina. Modificato js/app.js.
+// v6.592 — 🗑️ VIA IL SEGNAPOSTO «es. OLO» dal campo Sottoserie della scheda figurina
+//          (Franco), e con lui le due chiavi `form.fig.subseriesHint` del dizionario.
+//          🔴 Quelle due erano GIA' MORTE: esistevano solo nei dizionari, nessun data-i18n e
+//          nessuna t() le chiedeva — una frase che il sito non pronunciava piu'. Stessa
+//          medicina delle `banner.wip` della v6.588.
+//          📌 «es. OLO» era un esempio preso da UNA serie e mostrato in tutte quelle con
+//          hasSubseries: suggeriva una forma che altrove e' sbagliata.
+//          ⚠️ Il campo, il suo id e la condizione hasSubseries NON si toccano. Modificato js/app.js.
+// v6.591 — 🔠 LA HOME PRENDE IL SUO <h1>, e a schermo non cambia niente: l'<h1> avvolge il
+//          logo che c'era gia', e l'`alt` fa da testo del titolo (modo standard per i loghi).
+//          Nessuna scritta doppia, nessun testo nascosto.
+//          📌 Misurato il 5 settembre: la home aveva ZERO <h1>, ed era l'UNICA sezione senza
+//          (le altre nove ce l'hanno) — e l'unica che Google possa vedere, visto che il resto
+//          sta dietro il login. L'alt l'ha scelto Franco: «Sgorbions — le figurine italiane
+//          anni '90». ⚠️ Il CSS azzera margine e corpo dell'h1 e gli sposta `grid-area:logo`,
+//          o la griglia dell'hero (v6.019) si scompone. Modificato index.html.
+// v6.590 — ✍️ IL TITOLO DEL SITO, SCRITTO DA FRANCO: «figurineSgorbions.it — il database
+//          degli Sgorbions». Sostituisce quello della v6.589, che l'aveva scritto Claude e
+//          pubblicato senza aspettare la risposta alla domanda che aveva appena fatto.
+//          🔴 Il mandato di rilascio NON copre le decisioni sul contenuto, e un <title> e'
+//          contenuto: «come si chiama una cosa a schermo» sta scritto proprio cosi' nelle
+//          istruzioni permanenti. Modificato index.html.
 // v6.589 — 🔎 LE BASI SEO (Franco: «vorrei che il sito sia trovabile su Google»), ampiezza A.
 //          index.html: <title> vero, meta description, canonical, robots, Open Graph completo
 //          (un link su WhatsApp appariva senza anteprima) e lang="it" al posto di "en".
@@ -25789,7 +25832,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.589';
+const JS_VERSION = 'v6.594';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27407,7 +27450,7 @@ const i18n = {
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Stick-in stickers differ from the ones with backs','form.series.abilitaModifica':'Enable editing of stick-in stickers','form.series.hasSubseries':'Has subseries',
 'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has sticker Change','form.series.hasRetroChange':'Has back Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of sticker Change','form.series.countRetroChange':'No. of back Change','form.series.retroChangeTypes':'BACK change types (one per line)','form.series.retroChangeTypesHint':'One value per line. The difference is on the BACK: a change of these types has a back of its own, or the "Blank back" flag.','form.series.frontChangeTypes':'FRONT change types (one per line)','form.series.frontChangeTypesHint':'One value per line. The difference is on the FRONT: a change of these types uses the back of its base sticker. The same type cannot be in both lists.','form.series.descPlaceholder':'Describe this series...',
-'form.fig.subseries':'Subseries','form.fig.subseriesHint':'If present, replaces the number',
+'form.fig.subseries':'Subseries',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
 'form.fig.score':'Rarity','form.fig.scoreHint':'How rare it is. It adds to the Rarity score of whoever has it in their list',
@@ -27500,7 +27543,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità ai risultati','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.subseriesHint':'Se presente, sostituisce il numero','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri articoli','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -35540,15 +35583,44 @@ function _coppiaFronteRetro(f, allFigs, idx) {
   if (_soloFronteMobile()) return vuoto; // v5.853 — su telefono col filtro "set base", solo il fronte
   const get = id => (idx ? idx.get(id) : allFigs.find(x => x.id === id));
   const isBaseFig = !f.isVariation && !f.isUnofficialVariation && !f.isChange;
-  const baseForChange = (f.isChange && f.baseFigurineId) ? get(f.baseFigurineId) : null;
-  const effRetroId = f.isChange ? (f.retroId || baseForChange?.retroId || null) : f.retroId;
+  // 🔄 v6.594 - L'EREDITA' DEL RETRO VALE ANCHE PER GLI ERRORI DI STAMPA FRONTALI.
+  // Fino alla v6.593 questa riga diceva `f.isChange ? ... : f.retroId`, e un errore di stampa
+  // frontale restava senza: la card entrava lo stesso nel ramo a due facce (via
+  // `retroDaCollegare`) e disegnava il riquadro del retro VUOTO — nella scheda, nella miniatura
+  // della ricerca globale e nella card della griglia, che passano tutte di qui.
+  // 📌 IL CASO E' LO STESSO DEL CHANGE DI RETRO: il difetto sta DAVANTI, quindi il dietro e'
+  // identico a quello della base. Non e' un ripiego «meglio di niente»: e' il retro giusto.
+  // 📌 «errore di stampa senza retro proprio» e «errore di stampa frontale» sono la stessa cosa
+  // per definizione (`_latoErroreStampa`: se manca `retroId`, la risposta e' 'fronte'), quindi la
+  // condizione non ha bisogno di chiamarla — e non deve, perche' quella funzione fa una ricerca
+  // per id e questa riga gira dentro cicli su migliaia di articoli.
+  // ⚠️ Per un errore di stampa POSTERIORE non cambia niente: un `retroId` suo ce l'ha, e vince lui.
+  //
+  // 🔴 DUE DEI 79 CENSITI IL 5 SETTEMBRE NON DOVREBBERO EREDITARE, E IL CODICE NON PUO' SAPERLO:
+  //    n. 629 (tipo «DIFETTO RETRO») e n. 641 (tipo «RETRO GIALLO») hanno un difetto che sta
+  //    DIETRO, ma il loro retro difettoso non e' ancora stato creato. Ereditano il retro PULITO
+  //    della base, cioe' mostrano un dietro perfetto dove il dietro E' il difetto.
+  //    ⚠️ NON si e' aggiunta un'eccezione che legga il nome del tipo: una regola che indovina il
+  //    significato da una stringa scritta a mano sbaglia in silenzio il giorno che qualcuno scrive
+  //    «retro giallo» minuscolo (la v6.540 e' stata riscritta per esattamente questo).
+  //    ✅ La soluzione e' nei DATI ed e' gia' in coda («I DUE RETRI DELLA SERIE 3»): creati e
+  //    collegati quei due retri, `retroId` esiste, vince lui, e questa eredita' si spegne da sola.
+  const _ereditaIlRetroDellaBase = f.isChange || (f.isPrintError && !f.retroId);
+  const baseForChange = (_ereditaIlRetroDellaBase && f.baseFigurineId) ? get(f.baseFigurineId) : null;
+  const effRetroId = f.retroId || (baseForChange ? baseForChange.retroId : null) || null;
   const retroBianco = !!f.retroBianco && !f.retroId; // v6.006
   // v6.098 caso C: la figurina che un retro dovrebbe averlo e non e' collegata entra comunque, e al
   // posto del retro va il riquadro vuoto. Caso B: tranne dove i retro non esistono proprio.
   const retroDaCollegare = !effRetroId && !retroBianco && !_serieSenzaRetro(f.seriesId);
   const entra = ((f.isVariation || f.isUnofficialVariation) && f.baseFigurineId && (f.retroId || retroBianco))
     || (f.isChange && f.baseFigurineId && effRetroId)
-    || (isBaseFig && (f.retroId || retroBianco))
+    // 🔄 v6.594 - `effRetroId` e non `f.retroId`: da qui devono passare anche gli errori di
+    //    stampa frontali, che il retro ce l'hanno per EREDITA' dalla base (vedi sopra).
+    //    ⚠️ Con `f.retroId` la riga sopra si sarebbe rivoltata contro: chiudeva la via di
+    //    servizio (`retroDaCollegare`) senza aprire questa, e il retro spariva del tutto.
+    //    📌 Per tutti gli altri non cambia niente: dove non c'e' eredita', `effRetroId` E'
+    //    `f.retroId`.
+    || (isBaseFig && (effRetroId || retroBianco))
     || retroDaCollegare;
   if (!entra) return vuoto;
   const fronte = _fotoFigurina(f, allFigs); // divergenza 1, risolta a favore del renderer
@@ -45244,7 +45316,7 @@ function switchToEditMode(figId) {
 
   // Sottoserie (solo se la serie ha hasSubseries)
   if (figSeries?.hasSubseries) {
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottoserie':'Subseries') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subseries" value="' + esc((f.subseries||'')) + '" placeholder="es. OLO" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottoserie':'Subseries') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subseries" value="' + esc((f.subseries||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   }
 
   // Numero (i Retro non sono numerati; le Variazioni/Change ereditano quello della figurina base)
@@ -45706,24 +45778,59 @@ function _slotFotoEdit(slot, url, f) {
 // rimozione, quindi i visitatori normali non scaricano nulla (nessun impatto su privacy/peso).
 // Espone la stessa identica interfaccia di prima: window._removeBackground(blob) -> Blob PNG
 // con trasparenza, così i 3 punti di chiamata restano invariati.
-let _rmbgPipe = null, _rmbgLoading = null;
+let _rmbgPipe = null, _rmbgLoading = null, _rmbgDevice = null;
+
+// 🆕 v6.593 — QUALE MOTORE, E LA DOMANDA GIUSTA NON E' QUELLA CHE SEMBRA.
+// Fino alla v6.592: `navigator.gpu ? 'webgpu' : 'wasm'`. Ma `navigator.gpu` e' l'OGGETTO dell'API,
+// e in Chrome esiste SEMPRE — anche quando la scheda non e' utilizzabile. Il 5 settembre 2026 il
+// processo grafico di Chrome era caduto: l'oggetto c'era, `requestAdapter()` rispondeva null, e il
+// sito sceglieva ostinatamente la GPU per una scheda che non c'era.
+// ⚠️ E' la stessa forma del `cqw` senza `container-type` (v6.585): una domanda plausibile che
+// misura la cosa sbagliata, e non da' nessun errore.
+// 📌 E' un guasto PASSEGGERO — riavviando Chrome tornava — quindi tornera'. Per questo la
+// correzione conta piu' di quanto sembri: non serve una volta, serve ogni volta che ricapita.
+async function _rmbgSceltaMotore() {
+  try {
+    if (navigator.gpu && await navigator.gpu.requestAdapter()) return 'webgpu';
+  } catch (e) { /* qualunque intoppo nel CHIEDERE la scheda vale come "non c'e'" */ }
+  return 'wasm';
+}
+
+// Il motore scelto all'ultimo caricamento riuscito: serve a chi disegna i bottoni, per avvisare
+// che sul processore ci vogliono decine di secondi invece di pochi.
+function _rmbgSuProcessore() { return _rmbgDevice === 'wasm'; }
+
 async function _loadRmbgPipe() {
   if (_rmbgPipe) return _rmbgPipe;
   if (_rmbgLoading) return _rmbgLoading;
   _rmbgLoading = (async () => {
     const { pipeline, env } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.4.0');
     env.allowLocalModels = false; // scarica dal hub, non cerca file locali
-    const device = navigator.gpu ? 'webgpu' : 'wasm';
+    const device = await _rmbgSceltaMotore();
+    // 🔴 IL try/catch QUI SOTTO E' L'ULTIMA RETE, E NELLA PRATICA E' VUOTA — sta scritto perche'
+    // il suo predecessore sembrava una difesa e non lo era. Misurato il 5 settembre: una volta che
+    // transformers.js ha provato webgpu e ha fallito, chiedere `device:'wasm'` nella STESSA pagina
+    // risponde ancora con l'errore di webgpu — la libreria resta agganciata alla prima scelta.
+    // Quindi ripiegare DOPO il fallimento non funziona: bisogna non sbagliare PRIMA, ed e' quello
+    // che fa `_rmbgSceltaMotore`. Questo catch resta per il caso in cui la GPU ci sia ma il modello
+    // non ci stia in memoria, dove il ripiego ha ancora una possibilita'.
     try {
       _rmbgPipe = await pipeline('background-removal', 'briaai/RMBG-1.4', { dtype: 'q8', device });
+      _rmbgDevice = device;
     } catch (e) {
-      // ripiego su WASM se WebGPU non regge
-      if (device !== 'wasm') { _rmbgPipe = await pipeline('background-removal', 'briaai/RMBG-1.4', { dtype: 'q8', device: 'wasm' }); }
-      else throw e;
+      if (device === 'wasm') throw e;
+      _rmbgPipe = await pipeline('background-removal', 'briaai/RMBG-1.4', { dtype: 'q8', device: 'wasm' });
+      _rmbgDevice = 'wasm';
     }
-    console.log('RMBG-1.4 background removal ready');
+    console.log('RMBG-1.4 pronto — motore: ' + _rmbgDevice);
     return _rmbgPipe;
   })();
+  // 🆕 v6.593 — UN FALLIMENTO NON SI CONSERVA. Fino alla v6.592 `_rmbgLoading` teneva la promessa
+  // FALLITA, quindi ogni pressione successiva del bottone riceveva lo stesso errore senza
+  // riprovare niente — e l'unico modo di uscirne era chiudere il browser.
+  // 📌 E' esattamente la ragione per cui a Franco «chiudendo Chrome» sembrava la cura: non lo era,
+  // era l'unico modo di buttare via questa variabile.
+  _rmbgLoading.catch(() => { _rmbgLoading = null; });
   return _rmbgLoading;
 }
 // Interfaccia compatibile col codice esistente: riceve un Blob, torna un Blob PNG con alpha.
@@ -45812,16 +45919,42 @@ function _ETICHETTA_SFONDO() { return currentLang === 'it' ? '\u2728 Rimuovi sfo
 function _bottoneSfondoAvanzamento(btn, pct, fase) {
   if (!btn) return;
   if (fase === 'libreria') { btn.textContent = currentLang === 'it' ? '\u23F3 Caricamento libreria...' : '\u23F3 Loading library...'; return; }
+  // 🆕 v6.593 — SUL PROCESSORE SI AVVISA. Misurato il 5 settembre: 27,6 secondi per un'immagine
+  // da 400px, contro i pochi della GPU. Senza avviso il bottone sembra piantato, e la prima cosa
+  // che uno fa e' ripremere o ricaricare — cioe' buttare via il lavoro a meta'.
+  if (_rmbgSuProcessore()) { btn.textContent = (currentLang === 'it' ? '\u23F3 CPU, attendi... ' : '\u23F3 CPU, wait... ') + pct + '%'; return; }
   btn.textContent = '\u23F3 ' + pct + '%';
 }
 
+// 🆕 v6.593 — IL TOAST DICE LA CAUSA, non «qualcosa e' andato storto».
+// Fino alla v6.592 c'era un messaggio dedicato per la libreria mancante e UNO SOLO per tutto il
+// resto: niente GPU, memoria finita, rete caduta a meta' del modello. Il 5 settembre e' costato a
+// Franco un giro di domande per una causa che la console conosceva gia'.
+// 📌 E' la stessa famiglia del difetto di TRASPORTO del 1 settembre (`console.log` invisibile) e
+// del 5 (lo snippet dentro i commenti, la promessa non attesa): il calcolo sapeva, la scritta no.
+// 📌 Il gergo qui e' ammesso: questo bottone lo vede solo l'admin (Franco: «tanto e' sempre admin
+// che mette le foto»).
 function _erroreSfondo(e, btn) {
-  if (e && e.message === '_LIBRERIA_NON_DISPONIBILE_') {
-    toast(currentLang === 'it' ? '\u274C Libreria non disponibile, ricarica la pagina' : '\u274C Library unavailable, reload the page', 'error');
+  const it = currentLang === 'it';
+  const msg = String((e && e.message) || '');
+  let testo;
+  if (msg === '_LIBRERIA_NON_DISPONIBILE_') {
+    testo = it ? '\u274C Libreria non disponibile, ricarica la pagina' : '\u274C Library unavailable, reload the page';
+  } else if (/no available backend|GPU adapter|webgpu/i.test(msg)) {
+    // La causa vista il 5 settembre 2026: il processo grafico di Chrome era caduto.
+    testo = it ? '\u274C Accelerazione grafica non disponibile in questo browser. Riprova: ora ripiega sul processore (piu\u0300 lento). Se insiste, riavvia Chrome.'
+               : '\u274C Graphics acceleration unavailable. Try again: it now falls back to the CPU (slower). If it persists, restart Chrome.';
+  } else if (/memory|allocation|out of memory|RangeError/i.test(msg) || (e && e.name === 'RangeError')) {
+    testo = it ? '\u274C Memoria insufficiente per il modello. Chiudi qualche scheda e riprova.'
+               : '\u274C Not enough memory for the model. Close some tabs and try again.';
+  } else if (/fetch|network|Failed to load|NetworkError|ERR_/i.test(msg)) {
+    testo = it ? '\u274C Download del modello interrotto: controlla la rete e riprova.'
+               : '\u274C Model download interrupted: check your connection and try again.';
   } else {
-    console.error('removeBg error', e);
-    toast(currentLang === 'it' ? '\u274C Errore nella rimozione sfondo' : '\u274C Error removing background', 'error');
+    testo = (it ? '\u274C Rimozione sfondo fallita: ' : '\u274C Background removal failed: ') + (msg.slice(0, 90) || (it ? 'causa sconosciuta' : 'unknown cause'));
   }
+  console.error('removeBg error', e);
+  toast(testo, 'error');
   if (btn) { btn.disabled = false; btn.textContent = _ETICHETTA_SFONDO(); }
 }
 
