@@ -1,6 +1,43 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.603 — 🎨 `--danger` DICHIARATA IN UN POSTO SOLO, e a schermo non cambia niente.
+//          Franco: «il tasto elimina è rosa, non rosso». Il rosa e' il valore GIUSTO: dalla
+//          rotazione della tavolozza (v6.404) `--danger` ha ceduto #ff6464 all'errore di
+//          stampa. La riga #ff6464 rimasta in css/style.css era quella stantia, e perdeva
+//          contro l'index — invisibile, ma diceva il falso a chi la leggeva.
+//          🔴 La prima stesura di questa release faceva l'OPPOSTO (rimetteva il rosso):
+//          l'ha fermata `prova-v6404`, che custodisce la rotazione. Senza, avrei «riparato»
+//          una scelta di Franco e l'avrei scritto nel documento come una correzione.
+//          ✅ Franco ha scelto: «OK per la A: tutto in rosa». E il timbro «IN ARRIVO !» prende
+//          `--in-arrivo`, un nome suo. Modificato js/app.js, css/style.css, index.html.
+// v6.602 — 💾 «AGGIUNGI E SALVA» / «CAMBIA E SALVA» accanto al tasto della foto (Franco):
+//          carica l'immagine e salva in un gesto solo. Compare anche in creazione e
+//          clonazione (dove «salva» vuol dire CREARE), e dopo il salvataggio la scheda si
+//          chiude — scelte di Franco, chieste prima di scrivere.
+//          📌 NON riscrive il salvataggio: chiama `saveFigFromDetail` come il pulsante
+//          «Salva», quindi la chiusura avviene SOLO se il salvataggio riesce — una
+//          validazione fallita lascia la scheda aperta invece di buttare via il lavoro.
+//          🔴 `handleFigEditImg` prende un terzo argomento `poi`, eseguito DENTRO
+//          `reader.onload`: FileReader e' asincrono, e salvare subito avrebbe salvato la foto
+//          PRECEDENTE senza dare nessun errore. Modificato js/app.js.
+// v6.601 — 🎨 «AGGIORNAMENTO MASSIVO» E «ORDINA PER CREAZIONE» PRENDONO LA CLASSE degli altri
+//          tasti admin (Franco: «non sono come gli altri tasti admin»). Avevano il vestito
+//          scritto a mano nell'inline: niente :hover, niente ombra, misure loro.
+//          ✅ Nasce `.btn-admin-off` in css/style.css — la variante svuotata, che serviva
+//          perche' «Ordina per creazione» ha due stati e quel gradino era in un ternario.
+//          🔴 «Elimina selezionati» NON si tocca: resta rosso. Franco: «le eliminazioni fanno
+//          eccezione e sono sempre rosse» — regola scritta nel CSS accanto a .btn-danger,
+//          perche' la v6.441 gliel'aveva tolto e il documento non lo sapeva.
+//          Modificato js/app.js, css/style.css, index.html.
+// v6.600 — 🔴 LA QUARTA COPIA: anche la SCHEDA DI DETTAGLIO chiede il retro a
+//          `_retroEffettivo` (Franco: «e' possibile che la card di dettaglio ancora non
+//          mostri la foto del retro quando l'errore di stampa e' frontale?»). Dentro
+//          `openFigDetail` viveva la riga vecchia parola per parola, e per un errore
+//          frontale dava sempre null.
+//          📌 Era sfuggita alla v6.595 perche' avevo cercato i CHIAMANTI delle funzioni che
+//          conoscevo, non la REGOLA: una copia e' per definizione qualcuno che non ti chiama.
+//          Sei occorrenze in quattro funzioni; da qui la fonte e' una. Modificato js/app.js.
 // v6.599 — 🖼️ I COMANDI DELLA FOTO SEGUONO LA FOTO, ANCHE PRIMA DI SALVARE (Franco).
 //          Ripara un difetto della v6.596: quella aveva reso «Rimuovi sfondo» e l'etichetta
 //          dipendenti dalla presenza della foto, ma `url` e' la fotografia del momento in cui
@@ -25878,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.599';
+const JS_VERSION = 'v6.603';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35409,8 +35446,8 @@ function _timbroInCostruzione(s) {
   const testo = currentLang === 'it' ? 'IN ARRIVO !' : 'COMING SOON !';
   return '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-12deg);'
     + 'pointer-events:none;white-space:nowrap;z-index:2;'
-    + 'padding:0.3em 0.8em;border:max(1px,0.1em) solid var(--danger);border-radius:0.5em;'
-    + 'background:rgba(0,0,0,0.55);color:var(--danger);'
+    + 'padding:0.3em 0.8em;border:max(1px,0.1em) solid var(--in-arrivo);border-radius:0.5em;'
+    + 'background:rgba(0,0,0,0.55);color:var(--in-arrivo);'
     + 'font-family:var(--font-ui);font-size:clamp(0.4rem,7.5cqw,0.95rem);font-weight:800;'
     + 'letter-spacing:0.08em;text-transform:uppercase;">' + testo + '</div>';
 }
@@ -43683,7 +43720,17 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     // se presente, altrimenti quello della base (come sulla card).
     const isVar = f.isVariation || f.isUnofficialVariation || f.isChange;
     const _detBase = (isVar && f.baseFigurineId) ? getData('figurines', []).find(x => x.id === f.baseFigurineId) : null;
-    const _detEffRetroId = f.isChange ? (f.retroId || _detBase?.retroId || null) : f.retroId;
+    // 🔄 v6.600 - LA QUARTA COPIA DELLA REGOLA DEL RETRO, ed era l'ultima. Qui c'era la riga
+    //    vecchia parola per parola — `f.isChange ? (f.retroId || _detBase?.retroId ...)` — la
+    //    stessa che la v6.595 aveva tolto da `_coppiaFronteRetro` e `_dueFacce`.
+    // 🔴 Per un errore di stampa FRONTALE dava sempre `null`: `isVar` e' falso, quindi
+    //    `_detBase` e' nullo, quindi il ramo `: f.retroId` — che per lui non esiste. Franco
+    //    vedeva la card della griglia e la ricerca globale a posto, e la SCHEDA no.
+    // 📌 E il modo in cui e' sfuggita alla v6.595 vale piu' della riga: cercando i CHIAMANTI
+    //    di `_coppiaFronteRetro` e `_dueFacce` questa non compariva, perche' una copia e' per
+    //    definizione qualcuno che NON ti chiama. Si cerca la regola, non chi la usa.
+    // ⚠️ `_detBase` resta: serve a `baseFig`, che risponde a un'altra domanda.
+    const _detEffRetroId = _retroEffettivo(f, getData('figurines', []));
     if (_schedaDueFoto(f)) { // v6.032/044 - unica fonte, vedi _schedaDueFoto()
       // Variazione/Change o figurina base con Retro collegato: mostra Fronte (sx) + Retro (dx) affiancati
       const baseFig = _detBase;
@@ -45943,6 +45990,18 @@ function _slotFotoEdit(slot, url, f) {
         '<span class="btn-foto" style="display:block;">\u{1F4F7} ' + (currentLang === 'it' ? (url ? 'Cambia foto' : 'Aggiungi foto') : (url ? 'Change photo' : 'Add photo')) + '</span>' +
         '<input type="file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event, \'' + slot + '\')">' +
       '</label>' +
+      // 🆕 v6.602 (Franco: «aggiungi un tasto "Aggiungi foto e salva", alla sua destra») — lo stesso
+      // gesto, ma senza il passaggio dal pulsante Salva. La seconda `<label>` ha una `<input>` sua:
+      // due comandi non possono condividere la stessa casella file, o il primo che la usa
+      // deciderebbe anche per il secondo.
+      // 📌 Etichetta accorciata («Aggiungi e salva», non «Aggiungi foto e salva»): i due tasti stanno
+      // affiancati e la parola «foto» e' gia' nel primo. Confermato da Franco.
+      // 📌 `btn-foto` e non una classe nuova: e' la famiglia di questa riga, gia' coerente — la
+      // stessa regola che la v6.601 ha appena applicato ai tasti admin.
+      '<label style="flex:1;cursor:pointer;text-align:center;">' +
+        '<span class="btn-foto" style="display:block;">\u{1F4BE} ' + (currentLang === 'it' ? (url ? 'Cambia e salva' : 'Aggiungi e salva') : (url ? 'Change and save' : 'Add and save')) + '</span>' +
+        '<input type="file" accept="image/*" style="display:none;" onchange="handleFigEditImgESalva(event, \'' + slot + '\')">' +
+      '</label>' +
       (url ? '<button onclick="removeFigPhoto(\'' + slot + '\')" class="btn-foto" style="flex:1;">\u{1F5D1}\uFE0F ' + (currentLang === 'it' ? 'Rimuovi foto' : 'Remove photo') + '</button>' : '') +
     '</div>' +
     // 🆕 v6.596 (Franco: «quando la foto non c'e', "Rimuovi sfondo" sparisce») — un
@@ -46309,7 +46368,14 @@ function removeFigPhoto(slot) {
   toast(currentLang === 'it' ? 'Foto rimossa — premi Salva per confermare' : 'Photo removed — press Save to confirm', 'success');
 }
 
-function handleFigEditImg(event, slot) {
+// 🔄 v6.602 - IL TERZO ARGOMENTO `poi`, ED E' UNA QUESTIONE DI ORDINE, NON DI COMODITA'.
+// `FileReader` e' ASINCRONO: chi volesse salvare subito dopo aver chiamato questa funzione
+// salverebbe la foto PRECEDENTE — o nessuna, in creazione — e otterrebbe un articolo salvato senza
+// l'immagine appena scelta, **senza nessun errore da nessuna parte**.
+// ✅ `poi` viene eseguito DENTRO `reader.onload`, cioe' quando la foto e' davvero nello slot.
+// ⚠️ Stessa famiglia del difetto della v6.599 e del campo nascosto della 641: un valore letto
+// prima che esista.
+function handleFigEditImg(event, slot, poi) {
   slot = slot || 'fronte';
   const file = event.target.files[0];
   if (!file) return;
@@ -46323,8 +46389,29 @@ function handleFigEditImg(event, slot) {
     // bottone non compariva.
     // ✅ Adesso si ridisegna il riquadro e decide lui: anteprima, etichetta e comandi insieme.
     _ridisegnaSlotFoto(slot);
+    // 🔄 v6.602 - e SOLO ADESSO cio' che chi ha chiamato voleva fare dopo: la foto e' nello slot.
+    if (typeof poi === 'function') { try { poi(); } catch (e) { console.error('handleFigEditImg/poi', e); } }
   };
   reader.readAsDataURL(file);
+}
+
+// 🆕 v6.602 (Franco) — CARICA LA FOTO E SALVA, in un gesto solo.
+// 📌 NON RISCRIVE IL SALVATAGGIO: chiama `saveFigFromDetail` senza `{resta:true}`, cioe' esattamente
+// quello che fa il pulsante «Salva». Da li' arriva gratis anche la regola giusta sulla chiusura —
+// `closeModal` avviene SOLO se il salvataggio e' andato a buon fine, quindi una validazione fallita
+// lascia la scheda aperta con l'errore invece di buttare via cio' che c'era scritto.
+// 🔴 Franco ha scelto che il tasto compaia ANCHE in creazione e clonazione, dove «salva» vuol dire
+// CREARE l'articolo: e' un gesto piu' grosso di quanto l'etichetta prometta, ed e' scritto qui
+// perche' chi legge lo sappia. La rete e' quella di sopra: se manca un campo obbligatorio non si
+// crea niente e la scheda resta.
+// ⚠️ L'id viene da `_figSlotF` (v6.599), «il record della scheda aperta»: e' lo stesso che i due
+// pulsanti «Salva» portano nel loro `data-fig-id`. Senza scheda aperta non si fa niente.
+function handleFigEditImgESalva(event, slot) {
+  const _id = _figSlotF && _figSlotF.id;
+  handleFigEditImg(event, slot, () => {
+    if (!_id) { console.error('handleFigEditImgESalva: nessuna scheda aperta'); return; }
+    saveFigFromDetail(_id);
+  });
 }
 
 // v6.008 - gemello di toggleRetroBianco per la scheda. Stesso comportamento: il campo
@@ -52342,8 +52429,8 @@ function renderBulkEditView() {
     ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
       <button class="btn-danger" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;font-size:0.9rem;padding:0.5rem 1rem;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
-      <button onclick="toggleOrdinaPerCreazione()" title="${_ordinaPerCreazione ? (currentLang === 'it' ? 'Torna all\'ordine normale' : 'Back to the normal order') : (currentLang === 'it' ? 'Dal piu’ recente. Gli articoli senza data leggibile restano in fondo.' : 'Most recent first. Items without a readable date stay at the bottom.')}" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--action-admin);background:${_ordinaPerCreazione ? 'var(--action-admin)' : 'transparent'};color:${_ordinaPerCreazione ? '#ffffff' : 'var(--action-admin)'};font-weight:600;">🕒 ${currentLang === 'it' ? 'Ordina per creazione' : 'Sort by creation'}</button>
-      <button onclick="toggleAggiornamentoMassivo()" style="font-size:0.85rem;padding:0.45rem 0.9rem;border-radius:8px;cursor:pointer;white-space:nowrap;border:1px solid var(--action-admin);background:transparent;color:var(--action-admin);font-weight:600;">✏️ ${currentLang === 'it' ? 'Aggiornamento massivo' : 'Bulk update'}</button>
+      <button class="btn-primary ${_ordinaPerCreazione ? 'btn-admin' : 'btn-admin-off'}" onclick="toggleOrdinaPerCreazione()" title="${_ordinaPerCreazione ? (currentLang === 'it' ? 'Torna all\'ordine normale' : 'Back to the normal order') : (currentLang === 'it' ? 'Dal piu’ recente. Gli articoli senza data leggibile restano in fondo.' : 'Most recent first. Items without a readable date stay at the bottom.')}" style="font-size:0.85rem;padding:0.45rem 0.9rem;">🕒 ${currentLang === 'it' ? 'Ordina per creazione' : 'Sort by creation'}</button>
+      <button class="btn-primary btn-admin-off" onclick="toggleAggiornamentoMassivo()" style="font-size:0.85rem;padding:0.45rem 0.9rem;">✏️ ${currentLang === 'it' ? 'Aggiornamento massivo' : 'Bulk update'}</button>
     </div>
     <!-- v6.080 (Franco) — il pannello nasce chiuso: e' una procedura che scrive, non un comando da
          sfiorare. I due ambiti dicono il numero di righe che toccherebbero, e la conferma lo ripete. -->
