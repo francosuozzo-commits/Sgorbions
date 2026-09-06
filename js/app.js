@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.610';
+const JS_VERSION = 'v6.611';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -52712,8 +52712,8 @@ function renderBulkEditView() {
     ${isAdmin ? `<p style="font-size:0.8rem;color:var(--muted);margin-bottom:0.75rem;">${(currentLang === 'it') ? 'Modifica direttamente nelle celle. Le modifiche vengono salvate automaticamente.' : 'Edit directly in the cells. Changes are saved automatically.'}</p>
     <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;">
       <button class="btn-danger" id="bulk-delete-btn" onclick="deleteBulkSelected()" disabled style="opacity:0.5;font-size:0.9rem;padding:0.5rem 1rem;">🗑️ ${(currentLang === 'it') ? 'Elimina selezionati' : 'Delete selected'} (<span id="bulk-delete-count">0</span>)</button>
-      <button class="btn-primary ${_ordinaPerCreazione ? 'btn-admin' : 'btn-admin-off'}" onclick="toggleOrdinaPerCreazione()" title="${_ordinaPerCreazione ? (currentLang === 'it' ? 'Torna all\'ordine normale' : 'Back to the normal order') : (currentLang === 'it' ? 'Dal piu’ recente. Gli articoli senza data leggibile restano in fondo.' : 'Most recent first. Items without a readable date stay at the bottom.')}" style="font-size:0.85rem;padding:0.45rem 0.9rem;">🕒 ${currentLang === 'it' ? 'Ordina per creazione' : 'Sort by creation'}</button>
-      <button class="btn-primary btn-admin-off" onclick="toggleAggiornamentoMassivo()" style="font-size:0.85rem;padding:0.45rem 0.9rem;">✏️ ${currentLang === 'it' ? 'Aggiornamento massivo' : 'Bulk update'}</button>
+      <button class="btn-primary btn-admin" onclick="toggleOrdinaPerCreazione()" title="${_ordinaPerCreazione ? (currentLang === 'it' ? 'Torna all\'ordine normale' : 'Back to the normal order') : (currentLang === 'it' ? 'Dal piu’ recente. Gli articoli senza data leggibile restano in fondo.' : 'Most recent first. Items without a readable date stay at the bottom.')}" style="font-size:0.9rem;padding:0.4rem 1.1rem;">🕒 ${currentLang === 'it' ? 'Ordina per creazione' : 'Sort by creation'}</button>
+      <button class="btn-primary btn-admin" onclick="toggleAggiornamentoMassivo()" style="font-size:0.9rem;padding:0.4rem 1.1rem;">✏️ ${currentLang === 'it' ? 'Aggiornamento massivo' : 'Bulk update'}</button>
     </div>
     <!-- v6.080 (Franco) — il pannello nasce chiuso: e' una procedura che scrive, non un comando da
          sfiorare. I due ambiti dicono il numero di righe che toccherebbero, e la conferma lo ripete. -->
