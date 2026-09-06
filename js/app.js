@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.612';
+const JS_VERSION = 'v6.614';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35160,7 +35160,7 @@ function renderCatalogSearch(q) {
             <!-- 🆕 v6.610 - IL TITOLO DIVENTA UNA RIGA, per fare posto al pulsante senza
                  mandarlo a capo su schermi stretti. Il pulsante e' l'ULTIMO elemento e ha
                  «margin-left:auto»: sta a destra senza che nessuno debba misurare niente. -->
-            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(getSectionLabel(sec))}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(inSection.length)}</span><button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}')" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;font-weight:400;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span style="color:var(--accent);">\u2197</span>${currentLang === 'it' ? 'Mostra in vista tabellare' : 'Show in table view'}</button></div>
+            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(getSectionLabel(sec))}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(inSection.length)}</span>${inSection.length > 1 ? `<button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}')" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;font-weight:400;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span style="color:var(--accent);">\u2197</span>${currentLang === 'it' ? 'Mostra in vista tabellare' : 'Show in table view'}</button>` : ''}</div>
             <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
               ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
@@ -35565,7 +35565,12 @@ function _timbroInvisibile(f) {
 // parola e «fullName» non lo vedono nemmeno.
 function _prefissoInvisibile(f) {
   if (!f || !f.invisibile || !currentUser?.isAdmin) return '';
-  return '<span style="color:var(--in-arrivo);font-weight:700;font-size:0.85rem;">('
+  // 🔄 v6.613 (Franco: *«(INVISIBILE) mettilo in bianco»*) — QUI C'ERA «--in-arrivo», cioe'
+  // il colore del timbro. Il TIMBRO sulla card lo tiene; questo no, e la ragione e' il posto:
+  // qui il prefisso sta IN MEZZO A UN NOME, e nella ricerca globale il colore serve a
+  // distinguere i NOMI (v6.398). Un arancione fra quelle parole diceva «questo e' un altro
+  // tipo di nome» invece di «questo articolo e' nascosto».
+  return '<span style="color:var(--text);font-weight:700;font-size:0.85rem;">('
     + (currentLang === 'it' ? 'INVISIBILE' : 'HIDDEN') + ')</span> ';
 }
 
@@ -39877,7 +39882,20 @@ function _corpoErroriPerLatoHTML(C) {
     // un gruppo vuoto, e' un gruppo che non c'e'.
     if (!_esiste[lato]) return '';
     const voci = [...conta[lato].entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'it'));
-    const latoAcceso = _filtroLatoErrore.has(lato);
+    // 🆕 v6.614 (Franco, due volte: *«come mai FRONTALI non si accende se seleziono TUTTE
+    // o se seleziono sia SCRITTA GRIGIO SCURO che SCRITTA GRIGIO CHIARO?»*)
+    // 🔴 LA SIMMETRIA ERA ENUNCIATA E IMPLEMENTATA A META'. Il commento della v6.604, sotto,
+    // dice: «Padre acceso e tutti i figli accesi selezionano lo stesso insieme» — ma la luce
+    // scendeva soltanto («attiva: … || latoAcceso»), e qui non si guardavano mai i figli.
+    // 📌 La v6.604 aveva staccato «accendi il padre» da «premi UNA tipologia», e la ragione
+    // era il conteggio: il numero del padre e' piu' grande del risultato, quindi mentiva.
+    // Con TUTTE le voci accese non mente: il tipo e' obbligatorio dalla v5.771, quindi non
+    // esistono errori del lato che nessuna pillola rappresenta.
+    // ⚠️ E' DERIVATO, non uno stato in piu': spegnendo una tipologia il padre si spegne DA
+    // SE', per costruzione. Un flag da tenere allineato sarebbe la copia che diverge.
+    const _tutteLeVoci = voci.length > 0
+      && voci.every(([val]) => _VOCI_ERR_SCELTE.has(_K_VOCE_ERR(lato, val)));
+    const latoAcceso = _filtroLatoErrore.has(lato) || _tutteLeVoci;
     const totale = voci.reduce((s, v) => s + v[1], 0);
     const testa = `<span onclick="_toggleLatoErrore('${lato}')" title="${it ? (latoAcceso ? 'Togli questo lato' : 'Mostra solo gli errori di stampa di questo lato') : (latoAcceso ? 'Remove this side' : 'Show only the print errors on this side')}" `
       + `style="cursor:pointer;display:inline-flex;align-items:center;gap:0.35rem;`
@@ -39952,7 +39970,19 @@ function _pillolLatoErroreHTML() {
 }
 function _toggleLatoErrore(lato) {
   if (_filtroLatoErrore.has(lato)) _filtroLatoErrore.delete(lato);
-  else _filtroLatoErrore.add(lato);
+  else {
+    // 🆕 v6.614 — ACCESO PER DERIVAZIONE? ALLORA IL CLIC SPEGNE.
+    // 🔴 Senza questo ramo il padre acceso da tutte le sue voci NON e' in
+    // «_filtroLatoErrore», quindi il clic lo AGGIUNGEREBBE: un pulsante acceso che, premuto,
+    // resta acceso. E' identico al difetto che la v6.607 ha appena riparato sulle figlie —
+    // e nasce dalla stessa causa: uno stato che si vede e uno che si tiene, diversi fra loro.
+    // ✅ Si riusa «_tutteVociErroreLato», che quel lato lo sa gia' spegnere: nessuna seconda
+    // regola da tenere allineata alla prima.
+    const _sue = _VOCI_ERR_LATO.filter(v => v.lato === lato);
+    const _tutte = _sue.length > 0 && _sue.every(v => _VOCI_ERR_SCELTE.has(_K_VOCE_ERR(v.lato, v.val)));
+    if (_tutte) { _tutteVociErroreLato(lato); return; }
+    _filtroLatoErrore.add(lato);
+  }
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (_toggleLatoErrore)', e); }
 }
