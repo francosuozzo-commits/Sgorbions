@@ -25085,6 +25085,38 @@ function checkUnsubscribeLink() {
   } catch(e) { console.warn('[unsubscribe] checkUnsubscribeLink', e.message); }
 }
 
+// 🆕 v6.627 (Franco, per il footer delle pagine serie: «perche' non mettiamo la stessa nota
+// che abbiamo nel footer della homepage?») — IL SITO LEGGE L'INDIRIZZO.
+// 🔴 Il difetto che ha fatto nascere questa funzione: il «Privacy Policy» del footer e'
+// `onclick="showPage('privacy')"`, cioe' un GESTO. Da fuori — da una pagina statica, da un'e-mail,
+// da un link condiviso — non c'era nessun indirizzo che aprisse quella pagina. Non era protetta:
+// era una porta senza maniglia dal lato di fuori.
+// 📌 E LA LISTA DELLE PAGINE NON STA QUI. Un elenco scritto a mano sarebbe stato la copia
+// numero due degli `id="page-*"` dell'index, e una pagina nuova non ci finirebbe mai — senza
+// nessun errore. Si chiede al DOM: se `#page-<nome>` esiste ed e' una `.page`, e' una pagina.
+// ⚠️ `#unsubscribe` e' escluso APPOSTA: ha gia' il suo meccanismo, che conserva l'intento
+// attraverso il login e sa a CHI era indirizzata l'e-mail. Due strade per lo stesso gesto, con la
+// seconda piu' stupida della prima, e' il modo in cui una delle due comincia a divergere.
+// ⚠️ E le pagine protette non hanno bisogno di una riga qui: la guardia sta dentro `showPage`,
+// dove stava gia'. Sloggato su `/#catalog` si vede il riquadro di accesso, come dal menu.
+function apriPaginaDaHash() {
+  try {
+    // 🔴 Se una disiscrizione e' in sospeso, quella strada ha gia' deciso dove mandare
+    // l'utente (la pagina, o il login che la precede): qui non si tocca niente.
+    if (pendingUnsubTarget()) return false;
+    const nome = (window.location.hash || '').replace(/^#/, '').trim().toLowerCase();
+    if (!nome || !/^[a-z]+$/.test(nome)) return false;
+    // alias: le parole che una persona scrive, portate ai nomi veri delle pagine.
+    const ALIAS = { serie: 'catalog', inventario: 'catalog', inventory: 'catalog' };
+    const pagina = ALIAS[nome] || nome;
+    if (pagina === 'unsubscribe') return false;
+    const el = document.getElementById('page-' + pagina);
+    if (!el || !el.classList.contains('page')) return false;
+    showPage(pagina);
+    return true;
+  } catch (e) { console.warn('apriPaginaDaHash', e.message); return false; }
+}
+
 function pendingUnsubTarget() {
   try { return sessionStorage.getItem(PENDING_UNSUB_KEY); } catch(e) { return null; }
 }
@@ -25915,7 +25947,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.625';
+const JS_VERSION = 'v6.636';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -26130,6 +26162,14 @@ async function initFirebase() {
   // maybeAskNewsletterConsent uscirebbe comunque subito -- ma l'ordine conta se
   // un domani si aggiungessero altri intenti in sospeso.
   checkUnsubscribeLink();
+  // 🆕 v6.627 - DOPO `checkUnsubscribeLink`, e l'ordine e' la cosa che conta:
+  // quella funzione puo' aver messo in sospeso un intento di disiscrizione, e
+  // `apriPaginaDaHash` si ferma se lo trova. Invertendole, un link di disiscrizione
+  // che portasse anche un hash finirebbe sulla pagina sbagliata.
+  // 📌 E dopo `loadAllData()` + il ripristino della sessione, che stanno sopra:
+  // prima, `currentUser` e' ancora nullo e una pagina protetta manderebbe al login
+  // anche chi e' loggato.
+  apriPaginaDaHash();
   setTimeout(maybeAskNewsletterConsent, 1200);
 }
 
@@ -27517,7 +27557,7 @@ const i18n = {
 'form.message':'Message','form.message.ph':'Tell me everything...',
 'form.send':'Send message 🚀','form.password':'Password','form.nationality':'Nationality','form.ageConfirm':'I confirm I am at least 16 years old','form.newsletterLabel':'Would you like the newsletter? *','form.newsletter.opt.none':'— Select —','form.newsletter.opt.yes':'Yes, I want it','form.newsletter.opt.no':'No, thanks','form.newsletter.hint':'Answering is required, but you are free to say no: registration works anyway. You can change your mind anytime from your profile.','profile.emailPrefs.title':'E-mail preferences','profile.newsletter':'I want to receive the figurinesgorbions.it newsletter','profile.newsletter.hint':'Get the latest news about the Sgorbions inventory.<br>You can turn it on or off whenever you like.','newsletterConsent.title':'📧 Would you like the newsletter?','newsletterConsent.body':'We never actually asked you — and without your consent we won\'t send it.<br><br>It\'s just the occasional update on the latest news from the Sgorbions Inventory.<br>No advertising!<br><br>You can change your mind anytime from your profile.','newsletterConsent.yes':'Yes, sign me up','newsletterConsent.no':'No, thanks','form.privacyNotice':'By registering, you agree to our <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Privacy Policy</a>.','auth.forgotPassword':'Forgot password?','profile.searchCountry':'Search your country',
 'form.series.name':'Series Name','form.series.year':'Year','form.series.count':'Number of Stickers',
-'form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.desc.en':'Description (English)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Cover Image',
+'form.series.desc':'Description','form.series.desc.it':'Description (Italian)','form.series.desc.en':'Description (English)','form.series.descEnPlaceholder':'Describe this series...','form.series.testoPagina.it':'Text for the Google page (Italian)','form.series.testoPagina.en':'Text for the Google page (English)','form.series.testoPaginaPh':'What this page should say about the series...','form.series.testoPaginaPhEn':'What this page should say about the series...','form.series.testoPaginaHint':'Each text goes out exactly as written on the public page of that language. Leave one empty and that page has no presentation paragraph: nothing is made up, and the other language is never used as a stand-in.','form.series.cover':'Cover Image',
 'form.click':'Click to upload','form.drag':'or drag and drop',
 'form.fig.image':'Image',
 'form.post.type':'Post Type','form.post.title':'Title','form.post.body':'Content',
@@ -27618,7 +27658,7 @@ const i18n = {
     'contact.info.title':'Parliamo di Sgorbions','contact.email':'E-mail','contact.location':'Posizione','contact.location.val':'Italia 🇮🇹','contact.resp':'Tempo di risposta','contact.resp.val':'Di solito entro 24–48 ore',
     "contact.privacy":"Per poterti rispondere conserviamo il tuo indirizzo e-mail e il testo del messaggio. Se non hai un account sul sito, dopo 6 mesi il messaggio viene <strong>cancellato del tutto</strong>, indirizzo compreso. Se ce l'hai, resta finché non elimini l'account.",'form.name':'Il tuo nome','form.name.ph':'Fan degli Sgorbions','form.email':'Indirizzo E-mail','form.subject':'Articolo','form.subject.ph':'Ho trovato uno Sgorbio raro !','form.message':'Messaggio','form.message.ph':'Dimmi tutto...','form.send':'Invia messaggio 🚀',
     'form.username':'Nome utente','form.password':'Password','form.nationality':'Nazionalità','form.ageConfirm':'Confermo di avere almeno 16 anni','form.newsletterLabel':'Vuoi ricevere la newsletter? *','form.newsletter.opt.none':'— Seleziona —','form.newsletter.opt.yes':'Sì, voglio riceverla','form.newsletter.opt.no':'No, grazie','form.newsletter.hint':'Rispondere è obbligatorio, ma sei libero di dire di no: la registrazione funziona comunque. Potrai cambiare idea quando vuoi dal tuo profilo.','profile.emailPrefs.title':'Preferenze e-mail','profile.newsletter':'Voglio ricevere la newsletter di figurinesgorbions.it','profile.newsletter.hint':'Ricevi le ultime novità sull\'inventario degli Sgorbions.<br>Puoi attivarla o disattivarla quando vuoi.','newsletterConsent.title':'📧 Vuoi ricevere la newsletter?','newsletterConsent.body':'Non te l\'abbiamo mai chiesto, e senza il tuo consenso non te la mandiamo.<br><br>È solo qualche comunicazione sulle ultime novità dell\'Inventario Sgorbions.<br>Nessuna pubblicità!<br><br>Puoi cambiare idea quando vuoi dal tuo profilo utente.','newsletterConsent.yes':'Sì, iscrivimi','newsletterConsent.no':'No, grazie','form.privacyNotice':'Registrandoti, accetti la nostra <a href="#" onclick="closeModal(\'auth-modal\');showPage(\'privacy\');return false;" style="color:var(--accent);">Informativa sulla Privacy</a>.','auth.forgotPassword':'Password dimenticata?','profile.searchCountry':'Cerca il tuo paese',
-    'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.desc.en':'Descrizione (Inglese)','form.series.descEnPlaceholder':'Describe this series...','form.series.cover':'Immagine di Copertina',
+    'form.series.name':'Nome della Serie','form.series.year':'Anno','form.series.count':'N. di Figurine','form.series.desc':'Descrizione','form.series.desc.it':'Descrizione (Italiano)','form.series.desc.en':'Descrizione (Inglese)','form.series.descEnPlaceholder':'Describe this series...','form.series.testoPagina.it':'Testo per la pagina Google (Italiano)','form.series.testoPagina.en':'Testo per la pagina Google (Inglese)','form.series.testoPaginaPh':'Che cosa deve dire questa pagina della serie...','form.series.testoPaginaPhEn':'What this page should say about the series...','form.series.testoPaginaHint':'Ogni testo esce tale e quale sulla pagina pubblica della sua lingua. Se ne lasci uno vuoto, quella pagina non ha nessun paragrafo di presentazione: niente viene inventato, e l\'altra lingua non fa da tappabuchi.','form.series.cover':'Immagine di Copertina',
     'form.click':'Clicca per caricare','form.drag':'o trascina e rilascia',
     'admin.funzioni':'Funzioni',
     'form.fig.number':'Numero','form.fig.name':'Nome','form.fig.subname':'Sottonome','form.fig.desc':'Descrizione','form.fig.image':'Immagine',
@@ -31204,6 +31244,23 @@ function openAddSeriesModal(seriesId) {
     });
 
       document.getElementById('series-desc-input').value = s.descIt || s.desc || '';
+      // 🆕 v6.626 (Franco: *«mettiamo un campo nell'inventario dove posso mettere io il
+      // contenuto che voglio in quella pagina»*) — il testo della pagina pubblica della serie.
+      // ⚠️ NESSUN RIPIEGO SU `descIt`, ed e' voluto: la descrizione e' un sottotitolo di una
+      // riga e nella pagina generata sta gia' sotto il titolo. Ripiegare li' avrebbe stampato
+      // la stessa frase due volte, e due copie giuste non le vede nessuna prova.
+      // 📌 `?.` perche' le serie salvate prima di oggi il campo non ce l'hanno affatto.
+      // 🔄 v6.628 - DUE LINGUE (Franco: «anche il campo per GSC serve in due lingue»), e il
+      // campo di ieri cambia nome: si chiamava `testoPaginaSerie`, cioe' l'italiano col nome
+      // dell'INGLESE — in questo progetto e' `desc` a essere inglese e `descIt` italiano.
+      // ✅ Adesso hanno tutti e due il suffisso e nessuno dei due si puo' leggere al contrario.
+      // ⚠️ NESSUN RIPIEGO FRA LE DUE, e qui `_descrizioneSerie` NON e' il modello: quella
+      // incrocia perche' a leggere e' una persona. Queste pagine le legge Google, e un
+      // paragrafo italiano dentro un `lang="en"` e' un segnale sbagliato che non vede nessuno.
+      const tpsIt = document.getElementById('series-testo-pagina-input');
+      if (tpsIt) tpsIt.value = s.testoPaginaSerieIt || '';
+      const tpsEn = document.getElementById('series-testo-pagina-en-input');
+      if (tpsEn) tpsEn.value = s.testoPaginaSerieEn || '';
       const descEnInput = document.getElementById('series-desc-en-input');
       if (descEnInput) descEnInput.value = s.desc || '';
       const rctInput = document.getElementById('series-retro-change-types-input');
@@ -31231,7 +31288,7 @@ function openAddSeriesModal(seriesId) {
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
     }
   } else {
-    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-desc-input','series-desc-en-input'].forEach(id => document.getElementById(id).value = '');
+    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-desc-input','series-desc-en-input','series-testo-pagina-input','series-testo-pagina-en-input'].forEach(id => document.getElementById(id).value = '');
     // 🔴 v6.186 - QUI STAVA IL BUCO: si azzeravano TRE caselle su otto, e le altre cinque
     //             (`hasRetroChange`, `noRetro`, `hasSubseries`, `hasSizes`, `hasVariations`) piu'
     //             `nomeCorto` e i controlli sospesi restavano quelli dell'ultima serie aperta.
@@ -31451,6 +31508,10 @@ async function saveSeries() {
   // campo sparisce dai payload, e lo spread `...series[idx]` conserva cio' che c'e'.
   const descIt = document.getElementById('series-desc-input').value.trim();
   const desc = document.getElementById('series-desc-en-input').value.trim();
+  // 🆕 v6.626 - il testo della pagina pubblica della serie. `?.` + `|| ''` come sopra:
+  // il campo e' nuovo, e `saveSeries` gira anche su finestre che non l'hanno ancora.
+  const testoPaginaSerieIt = (document.getElementById('series-testo-pagina-input')?.value || '').trim();
+  const testoPaginaSerieEn = (document.getElementById('series-testo-pagina-en-input')?.value || '').trim();
   // v6.246 - i tipi di omaggio, DUE liste come i change: uno per riga.
   const retroFreeVersionTypes = (document.getElementById('series-retro-free-version-types-input')?.value || '')
     .split('\n').map(v => v.trim()).filter(Boolean);
@@ -31555,7 +31616,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -31573,7 +31634,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -35611,6 +35672,12 @@ function seriesCardHTML(s) {
   // a due centimetri di distanza.
   const _conteggiSezione = Object.keys(ARTICOLI)
     .sort((a, b) => (ARTICOLI[a].pos ?? 99) - (ARTICOLI[b].pos ?? 99))
+    // 🔴 v6.632 - QUESTO NUMERO E QUELLO DELLA PAGINA SERIE NON COINCIDONO PIU'.
+    // Qui gli errori di stampa restano ESCLUSI (v6.429); nella colonna «totali» di
+    // `sezRows` da oggi sono compresi, perche' Franco l'ha chiesto li' e solo li'.
+    // ⚠️ NON E' UN DIFETTO DA RIPARARE: e' una scelta, presa avendo davanti proprio
+    // questa conseguenza. Chi allineasse i due posti «per coerenza» cancellerebbe una
+    // decisione — e il commento gemello sta in `renderSeriesMeta`, accanto a `_totali`.
     .map(sez => [sez, senzaErroriDiStampa(allItems.filter(f => f.section === sez)).length])
     .filter(([, n]) => n > 0);
   const figs = allItems.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras' && f.section !== 'bustine');
@@ -36459,34 +36526,50 @@ function senzaErroriDiStampa(elenco) {
   return elenco.filter(f => !f.isPrintError);
 }
 
-// 🆕 v6.507 (Franco: *"continua a non contarli ma indica così: N totali (+ M errori di
-// stampa)"*, e *"M errori di stampa in rosso"*) — LA META' CHE DICE QUANTO SI È TOLTO.
-// 🔴 STA ATTACCATA A `senzaErroriDiStampa` DI PROPOSITO: sono le due metà della stessa
-// regola — una toglie, l'altra dichiara quanto ha tolto — e chi un domani cambiasse l'una
-// senza l'altra le trova a due righe di distanza invece che in due capitoli del file.
-// 🔴 OGGI LA CHIAMA UN POSTO SOLO — la riga «totali» della pagina serie — E RESTA UNA
-// FUNZIONE LO STESSO. Sulla card della serie la coda è stata provata a schermo e
-// scartata: *"non devi mettere la frase tra (); lì non c'è spazio"*, e un badge che va a
-// capo per una parentesi è peggio del numero non spiegato. ⚠️ Il prezzo è dichiarato:
-// sulla card 539 continua a non ritrovarsi, e la spiegazione vive dove uno la cerca.
-// 📌 I posti che dicono «quante figurine» restano due e lontani, e il 26 agosto erano già
-// andati fuori sincrono (è la ragione di `prova-v6429`): il giorno che questa coda
-// servisse anche là, si chiama — non si riscrive (§12-bis).
-// 📌 IL ROSSO È `--type-printerror` e non un rosso nuovo: è il colore che nella pagina
-// della serie significa già «errore di stampa», sulla colonna a fianco. Il valore vivo è
-// #ff6464 — misurato dal browser, non letto da style.css, che l'index può ridichiarare
-// (v6.372). ⚠️ Il commento del progetto che lo chiama «salmone» è vecchio: si è guardato
-// il valore, non la parola che lo descrive.
-// ⚠️ A zero la coda non si scrive: «(+ 0 errori di stampa)» occupa una riga per non dire
-// niente, e su una card i badge sono corti per mestiere.
-function codaErroriDiStampa(elenco) {
-  const n = elenco.filter(f => f.isPrintError).length;
-  if (!n) return '';
-  const it = currentLang === 'it';
-  const q = n.toLocaleString(it ? 'it-IT' : 'en-US');
-  return ' (+ <span style="color:var(--type-printerror);">' + q + ' '
-       + (it ? (n === 1 ? 'errore di stampa' : 'errori di stampa')
-             : (n === 1 ? 'print error' : 'print errors')) + '</span>)';
+// 🗑️ v6.632 - QUI VIVEVA `codaErroriDiStampa`, nata con la v6.507 per scrivere
+// «N totali (+ M errori di stampa)» accanto al totale della pagina serie. Franco ha
+// chiesto che il totale li COMPRENDA, quindi la coda non ha piu' niente da dichiarare e
+// la funzione non aveva piu' nessun chiamante.
+// 🔴 Si cancella invece di lasciarla «caso mai»: una funzione che nessuno chiama e'
+// una regola che chi legge crede ancora in vigore. E' la lezione di `prova-v6267`, verde
+// per 251 release su una funzione cancellata, perche' il nome sopravviveva in un commento.
+// 📌 `senzaErroriDiStampa` INVECE RESTA, e non e' un'incoerenza: la chiama ancora il
+// badge della card (`seriesCardHTML`), che continua a escluderli per scelta di Franco.
+
+// 🆕 v6.629 (Franco: *«"N omaggi" cambialo in "N versioni omaggio"»*, e poi *«il termine
+// corretto e' "versione omaggio"; "versioni omaggio" quando siamo al plurale»*)
+// L'ETICHETTA DI UN CONTEGGIO SI CHIEDE AL DESCRITTORE, NON SI RISCRIVE.
+// 🔴 Il difetto che ha fatto nascere questa funzione non era la parola sbagliata: era che il
+// sito ne diceva DUE. `filtroIt` porta «Versioni omaggio» da sempre, e il filtro della ricerca lo
+// mostrava; la numerica due centimetri piu' su aveva `'omaggio' : 'omaggi'` scritto a mano e
+// diceva «144 omaggi». Nessun errore, nessuna prova rossa, la stessa cosa chiamata in due modi
+// nella stessa pagina.
+// 📌 IL SINGOLARE E IL PLURALE ESISTONO GIA' TUTTI E DUE, e non sono stati inventati qui:
+//    singolare -> `titoloIt`/`titoloEn`, e dove non c'e' il generico `it`/`en`;
+//    plurale   -> `filtroIt`/`filtroEn`, nati alla v6.514 per i titoli dei filtri.
+// ⚠️ L'INIZIALE SI ABBASSA SEMPRE. Nel descrittore le etichette sono maiuscole perche' li'
+// fanno da titolo (badge, filtri, legenda); in una numerica vanno dopo una cifra, e li' la
+// maiuscola non ci sta.
+// 🔄 v6.630 (Franco: *«abbiamo Change con la C maiuscola. ma e' la unica, quindi
+// metterei minuscolo»*) — QUI C'ERA UN'ECCEZIONE, ED E' DURATA UNA RELEASE. La v6.629
+// abbassava l'iniziale solo se l'etichetta conteneva uno spazio, per non toccare «Change»
+// che Franco non aveva nominato. Era una scorciatoia, e il suo stesso commento diceva che
+// sarebbe diventata falsa il giorno che `filtroIt` fosse diventato «Change di figurina».
+// 📌 Nominata la parola, la regola torna a essere una riga sola: il rimedio piu'
+// semplice e' arrivato dalla richiesta, non da un ripensamento.
+// 🔴 E IL DESCRITTORE NON SI TOCCA. Scrivere `it: 'change'` li' dentro avrebbe
+// minuscolizzato anche badge, filtro, legenda e raggruppamenti — cinque posti per
+// aggiustarne uno. Cambia chi legge, non cio' che e' scritto.
+// 📌 In italiano resta invariato al plurale, e la ragione e' di Franco: «change» e' un
+// inglesismo, e gli inglesismi in italiano non hanno plurale. Lo faceva gia'
+// (`filtroIt: 'Change'`), ma non era scritto da nessuna parte perche'.
+function _etichettaConteggio(chiave, quanti, it) {
+  const v = VERSIONI_ARTICOLO.find(x => x.chiave === chiave);
+  if (!v) return chiave;
+  const sing = it ? (v.titoloIt || v.it) : (v.titoloEn || v.en);
+  const plur = it ? (v.filtroIt || sing) : (v.filtroEn || sing);
+  const t = (quanti === 1) ? sing : plur;
+  return t.charAt(0).toLowerCase() + t.slice(1);
 }
 
 function tipiPresenti(seriesId, section) {
@@ -36772,15 +36855,13 @@ function renderSeriesMeta(s) {
 : (nm.p + (it ? ' set base' : ' base set'))),
       false, nm.f, 'var(--type-base)'));
     if (g.variation.length) m.push(colonna(BULLET, g.variation,
-      it ? (g.variation.length === 1 ? 'variazione ufficiale' : 'variazioni ufficiali')
-         : (g.variation.length === 1 ? 'official variation' : 'official variations'),
+      _etichettaConteggio('variation', g.variation.length, it),
       false, true, 'var(--type-official)'));
     if (g.unofficial.length) m.push(colonna(BULLET, g.unofficial,
-      it ? (g.unofficial.length === 1 ? 'variazione non ufficiale' : 'variazioni non ufficiali')
-         : (g.unofficial.length === 1 ? 'unofficial variation' : 'unofficial variations'),
+      _etichettaConteggio('unofficialVariation', g.unofficial.length, it),
       false, true, 'var(--type-unofficial)'));
     if (g.change.length) m.push(colonna(BULLET, g.change,
-      'Change', false, false, 'var(--type-change)'));
+      _etichettaConteggio('change', g.change.length, it), false, false, 'var(--type-change)'));
     // 🆕 v6.623 (Franco: *«nelle numeriche dei retro sbaglio o mancano i retro omaggio?»*)
     // 🔴 NON SBAGLIAVA: «tipiPresenti» calcolava «free» e nessuno lo disegnava. Cinque
     // versioni vive, quattro righe — e 220 articoli fuori da ogni conto.
@@ -36795,12 +36876,10 @@ function renderSeriesMeta(s) {
     // 📌 Sta fra i change e gli errori di stampa perche' e' l'ordine di «VERSIONI_ARTICOLO»,
     // lo stesso di badge, pillole e filtri.
     if (g.free.length) m.push(colonna(BULLET, g.free,
-      it ? (g.free.length === 1 ? 'omaggio' : 'omaggi')
-         : (g.free.length === 1 ? 'free version' : 'free versions'),
+      _etichettaConteggio('free', g.free.length, it),
       false, false, 'var(--type-free)'));
     if (g.printError.length) m.push(colonna(BULLET, g.printError,
-      it ? (g.printError.length === 1 ? 'errore di stampa' : 'errori di stampa')
-         : (g.printError.length === 1 ? 'print error' : 'print errors'),
+      _etichettaConteggio('printError', g.printError.length, it),
       false, false, 'var(--type-printerror)'));
     // ♻️ v6.421 - QUI IL FUCSIA SE NE VA, E QUESTA RELEASE REVOCA UNA SCELTA DELLA v6.004.
     // Allora Franco l'aveva voluto fucsia con un argomento che era giusto: su questa riga ogni
@@ -36817,17 +36896,28 @@ function renderSeriesMeta(s) {
     // 🆕 v6.429 - il totale NON comprende gli errori di stampa (vedi `senzaErroriDiStampa`).
     // ⚠️ Il conto passa anche a `miei()` dentro `colonna`, quindi la riga «N nella tua lista» del
     // totale segue: se cosi' non fosse, la lista potrebbe dire un numero piu' grande del totale.
-    const _totali = senzaErroriDiStampa(g.items);
+    // 🔴 v6.632 (Franco: *«nel totale conta anche gli errori di stampa, cosi da togliere
+    // (+ 2 errori di stampa)»*) — QUI SI REVOCA LA v6.429, CHE ERA SUA: *«il contatore
+    // "figurine" credo conti tutto, quindi anche gli errori di stampa; no! quelli
+    // escludiamoli»*. Adesso il totale e' il totale, e la parentesi che spiegava
+    // l'esclusione non ha piu' niente da spiegare.
+    // ⚠️ L'informazione non si perde: la colonna «N errori di stampa» resta qui sopra,
+    // col suo colore. Cambia il totale, non cio' che si vede.
+    // 🔴 E DA OGGI QUESTA RIGA E IL BADGE DELLA CARD DICONO NUMERI DIVERSI: la card
+    // (`seriesCardHTML`) continua a chiamare `senzaErroriDiStampa` e dira' 368 dove qui
+    // si legge 370. E' una scelta di Franco, messo davanti a «tutti e due o solo le
+    // numeriche»: ha detto solo le numeriche.
+    // ⚠️ E' LA DIVERGENZA CHE LA v6.429 AVEVA CHIUSO, RIAPERTA APPOSTA. Sta scritto qui E
+    // nella card, perche' il pericolo di una divergenza voluta e' che qualcuno la trovi
+    // fra un mese, la creda un difetto e la «ripari» — cancellando una decisione senza
+    // sapere che qualcuno l'aveva presa.
+    const _totali = g.items;
     if (_totali.length || alwaysTotal) m.push(colonna(BULLET, _totali,
       // v6.067 (Franco) - "368 totali" al posto di "368 figurine in totale": stessa ragione della
       // riga del set base, e in piu' sparisce anche il "in", che non serviva a niente.
-      // 🆕 v6.507 - «N totali (+ M errori di stampa)». La coda è la STESSA funzione che usa
-      // il badge della card: i due posti dicono lo stesso numero sulla stessa cosa, quindi
-      // devono anche spiegarlo con le stesse parole. È il §12-bis applicato al testo, non
-      // solo ai conti.
-      // 📌 Qui gli errori di stampa hanno GIÀ una colonna tutta loro, poche righe sopra:
-      // la coda non aggiunge un dato nuovo, dice che quel dato NON è dentro questo totale.
-      (it ? 'in totale' : 'in total') + codaErroriDiStampa(g.items),
+      // 🗑️ v6.632 - QUI C'ERA LA CODA «(+ M errori di stampa)» della v6.507, e non c'e'
+      // piu': diceva che quel dato NON era dentro il totale, e adesso ci sta dentro.
+      (it ? 'in totale' : 'in total'),
       true, nm.f, 'var(--accent)'));
     return m;
   }
@@ -42269,6 +42359,7 @@ function adminTab(tab) {
   if (tab === 'risorse') renderAdminRisorse();
   if (tab === 'foto') renderAdminFoto();
   if (tab === 'funzioni') renderAdminFunzioni(); // v6.055
+  if (tab === 'gsc') renderAdminGsc();           // v6.633
   if (tab === 'errori') renderAdminErrori();
   if (tab === 'figurine') renderAdminFigurineInvisibili(); // v6.080
   if (tab === 'email') { renderEmailLog(); refreshEmailCountWidgets(); }
@@ -51089,6 +51180,388 @@ async function moveFigurinesToSeries() {
 // li' il controllo che conta e' "quanti nomi si accorciano?", e lo si puo' fare solo se si vede
 // l'elenco prima di scrivere.
 let _pianoAllinea = null;
+
+// ════════════════════════════════════════════════════════════════════════════
+//  🆕 v6.633 — LE PAGINE PER GOOGLE, generate dalla console admin.
+//  Franco: «ma per generare queste pagine devo sempre passare da te? perche' non mi rendi
+//  autonomo?». Prima il codice stava in `strumenti\genera-pagine-serie.js`, da incollare in
+//  console: un gesto da programmatore per una cosa che si rifa' a ogni ritocco di un testo.
+//  🔴 E c'era un secondo motivo, tecnico: Chrome BLOCCA i download avviati da uno script senza
+//  un clic. Da qui i download nascono da un gesto di Franco, e non vengono bloccati.
+// ════════════════════════════════════════════════════════════════════════════
+
+// 🔴 LE PAGINE SI GUARDANO CON L'OCCHIO DI GOOGLEBOT, cioe' da sloggati: `getData` toglie gli
+//    invisibili e le serie nascoste a chi non e' admin (v6.080/v6.584), e Googlebot admin non lo
+//    e' mai. Si azzera `currentUser` per la durata del giro e lo si rimette, come per la lingua.
+//    Il filtro NON e' riscritto qui: resta dentro `getData`. Cambia chi guarda, non la regola.
+// ⚠️ Il `finally` non e' prudenza generica: se qualcosa esplodesse a meta', Franco resterebbe
+//    sloggato e in inglese nella sua console, senza nessun errore a spiegarglielo.
+function _gscConPanniGooglebot(fn) {
+  const utente = (typeof currentUser !== 'undefined') ? currentUser : null;
+  const lingua = (typeof currentLang !== 'undefined') ? currentLang : 'it';
+  try { currentUser = null; return fn(); }
+  finally { currentUser = utente; currentLang = lingua; }
+}
+
+function _gscSerie() {
+  // 📌 Il filtro e' letto dai DATI, non da un elenco scritto qui: il giorno che una serie esce
+  //    dalla costruzione entra da se'. Franco, 7 settembre: «per le serie in costruzione non
+  //    facciamo nulla in Google».
+  return getData('series', []).filter(s => !s.inCostruzione && !s.serieContenitore);
+}
+
+const _GSC_PRE = 'https://res.cloudinary.com/ddpsge9d8/image/upload/';
+
+const _gscEsc = x => String(x == null ? '' : x)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+const _gscSlug = x => String(x || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+  .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+// 🔴 GLI INDIRIZZI IN UN POSTO SOLO: `canonical`, `og:url` e i due `hreflang` devono dire la
+//    stessa cosa, e quattro copie della stessa stringa divergono al primo ritocco.
+// ⚠️ Lo slug inglese e' l'UNICA traduzione automatica: «serie» -> «series» dentro lo slug,
+//    perche' nei dati il nome della serie esiste solo in italiano. Funziona finche' i nomi hanno
+//    la forma «Sgorbions serie N»; per una serie con un nome diverso i due slug coincidono —
+//    non e' un errore, ma nemmeno cio' che si voleva.
+function _gscIndirizzi(s) {
+  const it = _gscSlug(s.name);
+  const en = it.replace(/(^|-)serie(-|$)/, '$1series$2');
+  return { it: 'https://figurinesgorbions.it/serie/' + it + '/',
+           en: 'https://figurinesgorbions.it/en/series/' + en + '/',
+           file: { it: 'serie-' + it + '.html', en: 'en-series-' + en + '.html' } };
+}
+
+// ⚠️ LE SOLE PAROLE COPIATE DAL SITO sono quelle della riga BASE e del totale: non sono versioni,
+//    e in `VERSIONI_ARTICOLO` non ci sono. Tutte le altre le da' `_etichettaConteggio` (v6.629),
+//    che legge il descrittore; i nomi delle categorie li da' `getSectionLabel`. Questo e' l'unico
+//    punto di questa scheda che puo' divergere dal resto del sito.
+const _GSC_PAROLE = {
+  it: { nomi: { figurines: 'figurine', retros: 'retro', albums: 'album', extras: 'articoli', bustine: 'bustine' },
+        setBase: p => p + ' set base',
+        standard: n => n === 1 ? 'versione standard' : 'versioni standard',
+        totale: 'in totale', locale: 'it-IT' },
+  en: { nomi: { figurines: 'stickers', retros: 'retros', albums: 'albums', extras: 'items', bustine: 'wrappers' },
+        setBase: p => p + ' base set',
+        standard: n => n === 1 ? 'standard version' : 'standard versions',
+        totale: 'in total', locale: 'en-US' },
+};
+
+const _GSC_CSS = `:root{--bg:#1a1333;--card:#241a45;--dim:#b3a8d4;--txt:#f2eeff;--acc:#ffd166}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:Nunito,system-ui,sans-serif;line-height:1.55}
+.wrap{max-width:1100px;margin:0 auto;padding:1.5rem 1.1rem 4rem}
+a{color:var(--acc)}
+.bc{font-size:.85rem;color:var(--dim);margin-bottom:1.4rem}
+.bc a{color:var(--dim)}
+header{display:flex;gap:1.4rem;flex-wrap:wrap;align-items:flex-start;margin-bottom:1.6rem}
+header img{border-radius:10px;background:var(--card);flex-shrink:0}
+/* \U0001F534 v6.636 (Franco: «le 6 pagine devono avere la stessa struttura») — IL BLOCCO DI
+   DESTRA SI RESTRINGE INVECE DI ANDARE A CAPO. Era largo quanto il suo contenuto, e accanto
+   alla copertina restano 852px: misurati, la serie 2 ne chiedeva 933 e finiva SOTTO la foto,
+   la serie 3 ne chiedeva 832 e ci stava per venti pixel. La struttura della pagina dipendeva
+   da quanti articoli ha la serie.
+   \u2022 flex:1 1 0 -> la base non e' piu' il contenuto ma zero: prende lo spazio che c'e'.
+   \u2022 min-width:0 -> senza, un figlio flex non scende mai sotto la larghezza minima del
+     suo contenuto, e la riga delle numeriche lo impedirebbe. E' la trappola classica del
+     flexbox: «flex:1» da solo non basta, e non da' nessun segnale.
+   \u26a0\ufe0f NIENTE APICI INVERSI QUI DENTRO: questo commento vive in una template literal,
+     e un apice inverso la CHIUDE. Scritto la prima volta con gli apici, ha rotto app.js —
+     e nessuna delle 219 prove se n'e' accorta, perche' leggono il testo e non lo eseguono.
+   \u26a0\ufe0f NON si e' allargato il contenitore ne' rimpicciolita la copertina: sarebbero
+   rimedi tarati sui numeri di oggi, e la prima serie che cresce li scavalca. */
+header > div{flex:1 1 0;min-width:0}
+.titolo{display:flex;align-items:baseline;gap:.7rem;flex-wrap:wrap}
+h1{font-size:2rem;margin:.2rem 0 .4rem;line-height:1.15}
+.anno{font-size:.88rem;color:var(--txt);letter-spacing:2px;text-transform:uppercase}
+.num{display:grid;grid-template-columns:max-content 1fr;gap:.35rem 1.4rem;align-items:start;margin:.9rem 0 1.1rem;font-size:.92rem}
+.cat{font-weight:700;color:var(--txt)}
+.vv{display:flex;flex-wrap:wrap;align-items:flex-start;gap:.35rem 1.4rem}
+.pal{display:inline-block;width:9px;height:9px;border-radius:2px;background:currentColor;margin-right:7px;vertical-align:.05em}
+h2{font-size:1.35rem;margin:2.2rem 0 .3rem}
+.hint{color:var(--dim);font-size:.9rem;margin:0 0 1.1rem}
+.g{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.9rem}
+.c{background:var(--card);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.c img{width:100%;height:auto;display:block;background:#2f2456}
+.c .n{display:block;padding:.5rem .55rem 0;font-size:.78rem;color:var(--acc);font-weight:800;margin-top:auto}
+.c .nm{display:block;padding:0 .55rem .6rem;font-weight:700;font-size:.83rem;line-height:1.25}
+footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var(--dim);font-size:.88rem;text-align:center}
+footer a{color:var(--dim);text-decoration:underline}`;
+
+// 🔴 LE NUMERICHE NON RICALCOLANO NIENTE: chiedono a `tipiPresenti`, la stessa funzione che
+//    disegna la pagina della serie. Dentro c'e' `_eBase`, la quaterna di negazioni che la v6.235
+//    ha smesso di ricopiare a mano dopo OTTO copie.
+// 🔄 v6.632 — il totale COMPRENDE gli errori di stampa (Franco: «cosi da togliere (+ 2 errori di
+//    stampa)»). ⚠️ Il badge della card continua a escluderli: i due numeri divergono, ed e' voluto.
+// 📌 I colori si leggono dal browser VIVO con `getComputedStyle`, non da `style.css`: e' la
+//    medicina della v6.372, dove `--danger` era dichiarata due volte e a vincere era l'index.
+function _gscNumeriche(s, L) {
+  const P = _GSC_PAROLE[L];
+  const radice = getComputedStyle(document.documentElement);
+  const tinta = v => (radice.getPropertyValue(v) || '').trim();
+  const nfmt = q => q.toLocaleString(P.locale);
+  const BULLET = '<span class="pal"></span>';
+  const voce = (q, e, c) => '<span class="v" style="color:' + c + '">' + BULLET + nfmt(q) + ' ' + e + '</span>';
+  const righe = ['figurines', 'retros', 'bustine', 'albums', 'extras'].map(sez => {
+    const g = tipiPresenti(s.id, sez);
+    if (!g.items.length) return '';   // una categoria vuota non si annuncia a un visitatore
+    const m = [];
+    if (g.base.length) m.push(voce(g.base.length,
+      (['bustine', 'albums', 'extras'].includes(sez) ? P.standard(g.base.length) : P.setBase(P.nomi[sez])),
+      tinta('--type-base')));
+    if (g.variation.length) m.push(voce(g.variation.length, _etichettaConteggio('variation', g.variation.length, L === 'it'), tinta('--type-official')));
+    if (g.unofficial.length) m.push(voce(g.unofficial.length, _etichettaConteggio('unofficialVariation', g.unofficial.length, L === 'it'), tinta('--type-unofficial')));
+    if (g.change.length) m.push(voce(g.change.length, _etichettaConteggio('change', g.change.length, L === 'it'), tinta('--type-change')));
+    if (g.free.length) m.push(voce(g.free.length, _etichettaConteggio('free', g.free.length, L === 'it'), tinta('--type-free')));
+    if (g.printError.length) m.push(voce(g.printError.length, _etichettaConteggio('printError', g.printError.length, L === 'it'), tinta('--type-printerror')));
+    if (g.items.length) m.push(voce(g.items.length, P.totale, tinta('--accent')));
+    return '      <div class="cat">' + _gscEsc(getSectionLabel(sez)) + '</div>\n'
+         + '      <div class="vv">' + m.join('') + '</div>\n';
+  }).filter(Boolean);
+  return '    <div class="num">\n' + righe.join('') + '    </div>\n';
+}
+
+// 🔴 IL PARAGRAFO LO SCRIVE FRANCO (v6.626/628), e se il campo e' vuoto non c'e' paragrafo:
+//    nessun testo generato «per sicurezza», che sarebbe finito in pagina proprio quando nessuno
+//    guarda. ⚠️ In inglese, se il testo manca, si ripiega sull'italiano — scelta di Franco — ma
+//    il paragrafo esce con `lang="it"`, cosi' Google sa che quel blocco non e' inglese.
+function _gscPagina(s, L) {
+  const U = _gscIndirizzi(s);
+  const F = getData('figurines', []);
+  const tutti = F.filter(f => f.seriesId === s.id);
+  const basi = tutti.filter(f => (f.section || 'figurines') === 'figurines' && !f.baseFigurineId)
+                    .sort((a, b) => (+a.number || 0) - (+b.number || 0));
+  const n = basi.length;
+  const testoIt = (s.testoPaginaSerieIt || '').trim();
+  const testoEn = (s.testoPaginaSerieEn || '').trim();
+  const testo = L === 'it' ? testoIt : (testoEn || testoIt);
+  const inItaliano = L === 'en' && !testoEn;
+  // ⚠️ Il NOME della serie non si traduce nemmeno in inglese: e' un nome proprio, ed e' come la
+  //    si cerca. Si traduce cio' che gli sta intorno.
+  const titolo = L === 'it' ? s.name + ' — tutte le ' + n + ' figurine | figurineSgorbions.it'
+                            : s.name + ' — all ' + n + ' stickers | figurineSgorbions.it';
+  const meta = L === 'it'
+    ? 'Elenco completo delle ' + n + ' figurine della ' + s.name + (s.year ? ' (Topps, ' + s.year + ')' : '')
+      + ': numeri, nomi, foto, retri, varianti ed errori di stampa.'
+    : 'Complete list of the ' + n + ' stickers in ' + s.name + (s.year ? ' (Topps, ' + s.year + ')' : '')
+      + ': numbers, names, photos, backs, variations and print errors.';
+  const cop = s.img || '';
+  // 🔴 LE CARD NON SONO LINK (Franco, 7 settembre: «iniziamo senza i link alle figurine»):
+  //    puntavano alle pagine per figurina, che non esistono. Il giorno che si fanno, qui torna
+  //    l'`<a href>` e nel CSS la regola `.c a`.
+  const card = f => {
+    const foto = _fotoFigurina(f, F) || '';
+    const alt = L === 'it' ? 'La figurina ' + f.name + ', n. ' + f.number + ' della ' + s.name
+                           : 'The sticker ' + f.name + ', no. ' + f.number + ' from ' + s.name;
+    return '<li class="c">'
+      + (foto ? '<img src="' + _gscEsc(foto.replace(_GSC_PRE, _GSC_PRE + 'w_240,q_auto,f_auto/'))
+            + '" alt="' + _gscEsc(alt) + '" loading="lazy" width="240" height="424">' : '')
+      + '<span class="n">' + _gscEsc(f.number) + '</span>'
+      + '<span class="nm">' + _gscEsc(f.name) + '</span></li>';
+  };
+  return '<!DOCTYPE html>\n<html lang="' + L + '">\n<head>\n<meta charset="UTF-8">\n'
+    + '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
+    + '<title>' + _gscEsc(titolo) + '</title>\n'
+    + '<meta name="description" content="' + _gscEsc(meta) + '">\n'
+    + '<link rel="canonical" href="' + U[L] + '">\n'
+    // 🔴 I due `hreflang` vanno su TUTTE E DUE le pagine, ognuno che nomina anche se stesso:
+    //    dichiarati da una parte sola, Google li ignora — e due pagine quasi uguali diventano
+    //    un duplicato, di cui ne sopravvive una.
+    + '<link rel="alternate" hreflang="it" href="' + U.it + '">\n'
+    + '<link rel="alternate" hreflang="en" href="' + U.en + '">\n'
+    + '<link rel="alternate" hreflang="x-default" href="' + U.it + '">\n'
+    + '<meta name="robots" content="index,follow,max-image-preview:large">\n'
+    + '<meta property="og:type" content="website">\n<meta property="og:site_name" content="Sgorbions">\n'
+    + '<meta property="og:url" content="' + U[L] + '">\n'
+    + '<meta property="og:title" content="' + _gscEsc(titolo) + '">\n'
+    + '<meta property="og:description" content="' + _gscEsc(meta) + '">\n'
+    + (cop ? '<meta property="og:image" content="' + _gscEsc(cop) + '">\n' : '')
+    + '<meta property="og:locale" content="' + (L === 'it' ? 'it_IT' : 'en_GB') + '">\n'
+    + '<meta name="twitter:card" content="summary_large_image">\n'
+    + '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+    + '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+    + '<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">\n'
+    + '<style>\n' + _GSC_CSS + '\n</style>\n</head>\n<body>\n<div class="wrap">\n\n'
+    // ⚠️ «Serie» non e' un link: `/serie/` non esiste. L'altra lingua invece si': e' l'unico
+    //    posto dove un lettore la cerca, e per Google e' il link che rende vivi gli hreflang.
+    + '<nav class="bc"><a href="/">figurineSgorbions.it</a> › ' + (L === 'it' ? 'Serie' : 'Series')
+    + ' › ' + _gscEsc(s.name) + ' · <a href="' + (L === 'it' ? U.en : U.it) + '">'
+    + (L === 'it' ? 'English' : 'Italiano') + '</a></nav>\n\n<header>\n'
+    + (cop ? '  <img src="' + _gscEsc(cop.replace(_GSC_PRE, _GSC_PRE + 'w_380,q_auto,f_auto/'))
+           + '" alt="' + (L === 'it' ? 'La copertina della ' : 'The cover of ') + _gscEsc(s.name)
+           + '" width="190" height="264">\n' : '')
+    + '  <div>\n    <div class="titolo"><h1>' + _gscEsc(s.name) + '</h1>'
+    + (s.year ? '<span class="anno">' + _gscEsc(s.year) + '</span>' : '') + '</div>\n'
+    + _gscNumeriche(s, L)
+    + '  </div>\n</header>\n\n'
+    + (testo ? '<p' + (inItaliano ? ' lang="it"' : '') + '>'
+             + _gscEsc(testo).replace(/\n/g, '<br>\n') + '</p>\n\n' : '')
+    + '<h2>' + (L === 'it' ? 'Tutte le figurine della ' : 'All the stickers in ')
+    + _gscEsc(s.name.replace(/^Sgorbions\s+serie\b/i, L === 'it' ? 'Serie' : 'Series')) + '</h2>\n'
+    + '<p class="hint">' + (L === 'it' ? 'Dalla n. ' : 'From no. ')
+    + _gscEsc(basi[0] ? basi[0].number : '?') + (L === 'it' ? ' alla n. ' : ' to no. ')
+    + _gscEsc(basi[n - 1] ? basi[n - 1].number : '?') + '.</p>\n'
+    + '<ul class="g">\n' + basi.map(card).join('\n') + '\n</ul>\n\n'
+    // 🔄 il footer e' quello della homepage. Il link alla privacy funziona dalla v6.627 in poi.
+    + '<footer>\n  <p>2026 <a href="/">figurinesgorbions.it</a> — '
+    + '<a href="/#privacy">Privacy Policy</a></p>\n</footer>\n\n</div>\n</body>\n</html>\n';
+}
+
+// 🔴 IL PIANO LO CALCOLA UNA FUNZIONE SOLA, e la usano sia l'anteprima sia la generazione. Se
+//    fossero due, quello che si legge e quello che si scarica potrebbero divergere — e' la
+//    regola n.1 del §14, che vale anche qui pur non essendo questa una procedura che scrive.
+function _gscPiano() {
+  return _gscConPanniGooglebot(() => {
+    const fuori = [];
+    // 🔄 v6.635 (Franco: *«ordina in modo diverso: serie 1 ita; serie 2 eng; etc»*)
+    // IL GIRO ESTERNO E' LA SERIE, non la lingua. Prima usciva it,it,it, en,en,en; adesso
+    // le due pagine di una serie stanno una sotto l'altra.
+    // 📌 Non e' ordinamento, e' RAGGRUPPAMENTO: le due pagine di una serie sono la
+    // stessa cosa in due lingue, e l'unica differenza che conta — se quella inglese sta
+    // ripiegando sull'italiano — si vede a colpo d'occhio solo se sono vicine.
+    // ⚠️ Nessun `sort`: l'ordine delle serie resta quello di `getData('series')`, cioe'
+    // quello del sito. Un ordinamento scritto qui sarebbe un secondo criterio accanto a
+    // quello, destinato a divergere il giorno che le serie si riordinano nella console.
+    for (const s of _gscSerie()) {
+      for (const L of ['it', 'en']) {
+        currentLang = L;
+        const html = _gscPagina(s, L);
+        const testoIt = (s.testoPaginaSerieIt || '').trim();
+        const testoEn = (s.testoPaginaSerieEn || '').trim();
+        fuori.push({
+          serie: s.name, lingua: L, nome: _gscIndirizzi(s).file[L], html,
+          kb: Math.round(html.length / 1024),
+          figurine: (html.match(/<li class="c">/g) || []).length,
+          parole: html.replace(/<(style|script)[\s\S]*?<\/\1>/g, ' ')
+                      .replace(/<[^>]*>/g, ' ').split(/\s+/).filter(Boolean).length,
+          // ⚠️ le due sole cose che NON si vedono dall'elenco dei file, e che sono la ragione
+          //    per cui l'anteprima esiste.
+          ripiego: L === 'en' && !testoEn && !!testoIt,
+          senzaTesto: !testoIt && !testoEn,
+        });
+      }
+    }
+    return fuori;
+  });
+}
+
+// 🆕 v6.634 (Franco: *«mettimi un link accanto ad ogni riga cosi posso scaricare un singolo file
+// (pagina) alla volta»*) — UNA RIGA SOLA, SCARICATA DA SE'.
+// 🔴 IL PIANO SI RICALCOLA, NON SI RICORDA. La forma comoda era tenerlo in una variabile
+// dall'anteprima e scaricare `piano[i].html`: fra l'anteprima e il clic possono passare minuti,
+// e in mezzo si puo' aver salvato il testo di una serie in un'altra scheda. Si scaricherebbe la
+// pagina di prima credendo di scaricare quella di adesso, senza nessun errore.
+// 📌 Costa il ricalcolo di sei pagine, che e' un batter d'occhio, e non lascia nessuno stato che
+// possa invecchiare. E' la regola n.1 del §14 — un calcolo solo per l'anteprima e per cio' che
+// si porta a casa — estesa alla singola riga.
+// ⚠️ E se quel nome nel piano nuovo non c'e' piu', vuol dire che la serie e' cambiata sotto i
+// piedi (messa in costruzione, resa invisibile, rinominata): si dichiara, non si scarica un
+// file a caso e non si tace.
+function _gscScaricaUna(nome) {
+  let p;
+  try { p = _gscPiano(); }
+  catch (e) { toast(e.message, 'error'); return; }
+  const x = p.find(y => y.nome === nome);
+  if (!x) {
+    toast(currentLang === 'it'
+      ? 'Questa pagina non c\'e\' piu\': la serie e\' cambiata. Rifai l\'anteprima.'
+      : 'This page is gone: the series changed. Run the preview again.', 'error');
+    _gscAnteprima();
+    return;
+  }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([x.html], { type: 'text/html;charset=utf-8' }));
+  a.download = x.nome;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+}
+
+function _gscAnteprima() {
+  const el = document.getElementById('gsc-esito');
+  if (!el) return;
+  let p;
+  try { p = _gscPiano(); }
+  catch (e) { el.innerHTML = '<p style="color:var(--danger);">' + _gscEsc(e.message) + '</p>'; return; }
+  const it = currentLang === 'it';
+  const rip = p.filter(x => x.ripiego), vuote = p.filter(x => x.senzaTesto);
+  el.innerHTML =
+    '<p style="color:var(--text);margin:0 0 .6rem;">' + p.length + (it ? ' pagine' : ' pages') + '</p>'
+    + '<table class="data-table" style="width:100%;"><thead><tr>'
+    // 🔄 v6.634 - PRIMA LA SERIE, POI IL FILE. La prima colonna e' quella con cui si
+    // CERCA la riga, e chi guarda questa tabella pensa «la serie 2», non
+    // «en-series-sgorbions-series-2.html»: il nome del file e' la conseguenza, e stava
+    // al posto della causa.
+    + '<th>' + (it ? 'Serie' : 'Series') + '</th><th>' + (it ? 'File' : 'File') + '</th>'
+    + '<th>KB</th><th>' + (it ? 'Figurine' : 'Stickers') + '</th><th>' + (it ? 'Parole' : 'Words') + '</th>'
+    + '<th></th><th></th></tr></thead><tbody>'
+    + p.map(x => '<tr>'
+        + '<td>' + _gscEsc(x.serie) + ' <span style="color:var(--muted);">' + x.lingua + '</span></td>'
+        + '<td style="font-family:monospace;font-size:.8rem;">' + _gscEsc(x.nome) + '</td>'
+        + '<td>' + x.kb + '</td><td>' + x.figurine + '</td><td>' + x.parole + '</td>'
+        + '<td style="color:var(--warn);font-size:.8rem;">'
+        + (x.senzaTesto ? (it ? '⚠️ nessun paragrafo' : '⚠️ no paragraph')
+          : x.ripiego ? (it ? '⚠️ paragrafo in italiano' : '⚠️ paragraph in Italian') : '')
+        + '</td>'
+        // 🆕 v6.634 - il tasto della singola riga. Il nome passa come argomento e non
+        // un indice: un indice punta a una posizione nell'elenco di PRIMA, e se nel
+        // frattempo una serie e' entrata o uscita scaricherebbe la riga sbagliata
+        // senza che niente lo dica. Gli slug sono [a-z0-9-], quindi l'apice non ci
+        // finisce dentro; `_gscEsc` copre comunque il caso.
+        + '<td><button class="btn-primary" style="padding:2px 10px;font-size:.8rem;" '
+        + 'onclick="_gscScaricaUna(\'' + _gscEsc(x.nome) + '\')">⬇️</button></td>'
+        + '</tr>').join('')
+    + '</tbody></table>'
+    + (rip.length ? '<p style="color:var(--warn);font-size:.85rem;margin-top:.7rem;">⚠️ '
+        + rip.length + (it ? ' pagine inglesi useranno il testo italiano: manca il loro testo nella scheda della serie.'
+                           : ' English pages will use the Italian text.') + '</p>' : '')
+    + (vuote.length ? '<p style="color:var(--warn);font-size:.85rem;margin-top:.4rem;">⚠️ '
+        + vuote.length + (it ? ' pagine non avranno nessun paragrafo di presentazione.'
+                             : ' pages will have no presentation paragraph.') + '</p>' : '');
+}
+
+// 📌 I download nascono da un CLIC di Franco, ed e' la ragione per cui questa scheda esiste:
+//    Chrome blocca quelli avviati da uno script senza un gesto dell'utente.
+function _gscGenera() {
+  let p;
+  try { p = _gscPiano(); }
+  catch (e) { toast(e.message, 'error'); return; }
+  p.forEach((x, i) => setTimeout(() => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([x.html], { type: 'text/html;charset=utf-8' }));
+    a.download = x.nome;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+  }, i * 300));
+  toast(currentLang === 'it' ? p.length + ' pagine scaricate' : p.length + ' pages downloaded', 'success');
+  _gscAnteprima();
+}
+
+function renderAdminGsc() {
+  const el = document.getElementById('admin-gsc-content');
+  if (!el) return;
+  const it = currentLang === 'it';
+  el.innerHTML =
+    '<div style="max-width:1100px;">'
+    + '<h3 style="font-family:var(--font-ui);margin-bottom:0.25rem;">🔍 Google Search Console</h3>'
+    + '<p style="color:var(--text);font-size:0.85rem;margin-bottom:1.5rem;">'
+    + (it ? 'Le pagine pubbliche delle serie, quelle che Google indicizza. Una per serie e per lingua.'
+          : 'The public series pages, the ones Google indexes. One per series and language.')
+    + '</p>'
+    + '<h4 style="font-family:var(--font-ui);color:var(--text);margin-bottom:.4rem;">'
+    + (it ? '1. Genera le pagine delle serie' : '1. Generate the series pages') + '</h4>'
+    + '<p class="form-hint" style="margin-bottom:.8rem;">'
+    + (it ? 'Il testo di ogni pagina si scrive nella scheda della serie, tab Descrizioni. Le serie in costruzione non entrano.'
+          : 'Each page text is written in the series form, Descriptions tab. Series under construction are excluded.')
+    + '</p>'
+    + '<button class="btn-primary" onclick="_gscAnteprima()" style="margin-right:.5rem;">'
+    + (it ? '👁️ Vedi cosa verrà generato' : '👁️ Preview') + '</button>'
+    + '<button class="btn-primary" onclick="_gscGenera()">'
+    + (it ? '⬇️ Genera e scarica' : '⬇️ Generate and download') + '</button>'
+    + '<div id="gsc-esito" style="margin-top:1.2rem;"></div>'
+    + '</div>';
+}
 
 function renderAdminFunzioni() {
   const el = document.getElementById('admin-funzioni-content');
