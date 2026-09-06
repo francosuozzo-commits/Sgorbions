@@ -313,14 +313,15 @@ body {
    Definita DOPO btn-primary: vince lo sfondo. Stessa taglia, cambia solo il colore. */
 .btn-admin { background: var(--action-admin); color: #ffffff; }
 .btn-admin:hover { transform: translateY(-2px); background: var(--action-admin-hover); box-shadow: 0 8px 30px rgba(var(--action-admin-rgb),0.4); }
-/* 🆕 v6.601 — LA VARIANTE SVUOTATA DI .btn-admin, e non e' un vezzo: «Ordina per creazione» ha
-   DUE stati — spento e acceso — e quel gradino era scritto a mano dentro un ternario, insieme a
-   tutto il resto del vestito. Un pulsante che si veste da solo non ha :hover, non ha l'ombra, e
-   ha misure sue: era la segnalazione di Franco («non sono come gli altri tasti admin»).
-   📌 La scala e' la stessa di «Salva e resta» / «Salva» nella scheda: un gradino, non due colori
-   diversi (v6.441). */
-.btn-admin-off { background: transparent; color: var(--action-admin); border: 1px solid var(--action-admin); }
-.btn-admin-off:hover { transform: translateY(-2px); background: rgba(var(--action-admin-rgb),0.12); box-shadow: 0 8px 30px rgba(var(--action-admin-rgb),0.25); }
+/* 🗑️ v6.611 — QUI STAVA `.btn-admin-off`, LA VARIANTE SVUOTATA, e se n'e' andata con i suoi
+   due soli utenti. Nata nella v6.601 per dare un gradino spento/acceso a «Ordina per
+   creazione»: trasparente col bordo arancione da spenta, piena da accesa.
+   🔴 REVOCATA DA FRANCO, che alla seconda segnalazione ha chiesto l'opposto: «pieni come tutti
+   gli altri». Lo stato non si perde — «Ordina per creazione» fa comparire la colonna Data
+   creazione, «Aggiornamento massivo» apre un pannello: segnali piu' grossi di un bordo.
+   📌 Non si lascia una classe senza utenti: il prossimo che la trova qui crede che sia un modo
+   previsto di vestire un tasto, e la usa. La storia resta scritta, cosi' se il gradino
+   servisse di nuovo si ritrova invece di reinventarlo. */
 
 /* 🔴 v6.601 — LA REGOLA DELLE ELIMINAZIONI, DETTA DA FRANCO E SCRITTA QUI PERCHE' NON SI RIAPRA
    UNA TERZA VOLTA: «abbiamo sempre detto che le eliminazioni fanno eccezione e sono sempre rosse».
@@ -337,7 +338,7 @@ body {
    commento e' qui sotto); la v6.441 glielo tolse per uniformare tre pulsanti, e il suo stesso
    commento si scrisse contro — «e' l'unico dei tre che DISTRUGGE dati, e il rosso era la sua unica
    differenza visibile». Poi qualcuno l'ha rimesso, e il documento non lo sapeva.
-   🔴 QUINDI: un pulsante che cancella NON prende mai .btn-admin ne' .btn-admin-off, nemmeno per
+   🔴 QUINDI: un pulsante che cancella NON prende mai .btn-admin, nemmeno per
    uniformare una fila. Se una fila sembra disomogenea, e' perche' uno dei suoi pulsanti fa una
    cosa diversa dagli altri. */
 /* IL PULSANTE CHE DISTRUGGE (v5.723). Non esisteva.
