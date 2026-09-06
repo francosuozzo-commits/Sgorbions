@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.606';
+const JS_VERSION = 'v6.607';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -39664,6 +39664,23 @@ let _VOCI_ERR_LATO = [];   // v6.534 - [{ lato, val }]
 function _soloVoceErroreLato(i) {
   const v = _VOCI_ERR_LATO[i]; if (!v) return;
   const s = _raggr('printerror'); if (!s) return;
+  const k = _K_VOCE_ERR(v.lato, v.val);
+  // 🆕 v6.607 (Franco: *«una volta accese, per spegnerle serve premere −»*) — IL RAMO CHE
+  // SPEGNE. Questa funzione era nata come copia di «_setRaggrFiltro» e ne aveva preso un
+  // ramo su due: c'era il «voglio vedere solo questa», mancava il «ho finito di guardarla».
+  // 🔴 Non dava errore — faceva una cosa sensata, solo diversa da ogni altra pillola del
+  // sito: il riclick RIMETTEVA la stessa scelta, quindi a schermo non succedeva niente.
+  // 📌 La condizione e' sulla COPPIA e non sul filtro (v6.604): lo stesso tipo vive su tutti
+  // e due i lati, e «e' rimasta accesa solo lei» e' una domanda sulle pillole premute.
+  // ⚠️ Il vincolo del lato non si spegne a mano: si RICAVA dalle pillole vive
+  // («_latiDaTipologia»), quindi svuotando la scelta se ne va per costruzione.
+  if (_VOCI_ERR_SCELTE.size === 1 && _VOCI_ERR_SCELTE.has(k)) {
+    _VOCI_ERR_SCELTE = new Set();
+    s.filtro = new Set();
+    currentItemPage = 1;
+    try { renderItems(); } catch(e) { console.error('renderItems (_soloVoceErroreLato)', e); }
+    return;
+  }
   s.filtro = new Set([v.val]);
   // 🔄 v6.604 — QUI STAVA `_filtroLatoErrore = new Set([v.lato])`, cioe' l'accensione del
   // padre. Il VINCOLO resta (lo porta la coppia qui sotto), la LUCE no: il lato lo dice
@@ -39673,6 +39690,38 @@ function _soloVoceErroreLato(i) {
   _soloQuestoRaggr('printerror');
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (_soloVoceErroreLato)', e); }
+}
+// 🆕 v6.607 (Franco: *«si metti TUTTE anche li»*) — TUTTE LE TIPOLOGIE DI UN LATO IN UN
+// COLPO. Era l'unico riquadro senza, e con il corpo della pillola che non spegneva (v6.534)
+// restava una strada sola invece di tre: niente «accendo tutte e tolgo col −».
+// 🔴 VALE PER UN LATO SOLO, e non e' una limitazione: il riquadro e' diviso in due sezioni
+// con la loro intestazione, e una pillola messa dentro una sezione non puo' voler dire
+// «anche l'altra». Chi le vuole tutte e due preme le due «Tutte».
+// ⚠️ NON chiama «_soloQuestoRaggr»: e' un gesto ADDITIVO, la scorciatoia di sette «+».
+// Chiamarlo spegnerebbe gli altri raggruppamenti, che sette «+» non fanno.
+// 📌 Gia' tutta accesa, SPEGNE quel lato: un interruttore, non un vicolo cieco. E' la
+// stessa scelta di «_tuttiRaggrFiltro» (v6.511).
+// 🔴 E una voce esce dal filtro solo se nessun ALTRO lato la sta ancora chiedendo: stessa
+// guardia di «_aggiungiVoceErroreLato». Con «DECENTRATA» accesa di qua e di la', spegnere
+// una sezione non deve spegnere l'altra.
+function _tutteVociErroreLato(lato) {
+  const s = _raggr('printerror'); if (!s) return;
+  const voci = _VOCI_ERR_LATO.filter(v => v.lato === lato);
+  if (!voci.length) return;
+  const tutte = voci.every(v => _VOCI_ERR_SCELTE.has(_K_VOCE_ERR(v.lato, v.val)));
+  for (const v of voci) {
+    const k = _K_VOCE_ERR(v.lato, v.val);
+    if (tutte) {
+      _VOCI_ERR_SCELTE.delete(k);
+      const _altrove = [..._VOCI_ERR_SCELTE].some(x => x.slice(x.indexOf('\u0000') + 1) === v.val);
+      if (!_altrove) s.filtro.delete(v.val);
+    } else {
+      _VOCI_ERR_SCELTE.add(k);
+      s.filtro.add(v.val);
+    }
+  }
+  currentItemPage = 1;
+  try { renderItems(); } catch(e) { console.error('renderItems (_tutteVociErroreLato)', e); }
 }
 // 📌 Il «+» aggiunge la tipologia a quelle accese e apre anche il suo lato: due sezioni
 // accese insieme sono una domanda legittima («tutte le DECENTRATA, di qua e di la'»).
@@ -39774,8 +39823,23 @@ function _corpoErroriPerLatoHTML(C) {
     }).join('');
     // ⚠️ Una sezione senza voci NON sparisce: resta la sua pillola a zero. E' la regola
     // di Franco del 30 agosto — non si nasconde niente, si spegne.
+    // 🆕 v6.607 - LA PILLOLA «TUTTE» DI QUESTA SEZIONE. Accesa quando lo sono TUTTE le sue
+    // voci: e' l'unico stato in cui la parola dice il vero, e ripremendola si spegne il lato.
+    // ⚠️ Non compare se le voci sono meno di due: «Tutte» su una pillola sola sarebbe un
+    // secondo modo di premere la stessa cosa, cioe' due comandi per un gesto.
+    // 📌 Il numero e' il totale del LATO, lo stesso che sta gia' nella sua intestazione.
+    const _tutteQui = voci.length > 1 && voci.every(([val]) => _VOCI_ERR_SCELTE.has(_K_VOCE_ERR(lato, val)));
+    const _tutteHTML = voci.length > 1
+      ? `<span onclick="_tutteVociErroreLato('${lato}')" title="${it ? (_tutteQui ? 'Togli tutte le tipologie di questo lato' : 'Accendi tutte le tipologie di questo lato') : (_tutteQui ? 'Remove all types on this side' : 'Turn on all types on this side')}" `
+        + `style="cursor:pointer;display:inline-flex;align-items:center;gap:0.3rem;`
+        + `background:${_tutteQui ? 'var(--accent)' : 'transparent'};border:1px solid var(--accent);`
+        + `border-radius:999px;padding:0.1rem 0.6rem;font-size:0.78rem;line-height:1.4;white-space:nowrap;">`
+        + `<span style="color:${_tutteQui ? 'var(--bg)' : 'var(--text)'};font-weight:700;text-transform:uppercase;letter-spacing:0.06em;">${it ? 'Tutte' : 'All'}</span>`
+        + `<span style="color:${_tutteQui ? 'var(--bg)' : 'var(--accent)'};font-weight:700;">${totale}</span></span>`
+      : '';
     return `<div style="margin-top:0.6rem;">${testa}`
       + `<div style="display:flex;flex-wrap:wrap;align-items:center;gap:0.4rem;margin-top:0.4rem;padding-left:0.2rem;">`
+      + _tutteHTML
       + (pillole || `<span style="color:var(--muted);font-style:italic;font-size:0.8rem;">${it ? 'nessuna tipologia con i filtri accesi adesso' : 'no type with the filters currently on'}</span>`)
       + `</div></div>`;
   };
