@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.608';
+const JS_VERSION = 'v6.609';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35352,7 +35352,7 @@ function renderCatalogSearch(q) {
                     + 'display:inline-flex;align-items:center;justify-content:center;'
                     + 'color:var(--muted);font-size:0.85rem;flex-shrink:0;">□</span>';
                 })()}
-                <span>${f.number ? '<span style="color:' + COL_IDENTITA + ';font-size:0.85rem;">'+f.number+'</span> ' : ''}<span style="color:${COL_IDENTITA};">${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}</span>${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.85rem;text-transform:uppercase;color:' + _COLORE_TIPO.change + ';">Change</span>' : ''}${mostraVersione ? _sep + _inVersione(varLabel) + (tipoLabel ? _sep + _inVersione(esc(tipoLabel)) : '') : ''}${(sec === 'retros' || _soloNomeENumero) ? '' : _codaRetro}</span>
+                <span>${f.number ? '<span style="color:' + COL_IDENTITA + ';font-size:0.85rem;">'+f.number+'</span> ' : ''}${_prefissoInvisibile(f)}<span style="color:${COL_IDENTITA};">${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}</span>${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.85rem;text-transform:uppercase;color:' + _COLORE_TIPO.change + ';">Change</span>' : ''}${mostraVersione ? _sep + _inVersione(varLabel) + (tipoLabel ? _sep + _inVersione(esc(tipoLabel)) : '') : ''}${(sec === 'retros' || _soloNomeENumero) ? '' : _codaRetro}</span>
               </span>`;
               }).join('') + '</div>').join('')}
             </div>
@@ -35485,15 +35485,54 @@ function _serieBloccata(s) {
   return !!(s && s.inCostruzione) && !currentUser?.isAdmin;
 }
 
-function _timbroInCostruzione(s) {
-  if (!s || !s.inCostruzione) return '';
-  const testo = currentLang === 'it' ? 'IN ARRIVO !' : 'COMING SOON !';
+// 🆕 v6.609 - LA FORMA DEL TIMBRO, IN UN POSTO SOLO. Nasce estraendo il corpo di
+// «_timbroInCostruzione» (v6.585) perche' Franco ne ha chiesto un secondo: «metti un timbro
+// INVISIBILE scritto in obliquo al centro». Ricopiarlo sarebbe stata la copia numero due,
+// destinata a divergere al primo ritocco — e questo file paga quel difetto da giorni.
+// 🔴 IL CORPO E' IN «cqw», CIOE' CENTESIMI DELLA LARGHEZZA DEL CONTENITORE, e chi lo usa
+// DEVE dichiarare «container-type:inline-size» sul contenitore. Senza, il cqw cade IN
+// SILENZIO sul viewport: misura lo schermo invece della card e continua a funzionare
+// mostrando la cosa sbagliata (lezione del 6 settembre, timbro giusto sul desktop e rotto
+// sul telefono). La regola ha due meta' e una sola non da' errore.
+// 📌 Concatenata e non template literal: puo' finire dentro il banco di una prova.
+function _timbroHTML(testo, colore) {
   return '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(-12deg);'
     + 'pointer-events:none;white-space:nowrap;z-index:2;'
-    + 'padding:0.3em 0.8em;border:max(1px,0.1em) solid var(--in-arrivo);border-radius:0.5em;'
-    + 'background:rgba(0,0,0,0.55);color:var(--in-arrivo);'
+    + 'padding:0.3em 0.8em;border:max(1px,0.1em) solid ' + colore + ';border-radius:0.5em;'
+    + 'background:rgba(0,0,0,0.55);color:' + colore + ';'
     + 'font-family:var(--font-ui);font-size:clamp(0.4rem,7.5cqw,0.95rem);font-weight:800;'
     + 'letter-spacing:0.08em;text-transform:uppercase;">' + testo + '</div>';
+}
+
+function _timbroInCostruzione(s) {
+  if (!s || !s.inCostruzione) return '';
+  return _timbroHTML(currentLang === 'it' ? 'IN ARRIVO !' : 'COMING SOON !', 'var(--in-arrivo)');
+}
+
+// 🆕 v6.609 (Franco: *«quando un articolo e' invisibile, fallo notare all'admin»*)
+// 📌 SOLO ADMIN, ed e' una scelta con un prezzo. «getData» toglie gia' gli invisibili a chi
+// non e' admin (v6.080), quindi oggi la guardia e' ridondante. Si mette lo stesso perche' se
+// un invisibile TRAPELASSE, un utente leggerebbe una parola che non puo' capire. Il prezzo,
+// dichiarato: quella perdita resta muta invece di essere denunciata dal timbro.
+// 🎨 Il colore e' quello di «IN ARRIVO !», scelto da Franco. I due non si confondono perche'
+// non compaiono mai insieme: quello sta sulle copertine di SERIE, questo sulle card degli
+// ARTICOLI.
+function _timbroInvisibile(f) {
+  if (!f || !f.invisibile || !currentUser?.isAdmin) return '';
+  return _timbroHTML(currentLang === 'it' ? 'INVISIBILE' : 'HIDDEN', 'var(--in-arrivo)');
+}
+
+// 🆕 v6.609 (Franco: *«io li aggiungerei un prefisso alla scritta del nome articoli»*)
+// 🔴 NELLA RICERCA GLOBALE IL TIMBRO NON CI STA, ED E' UNA MISURA: la miniatura di un
+// risultato e' 44px (v6.405). «IN ARRIVO !» misura 94 dentro 114, quindi qui il corpo
+// cadrebbe a ~3,3px — sotto il minimo del clamp, che lo terrebbe a 6,4 — e a quel corpo la
+// parola occupa ~48px dentro 44: uscirebbe dai bordi, come nella v6.586.
+// 📌 E il prefisso non tocca il DATO: e' presentazione. Il nome salvato, la ricerca per
+// parola e «fullName» non lo vedono nemmeno.
+function _prefissoInvisibile(f) {
+  if (!f || !f.invisibile || !currentUser?.isAdmin) return '';
+  return '<span style="color:var(--in-arrivo);font-weight:700;font-size:0.85rem;">('
+    + (currentLang === 'it' ? 'INVISIBILE' : 'HIDDEN') + ')</span> ';
 }
 
 function seriesCardHTML(s) {
@@ -41054,8 +41093,8 @@ function renderItems() {
       <!-- v6.555 - IL LATO SI DICHIARA QUI, UNA VOLTA. La coppia si disegna in cinque
            modi diversi (_retroViewMode): scrivere la cornice dentro ognuno voleva dire
            dieci punti da tenere allineati. Qui c'e' il FATTO, il disegno lo fa il CSS. -->
-      <div class="fig-img-placeholder"${_latoErrCard ? ` data-lato-errore="${_latoErrCard}"` : ''} style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;">
-        ${imgHTML}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}
+      <div class="fig-img-placeholder"${_latoErrCard ? ` data-lato-errore="${_latoErrCard}"` : ''} style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;container-type:inline-size;">
+        ${imgHTML}${_timbroInvisibile(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}
       </div>
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
