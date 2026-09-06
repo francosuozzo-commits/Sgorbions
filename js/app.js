@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.624';
+const JS_VERSION = 'v6.625';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -39316,6 +39316,21 @@ function _specchiettoTipiHTML(pairs, open, clickable, toggleFn, C, perColonna) {
   const collassabile = _potrebbeChiudersi && !_staFiltrando;
   if (!collassabile) open = true;
   const titoloTxt = clickable ? title : C.titoloFisso(it);
+  // 🔧 v6.625 (Franco: *«ma non avevi colorato di blu la frase "Filtra per versione"?»*)
+  // 🔴 LA v6.617 AVEVA COLORATO I TITOLI SBAGLIATI, e il suo `cambia` non se n'e' accorto
+  // perche' chiedeva 2 occorrenze e ne trovava 2. Di testate identiche pero' ce ne sono QUATTRO:
+  // due su `titoloTxt` («Filtra per categoria», «per sottocategoria») e due qui su `titoloHTML`
+  // — che sono le quattro che Franco aveva elencato: versione, tipologia di change, di omaggio,
+  // di errore di stampa. Un conto che torna non e' una prova di completezza: torna sulle copie
+  // che conosci, e tace su quelle che ci sono.
+  // 📌 Le due gia' azzurre restano azzurre: nessuno le aveva chieste, ma sono la stessa
+  // cosa, e sei titoli uguali si leggono meglio di quattro piu' due. Si torna indietro con due
+  // righe, ed e' una scelta — non un fatto.
+  // ✅ `prova-v6625` non conta piu' le occorrenze: pretende che NESSUNA testata resti in
+  // `--text`. La quinta copia, il giorno che nasce, trova una prova rossa.
+  // ⚠️ E LA PAROLA COLORATA QUI SOTTO NON SI TOCCA: sta in uno `<span>` INTERNO con `color:`
+  // esplicito, quindi l'azzurro del titolo le sta intorno senza coprirla. Coprirla avrebbe
+  // voluto dire cancellare la v6.419 per obbedire alla v6.617.
   // 🆕 v6.419 (Franco) - «change», «omaggio» ed «errore» nei titoli dei riquadri portano il
   // colore della loro versione, come gia' fanno le pillole li' sotto e i badge sulle card.
   // 📌 SOLO nei riquadri della RICERCA (`clickable`). Quelli della testata della serie hanno
@@ -39378,7 +39393,7 @@ function _specchiettoTipiHTML(pairs, open, clickable, toggleFn, C, perColonna) {
   let header = collassabile
     ? `<div onclick="${toggleFn}" style="${_STILE_ETICHETTA}cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
       + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '\u25bc' : '\u25b6'}</span>`
-      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--text);">${titoloHTML}</span>`
+      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--info);">${titoloHTML}</span>`
       + (open ? totaleSpan : '')
     : `<div style="${_STILE_ETICHETTA}display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">`
       // v6.270 - il segnaposto SOLO se e' un filtro a tenerlo aperto: nella testata il triangolino
@@ -39387,7 +39402,7 @@ function _specchiettoTipiHTML(pairs, open, clickable, toggleFn, C, perColonna) {
       // puo' esserci (niente toggle) non c'e' nessun posto da tenere, e uno spazio vuoto
       // sposterebbe il titolo a destra per niente - il difetto che la v6.270 stava evitando.
       + ((_staFiltrando && _potrebbeChiudersi) ? _TRIANGOLO_FINTO : '')
-      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--text);">${titoloHTML}</span>`
+      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--info);">${titoloHTML}</span>`
       + totaleSpan;
 header += `</div>`;
 
