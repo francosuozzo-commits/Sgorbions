@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.618"></script>
-<link rel="stylesheet" href="css/style.css?v=6.618">
+<script src="js/email.min.js?v=6.624"></script>
+<link rel="stylesheet" href="css/style.css?v=6.624">
 
 
 <style>
@@ -123,6 +123,15 @@
      📌 Un nome dice un SIGNIFICATO: un timbro «in arrivo» e un comando che
      cancella non significano la stessa cosa, quindi non condividono la variabile. */
   --in-arrivo:       #e8557c;
+  /* 🆕 v6.624 — IL GIALLO DEL CONTRASSEGNO DELLA VERSIONE (il pallino sulle card).
+     📌 Vale quanto `--type-unofficial`, e non e' un caso: si e' scelto un colore che la
+     tavolozza HA GIA', per non farne entrare uno nuovo e per non creare una coppia nuova da
+     misurare in `prova-v6372`.
+     🔴 Ma il NOME e' suo, ed e' la regola di `--in-arrivo` qui sopra: un numero di versione
+     e una variazione non ufficiale non significano la stessa cosa, quindi non condividono la
+     variabile. Il giorno che la tavolozza delle versioni ruota, questo non si muove con lei.
+     ⚖️ 5,81:1 su `--action-hover` #1d4ed8, che e' il fondo del pallino. Misurato. */
+  --num-versione:    #fff275;
   --danger-rgb:      232,85,124; }
 
 /* 🆕 v6.374 (Franco) — I COLORI DELLE QUATTRO SCATOLE DI LOG, e un interruttore per cambiarli.
@@ -1148,7 +1157,18 @@ button.back-btn { color:#ffffff; }
             </div>
             <div style="display:flex;flex-direction:column;gap:0.4rem;align-items:flex-end;flex-shrink:0;">
               <button id="detail-edit-series-btn" onclick="openAddSeriesModal(currentSeriesId)" style="display:none;font-size:0.92rem;padding:6px 14px;border-radius:8px;border:1px solid var(--action-admin);background:var(--action-admin);color:#ffffff;cursor:pointer;">&#9998; Modifica serie</button>
-              <button id="detail-ebay-series-btn" onclick="openSeriesEbayModal()" style="display:none;font-size:0.78rem;padding:4px 12px;border-radius:8px;border:1px solid rgba(var(--info-rgb),0.4);background:rgba(var(--info-rgb),0.12);color:var(--info);cursor:pointer;font-weight:600;">🏷️ Vista Ebay</button>
+              <!-- 🔄 v6.621 (Franco: *"il Tasto Vista ebay e' admin ma non e' come gli altri tasti"*)
+                   Si vestiva PER INTERO a mano: sei proprieta' inline, nessuna classe, un azzurro
+                   scritto a mano, niente :hover e — la cosa che contava — nessuna sparizione
+                   automatica sotto gli 860px. `.btn-admin` porta `display:none !important` per la
+                   regola "niente amministrazione da telefono" (v5.822); qui quella regola era
+                   affidata a un secondo `style.display` scritto in app.js. Due strade per la
+                   stessa cosa, e il prezzo non era un numero sbagliato: era un comando da
+                   amministratore visibile dove non deve.
+                   ⚠️ `display:none` RESTA, ed e' un'altra cosa: non e' vestito, e' lo stato
+                   iniziale. Il tasto compare solo per le serie che hanno articoli su eBay, e ad
+                   accenderlo e' app.js. -->
+              <button id="detail-ebay-series-btn" onclick="openSeriesEbayModal()" class="btn-primary btn-admin" style="display:none;font-size:0.9rem;padding:0.4rem 1.1rem;">🏷️ Vista Ebay</button>
             </div>
           </div>
           <div id="detail-meta" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;margin:0.4rem 0 0.6rem;font-size:0.82rem;color:var(--text);"></div>
@@ -3693,7 +3713,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.618"></script>
+<script src="js/app.js?v=6.624"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3717,7 +3737,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.618'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.624'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
