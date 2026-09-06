@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.618';
+const JS_VERSION = 'v6.624';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -36758,10 +36758,18 @@ function renderSeriesMeta(s) {
     if (g.base.length) m.push(colonna(BULLET, g.base,
       (['bustine','albums','extras'].includes(sez2)
         ? (it ? (g.base.length === 1 ? 'versione standard' : 'versioni standard') : (g.base.length === 1 ? 'standard version' : 'standard versions'))
-        // v6.067 (Franco) - via il nome dell'oggetto: "160 set base", non "160 figurine set base".
-        // La sezione la si sta gia' guardando, e il suo nome e' scritto sopra: ripeterlo su ogni
-        // riga allunga la colonna senza dire niente di nuovo.
-        : (it ? 'set base' : 'base set')),
+        // 🔄 v6.622 (Franco: *«la numerica "160 set base" diventa "160 figurine set base"»* e
+        // *«per i retro, "72 set base" diventa "72 retro set base"»*)
+        // 🔴 QUI STAVA LA v6.067, CHE ERA DI FRANCO, e diceva l'opposto: «via il nome
+        // dell'oggetto — la sezione la si sta gia' guardando, e il suo nome e' scritto sopra».
+        // 📌 Era vero NEL SUO CONTESTO: dentro una sezione il nome sta in alto e ripeterlo non
+        // aggiunge niente. Ma la stessa riga si vede anche nella PAGINA DELLA SERIE, dove le
+        // cinque categorie stanno una sotto l'altra — e li' il nome non ripete, distingue.
+        // Messo davanti alla scelta «solo nell'hub o ovunque», Franco ha detto ovunque.
+        // ⚠️ Il nome viene da «nm.p», cioe' il PLURALE gia' nella lingua corrente: il
+        // descrittore lo porta con se', e una sezione nuova non ha bisogno di una riga qui.
+        // 📌 Plurale e non singolare: «160 figurine set base», «72 retro set base».
+: (nm.p + (it ? ' set base' : ' base set'))),
       false, nm.f, 'var(--type-base)'));
     if (g.variation.length) m.push(colonna(BULLET, g.variation,
       it ? (g.variation.length === 1 ? 'variazione ufficiale' : 'variazioni ufficiali')
@@ -36773,6 +36781,23 @@ function renderSeriesMeta(s) {
       false, true, 'var(--type-unofficial)'));
     if (g.change.length) m.push(colonna(BULLET, g.change,
       'Change', false, false, 'var(--type-change)'));
+    // 🆕 v6.623 (Franco: *«nelle numeriche dei retro sbaglio o mancano i retro omaggio?»*)
+    // 🔴 NON SBAGLIAVA: «tipiPresenti» calcolava «free» e nessuno lo disegnava. Cinque
+    // versioni vive, quattro righe — e 220 articoli fuori da ogni conto.
+    // ⚠️ IL DANNO NON ERA LA RIGA MANCANTE, ERANO I CONTI CHE NON TORNAVANO: sui Retro
+    // della serie 1 le righe visibili sommavano 72 su un totale di 218. Centoquarantasei
+    // articoli spariti, e chi leggeva non aveva modo di sapere dove.
+    // 🔴 TERZA VOLTA CHE L'OMAGGIO SI DIMENTICA: la v6.248 lo scriveva gia' («il ramo
+    // dell'omaggio mancava ANCHE QUI, gemello del buco della v6.241»). Non e' distrazione:
+    // l'omaggio e' l'unica versione arrivata DOPO (v6.246-248), e ogni elenco scritto a mano
+    // prima di allora ne ha quattro. Per questo «prova-v6623» conta le righe e le confronta
+    // con le versioni DICHIARATE: la sesta, quando arrivera', trovera' una prova rossa.
+    // 📌 Sta fra i change e gli errori di stampa perche' e' l'ordine di «VERSIONI_ARTICOLO»,
+    // lo stesso di badge, pillole e filtri.
+    if (g.free.length) m.push(colonna(BULLET, g.free,
+      it ? (g.free.length === 1 ? 'omaggio' : 'omaggi')
+         : (g.free.length === 1 ? 'free version' : 'free versions'),
+      false, false, 'var(--type-free)'));
     if (g.printError.length) m.push(colonna(BULLET, g.printError,
       it ? (g.printError.length === 1 ? 'errore di stampa' : 'errori di stampa')
          : (g.printError.length === 1 ? 'print error' : 'print errors'),
@@ -36802,7 +36827,7 @@ function renderSeriesMeta(s) {
       // solo ai conti.
       // 📌 Qui gli errori di stampa hanno GIÀ una colonna tutta loro, poche righe sopra:
       // la coda non aggiunge un dato nuovo, dice che quel dato NON è dentro questo totale.
-      (it ? 'totali' : 'total') + codaErroriDiStampa(g.items),
+      (it ? 'in totale' : 'in total') + codaErroriDiStampa(g.items),
       true, nm.f, 'var(--accent)'));
     return m;
   }
@@ -36812,15 +36837,30 @@ function renderSeriesMeta(s) {
   if (!currentSection) {
     metaEl.classList.add('meta-hub');  // v5.886: su mobile le numeriche dell'hub vanno sotto la foto
     const cats = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
-    const _pfx = c => '<div class="hub-cat-name" style="font-weight:700;color:var(--text);min-width:96px;flex-shrink:0;">' + getSectionLabel(c) + '</div>';
+    // 🔄 v6.622 (Franco: *«le numeriche vorrei iniziassero tutte alla stessa distanza dal
+    // margine sx»*) — VIA IL «min-width:96px», e con lui il disallineamento.
+    // 🔴 MISURATO PRIMA DI TOCCARE: «Figurine con retro» misura 108px e sforava quel 96,
+    // quindi le SUE numeriche partivano da 490 e tutte le altre da 477. Tredici pixel,
+    // sistematici, e proprio sulla riga a cui le altre vanno allineate.
+    // ✅ La larghezza non si porta a 108 a mano: sarebbe giusta oggi e sbagliata il giorno
+    // che una sezione cambia nome, senza che nessuno sappia perche'. La decide la GRIGLIA
+    // qui sotto, che da' alla prima colonna la larghezza della sua voce piu' lunga.
+    const _pfx = c => '<div class="hub-cat-name" style="font-weight:700;color:var(--text);">' + getSectionLabel(c) + '</div>';
     // v6.069 (Franco) - righe piu' vicine fra loro: 0.7rem -> 0.35rem. Il gap e' uno solo e vale
     // per tutte e cinque le categorie, quindi restano equidistanti - stringerne alcune e non altre
     // avrebbe fatto sembrare che le prime e le ultime appartengano a due elenchi diversi.
     // Anche il gap DENTRO la riga scende a 0.35: si vede solo quando la riga va a capo (schermi
     // stretti), ma se restasse a 0.7 una riga spezzata risulterebbe piu' distanziata di due righe
     // intere, che e' il contrario di quello che deve comunicare.
-    metaEl.innerHTML = '<div class="hub-wrap" style="display:flex;flex-direction:column;gap:0.35rem;width:100%;">' +
-      cats.map(c => '<div class="hub-cat-row" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.35rem 1.4rem;">' + _pfx(c) + sezRows(c, true).join('') + '</div>').join('') +
+    // 🔄 v6.622 — DUE COLONNE, e la prima si misura da sola («max-content»): tutte le
+    // numeriche partono dallo stesso punto, quello dell'etichetta piu' lunga.
+    // ⚠️ Le righe diventano «display:contents»: non sono piu' contenitori, sono due celle
+    // della griglia. E le numeriche vanno avvolte in un contenitore loro, o finirebbero
+    // una per colonna — la griglia conta le CELLE, non le righe che uno immagina.
+    metaEl.innerHTML = '<div class="hub-wrap" style="display:grid;grid-template-columns:max-content 1fr;gap:0.35rem 1.4rem;width:100%;align-items:start;">' +
+      cats.map(c => '<div class="hub-cat-row" style="display:contents;">' + _pfx(c)
+        + '<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.35rem 1.4rem;">'
+        + sezRows(c, true).join('') + '</div></div>').join('') +
       '</div>';
     posizionaTestataSerie();   // v5.936 — dopo il render: qui la descrizione torna in coda al blocco eroe
     try { _applicaChiusuraTestata(); } catch(e) {}   // v6.001
@@ -36968,8 +37008,16 @@ function updateSectionCounts() {
     // ⚠️ L'inglese NON cambia: `items` era gia' la parola giusta. Una modifica sola,
     // e non due, perche' le due lingue non erano sbagliate allo stesso modo.
     const unit = currentLang === 'it' ? ' articoli' : ' items';
-    if (currentUser && total > 0) {
-      const ownedCount = items.filter(f => owned.includes(f.id)).length;
+    // 🔧 v6.624 (Franco: *«nelle card della pagina della serie, dove metti (N nella tua
+    // lista) non dire nulla se N e' zero, come facciamo da altre parti»*)
+    // 🔴 GUARDAVA IL NUMERO SBAGLIATO: `total > 0` dice «esistono articoli», non «ne hai».
+    // Cosi' ogni sezione mai toccata scriveva «(0 nella tua lista)» — una riga che occupa spazio
+    // per dire che non c'e' niente da dire.
+    // 📌 «come facciamo da altre parti» e' la v5.885, nelle numeriche della scheda serie:
+    // «se ne possiedi 0, niente riga». Questa card era il punto che non la seguiva.
+    const ownedCount = (currentUser && total > 0)
+      ? items.filter(f => owned.includes(f.id)).length : 0;
+    if (ownedCount > 0) {
       // 🔄 v6.479 (Franco: *"proviamo a mettere, ovunque nel sito, «x nella tua lista»
       // tra ()"*, con questa card per esempio) — LE PARENTESI NON SONO UNA NOVITA':
       // la pagina delle Liste scrive gia' «(N / M nella tua lista)». Qui e negli
@@ -38730,10 +38778,22 @@ function _retroCatPanelHTML(pairs, open, clickable, toggleFn, perColonna) {
   // ⚠️ I TRE PEZZI RESTANO TRE, ed e' la regola della v6.426 detta da Franco — «solo il
   // numero in lime; la scritta totale lasciamola bianca». Le parentesi non sono un dato:
   // prendono il grigio del separatore che hanno sostituito.
-  const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">(</span>`
+  // 🔧 v6.624 (Franco: *«come mai ci sono degli spazi prima e dopo di "N in totale"?
+  // possiamo toglierli e lasciare le parentesi attaccate al testo?»*)
+  // 🔴 NEL SORGENTE QUEGLI SPAZI NON C'ERANO: le quattro span sono concatenate con `+`, fra
+  // «(» e la cifra non c'e' un carattere. Li metteva il CSS — la testata e' `display:flex` con
+  // `gap:0.5rem`, e queste span erano figlie DIRETTE di quel div, cioe' quattro flex item. Il gap
+  // nato per staccare il triangolino dal titolo staccava anche la parentesi dalla sua cifra.
+  // ✅ IL CONTENITORE LE RIPORTA A ESSERE TESTO: dentro una span normale sono inline, e l'inline
+  // non ha gap. Il mezzo rem fra titolo e parentesi resta, perche' quello lo si voleva.
+  // ⚠️ Lo spazio davanti a «in totale» RESTA, ed e' scritto apposta: separa la cifra dalla
+  // parola. Toglierli tutti avrebbe dato «(14in totale)».
+  const totaleSpan = `<span>`
+    + `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">(</span>`
     + `<span style="color:var(--accent);font-size:0.82rem;font-weight:400;">${total}</span>`
     + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;"> ${it ? 'in totale' : 'in total'}</span>`
-    + `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">)</span>`;
+    + `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">)</span>`
+    + `</span>`;
   let header = collassabile
     ? `<div onclick="${toggleFn}()" style="${_STILE_ETICHETTA}cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
       + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '\u25bc' : '\u25b6'}</span>`
@@ -39299,10 +39359,22 @@ function _specchiettoTipiHTML(pairs, open, clickable, toggleFn, C, perColonna) {
   // ⚠️ I TRE PEZZI RESTANO TRE, ed e' la regola della v6.426 detta da Franco — «solo il
   // numero in lime; la scritta totale lasciamola bianca». Le parentesi non sono un dato:
   // prendono il grigio del separatore che hanno sostituito.
-  const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">(</span>`
+  // 🔧 v6.624 (Franco: *«come mai ci sono degli spazi prima e dopo di "N in totale"?
+  // possiamo toglierli e lasciare le parentesi attaccate al testo?»*)
+  // 🔴 NEL SORGENTE QUEGLI SPAZI NON C'ERANO: le quattro span sono concatenate con `+`, fra
+  // «(» e la cifra non c'e' un carattere. Li metteva il CSS — la testata e' `display:flex` con
+  // `gap:0.5rem`, e queste span erano figlie DIRETTE di quel div, cioe' quattro flex item. Il gap
+  // nato per staccare il triangolino dal titolo staccava anche la parentesi dalla sua cifra.
+  // ✅ IL CONTENITORE LE RIPORTA A ESSERE TESTO: dentro una span normale sono inline, e l'inline
+  // non ha gap. Il mezzo rem fra titolo e parentesi resta, perche' quello lo si voleva.
+  // ⚠️ Lo spazio davanti a «in totale» RESTA, ed e' scritto apposta: separa la cifra dalla
+  // parola. Toglierli tutti avrebbe dato «(14in totale)».
+  const totaleSpan = `<span>`
+    + `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">(</span>`
     + `<span style="color:var(--accent);font-size:0.82rem;font-weight:400;">${total}</span>`
     + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;"> ${it ? 'in totale' : 'in total'}</span>`
-    + `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">)</span>`;
+    + `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">)</span>`
+    + `</span>`;
   let header = collassabile
     ? `<div onclick="${toggleFn}" style="${_STILE_ETICHETTA}cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
       + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '\u25bc' : '\u25b6'}</span>`
@@ -41184,8 +41256,9 @@ function renderItems() {
            modi diversi (_retroViewMode): scrivere la cornice dentro ognuno voleva dire
            dieci punti da tenere allineati. Qui c'e' il FATTO, il disegno lo fa il CSS. -->
       <div class="fig-img-placeholder"${_latoErrCard ? ` data-lato-errore="${_latoErrCard}"` : ''} style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;container-type:inline-size;">
-        ${imgHTML}${_timbroInvisibile(f)}${_contrassegnoVariazioneHTML(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}
+        ${imgHTML}${_timbroInvisibile(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}
       </div>
+      ${_contrassegnoVariazioneHTML(f)}
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
         ${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : famigliaHTML)}
@@ -44758,18 +44831,46 @@ function _tipoErroreStampa(f, allFigs, indice) {
 function _contrassegnoVariazioneHTML(f) {
   const n = _numeroVersione(f, getData('figurines', []));
   if (!n) return '';
-  // 🔴 v6.618 — IL COLORE VIENE DALLA VERSIONE, e qui non e' decorazione: le due numerazioni
-  // ripartono tutte e due da 1, quindi sulla stessa figurina ci sono due «1». Il colore e'
-  // l'unica cosa che dice QUALE dei due, ed e' lo stesso codice di badge, pillole e filtri.
-  const _vC = _versioneDiChiave(_chiaveTipo(f));
-  const _col = (_vC && _vC.colore) || 'var(--text)';
-  return '<div title="' + (currentLang === 'it' ? 'Variazione non ufficiale n. ' : 'Unofficial variation no. ') + n
-    + '" style="position:absolute;right:6px;bottom:6px;z-index:2;pointer-events:none;'
-    + 'min-width:1.55em;height:1.55em;padding:0 0.35em;border-radius:999px;'
-    + 'background:' + _col + ';color:var(--bg);'
-    + 'font-family:var(--font-ui);font-size:clamp(0.55rem,7cqw,0.85rem);font-weight:800;'
-    + 'display:inline-flex;align-items:center;justify-content:center;line-height:1;">'
-    + n + '</div>';
+  // 🔄 v6.620 (Franco: *«il numero sarebbe piu' bello averlo sotto la cornice delle foto,
+  // sempre a quella altezza orizzontale»*) — UNA RIGA SUA, NON PIU' SOVRAPPOSTO.
+  // 📌 «sempre a quella altezza» si ottiene proprio uscendo dalla foto: nel flusso della
+  // card la riga sta allo stesso posto su tutte, qualunque proporzione abbia l'immagine.
+  // ⚠️ E IL CORPO NON E' PIU' IN «cqw»: qui fuori non c'e' il contenitore che dichiara
+  // «container-type», e un cqw cadrebbe IN SILENZIO sul viewport — misurando lo schermo
+  // invece della card. E' la lezione del 6 settembre applicata al contrario: non «aggiungi
+  // il container», ma «togli il cqw dove il container non c'e'».
+  // 🔄 v6.620 (Franco: *«non serve che riprenda il colore … per ora tutti bianchi»*)
+  // 🗑️ VIA IL COLORE DELLA VERSIONE E VIA IL PALLINO. Il tondo colorato serviva a staccare
+  // dall'immagine quando il numero le stava SOPRA; sotto la cornice non ha piu' niente da
+  // cui staccarsi, e un fondo pieno sarebbe rimasto li' a dire qualcosa che nessuno chiede.
+  // 📌 E il colore per versione non serve piu' nemmeno per disambiguare: dalla v6.618 la
+  // numerazione e' UNA sola e continua, quindi due card non portano mai lo stesso numero.
+  // Era la ragione per cui esisteva, ed e' caduta con le due numerazioni separate.
+  // 🔄 v6.624 (Franco: *«ora che lo hai messo fuori dalla cornice non si vede piu' che e'
+  // un pallino rotondo. Possiamo colorarlo? Prova a farlo a sfondo blu e numero giallo»*)
+  // 🔴 IL TONDO TORNA, E LA RAGIONE PER CUI ERA ANDATO VIA ERA SBAGLIATA. La v6.620
+  // scriveva: «sotto la cornice non ha piu' niente da cui staccarsi». Guardava l'immagine e si
+  // dimenticava la card: fuori dalla foto il numero non si stacca dalla FOTO, ma non si stacca
+  // piu' da niente — resta una cifra bianca appoggiata al buio, che non si legge come
+  // contrassegno. Un commento che spiega bene una decisione non la rende giusta.
+  // ⚖️ IL GIALLO E' STATO MISURATO PRIMA DI SCEGLIERLO (lezione della v6.617):
+  //     --warn #ffb400 su --action #2563eb ....... 2,90:1  ❌
+  //     #fff275        su --action #2563eb ....... 4,48:1  ⚠️ sul filo
+  //     #fff275        su --action-hover #1d4ed8 . 5,81:1  ✅  <- questo
+  // 📌 #fff275 NON e' un colore nuovo: e' il giallo che la tavolozza ha gia'. Nessuna
+  // tinta in piu' nel sito, e nessuna coppia nuova da misurare per `prova-v6372`.
+  // 🔴 MA IL NOME E' SUO — `--num-versione`, non `--type-unofficial`. E' la regola della
+  // v6.603 (`--in-arrivo`): due cose che valgono uguale oggi e significano cose diverse non
+  // condividono la variabile, o il giorno che una si muove si trascina l'altra.
+  // ⚠️ `min-width` + `padding` + `border-radius:999px`: cerchio con una cifra, pastiglia
+  // con due. Una larghezza fissa avrebbe tagliato il numero il giorno che arriva a 10.
+  return '<div style="display:flex;justify-content:flex-end;padding:5px 8px 0;line-height:1;">'
+    + '<span title="' + (currentLang === 'it' ? 'Versione n. ' : 'Version no. ') + n
+    + '" style="display:inline-flex;align-items:center;justify-content:center;'
+    + 'min-width:1.15rem;height:1.15rem;padding:0 0.3rem;box-sizing:border-box;'
+    + 'border-radius:999px;background:var(--action-hover);color:var(--num-versione);'
+    + 'font-family:var(--font-ui);font-size:0.72rem;font-weight:800;letter-spacing:0.02em;">'
+    + n + '</span></div>';
 }
 
 // 🔄 v6.618 (Franco: *«la variazione base la numeri come 1, quelle ufficiali proseguono la
