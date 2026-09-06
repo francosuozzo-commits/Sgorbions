@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.605';
+const JS_VERSION = 'v6.606';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -39723,7 +39723,16 @@ function _corpoErroriPerLatoHTML(C) {
   for (const f of items) {
     const lato = _latoErroreStampa(f, figs, idx);
     if (!lato) continue;
-    const tipo = (f.printErrorType || '').trim();
+    // 🔄 v6.606 - anche qui si chiede al retro (v6.577): era l'ULTIMA lettura del campo
+    // grezzo rimasta. Oggi non sbagliava — le figurine col difetto dietro concordano col
+    // loro retro — ed e' entrata proprio per quello: «oggi non sbaglia» e' la premessa di
+    // ogni copia, e il giorno che smette di essere vera nessuno lo sa. Qui costa zero:
+    // l'indice sta gia' pronto sulla riga sopra, per il lato.
+    const tipo = _tipoErroreStampa(f, figs, idx);
+    // ⚠️ LA RIGA SOTTO NON E' MORTA, e va tenuta anche se il form non puo' piu' produrre un
+    // errore senza tipo (obbligatorio dalla v5.771): la validazione e' AL SALVATAGGIO, quindi
+    // i record scritti prima, o entrati dall'import, possono avercelo vuoto. Una riga
+    // «impossibile» che si cancella e' il modo classico di scoprire che possibile lo era.
     if (!tipo) continue;
     conta[lato].set(tipo, (conta[lato].get(tipo) || 0) + 1);
   }
@@ -43601,10 +43610,21 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di omaggio' : 'Free type'}</span><span class="detail-value"${_tOm ? '' : ' style="color:var(--muted);font-style:italic;"'}>${_tOm ? esc(_tOm) : (currentLang === 'it' ? 'non impostato' : 'not set')}</span></div>`);
   }
   // Tipo di errore di stampa (testo libero, tutte le sezioni) — per gli Errori di stampa la riga
-  // e' SEMPRE mostrata (v5.770): il tipo e' facoltativo, quindi quando vuoto si scrive "non
-  // impostato" invece di nascondere la riga (a differenza del changeType, che e' obbligatorio).
+  // e' SEMPRE mostrata (v5.770), e quando vuota dice «non impostato» invece di sparire.
+  // 🗑️ v6.606 - QUI STAVA SCRITTO CHE IL TIPO E' FACOLTATIVO. Non lo e' dalla v5.771 — la
+  // release SUCCESSIVA, a poche righe di distanza — che lo rese obbligatorio con un toast
+  // che blocca il salvataggio, e non torno' a cancellare la frase.
+  // 🔴 UNA SPIEGAZIONE VECCHIA E' PIU' PERICOLOSA DI UNA REGOLA VECCHIA: la regola la prende
+  // una suite, la spiegazione no, perche' nessuna prova legge i commenti. Il 6 settembre 2026
+  // questa frase ha fatto affermare il contrario del vero a Franco, con sicurezza.
+  // 📌 «non impostato» resta comunque, e adesso difende un caso vero e piu' stretto: i record
+  // scritti prima della v5.771, o entrati dall'IMPORT, che la validazione non attraversano.
+  // 🔄 v6.606 - E IL VALORE SI CHIEDE AL RETRO (v6.577). Era il posto che faceva dire a Franco
+  // *«il campo viene mostrato aggiornato solo in editing»*: la form chiedeva, la scheda no —
+  // e le due si contraddicevano sullo stesso articolo a un clic di distanza.
   if (f.isPrintError) {
-    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di errore di stampa' : 'Print error type'}</span><span class="detail-value">${f.printErrorType ? esc(f.printErrorType) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostato' : 'not set') + '</span>'}</span></div>`);
+    const _peTipoDet = _tipoErroreStampa(f, getData('figurines', []));
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${currentLang === 'it' ? 'Tipo di errore di stampa' : 'Print error type'}</span><span class="detail-value">${_peTipoDet ? esc(_peTipoDet) : '<span style="color:var(--muted);font-style:italic;">' + (currentLang === 'it' ? 'non impostato' : 'not set') + '</span>'}</span></div>`);
   }
 
   // v5.849 — su telefono, per una VARIAZIONE (ufficiale o non ufficiale) la riga che la qualifica
@@ -47326,6 +47346,19 @@ async function saveFigFromDetail(figId, opzioni) {
     if (!merged.number) delete merged.number;
     if (!merged.subseries) delete merged.subseries;
     if (!merged.size) delete merged.size;
+    // 🆕 v6.606 - IL TIPO SI RILEGGE DAL RETRO APPENA SCELTO, e questo e' l'unico punto dove
+    // si puo': «merged» ha gia' il «retroId» nuovo, mentre il campo nascosto letto in
+    // «updates» e' una FOTOGRAFIA scattata all'apertura della scheda, che nessuno aggiorna
+    // se nel frattempo il retro cambia. Il salvataggio la trattava da verita'.
+    // 🔴 LA CURA NON E' AGGIORNARE QUEL CAMPO AL CAMBIO DEL RETRO: sarebbe l'ennesima
+    // sincronizzazione a mano, cioe' un'altra cosa da ricordare. Qui si CHIEDE, una volta
+    // sola, nel momento in cui la risposta e' definitiva.
+    // ⚠️ L'ORDINE CONTA DUE VOLTE: sta PRIMA di «computeFullName», che da questo valore
+    // compone il nome, e PRIMA di «_daSalvareInsiemeA», cosi' anche i collegati partono
+    // dal valore giusto invece di ereditare quello vecchio.
+    // 📌 Col difetto DAVANTI non cambia niente: «_tipoErroreStampa» torna il campo
+    // dell'articolo, cioe' quello scelto nella tendina. Questa riga non lo tocca.
+    if (merged.isPrintError) merged.printErrorType = _tipoErroreStampa(merged, getData('figurines', [])) || null;
     merged.fullName = computeFullName(merged, getData('figurines', []));
 
     // v6.103 (§12.1) - LA CODA DI PUBBLICAZIONE, la stessa regola dell'altra form (v5.981).
@@ -47996,7 +48029,14 @@ function computeFullName(fig, allFigs, _salti) {
     // solo per il changeType). Senza tipo (dato vecchio) resta il solo NomeBase.
     const base = fig.baseFigurineId ? allFigs.find(x => x.id === fig.baseFigurineId) : null;
     const baseName = _nomeFigurinaDiPartenza(base, fig, allFigs, _salti);
-    const tipoPE = (fig.printErrorType || '').trim();
+    // 🔄 v6.606 - IL TIPO SI CHIEDE A CHI LO POSSIEDE (v6.577), non si legge qui.
+    // 🔴 Era la copia piu' cara delle quattro, perche' il Nome completo si SCRIVE nei dati:
+    // un tipo vecchio letto qui non sbaglia una schermata, resta COTTO dentro «fullName».
+    // 📌 Il caso di Franco (figurina 641): cambiato il retro, il nome restava quello di prima.
+    // ⚠️ E QUESTA CONVERSIONE VALE SOLO PER LE FIGURINE. In «_retroFullName» c'e' la stessa
+    // riga identica e NON va toccata: li' l'oggetto e' un RETRO, e su un retro il tipo e' suo.
+    // Convertirla sarebbe questo stesso difetto al contrario.
+    const tipoPE = _tipoErroreStampa(fig, allFigs);
     return tipoPE ? baseName + ' - ' + tipoPE : baseName;
   }
   // v6.131 (Franco) - ANCHE LE FIGURINE BASE PORTANO IL NOME DEL RETRO nel Nome completo.
