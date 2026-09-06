@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.625"></script>
-<link rel="stylesheet" href="css/style.css?v=6.625">
+<script src="js/email.min.js?v=6.636"></script>
+<link rel="stylesheet" href="css/style.css?v=6.636">
 
 
 <style>
@@ -1900,6 +1900,13 @@ button.back-btn { color:#ffffff; }
           <button class="admin-tab" onclick="adminTab('email')" data-i18n="admin.email.tab">✉️ Comunicazioni</button>
           <button class="admin-tab" onclick="adminTab('settings')" data-i18n="admin.settings.tab">⚙️ Impostazioni</button>
           <button class="admin-tab" onclick="adminTab('funzioni')" data-i18n="admin.funzioni">Funzioni</button>
+          <!-- 🆕 v6.633 (Franco: *"perche non mi rendi autonomo?"* e *"una sezione nuova
+               della Admin console"*) — le pagine per Google si generano da qui.
+               ⚠️ NON dentro «Funzioni»: quella scheda raccoglie le procedure che SCRIVONO su
+               molti record, e la sua regola («prima l'anteprima, poi la conferma, poi la
+               scrittura») nasce per proteggere i dati. Questa legge e scarica: metterla lì
+               avrebbe messo accanto a tre procedure pericolose una cosa che non lo è. -->
+          <button class="admin-tab" onclick="adminTab('gsc')">🔍 Google Search Console</button>
         <button class="admin-tab" onclick="adminTab('risorse')" data-i18n="admin.risorse">🗄️ Risorse</button>
         </div>
         <!-- 🆕 v6.221 (Franco: "devi creare la tabella del tipo di articolo") — LA SEZIONE
@@ -2127,6 +2134,10 @@ button.back-btn { color:#ffffff; }
              un'anteprima e chiede conferma: qui dentro si scrive su molti record in un colpo solo. -->
         <div id="admin-funzioni" class="admin-section">
           <div id="admin-funzioni-content"></div>
+        </div>
+
+        <div id="admin-gsc" class="admin-section">
+          <div id="admin-gsc-content"></div>
         </div>
 
         <div id="admin-foto" class="admin-section">
@@ -2907,6 +2918,32 @@ button.back-btn { color:#ffffff; }
     <div class="form-group">
       <label class="form-label" data-i18n="form.series.desc.en">Description (English)</label>
       <textarea class="form-textarea" id="series-desc-en-input" data-i18n-placeholder="form.series.descEnPlaceholder" placeholder="Describe this series..." style="min-height:70px;"></textarea>
+    </div>
+    <!-- 🆕 v6.626 (Franco: *"mettiamo un campo nell'inventario dove posso mettere io il
+         contenuto che voglio in quella pagina"*) — il testo della pagina pubblica della serie,
+         quella che genera `strumenti\genera-pagine-serie.js` e che Google indicizza.
+         🔴 Prima di oggi quel paragrafo era scritto a mano DENTRO lo script: parole sulla
+         serie di Franco che Franco non aveva scritto, e che non poteva cambiare senza toccare
+         il codice. Ed erano la parte della pagina che Google legge per prima.
+         ⚠️ A CAMPO VUOTO LA PAGINA NON HA PARAGRAFO. Non c'e' nessun ripiego che scrive al
+         posto tuo: un ripiego del genere inventerebbe testo proprio quando nessuno guarda. -->
+    <div class="form-group">
+      <label class="form-label" data-i18n="form.series.testoPagina.it">Text for the Google page (Italian)</label>
+      <textarea class="form-textarea" id="series-testo-pagina-input" data-i18n-placeholder="form.series.testoPaginaPh" placeholder="Che cosa deve dire questa pagina della serie..." style="min-height:140px;"></textarea>
+      <label class="form-label" data-i18n="form.series.testoPagina.en" style="margin-top:0.8rem;">Text for the Google page (English)</label>
+      <textarea class="form-textarea" id="series-testo-pagina-en-input" data-i18n-placeholder="form.series.testoPaginaPhEn" placeholder="What this page should say about the series..." style="min-height:140px;"></textarea>
+      <!-- 🔄 v6.628 — L'AVVISO E' UNO SOLO E STA SOTTO TUTTE E DUE. Scriverlo due volte
+           avrebbe fatto due copie della stessa frase nella stessa finestra: il giorno che una
+           cambia, l'altra dice il falso a due centimetri di distanza. -->
+      <!-- 🔧 v6.631 (Franco: *"testo in bianco… tutti i testi dell'admin non devono mai
+           essere neri, ma sempre bianchi"*) — QUI C'ERA UNO STILE INLINE, E VINCEVA SUL FOGLIO.
+           `#add-series-modal .form-hint` porta `color: var(--text)` dalla v6.444: questa nota
+           era GIA' bianca per regola, e a renderla grigia era il `color:var(--muted)` che le
+           avevo scritto addosso nella v6.626.
+           🔴 Non e' una regola nuova: e' una copia a mano tolta di mezzo. Anche il corpo
+           (0.8rem contro 0.78) e il margine (0.3rem contro 4px) erano valori riscritti sopra
+           quelli che la classe dava gia', e nessuno dei tre era voluto. -->
+      <div class="form-hint" data-i18n="form.series.testoPaginaHint">Questo testo esce tale e quale sulla pagina pubblica che Google indicizza. Se lo lasci vuoto, la pagina non ha nessun paragrafo di presentazione: niente viene inventato.</div>
     </div>
     </div><!-- chiude il tab Descrizioni -->
 
@@ -3713,7 +3750,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.625"></script>
+<script src="js/app.js?v=6.636"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3737,7 +3774,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.625'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.636'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
