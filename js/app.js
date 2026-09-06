@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.614';
+const JS_VERSION = 'v6.618';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35160,7 +35160,7 @@ function renderCatalogSearch(q) {
             <!-- 🆕 v6.610 - IL TITOLO DIVENTA UNA RIGA, per fare posto al pulsante senza
                  mandarlo a capo su schermi stretti. Il pulsante e' l'ULTIMO elemento e ha
                  «margin-left:auto»: sta a destra senza che nessuno debba misurare niente. -->
-            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(getSectionLabel(sec))}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(inSection.length)}</span>${inSection.length > 1 ? `<button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}')" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;font-weight:400;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span style="color:var(--accent);">\u2197</span>${currentLang === 'it' ? 'Mostra in vista tabellare' : 'Show in table view'}</button>` : ''}</div>
+            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(getSectionLabel(sec))}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(inSection.length)}</span>${inSection.length > 1 ? `<button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',true)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" class="btn-primary" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u25A4</span>${currentLang === 'it' ? 'Mostra in tabella' : 'Show in table'}</button><button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',false)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista a griglia' : 'Open these results in the grid view'}" class="btn-primary" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u229E</span>${currentLang === 'it' ? 'Mostra in griglia' : 'Show in grid'}</button>` : ''}</div>
             <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
               ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
@@ -35391,7 +35391,12 @@ function renderCatalogSearch(q) {
 // ⚠️ E LA VISTA SI ACCENDE SOLO SE ERA SPENTA: «toggleBulkEditView» e' un interruttore, e
 // chiamarlo a tabella aperta la CHIUDEREBBE — il pulsante «apri» che chiude, e solo per chi
 // ci era gia' dentro.
-function apriTabellaDaRicerca(seriesId, section) {
+// 🆕 v6.615 — IL TERZO PARAMETRO, e i due bottoni chiamano questa stessa funzione.
+// 🔴 Copiare il giro per la griglia sarebbe stata la copia numero due di sei righe che
+// reggono per ORDINE (v6.598): la prima cosa a divergere sarebbe stata proprio l'attesa.
+// 📌 Il nome resta «apriTabellaDaRicerca» anche se adesso apre due viste: e' chiamato dal
+// markup e da «prova-v6610», e rinominarlo per bellezza romperebbe tutti e due.
+function apriTabellaDaRicerca(seriesId, section, tabellare) {
   const q = (document.getElementById('series-search')?.value || '').trim();
   openSeriesDetail(seriesId);
   openSeriesSection(section || 'figurines');
@@ -35403,7 +35408,14 @@ function apriTabellaDaRicerca(seriesId, section) {
     }
     currentItemPage = 1;
     try { renderItems(); } catch (e) { console.error('renderItems (apriTabellaDaRicerca)', e); }
-    if (!bulkEditActive) { try { toggleBulkEditView(); } catch (e) { console.error('toggleBulkEditView (apriTabellaDaRicerca)', e); } }
+    // 🆕 v6.615 — SIMMETRICO, e la seconda meta' non e' passiva: chi arriva qui con la
+    // tabella gia' aperta (ci era rimasto da prima) la troverebbe anche premendo «griglia»,
+    // perche' «bulkEditActive» sopravvive al cambio di sezione. Il bottone funzionerebbe
+    // solo per chi parte dallo stato giusto — cioe' per meta' delle volte, in silenzio.
+    const _vuole = (tabellare !== false);
+    if (_vuole !== bulkEditActive) {
+      try { toggleBulkEditView(); } catch (e) { console.error('toggleBulkEditView (apriTabellaDaRicerca)', e); }
+    }
   }, 300);
 }
 
@@ -38712,13 +38724,20 @@ function _retroCatPanelHTML(pairs, open, clickable, toggleFn, perColonna) {
   // separatore (muted), etichetta (bianca), DATO (lime). La stessa forma che
   // `updateItemsCountDisplay` usa dalla v5.797 - li' era gia' scritto *"colorare SOLO il numero,
   // non l'intera frase"*, e questo era il punto del sito che non l'aveva mai seguita.
-  const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">\u00b7 </span>`
+  // 🔄 v6.617 (Franco: *«metti tra () la parte col totale»*) — LE PARENTESI AL POSTO DEL
+  // PUNTO MEDIO. Quel punto stava li' come SEPARATORE (v6.002) e le parentesi lo sono gia':
+  // tenerli tutti e due sarebbe stato due volte lo stesso stacco.
+  // ⚠️ I TRE PEZZI RESTANO TRE, ed e' la regola della v6.426 detta da Franco — «solo il
+  // numero in lime; la scritta totale lasciamola bianca». Le parentesi non sono un dato:
+  // prendono il grigio del separatore che hanno sostituito.
+  const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">(</span>`
     + `<span style="color:var(--accent);font-size:0.82rem;font-weight:400;">${total}</span>`
-    + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;"> ${it ? 'in totale' : 'in total'}</span>`;
+    + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;"> ${it ? 'in totale' : 'in total'}</span>`
+    + `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">)</span>`;
   let header = collassabile
     ? `<div onclick="${toggleFn}()" style="${_STILE_ETICHETTA}cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
       + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '\u25bc' : '\u25b6'}</span>`
-      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--text);">${titoloTxt}</span>`
+      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--info);">${titoloTxt}</span>`
       + (open ? totaleSpan : '')
     : `<div style="${_STILE_ETICHETTA}display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">`
       // v6.270 - il segnaposto SOLO se e' un filtro a tenerlo aperto: nella testata il triangolino
@@ -38727,7 +38746,7 @@ function _retroCatPanelHTML(pairs, open, clickable, toggleFn, perColonna) {
       // puo' esserci (niente toggle) non c'e' nessun posto da tenere, e uno spazio vuoto
       // sposterebbe il titolo a destra per niente - il difetto che la v6.270 stava evitando.
       + ((_staFiltrando && _potrebbeChiudersi) ? _TRIANGOLO_FINTO : '')
-      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--text);">${titoloTxt}</span>`
+      + `<span style="font-size:${_etichettaSulBordo ? '0.78rem' : '0.85rem'};font-weight:600;color:var(--info);">${titoloTxt}</span>`
       + totaleSpan;
 header += `</div>`;
 
@@ -39274,9 +39293,16 @@ function _specchiettoTipiHTML(pairs, open, clickable, toggleFn, C, perColonna) {
   // separatore (muted), etichetta (bianca), DATO (lime). La stessa forma che
   // `updateItemsCountDisplay` usa dalla v5.797 - li' era gia' scritto *"colorare SOLO il numero,
   // non l'intera frase"*, e questo era il punto del sito che non l'aveva mai seguita.
-  const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">\u00b7 </span>`
+  // 🔄 v6.617 (Franco: *«metti tra () la parte col totale»*) — LE PARENTESI AL POSTO DEL
+  // PUNTO MEDIO. Quel punto stava li' come SEPARATORE (v6.002) e le parentesi lo sono gia':
+  // tenerli tutti e due sarebbe stato due volte lo stesso stacco.
+  // ⚠️ I TRE PEZZI RESTANO TRE, ed e' la regola della v6.426 detta da Franco — «solo il
+  // numero in lime; la scritta totale lasciamola bianca». Le parentesi non sono un dato:
+  // prendono il grigio del separatore che hanno sostituito.
+  const totaleSpan = `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">(</span>`
     + `<span style="color:var(--accent);font-size:0.82rem;font-weight:400;">${total}</span>`
-    + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;"> ${it ? 'in totale' : 'in total'}</span>`;
+    + `<span style="color:var(--text);font-size:0.82rem;font-weight:400;"> ${it ? 'in totale' : 'in total'}</span>`
+    + `<span style="color:var(--muted);font-size:0.82rem;font-weight:400;">)</span>`;
   let header = collassabile
     ? `<div onclick="${toggleFn}" style="${_STILE_ETICHETTA}cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;user-select:none;">`
       + `<span style="color:var(--accent);font-size:0.8rem;">${open ? '\u25bc' : '\u25b6'}</span>`
@@ -41158,7 +41184,7 @@ function renderItems() {
            modi diversi (_retroViewMode): scrivere la cornice dentro ognuno voleva dire
            dieci punti da tenere allineati. Qui c'e' il FATTO, il disegno lo fa il CSS. -->
       <div class="fig-img-placeholder"${_latoErrCard ? ` data-lato-errore="${_latoErrCard}"` : ''} style="aspect-ratio:${finalAspectRatio};display:flex;align-items:center;justify-content:center;font-size:3rem;background:linear-gradient(135deg,var(--bg2),var(--card2));position:relative;container-type:inline-size;">
-        ${imgHTML}${_timbroInvisibile(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}
+        ${imgHTML}${_timbroInvisibile(f)}${_contrassegnoVariazioneHTML(f)}${_mobileFigCard ? '' : typeBadgeHTML}${adminBtns}
       </div>
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
@@ -44291,6 +44317,32 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
 // Un figlio che non trova il suo capogruppo - il retro non c'e', o il capo e' stato escluso da un
 // filtro - resta attaccato alla base invece di sparire in fondo: un elenco filtrato non deve
 // riordinarsi in modo diverso da quello intero.
+// 🆕 v6.618 — LA CHIAVE CON CUI LA GRIGLIA ORDINA DUE ARTICOLI DELLO STESSO GRUPPO:
+// la terna [categoria, sottocategoria, nome] del RETRO.
+// 🔴 NASCE DA UN DIFETTO INTRODOTTO DALLA v6.616, che numerava con una regola scritta da
+// zero («nome del retro, alfabetico») mentre questa esisteva gia'. Due ordinamenti sullo
+// stesso insieme divergono sempre: qui in un'ora, perche' il numero e la griglia si vedono
+// uno accanto all'altro — «prima la 2 dopo la 1», parole di Franco.
+function _chiaveOrdineRetro(f, idx) {
+  const r = (f && f.retroId)
+    ? ((idx && idx.get) ? idx.get(f.retroId)
+                        : getData('figurines', []).find(x => x.id === f.retroId))
+    : null;
+  return [(r && r.category) || '', (r && r.subcategory) || '', (r && r.name) || ''];
+}
+
+// ⚠️ E il confronto sta qui accanto: e' la seconda meta' della stessa regola, e separarlo
+// sarebbe rifare il difetto un piano piu' sotto.
+function _cmpOrdineRetro(a, b, idx) {
+  const ka = _chiaveOrdineRetro(a, idx), kb = _chiaveOrdineRetro(b, idx);
+  for (let i = 0; i < 3; i++) {
+    const c = ka[i].localeCompare(kb[i], 'it');
+    if (c !== 0) return c;
+  }
+  return (a.fullName || a.name || '').localeCompare(b.fullName || b.name || '', 'it', { numeric: true })
+      || String(a.id).localeCompare(String(b.id));
+}
+
 function _chiaviOrdinamentoFigurine(items, idx) {
   const chiavi = new Map();
   if (currentSection !== 'figurines') return chiavi;
@@ -44336,9 +44388,11 @@ function _chiaviOrdinamentoFigurine(items, idx) {
     chiavi.set(f.id, {
       rankCapo: _rangoCapo(capo),   // v6.234 - ricavato, era una terza catena a mano
       retroCapo: capo ? nomeRetroDi(capo) : '',
-      catCapo: (retroCapo?.category || ''),
-      subcatCapo: (retroCapo?.subcategory || ''),
-      nomeRetroCapo: (retroCapo?.name || ''),
+      // 🔄 v6.618 — la terna viene da «_chiaveOrdineRetro», la stessa che numera le
+      // versioni. Erano tre letture scritte qui; adesso e' una domanda sola.
+      catCapo: _chiaveOrdineRetro(capo, idx)[0],
+      subcatCapo: _chiaveOrdineRetro(capo, idx)[1],
+      nomeRetroCapo: _chiaveOrdineRetro(capo, idx)[2],
       rangoFiglio: rango
     });
   });
@@ -44675,6 +44729,115 @@ function _tipoErroreStampa(f, allFigs, indice) {
   const r = indice ? indice.get(f.retroId)
                    : (allFigs || getData('figurines', [])).find(x => x.id === f.retroId);
   return ((r && r.printErrorType) || '').trim() || _mio;
+}
+
+// 🆕 v6.616 (Franco: *«numerare le variazioni non ufficiali, mostrando un numero sulla
+// card»*) — IL NUMERO DI UNA VARIAZIONE NON UFFICIALE.
+// 🔴 SI CALCOLA, NON E' UN DATO — tranne quando Franco lo scrive. Il campo
+// «numeroVariazione» e' una DEROGA: vuoto vuol dire «vale il calcolo», valorizzato vuol
+// dire «l'ho deciso io, non toccarlo». E' lo schema dei titoli eBay (v5.931), e il motivo
+// e' lo stesso: numerare 451 record per poi correggerne qualcuno significa avere 451 copie
+// di una cosa che si sa gia' calcolare.
+// 📌 L'ORDINE E' ALFABETICO SUL NOME DEL RETRO, scelto da Franco. E' anche l'unico ordine
+// che chi guarda le card puo' RICOSTRUIRE senza aprire niente.
+// ⚠️ MA E' TOTALE, non solo alfabetico: a parita' di nome si ordina per «id». Senza il
+// secondo criterio due variazioni omonime si scambierebbero il numero a ogni ridisegno,
+// a seconda di come arrivano dal server — un difetto intermittente, il piu' difficile da
+// segnalare e da riprodurre.
+// ⚠️ E CON UNA SOLA VARIAZIONE TORNA 0, cioe' «niente da mostrare»: un «1» solitario non
+// distingue niente da niente. Stessa regola della pillola «Tutte» (v6.607) e della soglia
+// dei due bottoni (v6.613). La deroga scritta a mano invece si mostra sempre.
+// 🆕 v6.616 — IL CONTRASSEGNO, e sta in BASSO A DESTRA perche' gli altri tre angoli sono
+// gia' presi: badge della versione in alto a destra, comandi admin in alto a sinistra,
+// fascetta dell'errore di stampa in basso a sinistra.
+// 📌 Il colore e' quello delle variazioni non ufficiali, cioe' lo stesso del badge che
+// dice cos'e' l'articolo: il numero e' un dettaglio di QUELLA versione, non un'etichetta
+// per conto suo.
+// ⚠️ Corpo in «cqw» come il timbro (v6.609): la faccia della card dichiara
+// «container-type», e senza quello il cqw cadrebbe in silenzio sul viewport.
+function _contrassegnoVariazioneHTML(f) {
+  const n = _numeroVersione(f, getData('figurines', []));
+  if (!n) return '';
+  // 🔴 v6.618 — IL COLORE VIENE DALLA VERSIONE, e qui non e' decorazione: le due numerazioni
+  // ripartono tutte e due da 1, quindi sulla stessa figurina ci sono due «1». Il colore e'
+  // l'unica cosa che dice QUALE dei due, ed e' lo stesso codice di badge, pillole e filtri.
+  const _vC = _versioneDiChiave(_chiaveTipo(f));
+  const _col = (_vC && _vC.colore) || 'var(--text)';
+  return '<div title="' + (currentLang === 'it' ? 'Variazione non ufficiale n. ' : 'Unofficial variation no. ') + n
+    + '" style="position:absolute;right:6px;bottom:6px;z-index:2;pointer-events:none;'
+    + 'min-width:1.55em;height:1.55em;padding:0 0.35em;border-radius:999px;'
+    + 'background:' + _col + ';color:var(--bg);'
+    + 'font-family:var(--font-ui);font-size:clamp(0.55rem,7cqw,0.85rem);font-weight:800;'
+    + 'display:inline-flex;align-items:center;justify-content:center;line-height:1;">'
+    + n + '</div>';
+}
+
+// 🔄 v6.618 (Franco: *«la variazione base la numeri come 1, quelle ufficiali proseguono la
+// numerazione … per quelle non ufficiali ordine a parte»*) — DUE NUMERAZIONI.
+//   · base + variazioni UFFICIALI : la base e' 1, le ufficiali proseguono 2, 3, 4…
+//   · variazioni NON UFFICIALI    : numerazione a parte, riparte da 1
+// 🔴 SULLA STESSA FIGURINA CONVIVONO DUE «1», ed e' voluto (esempio di Franco sulla serie 3:
+// «1 sulla base e 1, 2, 3 sulle non ufficiali»). A distinguerli e' il COLORE del
+// contrassegno, che e' quello della versione: il numero da solo direbbe mezza verita'.
+// 🗑️ E IL CAMPO «numeroVariazione» NON C'E' PIU' — Franco: «non mi serve un campo, e' solo
+// un numero a video». Un dato salvato che si sa calcolare e' una copia che aspetta di
+// divergere: e' cio' che questa giornata ha passato a riparare su «printErrorType».
+// ⚠️ L'ordine e' quello della GRIGLIA, chiesto a «_cmpOrdineRetro»: non una seconda regola.
+function _numeroVersione(f, allFigs, indice) {
+  if (!f || (f.section || 'figurines') !== 'figurines') return 0;
+  const _tutte = allFigs || getData('figurines', []);
+  const _idxN = (indice && indice.get) ? indice : new Map(_tutte.map(x => [x.id, x]));
+  const nonUff = !!f.isUnofficialVariation;
+  const uff = !!f.isVariation;
+  const base = f.baseFigurineId ? _idxN.get(f.baseFigurineId) : (_eBase(f) ? f : null);
+  if (!base) return 0;
+  // 🔴 Chi non e' base, ufficiale o non ufficiale non entra in nessuna delle due famiglie:
+  //    change, omaggi ed errori di stampa hanno una loro identita' e non si contano qui.
+  if (!nonUff && !uff && base.id !== f.id) return 0;
+  // 🔴 v6.618 — LA BASE SI NUMERA SE HA QUALCUNO DA CUI DISTINGUERSI, di qualunque famiglia.
+  //    L'esempio di Franco sulla serie 3 — «1 sulla base e 1, 2, 3 sulle non ufficiali» — dice
+  //    proprio questo: li' di ufficiali non ce n'e' nessuna, eppure la base porta 1.
+  //    ⚠️ La prima stesura contava solo la SUA famiglia e le dava 0: due regole che sembravano
+  //    compatibili («la base e' 1» e «un gruppo di uno non si numera») e non lo erano. L'ha
+  //    trovata la suite, eseguendo l'esempio di Franco invece di rileggerlo.
+  // 🔄 v6.618 — UNA NUMERAZIONE SOLA, CONTINUA. Franco: «metti sempre 1 alle base e anche per le
+  //    non ufficiali inizia dal primo posto disponibile, che sara' sempre almeno un 2».
+  //       base = 1  ·  ufficiali = 2, 3, 4…  ·  non ufficiali = proseguono da dove finiscono
+  // 📌 ED E' ANCHE L'ORDINE DELLA GRIGLIA, non una coincidenza: «_FIGLI_VERSIONE» elenca le
+  //    versioni nell'ordine variation → unofficialVariation → change…, e la griglia ordina i
+  //    figli per quel rango. Sullo schermo le ufficiali stanno gia' prima delle non ufficiali.
+  // 🗑️ QUI C'ERANO DUE NUMERAZIONI SEPARATE che ripartivano tutte e due da 1 — revocate da
+  //    Franco poco dopo averle chieste. Con quelle, sulla stessa figurina convivevano due «1» e
+  //    a distinguerli restava il solo colore; adesso il numero e' unico e non va interpretato.
+  const _uffs = _tutte.filter(x => x.isVariation && x.baseFigurineId === base.id)
+    .slice().sort((a, b) => _cmpOrdineRetro(a, b, _idxN));
+  const _nonUffs = _tutte.filter(x => x.isUnofficialVariation && x.baseFigurineId === base.id)
+    .slice().sort((a, b) => _cmpOrdineRetro(a, b, _idxN));
+  // ⚠️ La base e' SEMPRE 1, anche quando non ha varianti: e' la richiesta di Franco, e toglie
+  //    l'unica condizione che rendeva il numero assente su alcune card e presente su altre.
+  if (base.id === f.id) return 1;
+  const gruppo = [base].concat(_uffs).concat(_nonUffs);
+  // ⚠️ Nessun `sort` qui: il gruppo arriva gia' nell'ordine giusto — base, poi ufficiali
+  //    ordinate, poi non ufficiali ordinate. Riordinarlo tutto insieme rimescolerebbe le due
+  //    famiglie fra loro, che e' esattamente cio' che questa numerazione non deve fare.
+  const i = gruppo.findIndex(x => x.id === f.id);
+  return i < 0 ? 0 : i + 1;
+}
+
+function _numeroVariazioneNU_RIMOSSA(f, allFigs, indice) {
+  return 0;
+  const _chiave = x => {
+    const r = x.retroId
+      ? (indice ? indice.get(x.retroId)
+                : (allFigs || getData('figurines', [])).find(y => y.id === x.retroId))
+      : null;
+    return ((r && r.name) || '').trim();
+  };
+  const ord = tutte.slice().sort((a, b) =>
+    _chiave(a).localeCompare(_chiave(b), 'it', { numeric: true, sensitivity: 'base' })
+    || String(a.id).localeCompare(String(b.id)));
+  const i = ord.findIndex(x => x.id === f.id);
+  return i < 0 ? 0 : i + 1;
 }
 
 function _latoErroreStampaTesto(f, allFigs) {
@@ -45890,6 +46053,15 @@ function switchToEditMode(figId) {
   // ⚠️ L'`input hidden` NON e' decorazione: chi salva legge `#fe-print-error-type`.value, e un
   // div non ce l'ha. Senza, si salverebbe `undefined` al posto del tipo — e il salvataggio non
   // ha bisogno di sapere niente di tutto questo.
+  // 🆕 v6.616 — LA DEROGA AL NUMERO, e la riga compare solo sulle variazioni non ufficiali.
+  // 📌 Il segnaposto mostra il numero CALCOLATO: cosi' si vede cosa succede lasciando vuoto,
+  // e si scrive solo per cambiarlo. Un campo vuoto che non dice cosa vale da vuoto e' un
+  // campo che si riempie per sicurezza.
+  // 🗑️ v6.618 — QUI STAVA IL CAMPO «N. variazione», nato con la v6.616 come DEROGA al numero
+  // calcolato. Franco: «non mi serve un campo, e' solo un numero a video».
+  // 📌 Toglierlo non e' una rinuncia: il numero adesso segue l'ordine della griglia, cioe'
+  // cio' che si vede — e un campo che permette di scrivere un numero diverso da quello che
+  // si vede sarebbe un modo per far divergere le due cose a mano.
   const _peDietro = f.isPrintError && _latoErroreStampa(f, getData('figurines', [])) === 'retro';
   const _peTipo = _tipoErroreStampa(f, getData('figurines', []));
   html += '<div class="detail-row" id="fe-print-error-type-group" style="' + (f.isPrintError ? '' : 'display:none;') + '">' +
