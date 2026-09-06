@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.609';
+const JS_VERSION = 'v6.610';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35157,7 +35157,10 @@ function renderCatalogSearch(q) {
                  nulla"*. Un backtick dispari e' un errore che si vede subito; un backtick pari e'
                  un guasto silenzioso. ⚠️ Via i due punti: con le parentesi erano un secondo separatore per la
                  stessa cosa. -->
-            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;">${esc(getSectionLabel(sec))}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);margin-left:0.35rem;">${_frasePerQuesta(inSection.length)}</span></div>
+            <!-- 🆕 v6.610 - IL TITOLO DIVENTA UNA RIGA, per fare posto al pulsante senza
+                 mandarlo a capo su schermi stretti. Il pulsante e' l'ULTIMO elemento e ha
+                 «margin-left:auto»: sta a destra senza che nessuno debba misurare niente. -->
+            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(getSectionLabel(sec))}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(inSection.length)}</span><button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}')" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" style="margin-left:auto;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;padding:0.15rem 0.5rem;line-height:1.4;">\u{1F4CB}</button></div>
             <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
               ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
@@ -35371,6 +35374,37 @@ function renderCatalogSearch(q) {
       ${figsHTML}
     </div>`;
   }).join('');
+}
+
+// 🆕 v6.610 (Franco: *«un pulsante che se cliccato apre la vista tabellare di quegli
+// articoli»*) - DALLA RICERCA GLOBALE ALLA TABELLA, CON GLI STESSI RISULTATI.
+// 🔴 LE RIGHE COINCIDONO PER COSTRUZIONE, non per fortuna: la ricerca globale e il filtro
+// dell'Inventario chiamano LA STESSA funzione, «_figMatchRicerca». Portare di la' la query
+// non riproduce i risultati — da' gli stessi, e continuera' a darli il giorno che la regola
+// di confronto cambia. Con due gemelle questo pulsante sarebbe una promessa che si rompe da
+// sola alla prima divergenza.
+// ⚠️ L'ORDINE NON E' NEGOZIABILE: «openSeriesSection» AZZERA la casella dell'Inventario
+// (v5.939), quindi la query si scrive DOPO. Scriverla prima la farebbe cancellare un istante
+// dopo, senza un errore da nessuna parte. E' la stessa forma che regge la v6.598, e il
+// «setTimeout(…, 300)» e' quello che «switchToSeriesFromErrori» usa da sempre: la pagina si
+// ridisegna, e si scrive quando e' pronta.
+// ⚠️ E LA VISTA SI ACCENDE SOLO SE ERA SPENTA: «toggleBulkEditView» e' un interruttore, e
+// chiamarlo a tabella aperta la CHIUDEREBBE — il pulsante «apri» che chiude, e solo per chi
+// ci era gia' dentro.
+function apriTabellaDaRicerca(seriesId, section) {
+  const q = (document.getElementById('series-search')?.value || '').trim();
+  openSeriesDetail(seriesId);
+  openSeriesSection(section || 'figurines');
+  setTimeout(() => {
+    const cerca = document.getElementById('items-search');
+    if (cerca) {
+      cerca.value = q;
+      try { toggleSearchClearBtn('items-search'); } catch (e) { console.error('clearBtn (apriTabellaDaRicerca)', e); }
+    }
+    currentItemPage = 1;
+    try { renderItems(); } catch (e) { console.error('renderItems (apriTabellaDaRicerca)', e); }
+    if (!bulkEditActive) { try { toggleBulkEditView(); } catch (e) { console.error('toggleBulkEditView (apriTabellaDaRicerca)', e); } }
+  }, 300);
 }
 
 function openFigFromSearch(figId, seriesId, section) {
