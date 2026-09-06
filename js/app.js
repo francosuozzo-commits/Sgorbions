@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.611';
+const JS_VERSION = 'v6.612';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35160,7 +35160,7 @@ function renderCatalogSearch(q) {
             <!-- 🆕 v6.610 - IL TITOLO DIVENTA UNA RIGA, per fare posto al pulsante senza
                  mandarlo a capo su schermi stretti. Il pulsante e' l'ULTIMO elemento e ha
                  «margin-left:auto»: sta a destra senza che nessuno debba misurare niente. -->
-            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(getSectionLabel(sec))}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(inSection.length)}</span><button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}')" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" style="margin-left:auto;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;padding:0.15rem 0.5rem;line-height:1.4;">\u{1F4CB}</button></div>
+            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(getSectionLabel(sec))}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(inSection.length)}</span><button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}')" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:0.85rem;font-weight:400;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span style="color:var(--accent);">\u2197</span>${currentLang === 'it' ? 'Mostra in vista tabellare' : 'Show in table view'}</button></div>
             <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
               ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
