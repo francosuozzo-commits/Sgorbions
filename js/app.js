@@ -25915,7 +25915,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.607';
+const JS_VERSION = 'v6.608';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27821,7 +27821,7 @@ let _visibilitaFilter = 'all';   // v6.545 — 'all' | 'visibili' | 'invisibili'
 let _filtroLatoErrore = new Set();   // v6.520 — 'fronte' | 'retro'
 // 🆕 v6.604 (Franco: *"da sotto a sopra non da' valore, anzi fuorvia"*) — LE PILLOLE
 // DELLE TIPOLOGIE PREMUTE, RICORDATE COL LORO LATO.
-// 🔴 PERCHE' NON BASTA `_raggr('printerror').filtro`: quello conserva la STRINGA del tipo,
+// 🔴 PERCHE' NON BASTA `_raggr('printError').filtro`: quello conserva la STRINGA del tipo,
 // e lo stesso nome vive su tutti e due i lati — Franco: *"teoricamente tutte, perche' ogni
 // figurina puo' essere decentrata sul lato frontale o sul lato posteriore"*. Da «DECENTRATA»
 // non si torna indietro a «quella di sopra»: la coppia va ricordata, o il vincolo di lato
@@ -27843,7 +27843,7 @@ const _K_VOCE_ERR = (lato, val) => lato + '\u0000' + val;
 // che nessuno cerca piu'.
 function _latiDaTipologia() {
   const out = new Set();
-  const s = _raggr('printerror');
+  const s = _raggr('printError');
   if (!s) { _VOCI_ERR_SCELTE = new Set(); return out; }
   for (const k of [..._VOCI_ERR_SCELTE]) {
     const i = k.indexOf('\u0000');
@@ -28134,6 +28134,16 @@ function _raggr(chiave) {
   // 🆕 v6.330 - torna `aperto`, che la v6.328 aveva tolto quando i riquadri non si chiudevano
   // piu'. 📌 APERTO DI DEFAULT, e prima della v6.328 era chiuso: adesso questi riquadri sono il
   // comando di ricerca, e un comando non si nasconde da solo. Chi vuole ripiegarlo lo fa.
+  // 🔴 v6.608 — QUESTO RIPIEGO HA NASCOSTO UN BACO PER OLTRE VENTI RELEASE, e vale la pena
+  // saperlo prima di usarlo: davanti a una chiave SCONOSCIUTA questa riga non fallisce, la
+  // CREA. Le pillole delle tipologie chiedevano «printerror» mentre il descrittore dichiara
+  // «printError», e scrivevano il filtro in uno stato che nessun raggruppamento legge:
+  // popolato, corretto e ignorato. Franco lo ha visto cosi' — «premendo SCRITTA GRIGIO
+  // CHIARO (14) le figurine trovate sono 82», cioe' tutte quelle del lato.
+  // 📌 Se qui tornasse `undefined`, il «if (!s) return;» che sta in tutti i chiamanti
+  // avrebbe fermato il clic al primo tentativo. Non si cambia — creare lo stato serve ai
+  // raggruppamenti veri, che nascono pigri — ma la chiave adesso la sorveglia
+  // «prova-v6608», che confronta ogni «_raggr('X')» del sorgente con le chiavi DICHIARATE.
   return _RAGGR[chiave] || (_RAGGR[chiave] = { filtro: new Set(), vals: [], aperto: true, apertoTop: false });
 }
 // v6.096 (Franco) - DA UNO A PIU' TIPI INSIEME. Era una stringa (un tipo solo, null = spento), ora
@@ -39663,7 +39673,7 @@ let _VOCI_ERR_LATO = [];   // v6.534 - [{ lato, val }]
 // quel 75 non si ritroverebbe. E' la regola della v6.506.
 function _soloVoceErroreLato(i) {
   const v = _VOCI_ERR_LATO[i]; if (!v) return;
-  const s = _raggr('printerror'); if (!s) return;
+  const s = _raggr('printError'); if (!s) return;
   const k = _K_VOCE_ERR(v.lato, v.val);
   // 🆕 v6.607 (Franco: *«una volta accese, per spegnerle serve premere −»*) — IL RAMO CHE
   // SPEGNE. Questa funzione era nata come copia di «_setRaggrFiltro» e ne aveva preso un
@@ -39687,7 +39697,7 @@ function _soloVoceErroreLato(i) {
   // gia' la sezione in cui la pillola sta, e il numero del padre — piu' grande di quello
   // che stai per ottenere — accanto a una pillola accesa diceva il falso.
   _VOCI_ERR_SCELTE = new Set([_K_VOCE_ERR(v.lato, v.val)]);
-  _soloQuestoRaggr('printerror');
+  _soloQuestoRaggr('printError');
   currentItemPage = 1;
   try { renderItems(); } catch(e) { console.error('renderItems (_soloVoceErroreLato)', e); }
 }
@@ -39705,7 +39715,7 @@ function _soloVoceErroreLato(i) {
 // guardia di «_aggiungiVoceErroreLato». Con «DECENTRATA» accesa di qua e di la', spegnere
 // una sezione non deve spegnere l'altra.
 function _tutteVociErroreLato(lato) {
-  const s = _raggr('printerror'); if (!s) return;
+  const s = _raggr('printError'); if (!s) return;
   const voci = _VOCI_ERR_LATO.filter(v => v.lato === lato);
   if (!voci.length) return;
   const tutte = voci.every(v => _VOCI_ERR_SCELTE.has(_K_VOCE_ERR(v.lato, v.val)));
@@ -39727,7 +39737,7 @@ function _tutteVociErroreLato(lato) {
 // accese insieme sono una domanda legittima («tutte le DECENTRATA, di qua e di la'»).
 function _aggiungiVoceErroreLato(i) {
   const v = _VOCI_ERR_LATO[i]; if (!v) return;
-  const s = _raggr('printerror'); if (!s) return;
+  const s = _raggr('printError'); if (!s) return;
   // 🔄 v6.604 — si ragiona sulla COPPIA, non sul nome.
   // ⚠️ Il tipo esce dal filtro SOLO se nessun'altra sezione lo sta ancora chiedendo:
   // con «DECENTRATA» accesa di qua e di la', spegnerne una non deve spegnere l'altra.
@@ -39786,7 +39796,7 @@ function _corpoErroriPerLatoHTML(C) {
     conta[lato].set(tipo, (conta[lato].get(tipo) || 0) + 1);
   }
   _VOCI_ERR_LATO = [];
-  const stato = _raggr('printerror');
+  const stato = _raggr('printError');
   const sezione = (lato, testo) => {
     // 🔄 v6.547 - REVOCA UNA SCELTA DELLA v6.520, che disegnava le pillole anche a zero
     // «per non portar via il modo di accorgersi che quel gruppo esiste». Vero per un gruppo
