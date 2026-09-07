@@ -25968,7 +25968,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.649';
+const JS_VERSION = 'v6.661';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -26906,7 +26906,14 @@ const _ELENCHI_ESCL_SERIE  = ['retroChangeTypes', 'frontChangeTypes',
                               // scritte in una serie si sarebbero viste in un'altra: e' proprio
                               // cio' che questo elenco impedisce, e un campo nuovo che non ci entra
                               // non da' nessun errore - da' un elenco sbagliato in una tendina.
-                              'frontPrintErrorTypes', 'retroPrintErrorTypes'];
+                              'frontPrintErrorTypes', 'retroPrintErrorTypes',
+                              // 🆕 v6.650 - le sottoserie sono la quinta lista della
+                              // famiglia, e valgono le stesse regole: il valore scritto
+                              // sull'articolo viene confrontato con questo elenco, quindi
+                              // «HOLIDAY!» e «HOLIDAY !» devono diventare la stessa cosa
+                              // da tutte e due le parti. Fuori di qui darebbero DUE tab
+                              // dove ce n'e' uno, senza nessun errore.
+                              'sottoserie'];
 
 // Applica la regola a un oggetto e dice QUALI campi ha cambiato: chi chiama ha bisogno di saperlo
 // (il Nome completo va ricalcolato solo se qualcosa si e' mosso).
@@ -27593,7 +27600,7 @@ const i18n = {
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
 'form.series.hasSizes':'Stickers differ from the ones with backs','form.series.abilitaModifica':'Enable editing of stickers','form.series.hasSubseries':'Has subseries',
-'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has sticker Change','form.series.hasRetroChange':'Has back Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of sticker Change','form.series.countRetroChange':'No. of back Change','form.series.retroChangeTypes':'BACK change types (one per line)','form.series.retroChangeTypesHint':'One value per line. The difference is on the BACK: a change of these types has a back of its own, or the "Blank back" flag.','form.series.frontChangeTypes':'FRONT change types (one per line)','form.series.frontChangeTypesHint':'One value per line. The difference is on the FRONT: a change of these types uses the back of its base sticker. The same type cannot be in both lists.','form.series.descPlaceholder':'Describe this series...',
+'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has sticker Change','form.series.hasRetroChange':'Has back Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of sticker Change','form.series.countRetroChange':'No. of back Change','form.series.retroChangeTypes':'BACK change types (one per line)','form.series.retroChangeTypesHint':'One value per line. The difference is on the BACK: a change of these types has a back of its own, or the "Blank back" flag.','form.series.frontChangeTypes':'FRONT change types (one per line)','form.series.frontChangeTypesHint':'One value per line. The difference is on the FRONT: a change of these types uses the back of its base sticker. The same type cannot be in both lists.','form.series.descPlaceholder':'Describe this series...','form.series.sottoserie':'Subseries (one per line)','form.series.sottoserieHint':'One value per line. The ORDER matters: it is the order the subseries will appear in inside the section. A subseries written on an item but not listed here does not disappear: it shows up last.',
 'form.fig.subseries':'Subseries',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
 'form.fig.variationsHint':'Number printed on the back of the sticker (default: 1)',
@@ -27687,7 +27694,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità ai risultati','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da attaccare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da attaccare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da attaccare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da attaccare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.series.sottoserie':'Sottoserie (una per riga)','form.series.sottoserieHint':'Un valore per riga. L\'ORDINE conta: è l\'ordine con cui le sottoserie si vedranno nella sezione. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri articoli','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -27751,6 +27758,29 @@ function aggiornaTestiRicercaSezione() {
   // 📌 La frase nuova non passa piu' di qui: e' un `data-i18n` nell'index (`items.searchHint`), e
   // puo' esserlo perche' - a differenza di questa - non contiene il nome della sezione.
   if (st) st.textContent = (it ? 'Imposta i criteri per la tua ricerca di ' : 'Set your search criteria for ') + nome;
+  // 🆕 v6.652 (Franco: «nella pagina delle Spille, il tasto "Aggiungi" dovrebbe dire
+  //    "Aggiungi spilla"») — IL TASTO DICE COSA SI AGGIUNGE.
+  // 📌 Si chiede la parola al DESCRITTORE, per tutti e otto gli articoli: un ramo per le
+  //    sole spille sarebbe stato l'unico degli otto con una regola sua, e una tipologia
+  //    nuova nascerebbe di nuovo con «+ Aggiungi» e basta.
+  // ⚠️ STA QUI PER FORZA, non per simmetria: `applyI18n` chiama questa funzione alla FINE,
+  //    dopo aver riscritto tutti i `data-i18n`. Composto altrove, il primo cambio di lingua
+  //    riporterebbe il tasto a «+ Aggiungi» e nessuno collegherebbe le due cose.
+  // ⚠️ E il `data-i18n` sul tasto RESTA: e' il ripiego che si legge nell'attimo fra il
+  //    caricamento e la prima composizione, come per `#items-search-title` (v6.332).
+  // 🔄 v6.653 - E SA FARE ANCHE IL CASO DEL BOX. Dentro un box di tipo prodotto il tasto
+  //    dice il nome del TIPO (v6.164: «+ Aggiungi cartoncino»), non quello della sezione:
+  //    lo sapeva la tabella a mano che questa release ha tolto, e senza portarlo qui
+  //    sarebbe andato perso insieme a lei.
+  // 📌 Otto articoli e N tipi, e nessuna tabella da tenere allineata: due funzioni che
+  //    sanno gia' rispondere, chiamate al momento giusto.
+  const btnAdd = document.getElementById('admin-add-label');
+  if (btnAdd) {
+    const tipoQui = _tipoProdottoCorrente
+      ? _tipiProdotto().find(x => x.id === _tipoProdottoCorrente) : null;
+    btnAdd.textContent = (it ? '+ Aggiungi ' : '+ Add ')
+      + (tipoQui ? _singolareTipo(tipoQui) : getSectionLabelSingular(currentSection));
+  }
 }
 
 function applyI18n() {
@@ -31038,6 +31068,95 @@ function renderEbayOversizeTable() {
 // Da qui in avanti una casella nuova sulla serie si aggiunge in UN posto, e i due rami la ereditano.
 // v6.216 - l'elenco di un RECORD (non di un id): la usa il ripristino, che ha la serie in mano.
 // Stessa regola di `_articoliNascosti`, e il ripiego sui due flag sparira' al passo 3.
+// 🆕 v6.650 - L'ELENCO DELLE SOTTOSERIE DI UNA SERIE, NELL'ORDINE DICHIARATO DA FRANCO.
+// 📌 Una funzione e non `s.sottoserie` scritto nei punti che lo usano: le serie salvate
+//    prima di oggi quel campo non ce l'hanno affatto, e ognuno dei chiamanti dovrebbe
+//    ricordarsi il proprio `|| []`. E' la trappola scritta in chiaro alla v6.102: senza
+//    il ripiego finisce «undefined» dentro la casella, e al primo salvataggio diventa un
+//    valore vero.
+// ⚠️ Torna sempre un array, mai `undefined`, e le righe sono gia' ripulite: chi lo usa
+//    non deve sapere che nel database e' un elenco che qualcuno ha scritto a mano.
+// 🆕 v6.656 (Franco: «sembra un campo di testo libero. Non puo' mostrare l'elenco delle
+//    sottoserie disponibili?») — LE OPZIONI DELLA TENDINA, dall'elenco dichiarato sulla
+//    serie: la stessa fonte da cui nascono i tab (v6.651). Due elenchi per la stessa cosa
+//    sarebbero divergiti al primo ritocco.
+// 🔴 IL VALORE FUORI ELENCO NON SI PERDE: se l'articolo ne ha uno che l'elenco non nomina,
+//    compare sotto «non in elenco», selezionato. Senza, aprire quella scheda e salvarla
+//    gli cambierebbe la sottoserie in silenzio. E' la rete degli orfani dei tab, e la
+//    stessa che le tendine delle tipologie hanno dalla v6.258.
+// ⚠️ SE L'ELENCO E' VUOTO LA TENDINA LO DICE, invece di mostrare il solo «— scegli —»:
+//    quello e' indistinguibile da un elenco che si sta caricando, e da li' si salverebbe
+//    un articolo senza sottoserie con il sintomo lontano dalla causa (v6.258).
+// 🔴 QUESTA E' LA QUARTA TENDINA DELLA STESSA FAMIGLIA (`_opzioniTipoChange`,
+//    `_opzioniTipoOmaggio`, `_opzioniTipoErrore`). Le tre esistenti hanno anche il
+//    raggruppamento per lato, che qui non serve: estrarre a meta' sarebbe peggio che non
+//    estrarre. Il debito si conta - QUATTRO - invece di sparire dentro la quarta copia.
+function _opzioniSottoserie(seriesId, sel) {
+  const it = currentLang === 'it';
+  const s = getData('series', []).find(x => x.id === seriesId);
+  const elenco = _sottoserieSerie(s);
+  const scelto = String(sel || '').trim();
+  if (!elenco.length) {
+    return '<option value="">' + (it
+      ? '\u26a0\ufe0f nessuna sottoserie in questa serie \u2014 si definiscono nella scheda della serie'
+      : '\u26a0\ufe0f no subseries in this series') + '</option>';
+  }
+  let html = '<option value="">' + (it ? '\u2014 scegli \u2014' : '\u2014 choose \u2014') + '</option>';
+  html += elenco.map(v => '<option value="' + esc(v) + '"'
+    + (v === scelto ? ' selected' : '') + '>' + esc(v) + '</option>').join('');
+  if (scelto && !elenco.includes(scelto)) {
+    html += '<optgroup label="' + (it
+      ? '\u26a0\ufe0f non in elenco \u2014 va aggiunta alle sottoserie della serie'
+      : '\u26a0\ufe0f not listed') + '"><option value="' + esc(scelto)
+      + '" selected>' + esc(scelto) + '</option></optgroup>';
+  }
+  return html;
+}
+
+function _sottoserieSerie(s) {
+  if (!s || !Array.isArray(s.sottoserie)) return [];
+  return s.sottoserie.map(v => String(v || '').trim()).filter(Boolean);
+}
+
+// 🆕 v6.651 - I TAB DI QUESTA SEZIONE, e non escono da nessuna lista scritta qui.
+// 📌 Due fonti, ognuna per la sua domanda: l'elenco DICHIARATO sulla serie (v6.650) da'
+//    quali sottoserie esistono e IN CHE ORDINE; gli articoli di questa sezione dicono
+//    quali di quelle sono davvero usate qui.
+// 🔴 SE NESSUNA DELLE DICHIARATE E' USATA IN QUESTA SEZIONE, NON C'E' NESSUN TAB. E' cio'
+//    che fa funzionare «una lista per serie, ma i tab solo dove servono» senza un campo
+//    che dichiari la sezione: gli album di Holidays e i retro di Spille non ne hanno,
+//    quindi li' la barra non compare. Un campo «le sottoserie valgono per la sezione X»
+//    sarebbe stata una seconda copia della verita', capace di contraddire i dati.
+// 🔴 E GLI ORFANI IN CODA SONO LA RETE: un articolo con una sottoserie che l'elenco non
+//    nomina - o senza - NON deve sparire dalla vista. Prende un tab suo, e il refuso si
+//    vede invece di far mancare un pezzo. E' la lezione delle 672 card che puntavano a
+//    pagine mai fatte, applicata prima che il danno succeda.
+// ⚠️ Gli orfani si aggiungono SOLO se almeno una dichiarata e' in uso: senza questa
+//    condizione, ogni sezione senza sottoserie mostrerebbe un tab solo col vuoto dentro.
+function _tabSottoserie() {
+  if (!currentSeriesId || !currentSection) return [];
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  const dichiarate = _sottoserieSerie(s);
+  if (!dichiarate.length) return [];
+  const qui = getData('figurines', [])
+    .filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
+  const presenti = new Set(qui.map(f => String(f.subseries || '').trim()));
+  const usate = dichiarate.filter(v => presenti.has(v));
+  if (!usate.length) return [];
+  const orfani = [...presenti].filter(v => !dichiarate.includes(v));
+  return usate.concat(orfani);
+}
+
+// L'etichetta di un tab. Il vuoto ha un NOME, e non e' un ripiego: Franco, 9 settembre -
+// «quelle figurine senza sottoserie si puo' dire che fanno parte del set principale della
+// serie, quindi alla fine un nome lo abbiamo (set principale)».
+// 📌 Un orfano con un nome invece si mostra COL SUO NOME, refuso compreso: e' l'unico modo
+//    di accorgersene.
+function _etichettaSottoserie(v) {
+  if (v) return v;
+  return currentLang === 'it' ? 'Set principale' : 'Base set';
+}
+
 function _articoliNascostiDaRecord(s) {
   if (!s) return [];
   if (Array.isArray(s.articoliNascosti)) return s.articoliNascosti;
@@ -31045,6 +31164,16 @@ function _articoliNascostiDaRecord(s) {
   if (s.noAlbums) da.push('albums');
   if (s.noRetro)  da.push('retros');
   return da;
+}
+
+// 🆕 v6.650 - LA CASELLA DELLE SOTTOSERIE SI VEDE SOLO SE LA SERIE DICE DI AVERNE.
+// 📌 Una funzione sola, chiamata dall'apertura della scheda e dal clic sulla spunta: due
+//    punti che accendono la stessa cosa con due regole diverse sono il difetto che la
+//    v6.164 ha chiuso sui comandi della testata.
+function _aggiornaCasellaSottoserie() {
+  const g = document.getElementById('series-sottoserie-group');
+  const cb = document.getElementById('series-has-subseries-input');
+  if (g) g.style.display = (cb && cb.checked && currentUser?.isAdmin) ? '' : 'none';
 }
 
 function _ripristinaFlagSerie(s) {
@@ -31069,6 +31198,7 @@ function _ripristinaFlagSerie(s) {
   // senza, ogni salvataggio spegnerebbe il timbro. Tredici flag, tredici ripristini.
   spunta('series-in-costruzione-input',            s && s.inCostruzione);    // v6.585
   spunta('series-has-subseries-input',             s && s.hasSubseries);     // v6.169
+  _aggiornaCasellaSottoserie();   // v6.650 - dopo la spunta, o leggerebbe quella di prima
   spunta('series-has-sizes-input',                 s && s.hasSizes);
   spunta('series-abilita-modifica-input',          s && s.abilitaModifica); // v6.366         // v6.169
   spunta('series-has-variations-input',            s && s.hasVariations);    // v6.169
@@ -31298,6 +31428,10 @@ function openAddSeriesModal(seriesId) {
       // scritto dentro la casella, che al primo salvataggio diventerebbe un tipo di change.
       const fctInput = document.getElementById('series-front-change-types-input');
       if (fctInput) fctInput.value = (s.frontChangeTypes || []).join('\n');
+      // 🆕 v6.650 - le sottoserie. Stessa ragione del `|| []` qui sopra, detta alla
+      //    v6.102: nessuna serie salvata prima di oggi ha questo campo.
+      const ssInput = document.getElementById('series-sottoserie-input');
+      if (ssInput) ssInput.value = _sottoserieSerie(s).join('\n');
       // v6.241 - i tipi di omaggio. `|| []` per la stessa ragione detta qui sopra: nessuna serie
       // salvata prima di oggi ha questo campo, e senza ripiego finirebbe "undefined" dentro la
       // casella — che al primo salvataggio diventerebbe un tipo di omaggio chiamato "undefined".
@@ -31330,6 +31464,10 @@ function openAddSeriesModal(seriesId) {
     // in cui il reset resta indietro di un campo per mesi.
     const fctInput = document.getElementById('series-front-change-types-input');
     if (fctInput) fctInput.value = '';
+    // 🆕 v6.650 - e lo svuotamento per una serie NUOVA: senza, nascerebbe con le
+    //    sottoserie di quella aperta prima, e nessuno lo direbbe.
+    const ssVuoto = document.getElementById('series-sottoserie-input');
+    if (ssVuoto) ssVuoto.value = '';
     // v6.241 - la terza casella. Il commento qui sopra dice perche' esistono queste righe:
     // dimenticarne una fa nascere la serie nuova con l'elenco di quella aperta prima, e nessuno
     // lo segnala. E' il punto in cui "aggiungere una casella" resta indietro per mesi.
@@ -31354,6 +31492,12 @@ function openAddSeriesModal(seriesId) {
   if (hasSizesGroup) hasSizesGroup.style.display = currentUser?.isAdmin ? '' : 'none';
   const hasSubseriesGroup = document.getElementById('series-has-subseries-group');
   if (hasSubseriesGroup) hasSubseriesGroup.style.display = currentUser?.isAdmin ? '' : 'none';
+  // 🆕 v6.650 - la casella dell'ELENCO segue la spunta: un elenco di sottoserie su una
+  //    serie che dichiara di non averne sarebbe un campo che non vuol dire niente.
+  // 📌 Si accende anche al CLIC sulla spunta (`_aggiornaCasellaSottoserie`), non solo
+  //    all'apertura: accendere «Ha sottoserie» e non veder comparire dove scriverle
+  //    sembrerebbe che la spunta non faccia niente.
+  _aggiornaCasellaSottoserie();
   const hasVariationsGroup = document.getElementById('series-has-variations-input')?.closest('.form-group');
   if (hasVariationsGroup) hasVariationsGroup.style.display = currentUser?.isAdmin ? '' : 'none';
   // v6.217 - si apre SEMPRE sul primo tab. Nella scheda oggetto il tab resta dov'eri passando a
@@ -31569,6 +31713,12 @@ async function saveSeries() {
   // v6.102 (§12.10) - la seconda lista: i tipi di change che riguardano il FRONTE.
   const frontChangeTypes = (document.getElementById('series-front-change-types-input')?.value || '')
     .split('\n').map(v => v.trim()).filter(Boolean);
+  // 🆕 v6.650 - le sottoserie, con lo stesso taglio: righe ripulite e vuote scartate.
+  //    ⚠️ NON si ordina e NON si toglie il doppione: l'ordine e' l'informazione (e' cio'
+  //    che Franco decide scrivendolo), e un doppione va fatto VEDERE, non corretto in
+  //    silenzio - la stessa scelta della v6.102 sui tipi in due liste.
+  const sottoserie = (document.getElementById('series-sottoserie-input')?.value || '')
+    .split('\n').map(v => v.trim()).filter(Boolean);
   // Lo stesso tipo in tutte e due le liste e' una contraddizione: non si puo' sapere da che lato
   // sta un change di quel tipo, che e' esattamente il problema che questa release chiude.
   // Si BLOCCA e si dice quali sono, invece di scegliere una lista al posto di Franco: davanti a due
@@ -31646,7 +31796,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -31664,7 +31814,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -31995,6 +32145,7 @@ function toggleSearchClearBtn(inputId) {
 const ARTICOLI = {
   figurines: {
     pos: 1,
+    riquadro: 1,   // v6.654
     // 🔄 v6.481 (Franco) — «Figurine con velina» -> «Figurine con retro». L'inglese
     // l'ha scelto lui: «Stickers with backs». ⚠️ Il SINGOLARE dice `back`, non `backs`:
     // una figurina di retro ne ha uno, e le due righe devono concordare da sole.
@@ -32043,6 +32194,7 @@ const ARTICOLI = {
   // aggiunge un campo e lo si misura su tutti e sette, non si scrive a memoria sui sei vecchi.
   carte: {
     pos: 1,
+    riquadro: 1,   // v6.654
     it: 'Carte',   en: 'Cards',
     itSing: 'carta', enSing: 'card',
     genere: 'f',
@@ -32056,6 +32208,7 @@ const ARTICOLI = {
   },
   albums: {
     pos: 2,
+    riquadro: 1,   // v6.654
     it: 'Album',   en: 'Albums',
     itSing: 'album', enSing: 'album',
     genere: 'm',
@@ -32069,6 +32222,7 @@ const ARTICOLI = {
   },
   attaccare: {
     pos: 3,
+    riquadro: 1,   // v6.654
     // 🔄 v6.649 (Franco: «Figurine da attaccare -> Stickers») — L'INGLESE E' DECISO, e
     //    non e' piu' provvisorio: dalla v6.195 tre punti del file portavano scritto che
     //    «Stickers to stick» era da confermare. Adesso e' confermato, ed e' un'altra
@@ -32093,6 +32247,9 @@ const ARTICOLI = {
   },
   retros: {
     pos: 4,
+    // 📌 1.6 e' il valore che il codice applicava gia': era l'unico ramo
+    //    dichiarato dell'`if` che questa release ha tolto.
+    riquadro: 1.6,   // v6.654
     it: 'Retro',   en: 'Retros',
     itSing: 'retro', enSing: 'retro',
     genere: 'm',
@@ -32106,6 +32263,7 @@ const ARTICOLI = {
   },
   bustine: {
     pos: 5,
+    riquadro: 1,   // v6.654
     it: 'Bustine', en: 'Wrappers',
     itSing: 'bustina', enSing: 'wrapper',
     genere: 'f',
@@ -32130,6 +32288,14 @@ const ARTICOLI = {
   //    comunque, e si spostano con le frecce.
   spille: {
     pos: 7,
+    // 🔴 v6.654 (Franco: «l'altezza della card e' decisamente troppo alta,
+    //    considerando la dimensione delle foto; direi di un 30% di altezza
+    //    possiamo scendere (senza rimpicciolire la foto)») — 1 / 0,7 = 1,43.
+    //    `aspect-ratio` e' larghezza/altezza e la larghezza la decide la griglia,
+    //    quindi alzare il rapporto ABBASSA il riquadro. La foto sta dentro con
+    //    `object-fit: contain`: se e' piu' larga di 1,43 resta identica e sparisce
+    //    solo il vuoto sopra e sotto — che e' il caso descritto da Franco.
+    riquadro: 1.43,   // v6.654
     it: 'Spille', en: 'Pins',
     itSing: 'spilla', enSing: 'pin',
     genere: 'f',
@@ -32143,6 +32309,7 @@ const ARTICOLI = {
   },
   extras: {
     pos: 6,
+    riquadro: 1,   // v6.654
     it: 'Altri articoli', en: 'Other Items',
     itSing: 'articolo', enSing: 'item',
     genere: 'm',
@@ -32188,7 +32355,8 @@ function _nomeSezioneCard(sez, n) {
 // dire", e qui vorrebbe dire "nessuno sa piu' quale funzione lo ordina".
 const _ETICHETTE_DESCRITTORE = {
   pos: 'Pos.', it: 'Nome (IT)', en: 'Nome (EN)', itSing: 'Singolare (IT)', enSing: 'Singolare (EN)',
-  icona: 'Icona', colonne: 'Colonne d/m', numero: 'Numero', ordina: 'Ordinamento',
+  icona: 'Icona', colonne: 'Colonne d/m', riquadro: 'Riquadro foto (l/h)',
+  numero: 'Numero', ordina: 'Ordinamento',
   ordinaDove: 'Ordina dove', nomeCompleto: 'Nome completo', nomeCompletoDove: 'Nome completo dove'
 };
 
@@ -32625,6 +32793,7 @@ const VERSIONI_ARTICOLO = [
     // come la riga da ricordare il giorno di una sesta versione, aggiungendo che dimenticarla non
     // avrebbe dato errore.
     idForm: 'fe-is-variation',
+    flagSerie: 'hasVariations',   // v6.655
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
     // cinque frasi non hanno lo stesso articolo e da `it` non ci si arriva.
     esportaIt: 'Variazioni ufficiali', esportaEn: 'official variations',
@@ -32638,6 +32807,7 @@ const VERSIONI_ARTICOLO = [
     badgeIt: 'Variazione<br>non ufficiale', badgeEn: 'Unofficial<br>variation',
     itBreve: 'Var. non ufficiale', enBreve: 'Unofficial var.', livello: 'capo', partenza: ['base'],
     idForm: 'fe-is-unofficial-variation',
+    flagSerie: 'hasUnofficialVariations',   // v6.655
     // v6.284 - come si nomina questa versione dopo "Includi": articolo compreso, perche' le
     // cinque frasi non hanno lo stesso articolo e da `it` non ci si arriva.
     esportaIt: 'Variazioni non ufficiali', esportaEn: 'unofficial variations',
@@ -32651,6 +32821,7 @@ const VERSIONI_ARTICOLO = [
     badgeIt: 'Change', badgeEn: 'Change',
     livello: 'figlio', partenza: ['base', 'variation', 'unofficialVariation'],
     campoTipo: 'changeType', opzioniTipo: '_opzioniTipoChange', idForm: 'fe-is-change',
+    flagSerie: 'hasChange', flagSerieRetro: 'hasRetroChange',   // v6.655
     // 🆕 v6.583 - DOVE la serie dichiara i tipi di questa versione. Terzo pezzo accanto a
     // `campoTipo` e `opzioniTipo`: chi deve sapere quali tipi esistono lo chiede all'elenco.
     listeTipo: ['frontChangeTypes', 'retroChangeTypes'],
@@ -32711,6 +32882,7 @@ const VERSIONI_ARTICOLO = [
     // che quel lavoro serviva a qualcosa.
     livello: 'figlio', partenza: ['base', 'variation'],
     campoTipo: 'freeVersionType', opzioniTipo: '_opzioniTipoOmaggio', idForm: 'fe-is-free-version',
+    flagSerie: 'hasFreeVersion', flagSerieRetro: 'hasRetroFreeVersion',   // v6.655
     listeTipo: ['frontFreeVersionTypes', 'retroFreeVersionTypes'],   // v6.583
     // 🆕 v6.266 - IL PLURALE, e non si deriva da `it`: il titolo fisso del riquadro dice
     // "Omaggi per tipo", e da "Omaggio" non si arriva a "Omaggi" senza inventare una regola di
@@ -32782,6 +32954,7 @@ const VERSIONI_ARTICOLO = [
     // commento che spiega perche' una cosa e' diversa, accanto a una cosa che non lo e' piu', e'
     // la forma di bugia piu' difficile da smentire - suona come una ragione.
     campoTipo: 'printErrorType', opzioniTipo: '_opzioniTipoErrore', idForm: 'fe-is-printerror',
+    flagSerie: 'hasPrintError',   // v6.655
     listeTipo: ['frontPrintErrorTypes', 'retroPrintErrorTypes'],   // v6.583
     // 🆕 v6.520 - il riquadro degli errori di stampa porta un cappello: le due pillole del
     // LATO. È l'unico che ce l'ha, ed è per questo che si dichiara qui invece che nel
@@ -32809,6 +32982,41 @@ const VERSIONI_ARTICOLO = [
 // momento comparira' da se' in tutti i posti che derivano da questo elenco: e' esattamente cio'
 // che questa release compra.
 const _VERSIONI_VIVE = VERSIONI_ARTICOLO.filter(v => !v.nuova);
+
+// 🆕 v6.655 (Franco: «per le spille non ci sono variazioni, omaggi o change, quindi questi
+//    campi non vorrei vederli quando ne creo una») — QUESTA VERSIONE E' AMMESSA QUI?
+// 🔴 LA SPUNTA CHE RISPONDE ESISTEVA GIA' SULLA SERIE, e non la leggeva nessuno: sette
+//    caselle salvate, ripristinate, mostrate nella tabella della console, e mai
+//    interrogate. E' la seconda volta oggi (stamattina era `_articoloNascosto`), ed e'
+//    sempre la stessa forma: un attrezzo che nessuno usa non da' nessun segnale.
+// ⚠️ IL LATO CONTA: la serie dichiara change e omaggio per FRONTE e per RETRO (v6.170,
+//    v6.248). Il nome della spunta giusta lo dice il descrittore, non un `if` nella form.
+// 🔴 E LA RETE: cio' che l'articolo GIA' E' si vede sempre, spunta o no. Nascondere la
+//    casella di un change esistente non lo cancella — lo lascia senza il comando che lo
+//    governa, e il primo salvataggio potrebbe riportarlo a un articolo base senza che
+//    nessuno l'abbia chiesto. E' la regola degli orfani dei tab (v6.651).
+// 🆕 v6.658 - E QUESTA SERIE AMMETTE ALMENO UNA VERSIONE, IN QUESTA SEZIONE?
+// 📌 Non rifa' la domanda: la gira a `_versioneAmmessa` per ogni versione del descrittore.
+//    Cosi' la regola del LATO (change e omaggio dichiarati per fronte e per retro) vale
+//    anche qui senza riscriverla, e una versione nuova entra da se' il giorno che nasce.
+// ⚠️ Si passa un articolo FINTO con la sola sezione: qui non c'e' un record: la domanda e'
+//    sulla serie, non su un pezzo. Percio' la rete della v6.655 («cio' che l'articolo gia'
+//    e' si vede sempre») non entra in gioco, ed e' giusto: una colonna non appartiene a
+//    nessun articolo.
+function _qualcheVersioneAmmessa(serie, sezione) {
+  const finto = { section: sezione };
+  return VERSIONI_ARTICOLO.some(v => _versioneAmmessa(v.chiave, finto, serie));
+}
+
+function _versioneAmmessa(chiave, f, serie) {
+  const v = VERSIONI_ARTICOLO.find(x => x.chiave === chiave);
+  if (!v) return true;                       // una versione sconosciuta non si nasconde
+  if (f && v.campo && f[v.campo]) return true;   // la rete
+  const retro = !!(f && f.section === 'retros');
+  const nome = (retro && v.flagSerieRetro) ? v.flagSerieRetro : v.flagSerie;
+  if (!nome) return true;                    // versione senza spunta dichiarata: ammessa
+  return !!(serie && serie[nome]);
+}
 
 // 🆕 v6.266 - LE VERSIONI CHE HANNO UN TIPO, e che quindi si possono raggruppare nei risultati.
 // Non e' un elenco nuovo: e' una domanda a quello che c'e' gia'. `campoTipo` sta su change, omaggio
@@ -37248,6 +37456,12 @@ function openSeriesSection(section) {
   // seme guarderebbe la sezione che stiamo LASCIANDO (v6.338).
   _azzeraFiltriNonDuraturi(section);
   currentSection = section;
+  // 🆕 v6.651 - SI ENTRA DALLA PRIMA SOTTOSERIE (Franco: «mostriamo tutte le spille della
+  //    prima sottoserie»), e `null` dove la sezione non ne usa.
+  // ⚠️ DOPO `currentSection = section`: `_tabSottoserie` guarda la sezione CORRENTE, e
+  //    messo una riga piu' su risponderebbe sulla sezione che si sta lasciando. E' lo
+  //    stesso inciampo che la v6.338 ha gia' pagato col seme dei raggruppamenti.
+  _sottoserieAttiva = _tabSottoserie()[0] ?? null;
   // La riga dei contatori DEVE seguire la scheda. Senza questa chiamata resterebbe
   // quella disegnata all'apertura della serie — cioe' le Figurine — e continuerebbe
   // a mostrarle anche stando nei Retro. Era esattamente il difetto segnalato da
@@ -37311,17 +37525,16 @@ function openSeriesSection(section) {
   const showBulkScore = currentUser?.isAdmin && (section === 'figurines' || section === 'retros');
   if (bulkScoreWrap) bulkScoreWrap.style.display = showBulkScore ? 'flex' : 'none';
   if (bulkScoreTitle) bulkScoreTitle.style.display = showBulkScore ? '' : 'none';
-  // Rename add button based on section
-  const addBtn = document.querySelector('#admin-add-item-btn .btn-primary');
-  const addLabels = { figurines: currentLang === 'it' ? '+ Aggiungi figurina' : '+ Add sticker', retros: currentLang === 'it' ? '+ Aggiungi retro' : '+ Add retro', albums: currentLang === 'it' ? '+ Aggiungi album' : '+ Add album', extras: currentLang === 'it' ? '+ Aggiungi' : '+ Add' };
-  // v6.164 (Franco) - dentro un box il pulsante dice il NOME del prodotto: "+ Aggiungi cartoncino".
-  // Le altre sezioni lo fanno da sempre ("+ Aggiungi figurina", "+ Aggiungi retro") e i box erano
-  // rimasti col generico "+ Aggiungi" — la stessa incoerenza del titolo della scheda, corretta con
-  // la v6.147. Si usa il SINGOLARE del tipo, che e' il campo scritto apposta nella v6.148.
-  const _tipoQuiAdd = _tipoProdottoCorrente ? _tipiProdotto().find(x => x.id === _tipoProdottoCorrente) : null;
-  if (addBtn) addBtn.textContent = _tipoQuiAdd
-    ? ((currentLang === 'it' ? '+ Aggiungi ' : '+ Add ') + _singolareTipo(_tipoQuiAdd))
-    : (addLabels[section] || (currentLang === 'it' ? '+ Aggiungi' : '+ Add'));
+  // 🗑️ v6.653 — QUI STAVA IL SECONDO SCRITTORE DEL TASTO «+ Aggiungi», ed e' quello che
+  //    faceva sembrare inutile la v6.652: una tabella a mano con QUATTRO sezioni su otto
+  //    (figurine, retro, album, extra) e «+ Aggiungi» come ripiego per tutte le altre —
+  //    spille comprese. Girava DOPO `aggiornaTestiRicercaSezione`, quindi vinceva lui.
+  // 🔴 E NON SI TROVAVA CERCANDO L'ID: prendeva il tasto con
+  //    `querySelector('#admin-add-item-btn .btn-primary')`, cioe' per STRUTTURA. Il
+  //    controllo della v6.652 («il tasto si scrive da un punto solo») cercava per nome e
+  //    non l'ha visto. Un'ancora posizionale nasconde tanto quanto raccoglie.
+  // ✅ Adesso scrive solo `aggiornaTestiRicercaSezione`, e sa fare tutti e due i casi:
+  //    dentro un box il singolare del TIPO (v6.164), fuori il singolare dell'ARTICOLO.
   renderItems();
   // Show WIP banner if less than 50% of stickers have photos
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -38568,6 +38781,15 @@ async function unmarkFilteredForSale() {
 // altri.
 // ⚠️ LA RICERCA SCRITTA NON E' QUI, e non e' una svista: non e' una variabile ma il contenuto di
 // una casella del DOM, e le tre funzioni la trattano gia' in tre modi legittimamente diversi.
+// 🆕 v6.651 - LA SOTTOSERIE CHE SI STA GUARDANDO. `null` vuol dire «questa sezione non
+//    usa le sottoserie», non «tutte»: un «tutte» non esiste, per scelta di Franco.
+// 🔴 NON ENTRA IN `_FILTRI`, ed e' voluto. Quell'elenco raccoglie i filtri che si possono
+//    AZZERARE, e da cui leggono «Azzera filtri» e `_qualcheFiltroAcceso`. La sottoserie
+//    non ha uno stato spento: si e' sempre su un tab. Messa li', il sito direbbe «hai dei
+//    filtri accesi» a chi non ha toccato niente, e «Azzera filtri» la porterebbe a `null»
+//    - cioe' a nessuna griglia.
+let _sottoserieAttiva = null;
+
 const _FILTRI = [
   { nome: 'categoria retro',      azzera: () => { _retroCategoryFilter = new Set(); },
                                   acceso: () => _retroCategoryFilter.size > 0 },
@@ -38698,6 +38920,7 @@ function getCurrentlyFilteredItems(opts) {
   // pillole direbbero sempre «tutti di qua, zero di là» appena se ne accende una. È la
   // stessa ragione di `skipRaggr` e `skipCategory`.
   const _skipLato = !!(opts && opts.skipLato);
+  const _skipSottoserie = !!(opts && opts.skipSottoserie);   // v6.651
   const _latoAcceso = !_skipLato && _filtroLatoErrore.size > 0;
   // 🆕 v6.604 — IL SECONDO VINCOLO DI LATO, quello che porta con se' la pillola premuta.
   // 📌 Segue `skipLato` come il primo: il riquadro che disegna le due sezioni conta
@@ -38708,6 +38931,14 @@ function getCurrentlyFilteredItems(opts) {
   const _idxLato = (_latoAcceso || _vincoloTip) ? new Map(allFigs.map(x => [x.id, x])) : null;
   return allFigs.filter(f => {
     if (f.seriesId !== currentSeriesId || f.section !== currentSection) return false;
+    // 🆕 v6.651 - LA SOTTOSERIE CHE SI STA GUARDANDO. Sta qui e non in un secondo modo di
+    //    disegnare la griglia: cosi' conteggi, riquadri, paginazione, export, «aggiungi i
+    //    risultati alla tua lista» e la VISTA TABELLARE la rispettano senza saperne nulla.
+    // ⚠️ `skipSottoserie` serve alla barra dei tab, che deve contare quanti articoli
+    //    finirebbero in OGNI tab ignorando quello scelto - o direbbe «tutti qui, zero di
+    //    la'». E' la stessa ragione di `skipLato` e `skipRaggr`.
+    if (!_skipSottoserie && _sottoserieAttiva !== null
+        && String(f.subseries || '').trim() !== _sottoserieAttiva) return false;
     // Filtro per categoria (solo Retro), attivato cliccando un box nello specchietto risultati (v5.762)
     // v6.157 - il filtro per categoria vale nei retro E dentro un box di tipo prodotto. Accendere
     // un chip che poi non filtra sarebbe peggio che non averlo: un comando che non fa niente.
@@ -40501,9 +40732,60 @@ function _adattaCorniciErrore(radice) {
   });
 }
 
+// 🆕 v6.651 - LA BARRA DEI TAB. Si ridisegna a ogni `renderItems`, quindi non c'e' nessuno
+//    stato da tenere allineato: se un articolo cambia sottoserie, il tab compare o sparisce
+//    da se'.
+// 📌 IL CONTEGGIO ACCANTO A OGNI TAB IGNORA IL TAB SCELTO (`skipSottoserie`) ma NON gli
+//    altri filtri: dice «quanti ne troverei di la' con la ricerca che ho adesso», che e'
+//    l'unica risposta utile. Contare tutto direbbe un numero che non corrisponde a quello
+//    che si vede dopo il clic.
+function renderTabSottoserie() {
+  // ⚠️ IL NOME E' SPECIFICO APPOSTA. La prima stesura la chiamava `barra`, ed e'
+  //    bastato a rompere due suite: `prova-v6450` e `prova-v6451` trovano la barra dei
+  //    tasti della scheda cercando la PRIMA occorrenza di «const barra =» nel file, e
+  //    questa, stando piu' in su, gli ha preso il posto. Le due suite sono state
+  //    riancorate (e' la cosa che conta), ma un nome generico su una variabile che vive
+  //    in un file da 55.000 righe e' un invito a ricapitarci.
+  const barraTab = document.getElementById('items-subseries-tabs');
+  if (!barraTab) return;
+  const tab = _tabSottoserie();
+  if (!tab.length) { barraTab.innerHTML = ''; return; }
+  // ⚠️ Se la sottoserie attiva non esiste piu' (l'ultimo articolo e' stato spostato), si
+  //    torna alla prima invece di mostrare una griglia vuota senza spiegazione.
+  if (!tab.includes(_sottoserieAttiva)) _sottoserieAttiva = tab[0];
+  const tutti = getCurrentlyFilteredItems({ skipSottoserie: true });
+  barraTab.innerHTML = tab.map(v => {
+    const n = tutti.filter(f => String(f.subseries || '').trim() === v).length;
+    return '<button type="button" class="tab-sottoserie' + (v === _sottoserieAttiva ? ' on' : '')
+      + '" onclick="_vaiASottoserie(' + JSON.stringify(v).replace(/"/g, '&quot;') + ')">'
+      + esc(_etichettaSottoserie(v)) + '<span class="n">' + n + '</span></button>';
+  }).join('');
+}
+
+// 🆕 v6.651 (Franco: «ogni volta che cambio griglia si resetta anche la form di ricerca»)
+// ⚠️ E SI AZZERANO ANCHE GLI ALTRI FILTRI, con lo stesso gesto del cambio sezione. Non e'
+//    zelo: e' il difetto scritto alla v5.908 e ripetuto il 5 settembre 2026 - «un filtro
+//    dimenticato acceso fra una sezione e l'altra fa sembrare vuota una sezione piena». Un
+//    tab e' un cambio di sezione piu' piccolo, e li' il filtro dimenticato farebbe lo
+//    stesso danno con meno indizi per capirlo.
+function _vaiASottoserie(v) {
+  if (_sottoserieAttiva === v) return;   // gia' qui: non si azzera niente per un clic a vuoto
+  _sottoserieAttiva = v;
+  _azzeraFiltriNonDuraturi(currentSection);
+  const cerca = document.getElementById('items-search');
+  if (cerca) cerca.value = '';
+  try { toggleSearchClearBtn('items-search'); } catch (e) {}
+  currentItemPage = 1;
+  try { renderItems(); } catch (e) { console.error('renderItems (_vaiASottoserie)', e); }
+  try { if (typeof bulkEditActive !== 'undefined' && bulkEditActive) renderBulkEditView(); }
+  catch (e) { console.error('renderBulkEditView (_vaiASottoserie)', e); }
+}
+
 function renderItems() {
   const grid = document.getElementById('items-grid');
   if (!currentSeriesId || !grid || !currentSection) return;
+  // v6.651 - la barra dei tab, prima di tutto il resto: decide quali articoli sono in gioco.
+  try { renderTabSottoserie(); } catch (e) { console.error('renderTabSottoserie', e); }
   const searchQ = _perRicerca((document.getElementById('items-search')?.value || '').trim()); // v6.093 — senza accenti
   // 🔴 v6.355 - QUI C'ERA `if (searchQ) currentItemPage = 1;`, E BLOCCAVA LA PAGINAZIONE.
   // `changeItemPage(2)` scrive `currentItemPage = 2` e poi chiama QUESTA funzione, che con la
@@ -41307,7 +41589,14 @@ function renderItems() {
           // scrive sempre, ed e' la decisione che quel ramo prende da sempre.
           : `<span class="fig-number" style="font-size:1.05rem;color:${_COL_NOME};">${figLabel}</span>`
             + `<div class="fig-name-line" style="color:${_COL_NOME};">${catPrefix}${f.name}</div>`);
-    const imgAspectRatio = currentSection === 'retros' ? '1.6' : '1';
+    // 🔄 v6.654 - QUI C'ERA UN `if` A DUE RAMI: «i retro, e tutti gli altri». Ha retto
+    //    finche' gli articoli erano due famiglie; adesso sono OTTO, e ognuno ha una forma
+    //    sua. E' la stessa famiglia delle quattro liste di sezioni scritte a mano trovate
+    //    il 9 settembre: una regola PER ARTICOLO scritta fuori dal descrittore.
+    // 🔴 Il sintomo di allora e' quello che sarebbe successo qui: una tipologia nuova
+    //    eredita in silenzio il ramo «tutti gli altri», e nessuno se ne accorge finche'
+    //    non guarda una card storta. Le Spille l'hanno fatto davvero.
+    const imgAspectRatio = String(_art(currentSection).riquadro ?? 1);
     // LA SCRITTA DEL TIPO VIVE SOLO NEI RETRO (v5.705).
       // Nelle FIGURINE era ridondante: il badge in alto a destra dice gia' il tipo, ed
       // e' piu' visibile — Franco lo aveva fatto introdurre proprio per questo. Due
@@ -46306,7 +46595,14 @@ function switchToEditMode(figId) {
 
   // Sottoserie (solo se la serie ha hasSubseries)
   if (figSeries?.hasSubseries) {
-    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Sottoserie':'Subseries') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subseries" value="' + esc((f.subseries||'')) + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
+    // 🔄 v6.656 - DA CASELLA DI TESTO A TENDINA. Il testo libero faceva tre danni in uno:
+    //    non diceva quali sottoserie esistono, accettava un refuso che diventa un tab
+    //    fantasma, e - il sospetto di Franco - si lasciava riempire dal browser.
+    html += '<div class="detail-row"><span class="detail-label">'
+      + (currentLang==='it'?'Sottoserie':'Subseries')
+      + '</span><span class="detail-value"><select class="form-input" id="fe-subseries" '
+      + 'style="padding:0.3rem 0.5rem;font-size:0.9rem;">'
+      + _opzioniSottoserie(f.seriesId || currentSeriesId, f.subseries) + '</select></span></div>';
   }
 
   // Numero (i Retro non sono numerati; le Variazioni/Change ereditano quello della figurina base)
@@ -46325,7 +46621,12 @@ function switchToEditMode(figId) {
   // la sua ragione d'essere (v6.311).
   const _mostraNumero  = _mostraCampoNumero(f.section, _eFiglioCollegato(f));
   const _numeroEOrdine = _numeroEOrdinamento(f.section);
-  html += '<div class="detail-row" id="fe-number-group" style="' + (_mostraNumero ? '' : 'display:none;') + '"><span class="detail-label">' + (_numeroEOrdine ? (currentLang==='it'?'Ordinamento':'Sort order') : 'N.') + '</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="' + (_numeroEOrdine ? '1' : '01') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;">' + (_numeroEOrdine ? '<span style="font-size:0.75rem;color:var(--text);">' + (currentLang==='it'?'decide solo la posizione in griglia; non si vede da nessuna parte':'only sets the position in the grid; not shown anywhere') + '</span>' : '') +
+  html += '<div class="detail-row" id="fe-number-group" style="' + (_mostraNumero ? '' : 'display:none;') + '"><span class="detail-label">' + (_numeroEOrdine ? (currentLang==='it'?'Ordinamento':'Sort order') : 'N.') + '</span><span class="detail-value" style="display:flex;align-items:center;gap:0.6rem;"><input class="form-input" type="number" id="fe-number" value="' + (f.number||'') + '" placeholder="' + (_numeroEOrdine ? '1' : '01') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:80px;border:none;background:transparent;">' + (_numeroEOrdine ? '<span style="font-size:0.75rem;color:var(--text);">' + // 🔄 v6.660 (Franco: «scrivici davanti "NOTA: "») — accanto a una casella un testo si
+        //    legge come un'istruzione su cosa scriverci; questo invece dice cosa quel numero FA
+        //    e cosa NON e'. «NOTA:» lo dichiara prima che lo si legga col piede sbagliato.
+        //    ⚠️ In inglese «NOTE:»: «NOTA» in mezzo a una frase inglese sarebbe un refuso, e i
+        //    refusi si notano piu' della nota.
+        (currentLang==='it'?'NOTA: decide solo la posizione in griglia; non si vede da nessuna parte':'NOTE: only sets the position in the grid; not shown anywhere') + '</span>' : '') +
     // La casella "Non ha numero" resta SEMPRE nel DOM, anche dove non si mostra: il salvataggio la
     // legge (`fe-no-number`), e se non la trova scrive `false`. Toglierla avrebbe azzerato il flag
     // in silenzio al primo salvataggio, che e' il modo peggiore di perdere un dato.
@@ -46365,10 +46666,13 @@ function switchToEditMode(figId) {
   // Nella bozza restano `false`, quindi non si crea nessun dato a meta'.
   // Flag Variazione ufficiale / non ufficiale (solo Figurine/Album/Altro) e Change (anche Retro)
   if (!isRetrosItem && !_extraSerie) {
+    if (_versioneAmmessa('variation', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('variation') + '<span class="detail-value"><input type="checkbox" id="fe-is-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-variation\')" ' + (f.isVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+    if (_versioneAmmessa('unofficialVariation', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('unofficialVariation') + '<span class="detail-value"><input type="checkbox" id="fe-is-unofficial-variation" onchange="toggleFeBaseFigurineGroup(\'fe-is-unofficial-variation\')" ' + (f.isUnofficialVariation?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
   if (!_extraSerie) {   // v6.146 - Change ed Errore di stampa: stessa ragione
+    if (_versioneAmmessa('change', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('change') + '<span class="detail-value"><input type="checkbox" id="fe-is-change" onchange="toggleFeBaseFigurineGroup(\'fe-is-change\')" ' + (f.isChange?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
     // ERRORE DI STAMPA (v5.714): la quinta casella, in TUTTE E QUATTRO le sezioni, come
     // Change. Franco: "deve esserci in tutte e 4 le form di modifica". Nella v5.711
@@ -46378,7 +46682,9 @@ function switchToEditMode(figId) {
     // Franco (*"infila omaggio prima di errore di stampa"*), lo stesso della dichiarazione e
     // dell'ordinamento. Una casella che sta in un posto nell'elenco e in un altro nella form
     // sarebbe una terza verita' sullo stesso ordine.
+    if (_versioneAmmessa('free', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('free') + '<span class="detail-value"><input type="checkbox" id="fe-is-free-version" onchange="toggleFeBaseFigurineGroup(\'fe-is-free-version\')" ' + (f.isFreeVersion?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
+    if (_versioneAmmessa('printError', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('printError') + '<span class="detail-value"><input type="checkbox" id="fe-is-printerror" onchange="toggleFeBaseFigurineGroup(\'fe-is-printerror\')" ' + (f.isPrintError?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
   if (isRetrosItem || f.section === 'figurines') {
@@ -47685,6 +47991,23 @@ async function _salvaFigurineInBlocco(items) {
 async function saveFigFromDetail(figId, opzioni) {
   // v6.377 - vedi `saveBulkCell`: l'avviso sta dove l'utente preme, il fermo dove si scrive.
   if (_bloccatoDalLucchetto()) return;
+  // 🆕 v6.656 (Franco: «il campo Sottoserie dovrebbe essere obbligatorio ma non lo e'»)
+  // 📌 Si controlla solo dove la domanda ha senso: la serie deve avere delle sottoserie
+  //    DICHIARATE. Su una serie che non ne ha, il campo non c'e' nemmeno.
+  // ⚠️ E si guarda l'elemento, non il flag `hasSubseries`: se per qualunque ragione la
+  //    tendina non e' stata disegnata, non si puo' pretendere che qualcuno l'abbia
+  //    compilata - sarebbe un blocco senza scampo davanti a un campo che non si vede.
+  {
+    const ss = document.getElementById('fe-subseries');
+    if (ss && !String(ss.value || '').trim()
+        && _sottoserieSerie(getData('series', []).find(x => x.id === currentSeriesId)).length) {
+      toast(currentLang === 'it'
+        ? 'Scegli la sottoserie: in questa serie e\' obbligatoria.'
+        : 'Choose the subseries: it is required in this series.', 'error');
+      try { ss.focus(); } catch (e) {}
+      return;
+    }
+  }
   const _resta = !!(opzioni && opzioni.resta);
   // i due pulsanti si spengono durante il salvataggio: con "Salva e resta" la scheda rimane
   // aperta, quindi il secondo clic e' a portata di dito piu' che mai
@@ -51985,7 +52308,7 @@ function renderAdminFunzioni() {
       // avremo altre, fammi un bottone nella sezione FUNZIONI che fa questa cosa"* - quindi e'
       // ripetibile e non crea doppioni.
       '<div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1rem;margin-top:1.25rem;">' +
-        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '5. Crea le Figurine da attaccare' : '5. Create the stick-in stickers') + '</h4>' +
+        '<h4 style="font-family:var(--font-ui);margin:0 0 0.4rem;color:var(--info);">' + (it ? '5. Crea le Figurine da attaccare' : '5. Create the ' + _nomiAttacca().att) + '</h4>' +
         '<p style="color:var(--text);font-size:0.85rem;margin-bottom:0.9rem;">' +
           (it ? 'Crea una <b>Figurina da attaccare</b> per ogni <b>Figurina con retro</b> di tipo <b>base</b> che ancora non ce l’ha.<br><br>' +
                 '<b>Cosa eredita dalla figurina di partenza:</b><br>' +
@@ -51995,7 +52318,8 @@ function renderAdminFunzioni() {
                 'Si può <b>rilanciare</b>: chi ce l’ha già viene saltato, non duplicato.<br>' +
                 'Variazioni, change, omaggi ed errori di stampa <b>non</b> ne ricevono una.<br>' +
                 'Mostra l’anteprima coi numeri per serie e chiede conferma.'
-              : 'Creates one <b>stick-in sticker</b> for every <b>base</b> sticker that does not have one yet.<br><br>' +
+              : 'Creates one <b>' + _nomiAttacca().attS + '</b> for every <b>base</b> '
+        + _nomiAttacca().figS + ' that does not have one yet.<br><br>' +
                 '<b>Inherited from the source sticker:</b><br>' +
                 'Name and Number (governed by it: not editable on the card);<br>' +
                 'the front photo, <b>as a link</b> — no new image on Cloudinary.<br><br>' +
@@ -52085,6 +52409,20 @@ function _nuovaDaAttaccare(base) {
 
 let _pianoAttacca = null;
 
+// 🆕 v6.659 - I DUE ARTICOLI, NOMINATI DAL DESCRITTORE. Le frasi inglesi di questa
+//    procedura CONTRAPPONGONO le due cose («una da attaccare per ogni figurina con
+//    retro»), quindi hanno bisogno di due nomi diversi: se li scrivessero a mano
+//    resterebbero indietro il giorno che l'inglese di un articolo cambia — ed e'
+//    esattamente quello che e' successo dalla v6.195 alla v6.649.
+// 📌 Si leggono a ogni chiamata e non si copiano in una costante di file: cosi' seguono
+//    anche un cambio deciso mentre il sito e' aperto.
+function _nomiAttacca() {
+  return {
+    att:  _art('attaccare').en,   attS: _art('attaccare').enSing,
+    fig:  _art('figurines').en,   figS: _art('figurines').enSing
+  };
+}
+
 function anteprimaDaAttaccare() {
   const it = currentLang === 'it';
   const esito = document.getElementById('attacca-esito');
@@ -52099,13 +52437,14 @@ function anteprimaDaAttaccare() {
     // ed e' la prova che la funzione e' ripetibile senza danni.
     esito.innerHTML = '<div style="font-size:0.9rem;color:var(--success);">' +
       (it ? 'Ogni figurina con retro ha già la sua figurina da attaccare. Niente da creare.'
-          : 'Every sticker already has its stick-in counterpart. Nothing to create.') + '</div>';
+          : 'Every ' + _nomiAttacca().figS + ' already has its ' + _nomiAttacca().attS
+        + '. Nothing to create.') + '</div>';
     return;
   }
   esito.innerHTML =
     '<div style="font-size:0.9rem;margin-bottom:0.6rem;">' +
       (it ? '<b>' + totale + '</b> figurine da attaccare da creare, in <b>' + _pianoAttacca.length + '</b> serie'
-          : '<b>' + totale + '</b> stick-in stickers to create, across <b>' + _pianoAttacca.length + '</b> series') +
+          : '<b>' + totale + '</b> ' + _nomiAttacca().att.toLowerCase() + ' to create, across <b>' + _pianoAttacca.length + '</b> series') +
     '</div>' +
     '<div style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:0.5rem;">' +
     _pianoAttacca.map(r =>
@@ -52131,7 +52470,7 @@ async function applicaDaAttaccare() {
   // §14, regola 2: la conferma NOMINA il numero. «Sei sicuro?» senza un numero non e' una domanda.
   if (!confirm(it
     ? `Creare ${totale} figurine da attaccare in ${_pianoAttacca.length} serie? Nome, Numero e foto le erediteranno dalla figurina con retro di partenza.`
-    : `Create ${totale} stick-in stickers across ${_pianoAttacca.length} series? Name, number and photo are inherited from the source sticker.`)) return;
+    : `Create ${totale} ${_nomiAttacca().att.toLowerCase()} across ${_pianoAttacca.length} series? Name, number and photo are inherited from the source ${_nomiAttacca().figS}.`)) return;
   if (btn) btn.disabled = true;
   let creati = 0, serieScritte = 0;
   const errori = [];
@@ -52175,13 +52514,13 @@ async function applicaDaAttaccare() {
     esito.innerHTML =
       '<div style="font-size:0.9rem;color:' + (restanti || errori.length ? 'var(--warn)' : 'var(--success)') + ';">' +
         (it ? '✅ Create <b>' + creati + '</b> figurine da attaccare in ' + serieScritte + ' serie.'
-            : '✅ Created <b>' + creati + '</b> stick-in stickers in ' + serieScritte + ' series.') +
+            : '✅ Created <b>' + creati + '</b> ' + _nomiAttacca().att.toLowerCase() + ' in ' + serieScritte + ' series.') +
         '<br>' + (it ? 'Ricontate dopo la scrittura: ' : 'Recounted after writing: ') +
         '<b>' + restanti + '</b> ' + (it ? 'ancora da creare.' : 'still to create.') +
         (errori.length ? '<br><span style="color:var(--danger);">' + esc(errori.join(' — ')) + '</span>' : '') +
       '</div>';
   }
-  toast(it ? `✅ ${creati} figurine da attaccare create` : `✅ ${creati} stick-in stickers created`, 'success');
+  toast(it ? `✅ ${creati} figurine da attaccare create` : `✅ ${creati} ${_nomiAttacca().att.toLowerCase()} created`, 'success');
   try { updateSectionCounts(); } catch(e) { console.error('updateSectionCounts', e); }
 }
 
@@ -53595,6 +53934,17 @@ function renderBulkEditView() {
   // La colonna sparisce solo se sono TUTTI extra serie; con righe miste resta, e le celle degli
   // extra serie restano vuote. Toglierla in presenza di righe normali nasconderebbe un dato vero.
   const _cSoloExtra = allItems.length > 0 && allItems.every(_eProdottoExtraSerie);
+  // 🆕 v6.657 (Franco: «la colonna N. non va mostrata se nella serie il flag "Senza
+  //    numeri" e' TRUE») — LA DOMANDA IN UN POSTO SOLO, E CHIEDE ANCHE ALLA SERIE.
+  // 🔴 `_serieHaNumeri()` esisteva gia' e questa vista non la chiamava: decideva con una
+  //    condizione che parla di SEZIONI (`!== 'retros'`) e non del flag della serie. E' la
+  //    terza volta oggi che un attrezzo scritto non viene interrogato dove serve
+  //    (`_articoloNascosto` nelle numeriche, le sette spunte delle versioni, e questa).
+  // 📌 E si calcola UNA volta: la condizione stava scritta due volte, per l'intestazione
+  //    e per la cella. Sono due copie che devono dire per forza la stessa cosa - se
+  //    divergono, la tabella esce con un'intestazione in piu' o una cella in piu', e
+  //    tutte le colonne dopo scivolano di uno.
+  const _cMostraNumero = currentSection !== 'retros' && !_cSoloExtra && _serieHaNumeri();
   // v6.160 - la colonna Taglia si apre se qualcuno degli oggetti visibili la prevede DAVVERO: per i
   // prodotti extra serie lo dice il TIPO, per gli altri il flag della serie. Prima bastava essere
   // extra serie, e la colonna compariva anche sui tipi che la taglia non ce l'hanno.
@@ -53612,7 +53962,17 @@ function renderBulkEditView() {
   // cosa sono peggio di due colonne assenti - la lezione di `ebayShipIt`/`ebayShipUs` (v5.981).
   // 📌 Fino alla v6.369 quelle due colonne erano SENZA condizione, «su tutte e sette le sezioni»
   // (v6.237 e v6.242): era vero quando le sezioni erano sei e ognuna poteva avere versioni.
-  const _cVersione = currentSection !== 'attaccare';
+  // 🔄 v6.658 (Franco: «non li stai leggendo […] nella creazione della vista tabellare»)
+  //    — E ANCHE LA SERIE HA VOCE IN CAPITOLO. L'argomento e' quello scritto qui sopra per
+  //    le da-attaccare, parola per parola: dove la serie non ammette nessuna versione, la
+  //    colonna Versione direbbe «Base» su ogni riga e Tipologia sarebbe vuota su ogni riga.
+  //    Due colonne che non possono che dire sempre la stessa cosa sono peggio di due
+  //    colonne assenti.
+  // 📌 La differenza con la v6.370 e' da dove viene la risposta: li' dalla SEZIONE, qui
+  //    dalle sette spunte della SERIE - quelle che fino alla v6.655 non leggeva nessuno.
+  const _cVersione = currentSection !== 'attaccare'
+    && _qualcheVersioneAmmessa(getData('series', []).find(x => x.id === currentSeriesId),
+                               currentSection);
   // 🆕 v6.370 (Franco) - FAMIGLIA e COMMENTO ALBUM, le due colonne nuove: solo nella sezione delle
   // da-incollare e solo dove la modifica e' abilitata.
   // 📌 La domanda si fa alla stessa funzione dei tasti (`_daAttaccareModificaVietata`) su un oggetto
@@ -53732,7 +54092,7 @@ function renderBulkEditView() {
           ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Categoria</th>' : ''}
           ${_cExtra ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottocategoria</th>' : ''}
           ${currentSection === 'retros' ? '<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Categoria</th><th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Sottocategoria</th>' : ''}
-          ${(currentSection !== 'retros' && !_cSoloExtra) ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">N.</th>' : ''}
+          ${_cMostraNumero ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">N.</th>' : ''}
           <!-- v6.184 (Franco) - nelle Figurine qui c'era "Nome Completo" in sola lettura, e il Nome
                non c'era affatto. Ora c'e' il NOME, modificabile come nelle altre sezioni, e il Nome
                completo esce dalla tabella: e' un valore calcolato, e questa e' una vista di modifica. -->
@@ -53828,7 +54188,7 @@ function renderBulkEditView() {
             return _miniaturaTabella(_ff.fronte, true) + (_schedaDueFoto(f) ? ' ' + _miniaturaTabella(_ff.retro, false) : '');
           })()}</td>
           ${isAdmin ? `<td style="padding:4px;white-space:nowrap;text-align:center;"><button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Apri la scheda' : 'Open the card'}" onclick="openFigDetail('${f.id}')">&#128065;</button> <button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Modifica' : 'Edit'}" onclick="apriModificaItem('${f.id}')">&#9998;</button> ${_daAttaccareCreazioneVietata(f) ? '' : `<button class="tbl-btn tbl-btn-edit" style="font-size:1.05rem;font-weight:bold;line-height:1;padding:3px 8px;" title="${currentLang === 'it' ? 'Clona' : 'Clone'}" onclick="cloneFigurine('${f.id}')">&#10697;</button>`}</td>` : ''}
-          ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:90px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
+          ${currentSeriesHasSubseries ? (isAdmin ? '<td style="padding:4px;"><input data-field="subseries" data-id="'+f.id+'" value="'+(f.subseries||'')+'" style="width:150px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.subseries)) : ''}
           ${_cExtra ? (_eProdottoExtraSerie(f) && isAdmin
             ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" list="bulk-cat-'+f.tipoProdotto+'" value="'+esc(f.category||'')+'" style="width:230px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
             : '<td style="padding:4px;font-size:0.8rem;color:var(--muted);">'+esc(f.category||'')+'</td>') : ''}
@@ -53836,7 +54196,7 @@ function renderBulkEditView() {
             ? '<td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" list="bulk-sub-'+f.tipoProdotto+'" value="'+esc(f.subcategory||'')+'" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
             : '<td style="padding:4px;font-size:0.8rem;color:var(--muted);">'+esc(f.subcategory||'')+'</td>') : ''}
           ${currentSection === 'retros' ? (isAdmin && !_campoComandatoDalGenitore(f, 'category') ? '<td style="padding:4px;"><input data-field="category" data-id="'+f.id+'" value="'+(f.category||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td><td style="padding:4px;"><input data-field="subcategory" data-id="'+f.id+'" value="'+(f.subcategory||'')+'" style="width:120px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.category) + readCell(f.subcategory)) : ''}
-          ${(currentSection !== 'retros' && !_cSoloExtra) ? (isAdmin ? '<td style="padding:4px;text-align:center;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? f.number : '', null, 'center')) : ''}
+          ${_cMostraNumero ? (isAdmin ? '<td style="padding:4px;text-align:center;"><input data-field="number" data-id="'+f.id+'" value="'+(f.number||'')+'" type="number" style="width:60px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>' : readCell(f.number ? f.number : '', null, 'center')) : ''}
           ${(() => {
             // v6.184 (Franco) - IL NOME, e non piu' il Nome completo. Nelle Figurine questa cella
             // mostrava `fullName` in sola lettura e il Nome non c'era da nessuna parte: da qui non
