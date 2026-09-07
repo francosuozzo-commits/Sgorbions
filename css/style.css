@@ -333,6 +333,28 @@ body {
   cursor: pointer; text-decoration: none;
 }
 .menu-voce:hover { background: var(--card2); }
+
+/* 🆕 v6.651 — I TAB DELLE SOTTOSERIE. Una classe e non una stringa inline ripetuta per
+   ogni tab: il contro-esempio sta nella scheda della serie, dove i quattro tab hanno lo
+   stesso stile scritto quattro volte. Qui i tab sono quanti sono le sottoserie, cioe'
+   un numero che non si sa: scriverlo inline vorrebbe dire scriverlo N volte.
+   📌 La barra scorre in orizzontale invece di andare a capo: su telefono una barra che si
+   spezza in tre righe sposta la griglia in basso ogni volta che cambi tab. */
+#items-subseries-tabs {
+  display: flex; gap: 0.3rem; overflow-x: auto; margin: 0 0 0.9rem;
+  border-bottom: 1px solid var(--border); padding-bottom: 0;
+}
+#items-subseries-tabs:empty { display: none; }
+.tab-sottoserie {
+  flex-shrink: 0; padding: 0.45rem 0.9rem; border: 0; background: transparent;
+  border-bottom: 2px solid transparent; color: var(--text);
+  font-family: var(--font-ui); font-size: 0.88rem; cursor: pointer; white-space: nowrap;
+}
+.tab-sottoserie:hover { color: var(--accent); }
+/* Il tab attivo porta il lime dell'accento, come i tab della scheda serie: e' il colore
+   che in questo sito dice «sei qui». */
+.tab-sottoserie.on { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+.tab-sottoserie .n { color: var(--muted); font-size: 0.8rem; margin-left: 0.35rem; }
 /* 🗑️ v6.611 — QUI STAVA `.btn-admin-off`, LA VARIANTE SVUOTATA, e se n'e' andata con i suoi
    due soli utenti. Nata nella v6.601 per dare un gradino spento/acceso a «Ordina per
    creazione»: trasparente col bordo arancione da spenta, piena da accesa.
