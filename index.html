@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.661"></script>
-<link rel="stylesheet" href="css/style.css?v=6.661">
+<script src="js/email.min.js?v=6.676"></script>
+<link rel="stylesheet" href="css/style.css?v=6.676">
 
 
 <style>
@@ -123,6 +123,12 @@
      📌 Un nome dice un SIGNIFICATO: un timbro «in arrivo» e un comando che
      cancella non significano la stessa cosa, quindi non condividono la variabile. */
   --in-arrivo:       #e8557c;
+  /* 🆕 v6.668 - IL TIMBRO «IN COMPLETAMENTO». Colore SUO e non quello di IN ARRIVO:
+     nella stessa griglia dell'hub una serie puo' essere in arrivo e quella accanto in
+     completamento, e due significati con lo stesso colore sono il difetto segnalato da
+     Franco alla v6.394 e alla v6.397. 📌 Misurato sulla tavolozza viva: il vicino piu'
+     prossimo (`--action-admin`) sta a 37, `--in-arrivo` a 80. */
+  --in-completamento: #f0a30a;
   /* 🆕 v6.624 — IL GIALLO DEL CONTRASSEGNO DELLA VERSIONE (il pallino sulle card).
      📌 Vale quanto `--type-unofficial`, e non e' un caso: si e' scelto un colore che la
      tavolozza HA GIA', per non farne entrare uno nuovo e per non creare una coppia nuova da
@@ -3280,32 +3286,32 @@ button.back-btn { color:#ffffff; }
 
     <div class="series-tab-panel" data-tab="avanzate" style="display:none;">
 
-    <!-- 🆕 v6.584 (Franco: «non mostrare le serie che io indico come invisibili») — SERIE
-         INVISIBILE. Sta in CIMA al tab Avanzate e non in fondo accanto all'Elimina: e' un
-         interruttore che si cerca, non uno che si incontra. E non e' distruttivo — si spegne
-         quando si vuole — quindi non gli si applica la regola dell'Elimina (v6.171), che sta in
-         fondo apposta perche' cancellare non si disfa.
-         ⚠️ Il testo dice ANCHE cosa porta con se': senza, «invisibile» si legge come «non compare
-         nel menu», e nessuno si aspetta che spariscano 700 articoli dalla ricerca. -->
+    <!-- 🆕 v6.584 (Franco: «non mostrare le serie che io indico come invisibili») e v6.585
+         («un timbro alla foto copertina della serie»).
+         🔄 v6.668 - LE DUE SPUNTE DIVENTANO UN ELENCO SOLO. Franco: «onde evitare di costruire un
+         terzo campo, dopo "in arrivo" e "invisibile", non conviene usare un campo unico?». I quattro
+         valori sono gradini della stessa scala e non possono valere insieme; due spunte
+         indipendenti ne permettevano quattro combinazioni, tre ne avrebbero permesse otto.
+         🔴 E QUESTA RIGA DICE COSA SI E' PERSO, perche' era scritto qui e non vada perduto: fino
+         alla v6.667 «invisibile» e «in costruzione» si potevano spuntare tutte e due, e il commento
+         della v6.585 lo chiamava una possibilita' voluta - «una serie nascosta che un giorno
+         riappare si porta dietro il timbro gia' pronto». Adesso non si puo' piu': al ripristino il
+         timbro va rimesso a mano. Franco ha scelto sapendolo.
+         ⚠️ Il campo sta in CIMA al tab Avanzate e non in fondo accanto all'Elimina: e' un
+         interruttore che si cerca, non uno che si incontra. -->
     <div class="form-group">
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-        <input type="checkbox" id="series-invisibile-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-        <span>&#129765; Serie invisibile</span>
-      </label>
-      <div class="form-hint">La serie <b>e tutti i suoi articoli</b> spariscono dal sito: catalogo, ricerca globale, caroselli, classifica, contatori e Mia lista. Restano visibili solo all&rsquo;admin.</div>
-    </div>
-
-    <!-- 🆕 v6.585 (Franco: «un timbro alla foto copertina della serie») — SERIE IN COSTRUZIONE.
-         ⚠️ Sta SOTTO «Serie invisibile» e non accanto, perche' le due caselle non sono due gradi
-         della stessa cosa: una toglie la serie dal sito, l'altra la lascia dov'e' e dice che sta
-         arrivando. Spuntarle tutte e due non e' una contraddizione — una serie nascosta che un
-         giorno riappare si porta dietro il timbro gia' pronto. -->
-    <div class="form-group">
-      <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
-        <input type="checkbox" id="series-in-costruzione-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-        <span>&#128679; Serie in costruzione</span>
-      </label>
-      <div class="form-hint">Sulla copertina della card compare il timbro <b>IN ARRIVO !</b> (<b>COMING SOON !</b> in inglese). La serie resta visibile e si pu&ograve; aprire.</div>
+      <label class="form-label" for="series-stato-input">&#128679; Stato della serie</label>
+      <select id="series-stato-input" class="form-input">
+        <option value="pubblicata">Pubblicata &mdash; nessun timbro, tutto normale</option>
+        <option value="in-completamento">&#129521; In completamento &mdash; timbro, e la serie si apre</option>
+        <option value="in-arrivo">&#128679; In arrivo &mdash; timbro, e la serie NON si apre</option>
+        <option value="nascosta">&#129765; Nascosta &mdash; la serie e tutti i suoi articoli spariscono</option>
+      </select>
+      <div class="form-hint">
+        <b>In completamento</b>: sulla copertina compare <b>IN COMPLETAMENTO</b> (<b>WORK IN PROGRESS !</b>), e la serie resta apribile &mdash; serve a spiegare a chi guarda perch&eacute; mancano delle foto.<br>
+        <b>In arrivo</b>: compare <b>IN ARRIVO !</b> (<b>COMING SOON !</b>), la serie si vede ma non si apre, e non entra nelle pagine per Google.<br>
+        <b>Nascosta</b>: la serie <b>e tutti i suoi articoli</b> spariscono dal sito &mdash; catalogo, ricerca globale, caroselli, classifica, contatori e Mia lista. Restano visibili solo all&rsquo;admin.
+      </div>
     </div>
 
     <!-- v6.170 - qui stava il blocco dei tre conteggi (griglia 1fr 1fr 1fr). Ogni numero e' andato
@@ -3838,7 +3844,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.661"></script>
+<script src="js/app.js?v=6.676"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3862,7 +3868,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.661'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.676'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
