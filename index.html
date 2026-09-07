@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.636"></script>
-<link rel="stylesheet" href="css/style.css?v=6.636">
+<script src="js/email.min.js?v=6.649"></script>
+<link rel="stylesheet" href="css/style.css?v=6.649">
 
 
 <style>
@@ -1155,8 +1155,25 @@ button.back-btn { color:#ffffff; }
               <h1 class="series-name" id="detail-name" style="margin:0;"></h1>
               <div class="series-year" id="detail-year" style="margin:0;"></div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:0.4rem;align-items:flex-end;flex-shrink:0;">
-              <button id="detail-edit-series-btn" onclick="openAddSeriesModal(currentSeriesId)" style="display:none;font-size:0.92rem;padding:6px 14px;border-radius:8px;border:1px solid var(--action-admin);background:var(--action-admin);color:#ffffff;cursor:pointer;">&#9998; Modifica serie</button>
+            <!-- 🆕 v6.644 (Franco: «invece di n bottoni non possiamo fare un unico
+                 pulsante con un menu a tendina? … la tendina la chiami "Opzioni admin"»)
+                 Qui c'era una COLONNA di tasti, cresciuta da due a quattro in una
+                 giornata. Adesso e' un tasto e un pannello.
+                 ⚠️ `.btn-admin` sta sul TASTO, non sulle voci: e' quella classe a portare
+                 il `display:none !important` della regola «niente amministrazione da
+                 telefono» (v5.822). Sulle voci combatterebbe col `display` che decide
+                 app.js; sul tasto basta, perche' senza tasto il pannello non si apre. -->
+            <div id="detail-admin-menu" style="position:relative;flex-shrink:0;">
+              <button id="detail-admin-btn" onclick="_toggleMenuAdminSerie()"
+                      class="btn-primary btn-admin"
+                      style="display:none;font-size:0.9rem;padding:0.4rem 1.1rem;">⚙️ Opzioni admin ▾</button>
+              <!-- 📌 Il pannello si chiude da se' su QUALUNQUE clic che ci passi dentro:
+                   un solo `onclick` sul contenitore invece di quattro sulle voci, e una
+                   voce nuova domani non se ne puo' dimenticare. Il gesto della voce
+                   avviene lo stesso: questo scatta dopo, risalendo. -->
+              <div id="detail-admin-dd" onclick="this.style.display='none'"
+                   style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--card);border:1px solid var(--border2);border-radius:8px;overflow:hidden;z-index:999;min-width:220px;box-shadow:0 4px 16px rgba(0,0,0,0.3);text-align:left;">
+                <button id="detail-edit-series-btn" onclick="openAddSeriesModal(currentSeriesId)" class="menu-voce" style="display:none;">&#9998; Modifica serie</button>
               <!-- 🔄 v6.621 (Franco: *"il Tasto Vista ebay e' admin ma non e' come gli altri tasti"*)
                    Si vestiva PER INTERO a mano: sei proprieta' inline, nessuna classe, un azzurro
                    scritto a mano, niente :hover e — la cosa che contava — nessuna sparizione
@@ -1168,7 +1185,20 @@ button.back-btn { color:#ffffff; }
                    ⚠️ `display:none` RESTA, ed e' un'altra cosa: non e' vestito, e' lo stato
                    iniziale. Il tasto compare solo per le serie che hanno articoli su eBay, e ad
                    accenderlo e' app.js. -->
-              <button id="detail-ebay-series-btn" onclick="openSeriesEbayModal()" class="btn-primary btn-admin" style="display:none;font-size:0.9rem;padding:0.4rem 1.1rem;">🏷️ Vista Ebay</button>
+                <button id="detail-ebay-series-btn" onclick="openSeriesEbayModal()" class="menu-voce" style="display:none;">🏷️ Vista Ebay</button>
+              <!-- 🆕 v6.641 (Franco: «2 pulsanti - admin visible - sulla pagina della
+                   serie che mi permettano di aprire quella pagina») — LA PAGINA PUBBLICA
+                   DI QUESTA SERIE, nelle due lingue. Sono <a> e non <button>: aprono un
+                   indirizzo, e un indirizzo si copia, si apre in una scheda nuova e si
+                   vede nella barra di stato prima di premere. Un onclick con window.open
+                   toglie tutte e tre le cose e non ne da' nessuna.
+                   ⚠️ `href` vuoto e `display:none` sono lo STATO INIZIALE: l'indirizzo lo
+                   scrive app.js da `_gscIndirizzi`, che e' l'unico posto dove quei
+                   percorsi sono scritti. Qui non si ricopia niente.
+                   📌 `rel="noopener"`: la scheda nuova non deve poter toccare questa. -->
+                <a id="detail-gsc-it" href="" target="_blank" rel="noopener" class="menu-voce" style="display:none;">🔍 Pagina Google IT</a>
+                <a id="detail-gsc-en" href="" target="_blank" rel="noopener" class="menu-voce" style="display:none;">🔍 Pagina Google EN</a>
+              </div>
             </div>
           </div>
           <div id="detail-meta" style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.7rem 1.4rem;margin:0.4rem 0 0.6rem;font-size:0.82rem;color:var(--text);"></div>
@@ -1256,7 +1286,11 @@ button.back-btn { color:#ffffff; }
         <div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-repeat:no-repeat;background-position:center;background-size:cover;">
         </div>
         <div style="padding:1.25rem 1.5rem;">
-          <div class="section-choice-title">Figurine da attaccare</div>
+          <!-- 🔄 v6.649 — QUESTO TITOLO NON SI TRADUCEVA: senza `data-i18n` in inglese si
+               leggeva in italiano. La chiave e' la STESSA del titoletto nella form della
+               serie: due chiavi con lo stesso testo sono due cose da cambiare insieme, e
+               la seconda volta non succede. -->
+          <div class="section-choice-title" data-i18n="catalog.attaccare">Figurine da attaccare</div>
           <div class="section-choice-count" id="count-attaccare" data-i18n-loading="catalog.loading">caricamento...</div>
         </div>
       </div>
@@ -1282,6 +1316,23 @@ button.back-btn { color:#ffffff; }
         <div style="padding:1.25rem 1.5rem;">
           <div class="section-choice-title" data-i18n="catalog.extras">Altri articoli</div>
           <div class="section-choice-count" id="count-extras" data-i18n-loading="catalog.loading">caricamento...</div>
+        </div>
+      </div>
+      <!-- 🆕 v6.647 (Franco) — LE SPILLE, l'ottavo articolo.
+           ⚠️ IL RIQUADRO DELLA FOTO E' VUOTO, ED E' VOLUTO: `SECTION_IMAGES` ha tre voci
+           su sette, e la foto vera la mette `_applicaFotoSezioni` da quella che Franco
+           carica. Copiare qui il base64 di un'altra sezione «per non lasciarlo vuoto»
+           avrebbe messo una foto che dice una cosa falsa — peggio di un riquadro che
+           dice «manca».
+           📌 La POSIZIONE nella griglia non conta: `_riordinaBoxSezioni` sposta le card
+           secondo `PRODOTTI_INVENTARIO`, che e' l'ordine che Franco decide dalla
+           console. Qui sta in coda perche' da qualche parte doveva stare. -->
+      <div class="section-choice-card" onclick="openSeriesSection('spille')" style="padding:0;overflow:hidden;">
+        <div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-size:60%;background-repeat:no-repeat;background-position:center;">
+        </div>
+        <div style="padding:1.25rem 1.5rem;">
+          <div class="section-choice-title" data-i18n="catalog.spille">Spille</div>
+          <div class="section-choice-count" id="count-spille" data-i18n-loading="catalog.loading">caricamento...</div>
         </div>
       </div>
       
@@ -2702,10 +2753,21 @@ button.back-btn { color:#ffffff; }
           <div style="margin-bottom:0.6rem;">
             <label class="form-label" data-i18n="form.series.name">Series Name</label>
             <input class="form-input" type="text" id="series-name-input" placeholder="e.g. Serie 1 — Primavera">
+            <!-- 🆕 v6.645 (Franco: «ci serve una versione Inglese del nome delle Serie»)
+                 FACOLTATIVO, e si lascia vuoto per le serie che hanno un NOME PROPRIO —
+                 «Sgorbions serie 2» non si traduce. Serve per le due che un nome proprio
+                 non ce l'hanno: «Articoli senza serie» e le descrittive che verranno.
+                 ⚠️ Vuoto significa «usa l'italiano», non «manca qualcosa»: e' la ragione
+                 per cui non e' obbligatorio e non da' nessun avviso. -->
+            <input class="form-input" type="text" id="series-name-en-input" placeholder="English name (optional)" style="margin-top:0.35rem;">
           </div>
           <div>
             <label class="form-label">Nome breve</label>
             <input class="form-input" type="text" id="series-nome-corto-input" placeholder="es. S1">
+            <!-- 🆕 v6.645 — la forma corta in inglese. Si vede sulle card su telefono e
+                 in vista compatta, cioe' proprio dove lo spazio e' poco e la parola
+                 conta di piu'. Facoltativo come quello sopra. -->
+            <input class="form-input" type="text" id="series-nome-corto-en-input" placeholder="short English name (optional)" style="margin-top:0.35rem;">
             <!-- 🗑️ v6.480 (Franco) — QUI STAVA «Obbligatorio. Si usa sulle card su telefono,
                  dove il nome per esteso non ci sta.» Diceva due cose: dove si usa il campo, che
                  e' informazione, e che e' obbligatorio — che il campo fa gia' rispettare da se'.
@@ -2872,7 +2934,13 @@ button.back-btn { color:#ffffff; }
                📌 `margin-top` ridotto rispetto alla classe: qui il titoletto sta DENTRO una colonna
                di spunte, non in cima a un blocco, e il valore di classe (1,1rem) lo staccherebbe
                troppo da quella sopra. -->
-          <div class="series-sottotitolo" style="margin-top:0.55rem;">Figurine da incollare</div>
+          <!-- 🔄 v6.648 (Franco: «è sempre stato "da attaccare"») — e questo e' l'unico dei tre
+                 che si legge DA QUI: non ha `data-i18n`, quindi `applyI18n` non lo tocca.
+                 ⚠️ Ed e' anche la ragione per cui in inglese resta in italiano: dargli una
+                 chiave vuol dire scegliere quale delle due forme inglesi in giro usare
+                 («Stick-in stickers» del dizionario o «Stickers to stick» del
+                 descrittore). Le due cose si chiudono insieme. -->
+          <div class="series-sottotitolo" style="margin-top:0.55rem;" data-i18n="catalog.attaccare">Figurine da attaccare</div>
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-has-sizes-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <!-- 🆕 v6.362 (Franco) — UNA SPUNTA SOLA. La v6.361 ne aveva aggiunta una seconda per
@@ -2884,7 +2952,7 @@ button.back-btn { color:#ffffff; }
                  non il nome sul database. Rinominarlo avrebbe voluto dire riscrivere ogni documento
                  di serie per un guadagno di sola leggibilita' — e la chiave `form.series.hasSizes`
                  nomina il campo, non la frase, quindi continua a dire il vero. -->
-            <span data-i18n="form.series.hasSizes">Figurine da incollare diverse da figurine con retro</span>
+            <span data-i18n="form.series.hasSizes">Figurine da attaccare diverse da figurine con retro</span>
           </label>
           <!-- 🆕 v6.366 (Franco) — LA SECONDA SPUNTA, e stavolta i due flag sono due fatti davvero
                diversi: *"il flag 1 comanda la visibilita' dei bottoni di Creazione (Aggiungi) e
@@ -2898,7 +2966,7 @@ button.back-btn { color:#ffffff; }
                ⚠️ Nasce SPENTA su ogni serie, com'e' giusto per un interruttore di sicurezza. -->
           <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;font-size:0.88rem;" class="form-label">
             <input type="checkbox" id="series-abilita-modifica-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-            <span data-i18n="form.series.abilitaModifica">Abilita modifica figurine da incollare</span>
+            <span data-i18n="form.series.abilitaModifica">Abilita modifica figurine da attaccare</span>
           </label>
         </div>
       </div>
@@ -3750,7 +3818,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.636"></script>
+<script src="js/app.js?v=6.649"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3774,7 +3842,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.636'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.649'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 

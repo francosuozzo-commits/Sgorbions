@@ -313,6 +313,26 @@ body {
    Definita DOPO btn-primary: vince lo sfondo. Stessa taglia, cambia solo il colore. */
 .btn-admin { background: var(--action-admin); color: #ffffff; }
 .btn-admin:hover { transform: translateY(-2px); background: var(--action-admin-hover); box-shadow: 0 8px 30px rgba(var(--action-admin-rgb),0.4); }
+
+/* 🆕 v6.644 — LE VOCI DI UNA TENDINA (Franco: «un unico pulsante con un menu a tendina»).
+   Una classe e non quattro stringhe inline: il contro-esempio e' la tendina della lingua
+   in navbar, dove le due voci hanno lo stesso stile scritto due volte. Due bastano a
+   divergere, quattro sono una certezza.
+   ⚠️ NIENTE SEPARATORI FRA LE VOCI, ed e' una scelta, non una dimenticanza. La forma
+   ovvia sarebbe un border-bottom su tutte piu' «:last-child { border:0 }» — ma qui le
+   voci si accendono e si spengono una per una, e :last-child NON sa niente di
+   display:none: nascoste le ultime due, la riga resterebbe appesa sotto l'ultima voce
+   visibile. E' la stessa famiglia del selettore posizionale della v6.637.
+   📌 Il vestito da AMMINISTRATORE lo porta il tasto che apre (.btn-admin, arancione).
+   Dentro il pannello le voci sono testo: quattro blocchi arancioni uno sull'altro
+   direbbero «quattro comandi ad alto potere» invece di «un menu». */
+.menu-voce {
+  display: block; width: 100%; text-align: left; white-space: nowrap;
+  padding: 0.55rem 0.9rem; background: none; border: 0;
+  color: var(--text); font-family: var(--font-ui); font-size: 0.88rem;
+  cursor: pointer; text-decoration: none;
+}
+.menu-voce:hover { background: var(--card2); }
 /* 🗑️ v6.611 — QUI STAVA `.btn-admin-off`, LA VARIANTE SVUOTATA, e se n'e' andata con i suoi
    due soli utenti. Nata nella v6.601 per dare un gradino spento/acceso a «Ordina per
    creazione»: trasparente col bordo arancione da spenta, piena da accesa.
@@ -1373,13 +1393,24 @@ footer {
   #fig-detail-modal .modal > div:nth-child(2) {
     grid-template-columns: 1fr 740px !important;
   }
-  #fig-detail-photo > div {
+  /* \U0001F534 v6.637 — ANCORATE ALLA CLASSE, NON ALLA POSIZIONE.
+     Qui c'era «#fig-detail-photo > div» e «#fig-detail-photo > div > div:last-child».
+     Erano scritte per la scheda in LETTURA, dove i figli sono il blocco Fronte e il
+     blocco Retro — ma `#fig-detail-photo` e' UN SOLO contenitore, e in MODIFICA ci
+     scrive `_slotFotoEdit`: li' il `:last-child` e' la seconda RIGA DI TASTI, che
+     finiva in colonna. Da qui i quattro comandi disposti 2+1+1 invece di 2+2.
+     \u26a0\ufe0f Un selettore fatto di POSIZIONI non nomina cio' che colpisce: cercando
+     «chi mette flex-direction:column su quel div» per id, classe o stile inline non si
+     trova nulla, e si conclude che nessuna regola c'entri.
+     \u2705 Il rimedio NON e' rimettere flex-direction:row sui tasti: sarebbe spegnere il
+     sintomo e lasciare viva la regola, pronta per il prossimo contenuto che passa di li'. */
+  #fig-detail-photo > .fig-facce {
     grid-template-columns: 1fr 1fr !important;
     align-items: stretch !important;
   }
   /* il blocco del retro (etichetta, foto, link) centrato verticalmente rispetto al fronte,
      che di solito e' piu' alto */
-  #fig-detail-photo > div > div:last-child {
+  #fig-detail-photo > .fig-facce > div:last-child {
     display: flex; flex-direction: column; justify-content: center;
   }
 }

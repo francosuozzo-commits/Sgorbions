@@ -24118,6 +24118,37 @@
 //          Tab Utenti primo nella console admin.
 // ============================================================
 
+// 🆕 v6.644 - APRI E CHIUDI UNA TENDINA, IN UN POSTO SOLO. La danza - mostra/nascondi e
+//    installa un ascoltatore che chiude al primo clic FUORI - era scritta dentro
+//    `toggleLangDropdown`, e il menu «Opzioni admin» ne avrebbe fatta una seconda copia.
+// 🔴 E' una deduplicazione INTERA, non a meta': i due chiamanti sono tutti quelli che
+//    esistono. Una fatta a meta' e' peggio di nessuna - lascia scritto che il problema
+//    e' risolto (lezione del 6 settembre).
+// ⚠️ IL setTimeout NON E' DECORATIVO, e vive qui dentro apposta: senza, l'ascoltatore
+//    nasce durante lo STESSO clic che ha aperto il pannello, lo riceve subito e lo
+//    richiude. A schermo sembrerebbe che il tasto non funzioni.
+// 📌 Il `contenitore` e' cio' che NON conta come «fuori»: deve comprendere sia il tasto
+//    sia il pannello, o premere il tasto una seconda volta chiuderebbe e riaprirebbe.
+function _apriChiudiTendina(dd, contenitore) {
+  if (!dd || !contenitore) return;
+  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
+  if (dd.style.display !== 'block') return;
+  setTimeout(() => {
+    document.addEventListener('click', function chiudi(e) {
+      if (!contenitore.contains(e.target)) {
+        dd.style.display = 'none';
+        document.removeEventListener('click', chiudi);
+      }
+    });
+  }, 10);
+}
+
+// 🆕 v6.644 - il menu «Opzioni admin» della testata della serie.
+function _toggleMenuAdminSerie() {
+  _apriChiudiTendina(document.getElementById('detail-admin-dd'),
+                     document.getElementById('detail-admin-menu'));
+}
+
 function toggleLangDropdown() {
   const dd = document.getElementById('lang-dropdown');
   // Hide current language option
@@ -24127,19 +24158,9 @@ function toggleLangDropdown() {
       btn.style.display = lang === currentLang ? 'none' : '';
     });
   }
-  if (!dd) return;
-  dd.style.display = dd.style.display === 'none' ? 'block' : 'none';
-  // Close on outside click
-  if (dd.style.display === 'block') {
-    setTimeout(() => {
-      document.addEventListener('click', function closeLang(e) {
-        if (!document.getElementById('lang-switcher').contains(e.target)) {
-          dd.style.display = 'none';
-          document.removeEventListener('click', closeLang);
-        }
-      });
-    }, 10);
-  }
+  // 🔄 v6.644 - la danza sta in `_apriChiudiTendina`. Qui resta cio' che e' PROPRIO di
+  //    questa tendina: nascondere la voce della lingua gia' attiva, qui sopra.
+  _apriChiudiTendina(dd, document.getElementById('lang-switcher'));
 }
 
 function openAuth(tab) {
@@ -25947,7 +25968,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.636';
+const JS_VERSION = 'v6.649';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27529,7 +27550,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message !',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
@@ -27571,7 +27592,7 @@ const i18n = {
 'modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','modal.series.delete':'Delete series',
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
-'form.series.hasSizes':'Stick-in stickers differ from the ones with backs','form.series.abilitaModifica':'Enable editing of stick-in stickers','form.series.hasSubseries':'Has subseries',
+'form.series.hasSizes':'Stickers differ from the ones with backs','form.series.abilitaModifica':'Enable editing of stickers','form.series.hasSubseries':'Has subseries',
 'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has sticker Change','form.series.hasRetroChange':'Has back Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of sticker Change','form.series.countRetroChange':'No. of back Change','form.series.retroChangeTypes':'BACK change types (one per line)','form.series.retroChangeTypesHint':'One value per line. The difference is on the BACK: a change of these types has a back of its own, or the "Blank back" flag.','form.series.frontChangeTypes':'FRONT change types (one per line)','form.series.frontChangeTypesHint':'One value per line. The difference is on the FRONT: a change of these types uses the back of its base sticker. The same type cannot be in both lists.','form.series.descPlaceholder':'Describe this series...',
 'form.fig.subseries':'Subseries',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
@@ -27651,7 +27672,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine da attaccare','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici !',
@@ -27666,7 +27687,7 @@ const i18n = {
     'form.reply.placeholder':'Scrivi una risposta...','comment.admin':'Amministratore','comment.login':'Accedi per rispondere',
     'auth.title':'Bentornato','auth.login':'Accedi','auth.register':'Registrati','auth.login.btn':'Entra','auth.reg.btn':'Conferma registrazione','auth.reg.wait':'La registrazione può richiedere fino a un minuto: non chiudere questa finestra.',
     'modal.bulkscore.title':'⭐ Assegna rarità ai risultati','modal.bulkscore.desc':'Assegna la stessa rarità a tutti gli articoli restituiti dalla ricerca.','modal.bulkscore.label':'Rarità da assegnare','modal.bulkscore.apply':'Applica rarità ai risultati','contact.q1':'Vuoi avere altre informazioni sugli Sgorbions?','contact.q2':'Vuoi segnalare un errore?','contact.q3':'O vuoi semplicemente fare i complimenti all\'amministratore?','contact.cta':'Per una qualsiasi di queste cose, inviaci un messaggio !','contact.context':'Contesto della domanda','contact.message':'Domanda (o messaggio)','contact.send':'Invia messaggio 🚀','wantlist.desc':'Qui trovi l\'elenco delle serie per le quali la tua lista è completa o incompleta, rispetto all\'Inventario.<br><br>Puoi esportare in Excel i seguenti elenchi:<br>1) Articoli non presenti nella tua lista (figurine, card, retro, album, bustine, altro...)<br>2) Articoli presenti nella tua lista (serie non complete)<br>3) figurine (con retro) e card presenti nella tua lista (serie complete)','wantlist.pageTitle':'Le mie liste','wantlist.hook':'Vuoi costruire in pochi click liste di articoli Sgorbions, sulla base di una TUA lista costruita sfogliando l\'Inventario?<br>Se la risposta è sì, sei nel posto giusto!!<br><br>','wantlist.missingTitle':'EXPORT 1: OGGETTI NON PRESENTI NELLA TUA LISTA','wantlist.hintMissing':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.hintExportMissing':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco degli articoli non presenti nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista articoli non nella tua lista</i>.','wantlist.hintExportIncomplete':'<span style="color:var(--text);">ISTRUZIONI:</span> Seleziona le serie per cui esportare l\'elenco delle figurine nella tua lista.<br>Poi premi il tasto <i style="color:var(--text);">Esporta lista figurine presenti nella tua lista (solo serie incomplete)</i>.','wantlist.exportIncomplete':'Esporta lista figurine presenti nella tua lista (solo serie incomplete)','wantlist.hint':'Clicca su "Escludi da mancolista" sulle serie per cui non ti interessa la mancolista.','wantlist.exportMissing':'Esporta lista articoli non nella tua lista','wantlist.export':'Esporta lista figurine mie serie complete','modal.figdetail.title':'Dettaglio figurina','modal.segnala.send':'Invia segnalazione','modal.segnala.title':'🚩 Segnala errore','modal.segnala.desc':'Descrivi l\'errore che hai trovato su questa figurina. La segnalazione sarà visibile solo all\'amministratore.','modal.segnala.comment':'Commento','modal.segnala.placeholder':'Descrivi l\'errore...','pwd.current':'Password attuale','pwd.resetDesc':'Inserisci il tuo indirizzo e-mail.<br>Se è registrato, riceverai un link per reimpostare la password.',
-'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da incollare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da incollare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
+'modal.resetPwd.title':'🔑 Resetta la password','modal.resetPwd.emailLabel':'Indirizzo E-mail','modal.resetPwd.emailPh':'la-tua@e-mail.com','modal.resetPwd.send':'Inviami e-mail con link per reset password','modal.resetPwd.forgotEmail':'Hai dimenticato anche l\'e-mail con cui ti sei registrato? <a href="#" onclick="closeModal(\'reset-pwd-modal\');showPage(\'contact\');return false;" style="color:var(--accent);">Contatta l\'amministratore</a>.','modal.series.title':'Aggiungi nuova serie','modal.series.edit':'Modifica serie','modal.series.save':'Salva serie','modal.series.delete':'Elimina serie','form.series.hasSizes':'Figurine da attaccare diverse da figurine con retro','form.series.abilitaModifica':'Abilita modifica figurine da attaccare','form.series.hasSubseries':'Ha sottoserie','form.series.hasVariations':'Ha variazioni ufficiali','form.series.hasUnofficialVariations':'Ha variazioni non ufficiali','form.series.hasChange':'Ha change di figurine','form.series.hasRetroChange':'Ha change di retro','form.series.noNumbers':'Senza numeri','form.series.noRetro':'Figurine senza retro','form.series.retroNameHasCategory':'Il nome dei retro ne contiene la categoria','form.fig.isVariation':'Variazione ufficiale','form.fig.isUnofficialVariation':'Variazione non ufficiale','form.fig.isPrintError':'Errore di stampa','form.fig.isChange':'Change','form.fig.baseFigurine':'Figurina base (di cui questa è una variante)','form.fig.baseFigurineHint':'Indica la figurina originale di cui questa è una variazione o un change','form.fig.retroChangeType':'Tipo di change','form.fig.retroChangeTypeHint':'L\'elenco si configura nella scheda della serie','form.fig.printErrorType':'Tipo di errore di stampa','form.fig.retro':'Retro associato','form.fig.retroHint':'Indica il Retro che rappresenta il retro di questa variazione','form.fig.retroBianco':'Retro bianco (la figurina non ha un vero retro)','form.fig.retroBiancoHint':'Diverso dal non aver ancora collegato un retro: qui il retro non esiste, il dietro della figurina è bianco.','form.fig.category':'Categoria','form.fig.series':'Serie','form.fig.subcategory':'Sottocategoria','form.series.countVariations':'N. variazioni ufficiali','form.series.countUnofficialVariations':'N. variazioni non ufficiali','form.series.countChange':'N. change di figurine','form.series.countRetroChange':'N. change di retro','form.series.retroChangeTypes':'Tipi di change DI RETRO (uno per riga)','form.series.retroChangeTypesHint':'Un valore per riga. La differenza sta sul RETRO: un change di questi tipi ha un retro tutto suo, oppure il flag «Retro bianco».','form.series.frontChangeTypes':'Tipi di change FRONTALI (uno per riga)','form.series.frontChangeTypesHint':'Un valore per riga. La differenza sta sul FRONTE: un change di questi tipi usa il retro della sua figurina base. Lo stesso tipo non può stare in tutte e due le liste.','form.series.descPlaceholder':'Descrivi questa serie...','form.fig.subseries':'Sottoserie','form.fig.size':'Taglia','form.fig.variations':'Numero di variazioni esistenti','form.fig.variationsHint':'Numero stampato sul retro della figurina (default: 1)','form.fig.score':'Rarità','form.fig.scoreHint':'Quanto è raro. Fa Punteggio rarità a chi ce l\'ha in lista','form.fig.descPlaceholder':'Descrivi questa figurina...','form.fig.forSale':'🏷️ Ebay','form.fig.price':'Prezzo (€)','form.fig.priceUsd':'Prezzo ($)','form.fig.daPubblicare':'📤 In coda per eBay','form.fig.daPubblicareHint':'Si alza da sé quando cambi prezzo, quantità, condizione, titolo, descrizione o foto. Al prossimo lancio del programma l\'annuncio viene creato o aggiornato.','form.fig.quantity':'Quantità','form.fig.condition':'Condizione','form.fig.conditionNew':'Nuovo','form.fig.conditionUsed':'Usato','admin.refresh':'Aggiorna dati','items.adminFilters':'Filtri aggiuntivi admin','items.searchBox':'La tua ricerca','items.filterIntro':'Aggiungi dei filtri di ricerca preimpostati','items.resetFilters':'Azzera filtri','items.searchHint':'Ricerca per parola chiave','items.searchPlaceholder':'Cerca...','admin.classifica':'Classifica','items.retroViewMode.label':'Modalità visualizzazione:','items.retroViewMode.destraPiena':'Fronte e retro sempre grandi','items.retroViewMode.sotto':'Retro sempre sotto','items.retroViewMode.destra':'Retro sempre a destra','items.retroViewMode.dinamico':'Retro sempre grande','items.retroViewMode.fronteGrande':'Fronte sempre grande','items.filterLegend.title':'📖 Legenda delle versioni delle figurine','items.filterLegend.colorCode':'🎨 <strong style="color:var(--text);">Ogni versione ha il suo colore</strong>, ed è sempre lo stesso in tutto il sito: sulle card, nei filtri di ricerca e nei titoli dei riquadri della ricerca.','items.filterLegend.base':'<strong>Versione base</strong>: figurina appartenente al set base della serie','items.filterLegend.variation':'<strong>Variazione ufficiale</strong>: variante di retro documentata e ad alta tiratura (non rara)','items.filterLegend.unofficialVariation':'<strong>Variazione non ufficiale</strong>: variante di retro non documentata e a bassa tiratura (rara)','items.filterLegend.change':'<strong>Change</strong>: variante voluta dal produttore.<br>Si distinguono due casi:<ul style="margin:0.3rem 0 0 0;padding-left:0;list-style:none;"><li>1) stesso fronte ma con elemento grafico differente nella stampa (il retro coincide con quello della figurina base)</li><li>2) stesso fronte; è il retro a dare vita alla variante</li></ul>','items.filterLegend.free':'<strong>Omaggio</strong>: figurina offerta in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero) sul retro','items.filterLegend.printError':'<strong>Errore di stampa</strong>: variante (frontale o posteriore) mero frutto del processo di stampa','items.filterLegend.titleRetros':'📖 Legenda delle versioni dei retro','items.filterLegend.retroBase':'<strong>Versione base</strong>: retro appartenente al set base della serie','items.filterLegend.retroChange':'<strong>Change</strong>: variante voluta dal produttore; differisce dalla versione base per un elemento grafico differente nella stampa','items.filterLegend.retroFree':'<strong>Omaggio</strong>: retro offerto in versione promo (tipicamente fuori dalle scuole). Riporta un timbro OMAGGIO (rosso o nero)','items.filterLegend.retroPrintError':'<strong>Errore di stampa</strong>: variante mero frutto del processo di stampa','detail.myListTitle':'La tua lista','catalog.haveall.hint':'Inserisce nella tua lista ogni risultato della ricerca in corso, su tutte le pagine','catalog.havenone.hint':'Rimuove dalla tua lista ogni risultato della ricerca in corso, su tutte le pagine',
     'modal.fig.title':'Aggiungi Figurina','modal.fig.save':'Salva figurina',
     'modal.post.title':'Nuovo Post','modal.post.save':'Pubblica Post','modal.post.titlePh':'Qual è la tua domanda o novità?',
     'profile.title':'Il Mio Profilo','profile.owned':'Nella Mia Lista','profile.total':'Totale','profile.sec.figurines':'Figurine','profile.sec.retros':'Retro','profile.sec.albums':'Album','profile.sec.bustine':'Bustine','profile.sec.extras':'Altri articoli','profile.series':'Serie Tracciate','profile.collection':'La Mia Collezione','profile.myListHint':'La tua lista personale: cosa significhi per te lo decidi solo tu — non è visibile né interpretabile da altri utenti.',
@@ -31069,6 +31090,13 @@ function _ripristinaFlagSerie(s) {
   // salvataggio lo azzera.
   const na = document.getElementById('series-nome-album-input');
   if (na) na.value = (s && s.nomeAlbum) || '';                               // v6.480
+  // 🆕 v6.645 - i due nomi inglesi. Stesso avvertimento della riga qui sopra, e vale
+  //    doppio per un campo FACOLTATIVO: se la form non lo ripristina, il primo
+  //    salvataggio lo scrive vuoto e la traduzione sparisce mentre si cambia altro.
+  const nen = document.getElementById('series-name-en-input');
+  if (nen) nen.value = (s && s.nameEn) || '';                                // v6.645
+  const ncen = document.getElementById('series-nome-corto-en-input');
+  if (ncen) ncen.value = (s && s.nomeCortoEn) || '';                         // v6.645
   renderSeriesBypassCheckboxes(s && s.controlliSospesi);                     // v6.080
   // Dipende da `noRetro`, quindi va DOPO le spunte e non prima: e' il motivo per cui sta qui
   // dentro invece che nei due rami.
@@ -31288,7 +31316,7 @@ function openAddSeriesModal(seriesId) {
       if (s.img) { const pr = document.getElementById('series-img-preview'); pr.src = s.img; pr.style.display = 'block'; editingSeriesImg = s.img; }
     }
   } else {
-    ['series-name-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-desc-input','series-desc-en-input','series-testo-pagina-input','series-testo-pagina-en-input'].forEach(id => document.getElementById(id).value = '');
+    ['series-name-input','series-name-en-input','series-year-input','series-count-input','series-first-number-input','series-last-number-input','series-desc-input','series-desc-en-input','series-testo-pagina-input','series-testo-pagina-en-input'].forEach(id => document.getElementById(id).value = '');
     // 🔴 v6.186 - QUI STAVA IL BUCO: si azzeravano TRE caselle su otto, e le altre cinque
     //             (`hasRetroChange`, `noRetro`, `hasSubseries`, `hasSizes`, `hasVariations`) piu'
     //             `nomeCorto` e i controlli sospesi restavano quelli dell'ultima serie aperta.
@@ -31492,6 +31520,8 @@ async function saveSeries() {
   // ⚠️ NON entra nel controllo degli obbligatori due schermate piu' giu': vedi il commento
   // nell'index. Il vuoto e' ammesso, ed e' una decisione.
   const nomeAlbum = (document.getElementById('series-nome-album-input')?.value || '').trim(); // v6.480
+  const nameEn = (document.getElementById('series-name-en-input')?.value || '').trim();       // v6.645
+  const nomeCortoEn = (document.getElementById('series-nome-corto-en-input')?.value || '').trim(); // v6.645
   const countVariations = parseInt(document.getElementById('series-count-variations-input').value) || null;
   const countUnofficialVariations = parseInt(document.getElementById('series-count-unofficial-variations-input').value) || null;
   const countChange = parseInt(document.getElementById('series-count-change-input').value) || null;
@@ -31616,7 +31646,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -31634,7 +31664,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -32039,8 +32069,16 @@ const ARTICOLI = {
   },
   attaccare: {
     pos: 3,
-    it: 'Figurine da attaccare', en: 'Stickers to stick',
-    itSing: 'figurina da attaccare', enSing: 'sticker to stick',
+    // 🔄 v6.649 (Franco: «Figurine da attaccare -> Stickers») — L'INGLESE E' DECISO, e
+    //    non e' piu' provvisorio: dalla v6.195 tre punti del file portavano scritto che
+    //    «Stickers to stick» era da confermare. Adesso e' confermato, ed e' un'altra
+    //    parola: quelle tre note se ne sono andate con l'incertezza che descrivevano.
+    // 🔴 «Stickers» e «Stickers with backs» (figurines) CONVIVONO ED E' VOLUTO: in
+    //    inglese si leggono come una famiglia — quelle col retro, e quelle e basta.
+    // ⚠️ E il singolare segue: le due righe devono concordare da sole, che e' la stessa
+    //    avvertenza scritta sulle figurine alla v6.481.
+    it: 'Figurine da attaccare', en: 'Stickers',
+    itSing: 'figurina da attaccare', enSing: 'sticker',
     genere: 'f',
     icona: '&#128204;',
     colonne: { d: 7, m: 4 },
@@ -32078,6 +32116,30 @@ const ARTICOLI = {
     ordinaDove: 'number',                 // v6.221
     nomeCompleto: 'codice',
     nomeCompletoDove: 'computeFullName'  // v6.221
+  },
+  // 🆕 v6.647 (Franco: «mi serve una nuova tipologia di articoli da associare alle serie.
+  //    Si chiama "Spille"; in Inglese "Pins"») — L'OTTAVO ARTICOLO.
+  // 📌 `numero: 'ordinamento'` e `ordina: 'campo'` come bustine, album e altri articoli:
+  //    una spilla non ha un numero d'inventario che identifichi un soggetto (come ce
+  //    l'hanno figurine e carte), ha un ordine. `genere: 'f'` — «le spille».
+  // 📌 `colonne: {d:4, m:3}` come le altre categorie di OGGETTI, non 7/4 che e' la
+  //    griglia fitta delle figurine.
+  // ⚠️ `pos: 7` decide l'ordine DICHIARATO, non quello vero: se Franco ha salvato un
+  //    ordine dalla console, la v6.283 aggiunge in coda gli articoli che quell'elenco non
+  //    nomina - «e' l'unica delle due assenze che si nota». Le Spille compaiono ultime
+  //    comunque, e si spostano con le frecce.
+  spille: {
+    pos: 7,
+    it: 'Spille', en: 'Pins',
+    itSing: 'spilla', enSing: 'pin',
+    genere: 'f',
+    icona: '&#128205;',
+    colonne: { d: 4, m: 3 },
+    numero: 'ordinamento',
+    ordina: 'campo',
+    ordinaDove: 'number',
+    nomeCompleto: 'codice',
+    nomeCompletoDove: 'computeFullName'
   },
   extras: {
     pos: 6,
@@ -35015,7 +35077,13 @@ function renderCatalogSearch(q) {
   const results = [];
   allSeries.forEach(s => {
     const desc = _descSerie(s);
-    const seriesMatch = _matchRicerca(s.name, qn) || _matchRicerca(desc, qn);   // v6.264
+    // 🔄 v6.645 - si cerca anche per nome inglese: chi naviga in inglese legge quello,
+    //    e una ricerca che non trova cio' che mostra e' peggio di una che non mostra.
+    //    ⚠️ Si guardano TUTTI E DUE i nomi in tutte e due le lingue, non quello della
+    //    lingua corrente: il nome italiano resta l'identificatore, e chi lo conosce deve
+    //    poterlo digitare comunque.
+    const seriesMatch = _matchRicerca(s.name, qn) || _matchRicerca(s.nameEn || '', qn)
+                     || _matchRicerca(desc, qn);   // v6.264
     // v6.096 - l'elenco dei campi sta in _campiRicercaFigurina, condiviso con la ricerca di sezione
     const matchingFigs = allFigs.filter(f => f.seriesId === s.id && _figMatchRicerca(f, qn));
     if (seriesMatch || matchingFigs.length) {
@@ -35098,7 +35166,7 @@ function renderCatalogSearch(q) {
                ⚠️ NIENTE APICI INVERSI IN QUESTO COMMENTO: sta dentro un template literal, e un
                backtick qui CHIUDE la stringa. E' la lezione della v6.217, e scrivendo questa
                release ci sono cascato di nuovo - l'ha presa node --check, non la rilettura. -->
-          <span style="font-family:var(--font-display);font-size:1.1875rem;font-weight:600;color:var(--nome-entita);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}${r.figs.length ? ':' : ''}</span>
+          <span style="font-family:var(--font-display);font-size:1.1875rem;font-weight:600;color:var(--nome-entita);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${_nomeSerie(s)}${r.figs.length ? ':' : ''}</span>
           ${r.seriesMatch ? `<span style="font-size:0.8125rem;color:var(--muted);border:1px solid var(--border);border-radius:6px;padding:1px 5px;flex-shrink:0;">${currentLang==='it'?'serie':'series'}</span>` : ''}
           <!-- 🆕 v6.395 - e il lime passa QUI, dove dice cio' che dice sempre: quanti risultati.
                Non e' uno scambio estetico: e' rimettere un colore sul suo mestiere. -->
@@ -35544,10 +35612,38 @@ function _annoSottoNome(s, coda) {
        + 'gap:0.5rem;width:100%;"><span>' + esc(s.year) + '</span>' + coda + '</div>';
 }
 
+// 🆕 v6.645 (Franco: «ci serve una versione Inglese del nome delle Serie») — IL NOME
+//    DELLA SERIE NELLA LINGUA DI CHI GUARDA, E LA REGOLA VIVE QUI E SOLO QUI.
+// 🔴 E' la terza applicazione di un modello che il sito ha gia': `descIt`/`desc` (regola
+//    raccolta in `_descSerie`, v6.581) e `testoPaginaSerieIt`/`En` (v6.628). Scritta a
+//    mano nei punti che la usano sarebbe la stessa storia di quelle quattro copie della
+//    descrizione: nessuno schermo sbaglia niente finche' la regola non cambia.
+// 📌 IL RIPIEGO NON E' SIMMETRICO, e stavolta per una ragione diversa dalla v6.581: qui
+//    l'italiano e' OBBLIGATORIO e c'e' sempre, l'inglese e' facoltativo. Quindi si
+//    ripiega solo in un verso. Un ripiego dall'italiano verso l'inglese non servirebbe a
+//    niente e nasconderebbe un campo vuoto.
+// ⚠️ VUOTO VUOL DIRE «usa l'italiano», non «manca qualcosa»: per le serie con un nome
+//    proprio - «Sgorbions serie 2» - il campo resta vuoto ed e' giusto cosi'.
+// ⚠️ E QUESTO E' CIO' CHE SI LEGGE, NON LA CHIAVE. `name` e `nomeCorto` stanno in
+//    `_CAMPI_ESCL_SERIE`, sono identificatori: l'import li confronta, e `_gscIndirizzi`
+//    ci costruisce sopra lo slug delle pagine per Google. Quelli restano italiani, per
+//    scelta di Franco: la traduzione cambia cio' che si legge, non gli indirizzi.
+function _nomeSerie(s) {
+  if (!s) return '';
+  const en = (s.nameEn || '').trim();
+  return (currentLang === 'en' && en) ? en : (s.name || '');
+}
+
+function _nomeCortoSerie(s) {
+  if (!s) return '';
+  const en = (s.nomeCortoEn || '').trim();
+  return (currentLang === 'en' && en) ? en : (s.nomeCorto || '');
+}
+
 function _nomeSerieCard(s, sempreCorto) {
   if (!s) return '';
-  const corto = (s.nomeCorto || '').trim();
-  return ((sempreCorto || _isMobileViewport()) && corto) ? corto : (s.name || '');
+  const corto = _nomeCortoSerie(s).trim();
+  return ((sempreCorto || _isMobileViewport()) && corto) ? corto : _nomeSerie(s);
 }
 
 // 🆕 v6.585 (Franco: «un timbro alla foto copertina della serie — COMING SOON ! per l'Inglese e
@@ -36099,8 +36195,10 @@ let _itemPages = [];
 
 
 function getSectionLabel(section) {
-  // v6.195 - ⚠️ l'inglese di "da attaccare" e' PROVVISORIO e va confermato da Franco: e' un
-  // termine da collezionisti, non una traduzione. La rinomina di `figurines` in "Figurine con
+  // 🔄 v6.649 - QUI STAVA: «l'inglese di "da attaccare" e' PROVVISORIO e va confermato da
+  //    Franco». E' stato confermato, ed e' «Stickers». La nota se ne va con l'incertezza:
+  //    un «da confermare» su una cosa confermata manda il prossimo lettore a rifare una
+  //    domanda gia' fatta. La rinomina di `figurines` in "Figurine con
   // velina" NON e' in questa release: sta in una decina di altri punti (misurato: 72 stringhe
   // nominano Figurina/Figurine) e cambiarla solo qui lascerebbe il sito a dirlo in due modi.
   // v6.214 - le etichette vengono da `ARTICOLI`. Il ripiego resta il nome della sezione, come
@@ -36926,7 +37024,20 @@ function renderSeriesMeta(s) {
   // completa, una riga per categoria. Dentro una sezione: solo il dettaglio di quella sezione.
   if (!currentSection) {
     metaEl.classList.add('meta-hub');  // v5.886: su mobile le numeriche dell'hub vanno sotto la foto
-    const cats = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
+    // 🔴 v6.646 (Franco: «le numeriche non rispettano i flag sulla serie che dicono quali
+    //    tipologie di articolo non esiste per quella serie») — QUI C'ERA UNA LISTA
+    //    SCRITTA A MANO, e sbagliava due volte insieme:
+    //    · non chiedeva a `_articoliNascosti`, quindi mostrava «0 in totale» per le
+    //      categorie che la serie dichiara di non avere;
+    //    · elencava CINQUE articoli su SETTE - mancavano `carte` e `attaccare` - quindi
+    //      non li contava nemmeno per le serie che ce li hanno.
+    // 🔴 E `_articoloNascosto` ESISTEVA GIA' dalla v6.216, senza nessun chiamante:
+    //    l'attrezzo per questa domanda era scritto e non lo interrogava nessuno. Un
+    //    attrezzo che nessuno usa non da' nessun segnale - passa le prove e non protegge.
+    // 📌 Due fonti, ognuna per la sua domanda: `PRODOTTI_INVENTARIO` dice QUALI articoli
+    //    esistono (dal descrittore `ARTICOLI`), `_articoloNascosto` quali questa serie
+    //    non ha. Nessuna delle due riscritta qui - e una tipologia nuova entra da se'.
+    const cats = PRODOTTI_INVENTARIO.filter(c => !_articoloNascosto(c, currentSeriesId));
     // 🔄 v6.622 (Franco: *«le numeriche vorrei iniziassero tutte alla stessa distanza dal
     // margine sx»*) — VIA IL «min-width:96px», e con lui il disallineamento.
     // 🔴 MISURATO PRIMA DI TOCCARE: «Figurine con retro» misura 108px e sforava quel 96,
@@ -37036,7 +37147,8 @@ function openSeriesDetail(seriesId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const det = document.getElementById('series-detail');
   det.style.display = 'block';
-  document.getElementById('detail-name').textContent = s.name;
+  // 🔄 v6.645 - il titolo della testata e' un'ETICHETTA, non la chiave.
+  document.getElementById('detail-name').textContent = _nomeSerie(s);
   document.getElementById('detail-year').textContent = s.year;
   // 🔄 v6.549 - LA SCELTA DELLA LINGUA DELLA DESCRIZIONE ESCE DA QUI. Stava dentro
   // openSeriesDetail, che gira UNA VOLTA all'apertura: cambiando lingua a serie aperta
@@ -44261,7 +44373,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
              Con l'altezza fissa il vincolo era lo stesso per tutte e due, quindi le due
              foto uscivano alte uguali e larghe a caso: misurate 62k px2 contro 117k.
              Col quadrato il vincolo e' il LATO, come nella card, e le aree si pareggiano. -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+        <div class="fig-facce" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
           <div>
             <div style="font-size:0.7rem;color:var(--text);text-align:center;margin-bottom:14px;">${currentLang === 'it' ? 'Fronte' : 'Front'}</div>
             ${_latoErr === 'fronte' ? _corniceErroreStampaHTML(baseHTML, _tipoErr) : baseHTML}
@@ -44725,6 +44837,55 @@ function _aggiornaComandiTestata() {
   if (b2) b2.style.display = (adm && inBox) ? '' : 'none';
   // l'Ebay della serie segue la serie: dentro un box non c'e' una serie di cui parlare
   if (b3) b3.style.display = (adm && !inBox) ? '' : 'none';
+  // 🆕 v6.641 - I DUE TASTI DELLA PAGINA PUBBLICA. La domanda non e' «sei admin?» ma
+  //    «questa serie una pagina ce l'ha?», e la risposta la da' `_gscSerie()`, cioe' la
+  //    stessa funzione che decide quali pagine il generatore scrive.
+  // 🔴 Riscrivere qui il filtro (!inCostruzione && !serieContenitore) sarebbe la copia
+  //    numero due: il giorno che cambia, il generatore e questi tasti direbbero cose
+  //    diverse, e il sintomo sarebbe un tasto che apre un 404 - o che non compare per una
+  //    pagina che esiste. Nessuna delle due da' un errore.
+  // ⚠️ L'indirizzo NON si compone qui: lo da' `_gscIndirizzi`, l'unico posto dove quei
+  //    percorsi vivono (canonical, og:url, i due hreflang, e adesso questi due tasti).
+  // 🔄 v6.642 - E LA DOMANDA SI FA CON GLI OCCHI DI GOOGLEBOT, come la fa il generatore.
+  //    La v6.641 chiamava `_gscSerie()` cosi' com'era, cioe' dalla sessione di Franco:
+  //    da admin `_serieVisibili` non toglie le serie `invisibile`, quindi per Kakkones 2
+  //    e Weird Ball i tasti comparivano e aprivano un 404. Il generatore invece gira
+  //    dentro `_gscConPanniGooglebot`, che azzera `currentUser`: le vede sparire, e per
+  //    loro non scrive nessuna pagina.
+  // 🔴 LA STESSA FUNZIONE, CHIAMATA CON ALTRI OCCHI, E' UN'ALTRA FUNZIONE. Non basta
+  //    condividere `_gscSerie`: va condivisa anche la sessione in cui la si interroga.
+  // ⚠️ E non si aggiunge un `!s.invisibile` a mano: quella regola vive dentro
+  //    `_serieVisibili` (v6.584), e riscriverla qui sarebbe la copia numero due.
+  // 📌 `adm` resta calcolato PRIMA: e' una domanda su chi guarda lo schermo, non su
+  //    cosa vedrebbe Googlebot. I panni coprono la sola ricerca della serie.
+  // 🔄 v6.644 - le due voci non hanno piu' un contenitore proprio: stanno nel pannello
+  //    insieme alle altre, e si accendono una per una.
+  const a1 = document.getElementById('detail-gsc-it');
+  const a2 = document.getElementById('detail-gsc-en');
+  const s = (adm && !inBox && currentSeriesId)
+    ? _gscConPanniGooglebot(() => _gscSerie().find(x => x.id === currentSeriesId))
+    : null;
+  if (s) {
+    const U = _gscIndirizzi(s);
+    if (a1) { a1.href = U.it; a1.style.display = ''; }
+    if (a2) { a2.href = U.en; a2.style.display = ''; }
+  } else {
+    if (a1) a1.style.display = 'none';
+    if (a2) a2.style.display = 'none';
+  }
+  // 🔴 v6.644 - IL TASTO SI ACCENDE SE ALMENO UNA VOCE C'E', E LO CHIEDE ALLE VOCI.
+  //    Non si rifanno qui le loro condizioni: sarebbe la copia numero due, e il giorno
+  //    che una voce cambia regola il tasto comparirebbe su un menu VUOTO - oppure
+  //    sparirebbe con dentro qualcosa. Nessuna delle due da' errore, e tutte e due si
+  //    vedono solo premendo.
+  // 📌 Si legge il `display` DOPO averlo deciso: e' la risposta vera, non una sua copia.
+  const trig = document.getElementById('detail-admin-btn');
+  const dd = document.getElementById('detail-admin-dd');
+  const voci = [b1, b3, a1, a2].filter(x => x && x.style.display !== 'none');
+  if (trig) trig.style.display = voci.length ? '' : 'none';
+  // ⚠️ e se resta senza voci mentre e' APERTO, si chiude: un pannello sospeso sotto un
+  //    tasto che non c'e' piu' e' l'unico modo in cui questo menu puo' restare a mezz'aria.
+  if (dd && !voci.length) dd.style.display = 'none';
 }
 
 // v6.169 (Franco) - la riga "Retro" della tabellina delle colonne sparisce se la serie dichiara di
@@ -51224,12 +51385,24 @@ const _gscSlug = x => String(x || '').toLowerCase().normalize('NFD').replace(/[�
 //    perche' nei dati il nome della serie esiste solo in italiano. Funziona finche' i nomi hanno
 //    la forma «Sgorbions serie N»; per una serie con un nome diverso i due slug coincidono —
 //    non e' un errore, ma nemmeno cio' che si voleva.
+const _GSC_SITO = 'https://figurinesgorbions.it/';
+
 function _gscIndirizzi(s) {
   const it = _gscSlug(s.name);
   const en = it.replace(/(^|-)serie(-|$)/, '$1series$2');
-  return { it: 'https://figurinesgorbions.it/serie/' + it + '/',
-           en: 'https://figurinesgorbions.it/en/series/' + en + '/',
-           file: { it: 'serie-' + it + '.html', en: 'en-series-' + en + '.html' } };
+  const U = { it: _GSC_SITO + 'serie/' + it + '/', en: _GSC_SITO + 'en/series/' + en + '/' };
+  // 🆕 v6.643 - DOVE VA IL FILE, RICAVATO DALL'INDIRIZZO E NON SCRITTO ACCANTO.
+  //    Il generatore scarica un file piatto (serie-<nome>.html) ma la pagina dichiara
+  //    dentro di se' un indirizzo a CARTELLA (canonical, og:url, i due hreflang): perche'
+  //    quella dichiarazione sia vera, il file deve diventare serie/<nome>/index.html.
+  // 🔴 Ricavandolo per sottrazione dall'indirizzo, i due non possono divergere. Scritto
+  //    a mano accanto, sarebbero due stringhe che dicono la stessa cosa - e il giorno che
+  //    una cambia, la pagina risponde e il suo canonical mente. Un canonical falso e'
+  //    peggio di un 404: il 404 si vede.
+  const dove = L => U[L].slice(_GSC_SITO.length) + 'index.html';
+  return { it: U.it, en: U.en,
+           file: { it: 'serie-' + it + '.html', en: 'en-series-' + en + '.html' },
+           dove: { it: dove('it'), en: dove('en') } };
 }
 
 // ⚠️ LE SOLE PAROLE COPIATE DAL SITO sono quelle della riga BASE e del totale: non sono versioni,
@@ -51286,6 +51459,11 @@ h2{font-size:1.35rem;margin:2.2rem 0 .3rem}
 .c .n{display:block;padding:.5rem .55rem 0;font-size:.78rem;color:var(--acc);font-weight:800;margin-top:auto}
 .c .nm{display:block;padding:0 .55rem .6rem;font-weight:700;font-size:.83rem;line-height:1.25}
 footer{margin-top:3rem;padding-top:1.2rem;border-top:1px solid #2a2044;color:var(--dim);font-size:.88rem;text-align:center}
+/* \U0001F534 v6.638 — L'INVITO AL SITO. Franco: «quell'hyperlink in alto e' troppo
+   piccolo. chi lo vede??». Il colore e' --acc su fondo scuro, cioe' il contrario
+   dei link della pagina: un bottone non si legge, si vede. */
+.invito{margin:1.5rem 0 2rem;text-align:center}
+.vai{display:inline-block;background:var(--acc);color:#1a1333;font-weight:800;font-size:1.05rem;padding:.75rem 1.5rem;border-radius:10px;text-decoration:none}
 footer a{color:var(--dim);text-decoration:underline}`;
 
 // 🔴 LE NUMERICHE NON RICALCOLANO NIENTE: chiedono a `tipiPresenti`, la stessa funzione che
@@ -51302,7 +51480,13 @@ function _gscNumeriche(s, L) {
   const nfmt = q => q.toLocaleString(P.locale);
   const BULLET = '<span class="pal"></span>';
   const voce = (q, e, c) => '<span class="v" style="color:' + c + '">' + BULLET + nfmt(q) + ' ' + e + '</span>';
-  const righe = ['figurines', 'retros', 'bustine', 'albums', 'extras'].map(sez => {
+  // 🔄 v6.646 - LA STESSA CORREZIONE DELL'HUB, e la stessa lista a mano: cinque articoli
+  //    su sette, e nessuna domanda ai flag della serie. Qui il danno e' peggiore, perche'
+  //    questa pagina la legge il pubblico: una categoria che la serie dichiara di non
+  //    avere non deve comparire nemmeno a zero.
+  // 📌 Il salto delle categorie VUOTE resta due righe piu' sotto ed e' un'altra cosa: li'
+  //    si tace di cio' che non c'e' ANCORA, qui di cio' che non ci sara' mai.
+  const righe = PRODOTTI_INVENTARIO.filter(sez => !_articoloNascosto(sez, s.id)).map(sez => {
     const g = tipiPresenti(s.id, sez);
     if (!g.items.length) return '';   // una categoria vuota non si annuncia a un visitatore
     const m = [];
@@ -51332,27 +51516,56 @@ function _gscPagina(s, L) {
   const basi = tutti.filter(f => (f.section || 'figurines') === 'figurines' && !f.baseFigurineId)
                     .sort((a, b) => (+a.number || 0) - (+b.number || 0));
   const n = basi.length;
+  // 🆕 v6.645 - IL NOME CHE SI LEGGE, non quello che fa da chiave. `_gscPiano` mette
+  //    `currentLang = L` prima di chiamare questa funzione, quindi `_nomeSerie` risponde
+  //    gia' nella lingua della pagina che si sta scrivendo.
+  // ⚠️ `_gscIndirizzi` NON passa di qui, ed e' la scelta di Franco: lo slug (e quindi il
+  //    canonical, og:url e i due hreflang) continua a nascere dal nome ITALIANO. Un nome
+  //    inglese nuovo cambierebbe l'indirizzo di una pagina gia' online, e il vecchio
+  //    diventerebbe un 404.
+  const nome = _nomeSerie(s);
   const testoIt = (s.testoPaginaSerieIt || '').trim();
   const testoEn = (s.testoPaginaSerieEn || '').trim();
   const testo = L === 'it' ? testoIt : (testoEn || testoIt);
   const inItaliano = L === 'en' && !testoEn;
   // ⚠️ Il NOME della serie non si traduce nemmeno in inglese: e' un nome proprio, ed e' come la
   //    si cerca. Si traduce cio' che gli sta intorno.
-  const titolo = L === 'it' ? s.name + ' — tutte le ' + n + ' figurine | figurineSgorbions.it'
-                            : s.name + ' — all ' + n + ' stickers | figurineSgorbions.it';
+  const titolo = L === 'it' ? nome + ' — tutte le ' + n + ' figurine | figurineSgorbions.it'
+                            : nome + ' — all ' + n + ' stickers | figurineSgorbions.it';
   const meta = L === 'it'
-    ? 'Elenco completo delle ' + n + ' figurine della ' + s.name + (s.year ? ' (Topps, ' + s.year + ')' : '')
+    ? 'Elenco completo delle ' + n + ' figurine della ' + nome + (s.year ? ' (Topps, ' + s.year + ')' : '')
       + ': numeri, nomi, foto, retri, varianti ed errori di stampa.'
-    : 'Complete list of the ' + n + ' stickers in ' + s.name + (s.year ? ' (Topps, ' + s.year + ')' : '')
+    : 'Complete list of the ' + n + ' stickers in ' + nome + (s.year ? ' (Topps, ' + s.year + ')' : '')
       + ': numbers, names, photos, backs, variations and print errors.';
   const cop = s.img || '';
+  // 🔴 v6.638 — SCRITTO QUI E BASTA, stampato in due posti. Due stringhe uguali a
+  //    sessanta righe di distanza divergono alla prima modifica, e la seconda non se ne
+  //    accorge nessuno: e' la lezione del 6 settembre (lo snippet in tre posti).
+  // ⚠️ LA DESTINAZIONE E' LA HOME, NON L'INVENTARIO. Il bottone tolto l'8 settembre
+  //    puntava a /#catalog: sloggato, «showPage» non cambia pagina e apre il riquadro di
+  //    accesso sopra la home. Non era un muro — era un'etichetta che prometteva
+  //    l'inventario e consegnava un login. Franco ha scelto la home: si vede prima cos'e'
+  //    il sito, e il login arriva quando e' il visitatore a chiedere l'inventario.
+  const invito = '<div class="invito"><a class="vai" href="/">'
+  // 🔴 v6.640 (Franco) — L'ETICHETTA LA SCRIVE FRANCO, ed e' la terza stesura in un'ora:
+  //    «Vai al sito» (v6.638), «Accedi al sito …» (v6.639), e questa.
+  // ⚠️ LO SPAZIO PRIMA DEL PUNTO ESCLAMATIVO E' VOLUTO, in tutte e due le lingue: e' la
+  //    forma che il sito ha gia' nel bottone della home, «Esplora l'Inventario Sgorbions !».
+  //    Non e' un refuso e non va «sistemato» — lo guarda «prova-v6638».
+  // 📌 Il nome del dominio non si traduce in nessuna delle due: e' un nome proprio, ed e'
+  //    la parola con cui il sito si cerca. Si traduce cio' che gli sta intorno.
+  // 🗑️ QUI STAVA LA SPIEGAZIONE DELLA v6.639, e se n'e' andata con la parola che spiegava:
+  //    argomentava perche' «Accedi» in inglese non diventava «Enter». In italiano «Accedi»
+  //    non c'e' piu', e una spiegazione vecchia e' piu' pericolosa di una regola vecchia —
+  //    la regola la vede una prova, la spiegazione no.
+    + (L === 'it' ? 'Vai al sito Internet figurineSgorbions.it !' : 'Go to the website figurineSgorbions.it !') + '</a></div>\n\n';
   // 🔴 LE CARD NON SONO LINK (Franco, 7 settembre: «iniziamo senza i link alle figurine»):
   //    puntavano alle pagine per figurina, che non esistono. Il giorno che si fanno, qui torna
   //    l'`<a href>` e nel CSS la regola `.c a`.
   const card = f => {
     const foto = _fotoFigurina(f, F) || '';
-    const alt = L === 'it' ? 'La figurina ' + f.name + ', n. ' + f.number + ' della ' + s.name
-                           : 'The sticker ' + f.name + ', no. ' + f.number + ' from ' + s.name;
+    const alt = L === 'it' ? 'La figurina ' + f.name + ', n. ' + f.number + ' della ' + nome
+                           : 'The sticker ' + f.name + ', no. ' + f.number + ' from ' + nome;
     return '<li class="c">'
       + (foto ? '<img src="' + _gscEsc(foto.replace(_GSC_PRE, _GSC_PRE + 'w_240,q_auto,f_auto/'))
             + '" alt="' + _gscEsc(alt) + '" loading="lazy" width="240" height="424">' : '')
@@ -51385,23 +51598,23 @@ function _gscPagina(s, L) {
     // ⚠️ «Serie» non e' un link: `/serie/` non esiste. L'altra lingua invece si': e' l'unico
     //    posto dove un lettore la cerca, e per Google e' il link che rende vivi gli hreflang.
     + '<nav class="bc"><a href="/">figurineSgorbions.it</a> › ' + (L === 'it' ? 'Serie' : 'Series')
-    + ' › ' + _gscEsc(s.name) + ' · <a href="' + (L === 'it' ? U.en : U.it) + '">'
+    + ' › ' + _gscEsc(nome) + ' · <a href="' + (L === 'it' ? U.en : U.it) + '">'
     + (L === 'it' ? 'English' : 'Italiano') + '</a></nav>\n\n<header>\n'
     + (cop ? '  <img src="' + _gscEsc(cop.replace(_GSC_PRE, _GSC_PRE + 'w_380,q_auto,f_auto/'))
-           + '" alt="' + (L === 'it' ? 'La copertina della ' : 'The cover of ') + _gscEsc(s.name)
+           + '" alt="' + (L === 'it' ? 'La copertina della ' : 'The cover of ') + _gscEsc(nome)
            + '" width="190" height="264">\n' : '')
-    + '  <div>\n    <div class="titolo"><h1>' + _gscEsc(s.name) + '</h1>'
+    + '  <div>\n    <div class="titolo"><h1>' + _gscEsc(nome) + '</h1>'
     + (s.year ? '<span class="anno">' + _gscEsc(s.year) + '</span>' : '') + '</div>\n'
     + _gscNumeriche(s, L)
-    + '  </div>\n</header>\n\n'
+    + '  </div>\n</header>\n\n' + invito
     + (testo ? '<p' + (inItaliano ? ' lang="it"' : '') + '>'
              + _gscEsc(testo).replace(/\n/g, '<br>\n') + '</p>\n\n' : '')
     + '<h2>' + (L === 'it' ? 'Tutte le figurine della ' : 'All the stickers in ')
-    + _gscEsc(s.name.replace(/^Sgorbions\s+serie\b/i, L === 'it' ? 'Serie' : 'Series')) + '</h2>\n'
+    + _gscEsc(nome.replace(/^Sgorbions\s+serie\b/i, L === 'it' ? 'Serie' : 'Series')) + '</h2>\n'
     + '<p class="hint">' + (L === 'it' ? 'Dalla n. ' : 'From no. ')
     + _gscEsc(basi[0] ? basi[0].number : '?') + (L === 'it' ? ' alla n. ' : ' to no. ')
     + _gscEsc(basi[n - 1] ? basi[n - 1].number : '?') + '.</p>\n'
-    + '<ul class="g">\n' + basi.map(card).join('\n') + '\n</ul>\n\n'
+    + '<ul class="g">\n' + basi.map(card).join('\n') + '\n</ul>\n\n' + invito
     // 🔄 il footer e' quello della homepage. Il link alla privacy funziona dalla v6.627 in poi.
     + '<footer>\n  <p>2026 <a href="/">figurinesgorbions.it</a> — '
     + '<a href="/#privacy">Privacy Policy</a></p>\n</footer>\n\n</div>\n</body>\n</html>\n';
@@ -51425,11 +51638,14 @@ function _gscPiano() {
     for (const s of _gscSerie()) {
       for (const L of ['it', 'en']) {
         currentLang = L;
+        const _U = _gscIndirizzi(s);
         const html = _gscPagina(s, L);
         const testoIt = (s.testoPaginaSerieIt || '').trim();
         const testoEn = (s.testoPaginaSerieEn || '').trim();
         fuori.push({
-          serie: s.name, lingua: L, nome: _gscIndirizzi(s).file[L], html,
+          // 🆕 v6.643 - `loc` serve alla sitemap, `dove` all'anteprima: tutti e due
+          //    dalla stessa `_gscIndirizzi`, che e' l'unico posto dove quei percorsi vivono.
+          serie: s.name, lingua: L, nome: _U.file[L], loc: _U[L], dove: _U.dove[L], html,
           kb: Math.round(html.length / 1024),
           figurine: (html.match(/<li class="c">/g) || []).length,
           parole: html.replace(/<(style|script)[\s\S]*?<\/\1>/g, ' ')
@@ -51457,6 +51673,21 @@ function _gscPiano() {
 // ⚠️ E se quel nome nel piano nuovo non c'e' piu', vuol dire che la serie e' cambiata sotto i
 // piedi (messa in costruzione, resa invisibile, rinominata): si dichiara, non si scarica un
 // file a caso e non si tace.
+// 🆕 v6.643 - UN SOLO POSTO CHE SCARICA. La danza (createObjectURL, <a>, click, revoke)
+//    era scritta due volte - in `_gscScaricaUna` e in `_gscGenera` - e la sitemap sarebbe
+//    stata la TERZA copia. E' lo snippet in tre posti che il 6 settembre e' costato una
+//    giornata: la copia che fa male non e' quella che si vede, e' quella che nessuno conta.
+// ⚠️ Il `revoke` ritardato non e' decorativo: revocare subito annulla il download in corso
+//    su alcuni browser, e non da' nessun errore - il file semplicemente non arriva.
+function _gscScarica(nome, testo, tipo) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([testo], { type: (tipo || 'text/html') + ';charset=utf-8' }));
+  a.download = nome;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+}
+
 function _gscScaricaUna(nome) {
   let p;
   try { p = _gscPiano(); }
@@ -51469,12 +51700,42 @@ function _gscScaricaUna(nome) {
     _gscAnteprima();
     return;
   }
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([x.html], { type: 'text/html;charset=utf-8' }));
-  a.download = x.nome;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
+  _gscScarica(x.nome, x.html);
+}
+
+// 🆕 v6.643 (Franco) - LA SITEMAP LA GENERA LA SCHEDA, dalla stessa fonte delle pagine.
+// 🔴 `_gscPiano()` gira dentro `_gscConPanniGooglebot`, quindi questa sitemap non PUO'
+//    nominare una serie che il sito nasconde: chiede con gli occhi di un visitatore
+//    sloggato, come le pagine. La regola delle nascoste non e' riscritta qui, e non deve
+//    esserlo - il commento del vecchio sitemap.xml lo aveva previsto: «riscriverla a mano
+//    sarebbe una seconda copia, e il sintomo sarebbe Google che indicizza una serie che il
+//    sito nasconde, senza nessun errore».
+// 📌 Le pagine INTERNE del sito restano fuori, ed e' la ragione per cui il file aveva una
+//    riga sola: catalogo, blog, classifica e le altre stanno dietro il login (showPage), e
+//    Googlebot e' sempre sloggato. Elencarle offrirebbe indirizzi che rispondono tutti con
+//    lo stesso riquadro di accesso.
+// 📌 Niente `changefreq` ne' `priority`: Google li ignora, e due campi che nessuno legge
+//    in un file generato sono due cose che qualcuno dovra' chiedersi se aggiornare.
+function _gscSitemapXml() {
+  const p = _gscPiano();
+  const oggi = new Date().toISOString().slice(0, 10);
+  const riga = loc => '  <url>\n    <loc>' + loc + '</loc>\n'
+                    + '    <lastmod>' + oggi + '</lastmod>\n  </url>\n';
+  return '<?xml version="1.0" encoding="UTF-8"?>\n'
+    + '<!-- generata dalla scheda GSC (v6.643). NON si scrive a mano: le pagine che\n'
+    + '     elenca vengono da _gscPiano, la stessa fonte che le costruisce. -->\n'
+    + '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+    + riga(_GSC_SITO)
+    + p.map(x => riga(x.loc)).join('')
+    + '</urlset>\n';
+}
+
+function _gscScaricaSitemap() {
+  let xml;
+  try { xml = _gscSitemapXml(); }
+  catch (e) { toast(e.message, 'error'); return; }
+  _gscScarica('sitemap.xml', xml, 'application/xml');
+  toast(currentLang === 'it' ? 'sitemap.xml scaricata' : 'sitemap.xml downloaded', 'success');
 }
 
 function _gscAnteprima() {
@@ -51493,11 +51754,14 @@ function _gscAnteprima() {
     // «en-series-sgorbions-series-2.html»: il nome del file e' la conseguenza, e stava
     // al posto della causa.
     + '<th>' + (it ? 'Serie' : 'Series') + '</th><th>' + (it ? 'File' : 'File') + '</th>'
+    + '<th>' + (it ? 'Dove va' : 'Goes to') + '</th>'
     + '<th>KB</th><th>' + (it ? 'Figurine' : 'Stickers') + '</th><th>' + (it ? 'Parole' : 'Words') + '</th>'
     + '<th></th><th></th></tr></thead><tbody>'
     + p.map(x => '<tr>'
         + '<td>' + _gscEsc(x.serie) + ' <span style="color:var(--muted);">' + x.lingua + '</span></td>'
         + '<td style="font-family:monospace;font-size:.8rem;">' + _gscEsc(x.nome) + '</td>'
+        + '<td style="font-family:monospace;font-size:.8rem;color:var(--accent);">'
+        + _gscEsc(x.dove) + '</td>'
         + '<td>' + x.kb + '</td><td>' + x.figurine + '</td><td>' + x.parole + '</td>'
         + '<td style="color:var(--warn);font-size:.8rem;">'
         + (x.senzaTesto ? (it ? '⚠️ nessun paragrafo' : '⚠️ no paragraph')
@@ -51526,14 +51790,7 @@ function _gscGenera() {
   let p;
   try { p = _gscPiano(); }
   catch (e) { toast(e.message, 'error'); return; }
-  p.forEach((x, i) => setTimeout(() => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([x.html], { type: 'text/html;charset=utf-8' }));
-    a.download = x.nome;
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 5000);
-  }, i * 300));
+  p.forEach((x, i) => setTimeout(() => _gscScarica(x.nome, x.html), i * 300));
   toast(currentLang === 'it' ? p.length + ' pagine scaricate' : p.length + ' pages downloaded', 'success');
   _gscAnteprima();
 }
@@ -51559,6 +51816,18 @@ function renderAdminGsc() {
     + (it ? '👁️ Vedi cosa verrà generato' : '👁️ Preview') + '</button>'
     + '<button class="btn-primary" onclick="_gscGenera()">'
     + (it ? '⬇️ Genera e scarica' : '⬇️ Generate and download') + '</button>'
+    + '<p class="form-hint" style="margin-top:.8rem;">'
+    + (it ? '⚠️ Ogni file va messo nella cartella che la colonna «Dove va» indica: e\' quella che la pagina dichiara nel proprio canonical. Caricato piatto nella root risponde lo stesso, e il canonical mente.'
+          : '⚠️ Each file goes in the folder shown in the «Goes to» column: it is the one the page declares in its own canonical. Uploaded flat in the root it still answers, and the canonical lies.')
+    + '</p>'
+    + '<h4 style="font-family:var(--font-ui);color:var(--text);margin:1.6rem 0 .4rem;">'
+    + (it ? '2. La sitemap' : '2. The sitemap') + '</h4>'
+    + '<p class="form-hint" style="margin-bottom:.8rem;">'
+    + (it ? 'Le stesse pagine piu\' la home, prese da dove vengono le pagine: una serie nascosta non ci puo\' finire. Va nella root, accanto a robots.txt. Rigenerala ogni volta che una serie entra o esce.'
+          : 'The same pages plus the home, taken from where the pages come from: a hidden series cannot end up in it. It goes in the root, next to robots.txt. Regenerate it whenever a series comes in or out.')
+    + '</p>'
+    + '<button class="btn-primary" onclick="_gscScaricaSitemap()">'
+    + (it ? '⬇️ Scarica sitemap.xml' : '⬇️ Download sitemap.xml') + '</button>'
     + '<div id="gsc-esito" style="margin-top:1.2rem;"></div>'
     + '</div>';
 }
