@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.649"></script>
-<link rel="stylesheet" href="css/style.css?v=6.649">
+<script src="js/email.min.js?v=6.661"></script>
+<link rel="stylesheet" href="css/style.css?v=6.661">
 
 
 <style>
@@ -1544,6 +1544,13 @@ button.back-btn { color:#ffffff; }
         </select>
       </div>
     </div>
+    <!-- 🆕 v6.651 (Franco: «passare da una sottoserie ad un'altra con un solo click») —
+         LA BARRA DEI TAB. Nasce vuota e la riempie `renderTabSottoserie` a ogni ridisegno:
+         dove la sezione non usa le sottoserie resta vuota e non si vede.
+         📌 Sta SOPRA la paginazione e sopra la griglia, ed e' il posto giusto per tutte e
+         due le viste: la vista tabellare legge gli stessi articoli filtrati, quindi il
+         tab vale anche per lei senza doverlo sapere. -->
+    <div id="items-subseries-tabs"></div>
     <div id="items-pagination-top"></div>
     <div class="grid-6" id="items-grid">
       <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora !</p></div>
@@ -2891,6 +2898,19 @@ button.back-btn { color:#ffffff; }
             <input type="checkbox" id="series-has-subseries-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <span data-i18n="form.series.hasSubseries">Ha sottoserie</span>
           </label>
+          <!-- 🆕 v6.650 (Franco: «dovremo anche stabilire l'ordine delle sottoserie […]
+               questo lo gestisco io manualmente con l'ordinamento») — L'ELENCO DELLE
+               SOTTOSERIE, E L'ORDINE DELLE RIGHE E' L'ORDINE DEI TAB.
+               📌 Stessa forma delle liste dei tipi di change/omaggio/errore: il valore
+               scritto sull'articolo viene CONFRONTATO con questo elenco. E' la quinta
+               lista della stessa famiglia, non un modello nuovo.
+               ⚠️ Il riquadro si vede solo con «Ha sottoserie» acceso: lo accende e lo
+               spegne app.js, come fa gia' per gli altri gruppi condizionati. -->
+          <div class="form-group" id="series-sottoserie-group" style="display:none;margin-top:0.6rem;">
+            <label class="form-label" data-i18n="form.series.sottoserie">Sottoserie (una per riga)</label>
+            <textarea class="form-input" id="series-sottoserie-input" rows="4" style="resize:vertical;font-family:inherit;"></textarea>
+            <div class="form-hint" data-i18n="form.series.sottoserieHint">Un valore per riga. L'ORDINE conta: e' l'ordine con cui le sottoserie si vedranno nella sezione. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.</div>
+          </div>
           
           <!-- v6.219 (Franco) — "Non ha numeri" -> "Senza numeri". ⚠️ Il testo qui e' solo il
                ripiego: quello che si legge lo mette `data-i18n`, quindi la stringa e' stata
@@ -3818,7 +3838,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.649"></script>
+<script src="js/app.js?v=6.661"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3842,7 +3862,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.649'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.661'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
