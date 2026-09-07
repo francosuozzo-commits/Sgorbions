@@ -501,7 +501,10 @@ body {
    sull'etichetta ad aprire la scelta del file. Un `<button>` li' dentro si prenderebbe il clic e non
    lo passerebbe piu': sarebbe uscito un pulsante arancione e MUTO, che passa `node --check`, passa
    le suite, passa il controllo del markup, e si rompe solo in mano a chi lo usa.
-   ⚠️ «Rimuovi foto» NON entra qui: e' rosso perche' cancella. */
+   🔄 v6.662 — QUI STAVA SCRITTO CHE «Rimuovi foto» NON ENTRA IN QUESTA CLASSE,
+   PERCHE' E' ROSSO. E' stato vero per una release: la v6.457 ce l'ha messo dentro togliendogli
+   il rosso, e questo commento e' rimasto a dire il contrario del codice per duecento release.
+   Adesso il colore torna — rosa, cioe' `--danger` — col modificatore `.elimina` qui sotto. */
 .btn-foto {
   font-family: var(--font-ui); font-size: 0.72rem;
   border: 1px solid var(--action-admin); color: #ffffff;
@@ -509,6 +512,25 @@ body {
   cursor: pointer; white-space: nowrap; text-align: center; transition: all 0.2s;
 }
 .btn-foto:hover { background: var(--action-admin-hover); border-color: var(--action-admin-hover); }
+
+/* 🆕 v6.662 (Franco: *"il tasto rimuovi foto dovrebbe avere lo stesso colore (roseo)
+   degli altri tasti di eliminazione del sito"*) — L'ECCEZIONE DENTRO LA FILA DELLA FOTO.
+   🔴 Vale la regola delle eliminazioni (v6.601/6.603, poche schermate piu' su): un pulsante
+   che cancella porta SEMPRE `--danger`, e non prende il colore della fila per uniformarla. Se una
+   fila sembra disomogenea, e' perche' uno dei suoi pulsanti fa una cosa diversa dagli altri.
+   ✅ Cambia SOLO il colore: corpo, imbottitura, raggio e bordo restano quelli di .btn-foto,
+   cosi' i quattro comandi restano larghi uguali e incolonnati (v6.605).
+   ⚠️ L'HOVER NON E' UN COLORE SCRITTO A MANO, E NON E' PIGRIZIA. Un `--danger-hover` non
+   esiste, e i due hover che in questo foglio accompagnano `--danger` — #ff8080 su .btn-danger e
+   #e85454 su .tbl-btn-del — sono ROSSI di prima della rotazione della v6.404: copiarne uno
+   avrebbe fatto cambiare TINTA al pulsante al passaggio del mouse. `brightness` non puo'
+   divergere da --danger perche' non lo nomina: lo schiarisce e basta. */
+.btn-foto.elimina {
+  background: var(--danger); border-color: var(--danger); color: #ffffff;
+}
+.btn-foto.elimina:hover {
+  background: var(--danger); border-color: var(--danger); filter: brightness(1.12);
+}
 
 /* 🆕 v6.460 (Franco: *"porta la larghezza del carosello alla larghezza della griglia"*)
    🔴 IL CAROSELLO NON ERA STRETTO: ERA IL SUO CONTENITORE. Le tre file stanno dentro
@@ -631,11 +653,52 @@ body {
    ⚠️ E `space-between` NON poteva restare: con i badge che vanno a capo distribuisce il
    vuoto DENTRO ogni riga, quindi un'ultima riga con due badge li spara ai lati opposti
    della card. `flex-start` più un `gap` li tiene una fila che si accoda. */
+/* 🔄 v6.670 - `align-items` DA `center` A `flex-start`. Con le pillole tutte alte uguali
+   non cambiava niente; adesso un gruppo puo' avere una seconda riga di figli, e `center`
+   allineerebbe i gruppi a meta' altezza staccando i padri dalla loro fila. */
 .card-meta {
-  display: flex; align-items: center; justify-content: flex-start;
+  display: flex; align-items: flex-start; justify-content: flex-start;
   flex-wrap: wrap; gap: 0.4rem;
   margin-top: 1rem; padding-top: 1rem;
   border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+/* 🆕 v6.670 (Franco: *"metti le pillole delle sottoserie sotto alla pillola relativa alla
+   tipologia di articolo che le ha, come facciamo oggi con categoria e le sue sottocategorie"*)
+   🔴 LA FORMA E' COPIATA DA `_retroCatPanelHTML`, dove un gruppo e' gia' una colonna col
+   padre sopra e i figli rientrati di mezzo rem. Stessa idea, stessa forma: se un domani
+   cambia il rientro la' e non qui, sono due schermate che raccontano la stessa gerarchia in
+   due modi.
+   📌 IL GRUPPO VA A CAPO INTERO. E' il motivo per cui e' un `<div>` e non due pillole
+   affiancate: quando la fila si accoda, un figlio non puo' finire sotto il padre sbagliato. */
+.card-gruppo { display: flex; flex-direction: column; gap: 0.25rem; }
+.card-sotto { display: flex; flex-wrap: wrap; gap: 0.25rem; padding-left: 0.5rem; }
+
+/* 🎨 IL COLORE E' QUELLO CHE IL SITO USA GIA' PER UN SOTTOGRUPPO: `#ffa94d`, l'arancione
+   della SOTTOCATEGORIA (COL_SOTTOCAT, v5.995), che sta sotto il giallo della categoria nel
+   pannello dei retro. Riusarlo rende le due schermate parenti invece di inventare una sesta
+   tinta in una tavolozza gia' piena (cinque versioni, tre etichette, due timbri).
+   ⚠️ E IL DOPPIO SIGNIFICATO E' STATO PESATO, non ignorato: quell'arancione vuol dire
+   «sottocategoria di un retro», e qui vuol dire «sottoserie». I due non compaiono MAI nella
+   stessa videata - uno sta nel pannello dei retro dentro una serie, l'altro sulla card della
+   serie nell'Inventario - ed e' lo stesso ragionamento con cui la v6.609 ha dato al timbro
+   INVISIBILE il colore di IN ARRIVO.
+   📌 Il numero resta BIANCO come nel pannello dei retro: li' il colore e' del NOME, il conto
+   e' un valore e i valori restano bianchi (regola della v6.404). */
+/* 🔄 v6.674 (Franco: *"vorrei averle in giallo non arancio"*) - DALL'ARANCIONE AL GIALLO.
+   🎨 E' `COL_CATEGORIA` (#ffd84d), il giallo che il sito ha gia': la tavolozza e' satura e
+   le famiglie di tinta libere sono finite (v6.427).
+   ⚠️ Il valore e' scritto per esteso e non come `var(--...)` perche' quel giallo vive in una
+   COSTANTE JAVASCRIPT (`COL_CATEGORIA`), non in un token CSS - e' cosi' da sempre, e questa
+   release non e' il posto per cambiarlo. 🔴 Ma sono due copie dello stesso numero, qui e in
+   `app.js`: se un giorno quel giallo cambia, vanno cambiate insieme. `prova-v6670` le
+   confronta apposta.
+   📌 Sulla card il giallo non ha vicini: le altre pillole sono il lime delle tipologie. Nella
+   SCHEDA invece sta a ΔE 16 dalla «Variazione non ufficiale» - vedi il commento in `sezRows`. */
+.card-badge-sotto {
+  background: rgba(255,216,77,0.10); border: 1px solid rgba(255,216,77,0.35);
+  color: #ffd84d; font-size: 0.72rem; font-family: var(--font-ui);
+  padding: 2px 8px; border-radius: 20px; white-space: nowrap;
 }
 .card-badge {
   background: rgba(181,255,46,0.1); border: 1px solid rgba(181,255,46,0.2);
@@ -1649,6 +1712,10 @@ footer {
     margin-top: 0.4rem; padding-top: 0.4rem; gap: 0.2rem;
   }
   #catalog-grid .card-badge { font-size: 0.62rem; padding: 1px 6px; }
+  /* 🆕 v6.670 - e la pillola della sottoserie scende con lei: senza questa riga
+     resterebbe piu' grande del suo padre, che e' il contrario della gerarchia. */
+  #catalog-grid .card-badge-sotto { font-size: 0.58rem; padding: 1px 5px; }
+  #catalog-grid .card-sotto { padding-left: 0.35rem; gap: 0.15rem; }
 
   /* niente sollevamento al tocco: su telefono resta "appiccicato" dopo il tap */
   #catalog-grid .card:hover { transform: none; }
