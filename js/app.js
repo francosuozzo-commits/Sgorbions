@@ -25968,7 +25968,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.661';
+const JS_VERSION = 'v6.676';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -26229,7 +26229,9 @@ const LOCAL = {
 // conto che rende inutile un secondo memo qui.
 function _firmaSerieNascoste(serie) {
   let f = '';
-  for (const s of (serie || [])) if (s.invisibile) f += s.id + '|';
+  // 🔄 v6.668 - la domanda passa da `s.invisibile` a `_statoSerie`. Per i record vecchi
+  //    la risposta e' identica: il ripiego li legge esattamente come prima.
+  for (const s of (serie || [])) if (_statoSerie(s) === 'nascosta') f += s.id + '|';
   return f;
 }
 
@@ -26245,7 +26247,7 @@ function _serieVisibili(tutte) {
   if (currentUser?.isAdmin) return tutte;
   const firma = _firmaSerieNascoste(tutte);
   if (_memoSerie.src === tutte && _memoSerie.firma === firma) return _memoSerie.out;
-  const out = tutte.filter(s => !s.invisibile);
+  const out = tutte.filter(s => _statoSerie(s) !== 'nascosta');
   _memoSerie = { src: tutte, firma, out };
   return out;
 }
@@ -31133,18 +31135,26 @@ function _sottoserieSerie(s) {
 //    pagine mai fatte, applicata prima che il danno succeda.
 // ⚠️ Gli orfani si aggiungono SOLO se almeno una dichiarata e' in uso: senza questa
 //    condizione, ogni sezione senza sottoserie mostrerebbe un tab solo col vuoto dentro.
+// 🆕 v6.664 - LA REGOLA ESCE DAI TAB E DIVENTA UNA FUNZIONE PURA, perche' adesso la
+// chiedono in DUE: i tab di una sezione e i blocchi della ricerca globale. La ricerca gira su
+// tutte le serie e non puo' leggere «currentSeriesId», quindi o la regola prendeva i suoi dati
+// come argomenti, o nasceva la seconda copia — e due elenchi di gruppi divergono al primo
+// ritocco. 📌 Il ragionamento scritto qui sopra non cambia di una virgola: cambia solo da
+// dove arrivano i dati.
+function _sottoserieUsate(s, articoli) {
+  const dichiarate = _sottoserieSerie(s);
+  if (!dichiarate.length) return [];
+  const presenti = new Set((articoli || []).map(f => String(f.subseries || '').trim()));
+  const usate = dichiarate.filter(v => presenti.has(v));
+  if (!usate.length) return [];
+  return usate.concat([...presenti].filter(v => !dichiarate.includes(v)));
+}
+
 function _tabSottoserie() {
   if (!currentSeriesId || !currentSection) return [];
   const s = getData('series', []).find(x => x.id === currentSeriesId);
-  const dichiarate = _sottoserieSerie(s);
-  if (!dichiarate.length) return [];
-  const qui = getData('figurines', [])
-    .filter(f => f.seriesId === currentSeriesId && f.section === currentSection);
-  const presenti = new Set(qui.map(f => String(f.subseries || '').trim()));
-  const usate = dichiarate.filter(v => presenti.has(v));
-  if (!usate.length) return [];
-  const orfani = [...presenti].filter(v => !dichiarate.includes(v));
-  return usate.concat(orfani);
+  return _sottoserieUsate(s, getData('figurines', [])
+    .filter(f => f.seriesId === currentSeriesId && f.section === currentSection));
 }
 
 // L'etichetta di un tab. Il vuoto ha un NOME, e non e' un ripiego: Franco, 9 settembre -
@@ -31193,10 +31203,15 @@ function _ripristinaFlagSerie(s) {
   // questa riga la casella si aprirebbe sempre spenta e `saveSeries` scriverebbe `false` —
   // cioe' ogni salvataggio rimetterebbe in vista una serie nascosta. Dodici flag, dodici
   // ripristini.
-  spunta('series-invisibile-input',                s && s.invisibile);       // v6.584
-  // 🔴 v6.585 - e il ripristino del flag nuovo, per la stessa ragione della riga qui sopra:
-  // senza, ogni salvataggio spegnerebbe il timbro. Tredici flag, tredici ripristini.
-  spunta('series-in-costruzione-input',            s && s.inCostruzione);    // v6.585
+  // 🔄 v6.668 - LE DUE SPUNTE SONO DIVENTATE UN ELENCO SOLO, e il ripristino resta
+  // obbligatorio per la stessa ragione della v6.584: senza, la casella si aprirebbe sul primo
+  // valore e `saveSeries` scriverebbe quello - cioe' ogni salvataggio rimetterebbe in vista una
+  // serie nascosta. 📌 Su una serie NUOVA (`s` assente) `_statoSerie` risponde «pubblicata»,
+  // che e' il valore giusto per una serie che si sta creando.
+  {
+    const _selStato = document.getElementById('series-stato-input');
+    if (_selStato) _selStato.value = _statoSerie(s);
+  }
   spunta('series-has-subseries-input',             s && s.hasSubseries);     // v6.169
   _aggiornaCasellaSottoserie();   // v6.650 - dopo la spunta, o leggerebbe quella di prima
   spunta('series-has-sizes-input',                 s && s.hasSizes);
@@ -31655,8 +31670,10 @@ async function saveSeries() {
   const noAlbums = articoliNascosti.includes('albums');
 
   const serieContenitore = document.getElementById('series-contenitore-input')?.checked || false; // v6.204
-  const invisibile = document.getElementById('series-invisibile-input')?.checked || false; // v6.584
-  const inCostruzione = document.getElementById('series-in-costruzione-input')?.checked || false; // v6.585
+  // 🔄 v6.668 - un campo solo al posto delle due spunte. Il ripiego a «pubblicata» copre il
+  //    caso in cui il selettore non fosse nel DOM: prima, due `|| false` dicevano «visibile e
+  //    senza timbro», che e' la stessa cosa detta in due pezzi.
+  const statoSerie = document.getElementById('series-stato-input')?.value || 'pubblicata'; // v6.668
   const controlliSospesi = _leggiControlliSospesi(); // v6.080
   const nomeCorto = (document.getElementById('series-nome-corto-input')?.value || '').trim(); // v6.080
   // 🆕 v6.480 - stessa forma della riga sopra, `.trim()` compreso: due campi gemelli letti
@@ -31796,7 +31813,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -31814,7 +31831,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, invisibile /* v6.584 */, inCostruzione /* v6.585 */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -32250,6 +32267,10 @@ const ARTICOLI = {
     // 📌 1.6 e' il valore che il codice applicava gia': era l'unico ramo
     //    dichiarato dell'`if` che questa release ha tolto.
     riquadro: 1.6,   // v6.654
+    // 🆕 v6.667 - «questo articolo ha un SOTTONOME?». Fino alla v6.666 la risposta era
+    //    scritta a mano in cinque punti come «section === 'retros'»; adesso e' un campo, come
+    //    «riquadro» e «colonne». Qui vale true perche' e' cio' che il sito faceva gia'.
+    sottonome: true,   // v6.667
     it: 'Retro',   en: 'Retros',
     itSing: 'retro', enSing: 'retro',
     genere: 'm',
@@ -32296,6 +32317,9 @@ const ARTICOLI = {
     //    `object-fit: contain`: se e' piu' larga di 1,43 resta identica e sparisce
     //    solo il vuoto sopra e sotto — che e' il caso descritto da Franco.
     riquadro: 1.43,   // v6.654
+    // 🆕 v6.667 (Franco: *"mi serve il campo Sottonome sulla form delle spille ... e nella
+    //    card e nei dettagli del risultato della RG, come facciamo per i retro"*).
+    sottonome: true,   // v6.667
     it: 'Spille', en: 'Pins',
     itSing: 'spilla', enSing: 'pin',
     genere: 'f',
@@ -32327,6 +32351,18 @@ const ARTICOLI = {
 // sconosciuta non deve far esplodere il disegno di una pagina.
 function _art(sez) { return ARTICOLI[sez] || ARTICOLI.figurines; }
 
+// 🆕 v6.667 - «QUESTO ARTICOLO HA UN SOTTONOME?», E LA DOMANDA E' UNA SOLA.
+// 🔴 Fino alla v6.666 la risposta era scritta a mano in CINQUE punti lontani fra loro -
+//    la form, la scheda in lettura, la card, la vista tabellare e la ricerca globale - tutti
+//    nella forma «section === 'retros'». Franco ha chiesto il sottonome anche sulle spille:
+//    cinque «|| spille» sarebbero stati il SESTO elenco di sezioni a mano di questo file, cioe'
+//    la forma che ha nascosto la v6.652 per un giro e prodotto i difetti della v6.646 e 6.657.
+// 📌 La risposta sta nel descrittore accanto a «riquadro» e «colonne» (v6.654): il nono
+//    articolo ce l'ha gia', e accenderla altrove non costa una release.
+function _haSottonome(sez) {
+  return !!_art(sez).sottonome;
+}
+
 // 🆕 v6.506 — IL NOME DI UNA SEZIONE COME LO SI DICE IN UN BADGE: singolare se è uno
 // solo, e nella lingua corrente. Sta accanto a `_art` e chiede al DESCRITTORE, non a una
 // tabella parallela: è la lezione della v6.481, dove lo stesso nome viveva in due fonti
@@ -32356,6 +32392,7 @@ function _nomeSezioneCard(sez, n) {
 const _ETICHETTE_DESCRITTORE = {
   pos: 'Pos.', it: 'Nome (IT)', en: 'Nome (EN)', itSing: 'Singolare (IT)', enSing: 'Singolare (EN)',
   icona: 'Icona', colonne: 'Colonne d/m', riquadro: 'Riquadro foto (l/h)',
+  sottonome: 'Sottonome',   // v6.667
   numero: 'Numero', ordina: 'Ordinamento',
   ordinaDove: 'Ordina dove', nomeCompleto: 'Nome completo', nomeCompletoDove: 'Nome completo dove'
 };
@@ -34952,7 +34989,7 @@ function openProdottoDetail(sec) {
     return '<div class="section-choice-card"' + (_bloccataHub ? '' : ' onclick="apriSerieDaProdotto(\'' + s.id + '\')"') + ' style="padding:0;overflow:hidden;' + (_bloccataHub ? 'cursor:default;' : '') + '">' +
       '<div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;display:flex;align-items:center;justify-content:center;position:relative;container-type:inline-size;">' +
         (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_400,h_400,c_fit,q_auto,f_auto') + '" loading="lazy" alt="" style="width:100%;height:100%;object-fit:contain;">' : '<span style="font-size:3rem;">&#127924;</span>') +
-        _timbroInCostruzione(s) +
+        _timbroStatoSerie(s) +
       '</div>' +
       '<div class="card-body prodotto-serie-testo" style="padding:' + (_mobHub ? '0.5rem 0.5rem 0.6rem' : '1.25rem 1.5rem') + ';text-align:left;">' + // v6.080 - su telefono il riquadro si stringe con la colonna
         '<div class="card-title" style="margin-bottom:0;color:var(--nome-entita);' + (_mobHub ? 'font-size:0.88rem;line-height:1.2;' : '') + '">' + esc(_nomeSerieCard(s)) + '</div>' +
@@ -35362,9 +35399,30 @@ function renderCatalogSearch(q) {
     const desc = _descSerie(s);
     // Nome serie sempre in cima, cliccabile per aprire la serie
     // Prima riga: nome serie a sx + conteggio oggetti a dx
+    // 🆕 v6.666 (Franco: *"nella RG stiamo dando i risultati anche delle serie COMING
+    //    SOON ... apponiamo un timbro sulla foto della serie, cosi' che l'utente capisca come
+    //    mai mancano le foto delle miniature"*) - LA RICERCA CHIEDE IL PERMESSO COME GLI ALTRI.
+    // 🔴 QUESTA ERA LA TERZA PORTA, E LA v6.587 L'AVEVA PREVISTA: «una domanda sola per i DUE
+    //    punti che portano dentro una serie ... e ne nasceranno altri». Ne e' nato uno - questo -
+    //    e non chiamava `_serieBloccata`: un non-admin trovava gli articoli di una serie chiusa e
+    //    cliccando ci entrava. Non era un difetto della ricerca: era la regola applicata a meta'.
+    // 📌 IL TIMBRO RESTA QUELLO DI SEMPRE, parola compresa. Il flag e' uno solo
+    //    (`inCostruzione`) e una seconda parola per lo stesso flag sarebbe divergita al primo
+    //    ritocco. Chi l'ha gia' vista sulle copertine dell'Inventario la riconosce qui.
+    const _bloccataRG = _serieBloccata(s);
     const seriesHeader = `<div style="display:flex;align-items:center;justify-content:space-between;">
-        <div onclick="openSeriesDetail('${s.id}')" style="cursor:pointer;display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
-          ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_' + (_MINI_SERIE * 2) + ',h_' + (_MINI_SERIE * 2) + ',c_fit,q_auto,f_auto')}" style="width:${_MINI_SERIE}px;height:${_MINI_SERIE}px;object-fit:contain;border-radius:6px;background:var(--card2);flex-shrink:0;">` : '<span style="font-size:' + Math.round(_MINI_SERIE * 0.6) + 'px;line-height:' + _MINI_SERIE + 'px;width:' + _MINI_SERIE + 'px;text-align:center;flex-shrink:0;">🎴</span>'}
+        <div${_bloccataRG ? '' : ` onclick="openSeriesDetail('${s.id}')"`} style="cursor:${_bloccataRG ? 'default' : 'pointer'};display:flex;align-items:center;gap:0.5rem;flex:1;min-width:0;">
+          ${/* ⚠️ LA MINIATURA ENTRA IN UN CONTENITORE SUO, e le due dichiarazioni non sono
+                 decorazione: `position:relative` perche' il timbro e' assoluto e senza un
+                 antenato posizionato si aggancia a quello che trova; `container-type:inline-size`
+                 perche' il corpo del timbro e' in `cqw` e senza cade IN SILENZIO sul viewport,
+                 misurando lo schermo invece della miniatura. Nessuna delle due da' errore.
+                 📌 E il timbro sta FUORI dal ternario: una serie in arrivo SENZA copertina e' il
+                 caso piu' probabile, non l'eccezione - come nella card della v6.585. */''}
+          <div style="width:${_MINI_SERIE}px;height:${_MINI_SERIE}px;flex-shrink:0;position:relative;container-type:inline-size;display:flex;align-items:center;justify-content:center;">
+          ${s.img ? `<img src="${cloudinaryUrl(s.img,'w_' + (_MINI_SERIE * 2) + ',h_' + (_MINI_SERIE * 2) + ',c_fit,q_auto,f_auto')}" style="width:100%;height:100%;object-fit:contain;border-radius:6px;background:var(--card2);">` : '<span style="font-size:' + Math.round(_MINI_SERIE * 0.6) + 'px;line-height:' + _MINI_SERIE + 'px;text-align:center;">🎴</span>'}
+          ${_timbroStatoSerie(s)}
+          </div>
           <!-- 🆕 v6.395 (Franco) - IL NOME DELLA SERIE E' BIANCO, come in tutto il resto del sito.
                Qui era l'unico posto in cui era lime: altrove eredita il colore del testo, e nella
                lista admin e' --muted. 🔴 E il lime non e' un colore qualunque: e' --accent, che
@@ -35458,14 +35516,39 @@ function renderCatalogSearch(q) {
             });
           }
           if (!inSection.length) return '';
+          // 🆕 v6.664 (Franco: *"per le spille usa la sottoserie come contenitore, alla
+          //    stregua della tipologia di articolo"*) - LA SOTTOSERIE DIVENTA UN CONTENITORE.
+          // 🔄 v6.665 - L'ETICHETTA E' LA SOLA SOTTOSERIE. La v6.664 scriveva «Spille - Beta»,
+          //    forma proposta da Franco stesso ma con un «se proprio vogliamo creare una
+          //    differenza»: era gia' un ripiego quando e' nata. Franco: *"quando ci sono le
+          //    sottoserie usa solo la sottoserie come etichetta"*.
+          // ⚠️ COSA CI SI PERDE, e va saputo prima di rimetterlo: senza il nome della sezione
+          //    davanti, due tipologie della STESSA serie che dichiarano la stessa sottoserie
+          //    fanno due blocchi con lo stesso titolo, e niente dice quale sia quale. Oggi non
+          //    succede - l'elenco e' per serie e ogni serie lo usa su una tipologia sola - ma
+          //    non c'e' niente che lo vieti. Il posto dove rimediare e' questa riga.
+          // 🔴 E LA REGOLA NON NOMINA LE SPILLE: vale ovunque ci siano sottoserie, scelta di
+          //    Franco. Un sec === 'spille' scritto qui sarebbe il quinto elenco di sezioni a
+          //    mano del file, cioe' la forma che ha nascosto la v6.652 per un giro intero.
+          // 📌 QUALI BLOCCHI E IN CHE ORDINE lo dice _sottoserieUsate, la stessa funzione dei
+          //    tab: la ricerca e i tab devono mostrare gli stessi gruppi nello stesso ordine.
+          // ⚠️ Gli orfani restano la rete anche qui: chi ha la sottoserie vuota finisce in «Set
+          //    principale», chi ce l'ha scritta male in un blocco col suo nome. Non sparisce.
+          const _sotto = _sottoserieUsate(s, inSection);
+          const _blocchi = _sotto.length
+            ? _sotto.map(v => ({ eti: _etichettaSottoserie(v),
+                items: inSection.filter(f => String(f.subseries || '').trim() === v) }))
+                .filter(b => b.items.length)
+            : [{ eti: getSectionLabel(sec), items: inSection }];
+          return _blocchi.map(_b => {
           // I gruppi, nell'ordine appena stabilito. Le altre sezioni restano UN gruppo solo, cioe'
           // esattamente com'erano: raggruppare i Retro per numero non vorrebbe dire niente, e
           // spezzarli in gruppi da uno cambierebbe le spaziature senza motivo.
           const gruppi = [];
           if (sec !== 'figurines') {
-            gruppi.push({ k: '*', items: inSection });
+            gruppi.push({ k: '*', items: _b.items });
           } else {
-            inSection.forEach(f => {
+            _b.items.forEach(f => {
               const k = chiaveGruppo(f);
               const ultimo = gruppi[gruppi.length - 1];
               if (ultimo && ultimo.k === k) ultimo.items.push(f); else gruppi.push({ k, items: [f] });
@@ -35497,7 +35580,7 @@ function renderCatalogSearch(q) {
             <!-- 🆕 v6.610 - IL TITOLO DIVENTA UNA RIGA, per fare posto al pulsante senza
                  mandarlo a capo su schermi stretti. Il pulsante e' l'ULTIMO elemento e ha
                  «margin-left:auto»: sta a destra senza che nessuno debba misurare niente. -->
-            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(getSectionLabel(sec))}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(inSection.length)}</span>${inSection.length > 1 ? `<button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',true)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" class="btn-primary" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u25A4</span>${currentLang === 'it' ? 'Mostra in tabella' : 'Show in table'}</button><button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',false)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista a griglia' : 'Open these results in the grid view'}" class="btn-primary" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u229E</span>${currentLang === 'it' ? 'Mostra in griglia' : 'Show in grid'}</button>` : ''}</div>
+            <div style="font-size:1.125rem;color:var(--text);font-weight:600;margin-bottom:0.25rem;display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;">${esc(_b.eti)}:<span style="font-size:0.9375rem;font-weight:400;color:var(--accent);">${_frasePerQuesta(_b.items.length)}</span>${_b.items.length > 1 ? `<button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',true)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista tabellare' : 'Open these results in the table view'}" class="btn-primary" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u25A4</span>${currentLang === 'it' ? 'Mostra in tabella' : 'Show in table'}</button><button onclick="event.stopPropagation();apriTabellaDaRicerca('${s.id}','${sec}',false)" title="${currentLang === 'it' ? 'Apri questi risultati nella vista a griglia' : 'Open these results in the grid view'}" class="btn-primary" style="border-radius:8px;font-size:0.85rem;padding:0.15rem 0.6rem;line-height:1.4;display:inline-flex;align-items:center;gap:0.3rem;white-space:nowrap;"><span>\u229E</span>${currentLang === 'it' ? 'Mostra in griglia' : 'Show in grid'}</button>` : ''}</div>
             <div style="display:flex;flex-wrap:wrap;gap:0.7rem;">
               ${gruppi.map(gruppo => '<div style="display:inline-flex;flex-wrap:wrap;gap:0.3rem;">' + gruppo.items.map(f => {
                 _elencoRicercaGlobale.push(f.id); // v6.097 - l'ordine e' questo, perche' e' qui che si disegna
@@ -35605,8 +35688,12 @@ function renderCatalogSearch(q) {
                 // insieme avrebbe dato un colore al valore, che è quello che questa settimana
                 // abbiamo tolto dappertutto.
                 // ⚠️ Il « - » resta bianco: è punteggiatura, e la regola della v6.404 vale anche qui.
+                // 🔄 v6.663 - IL SEPARATORE ESCE DA QUI. Questo pezzo adesso e' uno dei
+                //    pezzi della RIGA 2, e puo' esserne il primo: il « - » lo mette il join, che
+                //    sa quanti pezzi ci sono. La regola della v6.404 non cambia (il separatore e'
+                //    punteggiatura e resta bianco): cambia chi lo scrive.
                 const _codaRetro = retroFig
-                  ? ' <span style="font-size:0.85rem;"> - '
+                  ? '<span style="font-size:0.85rem;">'
                     + '<span style="color:var(--etichetta-retro);">RETRO: </span>'
                     + '<span style="color:var(--text);">' + esc(_retroNomeCompleto(retroFig)) + '</span>'
                     + '</span>'
@@ -35673,7 +35760,41 @@ function renderCatalogSearch(q) {
                 const smallImg = (url, title, bordo = true) => url
                   ? `<img src="${cloudinaryUrl(url,'w_64,h_64,c_fit,q_auto,f_auto')}"${title ? ` title="${esc(title)}"` : ''} style="width:${_MINI}px;height:${_MINI}px;object-fit:contain;border-radius:4px;background:var(--card);${bordo ? 'border:1px solid var(--border);' : ''}">`
                   : '';
-                return `<span onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')" style="cursor:pointer;background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.9375rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
+                // 🆕 v6.663 (Franco: *"metti sempre il solo nome/numero dell'articolo in
+                //    riga 1 e tutto il resto in riga 2"*) - LA PILLOLA SU DUE RIGHE.
+                // 🔴 IL MOTIVO E' UNA MISURA, NON UN GUSTO: le miniature sono alte 44px e il
+                //    testo accanto ne occupava circa la meta'. Lo spazio per la seconda riga
+                //    c'era gia'; la pillola lo pagava in LARGHEZZA, andando a capo dove capitava
+                //    e spezzando la coda del retro a meta' parola.
+                // ⚠️ RIGA 1 E' L'IDENTITA' (numero + nome) e non porta MAI altro: e' la cosa
+                //    che si scorre con l'occhio. Tutto cio' che qualifica - versione, tipologia,
+                //    il retro associato - sta sotto, e i pezzi li unisce il separatore invece di
+                //    portarselo ciascuno addosso.
+                const _riga1 = (f.number ? '<span style="color:' + COL_IDENTITA + ';font-size:0.85rem;">' + f.number + '</span> ' : '')
+                  + _prefissoInvisibile(f)
+                  + '<span style="color:' + COL_IDENTITA + ';">'
+                  + (sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name) + '</span>'
+                  // 🆕 v6.667 (Franco: *"mi serve il sottonome nei dettagli del risultato
+                  //    della RG, come facciamo per i retro"*) - IL SOTTONOME DIETRO AL NOME.
+                  // 📌 NON per i retro: li' il nome mostrato e' gia' il Nome completo, che il
+                  //    sottonome se lo porta dentro (`_retroFullName`). Aggiungerlo anche qui lo
+                  //    scriverebbe due volte nella stessa riga - il difetto che la v6.103 aveva
+                  //    gia' tolto al tipo dei Change.
+                  // 📌 Fra parentesi e in `--info`, come sulla card (v6.273): stessa cosa,
+                  //    stesso aspetto nei due posti in cui si vede.
+                  + ((sec !== 'retros' && _haSottonome(sec) && (f.subname || '').trim())
+                      ? ' <span style="color:var(--info);">(' + esc((f.subname || '').trim()) + ')</span>'
+                      : '');
+                const _pezzi = [];
+                if (sec === 'retros' && f.changeType) _pezzi.push('<span style="font-size:0.85rem;'
+                  + 'text-transform:uppercase;color:' + _COLORE_TIPO.change + ';">Change</span>');
+                if (mostraVersione) {
+                  _pezzi.push(_inVersione(varLabel));
+                  if (tipoLabel) _pezzi.push(_inVersione(esc(tipoLabel)));
+                }
+                if (!(sec === 'retros' || _soloNomeENumero) && _codaRetro) _pezzi.push(_codaRetro);
+                const _riga2 = _pezzi.join(_sep);
+                return `<span${_bloccataRG ? '' : ` onclick="openFigFromSearch('${f.id}','${s.id}','${f.section||'figurines'}')"`} style="cursor:${_bloccataRG ? 'default' : 'pointer'};background:var(--card2);border:1px solid var(--border);color:var(--text);font-size:0.9375rem;padding:2px 6px 2px 3px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;">
                 ${smallImg(_facce.fronte, '', false)}
                 ${_soloNomeENumero ? '' : (() => {
                   // 🔴 v6.413 - IL TERZO STATO, che qui non c'era. Card e scheda distinguono da
@@ -35692,11 +35813,12 @@ function renderCatalogSearch(q) {
                     + 'display:inline-flex;align-items:center;justify-content:center;'
                     + 'color:var(--muted);font-size:0.85rem;flex-shrink:0;">□</span>';
                 })()}
-                <span>${f.number ? '<span style="color:' + COL_IDENTITA + ';font-size:0.85rem;">'+f.number+'</span> ' : ''}${_prefissoInvisibile(f)}<span style="color:${COL_IDENTITA};">${sec === 'retros' ? esc(_retroNomeCompleto(f)) : f.name}</span>${(sec === 'retros' && f.changeType) ? ' <span style="font-size:0.85rem;text-transform:uppercase;color:' + _COLORE_TIPO.change + ';">Change</span>' : ''}${mostraVersione ? _sep + _inVersione(varLabel) + (tipoLabel ? _sep + _inVersione(esc(tipoLabel)) : '') : ''}${(sec === 'retros' || _soloNomeENumero) ? '' : _codaRetro}</span>
+                <span style="display:inline-flex;flex-direction:column;align-items:flex-start;line-height:1.25;min-width:0;">${_riga1 ? '<span>' + _riga1 + '</span>' : ''}${_riga2 ? '<span>' + _riga2 + '</span>' : ''}</span>
               </span>`;
               }).join('') + '</div>').join('')}
             </div>
           </div>`;
+          }).join('');
         }).join('') : '';
     // 🆕 v6.411 (Franco) - LO SPAZIO FRA UNA TIPOLOGIA E LA SUCCESSIVA.
     // Franco: *"tra i risultati di una tipologia di articolo e quelli della successiva, lascia una
@@ -35892,12 +36014,59 @@ function _nomeSerieCard(s, sempreCorto) {
 // litigano — e ne nasceranno altri: la home usa gia' la stessa card.
 // ⚠️ L'ADMIN NON E' UN'ECCEZIONE MESSA DOPO, e' meta' della domanda: e' lui che deve poter entrare
 // in una serie in costruzione, se no non puo' lavorarci. Stessa forma di `_figurineVisibili`.
+// 🆕 v6.668 - LO STATO DELLA SERIE, UN CAMPO SOLO A QUATTRO VALORI.
+// Franco: «onde evitare di costruire un terzo campo, dopo in arrivo e invisibile, non conviene
+// usare un campo unico?». I quattro valori sono gradini della stessa scala e non possono valere
+// insieme: due booleani indipendenti ne permettevano quattro combinazioni, tre ne avrebbero
+// permesse otto, e la meta' non voleva dire niente.
+// 🔴 IL RIPIEGO SUI DUE CAMPI VECCHI NON E' PROVVISORIETA'. Senza, una serie salvata prima di
+// questa release risponderebbe «pubblicata»: una serie NASCOSTA tornerebbe visibile a tutti nel
+// momento del deploy, prima che qualcuno la riapra. Non e' un difetto di forma, e' §15.
+// ⚠️ E L'ORDINE NON E' ARBITRARIO: `invisibile` si guarda PRIMA di `inCostruzione`, perche' e'
+// cio' che il sito faceva gia' - `getData` toglieva la serie prima che qualcuno leggesse
+// l'altro flag. Invertirlo darebbe il timbro a una serie che non si deve vedere.
+// 📌 E' la stessa forma di `_articoliNascostiDaRecord` (v6.216), che ricava l'elenco nuovo
+// dai due booleani vecchi quando il campo non c'e'.
+// 🆕 v6.669 - I QUATTRO STATI, IN UN POSTO SOLO: il valore, il segno che li mostra e la
+// parola nelle due lingue. Alla v6.668 il segno viveva in un punto (il 🫥 della tabella in
+// console) e le parole in un altro (le <option> dell'index), e le seconde parlavano solo
+// italiano: due elenchi della stessa cosa, destinati a divergere al primo stato nuovo.
+// 📌 L'ORDINE E' UNA SCALA, dalla piu' pronta alla meno, e non e' decorativo: la colonna
+// della tabella si ordina su QUESTA posizione, non in alfabetico. In alfabetico «in-arrivo»
+// verrebbe prima di «in-completamento», cioe' il contrario di quanto sono avanti.
+// ⚠️ Le <option> dell'index NON si generano da qui, ed e' voluto: quel selettore decide se una
+// serie si vede, e un elenco costruito da JavaScript che per qualche motivo resta vuoto
+// farebbe scrivere il ripiego al salvataggio (§15). La copia esiste e non puo' divergere in
+// silenzio: `prova-v6669` pretende che i quattro `value=` siano questi, nello stesso ordine.
+const STATI_SERIE = [
+  { v: 'pubblicata',       segno: '',            it: 'Pubblicata',       en: 'Published' },
+  { v: 'in-completamento', segno: '\u{1F9F1}',   it: 'In completamento', en: 'Work in progress' },
+  { v: 'in-arrivo',        segno: '\u{1F6A7}',   it: 'In arrivo',        en: 'Coming soon' },
+  { v: 'nascosta',         segno: '\u{1FAE5}',   it: 'Nascosta',         en: 'Hidden' }
+];
+
+// La voce dello stato di una serie. Il ripiego sulla prima non e' pigrizia: uno stato scritto
+// a mano nei dati e sbagliato non deve far sparire la riga dalla tabella.
+function _voceStatoSerie(s) {
+  const v = _statoSerie(s);
+  return STATI_SERIE.find(x => x.v === v) || STATI_SERIE[0];
+}
+
+function _statoSerie(s) {
+  const v = (s && s.statoSerie) || '';
+  if (v) return v;
+  if (s && s.invisibile) return 'nascosta';
+  if (s && s.inCostruzione) return 'in-arrivo';
+  return 'pubblicata';
+}
+
 function _serieBloccata(s) {
-  return !!(s && s.inCostruzione) && !currentUser?.isAdmin;
+  return _statoSerie(s) === 'in-arrivo' && !currentUser?.isAdmin;
 }
 
 // 🆕 v6.609 - LA FORMA DEL TIMBRO, IN UN POSTO SOLO. Nasce estraendo il corpo di
-// «_timbroInCostruzione» (v6.585) perche' Franco ne ha chiesto un secondo: «metti un timbro
+// «_timbroInCostruzione» (v6.585, oggi `_timbroStatoSerie`) perche' Franco ne ha chiesto un
+// secondo: «metti un timbro
 // INVISIBILE scritto in obliquo al centro». Ricopiarlo sarebbe stata la copia numero due,
 // destinata a divergere al primo ritocco — e questo file paga quel difetto da giorni.
 // 🔴 IL CORPO E' IN «cqw», CIOE' CENTESIMI DELLA LARGHEZZA DEL CONTENITORE, e chi lo usa
@@ -35915,9 +36084,25 @@ function _timbroHTML(testo, colore) {
     + 'letter-spacing:0.08em;text-transform:uppercase;">' + testo + '</div>';
 }
 
-function _timbroInCostruzione(s) {
-  if (!s || !s.inCostruzione) return '';
-  return _timbroHTML(currentLang === 'it' ? 'IN ARRIVO !' : 'COMING SOON !', 'var(--in-arrivo)');
+// 🔄 v6.668 - CAMBIA NOME PERCHE' NON PARLA PIU' DI UNA COSA SOLA. Si chiamava
+// `_timbroInCostruzione` e disegnava un timbro; adesso i timbri sono due e li sceglie lo STATO.
+// Tenere il nome vecchio avrebbe voluto dire una funzione che dice «in costruzione» e disegna
+// «IN COMPLETAMENTO» - un commento sbagliato scritto nel nome, dove nessuno lo rilegge.
+// 🎨 I DUE TIMBRI HANNO DUE COLORI, e non e' decorazione: nella stessa griglia dell'hub una
+// serie puo' essere IN ARRIVO e quella accanto IN COMPLETAMENTO. Due significati diversi con lo
+// stesso colore sono il difetto che Franco ha segnalato due volte (v6.394, v6.397).
+// 📌 `--in-completamento` e' un token nuovo e misurato: il suo vicino piu' prossimo nella
+// tavolozza viva sta a 37 di distanza, e da `--in-arrivo` sta a 80.
+function _timbroStatoSerie(s) {
+  const st = _statoSerie(s);
+  if (st === 'in-arrivo') {
+    return _timbroHTML(currentLang === 'it' ? 'IN ARRIVO !' : 'COMING SOON !', 'var(--in-arrivo)');
+  }
+  if (st === 'in-completamento') {
+    return _timbroHTML(currentLang === 'it' ? 'IN COMPLETAMENTO' : 'WORK IN PROGRESS !',
+                       'var(--in-completamento)');
+  }
+  return '';
 }
 
 // 🆕 v6.609 (Franco: *«quando un articolo e' invisibile, fallo notare all'admin»*)
@@ -35982,7 +36167,24 @@ function seriesCardHTML(s) {
     // ⚠️ NON E' UN DIFETTO DA RIPARARE: e' una scelta, presa avendo davanti proprio
     // questa conseguenza. Chi allineasse i due posti «per coerenza» cancellerebbe una
     // decisione — e il commento gemello sta in `renderSeriesMeta`, accanto a `_totali`.
-    .map(sez => [sez, senzaErroriDiStampa(allItems.filter(f => f.section === sez)).length])
+  // 🆕 v6.670 (Franco: *"se una serie ha sottoserie, mostra pillole anche per sottoserie"*)
+  //    - OGNI TIPOLOGIA SI PORTA DIETRO LE SUE SOTTOSERIE.
+  // 🔴 QUALI, E IN CHE ORDINE, LO DICE `_sottoserieUsate` - la stessa funzione dei tab della
+  //    sezione (v6.651) e dei blocchi della ricerca globale (v6.664). Le tre viste devono dire
+  //    gli stessi gruppi nello stesso ordine: una quarta lista divergerebbe al primo ritocco.
+  // ⚠️ E IL CONTEGGIO SCARTA GLI ERRORI DI STAMPA COME QUELLO DELLA TIPOLOGIA. Senza, la somma
+  //    dei figli non tornerebbe col numero del padre, sulla stessa card e a due righe di
+  //    distanza. Franco l'aveva gia' deciso per le tipologie: «non contarli manco nella card
+  //    della serie, senno' e' una incongruenza».
+  // 📌 Gli orfani restano la rete anche qui: una sottoserie scritta male fa la sua pillola
+  //    invece di far mancare un pezzo al conto.
+    .map(sez => {
+      const _qui = senzaErroriDiStampa(allItems.filter(f => f.section === sez));
+      const _sotto = _sottoserieUsate(s, _qui)
+        .map(v => [v, _qui.filter(f => String(f.subseries || '').trim() === v).length])
+        .filter(([, n]) => n > 0);
+      return [sez, _qui.length, _sotto];
+    })
     .filter(([, n]) => n > 0);
   const figs = allItems.filter(f => f.section !== 'retros' && f.section !== 'albums' && f.section !== 'extras' && f.section !== 'bustine');
   // ⚠️ v6.506 — `figs` RESTA, e resta per esclusione, ma da adesso serve a UNA COSA SOLA:
@@ -36031,7 +36233,7 @@ function seriesCardHTML(s) {
              caso piu' probabile, non l'eccezione, e li' il timbro va sopra il 🎴.
              📌 `.card-img-placeholder` e' gia' `position:relative` (v5.x, css/style.css): il
              timbro si aggancia a lei, non alla card. */''}
-      ${_timbroInCostruzione(s)}
+      ${_timbroStatoSerie(s)}
     </div>
     <div class="card-body">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
@@ -36040,7 +36242,10 @@ function seriesCardHTML(s) {
       </div>
       <div class="card-desc">${(desc||'').substring(0,90)}${(desc||'').length>90?'…':''}</div>
       <div class="card-meta">
-        ${_conteggiSezione.map(([sez, n]) => `<span class="card-badge">${n} ${_nomeSezioneCard(sez, n)}</span>`).join('')}
+        ${/* 🆕 v6.670 - LA FORMA E' QUELLA DI `_retroCatPanelHTML`: il gruppo e' una colonna,
+               il padre sopra e i figli in una fila rientrata. 📌 Il gruppo va a capo INTERO,
+               quindi un figlio non si stacca mai dal suo padre quando la fila si accoda. */''}
+        ${_conteggiSezione.map(([sez, n, sotto]) => `<div class="card-gruppo"><span class="card-badge">${n} ${_nomeSezioneCard(sez, n)}</span>${sotto.length ? `<div class="card-sotto">${sotto.map(([v, sn]) => `<span class="card-badge-sotto">${sn} ${esc(_etichettaSottoserie(v))}</span>`).join('')}</div>` : ''}</div>`).join('')}
       </div>
     </div>
   </div>`;
@@ -37089,12 +37294,25 @@ function renderSeriesMeta(s) {
   // e' tuo» merita un colore suo - ma il colore scelto era quello del BRAND, che sulla stessa
   // pagina sta gia' dappertutto: non distingueva niente. Il commento e' stato corretto invece che
   // lasciato: un commento che nomina un colore muore il giorno che il colore si muove.
-  const colonna = (icona, elenco, etichetta, forte, femminile = true, colore = null) => {
+  // 🔄 v6.675 - DUE PARAMETRI NUOVI, E IL RIPIEGO E' IL COMPORTAMENTO DI PRIMA.
+  //    `nomeDavanti` scrive «etichetta: numero» invece di «numero etichetta»; `rigaIntera` fa
+  //    occupare alla riga tutta la larghezza invece di accodarsi alle altre.
+  // ⚠️ Questa funzione la usano SETTE punti (set base, cinque versioni, totale): i valori di
+  //    ripiego riproducono esattamente cio' che facevano, quindi chi non li passa non si
+  //    accorge di niente. Franco: «le versioni le lasci cosi' come sono».
+  const colonna = (icona, elenco, etichetta, forte, femminile = true, colore = null,
+                   nomeDavanti = false, rigaIntera = false) => {
     const quanti = elenco.length;
     const n = miei(elenco);
     const complete = currentUser && quanti > 0 && n === quanti;
     const stile = (forte ? 'font-weight:600;' : '') + (colore ? `color:${colore};` : '');
-    const riga1 = `<span${stile ? ` style="${stile}"` : ''}>${icona}${nfmt(quanti)} ${etichetta}</span>`;
+    // 🔄 v6.675 - LE DUE FORME. «numero etichetta» e' quella di sempre; «etichetta: numero»
+    //    e' quella delle sottoserie (Franco). 📌 Non e' un vezzo: «sottoserie X: 24» si legge
+    //    come un raggruppamento, «24 Y» come un conto - e sono due cose diverse.
+    const _testo = nomeDavanti
+      ? etichetta + ': ' + nfmt(quanti)
+      : nfmt(quanti) + ' ' + etichetta;
+    const riga1 = `<span${stile ? ` style="${stile}"` : ''}>${icona}${_testo}</span>`;
     let riga2 = '';
     if (currentUser && (complete || n > 0)) {  // v5.885: se ne possiedi 0, niente riga ("0 nella tua lista" era brutto)
       const testo = complete
@@ -37125,24 +37343,35 @@ function renderSeriesMeta(s) {
       // 📌 E il grassetto RESTA: la riga perde il colore, non il rilievo.
       riga2 = `<span class="col-own" style="color:var(--text);font-weight:600;">${testo}</span>`;
     }
-    return `<div style="display:flex;flex-direction:column;gap:1px;">${riga1}${riga2}</div>`;
+    // 🔄 v6.675 - `flex-basis:100%` prende tutta la riga. Il contenitore delle numeriche e'
+    //    un `flex-wrap`, quindi una voce larga quanto la riga manda a capo se stessa e chi
+    //    viene dopo: e' il modo di andare a capo che non richiede di sapere quante voci ci
+    //    sono ne' dove sta il taglio.
+    return `<div style="display:flex;flex-direction:column;gap:1px;${rigaIntera ? 'flex-basis:100%;' : ''}">${riga1}${riga2}</div>`;
   };
 
-  // v5.882 — nomi delle categorie (plurale/singolare/genere), usati sia nell'hub sia in sezione.
-  const nomi = {
-    figurines: { p: it ? 'figurine' : 'stickers', s: it ? 'figurina' : 'sticker', f: true  },
-    retros:    { p: it ? 'retro'    : 'retros',   s: it ? 'retro'    : 'retro',   f: false },
-    albums:    { p: it ? 'album'    : 'albums',   s: it ? 'album'    : 'album',   f: false },
-    extras:    { p: it ? 'articoli'  : 'items',    s: it ? 'articolo'  : 'item',    f: false },
-    bustine:   { p: it ? 'bustine'  : 'wrappers',    s: it ? 'bustina'  : 'wrapper',    f: true  }
+  // 🔄 v6.671 - I NOMI VENGONO DAL DESCRITTORE, e qui c'era la SESTA lista di sezioni
+  // scritta a mano di questo file: `nomi` ne conteneva CINQUE, e gli articoli sono OTTO.
+  // 🔴 IL RIPIEGO `nomi[sez2] || nomi.figurines` NON ERA PRUDENTE, ERA BUGIARDO: per le
+  // spille, le carte e le figurine da attaccare rispondeva «figurine», con sicurezza e senza
+  // errore. Franco: «per la serie Spille ora abbiamo 48 FIGURINE set base. No: questa serie non
+  // ha figurine ma spille».
+  // 📌 Era previsto per iscritto. Il commento della v6.654 dice: «una tipologia nuova eredita
+  // in silenzio il ramo tutti gli altri, e nessuno se ne accorge finche' non guarda una card
+  // storta. Le Spille l'hanno fatto davvero». Erano due rami diversi, stessa malattia.
+  // ⚠️ E IL GENERE NON E' UN VEZZO: `colonna(...)` lo usa per accordare «posseduta/posseduto».
+  // Il descrittore lo dichiara gia' (`genere: 'f'`), quindi si legge da li' come tutto il resto.
+  const nomiSez = (sez2) => {
+    const a = _art(sez2);
+    return { p: it ? a.it : a.en, s: it ? a.itSing : a.enSing, f: a.genere === 'f' };
   };
 
   // Costruisce le colonne (set base, variazioni ufficiali/non ufficiali, change, errori di stampa,
   // in totale) di UNA categoria — la riga di dettaglio. alwaysTotal: mostra "in totale" anche a 0
   // (usato nell'hub, cosi' ogni categoria compare comunque).
-  function sezRows(sez2, alwaysTotal) {
+  function sezRows(sez2) {
     const g = tipiPresenti(s.id, sez2);
-    const nm = nomi[sez2] || nomi.figurines;
+    const nm = nomiSez(sez2);
     const m = [];
     if (g.base.length) m.push(colonna(BULLET, g.base,
       (['bustine','albums','extras'].includes(sez2)
@@ -37217,14 +37446,68 @@ function renderSeriesMeta(s) {
     // nella card, perche' il pericolo di una divergenza voluta e' che qualcuno la trovi
     // fra un mese, la creda un difetto e la «ripari» — cancellando una decisione senza
     // sapere che qualcuno l'aveva presa.
+    // 🆕 v6.671 (Franco: *"le numeriche delle spille le voglio anche per sottoserie, oltre
+    //    che per versione"*) - LE SOTTOSERIE, DOPO LE VERSIONI E PRIMA DEL TOTALE.
+    // 🔴 QUALI E IN CHE ORDINE lo dice `_sottoserieUsate`: la stessa funzione dei tab, della
+    //    ricerca globale e della card. Cinque viste, una regola sola.
+    // 🎨 Il colore e' `COL_CATEGORIA`, lo stesso della pillola sulla card: la stessa cosa si
+    //    mostra con lo stesso colore, o sono due cose diverse.
+    // 🔄 v6.674 (Franco: *"vorrei averle in giallo non arancio"*) - era `COL_SOTTOCAT`.
+    // ⚠️ E QUI IL GIALLO COSTA QUALCOSA, misurato: questa riga finisce in fila con le cinque
+    //    tinte delle VERSIONI, e da `--type-unofficial` (#fff275, la Variazione non ufficiale)
+    //    dista ΔE 16. Sedici e' pochissimo: nella stessa videata i due gialli si somigliano.
+    //    Franco l'ha chiesto sapendolo. 📌 Non esiste un terzo giallo che risolva - il piu'
+    //    lontano provato (#ffc94d) sta a 22 dall'unofficial: se dara' fastidio, la strada e'
+    //    distinguere per FORMA, come alla v6.394, non una quarta tinta.
+    // ⚠️ QUI PERO' NON STA DA SOLO COME SULLA CARD: sta in fila con le cinque tinte delle
+    //    VERSIONI. Misurato prima di scriverlo, non dopo: il vicino piu' prossimo e'
+    //    `--type-unofficial` a 39, poi `--type-printerror` a 47. Distinguibili.
+    // 📌 E un commento della v6.427 dice che `--type-official` e COL_SOTTOCAT erano lo STESSO
+    //    #ffa94d, distanza ZERO. Oggi non piu' - la rotazione della v6.404 ha portato l'ufficiale
+    //    a #9be89b - quindi quella riga e' storia, non un avvertimento vivo. Verificato, perche'
+    //    fidarsi di un commento che parla di colori e' esattamente cio' che e' costato la
+    //    tavolozza sbagliata del 24 agosto.
+    // ⚠️ E IL CONTO PARTE DA `g.items`, cioe' dallo STESSO mucchio del totale qui sotto: una
+    //    somma dei figli che non torna col totale, nella stessa riga, e' il §12-bis.
+    // 🔄 v6.676 - LE SOTTOSERIE SONO USCITE DA QUI e sono diventate un blocco suo, dopo il
+    //    totale. Vedi in fondo a questa funzione: la riga di sopra torna quella classica.
+    const _righeSotto = _sottoserieUsate(s, g.items).map(v => {
+      const _qui = g.items.filter(f => String(f.subseries || '').trim() === v);
+      // 🔄 v6.675 (Franco) - «sottoserie <nome>: <n>», e ognuna su una riga sua.
+      // 📌 La parola davanti dice CHE COSA raggruppa quel numero: senza, «Spille grandi senza
+      //    nome: 24» in mezzo alle versioni si legge come un'altra versione.
+      // 📌 LA PAROLA «sottoserie» NON STA PIU' SU OGNI RIGA: la dice il titolo del blocco,
+      //    una volta sola. E' la regola della v6.852 - «era la stessa parola due volte».
+      return _qui.length ? colonna(BULLET, _qui, _etichettaSottoserie(v),
+        false, nm.f, COL_CATEGORIA, true, true) : '';
+    }).filter(Boolean);
+    // 🔄 v6.671 (Franco: *"non mostrare una etichetta se il suo contatore e' zero"*) - VIA
+    //    `alwaysTotal`. Faceva comparire «0 in totale» nell'hub sulle sezioni vuote: una riga
+    //    che occupa spazio per dire che non c'e' niente da dire.
+    // 📌 Il parametro si toglie invece di lasciarlo sempre falso: un argomento che nessuno
+    //    passa piu' e' una domanda che il prossimo lettore si fa a vuoto.
     const _totali = g.items;
-    if (_totali.length || alwaysTotal) m.push(colonna(BULLET, _totali,
+    if (_totali.length) m.push(colonna(BULLET, _totali,
       // v6.067 (Franco) - "368 totali" al posto di "368 figurine in totale": stessa ragione della
       // riga del set base, e in piu' sparisce anche il "in", che non serviva a niente.
       // 🗑️ v6.632 - QUI C'ERA LA CODA «(+ M errori di stampa)» della v6.507, e non c'e'
       // piu': diceva che quel dato NON era dentro il totale, e adesso ci sta dentro.
       (it ? 'in totale' : 'in total'),
       true, nm.f, 'var(--accent)'));
+    // 🆕 v6.676 (Franco) - IL BLOCCO DELLE SOTTOSERIE, DOPO IL TOTALE E CON UN TITOLO SUO.
+    // 🔴 Sta DOPO di proposito: la riga di sopra deve restare «la visualizzazione classica
+    //    delle serie senza sottoserie» (parole di Franco), cioe' identica a com'e' sempre stata
+    //    su tutte le altre serie. Le sottoserie sono un secondo modo di contare gli STESSI
+    //    articoli, non una voce in piu' nel primo.
+    // ⚠️ IL TITOLO NON E' UNA `colonna`: quella stampa sempre un numero, e qui il numero non
+    //    c'e'. Passarle un elenco vuoto avrebbe scritto «0 Numeri per sottoserie».
+    // 📌 E il blocco compare solo se ci sono sottoserie: un titolo senza righe sotto e'
+    //    l'etichetta orfana della v6.672, appena tolta.
+    if (_righeSotto.length) {
+      m.push('<div style="flex-basis:100%;margin-top:0.35rem;color:var(--text);'
+        + 'font-weight:600;">' + (it ? 'Numeri per sottoserie' : 'Counts by subseries') + '</div>');
+      _righeSotto.forEach(r => m.push(r));
+    }
     return m;
   }
 
@@ -37267,9 +37550,19 @@ function renderSeriesMeta(s) {
     // della griglia. E le numeriche vanno avvolte in un contenitore loro, o finirebbero
     // una per colonna — la griglia conta le CELLE, non le righe che uno immagina.
     metaEl.innerHTML = '<div class="hub-wrap" style="display:grid;grid-template-columns:max-content 1fr;gap:0.35rem 1.4rem;width:100%;align-items:start;">' +
-      cats.map(c => '<div class="hub-cat-row" style="display:contents;">' + _pfx(c)
+      // 🔄 v6.672 (Franco: *"«niente piu' etichette con lo zero» significa NIENTE. Invece hai
+      //    solo omesso il conteggio, lasciando una etichetta orfana di numero"*).
+      // 🔴 IL TITOLO DELLA SEZIONE LO SCRIVE QUESTO PUNTO, NON `sezRows`. La v6.671 ha tolto
+      //    `alwaysTotal` e per una sezione vuota le righe sono diventate zero - ma il titolo
+      //    continuava a uscire da `_pfx(c)`, che vive qui. Una sezione si mostra INTERA o non si
+      //    mostra: titolo e righe sono la stessa decisione, e stavano in due punti diversi.
+      // ⚠️ `sezRows(c)` si chiama UNA volta e il risultato si tiene: chiamarla due volte - una
+      //    per sapere se e' vuota, una per disegnarla - vorrebbe dire ricontare tutti gli
+      //    articoli della serie a ogni apertura dell'hub.
+      cats.map(c => [c, sezRows(c)]).filter(([, righe]) => righe.length)
+        .map(([c, righe]) => '<div class="hub-cat-row" style="display:contents;">' + _pfx(c)
         + '<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.35rem 1.4rem;">'
-        + sezRows(c, true).join('') + '</div></div>').join('') +
+        + righe.join('') + '</div></div>').join('') +
       '</div>';
     posizionaTestataSerie();   // v5.936 — dopo il render: qui la descrizione torna in coda al blocco eroe
     try { _applicaChiusuraTestata(); } catch(e) {}   // v6.001
@@ -37277,7 +37570,7 @@ function renderSeriesMeta(s) {
   }
 
   metaEl.classList.remove('meta-hub');
-  metaEl.innerHTML = sezRows(sez, false).join('');
+  metaEl.innerHTML = sezRows(sez).join('');
   posizionaTestataSerie();     // v5.936 — dopo il render, perché entra DENTRO #detail-meta
   try { _applicaChiusuraTestata(); } catch(e) {}   // v6.001
 }
@@ -41556,12 +41849,17 @@ function renderItems() {
     _rigaCard(_campoCard('CATEGORIA: ', esc((f.category || '').trim()), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
     _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc((f.subcategory || '').trim()), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
   );
+  // 🔄 v6.667 - LA RIGA DEL SOTTONOME ESCE DAL BLOCCO DEI RETRO. Stava dentro
+  //    `_retroRigheHTML` insieme a CATEGORIA e SOTTOCATEGORIA, che sono davvero roba da retro;
+  //    il sottonome no - Franco lo vuole anche sulle spille, che categoria e sottocategoria non
+  //    le hanno. Adesso e' una riga sua, accesa da `_haSottonome`.
+  // 🧪 v6.273 - fra parentesi e senza etichetta: non era fra le tre. Le parentesi stanno
+  //    qui e NON dentro `_rigaCard`, perche' col sottonome vuoto la riga deve restare vuota
+  //    davvero - un paio di parentesi sole sarebbero una riga piena di niente.
+  const _sottonomeRigaHTML = !_haSottonome(f.section || currentSection) ? '' : _rigaCard(
+        (f.subname || '').trim() ? '(' + esc((f.subname || '').trim()) + ')' : '',
+        'font-size:0.82rem;color:var(--info);margin-top:1px;', 'subname');
   const _retroRigheHTML = !isRetroCard ? '' : (
-        // 🧪 v6.273 - il sottonome fra parentesi. Resta senza etichetta: non era fra le tre.
-        // Le parentesi si mettono qui e NON dentro `_rigaCard`, perche' col sottonome vuoto la riga
-        // deve restare vuota davvero — un paio di parentesi sole sarebbero una riga piena di niente.
-        _rigaCard((f.subname || '').trim() ? '(' + esc((f.subname || '').trim()) + ')' : '',
-                  'font-size:0.82rem;color:var(--info);margin-top:1px;', 'subname') +
         _rigaCard(_campoCard('CATEGORIA: ', esc(_catNuda), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
         _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc(_retroSub), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
       );
@@ -41767,7 +42065,7 @@ function renderItems() {
       ${_contrassegnoVariazioneHTML(f)}
       <div class="fig-body">
         <div class="fig-name">${figNameInner}</div>
-        ${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : famigliaHTML)}
+        ${_sottonomeRigaHTML}${isRetroCard ? _retroRigheHTML : (_eProdottoExtraSerie(f) ? _extraRigheHTML : famigliaHTML)}
         ${retroNameHTML}
         ${typeIndicatorHTML}
         ${descHTML}
@@ -42856,6 +43154,12 @@ function renderAdminSeries() {
     { key:'order',    lab: _L?'Ordine':'Order' },
     { key:'nome',     lab: _L?'Nome':'Name', stile:'text-align:left;', val:r => r.s.name || '' },
     { key:'anno',     lab: _L?'Anno':'Year', val:r => r.s.year || 0 },
+    // 🆕 v6.669 (Franco: *"mostrami lo stato della serie nella VT delle serie della admin
+    //    console"*). 📌 `val` torna la POSIZIONE nella scala, non la parola: ordinando per
+    //    questa colonna si vogliono le serie dalla piu' pronta alla meno, e l'alfabetico
+    //    metterebbe «in arrivo» prima di «in completamento».
+    { key:'stato',    lab: _L?'STATO':'STATUS', stile:'text-align:left;',
+      val:r => STATI_SERIE.findIndex(x => x.v === _statoSerie(r.s)) },
     { key:'base',     lab: _L?'N.<br>FIGURINE':'N.<br>STICKERS', val:r => r.c.base },
     { key:'da',       lab:'DA', val:r => r.s.firstNumber ?? 0 },
     { key:'a',        lab:'A',  val:r => r.s.lastNumber ?? 0 },
@@ -42939,12 +43243,28 @@ function renderAdminSeries() {
             return _num + _btn('Up', '▲', _su) + _btn('Down', '▼', _giu);
           })()}
         </td>
-        <!-- 🆕 v6.584 - il 🫥 davanti al nome dice che la serie e i suoi articoli non si
-             vedono. Sta QUI e non in una colonna sua: una colonna in piu' su una tabella
-             gia' larga si paga tutti i giorni per un caso che capita di rado.
-             📌 E' la STESSA faccina della scheda «🫥 Figurine» in console (v6.080): la
-             stessa idea si mostra con lo stesso segno, o sono due cose diverse. -->
-        <td style="text-align:left;" title="${esc(s.name)}">${s.invisibile ? '\u{1FAE5} ' : ''}${esc(_nomeSerieCard(s, true))}</td><td>${s.year}</td><td>${c.base}</td>
+        <!-- 🔄 v6.669 - IL SEGNO ESCE DALLA CELLA DEL NOME E VA IN UNA COLONNA SUA, e con
+             questo si ribalta una decisione scritta. La v6.584 diceva: «sta QUI e non in una
+             colonna sua: una colonna in piu' su una tabella gia' larga si paga tutti i giorni
+             per un caso che capita di rado». Reggeva finche' lo stato era UNO e raro; dalla
+             v6.668 sono QUATTRO, e tre non si vedevano qui dentro. Franco: «mostrami lo stato
+             della serie nella VT delle serie».
+             ⚠️ E il segno NON resta anche qui: sarebbe la stessa cosa scritta due volte sulla
+             stessa riga, cioe' due posti da cambiare il giorno di uno stato nuovo.
+             📌 La faccina resta la stessa della scheda «🫥 Figurine» (v6.080): la stessa idea
+             si mostra con lo stesso segno, o sono due cose diverse. -->
+        <td style="text-align:left;" title="${esc(s.name)}">${esc(_nomeSerieCard(s, true))}</td><td>${s.year}</td>
+        ${(() => {
+          const _st = _voceStatoSerie(s);
+          return '<td style="text-align:left;white-space:nowrap;">'
+            + (_st.segno ? _st.segno + ' ' : '')
+            // ⚠️ NIENTE `--muted` QUI DENTRO: la v6.437 ha tolto il grigio da tutte le
+            //    schermate da amministratore, e `prova-v6437` lo conta. La prima stesura di
+            //    questa cella lo usava per «Pubblicata» e la suite l'ha preso subito.
+            + '<span style="color:var(--text);">'
+            + esc(currentLang === 'it' ? _st.it : _st.en) + '</span></td>';
+        })()}
+        <td>${c.base}</td>
         <td>${s.firstNumber ?? ''}</td>
         <td>${s.lastNumber ?? ''}</td>
         <!-- v6.166 - le due colonne erano NEGATIVE (noNumbers, noRetro) e ora sono positive: la
@@ -44344,7 +44664,7 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   // mentre lo stesso sottonome si vedeva regolarmente sulle card e dentro il Nome completo: il
   // posto dove il dato non si vedeva era proprio la sua scheda. Fra i due campi non c'e' nessun
   // nesso — il Sottonome e' la seconda parte del NOME, e infatti ora sta subito dopo il Nome.
-  if (f.section === 'retros' && (f.subname || '').trim()) {
+  if (_haSottonome(f.section) && (f.subname || '').trim()) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${esc(f.subname.trim())}</span></div>`);
   }
 
@@ -46641,7 +46961,7 @@ function switchToEditMode(figId) {
   // Sottocategoria e Numero, cioe' in mezzo ai campi della categoria e prima ancora del Nome: la
   // stessa disposizione che la v6.026 aveva gia' corretto nella VISTA della scheda. Vista e
   // modifica devono coincidere (regola di Franco, v5.782), e finora non coincidevano.
-  if (f.section === 'retros') {
+  if (_haSottonome(f.section)) {
     html += '<div class="detail-row" style="' + _eredStile('subname') + '"' + _eredAttr('subname') + '><span class="detail-label">' + (currentLang==='it'?'Sottonome':'Subname') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subname" value="' + esc(f.subname||'') + '"' + _eredRO('subname') + '></span></div>';
   }
 
@@ -47148,7 +47468,7 @@ function _slotFotoEdit(slot, url, f) {
     // 📌 `flex:1` su tutti e due, come nella riga di sopra: le due righe hanno la stessa
     // griglia, quindi i quattro tasti sono larghi uguali e le colonne si incolonnano.
     (url ? '<div style="display:flex;gap:0.4rem;margin-top:0.4rem;">' +
-      '<button onclick="removeFigPhoto(\'' + slot + '\')" class="btn-foto" style="flex:1;">\u{1F5D1}\uFE0F ' + (currentLang === 'it' ? 'Rimuovi foto' : 'Remove photo') + '</button>' +
+      '<button onclick="removeFigPhoto(\'' + slot + '\')" class="btn-foto elimina" style="flex:1;">\u{1F5D1}\uFE0F ' + (currentLang === 'it' ? 'Rimuovi foto' : 'Remove photo') + '</button>' +
       '<button id="' + s.btn + '" onclick="removeBgFromEdit(\'' + slot + '\')" class="btn-foto" style="flex:1;">\u2728 ' + (currentLang === 'it' ? 'Rimuovi sfondo' : 'Remove background') + '</button>' +
     '</div>' : '') +
   '</div>';
@@ -51691,7 +52011,10 @@ function _gscSerie() {
   // 📌 Il filtro e' letto dai DATI, non da un elenco scritto qui: il giorno che una serie esce
   //    dalla costruzione entra da se'. Franco, 7 settembre: «per le serie in costruzione non
   //    facciamo nulla in Google».
-  return getData('series', []).filter(s => !s.inCostruzione && !s.serieContenitore);
+  // 🔄 v6.668 - «in arrivo» e non «ha il flag»: una serie IN COMPLETAMENTO si apre e si
+  //    naviga, quindi la sua pagina per Google ci vuole. Restano fuori solo le une e le altre
+  //    di sempre.
+  return getData('series', []).filter(s => _statoSerie(s) !== 'in-arrivo' && !s.serieContenitore);
 }
 
 const _GSC_PRE = 'https://res.cloudinary.com/ddpsge9d8/image/upload/';
@@ -54100,7 +54423,7 @@ function renderBulkEditView() {
           ${_cAttaccare ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Famiglia' : 'Family'}</th>` : ''}
           ${_cAttaccare ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Commento album' : 'Album note'}</th>` : ''}
           ${currentSection === 'figurines' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Retro</th>` : ''}
-          ${currentSection === 'retros' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Sottonome' : 'Subname'}</th>` : ''}
+          ${_haSottonome(currentSection) ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Sottonome' : 'Subname'}</th>` : ''}
           <!-- v6.237 (Franco) - LA COLONNA C'E' SU TUTTE E SETTE LE SEZIONI, e si chiama VERSIONE.
                Era limitata alle figurine, quindi sui retro non compariva: e gli unici due articoli
                su cui Franco deve spostare da change a omaggio sono proprio figurine e retro.
@@ -54234,7 +54557,7 @@ function renderBulkEditView() {
             const rec = _dueFacce(f, _tutteLeFig).retroRec;
             return `<td style="padding:4px 8px;color:var(--text);width:99%;min-width:320px;">${rec ? (rec.fullName || computeFullName(rec, _tutteLeFig)) : ''}</td>`;
           })() : ''}
-          ${currentSection === 'retros' ? (isAdmin && !_campoComandatoDalGenitore(f, 'subname') ? `<td style="padding:4px;"><input data-field="subname" data-id="${f.id}" value="${(f.subname||'').replace(/"/g,'&quot;')}" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.subname, 200)) : ''}
+          ${_haSottonome(currentSection) ? (isAdmin && !_campoComandatoDalGenitore(f, 'subname') ? `<td style="padding:4px;"><input data-field="subname" data-id="${f.id}" value="${(f.subname||'').replace(/"/g,'&quot;')}" style="width:200px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>` : readCell(f.subname, 200)) : ''}
           ${!_cVersione ? '' : (() => {
             // ⚠️ v6.237 - la condizione e' stata tolta QUI e nell'intestazione NELLA STESSA PASSATA.
             // Toglierne una sola non da' errore: sfalsa le colonne di una posizione per tutte le
@@ -54354,6 +54677,16 @@ const CAMPI_MASSIVI = [
   // completo non e' una decorazione: e' cio' che la scheda mostra nel titolo e cio' su cui la
   // ricerca globale cerca (v6.049/050). Nessuna delle voci precedenti aveva questo problema, ed e'
   // il motivo per cui il ricalcolo non c'era.
+  // 🆕 v6.673 (Franco: *"non posso farlo perche' il campo sottoserie non e' aggiornabile
+  //    massivamente"*) - LA SOTTOSERIE.
+  // 🔴 IL VALORE E' UNA TENDINA DELLE DICHIARATE, non un testo libero: e' l'unica forma che
+  //    non permette di rifare in grande il guaio che questo comando serve a riparare - 48
+  //    articoli riscritti con una sottoserie che l'elenco della serie non contiene.
+  // ⚠️ NIENTE `soloSezione`: le sottoserie sono un fatto della SERIE, non di una tipologia di
+  //    articolo (v6.651). La tendina si svuota da se' dove la serie non ne dichiara.
+  // ⚠️ E NIENTE `nelNomeCompleto`: il Nome completo non contiene la sottoserie (verificato in
+  //    `computeFullName`). Se un giorno ci entrasse, questa riga va cambiata insieme.
+  { id: 'subseries',   it: 'Sottoserie',     en: 'Subseries',   tipo: 'scelta', sottoserie: true, opzioni: [] },
   { id: 'category',    it: 'Categoria',      en: 'Category',    tipo: 'testo', soloSezione: 'retros', nelNomeCompleto: true },
   { id: 'subcategory', it: 'Sottocategoria', en: 'Subcategory', tipo: 'testo', soloSezione: 'retros', nelNomeCompleto: true },
   // 🆕 v6.235 (Franco: "mettilo in via definitiva") — IL TIPO, cioe' la VERSIONE.
@@ -54428,6 +54761,25 @@ function _massivoAggiornaValori() {
   const it = currentLang === 'it';
   const c = CAMPI_MASSIVI.find(x => x.id === campo);
   if (!c) { box.innerHTML = ''; return; }
+  // 🆕 v6.673 - LE SOTTOSERIE DICHIARATE SULLA SERIE APERTA. Come per la tipologia, le
+  //    opzioni non possono stare nella dichiarazione: dipendono da quale serie si sta guardando.
+  // 🔴 SI CHIEDONO A `_sottoserieSerie`, la stessa funzione della scheda e dei tab: un elenco
+  //    ricavato qui sarebbe la sesta lista delle sottoserie, e divergerebbe al primo ritocco.
+  // 📌 E si mostrano TUTTE le dichiarate, anche quelle che nessun articolo usa ancora - al
+  //    contrario di `_sottoserieUsate`, che serve a DISEGNARE i gruppi esistenti. Qui la domanda
+  //    e' un'altra: «a quale sottoserie voglio spostarli?», e la risposta puo' essere una che
+  //    oggi e' vuota. E' proprio il caso del 9 settembre.
+  if (c.sottoserie) {
+    const _dich = _sottoserieSerie(getData('series', []).find(x => x.id === currentSeriesId));
+    box.innerHTML = _dich.length
+      ? '<select id="massivo-valore" class="form-input" style="min-width:200px;">'
+        + _dich.map(x => '<option value="' + esc(x) + '">' + esc(x) + '</option>').join('')
+        + '</select>'
+      : '<span style="font-size:0.85rem;color:var(--text);">'
+        + (it ? 'Questa serie non dichiara nessuna sottoserie: si definiscono nella scheda della serie.'
+              : 'This series declares no subseries: they are defined in the series form.') + '</span>';
+    return;
+  }
   if (c.tipo === 'testo') {
     box.innerHTML = '<input type="text" id="massivo-valore" class="form-input" autocomplete="off" '
       + 'list="massivo-valori-noti" style="min-width:180px;">'
