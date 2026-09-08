@@ -1442,6 +1442,21 @@ footer {
    quindi qui non c'e' modo di colorarle diverse, ne' motivo. */
 .section-choice-count { font-size: 0.88rem; color: var(--text); }
 
+/* 🆕 v6.677 - LE PILLOLE DELLE SOTTOSERIE DENTRO LA CARD DELLA SEZIONE.
+   Sono le stesse `.card-sotto` / `.card-badge-sotto` della card della serie (v6.670): qui
+   cambia solo cio' che lo SPAZIO impone, e non il vestito.
+   🔴 IL `nowrap` VA TOLTO, E NON E' UN GUSTO: misurato nel browser a 375px, questa card
+   e' larga 174px (due colonne dalla media query degli 860) e la pillola piu' lunga - «20
+   Spille grandi senza nome» - misurava 164 su 153 disponibili, cioe' usciva dai bordi. Con
+   l'a capo sta in 153 e non sfora.
+   ⚠️ E' la trappola del timbro della v6.605: giusto sul desktop, rotto sul telefono. La
+   misura e' stata presa PRIMA di scrivere, non dopo una segnalazione.
+   📌 E il rientro di 0.5rem se ne va: sulla card della serie diceva che le pillole sono
+   FIGLIE della pillola sopra; qui sopra c'e' il numero della card, e non c'e' nessuna fila
+   da cui rientrare. */
+.section-choice-count .card-sotto { padding-left: 0; gap: 0.2rem; margin-top: 0.35rem; }
+.section-choice-count .card-badge-sotto { white-space: normal; }
+
 /* ===== SCROLL ANIMATIONS ===== */
 .reveal { opacity: 0; transform: translateY(24px); transition: opacity 0.6s ease, transform 0.6s ease; }
 .reveal.visible { opacity: 1; transform: translateY(0); }
