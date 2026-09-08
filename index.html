@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.678"></script>
-<link rel="stylesheet" href="css/style.css?v=6.678">
+<script src="js/email.min.js?v=6.688"></script>
+<link rel="stylesheet" href="css/style.css?v=6.688">
 
 
 <style>
@@ -381,6 +381,25 @@
    che non è in questa cartella (§5) e quindi non posso leggerlo. Elemento + classe batte la sola
    classe, e a parità vince comunque l'ultimo — e questo blocco viene dopo il <link>. Niente
    !important: serve solo quando non si sa cosa si sta scavalcando. */
+  /* 🆕 v6.687 (Franco: «i pulsanti "Applica foto" e "Annulla" falli alti come "Rimuovi sfondo"»)
+     I due tasti in fondo alla finestra della foto prendono la misura di `.btn-foto`, cioe'
+     del tasto che sta sopra di loro: corpo 0.72rem e imbottitura 4px 8px.
+     ⚠️ IL `!important` NON E' PIGRIZIA. `.btn-primary` ha una regola con `!important` dentro
+     una media query (`font-size: 1rem !important; padding: 0.7rem 1.3rem !important`): senza
+     un `!important` anche qui, i due tasti tornerebbero alti SUL TELEFONO e bassi sul
+     desktop, cioe' il difetto si sposterebbe invece di chiudersi. Misurato leggendo la
+     media query, non provato a caso.
+     📌 E STA PRIMA DI `button.back-btn`, NON DOPO, e non e' estetica: `prova-v6393`
+     classifica ogni bianco letterale guardando i 260 caratteri prima e i 140 dopo. Messo
+     dopo, questo commento spingeva fuori da quella finestra la parola che diceva «e' un
+     PULSANTE», e la suite denunciava un bianco «nel testo» su codice giusto. Trovato
+     lanciandola. */
+  #foto-scelta-modal .btn-primary,
+  #foto-scelta-modal .btn-secondary {
+    font-size: 0.72rem !important;
+    padding: 4px 8px !important;
+  }
+
 button.back-btn { color:#ffffff; }
 
 /* 🆕 v6.304 — L'ARANCIONE DEI COMANDI ADMIN, SENZA LA SPARIZIONE.
@@ -1857,7 +1876,10 @@ button.back-btn { color:#ffffff; }
   <section class="section">
     <div class="section-inner">
       <div id="profile-content">
-      <button id="profile-back-btn" onclick="showPage(_previousPage)" style="display:flex;align-items:center;gap:0.4rem;font-size:0.9rem;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;margin-bottom:1rem;">← <span id="profile-back-btn-label">Torna a Home</span></button>
+<!-- 🔄 v6.685 (Franco: «il tasto "Torna a home" non e' bianco come gli altri tasti di navigazione pagine») — DA `--muted` A BIANCO.
+           🔴 `--muted` e' il colore delle NOTE, di cio' che si puo' non leggere: su un COMANDO dice «questo conta meno». Gli altri tasti indietro sono bianchi per la regola `button.back-btn` in cima a questo file; questo quella classe non ce l'ha.
+           ⚠️ E la classe non gli si da': porta anche posizione e margini fatti per la testata di una serie, e qui il tasto vive in un flex suo. -->
+      <button id="profile-back-btn" onclick="showPage(_previousPage)" style="display:flex;align-items:center;gap:0.4rem;font-size:0.9rem;color:#ffffff;background:none;border:none;cursor:pointer;padding:0;margin-bottom:1rem;">← <span id="profile-back-btn-label">Torna a Home</span></button>
       <div class="profile-header">
         <div class="profile-avatar" id="profile-avatar" onclick="document.getElementById('avatar-upload').click()" style="cursor:pointer;position:relative;" title="Clicca per cambiare foto">
         <input type="file" id="avatar-upload" accept="image/*" style="display:none;" onchange="uploadAvatar(event)">
@@ -2738,6 +2760,11 @@ button.back-btn { color:#ffffff; }
       <button type="button" class="series-tab-btn" data-tab="descrizioni" onclick="switchSeriesTab('descrizioni')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">📝 Descrizioni</button>
       <button type="button" class="series-tab-btn" data-tab="nonbase" onclick="switchSeriesTab('nonbase')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🔀 Articoli non base</button>
       <button type="button" class="series-tab-btn" data-tab="visualizzazione" onclick="switchSeriesTab('visualizzazione')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🗂️ Visualizzazione</button>
+      <!-- 🆕 v6.681 - IL QUINTO TAB. 🔴 Si mostra solo se la serie dice di avere
+           sottoserie: lo accende `_aggiornaCasellaSottoserie`, lo stesso punto che accendeva
+           il riquadro. Un tab sempre presente si aprirebbe sul vuoto per quattordici serie
+           su quindici. -->
+      <button type="button" class="series-tab-btn" id="series-tab-btn-sottoserie" data-tab="sottoserie" onclick="switchSeriesTab('sottoserie')" style="display:none;padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">🏷️ Sottoserie</button>
       <button type="button" class="series-tab-btn" data-tab="avanzate" onclick="switchSeriesTab('avanzate')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text);font-size:0.85rem;cursor:pointer;">⚙️ Avanzate</button>
     </div>
 
@@ -2904,19 +2931,11 @@ button.back-btn { color:#ffffff; }
             <input type="checkbox" id="series-has-subseries-input" style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
             <span data-i18n="form.series.hasSubseries">Ha sottoserie</span>
           </label>
-          <!-- 🆕 v6.650 (Franco: «dovremo anche stabilire l'ordine delle sottoserie […]
-               questo lo gestisco io manualmente con l'ordinamento») — L'ELENCO DELLE
-               SOTTOSERIE, E L'ORDINE DELLE RIGHE E' L'ORDINE DEI TAB.
-               📌 Stessa forma delle liste dei tipi di change/omaggio/errore: il valore
-               scritto sull'articolo viene CONFRONTATO con questo elenco. E' la quinta
-               lista della stessa famiglia, non un modello nuovo.
-               ⚠️ Il riquadro si vede solo con «Ha sottoserie» acceso: lo accende e lo
-               spegne app.js, come fa gia' per gli altri gruppi condizionati. -->
-          <div class="form-group" id="series-sottoserie-group" style="display:none;margin-top:0.6rem;">
-            <label class="form-label" data-i18n="form.series.sottoserie">Sottoserie (una per riga)</label>
-            <textarea class="form-input" id="series-sottoserie-input" rows="4" style="resize:vertical;font-family:inherit;"></textarea>
-            <div class="form-hint" data-i18n="form.series.sottoserieHint">Un valore per riga. L'ORDINE conta: e' l'ordine con cui le sottoserie si vedranno nella sezione. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.</div>
-          </div>
+          <!-- 🔄 v6.681 - IL RIQUADRO DELLE SOTTOSERIE SE N'E' ANDATO DA QUI: adesso ha un
+               TAB tutto suo, in fondo alla fila. Stava nella colonna DESTRA di questo blocco a
+               due colonne, cioe' in meta' larghezza, e la tabellina della v6.680 li' era
+               schiacciata: «Spille grandi senza nome» non si leggeva (Franco). La spunta «Ha
+               sottoserie» resta QUI, con le altre: e' un flag della serie, non un elenco. -->
           
           <!-- v6.219 (Franco) — "Non ha numeri" -> "Senza numeri". ⚠️ Il testo qui e' solo il
                ripiego: quello che si legge lo mette `data-i18n`, quindi la stringa e' stata
@@ -3001,6 +3020,32 @@ button.back-btn { color:#ffffff; }
          qui nella v6.217 dal fondo della form, e nella v6.219 aveva perso il riquadro finto di
          trascinamento: ridotta a due pulsanti, non aveva piu' bisogno di una riga tutta sua. -->
     </div><!-- chiude il tab Serie -->
+
+    <!-- 🆕 v6.681 - IL TAB SOTTOSERIE. Stessa mossa della v6.218 qui sotto: il riquadro
+         e' lo STESSO, spostato e non riscritto — stesso id, stesse chiavi, stessa tabella —
+         quindi `saveSeries` e `_ssApri` non si accorgono di niente.
+         📌 `display:none` sul gruppo resta: e' `_aggiornaCasellaSottoserie` ad accenderlo,
+         ed e' lo stesso interruttore del bottone qui sopra. Uno solo, per due cose che
+         devono comparire e sparire insieme. -->
+    <div class="series-tab-panel" data-tab="sottoserie" style="display:none;">
+          <!-- 🆕 v6.650 (Franco: «dovremo anche stabilire l'ordine delle sottoserie […]
+               questo lo gestisco io manualmente con l'ordinamento») — L'ELENCO DELLE
+               SOTTOSERIE, E L'ORDINE DELLE RIGHE E' L'ORDINE DEI TAB.
+               📌 Stessa forma delle liste dei tipi di change/omaggio/errore: il valore
+               scritto sull'articolo viene CONFRONTATO con questo elenco. E' la quinta
+               lista della stessa famiglia, non un modello nuovo.
+               ⚠️ Il riquadro si vede solo con «Ha sottoserie» acceso: lo accende e lo
+               spegne app.js, come fa gia' per gli altri gruppi condizionati. -->
+          <div class="form-group" id="series-sottoserie-group" style="display:none;margin-top:0.6rem;">
+            <label class="form-label" data-i18n="form.series.sottoserie">Sottoserie</label>
+            <!-- 🔄 v6.680 - QUI C'ERA UNA TEXTAREA «una per riga». Adesso e' una tabellina
+                 con una riga per sottoserie: miniatura, nome, foto, ordine, cestino. La
+                 disegna `_rendiSottoserieTabella` in app.js, perche' le righe sono un DATO
+                 e non un markup fisso. -->
+            <div id="series-sottoserie-tabella"></div>
+            <div class="form-hint" data-i18n="form.series.sottoserieHint">Un valore per riga. L'ORDINE conta: e' l'ordine con cui le sottoserie si vedranno nella sezione. Una sottoserie scritta su un articolo ma non elencata qui non sparisce: si vede in fondo.</div>
+          </div>
+    </div><!-- chiude il tab Sottoserie -->
 
     <!-- v6.218 — IL TAB DESCRIZIONI. I due campi sono gli stessi, spostati e non riscritti: stessi
          id, stesse chiavi di traduzione. `saveSeries` li legge per id e non sa in che tab siano. -->
@@ -3736,7 +3781,7 @@ button.back-btn { color:#ffffff; }
     <img id="foto-scelta-preview" alt="" style="width:100%;max-height:320px;object-fit:contain;border-radius:8px;background:var(--card2);padding:6px;display:block;margin-bottom:0.75rem;">
     <button id="foto-scelta-bg-btn" type="button" onclick="fotoSceltaTogliSfondo()" class="btn-foto" style="width:100%;margin-bottom:0.75rem;">&#10024; Rimuovi sfondo</button>
     <div style="display:flex;gap:0.6rem;">
-      <button class="btn-primary btn-azione-admin" style="flex:1;" onclick="fotoSceltaConferma()">Usa questa foto</button>
+      <button class="btn-primary btn-azione-admin" style="flex:1;" onclick="fotoSceltaConferma()">Applica foto</button>
       <button class="btn-secondary btn-admin-ghost" style="flex:1;" onclick="fotoSceltaAnnulla()">Annulla</button>
     </div>
   </div>
@@ -3844,7 +3889,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.678"></script>
+<script src="js/app.js?v=6.688"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3868,7 +3913,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.678'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.688'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
