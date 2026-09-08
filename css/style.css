@@ -993,11 +993,22 @@ body {
 .back-btn:hover { border-color: var(--accent3); color: var(--accent3); }
 /* v5.886 — nome sopra la foto anche su DESKTOP: griglia come il mobile (nome riga 1 a tutta larghezza, foto+contatori riga 2) */
 .series-title-area { display: grid; grid-template-columns: 160px 1fr; gap: 0.5rem 2rem; align-items: start; }
+/* 🆕 v6.689 - LA COPERTINA DIVENTA IL CONTENITORE DEL TIMBRO, e sono DUE righe che
+   valgono solo insieme:
+   🔴 `position: relative` - il timbro e' `position:absolute`, e senza un antenato
+      posizionato si aggancia a qualcos'altro e finisce da un'altra parte;
+   🔴 `container-type: inline-size` - il corpo del timbro e' in `cqw`, cioe' centesimi
+      della larghezza del CONTENITORE. Senza questa riga il `cqw` cade IN SILENZIO sul
+      viewport: nessun errore, e il timbro si misura sullo schermo invece che sulla foto.
+   ⚠️ E' la trappola della v6.605, quella del timbro giusto sul desktop e rotto sul telefono.
+   📌 Misurato: questa copertina e' 160px sul desktop e 104px sul telefono (media query
+      dei 768), quindi 7.5cqw fanno 12px e 7.8px - dentro il `clamp` del timbro. */
 .series-cover {
   width: 160px; min-width: 160px; aspect-ratio: 3/4; grid-row: 2; grid-column: 1;
   background: var(--card2); border-radius: var(--radius);
   border: 1px solid var(--border2); display: flex; align-items: center;
   justify-content: center; font-size: 4rem; overflow: hidden;
+  position: relative; container-type: inline-size;
 }
 .series-cover img { width: 100%; height: 100%; object-fit: cover; }
 .series-info { display: contents; }
