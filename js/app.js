@@ -25968,7 +25968,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.688';
+const JS_VERSION = 'v6.690';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -28617,6 +28617,25 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
 // cioe' non distingue niente - e nel carosello di una scheda serie ripete pure il titolo della
 // pagina che la contiene. Si guarda l'elenco gia' filtrato, non il contesto, perche' e' l'elenco
 // a saperlo: chi lo ha costruito puo' cambiare idea sui filtri senza che questa riga se ne accorga.
+// 🆕 v6.690 - «QUESTA TIPOLOGIA VA NEI CAROSELLI?» Lo dice il descrittore, non un nome
+// di sezione scritto qui.
+// 🔴 La domanda ha un nome perche' la fanno in DUE - il carosello della home e quello
+//    della pagina serie - e la stessa condizione scritta in due punti diverge al primo
+//    ritocco. E' la lezione che questa sessione ha pagato tre volte.
+// 📌 `|| 'figurines'` e' il ripiego di sempre per gli articoli senza `section`: sono le
+//    figurine, e lo sono da prima che la sezione esistesse come campo.
+// 🔴 E NON SI PASSA DA `_art`, CHE QUI MENTIREBBE: quella funzione, davanti a una
+//    sezione che non conosce, restituisce le FIGURINE - ed e' il ripiego descritto dalla
+//    v6.654, «una tipologia nuova eredita in silenzio il ramo tutti gli altri». Applicato
+//    qui, una tipologia inventata domani entrerebbe nei caroselli senza che nessuno l'abbia
+//    deciso. Si guarda `ARTICOLI` direttamente: chi non c'e' risponde NO, e ci entra il
+//    giorno che qualcuno scrive `carosello: true`.
+// 📌 Trovato da `prova-v6690`, che chiedeva proprio questo caso.
+function _vaInCarosello(sez) {
+  const k = sez || 'figurines';
+  return !!(ARTICOLI[k] && ARTICOLI[k].carosello);
+}
+
 function _caroselloMostraSerie(elenco) {
   return new Set((elenco || []).map(f => f.seriesId)).size > 1;
 }
@@ -28709,7 +28728,9 @@ function renderCarosello() {
   // collaterale sfuggito: e' la regola della v6.080, che consente il ripiego esattamente dove il
   // fronte E' quello della base. Le altre due file filtrano `_eBase` e non se ne accorgono.
   const _figs = getData('figurines', []);
-  const disponibili = _figs.filter(f => (f.section || 'figurines') === 'figurines' && _fotoFigurina(f, _figs));
+  // 🔄 v6.690 - la tipologia la decide il descrittore (`_vaInCarosello`), non un nome
+  //    scritto qui: le spille entrano senza che questa riga le nomini.
+  const disponibili = _figs.filter(f => _vaInCarosello(f.section) && _fotoFigurina(f, _figs));
   if (disponibili.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   // si mescola una COPIA: ordinare a caso l'elenco vero cambierebbe l'ordine in tutto il sito
   const mazzo = disponibili.slice();
@@ -28745,8 +28766,12 @@ function renderCaroselloSerie() {
   _caroselloSpegni('serie');
   // 🆕 v6.463 - vedi il commento in `renderCarosello`: la foto la sa `_fotoFigurina`.
   const _figs = getData('figurines', []);
+  // 🔄 v6.690 - stessa domanda del carosello della home, stessa funzione: sulla pagina
+  //    della serie Spille adesso compare il carosello delle spille.
+  // ⚠️ `_eBase` RESTA, e non e' un elenco a mano: e' una regola sul singolo articolo. Senza,
+  //    il carosello della serie 1 si riempirebbe di change ed errori di stampa.
   const base = _figs
-    .filter(f => f.seriesId === currentSeriesId && (f.section || 'figurines') === 'figurines'
+    .filter(f => f.seriesId === currentSeriesId && _vaInCarosello(f.section)
       && _eBase(f) && _fotoFigurina(f, _figs))
     .sort((a, b) => (a.number || 0) - (b.number || 0));
   if (base.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
@@ -32388,6 +32413,10 @@ const ARTICOLI = {
     // state cambiate insieme, e `prova-v6481` pretende che restino uguali — perche'
     // nessuna delle due sa dell'altra, ed e' la forma esatta del difetto della
     // tavolozza del 24 agosto.
+    // 🆕 v6.690 (Franco: «nel carosello della homepage includiamo anche le spille») -
+    //    QUESTA TIPOLOGIA VA NEI CAROSELLI. Prima i due caroselli filtravano 'figurines'
+    //    scritto a mano, in due punti: adesso la risposta ce l'ha l'articolo.
+    carosello: true,   // v6.690
     it: 'Figurine con retro',   en: 'Stickers with backs',
     itSing: 'figurina con retro', enSing: 'sticker with back',
     genere: 'f',
@@ -32537,6 +32566,9 @@ const ARTICOLI = {
     // 🆕 v6.667 (Franco: *"mi serve il campo Sottonome sulla form delle spille ... e nella
     //    card e nei dettagli del risultato della RG, come facciamo per i retro"*).
     sottonome: true,   // v6.667
+    // 🆕 v6.690 (Franco) - anche le spille nei caroselli: in home e nella pagina della
+    //    loro serie. E' la stessa riga delle figurine, non un ramo che le nomina.
+    carosello: true,   // v6.690
     it: 'Spille', en: 'Pins',
     itSing: 'spilla', enSing: 'pin',
     genere: 'f',
@@ -38010,7 +38042,14 @@ function openSeriesDetail(seriesId) {
   // Campi meta nella hero
   renderSeriesMeta(s);
   const cover = document.getElementById('detail-cover');
-  cover.innerHTML = s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_200,h_200,c_fit,q_auto,f_auto') + '">' : '<span>&#127924;</span>';
+  // 🆕 v6.689 (Franco: «metti il timbro IN COMPLETAMENTO anche sulla foto della serie
+  //    quando entro nella serie») - IL TIMBRO STA ANCHE QUI, non solo sulla card dell'hub.
+  // 🔴 STA FUORI DAL TERNARIO, come sulla card (v6.585): una serie non finita e senza
+  //    copertina e' il caso piu' probabile, non l'eccezione, e li' il timbro va sopra il 🎴.
+  // 📌 Lo stato lo dice `_timbroStatoSerie`, la stessa funzione della card: due schermate
+  //    che leggono lo stesso stato da due punti diversi finirebbero per dirne due.
+  cover.innerHTML = (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_200,h_200,c_fit,q_auto,f_auto') + '">' : '<span>&#127924;</span>')
+    + _timbroStatoSerie(s);
   // show selector, hide items section
   document.getElementById('section-selector').style.display = '';
   document.getElementById('items-section').style.display = 'none';
