@@ -25968,7 +25968,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.676';
+const JS_VERSION = 'v6.678';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31133,8 +31133,16 @@ function _sottoserieSerie(s) {
 //    nomina - o senza - NON deve sparire dalla vista. Prende un tab suo, e il refuso si
 //    vede invece di far mancare un pezzo. E' la lezione delle 672 card che puntavano a
 //    pagine mai fatte, applicata prima che il danno succeda.
-// ⚠️ Gli orfani si aggiungono SOLO se almeno una dichiarata e' in uso: senza questa
-//    condizione, ogni sezione senza sottoserie mostrerebbe un tab solo col vuoto dentro.
+// 🔄 v6.678 - QUELLA CONDIZIONE C'ERA E FACEVA DANNO. Diceva: «gli orfani si
+//    aggiungono SOLO se almeno una dichiarata e' in uso», per non mostrare un tab vuoto
+//    sulle sezioni che di sottoserie non ne hanno. La ragione era buona e il risultato no:
+//    quando TUTTI gli articoli hanno una sottoserie fuori elenco non si vedeva NIENTE,
+//    invece di vedere il refuso. E' il caso peggiore, ed e' capitato davvero - le Spille
+//    del 9 settembre 2026: la serie diceva «Spille grandi senza nome», gli articoli
+//    «Grandi senza nome», zero combacianti, e a schermo non compariva niente.
+// ✅ Adesso le due cose sono distinte: «nessun articolo ha una sottoserie» (niente da
+//    mostrare, ed e' il caso di sette sezioni su otto) e «ce l'hanno, ma nessuna e'
+//    dichiarata» (si mostrano come orfani, col loro nome).
 // 🆕 v6.664 - LA REGOLA ESCE DAI TAB E DIVENTA UNA FUNZIONE PURA, perche' adesso la
 // chiedono in DUE: i tab di una sezione e i blocchi della ricerca globale. La ricerca gira su
 // tutte le serie e non puo' leggere «currentSeriesId», quindi o la regola prendeva i suoi dati
@@ -31146,8 +31154,13 @@ function _sottoserieUsate(s, articoli) {
   if (!dichiarate.length) return [];
   const presenti = new Set((articoli || []).map(f => String(f.subseries || '').trim()));
   const usate = dichiarate.filter(v => presenti.has(v));
-  if (!usate.length) return [];
-  return usate.concat([...presenti].filter(v => !dichiarate.includes(v)));
+  const orfane = [...presenti].filter(v => !dichiarate.includes(v));
+  // 🔴 v6.678 - LA DOMANDA E' «QUALCUNO HA UNA SOTTOSERIE?», non «quante ne combaciano».
+  //    `orfane.some(v => v)` chiede se ce n'e' almeno una NON VUOTA: la stringa vuota sta
+  //    in `presenti` per ogni articolo che non ne ha, quindi contarla vorrebbe dire
+  //    mostrare un tab «Set principale» su tutte le sezioni del sito.
+  if (!usate.length) return orfane.some(v => v) ? orfane : [];
+  return usate.concat(orfane);
 }
 
 function _tabSottoserie() {
@@ -37680,6 +37693,12 @@ function openSeriesDetail(seriesId) {
 
 function updateSectionCounts() {
   const owned = getOwned();
+  // 🆕 v6.677 (Franco: «le numeriche le hai messe solo nella card della serie nell'hub
+  //    serie, ma non nella card Spille della serie Spille; anche li' puoi spacchettare il 48
+  //    allo stesso modo») - IL RECORD DELLA SERIE SERVE ALLE SOTTOSERIE, e si legge QUI.
+  // ⚠️ Fuori dal giro di proposito: dentro sarebbe una `find` su tutte le serie per
+  //    ognuna delle otto sezioni, otto volte la stessa risposta.
+  const _serie = getData('series', []).find(x => x.id === currentSeriesId);
   // v6.195 - era un elenco cablato di CINQUE nomi, e con la sesta sezione avrebbe lasciato il
   // suo contatore a "caricamento..." per sempre, senza dare errore. Ora la fonte e' una sola.
   PRODOTTI_INVENTARIO.forEach(sec => {
@@ -37720,6 +37739,24 @@ function updateSectionCounts() {
     // «se ne possiedi 0, niente riga». Questa card era il punto che non la seguiva.
     const ownedCount = (currentUser && total > 0)
       ? items.filter(f => owned.includes(f.id)).length : 0;
+    // 🆕 v6.677 - LA QUINTA VISTA CHE CHIEDE GLI STESSI GRUPPI.
+    // 🔴 QUALI E IN CHE ORDINE lo dice `_sottoserieUsate`: la stessa funzione dei tab
+    //    (v6.651), della ricerca globale (v6.664), della card della serie (v6.670) e delle
+    //    numeriche della scheda (v6.671). Una sesta lista divergerebbe al primo ritocco.
+    // ⚠️ IL CONTO PARTE DA `items`, cioe' dallo STESSO mucchio del numero grande qui
+    //    sopra - errori di stampa compresi. Qui NON si chiama `senzaErroriDiStampa`: lo fa
+    //    la card dell'hub serie, che pero' scarta anche nel numero del padre. Una somma dei
+    //    figli che non torna col padre, nella stessa card, e' il §12-bis.
+    // 🎨 Le classi sono quelle della v6.670: la stessa cosa si mostra con lo stesso
+    //    vestito, o sono due cose diverse. Cio' che cambia lo impone lo SPAZIO, ed e' scritto
+    //    in `style.css` accanto a `.section-choice-count` - non qui.
+    const _sotto = _sottoserieUsate(_serie, items)
+      .map(v => [v, items.filter(f => String(f.subseries || '').trim() === v).length])
+      .filter(([, n]) => n > 0);
+    const _sottoHTML = _sotto.length
+      ? '<div class="card-sotto">' + _sotto.map(([v, n]) => '<span class="card-badge-sotto">'
+          + n + ' ' + esc(_etichettaSottoserie(v)) + '</span>').join('') + '</div>'
+      : '';
     if (ownedCount > 0) {
       // 🔄 v6.479 (Franco: *"proviamo a mettere, ovunque nel sito, «x nella tua lista»
       // tra ()"*, con questa card per esempio) — LE PARENTESI NON SONO UNA NOVITA':
@@ -37730,8 +37767,13 @@ function updateSectionCounts() {
       // della riga sopra («100 articoli» / «(12 nella tua lista)»), non un secondo
       // dato in fila. La parentesi lo dice senza doverlo spiegare.
       const ownedLabel = currentLang === 'it' ? '(' + ownedCount + ' nella tua lista)' : '(' + ownedCount + ' in your list)';
-      el.innerHTML = total + unit + '<br>' + ownedLabel;
+      el.innerHTML = total + unit + '<br>' + ownedLabel + _sottoHTML;
+    } else if (_sottoHTML) {
+      el.innerHTML = total + unit + _sottoHTML;
     } else {
+      // 📌 Il ramo con `textContent` resta, e non e' pignoleria: senza sottoserie qui
+      //    dentro c'e' solo un numero e una parola, e `textContent` non chiede al browser di
+      //    interpretare niente. E' il caso di sette sezioni su otto.
       el.textContent = total + unit;
     }
   });
