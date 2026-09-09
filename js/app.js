@@ -25968,7 +25968,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.690';
+const JS_VERSION = 'v6.692';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27559,7 +27559,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message !',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Peel-off stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
@@ -27601,7 +27601,7 @@ const i18n = {
 'modal.series.title':'Add new series','modal.series.edit':'Edit series','modal.series.save':'Save series','modal.series.delete':'Delete series',
 'modal.fig.title':'Add Sticker','modal.fig.save':'Save sticker',
 'modal.post.title':'New Post','modal.post.save':'Publish Post','modal.post.titlePh':'What\u2019s your question or news?',
-'form.series.hasSizes':'Stickers differ from the ones with backs','form.series.abilitaModifica':'Enable editing of stickers','form.series.hasSubseries':'Has subseries',
+'form.series.hasSizes':'Peel-off stickers differ from the ones with backs','form.series.abilitaModifica':'Enable editing of peel-off stickers','form.series.hasSubseries':'Has subseries',
 'form.series.hasVariations':'Has official variations','form.series.hasUnofficialVariations':'Has unofficial variations','form.series.hasChange':'Has sticker Change','form.series.hasRetroChange':'Has back Change','form.series.noNumbers':'Does not have numbers','form.series.noRetro':'Stickers without a back','form.series.retroNameHasCategory':'Retro names already include the category','form.fig.isVariation':'Official variation','form.fig.isUnofficialVariation':'Unofficial variation','form.fig.isPrintError':'Print error','form.fig.isChange':'Change','form.fig.baseFigurine':'Base sticker (the one this is a variant of)','form.fig.baseFigurineHint':'Select the original sticker this is a variation or change of','form.fig.retroChangeType':'Change type','form.fig.retroChangeTypeHint':'The list is configured in the series form','form.fig.printErrorType':'Print error type','form.fig.retro':'Associated retro','form.fig.retroHint':'Select the Retro that represents the back of this variation','form.fig.retroBianco':'Blank back (this sticker has no real back)','form.fig.retroBiancoHint':'Different from not having linked a back yet: here the back does not exist, the reverse of the sticker is blank.','form.fig.category':'Category','form.fig.series':'Series','form.fig.subcategory':'Subcategory','form.series.countVariations':'N. official variations','form.series.countUnofficialVariations':'N. unofficial variations','form.series.countChange':'No. of sticker Change','form.series.countRetroChange':'No. of back Change','form.series.retroChangeTypes':'BACK change types (one per line)','form.series.retroChangeTypesHint':'One value per line. The difference is on the BACK: a change of these types has a back of its own, or the "Blank back" flag.','form.series.frontChangeTypes':'FRONT change types (one per line)','form.series.frontChangeTypesHint':'One value per line. The difference is on the FRONT: a change of these types uses the back of its base sticker. The same type cannot be in both lists.','form.series.descPlaceholder':'Describe this series...','form.series.sottoserie':'Subseries','form.series.sottoserieHint':'One row per subseries, with its photo. The ORDER matters: it is the order the subseries will appear in. A subseries written on an item but not listed here does not disappear: it shows up last.',
 'form.fig.subseries':'Subseries',
 'form.fig.size':'Size','form.fig.variations':'Number of existing variations',
@@ -32494,8 +32494,15 @@ const ARTICOLI = {
     //    inglese si leggono come una famiglia — quelle col retro, e quelle e basta.
     // ⚠️ E il singolare segue: le due righe devono concordare da sole, che e' la stessa
     //    avvertenza scritta sulle figurine alla v6.481.
-    it: 'Figurine da attaccare', en: 'Stickers',
-    itSing: 'figurina da attaccare', enSing: 'sticker',
+    // 🔄 v6.691 (Franco: «ovviamente Stickers sara' la traduzione di figurine;
+    //    Figurine da attaccare deve avere una diversa traduzione») - REVOCA VOLUTA DELLA
+    //    v6.649, che aveva confermato «Stickers» dopo 450 release di provvisorio.
+    // 🔴 Non e' un ripensamento di stile: «Stickers» serve alla tipologia «Figurine»
+    //    nata in questa stessa release, e due tipologie non possono chiamarsi uguale.
+    // 📌 «Peel-off» dice il gesto - quelle che si staccano e si attaccano - ed e' la
+    //    scelta di Franco fra tre proposte.
+    it: 'Figurine da attaccare', en: 'Peel-off stickers',
+    itSing: 'figurina da attaccare', enSing: 'peel-off sticker',
     genere: 'f',
     icona: '&#128204;',
     colonne: { d: 7, m: 4 },
@@ -32573,6 +32580,100 @@ const ARTICOLI = {
     itSing: 'spilla', enSing: 'pin',
     genere: 'f',
     icona: '&#128205;',
+    colonne: { d: 4, m: 3 },
+    numero: 'ordinamento',
+    ordina: 'campo',
+    ordinaDove: 'number',
+    nomeCompleto: 'codice',
+    nomeCompletoDove: 'computeFullName'
+  },
+  // 🆕 v6.691 (Franco) - LE QUATTRO TIPOLOGIE NUOVE, e nascono tutte dalla stessa
+  //    misura: la serie Holidays teneva 187 articoli nella sezione «Figurine con retro», e
+  //    127 di quei 187 figurine non sono. Il campo «sottoserie» faceva da cassetto a quattro
+  //    oggetti diversi, che e' il mestiere di una TIPOLOGIA, non di una sottoserie.
+  //
+  // 🔴 «Figurine» E' LA NONA, ED E' LA PIU' DELICATA DELLE QUATTRO: si chiama come le
+  //    altre due, e la differenza sta in una parola. Franco: «sono figurine con velina ma la
+  //    velina e' insignificante; io le chiamerei semplicemente Figurine».
+  // 📌 E in INGLESE si prende «Stickers», che fino a ieri era il nome delle «da
+  //    attaccare» - le quali in questa stessa release diventano «Peel-off stickers». Le due
+  //    modifiche sono una cosa sola: separate, per una release il sito avrebbe avuto due
+  //    tipologie con lo stesso nome inglese, e nessuna delle due avrebbe detto niente.
+  //
+  // 📌 `pos: 1` a pari merito con le altre figurine e con le carte, per la ragione
+  //    scritta alla v6.224: sono ALTERNATIVE, non consecutive. A pari punteggio l'ordine lo
+  //    decide quello di dichiarazione (sort stabile), quindi restano dopo le carte.
+  // ⚠️ `ordina: 'campo'` e non 'codice', come le carte: il raggruppamento dei figli sotto
+  //    il capogruppo sta dentro un `if (currentSection === 'figurines')` scritto a mano, e
+  //    queste non ci passano. Il descrittore dice cio' che il codice fa.
+  // 📌 `numero: 'inventario'` come le figurine: una figurina il numero ce l'ha. Che
+  //    quelle di Holidays non l'abbiano lo dice gia' `noNumbers` sulla SERIE, ed e' li' che
+  //    va detto - non nel descrittore di una tipologia che varra' anche per altre serie.
+  figurine: {
+    pos: 1,
+    riquadro: 1,
+    it: 'Figurine',   en: 'Stickers',
+    itSing: 'figurina', enSing: 'sticker',
+    genere: 'f',
+    icona: '&#128444;&#65039;',
+    colonne: { d: 7, m: 4 },
+    numero: 'inventario',
+    ordina: 'campo',
+    ordinaDove: 'number',
+    nomeCompleto: 'codice',
+    nomeCompletoDove: 'computeFullName'
+  },
+  // 🆕 v6.691 - I TATUAGGI. Franco: «i tatuaggi (Tattoos) non sono figurine».
+  // 📌 L'icona e' la spirale, ed e' una scelta di Franco fra quattro proposte: un
+  //    tatuaggio TRIBALE in Unicode non esiste, e la koru e' la cosa piu' vicina fra le
+  //    emoji standard. Le alternative con un glifo ornamentale di un altro alfabeto sono
+  //    state scartate perche' ogni sistema le disegna a modo suo: quello che vede chi
+  //    scrive non e' quello che vede chi apre il sito.
+  tatuaggi: {
+    pos: 8,
+    riquadro: 1,
+    it: 'Tatuaggi',   en: 'Tattoos',
+    itSing: 'tatuaggio', enSing: 'tattoo',
+    genere: 'm',
+    icona: '&#127744;',
+    colonne: { d: 7, m: 4 },
+    numero: 'ordinamento',
+    ordina: 'campo',
+    ordinaDove: 'number',
+    nomeCompleto: 'codice',
+    nomeCompletoDove: 'computeFullName'
+  },
+  // 🆕 v6.691 - I TRASFERELLI. Franco: «i trasferelli (Iron-on)».
+  // 📌 L'icona dice DOVE VA A FINIRE l'oggetto, non com'e' fatto - la maglietta - e fa
+  //    coppia con la spirale dei tatuaggi, che sta sulla pelle. Due superfici, due icone.
+  trasferelli: {
+    pos: 9,
+    riquadro: 1,
+    it: 'Trasferelli',   en: 'Iron-ons',
+    itSing: 'trasferello', enSing: 'iron-on',
+    genere: 'm',
+    icona: '&#128085;',
+    colonne: { d: 7, m: 4 },
+    numero: 'ordinamento',
+    ordina: 'campo',
+    ordinaDove: 'number',
+    nomeCompleto: 'codice',
+    nomeCompletoDove: 'computeFullName'
+  },
+  // 🆕 v6.691 - I CARTONCINI, e NON sono carte. Franco: «una carta e' un oggetto
+  //    prestampato, fatto di carta o di plastica. Questi sono un mix: un foglio di cartone,
+  //    della grandezza di una figurina, piu' 2 figurine attaccate sopra».
+  // ⚠️ La tipologia «Carte» esiste dalla v6.224 e Holidays la NASCONDE con la spunta:
+  //    sembrava la casa giusta e non lo e'. La deduzione era mia, la correzione di Franco.
+  // 📌 In inglese «Cardboards» e non «Backing cards», che sarebbe il termine da
+  //    collezionismo: contiene la parola «cards», cioe' proprio quella da cui vanno distinti.
+  cartoncini: {
+    pos: 10,
+    riquadro: 1,
+    it: 'Cartoncini',   en: 'Cardboards',
+    itSing: 'cartoncino', enSing: 'cardboard',
+    genere: 'm',
+    icona: '&#128199;',
     colonne: { d: 4, m: 3 },
     numero: 'ordinamento',
     ordina: 'campo',
@@ -34727,6 +34828,39 @@ function _serieSenzaAlbum(seriesId) {
 //    vera - e sarebbe un difetto silenzioso, che cambia a seconda dell'ordine nel DOM.
 // 📌 Si esclude per ATTRIBUTO e non per posizione: `data-sottoserie` c'e' o non c'e',
 //    mentre «e' la prima che trovo» dipende da chi ha appeso cosa per ultimo.
+// 🆕 v6.692 (Franco: «mi domando come si possa far capire all'utente che tipologia di
+//    articolo sono le diverse sottoserie della serie», e poi «metti la icona sempre in ultima
+//    riga e centrale») - L'ULTIMA RIGA DELLA CARD DICE DI CHE TIPOLOGIA E'.
+// 🔴 UN PADRONE SOLO. Le card di una tipologia le disegna `updateSectionCounts`, quelle
+//    di una sottoserie `_rendiCardSottoserie`: scrivere questa riga in tutte e due sarebbe
+//    stata la stessa cosa scritta da due punti, che l'8-9 settembre e' costata tre release.
+// 📌 E una card di SOTTOSERIE riceve la tipologia della sua SEZIONE, che e' precisamente
+//    l'informazione che le manca: Clear e Metal diranno «Figurine», i Tatuaggi «Tatuaggi».
+// ⚠️ LA PAROLA SI RIPETE SULLE CARD DI TIPOLOGIA, ed e' voluto: «Tatuaggi» sopra e
+//    «(icona Tatuaggi)» sotto. Scriverla solo dove il titolo non la dice gia' vorrebbe dire
+//    UNA RIGA CON DUE REGOLE - la forma dei tre difetti dell'8-9 settembre. Se un giorno da'
+//    fastidio si toglie la parola a tutte e due, che e' una riga e non un ramo.
+// ⚠️ SI RIUSA, NON SI ACCUMULA: queste card si ridisegnano a ogni giro, e una funzione che
+//    aggiungesse sempre un elemento nuovo ne farebbe una fila.
+// 📌 `appendChild` e non `insertBefore(..., conto.nextSibling)`: il conteggio e' gia'
+//    l'ultimo figlio del blocco di testo, quindi appendere E' «in ultima riga».
+function _mettiRigaTipologia(card, sez) {
+  if (!card || !sez) return;
+  const conto = card.querySelector('.section-choice-count');
+  if (!conto || !conto.parentNode) return;
+  let r = card.querySelector('.riga-tipologia');
+  if (!r) {
+    r = document.createElement('div');
+    r.className = 'riga-tipologia';
+    conto.parentNode.appendChild(r);
+  }
+  // 📌 L'icona e' un'entita' HTML nel descrittore, quindi `innerHTML` e non
+  //    `textContent`: con il secondo si leggerebbe «&#127744;» a schermo. Il NOME invece
+  //    passa da `esc`, perche' viene da una tabella che un giorno potrebbe contenere una
+  //    parola con un carattere da sfuggire.
+  r.innerHTML = '(' + (SECTION_ICONS[sez] || '') + ' ' + esc(getSectionLabel(sez)) + ')';
+}
+
 function _cardSezione(sel, sec) {
   return Array.from(sel.querySelectorAll('.section-choice-card'))
     .filter(c => !c.hasAttribute('data-sottoserie'))
@@ -38094,6 +38228,12 @@ function updateSectionCounts() {
       _tit.removeAttribute('data-i18n');
       _tit.textContent = getSectionLabel(sec);
     }
+    // 🆕 v6.692 - e l'ultima riga, dallo stesso giro che scrive il titolo: due posti
+    //    diversi per due cose che devono comparire insieme sono il difetto della v6.164.
+    // 📌 La card si trova risalendo dal contatore, non cercandola una seconda volta:
+    //    `_cardSezione` chiede il `sel`, che qui dentro non c'e'.
+    try { _mettiRigaTipologia(el.closest('.section-choice-card'), sec); }
+    catch (e) { console.error('_mettiRigaTipologia', sec, e); }
     // 🆕 v6.682 - IL NUMERO DELLA CARD E' QUELLO DEGLI ARTICOLI CHE NON STANNO IN
     //    NESSUNA SOTTOSERIE, quando la sezione ne usa. Da questa release ogni sottoserie ha
     //    una card sua, e questa vuol dire «tutte le altre»: 10 + 96 = 106, e nessun articolo
@@ -38235,6 +38375,9 @@ function _rendiCardSottoserie() {
         + '<div class="section-choice-title">' + esc(nome) + '</div>'
         + '<div class="section-choice-count">' + quanti + _paroleArticoli(quanti)
         + '</div></div>';
+      // 🆕 v6.692 - l'ultima riga, con la tipologia della SEZIONE a cui questa
+      //    sottoserie appartiene. ⚠️ DOPO l'`innerHTML` qui sopra, che la cancellerebbe.
+      _mettiRigaTipologia(card, sec);
       if (prec && prec.parentNode === griglia) prec.after(card); else griglia.appendChild(card);
       prec = card;
     });
