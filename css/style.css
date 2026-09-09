@@ -1422,6 +1422,17 @@ footer {
      accanto a un fatto. Il vero comportamento a 480px sta nel blocco a 860px, più sotto. */
 }
 
+/* 🆕 v6.692 - L'ULTIMA RIGA DELLA CARD: di che tipologia e' quello che c'e' dentro.
+   📌 `text-align: center` e' scritto qui anche se le card sono gia' centrate: una regola
+      che dipende da cio' che il markup si porta dietro per caso e' il difetto della v6.191,
+      quello che `_sfondoUnaVoltaSola` esiste per non ripetere.
+   📌 Piu' piccola e grigia del conteggio: e' un'etichetta di specie, non un dato della
+      card - e sulle card di tipologia ripete il titolo, quindi non deve gridare. */
+.riga-tipologia {
+  margin-top: 0.35rem; text-align: center;
+  font-size: 0.8rem; color: var(--muted);
+}
+
 /* ===== SECTION CHOICE CARDS ===== */
 .section-choice-card {
   background: var(--card); border: 1px solid var(--border2);
