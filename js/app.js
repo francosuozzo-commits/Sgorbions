@@ -25968,7 +25968,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.692';
+const JS_VERSION = 'v6.700';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -31405,11 +31405,27 @@ function _ripristinaFlagSerie(s) {
   spunta('series-has-change-input',                s && s.hasChange);
   spunta('series-has-retro-change-input',          s && s.hasRetroChange);   // v6.170
   spunta('series-no-numbers-input',                s && s.noNumbers);
-  // v6.216 - le due caselle singole sono diventate l'elenco. ⚠️ Con `s` a null (creazione) si
-  // spengono tutte: e' la ragione per cui questa funzione esiste dalla v6.186.
+  // v6.216 - le due caselle singole sono diventate l'elenco.
+  // 🔄 v6.696 (Franco: «le tipologie stanno diventando tante; alla creazione della
+  //    prossima serie accendili tutti») - SU UNA SERIE NUOVA SI ACCENDONO TUTTE.
+  // 🗑️ QUI C'ERA SCRITTO IL CONTRARIO - «con `s` a null (creazione) si spengono tutte» -
+  //    e quel commento se ne va con la riga che descriveva.
+  // 📌 PERCHE': le tipologie sono DODICI dalla v6.691 e una serie ne usa da una a
+  //    cinque. Aprire la form con tutte spente voleva dire, ogni volta, mettere sette o otto
+  //    spunte per dire quello che si dice togliendone tre. Il default dev'essere il caso raro
+  //    da correggere, non il caso comune da smontare.
+  // ⚠️ IL PREZZO, ed e' l'altra faccia dello stesso gesto: una serie appena creata non mostra
+  //    nessuna sezione finche' non si tolgono le spunte. E' voluto - una serie senza articoli
+  //    non ha niente da mostrare - ma va saputo, o sembra nata rotta.
+  // 📌 IL CAMPO NON CAMBIA SIGNIFICATO: `articoliNascosti` vuol dire ancora «quelle che
+  //    NON ci sono», e i record esistenti non si toccano. Cambia come si apre la form.
+  // 📌 La domanda «e' una serie nuova?» c'era gia' (`s` a null) e serviva a spegnere
+  //    tutto: adesso la stessa domanda accende tutto. Nessun ramo nuovo.
   {
+    const nuova = !s;
     const nascosti = _articoliNascostiDaRecord(s);
-    document.querySelectorAll('.series-articolo-nascosto').forEach(x => { x.checked = nascosti.includes(x.value); });
+    document.querySelectorAll('.series-articolo-nascosto')
+      .forEach(x => { x.checked = nuova ? true : nascosti.includes(x.value); });
   }
   spunta('series-contenitore-input',               s && s.serieContenitore); // v6.204
   // 🔴 v6.584 - IL RIPRISTINO DEL FLAG NUOVO, e vale l'avvertimento della v6.219: senza
@@ -32670,9 +32686,19 @@ const ARTICOLI = {
   cartoncini: {
     pos: 10,
     riquadro: 1,
-    it: 'Cartoncini',   en: 'Cardboards',
-    itSing: 'cartoncino', enSing: 'cardboard',
-    genere: 'm',
+    // 🔄 v6.700 (Franco: «da altre parti definiremo un cartoncino una cosa diversa; il
+    //    fatto che c'e' cartone e figurine sopra lo allontana da un cartoncino puro») - IL
+    //    NOME TORNA QUELLO CHE AVEVANO DA SOTTOSERIE: «Carte d'identita'».
+    // ⚠️ LA CHIAVE RESTA `cartoncini`, ed e' scritta dentro 36 record. Rinominarla sarebbe un
+    //    secondo intervento sui dati per cambiare un'etichetta che nessuno vede.
+    // 🔴 E IL GENERE PASSA A 'f' INSIEME AL NOME: decide «Questa/Questo» e il femminile
+    //    delle numeriche. Lasciarlo 'm' avrebbe fatto dire «Questo Carte d'identita'» - una
+    //    parola sbagliata in una frase giusta, che nessun controllo di sintassi vede.
+    // 📌 L'apostrofo va sfuggito: e' l'unico nome del descrittore che ne ha uno, ed e'
+    //    lo stesso carattere che alla v6.682 avrebbe chiuso a meta' un attributo HTML.
+    it: 'Carte d\'identità',   en: 'Identity cards',
+    itSing: 'carta d\'identità', enSing: 'identity card',
+    genere: 'f',
     icona: '&#128199;',
     colonne: { d: 4, m: 3 },
     numero: 'ordinamento',
@@ -34682,8 +34708,8 @@ function _ridisegnaBox() {
 function _matitaBox(chiave, perSerie) {
   if (!currentUser?.isAdmin) return '';
   return '<button type="button" title="' + (perSerie
-      ? 'Cambia la foto di questo box PER QUESTA SERIE'
-      : 'Cambia la foto di questo box (vale per tutte le serie)') + '" ' +
+      ? 'Cambia la foto di questa card PER QUESTA SERIE'
+      : 'Cambia la foto di questa card (vale per tutte le serie)') + '" ' +
     'onclick="event.stopPropagation();' + (perSerie ? 'cambiaFotoSezioneSerie' : 'cambiaFotoBox')
       + '(\'' + chiave + '\')" ' +
     'style="position:absolute;top:6px;right:6px;z-index:3;border:none;border-radius:999px;' +
@@ -34767,8 +34793,8 @@ async function _caricaFotoSezioneSerie(ev) {
   }
   _boxSerieInCorso = null;
   _ridisegnaBox();
-  toast(it ? '\u2705 Foto del box aggiornata per questa serie'
-           : '\u2705 Box photo updated for this series', 'success');
+  toast(it ? '\u2705 Foto della card aggiornata per questa serie'
+           : '\u2705 Card photo updated for this series', 'success');
 }
 
 async function _caricaFotoBox(ev) {
@@ -34778,7 +34804,7 @@ async function _caricaFotoBox(ev) {
   if (!file || !chiave) return;
   // v6.191 - prima si guarda, poi si carica. Fino alla v6.190 il file partiva subito e non c'era
   // nessun momento in cui offrire "Rimuovi sfondo".
-  const scelto = await _scegliFoto(file, it ? 'Foto del box' : 'Box photo');
+  const scelto = await _scegliFoto(file, it ? 'Foto della card' : 'Card photo');
   if (!scelto) { _boxFotoInCorso = null; return; }   // annullato
   toast(it ? 'Carico la foto…' : 'Uploading…', 'info');
   let url;
@@ -34803,7 +34829,7 @@ async function _caricaFotoBox(ev) {
   _cache.immaginiBox = box;
   _boxFotoInCorso = null;
   _ridisegnaBox();
-  toast(it ? '✅ Foto del box aggiornata' : '✅ Box photo updated', 'success');
+  toast(it ? '✅ Foto della card aggiornata' : '✅ Card photo updated', 'success');
 }
 
 // Le foto dei box SEZIONE, dentro l'hub di una serie. Il markup di quelle card sta nell'index e non
@@ -34836,14 +34862,23 @@ function _serieSenzaAlbum(seriesId) {
 //    stata la stessa cosa scritta da due punti, che l'8-9 settembre e' costata tre release.
 // 📌 E una card di SOTTOSERIE riceve la tipologia della sua SEZIONE, che e' precisamente
 //    l'informazione che le manca: Clear e Metal diranno «Figurine», i Tatuaggi «Tatuaggi».
-// ⚠️ LA PAROLA SI RIPETE SULLE CARD DI TIPOLOGIA, ed e' voluto: «Tatuaggi» sopra e
-//    «(icona Tatuaggi)» sotto. Scriverla solo dove il titolo non la dice gia' vorrebbe dire
-//    UNA RIGA CON DUE REGOLE - la forma dei tre difetti dell'8-9 settembre. Se un giorno da'
-//    fastidio si toglie la parola a tutte e due, che e' una riga e non un ramo.
+// 🗑️ v6.694 - QUI C'ERA IL COMPROMESSO DELLA v6.692, E DICEVA IL FALSO DA UN'ORA:
+//    «la parola si ripete sulle card di tipologia, ed e' voluto». Non si ripete piu' da
+//    quando la v6.693 l'ha spostata nel titolo - e quel commento e' sopravvissuto alla
+//    release che lo smentiva, che e' la malattia di sempre in miniatura.
+// 📌 L'ha trovato il controllo di QUESTA release, cercando tutt'altro: l'ancora non
+//    combaciava piu' e sono andato a leggere cosa c'era davvero scritto.
 // ⚠️ SI RIUSA, NON SI ACCUMULA: queste card si ridisegnano a ogni giro, e una funzione che
 //    aggiungesse sempre un elemento nuovo ne farebbe una fila.
-// 📌 `appendChild` e non `insertBefore(..., conto.nextSibling)`: il conteggio e' gia'
-//    l'ultimo figlio del blocco di testo, quindi appendere E' «in ultima riga».
+// 🔄 v6.694 (Franco: «prima il titolo, dopo la icona, dopo N articoli, dopo (N nella
+  //    tua lista)») - L'ICONA STA FRA IL TITOLO E IL CONTEGGIO, non piu' in fondo.
+  // 📌 E' l'ordine di lettura: che cos'e', di che specie, quanti, quanti ne hai. Alla
+  //    v6.692 stava in fondo perche' portava anche la PAROLA ed era un'etichetta; dalla
+  //    v6.693 e' un segno, e un segno sta accanto al nome invece che dopo i numeri.
+  // 📌 `insertBefore(r, conto)` e non un indice ne' un `nextSibling`: «prima del
+  //    conteggio» resta vero anche se un domani nasce un'altra riga sopra o sotto.
+  // ⚠️ Il «(N nella tua lista)» non si tocca: vive DENTRO lo stesso elemento del conteggio,
+  //    dopo un `<br>` scritto da `updateSectionCounts`. Era gia' l'ultima cosa che si legge.
 function _mettiRigaTipologia(card, sez) {
   if (!card || !sez) return;
   const conto = card.querySelector('.section-choice-count');
@@ -34852,13 +34887,22 @@ function _mettiRigaTipologia(card, sez) {
   if (!r) {
     r = document.createElement('div');
     r.className = 'riga-tipologia';
-    conto.parentNode.appendChild(r);
+    conto.parentNode.insertBefore(r, conto);
   }
-  // 📌 L'icona e' un'entita' HTML nel descrittore, quindi `innerHTML` e non
-  //    `textContent`: con il secondo si leggerebbe «&#127744;» a schermo. Il NOME invece
-  //    passa da `esc`, perche' viene da una tabella che un giorno potrebbe contenere una
-  //    parola con un carattere da sfuggire.
-  r.innerHTML = '(' + (SECTION_ICONS[sez] || '') + ' ' + esc(getSectionLabel(sez)) + ')';
+  // 🔄 v6.693 (Franco: «togli il nome della tipologia da sotto; la icona rimane,
+  //    senza () e la + grande») - QUI RESTA LA SOLA ICONA.
+  // 🔴 E CON LA PAROLA SE NE VA IL COMPROMESSO DELLA v6.692, che era scritto in
+  //    chiaro qui sopra: «la parola si ripete sulle card di tipologia». Adesso la parola sta
+  //    nel TITOLO delle card di sottoserie, dove serve sempre e non si ripete mai - e questa
+  //    riga torna a essere una regola sola per tutte le card.
+  // 📌 E NASCE IL `title`, che risponde all'obiezione di sempre («un'icona da sola si
+  //    indovina»): il nome della tipologia si legge passandoci sopra, senza occupare una
+  //    riga. ⚠️ Non c'era: l'avevo perso riscrivendo la v6.692, e se n'e' accorto il
+  //    controllo di QUESTA release, non una rilettura.
+  // 📌 `innerHTML` e non `textContent`: l'icona e' un'entita' HTML nel descrittore, e
+  //    col secondo si leggerebbe «&#127744;» a schermo.
+  r.innerHTML = SECTION_ICONS[sez] || '';
+  r.title = getSectionLabel(sez);
 }
 
 function _cardSezione(sel, sec) {
@@ -35019,7 +35063,7 @@ function _applicaFotoSezioni() {
       // non trovava l'elemento e tirava dritto. Se il markup dell'index cambia ancora, questo
       // avviso e' l'unica cosa che lo dira'.
       console.warn('v6.191 _applicaFotoSezioni: nessun riquadro foto nella card di', sec,
-                   '- il markup dell\'index e\' cambiato e la foto del box non si vedra\'.');
+                   '- il markup dell\'index e\' cambiato e la foto della card non si vedra\'.');
     } else if (url) {
       riquadro.style.backgroundImage = 'url(\'' + cloudinaryUrl(url, 'w_600,h_600,c_fit,q_auto,f_auto') + '\')';
       riquadro.style.backgroundSize = 'contain';
@@ -37888,9 +37932,24 @@ function renderSeriesMeta(s) {
     const g = tipiPresenti(s.id, sez2);
     const nm = nomiSez(sez2);
     const m = [];
+    // 🔄 v6.698 (Franco: «la parola "set base" dovrebbe accompagnare il nome
+    //    dell'articolo solo se la serie prevede versioni; 100 Tatuaggi, e non 100 Tatuaggi
+    //    set base») - «SET BASE» E' UNA DISTINZIONE, E SI SCRIVE SOLO SE DISTINGUE.
+    // 🔴 LA DOMANDA SI FA AI DATI, NON A UNA SPUNTA DELLA SERIE: una serie puo'
+    //    DICHIARARE di avere variazioni e non averne ancora nessuna. Le altre righe di questo
+    //    specchietto compaiono solo se hanno articoli dentro (v6.672), quindi e' la stessa
+    //    fonte a dover decidere - o «set base» comparirebbe da solo, accanto a nessuno.
+    // 🗑️ E QUI C'ERA IL QUARTO ELENCO DI SEZIONI SCRITTO A MANO DI QUESTO FILE:
+    //    `['bustine','albums','extras']`, con la sua etichetta «versioni standard». Erano il
+    //    caso particolare di «non ha versioni» risolto per tre nomi invece che per tutti.
+    //    Adesso lo dice la regola: «2 Bustine», come «100 Tatuaggi». Scelta di Franco.
+    // ⚠️ LE ALTRE RIGHE SONO CINQUE, contate LEGGENDO `tipiPresenti` e non a memoria: la
+    //    prima stesura ci aveva messo anche `g.retroChange`, che NON ESISTE - i change di
+    //    retro non hanno una riga loro qui. L'ha preso la prova, lanciandola.
+    const _altreVersioni = g.variation.length + g.unofficial.length + g.change.length
+      + g.free.length + g.printError.length;
     if (g.base.length) m.push(colonna(BULLET, g.base,
-      (['bustine','albums','extras'].includes(sez2)
-        ? (it ? (g.base.length === 1 ? 'versione standard' : 'versioni standard') : (g.base.length === 1 ? 'standard version' : 'standard versions'))
+      (_altreVersioni
         // 🔄 v6.622 (Franco: *«la numerica "160 set base" diventa "160 figurine set base"»* e
         // *«per i retro, "72 set base" diventa "72 retro set base"»*)
         // 🔴 QUI STAVA LA v6.067, CHE ERA DI FRANCO, e diceva l'opposto: «via il nome
@@ -37902,7 +37961,8 @@ function renderSeriesMeta(s) {
         // ⚠️ Il nome viene da «nm.p», cioe' il PLURALE gia' nella lingua corrente: il
         // descrittore lo porta con se', e una sezione nuova non ha bisogno di una riga qui.
         // 📌 Plurale e non singolare: «160 figurine set base», «72 retro set base».
-: (nm.p + (it ? ' set base' : ' base set'))),
+        ? (nm.p + (it ? ' set base' : ' base set'))
+        : nm.p),
       false, nm.f, 'var(--type-base)'));
     if (g.variation.length) m.push(colonna(BULLET, g.variation,
       _etichettaConteggio('variation', g.variation.length, it),
@@ -38001,8 +38061,19 @@ function renderSeriesMeta(s) {
     //    che occupa spazio per dire che non c'e' niente da dire.
     // 📌 Il parametro si toglie invece di lasciarlo sempre falso: un argomento che nessuno
     //    passa piu' e' una domanda che il prossimo lettore si fa a vuoto.
+    // 🔄 v6.699 (Franco: «anche N in totale va tolto se non ci sono versioni») -
+    //    E' LA REGOLA DELLA v6.698 APPLICATA ALL'ALTRA RIGA. «In totale» e' la SOMMA di
+    //    quelle sopra: con una riga sola non somma, ripete. «100 Tatuaggi» e «100 in totale»
+    //    sono lo stesso numero detto due volte.
+    // 🔴 STESSA VARIABILE, non un secondo conto: `_altreVersioni` nasce dodici righe
+    //    piu' su. Due domande identiche con due conti a mano divergono al primo ritocco.
+    // ⚠️ Senza versioni `g.items` e `g.base` sono lo stesso insieme - `tipiPresenti` divide
+    //    gli articoli in base piu' le cinque versioni - quindi non si perde nessun numero.
+    //    Il giorno che nascesse una SESTA versione e nessuno la aggiungesse a
+    //    `_altreVersioni`, il totale sparirebbe proprio dove serve: `prova-v6671` misura la
+    //    somma apposta.
     const _totali = g.items;
-    if (_totali.length) m.push(colonna(BULLET, _totali,
+    if (_totali.length && _altreVersioni) m.push(colonna(BULLET, _totali,
       // v6.067 (Franco) - "368 totali" al posto di "368 figurine in totale": stessa ragione della
       // riga del set base, e in piu' sparisce anche il "in", che non serviva a niente.
       // 🗑️ v6.632 - QUI C'ERA LA CODA «(+ M errori di stampa)» della v6.507, e non c'e'
@@ -38018,10 +38089,26 @@ function renderSeriesMeta(s) {
     //    c'e'. Passarle un elenco vuoto avrebbe scritto «0 Numeri per sottoserie».
     // 📌 E il blocco compare solo se ci sono sottoserie: un titolo senza righe sotto e'
     //    l'etichetta orfana della v6.672, appena tolta.
+    // 🔄 v6.697 (Franco: «metti le numeriche delle sottoserie alla destra della sezione
+    //    delle numeriche delle figurine») - UN BLOCCO SOLO, NON CINQUE PEZZI.
+    // 🔴 QUI C'ERA `flex-basis:100%` SUL TITOLO, ed era quello a mandare tutto a capo:
+    //    dentro un contenitore `flex-wrap`, un elemento largo quanto tutto spinge sotto ogni
+    //    cosa che segue.
+    // ⚠️ MA TOGLIERLO E BASTA NON BASTAVA: titolo e righe sarebbero tornati in fila come se
+    //    fossero altre numeriche delle figurine, e «Numeri per sottoserie» si sarebbe messo
+    //    accanto a «60 in totale» come se fosse un terzo conto. Diventano UN elemento, e il
+    //    flex lo mette a destra come metterebbe qualunque altro.
+    // 📌 «Le tipologie successive iniziano dopo la fine delle sottoserie» non chiede
+    //    niente: le numeriche stanno in una griglia a due colonne (v6.622) e una riga di
+    //    griglia e' gia' alta quanto il suo contenuto.
+    // 📌 E su schermo stretto scende sotto da se', perche' il contenitore e' `flex-wrap`
+    //    da sempre: la colonna intera va a capo invece di spezzarsi a meta'. Niente media query.
     if (_righeSotto.length) {
-      m.push('<div style="flex-basis:100%;margin-top:0.35rem;color:var(--text);'
-        + 'font-weight:600;">' + (it ? 'Numeri per sottoserie' : 'Counts by subseries') + '</div>');
-      _righeSotto.forEach(r => m.push(r));
+      m.push('<div style="display:flex;flex-direction:column;align-items:flex-start;'
+        + 'gap:0.35rem;">'
+        + '<div style="color:var(--text);font-weight:600;">'
+        + (it ? 'Numeri per sottoserie' : 'Counts by subseries') + '</div>'
+        + _righeSotto.join('') + '</div>');
     }
     return m;
   }
@@ -38372,7 +38459,14 @@ function _rendiCardSottoserie() {
         + (foto ? 'background-image:url(\'' + cloudinaryUrl(foto, 'w_600,h_600,c_fit,q_auto,f_auto') + '\');' : '')
         + '"></div>'
         + '<div style="padding:1.25rem 1.5rem;">'
-        + '<div class="section-choice-title">' + esc(nome) + '</div>'
+        // 🆕 v6.693 (Franco: «per le figurine, scrivi Figurine Metal, Figurine Clear,
+      //    Figurine White») - IL TITOLO DICE LA TIPOLOGIA E POI LA SOTTOSERIE.
+      // 📌 Il nome della tipologia lo da' `getSectionLabel`, la STESSA funzione che
+      //    scrive il titolo delle card di tipologia: il giorno che «Figurine» cambia nome,
+      //    cambiano insieme. Leggerlo da un secondo posto sarebbe la copia che nessuno conta.
+      // ⚠️ Vale solo QUI: sulle card di tipologia il titolo e' gia' il nome della tipologia,
+      //    e comporlo direbbe «Tatuaggi Tatuaggi».
+      + '<div class="section-choice-title">' + esc(getSectionLabel(sec) + ' ' + nome) + '</div>'
         + '<div class="section-choice-count">' + quanti + _paroleArticoli(quanti)
         + '</div></div>';
       // 🆕 v6.692 - l'ultima riga, con la tipologia della SEZIONE a cui questa
