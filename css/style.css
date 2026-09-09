@@ -1426,11 +1426,17 @@ footer {
    📌 `text-align: center` e' scritto qui anche se le card sono gia' centrate: una regola
       che dipende da cio' che il markup si porta dietro per caso e' il difetto della v6.191,
       quello che `_sfondoUnaVoltaSola` esiste per non ripetere.
-   📌 Piu' piccola e grigia del conteggio: e' un'etichetta di specie, non un dato della
-      card - e sulle card di tipologia ripete il titolo, quindi non deve gridare. */
+   🔄 v6.693 (Franco: «la icona rimane, senza () e la + grande») - QUI C'ERA UNA RIGA
+      DI TESTO PICCOLA E GRIGIA, e adesso c'e' un'icona sola. Il corpo passa da 0.8rem a
+      1.5rem: non e' piu' un'etichetta da leggere, e' un segno da riconoscere a colpo
+      d'occhio, e a 0.8rem un'emoji si vede appena.
+   📌 Via anche il grigio: `--muted` serviva ad abbassare la voce di una parola che
+      ripeteva il titolo. Un'emoji il suo colore ce l'ha, e spegnerlo non fa niente. */
+/* 🔄 v6.694 - l'icona e' salita fra il titolo e il conteggio, quindi lo spazio
+   si distribuisce sopra E sotto invece che solo sopra. */
 .riga-tipologia {
-  margin-top: 0.35rem; text-align: center;
-  font-size: 0.8rem; color: var(--muted);
+  margin: 0.25rem 0 0.35rem; text-align: center;
+  font-size: 1.5rem; line-height: 1;
 }
 
 /* ===== SECTION CHOICE CARDS ===== */
