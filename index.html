@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.690"></script>
-<link rel="stylesheet" href="css/style.css?v=6.690">
+<script src="js/email.min.js?v=6.692"></script>
+<link rel="stylesheet" href="css/style.css?v=6.692">
 
 
 <style>
@@ -1358,6 +1358,51 @@ button.back-btn { color:#ffffff; }
         <div style="padding:1.25rem 1.5rem;">
           <div class="section-choice-title" data-i18n="catalog.spille">Spille</div>
           <div class="section-choice-count" id="count-spille" data-i18n-loading="catalog.loading">caricamento...</div>
+        </div>
+      </div>
+      <!-- 🆕 v6.691 (Franco) - LE QUATTRO TIPOLOGIE NUOVE: Figurine, Tatuaggi,
+           Trasferelli, Cartoncini. Nascono dalla serie Holidays, che teneva 187 articoli
+           nella sezione «Figurine con retro» e 127 di quelli figurine non sono.
+           ⚠️ IL RIQUADRO DELLA FOTO E' VUOTO ED E' VOLUTO, stessa ragione delle Spille
+           alla v6.647: `SECTION_IMAGES` ha tre voci su dodici, e la foto vera la mette
+           `_applicaFotoSezioni` da quella che carica Franco. Copiare qui il base64 di
+           un'altra sezione «per non lasciarlo vuoto» metterebbe una foto che dice il falso.
+           📌 E IL TITOLO NON HA `data-i18n`, a differenza delle otto vecchie: dalla
+           v6.548 lo scrive il descrittore, che le due lingue ce le ha. Una chiave i18n qui
+           sarebbe una seconda fonte per lo stesso nome - e il codice della v6.548
+           l'attributo lo TOGLIE comunque, a ogni giro.
+           📌 La POSIZIONE non conta: `_riordinaBoxSezioni` sposta le card secondo
+           `PRODOTTI_INVENTARIO`, cioe' l'ordine che Franco decide dalla console. -->
+      <div class="section-choice-card" onclick="openSeriesSection('figurine')" style="padding:0;overflow:hidden;">
+        <div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-size:60%;background-repeat:no-repeat;background-position:center;">
+        </div>
+        <div style="padding:1.25rem 1.5rem;">
+          <div class="section-choice-title">Figurine</div>
+          <div class="section-choice-count" id="count-figurine" data-i18n-loading="catalog.loading">caricamento...</div>
+        </div>
+      </div>
+      <div class="section-choice-card" onclick="openSeriesSection('tatuaggi')" style="padding:0;overflow:hidden;">
+        <div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-size:60%;background-repeat:no-repeat;background-position:center;">
+        </div>
+        <div style="padding:1.25rem 1.5rem;">
+          <div class="section-choice-title">Tatuaggi</div>
+          <div class="section-choice-count" id="count-tatuaggi" data-i18n-loading="catalog.loading">caricamento...</div>
+        </div>
+      </div>
+      <div class="section-choice-card" onclick="openSeriesSection('trasferelli')" style="padding:0;overflow:hidden;">
+        <div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-size:60%;background-repeat:no-repeat;background-position:center;">
+        </div>
+        <div style="padding:1.25rem 1.5rem;">
+          <div class="section-choice-title">Trasferelli</div>
+          <div class="section-choice-count" id="count-trasferelli" data-i18n-loading="catalog.loading">caricamento...</div>
+        </div>
+      </div>
+      <div class="section-choice-card" onclick="openSeriesSection('cartoncini')" style="padding:0;overflow:hidden;">
+        <div style="width:100%;aspect-ratio:var(--hub-box-ratio);background:var(--bg3);overflow:hidden;background-size:60%;background-repeat:no-repeat;background-position:center;">
+        </div>
+        <div style="padding:1.25rem 1.5rem;">
+          <div class="section-choice-title">Cartoncini</div>
+          <div class="section-choice-count" id="count-cartoncini" data-i18n-loading="catalog.loading">caricamento...</div>
         </div>
       </div>
       
@@ -3889,7 +3934,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.690"></script>
+<script src="js/app.js?v=6.692"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3913,7 +3958,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.690'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.692'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
