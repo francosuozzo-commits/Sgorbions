@@ -25968,7 +25968,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.700';
+const JS_VERSION = 'v6.712';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27576,7 +27576,7 @@ const i18n = {
 'how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
 'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
 'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
-'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Items','catalog.allSeriesInfo':'Show information on all series','catalog.allSeriesInfoShort':'All series info','catalog.allSeriesInfoTitle':'The Sgorbions series on record','catalog.addseries':'+ Add Series',
+'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Items','catalog.allSeriesInfo':'Show summary information\non all series','catalog.allSeriesInfoShort':'All series info','catalog.allSeriesInfoTitle':'The Sgorbions series on record','catalog.addseries':'+ Add Series',
 'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them !',
 'back':'Inventory','detail.addfig':'+ Add Sticker',
 'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation !',
@@ -27681,7 +27681,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni di tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine da attaccare','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine da attaccare','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici !',
@@ -28457,6 +28457,37 @@ function _caroselloLarghezzaCard() { return _isMobileViewport() ? _caroselloLarg
 // Vale 0 come "usa il quadrato": _caroselloCard lo legge cosi'.
 function _caroselloAltezzaFoto(px) { return _isMobileViewport() ? 0 : px; }
 
+// 🆕 v6.706 (Franco: «il carosello della pagina spille e' alto come quello delle altre
+//    pagine serie?» - si', identico al pixel, ed era il difetto) - L'ALTEZZA DELLA FOTO LA DICE
+//    IL DESCRITTORE, non una costante.
+// 🔴 `riquadro` (larghezza/altezza) esiste dalla v6.654, nato dalle parole di Franco -
+//    «l'altezza della card e' decisamente troppo alta, considerando la dimensione delle foto» -
+//    ed era dichiarato su tutte e dodici le tipologie ma LETTO IN UN POSTO SOLO: `imgAspectRatio`
+//    nella card della GRIGLIA. I tre caroselli non lo guardavano. Percio' nella griglia una
+//    spilla stava in una card bassa e piena, e nel carosello in una alta come quella di una
+//    figurina, col vuoto sopra e sotto: il fastidio della v6.654 nell'unico posto che la v6.654
+//    non aveva toccato. Una deduplicazione a meta' e' peggio di nessuna.
+// 🔴 LA DECIDE LA FILA, NON LA SINGOLA CARD, e la ragione e' misurata: il carosello della
+//    home mescola 1658 figurine e 48 spille. Se ogni card scegliesse la sua altezza, nella
+//    stessa fila il testo partirebbe a quote diverse - e la fila si stira comunque sulla piu'
+//    alta, quindi il vuoto si sposterebbe SOTTO la card invece di sparire. Peggio di adesso.
+// 📌 Quindi si prende il riquadro PIU' BASSO della fila, cioe' il box PIU' ALTO: una fila
+//    di sole spille si accorcia tutta insieme (139/1.43 = 97), una fila mista resta identica a
+//    oggi. Nessuna card peggiora e nessuna fila diventa irregolare.
+// ⚠️ SU TELEFONO NON CAMBIA NIENTE, ED E' DECISO, NON DIMENTICATO: li' la foto e' quadrata
+//    rispetto alla card dalla v6.080, per un vincolo diverso (la card e' larga un terzo di
+//    schermo). Questa funzione PASSA da `_caroselloAltezzaFoto` invece di scavalcarla, quindi
+//    sotto la soglia risponde 0 come sempre.
+// 📌 Legge `ARTICOLI`, dichiarata ~4000 righe piu' sotto: e' una `function`, il corpo gira
+//    a runtime, nessuna zona morta. Stesso schema di `_vaInCarosello` (v6.690).
+function _caroselloAltezzaFotoDi(elenco, base) {
+  const q = (elenco || []).reduce((min, f) => {
+    const a = ARTICOLI[f.section || 'figurines'];
+    return Math.min(min, (a && a.riquadro) || 1);
+  }, Infinity);
+  return _caroselloAltezzaFoto(Math.round(base / (isFinite(q) && q > 0 ? q : 1)));
+}
+
 // ---- pezzi comuni ai due caroselli (v6.071) --------------------------------------------------
 // Sono due file di figurine con le stesse regole: stessa card, stesso scorrimento, stessa velocita',
 // stesse condizioni per fermarsi. Cambiano solo COSA mostrano e QUANTO sono grandi. Tenerli in due
@@ -28631,6 +28662,15 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
 //    deciso. Si guarda `ARTICOLI` direttamente: chi non c'e' risponde NO, e ci entra il
 //    giorno che qualcuno scrive `carosello: true`.
 // 📌 Trovato da `prova-v6690`, che chiedeva proprio questo caso.
+// 📌 v6.703 - LE TIPOLOGIE DA CAROSELLO SONO DUE SU DODICI, ED E' UNA DECISIONE PRESA,
+//    non una casella dimenticata. Franco, il 10 settembre 2026, con la misura davanti:
+//    `figurines` e `spille`, e basta.
+// ⚠️ QUINDI HOLIDAYS NON E' NELLA VETRINA DELLA HOME, e non e' un difetto: fino all'8
+//    settembre i suoi 187 articoli stavano in `figurines` e ci comparivano; la v6.691 li ha
+//    spostati in `figurine`, `tatuaggi`, `trasferelli` e `cartoncini`, che il flag non ce
+//    l'hanno. Lo stesso vale per `carte` (Sgorbions 2018) e per le «da attaccare».
+// 🔴 Chi tornera' qui a chiedersi «perche' quella serie non si vede» ha la risposta senza
+//    doverla ricostruire: e' scritto qui perche' e' qui che si viene a guardare.
 function _vaInCarosello(sez) {
   const k = sez || 'figurines';
   return !!(ARTICOLI[k] && ARTICOLI[k].carosello);
@@ -28730,7 +28770,17 @@ function renderCarosello() {
   const _figs = getData('figurines', []);
   // 🔄 v6.690 - la tipologia la decide il descrittore (`_vaInCarosello`), non un nome
   //    scritto qui: le spille entrano senza che questa riga le nomini.
-  const disponibili = _figs.filter(f => _vaInCarosello(f.section) && _fotoFigurina(f, _figs));
+  // 🆕 v6.703 (Franco) - E NEMMENO LA SERIE PUO' ESSERE QUALUNQUE. Fino a ieri qui non
+  //    c'era NESSUNA formula sulla serie: si prendeva tutto l'inventario, e le serie IN ARRIVO
+  //    restavano fuori solo perche' non hanno foto - cioe' per caso, non per una regola. Con
+  //    la prima foto caricata, 512 figurine di una serie col timbro «IN ARRIVO !» sarebbero
+  //    entrate nella vetrina senza errori e senza che nessuno l'avesse deciso.
+  // 📌 L'elenco delle serie si legge UNA volta e serve a due cose (il filtro e i nomi):
+  //    due `getData('series')` nella stessa funzione sarebbero due letture della stessa cosa.
+  const _serie = new Map(getData('series', []).map(x => [x.id, x]));
+  const disponibili = _figs.filter(f => _vaInCarosello(f.section)
+    && _serieInVetrina(_serie.get(f.seriesId))
+    && _fotoFigurina(f, _figs));
   if (disponibili.length < 2) { sez.style.display = 'none'; box.innerHTML = ''; return; }
   // si mescola una COPIA: ordinare a caso l'elenco vero cambierebbe l'ordine in tutto il sito
   const mazzo = disponibili.slice();
@@ -28738,10 +28788,11 @@ function renderCarosello() {
     const j = Math.floor(Math.random() * (i + 1));
     [mazzo[i], mazzo[j]] = [mazzo[j], mazzo[i]];
   }
-  const nomeSerie = new Map(getData('series', []).map(x => [x.id, _nomeSerieCard(x, true)])); // v6.080, v6.493: sempre il nome BREVE
+  // 🔄 v6.703 - i nomi si ricavano dall'elenco gia' letto sopra, non da un secondo `getData`.
+  const nomeSerie = new Map([..._serie].map(([id, x]) => [id, _nomeSerieCard(x, true)])); // v6.080, v6.493: sempre il nome BREVE
   const inFila = mazzo.slice(0, CAROSELLO_MAX); // v6.081 - la serie si guarda sulle card che finiscono davvero in fila
   const mostraSerie = _caroselloMostraSerie(inFila);
-  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs)).join('');
+  box.innerHTML = inFila.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(inFila, CAROSELLO_ALTEZZA), _caroselloLarghezzaCard(), mostraSerie, _figs)).join('');
   sez.style.display = '';
   const prec = document.getElementById('carosello-prec');
   const succ = document.getElementById('carosello-succ');
@@ -28781,7 +28832,7 @@ function renderCaroselloSerie() {
   // riga della serie ricomparirebbe da sola.
   const mostraSerie = _caroselloMostraSerie(base);
   // v6.528 - al 75% come quello dei tipi di articolo. La home no: non e' stata chiesta.
-  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs)).join('');
+  box.innerHTML = base.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(base, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs)).join('');
   sez.style.display = '';
   const prec = document.getElementById('serie-carosello-prec');
   const succ = document.getElementById('serie-carosello-succ');
@@ -28842,7 +28893,7 @@ function renderCaroselloProdotto() {
   }
   const mostraSerie = _caroselloMostraSerie(mazzo); // v6.081 - qui le serie sono di solito piu' d'una, ma non per forza
   // v6.527 - qui, e solo qui, la foto e' al 75%: e' la pagina che Franco ha segnalato.
-  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFoto(CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs)).join('');
+  box.innerHTML = mazzo.map(f => _caroselloCard(f, nomeSerie, _caroselloAltezzaFotoDi(mazzo, CAROSELLO_ALTEZZA_RIDOTTA), _isMobileViewport() ? _caroselloLarghezzaCard() : CAROSELLO_LARGHEZZA_RIDOTTA, mostraSerie, _figs)).join('');
   sez.style.display = '';
   const prec = document.getElementById('prodotto-carosello-prec');
   const succ = document.getElementById('prodotto-carosello-succ');
@@ -30079,11 +30130,11 @@ function openSeriesEbayModal() {
   // riquadro compatto in alto a sinistra (Franco). Stessa informazione, un ventesimo dello spazio.
   const counters = document.getElementById('series-ebay-counters');
   counters.innerHTML = `<div style="display:inline-block;border:1px solid var(--border);border-radius:10px;padding:0.5rem 0.8rem;background:var(--card2);">
-    ${EBAY_SECTIONS.map(sec => {
+    ${_ebaySezioniDi(figs).map(sec => {
       const total = figs.filter(f => (f.section || 'figurines') === sec).length;
       const forSaleCount = figs.filter(f => (f.section || 'figurines') === sec && f.forSale).length;
       return `<div style="display:flex;justify-content:space-between;gap:1.2rem;font-size:0.78rem;line-height:1.5;">
-        <span style="color:var(--muted);">${ebaySectionLabel(sec)}</span>
+        <span style="color:var(--muted);">${getSectionLabel(sec)}</span>
         <span style="color:var(--text);font-weight:${forSaleCount ? '700' : '400'};white-space:nowrap;">${forSaleCount} / ${total}</span>
       </div>`;
     }).join('')}
@@ -30178,14 +30229,31 @@ function cmpVistaTabellare(sezione) {
 // "Titoli eccedenti la taglia ebay" nella Vista Ebay.
 // Un eventuale titolo scritto a mano (ebayTitleIt/En) ha comunque la precedenza sul generato.
 const EBAY_TITLE_MAX = 80;
-// v5.919 — ordine delle sezioni nella Vista Ebay, deciso da Franco: figurine, retro, bustine,
-// album, altri oggetti. Una sola definizione per contatori, tabelle e tabella dei titoli lunghi.
-const EBAY_SECTIONS = ['figurines', 'retros', 'bustine', 'albums', 'extras'];
-function ebaySectionLabel(sec) {
-  const it = (currentLang === 'it');
-  return ({ figurines: it ? 'Figurine' : 'Stickers', retros: 'Retro', bustine: it ? 'Bustine' : 'Wrappers',
-            albums: it ? 'Album' : 'Albums', extras: it ? 'Altri articoli' : 'Other items' })[sec] || sec;
-}
+// 🗑️ v6.702 (Franco: «tutto va su ebay») - QUI STAVANO `EBAY_SECTIONS`, CINQUE SEZIONI
+// SU DODICI scritte a mano dalla v5.919, e `ebaySectionLabel`, la SESTA tabella di etichette
+// a mano di questo file. Se ne vanno tutte e due, e per due ragioni diverse.
+// 🔴 L'ELENCO: il tasto «Aggiungi a Ebay» non ha MAI avuto una condizione di sezione, quindi
+//    una spilla si poteva marcare e poi non compariva in nessun riquadro - nessun errore, solo
+//    un posto che non esiste. Una porta aperta su una stanza non costruita. (Misurato il 10
+//    settembre 2026: i 586 `forSale` erano tutti figurines e retros, quindi non e' ancora
+//    costato niente.)
+// 🔴 LE ETICHETTE: quella tabella diceva «Figurine» per `figurines` mentre il resto del sito
+//    dice «Figurine con retro» - e dalla v6.691 «Figurine» e' il nome di un'ALTRA tipologia.
+//    Con dodici sezioni avrebbe mostrato le sette nuove col loro id crudo. Le dice il
+//    descrittore, come dappertutto: `getSectionLabel`.
+// ⚠️ E L'ORDINE CAMBIA: e' quello dell'INVENTARIO, non piu' quello scelto a mano dalla
+//    v5.919. E' una revoca voluta - due ordini per la stessa cosa sono due verita', e la Vista
+//    Ebay la guarda la stessa persona che ha ordinato i box dalla console.
+// 🔴 FUNZIONE E NON COSTANTE, e non e' stile: `PRODOTTI_INVENTARIO` e' dichiarato ~2900
+//    righe piu' sotto. Una costante valutata qui lo leggerebbe in zona morta e il sito non
+//    partirebbe. Chiamata da dentro chi la usa, arriva quando serve - ed e' anche l'unico modo
+//    di seguire l'ordine se l'admin lo cambia senza ricaricare (v6.283: `let`).
+// 📌 E I RIQUADRI NON DIVENTANO DODICI: si mostra solo cio' che QUELLA SERIE ha davvero.
+//    Senza questo filtro una serie di sole figurine mostrerebbe undici righe «0 / 0» e undici
+//    intestazioni «Nessun articolo marcato Ebay»: informazione zero, spazio undici. E' la
+//    regola gia' viva nell'hub - una card esiste se ha qualcosa dentro.
+const _ebaySezioniDi = figs => PRODOTTI_INVENTARIO.filter(
+  sec => figs.some(f => (f.section || 'figurines') === sec));
 // v5.979 — MARCATORE DELLE VERSIONI SPECIALI (Franco). Fino alla v5.978 il titolo diceva solo
 // il Nome completo, e per le varianti quello NON basta: computeFullName() dà "Nome - NomeRetro"
 // sia per una variazione UFFICIALE sia per una NON ufficiale, quindi nel titolo le due erano
@@ -30869,7 +30937,7 @@ function renderEbayViewTable() {
   // parola per cento righe è spazio buttato. Anche N. e Nome se ne vanno: al loro posto il NOME
   // COMPLETO, che è ciò che finisce nel titolo dell'annuncio.
   // Ordine delle righe: lo stesso della vista tabellare (cmpVistaTabellare).
-  const blocchi = EBAY_SECTIONS.map(sec => {
+  const blocchi = _ebaySezioniDi(figs).map(sec => {
     const items = figs.filter(f => f.forSale && (f.section || 'figurines') === sec).sort(cmpVistaTabellare(sec));
     // v5.920 (Franco) — ogni sezione si chiude: con centinaia di righe, per arrivare alla sezione
     // dopo si scorreva all'infinito. L'intestazione è il comando (tutta, non una freccina da
@@ -30877,7 +30945,7 @@ function renderEbayViewTable() {
     // IT/COM e a ogni ridisegno finché la maschera è aperta.
     const chiusa = !!_ebaySectionCollapsed[sec];
     const testa = (comando) => `<h3 onclick="${comando}" style="font-size:0.92rem;font-weight:700;color:var(--text);margin:1.5rem 0 0.5rem;${comando ? 'cursor:pointer;user-select:none;' : ''}">
-      <span style="display:inline-block;width:1em;color:var(--text);">${comando ? (chiusa ? '▸' : '▾') : ''}</span>${ebaySectionLabel(sec)} <span style="color:var(--text);font-weight:400;">(${items.length})</span></h3>`;
+      <span style="display:inline-block;width:1em;color:var(--text);">${comando ? (chiusa ? '▸' : '▾') : ''}</span>${getSectionLabel(sec)} <span style="color:var(--text);font-weight:400;">(${items.length})</span></h3>`;
     if (!items.length) {
       return testa('') + `<p style="color:var(--text);font-style:italic;font-size:0.85rem;margin:0;">${it ? 'Nessun articolo marcato Ebay.' : 'No items marked Ebay.'}</p>`;
     }
@@ -31034,7 +31102,7 @@ function renderEbayOversizeTable() {
   const box = document.getElementById('series-ebay-oversize');
   if (!box) return;
   const it = (currentLang === 'it');
-  const eccedenti = EBAY_SECTIONS.flatMap(sec =>
+  const eccedenti = PRODOTTI_INVENTARIO.flatMap(sec =>
     getData('figurines', [])
       .filter(f => f.seriesId === currentSeriesId && f.forSale && (f.section || 'figurines') === sec && ebayTitleEccede(f))
       .sort(cmpVistaTabellare(sec)));
@@ -31049,7 +31117,7 @@ function renderEbayOversizeTable() {
   // v5.921 — ordinabile anche questa: qui la colonna che serve davvero è "Caratteri", per
   // partire dai titoli che sforano di più.
   const ordinati = ebayApplicaSort(eccedenti, '_oversize', {
-    sezione:  f => ebaySectionLabel(f.section || 'figurines'),
+    sezione:  f => getSectionLabel(f.section || 'figurines'),
     nome:     f => f.fullName || f.name || '',
     troncato: f => ebayTitle(f),
     intero:   f => ebayTitleFull(f),
@@ -31061,7 +31129,7 @@ function renderEbayOversizeTable() {
     // v5.926 — anche qui il comando è la ✎ a fine riga (non la riga intera), e apre la form.
     return `<tr onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background=''">
       ${td(i + 1, 'color:var(--text);text-align:right;white-space:nowrap;width:1%;')}
-      ${td(ebaySectionLabel(f.section || 'figurines'), 'color:var(--text);white-space:nowrap;')}
+      ${td(getSectionLabel(f.section || 'figurines'), 'color:var(--text);white-space:nowrap;')}
       ${td(esc(f.fullName || f.name))}
       ${td(esc(troncato), 'color:var(--text);')}
       ${td(esc(intero), 'color:var(--text);')}
@@ -32743,10 +32811,32 @@ function _haSottonome(sez) {
 // solo, e nella lingua corrente. Sta accanto a `_art` e chiede al DESCRITTORE, non a una
 // tabella parallela: è la lezione della v6.481, dove lo stesso nome viveva in due fonti
 // che non si conoscevano e cambiarne una faceva dire al sito due parole diverse.
+// 🆕 v6.711 - LA MAIUSCOLA IN TESTA A UN'ETICHETTA, DICHIARATA UNA VOLTA.
+// 🔴 LA REGOLA, che in questo file non era mai stata scritta: il DESCRITTORE tiene la
+//    parola come si dice DENTRO una frase (`itSing` e' minuscolo perche' serve a
+//    `_soggettoArticolo`: «Questa figurina e' un Change»); chi la mette IN TESTA a
+//    un'etichetta la maiuscola se la fa.
+// ⚠️ Cinque punti di questo file se la fanno gia' a mano, per SEI copie in tutto - uno dei
+//    cinque la ripete nella stessa riga, una per l'italiano e una per l'inglese. Questa
+//    funzione non li converte - due dei cinque non fanno la stessa identica cosa - ma da'
+//    un posto a cui chiedere, cosi' il sesto non nasce. `prova-v6711` li conta.
+function _maiuscola(s) {
+  const t = String(s == null ? '' : s);
+  return t ? t.charAt(0).toUpperCase() + t.slice(1) : t;
+}
+
+// 🔄 v6.711 (Franco: «in alcune card serie abbiamo «Album» con la A maiuscola, in altre
+//    con la «a» minuscola; e anche «bustina» e' minuscolo. Sbagliato») - E NON BALLAVA FRA
+//    LE SERIE: BALLAVA FRA UNO E PIU' DI UNO. Qui si sceglie fra singolare e plurale, e nel
+//    descrittore tutti e dodici i singolari sono minuscoli e tutti i plurali maiuscoli.
+//    Quindi il badge diceva «1 album» e «2 Album».
+// 📌 Si corregge QUI e non nel descrittore: li' il minuscolo e' giusto, e cambiarlo
+//    romperebbe cinque frasi per aggiustare un badge.
 function _nomeSezioneCard(sez, n) {
   const a = _art(sez);
-  if (currentLang === 'it') return n === 1 ? a.itSing : a.it;
-  return n === 1 ? a.enSing : a.en;
+  return _maiuscola(currentLang === 'it'
+    ? (n === 1 ? a.itSing : a.it)
+    : (n === 1 ? a.enSing : a.en));
 }
 
 // ============================================================
@@ -36623,6 +36713,24 @@ function _serieBloccata(s) {
   return _statoSerie(s) === 'in-arrivo' && !currentUser?.isAdmin;
 }
 
+// 🆕 v6.703 (Franco) - CHI PUO' STARE NELLA VETRINA DELLA HOME.
+// 🔴 E' UNA SOGLIA SULLA SCALA, NON UN ELENCO DI STATI. `STATI_SERIE` e' gia' ordinato
+//    «dalla piu' pronta alla meno» (v6.669, e il suo commento dice che l'ordine non e'
+//    decorativo): qui si dice «pronta almeno quanto in-completamento» e basta. Uno stato
+//    dichiarato domani cade dalla parte giusta da se', secondo dove lo si scrive nella scala.
+//    Un `['pubblicata', 'in-completamento']` sarebbe stato il settimo elenco a mano di questo
+//    file, e sarebbe scaduto al quinto stato.
+// ⚠️ LO STATO SCRITTO MALE NEI DATI RESTA IN VETRINA: si passa da `_voceStatoSerie`, che
+//    ripiega su «pubblicata». E' la scelta della v6.669 e la ragione e' la stessa - un valore
+//    storto non deve far SPARIRE roba senza dirlo.
+// 📌 E STA QUI, NON ACCANTO AL CAROSELLO: una `const` valutata la' leggerebbe
+//    `STATI_SERIE` in zona morta e il sito non partirebbe. Questa e' una `function`, quindi
+//    issata: `renderCarosello` la chiama 8000 righe piu' su senza saperlo.
+function _serieInVetrina(s) {
+  const soglia = STATI_SERIE.findIndex(x => x.v === 'in-completamento');
+  return STATI_SERIE.indexOf(_voceStatoSerie(s)) <= soglia;
+}
+
 // 🆕 v6.609 - LA FORMA DEL TIMBRO, IN UN POSTO SOLO. Nasce estraendo il corpo di
 // «_timbroInCostruzione» (v6.585, oggi `_timbroStatoSerie`) perche' Franco ne ha chiesto un
 // secondo: «metti un timbro
@@ -38654,10 +38762,22 @@ function openSeriesSection(section, sottoserie) {
   if (ebayTitle) ebayTitle.style.display = currentUser?.isAdmin ? '' : 'none';
   const tableViewBtn = document.getElementById('user-table-view-btn');
   if (tableViewBtn) tableViewBtn.style.display = currentUser ? 'flex' : 'none';
-  // Show bulk score box only for admin, figurines and retros sections
+  // 🔄 v6.701 (Franco: «tutto ha punteggio») - QUI STAVA IL SESTO ELENCO DI SEZIONI
+  //    SCRITTO A MANO, e ne nominava DUE su dodici: figurine e retro. Non era una decisione
+  //    presa tipologia per tipologia - e' la riga di quando le sezioni erano poche, mai
+  //    riletta da allora. Nata da una domanda di Franco: «come mai nelle spille non c'e' il
+  //    box Classifica?».
+  // 📌 CHE LA RARITA' FOSSE GIA' DI TUTTI LO DICEVANO TRE MISURE, non un'opinione: il
+  //    campo «Rarita'» della form di modifica non ha mai avuto una condizione di sezione; il
+  //    filtro admin «Senza rarita'» c'e' in ogni sezione; e `saveBulkScore` lavora su
+  //    `getCurrentlyFilteredItems()`, che la sezione non la guarda. L'unico pezzo che
+  //    nominava due sezioni era il PULSANTE, cioe' il permesso di farlo IN BLOCCO.
+  // 🔴 E LA MEDICINA E' L'ASSENZA DI UN ELENCO, non un elenco piu' lungo: aggiungerci
+  //    `spille` avrebbe rimesso in piedi la stessa riga, scaduta di nuovo alla tipologia
+  //    successiva. E' cosi' che sono nati gli altri cinque elenchi a mano di questo file.
   const bulkScoreWrap = document.getElementById('admin-classifica-btn-wrap');
   const bulkScoreTitle = document.getElementById('admin-classifica-title');
-  const showBulkScore = currentUser?.isAdmin && (section === 'figurines' || section === 'retros');
+  const showBulkScore = !!currentUser?.isAdmin;
   if (bulkScoreWrap) bulkScoreWrap.style.display = showBulkScore ? 'flex' : 'none';
   if (bulkScoreTitle) bulkScoreTitle.style.display = showBulkScore ? '' : 'none';
   // 🗑️ v6.653 — QUI STAVA IL SECONDO SCRITTORE DEL TASTO «+ Aggiungi», ed e' quello che
@@ -49153,23 +49273,21 @@ async function _salvaFigurineInBlocco(items) {
 async function saveFigFromDetail(figId, opzioni) {
   // v6.377 - vedi `saveBulkCell`: l'avviso sta dove l'utente preme, il fermo dove si scrive.
   if (_bloccatoDalLucchetto()) return;
-  // 🆕 v6.656 (Franco: «il campo Sottoserie dovrebbe essere obbligatorio ma non lo e'»)
-  // 📌 Si controlla solo dove la domanda ha senso: la serie deve avere delle sottoserie
-  //    DICHIARATE. Su una serie che non ne ha, il campo non c'e' nemmeno.
-  // ⚠️ E si guarda l'elemento, non il flag `hasSubseries`: se per qualunque ragione la
-  //    tendina non e' stata disegnata, non si puo' pretendere che qualcuno l'abbia
-  //    compilata - sarebbe un blocco senza scampo davanti a un campo che non si vede.
-  {
-    const ss = document.getElementById('fe-subseries');
-    if (ss && !String(ss.value || '').trim()
-        && _sottoserieSerie(getData('series', []).find(x => x.id === currentSeriesId)).length) {
-      toast(currentLang === 'it'
-        ? 'Scegli la sottoserie: in questa serie e\' obbligatoria.'
-        : 'Choose the subseries: it is required in this series.', 'error');
-      try { ss.focus(); } catch (e) {}
-      return;
-    }
-  }
+  // 🗑️ v6.707 - QUI STAVA L'OBBLIGO DELLA SOTTOSERIE (v6.656), ED E' UNA REVOCA VOLUTA.
+  // 🔴 La v6.656 nasceva da Franco - «il campo Sottoserie dovrebbe essere obbligatorio ma
+  //    non lo e'» - e a toglierlo e' Franco, il 10 settembre 2026, con la ragione davanti:
+  //    «puo' esserci la serie principale, nel caso di figurine, e le bustine gli album e gli
+  //    altri articoli non fanno parte di una sottoserie della serie».
+  // 🔴 E LA SUA RAGIONE E' PIU' FORTE DELLA MIA: il vuoto in quel campo non e' un dato
+  //    mancante, e' il SET PRINCIPALE - che questo sito nomina gia' cosi' dalla v6.682. Un
+  //    campo obbligatorio non chiedeva di riempire un buco: vietava una risposta legittima.
+  // ⚠️ Il difetto si vedeva perche' la domanda era fatta al livello sbagliato: le sottoserie
+  //    sono un campo della SERIE, e ne' la tendina ne' l'obbligo guardavano la TIPOLOGIA. In
+  //    Spille una BUSTINA si sentiva chiedere «Grandi senza nome / Medie classiche».
+  // 📌 E NEMMENO «obbligatorio solo per la tipologia che le usa» avrebbe retto, ed e'
+  //    misurato: in Sgorbions 2018 le carte con sottoserie sono 10 su 106. Le altre 96 sono
+  //    giuste cosi' - sono il set principale.
+  // 📌 La TENDINA resta: si toglie l'obbligo, non il campo.
   const _resta = !!(opzioni && opzioni.resta);
   // i due pulsanti si spengono durante il salvataggio: con "Salva e resta" la scheda rimane
   // aperta, quindi il secondo clic e' a portata di dito piu' che mai
