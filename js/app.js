@@ -25968,7 +25968,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.712';
+const JS_VERSION = 'v6.716';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -27576,7 +27576,7 @@ const i18n = {
 'how.2.title':'Build Your List','how.2.desc':'Add stickers to your personal list and track the percentage of items in your list compared to the Sgorbions Inventory.',
 'how.3.title':'Connect and Ask','how.3.desc':'Ask questions and get answers from the administrator and other collectors.',
 'how.4.title':'Your Profile','how.4.desc':'See your profile information and decide what to share with other collectors.',
-'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Items','catalog.allSeriesInfo':'Show summary information\non all series','catalog.allSeriesInfoShort':'All series info','catalog.allSeriesInfoTitle':'The Sgorbions series on record','catalog.addseries':'+ Add Series',
+'catalog.title':'The Inventory','catalog.sub':'All Sgorbions series ever published','catalog.subProducts':'All Sgorbions items ever published','catalog.browseby':'Browse by','catalog.byseries':'Series','catalog.byproducts':'Item types','catalog.allSeriesInfo':'Show summary information\non all series','catalog.allSeriesInfoShort':'All series info','catalog.allSeriesInfoTitle':'The Sgorbions series on record','catalog.addseries':'+ Add Series',
 'catalog.search':'Search series...','catalog.empty':'No series yet. Admin can add them !',
 'back':'Inventory','detail.addfig':'+ Add Sticker',
 'blog.title':'Blog / Q&A','blog.sub':'Ask questions, share news and discoveries','blog.post':'+ New Question / News','blog.empty':'No posts yet. Start the conversation !',
@@ -27681,7 +27681,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine da attaccare','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Tipologie di articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine da attaccare','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici !',
@@ -31495,6 +31495,17 @@ function _ripristinaFlagSerie(s) {
     document.querySelectorAll('.series-articolo-nascosto')
       .forEach(x => { x.checked = nuova ? true : nascosti.includes(x.value); });
   }
+  // 🆕 v6.716 - e le caselle della completezza, che NON seguono la regola della riga sopra:
+  // su una serie nuova restano tutte SPENTE. «Accendile tutte» (v6.696) e' giusto per «quali
+  // articoli ci sono», dove il caso comune e' averne quasi tutti, ed e' sbagliato qui: le
+  // tipologie che FANNO la serie sono una o due, e accenderle tutte direbbe che per completare
+  // la serie servono anche i tatuaggi. Vuoto vuol dire «non dichiarato», e il ripiego sa cosa
+  // farne.
+  {
+    const serve = (s && Array.isArray(s.articoliCompletezza)) ? s.articoliCompletezza : [];
+    document.querySelectorAll('.series-articolo-completezza')
+      .forEach(x => { x.checked = serve.includes(x.value); });
+  }
   spunta('series-contenitore-input',               s && s.serieContenitore); // v6.204
   // 🔴 v6.584 - IL RIPRISTINO DEL FLAG NUOVO, e vale l'avvertimento della v6.219: senza
   // questa riga la casella si aprirebbe sempre spenta e `saveSeries` scriverebbe `false` —
@@ -31590,6 +31601,39 @@ function _leggiArticoliNascosti() {
   return [...document.querySelectorAll('.series-articolo-nascosto')].filter(x => x.checked).map(x => x.value);
 }
 
+// 🆕 v6.716 - LE CASELLE DI «SERVONO PER LA SERIE COMPLETA», generate come le altre.
+// 📌 LE RIGHE SONO QUINDICI, NON DODICI: la sorgente e' `_righeTipoArticolo()` (v6.714),
+// che mette insieme i due registri. E' la regola che Franco ha dettato per la tabella -
+// *"quei 15 oggetti sono tutti uguali: tipologie di articolo"* - e vale anche qui: una serie
+// fatta di Felpe deve poter dire che sono le Felpe a completarla.
+// ⚠️ `getSectionLabel` NON sa i nomi delle tre tipologie che stanno nei dati: torna l'id.
+// L'etichetta la porta la riga, che ce l'ha per tutte e quindici.
+function _caselleCompletezzaSerie() {
+  const box = document.getElementById('series-articoli-completezza');
+  if (!box) return;
+  box.innerHTML = _righeTipoArticolo().map(r =>
+    '<label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem;">' +
+      '<input type="checkbox" class="series-articolo-completezza" value="' + esc(r.chiave) + '" ' +
+        'style="width:15px;height:15px;cursor:pointer;flex-shrink:0;">' +
+      '<span style="color:var(--text);">' +
+        // ⚠️ il nome inglese di una tipologia dei dati puo' essere vuoto: meglio l'italiano
+        // che una riga senza etichetta accanto a una casella.
+        esc((currentLang === 'it' ? r.voce.it : (r.voce.en || r.voce.it)) || r.chiave) + '</span>' +
+    '</label>').join('');
+}
+// ⚠️ LE TRE TIPOLOGIE CHE STANNO NEI DATI ARRIVANO DALLA RETE: se la scheda si apre prima che
+// siano arrivate, `_righeTipoArticolo()` ne offre dodici invece di quindici. Senza l'ultima riga,
+// salvare in quel momento CANCELLEREBBE una dichiarazione che nessuno ha toccato. Si tiene quello
+// che non e' stato nemmeno chiesto: e' la stessa regola dell'elenco degli articoli salvato.
+function _leggiArticoliCompletezza() {
+  const viste = [...document.querySelectorAll('.series-articolo-completezza')];
+  const offerte = viste.map(x => x.value);
+  const scelte = viste.filter(x => x.checked).map(x => x.value);
+  const id = document.getElementById('edit-series-id')?.value;
+  const prima = id ? getData('series', []).find(x => x.id === id)?.articoliCompletezza : null;
+  return scelte.concat((Array.isArray(prima) ? prima : []).filter(k => !offerte.includes(k)));
+}
+
 function _tabellaColonneSerie() {
   const box = document.getElementById('series-colonne-tabella');
   if (!box) return;
@@ -31633,6 +31677,7 @@ function openAddSeriesModal(seriesId) {
   // release chiude, e senza dare errore.
   _tabellaColonneSerie();
   _caselleArticoliSerie();   // v6.216 - anche queste PRIMA del ripristino, che le spunta
+  _caselleCompletezzaSerie();   // v6.716 - stessa ragione, stesso momento
   if (!currentUser?.isAdmin) { toast((currentLang === 'it' ? 'Solo per admin' : 'Admin only'), 'error'); return; }
   document.getElementById('edit-series-id').value = seriesId || '';
   // v6.162 - la form si riusa fra creazione e modifica: i due campi si azzerano sempre, e in
@@ -31963,6 +32008,7 @@ async function saveSeries() {
   // guardano ancora i vecchi, e se restassero indietro mostrerebbero la cosa sbagliata. Queste due
   // righe spariscono al passo 3, e i campi al passo 4.
   const articoliNascosti = _leggiArticoliNascosti();
+  const articoliCompletezza = _leggiArticoliCompletezza();   // v6.716
   const noRetro = articoliNascosti.includes('retros');
   const noAlbums = articoliNascosti.includes('albums');
 
@@ -32135,7 +32181,7 @@ async function saveSeries() {
     if (editId) {
       const idx = series.findIndex(x => x.id === editId);
       if (idx >= 0) {
-        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
+        series[idx] = { ...series[idx], colonne, name, year: +year, count: +count, firstNumber: firstNumber || series[idx].firstNumber || null, lastNumber: lastNumber || series[idx].lastNumber || null, desc, descIt, img: imgUrl || series[idx].img, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? series[idx].countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? series[idx].countUnofficialVariations ?? null, countChange: countChange ?? series[idx].countChange ?? null, countRetroChange: countRetroChange ?? series[idx].countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? series[idx].countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? series[idx].countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? series[idx].countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */ };
         // 🔴 v6.172 - IL PAYLOAD NON PORTA PIU' `items`. Vedi `_serieSenzaItems`: qui cambiano
         // nome, anno, spunte e conteggi — campi di livello serie — e il documento intero partiva
         // lo stesso, 521 KB per Serie 3, perche' lo spread qui sopra si porta dietro gli oggetti.
@@ -32157,7 +32203,7 @@ async function saveSeries() {
         }
       }
     } else {
-      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
+      const newS = { colonne, name, year: +year, count: +count||0, firstNumber: firstNumber || null, lastNumber: lastNumber || null, desc, descIt, img: imgUrl, hasSizes, abilitaModifica /* v6.366 */, hasSubseries, hasVariations, hasUnofficialVariations, hasChange, hasRetroChange /* v6.170 */, hasPrintError /* v6.219 */, hasFreeVersion, hasRetroFreeVersion /* v6.248 */, nomeCorto, nomeAlbum /* v6.480 */, nameEn, nomeCortoEn /* v6.645 */, controlliSospesi, noNumbers, noRetro, noAlbums /* v6.194 */, serieContenitore /* v6.204 */, articoliNascosti /* v6.216 */, articoliCompletezza /* v6.716 */, countVariations: countVariations ?? null, countUnofficialVariations: countUnofficialVariations ?? null, countChange: countChange ?? null, countRetroChange: countRetroChange ?? null /* v6.170 */, countPrintError: countPrintError ?? null /* v6.219 */, countFreeVersion: countFreeVersion ?? null, countRetroFreeVersion: countRetroFreeVersion ?? null /* v6.248 */, retroChangeTypes, frontChangeTypes /* v6.102 */, sottoserie /* v6.650 */, retroFreeVersionTypes, frontFreeVersionTypes /* v6.246 */, retroPrintErrorTypes, frontPrintErrorTypes /* v6.350 */, statoSerie /* v6.668 - un campo solo al posto di invisibile e inCostruzione */, testoPaginaSerieIt, testoPaginaSerieEn /* v6.628 */, created: new Date().toISOString() };
       const saved = await fsSave('series', newS);
       _cache.series.push(saved);
     }
@@ -32859,11 +32905,19 @@ const _ETICHETTE_DESCRITTORE = {
   pos: 'Pos.', it: 'Nome (IT)', en: 'Nome (EN)', itSing: 'Singolare (IT)', enSing: 'Singolare (EN)',
   icona: 'Icona', colonne: 'Colonne d/m', riquadro: 'Riquadro foto (l/h)',
   sottonome: 'Sottonome',   // v6.667
+  // 🆕 v6.714 - `genere` e `carosello` non erano qui, quindi la tabella ne stampava la
+  //    CHIAVE: due intestazioni minuscole in mezzo alle altre. Si vedeva a occhio, e nessun
+  //    controllo poteva dirlo - il ripiego `|| k` non e' un errore, e' un ripiego.
+  genere: 'Genere', carosello: 'Carosello',
   numero: 'Numero', ordina: 'Ordinamento',
   ordinaDove: 'Ordina dove', nomeCompleto: 'Nome completo', nomeCompletoDove: 'Nome completo dove'
 };
 
-function _cellaDescrittore(chiave, voce) {
+// 🔄 v6.714 - LA CELLA SA SE LA RIGA VIENE DAI DATI, e cambia il segno del vuoto.
+// 🔴 «—» e «N/A» non sono sinonimi: `—` vuol dire «questa riga potrebbe averlo e non ce
+//    l'ha», N/A vuol dire «per questa riga quel campo non esiste proprio». Una cella vuota li
+//    confonderebbe tutti e due, ed e' esattamente il caso in cui la tabella serve.
+function _cellaDescrittore(chiave, voce, dato) {
   const v = voce[chiave];
   const muto = t => '<span style="color:var(--muted);">' + t + '</span>';
   // Il "dove" mancante dove servirebbe: si dice, non si lascia in bianco.
@@ -32871,7 +32925,7 @@ function _cellaDescrittore(chiave, voce) {
       (chiave === 'nomeCompletoDove' && !v && voce.nomeCompleto)) {
     return '<span style="color:var(--danger);">⚠️ non dichiarato</span>';
   }
-  if (v === null || v === undefined || v === '') return muto('—');
+  if (v === null || v === undefined || v === '') return muto(dato ? 'N/A' : '\u2014');
   if (chiave === 'icona') return v;                       // e' un'entita' HTML: va resa, non scritta
   if (chiave === 'colonne') return esc(v.d + ' / ' + v.m); // l'unico campo composto, oggi
   if (typeof v === 'object') return esc(JSON.stringify(v));
@@ -32889,6 +32943,29 @@ function _cellaDescrittore(chiave, voce) {
 // colonne di questa tabella nascono dalle chiavi del descrittore, e un elenco separato di chiavi
 // di ordinamento sarebbe la seconda lista da tenere allineata - cioe' quella che si dimentica.
 // `colonne` e' l'unico campo composto e si ordina per desktop e poi mobile; i vuoti stanno insieme.
+// 🆕 v6.714 (Franco: «arriva sino a 12» / «una tabella unica dove le informazioni che non
+//    hai le metti con N/A») - LE RIGHE VENGONO DA DUE REGISTRI.
+// 🔴 Le sezioni stanno nel CODICE (`ARTICOLI`), i tipi creati dalla console stanno nei DATI
+//    (`settings/tipi_prodotto`). Fino alla v6.713 la tabella conosceva solo i primi e diceva
+//    «12 articoli»: era vero di se' stessa, non dell'inventario.
+// 🔴 SI INCOLONNA SOLO CIO' CHE SIGNIFICA LA STESSA COSA, verificato campo per campo. In
+//    particolare `ordina` NON si incolonna, anche se il nome combacia: nel descrittore dice DOVE
+//    e' scritto l'ordinamento (`codice`/`campo`), in un tipo dei dati e' l'ELENCO DEI CAMPI su
+//    cui ordinare. Stesso nome, due mestieri: incolonnarli sarebbe una bugia allineata bene.
+function _voceDaTipoProdotto(t) {
+  const c = (t.colonneDesktop || t.colonneMobile)
+    ? { d: t.colonneDesktop, m: t.colonneMobile } : undefined;
+  return { it: t.nome, en: t.nomeEn, itSing: t.singolare, enSing: t.singolareEn, colonne: c };
+}
+
+// L'elenco unico. `dato: true` e' cio' che fa scrivere N/A al posto di «—», e non si ricava
+// dalla voce: una voce dei dati con tutti i campi pieni sarebbe indistinguibile da una del
+// codice, e il giorno che succedesse la tabella mentirebbe senza dare errore.
+function _righeTipoArticolo() {
+  return PRODOTTI_INVENTARIO.map(sez => ({ chiave: sez, dato: false, voce: ARTICOLI[sez] }))
+    .concat(_tipiProdotto().map(t => ({ chiave: t.id, dato: true, voce: _voceDaTipoProdotto(t) })));
+}
+
 let _tipoArtSort = { col: null, dir: 1 };
 function sortAdminTipoArticolo(col) {
   if (_tipoArtSort.col === col) _tipoArtSort.dir *= -1;
@@ -32909,12 +32986,14 @@ function renderAdminTipoArticolo() {
     Object.keys(ARTICOLI[sez]).forEach(k => { if (!chiavi.includes(k)) chiavi.push(k); }));
   // v6.228 - l'elenco delle righe, ordinato se c'e' una colonna attiva. `pos` e' l'ordine
   // naturale, quindi cliccarlo riporta esattamente com'era.
-  let _sezioniOrdinate = PRODOTTI_INVENTARIO;
+  // 🔄 v6.714 - si ordina l'elenco UNICO, righe dei dati comprese.
+  const _righe = _righeTipoArticolo();
+  let _sezioniOrdinate = _righe;
   if (_tipoArtSort.col) {
     const k = _tipoArtSort.col;
-    _sezioniOrdinate = [...PRODOTTI_INVENTARIO].sort((a, b) => {
-      const va = _valoreOrdinamentoDescrittore(ARTICOLI[a][k]);
-      const vb = _valoreOrdinamentoDescrittore(ARTICOLI[b][k]);
+    _sezioniOrdinate = [..._righe].sort((a, b) => {
+      const va = _valoreOrdinamentoDescrittore(a.voce[k]);
+      const vb = _valoreOrdinamentoDescrittore(b.voce[k]);
       const cmp = (typeof va === 'number' && typeof vb === 'number')
         ? va - vb
         : String(va).localeCompare(String(vb), 'it');
@@ -32925,10 +33004,13 @@ function renderAdminTipoArticolo() {
   const td = 'padding:5px 8px;font-size:0.82rem;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border);';
   box.innerHTML =
     '<p style="font-size:0.85rem;color:var(--text);margin-bottom:0.9rem;line-height:1.5;">' +
-      'Questa tabella <strong>stampa il descrittore</strong> <code>ARTICOLI</code> di <code>app.js</code>: ' +
-      'righe e colonne si ricavano da lì. Un articolo nuovo compare da sé, e un campo nuovo si porta ' +
-      'dietro la sua colonna. Se una cosa che ti aspetti non è una colonna, vuol dire che ' +
-      '<strong>nessun articolo la dichiara</strong> — non che la tabella se l\'è dimenticata.' +
+      'Le <strong>colonne</strong> si ricavano dal descrittore <code>ARTICOLI</code> di <code>app.js</code>: ' +
+      'un campo nuovo si porta dietro la sua colonna, e se una cosa che ti aspetti non è una colonna ' +
+      'vuol dire che <strong>nessun articolo la dichiara</strong> — non che la tabella se l\'è dimenticata.' +
+      '<br>Le <strong>righe</strong> vengono da due posti: le <strong>sezioni</strong>, scritte nel codice, ' +
+      'e i <strong>tipi creati da questa console</strong>, che vivono nei dati. I secondi non hanno tutti ' +
+      'i campi dei primi: dove un campo <strong>non esiste per quella riga</strong> la cella dice ' +
+      '<strong>N/A</strong>, che è un\'altra cosa da <strong>—</strong> («potrebbe averlo e non ce l\'ha»).' +
     '</p>' +
     '<div style="overflow-x:auto;">' +
     '<table style="border-collapse:collapse;min-width:100%;">' +
@@ -32937,6 +33019,16 @@ function renderAdminTipoArticolo() {
     // campo del descrittore: era la sua CHIAVE, cioe' l'unica colonna scritta a mano di una
     // tabella che per il resto si ricava. La riga si riconosce dal Nome (IT), che e' li' accanto.
     '<tr>' +
+      // 🆕 v6.713 (Franco: «metti una colonna all'inizio che indica il n. di riga») - IL
+      //    NUMERO DI RIGA, e conta quello che si VEDE.
+      // ⚠️ Non e' la stessa cosa della colonna «Ordine» qui accanto: quella dice la posizione
+      //    vera dell'articolo nell'inventario e ha le frecce per spostarlo, questa conta le
+      //    righe come stanno adesso a schermo. Ordinando per una colonna, il numero di riga si
+      //    rinumera e «Ordine» no.
+      // 🔴 E NON E' ORDINABILE, di proposito: in questa tabella cliccare un'intestazione
+      //    ordina davvero, e ordinare per «numero di riga» non vuol dire niente - sarebbe un
+      //    comando che promette una cosa che non esiste.
+      '<th style="' + th + '">' + (currentLang === 'it' ? 'N.' : 'No.') + '</th>' +
       // v6.283 - la colonna dell'ORDINE non si puo' ordinare: e' l'ordine.
       '<th style="' + th + '">' + (currentLang === 'it' ? 'Ordine' : 'Order') + '</th>' +
       chiavi.map(k => {
@@ -32952,34 +33044,49 @@ function renderAdminTipoArticolo() {
     // ordinamento accesa quello che si vede non e' l'ordine del sito, e una freccia che dice "su"
     // sposterebbe rispetto a una fila che esiste solo a schermo: e' il modo piu' rapido di far
     // spostare all'admin l'articolo sbagliato. Li' al loro posto c'e' il perche', non un buco.
-    _sezioniOrdinate.map((sez, n) => {
+    _sezioniOrdinate.map((r, n) => {
       const _it = (currentLang === 'it');
-      const _ord = PRODOTTI_INVENTARIO.indexOf(sez);
+      const sez = r.chiave;
+      const _ord = r.dato ? -1 : PRODOTTI_INVENTARIO.indexOf(sez);
       const _bottone = (d, seg, dis, tit) =>
         '<button type="button" onclick="spostaArticolo(\'' + sez + '\', ' + d + ')"' +
         (dis ? ' disabled' : '') + ' title="' + tit + '"' +
         ' style="background:none;border:none;color:' + (dis ? 'var(--text)' : 'var(--accent)') +
         ';cursor:' + (dis ? 'default' : 'pointer') + ';font-size:0.9rem;padding:0 0.15rem;">' + seg + '</button>';
-      const celle = _tipoArtSort.col
+      // \U0001f195 v6.714 - sulle righe dei DATI le frecce sono N/A, non spente: quei box si
+      //    ordinano per NOME dalla v6.167 e non hanno una posizione da spostare. Un pulsante
+      //    disabilitato direbbe «qui non si puo' adesso»; N/A dice «qui non si fa».
+      const celle = r.dato
+        ? '<span style="color:var(--text);" title="' + (_it ? 'I tipi creati dalla console si ordinano per nome: non hanno una posizione da spostare' : 'Console-made types are sorted by name') + '">N/A</span>'
+        : (_tipoArtSort.col
         ? '<span style="color:var(--text);" title="' + (_it ? 'Le frecce tornano togliendo l\'ordinamento per colonna: qui non stai guardando l\'ordine vero' : 'Arrows come back when no column sort is active') + '">\u2014</span>'
         : (_bottone(-1, '\u25B2', _ord === 0, _it ? 'Sposta su' : 'Move up')
-         + _bottone(+1, '\u25BC', _ord === PRODOTTI_INVENTARIO.length - 1, _it ? 'Sposta giù' : 'Move down'));
+         + _bottone(+1, '\u25BC', _ord === PRODOTTI_INVENTARIO.length - 1, _it ? 'Sposta giù' : 'Move down')));
       return '<tr>' +
+        // 🆕 v6.713 - il numero di riga: `n` e' l'indice della fila DISEGNATA, quindi
+        //    segue l'ordinamento a colonna.
+        // 🔴 NIENTE `var(--muted)`, e non e' un dettaglio: qui siamo in una schermata da
+        //    AMMINISTRATORE, dove il grigio e' vietato dalla v6.437 - lo pretende
+        //    `prova-v6437`, che ha bocciato la prima stesura di questa riga. Il colore lo
+        //    da' gia' `td`; qui resta solo l'allineamento a destra, che incolonna i numeri.
+        '<td style="' + td + 'text-align:right;">' + (n + 1) + '</td>' +
         '<td style="' + td + 'white-space:nowrap;">' + celle + '</td>' +
-        chiavi.map(k => '<td style="' + td + '">' + _cellaDescrittore(k, ARTICOLI[sez]) + '</td>').join('') +
+        chiavi.map(k => '<td style="' + td + '">' + _cellaDescrittore(k, r.voce, r.dato) + '</td>').join('') +
         '</tr>';
     }).join('') +
     '</table></div>' +
     // La riga che dice PERCHE' e' in sola lettura, e i due numeri sono contati, non scritti.
     '<p style="font-size:0.8rem;color:var(--text);margin-top:0.9rem;line-height:1.5;">' +
       '<span id="ordine-articoli-feedback" style="font-size:0.85rem;"></span> ' +
-      '<strong>' + PRODOTTI_INVENTARIO.length + ' articoli, ' + chiavi.length + ' campi.</strong> ' +
+      '<strong>' + _righe.length + ' articoli (' + PRODOTTI_INVENTARIO.length + ' dal codice, ' +
+        (_righe.length - PRODOTTI_INVENTARIO.length) + ' da questa console), ' + chiavi.length + ' campi.</strong> ' +
       // v6.233 - QUESTA FRASE DICEVA "sono in sola lettura" e da questa release non e' piu' vera
       // per tutto: le VERSIONI si modificano dalla tabella qui sotto. Una pagina che si descrive
       // da se' e' utile finche' la descrizione e' esatta; il giorno che resta indietro diventa la
       // cosa piu' convincente e piu' sbagliata della pagina.
-      'I campi di <strong>questa</strong> tabella sono in <strong>sola lettura</strong> perché sono ' +
-      'descritti nel codice: si cambiano modificando <code>ARTICOLI</code> in <code>app.js</code>. ' +
+      'I campi delle righe <strong>dal codice</strong> sono in <strong>sola lettura</strong>: si cambiano ' +
+      'modificando <code>ARTICOLI</code> in <code>app.js</code>. Quelli dei tipi creati da questa ' +
+      'console si modificano con l\'ingranaggio sulla loro card, nell\'Inventario. ' +
       'Le <strong>Versioni</strong>, qui sotto, si modificano invece da questa pagina. ' +
       'La colonna <em>Ordina dove</em> ' +
       'porta il nome della funzione quando l\'ordinamento è di codice, e il campo del record quando è ' +
@@ -56893,6 +57000,37 @@ function isBaseFigurine(f) {
   return _eBase(f);
 }
 
+// 🆕 v6.716 - GLI ARTICOLI CHE FANNO LA "SERIE COMPLETA" LI DICE LA SERIE.
+// Franco: *"serie per serie ti dico io quali sono le tipologie di articolo che bisogna averle
+// tutte per avere la serie completa"*, e sulla regola di prima: *"quella regola (figurine con
+// retro o carte) e' vecchia e quindi sbagliata"*.
+//
+// 🗑️ VIA LA REGOLA UNICA, che per giunta non era scritta: si LEGGEVA da `pos`. Le tipologie
+// con lo stesso `pos` delle figurine erano "quelle che fanno la serie" per tutte e quindici le
+// serie. Un pari merito nato per dire *"sono alternative"* (v6.224) era diventato la definizione
+// di completezza (v6.296), e cambiarla voleva dire toccare il codice.
+//
+// 🔴 E IL BLOCCO STAVA DENTRO `renderWantlist`: `const` in una funzione si vede solo li'.
+// `exportOwnedList` lo chiamava da fuori, quindi il tasto «Esporta articoli mie serie complete»
+// moriva sul primo clic con `_contaPerCompletezza is not defined` - muto dalla v6.296, perche'
+// l'errore lo vede solo chi apre la consolle. Qui in cima e' visibile a tutti e due.
+//
+// 📌 IL RIPIEGO NON E' UN DEFAULT ELEGANTE, E' LA GIORNATA DI OGGI: le serie esistenti hanno
+// il campo vuoto e devono comportarsi ESATTAMENTE come ieri, o una serie completa da mesi
+// diventerebbe incompleta senza che nessuno abbia chiesto niente. E' l'elenco che `pos` produceva,
+// scritto in chiaro. Sparira' quando l'ultima serie sara' dichiarata: allora "vuoto" potra' voler
+// dire "nessuna" invece che "quelle di prima".
+// ⚠️ Scartato il ripiego "tutte le tipologie che la serie ha": avrebbe reso obbligatori album e
+// bustine da un giorno all'altro. Scartato anche "nessuna": una serie di sole Carte sarebbe
+// diventata impossibile da completare, in silenzio.
+const ARTICOLI_COMPLETEZZA_RIPIEGO = ['figurines', 'figurine', 'carte'];
+function _articoliCompletezza(s) {
+  const d = (s && Array.isArray(s.articoliCompletezza)) ? s.articoliCompletezza.filter(k => !!k) : [];
+  return d.length ? d : ARTICOLI_COMPLETEZZA_RIPIEGO;
+}
+// ⚠️ `s` e' la SERIE dell'articolo, non una serie qualsiasi: chi chiama deve passarla, o la
+// domanda torna a essere globale ed e' come non aver fatto niente.
+function _contaPerCompletezza(f, s) { return _articoliCompletezza(s).includes(f.section || 'figurines'); }
 function renderWantlist() {
   if (!currentUser) { showPage('home'); return; }
   const el = document.getElementById('wantlist-content');
@@ -56902,22 +57040,13 @@ function renderWantlist() {
   // le variazioni/change sono incluse nell'export solo se l'utente attiva l'opzione dedicata
   const isBaseItem = isBaseFigurine;
 
-// 🆕 v6.296 - GLI ARTICOLI CHE CONTANO PER LA "SERIE COMPLETA": figurine e carte insieme.
-// 📌 Non e' un elenco scritto qui: e' una domanda a `ARTICOLI`. Quei due hanno lo stesso `pos`,
-// e quel pari merito e' una decisione di Franco della v6.224 — *"una serie ha le carte o ha le
-// figurine"*. Sono alternativi, quindi la completezza li guarda insieme e non tira dentro album e
-// bustine, che sono un'altra cosa.
-// ⚠️ Un ottavo articolo dichiarato con lo stesso `pos` entrerebbe qui da solo, ed e' voluto: vorrebbe
-// dire che qualcuno l'ha dichiarato alternativo alle figurine.
-const _ARTICOLI_COMPLETEZZA = Object.keys(ARTICOLI).filter(k => ARTICOLI[k].pos === ARTICOLI.figurines.pos);
-const _contaPerCompletezza = f => _ARTICOLI_COMPLETEZZA.includes(f.section || 'figurines');
   const missing = allFigs.filter(f => !owned.includes(f.id) && isBaseItem(f));
   const series = getData('series', []);
 
   // Series where user has everything (or has items but none missing)
   const completeSeries = series.slice().sort((a,b) => (a.order ?? 9999) - (b.order ?? 9999)).filter(s => {
     // v6.296 - figurine E carte: vedi `_ARTICOLI_COMPLETEZZA`.
-    const seriesFigs = allFigs.filter(f => f.seriesId === s.id && _contaPerCompletezza(f) && isBaseItem(f));
+    const seriesFigs = allFigs.filter(f => f.seriesId === s.id && _contaPerCompletezza(f, s) && isBaseItem(f));
     const missingInSeries = seriesFigs.filter(f => !owned.includes(f.id));
     if (!seriesFigs.length) return false;
     return missingInSeries.length === 0;
@@ -57382,9 +57511,12 @@ async function exportOwnedList() {
   if (!currentUser) return;
   const allFigs = getData('figurines', []);
   const owned = getOwned();
-  // v6.296 - figurine E carte, come dice la voce 3 dell'elenco.
-  const ownedFigs = allFigs.filter(f => owned.includes(f.id) && _contaPerCompletezza(f) && isBaseFigurine(f));
+  // 🔄 v6.716 - non piu' "figurine e carte" per tutti: ognuno chiede alla SUA serie.
+  // ⚠️ `series` sale di una riga perche' adesso serve PRIMA: era sotto, e messo sotto
+  //    darebbe un `series` non ancora definito - l'errore che questa release chiude altrove.
   const series = getData('series', []);
+  const ownedFigs = allFigs.filter(f => owned.includes(f.id)
+    && _contaPerCompletezza(f, series.find(x => x.id === f.seriesId)) && isBaseFigurine(f));
   // 🗑️ v6.285 - qui c'era una mappa `sectionLabels` scritta a mano, con CINQUE articoli su
   // sette: `carte` e `attaccare` cadevano sul ripiego e uscivano dal file chiamati "Figurina".
   // Adesso l'etichetta la da' `_etichettaArticoloSing()`, che legge `ARTICOLI`.

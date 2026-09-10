@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.712"></script>
-<link rel="stylesheet" href="css/style.css?v=6.712">
+<script src="js/email.min.js?v=6.716"></script>
+<link rel="stylesheet" href="css/style.css?v=6.716">
 
 
 <style>
@@ -1143,7 +1143,7 @@ button.back-btn { color:#ffffff; }
         <span style="font-size:0.72rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent3);font-weight:700;" data-i18n="catalog.browseby">Browse by</span>
         <div style="display:inline-flex;background:var(--bg2);border:1px solid var(--border2);border-radius:999px;padding:4px;gap:4px;">
           <button type="button" id="taglio-serie" onclick="impostaTaglioInventario('serie')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:#ffffff;background:var(--action);border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byseries">Series</button>
-          <button type="button" id="taglio-prodotti" onclick="impostaTaglioInventario('prodotti')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byproducts">Products</button>
+          <button type="button" id="taglio-prodotti" onclick="impostaTaglioInventario('prodotti')" style="font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text);background:transparent;border:none;padding:0.55rem 1.5rem;border-radius:999px;cursor:pointer;letter-spacing:0.3px;" data-i18n="catalog.byproducts">Item types</button>
         </div>
         <!-- v6.174 (Franco) - IL RIEPILOGO DELLE SERIE, per tutti e non solo per l'admin.
              `margin-left:auto` lo spinge in fondo a destra della riga senza aggiungere contenitori.
@@ -2978,6 +2978,17 @@ di tutte le serie</button>
           <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin-bottom:0.5rem;color:var(--warn);">Articoli non in questa serie</div>
           <div id="series-articoli-nascosti" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
           <div class="form-hint" style="margin-top:0.3rem;">Il box sparisce dall'hub della serie. Nasconde la porta, non la stanza: gli oggetti restano nei dati.</div>
+          <!-- 🆕 v6.716 - L'ELENCO POSITIVO, e sta QUI perche' la domanda e' la sorella di
+               quella sopra: la prima dice quali tipologie la serie NON ha, questa quali la
+               FANNO. In due schede diverse avrebbe costretto ad andare avanti e indietro per
+               rispondere a due domande sulla stessa manciata di caselle.
+               📌 IL VERDE E' `--success`, lo stesso della spunta «serie completa» nella
+               wantlist: e' il colore con cui il sito dice gia' "completa". Il giallo qui sopra
+               dice "attenzione, questa roba non c'e'"; un secondo giallo avrebbe fatto sembrare
+               le due liste la stessa cosa scritta due volte. -->
+          <div class="form-label" style="font-family:var(--font-ui);font-size:0.78rem;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin:0.9rem 0 0.5rem;color:var(--success);">Servono per la serie completa</div>
+          <div id="series-articoli-completezza" style="display:flex;flex-direction:column;gap:0.3rem;"></div>
+          <div class="form-hint" style="margin-top:0.3rem;">La serie e' completa quando hai tutti gli articoli base di QUESTE tipologie. Se non ne scegli nessuna vale il ripiego di sempre: Figurine con retro, Figurine, Carte.</div>
         </div>
         <!-- DESTRA -->
         <div style="display:flex;flex-direction:column;gap:0.5rem;">
@@ -3943,7 +3954,7 @@ di tutte le serie</button>
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.712"></script>
+<script src="js/app.js?v=6.716"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3967,7 +3978,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.712'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.716'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
