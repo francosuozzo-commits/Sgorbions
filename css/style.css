@@ -195,8 +195,16 @@ body {
 .nav-logo span { color: var(--accent2); }
 .nav-brand { display: flex; flex-direction: column; justify-content: center; flex-shrink: 0; margin-right: 1.5rem; }
 .nav-links { display: flex; gap: 0.25rem; align-items: center; }
+/* 🔄 v6.704 (Franco: «usiamo la b)», dopo tre prove iniettate nel sito vero) — LE VOCI
+   DELLA NAVBAR SONO BIANCHE A RIPOSO. Erano `--muted`, che non e' un grigio: e' #8b7aaa, un
+   viola smorto, e su una voce di menu legge come «disattivata» invece che «secondaria».
+   🔴 LA VOCE ATTIVA RESTA LIME, ed e' la meta' che conta: e' l'unica cosa a schermo che
+   dice DOVE SEI. La variante scartata la faceva bianca come le altre — piu' pulita e piu' muta.
+   📌 E il panino del telefono eredita da qui: la sua regola (in fondo al file, dentro la
+   media query degli 860px) tocca corpo, spaziatura e bordo ma NON il colore. Chi ci scrivesse
+   dentro un `color` creerebbe la seconda copia. */
 .nav-links a {
-  color: var(--muted); text-decoration: none;
+  color: var(--text); text-decoration: none;
   font-family: var(--font-ui); font-size: 1.05rem;
   padding: 0.4rem 0.9rem; border-radius: 8px;
   transition: all 0.2s; cursor: pointer;
@@ -1568,6 +1576,72 @@ footer {
    solo a fine riga). Su mobile restano impilate, vedi sezione mobile. */
 @media (min-width: 861px) {
   .fig-actions { justify-content: flex-end; }
+}
+
+/* 🆕 v6.705 (Franco: «nella home possiamo ridurre del 10% tutto quanto? con lo zoom del
+   browser al 90% vedo meglio che al 100%») — LA HOME, SUL COMPUTER, STA AL 90%.
+   🔴 COSA VEDE MEGLIO, MISURATO: nella sua finestra alta 695px il fondo della card del
+   carosello stava a 763px, cioe' 68px sotto la piega — e a restare tagliate erano le QUATTRO
+   RIGHE DI TESTO della card (serie, numero, nome, rarita'), non un margine. Il 10% di quella
+   pila fa ~76px: il conto torna.
+   ⚠️ IL COSTO, ACCETTATO DA FRANCO CON LE ALTERNATIVE DAVANTI: il sito ha DUE SCALE. Qui il
+   testo e' al 90%, altrove al 100%, e uscendo dalla home la stessa parola torna piu' grande.
+   Non e' una svista. L'alternativa scartata era accorciare la testata di ~70px senza toccare
+   nessuna dimensione.
+   🔴 E `zoom` NON E' UNA SCORCIATOIA, E' L'UNICA CHE FUNZIONA: `font-size: 90%` muove solo
+   cio' che e' in rem/em, e questa pagina e' fatta di PIXEL — l'altezza della foto del
+   carosello e' `CAROSELLO_ALTEZZA = 185` scritta in app.js, e l'index e' pieno di stili inline
+   in px (§5). Con `font-size` la card che sborda non si sarebbe mossa di un pixel.
+   📌 Un browser che non conoscesse `zoom` mostra la home al 100%, cioe' com'era: si guasta
+   bene. Ed e' verificato che dentro #page-home non c'e' nessun elemento fixed o sticky e
+   nessuna modale — l'unica cosa che `zoom` maltratta davvero.
+   ⚠️ SOLO SOPRA GLI 860px, scelta di Franco: sul telefono la home e' gia' stretta. La soglia e'
+   quella dell'hamburger, e la regola sta QUI, nella zona desktop, non in fondo al file. */
+@media (min-width: 861px) {
+  #page-home { zoom: 0.9; }
+}
+
+/* 🆕 v6.708 (Franco: «il testo mettilo su due righe») — IL PULSANTE DEL RIEPILOGO VA A CAPO
+   DOVE LO DICE LA STRINGA TRADOTTA, non dove capita.
+   🔴 NON un `<br>`: quel pulsante ha `data-i18n`, e `applyI18n()` scrive `textContent`, che
+   cancella il markup — il `<br>` sparirebbe al primo cambio lingua (§5).
+   🔴 E NON un `max-width`: quello manda a capo dove capita, secondo il font consegnato, la
+   lingua e lo zoom, e il punto di rottura non lo sceglie nessuno.
+   📌 `pre-line` fa valere l'a capo scritto DENTRO la stringa: e' testo, quindi sopravvive a
+   `textContent`, e ogni lingua sceglie il suo punto senza che il CSS ne sappia niente.
+   📌 Misurato sul sito vero prima di scrivere: da 274x34 a 238x53. */
+#btn-info-tutte-serie { white-space: pre-line; }
+
+/* 🆕 v6.710 (Franco: «rendi la altezza del tasto Aggiungi serie come quella del tasto
+   Mostra informazioni sommarie...») — I PULSANTI DELLA TESTATA INVENTARIO SONO ALTI UGUALI.
+   📌 MISURATA, NON INDOVINATA, e nell'ordine giusto: prima la v6.708 manda il testo su due
+   righe, poi si misura. Sul sito vero: 52,80px, che a 16px di radice fanno 3,3rem esatti.
+   «Aggiungi serie» ne misurava 48,80 - mancavano quattro pixel.
+   🔴 IN `rem` E NON IN `px`: in px l'altezza resterebbe ferma se cambiasse il corpo del
+   testo, e i due pulsanti tornerebbero diversi senza che nessuno tocchi niente.
+   🔴 E IL NUMERO STA IN UN POSTO SOLO: scriverlo una volta per pulsante sarebbe la solita
+   coppia destinata a divergere. E' la medicina della v6.373.
+   ⚠️ I PULSANTI SONO TRE: «+ Aggiungi Serie» e «+ Aggiungi tipo di articolo» sono gemelli
+   dichiarati (v6.144) - stessa posizione, mai insieme, uno per taglio. Allinearne uno solo
+   avrebbe fatto saltare l'altezza della testata passando da un taglio all'altro.
+   📌 `min-height` e non `height`: un testo che prendesse tre righe cresce invece di essere
+   tagliato. E `inline-flex` perche' con un'altezza minima il testo di un pulsante non si
+   centra da solo in tutti i browser. */
+/* 🔄 v6.712 (Franco: «il tasto Mostra informazioni sommarie fallo alto come il selettore
+   SFOGLIA PER») — IL METRO CAMBIA, ED E' UNA CORREZIONE DELLA v6.710.
+   🔴 Alla v6.710 avevo preso come riferimento il tasto del riepilogo (52,80px, l'altezza
+   che gli veniva col testo su due righe) e ci avevo tirato dietro «Aggiungi serie». Il metro
+   buono e' il selettore «Sfoglia per»: 48,80px — e «Aggiungi serie» li aveva gia'.
+   📌 Misurato, non dedotto: il gruppo «Sfoglia per» e' 4px di padding piu' 0,8 di bordo per
+   lato attorno a una pillola da 39,2 = 48,80px, cioe' 3,05rem esatti a 16px di radice.
+   ⚠️ Franco aveva ragione anche prima: «Aggiungi serie e' alto come prima» — erano quattro
+   pixel, invisibili. Alzavo il pulsante sbagliato. */
+:root { --h-testata-inventario: 3.05rem; }
+#btn-info-tutte-serie,
+#admin-add-series-btn .btn-primary,
+#admin-add-tipo-prodotto-btn .btn-primary {
+  min-height: var(--h-testata-inventario);
+  display: inline-flex; align-items: center; justify-content: center;
 }
 
 /* ============================================================
