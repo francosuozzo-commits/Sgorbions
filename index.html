@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.700"></script>
-<link rel="stylesheet" href="css/style.css?v=6.700">
+<script src="js/email.min.js?v=6.712"></script>
+<link rel="stylesheet" href="css/style.css?v=6.712">
 
 
 <style>
@@ -1108,7 +1108,15 @@ button.back-btn { color:#ffffff; }
 <div id="page-catalog" class="page">
   <section class="section">
     <div class="section-inner">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem;">
+      <!-- 🔄 v6.709 (Franco: «tirali su sino a stare sotto al titolo») - L'ARIA SOTTO IL
+           TITOLO PASSA DA 2rem A 0.5rem. Non e' un trasloco: «Sfoglia per» sta GIA' subito
+           sotto nel DOM, e quello che le separava erano 32px di margine.
+           📌 Misurato nella finestra di Franco: il titolo finisce a 144, la riga cominciava
+           a 177 e adesso comincia a 153. Il valore non e' indovinato: si e' guardato dove
+           finisce il titolo.
+           ⚠️ Si tocca QUESTA riga, non quella di «Sfoglia per»: il suo `margin-bottom: 1rem`
+           la stacca dalla ricerca, e con questa richiesta non c'entra. -->
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:0.5rem;">
         <div style="display:flex;align-items:baseline;gap:0.6rem;flex-wrap:wrap;">
           <h1 style="font-family:var(--font-display);font-size:2.2rem;" data-i18n="catalog.title">The Inventory</h1>
           <p id="catalog-sub" style="color:var(--muted);font-size:0.9rem;" data-i18n="catalog.sub">All Sgorbions series published</p>
@@ -1150,7 +1158,8 @@ button.back-btn { color:#ffffff; }
              l'altro, ed e' lo stesso errore della v6.164 - lo stile si COPIA, non si riscrive
              "simile". Dalla classe si prende il COLORE; restano in linea solo taglia e raggio, per
              stare nella riga insieme alle due pillole. -->
-        <button type="button" id="btn-info-tutte-serie" class="btn-primary" onclick="apriInfoTutteLeSerie()" style="margin-left:auto;font-size:0.85rem;padding:0.5rem 1.2rem;border-radius:999px;letter-spacing:0.3px;" data-i18n="catalog.allSeriesInfo">Mostra informazioni di tutte le serie</button>
+        <button type="button" id="btn-info-tutte-serie" class="btn-primary" onclick="apriInfoTutteLeSerie()" style="margin-left:auto;font-size:0.85rem;padding:0 1.2rem;border-radius:999px;letter-spacing:0.3px;" data-i18n="catalog.allSeriesInfo">Mostra informazioni sommarie
+di tutte le serie</button>
       </div>
       <div class="search-bar">
         <div class="search-input-wrap">
@@ -3934,7 +3943,7 @@ button.back-btn { color:#ffffff; }
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.700"></script>
+<script src="js/app.js?v=6.712"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3958,7 +3967,7 @@ button.back-btn { color:#ffffff; }
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.700'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.712'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
