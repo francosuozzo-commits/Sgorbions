@@ -1,6 +1,192 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.728 — 💾 «SALVA E NEXT» sulla scheda di un articolo. Franco: «deve salvare e passare al
+//          prossimo articolo; ha senso solo quando ci sono le frecce dx-sx in alto, quando non ci
+//          sono non farlo vedere».
+//          🔴 LA CONDIZIONE E' LA STESSA DELLE FRECCE, non una sua copia: `_navIdsCorrenti` e
+//          l'indice dentro quell'elenco. Riscrivere «se siamo in una griglia» avrebbe messo due
+//          regole a decidere la stessa cosa, e il tasto sarebbe potuto comparire dove la freccia
+//          non c'e' - promettendo un «next» che non porta da nessuna parte.
+//          📌 E SULL'ULTIMO SI SPEGNE, come la freccia: salverebbe e basta, cioe' farebbe il
+//          mestiere di un altro tasto sotto un altro nome.
+//          🔄 Il salvataggio e' lo STESSO (`saveFigFromDetail`), con un'opzione in piu': `next`
+//          implica `resta` e poi chiama `navigateFigDetail(1)`. Chiudere e riaprire sarebbe stato
+//          un lampeggio, e avrebbe perso la pila del «da dove sei arrivato» (v6.524).
+//          ⚠️ Il nome resta inglese anche in italiano, per scelta di Franco: e' l'unica etichetta
+//          del sito che non si traduce, e sta scritto nel codice perche' senza sembrerebbe una
+//          dimenticanza. Modificato js/app.js.
+//
+// v6.727 — 🔎 L'HUB E' LARGO QUANTO IL CAROSELLO DELLA HOME **A SCHERMO**, e la differenza
+//          stava in un posto che il sorgente non mostra: `zoom: 0.9` su `#page-home` (v6.705).
+//          🔴 Per tre release ho risposto a Franco leggendo il CSS - «stessa regola, stessa
+//          larghezza» - e ogni volta lui vedeva il contrario. Misurato nel browser sul sito vero,
+//          finestra da 2554px: carosello della home **1620**, hub con la stessa dichiarazione
+//          **1800**. Dentro uno zoom 0.9 una regola che chiede 1800 ne mostra 1620.
+//          📌 LA LEZIONE, ed e' la stessa del 31 agosto in grande: la misura era giusta e
+//          rispondeva a un'altra domanda. «Stessa regola» non vuol dire «stessa larghezza»
+//          quando i due elementi stanno in contesti di zoom diversi - e questo non lo dice
+//          nessun grep, nessun banco e nessuna prova sul foglio: lo dice il browser.
+//          ⚠️ E i due caroselli non sono uguali fra loro: quello della scheda serie sta fuori
+//          dallo zoom e fa 1800. Franco li aveva nominati tutti e due; si segue la home, che e'
+//          quella che stava guardando. Modificato css/style.css.
+//
+// v6.726 — 📏 L'HUB E IL CAROSELLO DELLA HOME COMINCIANO NELLO STESSO PUNTO. Franco: «sei
+//          andato oltre la larghezza del carosello della home».
+//          🔴 E I CONTENITORI ERANO GIA' UGUALI: misurati su un banco col foglio vero, stessi
+//          bordi al pixel a 1440 e a 1920. La differenza stava nel CONTENUTO - la fila del
+//          carosello ha 0.4rem di padding per lato (v6.061), quindi le sue card cominciano 6,4px
+//          dentro il bordo, e la griglia invece ci arrivava. Tredici pixel fra le due file.
+//          📌 Trovato guardando, non ragionando: la prima risposta - «e' la stessa regola,
+//          quindi e' la stessa larghezza» - era vera e non spiegava cio' che si vede.
+//          Modificato css/style.css.
+//
+// v6.725 — 🔳 L'HUB SI ALLARGA QUANTO IL CAROSELLO, e le foto tornano grandi. Franco, dopo
+//          aver visto la v6.724: «rimetti le dimensioni di prima allargando il box contenitore
+//          … fallo largo quanto quello del carosello della pagina serie».
+//          🔴 IL DIFETTO DELLA v6.724 NON ERA IL NUMERO DI COLONNE: era che nessuno aveva
+//          detto cosa succedeva alle foto. Quattro colonne in un contenitore da 1100px fanno
+//          card da 257px invece di 351, cioe' foto piu' piccole del 27% - misurato DOPO, su
+//          domanda di Franco, e andava misurato PRIMA di scrivere la release.
+//          ✅ Con la larghezza del carosello (`min(1800px, calc(100vw - 4rem))`) le card fanno
+//          326 a 1440 e 432 dai 1800 in su: come prima, o piu' grandi.
+//          📌 E LA RICETTA NON E' STATA COPIATA: il selettore della regola del carosello ne
+//          prende due. La v6.460 aveva gia' lasciato scritto che una copia «resta indietro in
+//          silenzio» - questa sarebbe stata la terza. Modificato css/style.css.
+//
+// v6.724 — 🔳 QUATTRO CARD PER RIGA SUL DESKTOP, nell'hub delle serie E in quello delle
+//          tipologie. Franco: «si potrebbe provare … 4 card per riga? solo desktop».
+//          🔴 UNA RIGA SOLA PER TUTTI E DUE GLI HUB, e vale la pena saperlo: le card delle
+//          tipologie usano la STESSA griglia delle serie (`#catalog-grid`) dalla v6.080. Chi
+//          cercasse due regole da cambiare non troverebbe la seconda.
+//          📌 Il telefono non cambia: sotto gli 860px la media query rimette tre colonne, ed
+//          e' piu' specifica perche' arriva dopo. Quattro card su 375px sarebbero larghe 80
+//          pixel. Le colonne restano monotone scendendo - 4, poi 3 - che e' quello che la
+//          v5.837 aveva chiesto: il difetto era il ballo 3-2-3, non il numero.
+//          Modificato css/style.css.
+//
+// v6.723 — 🎞️ NEL CAROSELLO LA RIGA DEL GRUPPO DICE ANCHE LA TIPOLOGIA: «Spille Grandi»,
+//          «Figurine Metal». Franco, guardando la preview: «metti davanti SPILLE».
+//          📌 Composizione e funzione sono quelle della v6.693 e della v6.719
+//          (`getSectionLabel`): quattro punti del sito compongono quel nome, e lo compongono
+//          tutti allo stesso modo e dalla stessa fonte.
+//          ⚠️ Il nome della tipologia esce come lo scrive il descrittore - «Spille», non
+//          «SPILLE»: il maiuscolo nel messaggio era una citazione, e forzarlo qui avrebbe
+//          creato l'unica etichetta urlata del carosello. Se lo vuole, e' una riga.
+//          Modificato js/app.js.
+//
+// v6.722 — 🎞️ IL CAROSELLO A QUATTRO RIGHE: NASCE LA RIGA DELLA SOTTOSERIE. Era il primo
+//          punto aperto del 10 settembre, e l'11 Franco ha segnalato che a schermo non c'era:
+//          «abbiamo detto che sotto Serie va sempre esposta la Sottoserie (riga vuota se non
+//          presente)».
+//          🔴 LA RIGA NON DIPENDE DA `mostraSerie`, ed e' la meta' che si sarebbe persa
+//          scrivendola dentro `rigaSerie`: nella scheda di una serie la riga della SERIE
+//          sparisce (v6.081, ripeterebbe il titolo della pagina) ma la sottoserie no - anzi li'
+//          e' l'unica cosa che distingue una card dall'altra. Franco: «anche i caroselli delle
+//          pagine delle serie devono mostrare la sottoserie; la serie no, essendo ovvia».
+//          📌 E LA RIGA RESTA ANCHE VUOTA: un carosello e' polimorfico, e una riga che
+//          compare solo su alcune card farebbe ballare l'altezza mentre si scorre.
+//          🔄 E LA STELLA NON E' LA QUINTA RIGA: «la stella mettila in fondo a dx della
+//          quarta riga; niente quinta riga». Da oggi una riga puo' avere una CODA a destra, e
+//          la stella e' la coda del nome - allineata in basso, perche' quella riga e' alta due
+//          righe e una coda centrata galleggerebbe a mezz'aria.
+//          ✅ Sui RETRO su telefono la fusione toglie una riga: e' proprio cio' che cercava la
+//          v6.080 («il box si allungava tantissimo in verticale»).
+//          ⚠️ SU TELEFONO LA SOTTOSERIE NON SI AGGIUNGE, ed e' una scelta: alla v6.080 Franco
+//          aveva fatto TOGLIERE righe da quelle card per quel motivo, e rimetterne una senza
+//          che l'abbia chiesto ribalterebbe una sua decisione in silenzio. Modificato js/app.js.
+//
+// v6.721 — 🖼️ LA TESTATA DICE DOVE SEI ANCHE DENTRO UNA TIPOLOGIA. Franco: «possiamo fare
+//          la stessa cosa con le card delle tipologie di articolo? foto in alto, titolo sopra,
+//          e foto serie in basso a dx».
+//          🔴 Non e' un secondo caso: e' lo STESSO, con un'altra sorgente per la foto. La
+//          domanda che la funzione fa e' una sola - «sono dentro qualcosa?» - e le due foto
+//          arrivano dalle stesse funzioni che riempiono le card da cui si e' entrati
+//          (`_fotoSottoserie` v6.684, `_fotoSezioneSerie` v6.686). Due rami separati sarebbero
+//          state due funzioni che vestono la stessa testata.
+//          🔄 `_vestiTestataPerSottoserie` -> `_vestiTestataPerSezione`: il nome diceva un
+//          caso su due.
+//          📌 E IL «SET PRINCIPALE» HA UNA RISPOSTA: entrandoci, fino a ieri la testata
+//          restava quella della serie (li' la sottoserie e' la stringa vuota). Adesso mostra la
+//          tipologia, che e' cio' che si sta guardando. Modificato js/app.js.
+//
+// v6.720 — 🖼️ LA FOTO DELLA SOTTOSERIE IN TESTATA NON E' PIU' TAGLIATA. Franco: «la foto
+//          della sottoserie presente nella sezione alta della pagina della serie la hai messa
+//          ma e' tagliata».
+//          🔴 La copertina ritaglia (`object-fit: cover`) perche' e' nata per la foto di una
+//          SERIE, che e' scelta per stare in quel riquadro. La foto di una sottoserie e'
+//          invece la stessa che si vede sulla sua card nell'hub, dove il sito la mostra
+//          INTERA (`background-size: contain`): la stessa immagine si vedeva in due modi a un
+//          clic di distanza, e quello dopo il clic era tagliato.
+//          📌 Una classe, non uno stile scritto sull'elemento: si accende vestendo la
+//          testata e si spegne svestendola, con lo stesso gesto che rimette la copertina
+//          della serie - che il ritaglio lo vuole ancora. Modificato js/app.js, css/style.css.
+//
+// v6.719 — 🖼️ LA TESTATA DICE DOVE SEI: la foto della SOTTOSERIE prende il posto grande.
+//          Franco: «dai piu' enfasi alla foto della sottoserie, che metterei dove ora c'e' la
+//          foto della serie; sotto al titolo della serie metterei, piu' piccolo, quello della
+//          sottoserie, e la foto della serie la lascerei a margine e dx e piu' piccola».
+//          🔴 Una funzione sola veste tutti e tre i pezzi (foto grande, sottotitolo,
+//          fotina): scritti da tre punti, basterebbe che uno non venisse chiamato per avere
+//          la foto di un gruppo col nome di un altro - una testata che si contraddice da sola.
+//          🔄 E REVOCA META' DELLA v6.718, scritta mezz'ora prima: il titolo della sezione
+//          torna a dire la sola tipologia. La composizione «Figurine Metal» adesso sta nella
+//          testata, dove Franco l'ha voluta; lasciarla in tutti e due i posti l'avrebbe scritta
+//          due volte a due centimetri. La v6.718 non e' sprecata: e' servita a far vedere che
+//          quell'informazione mancava.
+//          📌 NIENTE RIPIEGO sulla foto grande: una sottoserie senza foto mostra il
+//          riquadro vuoto, com'e' per le tipologie dalla v6.686 - un ripiego direbbe «questa
+//          sottoserie ha una foto», che e' falso. Qui costa poco: la foto della serie resta
+//          comunque a destra.
+//          ⚠️ SU TELEFONO LA FOTINA NON SI MOSTRA, dichiarato nel CSS con la ragione: provata
+//          in tre piazzamenti su quattro larghezze, a 375px non si disegna. Su telefono
+//          restano il nome della sottoserie e la sua foto grande.
+//          Modificato js/app.js, index.html, css/style.css.
+//
+// v6.718 — 🗑️ VIA I TAB DELLE SOTTOSERIE: LA SCELTA SI FA IN UN POSTO SOLO.
+//          E' il PASSO 4 del piano delle sottoserie, deciso il 9 settembre e rimasto in coda
+//          tre giorni. Dalla v6.682 il punto d'ingresso di una sottoserie sono le CARD
+//          dell'hub; i tab dentro la sezione facevano la stessa cosa in un secondo modo.
+//          🔴 Franco, l'11 settembre: «non deve rimanere traccia alcuna del fatto che una
+//          volta usavamo i tab». Quindi non e' stata spenta la barra: se ne sono andati la
+//          funzione, il gestore del clic, il nodo nell'index, sei regole CSS e l'opzione
+//          `skipSottoserie`, che nessun altro chiedeva.
+//          ✅ E IL TITOLO DELLA SEZIONE ADESSO NOMINA LA SOTTOSERIE («Figurine Metal»), con
+//          la composizione della v6.693: il tab acceso era l'unica cosa a schermo che diceva
+//          in quale gruppo sei, e toglierlo senza rimpiazzarlo avrebbe tolto un'informazione.
+//          ⚠️ SI PERDE UNA COSA, ed e' scritto dove stava: il conteggio accanto a ogni tab
+//          diceva «quanti ne troverei di la' CON I FILTRI CHE HO ADESSO». Le card contano
+//          tutto, sempre. Quella domanda oggi non ha piu' risposta: perdita nota, non svista.
+//          🔴 LA RETE DELLA v6.651 RESTA e diventa una funzione sua
+//          (`_verificaSottoserieAttiva`): se il gruppo in cui sei non esiste piu', si torna
+//          al primo invece di mostrare una griglia vuota senza spiegazione. Stava dentro un
+//          disegno, ed era l'unica parte di quel blocco che disegno non era.
+//          Modificato js/app.js, index.html, css/style.css.
+//
+// v6.717 — 🗑️ VIA `pos`: L'ORDINE DELLE TIPOLOGIE LO DICONO I DATI, E BASTA.
+//          Franco: «ha pure dei valori duplicati; come puo' ordinare un campo di ordinamento
+//          che ha valori duplicati?» e, il giorno dopo, «non voglio niente a codice».
+//          Il campo aveva tre volte il valore 1 e non aveva ne' 11 ne' 12: non era lui a fare
+//          l'ordine che si vede: quello vive in `settings/articoli`, campo `ordine`.
+//          🔴 Il piano scritto diceva di sostituirlo con un campo `ordine` coi numeri della
+//          colonna N. Non si e' fatto, ed e' la decisione della release: sarebbe stato lo
+//          stesso difetto con un nome nuovo - un secondo ordine, nel codice, che dopo una
+//          freccia della console dice una cosa diversa dai dati senza dare nessun errore.
+//          ✅ Al suo posto l'ordine di SCRITTURA del descrittore, che vale solo nei due
+//          momenti in cui i dati non hanno ancora parlato. Le dodici tipologie sono state
+//          riscritte una volta sola nell'ordine del 10 settembre.
+//          🔴 E I BADGE DELLE CARD DI SERIE SEGUONO L'ORDINE VERO: erano l'unico punto su
+//          quattordici che leggeva il seme invece di `PRODOTTI_INVENTARIO`, e gia' oggi
+//          mostravano una fila diversa da quella dell'hub. Franco: «il N.».
+//          🆕 La colonna N. rimette l'ordine naturale (revoca meta' della v6.713: era muta
+//          perche' bastava cliccare `Pos.`, e `Pos.` non c'e' piu').
+//          Modificato js/app.js, index.html.
+//
+// ⚠️ FRA LA v6.603 E LA v6.717 QUESTO CHANGELOG NON E' STATO SCRITTO - centotredici release.
+//    Non e' un buco di questa giornata e non lo si riempie a memoria: il racconto di quelle
+//    release vive nei commenti del codice e in `progetto-sgorbions.md`. E' scritto qui perche'
+//    un elenco che salta da 603 a 717 senza dirlo sembra un elenco completo.
+//
 // v6.603 — 🎨 `--danger` DICHIARATA IN UN POSTO SOLO, e a schermo non cambia niente.
 //          Franco: «il tasto elimina è rosa, non rosso». Il rosa e' il valore GIUSTO: dalla
 //          rotazione della tavolozza (v6.404) `--danger` ha ceduto #ff6464 all'errore di
@@ -25968,7 +26154,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.716';
+const JS_VERSION = 'v6.728';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -28549,6 +28735,34 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
   // v6.277 (Franco) - il nome della serie in BIANCO. Era `var(--accent)`, il verde lime, e in mezzo
   // al testo di un carosello era l'unico.
   const rigaSerie = dim => (mostraSerie === false ? [] : [{ t: serie, col: 'var(--text)', dim, alt: '1.2em' }]);
+  // 🆕 v6.722 (Franco, 10 settembre: «per gli articoli facenti parte di una sottoserie, scrivi il
+  //    nome della sottoserie sotto alla serie … quando un dato non c'e' lascia la riga vuota»;
+  //    e l'11: «anche i caroselli delle pagine delle serie devono mostrare la sottoserie; la
+  //    serie no, essendo ovvia, ma la sottoserie si») — LA RIGA DELLA SOTTOSERIE.
+  // 🔴 NON DIPENDE DA `mostraSerie`, ed e' la meta' della richiesta che si sarebbe persa
+  //    scrivendola dentro `rigaSerie`: nella scheda di una serie la riga della serie sparisce
+  //    (v6.081, ripeterebbe il titolo della pagina) ma la sottoserie NON e' ovvia - anzi li' e'
+  //    l'unica cosa che distingue una card dall'altra.
+  // 📌 LA RIGA RESTA ANCHE VUOTA, ed e' la ragione per cui Franco l'ha chiesta cosi': un
+  //    carosello e' polimorfico, e una riga che compare solo su alcune card farebbe ballare
+  //    l'altezza mentre si scorre. Altezza fissa, come le altre.
+  // 🎨 Il giallo e' `COL_CATEGORIA`, lo stesso delle pillole delle sottoserie sulla card e nelle
+  //    numeriche (v6.671/6.674): la stessa cosa si mostra con lo stesso colore, o sono due cose.
+  // 🔄 v6.723 (Franco: «metti davanti SPILLE») - LA RIGA DICE ANCHE DI CHE TIPOLOGIA E' IL
+  //    GRUPPO: «Spille Grandi», «Figurine Metal». Da sola «Metal» non dice di cosa sia il
+  //    gruppo, e in un carosello - dove le card vengono da tipologie diverse - due gruppi con
+  //    lo stesso nome sotto tipologie diverse sarebbero indistinguibili.
+  // 📌 LA COMPOSIZIONE E' QUELLA DI FRANCO, v6.693 («per le figurine, scrivi Figurine Metal»),
+  //    ed e' la stessa delle card dell'hub e del titolo della testata (v6.719). Passa da
+  //    `getSectionLabel`, la stessa funzione: il giorno che una tipologia cambia nome, cambiano
+  //    tutti insieme. Scriverlo da un secondo posto sarebbe la copia che nessuno conta.
+  // ⚠️ SOLO SE IL GRUPPO C'E'. Senza, la riga resta VUOTA e non scrive la sola tipologia: quella
+  //    e' gia' scritta dove serve, e qui direbbe la stessa cosa su ogni card della fila.
+  const rigaSottoserie = dim => {
+    const g = String(f.subseries || '').trim();
+    return [{ t: g ? esc(getSectionLabel(f.section || 'figurines') + ' ' + g) : '',
+              col: COL_CATEGORIA, dim, alt: '1.2em' }];
+  };
   // v6.080 (Franco) - SU TELEFONO una riga sola: il nome. Era il testo, non la foto, a fare il "box
   // allungato tantissimo in verticale": quattro righe per le figurine e CINQUE per i retro, ognuna
   // con un'altezza fissa, fanno circa 6em di testo sotto una card larga sessanta pixel - piu' alto
@@ -28605,8 +28819,10 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
         // v6.281 (Franco) - l'arancione delle card. Qui la categoria era gia' 'auto', quindi andava
         // a capo da se': il troncamento che si vedeva era quello del ramo non-telefono.
         { t: esc(f.subcategory || ''), col: COL_SOTTOCAT,    dim: '0.64rem', alt: '1.2em' },
-        { t: esc(_etichettaR),         col: COL_IDENTITA,    dim: '0.7rem',  alt: 'auto' },
-        { t: _stellaRarita(f.score), col: 'var(--success)', dim: '0.66rem', alt: '1.2em', dx: 'right' }
+        // 🔄 v6.722 - anche qui la stella e' la coda del nome, non una riga sua: una riga in
+        //    meno su telefono e' proprio cio' che la v6.080 cercava.
+        { t: esc(_etichettaR), col: COL_IDENTITA, dim: '0.7rem', alt: 'auto',
+          coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.66rem' }
       ];
     }
     // Le figurine restano come deciso prima: serie, numero, e il nome parola per parola - li' sono
@@ -28621,22 +28837,27 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
   if ((f.section || '') === 'retros') {
     return [
       ...rigaSerie('0.66rem'),
+      ...rigaSottoserie('0.66rem'),   // v6.722
       // v6.279 (Franco) - come sopra, e per la stessa ragione.
       // v6.281 (Franco) - la categoria su DUE righe invece di una troncata: e' l'altezza a decidere
       // se una riga va a capo (vedi `_caroselloCard`), quindi si cambia quella. Fissa e non 'auto',
       // altrimenti una categoria lunga alzerebbe la sua card e sfalserebbe la fila.
       { t: esc(f.category || ''),    col: COL_CATEGORIA,    dim: '0.68rem', alt: '2.5em' },
       { t: esc(f.subcategory || ''), col: COL_SOTTOCAT,     dim: '0.68rem', alt: '1.2em' },
-      { t: esc(f.name || ''),        col: COL_IDENTITA,     dim: '0.74rem', alt: '2.5em' },
-      { t: _stellaRarita(f.score), col: 'var(--success)', dim: '0.7rem', alt: '1.2em', dx: 'right' }
+      { t: esc(f.name || ''), col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em',
+        coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }   // v6.722
     ];
   }
+  // 🔄 v6.722 - QUATTRO RIGHE, come le ha elencate Franco: serie, sottoserie, numero, nome. E la
+  //    stella non e' la quinta: *«la stella mettila in fondo a dx della quarta riga; niente
+  //    quinta riga»*. Viaggia come CODA della riga del nome, in basso a destra.
   return [
     ...rigaSerie('0.66rem'),
+    ...rigaSottoserie('0.66rem'),
     // v6.277 (Franco) - numero e nome in azzurro, come sulle card.
     { t: f.number ? esc(String(f.number)) : '', col: COL_IDENTITA,    dim: '0.7rem',  alt: '1.2em' }, // v6.080 - senza cancelletto
-    { t: esc(f.name || ''),                     col: COL_IDENTITA,    dim: '0.74rem', alt: '2.5em' },
-    { t: _stellaRarita(f.score), col: 'var(--success)', dim: '0.7rem', alt: '1.2em', dx: 'right' }
+    { t: esc(f.name || ''), col: COL_IDENTITA, dim: '0.74rem', alt: '2.5em',
+      coda: _stellaRarita(f.score), codaCol: 'var(--success)', codaDim: '0.7rem' }
   ];
 }
 
@@ -28702,13 +28923,27 @@ function _caroselloCard(f, nomeSerie, altezzaFoto, larghezza, mostraSerie, figs)
   // v6.080 - alt 'auto' vuol dire "niente altezza fissa": serve alle righe che possono essere una o
   // tre (il nome spezzato parola per parola su telefono). Le altre continuano ad avere la loro
   // misura, che e' cio' che tiene allineate le card fra loro sul desktop.
-  const righe = _caroselloRighe(f, nomeSerie, mostraSerie).map((r, i) =>
-    '<div style="font-size:' + r.dim + ';color:' + r.col + ';line-height:1.25;' + (r.alt === 'auto' ? '' : 'height:' + r.alt + ';overflow:hidden;') +
+  // 🆕 v6.722 - UNA RIGA PUO' AVERE UNA CODA A DESTRA (Franco: «la stella mettila in fondo a dx
+  //    della quarta riga; niente quinta riga»). La riga diventa un flex e la coda si allinea al
+  //    BASSO: «in fondo» sulla riga del nome, che e' alta due righe, vuol dire in basso - se
+  //    fosse centrata galleggerebbe a mezz'aria su una card e non sull'altra, secondo la
+  //    lunghezza del nome.
+  // 🔴 La coda NON si stringe (`flex:0 0 auto`) e il testo si', o un nome lungo mangerebbe la
+  //    stella invece di andare a capo: la cosa da troncare e' il nome, che continua nel titolo
+  //    del passaggio del mouse, non il punteggio, che sparirebbe e basta.
+  const righe = _caroselloRighe(f, nomeSerie, mostraSerie).map((r, i) => {
+    const base = 'font-size:' + r.dim + ';color:' + r.col + ';line-height:1.25;' +
+      (r.alt === 'auto' ? '' : 'height:' + r.alt + ';overflow:hidden;') +
       (i === 0 ? 'margin-top:0.4rem;' : '') +
       (r.alt === '1.2em' ? 'white-space:nowrap;text-overflow:ellipsis;' : '') +
-      (r.dx ? 'text-align:' + r.dx + ';' : '') +
-    '">' + (r.t || '&nbsp;') + '</div>'
-  ).join('');
+      (r.dx ? 'text-align:' + r.dx + ';' : '');
+    if (!r.coda) return '<div style="' + base + '">' + (r.t || '&nbsp;') + '</div>';
+    return '<div style="' + base + 'display:flex;align-items:flex-end;gap:0.35rem;">' +
+      '<span style="min-width:0;overflow:hidden;">' + (r.t || '&nbsp;') + '</span>' +
+      '<span style="margin-left:auto;flex:0 0 auto;color:' + (r.codaCol || r.col) + ';' +
+        'font-size:' + (r.codaDim || r.dim) + ';">' + r.coda + '</span>' +
+    '</div>';
+  }).join('');
   return '<div onclick="_caroselloApri(\'' + f.id + '\',\'' + f.seriesId + '\')" ' +
     'title="' + esc(etichetta) + '" ' +
     'style="flex:0 0 auto;width:' + larghezza + ';scroll-snap-align:start;cursor:pointer;background:var(--card2);border:1px solid var(--border);border-radius:var(--radius);padding:0.5rem;">' +
@@ -31416,7 +31651,7 @@ function _sottoserieUsate(s, articoli) {
   return usate.concat(orfane);
 }
 
-function _tabSottoserie() {
+function _sottoserieDellaSezione() {
   if (!currentSeriesId || !currentSection) return [];
   const s = getData('series', []).find(x => x.id === currentSeriesId);
   return _sottoserieUsate(s, getData('figurines', [])
@@ -32487,8 +32722,21 @@ function toggleSearchClearBtn(inputId) {
 // ------------------------------------------------------------
 // COSA VUOL DIRE OGNI CAMPO, e sono tutti fatti misurati sul codice del 17 agosto, non intenzioni:
 //
-//   pos           l'ordine dei box nel taglio Articoli. ⚠️ L'hub della serie ha le sue card
-//                 scritte a mano nell'index e va tenuto d'accordo con questa riga (v6.195).
+// 🔴 v6.717 - QUI C'ERA `pos`, "l'ordine dei box nel taglio Articoli", e NON E' STATO
+// SOSTITUITO DA UN ALTRO CAMPO. Franco: *"ha pure dei valori duplicati; come puo' ordinare un
+// campo di ordinamento che ha valori duplicati?"* e, il giorno dopo, *"non voglio niente a
+// codice"*.
+// ✅ L'ORDINE DELLE TIPOLOGIE E' UNO SOLO E VIVE NEI DATI: `settings/articoli`, campo `ordine`,
+// un elenco di nomi in fila che scrivono le frecce della console. Il "N." che si legge nella
+// tabella e' la POSIZIONE in quella fila, non un numero scritto da qualche parte.
+// 🔴 E QUI DENTRO L'ORDINE ADESSO E' QUELLO DI SCRITTURA: `Object.keys()` restituisce le
+// chiavi nell'ordine in cui sono state inserite, quindi **spostare una voce in questo file
+// cambia il sito**. Vale solo nei due momenti in cui i dati non hanno ancora parlato: il primo
+// istante del caricamento, e una tipologia nuova che l'elenco salvato non nomina (finisce in
+// coda, v6.283). Le dodici sono state riscritte una volta sola nell'ordine del 10 settembre.
+// ⚠️ Perche' non un campo `ordine` coi numeri del N., che era il piano scritto: sarebbe stato
+// lo stesso difetto con un nome nuovo. Un secondo ordine, nel codice, che il giorno che Franco
+// sposta una tipologia con le frecce dice una cosa diversa dai dati - e non da' nessun errore.
 //   numero        COSA SIGNIFICA il campo Numero per questo articolo. Tre valori, e non sono
 //                 sfumature - decidono se il campo si vede e se si eredita:
 //                   'inventario'  identifica il SOGGETTO: la #214, la sua variazione e il suo
@@ -32532,8 +32780,44 @@ function toggleSearchClearBtn(inputId) {
 // invece di stare nascosta dentro una condizione a tre rami.
 // ============================================================
 const ARTICOLI = {
+  // 🆕 v6.691 (Franco) - LE QUATTRO TIPOLOGIE NUOVE, e nascono tutte dalla stessa
+  //    misura: la serie Holidays teneva 187 articoli nella sezione «Figurine con retro», e
+  //    127 di quei 187 figurine non sono. Il campo «sottoserie» faceva da cassetto a quattro
+  //    oggetti diversi, che e' il mestiere di una TIPOLOGIA, non di una sottoserie.
+  //
+  // 🔴 «Figurine» E' LA NONA, ED E' LA PIU' DELICATA DELLE QUATTRO: si chiama come le
+  //    altre due, e la differenza sta in una parola. Franco: «sono figurine con velina ma la
+  //    velina e' insignificante; io le chiamerei semplicemente Figurine».
+  // 📌 E in INGLESE si prende «Stickers», che fino a ieri era il nome delle «da
+  //    attaccare» - le quali in questa stessa release diventano «Peel-off stickers». Le due
+  //    modifiche sono una cosa sola: separate, per una release il sito avrebbe avuto due
+  //    tipologie con lo stesso nome inglese, e nessuna delle due avrebbe detto niente.
+  //
+  // 🗑️ v6.717 - QUI C'ERA `pos: 1`, a pari merito con le carte e con le figurine con
+  //    retro. Il pari merito diceva *"sono ALTERNATIVE, non consecutive"*, ed era diventato -
+  //    alla v6.296 - la definizione di serie completa. La v6.716 quella definizione l'ha data
+  //    alla SERIE, con un campo suo; qui non restava che un numero doppio in un campo di
+  //    ordinamento. Il significato non e' andato perso: vive in `articoliCompletezza`.
+  // ⚠️ `ordina: 'campo'` e non 'codice', come le carte: il raggruppamento dei figli sotto
+  //    il capogruppo sta dentro un `if (currentSection === 'figurines')` scritto a mano, e
+  //    queste non ci passano. Il descrittore dice cio' che il codice fa.
+  // 📌 `numero: 'inventario'` come le figurine: una figurina il numero ce l'ha. Che
+  //    quelle di Holidays non l'abbiano lo dice gia' `noNumbers` sulla SERIE, ed e' li' che
+  //    va detto - non nel descrittore di una tipologia che varra' anche per altre serie.
+  figurine: {
+    riquadro: 1,
+    it: 'Figurine',   en: 'Stickers',
+    itSing: 'figurina', enSing: 'sticker',
+    genere: 'f',
+    icona: '&#128444;&#65039;',
+    colonne: { d: 7, m: 4 },
+    numero: 'inventario',
+    ordina: 'campo',
+    ordinaDove: 'number',
+    nomeCompleto: 'codice',
+    nomeCompletoDove: 'computeFullName'
+  },
   figurines: {
-    pos: 1,
     riquadro: 1,   // v6.654
     // 🔄 v6.481 (Franco) — «Figurine con velina» -> «Figurine con retro». L'inglese
     // l'ha scelto lui: «Stickers with backs». ⚠️ Il SINGOLARE dice `back`, non `backs`:
@@ -32563,58 +32847,7 @@ const ARTICOLI = {
     nomeCompleto: 'codice',
     nomeCompletoDove: 'computeFullName'       // rami variazione/change/errore/base
   },
-  // 🆕 v6.224 (Franco) — IL SETTIMO ARTICOLO: le CARTE. *"le carte sono come le figurine; hanno un
-  // retro che non va censito. per il resto sono come le figurine"*, e *"non ci saranno
-  // variazioni-change per le carte"*.
-  //
-  // 📌 `pos: 1` A PARI MERITO CON LE FIGURINE, ed e' la scelta di Franco: *"una serie ha le card o
-  // ha le figurine"*. Non e' un numero storto — dice una cosa vera che nessun altro campo diceva:
-  // i due articoli sono ALTERNATIVI, non consecutivi. A pari punteggio l'ordine lo decide l'ordine
-  // di dichiarazione (`Array.prototype.sort` e' stabile per specifica dal 2019), quindi le figurine
-  // restano prima: e' l'unica cosa da sapere se un giorno si sposta questa voce piu' in su nel
-  // file. L'alternativa era rinumerare gli altri cinque per far posto a un 2.
-  //
-  // ⚠️ `ordina: 'campo'` E NON 'codice', anche se "sono come le figurine". Il raggruppamento dei
-  // figli sotto il capogruppo (`_chiaviOrdinamentoFigurine`) e' dentro un `if (currentSection ===
-  // 'figurines')` scritto a mano: le carte non ci passano. E non e' un ripiego: senza variazioni
-  // ne' change non c'e' NIENTE da raggruppare, quindi ordinare per il campo `number` da' lo stesso
-  // ordine visibile. Il descrittore dice cio' che il codice fa - se un domani le carte avessero
-  // dei figli, questa riga sarebbe il posto dove si vede che non li ordina nessuno.
-  //
-  // 📌 IL RETRO NON SI CENSISCE, e infatti qui non c'e' nessun campo che lo dica: il descrittore
-  // non descrive i retro (ne' le taglie). Va bene cosi' finche' e' vero per costruzione - le carte
-  // semplicemente non avranno record nella sezione Retro. Se un giorno servisse dichiararlo, si
-  // aggiunge un campo e lo si misura su tutti e sette, non si scrive a memoria sui sei vecchi.
-  carte: {
-    pos: 1,
-    riquadro: 1,   // v6.654
-    it: 'Carte',   en: 'Cards',
-    itSing: 'carta', enSing: 'card',
-    genere: 'f',
-    icona: '&#127183;',
-    colonne: { d: 7, m: 4 },              // come le figurine
-    numero: 'inventario',                 // identifica il soggetto, come le figurine
-    ordina: 'campo',
-    ordinaDove: 'number',
-    nomeCompleto: 'codice',
-    nomeCompletoDove: 'computeFullName'
-  },
-  albums: {
-    pos: 2,
-    riquadro: 1,   // v6.654
-    it: 'Album',   en: 'Albums',
-    itSing: 'album', enSing: 'album',
-    genere: 'm',
-    icona: '&#128210;',
-    colonne: { d: 4, m: 3 },
-    numero: 'ordinamento',
-    ordina: 'campo',
-    ordinaDove: 'number',                 // v6.221 - diventera' `ordine` col passo 2 della scaletta
-    nomeCompleto: 'codice',
-    nomeCompletoDove: 'computeFullName'  // v6.221
-  },
   attaccare: {
-    pos: 3,
     riquadro: 1,   // v6.654
     // 🔄 v6.649 (Franco: «Figurine da attaccare -> Stickers») — L'INGLESE E' DECISO, e
     //    non e' piu' provvisorio: dalla v6.195 tre punti del file portavano scritto che
@@ -32645,39 +32878,42 @@ const ARTICOLI = {
     nomeCompleto: 'codice',
     nomeCompletoDove: 'computeFullName'  // v6.221
   },
-  retros: {
-    pos: 4,
-    // 📌 1.6 e' il valore che il codice applicava gia': era l'unico ramo
-    //    dichiarato dell'`if` che questa release ha tolto.
-    riquadro: 1.6,   // v6.654
-    // 🆕 v6.667 - «questo articolo ha un SOTTONOME?». Fino alla v6.666 la risposta era
-    //    scritta a mano in cinque punti come «section === 'retros'»; adesso e' un campo, come
-    //    «riquadro» e «colonne». Qui vale true perche' e' cio' che il sito faceva gia'.
-    sottonome: true,   // v6.667
-    it: 'Retro',   en: 'Retros',
-    itSing: 'retro', enSing: 'retro',
-    genere: 'm',
-    icona: '&#128257;',
-    colonne: { d: 5, m: 4 },
-    numero: 'nessuno',
-    ordina: 'codice',
-    ordinaDove: 'cmpVistaTabellare',     // categoria, sottocategoria, nome, tipo
-    nomeCompleto: 'retro',
-    nomeCompletoDove: '_retroFullName'  // v6.221
-  },
-  bustine: {
-    pos: 5,
+  // 🆕 v6.224 (Franco) — IL SETTIMO ARTICOLO: le CARTE. *"le carte sono come le figurine; hanno un
+  // retro che non va censito. per il resto sono come le figurine"*, e *"non ci saranno
+  // variazioni-change per le carte"*.
+  //
+  // 🗑️ v6.717 - QUI C'ERA `pos: 1` A PARI MERITO CON LE FIGURINE (v6.224, Franco: *"una
+  // serie ha le carte o ha le figurine"*). Era la scrittura piu' densa del descrittore - un
+  // campo di ordinamento che diceva ANCHE "questi due sono alternativi" - e per questo ha retto
+  // due anni. Poi la v6.296 ha letto quel doppio significato come "serie completa", che nessuno
+  // aveva deciso, e la v6.716 ha spostato la completezza sulla serie.
+  // 📌 LA LEZIONE, che vale oltre questo campo: un valore che dice due cose e' comodo finche'
+  // qualcuno non legge la seconda. Il pari merito adesso non e' nascosto in un numero - o e'
+  // scritto nel campo della serie, o non c'e'.
+  //
+  // ⚠️ `ordina: 'campo'` E NON 'codice', anche se "sono come le figurine". Il raggruppamento dei
+  // figli sotto il capogruppo (`_chiaviOrdinamentoFigurine`) e' dentro un `if (currentSection ===
+  // 'figurines')` scritto a mano: le carte non ci passano. E non e' un ripiego: senza variazioni
+  // ne' change non c'e' NIENTE da raggruppare, quindi ordinare per il campo `number` da' lo stesso
+  // ordine visibile. Il descrittore dice cio' che il codice fa - se un domani le carte avessero
+  // dei figli, questa riga sarebbe il posto dove si vede che non li ordina nessuno.
+  //
+  // 📌 IL RETRO NON SI CENSISCE, e infatti qui non c'e' nessun campo che lo dica: il descrittore
+  // non descrive i retro (ne' le taglie). Va bene cosi' finche' e' vero per costruzione - le carte
+  // semplicemente non avranno record nella sezione Retro. Se un giorno servisse dichiararlo, si
+  // aggiunge un campo e lo si misura su tutti e sette, non si scrive a memoria sui sei vecchi.
+  carte: {
     riquadro: 1,   // v6.654
-    it: 'Bustine', en: 'Wrappers',
-    itSing: 'bustina', enSing: 'wrapper',
+    it: 'Carte',   en: 'Cards',
+    itSing: 'carta', enSing: 'card',
     genere: 'f',
-    icona: '&#128230;',
-    colonne: { d: 4, m: 3 },
-    numero: 'ordinamento',
+    icona: '&#127183;',
+    colonne: { d: 7, m: 4 },              // come le figurine
+    numero: 'inventario',                 // identifica il soggetto, come le figurine
     ordina: 'campo',
-    ordinaDove: 'number',                 // v6.221
+    ordinaDove: 'number',
     nomeCompleto: 'codice',
-    nomeCompletoDove: 'computeFullName'  // v6.221
+    nomeCompletoDove: 'computeFullName'
   },
   // 🆕 v6.647 (Franco: «mi serve una nuova tipologia di articoli da associare alle serie.
   //    Si chiama "Spille"; in Inglese "Pins"») — L'OTTAVO ARTICOLO.
@@ -32686,12 +32922,11 @@ const ARTICOLI = {
   //    l'hanno figurine e carte), ha un ordine. `genere: 'f'` — «le spille».
   // 📌 `colonne: {d:4, m:3}` come le altre categorie di OGGETTI, non 7/4 che e' la
   //    griglia fitta delle figurine.
-  // ⚠️ `pos: 7` decide l'ordine DICHIARATO, non quello vero: se Franco ha salvato un
-  //    ordine dalla console, la v6.283 aggiunge in coda gli articoli che quell'elenco non
-  //    nomina - «e' l'unica delle due assenze che si nota». Le Spille compaiono ultime
-  //    comunque, e si spostano con le frecce.
+  // ⚠️ LA POSIZIONE IN QUESTO FILE non decide l'ordine vero, ma quello di partenza: se
+  //    esiste un ordine salvato dalla console comanda quello, e la v6.283 mette in coda le
+  //    tipologie che l'elenco salvato non nomina - «e' l'unica delle due assenze che si
+  //    nota». Una tipologia nuova compare quindi ultima, e si sposta con le frecce.
   spille: {
-    pos: 7,
     // 🔴 v6.654 (Franco: «l'altezza della card e' decisamente troppo alta,
     //    considerando la dimensione delle foto; direi di un 30% di altezza
     //    possiamo scendere (senza rimpicciolire la foto)») — 1 / 0,7 = 1,43.
@@ -32717,42 +32952,6 @@ const ARTICOLI = {
     nomeCompleto: 'codice',
     nomeCompletoDove: 'computeFullName'
   },
-  // 🆕 v6.691 (Franco) - LE QUATTRO TIPOLOGIE NUOVE, e nascono tutte dalla stessa
-  //    misura: la serie Holidays teneva 187 articoli nella sezione «Figurine con retro», e
-  //    127 di quei 187 figurine non sono. Il campo «sottoserie» faceva da cassetto a quattro
-  //    oggetti diversi, che e' il mestiere di una TIPOLOGIA, non di una sottoserie.
-  //
-  // 🔴 «Figurine» E' LA NONA, ED E' LA PIU' DELICATA DELLE QUATTRO: si chiama come le
-  //    altre due, e la differenza sta in una parola. Franco: «sono figurine con velina ma la
-  //    velina e' insignificante; io le chiamerei semplicemente Figurine».
-  // 📌 E in INGLESE si prende «Stickers», che fino a ieri era il nome delle «da
-  //    attaccare» - le quali in questa stessa release diventano «Peel-off stickers». Le due
-  //    modifiche sono una cosa sola: separate, per una release il sito avrebbe avuto due
-  //    tipologie con lo stesso nome inglese, e nessuna delle due avrebbe detto niente.
-  //
-  // 📌 `pos: 1` a pari merito con le altre figurine e con le carte, per la ragione
-  //    scritta alla v6.224: sono ALTERNATIVE, non consecutive. A pari punteggio l'ordine lo
-  //    decide quello di dichiarazione (sort stabile), quindi restano dopo le carte.
-  // ⚠️ `ordina: 'campo'` e non 'codice', come le carte: il raggruppamento dei figli sotto
-  //    il capogruppo sta dentro un `if (currentSection === 'figurines')` scritto a mano, e
-  //    queste non ci passano. Il descrittore dice cio' che il codice fa.
-  // 📌 `numero: 'inventario'` come le figurine: una figurina il numero ce l'ha. Che
-  //    quelle di Holidays non l'abbiano lo dice gia' `noNumbers` sulla SERIE, ed e' li' che
-  //    va detto - non nel descrittore di una tipologia che varra' anche per altre serie.
-  figurine: {
-    pos: 1,
-    riquadro: 1,
-    it: 'Figurine',   en: 'Stickers',
-    itSing: 'figurina', enSing: 'sticker',
-    genere: 'f',
-    icona: '&#128444;&#65039;',
-    colonne: { d: 7, m: 4 },
-    numero: 'inventario',
-    ordina: 'campo',
-    ordinaDove: 'number',
-    nomeCompleto: 'codice',
-    nomeCompletoDove: 'computeFullName'
-  },
   // 🆕 v6.691 - I TATUAGGI. Franco: «i tatuaggi (Tattoos) non sono figurine».
   // 📌 L'icona e' la spirale, ed e' una scelta di Franco fra quattro proposte: un
   //    tatuaggio TRIBALE in Unicode non esiste, e la koru e' la cosa piu' vicina fra le
@@ -32760,7 +32959,6 @@ const ARTICOLI = {
   //    state scartate perche' ogni sistema le disegna a modo suo: quello che vede chi
   //    scrive non e' quello che vede chi apre il sito.
   tatuaggi: {
-    pos: 8,
     riquadro: 1,
     it: 'Tatuaggi',   en: 'Tattoos',
     itSing: 'tatuaggio', enSing: 'tattoo',
@@ -32777,7 +32975,6 @@ const ARTICOLI = {
   // 📌 L'icona dice DOVE VA A FINIRE l'oggetto, non com'e' fatto - la maglietta - e fa
   //    coppia con la spirale dei tatuaggi, che sta sulla pelle. Due superfici, due icone.
   trasferelli: {
-    pos: 9,
     riquadro: 1,
     it: 'Trasferelli',   en: 'Iron-ons',
     itSing: 'trasferello', enSing: 'iron-on',
@@ -32798,7 +32995,6 @@ const ARTICOLI = {
   // 📌 In inglese «Cardboards» e non «Backing cards», che sarebbe il termine da
   //    collezionismo: contiene la parola «cards», cioe' proprio quella da cui vanno distinti.
   cartoncini: {
-    pos: 10,
     riquadro: 1,
     // 🔄 v6.700 (Franco: «da altre parti definiremo un cartoncino una cosa diversa; il
     //    fatto che c'e' cartone e figurine sopra lo allontana da un cartoncino puro») - IL
@@ -32821,8 +33017,52 @@ const ARTICOLI = {
     nomeCompleto: 'codice',
     nomeCompletoDove: 'computeFullName'
   },
+  retros: {
+    // 📌 1.6 e' il valore che il codice applicava gia': era l'unico ramo
+    //    dichiarato dell'`if` che questa release ha tolto.
+    riquadro: 1.6,   // v6.654
+    // 🆕 v6.667 - «questo articolo ha un SOTTONOME?». Fino alla v6.666 la risposta era
+    //    scritta a mano in cinque punti come «section === 'retros'»; adesso e' un campo, come
+    //    «riquadro» e «colonne». Qui vale true perche' e' cio' che il sito faceva gia'.
+    sottonome: true,   // v6.667
+    it: 'Retro',   en: 'Retros',
+    itSing: 'retro', enSing: 'retro',
+    genere: 'm',
+    icona: '&#128257;',
+    colonne: { d: 5, m: 4 },
+    numero: 'nessuno',
+    ordina: 'codice',
+    ordinaDove: 'cmpVistaTabellare',     // categoria, sottocategoria, nome, tipo
+    nomeCompleto: 'retro',
+    nomeCompletoDove: '_retroFullName'  // v6.221
+  },
+  albums: {
+    riquadro: 1,   // v6.654
+    it: 'Album',   en: 'Albums',
+    itSing: 'album', enSing: 'album',
+    genere: 'm',
+    icona: '&#128210;',
+    colonne: { d: 4, m: 3 },
+    numero: 'ordinamento',
+    ordina: 'campo',
+    ordinaDove: 'number',                 // v6.221 - diventera' `ordine` col passo 2 della scaletta
+    nomeCompleto: 'codice',
+    nomeCompletoDove: 'computeFullName'  // v6.221
+  },
+  bustine: {
+    riquadro: 1,   // v6.654
+    it: 'Bustine', en: 'Wrappers',
+    itSing: 'bustina', enSing: 'wrapper',
+    genere: 'f',
+    icona: '&#128230;',
+    colonne: { d: 4, m: 3 },
+    numero: 'ordinamento',
+    ordina: 'campo',
+    ordinaDove: 'number',                 // v6.221
+    nomeCompleto: 'codice',
+    nomeCompletoDove: 'computeFullName'  // v6.221
+  },
   extras: {
-    pos: 6,
     riquadro: 1,   // v6.654
     it: 'Altri articoli', en: 'Other Items',
     itSing: 'articolo', enSing: 'item',
@@ -32902,7 +33142,7 @@ function _nomeSezioneCard(sez, n) {
 // ("non dichiarato") invece di lasciare una cella vuota: una cella vuota si legge come "niente da
 // dire", e qui vorrebbe dire "nessuno sa piu' quale funzione lo ordina".
 const _ETICHETTE_DESCRITTORE = {
-  pos: 'Pos.', it: 'Nome (IT)', en: 'Nome (EN)', itSing: 'Singolare (IT)', enSing: 'Singolare (EN)',
+  it: 'Nome (IT)', en: 'Nome (EN)', itSing: 'Singolare (IT)', enSing: 'Singolare (EN)',
   icona: 'Icona', colonne: 'Colonne d/m', riquadro: 'Riquadro foto (l/h)',
   sottonome: 'Sottonome',   // v6.667
   // 🆕 v6.714 - `genere` e `carosello` non erano qui, quindi la tabella ne stampava la
@@ -32936,9 +33176,13 @@ function _cellaDescrittore(chiave, voce, dato) {
 
 // 🆕 v6.228 (Franco) — ANCHE QUESTA TABELLA SI ORDINA A CLIC. Stesso meccanismo della tabella
 // delle serie (v6.226) e delle altre tre del sito.
-// 📌 Qui non c'e' nessun ordine manuale da proteggere - niente frecce, nessun `order` scritto sul
-// dato - quindi non serve nessuno stato "torna com'era": l'ordine di partenza e' `pos`, e
-// cliccando **Pos.** ci si torna, perche' ordinare per `pos` E' l'ordine naturale.
+// 🔄 v6.717 - IL RITORNO ALL'ORDINE NATURALE ADESSO HA UN COMANDO SUO, ed e' la colonna
+// **N.**. Fino a ieri ci si tornava cliccando **Pos.**, perche' ordinare per quel campo ERA
+// l'ordine naturale; tolto il campo, quella strada non esiste piu' e senza un comando nuovo si
+// resterebbe incastrati nell'ordine a colonna fino a ricaricare la pagina.
+// 🔴 E' UNA REVOCA DICHIARATA DELLA v6.713, che aveva fatto quella colonna MUTA di proposito
+// («ordinare per numero di riga non vuol dire niente»). Resta vero: infatti il N. non ordina -
+// RIMETTE L'ORDINE NATURALE, che e' un altro mestiere. Un comando solo, non un ordinamento.
 // ⚠️ Il valore su cui si ordina si ricava dalla CELLA, non da un elenco scritto a parte: le
 // colonne di questa tabella nascono dalle chiavi del descrittore, e un elenco separato di chiavi
 // di ordinamento sarebbe la seconda lista da tenere allineata - cioe' quella che si dimentica.
@@ -32967,6 +33211,18 @@ function _righeTipoArticolo() {
 }
 
 let _tipoArtSort = { col: null, dir: 1 };
+
+// 🆕 v6.717 - RIMETTI L'ORDINE NATURALE. Finche' esisteva `pos`, per tornare all'ordine vero
+// si cliccava la sua colonna: ordinare per `pos` ERA l'ordine naturale, quindi il comando non
+// serviva. Tolto il campo, senza questo non si torna indietro se non ricaricando la pagina.
+// 🔴 NON E' UN ORDINAMENTO, ed e' la ragione per cui non passa da `sortAdminTipoArticolo`:
+// quello accende una colonna, questo le SPEGNE tutte. Chiamarlo "ordina per N." sarebbe la
+// promessa sbagliata che la v6.713 aveva evitato lasciando la colonna muta.
+function ordineNaturaleTipoArticolo() {
+  if (!_tipoArtSort.col) return;          // gia' naturale: non si ridisegna per niente
+  _tipoArtSort = { col: null, dir: 1 };
+  renderAdminTipoArticolo();
+}
 function sortAdminTipoArticolo(col) {
   if (_tipoArtSort.col === col) _tipoArtSort.dir *= -1;
   else _tipoArtSort = { col, dir: 1 };
@@ -32984,8 +33240,9 @@ function renderAdminTipoArticolo() {
   const chiavi = [];
   PRODOTTI_INVENTARIO.forEach(sez =>
     Object.keys(ARTICOLI[sez]).forEach(k => { if (!chiavi.includes(k)) chiavi.push(k); }));
-  // v6.228 - l'elenco delle righe, ordinato se c'e' una colonna attiva. `pos` e' l'ordine
-  // naturale, quindi cliccarlo riporta esattamente com'era.
+  // v6.228 - l'elenco delle righe, ordinato se c'e' una colonna attiva. Senza nessuna colonna
+  // attiva si vede l'ordine naturale, cioe' quello vero del sito (`PRODOTTI_INVENTARIO`), e ci
+  // si torna col comando della colonna N. (v6.717).
   // 🔄 v6.714 - si ordina l'elenco UNICO, righe dei dati comprese.
   const _righe = _righeTipoArticolo();
   let _sezioniOrdinate = _righe;
@@ -33025,15 +33282,29 @@ function renderAdminTipoArticolo() {
       //    vera dell'articolo nell'inventario e ha le frecce per spostarlo, questa conta le
       //    righe come stanno adesso a schermo. Ordinando per una colonna, il numero di riga si
       //    rinumera e «Ordine» no.
-      // 🔴 E NON E' ORDINABILE, di proposito: in questa tabella cliccare un'intestazione
-      //    ordina davvero, e ordinare per «numero di riga» non vuol dire niente - sarebbe un
-      //    comando che promette una cosa che non esiste.
-      '<th style="' + th + '">' + (currentLang === 'it' ? 'N.' : 'No.') + '</th>' +
+      // 🔴 NON E' ORDINABILE, e non lo e' nemmeno adesso: in questa tabella cliccare
+      //    un'intestazione ordina davvero, e ordinare per «numero di riga» non vuol dire
+      //    niente - sarebbe un comando che promette una cosa che non esiste.
+      // 🔄 v6.717 - MA ADESSO UN MESTIERE CE L'HA, ed e' un altro: **rimette l'ordine
+      //    naturale**. E' una revoca dichiarata della meta' di quel commento che diceva
+      //    «muta di proposito»: muta lo era perche' a riportare indietro bastava `Pos.`, e
+      //    `Pos.` non esiste piu'.
+      // 📌 SI ACCENDE SOLO QUANDO SERVE, come le frecce qui sotto (v6.283): senza nessuna
+      //    colonna attiva siamo gia' nell'ordine naturale, e un comando che non fa niente e'
+      //    peggio di un comando assente - si clicca, non succede nulla, e non si capisce perche'.
+      '<th style="' + th + (_tipoArtSort.col ? 'cursor:pointer;user-select:none;color:var(--accent);' : '') + '"' +
+        (_tipoArtSort.col
+          ? ' onclick="ordineNaturaleTipoArticolo()" title="' +
+            (currentLang === 'it' ? 'Rimetti l\'ordine naturale' : 'Restore the natural order') + '"'
+          : '') +
+        '>' + (currentLang === 'it' ? 'N.' : 'No.') + '</th>' +
       // v6.283 - la colonna dell'ORDINE non si puo' ordinare: e' l'ordine.
       '<th style="' + th + '">' + (currentLang === 'it' ? 'Ordine' : 'Order') + '</th>' +
       chiavi.map(k => {
-        const attiva = _tipoArtSort.col === k || (!_tipoArtSort.col && k === 'pos');
-        const freccia = attiva ? (_tipoArtSort.col === k ? (_tipoArtSort.dir === 1 ? ' \u25B2' : ' \u25BC') : ' \u25B2') : '';
+        // 🔄 v6.717 - nessuna colonna e' accesa di default: l'ordine naturale non e' piu'
+        //    l'ordinamento per una colonna, e accendere `Pos.` era il modo in cui lo si diceva.
+        const attiva = _tipoArtSort.col === k;
+        const freccia = attiva ? (_tipoArtSort.dir === 1 ? ' \u25B2' : ' \u25BC') : '';
         return '<th style="' + th + 'cursor:pointer;user-select:none;' + (attiva ? 'color:var(--accent);' : '') + '"' +
           ' onclick="sortAdminTipoArticolo(\'' + k + '\')"' +
           ' title="' + (currentLang === 'it' ? 'Ordina per questa colonna' : 'Sort by this column') + '">' +
@@ -33260,9 +33531,14 @@ async function salvaVersioniArticolo() {
 // DA QUI IN GIU' GLI ELENCHI DI PRIMA, che ora si RICAVANO. Stessi nomi, stessi valori: i dieci
 // punti che li leggono non sono stati toccati, ed e' cio' che rende questa release verificabile -
 // se un valore derivato non coincidesse con quello di prima, si vedrebbe subito.
-// L'ordine DICHIARATO, da `pos`. Dalla v6.283 non e' piu' l'ordine in uso ma il suo RIPIEGO: e'
-// quello che vede chi non ha mai salvato niente, ed e' la base su cui si valida quello salvato.
-const ARTICOLI_ORDINE_DICHIARATO = Object.keys(ARTICOLI).sort((a, b) => ARTICOLI[a].pos - ARTICOLI[b].pos);
+// L'ordine DICHIARATO. Dalla v6.283 non e' piu' l'ordine in uso ma il suo RIPIEGO: e' quello che
+// vede chi non ha mai salvato niente, ed e' la base su cui si valida quello salvato.
+// 🔄 v6.717 - LO DICE L'ORDINE DI SCRITTURA DEL DESCRITTORE, non piu' un campo. `Object.keys`
+// rende le chiavi non numeriche nell'ordine di inserimento (ECMAScript 2015, §OrdinaryOwnPropertyKeys),
+// quindi qui non c'e' piu' niente da ordinare: l'elenco esce gia' in fila.
+// ⚠️ E vuol dire che **spostare una voce nel descrittore cambia il sito**. E' scritto anche
+// in cima ad `ARTICOLI`, ed e' l'unica cosa da sapere prima di riordinare quel blocco per gusto.
+const ARTICOLI_ORDINE_DICHIARATO = Object.keys(ARTICOLI);
 
 // 🆕 v6.283 - L'ORDINE SALVATO SI VALIDA SEMPRE, e la ragione non e' la prudenza: quel documento
 // vive su Firestore mentre il codice cambia sotto. Un elenco salvato PRIMA che nascesse un articolo
@@ -36922,9 +37198,16 @@ function seriesCardHTML(s) {
   // ⚠️ E una scelta per esclusione ACCOGLIE IN SILENZIO ogni sezione futura: oggi `carte`
   // non ha nemmeno un record, ma il giorno che ne avesse finirebbe dentro il conto delle
   // «figurine» senza che nessuno sbagli niente. È la trappola della v6.214.
-  // 📌 Ordine e nomi vengono da `ARTICOLI` (`pos`, `it`/`en`, `itSing`/`enSing`), cioè
-  // dalle parole che si leggono sullo schermo: un badge nomina la sezione in cui si
-  // finisce premendo la card, e una sezione nuova prende il suo contatore da sé.
+  // 📌 I nomi vengono da `ARTICOLI` (`it`/`en`, `itSing`/`enSing`), cioè dalle parole che
+  // si leggono sullo schermo: un badge nomina la sezione in cui si finisce premendo la card, e
+  // una sezione nuova prende il suo contatore da sé.
+  // 🔴 v6.717 - E L'ORDINE LO DÀ `PRODOTTI_INVENTARIO`, cioè QUELLO CHE FRANCO VEDE.
+  // Fino a ieri questi badge si ordinavano per `pos`, il seme scritto nel codice: erano l'unico
+  // punto del sito su quattordici a non seguire l'ordine della console. Il difetto non era
+  // teorico - già oggi la fila dei badge era diversa da quella dell'hub e della tabella, e
+  // nessuno poteva accorgersene perché nessuna delle due è sbagliata di per sé.
+  // ⚠️ Franco, l'11 settembre, davanti alle due scelte: «il N.» - cioè l'ordine che si vede e
+  // che le frecce spostano, non un numero scritto in un file.
   // ⚠️ LO SCARTO DEGLI ERRORI DI STAMPA (v6.429) RESTA, e ora si applica DENTRO il giro,
   // una volta per sezione: spezzato il badge in due, uno scarto solo su un mucchio unico
   // non avrebbe più saputo a chi appartenevano gli scartati. La regola non è stata
@@ -36933,8 +37216,7 @@ function seriesCardHTML(s) {
   // nell'hub serie, senno' è una incongruenza"* — la card e la pagina della serie dicono
   // lo stesso numero sulla stessa cosa, e una che scarta mentre l'altra conta è il §12-bis
   // a due centimetri di distanza.
-  const _conteggiSezione = Object.keys(ARTICOLI)
-    .sort((a, b) => (ARTICOLI[a].pos ?? 99) - (ARTICOLI[b].pos ?? 99))
+  const _conteggiSezione = PRODOTTI_INVENTARIO
     // 🔴 v6.632 - QUESTO NUMERO E QUELLO DELLA PAGINA SERIE NON COINCIDONO PIU'.
     // Qui gli errori di stampa restano ESCLUSI (v6.429); nella colonna «totali» di
     // `sezRows` da oggi sono compresi, perche' Franco l'ha chiesto li' e solo li'.
@@ -38477,15 +38759,11 @@ function openSeriesDetail(seriesId) {
 
   // Campi meta nella hero
   renderSeriesMeta(s);
-  const cover = document.getElementById('detail-cover');
-  // 🆕 v6.689 (Franco: «metti il timbro IN COMPLETAMENTO anche sulla foto della serie
-  //    quando entro nella serie») - IL TIMBRO STA ANCHE QUI, non solo sulla card dell'hub.
-  // 🔴 STA FUORI DAL TERNARIO, come sulla card (v6.585): una serie non finita e senza
-  //    copertina e' il caso piu' probabile, non l'eccezione, e li' il timbro va sopra il 🎴.
-  // 📌 Lo stato lo dice `_timbroStatoSerie`, la stessa funzione della card: due schermate
-  //    che leggono lo stesso stato da due punti diversi finirebbero per dirne due.
-  cover.innerHTML = (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_200,h_200,c_fit,q_auto,f_auto') + '">' : '<span>&#127924;</span>')
-    + _timbroStatoSerie(s);
+  // 🔄 v6.719 - IL DISEGNO DELLA COPERTINA E' USCITO DA QUI ed e' `_disegnaCopertinaSerie`:
+  //    adesso lo chiedono in due, questa apertura e il ritorno da una sottoserie (v6.719).
+  //    Due copie della stessa immagine sarebbero due copie della stessa regola, e il timbro
+  //    di stato e' proprio il genere di dettaglio che in una delle due si dimentica.
+  _disegnaCopertinaSerie(s);
   // show selector, hide items section
   document.getElementById('section-selector').style.display = '';
   document.getElementById('items-section').style.display = 'none';
@@ -38795,7 +39073,7 @@ function openSeriesSection(section, sottoserie) {
   currentSection = section;
   // 🆕 v6.651 - SI ENTRA DALLA PRIMA SOTTOSERIE (Franco: «mostriamo tutte le spille della
   //    prima sottoserie»), e `null` dove la sezione non ne usa.
-  // ⚠️ DOPO `currentSection = section`: `_tabSottoserie` guarda la sezione CORRENTE, e
+  // ⚠️ DOPO `currentSection = section`: `_sottoserieDellaSezione` guarda la sezione CORRENTE, e
   //    messo una riga piu' su risponderebbe sulla sezione che si sta lasciando. E' lo
   //    stesso inciampo che la v6.338 ha gia' pagato col seme dei raggruppamenti.
   // 🔄 v6.682 - TRE CASI, E IL SECONDO E' NUOVO.
@@ -38808,16 +39086,22 @@ function openSeriesSection(section, sottoserie) {
   // 🔴 E' una revoca PARZIALE della v6.651 («si entra dalla prima sottoserie»), e vale
   //    solo dove esiste un gruppo senza nome. Chi la rimettesse intera farebbe dire alla card
   //    un numero e mostrerebbe un altro insieme.
-  const _tab = _tabSottoserie();
+  const _gruppi = _sottoserieDellaSezione();
   _sottoserieAttiva = (sottoserie !== undefined && sottoserie !== null)
     ? sottoserie
-    : (_tab.includes('') ? '' : (_tab[0] ?? null));
+    : (_gruppi.includes('') ? '' : (_gruppi[0] ?? null));
   // La riga dei contatori DEVE seguire la scheda. Senza questa chiamata resterebbe
   // quella disegnata all'apertura della serie — cioe' le Figurine — e continuerebbe
   // a mostrarle anche stando nei Retro. Era esattamente il difetto segnalato da
   // Franco: non numeri sbagliati, numeri CONGELATI.
   const _s = getData('series', []).find(x => x.id === currentSeriesId);
   if (_s) renderSeriesMeta(_s);
+  // 🆕 v6.719 - e la TESTATA dice in quale gruppo si e' entrati: foto della sottoserie al
+  //    posto grande, il suo nome sotto il titolo, la foto della serie piccola a destra.
+  // ⚠️ DOPO `_sottoserieAttiva`, che viene deciso venti righe piu' su: messa prima
+  //    vestirebbe la testata con il gruppo che si sta LASCIANDO. E' lo stesso inciampo che la
+  //    v6.338 ha gia' pagato col seme dei raggruppamenti e la v6.651 con i gruppi di sezione.
+  try { _vestiTestataPerSezione(_s); } catch (e) { console.error('_vestiTestataPerSottoserie', e); }
   const si = document.getElementById('items-search'); if (si) si.value = '';
   aggiornaTestiRicercaSezione();  // v5.939 — titolo e segnaposto, in una funzione sola (v5.890)
   currentItemPage = 1;
@@ -38829,6 +39113,14 @@ function openSeriesSection(section, sottoserie) {
   document.getElementById('section-selector').style.display = 'none';
   document.getElementById('items-section').style.display = '';
   _mostraTestataSerie(); // sezione: descrizione NO, specchietti SI
+  // 🔄 v6.719 - QUI LA v6.718 COMPONEVA «Figurine Metal», E LA COMPOSIZIONE SE N'E' ANDATA
+  //    DI SOPRA. Non e' un ripensamento sulla sostanza: l'informazione - in quale gruppo sei -
+  //    serve e resta, ma Franco l'ha voluta nella TESTATA, sotto il nome della serie e insieme
+  //    alla foto della sottoserie. Lasciarla anche qui avrebbe scritto la stessa cosa due
+  //    volte a due centimetri di distanza, che e' il difetto chiuso dalla v6.695 e dalla
+  //    v6.688 («era la stessa parola due volte»).
+  // 📌 La v6.718 era durata mezz'ora, e non e' sprecata: e' servita a far vedere che
+  //    l'informazione mancava. Il posto giusto l'ha detto Franco guardandola.
   document.getElementById('items-section-title').textContent = getSectionLabel(section);
   // v6.153 - l'etichetta del tasto indietro dice DOVE si torna, non un posto fisso. Dentro un box
   // si torna all'Inventario; altrove alle Sezioni della serie, come sempre.
@@ -38974,6 +39266,92 @@ function _applicaChiusuraTestata() {
     if (el) el.style.display = 'none';
   });
 }
+// 🆕 v6.719 (Franco: «dai piu' enfasi alla foto della sottoserie, che metterei dove ora c'e' la
+//    foto della serie; sotto al titolo della serie metterei, piu' piccolo, quello della
+//    sottoserie, e la foto della serie la lascerei a margine e dx e piu' piccola»)
+//    — LA TESTATA DICE DOVE SEI.
+// 🔴 UNA FUNZIONE SOLA VESTE TUTTI E TRE I PEZZI (foto grande, sottotitolo, fotina), e non e'
+//    ordine: sono TRE ELEMENTI CHE RACCONTANO LA STESSA COSA. Scritti da tre punti diversi
+//    basterebbe che uno non venisse chiamato per avere la foto di un gruppo col nome di un
+//    altro - una testata che si contraddice da sola, senza dare nessun errore. E' la malattia
+//    che questo progetto paga piu' spesso, in miniatura.
+// 📌 IL RIPIEGO NON C'E', ED E' LA REGOLA DI FRANCO DELLA v6.686: una sottoserie senza foto
+//    mostra il riquadro vuoto invece di ripiegare su quella della serie. Li' il riquadro vuoto
+//    e' un invito a riempirlo; un ripiego direbbe «questa sottoserie ha una foto» ed e' falso.
+//    ⚠️ E qui costa meno che altrove: la foto della serie resta comunque a destra, quindi il
+//    posto grande vuoto non lascia la testata senza nessuna immagine.
+// 🔴 SI CHIAMA ANCHE TORNANDO INDIETRO. Senza, uscendo da una sottoserie resterebbero la sua
+//    foto e il suo nome sulla pagina della serie: lo stato vecchio che sopravvive al gesto che
+//    lo doveva chiudere.
+// 🆕 v6.719 - LA COPERTINA DELLA SERIE, in un posto solo. Era scritta dentro
+// `openSeriesDetail`; il codice e' lo stesso, timbro compreso.
+// 🆕 v6.689 (Franco: «metti il timbro IN COMPLETAMENTO anche sulla foto della serie quando
+//    entro nella serie») - IL TIMBRO STA ANCHE QUI, non solo sulla card dell'hub.
+// 🔴 STA FUORI DAL TERNARIO, come sulla card (v6.585): una serie non finita e senza copertina
+//    e' il caso piu' probabile, non l'eccezione, e li' il timbro va sopra il 🎴.
+// 📌 Lo stato lo dice `_timbroStatoSerie`, la stessa funzione della card: due schermate che
+//    leggono lo stesso stato da due punti diversi finirebbero per dirne due.
+function _disegnaCopertinaSerie(s) {
+  const cover = document.getElementById('detail-cover');
+  if (!cover || !s) return;
+  cover.innerHTML = (s.img ? '<img src="' + cloudinaryUrl(s.img, 'w_200,h_200,c_fit,q_auto,f_auto') + '">' : '<span>&#127924;</span>')
+    + _timbroStatoSerie(s);
+}
+
+function _vestiTestataPerSezione(s) {
+  const cover = document.getElementById('detail-cover');
+  const mini  = document.getElementById('detail-cover-serie');
+  const sub   = document.getElementById('detail-subname');
+  if (!cover || !mini || !sub) return;
+  // 🔄 v6.721 (Franco: «possiamo fare la stessa cosa con le card delle tipologie di articolo?
+  //    foto in alto, titolo sopra, e foto serie in basso a dx») - VALE PER OGNI SEZIONE, non
+  //    piu' per le sole sottoserie.
+  // 🔴 LA DOMANDA E' UNA SOLA - «sono dentro qualcosa?» - e la risposta e' `currentSection`.
+  //    Dentro una sottoserie la foto e il nome sono quelli del gruppo, dentro una tipologia
+  //    quelli della tipologia: due sorgenti, una regola. Due rami separati avrebbero voluto
+  //    dire due funzioni che vestono la stessa testata, cioe' la malattia di sempre.
+  // 📌 E IL «SET PRINCIPALE» ADESSO HA UNA RISPOSTA: e' la tipologia. Fino a ieri, entrando
+  //    li', la testata restava quella della serie perche' `_sottoserieAttiva` era la stringa
+  //    vuota; oggi mostra la foto e il nome della TIPOLOGIA, che e' cio' che si sta guardando.
+  const dentro = !!currentSection;
+  if (!dentro) {
+    // fuori da una sottoserie la testata torna quella di sempre, in un colpo solo
+    mini.innerHTML = '';
+    sub.style.display = 'none';
+    sub.textContent = '';
+    cover.classList.remove('mostra-sottoserie');   // v6.720 - la copertina della serie si ritaglia
+    document.querySelector('.series-title-area')?.classList.remove('con-sottoserie');
+    if (s) _disegnaCopertinaSerie(s);
+    return;
+  }
+  // la foto e il nome vengono dal gruppo se ci si e' dentro, dalla tipologia altrimenti.
+  // 🔴 Le due sorgenti sono le stesse che riempiono le CARD da cui si e' entrati
+  //    (`_fotoSottoserie` v6.684, `_fotoSezioneSerie` v6.686): la testata non sceglie una
+  //    foto per conto suo, mostra quella su cui si e' appena cliccato.
+  const foto = _sottoserieAttiva
+    ? _fotoSottoserie(s, _sottoserieAttiva)
+    : _fotoSezioneSerie(currentSection);
+  // 🆕 v6.720 - la foto di una sottoserie si vede INTERA, come sulla card da cui si e' entrati
+  //    (Franco: «e' tagliata»). La classe si toglie uscendo, qui sopra: e' lo stesso gesto che
+  //    rimette la copertina della serie, che invece il ritaglio lo vuole.
+  cover.classList.add('mostra-sottoserie');
+  // 🔴 e la COLONNA si allarga con lei: il riquadro panoramico e' piu' largo dei 160px fissi
+  //    della griglia, e senza questa riga sfonderebbe la colonna invece di prendersi il posto.
+  document.querySelector('.series-title-area')?.classList.add('con-sottoserie');
+  // il posto grande: la foto della sottoserie, senza timbro. Il timbro dice lo stato della
+  // SERIE (v6.689) e qui la serie non e' piu' il soggetto di quell'immagine.
+  cover.innerHTML = foto
+    ? '<img src="' + cloudinaryUrl(foto, 'w_200,h_200,c_fit,q_auto,f_auto') + '">'
+    : '<span>&#127924;</span>';
+  // la fotina a destra: la serie. Senza timbro anche qui - a 56px non si leggerebbe.
+  mini.innerHTML = s && s.img
+    ? '<img src="' + cloudinaryUrl(s.img, 'w_120,h_120,c_fit,q_auto,f_auto') + '" alt="">'
+    : '';
+  // 🔄 v6.721 - dentro una tipologia il nome e' quello della tipologia, senza coda.
+  sub.textContent = getSectionLabel(currentSection) + (_sottoserieAttiva ? ' ' + _sottoserieAttiva : '');
+  sub.style.display = '';
+}
+
 function _mostraTestataSerie() {
   try { posizionaTestataSerie(); } catch(e) { console.error('_mostraTestataSerie/desc', e); }
   try { renderRaggrSummaries(); } catch(e) { console.error('_mostraTestataSerie/raggr', e); }
@@ -39006,6 +39384,13 @@ function closeItemsSection() {
   document.getElementById('items-section').style.display = 'none';
   document.getElementById('section-selector').style.display = '';
   currentSection = null;
+  // 🆕 v6.719 - e la testata torna quella della serie. DOPO `currentSection = null`, per la
+  //    stessa ragione della riga qui sotto: la funzione guarda dove si E', non dove si era.
+  // 🔴 Senza questa chiamata, uscendo da una sottoserie resterebbero la sua foto e il suo nome
+  //    sulla pagina della serie - lo stato vecchio che sopravvive al gesto che lo chiude.
+  try {
+    _vestiTestataPerSezione(getData('series', []).find(x => x.id === currentSeriesId));
+  } catch (e) { console.error('_vestiTestataPerSottoserie (indietro)', e); }
   _mostraTestataSerie(); // DOPO currentSection = null, cosi' descrizione e specchietti si regolano da soli
   updateSectionCounts();
   try { renderSeriesMeta(getData('series', []).find(x => x.id === currentSeriesId)); } catch(e) {} // v5.881: hub -> una riga per categoria (non i numeri della sezione appena lasciata)
@@ -40282,7 +40667,6 @@ function getCurrentlyFilteredItems(opts) {
   // pillole direbbero sempre «tutti di qua, zero di là» appena se ne accende una. È la
   // stessa ragione di `skipRaggr` e `skipCategory`.
   const _skipLato = !!(opts && opts.skipLato);
-  const _skipSottoserie = !!(opts && opts.skipSottoserie);   // v6.651
   const _latoAcceso = !_skipLato && _filtroLatoErrore.size > 0;
   // 🆕 v6.604 — IL SECONDO VINCOLO DI LATO, quello che porta con se' la pillola premuta.
   // 📌 Segue `skipLato` come il primo: il riquadro che disegna le due sezioni conta
@@ -40296,10 +40680,12 @@ function getCurrentlyFilteredItems(opts) {
     // 🆕 v6.651 - LA SOTTOSERIE CHE SI STA GUARDANDO. Sta qui e non in un secondo modo di
     //    disegnare la griglia: cosi' conteggi, riquadri, paginazione, export, «aggiungi i
     //    risultati alla tua lista» e la VISTA TABELLARE la rispettano senza saperne nulla.
-    // ⚠️ `skipSottoserie` serve alla barra dei tab, che deve contare quanti articoli
-    //    finirebbero in OGNI tab ignorando quello scelto - o direbbe «tutti qui, zero di
-    //    la'». E' la stessa ragione di `skipLato` e `skipRaggr`.
-    if (!_skipSottoserie && _sottoserieAttiva !== null
+    // 🗑️ v6.718 - QUI C'ERA `skipSottoserie`, e se n'e' andato con la barra dei tab: era
+    //    l'unico che lo chiedeva, per contare quanti articoli sarebbero finiti negli ALTRI
+    //    tab. Senza quel lettore restava un'opzione che nessuno passa piu' - cioe' codice
+    //    morto in mezzo a un filtro, che e' il posto peggiore in cui lasciarne.
+    // 📌 `skipLato` e `skipRaggr` RESTANO: quelli li chiede ancora chi calcola i riquadri.
+    if (_sottoserieAttiva !== null
         && String(f.subseries || '').trim() !== _sottoserieAttiva) return false;
     // Filtro per categoria (solo Retro), attivato cliccando un box nello specchietto risultati (v5.762)
     // v6.157 - il filtro per categoria vale nei retro E dentro un box di tipo prodotto. Accendere
@@ -42094,60 +42480,40 @@ function _adattaCorniciErrore(radice) {
   });
 }
 
-// 🆕 v6.651 - LA BARRA DEI TAB. Si ridisegna a ogni `renderItems`, quindi non c'e' nessuno
-//    stato da tenere allineato: se un articolo cambia sottoserie, il tab compare o sparisce
-//    da se'.
-// 📌 IL CONTEGGIO ACCANTO A OGNI TAB IGNORA IL TAB SCELTO (`skipSottoserie`) ma NON gli
-//    altri filtri: dice «quanti ne troverei di la' con la ricerca che ho adesso», che e'
-//    l'unica risposta utile. Contare tutto direbbe un numero che non corrisponde a quello
-//    che si vede dopo il clic.
-function renderTabSottoserie() {
-  // ⚠️ IL NOME E' SPECIFICO APPOSTA. La prima stesura la chiamava `barra`, ed e'
-  //    bastato a rompere due suite: `prova-v6450` e `prova-v6451` trovano la barra dei
-  //    tasti della scheda cercando la PRIMA occorrenza di «const barra =» nel file, e
-  //    questa, stando piu' in su, gli ha preso il posto. Le due suite sono state
-  //    riancorate (e' la cosa che conta), ma un nome generico su una variabile che vive
-  //    in un file da 55.000 righe e' un invito a ricapitarci.
-  const barraTab = document.getElementById('items-subseries-tabs');
-  if (!barraTab) return;
-  const tab = _tabSottoserie();
-  if (!tab.length) { barraTab.innerHTML = ''; return; }
-  // ⚠️ Se la sottoserie attiva non esiste piu' (l'ultimo articolo e' stato spostato), si
-  //    torna alla prima invece di mostrare una griglia vuota senza spiegazione.
-  if (!tab.includes(_sottoserieAttiva)) _sottoserieAttiva = tab[0];
-  const tutti = getCurrentlyFilteredItems({ skipSottoserie: true });
-  barraTab.innerHTML = tab.map(v => {
-    const n = tutti.filter(f => String(f.subseries || '').trim() === v).length;
-    return '<button type="button" class="tab-sottoserie' + (v === _sottoserieAttiva ? ' on' : '')
-      + '" onclick="_vaiASottoserie(' + JSON.stringify(v).replace(/"/g, '&quot;') + ')">'
-      + esc(_etichettaSottoserie(v)) + '<span class="n">' + n + '</span></button>';
-  }).join('');
-}
-
-// 🆕 v6.651 (Franco: «ogni volta che cambio griglia si resetta anche la form di ricerca»)
-// ⚠️ E SI AZZERANO ANCHE GLI ALTRI FILTRI, con lo stesso gesto del cambio sezione. Non e'
-//    zelo: e' il difetto scritto alla v5.908 e ripetuto il 5 settembre 2026 - «un filtro
-//    dimenticato acceso fra una sezione e l'altra fa sembrare vuota una sezione piena». Un
-//    tab e' un cambio di sezione piu' piccolo, e li' il filtro dimenticato farebbe lo
-//    stesso danno con meno indizi per capirlo.
-function _vaiASottoserie(v) {
-  if (_sottoserieAttiva === v) return;   // gia' qui: non si azzera niente per un clic a vuoto
-  _sottoserieAttiva = v;
-  _azzeraFiltriNonDuraturi(currentSection);
-  const cerca = document.getElementById('items-search');
-  if (cerca) cerca.value = '';
-  try { toggleSearchClearBtn('items-search'); } catch (e) {}
-  currentItemPage = 1;
-  try { renderItems(); } catch (e) { console.error('renderItems (_vaiASottoserie)', e); }
-  try { if (typeof bulkEditActive !== 'undefined' && bulkEditActive) renderBulkEditView(); }
-  catch (e) { console.error('renderBulkEditView (_vaiASottoserie)', e); }
+// 🗑️ v6.718 - QUI C'ERA LA BARRA DEI TAB DELLE SOTTOSERIE (v6.651), E NON C'E' PIU'.
+// 🔴 E' il PASSO 4 del piano delle sottoserie, deciso il 9 settembre e rimasto in coda tre
+//    giorni: «i tab dentro la sezione vanno via, la scelta si fa in un posto solo». Dalla
+//    v6.682 quel posto sono le CARD nell'hub della serie, e i due modi convivevano - che e'
+//    la forma di difetto che questo progetto paga piu' spesso: due strade per la stessa cosa.
+// 🔴 FRANCO, L'11 SETTEMBRE: *«non deve rimanere traccia alcuna del fatto che una volta
+//    usavamo i tab»*. Quindi non si e' spenta la barra lasciandola scritta: se ne sono andati
+//    la funzione, il suo gestore, il nodo nell'index, le quattro regole CSS e l'opzione
+//    `skipSottoserie`, che serviva solo a contare gli articoli degli altri tab.
+// ⚠️ COSA SI PERDE, ed e' stato messo sul tavolo prima di toglierlo: il conteggio accanto a
+//    ogni tab diceva «quanti ne troverei di la' CON I FILTRI CHE HO ADESSO». Le card dell'hub
+//    contano tutto, sempre. Quella domanda, da oggi, in questo sito non ha piu' risposta -
+//    scritto qui perche' e' una perdita nota, non una dimenticanza.
+// ✅ COSA NON SI PERDE: il titolo della sezione adesso NOMINA la sottoserie (v6.718), che era
+//    l'altra cosa che i tab dicevano - e la diceva solo il tab acceso.
+//
+// 🔴 LA RETE DELLA v6.651 RESTA, ed e' l'unica cosa di quel blocco che aveva un mestiere suo:
+//    se la sottoserie attiva non esiste piu' (l'ultimo articolo e' stato spostato altrove) si
+//    torna al primo gruppo, invece di mostrare una griglia vuota senza nessuna spiegazione.
+//    Stava dentro la barra, cioe' in un disegno; adesso e' una funzione sua, perche' non e'
+//    disegno: e' una correzione di stato.
+function _verificaSottoserieAttiva() {
+  const gruppi = _sottoserieDellaSezione();
+  if (!gruppi.length) return;
+  if (!gruppi.includes(_sottoserieAttiva)) _sottoserieAttiva = gruppi[0];
 }
 
 function renderItems() {
   const grid = document.getElementById('items-grid');
   if (!currentSeriesId || !grid || !currentSection) return;
-  // v6.651 - la barra dei tab, prima di tutto il resto: decide quali articoli sono in gioco.
-  try { renderTabSottoserie(); } catch (e) { console.error('renderTabSottoserie', e); }
+  // 🔄 v6.718 - prima di tutto il resto si controlla che la sottoserie in cui siamo esista
+  //    ancora: decide quali articoli sono in gioco. Fino a ieri lo faceva la barra dei tab
+  //    mentre si disegnava, ed era l'unico pezzo di quel blocco che non era disegno.
+  try { _verificaSottoserieAttiva(); } catch (e) { console.error('_verificaSottoserieAttiva', e); }
   const searchQ = _perRicerca((document.getElementById('items-search')?.value || '').trim()); // v6.093 — senza accenti
   // 🔴 v6.355 - QUI C'ERA `if (searchQ) currentItemPage = 1;`, E BLOCCAVA LA PAGINAZIONE.
   // `changeItemPage(2)` scrive `currentItemPage = 2` e poi chiama QUESTA funzione, che con la
@@ -48368,7 +48734,32 @@ function switchToEditMode(figId) {
     // CARD: da li' si arriva alla scheda anche cliccandola, e una scheda con un Salva vivo dentro
     // una sezione dove modificare non ha senso sarebbe la porta di servizio - la stessa forma
     // dell'errore che la v6.347 aveva evitato tenendo UNA sola strada per impersonare.
+    // 🆕 v6.728 (Franco: «oltre a "salva" e "salva e resta", possiamo avere anche un tasto che si
+    //    chiami "salva e next"? … ovviamente ha senso solo quando ci sono le frecce dx-sx in alto.
+    //    quando non ci sono non farlo vedere») — IL TERZO SALVA.
+    // 🔴 LA CONDIZIONE E' LA STESSA DELLE FRECCE, e non una sua copia: `_navIdsCorrenti` e
+    //    l'indice dentro l'elenco sono cio' che in `openFigDetail` decide se le frecce si
+    //    accendono. Riscrivere qui «se siamo in una griglia» sarebbe stata la seconda regola,
+    //    e quel tasto avrebbe potuto comparire dove la freccia non c'e' - promettendo un «next»
+    //    che non porta da nessuna parte.
+    // 📌 E SULL'ULTIMO ARTICOLO SI SPEGNE, come la freccia ▶: un «salva e next» sull'ultimo
+    //    salverebbe e basta, cioe' farebbe la cosa di un altro tasto con un nome diverso.
+    // ⚠️ IL NOME RESTA INGLESE ANCHE IN ITALIANO, ed e' una scelta di Franco detta a voce
+    //    («lascia pure questo nome anche per l'italiano»): e' scritto qui perche' e' l'unica
+    //    etichetta del sito che non si traduce, e senza questa riga sembrerebbe una dimenticanza.
     (_daAttaccareModificaVietata(f) ? '' :   // v6.366 - i due Salva seguono «Abilita modifica»
+    (() => {
+      const _ids = _navIdsCorrenti(f.id);
+      const _i = _ids.indexOf(f.id);
+      const _ultimo = _i === _ids.length - 1;
+      return (_i === -1) ? '' :
+        '<button id="fig-edit-save-next-btn" data-fig-id="' + f.id + '" class="btn-barra-admin pieno"' +
+        (_ultimo ? ' disabled style="opacity:0.3;"' : '') +
+        ' title="' + (currentLang === 'it'
+          ? (_ultimo ? 'Sei sull\'ultimo articolo dell\'elenco' : 'Salva e apri il prossimo articolo')
+          : (_ultimo ? 'This is the last item in the list' : 'Save and open the next item')) +
+        '">💾 Salva e next</button>';
+    })() +
     '<button id="fig-edit-save-stay-btn" data-fig-id="' + f.id + '" class="btn-barra-admin pieno">💾 ' + (currentLang==='it'?'Salva e resta':'Save and stay') + '</button>' +
     '<button id="fig-edit-save-btn" data-fig-id="' + f.id + '" class="btn-barra-admin pieno">💾 ' + (currentLang==='it'?'Salva':'Save') + '</button>'
     ) +
@@ -48384,6 +48775,12 @@ function switchToEditMode(figId) {
   const stayBtn = document.getElementById('fig-edit-save-stay-btn'); // v6.052
   if (stayBtn) stayBtn.addEventListener('click', function() {
     saveFigFromDetail(stayBtn.getAttribute('data-fig-id'), { resta: true });
+  });
+  // 🆕 v6.728 - «Salva e next»: stessa funzione di salvataggio, un'opzione in piu'. Un secondo
+  //    percorso di salvataggio sarebbe stata la copia che diverge al primo campo nuovo.
+  const nextBtn2 = document.getElementById('fig-edit-save-next-btn');
+  if (nextBtn2) nextBtn2.addEventListener('click', function() {
+    saveFigFromDetail(nextBtn2.getAttribute('data-fig-id'), { next: true });
   });
 
   // v6.103 (§12.1) - i due riquadri eBay che hanno bisogno delle impostazioni (scelta account e
@@ -49395,10 +49792,24 @@ async function saveFigFromDetail(figId, opzioni) {
   //    misurato: in Sgorbions 2018 le carte con sottoserie sono 10 su 106. Le altre 96 sono
   //    giuste cosi' - sono il set principale.
   // 📌 La TENDINA resta: si toglie l'obbligo, non il campo.
-  const _resta = !!(opzioni && opzioni.resta);
+  // 🆕 v6.728 - «Salva e next» e' un «resta» che poi avanza: la scheda non si chiude, e dopo il
+  //    salvataggio si passa al prossimo articolo con la STESSA funzione delle frecce.
+  // 🔴 `_next` implica `_resta`, e non e' una scorciatoia: chiudere la scheda e poi riaprirla
+  //    sull'oggetto dopo sarebbe un lampeggio, e soprattutto perderebbe la pila di «da dove sei
+  //    arrivato» (v6.524) - le frecce invece la rispettano gia'.
+  const _next = !!(opzioni && opzioni.next);
+  const _resta = _next || !!(opzioni && opzioni.resta);
   // i due pulsanti si spengono durante il salvataggio: con "Salva e resta" la scheda rimane
   // aperta, quindi il secondo clic e' a portata di dito piu' che mai
-  const _bottoni = ['fig-edit-save-btn', 'fig-edit-save-stay-btn'].map(id => document.getElementById(id)).filter(Boolean);
+  // 🆕 v6.728 - E IL TERZO PULSANTE ENTRA IN QUESTO ELENCO, che e' la ragione per cui l'elenco
+  //    esiste: con «Salva e next» la scheda resta aperta come con «Salva e resta», quindi il
+  //    secondo clic e' a portata di dito - e li' un secondo clic non farebbe solo un secondo
+  //    salvataggio, farebbe saltare DUE articoli.
+  // 🔴 `!b.disabled` non e' prudenza: sull'ULTIMO articolo «Salva e next» nasce gia' spento, e
+  //    `_riaccendi()` lo riaccenderebbe alla prima uscita dal salvataggio - cioe' il pulsante
+  //    tornerebbe premibile proprio dove non ha un prossimo dove andare.
+  const _bottoni = ['fig-edit-save-btn', 'fig-edit-save-stay-btn', 'fig-edit-save-next-btn']
+    .map(id => document.getElementById(id)).filter(b => b && !b.disabled);
   _bottoni.forEach(b => { b.disabled = true; b.style.opacity = '0.5'; });
   const _riaccendi = () => _bottoni.forEach(b => { b.disabled = false; b.style.opacity = ''; });
   // v6.190 - qui la scheda era ancora piu' muta della form serie: non c'e' nessun riquadro di
@@ -49854,6 +50265,12 @@ async function saveFigFromDetail(figId, opzioni) {
     }
     // v6.052 - con "Salva e resta" la scheda NON si chiude: si aggiorna solo la griglia dietro.
     if (!_resta) closeModal('fig-detail-modal');
+    // 🆕 v6.728 - e con «Salva e next» si avanza, DOPO che il salvataggio e' andato a buon fine:
+    //    avanzare prima vorrebbe dire lasciare indietro un oggetto che non si e' salvato, e
+    //    l'utente se ne accorgerebbe solo tornando.
+    // 📌 Si passa da `navigateFigDetail`, la stessa funzione della freccia ▶: se un domani quella
+    //    cambia (l'elenco, la pila, il contesto che segue l'oggetto), questo la segue da se'.
+    if (_next) { try { navigateFigDetail(1); } catch (e) { console.error('salva e next', e); } }
     // v6.105 (§12.1, tappa 2) - IL RITORNO ALLA PAGINA ERRORI. Chi arriva da "Correggi"
     // (`switchToSeriesFromErrori`) ha lasciato una pagina aperta e si aspetta di ritrovarla: prima
     // se ne occupava il salvataggio della finestra, che da questa release non viene piu' chiamato.

@@ -342,27 +342,10 @@ body {
 }
 .menu-voce:hover { background: var(--card2); }
 
-/* 🆕 v6.651 — I TAB DELLE SOTTOSERIE. Una classe e non una stringa inline ripetuta per
-   ogni tab: il contro-esempio sta nella scheda della serie, dove i quattro tab hanno lo
-   stesso stile scritto quattro volte. Qui i tab sono quanti sono le sottoserie, cioe'
-   un numero che non si sa: scriverlo inline vorrebbe dire scriverlo N volte.
-   📌 La barra scorre in orizzontale invece di andare a capo: su telefono una barra che si
-   spezza in tre righe sposta la griglia in basso ogni volta che cambi tab. */
-#items-subseries-tabs {
-  display: flex; gap: 0.3rem; overflow-x: auto; margin: 0 0 0.9rem;
-  border-bottom: 1px solid var(--border); padding-bottom: 0;
-}
-#items-subseries-tabs:empty { display: none; }
-.tab-sottoserie {
-  flex-shrink: 0; padding: 0.45rem 0.9rem; border: 0; background: transparent;
-  border-bottom: 2px solid transparent; color: var(--text);
-  font-family: var(--font-ui); font-size: 0.88rem; cursor: pointer; white-space: nowrap;
-}
-.tab-sottoserie:hover { color: var(--accent); }
-/* Il tab attivo porta il lime dell'accento, come i tab della scheda serie: e' il colore
-   che in questo sito dice «sei qui». */
-.tab-sottoserie.on { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
-.tab-sottoserie .n { color: var(--muted); font-size: 0.8rem; margin-left: 0.35rem; }
+/* 🗑️ v6.718 - QUI STAVANO LE SEI REGOLE DELLA BARRA DEI TAB delle sottoserie (v6.651):
+   `#items-subseries-tabs`, il suo `:empty` e le quattro di `.tab-sottoserie`. La barra non
+   esiste piu' — la scelta della sottoserie si fa dalle card dell'hub, in un posto solo
+   (passo 4 del piano sottoserie). Franco: «non deve rimanere traccia alcuna». */
 /* 🗑️ v6.611 — QUI STAVA `.btn-admin-off`, LA VARIANTE SVUOTATA, e se n'e' andata con i suoi
    due soli utenti. Nata nella v6.601 per dare un gradino spento/acceso a «Ordina per
    creazione»: trasparente col bordo arancione da spenta, piena da accesa.
@@ -553,7 +536,43 @@ body {
    da guardare e' `grid.style.width` in `renderItems`.
    📌 Solo sopra gli 860px: sotto, la griglia stessa neutralizza tutto questo con `!important`, e il
    carosello li' e' gia' a posto. */
+/* 🔄 v6.725 (Franco: «rimetti le dimensioni di prima allargando il box contenitore … fallo largo
+   quanto quello del carosello della pagina serie») — L'HUB ENTRA IN QUESTA REGOLA.
+   🔴 NON E' UNA COPIA, ED E' IL PUNTO: due righe piu' su, la v6.460 aveva gia' scritto «se un
+   giorno la griglia cambia larghezza, questa regola resta indietro in silenzio», perche' la
+   ricetta era stata COPIATA dalla griglia degli articoli. Aggiungerne una terza copia per l'hub
+   avrebbe messo tre posti a dire la stessa misura. Qui il selettore ne prende due, e la misura
+   resta scritta una volta.
+   📌 PERCHE' SERVIVA: alla v6.724 le colonne dell'hub sono passate da tre a quattro dentro un
+   contenitore da 1100px, e le card sono scese da 351 a 257 pixel - le foto con loro, del 27%.
+   Franco non voleva quello. Allargando il contenitore le card tornano larghe quanto prima e
+   oltre: a 1440 di finestra fanno 326, dai 1800 in su 432 (prima erano 351).
+   ⚠️ E la griglia adesso e' piu' larga del titolo e della ricerca che le stanno sopra, che
+   restano dentro `.section-inner` (1100px). E' lo stesso sbordo che il carosello fa da sempre
+   nella home e nella scheda serie, ed e' cio' che Franco ha chiesto nominandolo. */
+/* 🔴 v6.727 — LA CONDIVISIONE DELLA v6.725 SI SCIOGLIE, E LA RAGIONE VALE PIU' DELLA RIGA.
+   Franco: «sei andato oltre la larghezza del carosello della home». Il codice diceva di no - la
+   stessa regola, quindi la stessa larghezza - e il codice diceva il falso.
+   📌 MISURATO NEL BROWSER, sul sito vero, con una finestra da 2554px: il carosello della home e'
+   largo **1620**, l'hub con la stessa dichiarazione ne fa **1800**. La differenza e' `zoom: 0.9`
+   su `#page-home` (v6.705, «con lo zoom al 90% vedo meglio»): dentro quello zoom una regola che
+   chiede 1800 a schermo ne mostra 1620. L'Inventario lo zoom non ce l'ha.
+   🔴 E' LA FORMA DEL 31 AGOSTO ALL'ENNESIMA POTENZA: la misura era giusta e diceva un'altra cosa.
+   Due elementi con la STESSA dichiarazione CSS non hanno la stessa larghezza a schermo se stanno
+   in due contesti di zoom diversi. Nessun `grep` lo dice, e nemmeno un banco: lo dice il browser.
+   ⚠️ E I DUE CAROSELLI NON SONO LARGHI UGUALI FRA LORO: quello della scheda serie sta fuori dallo
+   zoom, quindi fa 1800 come faceva l'hub. Franco li ha nominati tutti e due come riferimento;
+   qui si segue l'ULTIMO - la home - perche' e' quello che ha guardato dicendo «oltre».
+   📌 SE UN GIORNO LO ZOOM DELLA HOME SPARISCE, questo 0.9 va tolto insieme a lui, o l'hub
+   diventera' piu' stretto del carosello invece che piu' largo. */
 @media (min-width: 861px) {
+  #catalog-grid {
+    /* la larghezza del carosello della home MOLTIPLICATA PER IL SUO ZOOM: e' cio' che si vede,
+       non cio' che si chiede. Verificata a tre misure: a 1440 fanno 1238 tutti e due, a 1920
+       1620 tutti e due, a 2554 1620 tutti e due. */
+    width: min(1620px, calc((100vw - 4rem) * 0.9)); max-width: 1620px;
+    margin-left: 50%; margin-right: 0; transform: translateX(-50%);
+  }
   .carosello-largo {
     /* 🔄 v6.461 - ERA `96vw`, COPIATO DALLA GRIGLIA, E SFONDAVA. Il trucco «margine al 50% piu'
        traslazione all'indietro» serve a uscire dal proprio contenitore, e funziona per la griglia
@@ -566,6 +585,19 @@ body {
     width: min(1800px, calc(100vw - 4rem)); max-width: 1800px;
     margin-left: 50%; margin-right: 0; transform: translateX(-50%);
   }
+  /* 🔄 v6.726 (Franco: «sei andato oltre la larghezza del carosello della home») — E IL
+     CONTENUTO COMINCIA DOVE COMINCIA QUELLO DEL CAROSELLO.
+     🔴 I due CONTENITORI erano gia' larghi uguali - misurato su un banco col foglio vero, stessi
+     bordi al pixel a 1440 e a 1920. A non combaciare era il CONTENUTO: la fila del carosello ha
+     `padding: 0.2rem 0.4rem 0.8rem` (v6.061), quindi le sue card cominciano 6,4px dentro il
+     bordo e finiscono 6,4px prima. La griglia invece arrivava al bordo: tredici pixel di
+     differenza fra le due file, che a occhio si vedono perche' stanno una sopra l'altra.
+     📌 Si copia il valore laterale e solo quello: il verticale del carosello serve alle sue
+     frecce, che stanno a `-6px` e sporgono, e qui non c'e' niente da far sporgere.
+     ⚠️ Il padding STRINGE le card, non le sposta: quattro colonne dentro 12,8px in meno fanno
+     3,2px in meno ciascuna. E' il prezzo dell'allineamento, ed e' quello che Franco ha chiesto
+     guardando i due bordi. */
+  #catalog-grid { padding-left: 0.4rem; padding-right: 0.4rem; }
 }
 
 /* 🔄 v6.457 (Franco: *"non ci siamo. devono avere tutti le classiche caratteristiche di tasto admin
@@ -718,12 +750,23 @@ body {
 /* grid */
 .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
 
-/* v5.837 — INVENTARIO: SEMPRE TRE SERIE PER RIGA (regola valida anche sul desktop).
+/* v5.837 — INVENTARIO: UN NUMERO FISSO DI COLONNE, NON "quante ce ne stanno".
    .grid-3 e' "quante colonne da almeno 300px ci stanno": su schermo largo (contenitore max
    1100px) fanno gia' tre, ma nella fascia stretta 860-1000px ne restavano DUE, e sotto gli
    860 il mobile ne impone tre. Il numero di colonne cambiava quindi tre volte scendendo di
-   larghezza: 3, 2, 3. Qui diventa tre e basta, a ogni misura. */
-#catalog-grid { grid-template-columns: repeat(3, 1fr); }
+   larghezza: 3, 2, 3. Da allora e' un numero dichiarato, uguale a ogni misura.
+   🔄 v6.724 (Franco: «si potrebbe provare nell'hub delle serie (e in quello delle TDA) a
+   mettere 4 card per riga? solo desktop») — SUL DESKTOP SONO QUATTRO.
+   🔴 QUESTA RIGA GOVERNA TUTTI E DUE GLI HUB, e non e' un effetto collaterale: le card delle
+   TIPOLOGIE usano la stessa griglia delle SERIE (`renderCatalogProdotti` disegna dentro
+   `#catalog-grid`, v6.080). Era gia' cosi' prima di questa release, ed e' la ragione per cui
+   la richiesta di Franco - due hub - si soddisfa con una riga sola.
+   📌 IL TELEFONO NON CAMBIA: sotto gli 860px la media query piu' in basso rimette tre colonne
+   con il suo passo stretto, e quella regola e' piu' specifica di questa perche' arriva dopo.
+   Quattro card su una riga da 375px sarebbero larghe ottanta pixel.
+   ⚠️ E le colonne restano MONOTONE scendendo: 4 sopra gli 860, 3 sotto. Il difetto che la
+   v5.837 ha chiuso era il ballo 3-2-3, non il numero. */
+#catalog-grid { grid-template-columns: repeat(4, 1fr); }
 .grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; }
 .grid-6 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.75rem; }
 
@@ -1000,7 +1043,34 @@ body {
 }
 .back-btn:hover { border-color: var(--accent3); color: var(--accent3); }
 /* v5.886 — nome sopra la foto anche su DESKTOP: griglia come il mobile (nome riga 1 a tutta larghezza, foto+contatori riga 2) */
-.series-title-area { display: grid; grid-template-columns: 160px 1fr; gap: 0.5rem 2rem; align-items: start; }
+/* 🔄 v6.719 - UNA TERZA COLONNA, `auto`, PER LA FOTO PICCOLA DELLA SERIE (Franco: «a margine
+   e dx e piu' piccola»). `auto` e non una larghezza fissa: quando la fotina non c'e' - cioe'
+   ovunque tranne dentro una sottoserie - quella colonna misura ZERO e la testata torna
+   esattamente com'era. Una colonna fissa avrebbe lasciato un vuoto a destra su ogni serie. */
+.series-title-area { display: grid; grid-template-columns: 160px 1fr auto; gap: 0.5rem 2rem; align-items: start; }
+/* 🆕 v6.719 - LA FOTO DELLA SERIE quando la grande e' della sottoserie. Un terzo scarso di
+   quella (56 contro 160), stesso rapporto 3/4 e stesso arrotondamento: e' la stessa cosa in
+   piccolo, non un altro oggetto. `:empty` la fa sparire con la sua colonna. */
+/* 🔄 v6.720 - IN BASSO A DESTRA, E PIU' GRANDE (Franco). Terza colonna della griglia con
+   `align-self: end`: scende in fondo alla testata invece di stare in cima accanto al titolo.
+   📌 La colonna e' `auto`, quindi quando la fotina non c'e' - cioe' ovunque tranne dentro una
+   sottoserie - misura zero e la testata torna esattamente com'era. */
+.series-cover-mini {
+  width: 96px; min-width: 96px; aspect-ratio: 3/4; grid-row: 2; grid-column: 3; align-self: end;
+  background: var(--card2); border-radius: 10px; border: 1px solid var(--border2);
+  overflow: hidden;
+}
+.series-cover-mini:empty { display: none; }
+.series-cover-mini img { width: 100%; height: 100%; object-fit: cover; }
+/* 🆕 v6.719 - il nome della sottoserie sotto quello della serie. `flex-basis:100%` lo manda a
+   capo dentro il blocco del titolo, che ha gia' `flex-wrap`. */
+/* 🔄 v6.720 (Franco: «il nome della sottoserie e' un po' troppo piccolo») - da 1.05 a 1.45rem.
+   📌 Resta sotto al nome della serie, che e' 2rem: dice DOVE SEI dentro quella serie, non e' un
+   secondo titolo. Piu' grande di cosi' farebbe due titoli che si contendono lo sguardo. */
+.series-subname {
+  flex-basis: 100%; font-family: var(--font-ui); font-size: 1.45rem;
+  color: var(--accent); font-weight: 600; margin-top: 0.2rem;
+}
 /* 🆕 v6.689 - LA COPERTINA DIVENTA IL CONTENITORE DEL TIMBRO, e sono DUE righe che
    valgono solo insieme:
    🔴 `position: relative` - il timbro e' `position:absolute`, e senza un antenato
@@ -1019,6 +1089,28 @@ body {
   position: relative; container-type: inline-size;
 }
 .series-cover img { width: 100%; height: 100%; object-fit: cover; }
+/* 🆕 v6.720 (Franco: «la foto della sottoserie … è tagliata») — QUANDO IL POSTO GRANDE MOSTRA
+   UNA SOTTOSERIE, L'IMMAGINE SI VEDE INTERA.
+   🔴 `cover` riempie il riquadro tagliando i bordi, ed e' giusto per la COPERTINA di una serie:
+      e' una foto scelta per stare li'. La foto di una sottoserie invece e' la stessa che si e'
+      appena vista sulla sua card nell'hub, e li' il sito la mostra intera
+      (`background-size: contain`). Con `cover` la stessa immagine si vedeva in due modi a un
+      clic di distanza — e quello dopo il clic era tagliato.
+   📌 E' una CLASSE e non uno stile scritto sull'elemento: lo stile inline su un nodo che viene
+      rivestito a ogni ingresso e' il genere di cosa che una release dimentica di togliere. */
+.series-cover.mostra-sottoserie img { object-fit: contain; }
+/* 🔴 v6.720 - E IL RIQUADRO PRENDE LA FORMA DELLA FOTO, o «intera» vuol dire «piccola».
+   Misurato, non supposto: la copertina di una serie e' **3/4 verticale**, le card dell'hub sono
+   **16/9 panoramiche** (`--hub-box-ratio`, riga 203 dell'index). Una foto 16/9 dentro un
+   riquadro 3/4, mostrata intera, diventa una striscia alta meno di meta' riquadro con due
+   fasce vuote sopra e sotto — Franco: «cosi' visivamente non si nota differenza».
+   ✅ Quindi dentro una sottoserie il riquadro diventa 16/9 e si allarga: stessa forma della
+   card da cui si e' entrati, e l'immagine la riempie senza perdere niente ai bordi.
+   ⚠️ La colonna della griglia e' larga 160px fissi, quindi va allargata con lui: se ne occupa
+   `.series-title-area.con-sottoserie`, accesa dalla stessa funzione che veste la testata.
+   Cambiare la foto senza la colonna avrebbe fatto sfondare la griglia in silenzio. */
+.series-cover.mostra-sottoserie { width: 288px; min-width: 288px; aspect-ratio: var(--hub-box-ratio); }
+.series-title-area.con-sottoserie { grid-template-columns: 288px 1fr auto; }
 .series-info { display: contents; }
 .series-info > div:first-child { grid-row: 1; grid-column: 1 / -1; }  /* nome+anno sopra */
 #detail-meta { grid-row: 2; grid-column: 2; }  /* contatori a destra della foto */
@@ -1866,6 +1958,23 @@ footer {
     gap: 0.5rem 0.8rem;
     align-items: start;
   }
+  /* 🔴 SU TELEFONO LA FOTO PICCOLA DELLA SERIE NON SI MOSTRA, ED E' UNA SCELTA DICHIARATA,
+     non un effetto collaterale. Provata in tre piazzamenti diversi su un banco a quattro
+     larghezze (1440, 850, 560, 375): sul desktop sta dove Franco l'ha chiesta, a 375 non
+     si disegna — la riga del titolo lassu' e' gia' piena di titolo, anno e nome della
+     sottoserie. Invece di lasciare un elemento che compare o sparisce secondo lo spazio che
+     avanza, qui si spegne e si dice perche'.
+     📌 Cosa NON si perde su telefono: il nome della sottoserie sotto il titolo (che e'
+     l'informazione: dove sei) e la foto della sottoserie grande. La foto della serie e' a un
+     tocco - il tasto indietro - e a 40px diceva pochissimo.
+     ⚠️ E' la lezione del timbro della v6.605 (giusto sul desktop, rotto sul telefono), questa
+     volta trovata PRIMA di pubblicare, guardando le schermate invece di immaginarle. */
+  .series-cover-mini { display: none; }
+  /* su telefono la copertina della serie e' 104px: quella di una sottoserie resta panoramica
+     ma si ferma a 176, che a 375px lascia ancora spazio alle numeriche accanto. */
+  .series-cover.mostra-sottoserie { width: 176px; min-width: 176px; }
+  .series-title-area.con-sottoserie { grid-template-columns: 176px 1fr; }   /* la fotina qui e' spenta */
+  .series-subname { font-size: 1.15rem; }   /* v6.720 - cresciuto da 0.92 anche qui */
   .series-info { display: contents; }
   /* Le RIGHE vanno dette esplicitamente. La copertina viene prima nell'HTML: lasciando fare
      al piazzamento automatico si prendeva la riga 1, il blocco nome+anno (che occupa due

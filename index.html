@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.716"></script>
-<link rel="stylesheet" href="css/style.css?v=6.716">
+<script src="js/email.min.js?v=6.728"></script>
+<link rel="stylesheet" href="css/style.css?v=6.728">
 
 
 <style>
@@ -1182,12 +1182,33 @@ di tutte le serie</button>
     <div class="series-hero-inner">
       <button class="back-btn" onclick="closeSeriesDetail()">&#8592; <span data-i18n="back">Inventory</span></button>
       <div class="series-title-area">
+        <!-- 🔄 v6.719 (Franco: «dai piu' enfasi alla foto della sottoserie, che metterei dove
+             ora c'e' la foto della serie … e la foto della serie la lascerei a margine e dx e
+             piu' piccola») — IL POSTO GRANDE NON E' PIU' "LA FOTO DELLA SERIE": E' "LA FOTO DI
+             DOVE SEI". Dentro una sottoserie ci va la sua; sull'hub e nelle sezioni senza
+             gruppi resta quella della serie, come sempre. L'id non cambia: lo leggono il
+             timbro di stato (v6.689) e le sue regole CSS. -->
         <div class="series-cover" id="detail-cover"><span id="detail-cover-emoji">&#127924;</span></div>
+        <!-- 🆕 v6.719 / 🔄 v6.720 - LA FOTO DELLA SERIE quando la grande e' di una sottoserie.
+             Nasce vuota e si riempie solo li': fuori, la serie e' gia' quella grande, e
+             mostrarla due volte sarebbe la stessa cosa scritta da due punti.
+             🔄 v6.720 (Franco: «la metterei in basso a dx, ora e' in alto a dx, e un po' piu'
+             grande») - da 56 a 96px, e scende in fondo alla testata: terza colonna della
+             griglia, allineata al BASSO. Alla v6.719 stava nella riga del titolo perche' come
+             colonna spariva sotto i 560px; adesso su telefono e' spenta di proposito, quindi
+             quel motivo non c'e' piu' e puo' tornare dove si vede meglio. -->
+        <div class="series-cover-mini" id="detail-cover-serie"></div>
         <div class="series-info">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
             <div style="display:flex;align-items:baseline;gap:0.7rem;flex-wrap:wrap;">
               <h1 class="series-name" id="detail-name" style="margin:0;"></h1>
               <div class="series-year" id="detail-year" style="margin:0;"></div>
+              <!-- 🆕 v6.719 - IL NOME DELLA SOTTOSERIE, sotto quello della serie e piu'
+                   piccolo. Sta DENTRO questo blocco e non in una riga sua della griglia:
+                   qui c'e' gia' `flex-wrap`, quindi con `flex-basis:100%` va a capo da se'
+                   e resta allineato al titolo su tutte e due le impaginazioni, desktop e
+                   telefono, senza una seconda regola da tenere d'accordo. -->
+              <div class="series-subname" id="detail-subname" style="display:none;"></div>
             </div>
             <!-- 🆕 v6.644 (Franco: «invece di n bottoni non possiamo fare un unico
                  pulsante con un menu a tendina? … la tendina la chiami "Opzioni admin"»)
@@ -1623,13 +1644,6 @@ di tutte le serie</button>
         </select>
       </div>
     </div>
-    <!-- 🆕 v6.651 (Franco: «passare da una sottoserie ad un'altra con un solo click») —
-         LA BARRA DEI TAB. Nasce vuota e la riempie `renderTabSottoserie` a ogni ridisegno:
-         dove la sezione non usa le sottoserie resta vuota e non si vede.
-         📌 Sta SOPRA la paginazione e sopra la griglia, ed e' il posto giusto per tutte e
-         due le viste: la vista tabellare legge gli stessi articoli filtrati, quindi il
-         tab vale anche per lei senza doverlo sapere. -->
-    <div id="items-subseries-tabs"></div>
     <div id="items-pagination-top"></div>
     <div class="grid-6" id="items-grid">
       <div class="empty-state"><div class="empty-icon">&#128230;</div><p class="empty-title">Nessun oggetto ancora !</p></div>
@@ -3954,7 +3968,7 @@ di tutte le serie</button>
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.716"></script>
+<script src="js/app.js?v=6.728"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -3978,7 +3992,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.716'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.728'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 
