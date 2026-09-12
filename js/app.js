@@ -1,6 +1,406 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.783 - 🏷️ IL TAB «ARTICOLI NON BASE» SI CHIAMA «VERSIONI NON BASE». Franco: «nella form
+//          della serie, il tab "Articoli non base" va chiamato "Versioni non base"». Modificato
+//          index.html; js/app.js solo per `JS_VERSION` e per le tre righe che nominavano il tab.
+//          📌 E' LA PAROLA GIUSTA, non un sinonimo: dentro quel tab si contano variazioni,
+//          change, omaggi ed errori di stampa, che sono le VERSIONI di un articolo - e «articolo»
+//          nel vocabolario di questo sito e' un'altra cosa (le dodici tipologie dell'Inventario).
+//          Il tab diceva «articoli» e mostrava versioni.
+//          ⚠️ LE TRE SPIEGAZIONI VECCHIE SONO STATE CANCELLATE DOVE STAVANO (nel changelog della
+//          v6.219 e nelle due righe dell'index che nominavano il tab): una spiegazione che chiama
+//          una cosa con un nome che non ha piu' e' piu' pericolosa di una regola vecchia, perche'
+//          la regola la vede una prova e la spiegazione no. E' la lezione del 6 settembre.
+//          📌 I CINQUE TAB SONO SCRITTI A MANO IN ITALIANO nell'index, tutti e cinque: non c'e'
+//          nessuna chiave di traduzione da aggiornare, e questa release non ne inventa una.
+//
+// v6.782 - 🚧 IL «TIPO DI CHANGE» ESISTE IN TUTTE LE SEZIONI: ERA UN VICOLO CIECO. Franco:
+//          «nella form della bustina, se setto change=true mi chiede il tipo di change obbligatorio
+//          ma non c'e' il campo». Modificato js/app.js e index.html (solo i cache-buster).
+//          🔴 UNA RIGA SOLA, E UN GESTO IMPOSSIBILE. La casella «Change» si mostra in ogni
+//          sezione che la ammette (`_versioneAmmessa`), ma la tendina del suo TIPO nasceva dentro
+//          un `if (isRetrosItem || f.section === 'figurines')`. Su una bustina: spunti Change, il
+//          campo non compare, salvi, e il sito ti chiede un campo che non esiste. Non si poteva
+//          uscire - ne' salvare ne' capire perche'.
+//          ✅ MISURATO SUI DATI VERI PRIMA DI TOCCARE, ed e' la prova che il vicolo c'e' sempre
+//          stato: i Change esistono in `retros` (107) e in `figurines` (116), e in NESSUN'ALTRA
+//          sezione. Zero su bustine, album, spille, carte, tatuaggi, trasferelli, cartoncini,
+//          extra, da attaccare. Non e' una scelta di dominio: e' che da fuori quelle due sezioni
+//          un Change non si e' mai potuto creare.
+//          📌 E IL CONTROPROVA STA ACCANTO: gli ERRORI DI STAMPA fuori da quelle due sezioni
+//          sono SETTE (sulle spille). Il loro campo «Tipo» e' sempre stato disegnato per tutte le
+//          sezioni, e infatti li' il gesto riesce. Due campi gemelli, due destini diversi, e la
+//          differenza era una riga.
+//          📌 ADESSO I TRE CAMPI DEL TIPO SONO DELLA STESSA FORMA: «Tipo di change», «Tipo di
+//          omaggio» (v6.241/253) e «Tipo di errore di stampa» nascono senza condizione di sezione e
+//          si mostrano quando la loro casella e' spuntata. Era l'unico dei tre a portarsi dietro la
+//          regola scritta quando le sezioni erano due - stessa famiglia della v5.714, della v6.146
+//          e della v6.198, e con questa fa quattro.
+//          ⚠️ «IL CAMPO NON ERA ROTTO, ERA IRRAGGIUNGIBILE» e' parola per parola la diagnosi della
+//          v6.254 sul «Tipo di omaggio»: li' mancava la riga che lo SCOPRE, qui quella che lo CREA.
+//          📌 LE OPZIONI NON SI FILTRANO PER SEZIONE, e non e' una dimenticanza: i tipi di
+//          change sono dichiarati sulla SERIE (`changeTypesDiSerie`), non sulla tipologia di
+//          articolo. Inventare qui un filtro sarebbe una regola di dominio che Franco non ha dato -
+//          l'errore che la v6.246 ha gia' pagato una volta.
+//
+// v6.781 - 🎠 NEL CAROSELLO, DAVANTI AL GRUPPO VA «SOTTOSERIE» E NON LA TIPOLOGIA. Franco:
+//          «nel carosello della pagina delle spille, ma forse anche in quello della home - riga 1:
+//          Serie, riga 2: il nome della sottoserie», poi «devi solo non mettere il prefisso
+//          "Spille "», e infine «prova a usare "Sottoserie " come prefisso». Modificato js/app.js
+//          e index.html (solo i cache-buster).
+//          ✅ MISURATO SUL CAROSELLO VIVO DELLA HOME, e il difetto era quello che diceva lui: la
+//          card delle Spille scriveva «Spille» in bianco e, subito sotto, «Spille 3,7 CM
+//          classiche» in giallo. La stessa parola due volte, una sopra l'altra. Due card su otto,
+//          ed erano tutte e due delle Spille.
+//          🔴 QUESTA RELEASE REVOCA LA v6.723, CHE ERA DI FRANCO («metti davanti SPILLE»).
+//          L'argomento di allora NON cade - «da sola "Metal" non dice di cosa sia il gruppo» e'
+//          ancora vero. Cade la RISPOSTA: quel prefisso serviva a far capire che la riga parlava
+//          di un GRUPPO, e la parola «Sottoserie» lo dice meglio, senza dipendere da come si
+//          chiamano le tipologie. Sulle Spille la tipologia si chiama come la serie, ed e' li'
+//          che la risposta vecchia si rompeva.
+//          📌 E' LA v6.779 APPLICATA AL CAROSELLO: nello stesso giorno, e per la stessa
+//          ragione, il titolo della card di una sottoserie ha smesso di comporre tipologia + nome.
+//          🆕 LA PAROLA VIVE IN UN POSTO SOLO (`_parolaSottoserie`), e nasce qui: da questa
+//          release la usano il carosello E il sottotitolo della testata (v6.774), che se la
+//          scriveva per conto suo. Due copie di una parola tradotta sono due posti da cui puo'
+//          nascere una seconda forma - e' gia' successo con «punti»/«rarita'» (v6.493/v6.499).
+//          ⚠️ COSA SI PERDE, E FRANCO L'HA SCELTO SAPENDOLO: nella home le card vengono da
+//          tipologie diverse, e due gruppi con lo stesso nome sotto tipologie diverse ora
+//          sarebbero indistinguibili. Oggi non ne esistono; il giorno che esistono, la regola
+//          della v6.774 e' gia' scritta in `_sottoserieInUnaSolaTDA` e basta chiamarla.
+//          ⚠️ UNA SOTTOSERIE SFORA, ED E' UNA SOLA: «4.1 CM senza nome» chiede 144px in una riga
+//          da 137 sul carosello della serie, e finisce con i puntini - con «Spille » ci stava.
+//          Contate tutte e 67 le card prima di scriverlo, non stimato. Messe a Franco le tre
+//          strade (lasciarla, stringere la riga per tutte, togliere il prefisso) ha detto
+//          «proviamo 1»: si lascia cosi', e il nome intero resta nel `title` della card.
+//
+// v6.780 - 🔤 I DUE TITOLETTI LIME DELL'HUB SALGONO A 1.15em/700. Franco, guardandoli a
+//          schermo: «"Numeriche per sottoserie" e "Numeriche per tipologia di articolo" sono un po'
+//          troppo piccole». Modificato js/app.js e index.html (solo i cache-buster).
+//          📌 ERANO 1em/600, cioe' ESATTAMENTE la misura delle righe che intestano: un
+//          titolo che pesa quanto il suo contenuto non fa da titolo, lo fa solo il colore. La
+//          v6.778 li aveva lasciati cosi' per non aggiungere niente che Franco non avesse chiesto,
+//          e la risposta e' arrivata alla prima occhiata.
+//          📌 LA MISURA E' IN `em` E NON IN PIXEL, ed e' la scelta che conta: le numeriche
+//          dell'hub girano a 13.12px sul desktop - MISURATO sul sito vivo, non dedotto - ma quel
+//          valore non e' scritto da nessuna parte, lo ereditano dal corpo della pagina. In px il
+//          rapporto fra titolo e righe si congelerebbe, e il giorno che il corpo cambia misura
+//          resterebbero due titoli della vecchia taglia sopra numeri di taglia nuova.
+//          ⚠️ IL GRASSETTO SALE INSIEME (600 -> 700): a 1.15em un 600 su fondo scuro si legge
+//          come testo grande, non come titolo. Sono stati messi a schermo tutti e tre i gradini
+//          (1em/600, 1.15em/700, 1.3em/700) sulla pagina vera di Holidays, e Franco ha scelto il
+//          secondo.
+//          ✅ NESSUNA PROVA SI E' ACCESA, e ha senso: `prova-v6778` pretende i due titoli, il
+//          loro ORDINE, lo stacco sopra al secondo e i DUE `var(--accent)` - cioe' le cose che
+//          questa release non tocca. La taglia non era una promessa, era un valore di partenza.
+//
+// v6.779 - 🏷️ SULLA CARD DI UNA SOTTOSERIE IL TITOLO E' IL SUO NOME, E BASTA. Franco, guardando
+//          l'hub di Holidays: «chi apre la serie e legge il nome delle card non capisce cosa sia
+//          sottoserie e cosa no». Modificato js/app.js e index.html (solo i cache-buster).
+//          ✅ MISURATO, E IL DIFETTO ERA PIU' GROSSO DELLA SEGNALAZIONE: tutte e SEI le card di
+//          sottoserie di Holidays dicevano la stessa parola due volte - «Figurine Figurine Metal»,
+//          «Tatuaggi Tatuaggi», «Trasferelli Trasferelli», «Carte d'identita' Carte d'identita'».
+//          🔴 LA CAUSA E' UNA COLLISIONE FRA UNA REGOLA E I DATI. La v6.693 componeva il titolo
+//          come «tipologia + sottoserie», su richiesta di Franco («per le figurine, scrivi
+//          Figurine Metal…»), e per quei tre nomi era giusta. Ma i nomi delle sottoserie
+//          CONTENGONO GIA' la tipologia, quindi la composizione raddoppiava.
+//          📌 E IL COMMENTO DELLA v6.693 LO DICEVA, senza accorgersene: «comporlo direbbe
+//          "Tatuaggi Tatuaggi"» - scritto come la ragione per non comporre sulle card di
+//          TIPOLOGIA, mentre era esattamente cio' che usciva sulle card di SOTTOSERIE. Una
+//          spiegazione che descrive il difetto della riga accanto.
+//          ⚠️ RESTA APERTO cosa distingue a colpo d'occhio una card di sottoserie da una di
+//          tipologia: oggi lo dice solo la riga con l'emoji della tipologia, che non ha parole.
+//          Franco non ha ancora scelto come marcarle.
+//
+// v6.778 - 🧮 LE NUMERICHE DELL'HUB IN DUE BLOCCHI, CON DUE TITOLI LIME. Franco: «nella parte
+//          alta della scheda della serie vorrei delineare il confine tra sottoserie e resto»,
+//          e poi, guardando le anteprime: «Figurine diventano 3 sezioni», «la frase "Numeri per
+//          sottoserie" sparisce del tutto», «non c'e' un totale unico ma solo per ogni
+//          sottoserie», «una riga tra le numeriche delle sottoserie e quelle successive», «prima
+//          di quelle numeriche un titoletto», «il titoletto lo fai lime», e infine «ora che hai
+//          messo il titoletto non serve piu' il prefisso "Sottoserie "». Modificato js/app.js e
+//          index.html (solo i cache-buster).
+//          🔴 E' LA RAGIONE DELLA v6.676 RIMESSA IN PIEDI DOVE FUNZIONA. Quella release aveva
+//          scritto: «la parola non si ripete su ogni riga: la dice il titolo del blocco, una volta
+//          sola». Era giusta, ma il blocco stava DENTRO ogni tipologia, quindi su Holidays quel
+//          titolo compariva QUATTRO volte. Adesso il blocco e' uno per tutta la serie e il titolo
+//          lo dice davvero una volta - ed e' per questo che il prefisso, chiesto e poi ritirato da
+//          Franco nel giro di un'anteprima, non serve piu'.
+//          🔴 LA RIGA DI UNA TIPOLOGIA SPARISCE SOLO SE NON DICE NIENTE DI PIU' DELLE SUE
+//          SOTTOSERIE, e questa e' la riga che evita una perdita silenziosa. Su Holidays
+//          «61 Figurine» e' 30+30+1, cioe' la somma di cio' che si legge sotto. Sulle SPILLE
+//          quella riga dice «70 set base · 7 errori di stampa · 77 in totale», e quei numeri dalle
+//          sottoserie NON si ricavano. ⚠️ Misurato sul sito vivo prima di scrivere: la prima
+//          anteprima era su Holidays, dove il problema non si vedeva.
+//          📌 LA DOMANDA SI FA CONTANDO LE RIGHE: senza il blocco delle sottoserie, `sezRows`
+//          torna UNA riga quando non ci sono versioni e piu' d'una quando ci sono. Un secondo
+//          `tipiPresenti` a ogni apertura dell'hub sarebbe il costo che il commento di
+//          `renderSeriesMeta` mette in guardia dal pagare.
+//          ⚠️ IL SECONDO TITOLO DICE «per tipologia di articolo» E NON «altre tipologie», e la
+//          ragione e' quella riga qui sopra: dentro quel blocco puo' finirci anche una tipologia
+//          CHE HA sottoserie (le Spille), quindi «altre» direbbe il falso.
+//          ⚠️ I DUE TITOLI COMPAIONO SOLO SE CI SONO SOTTOSERIE: su una serie che non ne ha -
+//          quasi tutte - le numeriche restano identiche a oggi. E' la «visualizzazione classica
+//          delle serie senza sottoserie» che Franco ha chiesto di non toccare.
+//          📌 DENTRO UNA SEZIONE non cambia niente: li' il blocco «Numeri per sottoserie» resta
+//          dov'e', perche' quella pagina parla di una tipologia sola e il titolo non si ripete.
+//          `sezRows` ha un parametro nuovo, e il ripiego e' il comportamento di prima.
+//          📌 «Set principale» sta nel primo blocco senza prefisso: non e' una sottoserie, e' il
+//          resto (v6.651). Su «Sgorbions 2018» sono 96 carte su 106.
+//
+// v6.777 - 📐 I QUATTRO TASTI DELLA FINESTRA DELLA FOTO IN DUE RIGHE DA DUE. Franco, guardando la
+//          finestra: «i bottoni sono troppo larghi: disponili in 2 righe da 2 bottoni». Modificato
+//          index.html; js/app.js solo per `JS_VERSION`.
+//          📌 IL TAGLIO NON E' SOLO DI LARGHEZZA: la riga 1 e' quello che fai ALLA FOTO («Cambia
+//          foto», «Rimuovi sfondo»), la riga 2 quello che fai alla FINESTRA («Applica foto»,
+//          «Annulla»). Sono due mestieri diversi, e a due a due si leggono come due gruppi.
+//          🔄 E LA REGOLA DELLA v6.605 NON E' STATA TRADITA, E' DECADUTA: la v6.772 aveva messo
+//          «Cambia foto» SOPRA «Rimuovi sfondo» perche' «chi mette sta sopra, chi toglie sotto» -
+//          ma li' i comandi erano tre in colonna e l'unico ordine possibile era verticale. Su una
+//          riga sola quella regola non ha piu' niente da ordinare, e nessuno dei due toglie
+//          qualcosa all'articolo.
+//          ⚠️ VIA I `width:100%`, e non e' pulizia: dentro un contenitore flex una larghezza
+//          cablata scavalca il `flex:1` e rimette un tasto lungo quanto due. E' il difetto che
+//          `prova-v6605` §2 sorveglia nella scheda dell'articolo, qui in piccolo.
+//          ⚠️ E IL `margin-bottom` PASSA DAI TASTI ALLA RIGA: lasciato sui tasti, dentro una riga
+//          flex si sommerebbe a quello della riga e lo spazio fra le due file raddoppierebbe.
+//          📌 La regola CSS della v6.687 non si tocca: i due tasti in fondo prendono ancora la
+//          misura di `.btn-foto`, che adesso e' il tasto che sta sopra di loro sulla riga 1.
+//
+// v6.776 - 🧹 APRENDO UNA SERIE, LA TESTATA SI SVESTE DAVVERO. Franco: «quando apro la pagina di
+//          una sottoserie e dopo, facendo qualsiasi giro, apro la pagina di una serie (anche
+//          un'altra) rimane ancora visibile la scritta "Sottoserie [Nome sottoserie]"». Modificato
+//          js/app.js e index.html (solo i cache-buster).
+//          ✅ MISURATO SUL SITO VIVO (v6.768), e l'avanzo e' PIU' GRANDE della scritta: entrando in
+//          «Spille · 3,7 CM classiche» e poi aprendo la serie 3 restavano a schermo **tre** cose -
+//          il sottotitolo «Spille 3,7 CM classiche», la **fotina delle Spille** in fondo a destra e
+//          la classe `mostra-sottoserie`, cioe' la copertina della serie 3 NON ritagliata e la
+//          colonna larga. Piu' `_sottoserieAttiva` rimasto acceso su un gruppo di un'altra serie.
+//          ⚠️ NON E' UNA REGRESSIONE DELLA v6.774: quella ha cambiato le PAROLE di quel testo, non
+//          il fatto che restasse. L'avanzo c'e' dalla v6.719, che il nome del gruppo nella testata
+//          ce l'ha messo. La v6.774 l'ha solo reso leggibile come un errore - prima diceva
+//          «Spille 3,7 CM classiche» e sembrava quasi un titolo.
+//          🔴 LA CAUSA: `openSeriesDetail` non chiamava MAI `_vestiTestataPerSezione`, e si
+//          scriveva nome e anno a mano. Chi tornava indietro con il tasto passava da
+//          `closeItemsSection`, che la chiama; chi faceva «qualsiasi giro» - l'Inventario, un'altra
+//          serie, la ricerca - no. Una funzione che sa svestire la testata, e una porta d'ingresso
+//          che non la chiamava.
+//          📌 NON BASTAVA UN `sub.textContent = ''` QUI: sarebbe stata la quinta copia di un gesto
+//          che quella funzione fa gia', e avrebbe lasciato fuori la fotina e le due classi - cioe'
+//          avrebbe chiuso la meta' visibile del difetto lasciando l'altra.
+//          🧹 E SE NE VANNO TRE RIGHE SCRITTE A MANO: nome, anno e `_disegnaCopertinaSerie(s)`, che
+//          quella funzione fa gia' tutte e tre. ⚠️ Il nome e l'anno passano ora da
+//          `_vestiTitoloTestata`, che rimette anche il `display` dell'anno - quindi si chiude in
+//          silenzio anche l'avanzo di chi veniva da un box di TDA senza serie, dove l'anno era
+//          stato spento.
+//          📌 `_sottoserieAttiva` si azzera qui, per la ragione gia' scritta per il box di tipo
+//          prodotto: «l'azzeramento sta QUI e non in chi va via» (v6.144).
+//
+// v6.775 - 🔢 NELLA PAGINA DI UNA SOTTOSERIE, LE NUMERICHE SONO QUELLE DI QUELLA SOTTOSERIE.
+//          Franco: «quando sono nella pagina di una serie, ok a mostrare tutte le numeriche; ma
+//          quando sono nella pagina di una sottoserie mostrerei solo le numeriche per quella
+//          sottoserie». Modificato js/app.js e index.html (solo i cache-buster).
+//          ✅ MISURATO SUL SITO VIVO, E IL NUMERO E' IMBARAZZANTE: nella pagina «Spille · 3,7 CM
+//          classiche», con **24 card a schermo**, il riquadro degli errori di stampa annunciava
+//          **7 errori in totale** su quattro tipi. Quel gruppo di errori di stampa ne ha **ZERO**:
+//          i 7 sono di tutta la sezione (77 articoli), cioe' di altri gruppi. Una pagina che
+//          mostra i numeri di un'altra pagina, senza nessun errore da nessuna parte.
+//          🔴 E LE DUE RISPOSTE DIVERSE STAVANO DENTRO LA STESSA FUNZIONE. `renderSpecchiettiTop`
+//          prende i suoi riquadri da due sorgenti: le CATEGORIE da `getCurrentlyFilteredItems`,
+//          che il gruppo lo rispetta dalla v6.651; le VERSIONI da un filtro scritto a mano che
+//          chiedeva solo serie e sezione. Il commento della v6.651 diceva gia' perche' la regola
+//          stava nel setaccio - «cosi' conteggi, riquadri, paginazione, export e la vista tabellare
+//          la rispettano senza saperne nulla» - e questa riga era quella che se n'era andata per
+//          conto suo.
+//          📌 ADESSO LA DOMANDA E' UNA SOLA: `_delGruppoAttivo(f)`, letta dal setaccio e dalla
+//          testata. ⚠️ `!== null` e non una verita': la stringa VUOTA e' il «Set principale», cioe'
+//          un gruppo vero, e li' il filtro deve girare (v6.729). ⚠️ Ed e' una `function` e non una
+//          `const`: la leggono due punti lontani, e una dichiarazione issata non finisce in zona
+//          morta (v6.152).
+//          ⚠️ NON SI E' PASSATI DAL SETACCIO INTERO, ed e' voluto: quello applica anche i filtri
+//          dell'utente, e questi riquadri dicono «cosa c'e' qui dentro», non «cosa e' rimasto dopo
+//          che hai filtrato». Farli rimpicciolire sotto le dita e' il difetto che le v6.271 e
+//          v6.335 hanno evitato apposta.
+//
+// v6.774 - 🏷️ IL SOTTOTITOLO DI UNA SOTTOSERIE DICE «SOTTOSERIE», IN AZZURRO, E LA TIPOLOGIA
+//          SOLO DOVE SERVE A DISTINGUERE. Franco: «invece che ripetere Serie, prima del nome della
+//          sottoserie potremmo scrivere Sottoserie; in effetti questa parola in pagina non c'e'.
+//          Pero' lo scriverei nello stesso azzurro del nome della serie», e poi, sui due casi:
+//          «a) la serie ha tutte sottoserie della stessa TDA → "Sottoserie [Nome]"; b) se no →
+//          "Sottoserie [Tipologia] [Nome]". Sia in a) che in b) Sottoserie in azzurro e il resto
+//          lime». Modificato js/app.js e index.html (solo i cache-buster).
+//          ✅ «SOTTOSERIE» DAVVERO NON C'ERA: misurato sulla pagina viva, quella parola non
+//          compariva da nessuna parte.
+//          🔴 MA LA PAROLA CHE SPARIVA NON ERA «SERIE»: era il nome della TIPOLOGIA. In «Spille ·
+//          3,7 CM classiche» la riga diceva «Spille 3,7 CM classiche», e sembrava una ripetizione
+//          solo perche' quella serie si chiama come la sua TDA.
+//          🔴 E IL CASO b) SALVA LA META' DEL PATTO DELLA v6.729, che la prima stesura avrebbe
+//          rotto: quella release ha fatto TACERE il titolo sopra la griglia dentro un gruppo, e il
+//          suo commento dice perche' - «il titolo tace PERCHE' la testata parla». Scrivendo sempre
+//          «Sottoserie [Nome]», dove le tipologie con sottoserie sono due o piu' la tipologia non
+//          l'avrebbe piu' detta NESSUNO. Tre suite (v6.718, v6.729, v6.732) si sono accese tutte
+//          insieme su questo, prima che il codice uscisse.
+//          🔴 LA DOMANDA SI FA AI DATI, NON A UN ELENCO DI SERIE: `_sottoserieInUnaSolaTDA` guarda
+//          gli ARTICOLI, perche' nel record della serie le sottoserie sono `{nome, img}` e la
+//          tipologia non ce l'hanno proprio (v6.680). Zero o una sola tipologia = niente da
+//          distinguere = non si scrive.
+//          📌 MISURATO OGGI, e vale la pena scriverlo perche' Franco si aspettava il contrario:
+//          «Sgorbions Holidays» - il suo esempio di caso b) - oggi cade nel caso **a)**. Le sue tre
+//          sottoserie (Metal, Clear, White) stanno tutte dentro «Figurine». L'unica serie che oggi
+//          sarebbe b) e' la **serie 3**, per via delle sottoserie che NON deve avere (punto 7 del
+//          lavoro aperto): pulito quel dato, oggi nessuna serie e' b). La regola resta giusta - e'
+//          il giorno che una sottoserie nasce sotto una seconda tipologia che si accende da sola.
+//          ⚠️ Si passa a `innerHTML`, quindi la coda va scappata: le sottoserie vere hanno gia'
+//          apostrofi e virgole. 📌 `_codaSottoserie()` non se ne va: la usa ancora il sottotitolo
+//          della ricerca di sezione.
+//
+// v6.773 - 🪧 L'HUB DELLE TIPOLOGIE SI DIVIDE IN DUE, CON DUE TITOLI. Franco: «abbiamo messo
+//          consecutivamente sia articoli con serie che non, ma con 2 ordinamenti; l'utente, che non
+//          sa di questa separazione, potrebbe non capire che ordine si stia usando. Conviene
+//          dividere in 2 le card: prima gli articoli legati alle serie, dopo quelli non legati».
+//          Modificato js/app.js e index.html (solo i cache-buster).
+//          🔴 LA SEPARAZIONE C'ERA GIA', MA SOLO NEL CODICE. La v6.144 l'aveva scritta e motivata:
+//          «in coda e non mescolati - i primi sono TAGLI sugli item delle serie, questi sono
+//          CONTENITORI di oggetti senza serie, e ordinarli insieme farebbe sembrare che siano la
+//          stessa cosa». Cioe' la decisione giusta esisteva da un mese e a schermo non si vedeva:
+//          Franco non ha chiesto un ordine nuovo, ha chiesto di poter leggere quello che c'e'.
+//          ✅ E I DUE ORDINAMENTI SONO DAVVERO DUE, misurati: `PRODOTTI_INVENTARIO` e' l'ordine che
+//          l'admin si sceglie con le frecce e che vive in `settings/articoli`; `_tipiProdotto()`
+//          ordina per NOME (v6.167, `localeCompare`). In fila senza uno stacco, l'elenco sembra uno
+//          solo che a meta' smette di seguire la sua regola — ed e' esattamente cio' che Franco ha
+//          visto.
+//          📌 UNA FUNZIONE SOLA PER I DUE TITOLI (`_rigaTitoloHub`): devono vedersi identici. Due
+//          stringhe scritte a mano sarebbero divergite, e due intestazioni diverse direbbero che i
+//          gruppi hanno pesi diversi — non e' vero, sono due elenchi pari.
+//          🔴 `grid-column: 1 / -1` e' cio' che la fa essere una RIGA: senza, il titolo prende una
+//          cella e si mette di fianco a una card. `-1` e' l'ultima linea qualunque sia, quindi vale
+//          per le 4 colonne del desktop, le 3 sotto gli 860px e le 2 del telefono.
+//          📌 UN TITOLO SI SCRIVE SOLO SE HA CARD SOTTO (regola della v6.596). ⚠️ E serve davvero:
+//          `_tipiProdotto()` torna `[]` finche' la cache non e' arrivata e poi fa ridisegnare —
+//          senza, per un istante si vedrebbe il secondo titolo sopra il vuoto.
+//          📌 IL LIME E' STATO MISURATO, NON SCELTO A PAROLE: la prima stesura era bianca con un
+//          filo tenue, e sotto uno screenshot con le card vere si leggeva come un'etichetta
+//          sommessa invece che come uno stacco - cioe' non faceva il mestiere chiesto («una riga
+//          bella evidente»). `--accent` e' il lime che il sito usa gia' per separare, quindi non
+//          nasce nessun colore nuovo. ⚠️ Scartata la fascia piena: compete con le card, che sono
+//          anche loro riquadri.
+//          📌 Il maiuscolo sta nella STRINGA, non in un `text-transform`: Franco ha chiesto «tutto
+//          upper case», e una maiuscola fatta dal CSS nasconderebbe una stringa scritta minuscola.
+//          ⚠️ LE DUE FRASI INGLESI LE HO SCELTE IO, e le parole a schermo le sceglie Franco: sono
+//          «ITEMS LINKED TO A SERIES» e «ITEMS WITHOUT A DEDICATED SERIES», da confermare o
+//          cambiare.
+//
+// v6.772 - 📷 «CAMBIA FOTO» DENTRO LA FINESTRA DELL'ANTEPRIMA. Franco: «ci sono dei casi
+//          (sicuramente sul tasto matita della card dell'hub) dove quando aggiungi una foto non
+//          puoi cambiarla senza che prima abbandoni la finestra; in pratica manca il bottone
+//          "cambia foto" dentro a quella finestra». Modificato js/app.js e index.html.
+//          🔴 IL TASTO NASCE UNA VOLTA E VALE PER TUTTI I FLUSSI. Franco dice «sicuramente sul
+//          tasto matita della card dell'hub», ma quella finestra e' UNA SOLA - la v6.191 scelse
+//          un modale solo invece di uno per flusso, «due modali gemelli sarebbero due posti da
+//          tenere allineati». Quindi il tasto compare anche sulla matita delle sottoserie, su
+//          quella della tipologia per serie e sull'avatar, e non e' un effetto collaterale: e' il
+//          dividendo di quella scelta di sei mesi fa.
+//          🔴 IL RESET STA IN UN POSTO SOLO (`_mostraFotoScelta`), e questa e' la riga che evita
+//          il difetto vero. I momenti in cui una foto entra in quella finestra adesso sono DUE:
+//          scriverli separati avrebbe voluto dire due reset, e il giorno che uno dimentica di
+//          riabilitare «Rimuovi sfondo» si otterrebbe la foto nuova con il bottone
+//          dell'elaborazione precedente ancora spento — senza nessun errore.
+//          ⚠️ E IL BOTTONE DELLO SFONDO SI RIMETTE A NUOVO davvero: dopo `fotoSceltaTogliSfondo`
+//          il blob in memoria e' quello SCONTORNATO. Con una foto nuova quel lavoro non c'entra
+//          piu', e un'etichetta rimasta indietro direbbe che lo sfondo e' gia' stato tolto a
+//          un'immagine che non l'ha mai perso.
+//          ⚠️ IL TITOLO NON SI RISCRIVE cambiando foto: dice su quale box si sta lavorando
+//          («Foto «Spille» di questa serie»), e il ripiego «Foto scelta» sarebbe la finestra che
+//          si dimentica cosa sta facendo proprio mentre le si cambia il contenuto.
+//          ⚠️ LA PROMESSA NON SI TOCCA: cambiare foto non e' ne' confermare ne' annullare. Chi
+//          aspetta continua ad aspettare e ricevera' il blob che ci sara' al momento di «Applica
+//          foto».
+//          📌 `value = ''` sulla casella file, se no riscegliendo LO STESSO file l'evento
+//          `change` non parte: stessa riga e stessa ragione di `cambiaFotoBox`.
+//          📌 IL TASTO STA SOPRA «Rimuovi sfondo» e non accanto: e' la regola della v6.605 - i
+//          comandi che METTONO stanno sopra, quelli che TOLGONO sotto.
+//          ⚠️ «Applica foto» e «Annulla» restano in italiano anche in inglese: erano gia' cosi',
+//          e non si e' rimediato di nascosto - le parole a schermo le sceglie Franco.
+//
+// v6.771 - 🗑️ VIA «CAMBIA FOTO E SALVA». Franco: «il tasto "cambia foto e salva" non serve, puoi
+//          toglierlo: tanto alla fine ogni foto prima di salvarla la puliamo di sfondo, e non
+//          tolgo lo sfondo salvando subito senza vedere il risultato». Modificato js/app.js e
+//          index.html (solo i cache-buster).
+//          🔴 LA RAGIONE E' DI MESTIERE, NON DI INGOMBRO, e vale la pena scriverla: quel tasto
+//          risparmiava il passaggio dal pulsante Salva, ma fra la scelta della foto e il
+//          salvataggio in questo progetto c'e' SEMPRE «Rimuovi sfondo» e un'occhiata al risultato.
+//          Risparmiava quindi un gesto che non si fa mai.
+//          📌 LE OCCORRENZE ERANO DUE, come diceva Franco, e sono state contate non ricordate: il
+//          `<label>` in `_slotFotoEdit` e il gestore `handleFigEditImgESalva`. ⚠️ Ma ne e' morta
+//          una terza che nessuno aveva nominato: il terzo argomento `poi` di `handleFigEditImg`,
+//          che passava soltanto quel tasto. Lasciarlo sarebbe stato un parametro che nessuno usa —
+//          una strada dichiarata e non percorsa, la specie di `series.counts` e di `basi`.
+//          📌 LA RAGIONE PER CUI `poi` ESISTEVA RESTA SCRITTA dove serve, cioe' sopra
+//          `handleFigEditImg`: `FileReader` e' asincrono, e chi salvasse subito dopo la chiamata
+//          salverebbe la foto PRECEDENTE senza nessun errore. Se un domani servisse di nuovo, il
+//          posto e' dentro `reader.onload`.
+//          ⚠️ LA PRIMA RIGA DI COMANDI RESTA A UN TASTO SOLO, e la simmetria della v6.605 («due
+//          per riga») si perde: la seconda riga ne ha ancora due. E' la conseguenza visibile della
+//          richiesta, dichiarata e non nascosta.
+//          🔄 `prova-v6602` e `prova-v6605` NON sono state dismesse: quella del tasto adesso
+//          pretende l'ESATTO CONTRARIO (che non ci sia piu'), e conserva i controlli che
+//          difendevano cose ancora vive - l'ordine di `FileReader` e la chiusura legata a
+//          `_resta`. E' la scelta gia' fatta per `prova-v6651` con la barra delle sottoserie.
+//
+// v6.770 - 🚪 SE UNA TDA STA TUTTA DENTRO UNA SERIE, LA SUA CARD PORTA DRITTA LI'. Franco:
+//          «cliccando sulla card delle spille dall'hub delle TDA non si comporta come cliccandoci
+//          dall'hub delle Serie... la TDA Spille sta tutta dentro la serie Spille, quindi quel
+//          passaggio che sta facendo ora non serve», e poi: «non e' un baco, e' una semplice
+//          regola». Modificato js/app.js e index.html (solo i cache-buster).
+//          🔴 E' UNA REGOLA E NON IL CASO DELLE SPILLE, e i dati lo dicono: oggi le TDA che
+//          stanno tutte dentro una serie sola sono SEI - Figurine, Carte, Spille, Tatuaggi,
+//          Trasferelli e Carte d'identita' - misurate sul sito vero, non contate a memoria. Una
+//          riga scritta per le spille sarebbe stata il settimo elenco a mano di questo file, e
+//          sarebbe scaduta il giorno in cui una settima TDA si riduce a una serie.
+//          🔴 LA DOMANDA E' UNA SOLA, E LA RIFA' L'USCITA. `_serieUnicaDiTDA` decide l'andata
+//          (`apriTDA`) e il ritorno (`closeSeriesDetail`). Se rispondessero in due modi diversi
+//          si finirebbe, uscendo, in una pagina che all'andata non si e' attraversata - che e'
+//          il difetto chiuso dalla v6.153, rifatto al contrario.
+//          ⚠️ LA DEVIAZIONE NON STA DENTRO `openProdottoDetail`, che era la scorciatoia ovvia:
+//          quella funzione e' anche la DESTINAZIONE del tasto indietro, quindi si sarebbe
+//          rimbalzati dentro la serie a ogni tentativo di uscirne. Una pagina che non si riesce
+//          a lasciare, e nessun errore da nessuna parte.
+//          🔴 IL LUCCHETTO VALE ANCHE NELLA SCORCIATOIA. Nell'hub il box di una serie «in
+//          arrivo» non e' cliccabile per chi non e' admin: saltando l'hub, senza il controllo
+//          `_serieBloccata` la card avrebbe scavalcato quel divieto. Misurato: DUE delle sei
+//          serie uniche sono «in arrivo» (Sgorbions Holidays, Sgorbions 2018), quindi il ramo
+//          serve oggi - per un visitatore quelle quattro card continuano a passare dall'hub.
+//          📌 SI CONTANO TUTTI GLI ARTICOLI, NON LE SOLE BASI: la domanda giusta e' quella che
+//          si fa l'hub che si sta saltando. Le due risposte oggi coincidono per tutte e dodici
+//          le tipologie, cioe' scegliere male non si vedrebbe.
+//          ⚠️ UN ARTICOLO SENZA SERIE FA CADERE LA REGOLA: «tutta dentro» dev'essere falso se
+//          anche un pezzo sta fuori, se no la scorciatoia lo nasconderebbe. Oggi non ce n'e'
+//          nessuno - misurato - quindi la riga vale solo per il giorno che ne nasce uno.
+//          🧹 E le quattro righe del «torna all'Inventario, taglio Tipologie» sono diventate
+//          `_tornaInventarioProdotti()`: le usano in due, e due copie sarebbero divergite.
+//
+// v6.769 - 🏷️ DENTRO UNA SOTTOSERIE IL TASTO INDIETRO DICE «SERIE». Franco: «il tasto sezioni,
+//          quando si e' nella pagina di una Sottoserie, secondo me e' meglio chiamarlo Serie,
+//          perche' di fatto porta alla pagina della serie». Modificato js/app.js e index.html
+//          (solo i cache-buster).
+//          🔴 NESSUNA REGOLA NUOVA: e' la regola della v6.153 - «l'etichetta dice DOVE si torna,
+//          non un posto fisso» - applicata al terzo caso. Quando quella riga e' nata i casi erano
+//          due (dentro un box -> Inventario, altrove -> Sezioni) perche' una sottoserie NON aveva
+//          una pagina sua: aveva un tab. I tab se ne sono andati con la v6.718, le pagine sono
+//          arrivate, e il bivio e' rimasto a due strade.
+//          ✅ LA DESTINAZIONE E' MISURATA: da una sottoserie `closeItemsSection` mostra
+//          `#section-selector`, cioe' la pagina della serie. Quindi il pulsante non cambia strada,
+//          cambia soltanto la parola - e la parola vecchia prometteva l'elenco delle sezioni di
+//          quel gruppo, che non e' cio' che si apre.
+//          ⚠️ LA CHIAVE DI TRADUZIONE E' NUOVA E SUA (`catalog.backToSeries`), e non e'
+//          pignoleria in due tempi: senza `data-i18n` il testo tornerebbe «Sezioni» al primo
+//          cambio di lingua (e' il difetto che la v6.153 aveva gia' pagato); e appoggiarsi a
+//          `catalog.byseries`, che oggi vale «Serie», legherebbe questo pulsante al selettore del
+//          taglio dell'Inventario - due cose diverse che cambierebbero nome insieme.
+//          📌 La stringa vuota non conta come sottoserie (v6.729): vuota vuol dire «tutti i
+//          gruppi», e li' la parola giusta resta «Sezioni».
+//
 // v6.768 — 🧱 IL RIEMPIMENTO DI FINE RIGA SI MANGIA IL MINIMO, NON IL MASSIMO. Difetto
 //          della v6.767, trovato MISURANDO la griglia vera sul sito appena pubblicato: 23
 //          card, 10 famiglie, QUATTRO ancora spezzate - cioe' l'esatto contrario di quello
@@ -10235,7 +10635,7 @@
 //             punto di app.js**: nessun `dragover`/`drop` e' mai stato agganciato. Cercato PRIMA
 //             di toglierlo, perche' se il gancio ci fosse stato, rimpicciolire avrebbe tolto una
 //             funzione invece che dello spazio. Ora e' il pulsante della scheda oggetto, copiato.
-//          4. Titoletti nel tab Articoli non base: **Variazioni · Change · Errori di stampa**.
+//          4. Titoletti nel tab Versioni non base (v6.783; allora «Articoli non base»): **Variazioni · Change · Errori di stampa**.
 //          5. 🆕 **`hasPrintError` + il conteggio.** Il titoletto era chiesto ma sotto non c'era
 //             niente: `hasPrintError`, `countPrintError` e `printErrorTypes` non esistevano da
 //             nessuna parte. Franco ha scelto la coppia spunta+numero come le altre.
@@ -10269,7 +10669,9 @@
 //             `toggleSeriesCountGroups` accende il riquadro con `style.display = ''`, cioe'
 //             "torna a quello che dice il CSS". Un `display:flex` inline verrebbe cancellato da
 //             quella riga al primo clic, e il riquadro tornerebbe a impilarsi.
-//          4. Il tab "Variazioni" si chiama **Articoli non base** (`data-tab="nonbase"`).
+//          4. Il tab "Variazioni" si chiama **Versioni non base** (`data-tab="nonbase"`).
+//             🔄 v6.783 - allora si chiamava «Articoli non base»: rinominato su richiesta di
+//             Franco, perche' li' dentro ci sono VERSIONI e non articoli.
 //          5. "Colonne della griglia" -> **Colonne griglia hub Serie**: l'etichetta dice dove si
 //             vedono quelle colonne.
 //          6. 📌 E una domanda di Franco - *perche' "Articoli che questa serie NON ha" e non
@@ -10283,7 +10685,7 @@
 //             📌 Il tab acceso non perde niente - si distingue per il fondo arancio e il
 //             grassetto, non per il colore del testo, che era gia' bianco.
 //
-//          Ordine dei tab, deciso da Franco: Serie · Descrizioni · Articoli non base ·
+//          Ordine dei tab, deciso da Franco: Serie · Descrizioni · Versioni non base ·
 //          Visualizzazione · Avanzate. Nessun campo cambia id: `saveSeries` continua a leggerli
 //          tutti e non sa in che tab siano.
 //
@@ -26755,7 +27157,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.768';
+const JS_VERSION = 'v6.783';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -28346,7 +28748,7 @@ const i18n = {
 'form.username':'Nickname','form.email':'Email','contact.title':'Contact <span class="hi">the administrator</span>',
 'contact.intro':'Found a rare piece not listed on the site?<br>Want more information about Sgorbions?<br>Want to report an error?<br>Or do you just want to compliment the administrator?<br><br>For any of these, send us a message !',
 "contact.privacy":"So that we can reply, we keep your e-mail address and the text of your message. If you do not have an account on the site, after 6 months the message is <strong>deleted entirely</strong>, address included. If you do have one, it stays until you delete your account.",'form.name':'Name','contact.email.ph':'your@email.com','contact.context':'Question context','contact.message':'Question (or message)','contact.send':'Send message 🚀',
-'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Peel-off stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
+'contact.info':'Contact information','newsletter.title':'Send Newsletter','newsletter.subject':'Subject','newsletter.subject.ph':'e.g. New series added !','newsletter.body':'Message body','newsletter.body.ph':'Write the message for selected users...','newsletter.recipients':'Recipients','newsletter.selectAll':'Select all','newsletter.deselectAll':'Deselect all','newsletter.send':'📧 Send to selected users','newsletter.log':'Latest emails sent','classifica.best':'Whose list has the highest Rarity score?','classifica.levels':'figurinesgorbions.it Levels','admin.levels.addEdit':'Add / edit level','admin.levels.nameIt':'Name (IT)','admin.levels.nameEn':'Name (EN)','admin.levels.minScore':'Min. rarity score','admin.levels.save':'Save level','hero.tagline':'Made with 💚 by collectors, for collectors.','admin.funzioni':'Functions','catalog.add':'+ Add','form.fig.number':'Number','form.fig.name':'Name','form.fig.subname':'Subname','form.fig.desc':'Description','catalog.stickers':'Stickers with backs','catalog.retros':'Retros','catalog.cards':'Cards','catalog.albums':'Albums','catalog.extras':'Other Items','catalog.spille':'Pins','catalog.attaccare':'Peel-off stickers','catalog.packs':'Wrappers','catalog.loading':'Loading...','catalog.bulkscore':'Assign rarity to results','catalog.haveall':'Add results to your list','catalog.havenone':'Remove results from your list','catalog.sections':'Sections','catalog.backToSeries':'Series','form.series.firstNumber':'First sticker N.','form.series.firstNumberHint':'Leave empty if not numbered','form.series.lastNumber':'Last sticker N.','form.series.lastNumberHint':'Leave empty if not numbered','admin.foto':'📥 Data import','admin.errori':'⚠️ Errors','admin.importVar.tab':'📊 Import variations','admin.importVar.title':'📊 Import variations from XLS','admin.importVar.desc':'Import official/unofficial variations, Changes and print errors from an Excel file.','admin.importVar.series':'Series','admin.importVar.file':'XLS File','admin.importVar.fileHint':'Columns: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Start import','admin.email.tab':'✉️ Communications','admin.settings.tab':'⚙️ Settings','admin.pwdReset.title':'🔑 E-mails sent with Firebase Authentication (password reset)','admin.pwdReset.thisMonth':'requests this month','admin.pwdReset.note':'Our own count, not the official Firebase one (not accessible from the site) — but reliable, since every request still passes through here.','admin.email.recalc':'🔄 Recalculate from log','admin.email.recalc.hint':'Counts this month\'s e-mails recorded in the log as "sent" and realigns the counter. The log keeps the 200 most recent entries: if any from this month were already trimmed, the count would be an underestimate.','admin.email.all':'Sent e-mails','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Sent messages','admin.risorse.emailjsTitle':'📧 E-mails sent with EmailJS','admin.email.outgoingTitle':'🔐 Outgoing mail credentials','admin.email.outgoingDesc':'The credentials of the service used to send emails (account, password) are not managed by this site for security reasons. They can be found in the dashboard of','catalog.searchglobal':'Search in Inventory...',
 'nav.login':'Login','nav.register':'Sign up','nav.logout':'Logout','nav.mialista':'My list',
 'hero.eyebrow':'🇮🇹 The Grossest Stickers of the \'90s',
 'hero.sub':'The Collectors\' Universe','hero.myvsTotal':'My list / Total Inventory',
@@ -28468,7 +28870,7 @@ const i18n = {
     'how.2.title':'Costruisci la Tua Lista','how.2.desc':'Aggiungi le figurine alla tua lista personale e traccia la percentuale di articoli nella tua lista rispetto all\'Inventario Sgorbions.',
     'how.3.title':'Connettiti e Chiedi','how.3.desc':"Fai domande e ricevi risposte dall'amministratore e dagli altri collezionisti.",
     'how.4.title':'Il Tuo Profilo','how.4.desc':'Vedi le informazioni del tuo profilo e decidi quali vuoi condividere con gli altri collezionisti.',
-    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Tipologie di articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine da attaccare','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
+    'catalog.add':'+ Aggiungi','catalog.title':'L\'Inventario','catalog.sub':'Tutte le serie Sgorbions mai pubblicate','catalog.subProducts':'Tutti gli articoli Sgorbions mai pubblicati','catalog.browseby':'Sfoglia per','catalog.byseries':'Serie','catalog.byproducts':'Tipologie di articoli','catalog.allSeriesInfo':'Mostra informazioni sommarie\ndi tutte le serie','catalog.allSeriesInfoShort':'Mostra info tutte le serie','catalog.allSeriesInfoTitle':'Le serie Sgorbions censite','catalog.addseries':'+ Aggiungi Serie','catalog.search':'Cerca serie...','catalog.empty':'Nessuna serie ancora. L\'admin può aggiungerle !','catalog.stickers':'Figurine con retro','catalog.retros':'Retro','catalog.cards':'Carte','catalog.albums':'Album','catalog.extras':'Altri articoli','catalog.spille':'Spille','catalog.attaccare':'Figurine da attaccare','catalog.packs':'Bustine','catalog.loading':'Caricamento...','catalog.bulkscore':'Assegna rarità ai risultati','catalog.haveall':'Aggiungi risultati alla tua lista','catalog.havenone':'Rimuovi risultati dalla tua lista','catalog.sections':'Sezioni','catalog.backToSeries':'Serie','form.series.firstNumber':'N. prima figurina','form.series.firstNumberHint':'Lascia vuoto se non numerata','form.series.lastNumber':'N. ultima figurina','form.series.lastNumberHint':'Lascia vuoto se non numerata','admin.foto':'📥 Data import','admin.errori':'⚠️ Errori','admin.importVar.tab':'📊 Importa variazioni','admin.importVar.title':'📊 Importa variazioni da XLS','admin.importVar.desc':'Importa variazioni ufficiali, non ufficiali, Change ed errori di stampa da un file Excel.','admin.importVar.series':'Serie','admin.importVar.file':'File XLS','admin.importVar.fileHint':'Colonne: Serie · Numero Figurina · Nome · Tipo (Ufficiale / Non ufficiale) · Tipo di change · Errore di stampa · Nome errore di stampa · Retro (Categoria) · Retro (Nome)','admin.importVar.start':'▶ Avvia importazione','admin.email.tab':'✉️ Comunicazioni','admin.settings.tab':'⚙️ Impostazioni','admin.pwdReset.title':'🔑 E-mail inviate con Firebase Authentication (reset password)','admin.pwdReset.thisMonth':'richieste questo mese','admin.pwdReset.note':'Conteggio nostro, non quello ufficiale di Firebase (non consultabile dal sito) — ma affidabile, dato che ogni richiesta passa comunque da qui.','admin.email.recalc':'🔄 Ricalcola dal log','admin.email.recalc.hint':'Conta le e-mail di questo mese registrate nel log come "inviate" e riallinea il contatore. Il log conserva le 200 voci più recenti: se ne fossero già state eliminate di questo mese, il conteggio sarebbe per difetto.','admin.email.all':'E-mail inviate','admin.email.newsletterArchive':'Newsletter','admin.email.messagesArchive':'Messaggi inviati','admin.risorse.emailjsTitle':'📧 E-mail inviate con EmailJS','admin.email.outgoingTitle':'🔐 Credenziali posta in uscita','admin.email.outgoingDesc':'Le credenziali del servizio usato per inviare le e-mail (account, password) non sono gestite da questo sito per ragioni di sicurezza. Si trovano nel pannello di','catalog.searchglobal':'Cerca nell\'Inventario...',
     'back':'Inventario','detail.addfig':'+ Aggiungi Figurina',
     'blog.title':'Blog / D&R','blog.sub':'Fai domande, condividi novità e scoperte','blog.post':'+ Nuova domanda / Notizia','blog.empty':'Nessun post ancora. Inizia la conversazione !',
     'contact.eyebrow':'Mettiti in Contatto','contact.title':"Contatta l'amministratore",'contact.sub':'Hai trovato un pezzo raro? Vuoi contribuire? Scrivici !',
@@ -29383,9 +29785,32 @@ function _caroselloRighe(f, nomeSerie, mostraSerie) {
   //    tutti insieme. Scriverlo da un secondo posto sarebbe la copia che nessuno conta.
   // ⚠️ SOLO SE IL GRUPPO C'E'. Senza, la riga resta VUOTA e non scrive la sola tipologia: quella
   //    e' gia' scritta dove serve, e qui direbbe la stessa cosa su ogni card della fila.
+  // 🔄 v6.781 (Franco: «devi solo non mettere il prefisso "Spille "», e poi «prova a usare
+  //    "Sottoserie " come prefisso») - DAVANTI AL GRUPPO VA LA PAROLA, NON LA TIPOLOGIA.
+  // 🔴 E QUESTA RELEASE REVOCA LA v6.723, CHE ERA DI FRANCO («metti davanti SPILLE»).
+  //    L'argomento di allora era vero e non cade: «da sola "Metal" non dice di cosa sia il gruppo».
+  //    Cade la RISPOSTA. Quel prefisso diceva la tipologia per far capire che quella riga parlava
+  //    di un GRUPPO, e la parola «Sottoserie» lo dice meglio e senza dipendere dai nomi: sulle
+  //    Spille la tipologia si chiama come la serie, quindi «Spille 3,7 CM classiche» sotto la
+  //    riga bianca «Spille» ripeteva la parola due volte, una sopra l'altra. ✅ MISURATO sul
+  //    carosello vivo della home prima di scrivere, non dedotto: due card su otto, e tutte e due
+  //    delle Spille.
+  // 📌 E' LA v6.779 APPLICATA AL CAROSELLO: li' il titolo della card di una sottoserie ha
+  //    smesso di comporre tipologia + nome per la stessa ragione, e nello stesso giorno.
+  // ⚠️ COSA SI PERDE, E FRANCO L'HA SCELTO SAPENDOLO: nella home le card vengono da tipologie
+  //    diverse, e due gruppi con lo stesso nome sotto tipologie diverse ora sono indistinguibili.
+  //    Oggi non ne esistono; il giorno che esistono, la regola della v6.774 (la tipologia davanti
+  //    solo dove la serie mescola tipologie) e' gia' scritta in `_sottoserieInUnaSolaTDA`.
+  // ⚠️ UNA SOTTOSERIE SFORA LA RIGA, ed e' una sola: «4.1 CM senza nome» chiede 144px in una
+  //    riga da 137 sul carosello della serie, e finisce con i puntini - con «Spille » ci stava.
+  //    Contate tutte e 67 le card prima di scrivere. Franco: «proviamo 1», cioe' la si lascia
+  //    cosi': il nome intero resta nel `title` della card, al passaggio del mouse.
+  // 📌 La parola passa da `_parolaSottoserie`, la stessa del sottotitolo della testata: il
+  //    giorno che cambia, cambia in tutti e due i posti. E NON si scappa - e' una costante - mentre
+  //    il nome del gruppo si', che arriva dai dati e ha gia' apostrofi e virgole.
   const rigaSottoserie = dim => {
     const g = String(f.subseries || '').trim();
-    return [{ t: g ? esc(getSectionLabel(f.section || 'figurines') + ' ' + g) : '',
+    return [{ t: g ? _parolaSottoserie() + ' ' + esc(g) : '',
               col: COL_CATEGORIA, dim, alt: '1.2em' }];
   };
   // v6.080 (Franco) - SU TELEFONO una riga sola: il nome. Era il testo, non la foto, a fare il "box
@@ -32314,6 +32739,17 @@ function _sottoserieDellaSezione() {
 // serie, quindi alla fine un nome lo abbiamo (set principale)».
 // 📌 Un orfano con un nome invece si mostra COL SUO NOME, refuso compreso: e' l'unico modo
 //    di accorgersene.
+// 🆕 v6.781 - LA PAROLA «SOTTOSERIE», IN UN POSTO SOLO.
+// 📌 Fino a qui viveva in DUE punti: il sottotitolo della testata (v6.774) e, da questa
+//    release, la riga gialla del carosello. Due copie di una parola tradotta sono due posti da cui
+//    puo' nascere una seconda forma - ed e' gia' successo con «punti»/«rarita'» (v6.493/v6.499),
+//    dove due funzioni per la stessa etichetta avevano prodotto due testi diversi a schermo.
+// ⚠️ NON RESTITUISCE LO SPAZIO FINALE: chi la usa sa se le serve attaccata o staccata, e uno
+//    spazio dentro una parola tradotta e' la cosa che si perde per prima in una traduzione nuova.
+function _parolaSottoserie() {
+  return currentLang === 'it' ? 'Sottoserie' : 'Subseries';
+}
+
 function _etichettaSottoserie(v) {
   if (v) return v;
   return currentLang === 'it' ? 'Set principale' : 'Base set';
@@ -35733,6 +36169,43 @@ function _descArticoliBase(n, soloBase = false) {
     : (n === 1 ? '1 item (base version)'      : n + ' items (base version)');
 }
 
+// 🆕 v6.770 (Franco: «se una TDA sta solo dentro a una serie, allora la card di quella TDA deve
+//    portare direttamente dentro a quella serie») - LA DOMANDA SI FA UNA VOLTA SOLA.
+// 🔴 E' UNA REGOLA, NON IL CASO DELLE SPILLE. Franco l'ha detta a partire dalle Spille («se vuoi
+//    anche perche' la serie si chiama come la TDA»), ma la condizione non nomina nessuna
+//    tipologia. Misurata sui dati veri del sito: oggi sono SEI le TDA che stanno tutte dentro una
+//    serie sola - Figurine, Carte, Spille, Tatuaggi, Trasferelli e Carte d'identita' - e domani
+//    possono diventare cinque o sette senza che nessuno tocchi il codice. Scriverla per le sole
+//    Spille sarebbe stato il settimo elenco a mano di questo file.
+// 🔴 IL LUCCHETTO VALE ANCHE QUI, ed e' la riga che non si vede mancare. Nell'hub di una TDA il
+//    box di una serie «in arrivo» NON e' cliccabile per chi non e' admin (`_serieBloccata`).
+//    Saltando il passaggio intermedio, senza questo controllo la card lo scavalcherebbe e
+//    porterebbe dentro una serie chiusa - un buco aperto proprio dalla scorciatoia. Misurato: di
+//    quelle sei serie uniche, DUE sono «in arrivo» (Sgorbions Holidays e Sgorbions 2018), quindi
+//    il ramo scatta oggi, non un domani.
+// ⚠️ UN ARTICOLO SENZA SERIE FA CADERE LA REGOLA, e non e' pedanteria: «sta tutta dentro una
+//    serie» dev'essere falso se anche un solo pezzo sta fuori, altrimenti la scorciatoia
+//    nasconderebbe quel pezzo senza dirlo. Oggi di articoli senza serie non ce n'e' nessuno
+//    (misurato), quindi la riga non serve a niente - tranne il giorno in cui ne nasce uno.
+// 📌 SI GUARDANO TUTTI GLI ARTICOLI, NON LE SOLE BASI. La card, per l'elenco delle serie, conta
+//    le basi (`_eBase`); l'hub che questa scorciatoia salta le conta TUTTE. La domanda giusta e'
+//    quella dell'hub, perche' e' la pagina di cui si sta decidendo la sorte: con le basi, una TDA
+//    con una variante in una seconda serie salterebbe in una pagina che ne mostra due. Oggi i due
+//    conti coincidono per tutte e dodici le tipologie - cioe' la differenza non si vedrebbe.
+function _serieUnicaDiTDA(sec, tutti) {
+  const items = _diTipo(tutti || getData('figurines', []), sec);
+  let uno = null;
+  for (const f of items) {
+    if (!f.seriesId) return null;
+    if (uno === null) uno = f.seriesId;
+    else if (uno !== f.seriesId) return null;
+  }
+  if (uno === null) return null;   // nessun articolo: non c'e' niente dentro cui entrare
+  const s = getData('series', []).find(x => x.id === uno);
+  if (!s || _serieBloccata(s)) return null;
+  return uno;
+}
+
 function prodottoCardHTML(sec, tutti, serieOrdinate) {
   const miei = _diTipo(tutti, sec);
   const basi = miei.filter(_eBase);
@@ -35788,7 +36261,7 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
   // ⚠️ Tutto inline e su QUESTA card: `.card` e `.card-body` sono classi condivise da mezzo sito
   // (le serie, i tipi di articolo, i box dell'hub). Una regola sulle classi avrebbe cambiato
   // griglie che nessuno ha guardato.
-  return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="openProdottoDetail(\'' + sec + '\')">' +
+  return '<div class="card" style="position:relative;display:flex;flex-direction:column;" onclick="apriTDA(\'' + sec + '\')">' +
     _matitaBox(sec) +   // v6.145
     '<div class="card-img-placeholder">' + foto + '</div>' +
     '<div class="card-body" style="display:flex;flex-direction:column;flex:1 1 auto;min-height:0;">' +
@@ -35812,6 +36285,33 @@ function prodottoCardHTML(sec, tutti, serieOrdinate) {
   '</div>';
 }
 
+// 🆕 v6.773 (Franco) - LA RIGA CHE DIVIDE I DUE GRUPPI DELL'HUB DELLE TIPOLOGIE.
+// 🔴 UNA FUNZIONE E NON DUE STRINGHE: i titoli sono due e devono vedersi IDENTICI. Scritti a mano
+//    uno per gruppo, sarebbero divergiti al primo ritocco - e due intestazioni diverse direbbero
+//    che i due gruppi hanno pesi diversi, che non e' vero: sono due elenchi pari, con due criteri
+//    d'ordine diversi.
+// 🔴 `grid-column: 1 / -1` E' LA RIGA CHE LA FA ESSERE UNA RIGA: senza, il titolo prenderebbe una
+//    cella della griglia e si metterebbe di fianco a una card. Vale per tutte le forme che quella
+//    griglia prende - le 4 colonne del desktop, le 3 sotto gli 860px e le 2 che `renderCatalogProdotti`
+//    scrive sul telefono - perche' `-1` e' l'ultima linea, qualunque sia.
+// 📌 IL TESTO ARRIVA GIA' IN MAIUSCOLO e non c'e' nessun `text-transform`: Franco ha chiesto «tutto
+//    upper case», e una maiuscola fatta dal CSS nasconderebbe il giorno che qualcuno scrive la
+//    stringa in minuscolo. Quello che si legge e' quello che c'e' scritto.
+// 📌 IL LIME E' `--accent`, e la scelta e' stata MISURATA E NON DECISA A PAROLE: la prima stesura
+//    era in `--text` con un filo di `--border`, e messa sotto uno screenshot con le card vere si
+//    leggeva come un'etichetta sommessa, non come uno stacco - cioe' non faceva il mestiere per cui
+//    Franco l'ha chiesta («una riga bella evidente»). Il lime e' il colore che questo sito usa gia'
+//    per separare (`--border` e' lo stesso lime a bassa opacita'): non nasce nessun significato
+//    nuovo, si usa a piena forza quello che c'era.
+// ⚠️ SCARTATA LA FASCIA PIENA (fondo lime all'8% e bordo tondo): a schermo compete con le card,
+//    che sono anche loro riquadri - due file di rettangoli, uno dei quali dovrebbe essere un
+//    titolo. Una riga con un filo sotto resta un titolo.
+function _rigaTitoloHub(testo) {
+  return '<div style="grid-column:1 / -1;margin:1rem 0 -0.3rem;padding-bottom:0.6rem;'
+    + 'border-bottom:2px solid var(--accent);font-family:var(--font-display);font-size:1.15rem;'
+    + 'font-weight:800;letter-spacing:0.1em;color:var(--accent);">' + esc(testo) + '</div>';
+}
+
 function renderCatalogProdotti(grid) {
   // v6.080 (Franco) - anche il PRIMO livello dell'hub va a due colonne su telefono. Usa la stessa
   // griglia dell'Inventario (#catalog-grid), che di colonne ne ha tre per via della media query
@@ -35827,8 +36327,26 @@ function renderCatalogProdotti(grid) {
   // v6.144 - i cinque di sempre, poi i tipi censiti dall'admin. In coda e non mescolati: i primi
   // cinque sono TAGLI sugli item delle serie, questi sono CONTENITORI di oggetti senza serie, e
   // ordinarli insieme farebbe sembrare che siano la stessa cosa.
-  grid.innerHTML = PRODOTTI_INVENTARIO.map(sec => prodottoCardHTML(sec, tutti, serieOrdinate)).join('')
-    + _tipiProdotto().map(t => tipoProdottoCardHTML(t, tutti)).join('');
+  // 🆕 v6.773 (Franco: «abbiamo messo consecutivamente sia articoli con serie che non, ma con 2
+  //    ordinamenti; l'utente, che non sa di questa separazione, potrebbe non capire che ordine si
+  //    stia usando. Conviene dividere in 2 le card») - LA SEPARAZIONE C'ERA GIA', MA SOLO NEL
+  //    CODICE. La v6.144 l'aveva scritta e motivata - «in coda e non mescolati: i primi sono TAGLI
+  //    sugli item delle serie, questi sono CONTENITORI di oggetti senza serie, e ordinarli insieme
+  //    farebbe sembrare che siano la stessa cosa» - ma a schermo non la vedeva nessuno.
+  // 🔴 E I DUE ORDINAMENTI SONO DAVVERO DUE, misurati e non supposti: `PRODOTTI_INVENTARIO` e'
+  //    l'ordine che l'admin si sceglie con le frecce e che vive in `settings/articoli`;
+  //    `_tipiProdotto()` ordina per NOME (v6.167, `localeCompare`). Messi in fila senza uno stacco,
+  //    l'elenco sembra uno solo che a meta' smette di seguire la sua regola.
+  // 📌 UN TITOLO SI SCRIVE SOLO SE HA DELLE CARD SOTTO: e' la regola della v6.596 («un comando che
+  //    non ha niente su cui agire non si mostra») applicata a un'intestazione. ⚠️ E serve davvero:
+  //    `_tipiProdotto()` torna `[]` finche' la cache non e' arrivata e poi fa ridisegnare - senza
+  //    questa riga, per un istante si vedrebbe il secondo titolo sopra il vuoto.
+  const it = currentLang === 'it';
+  const conSerie   = PRODOTTI_INVENTARIO.map(sec => prodottoCardHTML(sec, tutti, serieOrdinate)).join('');
+  const senzaSerie = _tipiProdotto().map(t => tipoProdottoCardHTML(t, tutti)).join('');
+  grid.innerHTML =
+      (conSerie   ? _rigaTitoloHub(it ? 'ARTICOLI CORRELATI A SERIE'   : 'ITEMS LINKED TO A SERIES')       + conSerie   : '')
+    + (senzaSerie ? _rigaTitoloHub(it ? 'ARTICOLI SENZA SERIE DEDICATA' : 'ITEMS WITHOUT A DEDICATED SERIES') + senzaSerie : '');
 }
 
 // ============================================================
@@ -36842,14 +37360,33 @@ function closeProdottoDetail() {
 }
 
 // Il terzo livello e' la griglia che esiste gia': stessa destinazione, altra strada.
-function apriSerieDaProdotto(seriesId) {
-  const sec = _prodottoCorrente;
+// 🔄 v6.770 - LA TDA SI PUO' PASSARE, e prima si poteva solo leggere da `_prodottoCorrente`.
+//    Serve alla scorciatoia: quando la card entra DRITTA nella serie, la pagina dell'hub non
+//    viene mai aperta, quindi `_prodottoCorrente` e' ancora nullo. Il valore di ripiego lascia
+//    identica la chiamata che arriva dal box dell'hub - che e' l'unica che c'era prima.
+function apriSerieDaProdotto(seriesId, sec) {
+  sec = sec || _prodottoCorrente;
   _caroselloSpegni('prodotto');
   const d = document.getElementById('prodotto-detail');
   if (d) d.style.display = 'none';
   openSeriesDetail(seriesId);
   openSeriesSection(sec);
   _sezioneApertaDaProdotto = sec;  // dopo openSeriesSection, che non lo sa
+}
+
+// 🆕 v6.770 (Franco) - LA PORTA DELLE CARD DELL'HUB DELLE TIPOLOGIE.
+// 🔴 ESISTE PER AVERE UN POSTO SOLO DOVE SI DECIDE, e non per incapsulare per bellezza: la
+//    stessa domanda la rifa' `closeSeriesDetail` all'uscita. Se l'andata saltasse la pagina
+//    intermedia e il ritorno ci si fermasse, l'utente si troverebbe in un posto che non ha mai
+//    attraversato - che e' esattamente il difetto chiuso dalla v6.153, rifatto al contrario.
+// ⚠️ NON SI E' MESSA LA DEVIAZIONE DENTRO `openProdottoDetail`, che sarebbe stata la
+//    scorciatoia ovvia: quella funzione e' anche la DESTINAZIONE del tasto indietro, quindi si
+//    sarebbe rimbalzati dentro la serie ogni volta che si prova a uscirne - una pagina che non
+//    si riesce a lasciare, senza nessun errore.
+function apriTDA(sec) {
+  const unica = _serieUnicaDiTDA(sec);
+  if (unica) { apriSerieDaProdotto(unica, sec); return; }
+  openProdottoDetail(sec);
 }
 
 function renderCatalog() {
@@ -39261,6 +39798,79 @@ function salvaNodiDaMeta() {
   });
 }
 
+// 🆕 v6.778 (Franco) - LE NUMERICHE DELL'HUB IN DUE BLOCCHI, CON DUE TITOLI.
+// Franco: «nella parte alta della scheda della serie, le numeriche, vorrei delineare il confine
+// tra sottoserie e resto», poi «Figurine diventano 3 sezioni», «la frase "Numeri per sottoserie"
+// sparisce del tutto», «non c'e' un totale unico ma solo per ogni sottoserie», «una riga tra le
+// numeriche delle sottoserie e quelle successive», «prima di quelle numeriche un titoletto», «il
+// titoletto lo fai lime», e infine: «ora che hai messo il titoletto non serve piu' il prefisso
+// "Sottoserie "».
+// 🔴 ED E' LA RAGIONE DELLA v6.676, RIMESSA IN PIEDI DOVE FUNZIONA. Quella release aveva scritto:
+//    «la parola non si ripete su ogni riga: la dice il titolo del blocco, una volta sola». Era
+//    giusta, ma il blocco stava DENTRO ogni tipologia, quindi quel titolo compariva quattro volte
+//    sulla stessa pagina. Adesso il blocco e' uno per tutta la serie, e il titolo lo dice davvero
+//    una volta.
+// 🔴 LA RIGA DI UNA TIPOLOGIA SPARISCE SOLO SE NON DICE NIENTE DI PIU' DELLE SUE SOTTOSERIE, e
+//    questa e' la riga che evita una perdita silenziosa. Su Holidays «61 Figurine» e' 30+30+1,
+//    cioe' la somma di cio' che si legge sotto: toglierla non toglie niente. Sulle SPILLE invece
+//    quella riga dice «70 set base · 7 errori di stampa · 77 in totale», e quei numeri dalle
+//    sottoserie non si ricavano. ⚠️ Misurato sul sito vivo prima di scrivere, non dedotto.
+// 📌 LA DOMANDA SI FA CONTANDO LE RIGHE, non richiamando `tipiPresenti`: senza il blocco delle
+//    sottoserie, `sezRows` torna UNA riga quando non ci sono versioni e piu' d'una quando ci sono.
+//    Un secondo conteggio di tutti gli articoli, a ogni apertura dell'hub, sarebbe il costo che il
+//    commento di questa funzione mette in guardia dal pagare.
+// ⚠️ I DUE TITOLI COMPAIONO SOLO SE CI SONO SOTTOSERIE: su una serie che non ne ha - quasi tutte -
+//    le numeriche restano identiche a oggi, senza titoli. E' la «visualizzazione classica delle
+//    serie senza sottoserie» che Franco ha chiesto di non toccare (v6.676).
+// 📌 «Set principale» sta nel primo blocco e non prende nessun prefisso: non e' una sottoserie,
+//    e' il resto (v6.651). Su «Sgorbions 2018» sono 96 carte su 106.
+function _blocchiHub(cats, sezRows, _pfx, BULLET, colonna) {
+  const it = currentLang === 'it';
+  const s = getData('series', []).find(x => x.id === currentSeriesId);
+  const tutti = getData('figurines', []).filter(f => f.seriesId === currentSeriesId);
+  const cella = (etichetta, righe) => '<div class="hub-cat-row" style="display:contents;">'
+    + etichetta
+    + '<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.35rem 1.4rem;">'
+    + righe.join('') + '</div></div>';
+  // 🔄 v6.780 (Franco: «sono un po' troppo piccole») - I DUE TITOLETTI SALGONO A 1.15em/700.
+  // 📌 LA MISURA E' RELATIVA E NON IN PIXEL: le numeriche dell'hub girano a 13.12px sul
+  //    desktop (misurato sul sito vivo, non dedotto), ma quel valore non e' scritto da nessuna
+  //    parte - lo eredita dal corpo della pagina. Un `font-size` in px qui congelerebbe il
+  //    rapporto fra il titolo e le righe che intesta, e il giorno che il corpo cambia misura
+  //    resterebbero due titoli grandi come prima sopra numeri diventati piu' grandi o piu'
+  //    piccoli. Con `em` il rapporto e' la cosa scritta, ed e' quella che Franco ha guardato.
+  // ⚠️ IL GRASSETTO SALE INSIEME (600 -> 700), e non e' un di piu': a 1.15em un 600 su
+  //    fondo scuro si legge come testo grande, non come titolo. Sono stati messi a schermo tutti
+  //    e tre i gradini (1em/600, 1.15em/700, 1.3em/700) e Franco ha scelto il secondo.
+  const titolo = (testo, stacco) => '<div class="hub-cat-row" style="display:contents;">'
+    + '<div style="grid-column:1 / -1;color:var(--accent);font-weight:700;font-size:1.15em;margin:'
+    + (stacco ? '0.9rem 0 0.15rem' : '0 0 0.15rem') + ';">' + esc(testo) + '</div></div>';
+  const nome = t => '<div class="hub-cat-name" style="font-weight:700;color:var(--text);">'
+    + esc(t) + '</div>';
+  const sotto = [], tipologie = [];
+  cats.forEach(c => {
+    const items = tutti.filter(f => (f.section || 'figurines') === c);
+    const gruppi = _sottoserieUsate(s, items);
+    const righe = sezRows(c, gruppi.length > 0);
+    if (!righe.length) return;
+    if (!gruppi.length) { tipologie.push(cella(_pfx(c), righe)); return; }
+    gruppi.forEach(v => {
+      const qui = items.filter(f => String(f.subseries || '').trim() === v);
+      if (!qui.length) return;
+      sotto.push(cella(nome(_etichettaSottoserie(v)),
+        [colonna(BULLET, qui, '', false, true, COL_CATEGORIA)]));
+    });
+    // la riga della tipologia resta solo se dice qualcosa in piu' della somma delle sue sottoserie
+    if (righe.length > 1) tipologie.push(cella(_pfx(c), righe));
+  });
+  if (!sotto.length) return tipologie.join('');
+  return titolo(it ? 'Numeriche per sottoserie' : 'Counts by subseries', false) + sotto.join('')
+    + (tipologie.length
+        ? titolo(it ? 'Numeriche per tipologia di articolo' : 'Counts by item type', true)
+          + tipologie.join('')
+        : '');
+}
+
 function renderSeriesMeta(s) {
   const metaEl = document.getElementById('detail-meta');
   if (!metaEl || !s) return;
@@ -39318,9 +39928,13 @@ function renderSeriesMeta(s) {
     // 🔄 v6.675 - LE DUE FORME. «numero etichetta» e' quella di sempre; «etichetta: numero»
     //    e' quella delle sottoserie (Franco). 📌 Non e' un vezzo: «sottoserie X: 24» si legge
     //    come un raggruppamento, «24 Y» come un conto - e sono due cose diverse.
+    // 🆕 v6.778 - ETICHETTA VUOTA = SOLO IL NUMERO. Serve alle righe delle sottoserie
+    //    nell'hub, dove il nome sta nella PRIMA COLONNA della griglia e ripeterlo accanto al
+    //    numero direbbe due volte la stessa parola. Senza questa riga uscirebbe «30 » con uno
+    //    spazio in coda: invisibile, e sbagliato.
     const _testo = nomeDavanti
       ? etichetta + ': ' + nfmt(quanti)
-      : nfmt(quanti) + ' ' + etichetta;
+      : (etichetta ? nfmt(quanti) + ' ' + etichetta : nfmt(quanti));
     const riga1 = `<span${stile ? ` style="${stile}"` : ''}>${icona}${_testo}</span>`;
     let riga2 = '';
     if (currentUser && (complete || n > 0)) {  // v5.885: se ne possiedi 0, niente riga ("0 nella tua lista" era brutto)
@@ -39405,7 +40019,14 @@ function renderSeriesMeta(s) {
   // Costruisce le colonne (set base, variazioni ufficiali/non ufficiali, change, errori di stampa,
   // in totale) di UNA categoria — la riga di dettaglio. alwaysTotal: mostra "in totale" anche a 0
   // (usato nell'hub, cosi' ogni categoria compare comunque).
-  function sezRows(sez2) {
+  // 🔄 v6.778 - `senzaSottoserie`: l'hub della serie non vuole piu' il blocco delle sottoserie
+  //    QUI DENTRO, perche' da questa release le sottoserie hanno un blocco loro, uno solo per
+  //    tutta la serie invece di uno per tipologia (Franco). ⚠️ DENTRO UNA SEZIONE il blocco resta
+  //    dov'e' ed e' invariato: li' la pagina parla di una tipologia sola, e il titolo che si
+  //    ripeteva quattro volte nell'hub li' compare una volta e basta.
+  // 📌 Il valore di ripiego riproduce esattamente il comportamento di prima, quindi l'unico
+  //    chiamante che cambia e' quello che passa `true`.
+  function sezRows(sez2, senzaSottoserie) {
     // 🔧 v6.740 - dentro un box si contano i suoi articoli, non quelli della sezione che
     //    lo contiene. Nell'hub la variabile e' nulla (openSeriesDetail la azzera), quindi
     //    li' questa riga non cambia niente.
@@ -39586,7 +40207,7 @@ function renderSeriesMeta(s) {
     //    griglia e' gia' alta quanto il suo contenuto.
     // 📌 E su schermo stretto scende sotto da se', perche' il contenitore e' `flex-wrap`
     //    da sempre: la colonna intera va a capo invece di spezzarsi a meta'. Niente media query.
-    if (_righeSotto.length) {
+    if (_righeSotto.length && !senzaSottoserie) {
       m.push('<div style="display:flex;flex-direction:column;align-items:flex-start;'
         + 'gap:0.35rem;">'
         + '<div style="color:var(--text);font-weight:600;">'
@@ -39644,10 +40265,7 @@ function renderSeriesMeta(s) {
       // ⚠️ `sezRows(c)` si chiama UNA volta e il risultato si tiene: chiamarla due volte - una
       //    per sapere se e' vuota, una per disegnarla - vorrebbe dire ricontare tutti gli
       //    articoli della serie a ogni apertura dell'hub.
-      cats.map(c => [c, sezRows(c)]).filter(([, righe]) => righe.length)
-        .map(([c, righe]) => '<div class="hub-cat-row" style="display:contents;">' + _pfx(c)
-        + '<div style="display:flex;flex-wrap:wrap;align-items:flex-start;gap:0.35rem 1.4rem;">'
-        + righe.join('') + '</div></div>').join('') +
+      _blocchiHub(cats, sezRows, _pfx, BULLET, colonna) +
       '</div>';
     posizionaTestataSerie();   // v5.936 — dopo il render: qui la descrizione torna in coda al blocco eroe
     try { _applicaChiusuraTestata(); } catch(e) {}   // v6.001
@@ -39725,6 +40343,13 @@ function openSeriesDetail(seriesId) {
   // famiglia delle v6.095, v6.134 e v6.140. Chi entra in un box lo riaccende SUBITO DOPO, che e'
   // l'ordine giusto: prima si spegne tutto, poi si accende quello che serve.
   _tipoProdottoCorrente = null;
+  // 🆕 v6.776 (Franco: «apro la pagina di una sottoserie e dopo, facendo qualsiasi giro, apro la
+  //    pagina di una serie - anche un'altra - e rimane ancora visibile la scritta "Sottoserie
+  //    [Nome]"») - E IL GRUPPO SI AZZERA QUI, per la ragione scritta due righe piu' su per il box:
+  //    «l'azzeramento sta QUI e non in chi va via» (v6.144). Aprire una serie e' l'unico modo di
+  //    arrivare alle sue griglie, quindi e' il punto in cui uno stato rimasto acceso comincia a
+  //    parlare di un'altra serie.
+  _sottoserieAttiva = null;
   // v6.156 - il tasto indietro della serie torna visibile: chi apre una serie ci passa davvero.
   const _bs = document.querySelector('#series-detail > .series-hero .back-btn');
   if (_bs) _bs.style.display = '';
@@ -39733,9 +40358,24 @@ function openSeriesDetail(seriesId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const det = document.getElementById('series-detail');
   det.style.display = 'block';
-  // 🔄 v6.645 - il titolo della testata e' un'ETICHETTA, non la chiave.
-  document.getElementById('detail-name').textContent = _nomeSerie(s);
-  document.getElementById('detail-year').textContent = s.year;
+  // 🔄 v6.776 - QUI STAVANO DUE RIGHE CHE SCRIVEVANO NOME E ANNO A MANO, e la testata non la
+  //    SVESTIVA nessuno. Adesso si passa dalla funzione che veste la testata: con `currentSection`
+  //    gia' a `null` (due righe piu' su) imbocca il ramo «fuori da una sezione», che fa QUATTRO
+  //    cose - nome e anno (v6.645: il titolo e' un'ETICHETTA, non la chiave), la fotina della serie
+  //    via, il sottotitolo spento, le due classi della sottoserie spente - e ridisegna la
+  //    copertina.
+  // 🔴 IL DIFETTO CHE CHIUDE, MISURATO SUL SITO VIVO: entrando in «Spille · 3,7 CM classiche» e poi
+  //    aprendo la serie 3, restavano a schermo il sottotitolo «Spille 3,7 CM classiche», la fotina
+  //    delle Spille e la classe `mostra-sottoserie` - cioe' la copertina della serie 3 non
+  //    ritagliata e la colonna larga. Tre avanzi di un'altra serie, e nessun errore da nessuna
+  //    parte. ⚠️ Non e' una regressione della v6.774: la v6.774 ha solo cambiato le PAROLE di quel
+  //    testo. L'avanzo c'e' dalla v6.719, che quel nome nella testata ce l'ha messo.
+  // 📌 PERCHE' NON BASTAVA AGGIUNGERE UN `sub.textContent = ''` QUI: sarebbe stata la quinta copia
+  //    di un gesto che quella funzione fa gia', e avrebbe lasciato fuori la fotina e le due classi
+  //    - cioe' avrebbe chiuso la meta' visibile del difetto lasciando l'altra.
+  // ⚠️ La funzione esce subito se uno dei tre nodi non c'e'; ci sono sempre, sono statici
+  //    nell'index, e `prova-v6719` §1 pretende che ci siano.
+  _vestiTestataPerSezione(s);
   // 🔄 v6.549 - LA SCELTA DELLA LINGUA DELLA DESCRIZIONE ESCE DA QUI. Stava dentro
   // openSeriesDetail, che gira UNA VOLTA all'apertura: cambiando lingua a serie aperta
   // la descrizione restava quella di prima. Ora la regola sta in un posto solo e la
@@ -39745,11 +40385,9 @@ function openSeriesDetail(seriesId) {
 
   // Campi meta nella hero
   renderSeriesMeta(s);
-  // 🔄 v6.719 - IL DISEGNO DELLA COPERTINA E' USCITO DA QUI ed e' `_disegnaCopertinaSerie`:
-  //    adesso lo chiedono in due, questa apertura e il ritorno da una sottoserie (v6.719).
-  //    Due copie della stessa immagine sarebbero due copie della stessa regola, e il timbro
-  //    di stato e' proprio il genere di dettaglio che in una delle due si dimentica.
-  _disegnaCopertinaSerie(s);
+  // 🗑️ v6.776 - QUI C'ERA `_disegnaCopertinaSerie(s)`, e se n'e' andata di sopra insieme al resto:
+  //    la chiama gia' `_vestiTestataPerSezione` nel ramo «fuori da una sezione». Lasciarla avrebbe
+  //    disegnato la stessa copertina due volte a ogni apertura di una serie.
   // show selector, hide items section
   document.getElementById('section-selector').style.display = '';
   document.getElementById('items-section').style.display = 'none';
@@ -39938,14 +40576,19 @@ function _rendiCardSottoserie() {
         + (foto ? 'background-image:url(\'' + cloudinaryUrl(foto, 'w_600,h_600,c_fit,q_auto,f_auto') + '\');' : '')
         + '"></div>'
         + '<div style="padding:1.25rem 1.5rem;">'
-        // 🆕 v6.693 (Franco: «per le figurine, scrivi Figurine Metal, Figurine Clear,
-      //    Figurine White») - IL TITOLO DICE LA TIPOLOGIA E POI LA SOTTOSERIE.
-      // 📌 Il nome della tipologia lo da' `getSectionLabel`, la STESSA funzione che
-      //    scrive il titolo delle card di tipologia: il giorno che «Figurine» cambia nome,
-      //    cambiano insieme. Leggerlo da un secondo posto sarebbe la copia che nessuno conta.
-      // ⚠️ Vale solo QUI: sulle card di tipologia il titolo e' gia' il nome della tipologia,
-      //    e comporlo direbbe «Tatuaggi Tatuaggi».
-      + '<div class="section-choice-title">' + esc(getSectionLabel(sec) + ' ' + nome) + '</div>'
+        // 🗑️ v6.779 (Franco) - QUI IL TITOLO SI COMPONEVA «TIPOLOGIA + SOTTOSERIE», e non si
+      //    compone piu'. La v6.693 l'aveva scritto su richiesta di Franco - «per le figurine,
+      //    scrivi Figurine Metal, Figurine Clear, Figurine White» - e la regola era giusta per
+      //    quei tre nomi. Ma i nomi delle sottoserie, sulla serie, contengono GIA' quello della
+      //    tipologia: si chiamano «Figurine Metal», «Tatuaggi», «Trasferelli», «Carte
+      //    d'identita'». Quindi la composizione raddoppiava.
+      // 🔴 E IL COMMENTO DELLA v6.693 LO DICEVA GIA', in fondo: «comporlo direbbe "Tatuaggi
+      //    Tatuaggi"». Era scritto come la ragione per NON comporre sulle card di tipologia, ed
+      //    era esattamente cio' che usciva qui: misurato sul sito vivo, tutte e sei le card di
+      //    sottoserie di Holidays dicevano la stessa parola due volte.
+      // 📌 Adesso il titolo e' il nome della sottoserie, quello che Franco scrive sulla serie: un
+      //    posto solo decide come si chiama, e a schermo si legge quello.
+      + '<div class="section-choice-title">' + esc(nome) + '</div>'
         + '<div class="section-choice-count">' + quanti + _paroleArticoli(quanti)
         + '</div></div>';
       // 🆕 v6.692 - l'ultima riga, con la tipologia della SEZIONE a cui questa
@@ -40197,9 +40840,30 @@ function openSeriesSection(section, sottoserie) {
   const _btnIndietro = document.querySelector('#items-section .back-btn span');
   if (_btnIndietro) {
     const _it = currentLang === 'it';
+    // 🆕 v6.769 (Franco: «il tasto sezioni, quando si e' nella pagina di una Sottoserie, e'
+    //    meglio chiamarlo Serie, perche' di fatto porta alla pagina della serie») - TRE
+    //    DESTINAZIONI, TRE PAROLE. La regola non cambia: e' sempre quella della v6.153 -
+    //    «l'etichetta dice DOVE si torna, non un posto fisso» - applicata al terzo caso, che
+    //    quando quella riga e' stata scritta non esisteva: le sottoserie avevano i tab, non
+    //    una pagina loro (i tab se ne sono andati con la v6.718).
+    // 🔴 E LA DESTINAZIONE E' MISURATA, NON DEDOTTA: da una sottoserie `closeItemsSection`
+    //    mostra `#section-selector`, cioe' la pagina della SERIE. Da una sezione qualunque
+    //    fa esattamente la stessa cosa - la differenza sta in cosa si sta guardando, non in
+    //    dove si va: uscendo da «Metal» si sale di due piani in un colpo solo, e «Sezioni»
+    //    prometteva l'elenco delle sezioni di quel gruppo, che non e' quello che si apre.
+    // ⚠️ `data-i18n` SEMPRE, e con una chiave SUA. Un testo scritto a mano su un elemento
+    //    tradotto tornerebbe «Sezioni» al primo cambio di lingua (lezione della v6.153), e
+    //    riusare `catalog.byseries` - che oggi vale «Serie» - legherebbe questo pulsante al
+    //    selettore del taglio dell'Inventario: il giorno che quella voce cambia nome, questo
+    //    cambierebbe con lei senza che nessuno l'abbia chiesto.
+    // 📌 La stringa vuota NON conta come sottoserie: e' la stessa distinzione della v6.729,
+    //    dove `_sottoserieAttiva` vuota vuol dire «tutti i gruppi», non «un gruppo».
     if (_tipoProdottoCorrente) {
       _btnIndietro.removeAttribute('data-i18n');
       _btnIndietro.textContent = _it ? 'Inventario' : 'Inventory';
+    } else if (_sottoserieAttiva) {
+      _btnIndietro.setAttribute('data-i18n', 'catalog.backToSeries');
+      _btnIndietro.textContent = _it ? 'Serie' : 'Series';
     } else {
       _btnIndietro.setAttribute('data-i18n', 'catalog.sections');
       _btnIndietro.textContent = _it ? 'Sezioni' : 'Sections';
@@ -40356,6 +41020,32 @@ function _disegnaCopertinaSerie(s) {
     + _timbroStatoSerie(s);
 }
 
+// 🆕 v6.774 (Franco) - LE SOTTOSERIE DI QUESTA SERIE STANNO TUTTE NELLA STESSA TIPOLOGIA?
+// 🔴 E' LA DOMANDA CHE DECIDE COSA SCRIVE IL SOTTOTITOLO, e Franco l'ha posta come una regola sui
+//    DATI, non come un elenco di serie: «se la serie ha tutte sottoserie della stessa TDA →
+//    "Sottoserie [Nome]"; se no → "Sottoserie [Tipologia] [Nome]"». Un elenco scritto a mano
+//    sarebbe scaduto la prima volta che una sottoserie nasce sotto una seconda tipologia.
+// 🔴 SI CHIEDE AGLI ARTICOLI E NON AL RECORD DELLA SERIE, e non e' una scorciatoia: nel record le
+//    sottoserie sono `{nome, img}` (v6.680) e la tipologia non ce l'hanno proprio. L'unico posto
+//    dove quella coppia esiste e' l'articolo, che porta `subseries` e `section`.
+// 📌 ZERO O UNA SOLA TIPOLOGIA = `true`: se non c'e' niente da distinguere, la tipologia non si
+//    scrive. E' la stessa forma di `_serieUnicaDiTDA` (v6.770) - la domanda torna «non serve
+//    scegliere» anche quando le candidate sono zero.
+// ⚠️ LA STRINGA VUOTA NON E' UNA SOTTOSERIE (v6.729): un articolo senza gruppo non fa testo qui,
+//    se no basterebbe un articolo fuori gruppo in una seconda tipologia per far comparire la
+//    parola in tutte le pagine di quella serie.
+function _sottoserieInUnaSolaTDA(seriesId) {
+  let una = null;
+  for (const f of getData('figurines', [])) {
+    if (f.seriesId !== seriesId) continue;
+    if (!String(f.subseries || '').trim()) continue;
+    const sez = f.section || 'figurines';
+    if (una === null) una = sez;
+    else if (una !== sez) return false;
+  }
+  return true;
+}
+
 function _vestiTestataPerSezione(s) {
   const cover = document.getElementById('detail-cover');
   const mini  = document.getElementById('detail-cover-serie');
@@ -40419,7 +41109,37 @@ function _vestiTestataPerSezione(s) {
   //    parola, e scriverla due centimetri sotto e' il difetto chiuso dalle v6.688 e v6.729.
   if (tda) { sub.textContent = ''; sub.style.display = 'none'; }
   else {
-    sub.textContent = getSectionLabel(currentSection) + _codaSottoserie();
+    // 🆕 v6.774 (Franco: «nella pagina della sottoserie, invece che ripetere Serie, prima del nome
+    //    della sottoserie potremmo scrivere Sottoserie; in effetti questa parola in pagina non
+    //    c'e'. Pero' lo scriverei nello stesso azzurro del nome della serie») - E DUE CASI, decisi
+    //    da lui dopo aver visto la misura: «a) la serie ha tutte sottoserie della stessa TDA →
+    //    Sottoserie [Nome]; b) se no → Sottoserie [Tipologia] [Nome]».
+    // 🔴 LA PAROLA CHE SPARIVA NON ERA «SERIE», ERA IL NOME DELLA TIPOLOGIA: dentro «Spille · 3,7
+    //    CM classiche» questa riga diceva «Spille 3,7 CM classiche», e sembrava una ripetizione
+    //    solo perche' quella serie si chiama come la sua TDA - lo stesso motivo per cui la sua card
+    //    entra dritta nella serie (v6.770).
+    // 🔴 E IL CASO b) NON E' PRUDENZA: e' la META' DEL PATTO DELLA v6.729. Quella release ha fatto
+    //    TACERE il titolo sopra la griglia dentro un gruppo, e il suo commento dice perche': «il
+    //    titolo tace PERCHE' la testata parla; se un domani la testata smettesse di nominare la
+    //    tipologia, dentro un gruppo non la direbbe piu' nessuno». Dove le tipologie con sottoserie
+    //    sono due o piu', questa riga resta l'unica che lo dice.
+    // 🔴 L'AZZURRO VESTE LA SOLA ETICHETTA, il resto e' lime: detto da Franco due volte. E
+    //    `--nome-entita` e non un azzurro che gli somiglia - e' la stessa variabile del nome della
+    //    serie due centimetri piu' su.
+    // ⚠️ QUI SI PASSA A `innerHTML`, E LA CODA VA SCAPPATA. Le sottoserie vere hanno gia' apostrofi
+    //    e virgole («Carte d'identita'», «3,7 CM classiche»): un `<` romperebbe la testata.
+    // 📌 La stringa vuota non e' una sottoserie (v6.729): li' la riga resta il nome della
+    //    tipologia, com'e' sempre stata. E `_codaSottoserie()` non se ne va - la usa ancora il
+    //    sottotitolo della ricerca di sezione, che quella coda la vuole attaccata alla tipologia.
+    if (_sottoserieAttiva) {
+      const etichetta = _parolaSottoserie();   // v6.781 - la parola sta in un posto solo
+      const coda = _sottoserieInUnaSolaTDA(currentSeriesId)
+        ? _sottoserieAttiva
+        : getSectionLabel(currentSection) + ' ' + _sottoserieAttiva;
+      sub.innerHTML = '<span style="color:var(--nome-entita);">' + etichetta + '</span> ' + esc(coda);
+    } else {
+      sub.textContent = getSectionLabel(currentSection);
+    }
     sub.style.display = '';
   }
 }
@@ -40434,6 +41154,19 @@ function _mostraTestataSerie() {
   // per ultimo: spegne cio' che gli altri hanno appena acceso, se la testata e' chiusa
   try { _applicaChiusuraTestata(); } catch(e) { console.error('_mostraTestataSerie/chiusura', e); }
 }
+// 🆕 v6.770 - TORNA ALL'INVENTARIO, TAGLIO «TIPOLOGIE DI ARTICOLI».
+// 🔴 Queste quattro righe stavano solo dentro `closeItemsSection`, e dalla v6.770 servono anche a
+//    `closeSeriesDetail`: chi e' entrato dritto in una serie da una card di TDA non ha nessuna
+//    pagina intermedia a cui tornare. Due copie sarebbero divergite al primo ritocco del taglio.
+// ⚠️ Il taglio si scrive PRIMA di `renderCatalog`, che e' chi lo legge per decidere quale griglia
+//    disegnare: invertirli mostrerebbe le serie e poi cambierebbe idea senza ridisegnare.
+function _tornaInventarioProdotti() {
+  document.getElementById('page-catalog').classList.add('active');
+  try { _taglioInventario = 'prodotti'; localStorage.setItem('sgb_taglio', 'prodotti'); } catch (e) {}
+  try { renderCatalog(); } catch (e) {}
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 function closeItemsSection() {
   // v6.153 (Franco) - DENTRO UN BOX DI TIPO PRODOTTO, "indietro" torna all'INVENTARIO, non alle
   // sezioni. Le sezioni di "Extra serie" sono un piano che non si e' mai attraversato: chi e'
@@ -40447,10 +41180,7 @@ function closeItemsSection() {
     currentSeriesId = null;
     document.getElementById('items-section').style.display = 'none';
     document.getElementById('series-detail').style.display = 'none';
-    document.getElementById('page-catalog').classList.add('active');
-    try { _taglioInventario = 'prodotti'; localStorage.setItem('sgb_taglio', 'prodotti'); } catch (e) {}
-    try { renderCatalog(); } catch (e) {}
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    _tornaInventarioProdotti();   // v6.770 - le stesse quattro righe che usa `closeSeriesDetail`
     return;
   }
   document.getElementById('items-section').style.display = 'none';
@@ -40484,7 +41214,17 @@ function closeSeriesDetail() {
   const _daProd = _sezioneApertaDaProdotto;
   currentSeriesId = null;
   currentSection = null;
-  if (_daProd) { openProdottoDetail(_daProd); return; }
+  // 🆕 v6.770 - L'INDIETRO NON SI FERMA IN UNA PAGINA CHE ALL'ANDATA NON SI E' ATTRAVERSATA.
+  // Se quella TDA sta tutta dentro una serie sola, la sua card e' entrata DRITTA qui dentro: la
+  // pagina dell'hub non e' stata aperta, e mandarcisi ora non e' «tornare indietro», e' arrivare
+  // in un posto nuovo. E' parola per parola la ragione della v6.153, e la domanda e' la stessa
+  // funzione che ha deciso l'andata - se rispondesse in due modi diversi, il giro non si
+  // chiuderebbe.
+  if (_daProd) {
+    if (_serieUnicaDiTDA(_daProd)) { _sezioneApertaDaProdotto = null; _tornaInventarioProdotti(); return; }
+    openProdottoDetail(_daProd);
+    return;
+  }
   document.getElementById('page-catalog').classList.add('active');
 }
 
@@ -41658,6 +42398,26 @@ async function unmarkFilteredForSale() {
 //    - cioe' a nessuna griglia.
 let _sottoserieAttiva = null;
 
+// 🆕 v6.775 (Franco: «quando sono nella pagina di una sottoserie mostrerei solo le numeriche per
+//    quella sottoserie») - «QUESTO ARTICOLO E' DEL GRUPPO CHE STO GUARDANDO?», IN UN POSTO SOLO.
+// 🔴 NASCE PERCHE' LE COPIE ERANO GIA' DUE, E DENTRO LA STESSA FUNZIONE. `renderSpecchiettiTop`
+//    calcola i suoi riquadri da due sorgenti diverse: le CATEGORIE passano da
+//    `getCurrentlyFilteredItems`, che il gruppo lo rispetta dalla v6.651; le VERSIONI da un filtro
+//    scritto a mano che chiedeva solo serie e sezione. Stessa funzione, stessa domanda, due
+//    risposte.
+// ✅ MISURATO SUL SITO VIVO, non dedotto: nella pagina «Spille · 3,7 CM classiche» - 24 card a
+//    schermo - il riquadro degli errori di stampa diceva **7 in totale**, con quattro tipi. Quel
+//    gruppo di errori di stampa ne ha **ZERO**: i 7 sono di tutta la sezione, cioe' di altri
+//    gruppi. Una pagina che mostra i numeri di un'altra pagina, e nessun errore da nessuna parte.
+// ⚠️ `!== null` E NON UNA VERITA': la stringa VUOTA e' il «Set principale», cioe' un gruppo vero -
+//    quello degli articoli senza sottoserie - e li' il filtro deve girare. E' la distinzione della
+//    v6.729, e scriverla come `if (_sottoserieAttiva)` la perderebbe in silenzio.
+// 📌 E' una `function` e non una `const`: la leggono due punti che stanno 1300 righe piu' giu', e
+//    una dichiarazione issata non puo' finire in zona morta (la lezione della v6.152).
+function _delGruppoAttivo(f) {
+  return _sottoserieAttiva === null || String(f.subseries || '').trim() === _sottoserieAttiva;
+}
+
 const _FILTRI = [
   { nome: 'categoria retro',      azzera: () => { _retroCategoryFilter = new Set(); },
                                   acceso: () => _retroCategoryFilter.size > 0 },
@@ -41806,8 +42566,9 @@ function getCurrentlyFilteredItems(opts) {
     //    tab. Senza quel lettore restava un'opzione che nessuno passa piu' - cioe' codice
     //    morto in mezzo a un filtro, che e' il posto peggiore in cui lasciarne.
     // 📌 `skipLato` e `skipRaggr` RESTANO: quelli li chiede ancora chi calcola i riquadri.
-    if (_sottoserieAttiva !== null
-        && String(f.subseries || '').trim() !== _sottoserieAttiva) return false;
+    // 🔄 v6.775 - la condizione e' diventata `_delGruppoAttivo`, perche' adesso la chiede anche la
+    //    testata. La regola non cambia di una virgola: cambia che e' scritta in un posto solo.
+    if (!_delGruppoAttivo(f)) return false;
     // Filtro per categoria (solo Retro), attivato cliccando un box nello specchietto risultati (v5.762)
     // v6.157 - il filtro per categoria vale nei retro E dentro un box di tipo prodotto. Accendere
     // un chip che poi non filtra sarebbe peggio che non averlo: un comando che non fa niente.
@@ -43010,8 +43771,20 @@ function renderSpecchiettiTop() {
   // guardando. Il vecchio codice se ne salvava per caso: chiedeva `currentSection === 'figurines'`,
   // e quel confronto faceva da guardiano senza dirlo.
   if (!currentSeriesId || !currentSection) { el.style.display = 'none'; el.innerHTML = ''; return; }
+  // 🆕 v6.775 (Franco) - E ANCHE DEL GRUPPO, quando un gruppo c'e'. Prima questa riga chiedeva
+  //    solo serie e sezione, e in una pagina di sottoserie i riquadri contavano TUTTA la sezione:
+  //    misurato su «Spille · 3,7 CM classiche», 24 card a schermo e il riquadro degli errori di
+  //    stampa che ne annunciava 7 - che sono di altri gruppi, perche' questo ne ha zero.
+  // 🔴 E LA DOMANDA E' LA STESSA CHE FA IL SETACCIO, non una seconda scritta qui: due righe
+  //    diverse per «sono nel gruppo?» sarebbero divergite al primo ritocco, ed e' esattamente
+  //    cio' che succedeva dentro QUESTA funzione - le categorie, due righe piu' giu', il gruppo
+  //    lo rispettavano gia' perche' passano da `getCurrentlyFilteredItems`.
+  // ⚠️ NON SI PASSA DAL SETACCIO INTERO, e la differenza e' voluta: quello applica anche i filtri
+  //    dell'utente, e questi riquadri dicono «cosa c'e' qui dentro», non «cosa e' rimasto dopo che
+  //    hai filtrato». Farli rimpicciolire sotto le dita e' il difetto che le v6.271 e v6.335
+  //    hanno evitato apposta.
   const dellaSezione = getData('figurines', []).filter(f =>
-    f.seriesId === currentSeriesId && f.section === currentSection);
+    f.seriesId === currentSeriesId && f.section === currentSection && _delGruppoAttivo(f));
   // v6.266 - un riquadro per versione con un tipo, e l'ordine e' quello di `VERSIONI_ARTICOLO`:
   // lo stesso della griglia, delle colonne e dei badge. Non c'e' un secondo posto che lo decida.
   const perVersione = _VERSIONI_CON_TIPO.map(v => ({ v, pairs: _raggrCounts(dellaSezione, v) }));
@@ -49828,7 +50601,30 @@ function switchToEditMode(figId) {
     if (_versioneAmmessa('printError', f, figSeries))
     html += '<div class="detail-row">' + _labelVersione('printError') + '<span class="detail-value"><input type="checkbox" id="fe-is-printerror" onchange="toggleFeBaseFigurineGroup(\'fe-is-printerror\')" ' + (f.isPrintError?'checked':'') + ' style="width:18px;height:18px;cursor:pointer;"></span></div>';
   }
-  if (isRetrosItem || f.section === 'figurines') {
+  // 🔴 v6.782 (Franco: «nella form della bustina, se setto change=true mi chiede il tipo di
+  //    change obbligatorio ma non c'e' il campo») - QUI STAVA UN BIVIO A DUE SEZIONI, e faceva un
+  //    VICOLO CIECO. La riga diceva `if (isRetrosItem || f.section === 'figurines')`: la casella
+  //    «Change» si mostra in TUTTE le sezioni che la ammettono, ma la tendina del suo TIPO nasceva
+  //    solo per retro e figurine. Su una bustina si poteva spuntare Change e non si poteva
+  //    salvare: il controllo al salvataggio pretende il tipo, e il campo per darglielo non c'era.
+  // ✅ MISURATO SUI DATI VERI, ed e' la prova che il vicolo c'e' sempre stato: i Change
+  //    esistono in `retros` (107) e `figurines` (116) e in NESSUN'ALTRA sezione - zero su
+  //    bustine, album, spille, carte, tatuaggi, trasferelli, cartoncini, extra. Non e' una scelta
+  //    di dominio: e' che da fuori quelle due sezioni un Change non si e' mai potuto creare.
+  //    📌 Il controprova sta accanto: gli ERRORI DI STAMPA fuori da quelle due sezioni sono
+  //    SETTE (sulle spille), e il loro campo «Tipo» e' sempre stato disegnato per tutte.
+  // 📌 ADESSO E' GEMELLO DEI SUOI DUE FRATELLI: «Tipo di omaggio» (v6.241/253) e «Tipo di
+  //    errore di stampa» nascono senza condizione di sezione e si mostrano quando la loro casella
+  //    e' spuntata. Erano tre campi con la stessa forma e una sola regola diversa - quella vecchia,
+  //    scritta quando le sezioni erano due. Stessa famiglia della v5.714, della v6.146 e della
+  //    v6.198, ed e' la quarta volta.
+  // ⚠️ IL CAMPO NON ERA ROTTO, ERA IRRAGGIUNGIBILE: parola per parola la diagnosi della v6.254
+  //    sul «Tipo di omaggio». Li' mancava la riga che lo SCOPRE, qui mancava la riga che lo CREA.
+  // 📌 LE OPZIONI NON CAMBIANO E NON SI FILTRANO PER SEZIONE: i tipi di change sono
+  //    dichiarati sulla SERIE (`changeTypesDiSerie`), non sulla tipologia di articolo. Filtrarli
+  //    qui sarebbe una regola di dominio che Franco non ha dato - e inventarla e' l'errore che la
+  //    v6.246 ha gia' pagato una volta.
+  {
     const showChangeType = !!f.isChange;
     // v6.102 (§12.10) - stesse opzioni a due gruppi dell'altra form, dalla stessa funzione.
     html += '<div class="detail-row" id="fe-retro-change-type-group" style="' + (showChangeType ? '' : 'display:none;') + '">' +
@@ -50282,26 +51078,18 @@ function _slotFotoEdit(slot, url, f) {
         '<span class="btn-foto" style="display:block;">\u{1F4F7} ' + (currentLang === 'it' ? (url ? 'Cambia foto' : 'Aggiungi foto') : (url ? 'Change photo' : 'Add photo')) + '</span>' +
         '<input type="file" accept="image/*" style="display:none;" onchange="handleFigEditImg(event, \'' + slot + '\')">' +
       '</label>' +
-      // 🆕 v6.602 (Franco: «aggiungi un tasto "Aggiungi foto e salva", alla sua destra») — lo stesso
-      // gesto, ma senza il passaggio dal pulsante Salva. La seconda `<label>` ha una `<input>` sua:
-      // due comandi non possono condividere la stessa casella file, o il primo che la usa
-      // deciderebbe anche per il secondo.
-      // 🔄 v6.605 — QUI STAVA IL CONTRARIO, e la frase e' stata corretta insieme al codice:
-      //   «Etichetta accorciata («Aggiungi e salva», non «Aggiungi foto e salva»): i due tasti
-      //    stanno affiancati e la parola «foto» e' gia' nel primo. Confermato da Franco.»
-      // Era vera, e la sua ragione era lo SPAZIO: la riga ne teneva tre. Dalla v6.605 i tasti
-      // per riga sono due, lo spazio c'e', e Franco ha rimesso il nome per intero.
-      // 🔴 UNA SPIEGAZIONE VECCHIA E' PIU' PERICOLOSA DI UNA REGOLA VECCHIA: la regola la vede
-      // una prova, la spiegazione no — nessuna suite legge i commenti. Il 6 settembre 2026 la
-      // frase della v5.770 («il tipo di errore di stampa e' facoltativo»), mai cancellata dalla
-      // v5.771 che lo rese obbligatorio, ha fatto dare per buona una buca che non esisteva.
-      // L'unica difesa e' cancellarla nella release che la smentisce, cioe' adesso.
-      // 📌 `btn-foto` e non una classe nuova: e' la famiglia di questa riga, gia' coerente — la
-      // stessa regola che la v6.601 ha appena applicato ai tasti admin.
-      '<label style="flex:1;cursor:pointer;text-align:center;">' +
-        '<span class="btn-foto" style="display:block;">\u{1F4BE} ' + (currentLang === 'it' ? (url ? 'Cambia foto e salva' : 'Aggiungi foto e salva') : (url ? 'Change photo and save' : 'Add photo and save')) + '</span>' +
-        '<input type="file" accept="image/*" style="display:none;" onchange="handleFigEditImgESalva(event, \'' + slot + '\')">' +
-      '</label>' +
+      // 🗑️ v6.771 (Franco) — QUI STAVA «CAMBIA FOTO E SALVA» / «AGGIUNGI FOTO E SALVA», nato con
+      // la v6.602 e tolto oggi. La ragione è sua, ed è una ragione di mestiere, non di ingombro:
+      // «tanto alla fine ogni foto prima di salvarla la puliamo di sfondo, e non tolgo lo sfondo
+      // salvando subito senza vedere il risultato». Cioè il gesto che quel tasto risparmiava —
+      // scegli e salva — è un gesto che in questo progetto non si fa mai: fra la scelta e il
+      // salvataggio c'è sempre «Rimuovi sfondo» e un'occhiata al risultato.
+      // 📌 Se ne va anche il terzo argomento `poi` di `handleFigEditImg`, che esisteva SOLO per
+      // questo tasto: lasciarlo sarebbe stato un parametro che nessuno passa, cioè una strada
+      // che il codice dichiara di avere e non ha.
+      // ⚠️ La riga resta a UN comando, non a due: la seconda riga («Rimuovi foto», «Rimuovi
+      // sfondo») ne ha ancora due, e la simmetria della v6.605 si perde. È la conseguenza
+      // visibile della richiesta, non una svista.
     '</div>' +
     // 🆕 v6.596 (Franco: «quando la foto non c'e', "Rimuovi sfondo" sparisce») — un
     // comando che non ha niente su cui agire non si mostra. Prima compariva sempre e
@@ -50568,18 +51356,57 @@ async function removeBgFromEdit(slot) {
 let _fotoSceltaRisolvi = null;
 let _fotoSceltaBlob = null;
 
+// 🆕 v6.772 - VESTIRE LA FINESTRA CON UNA FOTO, IN UN POSTO SOLO.
+// 🔴 Nasce perche' adesso i momenti in cui una foto entra in questa finestra sono DUE: l'apertura
+//    e il tasto «Cambia foto». Scriverli due volte avrebbe voluto dire due reset da tenere
+//    allineati, e il giorno che uno dei due dimentica di riabilitare «Rimuovi sfondo» si otterrebbe
+//    una finestra con la foto nuova e il bottone dell'elaborazione precedente ancora spento —
+//    senza nessun errore.
+// ⚠️ IL TITOLO SI SCRIVE SOLO SE C'E'. Cambiando foto non si cambia box: la finestra sta sempre
+//    dicendo «Foto «Spille» di questa serie», e riscriverlo col ripiego «Foto scelta» sarebbe la
+//    finestra che si dimentica su cosa sta lavorando, proprio mentre le si cambia il contenuto.
+// 🔴 E IL BOTTONE DELLO SFONDO SI RIMETTE A NUOVO: dopo `fotoSceltaTogliSfondo` il blob e' quello
+//    SCONTORNATO. Con una foto nuova quel lavoro non c'entra piu' niente, e un'etichetta rimasta
+//    indietro direbbe che lo sfondo e' gia' stato tolto a un'immagine che non l'ha mai perso.
+function _mostraFotoScelta(file, titolo) {
+  _fotoSceltaBlob = file;
+  if (titolo) {
+    const t = document.getElementById('foto-scelta-titolo');
+    if (t) t.textContent = titolo;
+  }
+  const btn = document.getElementById('foto-scelta-bg-btn');
+  if (btn) { btn.disabled = false; btn.textContent = _ETICHETTA_SFONDO(); }
+  const cam = document.getElementById('foto-scelta-cambia-testo');
+  if (cam) cam.textContent = currentLang === 'it' ? 'Cambia foto' : 'Change photo';
+  const img = document.getElementById('foto-scelta-preview');
+  const reader = new FileReader();
+  reader.onload = e => { if (img) img.src = e.target.result; };
+  reader.readAsDataURL(file);
+}
+
+// 🆕 v6.772 (Franco: «ci sono dei casi - sicuramente sul tasto matita della card dell'hub - dove
+//    quando aggiungi una foto non puoi cambiarla senza che prima abbandoni la finestra; in pratica
+//    manca il bottone "cambia foto" dentro a quella finestra») - ADESSO C'E'.
+// 🔴 LA FINESTRA E' UNA SOLA PER TUTTI I FLUSSI CHE CARICANO SUBITO (la matita dei box, quella
+//    delle sottoserie, quella della tipologia per serie, l'avatar): il tasto nasce una volta e
+//    vale per tutti, che e' la ragione per cui la v6.191 aveva scelto un modale solo invece di uno
+//    per flusso.
+// ⚠️ LA PROMESSA NON SI TOCCA: `_fotoSceltaRisolvi` resta quello dell'apertura. Cambiare foto non
+//    e' ne' confermare ne' annullare - chi aspetta continua ad aspettare, e ricevera' il blob che
+//    ci sara' quando si preme «Applica foto».
+// 📌 `ev.target.value = ''` alla fine, se no riscegliendo LO STESSO file l'evento `change` non
+//    parte piu': e' la stessa riga, e la stessa ragione, di `cambiaFotoBox`.
+function fotoSceltaCambia(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  _mostraFotoScelta(file);
+}
+
 function _scegliFoto(file, titolo) {
   return new Promise(risolvi => {
     _fotoSceltaRisolvi = risolvi;
-    _fotoSceltaBlob = file;
-    const t = document.getElementById('foto-scelta-titolo');
-    if (t) t.textContent = titolo || (currentLang === 'it' ? 'Foto scelta' : 'Chosen photo');
-    const btn = document.getElementById('foto-scelta-bg-btn');
-    if (btn) { btn.disabled = false; btn.textContent = _ETICHETTA_SFONDO(); }
-    const img = document.getElementById('foto-scelta-preview');
-    const reader = new FileReader();
-    reader.onload = e => { if (img) img.src = e.target.result; };
-    reader.readAsDataURL(file);
+    _mostraFotoScelta(file, titolo || (currentLang === 'it' ? 'Foto scelta' : 'Chosen photo'));
     document.getElementById('foto-scelta-modal').classList.remove('hidden');
   });
 }
@@ -50679,14 +51506,16 @@ function removeFigPhoto(slot) {
   toast(currentLang === 'it' ? 'Foto rimossa — premi Salva per confermare' : 'Photo removed — press Save to confirm', 'success');
 }
 
-// 🔄 v6.602 - IL TERZO ARGOMENTO `poi`, ED E' UNA QUESTIONE DI ORDINE, NON DI COMODITA'.
-// `FileReader` e' ASINCRONO: chi volesse salvare subito dopo aver chiamato questa funzione
-// salverebbe la foto PRECEDENTE — o nessuna, in creazione — e otterrebbe un articolo salvato senza
-// l'immagine appena scelta, **senza nessun errore da nessuna parte**.
-// ✅ `poi` viene eseguito DENTRO `reader.onload`, cioe' quando la foto e' davvero nello slot.
-// ⚠️ Stessa famiglia del difetto della v6.599 e del campo nascosto della 641: un valore letto
-// prima che esista.
-function handleFigEditImg(event, slot, poi) {
+// 🗑️ v6.771 - QUI STAVA IL TERZO ARGOMENTO `poi`, nato con la v6.602 per il tasto «Cambia foto e
+// salva» e morto con lui. Lo passava soltanto quel tasto: tenerlo sarebbe stato un parametro che
+// nessuno usa, cioe' una strada dichiarata e non percorsa — la stessa specie di codice morto di
+// `series.counts` e di `basi` (v6.466).
+// 📌 LA RAGIONE PER CUI ESISTEVA RESTA VERA E VA RILETTA PRIMA DI RIFARLO: `FileReader` e'
+// ASINCRONO, quindi chi volesse salvare subito dopo aver chiamato questa funzione salverebbe la
+// foto PRECEDENTE — o nessuna, in creazione — senza nessun errore da nessuna parte. Se un domani
+// un altro comando dovesse fare qualcosa «appena la foto e' nello slot», il posto e' dentro
+// `reader.onload`, non dopo la chiamata.
+function handleFigEditImg(event, slot) {
   slot = slot || 'fronte';
   const file = event.target.files[0];
   if (!file) return;
@@ -50700,30 +51529,10 @@ function handleFigEditImg(event, slot, poi) {
     // bottone non compariva.
     // ✅ Adesso si ridisegna il riquadro e decide lui: anteprima, etichetta e comandi insieme.
     _ridisegnaSlotFoto(slot);
-    // 🔄 v6.602 - e SOLO ADESSO cio' che chi ha chiamato voleva fare dopo: la foto e' nello slot.
-    if (typeof poi === 'function') { try { poi(); } catch (e) { console.error('handleFigEditImg/poi', e); } }
   };
   reader.readAsDataURL(file);
 }
 
-// 🆕 v6.602 (Franco) — CARICA LA FOTO E SALVA, in un gesto solo.
-// 📌 NON RISCRIVE IL SALVATAGGIO: chiama `saveFigFromDetail` senza `{resta:true}`, cioe' esattamente
-// quello che fa il pulsante «Salva». Da li' arriva gratis anche la regola giusta sulla chiusura —
-// `closeModal` avviene SOLO se il salvataggio e' andato a buon fine, quindi una validazione fallita
-// lascia la scheda aperta con l'errore invece di buttare via cio' che c'era scritto.
-// 🔴 Franco ha scelto che il tasto compaia ANCHE in creazione e clonazione, dove «salva» vuol dire
-// CREARE l'articolo: e' un gesto piu' grosso di quanto l'etichetta prometta, ed e' scritto qui
-// perche' chi legge lo sappia. La rete e' quella di sopra: se manca un campo obbligatorio non si
-// crea niente e la scheda resta.
-// ⚠️ L'id viene da `_figSlotF` (v6.599), «il record della scheda aperta»: e' lo stesso che i due
-// pulsanti «Salva» portano nel loro `data-fig-id`. Senza scheda aperta non si fa niente.
-function handleFigEditImgESalva(event, slot) {
-  const _id = _figSlotF && _figSlotF.id;
-  handleFigEditImg(event, slot, () => {
-    if (!_id) { console.error('handleFigEditImgESalva: nessuna scheda aperta'); return; }
-    saveFigFromDetail(_id);
-  });
-}
 
 // v6.008 - gemello di toggleRetroBianco per la scheda. Stesso comportamento: il campo
 // sparisce e si svuota, la spunta resta per poter tornare indietro.
