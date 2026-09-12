@@ -1,6 +1,26 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.768 — 🧱 IL RIEMPIMENTO DI FINE RIGA SI MANGIA IL MINIMO, NON IL MASSIMO. Difetto
+//          della v6.767, trovato MISURANDO la griglia vera sul sito appena pubblicato: 23
+//          card, 10 famiglie, QUATTRO ancora spezzate - cioe' l'esatto contrario di quello
+//          che la v6.767 doveva fare. Il codice, a leggerlo, sembrava giusto.
+//          🔴 LA CAUSA, LETTA NEL DOM: in flex il riempimento voleva riempire la coda
+//          ESATTAMENTE. Ma `geo.width` viene da `clientWidth`, un intero arrotondato da un
+//          valore frazionario: basta mezzo pixel e il riempimento non ci sta, va a capo lui,
+//          e occupa spazio all'INIZIO della riga dopo - spostando la famiglia che doveva
+//          proteggere. E veniva scritto anche quando non serviva: dopo 4 card da 350 in
+//          1475px la card dopo non ci stava comunque.
+//          📌 Adesso si riempie solo se la prima card della famiglia ci starebbe ancora,
+//          e ne basta il minimo perche' non ci stia piu' (`resto - primaCard + 1`): il
+//          margine non e' mezzo pixel, e' quasi la larghezza di una card.
+//          🔴 E LA PROVA ERA VERDE PERCHE' COPIAVA L'IMPLEMENTAZIONE: `prova-v6767` §3-bis
+//          chiedeva il riempimento MASSIMO, non che la famiglia restasse unita. Riscritta:
+//          adesso chiede la proprieta'.
+//          ⚠️ Il ramo a griglia non si tocca: li' si contano celle, numeri interi esatti,
+//          e la misura dice che nessuna famiglia si spezza.
+//          Modificato js/app.js.
+//
 // v6.767 — 🧱 UN GRUPPO NON VA A CAPO: IL RESTO DELLA RIGA RESTA VUOTO. Franco: «nella
 //          griglia, come per altre TDA, non devi andare a capo tra elementi dello stesso
 //          gruppo (base-versioni-change-omaggi-erroristampa)», e sulla coda della riga:
@@ -26735,7 +26755,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.767';
+const JS_VERSION = 'v6.768';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -38468,7 +38488,25 @@ function _collocaFamiglia(fam, geo, x, rows, allFigs, idx) {
   if (geo.kind === 'flex') {
     const larg = fam.map(f => _itemHasWidePair(f, allFigs, idx) ? 350 : 247);
     const tot = larg.reduce((a, b) => a + b, 0) + geo.gap * (larg.length - 1);
-    if (x > 0 && x + geo.gap + tot > geo.width) { vuoti = geo.width - x - geo.gap; rows++; x = 0; }
+    if (x > 0 && x + geo.gap + tot > geo.width) {
+      // 🔄 v6.768 - QUI LA v6.767 RIEMPIVA LA CODA ESATTAMENTE (`geo.width - x - geo.gap`), E
+      //    SPEZZAVA LE FAMIGLIE CHE VOLEVA TENERE UNITE. Misurato sul sito: 23 card, 10 famiglie,
+      //    QUATTRO spezzate. Due ragioni, e la seconda e' quella grossa:
+      //    1. «esattamente» e' fragile: `geo.width` viene da `clientWidth`, un INTERO arrotondato
+      //       da un valore frazionario. Basta mezzo pixel e il riempimento non ci sta, va a capo
+      //       LUI, e si mette a occupare spazio all'INIZIO della riga dopo - spostando proprio la
+      //       famiglia che doveva proteggere;
+      //    2. veniva scritto anche quando non serviva: dopo 4 card da 350 in 1475px la card dopo
+      //       non ci stava comunque. Non c'era niente da mangiare, e mangiare lo stesso ha rotto.
+      // 📌 Adesso: si riempie SOLO se la prima card della famiglia ci starebbe ancora, e ne
+      //    basta il MINIMO perche' non ci stia piu'. Il margine che resta non e' mezzo pixel, e'
+      //    quasi tutta la larghezza di una card.
+      // ⚠️ Il ramo a GRIGLIA non ha questo problema e non si tocca: li' si contano celle, che sono
+      //    numeri interi esatti.
+      const resto = geo.width - x - geo.gap;   // spazio per un altro elemento, dopo il distanziamento
+      vuoti = resto >= larg[0] ? resto - larg[0] + 1 : 0;
+      rows++; x = 0;
+    }
     for (const w of larg) {
       if (x > 0 && x + geo.gap + w > geo.width) { rows++; x = w; }
       else x = x > 0 ? x + geo.gap + w : w;
