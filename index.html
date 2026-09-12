@@ -30,8 +30,8 @@
 <meta property="og:locale" content="it_IT">
 <meta property="og:locale:alternate" content="en_GB">
 <meta name="twitter:card" content="summary_large_image">
-<script src="js/email.min.js?v=6.752"></script>
-<link rel="stylesheet" href="css/style.css?v=6.752">
+<script src="js/email.min.js?v=6.767"></script>
+<link rel="stylesheet" href="css/style.css?v=6.767">
 
 
 <style>
@@ -2698,6 +2698,19 @@ di tutte le serie</button>
          cose: una gemella per la modifica sarebbe la copia che il §12.1 ha passato otto release a
          smontare. -->
     <input type="hidden" id="tipo-prodotto-id">
+    <!-- 🆕 v6.756 (Franco: «Organizziamo la form a tab») - LA FORM DEL TIPO A TAB.
+         Il meccanismo NON e' nuovo: e' quello della form della SERIE - bottoni e pannelli marcati
+         con `data-tab` - e da questa release la funzione che li accende e' UNA per tutte e due le
+         finestre (`switchTabModale`). Ricopiarla qui sarebbe stata la seconda copia di una regola
+         che ne ha gia' una, cioe' il difetto che questo file racconta piu' di ogni altro.
+         📌 «🗂️ Visualizzazione» e' la stessa parola e la stessa icona del tab gemello della serie:
+         chi ha imparato a leggere quella finestra legge anche questa senza rimparare niente. -->
+    <div style="display:flex;gap:0.5rem;border-bottom:1px solid var(--border);margin:0.75rem 0 1rem;flex-wrap:wrap;">
+      <button type="button" class="tipo-tab-btn" data-tab="tipo" onclick="switchTipoTab('tipo')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid var(--accent);background:transparent;color:var(--accent);font-weight:600;font-size:0.85rem;cursor:pointer;">&#128203; Tipo</button>
+      <button type="button" class="tipo-tab-btn" data-tab="versioni" onclick="switchTipoTab('versioni')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-weight:400;font-size:0.85rem;cursor:pointer;">&#128256; Versioni</button>
+      <button type="button" class="tipo-tab-btn" data-tab="visualizzazione" onclick="switchTipoTab('visualizzazione')" style="padding:0.4rem 0.9rem;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--muted);font-weight:400;font-size:0.85rem;cursor:pointer;">&#128451;&#65039; Visualizzazione</button>
+    </div>
+    <div class="tipo-tab-panel" data-tab="tipo">
     <!-- 🆕 v6.744 (Franco: "Nome e Nome in Inglese, mettili sulla stessa riga") — LE DUE
          LINGUE AFFIANCATE. Sono la stessa domanda detta due volte: appaiate si leggono come una
          coppia, incolonnate sembravano due campi indipendenti separati da una nota.
@@ -2749,9 +2762,51 @@ di tutte le serie</button>
       </select>
       <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Serve alle frasi che si accordano: le numeriche della serie scrivono &quot;Le hai tutte !&quot; oppure &quot;Li hai tutti !&quot;.</div>
     </div>
+    <!-- 🆕 v6.756 - LA TAGLIA RESTA NEL TAB PRINCIPALE, ed e' una scelta di Franco: e' una
+         proprieta' del tipo, come il nome e il genere, non una regola di disposizione. Il campo
+         non e' nuovo - c'e' dalla v6.160, ed e' gia' lui a comandare la colonna Taglia in vista
+         tabellare (`_tipoHaTaglia` -> `_mostraTaglia`). Qui cambia solo dove si legge.
+         v6.160 (Franco) - la Taglia e' una proprieta' del TIPO, come `hasSizes` per una serie:
+         prima compariva su tutti i prodotti extra serie, che era vero per i Cartoncini e non e'
+         una regola. Stessa correzione gia' fatta per il retro con la v6.149. -->
+    <div class="form-group">
+      <label class="form-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+        <input type="checkbox" id="tipo-prodotto-hataglia" onchange="_aggiornaCampoTaglieTipo()">
+        <span>Ha taglie differenti</span>
+      </label>
+      <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Acceso, nella scheda compare la tendina delle taglie di questo tipo, e la colonna Taglia in vista tabellare.</div>
+    </div>
+    <!-- 🆕 v6.758 (Franco: "l'elenco delle taglie deve essere distinto tra TDA e TDA") — L'ELENCO
+         DI QUESTO TIPO. Fino alla v6.757 i tre valori stavano in una costante del codice
+         (`TAGLIE_EXTRA_SERIE`), che nessuna schermata mostrava: "nemmeno trovo dove la abbiamo
+         messa", e non era messa da nessuna parte.
+         📌 LA FORMA NON E' NUOVA: e' la textarea "un valore per riga" che la form della serie usa
+         gia' per i tipi di change, di omaggio e di errore di stampa. Un secondo modo di scrivere
+         un elenco nella stessa console sarebbe la copia che diverge al primo ritocco.
+         ⚠️ SI MOSTRA SOLO A SPUNTA ACCESA, ma il suo contenuto NON si cancella quando la spunta si
+         spegne: una spunta e' un'affermazione e si spegne davvero (v6.748, v6.752), un elenco e'
+         testo scritto a mano e cancellato non torna (v6.750). -->
+    <div class="form-group" id="tipo-prodotto-taglie-group" style="display:none;">
+      <label class="form-label">Taglie di questo tipo (una per riga)</label>
+      <textarea class="form-input" id="tipo-prodotto-taglie-input" rows="5" style="resize:vertical;font-family:inherit;" placeholder="A4&#10;A5&#10;Altro"></textarea>
+      <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Un valore per riga, nell'ordine in cui vuoi vederli nella tendina. Finché è vuoto, una taglia già scritta su un articolo compare marcata &quot;⚠️&quot;: è fuori elenco, non è persa — sparisce appena la scrivi qui.</div>
+    </div>
+    </div><!-- fine del tab «Tipo» -->
+
+    <div class="tipo-tab-panel" data-tab="versioni" style="display:none;">
     <!-- v6.149 (Franco) - il tipo di prodotto prevede il retro? Spento di default, al contrario
          del flag delle serie: li' e' l'eccezione su un insieme che il retro ce l'ha, qui il caso
          normale e' non averlo. Comanda il riquadro della seconda foto nella scheda. -->
+    <div class="form-group">
+      <label class="form-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
+        <input type="checkbox" id="tipo-prodotto-haretro">
+        <span>Questo tipo di articolo ha il retro</span>
+      </label>
+      <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Spento, la scheda mostra un riquadro foto solo (il fronte).</div>
+    </div>
+    </div><!-- fine del tab «Versioni» -->
+
+    <div class="tipo-tab-panel" data-tab="visualizzazione" style="display:none;">
     <!-- v6.155 (Franco) - i campi con cui ordinare gli oggetti di questo tipo. La sintassi sta
          SOTTO il campo, non in un manuale: un campo con una sintassi propria e nessuna spiegazione
          accanto e' un campo che si compila a tentativi. Un nome sconosciuto FERMA il salvataggio e
@@ -2763,23 +2818,6 @@ di tutte le serie</button>
         Nomi separati da <b>virgola</b>, nell'ordine in cui contano. Il segno <b>&minus;</b> davanti inverte.<br>
         Ammessi: <code>ordinamento</code>, <code>nome</code>, <code>categoria</code>, <code>sottocategoria</code>, <code>taglia</code>, <code>punteggio</code>, <code>creazione</code>.
       </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-        <input type="checkbox" id="tipo-prodotto-haretro">
-        <span>Questo tipo di articolo ha il retro</span>
-      </label>
-      <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Spento, la scheda mostra un riquadro foto solo (il fronte).</div>
-    </div>
-    <!-- v6.160 (Franco) - la Taglia e' una proprieta' del TIPO, come `hasSizes` per una serie:
-         prima compariva su tutti i prodotti extra serie, che era vero per i Cartoncini e non e' una
-         regola. Stessa correzione gia' fatta per il retro con la v6.149. -->
-    <div class="form-group">
-      <label class="form-label" style="display:flex;align-items:center;gap:0.5rem;cursor:pointer;">
-        <input type="checkbox" id="tipo-prodotto-hataglia">
-        <span>Questo tipo di articolo ha la taglia</span>
-      </label>
-      <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Acceso, nella scheda compare la tendina A4 / A5 / Altro, e la colonna Taglia in vista tabellare.</div>
     </div>
     <!-- v6.162 (Franco) - QUANTE COLONNE HA LA GRIGLIA. Due numeri, desktop e mobile: e' il numero
          di partenza, prima che l'utente ridimensioni la finestra. Vuoto = come oggi.
@@ -2798,6 +2836,7 @@ di tutte le serie</button>
       </div>
       <div style="font-size:0.78rem;color:var(--text);margin-top:0.3rem;">Vuoto = la disposizione di sempre. Il numero scritto qui vince anche sugli schermi stretti, quindi su mobile tienilo basso.</div>
     </div>
+    </div><!-- fine del tab «Visualizzazione» -->
     <div style="display:flex;gap:0.6rem;justify-content:space-between;align-items:center;margin-top:1rem;">
       <button class="btn-danger" id="tipo-prodotto-elimina" style="display:none;" onclick="eliminaTipoProdotto()">Elimina</button>
       <div style="display:flex;gap:0.6rem;margin-left:auto;">
@@ -4027,7 +4066,7 @@ di tutte le serie</button>
 <!-- TOAST CONTAINER -->
 <div id="toast-container"></div>
 
-<script src="js/app.js?v=6.752"></script>
+<script src="js/app.js?v=6.767"></script>
 <script>
 /* Rete di sicurezza contro la cache — v5.917.
    Due guasti diversi, non uno solo:
@@ -4051,7 +4090,7 @@ di tutte le serie</button>
    un URL diverso no. Guardia in sessionStorage: mai un secondo tentativo, mai
    un loop. Se anche quello non basta, fascetta visibile con l'istruzione. */
 (function () {
-  var expected = 'v6.752'; // deve coincidere con JS_VERSION in app.js
+  var expected = 'v6.767'; // deve coincidere con JS_VERSION in app.js
   var KEY = 'sg_last_version', TRIED = 'sg_cache_reload';
   var n = function (v) { var m = /^v(\d+)\.(\d+)/.exec(v || ''); return m ? (+m[1]) * 10000 + (+m[2]) : 0; };
 

@@ -782,6 +782,18 @@ body {
 #prodotto-serie-grid { grid-template-columns: repeat(4, 1fr); }
 .grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; }
 .grid-6 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.75rem; }
+/* 🆕 v6.767 (Franco: «non devi andare a capo tra elementi dello stesso gruppo» +
+   «buchi a fondo riga e gruppo sempre assieme») - I DUE RIEMPIMENTI.
+   A griglia basta una cella che non disegna niente: occupa il suo posto e la riga finisce li'.
+   In flex (modo «Fronte e retro sempre grandi») le celle non esistono: si riempie la CODA della
+   riga con un elemento della larghezza che avanza - la scrive il codice, perche' dipende da
+   quanto e' rimasto - e l'a capo lo fa il browser da se'.
+   🔴 MISURATO, e non e' quello che avevo scritto per primo: un elemento a `flex: 0 0 100%` fa
+   una riga tutta sua, e le DUE spaziature che si porta dietro allargano il passo delle righe da
+   72 a 84px. Il margine negativo non le toglie, perche' una riga flex non scende sotto lo zero.
+   Riempiendo la coda il passo resta quello di tutte le altre righe. */
+.fig-cella-vuota { visibility: hidden; pointer-events: none; }
+.fig-fine-riga { height: 0; pointer-events: none; }
 
 /* ===== FIGURINE CARDS ===== */
 .fig-card {
@@ -1162,11 +1174,28 @@ body {
 .progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent3), var(--accent)); border-radius: 4px; transition: width 0.6s ease; }
 
 /* ===== MODALS ===== */
+/* 🆕 v6.757 (Franco: «quando si passa da un tab all'altro, non si deve spostare la
+   finestra» - e sono parole sue, «come in altre circostanze ti avevo gia' detto»)
+   🔴 LA CAUSA NON ERA NEI TAB, ERA QUI. Con `align-items: center` la finestra sta in mezzo
+   allo schermo, quindi OGNI cambiamento della sua altezza la fa risalire o scendere di meta'
+   della differenza. I tab sono solo il modo piu' frequente di cambiarle l'altezza: succede anche
+   quando un campo compare, quando un elenco cresce, quando un avviso si apre. Ancorata in alto,
+   la finestra sta ferma per tutte quelle ragioni, non per una.
+   🔴 MISURATO NEL BROWSER, non dedotto: cambiando tab il bordo alto si spostava di 152px
+   nella form del tipo di articolo, 131px in quella di accesso, 6px in quella della serie (poco
+   solo perche' sbatte contro il `max-height: 90vh`, non perche' stesse ferma: la sua altezza
+   cambiava di 404px).
+   📌 PERCHE' QUI E NON SUI TAB: le finestre a tab sono quattro e usano tre meccanismi
+   diversi. Una regola scritta sui tab avrebbe dovuto nominarle una per una - l'elenco da tenere
+   allineato che questo progetto passa le release a smontare.
+   ⚠️ IL PREZZO, DICHIARATO: una finestra CORTA non sta piu' in mezzo allo schermo, sta in alto.
+   Per le finestre alte non cambia niente - il `max-height: 90vh` le appoggiava gia' in cima. */
 .modal-overlay {
   position: fixed; inset: 0; background: rgba(5,2,15,0.85);
   backdrop-filter: blur(8px); z-index: 2000;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: flex-start; justify-content: center;
   padding: 1rem; animation: overlay-in 0.2s ease;
+  overflow-y: auto;
 }
 .modal-overlay.hidden { display: none; }
 @keyframes overlay-in { from { opacity: 0; } to { opacity: 1; } }

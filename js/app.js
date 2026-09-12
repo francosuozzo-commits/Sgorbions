@@ -1,6 +1,252 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.767 — 🧱 UN GRUPPO NON VA A CAPO: IL RESTO DELLA RIGA RESTA VUOTO. Franco: «nella
+//          griglia, come per altre TDA, non devi andare a capo tra elementi dello stesso
+//          gruppo (base-versioni-change-omaggi-erroristampa)», e sulla coda della riga:
+//          «buchi a fondo riga e gruppo sempre assieme».
+//          🔴 MISURATO PRIMA DI TOCCARE: la regola che c'era parla di PAGINE - «una
+//          FAMIGLIA non viene mai spezzata fra due PAGINE» - e dentro la pagina l'a capo
+//          era esplicitamente permesso (`rr++` girava DENTRO il ciclo della famiglia).
+//          E non era una cosa delle spille: `_familyKey` non nomina nessuna sezione, le
+//          figurine facevano identico - si vedeva meno perche' la famiglia ci stava spesso.
+//          📌 QUINDI NON SI "ESTENDE ALLE SPILLE" NIENTE: cambia per tutte e sette le
+//          sezioni insieme, che e' la regola generale del 12 settembre.
+//          🔴 E IL CONTO E' UNO SOLO: `_collocaFamiglia` la usano `buildItemPages` (per
+//          sapere dove finisce la pagina) e il disegno (per sapere quante celle vuote
+//          scrivere). Separati, sarebbero divergiti e la pagina avrebbe contenuto un
+//          numero di righe diverso da quello disegnato, senza dare errore.
+//          ⚠️ Una famiglia piu' larga di una riga comincia comunque da riga nuova e poi
+//          va a capo per forza: oggi non capita (5 card contro 7 colonne), ma il caso e'
+//          scritto invece che lasciato alla fortuna.
+//          Modificati js/app.js e css/style.css.
+//
+// v6.766 — 🔗 ANCHE LA SOTTOSERIE E' UN LINK, COME LA SERIE. Franco: «il campo
+//          Sottoserie deve avere il link come il campo Serie».
+//          🔴 Diceva un nome e basta: la meta' di un campo - ti dice dove sei senza
+//          poterti portare. Adesso ci si clicca, con la stessa freccetta della Serie.
+//          🔴 IL NOME VIAGGIA IN UN ATTRIBUTO, non dentro l'onclick: e' la regola della
+//          v6.682 («il nome puo' contenere un apostrofo»). Una sottoserie «Sgorbions'
+//          Stars» romperebbe la scheda, e solo per quelle: il difetto che si scopre dal
+//          cliente e non in prova.
+//          📌 La destinazione non si inventa: `openSeriesDetail` + `openSeriesSection`,
+//          nell'ordine che `switchToSeriesFromErrori` usa gia'. Da una scheda aperta dalla
+//          ricerca globale la pagina sotto puo' essere qualunque, quindi la serie va
+//          aperta prima - e questa e' l'unica riga in piu' rispetto alla card.
+//          Modificato js/app.js.
+//
+// v6.765 — 🔢 LA VISTA TABELLARE HA UN ORDINE ANCHE DOVE I NUMERI NON CI SONO. Franco:
+//          «quale e' l'ordine usato nella VT delle spille?» e poi «se mi parli di sottoserie
+//          e' inutile, visto che c'e' una pagina per ogni sottoserie».
+//          🔴 HA RAGIONE, MISURATO: la tabella e' alimentata da `getCurrentlyFilteredItems`,
+//          che scarta gli articoli di un'altra sottoserie - quindi quel confronto torna 0
+//          per ogni coppia, e per una sezione senza numeri era l'UNICO criterio: nessun
+//          ordine, e la tabella usciva come i dati arrivano dal server.
+//          🔴 MA LA SOTTOSERIE NON SI TOGLIE, e lo dice solo la misura: `cmpVistaTabellare`
+//          ha TRE consumatori, e le due tabelle eBay NON filtrano per sottoserie - la' quel
+//          criterio e' vivo. Toglierlo avrebbe sistemato una tabella rompendone due.
+//          📌 Quindi non si toglie niente: si aggiunge cio' che mancava - numero dove c'e',
+//          poi NOME COMPLETO (quello che le tabelle eBay mostrano, v5.919, e che il ramo
+//          delle figurine usa gia'), poi l'id, che e' unico e rende l'ordine totale.
+//          Modificato js/app.js.
+//
+// v6.764 — 📍 LA SOTTOSERIE STA SOTTO LA SERIE, NELLE DUE META' DELLA SCHEDA. Franco: «la
+//          sottoserie va sotto al campo serie; deve essere cosi' in tutte le form».
+//          🔴 MISURANDO E' USCITO CHE LE DUE META' NON ERANO D'ACCORDO FRA LORO: in modifica
+//          la Sottoserie stava dopo Categoria, Sottocategoria, Anno e Famiglia; in lettura
+//          ancora piu' giu', dopo Nome e Sottonome. Due posizioni per lo stesso campo, a un
+//          clic di distanza. La richiesta di Franco chiude anche una cosa che non aveva
+//          chiesto, ed e' una sua regola vecchia: la v5.782 («vista e modifica coincidono»).
+//          ⚠️ In lettura la riga segue la Serie ANCHE SUL TELEFONO: li' la scheda ha due
+//          elenchi e la Serie va nel primo. Usando `rows` e basta sarebbe finita staccata
+//          dalla riga che deve seguire - il difetto rifatto mentre lo si chiude.
+//          📌 La vista tabellare non si tocca: li' la colonna Sottoserie e' gia' la prima,
+//          e una colonna «Serie» non esiste (una serie per volta).
+//          Modificato js/app.js.
+//
+// v6.763 — 📐 LE COLONNE DELL'HUB SERIE SI SPENGONO DOVE L'ARTICOLO NON C'E'. Franco: «il
+//          campo "Colonne griglia hub Serie" deve ANCH'ESSO mostrare o rendere editabili solo
+//          le voci che hanno senso, considerando le possibili TDA ammesse dalla serie».
+//          🔴 «ANCH'ESSO» E' LA PAROLA CHE CONTA: la regola esiste dalla v6.748 e questa
+//          tabella era l'unica rimasta fuori. Chiedeva quante colonne dare a una griglia
+//          che, per quelle sezioni, non esiste.
+//          📌 Terza funzione, stessa domanda (`_leggiArticoliNascosti`), stesso `onchange`:
+//          nessuna regola nuova e nessun secondo elenco da tenere allineato.
+//          🔴 SI SPEGNE MA NON SI SVUOTA: una spunta e' un'affermazione e spenta va spenta
+//          davvero (v6.748/752); un numero di colonne non afferma niente ed e' una misura
+//          che torna utile se la sezione torna - cancellarla sarebbe la cancellazione
+//          silenziosa che la v6.750 ha deciso di non fare.
+//          📌 Le righe portano `data-sez` e non si cercano per posizione: l'ordine delle
+//          sezioni e' un dato salvato, non una costante.
+//          Modificato js/app.js.
+//
+// v6.762 — 🔣 L'ELENCO DELLE PARTENZE HA UN ORDINE, E VALE PER TUTTI. Franco: «il campo
+//          Spilla di partenza non mostra i valori in ordine».
+//          🔴 NON ERA UN ORDINE SBAGLIATO, ERA L'ASSENZA DI ORDINE: fuori dai retro si
+//          ordinava per numero, e su una sezione senza numeri `(a.number||0)-(b.number||0)`
+//          vale 0 per ogni coppia. L'elenco usciva come arrivava dal server.
+//          📌 La famiglia e' quella gia' nominata dalla v6.198 nella funzione accanto: una
+//          cosa vera del solo caso «figurine» scambiata per una regola di tutti. Adesso la
+//          domanda non e' «che sezione sei» ma «un numero ce l'hai»: i retro non sono piu'
+//          nominati e si comportano identici, perche' un numero non ce l'hanno.
+//          🔴 E L'ORDINE E' TOTALE: a parita' di numero (base e sue versioni lo condividono)
+//          il confronto tornava 0, e due voci pari si scambiavano posto a ogni ridisegno -
+//          un difetto intermittente (lezione della v6.616). Pareggio -> etichetta -> id.
+//          📌 `numeric: true`: «SPILLA 2» prima di «SPILLA 10».
+//          Modificato js/app.js.
+//
+// v6.761 — 🏷️ LA TIPOLOGIA NELLA RG SI CHIEDE AL MODELLO, E L'ARTICOLO NASCE DOV'E'.
+//          Franco: «continuo a non vedere dettagli sulla tipologia di errore di stampa» e
+//          «in creazione da una pagina di sottoserie non deve essere fatta la domanda sulla
+//          sottoserie del nuovo articolo».
+//          🔴 SULLA PRIMA LA CAUSA ERA DOPPIA, e meta' non e' codice: IL SITO E' ALLA
+//          v6.752 (misurato: navbar, JS_VERSION e l'app.js servito). La v6.760 non e'
+//          pubblicata, quindi li' non c'era niente da vedere.
+//          🔴 L'ALTRA META' SAREBBE MORSA ANCHE DOPO: la RG leggeva `f.printErrorType`
+//          grezzo, e per un errore il cui difetto sta SUL RETRO quel campo e' vuoto - la
+//          tipologia vive sul retro (v6.578). Adesso lo chiede a `_tipoErroreStampa`.
+//          🔴 E MANCAVA L'OMAGGIO: erano due versioni elencate a mano. Ora la domanda va al
+//          modello (`_campoTipoDi`), e le variazioni restano fuori DA SOLE perche' un
+//          `campoTipo` non ce l'hanno - la regola della v6.103 diventa una conseguenza.
+//          🆕 E la bozza di un articolo nuovo prende la sottoserie DALLA PAGINA. Il campo
+//          si blocca da solo: `_sottoserieBloccata` (v6.759) descriveva il DATO, non il
+//          gesto, quindi copre anche questo caso senza una riga nuova.
+//          ⚠️ Dal SET PRINCIPALE la domanda si fa ancora: li' il vuoto nella tendina non e'
+//          una voce, e' il «scegli», e un campo spento su «scegli» sembra un guasto.
+//          Modificato js/app.js.
+//
+// v6.760 — 🔍 NELLA RICERCA GLOBALE LA VERSIONE SI MOSTRA OVUNQUE, MENO LE ECCEZIONI
+//          SCRITTE. Franco: «per le spille non diamo info sul fatto che sono errori di
+//          stampa, come mai?» - e poi la regola generale: «comportati in modo uguale per
+//          tutto a meno di regole specifiche che ti ho dato».
+//          🔴 LA RISPOSTA ERA UNA RIGA: `mostraVersione = sec === "figurines"`. Non una
+//          decisione: una condizione scritta quando le sezioni erano poche.
+//          🔴 E SULLE SPILLE MORDEVA: qui il nome mostrato e' `f.name`, che su un errore di
+//          stampa e' EREDITATO dalla base - due errori della stessa spilla, di tipologia
+//          diversa, risultavano identici. E' il difetto chiuso dalla v6.103 per le sole
+//          figurine e lasciato aperto per tutte le altre sezioni.
+//          🔴 LE ECCEZIONI SONO DUE E SONO REGOLE VERE: i RETRO (il Nome completo porta
+//          gia' il tipo, v6.103) e le DA ATTACCARE (non sono versioni di niente, v6.370 -
+//          e la regola c'era gia', si chiama `_soloNomeENumero`). La terza, le variazioni,
+//          vive in `tipoLabel` e non si tocca.
+//          🔴 LA REGOLA GENERALE E' UNA: chi ha una versione la dice, in ogni sezione, con
+//          o senza serie. «Se una TDA senza serie ha versione, allora indichiamolo».
+//          🔴 E «VERSIONE BASE» RESTA ALLE FIGURINE: e' anch'essa una regola specifica di
+//          Franco (v6.412), non il comportamento generale. Scriverla ovunque avrebbe
+//          aggiunto una riga a ogni risultato per dire che non c'e' niente da dire.
+//          Modificato js/app.js.
+//
+// v6.759 — 🔒 IL CLONE NON CAMBIA SOTTOSERIE, E LA PARTENZA SI CERCA DENTRO LA SUA.
+//          Franco: «quando si clona un articolo avente una sottoserie, non deve essere
+//          possibile cambiare la sottoserie» e «il campo Spilla di partenza deve cercare
+//          solo nella sottoserie dell'articolo figlio».
+//          🔴 IL VALORE IL CLONE LO PRENDEVA GIA' (`{ ...src, id: "" }`): mancava solo che
+//          il campo non fosse modificabile, cioe' il modo di disfare una cosa giusta.
+//          🔴 LA CONDIZIONE SI LEGGE DAL DATO: un record senza id che nasce con una
+//          sottoserie viene da un clone e da nient'altro. Una bandierina «sto clonando»
+//          avrebbe dovuto essere accesa da uno e spenta da tre.
+//          ⚠️ `disabled`, non `readonly` (su un select non esiste), e il salvataggio
+//          continua a leggerlo: un select disabilitato conserva il `.value`. Misurato.
+//          🔴 E LA SOTTOSERIE DELLA PARTENZA E' UNA DOMANDA SOLA CHIESTA DA DUE:
+//          `_stessaSottoserieDi`, dall'elenco che si sfoglia e dal controllo che accetta.
+//          Solo nell'elenco, la vista tabellare avrebbe fatto passare cio' che la scheda
+//          nasconde. 📌 Non dentro `_stessoGruppoDi`: quella parla di NUMERI, e il suo
+//          messaggio avrebbe spiegato con una ragione falsa un rifiuto giusto.
+//          Modificato js/app.js.
+//
+// v6.758 — 📏 OGNI TDA HA IL SUO ELENCO DI TAGLIE. Franco: «l'elenco delle taglie deve
+//          essere distinto tra TDA e TDA». Solo sulle TDA (le serie restano col testo libero),
+//          e una TDA senza elenco parte VUOTA: due scelte sue.
+//          🗑️ VIA `TAGLIE_EXTRA_SERIE`: tre valori scritti nel codice che nessuna schermata
+//          mostrava. «Nemmeno trovo dove la abbiamo messa» - non era messa da nessuna parte.
+//          🔴 LA FORMA DELL'ELENCO NON SI INVENTA: e' la textarea "un valore per riga" che la
+//          form della serie usa gia' per i tipi di change, omaggio ed errore di stampa.
+//          ⚠️ CONSEGUENZA DICHIARATA della scelta "lista vuota": finche' l'elenco e' vuoto una
+//          taglia gia' salvata compare marcata «⚠️», fuori elenco. NON e' persa - il valore
+//          resta scritto e selezionato (meccanismo della v6.102) - e il segno sparisce
+//          appena la si scrive nell'elenco.
+//          📌 L'elenco si NASCONDE a spunta spenta, non si svuota: spunta = affermazione
+//          (v6.748/752), elenco = testo scritto a mano che cancellato non torna (v6.750).
+//          Modificato index.html e js/app.js.
+//
+// v6.757 — 📌 LE FINESTRE NON SI SPOSTANO PIU'. Franco: «come in altre circostanze ti avevo
+//          gia' detto, quando si passa da un tab all'altro, non si deve spostare la finestra».
+//          🔴 «GIA' DETTO» - E NON ERA SCRITTO DA NESSUNA PARTE: cercato nel documento con un
+//          grep, non c'era. Da oggi e' un'istruzione permanente, non il racconto di una release.
+//          🔴 LA CAUSA NON ERA NEI TAB, ERA NELL'OVERLAY: `align-items: center` mette la
+//          finestra in mezzo allo schermo, quindi ogni cambiamento di altezza la fa risalire
+//          o scendere di meta' della differenza. Ancorata in alto sta ferma per TUTTE le
+//          ragioni - non solo per i tab.
+//          🔴 MISURATO NEL BROWSER: il bordo alto si spostava di 152px nella form del tipo,
+//          131px in quella di accesso, 6px in quella della serie (che pero' cambiava
+//          altezza di 404px: stava ferma per il max-height, non per scelta).
+//          ⚠️ IL PREZZO, DICHIARATO: una finestra CORTA sta in alto e non piu' in mezzo.
+//          Per quelle alte non cambia niente.
+//          🆕 E «Questo tipo di articolo ha la taglia» diventa «Ha taglie differenti»
+//          (Franco). Cambia l'etichetta, non l'id: quello lo leggono in tre.
+//          Modificato css/style.css e index.html.
+//
+// v6.756 — 🗂️ LA FORM DEL TIPO DI ARTICOLO SI ORGANIZZA A TAB. Franco: «Tab principale ->
+//          tutti i campi legati al nome; Versioni -> ha il retro; Visualizzazione -> griglia
+//          e ordinamento». La Taglia sta nel tab principale, scelta sua.
+//          🔴 «AGGIUNGI UN CAMPO HA TAGLIE» NON SI E' FATTO: C'E' GIA', dalla v6.160, ed e'
+//          gia' lui a comandare la colonna Taglia in vista tabellare. Franco, messo davanti
+//          alla misura: «non l'avevo visto» - ed era l'ultimo campo di una form lunga, cioe'
+//          la ragione stessa dei tab. Un secondo campo sarebbe stata la seconda verita'.
+//          🔴 E IL MECCANISMO DEI TAB NON SI E' RICOPIATO: `switchSeriesTab` diventa
+//          `switchTabModale(idModale, chiave)`, una per tutte e due le finestre, e i due
+//          gusci di una riga tengono in piedi i nove `onclick` dell'HTML.
+//          📌 Bottone e pannello si distinguono sul TAG, non su una classe: misurato,
+//          dentro la modale della serie i `data-tab` sono 6 bottoni e 6 pannelli.
+//          Modificato index.html e js/app.js.
+//
+// v6.755 — 📏 NELLA VISTA TABELLARE L'ANNO VA DOPO IL NOME. Franco: «Nella VT delle
+//          tipologie di articoli, mettere l'anno dopo il campo Nome».
+//          🔴 LA v6.753 L'AVEVA MESSO DOVE STAVA COMODO A CHI SCRIVEVA - attaccato a
+//          Categoria e Sottocategoria, i due campi con cui era nato. Chi legge la tabella
+//          parte dal NOME, che e' l'identita' della riga: l'anno e' un dato di quella
+//          identita' e si legge dopo averla letta.
+//          🔴 INTESTAZIONE E CELLA SI SONO SPOSTATE INSIEME: sono due elenchi che devono
+//          dire per forza la stessa cosa, e una che resta indietro fa scivolare di uno
+//          tutte le colonne dopo (lezione della v6.657). `prova-v6755` guarda l'ORDINE,
+//          che e' la domanda che `prova-v6753` non fa - quella conta e basta.
+//          📌 La cella va dopo l'IIFE del Nome, non dopo il suo `<th>`: nel corpo della
+//          riga il Nome e' una funzione che sceglie fra scrivibile e sola lettura.
+//          Modificato js/app.js.
+//
+// v6.754 — 🔧 I QUATTRO AVVISI DEL BLOG PARLANO LA LINGUA DI CHI GUARDA. Franco, con lo
+//          screenshot: «questo messaggio viene mostrato in Inglese ma io sono in Italiano»
+//          («Please write something first», sotto la casella delle risposte).
+//          🔴 MISURATO: 21 `toast` partono da una stringa letterale, tre compongono il testo
+//          altrove, e dei diciotto veri UNO SOLO era in inglese - proprio quello. Gli altri
+//          diciassette sono in italiano, cioe' lo STESSO difetto rovesciato: se ne accorge
+//          solo chi guarda in inglese, e quello in chat non c'e'.
+//          🔴 QUESTA RELEASE NE CHIUDE QUATTRO E IL CONFINE E' LO SCHERMO DELLA FOTO:
+//          `submitComment` e `deleteComment`, cioe' la casella «Scrivi una risposta...» e la
+//          ✕ accanto a ogni risposta. I quattordici che restano stanno in console admin,
+//          registrazione, avatar ed esportazione: tradurli vuol dire scegliere quattordici
+//          frasi inglesi, e le parole a schermo le sceglie Franco.
+//          📌 «Comment deleted» non e' inventata: e' la coppia gia' usata per «Post
+//          eliminato». Una traduzione nuova dove ne esiste una e' la seconda verita'.
+//          Modificato js/app.js.
+//
+// v6.753 — 🆕 L'ANNO SUGLI ARTICOLI DELLE TDA SENZA SERIE. Franco: «nelle TDA che non hanno
+//          una serie di riferimento mi serve il campo Anno, sull'articolo. E questo campo va
+//          mostrato a video» - e a video vuol dire in tre posti: scheda, card e tabella.
+//          🔴 LA DOMANDA SI FA AL RECORD, NON ALLA PAGINA: `_articoloSenzaSerie(f)`, una
+//          sola, la chiedono in cinque. `_tdaSenzaSerie()` (v6.737) risponde «in che pagina
+//          sono» ed e' giusta per la testata; qui direbbe il falso per una scheda aperta
+//          dalla ricerca globale (v6.097).
+//          🔴 E VUOLE TUTTE E DUE LE CONDIZIONI: `tipoProdotto` da solo prenderebbe anche le
+//          TDA dentro una serie vera, che l'anno ce l'hanno gia'; `serieContenitore` da
+//          solo prenderebbe gli articoli della serie finta che in nessun box stanno.
+//          ⚠️ IL SALVATAGGIO NON SCRIVE LA CHIAVE SE IL CAMPO NON C'E': letto con `?.` come
+//          gli altri, un `fe-year` assente scriverebbe null e cancellerebbe l'anno a ogni
+//          salvataggio da una strada che quel campo non mostra - la v5.711 rovesciata.
+//          📌 La testata NON lo mostra, e non e' una dimenticanza: quella e' la testata
+//          della TDA intera, dove un anno per articolo non ci sta (vedi `_vestiTitoloTestata`).
+//          Modificato js/app.js.
+//
 // v6.752 — 🚫 ANCHE LE SPUNTE CHE PARLANO SOLO DEI RETRO SI SPENGONO. Franco: «non sono
 //          d'accordo. Anche questa spunta deve essere disabilitata. Per change, omaggi ed
 //          errori di stampa».
@@ -26489,7 +26735,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.752';
+const JS_VERSION = 'v6.767';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -30801,10 +31047,36 @@ function cmpVistaTabellare(sezione) {
       const fnB = b.fullName || computeFullName(b, allFigsForSort2);
       return fnA.localeCompare(fnB, 'it');
     }
-    if (!a.number && !b.number) return (a.subseries||'').localeCompare(b.subseries||'');
-    if (!a.number) return 1;
-    if (!b.number) return -1;
-    return a.number - b.number;
+    // 🔄 v6.765 (Franco: «quale e' l'ordine usato nella VT delle spille?» e poi «se mi parli
+    //    di sottoserie e' inutile, visto che c'e' una pagina per ogni sottoserie») - QUI, PER LE
+    //    SEZIONI SENZA NUMERI, NON C'ERA NESSUN ORDINE.
+    // 🔴 Misurato: nella vista tabellare le righe hanno TUTTE la stessa sottoserie -
+    //    `getCurrentlyFilteredItems` scarta quelle di un altro gruppo. Quindi il confronto sulla
+    //    sottoserie tornava 0 per ogni coppia, e per una sezione senza numeri era l'UNICO
+    //    criterio: la tabella usciva come i dati arrivano dal server.
+    // 🔴 MA LA SOTTOSERIE NON SI TOGLIE, e questo lo dice solo la misura: `cmpVistaTabellare`
+    //    ha TRE consumatori. Oltre alla vista tabellare la usano le due tabelle eBay - gli annunci
+    //    in vendita e i titoli eccedenti - che filtrano per serie e sezione e NON per sottoserie.
+    //    La' il criterio e' vivo e raggruppa. Toglierlo avrebbe sistemato una tabella rompendone
+    //    due, senza che nessuna delle due desse errore.
+    // 📌 Quindi non si toglie niente: si aggiunge cio' che mancava. E' la medicina della
+    //    v6.762 e la lezione della v6.616 - un ordine che a un certo punto dice «sono pari» non e'
+    //    un ordine, e due righe pari si scambiano posto a ogni ridisegno.
+    // 📌 Il seguito e' il NOME COMPLETO e non il Nome: e' cio' che le due tabelle eBay mostrano
+    //    davvero (v5.919), ed e' il criterio che il ramo delle FIGURINE usa gia' per rompere la
+    //    parita' di numero. Una terza forma qui sarebbe la terza verita' sullo stesso ordine.
+    const subCmpAltre = (a.subseries||'').localeCompare(b.subseries||'', 'it');
+    if (subCmpAltre !== 0) return subCmpAltre;
+    if (a.number && b.number && a.number !== b.number) return a.number - b.number;
+    if (!a.number !== !b.number) return a.number ? -1 : 1;
+    const _tutteAltre = getData('figurines', []);
+    const _nomeA = a.fullName || computeFullName(a, _tutteAltre) || a.name || '';
+    const _nomeB = b.fullName || computeFullName(b, _tutteAltre) || b.name || '';
+    const nomeCmpAltre = _nomeA.localeCompare(_nomeB, 'it', { numeric: true });
+    if (nomeCmpAltre !== 0) return nomeCmpAltre;
+    // ⚠️ L'ultima parola all'id, che e' unico: senza, due righe identiche in tutto restano «pari»
+    //    e si scambiano di posto a ogni ridisegno - il difetto intermittente della v6.616.
+    return String(a.id || '').localeCompare(String(b.id || ''));
   };
 }
 
@@ -32149,6 +32421,7 @@ function _ripristinaFlagSerie(s) {
   // dentro invece che nei due rami.
   _aggiornaCampiDiRetro();
   _aggiornaCaselleCompletezza();   // v6.748 - dopo le due liste di caselle, o leggerebbe quelle di prima
+  _aggiornaRigheColonneSerie();    // 🆕 v6.763 - stessa ragione, stesso momento
 }
 // \uD83D\uDD34 v6.215 - LA TABELLA DELLE COLONNE NELLA SCHEDA SERIE, GENERATA.
 // Fino alla v6.214 era markup scritto a mano nell'index, con CINQUE righe - e gli articoli sono
@@ -32184,7 +32457,7 @@ function _caselleArticoliSerie() {
   box.innerHTML = PRODOTTI_INVENTARIO.map(sez =>
     '<label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer;font-size:0.85rem;">' +
       '<input type="checkbox" class="series-articolo-nascosto" value="' + sez + '" ' +
-        'onchange="_aggiornaCampiDiRetro();_aggiornaCaselleCompletezza()" ' +
+        'onchange="_aggiornaCampiDiRetro();_aggiornaCaselleCompletezza();_aggiornaRigheColonneSerie()" ' +
         'style="width:15px;height:15px;cursor:pointer;flex-shrink:0;">' +
       // v6.229 (Franco: "lo metterei in bianco") - i nomi degli articoli erano `--muted`, cioe' lo
       // stesso grigio-viola dei SUGGERIMENTI. Ma questi non sono un suggerimento: sono le sei cose
@@ -32221,6 +32494,34 @@ function _aggiornaCaselleCompletezza() {
 }
 function _leggiArticoliNascosti() {
   return [...document.querySelectorAll('.series-articolo-nascosto')].filter(x => x.checked).map(x => x.value);
+}
+
+// 🆕 v6.763 (Franco: «il campo "Colonne griglia hub Serie" deve ANCH'ESSO mostrare o rendere
+//    editabili solo le voci che hanno senso») - LE COLONNE DI UNA GRIGLIA CHE NON C'E'.
+// 🔴 «ANCH'ESSO» E' LA PAROLA CHE CONTA: la regola esiste dalla v6.748 - cio' che la serie
+//    dichiara di non avere si spegne - e questa tabella era l'unica rimasta fuori. Chiedeva
+//    quante colonne dare a una griglia che, per quelle sezioni, non esiste.
+// 📌 E' la TERZA funzione che fa la stessa domanda (`_leggiArticoliNascosti`) e si appende
+//    allo stesso `onchange` delle altre due: nessuna regola nuova, nessun secondo elenco.
+// 🔴 SI SPEGNE MA NON SI SVUOTA, e la differenza e' quella scritta il 12 settembre: una
+//    SPUNTA e' un'affermazione e lasciata accesa finirebbe nei dati dicendo il falso, quindi si
+//    spegne davvero (v6.748, v6.752). Un NUMERO DI COLONNE non afferma niente - e' una misura che
+//    torna utile il giorno che la sezione torna. Cancellarla sarebbe la cancellazione silenziosa
+//    che la v6.750 ha deciso di non fare sugli elenchi.
+// ⚠️ E il salvataggio continua a leggerla: un `<input>` disabilitato conserva il suo `.value`.
+function _aggiornaRigheColonneSerie() {
+  const nascosti = new Set(_leggiArticoliNascosti());
+  document.querySelectorAll('#series-colonne-tabella tr[data-sez]').forEach(tr => {
+    const spenta = nascosti.has(tr.getAttribute('data-sez'));
+    tr.style.opacity = spenta ? '0.45' : '';
+    tr.title = spenta ? (currentLang === 'it'
+      ? 'Questa serie dichiara di non avere questi articoli: la loro griglia non esiste'
+      : 'This series declares it has no such items: their grid does not exist') : '';
+    tr.querySelectorAll('input').forEach(i => {
+      i.disabled = spenta;
+      i.style.cursor = spenta ? 'not-allowed' : '';
+    });
+  });
 }
 
 // 🆕 v6.716 - LE CASELLE DI «SERVONO PER LA SERIE COMPLETA», generate come le altre.
@@ -32297,7 +32598,11 @@ function _tabellaColonneSerie() {
       '<td style="padding:0 6px;font-size:0.76rem;color:var(--text);">desktop</td>' +
       '<td style="padding:0 6px;font-size:0.76rem;color:var(--text);">mobile</td></tr>' +
     PRODOTTI_INVENTARIO.map(sez =>
-      '<tr><td style="padding:3px 8px 3px 0;font-size:0.84rem;color:var(--text);white-space:nowrap;">' +
+      // 🆕 v6.763 - la riga porta il nome della sua sezione, invece di essere ritrovata
+      //    contando: l'ordine delle sezioni in questo sito e' un DATO salvato
+      //    (`_ordineArticoliSalvato`), non una costante, e una tabella cercata per posizione si
+      //    rompe il giorno che quell'ordine cambia - in silenzio, spegnendo la riga sbagliata.
+      '<tr data-sez="' + esc(sez) + '"><td style="padding:3px 8px 3px 0;font-size:0.84rem;color:var(--text);white-space:nowrap;">' +
         esc(getSectionLabel(sez)) + '</td>' +
       ['d', 'm'].map(q =>
         '<td style="' + cella + '"><input class="form-input" type="number" min="1" max="12" ' +
@@ -32312,16 +32617,43 @@ function _tabellaColonneSerie() {
 // elencarli sarebbe stato un altro posto dove ricordarsi di aggiungerli.
 // 🔴 `display:none`, MAI un `remove()`: i campi degli altri tre tab devono restare nel DOM, perche'
 // `saveSeries` li legge tutti a ogni salvataggio e cio' che non trova lo scrive vuoto o `false`.
-function switchSeriesTab(key) {
-  document.querySelectorAll('#add-series-modal .series-tab-btn').forEach(btn => {
-    const active = btn.getAttribute('data-tab') === key;
-    btn.style.borderBottomColor = active ? 'var(--accent)' : 'transparent';
-    btn.style.color = active ? 'var(--accent)' : 'var(--muted)';
-    btn.style.fontWeight = active ? '600' : '400';
+// 🆕 v6.756 (Franco: «Organizziamo la form a tab») - I TAB DI UNA FINESTRA, IN UN POSTO SOLO.
+// 🔴 Questa funzione era `switchSeriesTab`, e serviva la sola form della serie. La form del
+//    tipo di articolo ne aveva bisogno identica: ricopiarla avrebbe prodotto due funzioni che
+//    devono comportarsi allo stesso modo per definizione, cioe' la coppia che diverge al primo
+//    ritocco - il difetto che questo file racconta piu' di ogni altro (v6.032, v6.087, v6.147).
+// 📌 LA DISTINZIONE FRA BOTTONE E PANNELLO SI FA SUL TAG, non sul nome di una classe.
+//    Misurato prima di scrivere, non dedotto: dentro `#add-series-modal` i `[data-tab]` sono
+//    esattamente 6 bottoni e 6 pannelli. Chiedere alle due finestre di usare gli stessi nomi di
+//    classe sarebbe stato il prezzo che di solito impedisce a una funzione generica di nascere.
+// ⚠️ Il colore del bottone spento e' `var(--muted)`, quello che la form della serie aveva gia':
+//    non si cambia come si vede una finestra mentre se ne organizza un'altra.
+function switchTabModale(idModale, key) {
+  document.querySelectorAll('#' + idModale + ' [data-tab]').forEach(el => {
+    const attivo = el.getAttribute('data-tab') === key;
+    if (el.tagName === 'BUTTON') {
+      el.style.borderBottomColor = attivo ? 'var(--accent)' : 'transparent';
+      el.style.color = attivo ? 'var(--accent)' : 'var(--muted)';
+      el.style.fontWeight = attivo ? '600' : '400';
+    } else {
+      el.style.display = attivo ? '' : 'none';
+    }
   });
-  document.querySelectorAll('#add-series-modal .series-tab-panel').forEach(panel => {
-    panel.style.display = panel.getAttribute('data-tab') === key ? '' : 'none';
-  });
+}
+// I due gusci. Restano perche' li chiamano gli `onclick` dell'HTML: cambiare anche quelli avrebbe
+// voluto dire toccare nove bottoni per non guadagnare niente.
+function switchSeriesTab(key) { switchTabModale('add-series-modal', key); }
+function switchTipoTab(key)   { switchTabModale('add-tipo-prodotto-modal', key); }
+
+// 🆕 v6.758 - l'elenco delle taglie si mostra solo se il tipo dichiara di averle.
+// 🔴 SI NASCONDE, NON SI SVUOTA. E' la regola gia' scritta il 12 settembre e vale qui uguale:
+// una SPUNTA e' un'affermazione e spenta va spenta davvero (v6.748, v6.752); un ELENCO e' testo
+// scritto a mano, e cancellato non torna (v6.750). Chi spegne la spunta per sbaglio e la riaccende
+// ritrova quello che aveva scritto.
+function _aggiornaCampoTaglieTipo() {
+  const g = document.getElementById('tipo-prodotto-taglie-group');
+  if (!g) return;
+  g.style.display = document.getElementById('tipo-prodotto-hataglia')?.checked ? '' : 'none';
 }
 
 function openAddSeriesModal(seriesId) {
@@ -32347,6 +32679,7 @@ function openAddSeriesModal(seriesId) {
   });
   _aggiornaCampiDiRetro();   // v6.169 - anche in creazione
   _aggiornaCaselleCompletezza();   // v6.748 - idem: una serie nuova nasce con tutto nascosto
+  _aggiornaRigheColonneSerie();    // 🆕 v6.763 - idem
   document.getElementById('series-modal-title').textContent = seriesId ? t('modal.series.edit') : t('modal.series.title');
   document.getElementById('series-img-preview').style.display = 'none';
   editingSeriesImg = null;
@@ -36185,6 +36518,12 @@ function openAddTipoProdottoModal(idDaModificare) {
   if (g('tipo-prodotto-haretro')) g('tipo-prodotto-haretro').checked = !!(t && t.haRetro);
   if (g('tipo-prodotto-ordina')) g('tipo-prodotto-ordina').value = t ? (t.ordina || '') : '';   // v6.155
   if (g('tipo-prodotto-hataglia')) g('tipo-prodotto-hataglia').checked = !!(t && t.haTaglia);  // v6.160
+  // 🆕 v6.758 - l'elenco delle taglie di QUESTO tipo. Il ramo `t ? ... : ''` non e' una
+  // formalita': senza, un tipo NUOVO nascerebbe con le taglie di quello aperto prima e nessuno lo
+  // direbbe - e' il difetto che il commento delle due caselle dei change racconta da due release.
+  if (g('tipo-prodotto-taglie-input')) g('tipo-prodotto-taglie-input').value =
+    (t && Array.isArray(t.taglie) ? t.taglie : []).join('\n');
+  _aggiornaCampoTaglieTipo();
   if (g('tipo-prodotto-colonne-desktop')) g('tipo-prodotto-colonne-desktop').value = (t && _colClamp(t.colonneDesktop)) || COLONNE_DEFAULT.extras.d;  // v6.163
   if (g('tipo-prodotto-colonne-mobile'))  g('tipo-prodotto-colonne-mobile').value  = (t && _colClamp(t.colonneMobile))  || COLONNE_DEFAULT.extras.m;  // v6.163
   const tit = g('tipo-prodotto-modal-title');
@@ -36209,6 +36548,10 @@ function openAddTipoProdottoModal(idDaModificare) {
             : 'Cannot delete: it holds ' + _dentro + ' item(s).')
       : (it ? 'Elimina questo tipo di articolo' : 'Delete this item type');
   }
+  // 🆕 v6.756 - si riparte SEMPRE dal primo tab. Senza questa riga la finestra si
+  // riaprirebbe sul tab dove l'aveva lasciata l'apertura precedente, cioe' su un tipo diverso: e'
+  // la stessa precauzione che `openAddSeriesModal` ha gia' per la sua form.
+  switchTipoTab('tipo');
   document.getElementById('add-tipo-prodotto-modal')?.classList.remove('hidden');
   setTimeout(() => g('tipo-prodotto-nome')?.focus(), 50);
 }
@@ -36286,6 +36629,12 @@ async function salvaTipoProdotto() {
   const idEsistente = (document.getElementById('tipo-prodotto-id')?.value || '').trim();   // v6.149
   const haRetro = !!document.getElementById('tipo-prodotto-haretro')?.checked;             // v6.149
   const haTaglia = !!document.getElementById('tipo-prodotto-hataglia')?.checked;           // v6.160
+  // 🆕 v6.758 - l'elenco, letto come lo legge la form della serie per i suoi: una riga, un
+  // valore, via i vuoti. ⚠️ Si legge ANCHE a spunta spenta, e non e' una svista: il campo e'
+  // nascosto ma il testo c'e', e cancellarlo sarebbe la cancellazione silenziosa che la v6.750 ha
+  // deciso di non fare sugli elenchi.
+  const taglie = (document.getElementById('tipo-prodotto-taglie-input')?.value || '')
+    .split('\n').map(v => v.trim()).filter(Boolean);
   // v6.163 - obbligatori anche qui: vuoto -> il default della sezione `extras`, che e' quella in cui
   // questi oggetti vivono.
   const colonneDesktop = _colClamp(document.getElementById('tipo-prodotto-colonne-desktop')?.value) || COLONNE_DEFAULT.extras.d;
@@ -36304,12 +36653,12 @@ async function salvaTipoProdotto() {
     if (k < 0) { toast(it ? 'Quel tipo di articolo non esiste più.' : 'That item type no longer exists.', 'error'); return; }
     // Si riscrive il record intero a partire da quello che c'e': cosi' un campo aggiunto in futuro
     // non viene perso da un salvataggio scritto oggi.
-    tipi[k] = { ...tipi[k], nome, singolare, nomeEn, singolareEn, genere, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile };
+    tipi[k] = { ...tipi[k], nome, singolare, nomeEn, singolareEn, genere, haRetro, haTaglia, taglie /* v6.758 */, ordina, colonneDesktop, colonneMobile };
   } else {
     // L'id si genera e non si scrive: e' un riferimento, e un riferimento battuto a mano e' un id
     // storto che non si vede (la lezione della v6.119 sul `baseFigurineId`).
     const id = 'tp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-    tipi.push({ id, nome, singolare, nomeEn, singolareEn, genere, haRetro, haTaglia, ordina, colonneDesktop, colonneMobile });
+    tipi.push({ id, nome, singolare, nomeEn, singolareEn, genere, haRetro, haTaglia, taglie /* v6.758 */, ordina, colonneDesktop, colonneMobile });
   }
   try {
     await _salvaTipiProdotto(tipi);
@@ -37172,7 +37521,43 @@ function renderCatalogSearch(q) {
                 // RIPIEGO DEL FRONTE due righe piu' su: allargarla alle basi avrebbe fatto
                 // ripiegare sulla foto della base una figurina che LA BASE E'. Due domande diverse
                 // che oggi hanno risposte diverse non devono condividere una variabile.
-                const mostraVersione = sec === 'figurines';
+                // 🔄 v6.760 (Franco: «per le spille non diamo info sul fatto che sono errori di
+                //    stampa, come mai?» e «devi comportarti in modo uguale per tutto a meno di
+                //    regole specifiche che ti ho dato») - QUI C'ERA `sec === 'figurines'`.
+                // 🔴 NON ERA UNA DECISIONE: era una condizione scritta quando le sezioni erano
+                //    poche e mai riguardata quando sono diventate dodici. Versione e tipologia si
+                //    vedevano nelle sole Figurine, e su una spilla due errori di stampa della
+                //    stessa base, di tipologia diversa, risultavano IDENTICI - stesso nome e
+                //    stesso numero, tutti e due ereditati. E' il difetto che la v6.103 aveva
+                //    chiuso per le figurine, per la ragione scritta venti righe piu' su: qui il
+                //    nome mostrato e' `f.name`, cioe' quello ereditato, tranne che sui retro.
+                // 🔴 LE ECCEZIONI SONO DUE, E SONO REGOLE VERE, non sezioni elencate:
+                //    · i RETRO (v6.103): li' si mostra il Nome completo, che il tipo se lo porta
+                //      gia' dentro - ripeterlo sarebbe la stessa parola due volte;
+                //    · le figurine DA ATTACCARE (v6.370): una da-incollare non e' una versione di
+                //      niente, e la riga direbbe «Versione base» su ognuna. La regola c'era gia'
+                //      e si chiama `_soloNomeENumero`: si riusa, non si riscrive.
+                // 📌 E LA TERZA REGOLA NON STA QUI: le VARIAZIONI non portano la tipologia perche'
+                //    il loro suffisso e' il nome del retro, che la riga sotto aggiunge gia'. Vive
+                //    dentro `tipoLabel` (v6.103) e questa release non la tocca.
+                // 📌 Un elenco di sezioni AMMESSE sarebbe rimasto indietro alla tredicesima; un
+                //    elenco di ECCEZIONI cresce solo quando nasce una regola - e una regola va
+                //    scritta comunque.
+                // 🆕 v6.760 (Franco: «se una TDA (senza serie) ha versione, allora
+                //    indichiamolo come si fa per le TDA di serie; stesso per change ed errore di
+                //    stampa, e omaggio») - LA REGOLA GENERALE E' UNA SOLA: CHI HA UNA VERSIONE LA
+                //    DICE. In ogni sezione, con o senza serie, sempre.
+                // 🔴 E «VERSIONE BASE» RESTA ALLE FIGURINE, perche' e' una REGOLA SPECIFICA che
+                //    Franco ha dato (v6.412: «Franco ha chiesto VERSIONE BASE»), non il
+                //    comportamento generale. Una base non ha niente da qualificare: scriverlo in
+                //    tutte le sezioni avrebbe aggiunto una riga a ogni risultato del sito per dire
+                //    «non c'e' niente da dire» - e sarebbe stata una decisione mia, non sua.
+                // 📌 Quindi `sec === 'figurines'` non e' sparito: e' passato da CANCELLO della
+                //    regola a ECCEZIONE dichiarata, e vale solo sul ramo delle basi. La
+                //    differenza si vede tutta su una spilla errore di stampa, che prima taceva e
+                //    adesso parla.
+                const mostraVersione = !_soloNomeENumero && sec !== 'retros'
+                  && (_chiaveTipo(f) !== 'base' || sec === 'figurines');
                 // v6.103 (Franco) - IL TIPO TORNA NEI RISULTATI, per i soli Change ed errori di stampa.
                 // Era stato tolto con la nota "il tipo e' gia' in fondo al Nome completo, ripeterlo
                 // era la stessa parola due volte". Vero per i RETRO, che qui mostrano
@@ -37184,8 +37569,29 @@ function renderCatalogSearch(q) {
                 // Le VARIAZIONI restano fuori di proposito: il loro suffisso e' il nome del retro, e
                 // la riga piu' sotto lo aggiunge gia' per conto suo. Metterlo qui lo stamperebbe due
                 // volte — che e' poi il difetto vero denunciato dalla nota originale.
-                const tipoLabel = f.isChange ? (f.changeType || '')
-                  : f.isPrintError ? (f.printErrorType || '') : '';
+                // 🔄 v6.761 (Franco: «continuo a non vedere dettagli sulla tipologia di errore
+                //    di stampa, negli errori di stampa») - QUI C'ERANO DUE VERSIONI ELENCATE A
+                //    MANO, e due difetti dentro una riga.
+                // 🔴 PRIMO: `f.printErrorType` GREZZO. Per un errore di stampa il cui difetto sta
+                //    SUL RETRO quel campo e' vuoto - la tipologia vive sul retro, e a saperlo e'
+                //    `_tipoErroreStampa` (v6.578, nata da uno screenshot di Franco: «non e' vero
+                //    che SEMI ROSA non e' in elenco»). Su quegli errori la riga restava muta, e
+                //    sarebbe rimasta muta anche dopo la v6.760.
+                // 🔴 SECONDO: MANCAVA L'OMAGGIO, che Franco aveva nominato. Un elenco di due
+                //    versioni scritto a mano non poteva che restare indietro alla terza.
+                // 📌 Adesso la domanda si fa al MODELLO: `_campoTipoDi` legge da
+                //    `VERSIONI_ARTICOLO` quale campo porta la tipologia di questa versione. Le
+                //    VARIAZIONI restano fuori DA SOLE - un `campoTipo` non ce l'hanno - quindi la
+                //    regola della v6.103 («il loro suffisso e' il nome del retro, e la riga sotto
+                //    lo scrive gia'») diventa una conseguenza della dichiarazione invece di un
+                //    `if` da ricordarsi. E' la stessa medicina della v6.314.
+                // ⚠️ L'errore di stampa resta l'unico caso nominato, e non e' un'eccezione
+                //    dimenticata: e' l'unica versione la cui tipologia puo' vivere su un ALTRO
+                //    record. Leggerla dal campo sarebbe leggere il posto sbagliato.
+                const _campoTipoRG = _campoTipoDi(f);
+                const tipoLabel = !_campoTipoRG ? ''
+                  : (f.isPrintError ? _tipoErroreStampa(f, getData('figurines', []))
+                                    : String(f[_campoTipoRG] || '')).trim();
                 // v6.103 (Franco) - IL RETRO DI UNA VARIAZIONE SI SCRIVE PER INTERO: sequenza
                 // N.; Nome; Categoria retro; Sottocategoria retro; Nome retro.
                 // Qui si chiamava `_retroNomeLungo()`, che da' solo *nome + sottonome*: categoria e
@@ -38034,6 +38440,73 @@ function _gridGeometry() {
 // identico per Figurine e Retro (i Retro non hanno variazioni, ma hanno Change ed errori di stampa).
 function _familyKey(f) { return f.baseFigurineId || f.id; }
 
+// 🆕 v6.767 (Franco: «nella griglia, come per altre TDA, non devi andare a capo tra elementi
+//    dello stesso gruppo - base, versioni, change, omaggi, errori di stampa»; e sulla coda della
+//    riga: «buchi a fondo riga e gruppo sempre assieme»).
+// DOVE VA UNA FAMIGLIA, E QUANTO SPAZIO LASCIA INDIETRO. Questa funzione la usano in DUE:
+// `buildItemPages`, che conta le righe per decidere dove finisce la pagina, e il disegno della
+// griglia, che deve sapere quante celle vuote scrivere. Sono due conseguenze dello STESSO fatto:
+// scritte separate sarebbero divergite al primo ritocco, e la pagina avrebbe contenuto un numero
+// di righe diverso da quello disegnato - senza dare nessun errore.
+// Stato in ingresso e in uscita: `x` = quanto della riga corrente e' occupato (numero di card a
+// griglia, pixel in flex), `rows` = righe usate finora. `vuoti` = quanto va lasciato vuoto in coda
+// alla riga precedente perche' la famiglia non ci stava: a griglia e' un NUMERO DI CELLE, in flex
+// e' una LARGHEZZA IN PIXEL - li' le celle non esistono e la riga si chiude riempiendone la coda.
+// 🔴 In flex la coda si riempie, NON si mette un elemento largo quanto tutta la riga: MISURATO
+//    nel browser, un elemento a `flex:0 0 100%` fa una riga sua, e le due righe di stacco che si
+//    porta dietro aggiungono 12px a ogni a capo forzato (passo misurato 84px invece di 72). Il
+//    margine negativo non li toglie: la riga flex non scende sotto lo zero. Riempita la coda,
+//    invece, l'a capo lo fa il browser da se' e il passo resta quello di tutte le altre righe.
+// ⚠️ Se la coda che avanza e' piu' stretta del distanziamento, `vuoti` viene <= 0 e non si
+//    scrive niente: la card dopo non ci sta comunque e va a capo da sola.
+// ⚠️ UNA FAMIGLIA PIU' LARGA DI UNA RIGA non puo' starci tutta: si comincia comunque da riga
+//    nuova - cosi' resta il piu' unita possibile - e poi va a capo per forza. Oggi la famiglia piu'
+//    grande e' di 5 card contro 7 colonne, quindi il ramo non scatta: c'e' perche' un caso che il
+//    codice non sa evitare non si lascia scoperto per fiducia.
+function _collocaFamiglia(fam, geo, x, rows, allFigs, idx) {
+  let vuoti = 0;
+  if (geo.kind === 'flex') {
+    const larg = fam.map(f => _itemHasWidePair(f, allFigs, idx) ? 350 : 247);
+    const tot = larg.reduce((a, b) => a + b, 0) + geo.gap * (larg.length - 1);
+    if (x > 0 && x + geo.gap + tot > geo.width) { vuoti = geo.width - x - geo.gap; rows++; x = 0; }
+    for (const w of larg) {
+      if (x > 0 && x + geo.gap + w > geo.width) { rows++; x = w; }
+      else x = x > 0 ? x + geo.gap + w : w;
+    }
+    return { x: x, rows: rows, vuoti: vuoti };
+  }
+  const n = fam.length;
+  if (x > 0 && x + n > geo.cols) { vuoti = geo.cols - x; rows++; x = 0; }
+  rows += Math.floor((x + n - 1) / geo.cols);
+  x = ((x + n - 1) % geo.cols) + 1;
+  return { x: x, rows: rows, vuoti: vuoti };
+}
+
+// 🆕 v6.767 - LE CARD DELLA PAGINA, CON I BUCHI DENTRO. Riceve l'HTML gia' pronto di ogni
+// card (uno per articolo, nello stesso ordine) e lo incolla inserendo i riempimenti dove
+// `_collocaFamiglia` dice che la riga va chiusa in anticipo.
+// 📌 I riempimenti NON portano la classe `.fig-card`: `_allineaRigheRetro` raggruppa le card per
+//    `offsetTop` e `_adattaCorniciErrore` cerca i segnaposto delle foto - una cella vuota che si
+//    facesse passare per card entrerebbe in tutti e due i conti.
+// 📌 Una famiglia non e' mai spezzata fra due pagine (`buildItemPages`), quindi qui dentro le
+//    famiglie sono sempre intere: non serve nessun caso particolare per la prima e l'ultima.
+function _incollaGruppi(items, cardsHTML, geo, allFigs, idx) {
+  const CELLA_VUOTA = '<div class="fig-cella-vuota" aria-hidden="true"></div>';
+  const codaRiga = px => '<div class="fig-fine-riga" aria-hidden="true" style="flex:0 0 ' + px + 'px"></div>';
+  const pezzi = [];
+  let x = 0, rows = 1, i = 0;
+  while (i < items.length) {
+    const k = _familyKey(items[i]);
+    let j = i + 1;
+    while (j < items.length && _familyKey(items[j]) === k) j++;
+    const p = _collocaFamiglia(items.slice(i, j), geo, x, rows, allFigs, idx);
+    if (p.vuoti > 0) pezzi.push(geo.kind === 'flex' ? codaRiga(p.vuoti) : CELLA_VUOTA.repeat(p.vuoti));
+    for (let q = i; q < j; q++) pezzi.push(cardsHTML[q]);
+    x = p.x; rows = p.rows; i = j;
+  }
+  return pezzi.join('');
+}
+
 // Confini delle pagine, sull'elenco GIA' ORDINATO e GIA' FILTRATO. Due regole, in quest'ordine:
 //   1. una FAMIGLIA non viene mai spezzata fra due pagine;
 //   2. la pagina si misura in RIGHE (ROWS_PER_PAGE), non in un numero di card.
@@ -38052,8 +38525,13 @@ function _familyKey(f) { return f.baseFigurineId || f.id; }
 // arretrare darebbe una pagina vuota, cioe' un ciclo che non termina. Allora la si prende intera
 // sforando le righe. Oggi la famiglia piu' grande e' di 5 card contro 7 righe, quindi il ramo non
 // scatta: c'e' perche' un ciclo che puo' non terminare non si lascia in piedi per fiducia.
-function buildItemPages(allItems) {
-  const geo = _gridGeometry();
+// 🔄 v6.767 - la geometria ARRIVA da fuori. Chi disegna la griglia deve contare le righe con
+//    la STESSA misura con cui le conta qui: leggerla due volte vorrebbe dire due letture di layout
+//    per render (quella che il commento di `_gridGeometry` dice di non fare) e, peggio, due
+//    risposte diverse se nel mezzo cambia qualcosa. Il parametro e' facoltativo: chiamata senza,
+//    si comporta come prima.
+function buildItemPages(allItems, geoData) {
+  const geo = geoData || _gridGeometry();
   const allFigs = getData('figurines', []);
   const idx = _figIndex(allFigs);
   const famEnd = i => { let j = i + 1; const k = _familyKey(allItems[i]);
@@ -38064,18 +38542,14 @@ function buildItemPages(allItems) {
     let end = start, x = 0, rows = 1; // x = larghezza occupata (flex) o card nella riga (grid)
     while (end < allItems.length) {
       const fe = famEnd(end);
-      let xx = x, rr = rows, entra = true;
-      for (let i = end; i < fe; i++) {
-        if (geo.kind === 'flex') {
-          const w = _itemHasWidePair(allItems[i], allFigs, idx) ? 350 : 247;
-          if (xx > 0 && xx + geo.gap + w > geo.width) { rr++; xx = w; } else { xx = xx > 0 ? xx + geo.gap + w : w; }
-        } else {
-          xx++; if (xx > geo.cols) { rr++; xx = 1; }
-        }
-        if (rr > ROWS_PER_PAGE) { entra = false; break; }
-      }
-      if (!entra) break;          // la famiglia sfonderebbe le righe: slitta alla pagina dopo
-      x = xx; rows = rr; end = fe;
+      // 🔄 v6.767 - QUI C'ERA IL CONTO, SCRITTO A MANO. Adesso lo fa `_collocaFamiglia`, che e'
+      //    la stessa funzione usata da chi disegna: due conti sulla stessa cosa, tenuti separati,
+      //    sarebbero divergiti al primo ritocco e la pagina avrebbe contenuto un numero di righe
+      //    diverso da quello disegnato. La differenza di comportamento e' che una famiglia che non
+      //    entra nella riga adesso passa alla riga dopo INTERA, lasciando vuota la coda.
+      const p = _collocaFamiglia(allItems.slice(end, fe), geo, x, rows, allFigs, idx);
+      if (p.rows > ROWS_PER_PAGE) break;  // la famiglia sfonderebbe le righe: slitta alla pagina dopo
+      x = p.x; rows = p.rows; end = fe;
     }
     if (end === start) end = famEnd(start); // famiglia piu' alta della pagina (vedi sopra)
     pages.push({ start, end });
@@ -39531,6 +40005,23 @@ function openSeriesSottoserie(el) {
   openSeriesSection(el.getAttribute('data-sezione'), el.getAttribute('data-sottoserie'));
 }
 
+// 🆕 v6.766 (Franco: «il campo Sottoserie deve avere il link come il campo Serie») - LA
+//    STESSA PORTA, DA UNA SCHEDA. Sta accanto alla sua gemella e ne condivide il modo: il nome
+//    della sottoserie arriva da un ATTRIBUTO, mai da dentro l'`onclick`, perche' puo' contenere
+//    un apostrofo (v6.682).
+// 🔴 LA DIFFERENZA CON LA GEMELLA E' UNA RIGA, E SERVE: dalla card si e' gia' nella pagina
+//    della serie giusta; da una SCHEDA no - la ricerca globale la apre con la pagina del catalogo
+//    sotto, e una `openSeriesSection` da sola ridisegnerebbe una griglia sotto una scheda serie
+//    che non e' quella. L'ordine «prima la serie, poi la sezione» e' quello che
+//    `switchToSeriesFromErrori` usa gia': non se ne inventa un secondo.
+function vaiAllaSottoserie(el) {
+  if (!el) return;
+  closeModal('fig-detail-modal');
+  const serie = el.getAttribute('data-serie');
+  if (serie) openSeriesDetail(serie);
+  openSeriesSottoserie(el);
+}
+
 // 🔄 v6.682 - `sottoserie` e' il secondo argomento, e chi non lo passa non cambia
 // comportamento: e' la card della sezione, che entra dal gruppo giusto da se'.
 // 🆕 v6.729 (Franco: «non mostrare la TDA nei casi in cui la mostri in altro, cioe' nei casi in
@@ -40062,12 +40553,36 @@ function _baseFigurineLinkLabel(f) {
   return p.testa + p.coda;
 }
 
-// v5.785 — ordinamento condiviso delle opzioni "base": Retro per NOME COMPLETO, Figurine per Numero.
+// v5.785 — ordinamento condiviso delle opzioni "base".
+// 🔄 v6.762 (Franco: «il campo Spilla di partenza non mostra i valori in ordine») - LA REGOLA
+//    NON CHIEDE PIU' CHE SEZIONE SEI, CHIEDE SE UN NUMERO CE L'HAI.
+// 🔴 E NON ERA UN ORDINE SBAGLIATO: ERA L'ASSENZA DI ORDINE. La riga diceva «se uno dei due
+//    e' un retro ordina per etichetta, altrimenti per numero» - e su una sezione senza numeri,
+//    come le spille, `(a.number||0) - (b.number||0)` vale **0 per ogni coppia**. Il confronto
+//    rispondeva «sono pari» sempre, e l'elenco usciva nell'ordine in cui i dati arrivano.
+// 📌 E' la famiglia gia' nominata nella funzione qui accanto (v6.198, in `_stessoGruppoDi`):
+//    «una cosa vera di UN caso - il numero delle figurine - scambiata per una regola di tutti».
+//    La v5.785 scrisse «Retro per nome, Figurine per numero» quando le sezioni con una partenza
+//    erano quelle due. I RETRO non sono piu' nominati e si comportano identici a prima, perche'
+//    un numero non ce l'hanno: stessa risposta, da una domanda che non invecchia.
+// 🔴 E L'ORDINE E' TOTALE, che e' l'altra meta' della correzione. A parita' di numero - e una
+//    base e le sue versioni hanno lo STESSO numero, lo ereditano - il confronto tornava 0, e due
+//    voci pari si scambiano di posto a ogni ridisegno a seconda di come arrivano dal server: un
+//    difetto intermittente, il piu' difficile da segnalare e da riprodurre. E' la lezione scritta
+//    per esteso nella v6.616. Il pareggio del numero lo rompe l'etichetta, quello dell'etichetta
+//    lo rompe l'id - che e' unico per definizione, quindi l'ordine non puo' restare indeciso.
+// 📌 `numeric: true`: «SPILLA 2» prima di «SPILLA 10», non dopo. E' l'opzione che il resto del
+//    file usa gia' per categorie e sottocategorie.
+// ⚠️ Chi un numero ce l'ha viene PRIMA di chi non ce l'ha, invece di mescolarsi: due criteri
+//    alternati nello stesso elenco non producono un ordine, producono due mezzi elenchi intrecciati.
 function _baseFigurineLinkSort(a, b) {
-  if ((a.section || '') === 'retros' || (b.section || '') === 'retros') {
-    return (_baseFigurineLinkLabel(a)).localeCompare(_baseFigurineLinkLabel(b), 'it', { sensitivity: 'base' });
-  }
-  return (a.number || 0) - (b.number || 0);
+  const _num = x => { const n = Number(x && x.number); return Number.isFinite(n) && x.number !== null && x.number !== '' ? n : null; };
+  const na = _num(a), nb = _num(b);
+  if (na !== null && nb !== null && na !== nb) return na - nb;
+  if ((na === null) !== (nb === null)) return na === null ? 1 : -1;
+  const c = _baseFigurineLinkLabel(a).localeCompare(_baseFigurineLinkLabel(b), 'it',
+    { numeric: true, sensitivity: 'base' });
+  return c || String((a && a.id) || '').localeCompare(String((b && b.id) || ''));
 }
 
 
@@ -40114,6 +40629,14 @@ function _validaBaseId(rec, id, figs) {
                     : 'No item with id ' + id + ' — check you pasted the whole thing.';
   if (b.seriesId !== rec.seriesId) return it ? 'Quell\'articolo e\' di un\'altra serie.' : 'That item belongs to another series.';
   if ((b.section || 'figurines') !== (rec.section || 'figurines')) return it ? 'Quell\'articolo e\' di un\'altra sezione.' : 'That item belongs to another section.';
+  // 🆕 v6.759 - e stessa SOTTOSERIE. Sta qui e non solo nell'elenco della scheda perche' da
+  // questa strada (la cella della vista tabellare) una partenza si incolla a mano: senza il
+  // controllo, si accetterebbe proprio cio' che l'elenco nasconde.
+  // 📌 Il messaggio e' suo e nomina la sottoserie: quello del numero, due righe sotto, avrebbe
+  // dato una spiegazione falsa a un rifiuto giusto.
+  if (!_stessaSottoserieDi(rec, b)) return it
+    ? 'Quell\'articolo e\' di un\'altra sottoserie (' + ((b.subseries || '').trim() || 'Set principale') + ').'
+    : 'That item belongs to another subseries (' + ((b.subseries || '').trim() || 'main set') + ').';
   // v6.133 - stesso gruppo: il numero di un figlio si eredita dalla figurina di partenza, quindi
   // sceglierne una di un altro numero rinumererebbe il record senza dirlo.
   if (!_stessoGruppoDi(rec, b)) return it
@@ -43447,7 +43970,12 @@ function renderItems() {
   // spezza mai una famiglia fra due pagine (v5.977). Da qui in giu' si legge SEMPRE da _itemPages,
   // mai piu' da moltiplicazioni per getItemsPerPage(): erano quelle a dare per scontato che tutte
   // le pagine fossero lunghe uguale.
-  _itemPages = buildItemPages(allItems);
+  // 🆕 v6.767 - la geometria si legge QUI, una volta per render, e la usano tutti e due:
+  //    chi decide i confini delle pagine e chi scrive i riempimenti in fondo alle righe.
+  //    ⚠️ Dopo il blocco degli stili qui sopra, mai prima: e' da quegli stili che si leggono le
+  //    colonne e la larghezza, e letta prima descriverebbe il render PRECEDENTE (v5.978).
+  const _geoRender = _gridGeometry();
+  _itemPages = buildItemPages(allItems, _geoRender);
   const totalPages = _itemPages.length;
   if (currentItemPage > totalPages) currentItemPage = totalPages;
   if (currentItemPage < 1) currentItemPage = 1;
@@ -43523,7 +44051,10 @@ function renderItems() {
       _famigliaPerBase.set(x.baseFigurineId, x.famiglia.trim());
     }
   }
-  grid.innerHTML = items.map(f => {
+  // 🔄 v6.767 - QUI C'ERA `grid.innerHTML = items.map(...).join('')`. Adesso l'HTML delle card
+  //    si costruisce in un elenco e lo incolla `_incollaGruppi`, che ci infila le celle vuote dove
+  //    un gruppo non entrerebbe nella riga. Il disegno della singola card non cambia di una riga.
+  const _cardsHTML = items.map(f => {
     // 🔴 v6.503 - QUESTE DUE STANNO IN CIMA, E NON E' UNA QUESTIONE DI ORDINE ESTETICO.
     // Sono `const`, quindi vivono in una zona morta finche' la loro riga non viene
     // eseguita: chiamarle prima non da' `undefined`, da' ReferenceError e ferma tutto.
@@ -43909,7 +44440,15 @@ function renderItems() {
     // v6.273 - il colore ora sta nei due span di `_campoCard`, non nella riga: qui resta la sola
     // misura del testo. Lasciare anche un `color` avrebbe tinto solo lo spazio fra i due span.
     _rigaCard(_campoCard('CATEGORIA: ', esc((f.category || '').trim()), COL_CATEGORIA), 'font-size:0.82rem;margin-top:1px;', 'categoria') +
-    _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc((f.subcategory || '').trim()), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria')
+    _rigaCard(_campoCard('SOTTOCATEGORIA: ', esc((f.subcategory || '').trim()), COL_SOTTOCAT), 'font-size:0.78rem;margin-top:1px;', 'sottocategoria') +
+    // 🆕 v6.753 (Franco) - L'ANNO, terza riga, e solo dove la serie non ce l'ha da dare.
+    // 📌 Il colore e' COL_IDENTITA, l'azzurro di numero, nome e sottonome: l'anno e' un FATTO
+    //    dell'oggetto, non una sua classificazione, e il giallo della categoria su questa stessa
+    //    card c'e' gia'. Non si e' inventata una tinta nuova - la tavolozza e' stretta, e la nota
+    //    sopra `COL_CATEGORIA` dice perche' aggiungerne una non e' una decisione meccanica.
+    // ⚠️ Ad anno vuoto `_campoCard` torna '' e `_rigaCard` marca la riga vuota: il posto resta
+    //    riservato o no lo decide `_allineaRigheRetro` dopo il disegno, come per le altre due.
+    _rigaCard(_campoCard('ANNO: ', _articoloSenzaSerie(f) ? esc(String(f.year || '')) : '', COL_IDENTITA), 'font-size:0.78rem;margin-top:1px;', 'anno')
   );
   // 🔄 v6.667 - LA RIGA DEL SOTTONOME ESCE DAL BLOCCO DEI RETRO. Stava dentro
   //    `_retroRigheHTML` insieme a CATEGORIA e SOTTOCATEGORIA, che sono davvero roba da retro;
@@ -44140,7 +44679,8 @@ function renderItems() {
         </div>
       </div>
     </div>`;
-  }).join('');
+  });
+  grid.innerHTML = _incollaGruppi(items, _cardsHTML, _geoRender, _allFigs, _idx);
 
   // Event delegation per i pulsanti cuore wishlist: rimossa la vecchia istanza e aggiunta nuova
   if (grid._wishlistHandler) grid.removeEventListener('click', grid._wishlistHandler);
@@ -44481,7 +45021,11 @@ async function submitComment(postId) {
   if (!currentUser) { openAuth('login'); return; }
   const textarea = document.getElementById('reply-input-' + postId);
   const text = textarea ? textarea.value.trim() : '';
-  if (!text) { toast('Please write something first', 'error'); return; }
+  // 🆕 v6.754 (Franco, con lo screenshot) - era l'UNICO avviso del sito scritto in inglese
+  // e basta, ed e' per questo che si e' visto: chi guarda il sito in italiano lo incontra
+  // subito. Gli altri diciassette non tradotti sono in italiano - stesso difetto, ma se ne
+  // accorge solo chi guarda in inglese, e quello in chat non c'e'.
+  if (!text) { toast(currentLang === 'it' ? 'Scrivi prima qualcosa' : 'Please write something first', 'error'); return; }
   const idx = _cache.posts.findIndex(p => p.id === postId);
   if (idx < 0) return;
   if (!_cache.posts[idx].comments) _cache.posts[idx].comments = [];
@@ -44496,7 +45040,7 @@ async function submitComment(postId) {
   await fsSave('posts', _cache.posts[idx]);
   sendReplyNotificationEmail(_cache.posts[idx].authorId, _cache.posts[idx].title, currentUser.username, text);
   renderBlog();
-  toast('Risposta inviata! ✅', 'success');
+  toast(currentLang === 'it' ? 'Risposta inviata! ✅' : 'Reply sent! ✅', 'success');
 }
 
 async function deleteComment(postId, commentId) {
@@ -44505,11 +45049,13 @@ async function deleteComment(postId, commentId) {
   if (idx < 0) return;
   const c = _cache.posts[idx].comments.find(c => c.id === commentId);
   if (!c) return;
-  if (!currentUser.isAdmin && c.authorId !== currentUser.id) { toast('Non autorizzato', 'error'); return; }
+  if (!currentUser.isAdmin && c.authorId !== currentUser.id) { toast(currentLang === 'it' ? 'Non autorizzato' : 'Not allowed', 'error'); return; }
   _cache.posts[idx].comments = _cache.posts[idx].comments.filter(c => c.id !== commentId);
   await fsSave('posts', _cache.posts[idx]);
   renderBlog();
-  toast('Commento eliminato', 'success');
+  // 📌 «Comment deleted» e' la coppia che il file usa gia' per «Post eliminato»: una
+  // traduzione nuova dove ne esiste gia' una e' la seconda verita' sullo stesso messaggio.
+  toast(currentLang === 'it' ? 'Commento eliminato' : 'Comment deleted', 'success');
 }
 
 async function deletePost(id) {
@@ -46658,6 +47204,24 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
   // facce della stessa scheda dicono cose diverse.
   if (!_eProdottoExtraSerie(f))
   (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Serie' : 'Series')}</span><span class="detail-value" style="font-weight:600;">${figSeries ? `<a href="#" onclick="closeModal('fig-detail-modal');openSeriesDetail('${figSeries.id}');return false;" style="color:var(--accent);text-decoration:underline;">${esc(figSeries.name)} \u2197</a>` : ''}</span></div>`);
+  // \U0001f504 v6.764 - la Sottoserie subito sotto la Serie, come in modifica.
+  // ⚠️ E NELLO STESSO ELENCO: su telefono la scheda ha due liste (`rowsTop` e `rows`) e la
+  //    Serie va nella prima. Questa riga usava `rows` e basta, quindi su schermo stretto
+  //    sarebbe finita staccata dalla riga che deve seguire - cioe' il difetto rifatto in
+  //    piccolo proprio mentre lo si chiude.
+  // \U0001f4cc Vuota non si scrive, che e' la regola della vista (v5.782: «a parte i campi vuoti,
+  //    che in vista si nascondono»).
+  // \U0001f195 v6.766 (Franco: «il campo Sottoserie deve avere il link come il campo Serie») - E
+  //    ADESSO CI SI CLICCA. La Serie porta alla sua pagina dalla v5.xxx; la Sottoserie diceva un
+  //    nome e basta, che e' la meta' di un campo: dice dove sei senza poterti portare.
+  // \U0001f534 IL NOME VIAGGIA IN UN ATTRIBUTO, NON DENTRO L'`onclick`. E' la regola scritta dalla
+  //    v6.682 per la card della sottoserie - «prende l'ELEMENTO e non due stringhe, perche' il
+  //    nome puo' contenere un apostrofo» - e vale identica qui: «Sgorbions' Stars» dentro una
+  //    stringa fra apici chiuderebbe la stringa e romperebbe la scheda, e lo farebbe solo per
+  //    QUELLE sottoserie, cioe' il difetto che si scopre dal cliente e non in prova.
+  if (f.subseries) {
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottoserie' : 'Subseries')}</span><span class="detail-value" style="font-weight:600;"><a href="#" data-serie="${esc(f.seriesId || '')}" data-sezione="${esc(f.section || 'figurines')}" data-sottoserie="${esc(f.subseries)}" onclick="vaiAllaSottoserie(this);return false;" style="color:var(--accent);text-decoration:underline;">${esc(f.subseries)} \u2197</a></span></div>`);
+  }
 
   // v5.841 — la riga "Retro collegato" NON si stampa piu' (ne' su telefono ne' su desktop):
   // sotto la foto del Retro c'e' gia' lo STESSO link (retroCaption, piu' in basso in questa
@@ -46711,6 +47275,18 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
       (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottocategoria' : 'Subcategory')}</span><span class="detail-value">${esc(f.subcategory)}</span></div>`);
     }
   }
+  // 🆕 v6.753 (Franco) - L'ANNO, sugli articoli delle TDA senza serie.
+  // 🔴 VUOTO, LA RIGA NON C'E'. La prima stesura scriveva «non impostato» in grigio corsivo,
+  //    come fa la Categoria due righe piu' su - e `prova-v6400` e' diventata rossa: il grigio
+  //    accanto a un anno e' una scelta che Franco ha REVOCATO (v6.210 e v6.400, «il bianco
+  //    ovunque, apposta»). Non si e' cercato un grigio che sfugga al controllo: si e' presa la
+  //    convenzione della riga vicina, la Sottocategoria, che vuota sparisce.
+  // 📌 E non e' una perdita: il campo dove si scrive e' la scheda in MODIFICA, e li' per
+  //    questi articoli c'e' sempre. La regola della v6.314 («un campo scrivibile vuoto e' un
+  //    invito a scriverci») parla di quella, non di questa.
+  if (_articoloSenzaSerie(f) && f.year) {
+    (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Anno' : 'Year')}</span><span class="detail-value">${esc(String(f.year))}</span></div>`);
+  }
   // Nome — tutte le sezioni, quando presente (hide-empty).
   if (f.name) {
     const _rowNome = `<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Nome' : 'Name')}</span><span class="detail-value">${esc(f.name)}</span></div>`;
@@ -46730,10 +47306,6 @@ function openFigDetail(figId, elencoNav, senzaMemoria) {
     (_mobileDetail ? rowsTop : rows).push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottonome' : 'Subname')}</span><span class="detail-value">${esc(f.subname.trim())}</span></div>`);
   }
 
-  // Sottoserie - show only if populated (admin sees it always in edit modal, not here)
-  if (f.subseries) {
-    rows.push(`<div class="detail-row"><span class="detail-label">${(currentLang === 'it' ? 'Sottoserie' : 'Subseries')}</span><span class="detail-value">${f.subseries}</span></div>`);
-  }
 
   // Punteggio
   if (f.score > 0 || isAdmin) {
@@ -47371,6 +47943,28 @@ function _eProdottoExtraSerie(f) {
   return !!(f && f.tipoProdotto);
 }
 
+// 🆕 v6.753 (Franco: «nelle TDA che non hanno una serie di riferimento mi serve il campo Anno,
+//    sull'articolo») - CHI HA L'ANNO, IN UN POSTO SOLO. Lo chiedono in cinque: la scheda in
+//    modifica, la scheda in lettura, la card della griglia, la colonna della vista tabellare e il
+//    salvataggio. Cinque copie della stessa condizione sarebbero cinque risposte il giorno che
+//    cambia - e' il difetto che questo file racconta piu' di ogni altro.
+// 🔴 LA DOMANDA SI FA AL RECORD, NON A DOVE SI STA NAVIGANDO. `_tdaSenzaSerie()` (v6.737)
+//    risponde «in che pagina sono», ed e' la domanda giusta per la TESTATA. Per un campo
+//    dell'ARTICOLO sarebbe sbagliata: la scheda si apre anche dalla ricerca globale (v6.097),
+//    dove la pagina sotto e' un'altra - lo stesso articolo avrebbe il campo entrando dal box e
+//    non entrando dalla ricerca.
+// 🔴 E SERVONO TUTTE E DUE LE CONDIZIONI. `tipoProdotto` da solo direbbe di si' anche a un
+//    articolo di una TDA dentro una serie VERA, che l'anno ce l'ha gia' - quello della sua serie.
+//    Il flag `serieContenitore` da solo direbbe di si' a un articolo della serie finta che in
+//    nessun box ci sta.
+// 📌 Il flag, non il nome: la serie contenitore si puo' rinominare, ed e' proprio per questo
+//    che il flag e' nato (v6.204). E' la stessa scelta di `_tdaSenzaSerie`.
+function _articoloSenzaSerie(f) {
+  if (!f || !f.tipoProdotto) return false;
+  const s = getData('series', []).find(x => x.id === f.seriesId);
+  return !!(s && s.serieContenitore);
+}
+
 // v6.146 - IL TITOLO DELLA SCHEDA DICE IL TIPO DI PRODOTTO, non "Altri oggetti". Per un prodotto
 // extra serie la sezione (`extras`) e' un dettaglio di come e' immagazzinato, non la cosa che si
 // sta guardando: chi apre la scheda di un Cartoncino vuole leggere CARTONCINI.
@@ -47382,21 +47976,39 @@ function _eProdottoExtraSerie(f) {
 // riscriverli in vista tabellare avrebbe prodotto due elenchi destinati a divergere — e in questo
 // file "due strade che scrivono lo stesso campo si comportavano diversamente" e' il racconto della
 // v6.133 e della v6.143.
-const TAGLIE_EXTRA_SERIE = ['A4', 'A5', 'Altro'];
+// 🗑️ v6.758 - QUI STAVA `TAGLIE_EXTRA_SERIE = ['A4','A5','Altro']`, tre valori scritti nel
+// codice e raggiungibili da nessuno: nessuna schermata li mostrava, nessuno poteva cambiarli.
+// Franco: «nemmeno trovo dove la abbiamo messa» - e aveva ragione, non era messa da nessuna parte.
+// 🆕 Adesso l'elenco e' un campo del TIPO, come il nome e l'ordinamento, e questa e' l'unica
+// funzione che risponde alla domanda «quali taglie ha questo tipo?». La fanno la scheda e la vista
+// tabellare: due elenchi letti in due modi divergerebbero alla prima modifica.
+// 🔴 IL RIPIEGO E' L'ELENCO VUOTO, ed e' una scelta di Franco (13 settembre): una TDA che non
+// ha ancora dichiarato le sue taglie non ne propone nessuna. Rimettere i tre di prima come default
+// avrebbe riportato in vita, invisibile, la costante che questa release toglie.
+function _taglieDelTipo(idTipo) {
+  if (!idTipo) return [];
+  const t = _tipiProdotto().find(x => x.id === idTipo);
+  return (t && Array.isArray(t.taglie) ? t.taglie : [])
+    .map(v => String(v || '').trim()).filter(Boolean);
+}
 
 // Il `<select>` della Taglia, uno per la scheda e uno per la tabella, dalla stessa funzione.
 // ⚠️ Un valore che non sta fra i tre (dato vecchio, o i tre cambiati dopo) diventa un'opzione SUA,
 // selezionata e marcata: un `<select>` a cui assegni un valore che non ha fra le opzioni resta
 // VUOTO, e il salvataggio successivo scrive quel vuoto. E' il guasto trovato scrivendo la v6.102.
-function _selectTagliaHTML(valore, id, onchange, stile) {
+// 🔄 v6.758 - IL TIPO E' UN ARGOMENTO, non piu' una costante letta qui dentro. I due
+// chiamanti (la scheda e la cella della vista tabellare) hanno il record in mano e passano il suo
+// `tipoProdotto`: cosi' la tendina di un Cartoncino non propone le taglie dei Poster.
+function _selectTagliaHTML(valore, id, onchange, stile, idTipo) {
   const v = (valore || '').trim();
-  const fuori = v && !TAGLIE_EXTRA_SERIE.some(o => o.toLowerCase() === v.toLowerCase());
+  const taglie = _taglieDelTipo(idTipo);
+  const fuori = v && !taglie.some(o => o.toLowerCase() === v.toLowerCase());
   return '<select id="' + id + '" data-field="size" class="form-input"' +
     (onchange ? ' onchange="' + onchange + '"' : '') +
     ' style="' + (stile || 'padding:0.3rem 0.5rem;font-size:0.9rem;') + '">' +
     '<option value=""' + (v ? '' : ' selected') + '>&mdash;</option>' +
-    TAGLIE_EXTRA_SERIE.map(o => '<option value="' + o + '"' +
-      (v.toLowerCase() === o.toLowerCase() ? ' selected' : '') + '>' + o + '</option>').join('') +
+    taglie.map(o => '<option value="' + esc(o) + '"' +
+      (v.toLowerCase() === o.toLowerCase() ? ' selected' : '') + '>' + esc(o) + '</option>').join('') +
     (fuori ? '<option value="' + esc(v) + '" selected>' + esc(v) + ' \u26a0\ufe0f</option>' : '') +
     '</select>';
 }
@@ -48683,6 +49295,7 @@ function _costruisciPartenze(f, chiaveVersione) {
   _feBaseFigurineLinkOptions = (!rec || !amm.length) ? [] : getData('figurines', [])
     .filter(x => x.seriesId === rec.seriesId && x.section === rec.section && x.id !== rec.id
                  && amm.includes(_chiaveTipo(x))
+                 && _stessaSottoserieDi(rec, x)   // 🆕 v6.759
                  && _stessoGruppoDi(rec, x))
     .sort(_baseFigurineLinkSort);
   return amm;
@@ -48813,7 +49426,23 @@ function _bozzaNuovoItem(sezione, seriesId) {
     id: '', seriesId, section: sezione || 'figurines',
     number: null, noNumber: false, fotoNonDisponibile: false, invisibile: false,
     name: '', fullName: '', desc: '', note: '', score: 0,
-    subseries: '', size: '', category: '', subcategory: '', subname: '',
+    // 🆕 v6.761 (Franco: «in creazione di articolo partenza dalla pagina di una
+    //    sottoserie, non deve essere fatta la domanda sulla sottoserie del nuovo articolo») -
+    //    L'ARTICOLO NASCE DOVE SI STA. La sottoserie non e' una domanda: e' un fatto della
+    //    pagina da cui si e' premuto «+ Aggiungi».
+    // 📌 E IL CAMPO SI BLOCCA DA SOLO, senza nessuna regola nuova: `_sottoserieBloccata`
+    //    (v6.759) dice gia' «un record nuovo che nasce con una sottoserie non la cambia». La
+    //    regola scritta per il clone copre questo caso perche' descrive il DATO, non il gesto -
+    //    ed e' esattamente la ragione per cui era stata scritta cosi'.
+    // ⚠️ Dal SET PRINCIPALE resta la stringa vuota (v6.682), e li' la domanda si fa ancora: nella
+    //    tendina il vuoto non e' una voce, e' il «— scegli —». Un campo spento su «scegli»
+    //    sembrerebbe un guasto.
+    // 📌 Si legge la variabile di pagina come questa stessa funzione fa gia' due righe piu'
+    //    sotto per `tipoProdotto`: il posto da cui si crea e' cio' che decide dove si nasce.
+    subseries: (_sottoserieAttiva === null || _sottoserieAttiva === undefined) ? '' : _sottoserieAttiva,
+    size: '', category: '', subcategory: '', subname: '',
+    year: null,   // 🆕 v6.753 - vedi `_articoloSenzaSerie`: si mostra solo dove serve, ma nasce sempre
+
     isVariation: false, isUnofficialVariation: false, isChange: false, isPrintError: false,
     baseFigurineId: null, retroId: null, retroBianco: false,
     changeType: '', printErrorType: null,
@@ -49001,6 +49630,37 @@ function switchToEditMode(figId) {
   // informa - occupa spazio e insegna a saltare le righe.
   if (!_extraSerie)
   html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Serie':'Series') + '</span><span class="detail-value" style="font-weight:600;">' + (figSeries?.name||'') + '</span></div>';
+  // 🔄 v6.764 (Franco: «la sottoserie va sotto al campo serie; deve essere cosi' in tutte
+  //    le form») - LA SOTTOSERIE SEGUE LA SERIE, che e' la cosa di cui e' una parte.
+  // 🔴 Stava dopo Categoria, Sottocategoria, Anno e Famiglia - cioe' in mezzo ai campi
+  //    della classificazione - e nella scheda in LETTURA stava in un posto ancora diverso,
+  //    dopo il Nome e il Sottonome. Due posizioni per lo stesso campo a un clic di distanza:
+  //    la v6.764 le fa coincidere, che e' la regola di Franco della v5.782.
+  // Sottoserie (solo se la serie ha hasSubseries)
+  if (figSeries?.hasSubseries) {
+    // 🔄 v6.656 - DA CASELLA DI TESTO A TENDINA. Il testo libero faceva tre danni in uno:
+    //    non diceva quali sottoserie esistono, accettava un refuso che diventa un tab
+    //    fantasma, e - il sospetto di Franco - si lasciava riempire dal browser.
+    // 🆕 v6.759 (Franco) - SU UN CLONE LA SOTTOSERIE NON SI CAMBIA: e' quella dell'articolo
+    //    di partenza, e il valore lo porta gia' `cloneFigurine` con lo spread. Qui si toglie il
+    //    modo di disfarla per sbaglio.
+    // ⚠️ `disabled` e non `readonly`: su un `<select>` `readonly` non esiste e non fa niente.
+    //    E il salvataggio continua a funzionare - un select disabilitato conserva il suo
+    //    `.value`, e chi salva legge proprio quello (misurato nel browser, non dedotto). Non e'
+    //    il caso della v6.752, dove il DOM saltava delle SPUNTE.
+    // 📌 Sfumato e con la ragione nel `title`: un campo spento senza spiegazione si legge come
+    //    un guasto. E' la forma della v6.314 - in sola lettura, non nascosto.
+    const _ssBloc = _sottoserieBloccata(f);
+    html += '<div class="detail-row"><span class="detail-label">'
+      + (currentLang==='it'?'Sottoserie':'Subseries')
+      + '</span><span class="detail-value"><select class="form-input" id="fe-subseries" '
+      + (_ssBloc ? 'disabled title="' + (currentLang==='it'
+          ? 'La copia resta nella sottoserie dell\'articolo di partenza.'
+          : 'The copy stays in the source item\'s subseries.') + '" ' : '')
+      + 'style="padding:0.3rem 0.5rem;font-size:0.9rem;' + (_ssBloc ? 'opacity:0.55;' : '') + '">'
+      + _opzioniSottoserie(f.seriesId || currentSeriesId, f.subseries) + '</select></span></div>';
+  }
+
 
   const isRetrosItem = f.section === 'retros';
   _feIsRetro = isRetrosItem; // v5.779 — usato da toggleFeBaseFigurineGroup per le regole del Nome
@@ -49032,24 +49692,20 @@ function switchToEditMode(figId) {
     if (isRetrosItem || _extraSerie) html += '<div class="detail-row" style="' + _eredStile('subcategory') + '"' + _eredAttr('subcategory') + '><span class="detail-label">' + (currentLang==='it'?'Sottocategoria':'Subcategory') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-subcategory"' + (_extraSerie ? ' list="fe-subcat-list"' : '') + ' value="' + esc((f.subcategory||'')) + '"' + _eredRO('subcategory') + ' style="padding:0.3rem 0.5rem;font-size:0.9rem;border:none;background:transparent;"></span></div>';
   }
 
+  // 🆕 v6.753 (Franco) - L'ANNO DELL'ARTICOLO, dove la serie non ce l'ha da dare.
+  // 📌 Sta QUI, subito dopo Categoria e Sottocategoria, perche' e' il posto che gli da' la
+  //    scheda in LETTURA: vista e modifica devono mostrare le stesse righe nello stesso ordine
+  //    (regola di Franco, v5.782), e la v6.158 quella lezione l'ha gia' pagata.
+  if (_articoloSenzaSerie(f)) {
+    html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Anno':'Year') + '</span><span class="detail-value"><input class="form-input" type="number" id="fe-year" value="' + (f.year || '') + '" placeholder="' + (currentLang==='it'?'es. 1991':'e.g. 1991') + '" style="padding:0.3rem 0.5rem;font-size:0.9rem;width:100px;border:none;background:transparent;"></span></div>';
+  }
+
   // 🆕 v6.366 - i due campi delle figurine da attaccare, modificabili. Stessa condizione della
   // scheda in lettura: le due meta' devono mostrare le stesse righe, se no passare da lettura a
   // modifica fa comparire o sparire campi senza motivo (lezione della v6.158, pagata due volte).
   if (f.section === 'attaccare') {
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Famiglia':'Family') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-famiglia" value="' + esc(f.famiglia || '') + '"></span></div>';
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Commento album':'Album note') + '</span><span class="detail-value"><input class="form-input" type="text" id="fe-commento-album" value="' + esc(f.commentoAlbum || '') + '"></span></div>';
-  }
-
-  // Sottoserie (solo se la serie ha hasSubseries)
-  if (figSeries?.hasSubseries) {
-    // 🔄 v6.656 - DA CASELLA DI TESTO A TENDINA. Il testo libero faceva tre danni in uno:
-    //    non diceva quali sottoserie esistono, accettava un refuso che diventa un tab
-    //    fantasma, e - il sospetto di Franco - si lasciava riempire dal browser.
-    html += '<div class="detail-row"><span class="detail-label">'
-      + (currentLang==='it'?'Sottoserie':'Subseries')
-      + '</span><span class="detail-value"><select class="form-input" id="fe-subseries" '
-      + 'style="padding:0.3rem 0.5rem;font-size:0.9rem;">'
-      + _opzioniSottoserie(f.seriesId || currentSeriesId, f.subseries) + '</select></span></div>';
   }
 
   // Numero (i Retro non sono numerati; le Variazioni/Change ereditano quello della figurina base)
@@ -49099,7 +49755,7 @@ function switchToEditMode(figId) {
     // v6.151 - il markup del select viene da `_selectTagliaHTML`, lo stesso che usa la vista
     // tabellare: erano due elenchi, ora e' uno.
     html += '<div class="detail-row"><span class="detail-label">' + (currentLang==='it'?'Taglia':'Size') + '</span>' +
-      '<span class="detail-value">' + _selectTagliaHTML(f.size, 'fe-size', '') + '</span></div>';
+      '<span class="detail-value">' + _selectTagliaHTML(f.size, 'fe-size', '', '', f.tipoProdotto) + '</span></div>';
   // 🆕 v6.362 - la domanda la fa `_mostraTaglia`, come gia' la scheda in lettura e la tabella.
   // Qui c'era `!_extraSerie && figSeries?.hasSizes`, cioe' la stessa condizione riscritta a mano:
   // e' la copia che al trasloco della v6.362 sarebbe rimasta indietro, lasciando il campo Taglia
@@ -50732,6 +51388,24 @@ async function saveFigFromDetail(figId, opzioni) {
       ebayAccounts: _feVendita ? leggiEbayAccountScelta(_impostazioniEbay, 'fe') : null,
     };
 
+    // 🆕 v6.753 - L'ANNO ENTRA IN `updates` SOLO SE IL CAMPO C'E'.
+    // 🔴 Tutti gli altri campi qui sopra si leggono con `?.` e ripiegano su '' o null, e va
+    //    benissimo: sono campi che nella form ci sono sempre. Questo no - lo mostra solo
+    //    `_articoloSenzaSerie`. Letto alla cieca, un `fe-year` assente darebbe null e
+    //    CANCELLEREBBE l'anno a ogni salvataggio fatto da una strada che quel campo non disegna.
+    // 📌 E' il difetto della v5.711 rovesciato: li' una casella stava nella form e non nel
+    //    salvataggio, qui sarebbe il salvataggio ad avere una chiave che la form non ha. In tutti
+    //    e due i casi non c'e' nessun errore: il dato sparisce e basta.
+    // ⚠️ Il vuoto e' `null`, non 0: «non l'ho scritto» e «anno zero» sono due cose diverse, ed
+    //    e' la stessa distinzione che il §12.1 fa per `priceUsd`.
+    {
+      const _feYear = document.getElementById('fe-year');
+      if (_feYear) {
+        const _v = (_feYear.value || '').trim();
+        updates.year = _v ? +_v : null;
+      }
+    }
+
     // v6.235 - cinque, non quattro. ⚠️ Se l'omaggio non entrasse in questo controllo, si
     // potrebbe salvare un oggetto omaggio E change insieme: `_chiaviTipo` ne mostrerebbe uno solo
     // (il primo in ordine di dichiarazione) e l'altro resterebbe scritto, invisibile.
@@ -51442,6 +52116,38 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 // il ripiego per le serie che i numeri non li usano (`noNumbers`) e per gli oggetti con `noNumber`.
 // Se il figlio non ha ne' numero ne' nome — un record appena creato — non c'e' niente su cui
 // restringere e si lascia passare tutto: un elenco vuoto sarebbe peggio di uno lungo.
+// 🆕 v6.759 (Franco: «il campo Spilla di partenza deve cercare solo nella sottoserie
+//    dell'articolo figlio») - STESSA SOTTOSERIE, E LA DOMANDA LA FANNO IN DUE: l'elenco che si
+//    sfoglia nella scheda e il controllo che accetta o rifiuta una partenza incollata a mano.
+// 🔴 Due risposte diverse vorrebbero dire una delle due cose peggiori: proporre nell'elenco
+//    qualcosa che poi viene rifiutato, oppure accettare dalla vista tabellare proprio cio' che la
+//    scheda nasconde. Per questo e' una funzione e non due condizioni scritte dove servivano.
+// 📌 NON STA DENTRO `_stessoGruppoDi`, che sarebbe stato piu' corto: quella risponde «stesso
+//    NUMERO», e il messaggio di rifiuto che le sta accanto parla di numeri. Infilarci dentro la
+//    sottoserie avrebbe prodotto un rifiuto giusto con una spiegazione falsa - il difetto che il
+//    12 settembre e' costato una riga di documento («un numero ripescato da un commento e' una
+//    citazione, non una misura»): una risposta corretta detta con la ragione sbagliata.
+// 📌 E dove la serie non ha sottoserie la regola si spegne DA SOLA: li' hanno tutti la stringa
+//    vuota, quindi la domanda risponde sempre di si'. Nessun bisogno di chiedere `hasSubseries`,
+//    cioe' nessuna seconda condizione da tenere allineata.
+function _stessaSottoserieDi(figlio, candidato) {
+  return ((figlio && figlio.subseries) || '').trim()
+      === ((candidato && candidato.subseries) || '').trim();
+}
+
+// 🆕 v6.759 (Franco: «quando si clona un articolo avente una sottoserie, non deve essere
+//    possibile cambiare la sottoserie») - QUANDO LA SOTTOSERIE NON SI TOCCA.
+// 🔴 LA CONDIZIONE SI LEGGE DAL DATO, NON DA UNA BANDIERINA «STO CLONANDO». Un record senza
+//    id che nasce gia' con una sottoserie puo' venire da un posto solo: `cloneFigurine`, che fa
+//    `{ ...src, id: '' }`. «+ Aggiungi» costruisce la bozza con `subseries: ''`, quindi li' il
+//    campo resta scrivibile, che e' giusto. Una variabile di stato avrebbe dovuto essere accesa
+//    da uno e spenta da tre - e la quarta strada che nascera' domani non la spegnerebbe.
+// ⚠️ Vale solo sui record NUOVI: modificare un articolo che esiste e cambiargli sottoserie resta
+//    possibile, e Franco non ha chiesto di toglierlo.
+function _sottoserieBloccata(f) {
+  return !!(f && !f.id && ((f.subseries || '').trim()));
+}
+
 function _stessoGruppoDi(figlio, candidato) {
   const n = figlio.number;
   // v6.133 - LA DIFESA: il numero di un figlio non si scrive, si EREDITA dalla figurina di
@@ -56433,6 +57139,14 @@ function renderBulkEditView() {
   // comparivano. Si aprono anche quando fra gli oggetti visibili c'e' almeno un prodotto extra
   // serie: la domanda non e' "in che sezione sono" ma "questi oggetti quei campi ce l'hanno?".
   const _cExtra = allItems.some(_eProdottoExtraSerie);
+  // 🆕 v6.753 - la colonna Anno si apre se QUALCHE riga la mostrerebbe, e a dirlo e' la
+  // 🔄 v6.755 (Franco: «mettere l'anno dopo il campo Nome») - e sta DOPO IL NOME, non dopo
+  // la Sottocategoria dov'era nata. Il Nome e' l'identita' della riga: l'anno e' un dato di
+  // quell'identita' e si legge dopo averla letta. Intestazione e cella si sono spostate
+  // INSIEME - sono due elenchi che devono dire per forza la stessa cosa (v6.657).
+  // stessa funzione della scheda e della card. E' la forma della v6.362 per la Taglia: la
+  // domanda non e' «in che sezione sono» ma «questi oggetti quel campo ce l'hanno?».
+  const _cAnno = allItems.some(_articoloSenzaSerie);
   // v6.152 (Franco) - "come mai ci sono campi che hanno senso solo per le figurine? vedo il campo
   // Figurina di partenza". Quella colonna era gated dal solo `isAdmin`, quindi compariva ovunque.
   // Un prodotto extra serie non discende da niente: la v6.146 ha tolto le quattro caselle del tipo
@@ -56604,6 +57318,7 @@ function renderBulkEditView() {
                non c'era affatto. Ora c'e' il NOME, modificabile come nelle altre sezioni, e il Nome
                completo esce dalla tabella: e' un valore calcolato, e questa e' una vista di modifica. -->
           <th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Nome' : 'Name'}</th>
+          ${_cAnno ? '<th style="padding:8px;text-align:center;border-bottom:1px solid var(--border);color:var(--text);">' + (currentLang === 'it' ? 'Anno' : 'Year') + '</th>' : ''}
           ${_cAttaccare ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Famiglia' : 'Family'}</th>` : ''}
           ${_cAttaccare ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">${currentLang === 'it' ? 'Commento album' : 'Album note'}</th>` : ''}
           ${currentSection === 'figurines' ? `<th style="padding:8px;text-align:left;border-bottom:1px solid var(--border);color:var(--text);">Retro</th>` : ''}
@@ -56715,6 +57430,9 @@ function renderBulkEditView() {
               ? `<td style="padding:4px;${currentSection === 'figurines' ? '' : 'width:99%;'}"><input data-field="name" data-id="${f.id}" value="${f.name||''}" style="width:100%;min-width:${currentSection === 'figurines' ? 150 : 280}px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>`
               : readCell(f.name, 300);
           })()}
+          ${_cAnno ? (_articoloSenzaSerie(f) && isAdmin
+            ? '<td style="padding:4px;text-align:center;"><input data-field="year" data-id="'+f.id+'" value="'+(f.year||'')+'" type="number" style="width:80px;text-align:center;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)"></td>'
+            : readCell(f.year || '', null, 'center')) : ''}
           ${!_cAttaccare ? '' : (isAdmin
             ? `<td style="padding:4px;"><input data-field="famiglia" data-id="${f.id}" value="${esc(f.famiglia || '')}" style="width:100%;min-width:120px;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.85rem;" onchange="saveBulkCell(this)"></td>`
             : readCell(f.famiglia, 160))}
@@ -56792,7 +57510,7 @@ function renderBulkEditView() {
           ${(isAdmin && !_cSoloExtra) ? (_eProdottoExtraSerie(f) ? '<td></td>' : _eBase(f) ? readCell('', 420) :  `<td style="padding:4px;min-width:420px;"><input data-field="_figPartenza" data-id="${f.id}" list="${_idListaPartenza(f)}" value="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" placeholder="${currentLang === 'it' ? '— nessuna —' : '— none —'}" title="${(_etichettaPartenza(f) || '').replace(/"/g,'&quot;')}" style="width:100%;box-sizing:border-box;font-size:0.72rem;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;" onfocus="this.select()" onchange="saveBulkCell(this)"></td>`) : ''}
           ${_cTaglia ? (isAdmin
             ? '<td style="padding:4px;">' + (!_mostraTaglia(f, currentSeries) ? '' : _eProdottoExtraSerie(f)
-                ? _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;')
+                ? _selectTagliaHTML(f.size, 'bulk-size-'+f.id, 'saveBulkCell(this)', 'width:96px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;', f.tipoProdotto)
                 : '<input data-field="size" data-id="'+f.id+'" value="'+esc(f.size||'')+'" style="width:80px;background:var(--card);border:1px solid var(--border);color:var(--text);padding:3px 6px;border-radius:4px;font-size:0.8rem;" onchange="saveBulkCell(this)">')
               + '</td>'
             : readCell(f.size)) : ''}
@@ -57302,6 +58020,9 @@ async function saveBulkCell(input) {
   // Type conversion
   if (field === 'number') value = value ? parseInt(value) : null;
   if (field === 'score') value = parseInt(value) || 0;
+  // 🆕 v6.753 - come `number` e non come `score`: il vuoto e' null («non l'ho scritto»),
+  // non 0. Un anno 0 sarebbe un dato falso scritto al posto di un dato mancante.
+  if (field === 'year') value = value ? parseInt(value) : null;
 
   const figs = getData('figurines', []);
   const idx = figs.findIndex(f => f.id === figId);
