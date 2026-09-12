@@ -565,8 +565,16 @@ body {
    qui si segue l'ULTIMO - la home - perche' e' quello che ha guardato dicendo «oltre».
    📌 SE UN GIORNO LO ZOOM DELLA HOME SPARISCE, questo 0.9 va tolto insieme a lui, o l'hub
    diventera' piu' stretto del carosello invece che piu' largo. */
+/* 🔄 v6.747 (Franco: «la pagina della TDA, sotto al carosello, non occupa tutto lo spazio
+   che viene occupato dalla pagina di una serie») — L'HUB DI UNA TIPOLOGIA ENTRA QUI DENTRO.
+   Le sue card stavano in un contenitore da 1100px meno 4rem di padding: ~1036, cioe' tre
+   colonne di `.grid-3`. Non era una scelta, era un'altra pagina.
+   📌 Si aggiunge un SELETTORE, non si ricopia la larghezza: e' la lezione della v6.746,
+   di poche ore fa. E vale anche lo sbordo — `margin-left:50%` piu' la traslazione — che e'
+   cio' che fa uscire la griglia dal contenitore stretto in cui sta. */
 @media (min-width: 861px) {
-  #catalog-grid {
+  #catalog-grid,
+  #prodotto-serie-grid {
     /* la larghezza del carosello della home MOLTIPLICATA PER IL SUO ZOOM: e' cio' che si vede,
        non cio' che si chiede. Verificata a tre misure: a 1440 fanno 1238 tutti e due, a 1920
        1620 tutti e due, a 2554 1620 tutti e due. */
@@ -766,7 +774,12 @@ body {
    Quattro card su una riga da 375px sarebbero larghe ottanta pixel.
    ⚠️ E le colonne restano MONOTONE scendendo: 4 sopra gli 860, 3 sotto. Il difetto che la
    v5.837 ha chiuso era il ballo 3-2-3, non il numero. */
-#catalog-grid { grid-template-columns: repeat(4, 1fr); }
+/* 🔄 v6.747 — e le QUATTRO COLONNE sono le stesse: Franco, davanti alla scelta fra quattro
+   (come l'hub) e cinque (card della stessa dimensione dell'hub), ha detto «4».
+   ⚠️ Sul TELEFONO non cambia niente: li' le colonne le scrive il JS come stile inline
+   (v6.080, tre per riga), e l'inline vince su questa riga. */
+#catalog-grid,
+#prodotto-serie-grid { grid-template-columns: repeat(4, 1fr); }
 .grid-4 { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.25rem; }
 .grid-6 { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.75rem; }
 
@@ -1728,12 +1741,47 @@ footer {
    lato attorno a una pillola da 39,2 = 48,80px, cioe' 3,05rem esatti a 16px di radice.
    ⚠️ Franco aveva ragione anche prima: «Aggiungi serie e' alto come prima» — erano quattro
    pixel, invisibili. Alzavo il pulsante sbagliato. */
+/* 🔄 v6.733 (Franco: «falli alti come il tasto Opzioni admin») — I DUE TASTI «+» ESCONO DA
+   QUESTA REGOLA. Il 3,05rem resta al solo «Mostra informazioni sommarie», che Franco non ha
+   nominato: e' una REVOCA PARZIALE della v6.712, non una dimenticanza.
+   ⚠️ Conseguenza dichiarata: nella testata Inventario il tasto del riepilogo resta piu' alto
+   dei due «+». Erano alti uguali per una richiesta del 10 settembre; questa e' del 12. */
 :root { --h-testata-inventario: 3.05rem; }
-#btn-info-tutte-serie,
-#admin-add-series-btn .btn-primary,
-#admin-add-tipo-prodotto-btn .btn-primary {
+#btn-info-tutte-serie {
   min-height: var(--h-testata-inventario);
   display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* 🆕 v6.733 (Franco: «i bottoni Aggiungi serie e Aggiungi articolo devono essere alti la
+   meta'» → «falli alti come il tasto "opzioni admin"») — LA TAGLIA DEI TASTI ADMIN STA IN UN
+   POSTO SOLO, E IL METRO E' UN ALTRO TASTO.
+   🔴 PERCHE' «Opzioni admin» E' DENTRO QUESTA REGOLA e non lasciato com'era: se la taglia
+   restasse inline sul suo tasto, qui ci sarebbe la sua COPIA. Due numeri uguali in due posti
+   sono la coppia che diverge il giorno che uno dei due si ritocca (v6.373). Cosi' invece
+   «alti come Opzioni admin» non e' una misura: e' una conseguenza.
+   🔴 `align-self: center` E' PER IL TASTO DELLA SEZIONE, e REVOCA la v6.373 («il pulsante
+   Aggiungi figurine puoi farlo alto come il titolo della pagina»): quel tasto vive in una
+   riga `align-items:stretch`, quindi senza questa riga continuerebbe ad allungarsi fino al
+   titolo e la taglia qui sopra non si vedrebbe. Era una richiesta di Franco, e questa e'
+   un'altra richiesta di Franco: si scrive che e' una revoca, non si fa finta di niente.
+   📌 In rem e non in px, come la v6.710: in px l'altezza resterebbe ferma se cambiasse il
+   corpo del testo, e i tasti tornerebbero diversi senza che nessuno tocchi niente. */
+/* 🔄 v6.746 (Franco: «il tasto deve avere le stesse dimensioni del tasto Opzioni admin») —
+   IL TASTO DELLA TIPOLOGIA ENTRA NELL'ELENCO. Nasceva ieri con il vestito di serie di
+   .btn-primary: misurato sulla preview, corpo 18,4px e imbottitura 12/32 contro i 14,4px e
+   6,4/17,6 di «Opzioni admin», che sta un centimetro più in là.
+   📌 Si aggiunge un SELETTORE, non si riscrivono i numeri: quelli stanno qui e basta, ed è
+   la ragione per cui questa regola esiste (v6.733).
+   ⚠️ E la lezione: una regola «in un posto solo» protegge chi c'era, non chi nasce dopo.
+   Niente ricorda a un tasto nuovo di entrare in questo elenco — tranne `prova-v6746`. */
+#detail-admin-btn,
+#detail-tipo-admin-btn,
+#admin-add-series-btn .btn-primary,
+#admin-add-tipo-prodotto-btn .btn-primary,
+#admin-add-label {
+  font-size: 0.9rem;
+  padding: 0.4rem 1.1rem;
+  align-self: center;
 }
 
 /* ============================================================
