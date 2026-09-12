@@ -1,6 +1,21 @@
 // ============================================================
 // CHANGELOG app.js
 // ------------------------------------------------------------
+// v6.729 — 🤫 IL TITOLO DELLA SEZIONE TACE DENTRO UN GRUPPO. Franco: «non mostrare la TDA
+//          nei casi in cui la mostri in altro, cioe' nei casi in cui la pagina e' in una
+//          sottoserie» — la testata scrive gia' «Figurine Metal», e il titolo sotto ripeteva
+//          «Figurine» a due centimetri di distanza.
+//          🔴 E ALLA DOMANDA «fin dove» HA RISPOSTO **solo dentro una sottoserie**: in una
+//          sezione senza gruppi (Bustine, Album) la parola resta scritta due volte, ed e' una
+//          decisione sua, non una svista. Chi un domani «finisse il lavoro» la starebbe
+//          ribaltando.
+//          🔴 I QUATTRO CHE SCRIVEVANO QUEL TITOLO ADESSO PASSANO TUTTI DA UN POSTO SOLO
+//          (`_scriviTitoloSezione`). Il quarto e' il CAMBIO DI LINGUA, e senza di lui bastava
+//          toccare la bandierina dentro un gruppo per rivedere il doppione.
+//          ⚠️ La stringa vuota non conta come gruppo: e' il SET PRINCIPALE (v6.682), dove la
+//          testata dice la sola tipologia. Li' il titolo resta, come in Bustine.
+//          Modificato js/app.js.
+//
 // v6.728 — 💾 «SALVA E NEXT» sulla scheda di un articolo. Franco: «deve salvare e passare al
 //          prossimo articolo; ha senso solo quando ci sono le frecce dx-sx in alto, quando non ci
 //          sono non farlo vedere».
@@ -26154,7 +26169,7 @@ let db = null;
 let fbApp = null;
 let fbAuth = null;
 
-const JS_VERSION = 'v6.728';
+const JS_VERSION = 'v6.729';
 const CSS_VERSION = JS_VERSION; // segue sempre JS_VERSION: nessun numero separato da tenere allineato a mano
 
 // ============================================================
@@ -35733,7 +35748,7 @@ function openTipoProdotto(id) {
   _tipoProdottoCorrente = id;   // DOPO: `openSeriesDetail` azzera, e deve azzerare
   openSeriesSection('extras');  // e questa ridisegna la griglia, quindi il filtro e' gia' acceso
   const titolo = document.getElementById('items-section-title');
-  if (titolo) titolo.textContent = _nomeTipo(tipo) || titolo.textContent;
+  if (titolo) _scriviTitoloSezione(_nomeTipo(tipo) || titolo.textContent);   // v6.729
 }
 
 // ---- LA FORM DEL TIPO: due campi, e non e' una form di prodotti ----
@@ -35899,7 +35914,7 @@ async function salvaTipoProdotto() {
   if (idEsistente && _tipoProdottoCorrente === idEsistente) {
     const _t = _tipiProdotto().find(x => x.id === idEsistente);
     const _titolo = document.getElementById('items-section-title');
-    if (_t && _titolo) _titolo.textContent = _t.nome || _titolo.textContent;
+    if (_t && _titolo) _scriviTitoloSezione(_t.nome || _titolo.textContent);   // v6.729
     try { renderItems(); } catch (e) {}   // l'ordinamento del tipo puo' essere cambiato
   }
   toast(it ? (idEsistente ? '✅ Tipo di articolo aggiornato' : '✅ Tipo di articolo creato')
@@ -39059,6 +39074,30 @@ function openSeriesSottoserie(el) {
 
 // 🔄 v6.682 - `sottoserie` e' il secondo argomento, e chi non lo passa non cambia
 // comportamento: e' la card della sezione, che entra dal gruppo giusto da se'.
+// 🆕 v6.729 (Franco: «non mostrare la TDA nei casi in cui la mostri in altro, cioe' nei casi in
+//    cui la pagina e' in una sottoserie») - IL TITOLO DELLA SEZIONE TACE DENTRO UN GRUPPO.
+// 🔴 CHI SCRIVE QUEL TITOLO SONO IN QUATTRO, e prima di questa release ognuno lo scriveva per
+//    conto suo: `openSeriesSection`, i due punti del BOX (tipo di prodotto) e il cambio di
+//    lingua. Una regola messa in uno solo dei quattro sarebbe sparita al primo giro di uno
+//    degli altri tre - e il cambio di lingua e' quello che l'avrebbe disfatta subito, perche'
+//    riscrive `getSectionLabel(currentSection)` senza guardare niente.
+// ⚠️ E infatti, prima di oggi, cambiare lingua DENTRO UN BOX rimetteva «Extra» al posto del nome
+//    del box: lo stesso difetto, in un altro punto. Passando tutti e quattro da qui, quel
+//    comportamento resta quello che era - non e' questa la release che lo chiude - ma da oggi
+//    c'e' un posto solo dove andare a chiuderlo.
+// 🔴 LA CONDIZIONE E' `_sottoserieAttiva` NON VUOTA, e la stringa vuota NON conta: quella e' il
+//    SET PRINCIPALE (v6.682), dove la testata scrive la sola tipologia. Li' il titolo resta,
+//    esattamente come in «Bustine» - che e' la scelta di Franco dell'11 settembre.
+function _scriviTitoloSezione(testo) {
+  const el = document.getElementById('items-section-title');
+  if (!el) return;
+  // dentro un gruppo la testata dice gia' «Tipologia Gruppo»: ripeterlo qui e' la stessa parola
+  // due volte a due centimetri, il difetto chiuso dalla v6.688 e dalla v6.695.
+  const _muto = !!_sottoserieAttiva;
+  el.textContent = _muto ? '' : (testo || '');
+  el.style.display = _muto ? 'none' : '';
+}
+
 function openSeriesSection(section, sottoserie) {
   // 🔄 v6.597 - QUI STAVA LA TERZA LISTA, ed era quella che divergeva: dieci voci contro le
   // tredici delle altre due. Mancavano `_filtroLatoErrore` (il colpevole del 5 settembre 2026),
@@ -39121,7 +39160,7 @@ function openSeriesSection(section, sottoserie) {
   //    v6.688 («era la stessa parola due volte»).
   // 📌 La v6.718 era durata mezz'ora, e non e' sprecata: e' servita a far vedere che
   //    l'informazione mancava. Il posto giusto l'ha detto Franco guardandola.
-  document.getElementById('items-section-title').textContent = getSectionLabel(section);
+  _scriviTitoloSezione(getSectionLabel(section));   // v6.729 - tace dentro un gruppo
   // v6.153 - l'etichetta del tasto indietro dice DOVE si torna, non un posto fisso. Dentro un box
   // si torna all'Inventario; altrove alle Sezioni della serie, come sempre.
   // v6.156 (Franco) - UN SOLO TASTO INDIETRO. La v6.153 aveva rinominato quello della sezione in
@@ -55322,7 +55361,7 @@ function renderAll() {
   // Re-render items section if open
   if (document.getElementById('items-section')?.style.display !== 'none') {
     const titleEl = document.getElementById('items-section-title');
-    if (titleEl && currentSection) titleEl.textContent = getSectionLabel(currentSection);
+    if (titleEl && currentSection) _scriviTitoloSezione(getSectionLabel(currentSection));   // v6.729
     // Aggiorna testo pulsanti toolbar figurine (Vista tabellare / Solo senza foto)
     const bulkBtn = document.getElementById('bulk-edit-toggle-btn');
     if (bulkBtn) {
